@@ -17,7 +17,7 @@ import 'watch.dart';
 /// Unified command runner for all build_runner commands.
 class BuildCommandRunner extends CommandRunner<int> {
   final List<BuilderApplication> builderApplications;
-  final BuildEnvironment overrideEnvironment;
+  final OverrideableEnvironment Function(BuildEnvironment) overrideEnvironment;
 
   final packageGraph = PackageGraph.forThisPackage();
 

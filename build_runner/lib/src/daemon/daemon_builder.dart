@@ -132,13 +132,13 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     PackageGraph packageGraph,
     List<BuilderApplication> builders,
     SharedOptions sharedOptions,
-    BuildEnvironment overrideEnvironment,
+    OverrideableEnvironment Function(BuildEnvironment) overrideEnvironment,
   ) async {
     var expectedDeletes = Set<AssetId>();
     var outputStreamController = StreamController<ServerLog>();
 
     var environment = OverrideableEnvironment(
-        overrideEnvironment ?? IOEnvironment(packageGraph,
+        IOEnvironment(packageGraph,
             assumeTty: true,
             // TODO(grouma) - This should likely moved to the build_impl command
             // so that different daemon clients can output to different
@@ -148,6 +148,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         onLog: (record) {
       outputStreamController.add(ServerLog((b) => b.log = record.toString()));
     });
+    if (overrideEnvironment != null) {
+      environment = overrideEnvironment(environment);
+    }
 
     var daemonEnvironment = OverrideableEnvironment(environment,
         writer: OnDeleteWriter(environment.writer, expectedDeletes.add));

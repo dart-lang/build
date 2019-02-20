@@ -73,11 +73,11 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     Map<String, Map<String, dynamic>> builderConfigOverrides,
     List<String> buildDirs,
     String logPerformanceDir,
-    BuildEnvironment overrideEnvironment}) async {
+    OverrideableEnvironment Function(BuildEnvironment) overrideEnvironment}) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= PackageGraph.forThisPackage();
   var environment = OverrideableEnvironment(
-      overrideEnvironment ?? IOEnvironment(
+      IOEnvironment(
         packageGraph,
         assumeTty: assumeTty,
         outputMap: outputMap,
@@ -86,6 +86,9 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       reader: reader,
       writer: writer,
       onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose));
+  if (overrideEnvironment != null) {
+    environment = OverrideableEnvironment(environment);
+  }
   var logSubscription =
       LogSubscription(environment, verbose: verbose, logLevel: logLevel);
   var options = await BuildOptions.create(

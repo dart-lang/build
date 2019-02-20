@@ -44,11 +44,9 @@ class OverrideableEnvironment implements BuildEnvironment {
     Future<BuildResult> Function(BuildResult result,
             FinalizedAssetsView finalizedAssetsView, AssetReader reader)
         finalizeBuild,
-    Future<BuildScriptUpdates> Function(
-    AssetReader assetReader,
-    PackageGraph packageGraph,
-    AssetGraph graph,
-      ) buildScriptUpdates,
+    Future<BuildScriptUpdates> Function(AssetReader assetReader,
+            PackageGraph packageGraph, AssetGraph graph)
+        buildScriptUpdates,
   })  : _reader = reader,
         _writer = writer,
         _onLog = onLog,
@@ -81,7 +79,8 @@ class OverrideableEnvironment implements BuildEnvironment {
       _default.prompt(message, choices);
 
   @override
-  Future<BuildScriptUpdates> buildScriptUpdates(PackageGraph packageGraph, AssetGraph graph) {
+  Future<BuildScriptUpdates> buildScriptUpdates(
+      PackageGraph packageGraph, AssetGraph graph) {
     if (_buildScriptUpdates != null) {
       return _buildScriptUpdates(reader, packageGraph, graph);
     }

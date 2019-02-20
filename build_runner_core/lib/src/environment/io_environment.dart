@@ -11,8 +11,6 @@ import 'package:logging/logging.dart';
 import '../asset/file_based.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
-import '../asset_graph/graph.dart';
-import '../changes/build_script_updates.dart';
 import '../generate/build_result.dart';
 import '../generate/finalized_assets_view.dart';
 import '../package_graph/package_graph.dart';
@@ -22,7 +20,7 @@ import 'create_merged_dir.dart';
 final _logger = Logger('IOEnvironment');
 
 /// A [BuildEnvironment] writing to disk and stdout.
-class IOEnvironment implements BuildEnvironment {
+class IOEnvironment extends BuildEnvironment {
   @override
   final RunnerAssetReader reader;
 
@@ -78,20 +76,15 @@ class IOEnvironment implements BuildEnvironment {
 
   @override
   Future<BuildResult> finalizeBuild(BuildResult buildResult,
-      FinalizedAssetsView finalizedAssetsView, AssetReader reader) async {
+      FinalizedAssetsView finalizedAssetsView, AssetReader assetReader) async {
     if (_outputMap != null && buildResult.status == BuildStatus.success) {
       if (!await createMergedOutputDirectories(_outputMap, _packageGraph, this,
-          reader, finalizedAssetsView, _outputSymlinksOnly)) {
+          assetReader, finalizedAssetsView, _outputSymlinksOnly)) {
         return _convertToFailure(buildResult,
             failureType: FailureType.cantCreate);
       }
     }
     return buildResult;
-  }
-
-  @override
-  Future<BuildScriptUpdates> buildScriptUpdates(PackageGraph packageGraph, AssetGraph graph) {
-    return BuildScriptUpdates.create(reader, packageGraph, graph);
   }
 }
 
