@@ -21,7 +21,7 @@ void main() {
     test('should aggregate changes from all nodes', () {
       final graph = buildPackageGraph({
         rootPackage('a', path: '/g/a'): ['b'],
-        package('b', path: '/g/b'): []
+        package('b', path: '/g/b', type: DependencyType.path): []
       });
       final nodes = {
         'a': FakeNodeWatcher(graph['a']),
@@ -46,7 +46,7 @@ void main() {
     test('should avoid duplicate changes with nested packages', () async {
       final graph = buildPackageGraph({
         rootPackage('a', path: '/g/a'): ['b'],
-        package('b', path: '/g/a/b'): []
+        package('b', path: '/g/a/b', type: DependencyType.path): []
       });
       final nodes = {
         'a': FakeNodeWatcher(graph['a'])..markReady(),
@@ -96,7 +96,7 @@ void main() {
     test('ready waits for all node watchers to be ready', () async {
       final graph = buildPackageGraph({
         rootPackage('a', path: '/g/a'): ['b'],
-        package('b', path: '/g/b'): []
+        package('b', path: '/g/b', type: DependencyType.path): []
       });
       final nodes = {
         'a': FakeNodeWatcher(graph['a']),
