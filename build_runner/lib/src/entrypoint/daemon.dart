@@ -57,7 +57,7 @@ class DaemonCommand extends BuildRunnerCommand {
         packageGraph,
         builderApplications,
         options,
-        overrideEnvironment,
+        overrideEnvironment: overrideEnvironment,
       );
       // Forward server logs to daemon command STDIO.
       var logSub =

@@ -73,7 +73,8 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     Map<String, Map<String, dynamic>> builderConfigOverrides,
     List<String> buildDirs,
     String logPerformanceDir,
-    OverrideableEnvironment Function(BuildEnvironment) overrideEnvironment}) async {
+    OverrideableEnvironment Function(BuildEnvironment)
+        overrideEnvironment}) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= PackageGraph.forThisPackage();
   var environment = OverrideableEnvironment(
