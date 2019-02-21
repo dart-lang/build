@@ -128,12 +128,10 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     _buildResults.add(daemon.BuildResults((b) => b..results.addAll(results)));
   }
 
-  static Future<BuildRunnerDaemonBuilder> create(
-    PackageGraph packageGraph,
-    List<BuilderApplication> builders,
-    SharedOptions sharedOptions, {
-    OverrideableEnvironment Function(BuildEnvironment) overrideEnvironment
-  }) async {
+  static Future<BuildRunnerDaemonBuilder> create(PackageGraph packageGraph,
+      List<BuilderApplication> builders, SharedOptions sharedOptions,
+      {OverrideableEnvironment Function(BuildEnvironment)
+          overrideEnvironment}) async {
     var expectedDeletes = Set<AssetId>();
     var outputStreamController = StreamController<ServerLog>();
 
