@@ -30,7 +30,8 @@ abstract class BuildEnvironment {
   /// Determines whether current build script needs to be updated.
   ///
   /// Defaults to [BuildScriptUpdates].
-  Future<BuildScriptUpdates> buildScriptUpdates(PackageGraph packageGraph, AssetGraph graph) {
+  Future<BuildScriptUpdates> buildScriptUpdates(
+      PackageGraph packageGraph, AssetGraph graph) {
     return BuildScriptUpdates.create(reader, packageGraph, graph);
   }
 
