@@ -18,7 +18,6 @@ class DartPlatform {
     'html',
     'html_common',
     'indexed_db',
-    'isolate',
     'js',
     'js_util',
     'math',
