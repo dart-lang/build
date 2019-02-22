@@ -1,3 +1,7 @@
+## 1.2.7
+- `overrideEnvironment` factory can be optionally provided to
+   the`BuildCommandRunner` to allow further `BuildEnvironment` customization
+
 ## 1.2.6
 
 - Prevent terminals being launched when running the daemon command on Windows.
