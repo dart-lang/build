@@ -2,6 +2,8 @@
 
 - Add an explicit error when `buildExtensions` is configured to overwrite it's
   input.
+- Add an explicit error when an `InputSet` has an empty or null value in a glob
+  list.
 
 ## 0.3.1+4
 

@@ -7,6 +7,7 @@ analyzer:
     dead_code: error
     override_on_non_overriding_method: error
     todo: ignore
+    deprecated_member_use_from_same_package: ignore
   exclude:
     # Prevents extra work during e2e test runs.
     - "_test/dart2js_test/**"

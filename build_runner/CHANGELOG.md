@@ -1,6 +1,11 @@
+## 1.2.8
+
+- `overrideEnvironment` factory can be optionally provided to the
+  `BuildCommandRunner` to allow further `BuildEnvironment` customization.
+
 ## 1.2.7
-- `overrideEnvironment` factory can be optionally provided to
-   the`BuildCommandRunner` to allow further `BuildEnvironment` customization
+
+- Fix issue where daemon command would occasionally color a log.
 
 ## 1.2.6
 
