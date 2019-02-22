@@ -386,7 +386,7 @@ a:file://different/fake/pkg/path
       group('build.yaml', () {
         final packageGraph = buildPackageGraph({
           rootPackage('a', path: path.absolute('a')): ['b'],
-          package('b', path: path.absolute('b')): []
+          package('b', path: path.absolute('b'), type: DependencyType.path): []
         });
         List<LogRecord> logs;
         StreamQueue<BuildResult> results;

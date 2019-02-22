@@ -5,7 +5,6 @@
 import 'dart:async';
 
 import 'package:build_runner_core/build_runner_core.dart';
-import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
 import 'asset_change.dart';
@@ -15,7 +14,7 @@ Watcher _default(String path) => Watcher(path);
 /// Allows watching significant files and directories in a given package.
 class PackageNodeWatcher {
   final Watcher Function(String) _strategy;
-  final PackageNode _node;
+  final PackageNode node;
 
   /// The actual watcher instance.
   Watcher _watcher;
@@ -27,27 +26,15 @@ class PackageNodeWatcher {
   /// reasonable default based on the current platform and the type of path
   /// (i.e. a file versus directory).
   PackageNodeWatcher(
-    this._node, {
+    this.node, {
     Watcher watch(String path),
   }) : _strategy = watch ?? _default;
 
   /// Returns a stream of records for assets that change recursively.
-  ///
-  /// If [relative] is omitted, the entire package is watched:
-  /// ```dart
-  /// // a/lib/**
-  /// packageA.watch('lib');
-  ///
-  /// // a/**
-  /// packageA.watch()
-  /// ```
-  Stream<AssetChange> watch([String relative]) {
+  Stream<AssetChange> watch() {
     assert(_watcher == null);
-
-    final path = _node.path;
-    final absolute = relative != null ? p.join(path, relative) : path;
-    _watcher = _strategy(absolute);
+    _watcher = _strategy(node.path);
     final events = _watcher.events;
-    return events.map((e) => AssetChange.fromEvent(_node, e));
+    return events.map((e) => AssetChange.fromEvent(node, e));
   }
 }

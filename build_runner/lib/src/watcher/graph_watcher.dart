@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:async/async.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
 
@@ -20,10 +21,10 @@ class PackageGraphWatcher {
   final PackageNodeWatcher Function(PackageNode) _strategy;
   final PackageGraph _graph;
 
-  var _readyCompleter = Completer<Null>();
+  final _readyCompleter = Completer<Null>();
   Future<Null> get ready => _readyCompleter.future;
 
-  StreamController<AssetChange> controller;
+  bool _isWatching = false;
 
   /// Creates a new watcher for a [PackageGraph].
   ///
@@ -38,49 +39,20 @@ class PackageGraphWatcher {
 
   /// Returns a stream of records for assets that changed in the package graph.
   Stream<AssetChange> watch() {
-    if (controller != null) return controller.stream;
-    List<StreamSubscription> subscriptions;
-    controller = StreamController<AssetChange>(
-      sync: true,
-      onListen: () {
-        subscriptions = logTimedSync(
-          _logger,
-          'Setting up file watchers',
-          () => _watch(controller),
-        );
-      },
-      onCancel: () {
-        for (final subscription in subscriptions) {
-          subscription.cancel();
-        }
-        _readyCompleter = Completer<Null>();
-        var done = controller.close();
-        controller = null;
-        return done;
-      },
-    );
-    return controller.stream;
+    assert(!_isWatching);
+    _isWatching = true;
+    return LazyStream(
+        () => logTimedSync(_logger, 'Setting up file watchers', _watch));
   }
 
-  List<StreamSubscription> _watch(StreamSink<AssetChange> sink) {
-    final subscriptions = <StreamSubscription>[];
-    var allWatchers = <PackageNodeWatcher>[];
-    _graph.allPackages.forEach((name, node) {
-      if (node.dependencyType == DependencyType.hosted ||
-          node.dependencyType == DependencyType.github) {
-        return;
-      }
-      final nestedPackages = _nestedPaths(node);
-      final nodeWatcher = _strategy(node);
-      allWatchers.add(nodeWatcher);
-      subscriptions.add(nodeWatcher.watch().listen((event) {
-        // TODO: Consider a faster filtering strategy.
-        if (nestedPackages.any((path) => event.id.path.startsWith(path))) {
-          return;
-        }
-        sink.add(event);
-      }));
-    });
+  Stream<AssetChange> _watch() {
+    final allWatchers = _graph.allPackages.values
+        .where((node) => node.dependencyType == DependencyType.path)
+        .map(_strategy)
+        .toList();
+    final filteredEvents = allWatchers
+        .map((w) => w.watch().where(_nestedPathFilter(w.node)))
+        .toList();
     // Asynchronously complete the `_readyCompleter` once all the watchers
     // are done.
     () async {
@@ -88,7 +60,12 @@ class PackageGraphWatcher {
           allWatchers.map((nodeWatcher) => nodeWatcher.watcher.ready));
       _readyCompleter.complete();
     }();
-    return subscriptions;
+    return StreamGroup.merge(filteredEvents);
+  }
+
+  bool Function(AssetChange) _nestedPathFilter(PackageNode rootNode) {
+    final ignorePaths = _nestedPaths(rootNode);
+    return (change) => !ignorePaths.any(change.id.path.startsWith);
   }
 
   // Returns a set of all package paths that are "nested" within a node.
