@@ -52,9 +52,10 @@ class InvalidGenerationSourceError extends Error {
 
     if (element != null) {
       var span = spanForElement(element);
-      buffer.writeln();
-      buffer.writeln(span.start.toolString);
-      buffer.write(span.highlight());
+      buffer
+        ..writeln()
+        ..writeln(span.start.toolString)
+        ..write(span.highlight());
     }
 
     return buffer.toString();

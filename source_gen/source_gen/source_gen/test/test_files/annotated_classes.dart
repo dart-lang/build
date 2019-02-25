@@ -4,7 +4,7 @@
 
 library source_gen.test.annotation_test.classes;
 
-import 'package:_test_annotations/_test_annotations.dart';
+import 'package:_test_annotations/test_annotations.dart';
 
 import 'annotations.dart';
 

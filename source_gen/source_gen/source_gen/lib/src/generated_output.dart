@@ -50,13 +50,15 @@ String _outputFromError(Object error) {
 void _commentWithHeader(String header, String content, StringSink buffer) {
   var lines = const LineSplitter().convert(content);
 
-  buffer.writeAll([_commentPrefix, header, lines.first]);
-  buffer.writeln();
+  buffer
+    ..writeAll([_commentPrefix, header, lines.first])
+    ..writeln();
 
   var blankPrefix = ''.padLeft(header.length, ' ');
   for (var i = 1; i < lines.length; i++) {
-    buffer.writeAll([_commentPrefix, blankPrefix, lines[i]]);
-    buffer.writeln();
+    buffer
+      ..writeAll([_commentPrefix, blankPrefix, lines[i]])
+      ..writeln();
   }
 }
 

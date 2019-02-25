@@ -11,7 +11,7 @@ import 'package:async/async.dart';
 /// exceptions are forwarded through the return value.
 Stream<String> normalizeGeneratorOutput(Object value) {
   if (value == null) {
-    return Stream.empty();
+    return const Stream.empty();
   } else if (value is Future) {
     return StreamCompleter.fromFuture(value.then(normalizeGeneratorOutput));
   } else if (value is String) {

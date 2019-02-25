@@ -270,7 +270,7 @@ void main() {
   group('CombiningBuilder', () {
     test('includes a generated code header', () async {
       await testBuilder(
-          CombiningBuilder(),
+          const CombiningBuilder(),
           {
             '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
             '$_pkgName|lib/a.foo.g.part': 'some generated content'
@@ -284,7 +284,7 @@ void main() {
 
     test('outputs `.g.dart` files', () async {
       await testBuilder(
-          CombiningBuilder(),
+          const CombiningBuilder(),
           {
             '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
             '$_pkgName|lib/a.foo.g.part': 'some generated content'
@@ -298,7 +298,7 @@ void main() {
 
     test('outputs contain `part of`', () async {
       await testBuilder(
-          CombiningBuilder(),
+          const CombiningBuilder(),
           {
             '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
             '$_pkgName|lib/a.foo.g.part': 'some generated content'
@@ -311,7 +311,7 @@ void main() {
 
     test('joins part files', () async {
       await testBuilder(
-          CombiningBuilder(),
+          const CombiningBuilder(),
           {
             '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
             '$_pkgName|lib/a.foo.g.part': 'foo generated content',
@@ -326,7 +326,7 @@ void main() {
 
     test('joins only associated part files', () async {
       await testBuilder(
-          CombiningBuilder(),
+          const CombiningBuilder(),
           {
             '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
             '$_pkgName|lib/a.foo.g.part': 'foo generated content',
@@ -342,7 +342,7 @@ void main() {
 
     test('outputs nothing if no part files are found', () async {
       await testBuilder(
-          CombiningBuilder(),
+          const CombiningBuilder(),
           {
             '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
           },
@@ -353,7 +353,7 @@ void main() {
     test('trims part content and skips empty and whitespace-only parts',
         () async {
       await testBuilder(
-          CombiningBuilder(),
+          const CombiningBuilder(),
           {
             '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
             '$_pkgName|lib/a.foo.g.part': '\n\nfoo generated content\n',
@@ -369,7 +369,7 @@ void main() {
 
     test('includes part header if enabled', () async {
       await testBuilder(
-          CombiningBuilder(includePartName: true),
+          const CombiningBuilder(includePartName: true),
           {
             '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
             '$_pkgName|lib/a.foo.g.part': '\n\nfoo generated content\n',
