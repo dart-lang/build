@@ -1,3 +1,7 @@
+## 1.2.8
+
+- Allow running when the root package, or a path dependency, is named `test`.
+
 ## 1.2.7
 
 - Fix issue where daemon command would occasionally color a log.

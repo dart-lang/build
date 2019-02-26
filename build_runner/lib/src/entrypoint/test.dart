@@ -140,6 +140,7 @@ bool _packageTestSupportsSymlinks(PackageGraph packageGraph) {
   if (testPackage == null) return false;
   var pubspecPath = p.join(testPackage.path, 'pubspec.yaml');
   var pubspec = Pubspec.parse(File(pubspecPath).readAsStringSync());
+  if (pubspec.version == null) return false;
   return pubspec.version >= Version(1, 3, 0);
 }
 
