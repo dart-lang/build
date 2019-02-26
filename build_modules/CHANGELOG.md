@@ -1,3 +1,8 @@
+## 1.0.8
+
+- Don't follow `dart.library.isolate` conditional imports for the DDC
+  platform.
+
 ## 1.0.7+2
 
 - Update `dart2js` snapshot arguments for upcoming SDK.
