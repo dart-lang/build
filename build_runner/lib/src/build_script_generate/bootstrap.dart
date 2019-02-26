@@ -70,7 +70,9 @@ Future<int> generateAndRun(List<String> args, {Logger logger}) async {
     try {
       await Isolate.spawnUri(Uri.file(p.absolute(scriptSnapshotLocation)), args,
           messagePort.sendPort,
-          onExit: exitPort.sendPort, onError: errorPort.sendPort);
+          errorsAreFatal: true,
+          onExit: exitPort.sendPort,
+          onError: errorPort.sendPort);
       succeeded = true;
     } on IsolateSpawnException catch (e) {
       if (tryCount > 1) {

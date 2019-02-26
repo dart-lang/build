@@ -66,9 +66,9 @@ class DaemonCommand extends BuildRunnerCommand {
           .writeAsStringSync('${server.port}');
       await daemon.start(requestedOptions, builder, builder.changes);
       stdout.writeln(readyToConnectLog);
+      await logSub.cancel();
       await daemon.onDone.whenComplete(() async {
         await server.stop();
-        await logSub.cancel();
       });
       // Clients can disconnect from the daemon mid build.
       // As a result we try to relinquish resources which can

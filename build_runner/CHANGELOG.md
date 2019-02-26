@@ -1,3 +1,7 @@
+## 1.2.8
+
+- Fix issue where daemon command wouldn't properly shutdown.
+
 ## 1.2.7
 
 - Fix issue where daemon command would occasionally color a log.

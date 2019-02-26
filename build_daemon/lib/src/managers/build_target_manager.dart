@@ -22,21 +22,22 @@ class BuildTargetManager {
 
   bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuild;
 
-  bool get isEmpty => _buildTargets.isEmpty;
-
-  Set<BuildTarget> get targets => _buildTargets.keys.toSet();
-
-  Set<WebSocketChannel> channels(BuildTarget target) => _buildTargets[target];
-
   BuildTargetManager(
       {bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuildOverride})
       : shouldBuild = shouldBuildOverride ?? _shouldBuild;
+
+  bool get isEmpty => _buildTargets.isEmpty;
+
+  Set<BuildTarget> get targets => _buildTargets.keys.toSet();
 
   void addBuildTarget(BuildTarget target, WebSocketChannel channel) {
     _buildTargets
         .putIfAbsent(target, () => Set<WebSocketChannel>())
         .add(channel);
   }
+
+  Set<WebSocketChannel> channels(BuildTarget target) =>
+      _buildTargets[target] ?? Set();
 
   void removeChannel(WebSocketChannel channel) =>
       _buildTargets = Map.fromEntries(_buildTargets.entries
