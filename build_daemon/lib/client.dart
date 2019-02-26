@@ -102,6 +102,8 @@ class BuildDaemonClient {
     _channel.sink.add(jsonEncode(_serializers.serialize(request)));
   }
 
+  Future<void> close() => _channel.sink.close();
+
   static Future<BuildDaemonClient> connect(
       String workingDirectory, List<String> daemonCommand,
       {Serializers serializersOverride,
