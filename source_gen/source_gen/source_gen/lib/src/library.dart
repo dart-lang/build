@@ -29,7 +29,7 @@ class LibraryReader {
   /// Unlike [LibraryElement.getType], this also correctly traverses identifiers
   /// that are accessible via one or more `export` directives.
   ClassElement findType(String name) {
-    var type = element.exportNamespace.get(name);
+    final type = element.exportNamespace.get(name);
     return type is ClassElement ? type : null;
   }
 

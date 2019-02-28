@@ -41,10 +41,10 @@ abstract class GeneratorForAnnotation<T> extends Generator {
 
   @override
   FutureOr<String> generate(LibraryReader library, BuildStep buildStep) async {
-    var values = Set<String>();
+    final values = Set<String>();
 
     for (var annotatedElement in library.annotatedWith(typeChecker)) {
-      var generatedValue = generateForAnnotatedElement(
+      final generatedValue = generateForAnnotatedElement(
           annotatedElement.element, annotatedElement.annotation, buildStep);
       await for (var value in normalizeGeneratorOutput(generatedValue)) {
         assert(value == null || (value.length == value.trim().length));
@@ -66,6 +66,6 @@ abstract class GeneratorForAnnotation<T> extends Generator {
   ///
   /// Implementations should return `null` when no content is generated. Empty
   /// or whitespace-only [String] instances are also ignored.
-  generateForAnnotatedElement(
+  dynamic generateForAnnotatedElement(
       Element element, ConstantReader annotation, BuildStep buildStep);
 }

@@ -25,7 +25,7 @@ void main() {
     _testSimpleValue(
         'mixed good and bad', ['good', 42, 'also good'], throwsArgumentError);
 
-    var badInstance = _ThrowOnToString();
+    final badInstance = _ThrowOnToString();
     _testSimpleValue('really bad class', badInstance, throwsArgumentError);
 
     _testSimpleValue(

@@ -35,7 +35,7 @@ class _Builder extends Builder {
 
   /// Wrap [_generators] to form a [Builder]-compatible API.
   _Builder(this._generators,
-      {String formatOutput(String code),
+      {String Function(String code) formatOutput,
       String generatedExtension = '.g.dart',
       List<String> additionalOutputExtensions = const [],
       String header})
@@ -60,15 +60,15 @@ class _Builder extends Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    var resolver = buildStep.resolver;
+    final resolver = buildStep.resolver;
     if (!await resolver.isLibrary(buildStep.inputId)) return;
-    var lib = await buildStep.inputLibrary;
+    final lib = await buildStep.inputLibrary;
     await _generateForLibrary(lib, buildStep);
   }
 
   Future _generateForLibrary(
       LibraryElement library, BuildStep buildStep) async {
-    var generatedOutputs =
+    final generatedOutputs =
         await _generate(library, _generators, buildStep).toList();
 
     // Don't output useless files.
@@ -79,17 +79,17 @@ class _Builder extends Builder {
     if (generatedOutputs.isEmpty) return;
     final outputId = buildStep.inputId.changeExtension(_generatedExtension);
 
-    var contentBuffer = StringBuffer();
+    final contentBuffer = StringBuffer();
 
     if (_header.isNotEmpty) {
       contentBuffer.writeln(_header);
     }
 
     if (!_isLibraryBuilder) {
-      var asset = buildStep.inputId;
-      var name = nameOfPartial(library, asset);
+      final asset = buildStep.inputId;
+      final name = nameOfPartial(library, asset);
       if (name == null) {
-        var suggest = suggestLibraryName(asset);
+        final suggest = suggestLibraryName(asset);
         throw InvalidGenerationSourceError(
             'Could not find library identifier so a "part of" cannot be built.',
             todo: ''
@@ -104,7 +104,7 @@ class _Builder extends Builder {
         part = computePartUrl(buildStep.inputId, outputId);
       } else {
         assert(this is SharedPartBuilder);
-        var finalPartId = buildStep.inputId.changeExtension('.g.dart');
+        final finalPartId = buildStep.inputId.changeExtension('.g.dart');
         part = computePartUrl(buildStep.inputId, finalPartId);
       }
       if (!library.parts.map((c) => c.uri).contains(part)) {
@@ -176,7 +176,7 @@ class SharedPartBuilder extends _Builder {
   /// [formatOutput] is called to format the generated code. Defaults to
   /// [DartFormatter.format].
   SharedPartBuilder(List<Generator> generators, String partId,
-      {String formatOutput(String code),
+      {String Function(String code) formatOutput,
       List<String> additionalOutputExtensions = const []})
       : super(generators,
             formatOutput: formatOutput,
@@ -222,7 +222,7 @@ class PartBuilder extends _Builder {
   /// If `null`, the content of [defaultFileHeader] is used.
   /// If [header] is an empty `String` no header is added.
   PartBuilder(List<Generator> generators, String generatedExtension,
-      {String formatOutput(String code),
+      {String Function(String code) formatOutput,
       List<String> additionalOutputExtensions = const [],
       String header})
       : super(generators,
@@ -253,12 +253,13 @@ class LibraryBuilder extends _Builder {
   /// [header] is used to specify the content at the top of each generated file.
   /// If `null`, the content of [defaultFileHeader] is used.
   /// If [header] is an empty `String` no header is added.
-  LibraryBuilder(Generator generator,
-      {String formatOutput(String code),
-      String generatedExtension = '.g.dart',
-      List<String> additionalOutputExtensions = const [],
-      String header})
-      : super([generator],
+  LibraryBuilder(
+    Generator generator, {
+    String Function(String code) formatOutput,
+    String generatedExtension = '.g.dart',
+    List<String> additionalOutputExtensions = const [],
+    String header,
+  }) : super([generator],
             formatOutput: formatOutput,
             generatedExtension: generatedExtension,
             additionalOutputExtensions: additionalOutputExtensions,
@@ -267,9 +268,9 @@ class LibraryBuilder extends _Builder {
 
 Stream<GeneratedOutput> _generate(LibraryElement library,
     List<Generator> generators, BuildStep buildStep) async* {
-  var libraryReader = LibraryReader(library);
+  final libraryReader = LibraryReader(library);
   for (var i = 0; i < generators.length; i++) {
-    var gen = generators[i];
+    final gen = generators[i];
     try {
       var msg = 'Running $gen';
       if (generators.length > 1) {

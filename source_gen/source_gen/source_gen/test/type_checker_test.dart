@@ -43,7 +43,7 @@ void main() {
           .libraryFor(AssetId.resolve('asset:source_gen/lib/source_gen.dart')));
     });
 
-    var staticIterable = core.getType('Iterable').type;
+    final staticIterable = core.getType('Iterable').type;
     staticIterableChecker = TypeChecker.fromStatic(staticIterable);
     staticUri = core.getType('Uri').type;
     staticMap = core.getType('Map').type;
@@ -64,11 +64,11 @@ void main() {
 
   // Run a common set of type comparison checks with various implementations.
   void commonTests({
-    @required TypeChecker checkIterable(),
-    @required TypeChecker checkMap(),
-    @required TypeChecker checkHashMap(),
-    @required TypeChecker checkGenerator(),
-    @required TypeChecker checkGeneratorForAnnotation(),
+    @required TypeChecker Function() checkIterable,
+    @required TypeChecker Function() checkMap,
+    @required TypeChecker Function() checkHashMap,
+    @required TypeChecker Function() checkGenerator,
+    @required TypeChecker Function() checkGeneratorForAnnotation,
   }) {
     group('(Iterable)', () {
       test('should be assignable from dart:collection#UnmodifiableListView',
@@ -104,7 +104,7 @@ void main() {
       // Ensure we're consistent WRT generic types
       test('should be assignable from Map<String, String>', () {
         // Using Uri.queryParameters to get a Map<String, String>
-        var stringStringMapType =
+        final stringStringMapType =
             staticUri.getGetter('queryParameters').returnType;
 
         expect(checkMap().isAssignableFromType(stringStringMapType), isTrue);

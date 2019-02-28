@@ -15,7 +15,7 @@ class CommentGenerator extends Generator {
 
   @override
   Future<String> generate(LibraryReader library, _) async {
-    var output = <String>[];
+    final output = <String>[];
     if (forLibrary) {
       var name = library.element.name;
       if (name.isEmpty) {

@@ -24,9 +24,9 @@ const _outputExtensions = '.g.dart';
 const _partFiles = '.g.part';
 
 Builder combiningBuilder([BuilderOptions options]) {
-  var optionsMap = Map<String, dynamic>.from(options?.config ?? {});
+  final optionsMap = Map<String, dynamic>.from(options?.config ?? {});
 
-  var builder = CombiningBuilder(
+  final builder = CombiningBuilder(
       includePartName: optionsMap.remove('include_part_name') as bool);
 
   if (optionsMap.isNotEmpty) {
@@ -64,14 +64,14 @@ class CombiningBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
     // Pattern used for `findAssets`, which must be glob-compatible
-    var pattern = buildStep.inputId.changeExtension('.*$_partFiles').path;
+    final pattern = buildStep.inputId.changeExtension('.*$_partFiles').path;
 
-    var inputBaseName =
+    final inputBaseName =
         p.basenameWithoutExtension(buildStep.inputId.pathSegments.last);
 
     // Pattern used to ensure items are only considered if they match
     // [file name without extension].[valid part id].[part file extension]
-    var restrictedPattern = RegExp([
+    final restrictedPattern = RegExp([
       '^', // start of string
       RegExp.escape(inputBaseName), // file name, without extension
       '\.', // `.` character
@@ -80,13 +80,13 @@ class CombiningBuilder implements Builder {
       '\$', // end of string
     ].join(''));
 
-    var assetIds = await buildStep
+    final assetIds = await buildStep
         .findAssets(Glob(pattern))
         .where((id) => restrictedPattern.hasMatch(id.pathSegments.last))
         .toList()
       ..sort();
 
-    var assets = await Stream.fromIterable(assetIds)
+    final assets = await Stream.fromIterable(assetIds)
         .asyncMap((id) async {
           var content = (await buildStep.readAsString(id)).trim();
           if (_includePartName) {
@@ -97,8 +97,9 @@ class CombiningBuilder implements Builder {
         .where((s) => s.isNotEmpty)
         .join('\n\n');
     if (assets.isEmpty) return;
-    var partOf = nameOfPartial(await buildStep.inputLibrary, buildStep.inputId);
-    var output = '''
+    final partOf =
+        nameOfPartial(await buildStep.inputLibrary, buildStep.inputId);
+    final output = '''
 $defaultFileHeader
 
 part of $partOf;

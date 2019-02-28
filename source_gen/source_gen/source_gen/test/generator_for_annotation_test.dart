@@ -23,7 +23,7 @@ void main() {
     }.entries) {
       test(entry.key, () async {
         final generator = LiteralOutput(entry.value);
-        var builder = LibraryBuilder(generator);
+        final builder = LibraryBuilder(generator);
         await testBuilder(builder, _inputMap, outputs: {});
       });
     }
@@ -31,7 +31,7 @@ void main() {
 
   test('Supports and dedupes multiple return values', () async {
     final generator = const RepeatingGenerator();
-    var builder = LibraryBuilder(generator);
+    final builder = LibraryBuilder(generator);
     await testBuilder(builder, _inputMap, outputs: {
       'a|lib/file.g.dart': r'''
 // GENERATED CODE - DO NOT MODIFY BY HAND
@@ -57,7 +57,7 @@ void main() {
       'from iterable': const FailingIterableGenerator()
     }.entries) {
       test(entry.key, () async {
-        var builder = LibraryBuilder(entry.value);
+        final builder = LibraryBuilder(entry.value);
         await testBuilder(builder, _inputMap, outputs: {
           'a|lib/file.g.dart': r'''
 // GENERATED CODE - DO NOT MODIFY BY HAND
@@ -92,7 +92,7 @@ class FailingGenerator extends GeneratorForAnnotation<Deprecated> {
   const FailingGenerator();
 
   @override
-  generateForAnnotatedElement(
+  dynamic generateForAnnotatedElement(
       Element element, ConstantReader annotation, BuildStep buildStep) {
     throw StateError('not supported!');
   }

@@ -35,14 +35,14 @@ String nameOfPartial(LibraryElement element, AssetId source) {
     return element.name;
   }
 
-  var sourceUrl = p.basename(source.uri.toString());
+  final sourceUrl = p.basename(source.uri.toString());
   return '\'$sourceUrl\'';
 }
 
 /// Returns a suggested library identifier based on [source] path and package.
 String suggestLibraryName(AssetId source) {
   // lib/test.dart --> [lib/test.dart]
-  var parts = source.path.split('/');
+  final parts = source.path.split('/');
   // [lib/test.dart] --> [lib/test]
   parts[parts.length - 1] = parts.last.split('.').first;
   // [lib/test] --> [test]

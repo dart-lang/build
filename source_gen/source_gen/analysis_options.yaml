@@ -9,6 +9,7 @@ analyzer:
     unused_local_variable: error
 linter:
   rules:
+    - always_declare_return_types
     - annotate_overrides
     - avoid_bool_literals_in_conditional_expressions
     - avoid_classes_with_only_static_members
@@ -20,6 +21,7 @@ linter:
     - avoid_renaming_method_parameters
     - avoid_return_types_on_setters
     - avoid_returning_null
+    - avoid_returning_null_for_future
     - avoid_returning_null_for_void
     - avoid_returning_this
     - avoid_shadowing_type_parameters
@@ -65,6 +67,8 @@ linter:
     - prefer_contains
     - prefer_equal_for_default_values
     - prefer_final_fields
+    - prefer_final_locals
+    - prefer_generic_function_type_aliases
     - prefer_initializing_formals
     - prefer_interpolation_to_compose_strings
     - prefer_is_empty
@@ -78,6 +82,7 @@ linter:
     - throw_in_finally
     - type_init_formals
     - unawaited_futures
+    - unnecessary_await_in_return
     - unnecessary_brace_in_string_interps
     - unnecessary_const
     - unnecessary_getters_setters
@@ -88,6 +93,7 @@ linter:
     - unnecessary_statements
     - unnecessary_this
     - unrelated_type_equality_checks
+    - use_function_type_syntax_for_parameters
     - use_rethrow_when_possible
     - valid_regexps
     - void_checks

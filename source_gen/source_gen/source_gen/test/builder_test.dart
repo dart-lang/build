@@ -21,8 +21,8 @@ void main() {
   });
 
   test('Bad generated source', () async {
-    var srcs = _createPackageStub();
-    var builder = PartBuilder([const _BadOutputGenerator()], '.foo.dart');
+    final srcs = _createPackageStub();
+    final builder = PartBuilder([const _BadOutputGenerator()], '.foo.dart');
 
     await testBuilder(builder, srcs,
         generateFor: Set.from(['$_pkgName|lib/test_lib.dart']),
@@ -33,8 +33,8 @@ void main() {
   });
 
   test('Generate standalone output file', () async {
-    var srcs = _createPackageStub();
-    var builder = LibraryBuilder(const CommentGenerator());
+    final srcs = _createPackageStub();
+    final builder = LibraryBuilder(const CommentGenerator());
     await testBuilder(builder, srcs,
         generateFor: Set.from(['$_pkgName|lib/test_lib.dart']),
         outputs: {
@@ -43,8 +43,8 @@ void main() {
   });
 
   test('Generate standalone output file with custom header', () async {
-    var srcs = _createPackageStub();
-    var builder =
+    final srcs = _createPackageStub();
+    final builder =
         LibraryBuilder(const CommentGenerator(), header: _customHeader);
     await testBuilder(builder, srcs,
         generateFor: Set.from(['$_pkgName|lib/test_lib.dart']),
@@ -55,8 +55,8 @@ void main() {
   });
 
   test('LibraryBuilder omits header if provided an empty String', () async {
-    var srcs = _createPackageStub();
-    var builder = LibraryBuilder(const CommentGenerator(), header: '');
+    final srcs = _createPackageStub();
+    final builder = LibraryBuilder(const CommentGenerator(), header: '');
     await testBuilder(builder, srcs,
         generateFor: Set.from(['$_pkgName|lib/test_lib.dart']),
         outputs: {
@@ -73,23 +73,25 @@ void main() {
   });
 
   test('Allow no "library"  by default', () async {
-    var sources = _createPackageStub(testLibContent: _testLibContentNoLibrary);
-    var builder = PartBuilder([const CommentGenerator()], '.foo.dart');
+    final sources =
+        _createPackageStub(testLibContent: _testLibContentNoLibrary);
+    final builder = PartBuilder([const CommentGenerator()], '.foo.dart');
 
     await testBuilder(builder, sources,
         outputs: {'$_pkgName|lib/test_lib.foo.dart': _testGenNoLibrary});
   });
 
   test('Does not fail when there is no output', () async {
-    var sources = _createPackageStub(testLibContent: 'class A {}');
-    var builder =
+    final sources = _createPackageStub(testLibContent: 'class A {}');
+    final builder =
         PartBuilder([const CommentGenerator(forClasses: false)], '.foo.dart');
     await testBuilder(builder, sources, outputs: {});
   });
 
   test('Use new part syntax when no library directive exists', () async {
-    var sources = _createPackageStub(testLibContent: _testLibContentNoLibrary);
-    var builder = PartBuilder([const CommentGenerator()], '.foo.dart');
+    final sources =
+        _createPackageStub(testLibContent: _testLibContentNoLibrary);
+    final builder = PartBuilder([const CommentGenerator()], '.foo.dart');
     await testBuilder(builder, sources,
         outputs: {'$_pkgName|lib/test_lib.foo.dart': _testGenNoLibrary});
   });
@@ -107,14 +109,14 @@ void main() {
           _testGenPartContentForClassesAndLibrary));
 
   test('null result produces no generated parts', () async {
-    var srcs = _createPackageStub();
-    var builder = _unformattedLiteral();
+    final srcs = _createPackageStub();
+    final builder = _unformattedLiteral();
     await testBuilder(builder, srcs, outputs: {});
   });
 
   test('handle generator errors well', () async {
-    var srcs = _createPackageStub(testLibContent: _testLibContentWithError);
-    var builder = PartBuilder([const CommentGenerator()], '.foo.dart');
+    final srcs = _createPackageStub(testLibContent: _testLibContentWithError);
+    final builder = PartBuilder([const CommentGenerator()], '.foo.dart');
     await testBuilder(builder, srcs,
         generateFor: Set.from(['$_pkgName|lib/test_lib.dart']),
         outputs: {
@@ -123,9 +125,9 @@ void main() {
   });
 
   test('warns when a non-standalone builder does not see "part"', () async {
-    var srcs = _createPackageStub(testLibContent: _testLibContentNoPart);
-    var builder = PartBuilder([const CommentGenerator()], '.foo.dart');
-    var logs = <String>[];
+    final srcs = _createPackageStub(testLibContent: _testLibContentNoPart);
+    final builder = PartBuilder([const CommentGenerator()], '.foo.dart');
+    final logs = <String>[];
     await testBuilder(
       builder,
       srcs,
@@ -137,8 +139,8 @@ void main() {
   });
 
   test('generator with an empty result creates no outputs', () async {
-    var srcs = _createPackageStub(testLibContent: _testLibContentNoPart);
-    var builder = _unformattedLiteral('');
+    final srcs = _createPackageStub(testLibContent: _testLibContentNoPart);
+    final builder = _unformattedLiteral('');
     await testBuilder(
       builder,
       srcs,
@@ -147,8 +149,8 @@ void main() {
   });
 
   test('generator with whitespace-only result has no outputs', () async {
-    var srcs = _createPackageStub(testLibContent: _testLibContentNoPart);
-    var builder = _unformattedLiteral('\n  \n');
+    final srcs = _createPackageStub(testLibContent: _testLibContentNoPart);
+    final builder = _unformattedLiteral('\n  \n');
     await testBuilder(
       builder,
       srcs,
@@ -157,8 +159,8 @@ void main() {
   });
 
   test('generator result with wrapping whitespace is trimmed', () async {
-    var srcs = _createPackageStub(testLibContent: _testLibContent);
-    var builder = _unformattedLiteral('\n// hello\n');
+    final srcs = _createPackageStub(testLibContent: _testLibContent);
+    final builder = _unformattedLiteral('\n// hello\n');
     await testBuilder(
       builder,
       srcs,
@@ -205,9 +207,9 @@ void main() {
 
   group('SharedPartBuilder', () {
     test('warns about missing part', () async {
-      var srcs = _createPackageStub(testLibContent: _testLibContentNoPart);
-      var builder = SharedPartBuilder([const CommentGenerator()], 'comment');
-      var logs = <String>[];
+      final srcs = _createPackageStub(testLibContent: _testLibContentNoPart);
+      final builder = SharedPartBuilder([const CommentGenerator()], 'comment');
+      final logs = <String>[];
       await testBuilder(
         builder,
         srcs,
@@ -401,7 +403,7 @@ void main() {
   });
 
   test('can pass a custom formatter with formatOutput', () async {
-    var customOutput = 'final String hello = "hello";';
+    final customOutput = 'final String hello = "hello";';
     await testBuilder(
         PartBuilder([const UnformattedCodeGenerator()], '.foo.dart',
             formatOutput: (_) => customOutput),
@@ -426,8 +428,8 @@ void main() {
 }
 
 Future _generateTest(CommentGenerator gen, String expectedContent) async {
-  var srcs = _createPackageStub();
-  var builder = PartBuilder([gen], '.foo.dart');
+  final srcs = _createPackageStub();
+  final builder = PartBuilder([gen], '.foo.dart');
 
   await testBuilder(builder, srcs,
       generateFor: Set.from(['$_pkgName|lib/test_lib.dart']),

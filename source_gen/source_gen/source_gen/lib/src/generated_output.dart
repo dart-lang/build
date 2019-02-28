@@ -27,7 +27,7 @@ class GeneratedOutput {
 
   @override
   String toString() {
-    var output = generator.toString();
+    final output = generator.toString();
     if (output.endsWith('Generator')) {
       return output;
     }
@@ -36,7 +36,7 @@ class GeneratedOutput {
 }
 
 String _outputFromError(Object error) {
-  var buffer = StringBuffer();
+  final buffer = StringBuffer();
 
   _commentWithHeader(_errorHeader, error.toString(), buffer);
 
@@ -48,13 +48,13 @@ String _outputFromError(Object error) {
 }
 
 void _commentWithHeader(String header, String content, StringSink buffer) {
-  var lines = const LineSplitter().convert(content);
+  final lines = const LineSplitter().convert(content);
 
   buffer
     ..writeAll([_commentPrefix, header, lines.first])
     ..writeln();
 
-  var blankPrefix = ''.padLeft(header.length, ' ');
+  final blankPrefix = ''.padLeft(header.length, ' ');
   for (var i = 1; i < lines.length; i++) {
     buffer
       ..writeAll([_commentPrefix, blankPrefix, lines[i]])
