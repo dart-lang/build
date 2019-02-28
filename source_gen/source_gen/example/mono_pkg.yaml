@@ -2,6 +2,7 @@
 dart:
   - dev
   - stable
+  - 2.0.0
 
 stages:
   - analyze_format:

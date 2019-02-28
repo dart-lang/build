@@ -19,6 +19,11 @@ jobs:
       env: PKG="example"
       dart: stable
     - stage: analyze_format
+      name: "SDK: 2.0.0 - DIR: example - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
+      script: ./tool/travis.sh dartfmt dartanalyzer
+      env: PKG="example"
+      dart: "2.0.0"
+    - stage: analyze_format
       name: "SDK: dev - DIR: example_usage - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="example_usage"
@@ -48,6 +53,11 @@ jobs:
       script: ./tool/travis.sh dartfmt dartanalyzer
       env: PKG="source_gen"
       dart: stable
+    - stage: analyze_format
+      name: "SDK: 2.0.0 - DIR: source_gen - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
+      script: ./tool/travis.sh dartfmt dartanalyzer
+      env: PKG="source_gen"
+      dart: "2.0.0"
     - stage: unit_test
       name: "SDK: dev - DIR: source_gen - TASKS: pub run build_runner test -- -j 1"
       script: ./tool/travis.sh command
@@ -58,6 +68,11 @@ jobs:
       script: ./tool/travis.sh command
       env: PKG="source_gen"
       dart: stable
+    - stage: unit_test
+      name: "SDK: 2.0.0 - DIR: source_gen - TASKS: pub run build_runner test -- -j 1"
+      script: ./tool/travis.sh command
+      env: PKG="source_gen"
+      dart: "2.0.0"
 
 stages:
   - analyze_format
