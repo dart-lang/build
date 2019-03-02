@@ -54,8 +54,9 @@ class KernelBuilder implements Builder {
       @required this.summaryOnly,
       @required this.sdkKernelPath,
       @required this.outputExtension,
-      this.dartSdkDir})
-      : buildExtensions = {
+      String dartSdkDir})
+      : dartSdkDir = dartSdkDir ?? sdkDir,
+        buildExtensions = {
           moduleExtension(platform): [outputExtension]
         };
 
@@ -70,7 +71,7 @@ class KernelBuilder implements Builder {
           buildStep: buildStep,
           summaryOnly: summaryOnly,
           outputExtension: outputExtension,
-          dartSdkDir: dartSdkDir ?? sdkDir,
+          dartSdkDir: dartSdkDir,
           sdkKernelPath: sdkKernelPath);
     } on KernelException catch (e, s) {
       log.severe(
