@@ -22,11 +22,15 @@ main() {
     // will be "it works!".
     setUp(() async {
       var executableFileContent = '''
+import 'dart:io';
+
 void main(List<String> args) {
   if (args.isEmpty) {
     print("it works!");
   } else if (args[0] == "throw") {
     throw StateError('oh no!');
+  } else if (args[0] == "print_uri") {
+    print(Platform.script);
   } else {
     print(args.join(';'));
   }
@@ -114,6 +118,16 @@ main(List<String> args) async {
       expect(lastLine, 'it works!', reason: result.stderr as String);
     });
 
+    test('runs even if no output directory is given', () async {
+      // Verify that the script runs (it'll be generated into a temp dir)
+      var result = await runDart('a', 'tool/build.dart',
+          args: ['run', 'bin/main.copy.dart']);
+      var lastLine =
+          LineSplitter().convert(result.stdout as String).last.trim();
+      expect(result.exitCode, 0, reason: result.stderr as String);
+      expect(lastLine, 'it works!', reason: result.stderr as String);
+    });
+
     test('passes input args', () async {
       // Run the generated script, and examine its output.
       var result = await runDart('a', 'tool/build.dart', args: [
@@ -164,7 +178,7 @@ main(List<String> args) async {
       expect(result.stdout, contains('Bad state: oh no!'));
       // bin/main.copy.dart 5:5  main
       expect(result.stdout, contains('bin/main.copy.dart'));
-      expect(result.stdout, contains('5:5'));
+      expect(result.stdout, contains('7:5'));
       expect(result.stdout, contains('main'));
     });
   });
