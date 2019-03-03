@@ -21,6 +21,15 @@ void main() {
         isTrue);
   });
 
+  test('returns an empty set when no channels are interested', () {
+    var manager = BuildTargetManager();
+    var target = DefaultBuildTarget((b) => b..target = 'foo');
+    var targetB = DefaultBuildTarget((b) => b..target = 'bar');
+    var channel = DummyChannel();
+    manager.addBuildTarget(target, channel);
+    expect(manager.channels(targetB), isEmpty);
+  });
+
   test('when a channel is removed the corresponding target is removed', () {
     var manager = BuildTargetManager();
     var channelA = DummyChannel();

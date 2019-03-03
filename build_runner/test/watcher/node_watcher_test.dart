@@ -47,7 +47,7 @@ void main() {
       initFiles(node);
 
       expect(
-        nodeWatcher.watch('lib'),
+        nodeWatcher.watch(),
         emitsInAnyOrder([
           AssetChange(
             AssetId('a', 'lib/1.dart'),
@@ -76,7 +76,7 @@ void main() {
       initFiles(node);
 
       expect(
-        nodeWatcher.watch('lib'),
+        nodeWatcher.watch(),
         emitsInAnyOrder([
           AssetChange(
             AssetId('a', 'lib/1.dart'),

@@ -30,7 +30,6 @@ class Server {
 
   HttpServer _server;
   DaemonBuilder _builder;
-  final _channels = Set<WebSocketChannel>();
   // Channels that are interested in the current build.
   var _interestedChannels = Set<WebSocketChannel>();
 
@@ -57,8 +56,6 @@ class Server {
 
   Future<int> listen() async {
     var handler = webSocketHandler((WebSocketChannel channel) async {
-      _channels.add(channel);
-
       channel.stream.listen((message) async {
         dynamic request;
         try {
@@ -73,7 +70,6 @@ class Server {
           await _build(_buildTargetManager.targets, <WatchEvent>[]);
         }
       }, onDone: () {
-        _channels.remove(channel);
         _removeChannel(channel);
       });
     });

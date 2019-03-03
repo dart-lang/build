@@ -7,6 +7,7 @@ analyzer:
     dead_code: error
     override_on_non_overriding_method: error
     todo: ignore
+    deprecated_member_use_from_same_package: ignore
   exclude:
     # Prevents extra work during e2e test runs.
     - "_test/dart2js_test/**"
@@ -63,7 +64,8 @@ linter:
     - package_names
     - package_prefixed_library_names
     - prefer_adjacent_string_concatenation
-    - prefer_collection_literals
+    # TODO: reenable this once we want to pin the SDK to >=2.2.0
+    # - prefer_collection_literals
     - prefer_conditional_assignment
     #- prefer_const_constructors
     - prefer_contains
@@ -78,7 +80,6 @@ linter:
     - prefer_typing_uninitialized_variables
     - recursive_getters
     - slash_for_doc_comments
-    - super_goes_last
     - test_types_in_equals
     - throw_in_finally
     - type_init_formals

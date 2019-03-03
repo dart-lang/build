@@ -1,3 +1,12 @@
+## 1.2.8
+
+- Fix issue where daemon command wouldn't properly shutdown.
+- Allow running when the root package, or a path dependency, is named `test`.
+
+## 1.2.7
+
+- Fix issue where daemon command would occasionally color a log.
+
 ## 1.2.6
 
 - Prevent terminals being launched when running the daemon command on Windows.

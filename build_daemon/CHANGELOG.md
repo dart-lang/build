@@ -1,3 +1,8 @@
+## 0.4.1
+
+- Support closing a daemon client.
+- Fix a null set bug in the build target manager.
+
 ## 0.4.0
 
 - Replace the client log stream with an optional logHandler. This simplifies the
@@ -5,7 +10,7 @@
 
 ## 0.3.0
 
-- Forward daemon output while starting up / connecting. 
+- Forward daemon output while starting up / connecting.
 
 ## 0.2.3
 

@@ -27,7 +27,7 @@ abstract class AssetReader {
   ///
   /// * Throws a `PackageNotFoundException` if `id.package` is not found.
   /// * Throws a `AssetNotFoundException` if `id.path` is not found.
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8});
+  Future<String> readAsString(AssetId id, {Encoding encoding});
 
   /// Indicates whether asset at [id] is readable.
   Future<bool> canRead(AssetId id);
