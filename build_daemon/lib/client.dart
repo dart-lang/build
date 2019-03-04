@@ -105,16 +105,24 @@ class BuildDaemonClient {
   Future<void> close() => _channel.sink.close();
 
   static Future<BuildDaemonClient> connect(
-      String workingDirectory, List<String> daemonCommand,
-      {Serializers serializersOverride,
-      void Function(ServerLog) logHandler}) async {
+    String workingDirectory,
+    List<String> daemonCommand, {
+    Serializers serializersOverride,
+    void Function(ServerLog) logHandler,
+    bool includeParentEnvironment,
+    Map<String, String> environment,
+  }) async {
     logHandler ??= (_) {};
     var daemonSerializers = serializersOverride ?? serializers;
 
     var process = await Process.start(
-        daemonCommand.first, daemonCommand.sublist(1),
-        mode: ProcessStartMode.detachedWithStdio,
-        workingDirectory: workingDirectory);
+      daemonCommand.first,
+      daemonCommand.sublist(1),
+      mode: ProcessStartMode.detachedWithStdio,
+      workingDirectory: workingDirectory,
+      environment: environment,
+      includeParentEnvironment: includeParentEnvironment,
+    );
 
     await _handleDaemonStartup(process, logHandler);
 
