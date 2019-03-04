@@ -1,3 +1,7 @@
+## 0.4.2
+
+- Enable configuring the environment for the daemon.
+
 ## 0.4.1
 
 - Support closing a daemon client.
