@@ -43,19 +43,22 @@ class KernelBuilder implements Builder {
   /// The sdk kernel file for the current platform.
   final String sdkKernelPath;
 
-  /// The root directory of the Dart SDK.
+  /// The root directory of the platform's dart SDK.
   ///
   /// If not provided, defaults to the directory of
   /// [Platform.resolvedExecutable].
-  final String dartSdkDir;
+  ///
+  /// On flutter this is the path to the root of the flutter_patched_sdk
+  /// directory, which contains the platform kernel files.
+  final String platformSdk;
 
   KernelBuilder(
       {@required this.platform,
       @required this.summaryOnly,
       @required this.sdkKernelPath,
       @required this.outputExtension,
-      String dartSdkDir})
-      : dartSdkDir = dartSdkDir ?? sdkDir,
+      String platformSdk})
+      : platformSdk = platformSdk ?? sdkDir,
         buildExtensions = {
           moduleExtension(platform): [outputExtension]
         };
@@ -71,7 +74,7 @@ class KernelBuilder implements Builder {
           buildStep: buildStep,
           summaryOnly: summaryOnly,
           outputExtension: outputExtension,
-          dartSdkDir: dartSdkDir,
+          dartSdkDir: platformSdk,
           sdkKernelPath: sdkKernelPath);
     } on KernelException catch (e, s) {
       log.severe(

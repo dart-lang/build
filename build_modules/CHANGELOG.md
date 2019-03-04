@@ -1,6 +1,6 @@
 ## 1.0.9
 
-- Allow configuring the dart SDK directory in the `KernelBuilder` builder.
+- Allow configuring the platform SDK directory in the `KernelBuilder` builder.
 
 ## 1.0.8
 
