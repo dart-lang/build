@@ -43,12 +43,23 @@ class KernelBuilder implements Builder {
   /// The sdk kernel file for the current platform.
   final String sdkKernelPath;
 
+  /// The root directory of the platform's dart SDK.
+  ///
+  /// If not provided, defaults to the directory of
+  /// [Platform.resolvedExecutable].
+  ///
+  /// On flutter this is the path to the root of the flutter_patched_sdk
+  /// directory, which contains the platform kernel files.
+  final String platformSdk;
+
   KernelBuilder(
       {@required this.platform,
       @required this.summaryOnly,
       @required this.sdkKernelPath,
-      @required this.outputExtension})
-      : buildExtensions = {
+      @required this.outputExtension,
+      String platformSdk})
+      : platformSdk = platformSdk ?? sdkDir,
+        buildExtensions = {
           moduleExtension(platform): [outputExtension]
         };
 
@@ -63,6 +74,7 @@ class KernelBuilder implements Builder {
           buildStep: buildStep,
           summaryOnly: summaryOnly,
           outputExtension: outputExtension,
+          dartSdkDir: platformSdk,
           sdkKernelPath: sdkKernelPath);
     } on KernelException catch (e, s) {
       log.severe(
@@ -80,6 +92,7 @@ Future<void> _createKernel(
     @required BuildStep buildStep,
     @required bool summaryOnly,
     @required String outputExtension,
+    @required String dartSdkDir,
     @required String sdkKernelPath}) async {
   var request = WorkRequest();
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
@@ -109,7 +122,7 @@ Future<void> _createKernel(
 
     packagesFile = await createPackagesFile(allAssetIds);
 
-    _addRequestArguments(request, module, transitiveKernelDeps, sdkDir,
+    _addRequestArguments(request, module, transitiveKernelDeps, dartSdkDir,
         sdkKernelPath, outputFile, packagesFile, summaryOnly);
   }
 

@@ -1,3 +1,7 @@
+## 1.0.9
+
+- Allow configuring the platform SDK directory in the `KernelBuilder` builder.
+
 ## 1.0.8
 
 - Don't follow `dart.library.isolate` conditional imports for the DDC
