@@ -113,6 +113,8 @@ class BuildDaemonClient {
     Map<String, String> environment,
   }) async {
     logHandler ??= (_) {};
+    includeParentEnvironment ??= true;
+
     var daemonSerializers = serializersOverride ?? serializers;
 
     var process = await Process.start(
