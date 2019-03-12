@@ -117,7 +117,7 @@ when(mock.methodThatReturnsAFuture())
 when(mock.methodThatReturnsAStream())
     .thenAnswer((_) => Stream.fromIterable(['Stub']));
 
-````
+```
 
 If, for some reason, you desire the behavior of `thenReturn`, you can return a
 pre-defined instance.
