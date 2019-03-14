@@ -1,3 +1,7 @@
+## 1.2.0
+
+- Add a marker to inject code before the application main method is called.
+
 ## 1.1.0
 
 - Output a `.digests` file which contains transitive digests for an entrypoint.

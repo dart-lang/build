@@ -151,6 +151,7 @@ define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_s
   dart_sdk.dart.setStartAsyncSynchronously(true);
   dart_sdk._isolate_helper.startRootIsolate(() => {}, []);
 $_initializeTools
+  $_mainExtensionMarker
   app.$moduleScope.main();
   var bootstrap = {
       hot\$onChildUpdate: function(childName, child) {
@@ -424,11 +425,13 @@ requirejs.onResourceLoad = function (context, map, depArray) {
 };
 ''';
 
-/// Marker comment used by build_runner (or any other thinks) to identify
-/// entrypoint file, to inject custom code there.
-///
-/// Should be first line in a file, so server don't need to parse whole body
+/// Marker comment used by build_runner to identify the entrypoint file,
+/// to inject custom code.
 final _entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
+
+/// Marker comment used by build_runner to identify the main function
+/// to inject custom code.
+final _mainExtensionMarker = '/* MAIN_EXTENSION_MARKER */';
 
 final _baseUrlScript = '''
 var baseUrl = (function () {
