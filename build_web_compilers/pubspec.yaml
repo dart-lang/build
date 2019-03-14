@@ -1,5 +1,5 @@
 name: build_web_compilers
-version: 1.1.1-dev
+version: 1.2.0
 description: Builder implementations wrapping Dart compilers.
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/build_web_compilers
