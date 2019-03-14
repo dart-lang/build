@@ -7,7 +7,7 @@ import 'dart:async';
 import 'package:build/build.dart';
 
 /// Overridable behavior for a [Builder.build] method.
-typedef FutureOr BuildBehavior(
+typedef BuildBehavior = FutureOr Function(
     BuildStep buildStep, Map<String, List<String>> buildExtensions);
 
 /// Copy the input asset to all possible output assets.
