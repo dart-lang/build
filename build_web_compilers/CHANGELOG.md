@@ -1,3 +1,7 @@
+## 1.1.1-dev
+
+- During a hot restart we will now clear all statics before re-invoking main.
+
 ## 1.1.0
 
 - Output a `.digests` file which contains transitive digests for an entrypoint.
