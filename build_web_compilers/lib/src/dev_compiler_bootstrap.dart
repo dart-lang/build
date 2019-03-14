@@ -425,11 +425,11 @@ requirejs.onResourceLoad = function (context, map, depArray) {
 };
 ''';
 
-/// Marker comment used by build_runner to identify the entrypoint file,
+/// Marker comment used by tools to identify the entrypoint file,
 /// to inject custom code.
 final _entrypointExtensionMarker = '/* ENTRYPOINT_EXTENTION_MARKER */';
 
-/// Marker comment used by build_runner to identify the main function
+/// Marker comment used by tools to identify the main function
 /// to inject custom code.
 final _mainExtensionMarker = '/* MAIN_EXTENSION_MARKER */';
 
