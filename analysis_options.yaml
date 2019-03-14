@@ -71,6 +71,7 @@ linter:
     - prefer_contains
     - prefer_equal_for_default_values
     - prefer_final_fields
+    - prefer_generic_function_type_aliases
     - prefer_initializing_formals
     #- prefer_interpolation_to_compose_strings
     - prefer_is_empty

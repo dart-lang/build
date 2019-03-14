@@ -7,7 +7,7 @@ import 'dart:async';
 import 'package:build/build.dart';
 
 @deprecated
-typedef void OnDelete(AssetId id);
+typedef OnDelete = void Function(AssetId id);
 
 abstract class RunnerAssetWriter implements AssetWriter {
   Future delete(AssetId id);

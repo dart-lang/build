@@ -17,14 +17,14 @@ import '../validation/config_validation.dart';
 import 'package_graph.dart';
 import 'target_graph.dart';
 
-typedef BuildPhase BuildPhaseFactory(
+typedef BuildPhaseFactory = BuildPhase Function(
     PackageNode package,
     BuilderOptions options,
     InputSet targetSources,
     InputSet generateFor,
     bool isReleaseBuild);
 
-typedef bool PackageFilter(PackageNode node);
+typedef PackageFilter = bool Function(PackageNode node);
 
 /// Run a builder on all packages in the package graph.
 PackageFilter toAllPackages() => (_) => true;
