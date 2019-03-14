@@ -150,7 +150,7 @@ String _appBootstrap(String bootstrapModuleName, String moduleName,
 define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_sdk) {
   dart_sdk.dart.setStartAsyncSynchronously(true);
   dart_sdk._isolate_helper.startRootIsolate(() => {}, []);
-$_initializeTools
+  $_initializeTools
   $_mainExtensionMarker
   app.$moduleScope.main();
   var bootstrap = {
