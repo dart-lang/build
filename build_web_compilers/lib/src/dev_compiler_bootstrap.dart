@@ -156,6 +156,8 @@ define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_s
   var bootstrap = {
       hot\$onChildUpdate: function(childName, child) {
         if (childName === "$appModuleSource") {
+          // Clear static caches.
+          dart_sdk.dart.hotRestart();
           child.main();
           return true;
         }

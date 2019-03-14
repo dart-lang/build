@@ -1,6 +1,7 @@
 ## 1.2.0
 
 - Add a marker to inject code before the application main method is called.
+- During a hot restart we will now clear all statics before re-invoking main.
 
 ## 1.1.0
 

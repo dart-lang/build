@@ -9,7 +9,7 @@ import 'package:build_modules/src/meta_module_clean_builder.dart';
 import 'package:build_modules/src/module_cleanup.dart';
 import 'package:build_modules/src/module_library_builder.dart';
 
-typedef Builder _BuilderFactory(BuilderOptions options);
+typedef _BuilderFactory = Builder Function(BuilderOptions options);
 
 Builder moduleLibraryBuilder(_) => const ModuleLibraryBuilder();
 
