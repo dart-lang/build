@@ -124,7 +124,6 @@ BazelWorkerDriver get _dartdevkDriver {
   _dartdevkWorkersAreDoneCompleter ??= Completer<Null>();
   return __dartdevkDriver ??= BazelWorkerDriver(
       () => Process.start(
-<<<<<<< HEAD
           p.join(sdkDir, 'bin', 'dart'),
           [
             p.join(sdkDir, 'bin', 'snapshots', 'dartdevc.dart.snapshot'),
@@ -133,15 +132,6 @@ BazelWorkerDriver get _dartdevkDriver {
           ],
           mode: _processMode,
           workingDirectory: scratchSpace.tempDir.path),
-=======
-            p.join(sdkDir, 'bin', 'dartdevc$_scriptExtension'),
-            [
-              '--kernel',
-              '--persistent_worker',
-            ],
-            workingDirectory: scratchSpace.tempDir.path,
-          ),
->>>>>>> add input digests to work requests
       maxWorkers: _maxWorkersPerTask);
 }
 
