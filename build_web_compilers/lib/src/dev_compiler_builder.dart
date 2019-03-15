@@ -224,8 +224,19 @@ Future _createDevCompilerModule(
     // Copy the output back using the buildStep.
     await scratchSpace.copyOutput(jsId, buildStep);
     if (debugMode) {
-      await scratchSpace.copyOutput(
-          module.jsSourceMapId(jsSourceMapExtension), buildStep);
+      var sourceMapId = module.jsSourceMapId(jsSourceMapExtension);
+      var file = scratchSpace.fileFor(sourceMapId);
+      var content = await file.readAsString();
+      var json = jsonDecode(content);
+      json['sources'] = (json['sources'] as List).cast<String>().map((source) {
+        var uri = Uri.parse(source);
+        var newSegments = uri.pathSegments.first == 'packages'
+            ? uri.pathSegments
+            : uri.pathSegments.skip(1);
+        return Uri(path: p.url.joinAll(['/'].followedBy(newSegments)))
+            .toString();
+      }).toList();
+      await buildStep.writeAsString(sourceMapId, jsonEncode(json));
     }
   }
 }
