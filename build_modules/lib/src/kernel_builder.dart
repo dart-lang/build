@@ -196,6 +196,8 @@ Future<void> _addRequestArguments(
     multiRootScheme,
     '--exclude-non-sources',
     summaryOnly ? '--summary-only' : '--no-summary-only',
+    '--libraries-file',
+    p.join(sdkDir, 'lib', 'libraries.json'),
   ]);
   request.inputs.add(Input()
     ..path = '${Uri.file(p.join(sdkDir, sdkKernelPath))}'
