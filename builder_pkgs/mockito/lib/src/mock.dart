@@ -828,8 +828,12 @@ _InOrderVerification get verifyInOrder {
   };
 }
 
-void _throwMockArgumentError(method) =>
-    throw new ArgumentError('$method must only be given a Mock object');
+void _throwMockArgumentError(String method, var nonMockInstance) {
+  if (nonMockInstance == null) {
+    throw ArgumentError('$method was called with a null argument');
+  }
+  throw ArgumentError('$method must only be given a Mock object');
+}
 
 void verifyNoMoreInteractions(var mock) {
   if (mock is Mock) {
@@ -838,7 +842,7 @@ void verifyNoMoreInteractions(var mock) {
       fail("No more calls expected, but following found: " + unverified.join());
     }
   } else {
-    _throwMockArgumentError('verifyNoMoreInteractions');
+    _throwMockArgumentError('verifyNoMoreInteractions', mock);
   }
 }
 
@@ -849,7 +853,7 @@ void verifyZeroInteractions(var mock) {
           mock._realCalls.join());
     }
   } else {
-    _throwMockArgumentError('verifyZeroInteractions');
+    _throwMockArgumentError('verifyZeroInteractions', mock);
   }
 }
 
