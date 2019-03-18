@@ -1,3 +1,8 @@
+## 2.0.0-dev
+
+- Update to run DDC in kernel mode, and consume kernel outlines instead of
+  analyzer summaries.
+
 ## 1.1.1-dev
 
 - During a hot restart we will now clear all statics before re-invoking main.
