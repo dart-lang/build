@@ -11,7 +11,7 @@ import 'package:analyzer/src/dart/analysis/file_state.dart';
 import 'package:analyzer/src/dart/analysis/performance_logger.dart'
     show PerformanceLog;
 import 'package:analyzer/src/generated/engine.dart'
-    show AnalysisEngine, AnalysisOptionsImpl, AnalysisOptions;
+    show AnalysisOptionsImpl, AnalysisOptions;
 import 'package:analyzer/src/generated/source.dart';
 import 'package:path/path.dart' as p;
 import 'package:analyzer/src/summary/package_bundle_reader.dart';
@@ -26,7 +26,6 @@ import 'build_asset_uri_resolver.dart';
 /// [buildAssetUriResolver].
 AnalysisDriver analysisDriver(BuildAssetUriResolver buildAssetUriResolver,
     AnalysisOptions analysisOptions) {
-  AnalysisEngine.instance.processRequiredPlugins();
   var sdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
   var sdkSummary = p.join(sdkPath, 'lib', '_internal', 'strong.sum');
   var sdk = SummaryBasedDartSdk(sdkSummary, true);
