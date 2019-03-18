@@ -21,4 +21,7 @@ abstract class DefaultBuildTarget
   DefaultBuildTarget._();
 
   BuiltSet<RegExp> get blackListPatterns;
+
+  @nullable
+  Map<String, dynamic> get options;
 }
