@@ -8,16 +8,13 @@ import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/src/environment/io_environment.dart';
 import 'package:build_runner_core/src/environment/overridable_environment.dart';
 import 'package:build_runner_core/src/generate/build_result.dart';
+import 'package:build_runner_core/src/generate/build_runner.dart';
 import 'package:build_runner_core/src/generate/options.dart';
-//import 'package:build_runner/src/logging/std_io_logging.dart';
 import 'package:build_runner_core/src/package_graph/apply_builders.dart';
 import 'package:build_runner_core/src/package_graph/package_graph.dart';
+import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
-
-import 'package:build_test/build_test.dart';
-
-import 'package:build_runner_core/src/generate/build_runner.dart';
 
 import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
@@ -90,7 +87,7 @@ Future<BuildResult> testBuilders(
   bool enableLowResourcesMode = false,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool verbose = false,
-  List<String> buildDirs,
+  Map<String, List<String>> outputMap,
   String logPerformanceDir,
   String expectedGeneratedDir,
 }) async {
@@ -129,7 +126,7 @@ Future<BuildResult> testBuilders(
     builderConfigOverrides,
     isReleaseBuild: false,
   );
-  result = await build.run({}, buildDirs: buildDirs);
+  result = await build.run({}, outputMap: outputMap);
   await build.beforeExit();
   await options.logListener.cancel();
 
