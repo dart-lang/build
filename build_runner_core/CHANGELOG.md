@@ -1,6 +1,7 @@
-## 2.1.0
+## 3.0.0
 
 - Warn when there are no assets to write in a specified output directory.
+- `BuildImpl` now takes an optional `outputMap` instead of a list of `buildDirs`.
 
 ## 2.0.3
 
