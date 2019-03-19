@@ -23,11 +23,11 @@ final _logger = Logger('CreateOutputDir');
 const _manifestName = '.build.manifest';
 const _manifestSeparator = '\n';
 
-/// Creates merged output directories for each value in [outputMap].
+/// Creates merged output directories for each value in [outputLocations].
 ///
 /// Returns whether it succeeded or not.
 Future<bool> createMergedOutputDirectories(
-    Map<String, List<String>> outputMap,
+    Map<String, Set<String>> outputLocations,
     PackageGraph packageGraph,
     BuildEnvironment environment,
     AssetReader reader,
@@ -39,18 +39,15 @@ Future<bool> createMergedOutputDirectories(
         'requested.');
     return false;
   }
-  var outputToInput = _outputToInput(outputMap);
-  var conflictingOutputs = outputToInput.keys
-      .where((output) => outputToInput[output].length > 1)
-      .toList();
+  var conflictingOutputs = _conflicts(outputLocations);
   if (conflictingOutputs.isNotEmpty) {
     _logger.severe('Unable to create merged directory. '
         'Conflicting outputs for $conflictingOutputs');
     return false;
   }
 
-  for (var input in outputMap.keys) {
-    for (var output in outputMap[input]) {
+  for (var input in outputLocations.keys) {
+    for (var output in outputLocations[input]) {
       if (!await _createMergedOutputDir(output, input, packageGraph,
           environment, reader, finalizedAssetsView, outputSymlinksOnly)) {
         _logger.severe('Unable to create merged directory for $output.');
@@ -61,15 +58,13 @@ Future<bool> createMergedOutputDirectories(
   return true;
 }
 
-Map<String, List<String>> _outputToInput(Map<String, List<String>> outputMap) {
-  var outputToInput = <String, List<String>>{};
-  for (var input in outputMap.keys) {
-    for (var output in outputMap[input]) {
-      outputToInput[output] ??= [];
-      outputToInput[output].add(input);
-    }
+Set<String> _conflicts(Map<String, Set<String>> outputLocations) {
+  final seen = <String>{};
+  final conflicts = <String>{};
+  for (var location in outputLocations.values.expand((l) => l)) {
+    (seen.contains(location) ? conflicts : seen).add(location);
   }
-  return outputToInput;
+  return conflicts;
 }
 
 Future<bool> _createMergedOutputDir(

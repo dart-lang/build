@@ -86,16 +86,18 @@ class BuildImpl {
         _trackPerformance = options.trackPerformance,
         _logPerformanceDir = options.logPerformanceDir;
 
-  /// Runs a single build for the provided updates and optional [outputMap].
+  /// Runs a single build for the provided updates and optional
+  /// [outputLocations].
   ///
-  /// The [outputMap] is a map of input paths to a list of output paths. If the
-  /// input path is an empty string it means all input paths. If the list of
-  /// output paths is empty it means only output to the default location.
+  /// The [outputLocations] is a map of input paths to a list of output paths.
+  /// If the input path is an empty string it means all input paths. If the list
+  /// of output paths is empty, no merge output directory will be created for
+  /// that input.
   Future<BuildResult> run(Map<AssetId, ChangeType> updates,
-      {Map<String, List<String>> outputMap}) {
-    outputMap ??= {};
-    finalizedReader.reset(outputMap.keys.toList());
-    return _SingleBuild(this, outputMap).run(updates)
+      {Map<String, Set<String>> outputLocations}) {
+    outputLocations ??= {};
+    finalizedReader.reset(outputLocations.keys.toList());
+    return _SingleBuild(this, outputLocations).run(updates)
       ..whenComplete(_resolvers.reset);
   }
 
@@ -158,7 +160,7 @@ class _SingleBuild {
   final ResourceManager _resourceManager;
   final bool _verbose;
   final RunnerAssetWriter _writer;
-  final Map<String, List<String>> _outputMap;
+  final Map<String, Set<String>> _outputLocations;
   final String _logPerformanceDir;
   final _failureReporter = FailureReporter();
 
@@ -170,7 +172,7 @@ class _SingleBuild {
   /// Can't be final since it needs access to [pendingActions].
   HungActionsHeartbeat hungActionsHeartbeat;
 
-  _SingleBuild(BuildImpl buildImpl, Map<String, List<String>> outputMap)
+  _SingleBuild(BuildImpl buildImpl, Map<String, Set<String>> outputLocations)
       : _assetGraph = buildImpl._assetGraph,
         _buildPhases = buildImpl._buildPhases,
         _buildPhasePool = List(buildImpl._buildPhases.length),
@@ -184,7 +186,7 @@ class _SingleBuild {
         _resourceManager = buildImpl._resourceManager,
         _verbose = buildImpl._verbose,
         _writer = buildImpl._writer,
-        _outputMap = outputMap,
+        _outputLocations = outputLocations,
         _logPerformanceDir = buildImpl._logPerformanceDir {
     hungActionsHeartbeat = HungActionsHeartbeat(() {
       final message = StringBuffer();
@@ -209,7 +211,7 @@ class _SingleBuild {
     var watch = Stopwatch()..start();
     var result = await _safeBuild(updates);
     var optionalOutputTracker = OptionalOutputTracker(
-        _assetGraph, _outputMap.keys.toList(), _buildPhases);
+        _assetGraph, _outputLocations.keys.toList(), _buildPhases);
     if (result.status == BuildStatus.success) {
       final failures = _assetGraph.failedOutputs
           .where((n) => optionalOutputTracker.isRequired(n.id));
@@ -224,7 +226,7 @@ class _SingleBuild {
         result,
         FinalizedAssetsView(_assetGraph, optionalOutputTracker),
         _reader,
-        _outputMap);
+        _outputLocations);
     if (result.status == BuildStatus.success) {
       _logger.info('Succeeded after ${humanReadable(watch.elapsed)} with '
           '${result.outputs.length} outputs '
@@ -343,7 +345,7 @@ class _SingleBuild {
     var phase = _buildPhases[phaseNumber];
     await Future.wait(
         _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
-      if (!shouldBuildForDirs(node.id, _outputMap.keys.toList(), phase)) {
+      if (!shouldBuildForDirs(node.id, _outputLocations.keys.toList(), phase)) {
         return;
       }
 

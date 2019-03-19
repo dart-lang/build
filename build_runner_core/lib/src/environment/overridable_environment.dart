@@ -26,7 +26,7 @@ class OverrideableEnvironment implements BuildEnvironment {
       BuildResult result,
       FinalizedAssetsView finalizedAssetsView,
       AssetReader reader,
-      Map<String, List<String>> outputMap) _finalizeBuild;
+      Map<String, Set<String>> outputLocations) _finalizeBuild;
 
   OverrideableEnvironment(
     this._default, {
@@ -37,7 +37,7 @@ class OverrideableEnvironment implements BuildEnvironment {
             BuildResult result,
             FinalizedAssetsView finalizedAssetsView,
             AssetReader reader,
-            Map<String, List<String>> outputMap)
+            Map<String, Set<String>> outputLocations)
         finalizeBuild,
   })  : _reader = reader,
         _writer = writer,
@@ -55,9 +55,9 @@ class OverrideableEnvironment implements BuildEnvironment {
           BuildResult buildResult,
           FinalizedAssetsView finalizedAssetsView,
           AssetReader reader,
-          Map<String, List<String>> outputMap) =>
+          Map<String, Set<String>> outputLocations) =>
       (_finalizeBuild ?? _default.finalizeBuild)(
-          buildResult, finalizedAssetsView, reader, outputMap);
+          buildResult, finalizedAssetsView, reader, outputLocations);
 
   @override
   void onLog(LogRecord record) {

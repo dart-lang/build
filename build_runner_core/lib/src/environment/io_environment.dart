@@ -75,11 +75,12 @@ class IOEnvironment implements BuildEnvironment {
       BuildResult buildResult,
       FinalizedAssetsView finalizedAssetsView,
       AssetReader reader,
-      Map<String, List<String>> outputMap) async {
-    if (outputMap.keys.any((input) => outputMap[input].isNotEmpty) &&
+      Map<String, Set<String>> outputLocations) async {
+    if (outputLocations.keys
+            .any((input) => outputLocations[input].isNotEmpty) &&
         buildResult.status == BuildStatus.success) {
-      if (!await createMergedOutputDirectories(outputMap, _packageGraph, this,
-          reader, finalizedAssetsView, _outputSymlinksOnly)) {
+      if (!await createMergedOutputDirectories(outputLocations, _packageGraph,
+          this, reader, finalizedAssetsView, _outputSymlinksOnly)) {
         return _convertToFailure(buildResult,
             failureType: FailureType.cantCreate);
       }

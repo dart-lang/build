@@ -87,7 +87,7 @@ Future<BuildResult> testBuilders(
   bool enableLowResourcesMode = false,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool verbose = false,
-  Map<String, List<String>> outputMap,
+  Map<String, Set<String>> outputLocations,
   String logPerformanceDir,
   String expectedGeneratedDir,
 }) async {
@@ -126,7 +126,7 @@ Future<BuildResult> testBuilders(
     builderConfigOverrides,
     isReleaseBuild: false,
   );
-  result = await build.run({}, outputMap: outputMap);
+  result = await build.run({}, outputLocations: outputLocations);
   await build.beforeExit();
   await options.logListener.cancel();
 

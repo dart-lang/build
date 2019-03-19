@@ -51,7 +51,7 @@ abstract class BuildEnvironment {
           BuildResult buildResult,
           FinalizedAssetsView finalizedAssetsView,
           AssetReader assetReader,
-          Map<String, List<String>> outputMap) =>
+          Map<String, Set<String>> outputMap) =>
       Future.value(buildResult);
 }
 
