@@ -23,5 +23,5 @@ abstract class DefaultBuildTarget
   BuiltSet<RegExp> get blackListPatterns;
 
   @nullable
-  Map<String, dynamic> get options;
+  String get output;
 }

@@ -28,12 +28,11 @@ class _$DefaultBuildTargetSerializer
       serializers.serialize(object.target,
           specifiedType: const FullType(String)),
     ];
-    if (object.options != null) {
+    if (object.output != null) {
       result
-        ..add('options')
-        ..add(serializers.serialize(object.options,
-            specifiedType: const FullType(
-                Map, const [const FullType(String), const FullType(dynamic)])));
+        ..add('output')
+        ..add(serializers.serialize(object.output,
+            specifiedType: const FullType(String)));
     }
 
     return result;
@@ -56,12 +55,9 @@ class _$DefaultBuildTargetSerializer
                       const FullType(BuiltSet, const [const FullType(RegExp)]))
               as BuiltSet);
           break;
-        case 'options':
-          result.options = serializers.deserialize(value,
-              specifiedType: const FullType(Map, const [
-                const FullType(String),
-                const FullType(dynamic)
-              ])) as Map<String, dynamic>;
+        case 'output':
+          result.output = serializers.deserialize(value,
+              specifiedType: const FullType(String)) as String;
           break;
         case 'target':
           result.target = serializers.deserialize(value,
@@ -78,14 +74,14 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
   @override
   final BuiltSet<RegExp> blackListPatterns;
   @override
-  final Map<String, dynamic> options;
+  final String output;
   @override
   final String target;
 
   factory _$DefaultBuildTarget([void updates(DefaultBuildTargetBuilder b)]) =>
       (new DefaultBuildTargetBuilder()..update(updates)).build();
 
-  _$DefaultBuildTarget._({this.blackListPatterns, this.options, this.target})
+  _$DefaultBuildTarget._({this.blackListPatterns, this.output, this.target})
       : super._() {
     if (blackListPatterns == null) {
       throw new BuiltValueNullFieldError(
@@ -109,13 +105,13 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
     if (identical(other, this)) return true;
     return other is DefaultBuildTarget &&
         blackListPatterns == other.blackListPatterns &&
-        options == other.options &&
+        output == other.output &&
         target == other.target;
   }
 
   @override
   int get hashCode {
-    return $jf($jc($jc($jc(0, blackListPatterns.hashCode), options.hashCode),
+    return $jf($jc($jc($jc(0, blackListPatterns.hashCode), output.hashCode),
         target.hashCode));
   }
 
@@ -123,7 +119,7 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
   String toString() {
     return (newBuiltValueToStringHelper('DefaultBuildTarget')
           ..add('blackListPatterns', blackListPatterns)
-          ..add('options', options)
+          ..add('output', output)
           ..add('target', target))
         .toString();
   }
@@ -139,9 +135,9 @@ class DefaultBuildTargetBuilder
   set blackListPatterns(SetBuilder<RegExp> blackListPatterns) =>
       _$this._blackListPatterns = blackListPatterns;
 
-  Map<String, dynamic> _options;
-  Map<String, dynamic> get options => _$this._options;
-  set options(Map<String, dynamic> options) => _$this._options = options;
+  String _output;
+  String get output => _$this._output;
+  set output(String output) => _$this._output = output;
 
   String _target;
   String get target => _$this._target;
@@ -152,7 +148,7 @@ class DefaultBuildTargetBuilder
   DefaultBuildTargetBuilder get _$this {
     if (_$v != null) {
       _blackListPatterns = _$v.blackListPatterns?.toBuilder();
-      _options = _$v.options;
+      _output = _$v.output;
       _target = _$v.target;
       _$v = null;
     }
@@ -179,7 +175,7 @@ class DefaultBuildTargetBuilder
       _$result = _$v ??
           new _$DefaultBuildTarget._(
               blackListPatterns: blackListPatterns.build(),
-              options: options,
+              output: output,
               target: target);
     } catch (_) {
       String _$failedField;
