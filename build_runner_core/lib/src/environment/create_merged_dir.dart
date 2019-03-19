@@ -27,7 +27,7 @@ const _manifestSeparator = '\n';
 ///
 /// Returns whether it succeeded or not.
 Future<bool> createMergedOutputDirectories(
-    Map<String, String> outputMap,
+    Map<String, List<String>> outputMap,
     PackageGraph packageGraph,
     BuildEnvironment environment,
     AssetReader reader,
@@ -39,15 +39,37 @@ Future<bool> createMergedOutputDirectories(
         'requested.');
     return false;
   }
+  var outputToInput = _outputToInput(outputMap);
+  var conflictingOutputs = outputToInput.keys
+      .where((output) => outputToInput[output].length > 1)
+      .toList();
+  if (conflictingOutputs.isNotEmpty) {
+    _logger.severe('Unable to create merged directory. '
+        'Conflicting outputs for $conflictingOutputs');
+    return false;
+  }
 
-  for (var output in outputMap.keys) {
-    if (!await _createMergedOutputDir(output, outputMap[output], packageGraph,
-        environment, reader, finalizedAssetsView, outputSymlinksOnly)) {
-      _logger.severe('Unable to create merged directory for $output.');
-      return false;
+  for (var input in outputMap.keys) {
+    for (var output in outputMap[input]) {
+      if (!await _createMergedOutputDir(output, input, packageGraph,
+          environment, reader, finalizedAssetsView, outputSymlinksOnly)) {
+        _logger.severe('Unable to create merged directory for $output.');
+        return false;
+      }
     }
   }
   return true;
+}
+
+Map<String, List<String>> _outputToInput(Map<String, List<String>> outputMap) {
+  var outputToInput = <String, List<String>>{};
+  for (var input in outputMap.keys) {
+    for (var output in outputMap[input]) {
+      outputToInput[output] ??= [];
+      outputToInput[output].add(input);
+    }
+  }
+  return outputToInput;
 }
 
 Future<bool> _createMergedOutputDir(

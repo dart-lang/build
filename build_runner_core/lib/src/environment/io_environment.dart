@@ -29,16 +29,12 @@ class IOEnvironment implements BuildEnvironment {
 
   final bool _isInteractive;
 
-  final Map<String, String> _outputMap;
-
   final bool _outputSymlinksOnly;
 
   final PackageGraph _packageGraph;
 
-  IOEnvironment(this._packageGraph,
-      {bool assumeTty, Map<String, String> outputMap, bool outputSymlinksOnly})
+  IOEnvironment(this._packageGraph, {bool assumeTty, bool outputSymlinksOnly})
       : _isInteractive = assumeTty == true || _canPrompt(),
-        _outputMap = outputMap,
         _outputSymlinksOnly = outputSymlinksOnly ?? false,
         reader = FileBasedAssetReader(_packageGraph),
         writer = FileBasedAssetWriter(_packageGraph) {
@@ -75,10 +71,14 @@ class IOEnvironment implements BuildEnvironment {
   }
 
   @override
-  Future<BuildResult> finalizeBuild(BuildResult buildResult,
-      FinalizedAssetsView finalizedAssetsView, AssetReader reader) async {
-    if (_outputMap != null && buildResult.status == BuildStatus.success) {
-      if (!await createMergedOutputDirectories(_outputMap, _packageGraph, this,
+  Future<BuildResult> finalizeBuild(
+      BuildResult buildResult,
+      FinalizedAssetsView finalizedAssetsView,
+      AssetReader reader,
+      Map<String, List<String>> outputMap) async {
+    if (outputMap.keys.any((input) => outputMap[input].isNotEmpty) &&
+        buildResult.status == BuildStatus.success) {
+      if (!await createMergedOutputDirectories(outputMap, _packageGraph, this,
           reader, finalizedAssetsView, _outputSymlinksOnly)) {
         return _convertToFailure(buildResult,
             failureType: FailureType.cantCreate);

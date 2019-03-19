@@ -40,11 +40,18 @@ abstract class BuildEnvironment {
   /// completes, it will expire afterwords since it can no longer guarantee a
   /// consistent state.
   ///
+  /// The [outputMap] is a map of input paths to a list of output paths. If the
+  /// input path is an empty string it means all input paths. If the list of
+  /// output paths is empty it means only output to the default location.
+  ///
   /// By default this returns the original result.
   ///
   /// Any operation may be performed, as determined by environment.
-  Future<BuildResult> finalizeBuild(BuildResult buildResult,
-          FinalizedAssetsView finalizedAssetsView, AssetReader assetReader) =>
+  Future<BuildResult> finalizeBuild(
+          BuildResult buildResult,
+          FinalizedAssetsView finalizedAssetsView,
+          AssetReader assetReader,
+          Map<String, List<String>> outputMap) =>
       Future.value(buildResult);
 }
 
