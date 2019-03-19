@@ -1,3 +1,7 @@
+## 0.5.0
+
+- Add output to DefaultBuildTarget.
+
 ## 0.4.2
 
 - Enable configuring the environment for the daemon.
