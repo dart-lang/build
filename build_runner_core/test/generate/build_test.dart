@@ -705,8 +705,8 @@ void main() {
       }, outputs: {
         r'$$a|web/a.txt.copy': 'a',
         r'$$a|test/b.txt.copy': 'b',
-      }, outputMap: {
-        'web': []
+      }, outputLocations: {
+        'web': <String>{}
       }, verbose: true);
     });
 
@@ -721,8 +721,8 @@ void main() {
       }, outputs: {
         r'a|test/a.txt.copy': 'a',
         r'a|web/a.txt.copy': 'a',
-      }, outputMap: {
-        'web': []
+      }, outputLocations: {
+        'web': <String>{}
       }, verbose: true);
     });
 
