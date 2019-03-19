@@ -14,6 +14,8 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:pedantic/pedantic.dart';
 import 'package:pool/pool.dart';
+// TODO(grouma) - remove dependency on ChangeType API to remove the following
+// import.
 import 'package:watcher/watcher.dart';
 
 import '../asset/cache.dart';
