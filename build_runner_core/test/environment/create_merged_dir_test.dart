@@ -101,6 +101,21 @@ main() {
       _expectAllFiles(anotherTmpDir);
     });
 
+    test('errors if there are conflicting directories', () async {
+      var success = await createMergedOutputDirectories({
+        'web': [tmpDir.path],
+        'foo': [tmpDir.path]
+      }, packageGraph, environment, assetReader, finalizedAssetsView, false);
+      expect(success, isFalse);
+      expect(Directory(tmpDir.path).listSync(), isEmpty);
+    });
+
+    test('succeeds if no output directory requested ', () async {
+      var success = await createMergedOutputDirectories({'web': [], 'foo': []},
+          packageGraph, environment, assetReader, finalizedAssetsView, false);
+      expect(success, isTrue);
+    });
+
     test('removes the provided root from the output path', () async {
       var success = await createMergedOutputDirectories({
         'web': [tmpDir.path]
