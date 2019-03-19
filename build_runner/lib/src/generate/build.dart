@@ -64,14 +64,13 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     onLog(LogRecord record),
     Stream terminateEventStream,
     bool enableLowResourcesMode,
-    Map<String, String> outputMap,
+    Map<String, Set<String>> outputLocations,
     bool outputSymlinksOnly,
     bool trackPerformance,
     bool skipBuildScriptCheck,
     bool verbose,
     bool isReleaseBuild,
     Map<String, Map<String, dynamic>> builderConfigOverrides,
-    List<String> buildDirs,
     String logPerformanceDir}) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= PackageGraph.forThisPackage();
@@ -79,7 +78,6 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       IOEnvironment(
         packageGraph,
         assumeTty: assumeTty,
-        outputMap: outputMap,
         outputSymlinksOnly: outputSymlinksOnly,
       ),
       reader: reader,
@@ -108,7 +106,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       builderConfigOverrides,
       isReleaseBuild: isReleaseBuild ?? false,
     );
-    var result = await build.run({}, buildDirs: buildDirs);
+    var result = await build.run({}, outputLocations: outputLocations);
     await build?.beforeExit();
     return result;
   } finally {
@@ -138,9 +136,10 @@ Future<BuildResult> build(List<BuilderApplication> builders,
 /// will complete normally. Subsequent events are not handled (and will
 /// typically cause a shutdown).
 ///
-/// If [outputMap] is supplied then after each build a merged output directory
-/// will be created for each value in the map which contains all original
-/// sources and built sources contained in the provided path.
+/// If the values in [outputLocations] are not empty, then after each build a
+/// merged output directory will be created for each value in the set which
+/// contains all original sources and built sources contained in the provided
+/// path.
 Future<ServeHandler> watch(List<BuilderApplication> builders,
         {bool deleteFilesByDefault,
         bool assumeTty,
@@ -155,14 +154,13 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         DirectoryWatcher Function(String) directoryWatcherFactory,
         Stream terminateEventStream,
         bool enableLowResourcesMode,
-        Map<String, String> outputMap,
+        Map<String, Set<String>> outputLocations,
         bool outputSymlinksOnly,
         bool trackPerformance,
         bool skipBuildScriptCheck,
         bool verbose,
         bool isReleaseBuild,
         Map<String, Map<String, dynamic>> builderConfigOverrides,
-        List<String> buildDirs,
         String logPerformanceDir}) =>
     watch_impl.watch(
       builders,
@@ -179,13 +177,12 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
       directoryWatcherFactory: directoryWatcherFactory,
       terminateEventStream: terminateEventStream,
       enableLowResourcesMode: enableLowResourcesMode,
-      outputMap: outputMap,
+      outputLocations: outputLocations,
       outputSymlinksOnly: outputSymlinksOnly,
       trackPerformance: trackPerformance,
       skipBuildScriptCheck: skipBuildScriptCheck,
       verbose: verbose,
       builderConfigOverrides: builderConfigOverrides,
       isReleaseBuild: isReleaseBuild,
-      buildDirs: buildDirs,
       logPerformanceDir: logPerformanceDir,
     );

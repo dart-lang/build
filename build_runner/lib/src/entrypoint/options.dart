@@ -45,10 +45,10 @@ class SharedOptions {
   /// Read `build.$configKey.yaml` instead of `build.yaml`.
   final String configKey;
 
-  /// A mapping of output paths to root input directory.
+  /// A mapping of input paths to output paths.
   ///
-  /// If null, no directory will be created.
-  final Map<String, String> outputMap;
+  /// If the value is an empty set, no output will be created.
+  final Map<String, Set<String>> outputLocations;
 
   /// Whether or not the output directories should contain only symlinks,
   /// or full copies of all files.
@@ -74,28 +74,23 @@ class SharedOptions {
 
   final bool isReleaseBuild;
 
-  /// The directories that should be built.
-  final List<String> buildDirs;
-
   SharedOptions._({
     @required this.deleteFilesByDefault,
     @required this.enableLowResourcesMode,
     @required this.configKey,
-    @required this.outputMap,
+    @required this.outputLocations,
     @required this.outputSymlinksOnly,
     @required this.trackPerformance,
     @required this.skipBuildScriptCheck,
     @required this.verbose,
     @required this.builderConfigOverrides,
     @required this.isReleaseBuild,
-    @required this.buildDirs,
     @required this.logPerformanceDir,
   });
 
   factory SharedOptions.fromParsedArgs(ArgResults argResults,
       Iterable<String> positionalArgs, String rootPackage, Command command) {
-    var outputMap = _parseOutputMap(argResults);
-    var buildDirs = _buildDirsFromOutputMap(outputMap);
+    var outputLocations = _parseOutputLocations(argResults);
     for (var arg in positionalArgs) {
       var parts = p.split(arg);
       if (parts.length > 1) {
@@ -103,14 +98,14 @@ class SharedOptions {
             'Only top level directories are allowed as positional args',
             command.usage);
       }
-      buildDirs.add(arg);
+      outputLocations[arg] ??= <String>{};
     }
 
     return SharedOptions._(
       deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
       enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
       configKey: argResults[configOption] as String,
-      outputMap: outputMap,
+      outputLocations: outputLocations,
       outputSymlinksOnly: argResults[symlinkOption] as bool,
       trackPerformance: argResults[trackPerformanceOption] as bool,
       skipBuildScriptCheck: argResults[skipBuildScriptCheckOption] as bool,
@@ -118,7 +113,6 @@ class SharedOptions {
       builderConfigOverrides:
           _parseBuilderConfigOverrides(argResults[defineOption], rootPackage),
       isReleaseBuild: argResults[releaseOption] as bool,
-      buildDirs: buildDirs.toList(),
       logPerformanceDir: argResults[logPerformanceOption] as String,
     );
   }
@@ -139,27 +133,25 @@ class ServeOptions extends SharedOptions {
     @required bool deleteFilesByDefault,
     @required bool enableLowResourcesMode,
     @required String configKey,
-    @required Map<String, String> outputMap,
+    @required Map<String, Set<String>> outputLocations,
     @required bool outputSymlinksOnly,
     @required bool trackPerformance,
     @required bool skipBuildScriptCheck,
     @required bool verbose,
     @required Map<String, Map<String, dynamic>> builderConfigOverrides,
     @required bool isReleaseBuild,
-    @required List<String> buildDirs,
     @required String logPerformanceDir,
   }) : super._(
           deleteFilesByDefault: deleteFilesByDefault,
           enableLowResourcesMode: enableLowResourcesMode,
           configKey: configKey,
-          outputMap: outputMap,
+          outputLocations: outputLocations,
           outputSymlinksOnly: outputSymlinksOnly,
           trackPerformance: trackPerformance,
           skipBuildScriptCheck: skipBuildScriptCheck,
           verbose: verbose,
           builderConfigOverrides: builderConfigOverrides,
           isReleaseBuild: isReleaseBuild,
-          buildDirs: buildDirs,
           logPerformanceDir: logPerformanceDir,
         );
 
@@ -191,9 +183,10 @@ class ServeOptions extends SharedOptions {
       }
     }
 
-    var outputMap = _parseOutputMap(argResults);
-    var buildDirs = _buildDirsFromOutputMap(outputMap)
-      ..addAll(serveTargets.map((t) => t.dir));
+    var outputLocations = _parseOutputLocations(argResults);
+    for (var target in serveTargets) {
+      outputLocations[target.dir] ??= <String>{};
+    }
 
     BuildUpdatesOption buildUpdates;
     if (argResults[liveReloadOption] as bool &&
@@ -216,7 +209,7 @@ class ServeOptions extends SharedOptions {
       deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
       enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
       configKey: argResults[configOption] as String,
-      outputMap: _parseOutputMap(argResults),
+      outputLocations: outputLocations,
       outputSymlinksOnly: argResults[symlinkOption] as bool,
       trackPerformance: argResults[trackPerformanceOption] as bool,
       skipBuildScriptCheck: argResults[skipBuildScriptCheckOption] as bool,
@@ -224,7 +217,6 @@ class ServeOptions extends SharedOptions {
       builderConfigOverrides:
           _parseBuilderConfigOverrides(argResults[defineOption], rootPackage),
       isReleaseBuild: argResults[releaseOption] as bool,
-      buildDirs: buildDirs.toList(),
       logPerformanceDir: argResults[logPerformanceOption] as String,
     );
   }
@@ -283,22 +275,23 @@ Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
   return builderConfigOverrides;
 }
 
-/// Returns a map of output directory to root input directory to be used
-/// for merging.
+/// Returns a map of input directory to a set of output paths.
 ///
 /// Each output option is split on `:` where the first value is the
 /// root input directory and the second value output directory.
 /// If no delimeter is provided the root input directory will be null.
-Map<String, String> _parseOutputMap(ArgResults argResults) {
+Map<String, Set<String>> _parseOutputLocations(ArgResults argResults) {
   var outputs = argResults[outputOption] as List<String>;
-  if (outputs == null) return null;
-  var result = <String, String>{};
+  if (outputs == null) return {};
+  var result = <String, Set<String>>{};
+  var outputPaths = <String>{};
 
   void checkExisting(String outputDir) {
-    if (result.containsKey(outputDir)) {
+    if (outputPaths.contains(outputDir)) {
       throw ArgumentError.value(outputs.join(' '), '--output',
           'Duplicate output directories are not allowed, got');
     }
+    outputPaths.add(outputDir);
   }
 
   for (var option in argResults[outputOption] as List<String>) {
@@ -306,7 +299,8 @@ Map<String, String> _parseOutputMap(ArgResults argResults) {
     if (split.length == 1) {
       var output = split.first;
       checkExisting(output);
-      result[output] = null;
+      result[''] ??= <String>{};
+      result[''].add(output);
     } else if (split.length >= 2) {
       var output = split.sublist(1).join(':');
       checkExisting(output);
@@ -315,7 +309,8 @@ Map<String, String> _parseOutputMap(ArgResults argResults) {
         throw ArgumentError.value(
             option, '--output', 'Input root can not be nested');
       }
-      result[output] = split.first;
+      result[split.first] ??= <String>{};
+      result[split.first].add(output);
     }
   }
   return result;

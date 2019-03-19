@@ -59,6 +59,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   @override
   Future<void> build(
       Set<BuildTarget> targets, Iterable<WatchEvent> fileChanges) async {
+    var defaultTargets = targets.cast<DefaultBuildTarget>();
     var changes = fileChanges
         .map<AssetChange>(
             (change) => AssetChange(AssetId.parse(change.path), change.type))
@@ -67,10 +68,17 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     _logMessage(Level.INFO, 'About to build ${targetNames.toList()}...');
     _signalStart(targetNames);
     var results = <daemon.BuildResult>[];
+    var outputLocations = <String, Set<String>>{};
+    for (var target in defaultTargets) {
+      outputLocations[target.target] ??= <String>{};
+      if (target.output?.isNotEmpty ?? false) {
+        outputLocations[target.target].add(target.output);
+      }
+    }
     try {
       var mergedChanges = collectChanges([changes]);
       var result =
-          await _builder.run(mergedChanges, buildDirs: targetNames.toList());
+          await _builder.run(mergedChanges, outputLocations: outputLocations);
       for (var target in targets) {
         if (result.status == BuildStatus.success) {
           // TODO(grouma) - Can we notify if a target was cached?
@@ -137,10 +145,6 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     var environment = OverrideableEnvironment(
         IOEnvironment(packageGraph,
             assumeTty: true,
-            // TODO(grouma) - This should likely moved to the build_impl command
-            // so that different daemon clients can output to different
-            // directories.
-            outputMap: sharedOptions.outputMap,
             outputSymlinksOnly: sharedOptions.outputSymlinksOnly),
         onLog: (record) {
       outputStreamController.add(ServerLog((b) => b.log = record.toString()));
@@ -180,7 +184,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
               change,
               builder.assetGraph,
               buildOptions,
-              sharedOptions.outputMap?.isNotEmpty == true,
+              sharedOptions.outputLocations.keys?.isNotEmpty == true,
               expectedDeletes,
             ));
 

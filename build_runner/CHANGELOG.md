@@ -1,3 +1,7 @@
+## 1.3.0
+
+- Depend on the latest `build_runner_core` and `build_daemon` releases.
+
 ## 1.2.8
 
 - Fix issue where daemon command wouldn't properly shutdown.

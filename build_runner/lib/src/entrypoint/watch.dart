@@ -32,7 +32,7 @@ class WatchCommand extends BuildRunnerCommand {
       deleteFilesByDefault: options.deleteFilesByDefault,
       enableLowResourcesMode: options.enableLowResourcesMode,
       configKey: options.configKey,
-      outputMap: options.outputMap,
+      outputLocations: options.outputLocations,
       outputSymlinksOnly: options.outputSymlinksOnly,
       packageGraph: packageGraph,
       trackPerformance: options.trackPerformance,
@@ -40,7 +40,6 @@ class WatchCommand extends BuildRunnerCommand {
       verbose: options.verbose,
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
-      buildDirs: options.buildDirs,
       logPerformanceDir: options.logPerformanceDir,
     );
     if (handler == null) return ExitCode.config.code;
