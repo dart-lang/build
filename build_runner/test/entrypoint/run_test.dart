@@ -8,14 +8,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:_test_common/common.dart';
 import 'package:async/async.dart';
 import 'package:io/io.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
-
-import 'package:_test_common/common.dart';
 
 main() {
   setUpAll(() async {
@@ -146,7 +145,7 @@ main() {
     expect(await runSingleBuild(command, args), ExitCode.success.code);
     expectOutput('web/main.dart.js', exists: false);
     expectOutput('test/hello_test.dart.js', exists: true);
-  });
+  }, solo: true);
 
   test('Duplicate output directories give a nice error', () async {
     var command = 'build';
