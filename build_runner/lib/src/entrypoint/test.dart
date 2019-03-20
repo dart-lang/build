@@ -85,10 +85,10 @@ class TestCommand extends BuildRunnerCommand {
     try {
       _ensureBuildTestDependency(packageGraph);
       options = readOptions();
-      var outputLocations = (options.outputLocations ?? {})
-        ..addAll({
-          '': {tempPath}
-        });
+      var outputLocations = options.outputLocations ?? {};
+      outputLocations[''] ??= <String>{};
+      outputLocations[''].add(tempPath);
+
       var result = await build(
         builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
