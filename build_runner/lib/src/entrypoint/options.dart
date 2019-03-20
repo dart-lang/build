@@ -230,9 +230,6 @@ class ServeTarget {
   ServeTarget(this.dir, this.port);
 }
 
-Set<String> _buildDirsFromOutputMap(Map<String, String> outputMap) =>
-    outputMap.values.where((v) => v != null).toSet();
-
 Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
     dynamic parsedArg, String rootPackage) {
   final builderConfigOverrides = <String, Map<String, dynamic>>{};
