@@ -62,7 +62,7 @@ Set<String> _conflicts(Map<String, Set<String>> outputLocations) {
   final seen = <String>{};
   final conflicts = <String>{};
   for (var location in outputLocations.values.expand((l) => l)) {
-    (seen.contains(location) ? conflicts : seen).add(location);
+    if (!seen.add(location)) conflicts.add(location);
   }
   return conflicts;
 }

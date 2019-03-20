@@ -306,8 +306,7 @@ Map<String, Set<String>> _parseOutputLocations(ArgResults argResults) {
         throw ArgumentError.value(
             option, '--output', 'Input root can not be nested');
       }
-      result[split.first] ??= <String>{};
-      result[split.first].add(output);
+      result.putIfAbsent(split.first, () => <String>{}).add(output);
     }
   }
   return result;
