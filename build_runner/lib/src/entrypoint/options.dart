@@ -95,16 +95,12 @@ class SharedOptions {
   factory SharedOptions.fromParsedArgs(ArgResults argResults,
       Iterable<String> positionalArgs, String rootPackage, Command command) {
     var outputMap = _parseOutputMap(argResults);
-    var buildDirs = _buildDirsFromOutputMap(outputMap);
-    for (var arg in positionalArgs) {
-      var parts = p.split(arg);
-      if (parts.length > 1) {
-        throw UsageException(
-            'Only top level directories are allowed as positional args',
-            command.usage);
-      }
-      buildDirs.add(arg);
+    if (positionalArgs.any((arg) => p.split(arg).length > 1)) {
+      throw UsageException(
+          'Only top level directories are allowed as positional args',
+          command.usage);
     }
+    var buildDirs = _buildDirsFromOutputMap(outputMap, positionalArgs);
 
     return SharedOptions._(
       deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
@@ -192,8 +188,8 @@ class ServeOptions extends SharedOptions {
     }
 
     var outputMap = _parseOutputMap(argResults);
-    var buildDirs = _buildDirsFromOutputMap(outputMap)
-      ..addAll(serveTargets.map((t) => t.dir));
+    var buildDirs =
+        _buildDirsFromOutputMap(outputMap, serveTargets.map((t) => t.dir));
 
     BuildUpdatesOption buildUpdates;
     if (argResults[liveReloadOption] as bool &&
@@ -238,8 +234,13 @@ class ServeTarget {
   ServeTarget(this.dir, this.port);
 }
 
-Set<String> _buildDirsFromOutputMap(Map<String, String> outputMap) =>
-    outputMap.values.where((v) => v != null).toSet();
+Set<String> _buildDirsFromOutputMap(
+    Map<String, String> outputMap, Iterable<String> forceInclude) {
+  if (outputMap.isEmpty) return forceInclude.toSet();
+  // If we are outputting everything, everything must be built
+  if (outputMap.values.contains(null)) return <String>{};
+  return outputMap.values.followedBy(forceInclude).toSet();
+}
 
 Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
     dynamic parsedArg, String rootPackage) {
