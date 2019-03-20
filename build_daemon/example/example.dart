@@ -4,10 +4,10 @@
 
 import 'dart:io';
 import 'dart:math';
-import 'package:build_daemon/data/build_target.dart';
-import 'package:path/path.dart' as p;
 
 import 'package:build_daemon/client.dart';
+import 'package:build_daemon/data/build_target.dart';
+import 'package:path/path.dart' as p;
 
 void main(List<String> args) async {
   BuildDaemonClient client;
@@ -15,13 +15,16 @@ void main(List<String> args) async {
       p.normalize(p.join(Directory.current.path + '/../example'));
 
   try {
-    client = await BuildDaemonClient.connect(workingDirectory, [
-      'pub',
-      'run',
-      'build_runner',
-      'daemon',
-      '--delete-conflicting-outputs',
-    ]);
+    client = await BuildDaemonClient.connect(
+        workingDirectory,
+        [
+          'pub',
+          'run',
+          'build_runner',
+          'daemon',
+          '--delete-conflicting-outputs',
+        ],
+        logHandler: print);
   } catch (e) {
     if (e is VersionSkew) {
       print('Version skew. Please disconnect all other clients '
@@ -40,10 +43,13 @@ void main(List<String> args) async {
   if (Random().nextBool()) {
     client.registerBuildTarget(DefaultBuildTarget((b) => b
       ..target = 'web'
+      ..output = 'web_output'
       ..blackListPatterns.replace([RegExp(r'.*_test\.dart$')])));
     print('Registered example web target...');
   } else {
-    client.registerBuildTarget(DefaultBuildTarget((b) => b..target = 'test'));
+    client.registerBuildTarget(DefaultBuildTarget((b) => b
+      ..target = 'test'
+      ..output = 'test_output'));
 
     print('Registered test target...');
   }
