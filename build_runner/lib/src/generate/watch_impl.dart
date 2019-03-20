@@ -55,6 +55,7 @@ Future<ServeHandler> watch(
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= PackageGraph.forThisPackage();
+  outputLocations ??= {};
 
   var environment = OverrideableEnvironment(
       IOEnvironment(packageGraph,
