@@ -145,7 +145,7 @@ main() {
     expect(await runSingleBuild(command, args), ExitCode.success.code);
     expectOutput('web/main.dart.js', exists: false);
     expectOutput('test/hello_test.dart.js', exists: true);
-  }, solo: true);
+  });
 
   test('Duplicate output directories give a nice error', () async {
     var command = 'build';
