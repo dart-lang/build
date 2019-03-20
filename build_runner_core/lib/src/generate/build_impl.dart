@@ -96,7 +96,8 @@ class BuildImpl {
   Future<BuildResult> run(Map<AssetId, ChangeType> updates,
       {Map<String, Set<String>> outputLocations}) {
     outputLocations ??= {};
-    finalizedReader.reset(outputLocations.keys.toList());
+    finalizedReader
+        .reset(outputLocations.keys.where((k) => k.isNotEmpty).toList());
     return _SingleBuild(this, outputLocations).run(updates)
       ..whenComplete(_resolvers.reset);
   }
@@ -211,7 +212,9 @@ class _SingleBuild {
     var watch = Stopwatch()..start();
     var result = await _safeBuild(updates);
     var optionalOutputTracker = OptionalOutputTracker(
-        _assetGraph, _outputLocations.keys.toList(), _buildPhases);
+        _assetGraph,
+        _outputLocations.keys.where((k) => k.isNotEmpty).toList(),
+        _buildPhases);
     if (result.status == BuildStatus.success) {
       final failures = _assetGraph.failedOutputs
           .where((n) => optionalOutputTracker.isRequired(n.id));
@@ -345,7 +348,8 @@ class _SingleBuild {
     var phase = _buildPhases[phaseNumber];
     await Future.wait(
         _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
-      if (!shouldBuildForDirs(node.id, _outputLocations.keys.toList(), phase)) {
+      if (!shouldBuildForDirs(node.id,
+          _outputLocations.keys.where((k) => k.isNotEmpty).toList(), phase)) {
         return;
       }
 

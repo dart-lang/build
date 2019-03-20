@@ -85,8 +85,11 @@ class TestCommand extends BuildRunnerCommand {
     try {
       _ensureBuildTestDependency(packageGraph);
       options = readOptions();
-      var outputLocations = options.outputLocations ?? <String, Set<String>>{};
-      outputLocations.putIfAbsent('test', () => <String>{}).add(tempPath);
+      var outputLocations = (options.outputLocations ?? <String, Set<String>>{})
+        // Build test by default.
+        ..putIfAbsent('test', () => <String>{})
+        // Output top level dirs to temp path.
+        ..putIfAbsent('', () => <String>{}).add(tempPath);
 
       var result = await build(
         builderApplications,
