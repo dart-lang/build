@@ -90,7 +90,7 @@ Future<bool> _createMergedOutputDir(
     await _writeAsString(outputDir, packagesAsset, packagesFileContent);
     outputAssets.add(packagesAsset);
 
-    if (root == null) {
+    if (root == null || root == 'test') {
       for (var dir in _findRootDirs(builtAssets, outputPath)) {
         var link = Link(p.join(outputDir.path, dir, 'packages'));
         if (!link.existsSync()) {

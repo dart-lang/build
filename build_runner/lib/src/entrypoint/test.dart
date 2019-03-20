@@ -85,7 +85,7 @@ class TestCommand extends BuildRunnerCommand {
     try {
       _ensureBuildTestDependency(packageGraph);
       options = readOptions();
-      var outputMap = (options.outputMap ?? {})..addAll({tempPath: null});
+      var outputMap = (options.outputMap ?? {})..addAll({tempPath: 'test'});
       var result = await build(
         builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,

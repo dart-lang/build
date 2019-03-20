@@ -8,14 +8,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:_test_common/common.dart';
 import 'package:async/async.dart';
 import 'package:io/io.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
-
-import 'package:_test_common/common.dart';
 
 main() {
   setUpAll(() async {
@@ -125,9 +124,23 @@ main() {
       });
     }
 
+    testBuildCommandWithEverythingOutput(String command) {
+      test('works with -o everything and the $command command', () async {
+        var outputDirName = 'foo';
+        var args = ['build_runner', command, 'web', '-o', '$outputDirName'];
+        expect(await runSingleBuild(command, args), ExitCode.success.code);
+        expectOutput('web/main.dart.js', exists: true);
+        expectOutput('test/hello_test.dart.js', exists: true);
+
+        var outputDir = Directory(p.join(d.sandbox, 'a', 'foo'));
+        await outputDir.delete(recursive: true);
+      });
+    }
+
     for (var command in ['build', 'serve', 'watch']) {
       testBasicBuildCommand(command);
       testBuildCommandWithOutput(command);
+      testBuildCommandWithEverythingOutput(command);
     }
 
     test('is not supported for the test command', () async {
@@ -146,6 +159,16 @@ main() {
     expect(await runSingleBuild(command, args), ExitCode.success.code);
     expectOutput('web/main.dart.js', exists: false);
     expectOutput('test/hello_test.dart.js', exists: true);
+  });
+
+  test('test builds everything when -o is provided', () async {
+    var command = 'test';
+    var args = ['build_runner', command, '-o', 'foo'];
+    expect(await runSingleBuild(command, args), ExitCode.success.code);
+    expectOutput('web/main.dart.js', exists: true);
+    expectOutput('test/hello_test.dart.js', exists: true);
+    var outputDir = Directory(p.join(d.sandbox, 'a', 'foo'));
+    await outputDir.delete(recursive: true);
   });
 
   test('Duplicate output directories give a nice error', () async {
