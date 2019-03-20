@@ -184,9 +184,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
               change,
               builder.assetGraph,
               buildOptions,
-              sharedOptions.outputLocations.keys.any((input) =>
-                      sharedOptions.outputLocations[input].isNotEmpty) ==
-                  true,
+              sharedOptions.outputLocations.keys.any(
+                  (input) => sharedOptions.outputLocations[input].isNotEmpty),
               expectedDeletes,
             ));
 
