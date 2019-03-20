@@ -284,6 +284,25 @@ main() {
         _expectAllFiles(tmpDir);
       });
 
+      test('outputs all root directories when emptry string is provided',
+          () async {
+        environment.nextPromptResponse = 1;
+        var success = await createMergedOutputDirectories({
+          '': {tmpDir.path}
+        }, packageGraph, environment, assetReader, finalizedAssetsView, false);
+        expect(success, isTrue);
+
+        _expectAllFiles(tmpDir);
+      });
+
+      test('fails if the input path is invalid', () async {
+        environment.nextPromptResponse = 1;
+        var success = await createMergedOutputDirectories({
+          null: {tmpDir.path}
+        }, packageGraph, environment, assetReader, finalizedAssetsView, false);
+        expect(success, isFalse);
+      });
+
       test('can merge into the existing directory', () async {
         environment.nextPromptResponse = 2;
         var success = await createMergedOutputDirectories({

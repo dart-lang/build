@@ -75,16 +75,16 @@ Future<bool> _createMergedOutputDir(
     AssetReader reader,
     FinalizedAssetsView finalizedOutputsView,
     bool symlinkOnly) async {
+  if (root == null) return false;
   var outputDir = Directory(outputPath);
   var outputDirExists = await outputDir.exists();
   if (outputDirExists) {
     if (!await _cleanUpOutputDir(outputDir, environment)) return false;
   }
   var builtAssets = finalizedOutputsView.allAssets(rootDir: root).toList();
-  if (root != null &&
-      !builtAssets
-          .where((id) => id.package == packageGraph.root.name)
-          .any((id) => p.isWithin(root, id.path))) {
+  if (!builtAssets
+      .where((id) => id.package == packageGraph.root.name)
+      .any((id) => p.isWithin(root, id.path))) {
     _logger.severe('No assets exist in $root, skipping output');
     return false;
   }
@@ -107,7 +107,8 @@ Future<bool> _createMergedOutputDir(
     await _writeAsString(outputDir, packagesAsset, packagesFileContent);
     outputAssets.add(packagesAsset);
 
-    if (root == null) {
+    // Empty string inidicates all root input directories.
+    if (root.isEmpty) {
       for (var dir in _findRootDirs(builtAssets, outputPath)) {
         var link = Link(p.join(outputDir.path, dir, 'packages'));
         if (!link.existsSync()) {
