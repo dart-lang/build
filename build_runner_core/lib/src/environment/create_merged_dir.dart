@@ -90,7 +90,7 @@ Future<bool> _createMergedOutputDir(
     await _writeAsString(outputDir, packagesAsset, packagesFileContent);
     outputAssets.add(packagesAsset);
 
-    if (root == null || root == 'test') {
+    if (root == null) {
       for (var dir in _findRootDirs(builtAssets, outputPath)) {
         var link = Link(p.join(outputDir.path, dir, 'packages'));
         if (!link.existsSync()) {
@@ -140,7 +140,7 @@ Future<AssetId> _writeAsset(AssetId id, Directory outputDir, String root,
     var outputId = AssetId(packageGraph.root.name, assetPath);
     try {
       if (symlinkOnly) {
-        await Link(_filePathFor(outputDir, id)).create(
+        await Link(_filePathFor(outputDir, outputId)).create(
             // We assert at the top of `createMergedOutputDirectories` that the
             // reader implements this type when requesting symlinks.
             (reader as PathProvidingAssetReader).pathTo(id),

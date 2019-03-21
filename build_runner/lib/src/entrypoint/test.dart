@@ -82,10 +82,16 @@ class TestCommand extends BuildRunnerCommand {
         .absolute
         .uri
         .toFilePath();
+    var testPath = (Directory.fromUri(Uri.parse(p.join(tempPath, 'test')))
+          ..createSync())
+        .absolute
+        .uri
+        .toFilePath();
+
     try {
       _ensureBuildTestDependency(packageGraph);
       options = readOptions();
-      var outputMap = (options.outputMap ?? {})..addAll({tempPath: 'test'});
+      var outputMap = (options.outputMap ?? {})..addAll({testPath: 'test'});
       var result = await build(
         builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
@@ -107,6 +113,12 @@ class TestCommand extends BuildRunnerCommand {
         stdout.writeln('Skipping tests due to build failure');
         return result.failureType.exitCode;
       }
+
+      // Set up the temp directory as `package:test` expects.
+      Link(p.join(tempPath, '.packages'))
+          .createSync(p.join(testPath, '.packages'));
+      Link(p.join(tempPath, 'packages'))
+          .createSync(p.join(testPath, 'packages'), recursive: true);
 
       return await _runTests(tempPath);
     } on _BuildTestDependencyError catch (e) {
