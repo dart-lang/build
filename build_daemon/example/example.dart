@@ -45,7 +45,7 @@ void main(List<String> args) async {
       ..target = 'web'
       ..outputLocation = OutputLocation((b) => b
         ..output = 'web_output'
-        ..outputSymlinks = false
+        ..useSymlinks = false
         ..hoist = true).toBuilder()
       ..blackListPatterns.replace([RegExp(r'.*_test\.dart$')])));
     print('Registered example web target...');
@@ -54,7 +54,7 @@ void main(List<String> args) async {
       ..target = 'test'
       ..outputLocation = OutputLocation((b) => b
         ..output = 'test_output'
-        ..outputSymlinks = true
+        ..useSymlinks = true
         ..hoist = false).toBuilder()));
 
     print('Registered test target...');

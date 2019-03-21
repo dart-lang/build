@@ -37,7 +37,7 @@ abstract class OutputLocation
 
   String get output;
 
-  bool get outputSymlinks;
+  bool get useSymlinks;
 
   bool get hoist;
 }

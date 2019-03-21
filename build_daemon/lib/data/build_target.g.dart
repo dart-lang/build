@@ -86,8 +86,8 @@ class _$OutputLocationSerializer
       'output',
       serializers.serialize(object.output,
           specifiedType: const FullType(String)),
-      'outputSymlinks',
-      serializers.serialize(object.outputSymlinks,
+      'useSymlinks',
+      serializers.serialize(object.useSymlinks,
           specifiedType: const FullType(bool)),
       'hoist',
       serializers.serialize(object.hoist, specifiedType: const FullType(bool)),
@@ -111,8 +111,8 @@ class _$OutputLocationSerializer
           result.output = serializers.deserialize(value,
               specifiedType: const FullType(String)) as String;
           break;
-        case 'outputSymlinks':
-          result.outputSymlinks = serializers.deserialize(value,
+        case 'useSymlinks':
+          result.useSymlinks = serializers.deserialize(value,
               specifiedType: const FullType(bool)) as bool;
           break;
         case 'hoist':
@@ -259,20 +259,19 @@ class _$OutputLocation extends OutputLocation {
   @override
   final String output;
   @override
-  final bool outputSymlinks;
+  final bool useSymlinks;
   @override
   final bool hoist;
 
   factory _$OutputLocation([void updates(OutputLocationBuilder b)]) =>
       (new OutputLocationBuilder()..update(updates)).build();
 
-  _$OutputLocation._({this.output, this.outputSymlinks, this.hoist})
-      : super._() {
+  _$OutputLocation._({this.output, this.useSymlinks, this.hoist}) : super._() {
     if (output == null) {
       throw new BuiltValueNullFieldError('OutputLocation', 'output');
     }
-    if (outputSymlinks == null) {
-      throw new BuiltValueNullFieldError('OutputLocation', 'outputSymlinks');
+    if (useSymlinks == null) {
+      throw new BuiltValueNullFieldError('OutputLocation', 'useSymlinks');
     }
     if (hoist == null) {
       throw new BuiltValueNullFieldError('OutputLocation', 'hoist');
@@ -292,21 +291,21 @@ class _$OutputLocation extends OutputLocation {
     if (identical(other, this)) return true;
     return other is OutputLocation &&
         output == other.output &&
-        outputSymlinks == other.outputSymlinks &&
+        useSymlinks == other.useSymlinks &&
         hoist == other.hoist;
   }
 
   @override
   int get hashCode {
     return $jf($jc(
-        $jc($jc(0, output.hashCode), outputSymlinks.hashCode), hoist.hashCode));
+        $jc($jc(0, output.hashCode), useSymlinks.hashCode), hoist.hashCode));
   }
 
   @override
   String toString() {
     return (newBuiltValueToStringHelper('OutputLocation')
           ..add('output', output)
-          ..add('outputSymlinks', outputSymlinks)
+          ..add('useSymlinks', useSymlinks)
           ..add('hoist', hoist))
         .toString();
   }
@@ -320,10 +319,9 @@ class OutputLocationBuilder
   String get output => _$this._output;
   set output(String output) => _$this._output = output;
 
-  bool _outputSymlinks;
-  bool get outputSymlinks => _$this._outputSymlinks;
-  set outputSymlinks(bool outputSymlinks) =>
-      _$this._outputSymlinks = outputSymlinks;
+  bool _useSymlinks;
+  bool get useSymlinks => _$this._useSymlinks;
+  set useSymlinks(bool useSymlinks) => _$this._useSymlinks = useSymlinks;
 
   bool _hoist;
   bool get hoist => _$this._hoist;
@@ -334,7 +332,7 @@ class OutputLocationBuilder
   OutputLocationBuilder get _$this {
     if (_$v != null) {
       _output = _$v.output;
-      _outputSymlinks = _$v.outputSymlinks;
+      _useSymlinks = _$v.useSymlinks;
       _hoist = _$v.hoist;
       _$v = null;
     }
@@ -358,7 +356,7 @@ class OutputLocationBuilder
   _$OutputLocation build() {
     final _$result = _$v ??
         new _$OutputLocation._(
-            output: output, outputSymlinks: outputSymlinks, hoist: hoist);
+            output: output, useSymlinks: useSymlinks, hoist: hoist);
     replace(_$result);
     return _$result;
   }
