@@ -43,13 +43,19 @@ void main(List<String> args) async {
   if (Random().nextBool()) {
     client.registerBuildTarget(DefaultBuildTarget((b) => b
       ..target = 'web'
-      ..output = 'web_output'
+      ..outputLocation = OutputLocation((b) => b
+        ..output = 'web_output'
+        ..useSymlinks = false
+        ..hoist = true).toBuilder()
       ..blackListPatterns.replace([RegExp(r'.*_test\.dart$')])));
     print('Registered example web target...');
   } else {
     client.registerBuildTarget(DefaultBuildTarget((b) => b
       ..target = 'test'
-      ..output = 'test_output'));
+      ..outputLocation = OutputLocation((b) => b
+        ..output = 'test_output'
+        ..useSymlinks = true
+        ..hoist = false).toBuilder()));
 
     print('Registered test target...');
   }

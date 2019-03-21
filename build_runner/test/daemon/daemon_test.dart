@@ -100,7 +100,10 @@ main() {
       var client = await _startClient()
         ..registerBuildTarget(DefaultBuildTarget((b) => b
           ..target = 'web'
-          ..output = 'deploy'))
+          ..outputLocation = OutputLocation((b) => b
+            ..output = 'deploy'
+            ..hoist = true
+            ..useSymlinks = false).toBuilder()))
         ..startBuild();
       await client.buildResults
           .firstWhere((b) => b.results.first.status != BuildStatus.started);

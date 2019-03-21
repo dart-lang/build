@@ -71,8 +71,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     var outputLocations = <String, Set<String>>{};
     for (var target in defaultTargets) {
       outputLocations[target.target] ??= <String>{};
-      if (target.output?.isNotEmpty ?? false) {
-        outputLocations[target.target].add(target.output);
+      if (target.outputLocation != null) {
+        outputLocations[target.target].add(target.outputLocation.output);
       }
     }
     try {

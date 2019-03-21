@@ -1,6 +1,6 @@
 ## 0.5.0
 
-- Add output to DefaultBuildTarget.
+- Add OutputLocation to DefaultBuildTarget.
 
 ## 0.4.2
 

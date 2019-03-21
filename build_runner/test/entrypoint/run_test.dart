@@ -147,6 +147,25 @@ main() {
     expectOutput('test/hello_test.dart.js', exists: true);
   });
 
+  test('hoists output correctly even with --symlink', () async {
+    var command = 'build';
+    var outputDirName = 'foo';
+    var args = [
+      'build_runner',
+      command,
+      '-o',
+      'web:$outputDirName',
+      '--symlink'
+    ];
+    expect(await runSingleBuild(command, args), ExitCode.success.code);
+    var outputDir = Directory(p.join(d.sandbox, 'a', 'foo'));
+    expect(File(p.join(outputDir.path, 'web', 'main.dart.js')).existsSync(),
+        isFalse);
+    expect(File(p.join(outputDir.path, 'main.dart.js')).existsSync(), isTrue);
+
+    await outputDir.delete(recursive: true);
+  });
+
   test('Duplicate output directories give a nice error', () async {
     var command = 'build';
     var args = ['build_runner', command, '-o', 'web:build', '-o', 'test:build'];

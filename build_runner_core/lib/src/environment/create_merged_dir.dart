@@ -158,7 +158,7 @@ Future<AssetId> _writeAsset(AssetId id, Directory outputDir, String root,
     var outputId = AssetId(packageGraph.root.name, assetPath);
     try {
       if (symlinkOnly) {
-        await Link(_filePathFor(outputDir, id)).create(
+        await Link(_filePathFor(outputDir, outputId)).create(
             // We assert at the top of `createMergedOutputDirectories` that the
             // reader implements this type when requesting symlinks.
             (reader as PathProvidingAssetReader).pathTo(id),
