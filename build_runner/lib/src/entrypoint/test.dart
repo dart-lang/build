@@ -77,21 +77,14 @@ class TestCommand extends BuildRunnerCommand {
   Future<int> run() async {
     SharedOptions options;
     // We always run our tests in a temp dir.
-    var tempPath = Directory.systemTemp
-        .createTempSync('build_runner_test')
-        .absolute
-        .uri
-        .toFilePath();
-    var testPath = (Directory.fromUri(Uri.parse(p.join(tempPath, 'test')))
-          ..createSync())
-        .absolute
-        .uri
-        .toFilePath();
+    var tempDir = Directory.systemTemp.createTempSync('build_runner_test');
+    var testDir = Directory.fromUri(Uri.parse(p.join(tempDir.path, 'test')));
 
     try {
       _ensureBuildTestDependency(packageGraph);
       options = readOptions();
-      var outputMap = (options.outputMap ?? {})..addAll({testPath: 'test'});
+      var outputMap = (options.outputMap ?? {})
+        ..addAll({testDir.absolute.uri.toFilePath(): 'test'});
       var result = await build(
         builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
@@ -115,18 +108,19 @@ class TestCommand extends BuildRunnerCommand {
       }
 
       // Set up the temp directory as `package:test` expects.
-      Link(p.join(tempPath, '.packages'))
-          .createSync(p.join(testPath, '.packages'));
-      Link(p.join(tempPath, 'packages'))
-          .createSync(p.join(testPath, 'packages'), recursive: true);
+      Link(p.join(tempDir.path, '.packages'))
+          .createSync(p.join(testDir.path, '.packages'));
+      Link(p.join(tempDir.path, 'packages'))
+          .createSync(p.join(testDir.path, 'packages'), recursive: true);
 
-      return await _runTests(tempPath);
+      return await _runTests(tempDir.absolute.uri.toFilePath());
     } on _BuildTestDependencyError catch (e) {
       stdout.writeln(e);
       return ExitCode.config.code;
     } finally {
       // Clean up the output dir.
-      await Directory(tempPath).delete(recursive: true);
+      await Directory(tempDir.absolute.uri.toFilePath())
+          .delete(recursive: true);
     }
   }
 
