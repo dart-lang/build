@@ -4,7 +4,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart';
+import 'package:build_config/build_config.dart' as config;
 import 'package:build_runner/src/package_graph/build_config_overrides.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/change_filter.dart';
@@ -43,8 +43,8 @@ Future<ServeHandler> watch(
   Stream terminateEventStream,
   bool skipBuildScriptCheck,
   bool enableLowResourcesMode,
-  Map<String, BuildConfig> overrideBuildConfig,
-  Map<String, Set<String>> outputLocations,
+  Map<String, config.BuildConfig> overrideBuildConfig,
+  List<BuildTarget> buildTargets,
   bool outputSymlinksOnly,
   bool trackPerformance,
   bool verbose,
@@ -55,7 +55,7 @@ Future<ServeHandler> watch(
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= PackageGraph.forThisPackage();
-  outputLocations ??= {};
+  buildTargets ??= [];
 
   var environment = OverrideableEnvironment(
       IOEnvironment(packageGraph,
@@ -89,8 +89,9 @@ Future<ServeHandler> watch(
       terminator.shouldTerminate,
       directoryWatcherFactory,
       configKey,
-      outputLocations.keys.any((input) => outputLocations[input].isNotEmpty),
-      outputLocations,
+      buildTargets
+          .any((target) => target?.outputLocation?.output?.isNotEmpty ?? false),
+      buildTargets,
       isReleaseMode: isReleaseBuild ?? false);
 
   unawaited(watch.buildResults.drain().then((_) async {
@@ -118,18 +119,10 @@ WatchImpl _runWatch(
         DirectoryWatcher Function(String) directoryWatcherFactory,
         String configKey,
         bool willCreateOutputDirs,
-        Map<String, Set<String>> outputLocations,
+        List<BuildTarget> buildTargets,
         {bool isReleaseMode = false}) =>
-    WatchImpl(
-        options,
-        environment,
-        builders,
-        builderConfigOverrides,
-        until,
-        directoryWatcherFactory,
-        configKey,
-        willCreateOutputDirs,
-        outputLocations,
+    WatchImpl(options, environment, builders, builderConfigOverrides, until,
+        directoryWatcherFactory, configKey, willCreateOutputDirs, buildTargets,
         isReleaseMode: isReleaseMode);
 
 class WatchImpl implements BuildState {
@@ -160,7 +153,7 @@ class WatchImpl implements BuildState {
   final PackageGraph packageGraph;
 
   /// The directories to build upon file changes and where to output them.
-  final Map<String, Set<String>> _outputLocations;
+  final List<BuildTarget> _buildTargets;
 
   @override
   Future<BuildResult> currentBuild;
@@ -180,7 +173,7 @@ class WatchImpl implements BuildState {
       this._directoryWatcherFactory,
       this._configKey,
       this._willCreateOutputDirs,
-      this._outputLocations,
+      this._buildTargets,
       {bool isReleaseMode = false})
       : _debounceDelay = options.debounceDelay,
         packageGraph = options.packageGraph {
@@ -226,7 +219,7 @@ class WatchImpl implements BuildState {
               failureType: FailureType.buildScriptChanged);
         }
       }
-      return _build.run(mergedChanges, outputLocations: _outputLocations);
+      return _build.run(mergedChanges, buildTargets: _buildTargets);
     }
 
     var terminate = Future.any([until, _terminateCompleter.future]).then((_) {
@@ -316,7 +309,7 @@ class WatchImpl implements BuildState {
             options, watcherEnvironment, builders, builderConfigOverrides,
             isReleaseBuild: isReleaseMode);
 
-        firstBuild = await _build.run({}, outputLocations: _outputLocations);
+        firstBuild = await _build.run({}, buildTargets: _buildTargets);
       } on CannotBuildException {
         _terminateCompleter.complete();
 

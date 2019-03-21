@@ -4,7 +4,8 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart';
+import 'package:build_config/build_config.dart' hide BuildTarget;
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/environment/io_environment.dart';
 import 'package:build_runner_core/src/environment/overridable_environment.dart';
 import 'package:build_runner_core/src/generate/build_result.dart';
@@ -87,7 +88,7 @@ Future<BuildResult> testBuilders(
   bool enableLowResourcesMode = false,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool verbose = false,
-  Map<String, Set<String>> outputLocations,
+  List<BuildTarget> buildTargets,
   String logPerformanceDir,
   String expectedGeneratedDir,
 }) async {
@@ -126,7 +127,7 @@ Future<BuildResult> testBuilders(
     builderConfigOverrides,
     isReleaseBuild: false,
   );
-  result = await build.run({}, outputLocations: outputLocations);
+  result = await build.run({}, buildTargets: buildTargets);
   await build.beforeExit();
   await options.logListener.cancel();
 

@@ -13,6 +13,7 @@ export 'src/environment/io_environment.dart';
 export 'src/environment/overridable_environment.dart';
 export 'src/generate/build_result.dart';
 export 'src/generate/build_runner.dart';
+export 'src/generate/build_target.dart';
 export 'src/generate/exceptions.dart'
     show
         BuildConfigChangedException,

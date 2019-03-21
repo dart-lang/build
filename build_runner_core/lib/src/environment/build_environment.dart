@@ -10,6 +10,7 @@ import 'package:logging/logging.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../generate/build_result.dart';
+import '../generate/build_target.dart';
 import '../generate/finalized_assets_view.dart';
 
 /// Utilities to interact with the environment in which a build is running.
@@ -40,10 +41,6 @@ abstract class BuildEnvironment {
   /// completes, it will expire afterwords since it can no longer guarantee a
   /// consistent state.
   ///
-  /// The [outputMap] is a map of input paths to a list of output paths. If the
-  /// input path is an empty string it means all input paths. If the list of
-  /// output paths is empty it means only output to the default location.
-  ///
   /// By default this returns the original result.
   ///
   /// Any operation may be performed, as determined by environment.
@@ -51,7 +48,7 @@ abstract class BuildEnvironment {
           BuildResult buildResult,
           FinalizedAssetsView finalizedAssetsView,
           AssetReader assetReader,
-          Map<String, Set<String>> outputMap) =>
+          List<BuildTarget> buildTargets) =>
       Future.value(buildResult);
 }
 

@@ -41,10 +41,6 @@ import 'watch_impl.dart' as watch_impl;
 /// will simply consume the first event and allow the build to continue.
 /// Multiple termination events will cause a normal shutdown.
 ///
-/// If [outputLocations] is supplied then after each build a merged output
-/// directory will be created for each value in the map which contains all
-/// original sources and built sources contained in the provided path.
-///
 /// If [outputSymlinksOnly] is `true`, then the merged output directories will
 /// contain only symlinks, which is much faster but not generally suitable for
 /// deployment.
@@ -64,7 +60,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     onLog(LogRecord record),
     Stream terminateEventStream,
     bool enableLowResourcesMode,
-    Map<String, Set<String>> outputLocations,
+    List<BuildTarget> buildTargets,
     bool outputSymlinksOnly,
     bool trackPerformance,
     bool skipBuildScriptCheck,
@@ -106,7 +102,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       builderConfigOverrides,
       isReleaseBuild: isReleaseBuild ?? false,
     );
-    var result = await build.run({}, outputLocations: outputLocations);
+    var result = await build.run({}, buildTargets: buildTargets);
     await build?.beforeExit();
     return result;
   } finally {
@@ -154,7 +150,7 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         DirectoryWatcher Function(String) directoryWatcherFactory,
         Stream terminateEventStream,
         bool enableLowResourcesMode,
-        Map<String, Set<String>> outputLocations,
+        List<BuildTarget> buildTargets,
         bool outputSymlinksOnly,
         bool trackPerformance,
         bool skipBuildScriptCheck,
@@ -177,7 +173,7 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
       directoryWatcherFactory: directoryWatcherFactory,
       terminateEventStream: terminateEventStream,
       enableLowResourcesMode: enableLowResourcesMode,
-      outputLocations: outputLocations,
+      buildTargets: buildTargets,
       outputSymlinksOnly: outputSymlinksOnly,
       trackPerformance: trackPerformance,
       skipBuildScriptCheck: skipBuildScriptCheck,

@@ -8,7 +8,7 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:build_daemon/daemon_builder.dart';
 import 'package:build_daemon/data/build_status.dart' as daemon;
-import 'package:build_daemon/data/build_target.dart';
+import 'package:build_daemon/data/build_target.dart' as daemon;
 import 'package:build_daemon/data/server_log.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner/src/package_graph/build_config_overrides.dart';
@@ -58,8 +58,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
   @override
   Future<void> build(
-      Set<BuildTarget> targets, Iterable<WatchEvent> fileChanges) async {
-    var defaultTargets = targets.cast<DefaultBuildTarget>();
+      Set<daemon.BuildTarget> targets, Iterable<WatchEvent> fileChanges) async {
+    var defaultTargets = targets.cast<daemon.DefaultBuildTarget>();
     var changes = fileChanges
         .map<AssetChange>(
             (change) => AssetChange(AssetId.parse(change.path), change.type))
@@ -68,17 +68,22 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     _logMessage(Level.INFO, 'About to build ${targetNames.toList()}...');
     _signalStart(targetNames);
     var results = <daemon.BuildResult>[];
-    var outputLocations = <String, Set<String>>{};
-    for (var target in defaultTargets) {
-      outputLocations[target.target] ??= <String>{};
+    var buildTargets = defaultTargets.map((target) {
+      OutputLocation outputLocation;
       if (target.outputLocation != null) {
-        outputLocations[target.target].add(target.outputLocation.output);
+        outputLocation = OutputLocation(target.outputLocation.output,
+            useSymlinks: target.outputLocation.useSymlinks,
+            hoist: target.outputLocation.hoist);
       }
-    }
+      return BuildTarget(
+        target.target,
+        outputLocation,
+      );
+    }).toList();
     try {
       var mergedChanges = collectChanges([changes]);
       var result =
-          await _builder.run(mergedChanges, outputLocations: outputLocations);
+          await _builder.run(mergedChanges, buildTargets: buildTargets);
       for (var target in targets) {
         if (result.status == BuildStatus.success) {
           // TODO(grouma) - Can we notify if a target was cached?
@@ -184,8 +189,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
               change,
               builder.assetGraph,
               buildOptions,
-              sharedOptions.outputLocations.keys.any(
-                  (input) => sharedOptions.outputLocations[input].isNotEmpty),
+              // Assume we will create an outputDir.
+              true,
               expectedDeletes,
             ));
 

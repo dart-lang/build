@@ -14,8 +14,6 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:pedantic/pedantic.dart';
 import 'package:pool/pool.dart';
-// TODO(grouma) - remove dependency on ChangeType API to remove the following
-// import.
 import 'package:watcher/watcher.dart';
 
 import '../asset/cache.dart';
@@ -39,6 +37,7 @@ import '../util/build_dirs.dart';
 import '../util/constants.dart';
 import 'build_definition.dart';
 import 'build_result.dart';
+import 'build_target.dart';
 import 'finalized_assets_view.dart';
 import 'heartbeat.dart';
 import 'options.dart';
@@ -46,6 +45,12 @@ import 'performance_tracker.dart';
 import 'phase.dart';
 
 final _logger = Logger('Build');
+
+List<String> _buildDirsFromTargets(List<BuildTarget> buildTargets) =>
+    // The empty string means build everything.
+    buildTargets.any((b) => b.directory == '')
+        ? []
+        : buildTargets.map((b) => b.directory).toList();
 
 class BuildImpl {
   final FinalizedReader _finalizedReader;
@@ -86,19 +91,11 @@ class BuildImpl {
         _trackPerformance = options.trackPerformance,
         _logPerformanceDir = options.logPerformanceDir;
 
-  /// Runs a single build for the provided updates and optional
-  /// [outputLocations].
-  ///
-  /// The [outputLocations] is a map of input paths to a list of output paths.
-  /// If the input path is an empty string it means all input paths. If the list
-  /// of output paths is empty, no merge output directory will be created for
-  /// that input.
   Future<BuildResult> run(Map<AssetId, ChangeType> updates,
-      {Map<String, Set<String>> outputLocations}) {
-    outputLocations ??= {};
-    finalizedReader
-        .reset(outputLocations.keys.where((k) => k.isNotEmpty).toList());
-    return _SingleBuild(this, outputLocations).run(updates)
+      {List<BuildTarget> buildTargets}) {
+    buildTargets ??= [];
+    finalizedReader.reset(_buildDirsFromTargets(buildTargets));
+    return _SingleBuild(this, buildTargets).run(updates)
       ..whenComplete(_resolvers.reset);
   }
 
@@ -161,7 +158,7 @@ class _SingleBuild {
   final ResourceManager _resourceManager;
   final bool _verbose;
   final RunnerAssetWriter _writer;
-  final Map<String, Set<String>> _outputLocations;
+  final List<BuildTarget> _buildTargets;
   final String _logPerformanceDir;
   final _failureReporter = FailureReporter();
 
@@ -173,7 +170,7 @@ class _SingleBuild {
   /// Can't be final since it needs access to [pendingActions].
   HungActionsHeartbeat hungActionsHeartbeat;
 
-  _SingleBuild(BuildImpl buildImpl, Map<String, Set<String>> outputLocations)
+  _SingleBuild(BuildImpl buildImpl, List<BuildTarget> buildTargets)
       : _assetGraph = buildImpl._assetGraph,
         _buildPhases = buildImpl._buildPhases,
         _buildPhasePool = List(buildImpl._buildPhases.length),
@@ -187,7 +184,7 @@ class _SingleBuild {
         _resourceManager = buildImpl._resourceManager,
         _verbose = buildImpl._verbose,
         _writer = buildImpl._writer,
-        _outputLocations = outputLocations,
+        _buildTargets = buildTargets,
         _logPerformanceDir = buildImpl._logPerformanceDir {
     hungActionsHeartbeat = HungActionsHeartbeat(() {
       final message = StringBuffer();
@@ -212,9 +209,7 @@ class _SingleBuild {
     var watch = Stopwatch()..start();
     var result = await _safeBuild(updates);
     var optionalOutputTracker = OptionalOutputTracker(
-        _assetGraph,
-        _outputLocations.keys.where((k) => k.isNotEmpty).toList(),
-        _buildPhases);
+        _assetGraph, _buildDirsFromTargets(_buildTargets), _buildPhases);
     if (result.status == BuildStatus.success) {
       final failures = _assetGraph.failedOutputs
           .where((n) => optionalOutputTracker.isRequired(n.id));
@@ -229,7 +224,7 @@ class _SingleBuild {
         result,
         FinalizedAssetsView(_assetGraph, optionalOutputTracker),
         _reader,
-        _outputLocations);
+        _buildTargets);
     if (result.status == BuildStatus.success) {
       _logger.info('Succeeded after ${humanReadable(watch.elapsed)} with '
           '${result.outputs.length} outputs '
@@ -348,8 +343,8 @@ class _SingleBuild {
     var phase = _buildPhases[phaseNumber];
     await Future.wait(
         _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
-      if (!shouldBuildForDirs(node.id,
-          _outputLocations.keys.where((k) => k.isNotEmpty).toList(), phase)) {
+      if (!shouldBuildForDirs(
+          node.id, _buildDirsFromTargets(_buildTargets), phase)) {
         return;
       }
 

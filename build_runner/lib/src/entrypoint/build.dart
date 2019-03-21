@@ -30,7 +30,7 @@ class BuildCommand extends BuildRunnerCommand {
       deleteFilesByDefault: options.deleteFilesByDefault,
       enableLowResourcesMode: options.enableLowResourcesMode,
       configKey: options.configKey,
-      outputLocations: options.outputLocations,
+      buildTargets: options.buildTargets,
       outputSymlinksOnly: options.outputSymlinksOnly,
       packageGraph: packageGraph,
       verbose: options.verbose,

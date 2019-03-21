@@ -12,6 +12,7 @@ import 'package:pool/pool.dart';
 
 import '../asset/reader.dart';
 import '../environment/build_environment.dart';
+import '../generate/build_target.dart';
 import '../generate/finalized_assets_view.dart';
 import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
@@ -27,7 +28,7 @@ const _manifestSeparator = '\n';
 ///
 /// Returns whether it succeeded or not.
 Future<bool> createMergedOutputDirectories(
-    Map<String, Set<String>> outputLocations,
+    List<BuildTarget> buildTargets,
     PackageGraph packageGraph,
     BuildEnvironment environment,
     AssetReader reader,
@@ -39,17 +40,26 @@ Future<bool> createMergedOutputDirectories(
         'requested.');
     return false;
   }
-  var conflictingOutputs = _conflicts(outputLocations);
+  var conflictingOutputs = _conflicts(buildTargets);
   if (conflictingOutputs.isNotEmpty) {
     _logger.severe('Unable to create merged directory. '
         'Conflicting outputs for $conflictingOutputs');
     return false;
   }
 
-  for (var input in outputLocations.keys) {
-    for (var output in outputLocations[input]) {
-      if (!await _createMergedOutputDir(output, input, packageGraph,
-          environment, reader, finalizedAssetsView, outputSymlinksOnly)) {
+  for (var target in buildTargets) {
+    var output = target.outputLocation?.output;
+    if (output != null) {
+      if (!await _createMergedOutputDir(
+          output,
+          target.directory,
+          packageGraph,
+          environment,
+          reader,
+          finalizedAssetsView,
+          // TODO(grouma) - retrieve symlink information from target only.
+          outputSymlinksOnly || target.outputLocation.useSymlinks,
+          target.outputLocation.hoist)) {
         _logger.severe('Unable to create merged directory for $output.');
         return false;
       }
@@ -58,10 +68,16 @@ Future<bool> createMergedOutputDirectories(
   return true;
 }
 
-Set<String> _conflicts(Map<String, Set<String>> outputLocations) {
+Set<String> _conflicts(List<BuildTarget> buildTargets) {
   final seen = <String>{};
   final conflicts = <String>{};
-  for (var location in outputLocations.values.expand((l) => l)) {
+  var outputLocations = buildTargets.fold<List<String>>([], (a, b) {
+    if (b.outputLocation != null) {
+      a.add(b.outputLocation.output);
+    }
+    return a;
+  });
+  for (var location in outputLocations) {
     if (!seen.add(location)) conflicts.add(location);
   }
   return conflicts;
@@ -74,7 +90,8 @@ Future<bool> _createMergedOutputDir(
     BuildEnvironment environment,
     AssetReader reader,
     FinalizedAssetsView finalizedOutputsView,
-    bool symlinkOnly) async {
+    bool symlinkOnly,
+    bool hoist) async {
   if (root == null) return false;
   var outputDir = Directory(outputPath);
   var outputDirExists = await outputDir.exists();
@@ -97,8 +114,8 @@ Future<bool> _createMergedOutputDir(
       await outputDir.create(recursive: true);
     }
 
-    outputAssets.addAll(await Future.wait(builtAssets.map((id) =>
-        _writeAsset(id, outputDir, root, packageGraph, reader, symlinkOnly))));
+    outputAssets.addAll(await Future.wait(builtAssets.map((id) => _writeAsset(
+        id, outputDir, root, packageGraph, reader, symlinkOnly, hoist))));
 
     var packagesFileContent = packageGraph.allPackages.keys
         .map((p) => '$p:packages/$p/')
@@ -108,7 +125,7 @@ Future<bool> _createMergedOutputDir(
     outputAssets.add(packagesAsset);
 
     // Empty string inidicates all root input directories.
-    if (root.isEmpty) {
+    if (!hoist) {
       for (var dir in _findRootDirs(builtAssets, outputPath)) {
         var link = Link(p.join(outputDir.path, dir, 'packages'));
         if (!link.existsSync()) {
@@ -140,8 +157,14 @@ Set<String> _findRootDirs(Iterable<AssetId> allAssets, String outputPath) {
   return rootDirs;
 }
 
-Future<AssetId> _writeAsset(AssetId id, Directory outputDir, String root,
-    PackageGraph packageGraph, AssetReader reader, bool symlinkOnly) {
+Future<AssetId> _writeAsset(
+    AssetId id,
+    Directory outputDir,
+    String root,
+    PackageGraph packageGraph,
+    AssetReader reader,
+    bool symlinkOnly,
+    bool hoist) {
   return _descriptorPool.withResource(() async {
     String assetPath;
     if (id.path.startsWith('lib/')) {
@@ -150,7 +173,7 @@ Future<AssetId> _writeAsset(AssetId id, Directory outputDir, String root,
     } else {
       assetPath = id.path;
       assert(id.package == packageGraph.root.name);
-      if (root != null && p.isWithin(root, id.path)) {
+      if (hoist && p.isWithin(root, id.path)) {
         assetPath = p.relative(id.path, from: root);
       }
     }

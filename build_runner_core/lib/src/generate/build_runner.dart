@@ -11,6 +11,7 @@ import '../environment/build_environment.dart';
 import '../package_graph/apply_builders.dart';
 import 'build_impl.dart';
 import 'build_result.dart';
+import 'build_target.dart';
 import 'options.dart';
 
 class BuildRunner {
@@ -20,8 +21,8 @@ class BuildRunner {
   Future<Null> beforeExit() => _build.beforeExit();
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates,
-          {Map<String, Set<String>> outputLocations}) =>
-      _build.run(updates, outputLocations: outputLocations);
+          {List<BuildTarget> buildTargets}) =>
+      _build.run(updates, buildTargets: buildTargets);
 
   static Future<BuildRunner> create(
       BuildOptions options,

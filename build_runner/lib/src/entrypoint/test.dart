@@ -85,18 +85,20 @@ class TestCommand extends BuildRunnerCommand {
     try {
       _ensureBuildTestDependency(packageGraph);
       options = readOptions();
-      var outputLocations = (options.outputLocations ?? <String, Set<String>>{})
+      print(tempPath);
+      var buildTargets = (options.buildTargets ?? [])
         // Build test by default.
-        ..putIfAbsent('test', () => <String>{})
-        // Output top level dirs to temp path.
-        ..putIfAbsent('', () => <String>{}).add(tempPath);
+        ..add(BuildTarget(
+            'test',
+            OutputLocation(tempPath,
+                useSymlinks: options.outputSymlinksOnly, hoist: false)));
 
       var result = await build(
         builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
         configKey: options.configKey,
-        outputLocations: outputLocations,
+        buildTargets: buildTargets,
         outputSymlinksOnly: options.outputSymlinksOnly,
         packageGraph: packageGraph,
         trackPerformance: options.trackPerformance,

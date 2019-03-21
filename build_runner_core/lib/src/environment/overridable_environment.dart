@@ -10,6 +10,7 @@ import 'package:logging/logging.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../generate/build_result.dart';
+import '../generate/build_target.dart';
 import '../generate/finalized_assets_view.dart';
 import 'build_environment.dart';
 
@@ -23,10 +24,8 @@ class OverrideableEnvironment implements BuildEnvironment {
   final void Function(LogRecord) _onLog;
 
   final Future<BuildResult> Function(
-      BuildResult result,
-      FinalizedAssetsView finalizedAssetsView,
-      AssetReader reader,
-      Map<String, Set<String>> outputLocations) _finalizeBuild;
+          BuildResult, FinalizedAssetsView, AssetReader, List<BuildTarget>)
+      _finalizeBuild;
 
   OverrideableEnvironment(
     this._default, {
@@ -34,10 +33,7 @@ class OverrideableEnvironment implements BuildEnvironment {
     RunnerAssetWriter writer,
     void Function(LogRecord) onLog,
     Future<BuildResult> Function(
-            BuildResult result,
-            FinalizedAssetsView finalizedAssetsView,
-            AssetReader reader,
-            Map<String, Set<String>> outputLocations)
+            BuildResult, FinalizedAssetsView, AssetReader, List<BuildTarget>)
         finalizeBuild,
   })  : _reader = reader,
         _writer = writer,
@@ -55,9 +51,9 @@ class OverrideableEnvironment implements BuildEnvironment {
           BuildResult buildResult,
           FinalizedAssetsView finalizedAssetsView,
           AssetReader reader,
-          Map<String, Set<String>> outputLocations) =>
+          List<BuildTarget> buildTargets) =>
       (_finalizeBuild ?? _default.finalizeBuild)(
-          buildResult, finalizedAssetsView, reader, outputLocations);
+          buildResult, finalizedAssetsView, reader, buildTargets);
 
   @override
   void onLog(LogRecord record) {
