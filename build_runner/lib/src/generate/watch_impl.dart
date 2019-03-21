@@ -44,7 +44,7 @@ Future<ServeHandler> watch(
   bool skipBuildScriptCheck,
   bool enableLowResourcesMode,
   Map<String, config.BuildConfig> overrideBuildConfig,
-  List<BuildTarget> buildTargets,
+  Set<BuildTarget> buildTargets,
   bool outputSymlinksOnly,
   bool trackPerformance,
   bool verbose,
@@ -55,7 +55,7 @@ Future<ServeHandler> watch(
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= PackageGraph.forThisPackage();
-  buildTargets ??= [];
+  buildTargets ??= <BuildTarget>{};
 
   var environment = OverrideableEnvironment(
       IOEnvironment(packageGraph,
@@ -119,7 +119,7 @@ WatchImpl _runWatch(
         DirectoryWatcher Function(String) directoryWatcherFactory,
         String configKey,
         bool willCreateOutputDirs,
-        List<BuildTarget> buildTargets,
+        Set<BuildTarget> buildTargets,
         {bool isReleaseMode = false}) =>
     WatchImpl(options, environment, builders, builderConfigOverrides, until,
         directoryWatcherFactory, configKey, willCreateOutputDirs, buildTargets,
@@ -153,7 +153,7 @@ class WatchImpl implements BuildState {
   final PackageGraph packageGraph;
 
   /// The directories to build upon file changes and where to output them.
-  final List<BuildTarget> _buildTargets;
+  final Set<BuildTarget> _buildTargets;
 
   @override
   Future<BuildResult> currentBuild;

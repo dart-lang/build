@@ -86,7 +86,7 @@ class TestCommand extends BuildRunnerCommand {
       _ensureBuildTestDependency(packageGraph);
       options = readOptions();
       print(tempPath);
-      var buildTargets = (options.buildTargets ?? [])
+      var buildTargets = (options.buildTargets ?? <BuildTarget>{})
         // Build test by default.
         ..add(BuildTarget(
             'test',

@@ -79,7 +79,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         target.target,
         outputLocation,
       );
-    }).toList();
+    }).toSet();
     try {
       var mergedChanges = collectChanges([changes]);
       var result =

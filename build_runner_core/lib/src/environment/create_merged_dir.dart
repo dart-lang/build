@@ -28,7 +28,7 @@ const _manifestSeparator = '\n';
 ///
 /// Returns whether it succeeded or not.
 Future<bool> createMergedOutputDirectories(
-    List<BuildTarget> buildTargets,
+    Set<BuildTarget> buildTargets,
     PackageGraph packageGraph,
     BuildEnvironment environment,
     AssetReader reader,
@@ -68,7 +68,7 @@ Future<bool> createMergedOutputDirectories(
   return true;
 }
 
-Set<String> _conflicts(List<BuildTarget> buildTargets) {
+Set<String> _conflicts(Set<BuildTarget> buildTargets) {
   final seen = <String>{};
   final conflicts = <String>{};
   var outputLocations = buildTargets.fold<List<String>>([], (a, b) {

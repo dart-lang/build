@@ -21,7 +21,7 @@ class BuildRunner {
   Future<Null> beforeExit() => _build.beforeExit();
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates,
-          {List<BuildTarget> buildTargets}) =>
+          {Set<BuildTarget> buildTargets}) =>
       _build.run(updates, buildTargets: buildTargets);
 
   static Future<BuildRunner> create(

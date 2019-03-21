@@ -24,7 +24,7 @@ class OverrideableEnvironment implements BuildEnvironment {
   final void Function(LogRecord) _onLog;
 
   final Future<BuildResult> Function(
-          BuildResult, FinalizedAssetsView, AssetReader, List<BuildTarget>)
+          BuildResult, FinalizedAssetsView, AssetReader, Set<BuildTarget>)
       _finalizeBuild;
 
   OverrideableEnvironment(
@@ -33,7 +33,7 @@ class OverrideableEnvironment implements BuildEnvironment {
     RunnerAssetWriter writer,
     void Function(LogRecord) onLog,
     Future<BuildResult> Function(
-            BuildResult, FinalizedAssetsView, AssetReader, List<BuildTarget>)
+            BuildResult, FinalizedAssetsView, AssetReader, Set<BuildTarget>)
         finalizeBuild,
   })  : _reader = reader,
         _writer = writer,
@@ -51,7 +51,7 @@ class OverrideableEnvironment implements BuildEnvironment {
           BuildResult buildResult,
           FinalizedAssetsView finalizedAssetsView,
           AssetReader reader,
-          List<BuildTarget> buildTargets) =>
+          Set<BuildTarget> buildTargets) =>
       (_finalizeBuild ?? _default.finalizeBuild)(
           buildResult, finalizedAssetsView, reader, buildTargets);
 

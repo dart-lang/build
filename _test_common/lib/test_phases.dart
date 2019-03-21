@@ -88,7 +88,7 @@ Future<BuildResult> testBuilders(
   bool enableLowResourcesMode = false,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool verbose = false,
-  List<BuildTarget> buildTargets,
+  Set<BuildTarget> buildTargets,
   String logPerformanceDir,
   String expectedGeneratedDir,
 }) async {

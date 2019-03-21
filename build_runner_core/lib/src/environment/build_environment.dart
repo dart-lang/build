@@ -48,7 +48,7 @@ abstract class BuildEnvironment {
           BuildResult buildResult,
           FinalizedAssetsView finalizedAssetsView,
           AssetReader assetReader,
-          List<BuildTarget> buildTargets) =>
+          Set<BuildTarget> buildTargets) =>
       Future.value(buildResult);
 }
 

@@ -46,8 +46,8 @@ class SharedOptions {
   /// Read `build.$configKey.yaml` instead of `build.yaml`.
   final String configKey;
 
-  /// A list of targets to build with their corresponding output locations.
-  final List<BuildTarget> buildTargets;
+  /// A set of targets to build with their corresponding output locations.
+  final Set<BuildTarget> buildTargets;
 
   /// Whether or not the output directories should contain only symlinks,
   /// or full copies of all files.
@@ -132,7 +132,7 @@ class ServeOptions extends SharedOptions {
     @required bool deleteFilesByDefault,
     @required bool enableLowResourcesMode,
     @required String configKey,
-    @required List<BuildTarget> buildTargets,
+    @required Set<BuildTarget> buildTargets,
     @required bool outputSymlinksOnly,
     @required bool trackPerformance,
     @required bool skipBuildScriptCheck,
@@ -276,10 +276,10 @@ Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
 /// Each output option is split on `:` where the first value is the
 /// root input directory and the second value output directory.
 /// If no delimeter is provided the root input directory will be null.
-List<BuildTarget> _parseBuildTargets(ArgResults argResults) {
+Set<BuildTarget> _parseBuildTargets(ArgResults argResults) {
   var outputs = argResults[outputOption] as List<String>;
-  if (outputs == null) return [];
-  var result = <BuildTarget>[];
+  if (outputs == null) return <BuildTarget>{};
+  var result = <BuildTarget>{};
   var outputPaths = <String>{};
 
   void checkExisting(String outputDir) {

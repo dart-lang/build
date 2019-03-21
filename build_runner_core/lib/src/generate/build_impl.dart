@@ -46,7 +46,7 @@ import 'phase.dart';
 
 final _logger = Logger('Build');
 
-List<String> _buildDirsFromTargets(List<BuildTarget> buildTargets) =>
+List<String> _buildDirsFromTargets(Set<BuildTarget> buildTargets) =>
     // The empty string means build everything.
     buildTargets.any((b) => b.directory == '')
         ? []
@@ -92,8 +92,8 @@ class BuildImpl {
         _logPerformanceDir = options.logPerformanceDir;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates,
-      {List<BuildTarget> buildTargets}) {
-    buildTargets ??= [];
+      {Set<BuildTarget> buildTargets}) {
+    buildTargets ??= <BuildTarget>{};
     finalizedReader.reset(_buildDirsFromTargets(buildTargets));
     return _SingleBuild(this, buildTargets).run(updates)
       ..whenComplete(_resolvers.reset);
@@ -158,7 +158,7 @@ class _SingleBuild {
   final ResourceManager _resourceManager;
   final bool _verbose;
   final RunnerAssetWriter _writer;
-  final List<BuildTarget> _buildTargets;
+  final Set<BuildTarget> _buildTargets;
   final String _logPerformanceDir;
   final _failureReporter = FailureReporter();
 
@@ -170,7 +170,7 @@ class _SingleBuild {
   /// Can't be final since it needs access to [pendingActions].
   HungActionsHeartbeat hungActionsHeartbeat;
 
-  _SingleBuild(BuildImpl buildImpl, List<BuildTarget> buildTargets)
+  _SingleBuild(BuildImpl buildImpl, Set<BuildTarget> buildTargets)
       : _assetGraph = buildImpl._assetGraph,
         _buildPhases = buildImpl._buildPhases,
         _buildPhasePool = List(buildImpl._buildPhases.length),

@@ -76,7 +76,7 @@ class IOEnvironment implements BuildEnvironment {
       BuildResult buildResult,
       FinalizedAssetsView finalizedAssetsView,
       AssetReader reader,
-      List<BuildTarget> buildTargets) async {
+      Set<BuildTarget> buildTargets) async {
     if (buildTargets.any(
             (target) => target.outputLocation?.output?.isNotEmpty ?? false) &&
         buildResult.status == BuildStatus.success) {
