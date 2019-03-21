@@ -24,7 +24,7 @@ final _logger = Logger('CreateOutputDir');
 const _manifestName = '.build.manifest';
 const _manifestSeparator = '\n';
 
-/// Creates merged output directories for each value in [outputLocations].
+/// Creates merged output directories for each [OutputLocation].
 ///
 /// Returns whether it succeeded or not.
 Future<bool> createMergedOutputDirectories(

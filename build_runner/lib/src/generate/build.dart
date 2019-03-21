@@ -131,11 +131,6 @@ Future<BuildResult> build(List<BuilderApplication> builders,
 /// first event will allow any ongoing builds to finish, and then the program
 /// will complete normally. Subsequent events are not handled (and will
 /// typically cause a shutdown).
-///
-/// If the values in [outputLocations] are not empty, then after each build a
-/// merged output directory will be created for each value in the set which
-/// contains all original sources and built sources contained in the provided
-/// path.
 Future<ServeHandler> watch(List<BuilderApplication> builders,
         {bool deleteFilesByDefault,
         bool assumeTty,
