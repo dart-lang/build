@@ -1,5 +1,7 @@
 ## 1.3.0
 
+- Fix an issue where we might re-use stale build snapshots, which could only be
+  resolved by deleting the `.dart_tool` dir (or doing a `clean`).
 - Depend on the latest `build_runner_core`.
 
 ## 1.2.8
