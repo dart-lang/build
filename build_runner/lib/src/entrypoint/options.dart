@@ -295,7 +295,7 @@ Set<BuildTarget> _parseBuildTargets(ArgResults argResults) {
     if (split.length == 1) {
       var output = split.first;
       checkExisting(output);
-      result.add(BuildTarget('', OutputLocation(output)));
+      result.add(BuildTarget('', OutputLocation(output, hoist: false)));
     } else if (split.length >= 2) {
       var output = split.sublist(1).join(':');
       checkExisting(output);
