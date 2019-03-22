@@ -705,7 +705,9 @@ void main() {
       }, outputs: {
         r'$$a|web/a.txt.copy': 'a',
         r'$$a|test/b.txt.copy': 'b',
-      }, buildTargets: {BuildTarget('web', null)}, verbose: true);
+      }, buildTargets: {
+        BuildTarget('web', null)
+      }, verbose: true);
     });
 
     test('build to source builders are always ran regardless of buildDirs',
@@ -719,7 +721,9 @@ void main() {
       }, outputs: {
         r'a|test/a.txt.copy': 'a',
         r'a|web/a.txt.copy': 'a',
-      }, buildTargets: {BuildTarget('web', null)}, verbose: true);
+      }, buildTargets: {
+        BuildTarget('web', null)
+      }, verbose: true);
     });
 
     test('can output performance logs', () async {

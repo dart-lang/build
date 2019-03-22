@@ -101,16 +101,10 @@ main() {
     });
 
     test('can create multiple merged directories', () async {
-      var success = await createMergedOutputDirectories(
-          {
-            BuildTarget('', OutputLocation(tmpDir.path)),
-            BuildTarget('', OutputLocation(anotherTmpDir.path))
-          },
-          packageGraph,
-          environment,
-          assetReader,
-          finalizedAssetsView,
-          false);
+      var success = await createMergedOutputDirectories({
+        BuildTarget('', OutputLocation(tmpDir.path)),
+        BuildTarget('', OutputLocation(anotherTmpDir.path))
+      }, packageGraph, environment, assetReader, finalizedAssetsView, false);
       expect(success, isTrue);
 
       _expectAllFiles(tmpDir);
@@ -118,16 +112,10 @@ main() {
     });
 
     test('errors if there are conflicting directories', () async {
-      var success = await createMergedOutputDirectories(
-          {
-            BuildTarget('web', OutputLocation(tmpDir.path)),
-            BuildTarget('foo', OutputLocation(tmpDir.path))
-          },
-          packageGraph,
-          environment,
-          assetReader,
-          finalizedAssetsView,
-          false);
+      var success = await createMergedOutputDirectories({
+        BuildTarget('web', OutputLocation(tmpDir.path)),
+        BuildTarget('foo', OutputLocation(tmpDir.path))
+      }, packageGraph, environment, assetReader, finalizedAssetsView, false);
       expect(success, isFalse);
       expect(Directory(tmpDir.path).listSync(), isEmpty);
     });
@@ -187,16 +175,10 @@ main() {
     });
 
     test('outputs the packages when input root is provided', () async {
-      var success = await createMergedOutputDirectories(
-          {
-            BuildTarget('web', OutputLocation(tmpDir.path)),
-            BuildTarget('foo', OutputLocation(anotherTmpDir.path))
-          },
-          packageGraph,
-          environment,
-          assetReader,
-          finalizedAssetsView,
-          false);
+      var success = await createMergedOutputDirectories({
+        BuildTarget('web', OutputLocation(tmpDir.path)),
+        BuildTarget('foo', OutputLocation(anotherTmpDir.path))
+      }, packageGraph, environment, assetReader, finalizedAssetsView, false);
       expect(success, isTrue);
 
       var webFiles = <String, dynamic>{
@@ -223,16 +205,10 @@ main() {
     });
 
     test('only outputs files contained in the provided root', () async {
-      var success = await createMergedOutputDirectories(
-          {
-            BuildTarget('web', OutputLocation(tmpDir.path)),
-            BuildTarget('foo', OutputLocation(anotherTmpDir.path))
-          },
-          packageGraph,
-          environment,
-          assetReader,
-          finalizedAssetsView,
-          false);
+      var success = await createMergedOutputDirectories({
+        BuildTarget('web', OutputLocation(tmpDir.path)),
+        BuildTarget('foo', OutputLocation(anotherTmpDir.path))
+      }, packageGraph, environment, assetReader, finalizedAssetsView, false);
       expect(success, isTrue);
 
       var webFiles = <String, dynamic>{
