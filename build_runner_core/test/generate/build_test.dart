@@ -9,7 +9,7 @@ import 'package:_test_common/build_configs.dart';
 import 'package:_test_common/common.dart';
 import 'package:_test_common/package_graphs.dart';
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart' hide BuildTarget;
+import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
@@ -705,8 +705,8 @@ void main() {
       }, outputs: {
         r'$$a|web/a.txt.copy': 'a',
         r'$$a|test/b.txt.copy': 'b',
-      }, buildTargets: {
-        BuildTarget('web', null)
+      }, buildDirs: {
+        BuildDirectory('web', null)
       }, verbose: true);
     });
 
@@ -721,8 +721,8 @@ void main() {
       }, outputs: {
         r'a|test/a.txt.copy': 'a',
         r'a|web/a.txt.copy': 'a',
-      }, buildTargets: {
-        BuildTarget('web', null)
+      }, buildDirs: {
+        BuildDirectory('web', null)
       }, verbose: true);
     });
 

@@ -32,7 +32,7 @@ class WatchCommand extends BuildRunnerCommand {
       deleteFilesByDefault: options.deleteFilesByDefault,
       enableLowResourcesMode: options.enableLowResourcesMode,
       configKey: options.configKey,
-      buildTargets: options.buildTargets,
+      buildDirs: options.buildDirs,
       outputSymlinksOnly: options.outputSymlinksOnly,
       packageGraph: packageGraph,
       trackPerformance: options.trackPerformance,

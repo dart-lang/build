@@ -12,7 +12,7 @@ import 'package:pool/pool.dart';
 
 import '../asset/reader.dart';
 import '../environment/build_environment.dart';
-import '../generate/build_target.dart';
+import '../generate/build_directory.dart';
 import '../generate/finalized_assets_view.dart';
 import '../logging/logging.dart';
 import '../package_graph/package_graph.dart';
@@ -28,7 +28,7 @@ const _manifestSeparator = '\n';
 ///
 /// Returns whether it succeeded or not.
 Future<bool> createMergedOutputDirectories(
-    Set<BuildTarget> buildTargets,
+    Set<BuildDirectory> buildDirs,
     PackageGraph packageGraph,
     BuildEnvironment environment,
     AssetReader reader,
@@ -40,15 +40,15 @@ Future<bool> createMergedOutputDirectories(
         'requested.');
     return false;
   }
-  var conflictingOutputs = _conflicts(buildTargets);
+  var conflictingOutputs = _conflicts(buildDirs);
   if (conflictingOutputs.isNotEmpty) {
     _logger.severe('Unable to create merged directory. '
         'Conflicting outputs for $conflictingOutputs');
     return false;
   }
 
-  for (var target in buildTargets) {
-    var output = target.outputLocation?.output;
+  for (var target in buildDirs) {
+    var output = target.outputLocation?.path;
     if (output != null) {
       if (!await _createMergedOutputDir(
           output,
@@ -68,12 +68,12 @@ Future<bool> createMergedOutputDirectories(
   return true;
 }
 
-Set<String> _conflicts(Set<BuildTarget> buildTargets) {
+Set<String> _conflicts(Set<BuildDirectory> buildDirs) {
   final seen = <String>{};
   final conflicts = <String>{};
-  var outputLocations = buildTargets.fold<List<String>>([], (a, b) {
+  var outputLocations = buildDirs.fold<List<String>>([], (a, b) {
     if (b.outputLocation != null) {
-      a.add(b.outputLocation.output);
+      a.add(b.outputLocation.path);
     }
     return a;
   });

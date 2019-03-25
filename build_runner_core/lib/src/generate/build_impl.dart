@@ -36,8 +36,8 @@ import '../util/async.dart';
 import '../util/build_dirs.dart';
 import '../util/constants.dart';
 import 'build_definition.dart';
+import 'build_directory.dart';
 import 'build_result.dart';
-import 'build_target.dart';
 import 'finalized_assets_view.dart';
 import 'heartbeat.dart';
 import 'options.dart';
@@ -46,11 +46,11 @@ import 'phase.dart';
 
 final _logger = Logger('Build');
 
-List<String> _buildDirsFromTargets(Set<BuildTarget> buildTargets) =>
+List<String> _buildPaths(Set<BuildDirectory> buildDirs) =>
     // The empty string means build everything.
-    buildTargets.any((b) => b.directory == '')
+    buildDirs.any((b) => b.directory == '')
         ? []
-        : buildTargets.map((b) => b.directory).toList();
+        : buildDirs.map((b) => b.directory).toList();
 
 class BuildImpl {
   final FinalizedReader _finalizedReader;
@@ -92,10 +92,10 @@ class BuildImpl {
         _logPerformanceDir = options.logPerformanceDir;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates,
-      {Set<BuildTarget> buildTargets}) {
-    buildTargets ??= <BuildTarget>{};
-    finalizedReader.reset(_buildDirsFromTargets(buildTargets));
-    return _SingleBuild(this, buildTargets).run(updates)
+      {Set<BuildDirectory> buildDirs}) {
+    buildDirs ??= <BuildDirectory>{};
+    finalizedReader.reset(_buildPaths(buildDirs));
+    return _SingleBuild(this, buildDirs).run(updates)
       ..whenComplete(_resolvers.reset);
   }
 
@@ -158,7 +158,7 @@ class _SingleBuild {
   final ResourceManager _resourceManager;
   final bool _verbose;
   final RunnerAssetWriter _writer;
-  final Set<BuildTarget> _buildTargets;
+  final Set<BuildDirectory> _buildDirs;
   final String _logPerformanceDir;
   final _failureReporter = FailureReporter();
 
@@ -170,7 +170,7 @@ class _SingleBuild {
   /// Can't be final since it needs access to [pendingActions].
   HungActionsHeartbeat hungActionsHeartbeat;
 
-  _SingleBuild(BuildImpl buildImpl, Set<BuildTarget> buildTargets)
+  _SingleBuild(BuildImpl buildImpl, Set<BuildDirectory> buildDirs)
       : _assetGraph = buildImpl._assetGraph,
         _buildPhases = buildImpl._buildPhases,
         _buildPhasePool = List(buildImpl._buildPhases.length),
@@ -184,7 +184,7 @@ class _SingleBuild {
         _resourceManager = buildImpl._resourceManager,
         _verbose = buildImpl._verbose,
         _writer = buildImpl._writer,
-        _buildTargets = buildTargets,
+        _buildDirs = buildDirs,
         _logPerformanceDir = buildImpl._logPerformanceDir {
     hungActionsHeartbeat = HungActionsHeartbeat(() {
       final message = StringBuffer();
@@ -209,7 +209,7 @@ class _SingleBuild {
     var watch = Stopwatch()..start();
     var result = await _safeBuild(updates);
     var optionalOutputTracker = OptionalOutputTracker(
-        _assetGraph, _buildDirsFromTargets(_buildTargets), _buildPhases);
+        _assetGraph, _buildPaths(_buildDirs), _buildPhases);
     if (result.status == BuildStatus.success) {
       final failures = _assetGraph.failedOutputs
           .where((n) => optionalOutputTracker.isRequired(n.id));
@@ -224,7 +224,7 @@ class _SingleBuild {
         result,
         FinalizedAssetsView(_assetGraph, optionalOutputTracker),
         _reader,
-        _buildTargets);
+        _buildDirs);
     if (result.status == BuildStatus.success) {
       _logger.info('Succeeded after ${humanReadable(watch.elapsed)} with '
           '${result.outputs.length} outputs '
@@ -343,8 +343,7 @@ class _SingleBuild {
     var phase = _buildPhases[phaseNumber];
     await Future.wait(
         _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
-      if (!shouldBuildForDirs(
-          node.id, _buildDirsFromTargets(_buildTargets), phase)) {
+      if (!shouldBuildForDirs(node.id, _buildPaths(_buildDirs), phase)) {
         return;
       }
 

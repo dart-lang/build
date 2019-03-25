@@ -68,14 +68,14 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     _logMessage(Level.INFO, 'About to build ${targetNames.toList()}...');
     _signalStart(targetNames);
     var results = <daemon.BuildResult>[];
-    var buildTargets = defaultTargets.map((target) {
+    var buildDirs = defaultTargets.map((target) {
       OutputLocation outputLocation;
       if (target.outputLocation != null) {
         outputLocation = OutputLocation(target.outputLocation.output,
             useSymlinks: target.outputLocation.useSymlinks,
             hoist: target.outputLocation.hoist);
       }
-      return BuildTarget(
+      return BuildDirectory(
         target.target,
         outputLocation,
       );
@@ -83,7 +83,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     try {
       var mergedChanges = collectChanges([changes]);
       var result =
-          await _builder.run(mergedChanges, buildTargets: buildTargets);
+          await _builder.run(mergedChanges, buildDirs: buildDirs);
       for (var target in targets) {
         if (result.status == BuildStatus.success) {
           // TODO(grouma) - Can we notify if a target was cached?

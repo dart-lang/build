@@ -11,8 +11,8 @@ import 'package:logging/logging.dart';
 import '../asset/file_based.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
+import '../generate/build_directory.dart';
 import '../generate/build_result.dart';
-import '../generate/build_target.dart';
 import '../generate/finalized_assets_view.dart';
 import '../package_graph/package_graph.dart';
 import 'build_environment.dart';
@@ -76,12 +76,12 @@ class IOEnvironment implements BuildEnvironment {
       BuildResult buildResult,
       FinalizedAssetsView finalizedAssetsView,
       AssetReader reader,
-      Set<BuildTarget> buildTargets) async {
-    if (buildTargets.any(
-            (target) => target.outputLocation?.output?.isNotEmpty ?? false) &&
+      Set<BuildDirectory> buildDirs) async {
+    if (buildDirs.any(
+            (target) => target.outputLocation?.path?.isNotEmpty ?? false) &&
         buildResult.status == BuildStatus.success) {
-      if (!await createMergedOutputDirectories(buildTargets, _packageGraph,
-          this, reader, finalizedAssetsView, _outputSymlinksOnly)) {
+      if (!await createMergedOutputDirectories(buildDirs, _packageGraph, this,
+          reader, finalizedAssetsView, _outputSymlinksOnly)) {
         return _convertToFailure(buildResult,
             failureType: FailureType.cantCreate);
       }

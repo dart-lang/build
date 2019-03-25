@@ -2,14 +2,14 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-class BuildTarget {
+class BuildDirectory {
   final String directory;
   final OutputLocation outputLocation;
-  BuildTarget(this.directory, this.outputLocation);
+  BuildDirectory(this.directory, this.outputLocation);
 
   @override
   operator ==(other) =>
-      other is BuildTarget &&
+      other is BuildDirectory &&
       other.directory == directory &&
       other.outputLocation == outputLocation;
 
@@ -23,13 +23,13 @@ class BuildTarget {
 }
 
 class OutputLocation {
-  final String output;
+  final String path;
   final bool useSymlinks;
   final bool hoist;
-  OutputLocation(this.output, {bool useSymlinks, bool hoist})
+  OutputLocation(this.path, {bool useSymlinks, bool hoist})
       : useSymlinks = useSymlinks ?? false,
         hoist = hoist ?? true {
-    if (output.isEmpty && hoist) {
+    if (path.isEmpty && hoist) {
       throw ArgumentError('Can not build everything and hoist');
     }
   }
@@ -37,14 +37,14 @@ class OutputLocation {
   @override
   operator ==(other) =>
       other is OutputLocation &&
-      other.output == output &&
+      other.path == path &&
       other.useSymlinks == useSymlinks &&
       other.hoist == hoist;
 
   @override
   int get hashCode {
     var hash = 0;
-    hash = _hashCombine(hash, output.hashCode);
+    hash = _hashCombine(hash, path.hashCode);
     hash = _hashCombine(hash, useSymlinks.hashCode);
     hash = _hashCombine(hash, hoist.hashCode);
     return _hashComplete(hash);
