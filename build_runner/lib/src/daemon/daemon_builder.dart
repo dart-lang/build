@@ -82,8 +82,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     }).toSet();
     try {
       var mergedChanges = collectChanges([changes]);
-      var result =
-          await _builder.run(mergedChanges, buildDirs: buildDirs);
+      var result = await _builder.run(mergedChanges, buildDirs: buildDirs);
       for (var target in targets) {
         if (result.status == BuildStatus.success) {
           // TODO(grouma) - Can we notify if a target was cached?
