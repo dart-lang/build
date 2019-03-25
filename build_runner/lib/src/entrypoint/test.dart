@@ -85,7 +85,6 @@ class TestCommand extends BuildRunnerCommand {
     try {
       _ensureBuildTestDependency(packageGraph);
       options = readOptions();
-      print(tempPath);
       var buildDirs = (options.buildDirs ?? <BuildDirectory>{})
         // Build test by default.
         ..add(BuildDirectory(
