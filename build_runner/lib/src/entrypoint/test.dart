@@ -87,9 +87,8 @@ class TestCommand extends BuildRunnerCommand {
       options = readOptions();
       var buildDirs = (options.buildDirs ?? <BuildDirectory>{})
         // Build test by default.
-        ..add(BuildDirectory(
-            'test',
-            OutputLocation(tempPath,
+        ..add(BuildDirectory('test',
+            outputLocation: OutputLocation(tempPath,
                 useSymlinks: options.outputSymlinksOnly, hoist: false)));
 
       var result = await build(

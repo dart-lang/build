@@ -706,7 +706,7 @@ void main() {
         r'$$a|web/a.txt.copy': 'a',
         r'$$a|test/b.txt.copy': 'b',
       }, buildDirs: {
-        BuildDirectory('web', null)
+        BuildDirectory('web')
       }, verbose: true);
     });
 
@@ -722,7 +722,7 @@ void main() {
         r'a|test/a.txt.copy': 'a',
         r'a|web/a.txt.copy': 'a',
       }, buildDirs: {
-        BuildDirectory('web', null)
+        BuildDirectory('web')
       }, verbose: true);
     });
 

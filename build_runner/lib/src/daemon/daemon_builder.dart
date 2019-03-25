@@ -77,7 +77,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       }
       return BuildDirectory(
         target.target,
-        outputLocation,
+        outputLocation: outputLocation,
       );
     }).toSet();
     try {

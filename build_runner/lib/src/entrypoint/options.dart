@@ -97,7 +97,7 @@ class SharedOptions {
             'Only top level directories are allowed as positional args',
             command.usage);
       }
-      buildDirs.add(BuildDirectory(arg, null));
+      buildDirs.add(BuildDirectory(arg));
     }
 
     return SharedOptions._(
@@ -184,7 +184,7 @@ class ServeOptions extends SharedOptions {
 
     var buildDirs = _parseBuildDirs(argResults);
     for (var target in serveTargets) {
-      buildDirs.add(BuildDirectory(target.dir, null));
+      buildDirs.add(BuildDirectory(target.dir));
     }
 
     BuildUpdatesOption buildUpdates;
@@ -295,7 +295,8 @@ Set<BuildDirectory> _parseBuildDirs(ArgResults argResults) {
     if (split.length == 1) {
       var output = split.first;
       checkExisting(output);
-      result.add(BuildDirectory('', OutputLocation(output, hoist: false)));
+      result.add(BuildDirectory('',
+          outputLocation: OutputLocation(output, hoist: false)));
     } else if (split.length >= 2) {
       var output = split.sublist(1).join(':');
       checkExisting(output);
@@ -304,7 +305,8 @@ Set<BuildDirectory> _parseBuildDirs(ArgResults argResults) {
         throw ArgumentError.value(
             option, '--output', 'Input root can not be nested');
       }
-      result.add(BuildDirectory(split.first, OutputLocation(output)));
+      result.add(
+          BuildDirectory(split.first, outputLocation: OutputLocation(output)));
     }
   }
   return result;

@@ -5,7 +5,7 @@
 class BuildDirectory {
   final String directory;
   final OutputLocation outputLocation;
-  BuildDirectory(this.directory, this.outputLocation);
+  BuildDirectory(this.directory, {this.outputLocation});
 
   @override
   operator ==(other) =>
