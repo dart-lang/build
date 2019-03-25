@@ -9,6 +9,7 @@ import 'package:watcher/watcher.dart';
 
 import '../environment/build_environment.dart';
 import '../package_graph/apply_builders.dart';
+import 'build_directory.dart';
 import 'build_impl.dart';
 import 'build_result.dart';
 import 'options.dart';
@@ -20,7 +21,7 @@ class BuildRunner {
   Future<Null> beforeExit() => _build.beforeExit();
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates,
-          {List<String> buildDirs}) =>
+          {Set<BuildDirectory> buildDirs}) =>
       _build.run(updates, buildDirs: buildDirs);
 
   static Future<BuildRunner> create(

@@ -4,7 +4,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart';
+import 'package:build_config/build_config.dart' as config;
 import 'package:build_runner/src/package_graph/build_config_overrides.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/change_filter.dart';
@@ -43,24 +43,22 @@ Future<ServeHandler> watch(
   Stream terminateEventStream,
   bool skipBuildScriptCheck,
   bool enableLowResourcesMode,
-  Map<String, BuildConfig> overrideBuildConfig,
-  Map<String, String> outputMap,
+  Map<String, config.BuildConfig> overrideBuildConfig,
+  Set<BuildDirectory> buildDirs,
   bool outputSymlinksOnly,
   bool trackPerformance,
   bool verbose,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool isReleaseBuild,
-  List<String> buildDirs,
   String logPerformanceDir,
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= PackageGraph.forThisPackage();
+  buildDirs ??= <BuildDirectory>{};
 
   var environment = OverrideableEnvironment(
       IOEnvironment(packageGraph,
-          assumeTty: assumeTty,
-          outputMap: outputMap,
-          outputSymlinksOnly: outputSymlinksOnly),
+          assumeTty: assumeTty, outputSymlinksOnly: outputSymlinksOnly),
       reader: reader,
       writer: writer,
       onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose));
@@ -90,7 +88,8 @@ Future<ServeHandler> watch(
       terminator.shouldTerminate,
       directoryWatcherFactory,
       configKey,
-      outputMap?.isNotEmpty == true,
+      buildDirs
+          .any((target) => target?.outputLocation?.path?.isNotEmpty ?? false),
       buildDirs,
       isReleaseMode: isReleaseBuild ?? false);
 
@@ -119,7 +118,7 @@ WatchImpl _runWatch(
         DirectoryWatcher Function(String) directoryWatcherFactory,
         String configKey,
         bool willCreateOutputDirs,
-        List<String> buildDirs,
+        Set<BuildDirectory> buildDirs,
         {bool isReleaseMode = false}) =>
     WatchImpl(options, environment, builders, builderConfigOverrides, until,
         directoryWatcherFactory, configKey, willCreateOutputDirs, buildDirs,
@@ -152,8 +151,8 @@ class WatchImpl implements BuildState {
   /// The [PackageGraph] for the current program.
   final PackageGraph packageGraph;
 
-  /// The directories to build upon file changes.
-  final List<String> _buildDirs;
+  /// The directories to build upon file changes and where to output them.
+  final Set<BuildDirectory> _buildDirs;
 
   @override
   Future<BuildResult> currentBuild;
