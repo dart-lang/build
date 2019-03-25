@@ -7,13 +7,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:stack_trace/stack_trace.dart';
-
-import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
 
 final _logger = Logger('Bootstrap');
 
@@ -119,8 +118,8 @@ Future<int> _createSnapshotIfMissing(Logger logger) async {
   var assetGraphFile = File(assetGraphPathFor(scriptSnapshotLocation));
   var snapshotFile = File(scriptSnapshotLocation);
 
-  /// If we failed to serialize an asset graph for the snapshot, then we don't
-  /// want to re-use it because we can't check if it is up to date.
+  // If we failed to serialize an asset graph for the snapshot, then we don't
+  // want to re-use it because we can't check if it is up to date.
   if (!await assetGraphFile.exists() && await snapshotFile.exists()) {
     await snapshotFile.delete();
     logger.warning('Deleted previous snapshot due to missing asset graph.');
