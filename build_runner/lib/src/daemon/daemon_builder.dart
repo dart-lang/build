@@ -20,7 +20,8 @@ import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
 import 'package:build_runner_core/build_runner_core.dart'
     hide BuildResult, BuildStatus;
-import 'package:build_runner_core/build_runner_core.dart' as core;
+import 'package:build_runner_core/build_runner_core.dart' as core
+    show BuildStatus;
 import 'package:build_runner_core/src/generate/build_impl.dart';
 import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
