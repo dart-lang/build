@@ -8,7 +8,7 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:build_daemon/daemon_builder.dart';
 import 'package:build_daemon/data/build_status.dart' as daemon;
-import 'package:build_daemon/data/build_target.dart';
+import 'package:build_daemon/data/build_target.dart' as daemon;
 import 'package:build_daemon/data/server_log.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner/src/package_graph/build_config_overrides.dart';
@@ -58,7 +58,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
   @override
   Future<void> build(
-      Set<BuildTarget> targets, Iterable<WatchEvent> fileChanges) async {
+      Set<daemon.BuildTarget> targets, Iterable<WatchEvent> fileChanges) async {
+    var defaultTargets = targets.cast<daemon.DefaultBuildTarget>();
     var changes = fileChanges
         .map<AssetChange>(
             (change) => AssetChange(AssetId.parse(change.path), change.type))
@@ -67,10 +68,21 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     _logMessage(Level.INFO, 'About to build ${targetNames.toList()}...');
     _signalStart(targetNames);
     var results = <daemon.BuildResult>[];
+    var buildDirs = defaultTargets.map((target) {
+      OutputLocation outputLocation;
+      if (target.outputLocation != null) {
+        outputLocation = OutputLocation(target.outputLocation.output,
+            useSymlinks: target.outputLocation.useSymlinks,
+            hoist: target.outputLocation.hoist);
+      }
+      return BuildDirectory(
+        target.target,
+        outputLocation: outputLocation,
+      );
+    }).toSet();
     try {
       var mergedChanges = collectChanges([changes]);
-      var result =
-          await _builder.run(mergedChanges, buildDirs: targetNames.toList());
+      var result = await _builder.run(mergedChanges, buildDirs: buildDirs);
       for (var target in targets) {
         if (result.status == BuildStatus.success) {
           // TODO(grouma) - Can we notify if a target was cached?
@@ -137,10 +149,6 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     var environment = OverrideableEnvironment(
         IOEnvironment(packageGraph,
             assumeTty: true,
-            // TODO(grouma) - This should likely moved to the build_impl command
-            // so that different daemon clients can output to different
-            // directories.
-            outputMap: sharedOptions.outputMap,
             outputSymlinksOnly: sharedOptions.outputSymlinksOnly),
         onLog: (record) {
       outputStreamController.add(ServerLog((b) => b.log = record.toString()));
@@ -180,7 +188,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
               change,
               builder.assetGraph,
               buildOptions,
-              sharedOptions.outputMap?.isNotEmpty == true,
+              // Assume we will create an outputDir.
+              true,
               expectedDeletes,
             ));
 
