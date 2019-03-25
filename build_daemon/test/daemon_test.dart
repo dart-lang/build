@@ -6,9 +6,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build_daemon/constants.dart';
-// Keep the daemon_builder import so the fake daemon script below
-// can resolve it.
-// ignore: unused_import
 import 'package:build_daemon/daemon_builder.dart';
 import 'package:build_daemon/src/daemon.dart';
 import 'package:package_resolver/package_resolver.dart';
@@ -37,6 +34,18 @@ void main() {
           workspace.deleteSync(recursive: true);
         }
       }
+    });
+
+    test('can be stopped', () async {
+      var workspace = uuid.v1();
+      testWorkspaces.add(workspace);
+      var daemon = Daemon('$workspace');
+      expect(daemon.tryGetLock(), isTrue);
+      var timeout = Duration(seconds: 30);
+      await daemon
+          .start(<String>{}, DaemonBuilder(), Stream.empty(), timeout: timeout);
+      expect(daemon.onDone, completes);
+      await daemon.stop();
     });
 
     test('can run if no other daemon is running', () async {

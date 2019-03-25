@@ -45,7 +45,7 @@ class Daemon {
 
   Future<void> get onDone => _doneCompleter.future;
 
-  Future<void> stop(String message) => _server.stop(message: message);
+  Future<void> stop({String message}) => _server.stop(message: message);
 
   Future<void> start(
       Set<String> options, DaemonBuilder builder, Stream<WatchEvent> changes,
