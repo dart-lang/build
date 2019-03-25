@@ -271,7 +271,7 @@ Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
   return builderConfigOverrides;
 }
 
-/// Returns a list of BuiltTargets with output information.
+/// Returns BuiltTargets with output information.
 ///
 /// Each output option is split on `:` where the first value is the
 /// root input directory and the second value output directory.
