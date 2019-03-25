@@ -4,7 +4,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart' hide BuildTarget;
+import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/environment/io_environment.dart';
 import 'package:build_runner_core/src/environment/overridable_environment.dart';

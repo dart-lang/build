@@ -7,8 +7,8 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_daemon/daemon_builder.dart';
-import 'package:build_daemon/data/build_status.dart' as daemon;
-import 'package:build_daemon/data/build_target.dart' as daemon;
+import 'package:build_daemon/data/build_status.dart';
+import 'package:build_daemon/data/build_target.dart' hide OutputLocation;
 import 'package:build_daemon/data/server_log.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner/src/package_graph/build_config_overrides.dart';
@@ -18,14 +18,17 @@ import 'package:build_runner/src/watcher/collect_changes.dart';
 import 'package:build_runner/src/watcher/delete_writer.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner_core/build_runner_core.dart'
+    hide BuildResult, BuildStatus;
+import 'package:build_runner_core/build_runner_core.dart' as core
+    show BuildStatus;
 import 'package:build_runner_core/src/generate/build_impl.dart';
 import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
 
 /// A Daemon Builder that uses build_runner_core for building.
 class BuildRunnerDaemonBuilder implements DaemonBuilder {
-  final _buildResults = StreamController<daemon.BuildResults>();
+  final _buildResults = StreamController<BuildResults>();
 
   final BuildImpl _builder;
   final BuildOptions _buildOptions;
@@ -50,7 +53,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   Future<void> get building => _buildingCompleter?.future;
 
   @override
-  Stream<daemon.BuildResults> get builds => _buildResults.stream;
+  Stream<BuildResults> get builds => _buildResults.stream;
 
   Stream<WatchEvent> get changes => _changes;
 
@@ -58,8 +61,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
   @override
   Future<void> build(
-      Set<daemon.BuildTarget> targets, Iterable<WatchEvent> fileChanges) async {
-    var defaultTargets = targets.cast<daemon.DefaultBuildTarget>();
+      Set<BuildTarget> targets, Iterable<WatchEvent> fileChanges) async {
+    var defaultTargets = targets.cast<DefaultBuildTarget>();
     var changes = fileChanges
         .map<AssetChange>(
             (change) => AssetChange(AssetId.parse(change.path), change.type))
@@ -67,7 +70,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     var targetNames = targets.map((t) => t.target).toSet();
     _logMessage(Level.INFO, 'About to build ${targetNames.toList()}...');
     _signalStart(targetNames);
-    var results = <daemon.BuildResult>[];
+    var results = <BuildResult>[];
     var buildDirs = defaultTargets.map((target) {
       OutputLocation outputLocation;
       if (target.outputLocation != null) {
@@ -84,14 +87,14 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       var mergedChanges = collectChanges([changes]);
       var result = await _builder.run(mergedChanges, buildDirs: buildDirs);
       for (var target in targets) {
-        if (result.status == BuildStatus.success) {
+        if (result.status == core.BuildStatus.success) {
           // TODO(grouma) - Can we notify if a target was cached?
-          results.add(daemon.DefaultBuildResult((b) => b
-            ..status = daemon.BuildStatus.succeeded
+          results.add(DefaultBuildResult((b) => b
+            ..status = BuildStatus.succeeded
             ..target = target.target));
         } else {
-          results.add(daemon.DefaultBuildResult((b) => b
-            ..status = daemon.BuildStatus.failed
+          results.add(DefaultBuildResult((b) => b
+            ..status = BuildStatus.failed
             // TODO(grouma) - We should forward the error messages instead.
             // We can use the AssetGraph and FailureReporter to provide a better
             // error message.
@@ -101,8 +104,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       }
     } catch (e) {
       for (var target in targets) {
-        results.add(daemon.DefaultBuildResult((b) => b
-          ..status = daemon.BuildStatus.failed
+        results.add(DefaultBuildResult((b) => b
+          ..status = BuildStatus.failed
           ..error = '$e'
           ..target = target.target));
       }
@@ -122,20 +125,20 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         (b) => b.log = '[$level] $message',
       ));
 
-  void _signalEnd(Iterable<daemon.BuildResult> results) {
+  void _signalEnd(Iterable<BuildResult> results) {
     _buildingCompleter.complete();
-    _buildResults.add(daemon.BuildResults((b) => b..results.addAll(results)));
+    _buildResults.add(BuildResults((b) => b..results.addAll(results)));
   }
 
   void _signalStart(Iterable<String> targets) {
     _buildingCompleter = Completer();
-    var results = <daemon.BuildResult>[];
+    var results = <BuildResult>[];
     for (var target in targets) {
-      results.add(daemon.DefaultBuildResult((b) => b
-        ..status = daemon.BuildStatus.started
+      results.add(DefaultBuildResult((b) => b
+        ..status = BuildStatus.started
         ..target = target));
     }
-    _buildResults.add(daemon.BuildResults((b) => b..results.addAll(results)));
+    _buildResults.add(BuildResults((b) => b..results.addAll(results)));
   }
 
   static Future<BuildRunnerDaemonBuilder> create(

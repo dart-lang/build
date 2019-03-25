@@ -4,7 +4,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_config/build_config.dart' as config;
+import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/package_graph/build_config_overrides.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/change_filter.dart';
@@ -43,7 +43,7 @@ Future<ServeHandler> watch(
   Stream terminateEventStream,
   bool skipBuildScriptCheck,
   bool enableLowResourcesMode,
-  Map<String, config.BuildConfig> overrideBuildConfig,
+  Map<String, BuildConfig> overrideBuildConfig,
   Set<BuildDirectory> buildDirs,
   bool outputSymlinksOnly,
   bool trackPerformance,
