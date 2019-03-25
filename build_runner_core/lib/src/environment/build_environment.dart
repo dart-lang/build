@@ -9,6 +9,7 @@ import 'package:logging/logging.dart';
 
 import '../asset/reader.dart';
 import '../asset/writer.dart';
+import '../generate/build_directory.dart';
 import '../generate/build_result.dart';
 import '../generate/finalized_assets_view.dart';
 
@@ -43,8 +44,11 @@ abstract class BuildEnvironment {
   /// By default this returns the original result.
   ///
   /// Any operation may be performed, as determined by environment.
-  Future<BuildResult> finalizeBuild(BuildResult buildResult,
-          FinalizedAssetsView finalizedAssetsView, AssetReader assetReader) =>
+  Future<BuildResult> finalizeBuild(
+          BuildResult buildResult,
+          FinalizedAssetsView finalizedAssetsView,
+          AssetReader assetReader,
+          Set<BuildDirectory> buildDirs) =>
       Future.value(buildResult);
 }
 
