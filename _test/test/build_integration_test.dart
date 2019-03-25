@@ -100,7 +100,6 @@ void main() {
       await File(assetGraph).delete();
 
       var nextBuild = await runBuild();
-      printOnFailure(nextBuild.stdout.toString());
       expect(
           nextBuild.stdout.split('\n'),
           containsAllInOrder([
