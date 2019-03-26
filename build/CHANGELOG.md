@@ -1,3 +1,7 @@
+## 1.1.2
+
+- Removed the default utf8 encoding from `AssetReader.readAsString`.
+
 ## 1.1.1
 
 - Requires analyzer version `0.35.0`
