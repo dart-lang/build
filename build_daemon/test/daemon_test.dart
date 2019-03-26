@@ -41,9 +41,7 @@ void main() {
       testWorkspaces.add(workspace);
       var daemon = Daemon('$workspace');
       expect(daemon.tryGetLock(), isTrue);
-      var timeout = Duration(seconds: 30);
-      await daemon
-          .start(<String>{}, DaemonBuilder(), Stream.empty(), timeout: timeout);
+      await daemon.start(<String>{}, DaemonBuilder(), Stream.empty());
       expect(daemon.onDone, completes);
       await daemon.stop();
     });
