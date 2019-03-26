@@ -1,3 +1,7 @@
+## 1.1.2
+
+- Internal fixes: Remove default value for optional argument.
+
 ## 1.1.1
 
 - Requires analyzer version `0.35.0`
