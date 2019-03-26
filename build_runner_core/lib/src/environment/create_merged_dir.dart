@@ -71,12 +71,8 @@ Future<bool> createMergedOutputDirectories(
 Set<String> _conflicts(Set<BuildDirectory> buildDirs) {
   final seen = <String>{};
   final conflicts = <String>{};
-  var outputLocations = buildDirs.fold<List<String>>([], (a, b) {
-    if (b.outputLocation != null) {
-      a.add(b.outputLocation.path);
-    }
-    return a;
-  });
+  var outputLocations =
+      buildDirs.map((d) => d.outputLocation?.path).where((p) => p != null);
   for (var location in outputLocations) {
     if (!seen.add(location)) conflicts.add(location);
   }

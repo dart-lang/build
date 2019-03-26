@@ -5,8 +5,9 @@
 @TestOn('vm')
 import 'dart:io';
 
-import 'package:test/test.dart';
+import 'package:build_runner_core/src/util/constants.dart';
 import 'package:path/path.dart' as p;
+import 'package:test/test.dart';
 
 import 'common/utils.dart';
 
@@ -91,6 +92,23 @@ void main() {
 
       await runBuild(trailingArgs: ['--output', 'build']);
       expect(dartSource.existsSync(), true);
+    });
+
+    test('Re-snapshots if there is no asset graph', () async {
+      var assetGraph = assetGraphPathFor(p.url
+          .join('.dart_tool', 'build', 'entrypoint', 'build.dart.snapshot'));
+      await File(assetGraph).delete();
+
+      var nextBuild = await runBuild();
+      expect(
+          nextBuild.stdout.split('\n'),
+          containsAllInOrder([
+            contains('Generating build script'),
+            contains('Deleted previous snapshot due to missing asset graph.'),
+            contains('Creating build script snapshot'),
+            contains('Building new asset graph.'),
+            contains('Succeeded after'),
+          ]));
     });
   });
 }
