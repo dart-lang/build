@@ -5,7 +5,7 @@ author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/build_resolvers
 
 environment:
-  sdk: ">=2.0.0 <3.0.0"
+  sdk: ">=2.1.0 <3.0.0"
 
 dependencies:
   analyzer: ^0.35.0

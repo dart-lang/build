@@ -131,10 +131,10 @@ jobs:
       env: PKG="build_resolvers"
       dart: dev
     - stage: analyze_and_format
-      name: "SDK: 2.0.0 - DIR: build_resolvers - TASKS: dartanalyzer --fatal-warnings ."
+      name: "SDK: 2.1.0 - DIR: build_resolvers - TASKS: dartanalyzer --fatal-warnings ."
       script: ./tool/travis.sh dartanalyzer_1
       env: PKG="build_resolvers"
-      dart: "2.0.0"
+      dart: "2.1.0"
     - stage: unit_test
       name: "SDK: dev - DIR: build_resolvers - TASKS: pub run build_runner test"
       script: ./tool/travis.sh command_2
