@@ -1,3 +1,8 @@
+## 1.3.1
+
+- Remove usage of set literals to fix errors on older sdks that don't support
+  them.
+
 ## 1.3.0
 
 - Fix an issue where we might re-use stale build snapshots, which could only be

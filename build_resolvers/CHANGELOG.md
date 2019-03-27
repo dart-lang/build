@@ -1,3 +1,7 @@
+## 1.0.4-dev
+
+- Increase lower bound sdk constraint to 2.1.0.
+
 ## 1.0.3
 
 - Fixes a bug where transitive `dart-ext:` imports would cause the resolver

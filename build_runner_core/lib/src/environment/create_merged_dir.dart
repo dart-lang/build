@@ -69,8 +69,8 @@ Future<bool> createMergedOutputDirectories(
 }
 
 Set<String> _conflicts(Set<BuildDirectory> buildDirs) {
-  final seen = <String>{};
-  final conflicts = <String>{};
+  final seen = Set<String>();
+  final conflicts = Set<String>();
   var outputLocations =
       buildDirs.map((d) => d.outputLocation?.path).where((p) => p != null);
   for (var location in outputLocations) {

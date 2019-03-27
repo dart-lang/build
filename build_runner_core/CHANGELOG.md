@@ -1,3 +1,8 @@
+## 3.0.1
+
+- Remove usage of set literals to fix errors on older sdks that don't support
+  them.
+
 ## 3.0.0
 
 - Fix an issue where `--symlink` was forcing outputs to not be hoisted.

@@ -1,3 +1,7 @@
+## 1.1.3-dev
+
+- Update the minimum sdk constraint to 2.1.0.
+
 ## 1.1.2
 
 - Internal fixes: Remove default value for optional argument.

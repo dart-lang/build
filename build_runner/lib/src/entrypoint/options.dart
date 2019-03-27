@@ -279,9 +279,9 @@ Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
 /// If no delimeter is provided the root input directory will be null.
 Set<BuildDirectory> _parseBuildDirs(ArgResults argResults) {
   var outputs = argResults[outputOption] as List<String>;
-  if (outputs == null) return <BuildDirectory>{};
-  var result = <BuildDirectory>{};
-  var outputPaths = <String>{};
+  if (outputs == null) return Set<BuildDirectory>();
+  var result = Set<BuildDirectory>();
+  var outputPaths = Set<String>();
 
   void checkExisting(String outputDir) {
     if (outputPaths.contains(outputDir)) {
