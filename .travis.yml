@@ -71,10 +71,10 @@ jobs:
       env: PKG="build"
       dart: dev
     - stage: analyze_and_format
-      name: "SDK: 2.0.0 - DIR: build - TASKS: dartanalyzer --fatal-warnings ."
+      name: "SDK: 2.1.0 - DIR: build - TASKS: dartanalyzer --fatal-warnings ."
       script: ./tool/travis.sh dartanalyzer_1
       env: PKG="build"
-      dart: "2.0.0"
+      dart: "2.1.0"
     - stage: unit_test
       name: "SDK: dev - DIR: build - TASKS: pub run build_runner test"
       script: ./tool/travis.sh command_2
@@ -86,10 +86,10 @@ jobs:
       env: PKG="build_config"
       dart: dev
     - stage: analyze_and_format
-      name: "SDK: 2.0.0-dev.54.0 - DIR: build_config - TASKS: dartanalyzer --fatal-warnings ."
+      name: "SDK: 2.0.0 - DIR: build_config - TASKS: dartanalyzer --fatal-warnings ."
       script: ./tool/travis.sh dartanalyzer_1
       env: PKG="build_config"
-      dart: "2.0.0-dev.54.0"
+      dart: "2.0.0"
     - stage: unit_test
       name: "SDK: dev - DIR: build_config - TASKS: dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs"
       script: ./tool/travis.sh command_3
@@ -146,10 +146,10 @@ jobs:
       env: PKG="build_runner"
       dart: dev
     - stage: analyze_and_format
-      name: "SDK: 2.0.0 - DIR: build_runner - TASKS: dartanalyzer --fatal-warnings ."
+      name: "SDK: 2.1.0 - DIR: build_runner - TASKS: dartanalyzer --fatal-warnings ."
       script: ./tool/travis.sh dartanalyzer_1
       env: PKG="build_runner"
-      dart: "2.0.0"
+      dart: "2.1.0"
     - stage: unit_test
       name: "SDK: dev - DIR: build_runner - TASKS: pub run test -x integration"
       script: ./tool/travis.sh test_07
@@ -181,10 +181,10 @@ jobs:
       env: PKG="build_runner_core"
       dart: dev
     - stage: analyze_and_format
-      name: "SDK: 2.0.0 - DIR: build_runner_core - TASKS: dartanalyzer --fatal-warnings ."
+      name: "SDK: 2.1.0 - DIR: build_runner_core - TASKS: dartanalyzer --fatal-warnings ."
       script: ./tool/travis.sh dartanalyzer_1
       env: PKG="build_runner_core"
-      dart: "2.0.0"
+      dart: "2.1.0"
     - stage: unit_test
       name: "SDK: dev - DIR: build_runner_core - TASKS: pub run test"
       script: ./tool/travis.sh test_06
