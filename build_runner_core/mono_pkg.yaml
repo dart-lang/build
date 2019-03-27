@@ -6,7 +6,7 @@ stages:
     - group:
       - dartfmt: sdk
       - dartanalyzer: --fatal-infos --fatal-warnings .
-    - dartanalyzer: --fatal-infos --fatal-warnings .
+    - dartanalyzer: --fatal-warnings .
       dart:
         - 2.0.0
   - unit_test:

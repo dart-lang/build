@@ -12,7 +12,7 @@ jobs:
   include:
     - stage: analyze_and_format
       name: "SDK: dev - DIR: _test - TASKS: dartanalyzer --fatal-infos --fatal-warnings ."
-      script: ./tool/travis.sh dartanalyzer
+      script: ./tool/travis.sh dartanalyzer_0
       env: PKG="_test"
       dart: dev
     - stage: unit_test
@@ -62,17 +62,17 @@ jobs:
       dart: dev
     - stage: analyze_and_format
       name: "SDK: dev - DIR: _test_common - TASKS: dartanalyzer --fatal-infos --fatal-warnings ."
-      script: ./tool/travis.sh dartanalyzer
+      script: ./tool/travis.sh dartanalyzer_0
       env: PKG="_test_common"
       dart: dev
     - stage: analyze_and_format
       name: "SDK: dev - DIR: build - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
-      script: ./tool/travis.sh dartfmt dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer_0
       env: PKG="build"
       dart: dev
     - stage: analyze_and_format
-      name: "SDK: 2.0.0 - DIR: build - TASKS: dartanalyzer --fatal-infos --fatal-warnings ."
-      script: ./tool/travis.sh dartanalyzer
+      name: "SDK: 2.0.0 - DIR: build - TASKS: dartanalyzer --fatal-warnings ."
+      script: ./tool/travis.sh dartanalyzer_1
       env: PKG="build"
       dart: "2.0.0"
     - stage: unit_test
@@ -82,14 +82,14 @@ jobs:
       dart: dev
     - stage: analyze_and_format
       name: "SDK: dev - DIR: build_config - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
-      script: ./tool/travis.sh dartfmt dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer_0
       env: PKG="build_config"
       dart: dev
     - stage: analyze_and_format
-      name: "SDK: 2.0.0-dev.54 - DIR: build_config - TASKS: dartanalyzer --fatal-infos --fatal-warnings ."
-      script: ./tool/travis.sh dartanalyzer
+      name: "SDK: 2.0.0-dev.54.0 - DIR: build_config - TASKS: dartanalyzer --fatal-warnings ."
+      script: ./tool/travis.sh dartanalyzer_1
       env: PKG="build_config"
-      dart: "2.0.0-dev.54"
+      dart: "2.0.0-dev.54.0"
     - stage: unit_test
       name: "SDK: dev - DIR: build_config - TASKS: dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs"
       script: ./tool/travis.sh command_3
@@ -97,12 +97,12 @@ jobs:
       dart: dev
     - stage: analyze_and_format
       name: "SDK: dev - DIR: build_daemon - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
-      script: ./tool/travis.sh dartfmt dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer_0
       env: PKG="build_daemon"
       dart: dev
     - stage: analyze_and_format
-      name: "SDK: 2.1.0 - DIR: build_daemon - TASKS: dartanalyzer --fatal-infos --fatal-warnings ."
-      script: ./tool/travis.sh dartanalyzer
+      name: "SDK: 2.1.0 - DIR: build_daemon - TASKS: dartanalyzer --fatal-warnings ."
+      script: ./tool/travis.sh dartanalyzer_1
       env: PKG="build_daemon"
       dart: "2.1.0"
     - stage: unit_test
@@ -112,12 +112,12 @@ jobs:
       dart: dev
     - stage: analyze_and_format
       name: "SDK: dev - DIR: build_modules - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
-      script: ./tool/travis.sh dartfmt dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer_0
       env: PKG="build_modules"
       dart: dev
     - stage: analyze_and_format
-      name: "SDK: 2.1.1 - DIR: build_modules - TASKS: dartanalyzer --fatal-infos --fatal-warnings ."
-      script: ./tool/travis.sh dartanalyzer
+      name: "SDK: 2.1.1 - DIR: build_modules - TASKS: dartanalyzer --fatal-warnings ."
+      script: ./tool/travis.sh dartanalyzer_1
       env: PKG="build_modules"
       dart: "2.1.1"
     - stage: unit_test
@@ -127,12 +127,12 @@ jobs:
       dart: dev
     - stage: analyze_and_format
       name: "SDK: dev - DIR: build_resolvers - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
-      script: ./tool/travis.sh dartfmt dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer_0
       env: PKG="build_resolvers"
       dart: dev
     - stage: analyze_and_format
-      name: "SDK: 2.0.0 - DIR: build_resolvers - TASKS: dartanalyzer --fatal-infos --fatal-warnings ."
-      script: ./tool/travis.sh dartanalyzer
+      name: "SDK: 2.0.0 - DIR: build_resolvers - TASKS: dartanalyzer --fatal-warnings ."
+      script: ./tool/travis.sh dartanalyzer_1
       env: PKG="build_resolvers"
       dart: "2.0.0"
     - stage: unit_test
@@ -142,12 +142,12 @@ jobs:
       dart: dev
     - stage: analyze_and_format
       name: "SDK: dev - DIR: build_runner - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
-      script: ./tool/travis.sh dartfmt dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer_0
       env: PKG="build_runner"
       dart: dev
     - stage: analyze_and_format
-      name: "SDK: 2.0.0 - DIR: build_runner - TASKS: dartanalyzer --fatal-infos --fatal-warnings ."
-      script: ./tool/travis.sh dartanalyzer
+      name: "SDK: 2.0.0 - DIR: build_runner - TASKS: dartanalyzer --fatal-warnings ."
+      script: ./tool/travis.sh dartanalyzer_1
       env: PKG="build_runner"
       dart: "2.0.0"
     - stage: unit_test
@@ -177,12 +177,12 @@ jobs:
       dart: dev
     - stage: analyze_and_format
       name: "SDK: dev - DIR: build_runner_core - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
-      script: ./tool/travis.sh dartfmt dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer_0
       env: PKG="build_runner_core"
       dart: dev
     - stage: analyze_and_format
-      name: "SDK: 2.0.0 - DIR: build_runner_core - TASKS: dartanalyzer --fatal-infos --fatal-warnings ."
-      script: ./tool/travis.sh dartanalyzer
+      name: "SDK: 2.0.0 - DIR: build_runner_core - TASKS: dartanalyzer --fatal-warnings ."
+      script: ./tool/travis.sh dartanalyzer_1
       env: PKG="build_runner_core"
       dart: "2.0.0"
     - stage: unit_test
@@ -192,12 +192,12 @@ jobs:
       dart: dev
     - stage: analyze_and_format
       name: "SDK: dev - DIR: build_test - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
-      script: ./tool/travis.sh dartfmt dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer_0
       env: PKG="build_test"
       dart: dev
     - stage: analyze_and_format
-      name: "SDK: 2.0.0 - DIR: build_test - TASKS: dartanalyzer --fatal-infos --fatal-warnings ."
-      script: ./tool/travis.sh dartanalyzer
+      name: "SDK: 2.0.0 - DIR: build_test - TASKS: dartanalyzer --fatal-warnings ."
+      script: ./tool/travis.sh dartanalyzer_1
       env: PKG="build_test"
       dart: "2.0.0"
     - stage: unit_test
@@ -207,12 +207,12 @@ jobs:
       dart: dev
     - stage: analyze_and_format
       name: "SDK: dev - DIR: build_vm_compilers - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
-      script: ./tool/travis.sh dartfmt dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer_0
       env: PKG="build_vm_compilers"
       dart: dev
     - stage: analyze_and_format
-      name: "SDK: 2.0.0 - DIR: build_vm_compilers - TASKS: dartanalyzer --fatal-infos --fatal-warnings ."
-      script: ./tool/travis.sh dartanalyzer
+      name: "SDK: 2.0.0 - DIR: build_vm_compilers - TASKS: dartanalyzer --fatal-warnings ."
+      script: ./tool/travis.sh dartanalyzer_1
       env: PKG="build_vm_compilers"
       dart: "2.0.0"
     - stage: unit_test
@@ -222,12 +222,12 @@ jobs:
       dart: dev
     - stage: analyze_and_format
       name: "SDK: dev - DIR: build_web_compilers - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
-      script: ./tool/travis.sh dartfmt dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer_0
       env: PKG="build_web_compilers"
       dart: dev
     - stage: analyze_and_format
-      name: "SDK: 2.1.0 - DIR: build_web_compilers - TASKS: dartanalyzer --fatal-infos --fatal-warnings ."
-      script: ./tool/travis.sh dartanalyzer
+      name: "SDK: 2.1.0 - DIR: build_web_compilers - TASKS: dartanalyzer --fatal-warnings ."
+      script: ./tool/travis.sh dartanalyzer_1
       env: PKG="build_web_compilers"
       dart: "2.1.0"
     - stage: unit_test
@@ -237,17 +237,17 @@ jobs:
       dart: dev
     - stage: analyze_and_format
       name: "SDK: dev - DIR: example - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
-      script: ./tool/travis.sh dartfmt dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer_0
       env: PKG="example"
       dart: dev
     - stage: analyze_and_format
       name: "SDK: dev - DIR: scratch_space - TASKS: [dartfmt -n --set-exit-if-changed ., dartanalyzer --fatal-infos --fatal-warnings .]"
-      script: ./tool/travis.sh dartfmt dartanalyzer
+      script: ./tool/travis.sh dartfmt dartanalyzer_0
       env: PKG="scratch_space"
       dart: dev
     - stage: analyze_and_format
-      name: "SDK: 2.0.0 - DIR: scratch_space - TASKS: dartanalyzer --fatal-infos --fatal-warnings ."
-      script: ./tool/travis.sh dartanalyzer
+      name: "SDK: 2.0.0 - DIR: scratch_space - TASKS: dartanalyzer --fatal-warnings ."
+      script: ./tool/travis.sh dartanalyzer_1
       env: PKG="scratch_space"
       dart: "2.0.0"
     - stage: unit_test
