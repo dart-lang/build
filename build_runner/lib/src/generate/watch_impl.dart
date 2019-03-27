@@ -54,7 +54,7 @@ Future<ServeHandler> watch(
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= PackageGraph.forThisPackage();
-  buildDirs ??= <BuildDirectory>{};
+  buildDirs ??= Set<BuildDirectory>();
 
   var environment = OverrideableEnvironment(
       IOEnvironment(packageGraph,
