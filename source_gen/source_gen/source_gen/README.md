@@ -87,7 +87,7 @@ builders:
     import: "package:this_package/builder.dart"
     builder_factories: ["someCoolBuilder"]
     # The `partId` argument to `SharedPartBuilder` is "some_cool_builder"
-    build_extensions: {".dart": [".some_cool_buidler.g.part"]}
+    build_extensions: {".dart": [".some_cool_builder.g.part"]}
     auto_apply: dependents
     build_to: cache
     # To copy the `.g.part` content into `.g.dart` in the source tree
