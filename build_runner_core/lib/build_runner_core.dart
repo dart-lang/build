@@ -11,6 +11,7 @@ export 'src/asset/writer.dart';
 export 'src/environment/build_environment.dart';
 export 'src/environment/io_environment.dart';
 export 'src/environment/overridable_environment.dart';
+export 'src/generate/build_directory.dart';
 export 'src/generate/build_result.dart';
 export 'src/generate/build_runner.dart';
 export 'src/generate/exceptions.dart'
