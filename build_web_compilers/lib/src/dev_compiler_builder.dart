@@ -184,6 +184,9 @@ Future _createDevCompilerModule(
       multiRootScheme,
       '--multi-root',
       '.',
+      '--reuse-compiler-result',
+      '--use-incremental-compiler',
+      '--track-widget-creation',
     ]);
   }
 

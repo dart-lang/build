@@ -198,6 +198,8 @@ Future<void> _addRequestArguments(
     summaryOnly ? '--summary-only' : '--no-summary-only',
     '--libraries-file',
     p.join(sdkDir, 'lib', 'libraries.json'),
+    '--reuse-compiler-result',
+    '--use-incremental-compiler',
   ]);
   request.inputs.add(Input()
     ..path = '${Uri.file(p.join(sdkDir, sdkKernelPath))}'
