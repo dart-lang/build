@@ -98,6 +98,10 @@ Future _createUnlinkedSummary(Module module, BuildStep buildStep,
           buildStep.trackStage('Summarize', () => response, isExternal: true));
   if (response.exitCode == EXIT_CODE_ERROR) {
     throw AnalyzerSummaryException(module.unlinkedSummaryId, response.output);
+  } else {
+    if (response.output.isNotEmpty) {
+      log.fine(response.output);
+    }
   }
 
   // Copy the output back using the buildStep.
@@ -165,6 +169,10 @@ Future _createLinkedSummary(Module module, BuildStep buildStep,
   var summaryFile = scratchSpace.fileFor(module.linkedSummaryId);
   if (response.exitCode == EXIT_CODE_ERROR || !await summaryFile.exists()) {
     throw AnalyzerSummaryException(module.linkedSummaryId, response.output);
+  } else {
+    if (response.output.isNotEmpty) {
+      log.fine(response.output);
+    }
   }
 
   // Copy the output back using the buildStep.
