@@ -86,7 +86,7 @@ Future _createUnlinkedSummary(Module module, BuildStep buildStep,
   ]);
 
   // Add the default analysis_options.
-  await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
+  //await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
   request.arguments.add(defaultAnalysisOptionsArg(scratchSpace));
 
   // Add all the files to include in the unlinked summary bundle.
@@ -139,7 +139,7 @@ Future _createLinkedSummary(Module module, BuildStep buildStep,
   ]);
 
   // Add the default analysis_options.
-  await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
+  //await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
   request.arguments.add(defaultAnalysisOptionsArg(scratchSpace));
 
   // Add all the unlinked and linked summaries as build summary inputs.
