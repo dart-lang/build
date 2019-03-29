@@ -9,7 +9,7 @@ import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
 import 'package:scratch_space/scratch_space.dart';
 
-import 'common.dart';
+//import 'common.dart';
 import 'errors.dart';
 import 'module_builder.dart';
 import 'modules.dart';
@@ -87,7 +87,7 @@ Future _createUnlinkedSummary(Module module, BuildStep buildStep,
 
   // Add the default analysis_options.
   //await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
-  request.arguments.add(defaultAnalysisOptionsArg(scratchSpace));
+  //request.arguments.add(defaultAnalysisOptionsArg(scratchSpace));
 
   // Add all the files to include in the unlinked summary bundle.
   request.arguments.addAll(_analyzerSourceArgsForModule(module, scratchSpace));
@@ -140,7 +140,7 @@ Future _createLinkedSummary(Module module, BuildStep buildStep,
 
   // Add the default analysis_options.
   //await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
-  request.arguments.add(defaultAnalysisOptionsArg(scratchSpace));
+  //request.arguments.add(defaultAnalysisOptionsArg(scratchSpace));
 
   // Add all the unlinked and linked summaries as build summary inputs.
   request.arguments.addAll(transitiveUnlinkedSummaryDeps.map((id) =>
