@@ -187,6 +187,7 @@ Future _createDevCompilerModule(
       '--reuse-compiler-result',
       '--use-incremental-compiler',
       '--track-widget-creation',
+      '--inline-source-map',
     ]);
   }
 
