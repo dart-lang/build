@@ -7,15 +7,15 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
-import 'package:scratch_space/scratch_space.dart';
+// import 'package:scratch_space/scratch_space.dart';
 
 import 'kernel_builder.dart';
 
-final defaultAnalysisOptionsId =
-    AssetId('build_modules', 'lib/src/analysis_options.default.yaml');
+// final defaultAnalysisOptionsId =
+//     AssetId('build_modules', 'lib/src/analysis_options.default.yaml');
 
-String defaultAnalysisOptionsArg(ScratchSpace scratchSpace) =>
-    '--options=${scratchSpace.fileFor(defaultAnalysisOptionsId).path}';
+// String defaultAnalysisOptionsArg(ScratchSpace scratchSpace) =>
+//     '--options=${scratchSpace.fileFor(defaultAnalysisOptionsId).path}';
 
 // TODO: better solution for a .packages file, today we just create a new one
 // for every kernel build action.
