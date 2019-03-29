@@ -82,7 +82,6 @@ Future _createUnlinkedSummary(Module module, BuildStep buildStep,
     '--build-summary-only',
     '--build-summary-only-unlinked',
     '--build-summary-output-semantic=${summaryOutputFile.path}',
-    '--strong',
   ]);
 
   // Add the default analysis_options.
@@ -135,7 +134,6 @@ Future _createLinkedSummary(Module module, BuildStep buildStep,
   request.arguments.addAll([
     '--build-summary-only',
     '--build-summary-output-semantic=${summaryOutputFile.path}',
-    '--strong',
   ]);
 
   // Add the default analysis_options.
