@@ -96,6 +96,7 @@ Future _createUnlinkedSummary(Module module, BuildStep buildStep,
   var response = await analyzer.doWork(request,
       trackWork: (response) =>
           buildStep.trackStage('Summarize', () => response, isExternal: true));
+  log.fine('UnlinkedSummary request: $request');
   if (response.exitCode == EXIT_CODE_ERROR) {
     throw AnalyzerSummaryException(module.unlinkedSummaryId, response.output);
   } else {
@@ -166,6 +167,7 @@ Future _createLinkedSummary(Module module, BuildStep buildStep,
 
   var analyzer = await buildStep.fetchResource(analyzerDriverResource);
   var response = await analyzer.doWork(request);
+  log.fine('LinkedSummary request: $request');
   var summaryFile = scratchSpace.fileFor(module.linkedSummaryId);
   if (response.exitCode == EXIT_CODE_ERROR || !await summaryFile.exists()) {
     throw AnalyzerSummaryException(module.linkedSummaryId, response.output);
