@@ -35,7 +35,8 @@ class DevCompilerBuilder implements Builder {
   /// directory, which contains the platform kernel files.
   final String platformSdk;
 
-  DevCompilerBuilder({bool useKernel, this.platformSdk}) : useKernel = useKernel ?? false;
+  DevCompilerBuilder({bool useKernel, this.platformSdk})
+      : useKernel = useKernel ?? false;
 
   @override
   final buildExtensions = {
@@ -59,7 +60,8 @@ class DevCompilerBuilder implements Builder {
     }
 
     try {
-      await _createDevCompilerModule(module, buildStep, useKernel, platformSdk ?? _sdkDir);
+      await _createDevCompilerModule(
+          module, buildStep, useKernel, platformSdk ?? _sdkDir);
     } on DartDevcCompilationException catch (e) {
       await handleError(e);
     } on MissingModulesException catch (e) {
@@ -86,8 +88,8 @@ Future _createDevCompilerModule(
       'EnsureAssets', () => scratchSpace.ensureAssets(allAssetIds, buildStep));
   var jsId = module.jsId(jsModuleExtension);
   var jsOutputFile = scratchSpace.fileFor(jsId);
-  var sdkSummary = p.url
-      .join(sdkDir, 'lib/_internal/ddc_sdk.${useKernel ? 'dill' : 'sum'}');
+  var sdkSummary =
+      p.url.join(sdkDir, 'lib/_internal/ddc_sdk.${useKernel ? 'dill' : 'sum'}');
   var request = WorkRequest();
 
   request.arguments.addAll([

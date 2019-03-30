@@ -13,6 +13,11 @@ typedef _BuilderFactory = Builder Function(BuilderOptions options);
 
 Builder moduleLibraryBuilder(_) => const ModuleLibraryBuilder();
 
+/// A builder config used to configure the location of the dart SDK summary.
+///
+/// This is used by the [UnlinkedSummaryBuilder] and [LinkedSummaryBuilder].
+const String dartSdkSummaryConfig = 'dart-sdk-summary';
+
 _BuilderFactory metaModuleBuilderFactoryForPlatform(String platform) =>
     (BuilderOptions options) =>
         MetaModuleBuilder.forOptions(DartPlatform(platform), options);
@@ -22,9 +27,9 @@ _BuilderFactory moduleBuilderFactoryForPlatform(String platform) =>
     (_) => ModuleBuilder(DartPlatform(platform));
 _BuilderFactory unlinkedSummaryBuilderForPlatform(String platform) =>
     (BuilderOptions options) => UnlinkedSummaryBuilder(DartPlatform(platform),
-        dartSdkSummary: options.config['dart-sdk-summary'] as String);
+        dartSdkSummary: options.config[dartSdkSummaryConfig] as String);
 _BuilderFactory linkedSummaryBuilderForPlatform(String platform) =>
     (BuilderOptions options) => LinkedSummaryBuilder(DartPlatform(platform),
-        dartSdkSummary: options.config['dart-sdk-summary'] as String);
+        dartSdkSummary: options.config[dartSdkSummaryConfig] as String);
 
 PostProcessBuilder moduleCleanup(_) => const ModuleCleanup();
