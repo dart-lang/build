@@ -83,7 +83,8 @@ class LinkedSummaryBuilder implements Builder {
 }
 
 /// Creates an unlinked summary for [module].
-Future _createUnlinkedSummary(Module module, BuildStep buildStep, String dartSdkSummary,
+Future _createUnlinkedSummary(
+    Module module, BuildStep buildStep, String dartSdkSummary,
     {bool isRoot = false}) async {
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
   await scratchSpace.ensureAssets(module.sources, buildStep);
@@ -98,7 +99,6 @@ Future _createUnlinkedSummary(Module module, BuildStep buildStep, String dartSdk
   if (dartSdkSummary != null) {
     request.arguments.add('--dart-sdk-summary=$dartSdkSummary');
   }
-
 
   // Add the default analysis_options.
   await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
@@ -124,7 +124,8 @@ Future _createUnlinkedSummary(Module module, BuildStep buildStep, String dartSdk
 }
 
 /// Creates a linked summary for [module].
-Future _createLinkedSummary(Module module, BuildStep buildStep, String dartSdkSummary,
+Future _createLinkedSummary(
+    Module module, BuildStep buildStep, String dartSdkSummary,
     {bool isRoot = false}) async {
   var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
   var transitiveUnlinkedSummaryDeps = <AssetId>[];
