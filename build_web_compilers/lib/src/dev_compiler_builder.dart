@@ -101,7 +101,7 @@ Future _createDevCompilerModule(
 
   if (!useKernel) {
     // Add the default analysis_options.
-    //await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
+    await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
     var libraryRoot = '/${p.split(p.dirname(jsId.path)).first}';
     var summaryExtension =
         linkedSummaryExtension(DartPlatform.dartdevc).substring(1);
@@ -110,7 +110,7 @@ Future _createDevCompilerModule(
       '--library-root=$libraryRoot',
       '--summary-extension=$summaryExtension',
       '--no-summarize',
-      //defaultAnalysisOptionsArg(scratchSpace),
+      defaultAnalysisOptionsArg(scratchSpace),
     ]);
   }
 

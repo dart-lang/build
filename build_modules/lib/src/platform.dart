@@ -26,7 +26,6 @@ class DartPlatform {
     'web_audio',
     'web_gl',
     'web_sql',
-    'ui',
   ]);
   static const dart2js = DartPlatform._('dart2js', [
     'async',
