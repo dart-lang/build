@@ -24,7 +24,7 @@ String unlinkedSummaryExtension(DartPlatform platform) =>
 
 /// A builder which can output unlinked summaries!
 class UnlinkedSummaryBuilder implements Builder {
-  UnlinkedSummaryBuilder(DartPlatform platform)
+  UnlinkedSummaryBuilder(DartPlatform platform, {this.dartSdkSummary})
       : buildExtensions = {
           moduleExtension(platform): [unlinkedSummaryExtension(platform)]
         };
@@ -32,13 +32,15 @@ class UnlinkedSummaryBuilder implements Builder {
   @override
   final Map<String, List<String>> buildExtensions;
 
+  final String dartSdkSummary;
+
   @override
   Future build(BuildStep buildStep) async {
     var module = Module.fromJson(
         json.decode(await buildStep.readAsString(buildStep.inputId))
             as Map<String, dynamic>);
     try {
-      await _createUnlinkedSummary(module, buildStep);
+      await _createUnlinkedSummary(module, buildStep, dartSdkSummary);
     } on AnalyzerSummaryException catch (e) {
       log.severe('Error creating ${module.unlinkedSummaryId}:\n$e');
     }
@@ -47,7 +49,7 @@ class UnlinkedSummaryBuilder implements Builder {
 
 /// A builder which can output linked summaries!
 class LinkedSummaryBuilder implements Builder {
-  LinkedSummaryBuilder(DartPlatform platform)
+  LinkedSummaryBuilder(DartPlatform platform, {this.dartSdkSummary})
       : buildExtensions = {
           moduleExtension(platform): [linkedSummaryExtension(platform)]
         };
@@ -55,13 +57,15 @@ class LinkedSummaryBuilder implements Builder {
   @override
   final Map<String, List<String>> buildExtensions;
 
+  final String dartSdkSummary;
+
   @override
   Future build(BuildStep buildStep) async {
     var module = Module.fromJson(
         json.decode(await buildStep.readAsString(buildStep.inputId))
             as Map<String, dynamic>);
     try {
-      await _createLinkedSummary(module, buildStep);
+      await _createLinkedSummary(module, buildStep, dartSdkSummary);
     } on AnalyzerSummaryException catch (e, s) {
       log.warning('Error creating ${module.linkedSummaryId}:\n$e\n$s');
     } on MissingModulesException catch (e) {
@@ -71,7 +75,7 @@ class LinkedSummaryBuilder implements Builder {
 }
 
 /// Creates an unlinked summary for [module].
-Future _createUnlinkedSummary(Module module, BuildStep buildStep,
+Future _createUnlinkedSummary(Module module, BuildStep buildStep, String dartSdkSummary,
     {bool isRoot = false}) async {
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
   await scratchSpace.ensureAssets(module.sources, buildStep);
@@ -82,8 +86,11 @@ Future _createUnlinkedSummary(Module module, BuildStep buildStep,
     '--build-summary-only',
     '--build-summary-only-unlinked',
     '--build-summary-output-semantic=${summaryOutputFile.path}',
-    '--strong',
   ]);
+  if (dartSdkSummary != null) {
+    request.arguments.add('--dart-sdk-summary=$dartSdkSummary');
+  }
+
 
   // Add the default analysis_options.
   //await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
@@ -110,7 +117,7 @@ Future _createUnlinkedSummary(Module module, BuildStep buildStep,
 }
 
 /// Creates a linked summary for [module].
-Future _createLinkedSummary(Module module, BuildStep buildStep,
+Future _createLinkedSummary(Module module, BuildStep buildStep, String dartSdkSummary,
     {bool isRoot = false}) async {
   var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
   var transitiveUnlinkedSummaryDeps = <AssetId>[];
@@ -140,8 +147,10 @@ Future _createLinkedSummary(Module module, BuildStep buildStep,
   request.arguments.addAll([
     '--build-summary-only',
     '--build-summary-output-semantic=${summaryOutputFile.path}',
-    '--strong',
   ]);
+  if (dartSdkSummary != null) {
+    request.arguments.add('--dart-sdk-summary=$dartSdkSummary');
+  }
 
   // Add the default analysis_options.
   //await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);

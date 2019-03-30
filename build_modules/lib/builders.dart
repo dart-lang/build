@@ -21,8 +21,10 @@ _BuilderFactory metaModuleCleanBuilderFactoryForPlatform(String platform) =>
 _BuilderFactory moduleBuilderFactoryForPlatform(String platform) =>
     (_) => ModuleBuilder(DartPlatform(platform));
 _BuilderFactory unlinkedSummaryBuilderForPlatform(String platform) =>
-    (BuilderOptions options) => UnlinkedSummaryBuilder(DartPlatform(platform));
+    (BuilderOptions options) => UnlinkedSummaryBuilder(DartPlatform(platform),
+        dartSdkSummary: options.config['dart-sdk-summary'] as String);
 _BuilderFactory linkedSummaryBuilderForPlatform(String platform) =>
-    (BuilderOptions options) => LinkedSummaryBuilder(DartPlatform(platform));
+    (BuilderOptions options) => LinkedSummaryBuilder(DartPlatform(platform),
+        dartSdkSummary: options.config['dart-sdk-summary'] as String);
 
 PostProcessBuilder moduleCleanup(_) => const ModuleCleanup();
