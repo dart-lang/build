@@ -13,7 +13,7 @@ typedef _BuilderFactory = Builder Function(BuilderOptions options);
 
 Builder moduleLibraryBuilder(_) => const ModuleLibraryBuilder();
 
-/// A builder config used to configure the location of the dart SDK summary.
+/// A builder config for the location of the dart SDK analyzer summary.
 ///
 /// This is used by the [UnlinkedSummaryBuilder] and [LinkedSummaryBuilder].
 const String dartSdkSummaryConfig = 'dart-sdk-summary';

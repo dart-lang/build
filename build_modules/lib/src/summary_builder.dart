@@ -35,7 +35,7 @@ class UnlinkedSummaryBuilder implements Builder {
   /// The location of the dart SDK summary file.
   ///
   /// If null or not provided, this defaults to the summary file of the dart
-  /// sdk which is executing the builder.
+  /// SDK which is executing the builder.
   final String dartSdkSummary;
 
   @override
