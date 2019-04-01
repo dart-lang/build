@@ -172,13 +172,14 @@ Future<void> _findModuleDeps(
   }
 }
 
+/// The transitive dependencies of [root], not including [root] itself.
 Future<List<Module>> _resolveTransitiveModules(
         Module root, BuildStep buildStep) =>
     crawlAsync<AssetId, Module>(
         [root.primarySource],
         (id) => buildStep.fetchResource(moduleCache).then((c) => c.find(
             id.changeExtension(moduleExtension(root.platform)), buildStep)),
-        (id, module) => module.directDependencies).toList();
+        (id, module) => module.directDependencies).skip(1).toList();
 
 /// Finds the primary source of all transitive parents of any module which does
 /// not have a readable kernel file.
