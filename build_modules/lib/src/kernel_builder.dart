@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
@@ -101,18 +102,12 @@ Future<void> _createKernel(
 
   File packagesFile;
 
-  {
-    var transitiveDeps = await module.computeTransitiveDependencies(buildStep);
+  await buildStep.trackStage('CollectDeps', () async {
     var transitiveKernelDeps = <AssetId>[];
     var transitiveSourceDeps = <AssetId>[];
 
-    await Future.wait(transitiveDeps.map((dep) => _addModuleDeps(
-        dep,
-        module,
-        transitiveKernelDeps,
-        transitiveSourceDeps,
-        buildStep,
-        outputExtension)));
+    await _addModuleDeps(module, transitiveKernelDeps, transitiveSourceDeps,
+        buildStep, outputExtension);
 
     var allAssetIds = Set<AssetId>()
       ..addAll(module.sources)
@@ -124,7 +119,7 @@ Future<void> _createKernel(
 
     _addRequestArguments(request, module, transitiveKernelDeps, dartSdkDir,
         sdkKernelPath, outputFile, packagesFile, summaryOnly);
-  }
+  });
 
   // We need to make sure and clean up the temp dir, even if we fail to compile.
   try {
@@ -148,28 +143,68 @@ Future<void> _createKernel(
   }
 }
 
-/// Adds the source or kernel dependencies for [dependency] to
+/// Adds the source or kernel dependencies for [root] to
 /// [transitiveKernelDeps] or [transitiveSourceDeps].
 Future<void> _addModuleDeps(
-    Module dependency,
     Module root,
     List<AssetId> transitiveKernelDeps,
     List<AssetId> transitiveSourceDeps,
     BuildStep buildStep,
     String outputExtension) async {
-  var kernelId = dependency.primarySource.changeExtension(outputExtension);
-  if (await buildStep.canRead(kernelId)) {
-    // If we can read the kernel file, but it depends on any module in this
-    // package, then we need to only provide sources for that file since its
-    // dependencies in this package will only be providing sources as well.
-    if ((await dependency.computeTransitiveDependencies(buildStep))
-        .any((m) => m.primarySource.package == root.primarySource.package)) {
-      transitiveSourceDeps.addAll(dependency.sources);
-    } else {
-      transitiveKernelDeps.add(kernelId);
+  final toCrawl = Queue.of([root.primarySource]);
+  final nodes = {root.primarySource: _ModuleNode(root, true)};
+
+  // Helper for any time we encounter a module which is provided via source and
+  // not kernel.
+  //
+  // For each of those we have to ensure that all parents of that module are
+  // provided via source as well.
+  void Function(AssetId) updateParents;
+  updateParents = (AssetId nodeId) {
+    var node = nodes[nodeId];
+    for (var parent in node.parents) {
+      var parentNode = nodes[parent];
+      if (!parentNode.sourceOnly) {
+        parentNode.sourceOnly = true;
+        parentNode.parents.forEach(updateParents);
+      }
     }
-  } else {
-    transitiveSourceDeps.addAll(dependency.sources);
+  };
+
+  // Builds the module graph, the `sourceOnly` property of nodes gets
+  // incrementally updated so we need to wait until we are done to actually
+  // provide the deps.
+  while (toCrawl.isNotEmpty) {
+    var moduleId = toCrawl.removeLast();
+    var node = nodes[moduleId];
+    for (final dep in node.module.directDependencies) {
+      var depNode = nodes[dep];
+      if (depNode == null) {
+        toCrawl.add(dep);
+        var depKernelId = dep.changeExtension(outputExtension);
+        var sourceOnly = !await buildStep.canRead(depKernelId);
+        var depModule = Module.fromJson(json.decode(
+                await buildStep.readAsString(
+                    dep.changeExtension(moduleExtension(root.platform))))
+            as Map<String, dynamic>);
+        depNode = _ModuleNode(depModule, sourceOnly);
+        nodes[dep] = depNode;
+      }
+      depNode.parents.add(moduleId);
+      if (depNode.sourceOnly && !node.sourceOnly) {
+        node.sourceOnly = true;
+        updateParents(node.id);
+      }
+    }
+  }
+
+  for (var node in nodes.values) {
+    if (node.module == root) continue;
+    if (node.sourceOnly) {
+      transitiveSourceDeps.addAll(node.module.sources);
+    } else {
+      transitiveKernelDeps.add(node.id.changeExtension(outputExtension));
+    }
   }
 }
 
@@ -214,4 +249,18 @@ void _addRequestArguments(
         : '$multiRootScheme:///${id.path}';
     return '--source=$uri';
   }));
+}
+
+/// Used when iterating transitive deps.
+class _ModuleNode {
+  final parents = Set<AssetId>();
+  final Module module;
+
+  /// Whether this module should provide itself as a source dependency instead
+  /// of a dill dependency.
+  bool sourceOnly;
+
+  AssetId get id => module.primarySource;
+
+  _ModuleNode(this.module, this.sourceOnly);
 }
