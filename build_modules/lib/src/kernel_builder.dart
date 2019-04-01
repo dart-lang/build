@@ -144,7 +144,7 @@ Future<void> _createKernel(
   }
 }
 
-/// Finds the transitive dependencies of [root] and categories them as
+/// Finds the transitive dependencies of [root] and categorizes them as
 /// [kernelDeps] or [sourceDeps].
 ///
 /// A module will have it's kernel file in [kernelDeps] if it and all of it's
