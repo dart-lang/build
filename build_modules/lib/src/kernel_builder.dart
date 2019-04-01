@@ -104,22 +104,22 @@ Future<void> _createKernel(
   File packagesFile;
 
   await buildStep.trackStage('CollectDeps', () async {
-    var transitiveKernelDeps = <AssetId>[];
-    var transitiveSourceDeps = <AssetId>[];
+    var kernelDeps = <AssetId>[];
+    var sourceDeps = <AssetId>[];
 
-    await _addModuleDeps(module, transitiveKernelDeps, transitiveSourceDeps,
-        buildStep, outputExtension);
+    await _findModuleDeps(
+        module, kernelDeps, sourceDeps, buildStep, outputExtension);
 
     var allAssetIds = Set<AssetId>()
       ..addAll(module.sources)
-      ..addAll(transitiveKernelDeps)
-      ..addAll(transitiveSourceDeps);
+      ..addAll(kernelDeps)
+      ..addAll(sourceDeps);
     await scratchSpace.ensureAssets(allAssetIds, buildStep);
 
     packagesFile = await createPackagesFile(allAssetIds);
 
-    _addRequestArguments(request, module, transitiveKernelDeps, dartSdkDir,
-        sdkKernelPath, outputFile, packagesFile, summaryOnly);
+    _addRequestArguments(request, module, kernelDeps, dartSdkDir, sdkKernelPath,
+        outputFile, packagesFile, summaryOnly);
   });
 
   // We need to make sure and clean up the temp dir, even if we fail to compile.
@@ -144,24 +144,52 @@ Future<void> _createKernel(
   }
 }
 
-/// Adds the source or kernel dependencies for [root] to
-/// [transitiveKernelDeps] or [transitiveSourceDeps].
-Future<void> _addModuleDeps(
+/// Finds the transitive dependencies of [root] and categories them as
+/// [kernelDeps] or [sourceDeps].
+///
+/// A module will have it's kernel file in [kernelDeps] if it and all of it's
+/// transitive dependencies have readable kernel files. If any module has no
+/// readable kernel file then it, and all of it's dependents will be categorized
+/// as [sourceDeps] which will all of their [Module.sources].
+Future<void> _findModuleDeps(
     Module root,
-    List<AssetId> transitiveKernelDeps,
-    List<AssetId> transitiveSourceDeps,
+    List<AssetId> kernelDeps,
+    List<AssetId> sourceDeps,
     BuildStep buildStep,
     String outputExtension) async {
-  final resolvedModules = await crawlAsync<AssetId, Module>(
-      [root.primarySource],
-      (id) async => Module.fromJson(jsonDecode(await buildStep
-              .readAsString(id.changeExtension(moduleExtension(root.platform))))
-          as Map<String, dynamic>),
-      (id, module) => module.directDependencies).toList();
+  final resolvedModules = await _resolveTransitiveModules(root, buildStep);
 
+  final sourceOnly = await _parentsOfMissingKernelFiles(
+      resolvedModules, buildStep, outputExtension);
+
+  for (final module in resolvedModules) {
+    if (sourceOnly.contains(module.primarySource)) {
+      sourceDeps.addAll(module.sources);
+    } else {
+      kernelDeps.add(module.primarySource.changeExtension(outputExtension));
+    }
+  }
+}
+
+Future<List<Module>> _resolveTransitiveModules(
+        Module root, BuildStep buildStep) =>
+    crawlAsync<AssetId, Module>(
+        [root.primarySource],
+        (id) async => Module.fromJson(jsonDecode(await buildStep.readAsString(
+                id.changeExtension(moduleExtension(root.platform))))
+            as Map<String, dynamic>),
+        (id, module) => module.directDependencies).toList();
+
+/// Finds the primary source of all transitive parents of any module which does
+/// not have a readable kernel file.
+///
+/// Inverts the direction of the graph and then crawls to all reachables nodes
+/// from the modules which do not have a readable kernel file
+Future<Set<AssetId>> _parentsOfMissingKernelFiles(
+    List<Module> modules, BuildStep buildStep, String outputExtension) async {
   final sourceOnly = Set<AssetId>();
   final parents = <AssetId, Set<AssetId>>{};
-  for (final module in resolvedModules) {
+  for (final module in modules) {
     for (final dep in module.directDependencies) {
       parents.putIfAbsent(dep, () => Set<AssetId>()).add(module.primarySource);
     }
@@ -179,14 +207,7 @@ Future<void> _addModuleDeps(
       }
     }
   }
-  for (final module in resolvedModules) {
-    if (sourceOnly.contains(module.primarySource)) {
-      transitiveSourceDeps.addAll(module.sources);
-    } else {
-      transitiveKernelDeps
-          .add(module.primarySource.changeExtension(outputExtension));
-    }
-  }
+  return sourceOnly;
 }
 
 /// Fills in all the required arguments for [request] in order to compile the
