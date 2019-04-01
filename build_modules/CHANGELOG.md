@@ -1,3 +1,7 @@
+## 1.0.10
+
+- Fix a performance issue in the kernel_builder, especially for larger projects.
+
 ## 1.0.9
 
 - Allow configuring the platform SDK directory in the `KernelBuilder` builder.
