@@ -150,7 +150,7 @@ Future<void> _createKernel(
 /// A module will have it's kernel file in [kernelDeps] if it and all of it's
 /// transitive dependencies have readable kernel files. If any module has no
 /// readable kernel file then it, and all of it's dependents will be categorized
-/// as [sourceDeps] which will all of their [Module.sources].
+/// as [sourceDeps] which will have all of their [Module.sources].
 Future<void> _findModuleDeps(
     Module root,
     List<AssetId> kernelDeps,
@@ -201,6 +201,7 @@ Future<Set<AssetId>> _parentsOfMissingKernelFiles(
   final toCrawl = Queue.of(sourceOnly);
   while (toCrawl.isNotEmpty) {
     final current = toCrawl.removeFirst();
+    if (!parents.containsKey(current)) continue;
     for (final next in parents[current]) {
       if (!sourceOnly.add(next)) {
         toCrawl.add(next);
