@@ -12,6 +12,7 @@ import 'package:build/build.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
+import 'package:graphs/graphs.dart' show crawlAsync;
 
 import 'common.dart';
 import 'errors.dart';
@@ -151,58 +152,39 @@ Future<void> _addModuleDeps(
     List<AssetId> transitiveSourceDeps,
     BuildStep buildStep,
     String outputExtension) async {
-  final toCrawl = Queue.of([root.primarySource]);
-  final nodes = {root.primarySource: _ModuleNode(root, true)};
+  final resolvedModules = await crawlAsync<AssetId, Module>(
+      [root.primarySource],
+      (id) async => Module.fromJson(jsonDecode(await buildStep
+              .readAsString(id.changeExtension(moduleExtension(root.platform))))
+          as Map<String, dynamic>),
+      (id, module) => module.directDependencies).toList();
 
-  // Helper for any time we encounter a module which is provided via source and
-  // not kernel.
-  //
-  // For each of those we have to ensure that all parents of that module are
-  // provided via source as well.
-  void updateParents(AssetId nodeId) {
-    var node = nodes[nodeId];
-    for (var parent in node.parents) {
-      var parentNode = nodes[parent];
-      if (!parentNode.sourceOnly) {
-        parentNode.sourceOnly = true;
-        parentNode.parents.forEach(updateParents);
-      }
+  final sourceOnly = Set<AssetId>();
+  final parents = <AssetId, Set<AssetId>>{};
+  for (final module in resolvedModules) {
+    for (final dep in module.directDependencies) {
+      parents.putIfAbsent(dep, () => Set<AssetId>()).add(module.primarySource);
+    }
+    if (!await buildStep
+        .canRead(module.primarySource.changeExtension(outputExtension))) {
+      sourceOnly.add(module.primarySource);
     }
   }
-
-  // Builds the module graph, the `sourceOnly` property of nodes gets
-  // incrementally updated so we need to wait until we are done to actually
-  // provide the deps.
+  final toCrawl = Queue.of(sourceOnly);
   while (toCrawl.isNotEmpty) {
-    var moduleId = toCrawl.removeLast();
-    var node = nodes[moduleId];
-    for (final dep in node.module.directDependencies) {
-      var depNode = nodes[dep];
-      if (depNode == null) {
-        toCrawl.add(dep);
-        var depKernelId = dep.changeExtension(outputExtension);
-        var sourceOnly = !await buildStep.canRead(depKernelId);
-        var depModule = Module.fromJson(json.decode(
-                await buildStep.readAsString(
-                    dep.changeExtension(moduleExtension(root.platform))))
-            as Map<String, dynamic>);
-        depNode = _ModuleNode(depModule, sourceOnly);
-        nodes[dep] = depNode;
-      }
-      depNode.parents.add(moduleId);
-      if (depNode.sourceOnly && !node.sourceOnly) {
-        node.sourceOnly = true;
-        updateParents(node.id);
+    final current = toCrawl.removeFirst();
+    for (final next in parents[current]) {
+      if (!sourceOnly.add(next)) {
+        toCrawl.add(next);
       }
     }
   }
-
-  for (var node in nodes.values) {
-    if (node.module == root) continue;
-    if (node.sourceOnly) {
-      transitiveSourceDeps.addAll(node.module.sources);
+  for (final module in resolvedModules) {
+    if (sourceOnly.contains(module.primarySource)) {
+      transitiveSourceDeps.addAll(module.sources);
     } else {
-      transitiveKernelDeps.add(node.id.changeExtension(outputExtension));
+      transitiveKernelDeps
+          .add(module.primarySource.changeExtension(outputExtension));
     }
   }
 }
@@ -248,18 +230,4 @@ void _addRequestArguments(
         : '$multiRootScheme:///${id.path}';
     return '--source=$uri';
   }));
-}
-
-/// Used when iterating transitive deps.
-class _ModuleNode {
-  final parents = Set<AssetId>();
-  final Module module;
-
-  /// Whether this module should provide itself as a source dependency instead
-  /// of a dill dependency.
-  bool sourceOnly;
-
-  AssetId get id => module.primarySource;
-
-  _ModuleNode(this.module, this.sourceOnly);
 }
