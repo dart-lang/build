@@ -82,7 +82,6 @@ Future _createUnlinkedSummary(Module module, BuildStep buildStep,
     '--build-summary-only',
     '--build-summary-only-unlinked',
     '--build-summary-output-semantic=${summaryOutputFile.path}',
-    '--strong',
   ]);
 
   // Add the default analysis_options.
@@ -98,6 +97,10 @@ Future _createUnlinkedSummary(Module module, BuildStep buildStep,
           buildStep.trackStage('Summarize', () => response, isExternal: true));
   if (response.exitCode == EXIT_CODE_ERROR) {
     throw AnalyzerSummaryException(module.unlinkedSummaryId, response.output);
+  } else {
+    if (response.output.isNotEmpty) {
+      log.fine(response.output);
+    }
   }
 
   // Copy the output back using the buildStep.
@@ -135,7 +138,6 @@ Future _createLinkedSummary(Module module, BuildStep buildStep,
   request.arguments.addAll([
     '--build-summary-only',
     '--build-summary-output-semantic=${summaryOutputFile.path}',
-    '--strong',
   ]);
 
   // Add the default analysis_options.
@@ -165,6 +167,10 @@ Future _createLinkedSummary(Module module, BuildStep buildStep,
   var summaryFile = scratchSpace.fileFor(module.linkedSummaryId);
   if (response.exitCode == EXIT_CODE_ERROR || !await summaryFile.exists()) {
     throw AnalyzerSummaryException(module.linkedSummaryId, response.output);
+  } else {
+    if (response.output.isNotEmpty) {
+      log.fine(response.output);
+    }
   }
 
   // Copy the output back using the buildStep.

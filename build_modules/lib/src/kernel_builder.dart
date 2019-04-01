@@ -159,8 +159,7 @@ Future<void> _addModuleDeps(
   //
   // For each of those we have to ensure that all parents of that module are
   // provided via source as well.
-  void Function(AssetId) updateParents;
-  updateParents = (AssetId nodeId) {
+  void updateParents(AssetId nodeId) {
     var node = nodes[nodeId];
     for (var parent in node.parents) {
       var parentNode = nodes[parent];
@@ -169,7 +168,7 @@ Future<void> _addModuleDeps(
         parentNode.parents.forEach(updateParents);
       }
     }
-  };
+  }
 
   // Builds the module graph, the `sourceOnly` property of nodes gets
   // incrementally updated so we need to wait until we are done to actually
