@@ -12,6 +12,7 @@ import 'package:build/build.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
+import 'package:graphs/graphs.dart' show crawlAsync;
 
 import 'common.dart';
 import 'errors.dart';
@@ -103,21 +104,21 @@ Future<void> _createKernel(
   File packagesFile;
 
   await buildStep.trackStage('CollectDeps', () async {
-    var transitiveKernelDeps = <AssetId>[];
-    var transitiveSourceDeps = <AssetId>[];
+    var kernelDeps = <AssetId>[];
+    var sourceDeps = <AssetId>[];
 
-    await _addModuleDeps(module, transitiveKernelDeps, transitiveSourceDeps,
-        buildStep, outputExtension);
+    await _findModuleDeps(
+        module, kernelDeps, sourceDeps, buildStep, outputExtension);
 
     var allAssetIds = Set<AssetId>()
       ..addAll(module.sources)
-      ..addAll(transitiveKernelDeps)
-      ..addAll(transitiveSourceDeps);
+      ..addAll(kernelDeps)
+      ..addAll(sourceDeps);
     await scratchSpace.ensureAssets(allAssetIds, buildStep);
 
     packagesFile = await createPackagesFile(allAssetIds);
 
-    await _addRequestArguments(request, module, transitiveKernelDeps, sdkDir,
+    await _addRequestArguments(request, module, kernelDeps, sdkDir,
         sdkKernelPath, outputFile, packagesFile, summaryOnly, buildStep);
   });
 
@@ -143,68 +144,75 @@ Future<void> _createKernel(
   }
 }
 
-/// Adds the source or kernel dependencies for [root] to
-/// [transitiveKernelDeps] or [transitiveSourceDeps].
-Future<void> _addModuleDeps(
+/// Finds the transitive dependencies of [root] and categorizes them as
+/// [kernelDeps] or [sourceDeps].
+///
+/// A module will have it's kernel file in [kernelDeps] if it and all of it's
+/// transitive dependencies have readable kernel files. If any module has no
+/// readable kernel file then it, and all of it's dependents will be categorized
+/// as [sourceDeps] which will have all of their [Module.sources].
+Future<void> _findModuleDeps(
     Module root,
-    List<AssetId> transitiveKernelDeps,
-    List<AssetId> transitiveSourceDeps,
+    List<AssetId> kernelDeps,
+    List<AssetId> sourceDeps,
     BuildStep buildStep,
     String outputExtension) async {
-  final toCrawl = Queue.of([root.primarySource]);
-  final nodes = {root.primarySource: _ModuleNode(root, true)};
+  final resolvedModules = await _resolveTransitiveModules(root, buildStep);
 
-  // Helper for any time we encounter a module which is provided via source and
-  // not kernel.
-  //
-  // For each of those we have to ensure that all parents of that module are
-  // provided via source as well.
-  void updateParents(AssetId nodeId) {
-    var node = nodes[nodeId];
-    for (var parent in node.parents) {
-      var parentNode = nodes[parent];
-      if (!parentNode.sourceOnly) {
-        parentNode.sourceOnly = true;
-        parentNode.parents.forEach(updateParents);
-      }
-    }
-  }
+  final sourceOnly = await _parentsOfMissingKernelFiles(
+      resolvedModules, buildStep, outputExtension);
 
-  // Builds the module graph, the `sourceOnly` property of nodes gets
-  // incrementally updated so we need to wait until we are done to actually
-  // provide the deps.
-  while (toCrawl.isNotEmpty) {
-    var moduleId = toCrawl.removeLast();
-    var node = nodes[moduleId];
-    for (final dep in node.module.directDependencies) {
-      var depNode = nodes[dep];
-      if (depNode == null) {
-        toCrawl.add(dep);
-        var depKernelId = dep.changeExtension(outputExtension);
-        var sourceOnly = !await buildStep.canRead(depKernelId);
-        var depModule = Module.fromJson(json.decode(
-                await buildStep.readAsString(
-                    dep.changeExtension(moduleExtension(root.platform))))
-            as Map<String, dynamic>);
-        depNode = _ModuleNode(depModule, sourceOnly);
-        nodes[dep] = depNode;
-      }
-      depNode.parents.add(moduleId);
-      if (depNode.sourceOnly && !node.sourceOnly) {
-        node.sourceOnly = true;
-        updateParents(node.id);
-      }
-    }
-  }
-
-  for (var node in nodes.values) {
-    if (node.module == root) continue;
-    if (node.sourceOnly) {
-      transitiveSourceDeps.addAll(node.module.sources);
+  for (final module in resolvedModules) {
+    if (sourceOnly.contains(module.primarySource)) {
+      sourceDeps.addAll(module.sources);
     } else {
-      transitiveKernelDeps.add(node.id.changeExtension(outputExtension));
+      kernelDeps.add(module.primarySource.changeExtension(outputExtension));
     }
   }
+}
+
+/// The transitive dependencies of [root], not including [root] itself.
+Future<List<Module>> _resolveTransitiveModules(
+        Module root, BuildStep buildStep) =>
+    crawlAsync<AssetId, Module>(
+            [root.primarySource],
+            (id) async => Module.fromJson(jsonDecode(
+                    await buildStep.readAsString(
+                        id.changeExtension(moduleExtension(root.platform))))
+                as Map<String, dynamic>),
+            (id, module) => module.directDependencies)
+        .skip(1) // Skip the root.
+        .toList();
+
+/// Finds the primary source of all transitive parents of any module which does
+/// not have a readable kernel file.
+///
+/// Inverts the direction of the graph and then crawls to all reachables nodes
+/// from the modules which do not have a readable kernel file
+Future<Set<AssetId>> _parentsOfMissingKernelFiles(
+    List<Module> modules, BuildStep buildStep, String outputExtension) async {
+  final sourceOnly = Set<AssetId>();
+  final parents = <AssetId, Set<AssetId>>{};
+  for (final module in modules) {
+    for (final dep in module.directDependencies) {
+      parents.putIfAbsent(dep, () => Set<AssetId>()).add(module.primarySource);
+    }
+    if (!await buildStep
+        .canRead(module.primarySource.changeExtension(outputExtension))) {
+      sourceOnly.add(module.primarySource);
+    }
+  }
+  final toCrawl = Queue.of(sourceOnly);
+  while (toCrawl.isNotEmpty) {
+    final current = toCrawl.removeFirst();
+    if (!parents.containsKey(current)) continue;
+    for (final next in parents[current]) {
+      if (!sourceOnly.add(next)) {
+        toCrawl.add(next);
+      }
+    }
+  }
+  return sourceOnly;
 }
 
 /// Fills in all the required arguments for [request] in order to compile the
@@ -273,18 +281,4 @@ Future<void> _addRequestArguments(
         : '$multiRootScheme:///${id.path}';
     return '--source=$uri';
   }));
-}
-
-/// Used when iterating transitive deps.
-class _ModuleNode {
-  final parents = Set<AssetId>();
-  final Module module;
-
-  /// Whether this module should provide itself as a source dependency instead
-  /// of a dill dependency.
-  bool sourceOnly;
-
-  AssetId get id => module.primarySource;
-
-  _ModuleNode(this.module, this.sourceOnly);
 }
