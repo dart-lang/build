@@ -55,11 +55,6 @@ Module _moduleForComponent(
   return Module(primaryId, sources, directDependencies, platform, isSupported);
 }
 
-Map<AssetId, List<Module>> _entryPointModules(
-        Iterable<Module> modules, Set<AssetId> entrypoints) =>
-    Map.fromIterable(modules.where((m) => m.sources.any(entrypoints.contains)),
-        key: (m) => (m as Module).primarySource, value: (m) => [m as Module]);
-
 /// Gets the local (same top level dir of the same package) transitive deps of
 /// [module] using [assetsToModules].
 Set<AssetId> _localTransitiveDeps(
@@ -113,12 +108,16 @@ Map<AssetId, Set<AssetId>> _findReverseEntrypointDeps(
 ///   * Else merge it into with others that are depended on by the same set of
 ///   entrypoints
 List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
-  // Modules which have any entrypoing keyed by primary source.
-  var entrypointModules = _entryPointModules(modules, entrypoints);
+  var entrypointModules =
+      modules.where((m) => m.sources.any(entrypoints.contains)).toList();
+
+  // Groups of modules that can be merged into an existing entrypoint module.
+  var entrypointModuleGroups = Map.fromIterable(entrypointModules,
+      key: (m) => (m as Module).primarySource, value: (m) => [m as Module]);
 
   // Maps modules to entrypoint modules that transitively depend on them.
-  var modulesToEntryPoints = _findReverseEntrypointDeps(
-      entrypointModules.values.expand((v) => v), modules);
+  var modulesToEntryPoints =
+      _findReverseEntrypointDeps(entrypointModules, modules);
 
   // Modules which are not depended on by any entrypoint
   var standaloneModules = <Module>[];
@@ -128,7 +127,7 @@ List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
 
   for (var module in modules) {
     // Skip entrypoint modules.
-    if (entrypointModules.containsKey(module.primarySource)) continue;
+    if (entrypointModuleGroups.containsKey(module.primarySource)) continue;
 
     // The entry points that transitively import this module.
     var entrypointIds = modulesToEntryPoints[module.primarySource];
@@ -143,20 +142,16 @@ List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
     // a new shared module. Use `$` to signal that it is a shared module.
     if (entrypointIds.length > 1) {
       var mId = (entrypointIds.toList()..sort()).map((m) => m.path).join('\$');
-      if (mergedModules.containsKey(mId)) {
-        mergedModules[mId].add(module);
-      } else {
-        mergedModules[mId] = [module];
-      }
+      mergedModules.putIfAbsent(mId, () => []).add(module);
     } else {
-      entrypointModules[entrypointIds.single].add(module);
+      entrypointModuleGroups[entrypointIds.single].add(module);
     }
   }
 
   return mergedModules.values
       .map(Module.merge)
       .map(_withConsistentPrimarySource)
-      .followedBy(entrypointModules.values.map(Module.merge))
+      .followedBy(entrypointModuleGroups.values.map(Module.merge))
       .followedBy(standaloneModules)
       .toList();
 }

@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:build/build.dart';
@@ -17,9 +18,11 @@ import 'summary_builder.dart';
 
 part 'modules.g.dart';
 
-/// A collection of Dart libraries in a strongly connected component and the
-/// modules they depend on.
+/// A collection of Dart libraries in a strongly connected component of the
+/// import graph.
 ///
+/// Modules track their sources and the other modules they depend on.
+/// modules they depend on.
 /// Modules can span pub package boundaries when there are import cycles across
 /// packages.
 @JsonSerializable()
@@ -28,22 +31,29 @@ part 'modules.g.dart';
 class Module {
   /// Merge the sources and dependencies from [modules] into a single module.
   ///
-  /// The resulting modules will have a [primarySource] which is the earliest
-  /// value from [sources] if it were sorted. It will have the same [isMissing],
-  /// [isSupported] and [platform] as the first entry. The [sources] and
-  /// [directDependencies] will be merged, and dependencies will be filtered so
-  /// that no source is a dependency.
+  /// All modules must have the same [platform].
+  /// [primarySource] will be the earliest value from the combined [sources] if
+  /// they were sorted.
+  /// [isMissing] will be true if any input module is missing.
+  /// [isSupported] will be true if all input modules are supported.
+  /// [directDependencies] will be merged for all modules, but if any module
+  /// depended on a source from any other they will be filtered out.
   static Module merge(List<Module> modules) {
     assert(modules.isNotEmpty);
     if (modules.length == 1) return modules.single;
-    final allSources = Set.of(modules.expand((m) => m.sources));
-    final allDependencies = Set.of(modules.expand((m) => m.directDependencies))
-      ..removeAll(allSources);
+    assert(modules.every((m) => m.platform == modules.first.platform));
+
+    final allSources = HashSet.of(modules.expand((m) => m.sources));
+    final allDependencies =
+        HashSet.of(modules.expand((m) => m.directDependencies))
+          ..removeAll(allSources);
     final primarySource =
         allSources.reduce((a, b) => a.compareTo(b) < 0 ? a : b);
+    final isMissing = modules.any((m) => m.isMissing);
+    final isSupported = modules.every((m) => m.isSupported);
     return Module(primarySource, allSources, allDependencies,
-        modules.first.platform, modules.first.isSupported,
-        isMissing: modules.first.isMissing);
+        modules.first.platform, isSupported,
+        isMissing: isMissing);
   }
 
   /// The JS file for this module.
@@ -91,12 +101,12 @@ class Module {
   /// Libraries `foo` and `bar` form an import cycle so they would be grouped in
   /// the same module. Every Dart library will only be contained in a single
   /// [Module].
-  @JsonKey(name: 's', nullable: false)
+  @JsonKey(name: 's', nullable: false, toJson: _toJsonAssetIds)
   final Set<AssetId> sources;
 
   /// The [primarySource]s of the [Module]s which contain any library imported
   /// from any of the [sources] in this module.
-  @JsonKey(name: 'd', nullable: false)
+  @JsonKey(name: 'd', nullable: false, toJson: _toJsonAssetIds)
   final Set<AssetId> directDependencies;
 
   /// Missing modules are created if a module depends on another non-existent
@@ -126,8 +136,9 @@ class Module {
   Module(this.primarySource, Iterable<AssetId> sources,
       Iterable<AssetId> directDependencies, this.platform, this.isSupported,
       {bool isMissing})
-      : sources = UnmodifiableSetView(sources.toSet()),
-        directDependencies = UnmodifiableSetView(directDependencies.toSet()),
+      : sources = UnmodifiableSetView(HashSet.of(sources)),
+        directDependencies =
+            UnmodifiableSetView(HashSet.of(directDependencies)),
         isMissing = isMissing ?? false;
 
   /// Generated factory constructor.
@@ -195,3 +206,8 @@ class _DartPlatformConverter implements JsonConverter<DartPlatform, String> {
   @override
   String toJson(DartPlatform object) => object.name;
 }
+
+/// Ensure sets of asset IDs are sorted before writing them for a consistent
+/// output.
+List<List> _toJsonAssetIds(Set<AssetId> ids) =>
+    (ids.toList()..sort()).map((i) => i.serialize() as List).toList();
