@@ -102,6 +102,7 @@ Future _createDevCompilerModule(
       '--module-root=.',
       '--library-root=$libraryRoot',
       '--summary-extension=$summaryExtension',
+      '--no-summarize',
       defaultAnalysisOptionsArg(scratchSpace),
     ]);
   }
@@ -130,12 +131,7 @@ Future _createDevCompilerModule(
     var summaryId = useKernel
         ? depModule.primarySource.changeExtension(ddcKernelExtension)
         : depModule.linkedSummaryId;
-    var summaryPath =
-        /*useKernel
-        ? p.url.relative(scratchSpace.fileFor(summaryId).path,
-            from: scratchSpace.tempDir.path)
-        :*/
-        scratchSpace.fileFor(summaryId).path;
+    var summaryPath = scratchSpace.fileFor(summaryId).path;
 
     if (useKernel) {
       var input = Input()..path = summaryPath;
@@ -228,6 +224,8 @@ Future _createDevCompilerModule(
     // Copy the output back using the buildStep.
     await scratchSpace.copyOutput(jsId, buildStep);
     if (debugMode) {
+      /// We need to modify the sources in the sourcemap to remove the custom
+      /// [multiRootScheme] that we use.
       var sourceMapId = module.jsSourceMapId(jsSourceMapExtension);
       var file = scratchSpace.fileFor(sourceMapId);
       var content = await file.readAsString();
