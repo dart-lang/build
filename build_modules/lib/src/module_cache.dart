@@ -40,7 +40,7 @@ class DecodingCache<T> {
   /// Find and deserialize a [T] stored in [id].
   ///
   /// If the asset at [id] is unreadable the returned future will resolve to
-  /// null. If the isntance is cached it will not be decoded again, but the
+  /// `null`. If the instance is cached it will not be decoded again, but the
   /// content dependencies will be tracked through [reader].
   Future<T> find(AssetId id, AssetReader reader) async {
     if (!await reader.canRead(id)) return null;
