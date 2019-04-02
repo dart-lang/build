@@ -1,7 +1,7 @@
 ## 1.1.0-dev
 
 - Update the kernel worker to pass input digests, along with
-  `--reuse-compiler-result` and -`-use-incremental-compiler`.
+  `--reuse-compiler-result` and `--use-incremental-compiler`.
 
 ## 1.0.10
 

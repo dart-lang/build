@@ -244,6 +244,7 @@ Future<void> _addRequestArguments(
   ]);
   request.inputs.add(Input()
     ..path = '${Uri.file(p.join(sdkDir, sdkKernelPath))}'
+    // Sdk updates fully invalidate the build anyways.
     ..digest = [0]);
 
   // Add all kernel outlines as summary inputs, with digests.
