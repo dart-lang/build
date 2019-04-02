@@ -204,7 +204,7 @@ class MetaModule {
   @JsonKey(name: 'm', nullable: false)
   final List<Module> modules;
 
-  MetaModule(this.modules);
+  MetaModule(List<Module> modules) : modules = List.unmodifiable(modules);
 
   /// Generated factory constructor.
   factory MetaModule.fromJson(Map<String, dynamic> json) =>
