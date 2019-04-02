@@ -1,3 +1,9 @@
+## 3.0.2
+
+- Fix [an issue][i2017] causing errors when using `BuildStep.findAssets`.
+
+[i2017]: https://github.com/dart-lang/build/issues/2017
+
 ## 3.0.1
 
 - Remove usage of set literals to fix errors on older sdks that don't support
