@@ -75,7 +75,7 @@ Future _createDevCompilerModule(
     ..addAll(transitiveSummaryDeps);
   await buildStep.trackStage(
       'EnsureAssets', () => scratchSpace.ensureAssets(allAssetIds, buildStep));
-  var jsId = module.jsId(jsModuleExtension);
+  var jsId = module.primarySource.changeExtension(jsModuleExtension);
   var jsOutputFile = scratchSpace.fileFor(jsId);
   var sdkSummary = p.url
       .join(_sdkDir, 'lib/_internal/ddc_sdk.${useKernel ? 'dill' : 'sum'}');
@@ -125,7 +125,9 @@ Future _createDevCompilerModule(
     var summaryPath = useKernel
         ? p.url.relative(scratchSpace.fileFor(summaryId).path,
                 from: scratchSpace.tempDir.path) +
-            '=${ddcModuleName(depModule.jsId(jsModuleExtension))}'
+            '=' +
+            ddcModuleName(
+                depModule.primarySource.changeExtension(jsModuleExtension))
         : scratchSpace.fileFor(summaryId).path;
     request.arguments.addAll(['-s', summaryPath]);
   }
@@ -157,7 +159,7 @@ Future _createDevCompilerModule(
       '--packages',
       packagesFile.absolute.uri.toString(),
       '--module-name',
-      ddcModuleName(module.jsId(jsModuleExtension)),
+      ddcModuleName(module.primarySource.changeExtension(jsModuleExtension)),
     ]);
   }
 
@@ -195,7 +197,8 @@ Future _createDevCompilerModule(
     await scratchSpace.copyOutput(jsId, buildStep);
     if (debugMode) {
       await scratchSpace.copyOutput(
-          module.jsSourceMapId(jsSourceMapExtension), buildStep);
+          module.primarySource.changeExtension(jsSourceMapExtension),
+          buildStep);
     }
   }
 }
