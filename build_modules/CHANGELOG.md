@@ -1,3 +1,8 @@
+## 2.0.0
+
+- Remove the `merge` method from `Module` and replace with a static
+  `Module.merge`. Module instances are now immutable.
+
 ## 1.0.10
 
 - Fix a performance issue in the kernel_builder, especially for larger projects.
