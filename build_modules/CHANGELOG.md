@@ -1,3 +1,8 @@
+## 1.1.0-dev
+
+- Update the kernel worker to pass input digests, along with
+  --reuse-compiler-result and --use-incremental-compiler.
+
 ## 1.0.10
 
 - Fix a performance issue in the kernel_builder, especially for larger projects.
