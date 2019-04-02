@@ -2,6 +2,7 @@
 
 - Remove the `merge` method from `Module` and replace with a static
   `Module.merge`. Module instances are now immutable.
+- Remove `jsId`, and `jsSourceMapId` from `Module`.
 
 ## 1.0.10
 

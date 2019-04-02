@@ -34,7 +34,7 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
 
   // First, ensure all transitive modules are built.
   var transitiveDeps = await _ensureTransitiveModules(module, buildStep);
-  var jsId = module.jsId(jsModuleExtension);
+  var jsId = module.primarySource.changeExtension(jsModuleExtension);
   var appModuleName = ddcModuleName(jsId);
   var appDigestsOutput =
       dartEntrypointId.changeExtension(digestsEntrypointExtension);
@@ -65,8 +65,8 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   // Map from module name to module path for custom modules.
   var modulePaths =
       SplayTreeMap.of({'dart_sdk': r'packages/$sdk/dev_compiler/amd/dart_sdk'});
-  var transitiveJsModules = [jsId]
-    ..addAll(transitiveDeps.map((dep) => dep.jsId(jsModuleExtension)));
+  var transitiveJsModules = [jsId]..addAll(transitiveDeps
+      .map((dep) => dep.primarySource.changeExtension(jsModuleExtension)));
   for (var jsId in transitiveJsModules) {
     // Strip out the top level dir from the path for any module, and set it to
     // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
@@ -108,7 +108,7 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   // These can be consumed for hot reloads.
   var moduleDigests = <String, String>{};
   for (var dep in transitiveDeps.followedBy([module])) {
-    var assetId = dep.jsId(jsModuleExtension);
+    var assetId = dep.primarySource.changeExtension(jsModuleExtension);
     moduleDigests[
             assetId.path.replaceFirst('lib/', 'packages/${assetId.package}/')] =
         (await buildStep.digest(assetId)).toString();
@@ -125,9 +125,9 @@ Future<List<Module>> _ensureTransitiveModules(
   // Collect all the modules this module depends on, plus this module.
   var transitiveDeps = await module.computeTransitiveDependencies(reader);
   var jsModules = transitiveDeps
-      .map((module) => module.jsId(jsModuleExtension))
+      .map((module) => module.primarySource.changeExtension(jsModuleExtension))
       .toList()
-        ..add(module.jsId(jsModuleExtension));
+        ..add(module.primarySource.changeExtension(jsModuleExtension));
   // Check that each module is readable, and warn otherwise.
   await Future.wait(jsModules.map((jsId) async {
     if (await _lazyBuildPool.withResource(() => reader.canRead(jsId))) return;
