@@ -1,3 +1,7 @@
+## 0.5.1
+
+- Support shutting down the daemon with a notification.
+
 ## 0.5.0
 
 - Add OutputLocation to DefaultBuildTarget.
