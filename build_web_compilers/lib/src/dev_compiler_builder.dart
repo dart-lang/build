@@ -216,7 +216,7 @@ Future _createDevCompilerModule(
   // JS file to verify it was successful.
   var message = response.output.replaceAll('${scratchSpace.tempDir.path}/', '');
   if (response.exitCode != EXIT_CODE_OK || !jsOutputFile.existsSync()) {
-    throw DartDevcCompilationException(jsId, '$message}');
+    throw DartDevcCompilationException(jsId, message);
   } else {
     if (message.isNotEmpty) {
       log.info(message);
@@ -224,8 +224,8 @@ Future _createDevCompilerModule(
     // Copy the output back using the buildStep.
     await scratchSpace.copyOutput(jsId, buildStep);
     if (debugMode) {
-      /// We need to modify the sources in the sourcemap to remove the custom
-      /// [multiRootScheme] that we use.
+      // We need to modify the sources in the sourcemap to remove the custom
+      // `multiRootScheme` that we use.
       var sourceMapId = module.jsSourceMapId(jsSourceMapExtension);
       var file = scratchSpace.fileFor(sourceMapId);
       var content = await file.readAsString();

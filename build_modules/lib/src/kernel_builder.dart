@@ -246,33 +246,18 @@ Future<void> _addRequestArguments(
     ..path = '${Uri.file(p.join(sdkDir, sdkKernelPath))}'
     ..digest = [0]);
 
-  // Add all summaries as summary inputs.
-  //
-  // Also request the digests for each and add those to the inputs.
-  //
-  // This runs synchronously and the digest futures will be awaited later on.
-  var digestFutures = <Future>[];
-  request.arguments.addAll(transitiveKernelDeps.map((id) {
+  // Add all kernel outlines as summary inputs, with digests.
+  var inputs = await Future.wait(transitiveKernelDeps.map((id) async {
     var relativePath = p.url.relative(scratchSpace.fileFor(id).uri.path,
         from: scratchSpace.tempDir.uri.path);
 
-    var uri = '$multiRootScheme:///$relativePath';
-
-    var input = Input()..path = uri;
-    request.inputs.add(input);
-    digestFutures.add(reader.digest(id).then((digest) {
-      input.digest = digest.bytes;
-    }));
-
-    if (summaryOnly) {
-      return '--input-summary=$uri';
-    } else {
-      return '--input-linked=$uri';
-    }
+    return Input()
+      ..path = '$multiRootScheme:///$relativePath'
+      ..digest = (await reader.digest(id)).bytes;
   }));
-
-  // Wait for all the digests to complete.
-  await Future.wait(digestFutures);
+  request.arguments.addAll(inputs
+      .map((i) => '--input-${summaryOnly ? 'summary' : 'linked'}=${i.path}'));
+  request.inputs.addAll(inputs);
 
   request.arguments.addAll(module.sources.map((id) {
     var uri = id.path.startsWith('lib')
