@@ -93,7 +93,7 @@ class BuildImpl {
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates,
       {Set<BuildDirectory> buildDirs}) {
-    buildDirs ??= <BuildDirectory>{};
+    buildDirs ??= Set<BuildDirectory>();
     finalizedReader.reset(_buildPaths(buildDirs));
     return _SingleBuild(this, buildDirs).run(updates)
       ..whenComplete(_resolvers.reset);

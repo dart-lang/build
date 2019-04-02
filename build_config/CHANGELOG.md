@@ -1,9 +1,10 @@
-## 0.3.2
+## 0.3.2-dev
 
 - Add an explicit error when `buildExtensions` is configured to overwrite it's
   input.
 - Add an explicit error when an `InputSet` has an empty or null value in a glob
   list.
+- Increase lower bound sdk constraint to 2.0.0.
 
 ## 0.3.1+4
 
