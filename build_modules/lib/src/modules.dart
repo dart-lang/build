@@ -28,7 +28,8 @@ part 'modules.g.dart';
 class Module {
   /// Merge the sources and dependencies from [modules] into a single module.
   ///
-  /// The resulting modules will have the same [primarySource],  [isMissing],
+  /// The resulting modules will have a [primarySource] which is the earliest
+  /// value from [sources] if it were sorted. It will have the same [isMissing],
   /// [isSupported] and [platform] as the first entry. The [sources] and
   /// [directDependencies] will be merged, and dependencies will be filtered so
   /// that no source is a dependency.
@@ -38,10 +39,11 @@ class Module {
     final allSources = Set.of(modules.expand((m) => m.sources));
     final allDependencies = Set.of(modules.expand((m) => m.directDependencies))
       ..removeAll(allSources);
-    final first = modules.first;
-    return Module(first.primarySource, allSources, allDependencies,
-        first.platform, first.isSupported,
-        isMissing: first.isMissing);
+    final primarySource =
+        allSources.reduce((a, b) => a.compareTo(b) < 0 ? a : b);
+    return Module(primarySource, allSources, allDependencies,
+        modules.first.platform, modules.first.isSupported,
+        isMissing: modules.first.isMissing);
   }
 
   /// The JS file for this module.
