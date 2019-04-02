@@ -17,6 +17,7 @@ import 'package:graphs/graphs.dart' show crawlAsync;
 import 'common.dart';
 import 'errors.dart';
 import 'module_builder.dart';
+import 'module_cache.dart';
 import 'modules.dart';
 import 'platform.dart';
 import 'scratch_space.dart';
@@ -176,10 +177,8 @@ Future<List<Module>> _resolveTransitiveModules(
         Module root, BuildStep buildStep) =>
     crawlAsync<AssetId, Module>(
             [root.primarySource],
-            (id) async => Module.fromJson(jsonDecode(
-                    await buildStep.readAsString(
-                        id.changeExtension(moduleExtension(root.platform))))
-                as Map<String, dynamic>),
+            (id) => buildStep.fetchResource(moduleCache).then((c) => c.find(
+                id.changeExtension(moduleExtension(root.platform)), buildStep)),
             (id, module) => module.directDependencies)
         .skip(1) // Skip the root.
         .toList();
