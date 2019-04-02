@@ -2,11 +2,13 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 import 'package:build_web_compilers/build_web_compilers.dart';
+import 'package:build_web_compilers/builders.dart';
 import 'package:build_modules/build_modules.dart';
 
 import 'util.dart';
@@ -39,8 +41,7 @@ main() {
           MetaModuleCleanBuilder(platform), assets);
       await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
       await testBuilderAndCollectAssets(
-          UnlinkedSummaryBuilder(platform), assets);
-      await testBuilderAndCollectAssets(LinkedSummaryBuilder(platform), assets);
+          ddcKernelBuilder(BuilderOptions({})), assets);
     });
 
     test('can compile ddc modules under lib and web', () async {
@@ -53,7 +54,8 @@ main() {
         'a|web/index$jsSourceMapExtension':
             decodedMatches(contains('index.dart')),
       };
-      await testBuilder(DevCompilerBuilder(), assets, outputs: expectedOutputs);
+      await testBuilder(DevCompilerBuilder(useKernel: true), assets,
+          outputs: expectedOutputs);
     });
   });
 
@@ -72,9 +74,7 @@ main() {
             MetaModuleCleanBuilder(platform), assets);
         await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
         await testBuilderAndCollectAssets(
-            UnlinkedSummaryBuilder(platform), assets);
-        await testBuilderAndCollectAssets(
-            LinkedSummaryBuilder(platform), assets);
+            ddcKernelBuilder(BuilderOptions({})), assets);
       });
 
       test('reports useful messages', () async {
