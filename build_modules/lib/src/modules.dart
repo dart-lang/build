@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:collection/collection.dart' show UnmodifiableSetView;
 import 'package:graphs/graphs.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -25,6 +26,24 @@ part 'modules.g.dart';
 @_AssetIdConverter()
 @_DartPlatformConverter()
 class Module {
+  /// Merge the sources and dependencies from [modules] into a single module.
+  ///
+  /// The resulting modules will have the same [primarySource],  [isMissing],
+  /// [isSupported] and [platform] as the first entry. The [sources] and
+  /// [directDependencies] will be merged, and dependencies will be filtered so
+  /// that no source is a dependency.
+  static Module merge(List<Module> modules) {
+    assert(modules.isNotEmpty);
+    if (modules.length == 1) return modules.single;
+    final allSources = Set.of(modules.expand((m) => m.sources));
+    final allDependencies = Set.of(modules.expand((m) => m.directDependencies))
+      ..removeAll(allSources);
+    final first = modules.first;
+    return Module(first.primarySource, allSources, allDependencies,
+        first.platform, first.isSupported,
+        isMissing: first.isMissing);
+  }
+
   /// The JS file for this module.
   AssetId jsId(String jsModuleExtension) =>
       primarySource.changeExtension(jsModuleExtension);
@@ -105,8 +124,8 @@ class Module {
   Module(this.primarySource, Iterable<AssetId> sources,
       Iterable<AssetId> directDependencies, this.platform, this.isSupported,
       {bool isMissing})
-      : sources = sources.toSet(),
-        directDependencies = directDependencies.toSet(),
+      : sources = UnmodifiableSetView(sources.toSet()),
+        directDependencies = UnmodifiableSetView(directDependencies.toSet()),
         isMissing = isMissing ?? false;
 
   /// Generated factory constructor.
@@ -152,15 +171,6 @@ class Module {
         equals: (a, b) => a.primarySource == b.primarySource,
         hashCode: (m) => m.primarySource.hashCode);
     return orderedModules.map((c) => c.single).toList();
-  }
-
-  /// Add all of [other]'s source and dependencies to this module and keep this
-  /// module's primary source.
-  void merge(Module other) {
-    sources.addAll(other.sources);
-    directDependencies
-      ..addAll(other.directDependencies)
-      ..removeAll(sources);
   }
 }
 

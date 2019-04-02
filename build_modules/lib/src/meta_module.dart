@@ -55,10 +55,10 @@ Module _moduleForComponent(
   return Module(primaryId, sources, directDependencies, platform, isSupported);
 }
 
-Map<AssetId, Module> _entryPointModules(
+Map<AssetId, List<Module>> _entryPointModules(
         Iterable<Module> modules, Set<AssetId> entrypoints) =>
     Map.fromIterable(modules.where((m) => m.sources.any(entrypoints.contains)),
-        key: (m) => (m as Module).primarySource);
+        key: (m) => (m as Module).primarySource, value: (m) => [m as Module]);
 
 /// Gets the local (same top level dir of the same package) transitive deps of
 /// [module] using [assetsToModules].
@@ -117,14 +117,14 @@ List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
   var entrypointModules = _entryPointModules(modules, entrypoints);
 
   // Maps modules to entrypoint modules that transitively depend on them.
-  var modulesToEntryPoints =
-      _findReverseEntrypointDeps(entrypointModules.values, modules);
+  var modulesToEntryPoints = _findReverseEntrypointDeps(
+      entrypointModules.values.expand((v) => v), modules);
 
   // Modules which are not depended on by any entrypoint
   var standaloneModules = <Module>[];
 
   // Modules which are merged with others.
-  var mergedModules = <String, Module>{};
+  var mergedModules = <String, List<Module>>{};
 
   for (var module in modules) {
     // Skip entrypoint modules.
@@ -144,18 +144,19 @@ List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
     if (entrypointIds.length > 1) {
       var mId = (entrypointIds.toList()..sort()).map((m) => m.path).join('\$');
       if (mergedModules.containsKey(mId)) {
-        mergedModules[mId].merge(module);
+        mergedModules[mId].add(module);
       } else {
-        mergedModules[mId] = module;
+        mergedModules[mId] = [module];
       }
     } else {
-      entrypointModules[entrypointIds.single].merge(module);
+      entrypointModules[entrypointIds.single].add(module);
     }
   }
 
   return mergedModules.values
+      .map(Module.merge)
       .map(_withConsistentPrimarySource)
-      .followedBy(entrypointModules.values)
+      .followedBy(entrypointModules.values.map(Module.merge))
       .followedBy(standaloneModules)
       .toList();
 }
