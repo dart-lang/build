@@ -694,12 +694,16 @@ class _SingleBuild {
           .where((n) => globNode.glob.matches(n.id.path))
           .toList();
 
+      await Future.wait(potentialNodes
+          .whereType<GeneratedAssetNode>()
+          .map(_ensureAssetIsBuilt)
+          .map(toFuture));
+
       var actualMatches = <AssetId>[];
       for (var node in potentialNodes) {
         node.outputs.add(globNode.id);
-        if (node is GeneratedAssetNode) {
-          await _ensureAssetIsBuilt(node);
-          if (!node.wasOutput || node.isFailure) continue;
+        if (node is GeneratedAssetNode && (!node.wasOutput || node.isFailure)) {
+          continue;
         }
         actualMatches.add(node.id);
       }
