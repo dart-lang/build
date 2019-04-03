@@ -8,7 +8,7 @@ environment:
   sdk: ">=2.2.1-dev.3.0 <3.0.0"
 
 dependencies:
-  analyzer: '>0.30.0 <0.36.0'
+  analyzer: '>0.30.0 <0.37.0'
   async: '>=1.13.3 <3.0.0'
   bazel_worker: ^0.1.20
   build: '>=0.12.3 <2.0.0'
@@ -36,5 +36,12 @@ dev_dependencies:
     path: test/fixtures/b
 
 dependency_overrides:
+  build:
+    path: ../build
+  build_resolvers:
+    path: ../build_resolvers
   build_vm_compilers:
     path: ../build_vm_compilers
+
+  # TEMP - enable testing while waiting on source_gen and json_serializable
+  analyzer: 0.36.0
