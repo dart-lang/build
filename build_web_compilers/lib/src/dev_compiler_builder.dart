@@ -84,9 +84,13 @@ Future _createDevCompilerModule(
   request.arguments.addAll([
     '--dart-sdk-summary=$sdkSummary',
     '--modules=amd',
+    '--no-summarize',
     '-o',
     jsOutputFile.path,
   ]);
+  request.inputs.add(Input()
+    ..path = sdkSummary
+    ..digest = [0]);
 
   if (!useKernel) {
     // Add the default analysis_options.
@@ -117,20 +121,34 @@ Future _createDevCompilerModule(
     request.arguments.add('--no-source-map');
   }
 
-  // Add all the linked summaries as summary inputs.
+  // Add linked summaries as summary inputs.
+  //
+  // Also request the digests for each and add those to the inputs.
+  //
+  // This runs synchronously and the digest futures will be awaited later on.
+  var digestFutures = <Future>[];
   for (var depModule in transitiveDeps) {
     var summaryId = useKernel
         ? depModule.primarySource.changeExtension(ddcKernelExtension)
         : depModule.linkedSummaryId;
-    var summaryPath = useKernel
-        ? p.url.relative(scratchSpace.fileFor(summaryId).path,
-                from: scratchSpace.tempDir.path) +
-            '=' +
-            ddcModuleName(
-                depModule.primarySource.changeExtension(jsModuleExtension))
-        : scratchSpace.fileFor(summaryId).path;
+    var summaryPath = scratchSpace.fileFor(summaryId).path;
+
+    if (useKernel) {
+      var input = Input()..path = summaryPath;
+      request.inputs.add(input);
+      digestFutures.add(buildStep.digest(summaryId).then((digest) {
+        input.digest = digest.bytes;
+      }));
+      var moduleName = ddcModuleName(
+          depModule.primarySource.changeExtension(jsModuleExtension));
+      summaryPath += '=$moduleName';
+    }
+
     request.arguments.addAll(['-s', summaryPath]);
   }
+
+  // Wait for all the digests to complete.
+  await Future.wait(digestFutures);
 
   // Add URL mappings for all the package: files to tell DartDevc where to
   // find them.
@@ -154,12 +172,20 @@ Future _createDevCompilerModule(
     var allDeps = <AssetId>[]
       ..addAll(module.sources)
       ..addAll(transitiveSummaryDeps);
-    packagesFile = await createPackagesFile(allDeps, scratchSpace);
+    packagesFile = await createPackagesFile(allDeps);
     request.arguments.addAll([
       '--packages',
       packagesFile.absolute.uri.toString(),
       '--module-name',
       ddcModuleName(module.primarySource.changeExtension(jsModuleExtension)),
+      '--multi-root-scheme',
+      multiRootScheme,
+      '--multi-root',
+      '.',
+      '--reuse-compiler-result',
+      '--use-incremental-compiler',
+      '--track-widget-creation',
+      '--inline-source-map',
     ]);
   }
 
@@ -170,7 +196,9 @@ Future _createDevCompilerModule(
     if (uri.startsWith('package:')) {
       return uri;
     }
-    return useKernel ? id.path : Uri.file('/${id.path}').toString();
+    return useKernel
+        ? '$multiRootScheme:///${id.path}'
+        : Uri.file('/${id.path}').toString();
   }));
 
   WorkResponse response;
@@ -188,17 +216,36 @@ Future _createDevCompilerModule(
   // TODO(jakemac53): Fix the ddc worker mode so it always sends back a bad
   // status code if something failed. Today we just make sure there is an output
   // JS file to verify it was successful.
-  if (response.exitCode != EXIT_CODE_OK || !jsOutputFile.existsSync()) {
-    var message =
-        response.output.replaceAll('${scratchSpace.tempDir.path}/', '');
-    throw DartDevcCompilationException(jsId, '$message}');
+  var message = response.output
+      .replaceAll('${scratchSpace.tempDir.path}/', '')
+      .replaceAll('$multiRootScheme:///', '');
+  if (response.exitCode != EXIT_CODE_OK ||
+      !jsOutputFile.existsSync() ||
+      message.contains('Error:')) {
+    throw DartDevcCompilationException(jsId, message);
   } else {
+    if (message.isNotEmpty) {
+      log.info('\n$message');
+    }
     // Copy the output back using the buildStep.
     await scratchSpace.copyOutput(jsId, buildStep);
     if (debugMode) {
-      await scratchSpace.copyOutput(
-          module.primarySource.changeExtension(jsSourceMapExtension),
-          buildStep);
+      // We need to modify the sources in the sourcemap to remove the custom
+      // `multiRootScheme` that we use.
+      var sourceMapId =
+          module.primarySource.changeExtension(jsSourceMapExtension);
+      var file = scratchSpace.fileFor(sourceMapId);
+      var content = await file.readAsString();
+      var json = jsonDecode(content);
+      json['sources'] = (json['sources'] as List).cast<String>().map((source) {
+        var uri = Uri.parse(source);
+        var newSegments = uri.pathSegments.first == 'packages'
+            ? uri.pathSegments
+            : uri.pathSegments.skip(1);
+        return Uri(path: p.url.joinAll(['/'].followedBy(newSegments)))
+            .toString();
+      }).toList();
+      await buildStep.writeAsString(sourceMapId, jsonEncode(json));
     }
   }
 }

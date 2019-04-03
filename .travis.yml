@@ -66,9 +66,9 @@ jobs:
       env: PKGS="build build_config build_daemon build_modules build_resolvers build_runner build_runner_core build_test build_vm_compilers build_web_compilers example scratch_space"
       script: ./tool/travis.sh dartfmt dartanalyzer_0
     - stage: analyze_and_format
-      name: "SDK: 2.1.0; PKGS: build, build_daemon, build_resolvers, build_runner, build_runner_core, build_web_compilers; TASKS: `dartanalyzer --fatal-warnings .`"
+      name: "SDK: 2.1.0; PKGS: build, build_daemon, build_resolvers, build_runner, build_runner_core; TASKS: `dartanalyzer --fatal-warnings .`"
       dart: "2.1.0"
-      env: PKGS="build build_daemon build_resolvers build_runner build_runner_core build_web_compilers"
+      env: PKGS="build build_daemon build_resolvers build_runner build_runner_core"
       script: ./tool/travis.sh dartanalyzer_1
     - stage: unit_test
       name: "SDK: dev; PKG: build; TASKS: `pub run build_runner test`"
@@ -116,9 +116,9 @@ jobs:
       env: PKGS="build_vm_compilers"
       script: ./tool/travis.sh test_06
     - stage: analyze_and_format
-      name: "SDK: 2.1.1; PKG: build_modules; TASKS: `dartanalyzer --fatal-warnings .`"
-      dart: "2.1.1"
-      env: PKGS="build_modules"
+      name: "SDK: 2.2.1-dev.3.0; PKGS: build_modules, build_web_compilers; TASKS: `dartanalyzer --fatal-warnings .`"
+      dart: "2.2.1-dev.3.0"
+      env: PKGS="build_modules build_web_compilers"
       script: ./tool/travis.sh dartanalyzer_1
     - stage: unit_test
       name: "SDK: dev; PKG: build_modules; TASKS: `dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs-- -P presubmit`"

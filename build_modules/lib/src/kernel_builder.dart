@@ -119,14 +119,14 @@ Future<void> _createKernel(
 
     packagesFile = await createPackagesFile(allAssetIds);
 
-    _addRequestArguments(request, module, kernelDeps, dartSdkDir, sdkKernelPath,
-        outputFile, packagesFile, summaryOnly);
+    await _addRequestArguments(request, module, kernelDeps, sdkDir,
+        sdkKernelPath, outputFile, packagesFile, summaryOnly, buildStep);
   });
 
   // We need to make sure and clean up the temp dir, even if we fail to compile.
   try {
-    var analyzer = await buildStep.fetchResource(frontendDriverResource);
-    var response = await analyzer.doWork(request,
+    var frontendWorker = await buildStep.fetchResource(frontendDriverResource);
+    var response = await frontendWorker.doWork(request,
         trackWork: (response) => buildStep
             .trackStage('Kernel Generate', () => response, isExternal: true));
     if (response.exitCode != EXIT_CODE_OK || !await outputFile.exists()) {
@@ -216,7 +216,7 @@ Future<Set<AssetId>> _parentsOfMissingKernelFiles(
 
 /// Fills in all the required arguments for [request] in order to compile the
 /// kernel file for [module].
-void _addRequestArguments(
+Future<void> _addRequestArguments(
     WorkRequest request,
     Module module,
     Iterable<AssetId> transitiveKernelDeps,
@@ -224,7 +224,8 @@ void _addRequestArguments(
     String sdkKernelPath,
     File outputFile,
     File packagesFile,
-    bool summaryOnly) {
+    bool summaryOnly,
+    AssetReader reader) async {
   request.arguments.addAll([
     '--dart-sdk-summary',
     Uri.file(p.join(sdkDir, sdkKernelPath)).toString(),
@@ -236,18 +237,28 @@ void _addRequestArguments(
     multiRootScheme,
     '--exclude-non-sources',
     summaryOnly ? '--summary-only' : '--no-summary-only',
+    '--libraries-file',
+    p.toUri(p.join(sdkDir, 'lib', 'libraries.json')).toString(),
+    '--reuse-compiler-result',
+    '--use-incremental-compiler',
   ]);
+  request.inputs.add(Input()
+    ..path = '${Uri.file(p.join(sdkDir, sdkKernelPath))}'
+    // Sdk updates fully invalidate the build anyways.
+    ..digest = [0]);
 
-  // Add all summaries as summary inputs.
-  request.arguments.addAll(transitiveKernelDeps.map((id) {
+  // Add all kernel outlines as summary inputs, with digests.
+  var inputs = await Future.wait(transitiveKernelDeps.map((id) async {
     var relativePath = p.url.relative(scratchSpace.fileFor(id).uri.path,
         from: scratchSpace.tempDir.uri.path);
-    if (summaryOnly) {
-      return '--input-summary=$multiRootScheme:///$relativePath';
-    } else {
-      return '--input-linked=$multiRootScheme:///$relativePath';
-    }
+
+    return Input()
+      ..path = '$multiRootScheme:///$relativePath'
+      ..digest = (await reader.digest(id)).bytes;
   }));
+  request.arguments.addAll(inputs
+      .map((i) => '--input-${summaryOnly ? 'summary' : 'linked'}=${i.path}'));
+  request.inputs.addAll(inputs);
 
   request.arguments.addAll(module.sources.map((id) {
     var uri = id.path.startsWith('lib')

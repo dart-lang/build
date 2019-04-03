@@ -1,4 +1,16 @@
 builders:
+  kernel:
+    import: "package:build_web_compilers/builders.dart"
+    builder_factories:
+      - ddcKernelBuilder
+    build_extensions:
+      .dart:
+        - .ddc.dill
+    is_optional: True
+    auto_apply: none
+    required_inputs:
+      - .dart
+      - .dartdevc.module
   ddc:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
@@ -13,11 +25,13 @@ builders:
     required_inputs:
       - .dart
       - .dartdevc.module
+      - .ddc.dill
     applies_builders:
       # We want this to apply for dart2js as well - luckily this builder doesn't
       # need to be disabled since it's lazy so we can use is as a handle to get
       # the cleanup builder applied.
       - build_web_compilers|dart_source_cleanup
+      - build_web_compilers|kernel
       - build_modules|dartdevc
       - build_modules|dart2js
   entrypoint:
