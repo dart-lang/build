@@ -233,17 +233,25 @@ Future _createDevCompilerModule(
       var file = scratchSpace.fileFor(sourceMapId);
       var content = await file.readAsString();
       var json = jsonDecode(content);
-      json['sources'] = (json['sources'] as List).cast<String>().map((source) {
-        var uri = Uri.parse(source);
-        var newSegments = uri.pathSegments.first == 'packages'
-            ? uri.pathSegments
-            : uri.pathSegments.skip(1);
-        return Uri(path: p.url.joinAll(['/'].followedBy(newSegments)))
-            .toString();
-      }).toList();
+      json['sources'] = fixSourceMapSources((json['sources'] as List).cast());
       await buildStep.writeAsString(sourceMapId, jsonEncode(json));
     }
   }
+}
+
+/// Given a list of [uris] as [String]s from a sourcemap, fixes them up so that
+/// they make sense in a browser context.
+///
+/// - Strips the scheme from the uri
+/// - Strips the top level directory if its not `packages`
+List<String> fixSourceMapSources(List<String> uris) {
+  return uris.map((source) {
+    var uri = Uri.parse(source);
+    var newSegments = uri.pathSegments.first == 'packages'
+        ? uri.pathSegments
+        : uri.pathSegments.skip(1);
+    return Uri(path: p.url.joinAll(['/'].followedBy(newSegments))).toString();
+  }).toList();
 }
 
 /// The module name according to ddc for [jsId] which represents the real js

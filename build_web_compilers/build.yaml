@@ -1,3 +1,16 @@
+targets:
+  $default:
+    builders:
+      build_web_compilers|entrypoint:
+        options:
+          compiler: dart2js
+          dart2js_args:
+            - -O0
+        enabled: true
+        generate_for:
+          - web/stack_trace_mapper.dart
+      build_web_compilers|_stack_trace_mapper_copy:
+        enabled: true
 builders:
   kernel:
     import: "package:build_web_compilers/builders.dart"
@@ -68,6 +81,15 @@ builders:
         compiler: dart2js
     applies_builders:
       - build_web_compilers|dart2js_archive_extractor
+  _stack_trace_mapper_copy:
+    import: "tool/copy_builder.dart"
+    builder_factories:
+        - copyBuilder
+    build_extensions:
+      web/stack_trace_mapper.dart.js:
+        - lib/src/dev_compiler_stack_trace/stack_trace_mapper.dart.js
+    auto_apply: none
+    build_to: source
 post_process_builders:
   dart2js_archive_extractor:
     import: "package:build_web_compilers/builders.dart"
