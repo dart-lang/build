@@ -1,6 +1,6 @@
 ## 0.9.4+2
 
-* Internal cleanup.
+* Allow `pkg:analyzer` version `0.36.x`.
 
 ## 0.9.4+1
 
