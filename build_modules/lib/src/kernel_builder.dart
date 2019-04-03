@@ -238,7 +238,7 @@ Future<void> _addRequestArguments(
     '--exclude-non-sources',
     summaryOnly ? '--summary-only' : '--no-summary-only',
     '--libraries-file',
-    p.join(sdkDir, 'lib', 'libraries.json'),
+    p.toUri(p.join(sdkDir, 'lib', 'libraries.json')).toString(),
     '--reuse-compiler-result',
     '--use-incremental-compiler',
   ]);
