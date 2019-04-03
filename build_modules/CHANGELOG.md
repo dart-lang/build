@@ -1,5 +1,7 @@
-## 1.1.0-dev
+## 2.0.0
 
+- Remove the `merge` method from `Module` and replace with a static
+  `Module.merge`. Module instances are now immutable.
 - Update the kernel worker to pass input digests, along with
   `--reuse-compiler-result` and `--use-incremental-compiler`.
 
