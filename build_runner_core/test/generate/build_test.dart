@@ -1296,6 +1296,24 @@ void main() {
         expect(node.isFailure, isTrue);
       }
     });
+
+    test('a glob should not be an output of an anchor node', () async {
+      // https://github.com/dart-lang/build/issues/2017
+      var builders = [
+        apply(
+            'test_builder',
+            [
+              (_) => TestBuilder(build: (buildStep, _) {
+                    buildStep.findAssets(Glob('**'));
+                  })
+            ],
+            toRoot(),
+            appliesBuilders: ['a|copy_builder']),
+        applyPostProcess('a|copy_builder', (_) => CopyingPostProcessBuilder())
+      ];
+      // A build does not crash in `_cleanUpStaleOutputs`
+      await testBuilders(builders, {'a|lib/a.txt': 'a'});
+    });
   });
 }
 

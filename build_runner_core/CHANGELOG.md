@@ -1,3 +1,8 @@
+## 3.0.2
+
+- Only track valid and readable assets as inputs to globs. Fixes a crash when
+  attempting to check outputs from an invalid asset.
+
 ## 3.0.1
 
 - Remove usage of set literals to fix errors on older sdks that don't support
