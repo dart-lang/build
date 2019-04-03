@@ -10,6 +10,7 @@
 
 - Update the kernel worker to pass input digests, along with
   `--reuse-compiler-result` and `--use-incremental-compiler`.
+- Increased the upper bound for `package:analyzer` to `<0.37.0`.
 
 ## 1.0.10
 
