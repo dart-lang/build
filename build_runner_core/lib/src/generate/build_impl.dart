@@ -544,7 +544,7 @@ class _SingleBuild {
     await FailureReporter.clean(phaseNum, input);
     await _cleanUpStaleOutputs(anchorNode.outputs);
     anchorNode.outputs
-      ..forEach(_assetGraph.remove)
+      ..toList().forEach(_assetGraph.remove)
       ..clear();
     inputNode.deletedBy.remove(anchorNode.id);
 
