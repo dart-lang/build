@@ -1,3 +1,7 @@
+## 2.0.0
+
+- Increased the upper bound for `package:analyzer` to `<0.37.0`.
+
 ## 1.2.0
 
 - Add a marker to inject code before the application main method is called.
