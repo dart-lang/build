@@ -4,19 +4,30 @@
 
 import 'package:test/test.dart';
 
-// ignore: uri_does_not_exist
 import 'common/message.dart'
-    // ignore: uri_does_not_exist
     if (dart.library.io) 'common/message_io.dart'
-    // ignore: uri_does_not_exist
     if (dart.library.html) 'common/message_html.dart';
 
+import 'common/message_export.dart' as exported;
+
 main() {
-  test('Message matches expected', () {
-    if (1.0 is int) {
+  group('browser', () {
+    test('imports', () {
       expect(message, contains('Javascript'));
-    } else {
+    });
+
+    test('exports', () {
+      expect(exported.message, contains('Javascript'));
+    });
+  }, testOn: 'browser');
+
+  group('vm', () {
+    test('imports', () {
       expect(message, contains('VM'));
-    }
-  });
+    });
+
+    test('exports', () {
+      expect(exported.message, contains('VM'));
+    });
+  }, testOn: 'vm');
 }
