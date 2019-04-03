@@ -1,5 +1,3 @@
-# source_gen
-
 <p align="center">
   <a href="https://travis-ci.org/dart-lang/source_gen">
     <img src="https://travis-ci.org/dart-lang/source_gen.svg?branch=master" alt="Build Status" />
