@@ -687,22 +687,30 @@ class _SingleBuild {
     return _lazyGlobs.putIfAbsent(globNode.id, () async {
       var potentialNodes = _assetGraph
           .packageNodes(globNode.id.package)
+          .where((n) => n.isReadable && n.isValidInput)
+          .where((n) =>
+              n is! GeneratedAssetNode ||
+              (n as GeneratedAssetNode).phaseNumber < globNode.phaseNumber)
           .where((n) => globNode.glob.matches(n.id.path))
           .toList();
-      globNode.inputs = HashSet.of(potentialNodes.map((n) => n.id));
-      for (var node in potentialNodes) {
-        node.outputs.add(globNode.id);
-      }
+
+      await Future.wait(potentialNodes
+          .whereType<GeneratedAssetNode>()
+          .map(_ensureAssetIsBuilt)
+          .map(toFuture));
 
       var actualMatches = <AssetId>[];
       for (var node in potentialNodes) {
-        if (await _isReadableNode(
-            node, globNode.phaseNumber, globNode.id.package)) {
-          actualMatches.add(node.id);
+        node.outputs.add(globNode.id);
+        if (node is GeneratedAssetNode && (!node.wasOutput || node.isFailure)) {
+          continue;
         }
+        actualMatches.add(node.id);
       }
+
       globNode
         ..results = actualMatches
+        ..inputs = HashSet.of(potentialNodes.map((n) => n.id))
         ..state = NodeState.upToDate
         ..lastKnownDigest =
             md5.convert(utf8.encode(globNode.results.join(' ')));

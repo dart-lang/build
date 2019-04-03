@@ -262,11 +262,11 @@ class PostProcessAnchorNode extends AssetNode with _SyntheticAssetNode {
 class GlobAssetNode extends InternalAssetNode implements NodeWithInputs {
   final Glob glob;
 
-  /// All the potential inputs matching this glob. Whether they appear in
-  /// [results] is dependent on if they were actually created or not.
+  /// All the potential inputs matching this glob.
   ///
-  /// This needs to be an ordered set because we compute combined input digests
-  /// using this later on.
+  /// This field differs from [results] in that [GeneratedAssetNode] which may
+  /// have been readable but were not output are included here and not in
+  /// [results].
   @override
   HashSet<AssetId> inputs;
 
