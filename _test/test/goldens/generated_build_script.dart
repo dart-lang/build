@@ -68,12 +68,16 @@ final _builders = <_i1.BuilderApplication>[
       isOptional: true,
       hideOutput: true,
       appliesBuilders: ['build_modules|module_cleanup']),
+  _i1.apply('build_web_compilers|kernel', [_i6.ddcKernelBuilder],
+      _i1.toNoneByDefault(),
+      isOptional: true, hideOutput: true),
   _i1.apply(
       'build_web_compilers|ddc', [_i6.devCompilerBuilder], _i1.toAllPackages(),
       isOptional: true,
       hideOutput: true,
       appliesBuilders: [
         'build_web_compilers|dart_source_cleanup',
+        'build_web_compilers|kernel',
         'build_modules|dartdevc',
         'build_modules|dart2js'
       ]),

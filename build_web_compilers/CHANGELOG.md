@@ -1,3 +1,8 @@
+## 2.0.0-dev
+
+- Update to run DDC in kernel mode, and consume kernel outlines instead of
+  analyzer summaries.
+
 ## 1.2.0
 
 - Add a marker to inject code before the application main method is called.

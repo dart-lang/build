@@ -8,7 +8,7 @@ stages:
         - dartanalyzer: --fatal-infos --fatal-warnings .
     - dartanalyzer: --fatal-warnings .
       dart:
-        - 2.1.1
+        - 2.2.1-dev.3.0
   - unit_test:
     # Run the script directly - running from snapshot has issues for packages
     # that are depended on by build_runner itself.
