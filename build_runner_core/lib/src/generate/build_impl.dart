@@ -540,13 +540,12 @@ class _SingleBuild {
     // to remove those.
     wrappedReader.assetsRead.clear();
 
-    // Delete old assets from disk.
-    await _cleanUpStaleOutputs(anchorNode.outputs);
+    // Clean out the impacts of the previous run
     await FailureReporter.clean(phaseNum, input);
-
-    // Remove old nodes from the graph and clear `outputs`.
-    anchorNode.outputs.toList().forEach(_assetGraph.remove);
-    anchorNode.outputs.clear();
+    await _cleanUpStaleOutputs(anchorNode.outputs);
+    anchorNode.outputs
+      ..forEach(_assetGraph.remove)
+      ..clear();
     inputNode.deletedBy.remove(anchorNode.id);
 
     var wrappedWriter = AssetWriterSpy(_writer);
@@ -658,14 +657,14 @@ class _SingleBuild {
   /// Deletes any of [outputs] which previously were output.
   ///
   /// This should be called after deciding that an asset really needs to be
-  /// regenerated based on its inputs hash changing.
-  Future<Null> _cleanUpStaleOutputs(Iterable<AssetId> outputs) async {
-    await Future.wait(outputs.map((output) {
-      var node = _assetGraph.get(output) as GeneratedAssetNode;
-      if (node.wasOutput) return _delete(output);
-      return Future.value(null);
-    }));
-  }
+  /// regenerated based on its inputs hash changing. All assets in [outputs]
+  /// must correspond to a [GeneratedAssetNode].
+  Future<void> _cleanUpStaleOutputs(Iterable<AssetId> outputs) =>
+      Future.wait(outputs
+          .map(_assetGraph.get)
+          .cast<GeneratedAssetNode>()
+          .where((n) => n.wasOutput)
+          .map((n) => _delete(n.id)));
 
   Future<GlobAssetNode> _getUpdatedGlobNode(
       Glob glob, String package, int phaseNum) {
