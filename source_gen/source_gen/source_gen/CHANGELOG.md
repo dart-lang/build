@@ -1,3 +1,7 @@
+## 0.9.4+2
+
+* Internal cleanup.
+
 ## 0.9.4+1
 
 * Support the latest `pkg:analyzer`.

@@ -5,8 +5,6 @@
 import 'dart:mirrors' hide SourceLocation;
 
 import 'package:analyzer/dart/ast/ast.dart';
-// ignore: implementation_imports
-import 'package:analyzer/src/dart/analysis/results.dart';
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
@@ -291,14 +289,12 @@ class UnresolvedAnnotationException implements Exception {
   /// May be `null` if the import library was not found.
   final SourceSpan annotationSource;
 
-  // TODO: Remove internal API once AnalysisDriver / AnalysisSession only.
-  // https://github.com/dart-lang/sdk/issues/32454
-  static SourceSpan _getSourceSpanFrom(
+  static SourceSpan _findSpan(
     Element annotatedElement,
     int annotationIndex,
   ) {
-    // ignore: deprecated_member_use
-    final parsedLibrary = ParsedLibraryResultImpl.tmp(annotatedElement.library);
+    final parsedLibrary = annotatedElement.session
+        .getParsedLibraryByElement(annotatedElement.library);
     final declaration = parsedLibrary.getElementDeclaration(annotatedElement);
     final annotatedNode = declaration.node as AnnotatedNode;
     final annotation = annotatedNode.metadata[annotationIndex];
@@ -317,7 +313,7 @@ class UnresolvedAnnotationException implements Exception {
     Element annotatedElement,
     int annotationIndex,
   ) {
-    final sourceSpan = _getSourceSpanFrom(annotatedElement, annotationIndex);
+    final sourceSpan = _findSpan(annotatedElement, annotationIndex);
     return UnresolvedAnnotationException._(annotatedElement, sourceSpan);
   }
 

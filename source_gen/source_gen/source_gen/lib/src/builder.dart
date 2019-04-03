@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:dart_style/dart_style.dart';
+import 'package:pedantic/pedantic.dart';
 
 import 'generated_output.dart';
 import 'generator.dart';
@@ -141,8 +142,7 @@ class _Builder extends Builder {
           stack);
     }
 
-    // ignore: unawaited_futures
-    buildStep.writeAsString(outputId, genPartContent);
+    unawaited(buildStep.writeAsString(outputId, genPartContent));
   }
 
   @override
