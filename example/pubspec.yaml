@@ -27,3 +27,6 @@ dependency_overrides:
     path: ../build_modules
   build_web_compilers:
     path: ../build_web_compilers
+
+  #temp for testing
+  analyzer: 0.36.0
