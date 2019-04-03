@@ -11,7 +11,7 @@ import 'package:path/path.dart' as p;
 
 Builder devCompilerBuilder(_) => DevCompilerBuilder(useKernel: true);
 Builder webEntrypointBuilder(BuilderOptions options) =>
-    WebEntrypointBuilder.fromOptions(options);
+    WebEntrypointBuilder.fromOptions(options, useKernel: true);
 PostProcessBuilder dart2JsArchiveExtractor(BuilderOptions options) =>
     Dart2JsArchiveExtractor.fromOptions(options);
 PostProcessBuilder dartSourceCleanup(BuilderOptions options) =>

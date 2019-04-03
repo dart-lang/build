@@ -57,7 +57,9 @@ class WebEntrypointBuilder implements Builder {
       this.useKernel = false,
       this.buildRootAppSummary = false});
 
-  factory WebEntrypointBuilder.fromOptions(BuilderOptions options) {
+  factory WebEntrypointBuilder.fromOptions(BuilderOptions options,
+      {bool useKernel}) {
+    useKernel ??= false;
     validateOptions(
         options.config, _supportedOptions, 'build_web_compilers|entrypoint',
         deprecatedOptions: _deprecatedOptions);
@@ -86,7 +88,8 @@ class WebEntrypointBuilder implements Builder {
 
     return WebEntrypointBuilder(compiler,
         buildRootAppSummary: buildRootAppSummary,
-        dart2JsArgs: dart2JsArgs as List<String>);
+        dart2JsArgs: dart2JsArgs as List<String>,
+        useKernel: useKernel);
   }
 
   @override
