@@ -216,12 +216,16 @@ Future _createDevCompilerModule(
   // TODO(jakemac53): Fix the ddc worker mode so it always sends back a bad
   // status code if something failed. Today we just make sure there is an output
   // JS file to verify it was successful.
-  var message = response.output.replaceAll('${scratchSpace.tempDir.path}/', '');
-  if (response.exitCode != EXIT_CODE_OK || !jsOutputFile.existsSync()) {
+  var message = response.output
+      .replaceAll('${scratchSpace.tempDir.path}/', '')
+      .replaceAll('$multiRootScheme:///', '');
+  if (response.exitCode != EXIT_CODE_OK ||
+      !jsOutputFile.existsSync() ||
+      message.contains('Error:')) {
     throw DartDevcCompilationException(jsId, message);
   } else {
     if (message.isNotEmpty) {
-      log.info(message);
+      log.info('\n$message');
     }
     // Copy the output back using the buildStep.
     await scratchSpace.copyOutput(jsId, buildStep);
