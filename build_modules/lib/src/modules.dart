@@ -56,14 +56,6 @@ class Module {
         isMissing: isMissing);
   }
 
-  /// The JS file for this module.
-  AssetId jsId(String jsModuleExtension) =>
-      primarySource.changeExtension(jsModuleExtension);
-
-  // The sourcemap for the JS file for this module.
-  AssetId jsSourceMapId(String jsSourceMapExtension) =>
-      primarySource.changeExtension(jsSourceMapExtension);
-
   /// The linked summary for this module.
   AssetId get linkedSummaryId =>
       primarySource.changeExtension(linkedSummaryExtension(platform));

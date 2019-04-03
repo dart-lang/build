@@ -30,6 +30,9 @@ class BuildTargetManager {
 
   Set<BuildTarget> get targets => _buildTargets.keys.toSet();
 
+  Set<WebSocketChannel> get allChannels =>
+      _buildTargets.values.expand((s) => s).toSet();
+
   void addBuildTarget(BuildTarget target, WebSocketChannel channel) {
     _buildTargets
         .putIfAbsent(target, () => Set<WebSocketChannel>())

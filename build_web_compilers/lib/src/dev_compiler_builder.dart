@@ -75,7 +75,7 @@ Future _createDevCompilerModule(
     ..addAll(transitiveSummaryDeps);
   await buildStep.trackStage(
       'EnsureAssets', () => scratchSpace.ensureAssets(allAssetIds, buildStep));
-  var jsId = module.jsId(jsModuleExtension);
+  var jsId = module.primarySource.changeExtension(jsModuleExtension);
   var jsOutputFile = scratchSpace.fileFor(jsId);
   var sdkSummary = p.url
       .join(_sdkDir, 'lib/_internal/ddc_sdk.${useKernel ? 'dill' : 'sum'}');
@@ -139,7 +139,9 @@ Future _createDevCompilerModule(
       digestFutures.add(buildStep.digest(summaryId).then((digest) {
         input.digest = digest.bytes;
       }));
-      summaryPath += '=${ddcModuleName(depModule.jsId(jsModuleExtension))}';
+      var moduleName = ddcModuleName(
+          depModule.primarySource.changeExtension(jsModuleExtension));
+      summaryPath += '=$moduleName';
     }
 
     request.arguments.addAll(['-s', summaryPath]);
@@ -175,7 +177,7 @@ Future _createDevCompilerModule(
       '--packages',
       packagesFile.absolute.uri.toString(),
       '--module-name',
-      ddcModuleName(module.jsId(jsModuleExtension)),
+      ddcModuleName(module.primarySource.changeExtension(jsModuleExtension)),
       '--multi-root-scheme',
       multiRootScheme,
       '--multi-root',
@@ -226,7 +228,8 @@ Future _createDevCompilerModule(
     if (debugMode) {
       // We need to modify the sources in the sourcemap to remove the custom
       // `multiRootScheme` that we use.
-      var sourceMapId = module.jsSourceMapId(jsSourceMapExtension);
+      var sourceMapId =
+          module.primarySource.changeExtension(jsSourceMapExtension);
       var file = scratchSpace.fileFor(sourceMapId);
       var content = await file.readAsString();
       var json = jsonDecode(content);
