@@ -5,7 +5,7 @@ targets:
         options:
           compiler: dart2js
           dart2js_args:
-            - -O0
+            - -O4
         enabled: true
         generate_for:
           - web/stack_trace_mapper.dart
