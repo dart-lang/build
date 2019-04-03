@@ -1311,9 +1311,8 @@ void main() {
             appliesBuilders: ['a|copy_builder']),
         applyPostProcess('a|copy_builder', (_) => CopyingPostProcessBuilder())
       ];
-      var writer = InMemoryRunnerAssetWriter();
       // A build does not crash in `_cleanUpStaleOutputs`
-      await testBuilders(builders, {'a|lib/a.txt': 'a'}, writer: writer);
+      await testBuilders(builders, {'a|lib/a.txt': 'a'});
     });
   });
 }
