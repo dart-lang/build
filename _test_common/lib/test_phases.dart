@@ -24,7 +24,9 @@ import 'package_graphs.dart';
 Future wait(int milliseconds) =>
     Future.delayed(Duration(milliseconds: milliseconds));
 
-void _nullLog(_) {}
+void _printOnFailure(LogRecord record) {
+  printOnFailure('$record');
+}
 
 /// Runs [builders] in a test environment.
 ///
@@ -82,7 +84,7 @@ Future<BuildResult> testBuilders(
   InMemoryRunnerAssetWriter writer,
   Level logLevel,
   // A better way to "silence" logging than setting logLevel to OFF.
-  onLog(LogRecord record) = _nullLog,
+  onLog(LogRecord record) = _printOnFailure,
   bool checkBuildStatus = true,
   bool deleteFilesByDefault = true,
   bool enableLowResourcesMode = false,
