@@ -34,6 +34,3 @@ dependency_overrides:
     path: ../build_web_compilers
   scratch_space:
     path: ../scratch_space
-
-  # temp for testing
-  analyzer: 0.36.0
