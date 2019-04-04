@@ -5,6 +5,7 @@
 - Increased the upper bound for `package:analyzer` to `<0.37.0`.
 - Removed support for `build_root_app_summary` configuration option.
 - Remove support for building DDC with analyzer summaries.
+- Stop writing compilation errors to a `.js.errors` asset.
 
 ## 1.2.0
 

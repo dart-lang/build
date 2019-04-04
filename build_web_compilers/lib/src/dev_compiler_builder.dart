@@ -18,7 +18,6 @@ import 'errors.dart';
 
 final _sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
 
-const jsModuleErrorsExtension = '.ddc.js.errors';
 const jsModuleExtension = '.ddc.js';
 const jsSourceMapExtension = '.ddc.js.map';
 
@@ -28,7 +27,6 @@ class DevCompilerBuilder implements Builder {
   final buildExtensions = {
     moduleExtension(DartPlatform.dartdevc): [
       jsModuleExtension,
-      jsModuleErrorsExtension,
       jsSourceMapExtension
     ]
   };
@@ -39,18 +37,12 @@ class DevCompilerBuilder implements Builder {
         json.decode(await buildStep.readAsString(buildStep.inputId))
             as Map<String, dynamic>);
 
-    Future<void> handleError(e) async {
-      await buildStep.writeAsString(
-          module.primarySource.changeExtension(jsModuleErrorsExtension), '$e');
-      log.severe('$e');
-    }
-
     try {
       await _createDevCompilerModule(module, buildStep);
     } on DartDevcCompilationException catch (e) {
-      await handleError(e);
+      log.severe('$e');
     } on MissingModulesException catch (e) {
-      await handleError(e);
+      log.severe('$e');
     }
   }
 }

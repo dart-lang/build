@@ -30,7 +30,6 @@ builders:
       - devCompilerBuilder
     build_extensions:
       .dart:
-        - .ddc.js.errors
         - .ddc.js
         - .ddc.js.map
     is_optional: True

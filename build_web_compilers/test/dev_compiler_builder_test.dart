@@ -4,7 +4,6 @@
 
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 import 'package:build_web_compilers/build_web_compilers.dart';
@@ -75,23 +74,6 @@ main() {
         await testBuilderAndCollectAssets(
             ddcKernelBuilder(BuilderOptions({})), assets);
       });
-
-      test('reports useful messages', () async {
-        var expectedOutputs = {
-          'a|web/index$jsModuleErrorsExtension': decodedMatches(
-              allOf(contains('String'), contains('assigned'), contains('int'))),
-        };
-        var logs = <LogRecord>[];
-        await testBuilder(DevCompilerBuilder(), assets,
-            outputs: expectedOutputs, onLog: logs.add);
-        expect(
-            logs,
-            contains(predicate<LogRecord>((record) =>
-                record.level == Level.SEVERE &&
-                record.message.contains('String') &&
-                record.message.contains('assigned') &&
-                record.message.contains('int'))));
-      });
     });
 
     group('invalid imports', () {
@@ -107,22 +89,6 @@ main() {
         await testBuilderAndCollectAssets(
             MetaModuleCleanBuilder(platform), assets);
         await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
-      });
-
-      test('reports useful messages', () async {
-        var expectedOutputs = {
-          'a|web/index$jsModuleErrorsExtension': decodedMatches(
-              contains('Unable to find modules for some sources')),
-        };
-        var logs = <LogRecord>[];
-        await testBuilder(DevCompilerBuilder(), assets,
-            outputs: expectedOutputs, onLog: logs.add);
-        expect(
-            logs,
-            contains(predicate<LogRecord>((record) =>
-                record.level == Level.SEVERE &&
-                record.message
-                    .contains('Unable to find modules for some sources'))));
       });
     });
   });
