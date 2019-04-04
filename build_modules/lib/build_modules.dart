@@ -14,5 +14,4 @@ export 'src/module_library_builder.dart'
 export 'src/modules.dart';
 export 'src/platform.dart' show DartPlatform;
 export 'src/scratch_space.dart' show scratchSpace, scratchSpaceResource;
-export 'src/workers.dart'
-    show dart2JsWorkerResource, dartdevcDriverResource, dartdevkDriverResource;
+export 'src/workers.dart' show dart2JsWorkerResource, dartdevkDriverResource;

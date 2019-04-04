@@ -22,16 +22,6 @@ final _processMode = stdin.hasTerminal
     ? ProcessStartMode.normal
     : ProcessStartMode.detachedWithStdio;
 
-/// Completes once the analyzer workers have been shut down.
-Future<Null> get analyzerWorkersAreDone =>
-    _analyzerWorkersAreDoneCompleter?.future ?? Future.value(null);
-Completer<Null> _analyzerWorkersAreDoneCompleter;
-
-/// Completes once the dartdevc workers have been shut down.
-Future<Null> get dartdevcWorkersAreDone =>
-    _dartdevcWorkersAreDoneCompleter?.future ?? Future.value(null);
-Completer<Null> _dartdevcWorkersAreDoneCompleter;
-
 /// Completes once the dartdevk workers have been shut down.
 Future<Null> get dartdevkWorkersAreDone =>
     _dartdevkWorkersAreDoneCompleter?.future ?? Future.value(null);
@@ -63,61 +53,6 @@ final int _maxWorkersPerTask = () {
   }
   return parsed;
 }();
-
-/// Manages a shared set of persistent analyzer workers.
-BazelWorkerDriver get _analyzerDriver {
-  _analyzerWorkersAreDoneCompleter ??= Completer<Null>();
-  return __analyzerDriver ??= BazelWorkerDriver(
-      () => Process.start(
-          p.join(sdkDir, 'bin', 'dart'),
-          [
-            p.join(sdkDir, 'bin', 'snapshots', 'dartanalyzer.dart.snapshot'),
-            '--dart-sdk=$sdkDir',
-            '--build-mode',
-            '--persistent_worker'
-          ],
-          mode: _processMode,
-          workingDirectory: scratchSpace.tempDir.path),
-      maxWorkers: _maxWorkersPerTask);
-}
-
-BazelWorkerDriver __analyzerDriver;
-
-/// Resource for fetching the current [BazelWorkerDriver] for dartanalyzer.
-final analyzerDriverResource =
-    Resource<BazelWorkerDriver>(() => _analyzerDriver, beforeExit: () async {
-  await _analyzerDriver?.terminateWorkers();
-  _analyzerWorkersAreDoneCompleter.complete();
-  _analyzerWorkersAreDoneCompleter = null;
-  __analyzerDriver = null;
-});
-
-/// Manages a shared set of persistent dartdevc workers.
-BazelWorkerDriver get _dartdevcDriver {
-  _dartdevcWorkersAreDoneCompleter ??= Completer<Null>();
-  return __dartdevcDriver ??= BazelWorkerDriver(
-      () => Process.start(
-          p.join(sdkDir, 'bin', 'dart'),
-          [
-            p.join(sdkDir, 'bin', 'snapshots', 'dartdevc.dart.snapshot'),
-            '--dart-sdk=$sdkDir',
-            '--persistent_worker'
-          ],
-          mode: _processMode,
-          workingDirectory: scratchSpace.tempDir.path),
-      maxWorkers: _maxWorkersPerTask);
-}
-
-BazelWorkerDriver __dartdevcDriver;
-
-/// Resource for fetching the current [BazelWorkerDriver] for dartdevc.
-final dartdevcDriverResource =
-    Resource<BazelWorkerDriver>(() => _dartdevcDriver, beforeExit: () async {
-  await _dartdevcDriver?.terminateWorkers();
-  _dartdevcWorkersAreDoneCompleter.complete();
-  _dartdevcWorkersAreDoneCompleter = null;
-  __dartdevcDriver = null;
-});
 
 /// Manages a shared set of persistent dartdevk workers.
 BazelWorkerDriver get _dartdevkDriver {

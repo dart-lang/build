@@ -203,8 +203,7 @@ Future _createDevCompilerModule(
 
   WorkResponse response;
   try {
-    var driverResource =
-        useKernel ? dartdevkDriverResource : dartdevcDriverResource;
+    var driverResource = dartdevkDriverResource;
     var driver = await buildStep.fetchResource(driverResource);
     response = await driver.doWork(request,
         trackWork: (response) =>
