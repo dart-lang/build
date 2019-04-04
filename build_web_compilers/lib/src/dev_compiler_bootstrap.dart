@@ -126,8 +126,8 @@ final _lazyBuildPool = Pool(16);
 
 /// Ensures that all transitive js modules for [module] are available and built.
 ///
-/// Throws an [UnsupportedModules] exception if there are any unsupported
-/// modules.
+/// Throws an [UnsupportedModulesException] exception if there are any
+/// unsupported modules.
 Future<List<Module>> _ensureTransitiveModules(
     Module module, AssetReader reader) async {
   // Collect all the modules this module depends on, plus this module.
