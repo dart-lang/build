@@ -24,10 +24,6 @@ const jsSourceMapExtension = '.ddc.js.map';
 
 /// A builder which can output ddc modules!
 class DevCompilerBuilder implements Builder {
-  final bool useKernel;
-
-  DevCompilerBuilder({bool useKernel}) : useKernel = useKernel ?? false;
-
   @override
   final buildExtensions = {
     moduleExtension(DartPlatform.dartdevc): [
@@ -43,14 +39,14 @@ class DevCompilerBuilder implements Builder {
         json.decode(await buildStep.readAsString(buildStep.inputId))
             as Map<String, dynamic>);
 
-    Future<Null> handleError(e) async {
+    Future<void> handleError(e) async {
       await buildStep.writeAsString(
           module.primarySource.changeExtension(jsModuleErrorsExtension), '$e');
       log.severe('$e');
     }
 
     try {
-      await _createDevCompilerModule(module, buildStep, useKernel);
+      await _createDevCompilerModule(module, buildStep);
     } on DartDevcCompilationException catch (e) {
       await handleError(e);
     } on MissingModulesException catch (e) {
@@ -60,134 +56,66 @@ class DevCompilerBuilder implements Builder {
 }
 
 /// Compile [module] with the dev compiler.
-Future _createDevCompilerModule(
-    Module module, BuildStep buildStep, bool useKernel,
+Future<void> _createDevCompilerModule(Module module, BuildStep buildStep,
     {bool debugMode = true}) async {
   var transitiveDeps = await buildStep.trackStage('CollectTransitiveDeps',
       () => module.computeTransitiveDependencies(buildStep));
-  var transitiveSummaryDeps = transitiveDeps.map((module) => useKernel
-      ? module.primarySource.changeExtension(ddcKernelExtension)
-      : module.linkedSummaryId);
+  var transitiveKernelDeps = transitiveDeps.map(
+      (module) => module.primarySource.changeExtension(ddcKernelExtension));
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
 
   var allAssetIds = Set<AssetId>()
     ..addAll(module.sources)
-    ..addAll(transitiveSummaryDeps);
+    ..addAll(transitiveKernelDeps);
   await buildStep.trackStage(
       'EnsureAssets', () => scratchSpace.ensureAssets(allAssetIds, buildStep));
   var jsId = module.primarySource.changeExtension(jsModuleExtension);
   var jsOutputFile = scratchSpace.fileFor(jsId);
-  var sdkSummary = p.url
-      .join(_sdkDir, 'lib/_internal/ddc_sdk.${useKernel ? 'dill' : 'sum'}');
-  var request = WorkRequest();
+  var sdkSummary = p.url.join(_sdkDir, 'lib/_internal/ddc_sdk.dill');
 
-  request.arguments.addAll([
-    '--dart-sdk-summary=$sdkSummary',
-    '--modules=amd',
-    '--no-summarize',
-    '-o',
-    jsOutputFile.path,
-  ]);
-  request.inputs.add(Input()
-    ..path = sdkSummary
-    ..digest = [0]);
-
-  if (!useKernel) {
-    // Add the default analysis_options.
-    await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
-    var libraryRoot = '/${p.split(p.dirname(jsId.path)).first}';
-    var summaryExtension =
-        linkedSummaryExtension(DartPlatform.dartdevc).substring(1);
-    request.arguments.addAll([
-      '--module-root=.',
-      '--library-root=$libraryRoot',
-      '--summary-extension=$summaryExtension',
+  var request = WorkRequest()
+    ..arguments.addAll([
+      '--dart-sdk-summary=$sdkSummary',
+      '--modules=amd',
       '--no-summarize',
-      defaultAnalysisOptionsArg(scratchSpace),
-    ]);
-  }
+      '-o',
+      jsOutputFile.path,
+      debugMode ? '--source-map' : '--no-source-map',
+    ])
+    ..inputs.add(Input()
+      ..path = sdkSummary
+      ..digest = [0])
+    ..inputs.addAll(await Future.wait(transitiveDeps.map((dep) async {
+      final kernelAsset = dep.primarySource.changeExtension(ddcKernelExtension);
+      return Input()
+        ..path = scratchSpace.fileFor(kernelAsset).path
+        ..digest = (await buildStep.digest(kernelAsset)).bytes;
+    })))
+    ..arguments.addAll(transitiveDeps.expand((dep) {
+      final kernelAsset = dep.primarySource.changeExtension(ddcKernelExtension);
+      var moduleName =
+          ddcModuleName(dep.primarySource.changeExtension(jsModuleExtension));
+      return ['-s', '${scratchSpace.fileFor(kernelAsset).path}=$moduleName'];
+    }));
 
-  if (debugMode) {
-    request.arguments.addAll([
-      '--source-map',
-    ]);
-    if (!useKernel) {
-      request.arguments.addAll([
-        '--source-map-comment',
-        '--inline-source-map',
-      ]);
-    }
-  } else {
-    request.arguments.add('--no-source-map');
-  }
-
-  // Add linked summaries as summary inputs.
-  //
-  // Also request the digests for each and add those to the inputs.
-  //
-  // This runs synchronously and the digest futures will be awaited later on.
-  var digestFutures = <Future>[];
-  for (var depModule in transitiveDeps) {
-    var summaryId = useKernel
-        ? depModule.primarySource.changeExtension(ddcKernelExtension)
-        : depModule.linkedSummaryId;
-    var summaryPath = scratchSpace.fileFor(summaryId).path;
-
-    if (useKernel) {
-      var input = Input()..path = summaryPath;
-      request.inputs.add(input);
-      digestFutures.add(buildStep.digest(summaryId).then((digest) {
-        input.digest = digest.bytes;
-      }));
-      var moduleName = ddcModuleName(
-          depModule.primarySource.changeExtension(jsModuleExtension));
-      summaryPath += '=$moduleName';
-    }
-
-    request.arguments.addAll(['-s', summaryPath]);
-  }
-
-  // Wait for all the digests to complete.
-  await Future.wait(digestFutures);
-
-  // Add URL mappings for all the package: files to tell DartDevc where to
-  // find them.
-  //
-  // For non-lib files we use "fake" absolute file uris, using `id.path`.
-  if (!useKernel) {
-    for (var id in module.sources) {
-      var uri = canonicalUriFor(id);
-      if (uri.startsWith('package:')) {
-        request.arguments
-            .add('--url-mapping=$uri,${scratchSpace.fileFor(id).path}');
-      } else {
-        var absoluteFileUri = Uri.file('/${id.path}');
-        request.arguments.add('--url-mapping=$absoluteFileUri,${id.path}');
-      }
-    }
-  }
-
-  File packagesFile;
-  if (useKernel) {
-    var allDeps = <AssetId>[]
-      ..addAll(module.sources)
-      ..addAll(transitiveSummaryDeps);
-    packagesFile = await createPackagesFile(allDeps);
-    request.arguments.addAll([
-      '--packages',
-      packagesFile.absolute.uri.toString(),
-      '--module-name',
-      ddcModuleName(module.primarySource.changeExtension(jsModuleExtension)),
-      '--multi-root-scheme',
-      multiRootScheme,
-      '--multi-root',
-      '.',
-      '--reuse-compiler-result',
-      '--use-incremental-compiler',
-      '--track-widget-creation',
-      '--inline-source-map',
-    ]);
-  }
+  var allDeps = <AssetId>[]
+    ..addAll(module.sources)
+    ..addAll(transitiveKernelDeps);
+  var packagesFile = await createPackagesFile(allDeps);
+  request.arguments.addAll([
+    '--packages',
+    packagesFile.absolute.uri.toString(),
+    '--module-name',
+    ddcModuleName(module.primarySource.changeExtension(jsModuleExtension)),
+    '--multi-root-scheme',
+    multiRootScheme,
+    '--multi-root',
+    '.',
+    '--reuse-compiler-result',
+    '--use-incremental-compiler',
+    '--track-widget-creation',
+    '--inline-source-map',
+  ]);
 
   // And finally add all the urls to compile, using the package: path for
   // files under lib and the full absolute path for other files.
@@ -196,21 +124,18 @@ Future _createDevCompilerModule(
     if (uri.startsWith('package:')) {
       return uri;
     }
-    return useKernel
-        ? '$multiRootScheme:///${id.path}'
-        : Uri.file('/${id.path}').toString();
+    return '$multiRootScheme:///${id.path}';
   }));
 
   WorkResponse response;
   try {
-    var driverResource =
-        useKernel ? dartdevkDriverResource : dartdevcDriverResource;
+    var driverResource = dartdevkDriverResource;
     var driver = await buildStep.fetchResource(driverResource);
     response = await driver.doWork(request,
         trackWork: (response) =>
             buildStep.trackStage('Compile', () => response, isExternal: true));
   } finally {
-    if (useKernel) await packagesFile.parent.delete(recursive: true);
+    await packagesFile.parent.delete(recursive: true);
   }
 
   // TODO(jakemac53): Fix the ddc worker mode so it always sends back a bad

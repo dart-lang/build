@@ -30,18 +30,11 @@ Future main(List<String> args) async {
         toAllPackages(),
         isOptional: true,
         hideOutput: true),
-    apply(
-        'build_web_compilers|ddc',
-        [
-          (_) => DevCompilerBuilder(useKernel: true),
-        ],
+    apply('build_web_compilers|ddc', [(_) => DevCompilerBuilder()],
         toAllPackages(),
-        isOptional: true,
-        hideOutput: true),
-    apply(
-        'build_web_compilers|entrypoint',
-        [(_) => WebEntrypointBuilder(WebCompiler.DartDevc, useKernel: true)],
-        toRoot(),
+        isOptional: true, hideOutput: true),
+    apply('build_web_compilers|entrypoint',
+        [(_) => WebEntrypointBuilder(WebCompiler.DartDevc)], toRoot(),
         defaultGenerateFor: const InputSet(include: [
           'web/**.dart',
           'test/**.browser_test.dart',
