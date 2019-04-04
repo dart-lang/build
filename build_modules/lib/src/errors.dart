@@ -8,6 +8,8 @@ import 'dart:async';
 import 'package:analyzer/analyzer.dart';
 import 'package:build/build.dart';
 
+import 'module_library.dart';
+import 'module_library_builder.dart';
 import 'modules.dart';
 
 /// An [Exception] that is thrown when a worker returns an error.
@@ -101,4 +103,37 @@ Future<String> _missingImportMessage(
   if (import == null) return null;
   var lineInfo = parsed.lineInfo.getLocation(import.offset);
   return '`$import` from $sourceId at $lineInfo';
+}
+
+/// An [Exception] that is thrown when there are some unsupported modules.
+class UnsupportedModulesException implements Exception {
+  final Set<Module> unsupportedModules;
+
+  UnsupportedModulesException(this.unsupportedModules);
+
+  Stream<ModuleLibrary> exactLibraries(AssetReader reader) async* {
+    for (var module in unsupportedModules) {
+      for (var source in module.sources) {
+        var libraryId = source.changeExtension(moduleLibraryExtension);
+        ModuleLibrary library;
+        if (await reader.canRead(libraryId)) {
+          library = ModuleLibrary.deserialize(
+              libraryId, await reader.readAsString(libraryId));
+        } else {
+          library = ModuleLibrary.fromSource(
+              source, await reader.readAsString(source));
+        }
+        if (!library.isImportable) continue;
+        if (library.sdkDeps
+            .any((lib) => !module.platform.supportsLibrary(lib))) {
+          yield library;
+        }
+      }
+    }
+  }
+
+  @override
+  String toString() =>
+      'Some modules contained libraries that were incompatible '
+      'with the current platform.';
 }

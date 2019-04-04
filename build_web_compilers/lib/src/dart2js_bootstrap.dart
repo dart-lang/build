@@ -27,8 +27,27 @@ Future<Null> bootstrapDart2Js(
     var module = Module.fromJson(
         json.decode(await buildStep.readAsString(moduleId))
             as Map<String, dynamic>);
-    var allDeps = (await module.computeTransitiveDependencies(buildStep))
-      ..add(module);
+    List<Module> allDeps;
+    try {
+      allDeps = (await module.computeTransitiveDependencies(buildStep,
+          throwIfUnsupported: true))
+        ..add(module);
+    } on UnsupportedModulesException catch (e) {
+      var librariesString = (await e.exactLibraries(buildStep).toList())
+          .map((lib) => AssetId(lib.id.package,
+              lib.id.path.replaceFirst(moduleLibraryExtension, '.dart')))
+          .join('\n');
+      log.warning('''
+Skipping compiling ${buildStep.inputId} with dart2js because some of its
+transitive libraries have sdk dependencies that not supported on this platform:
+
+$librariesString
+
+https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-skipped-compiling-warnings
+''');
+      return;
+    }
+
     var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
     var allSrcs = allDeps.expand((module) => module.sources);
     await scratchSpace.ensureAssets(allSrcs, buildStep);
