@@ -86,15 +86,13 @@ Future<void> _createDevCompilerModule(Module module, BuildStep buildStep,
       ..path = sdkSummary
       ..digest = [0])
     ..inputs.addAll(await Future.wait(transitiveDeps.map((dep) async {
-      final kernelAsset =
-          module.primarySource.changeExtension(ddcKernelExtension);
+      final kernelAsset = dep.primarySource.changeExtension(ddcKernelExtension);
       return Input()
         ..path = scratchSpace.fileFor(kernelAsset).path
         ..digest = (await buildStep.digest(kernelAsset)).bytes;
     })))
     ..arguments.addAll(transitiveDeps.expand((dep) {
-      final kernelAsset =
-          module.primarySource.changeExtension(ddcKernelExtension);
+      final kernelAsset = dep.primarySource.changeExtension(ddcKernelExtension);
       var moduleName =
           ddcModuleName(dep.primarySource.changeExtension(jsModuleExtension));
       return ['-s', '${scratchSpace.fileFor(kernelAsset).path}=$moduleName'];
