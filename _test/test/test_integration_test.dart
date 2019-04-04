@@ -23,7 +23,7 @@ void main() {
     expect(
         result.stdout, matches(RegExp(r'hello_world_test.dart [\d]+:[\d]+')));
     expect(result.stdout, isNot(contains('.js')));
-  }, skip: 'https://github.com/dart-lang/sdk/issues/36236');
+  });
 
   group('file edits', () {
     setUp(() async {
@@ -43,12 +43,12 @@ void main() {
 
     test('create new test', () async {
       await createFile(p.join('test', 'other_test.dart'), basicTestContents);
-      await expectTestsPass(expectedNumRan: 6);
+      await expectTestsPass(expectedNumRan: 7);
     });
 
     test('delete test', () async {
       await deleteFile(p.join('test', 'sub-dir', 'subdir_test.dart'));
-      await expectTestsPass(expectedNumRan: 4);
+      await expectTestsPass(expectedNumRan: 5);
     });
   });
 }

@@ -96,7 +96,8 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
         ..write(_dartLoaderSetup(
             modulePaths,
             _p.url.relative(appDigestsOutput.path,
-                from: _p.url.dirname(bootstrapId.path))))
+                from: _p.url.dirname(bootstrapId.path)),
+            useKernel))
         ..write(_requireJsConfig)
         ..write(_appBootstrap(bootstrapModuleName, appModuleName,
             appModuleScope, appModuleSource));
@@ -246,7 +247,8 @@ var _currentDirectory = (function () {
 ''';
 
 /// Sets up `window.$dartLoader` based on [modulePaths].
-String _dartLoaderSetup(Map<String, String> modulePaths, String appDigests) =>
+String _dartLoaderSetup(
+        Map<String, String> modulePaths, String appDigests, bool useKernel) =>
     '''
 $_baseUrlScript
 let modulePaths = ${const JsonEncoder.withIndent(" ").convert(modulePaths)};
@@ -296,7 +298,7 @@ for (let moduleName of Object.getOwnPropertyNames(modulePaths)) {
   // dartdevc only strips the final extension when adding modules to source
   // maps, so we need to do the same.
   if (moduleName != 'dart_sdk') {
-    moduleName += '$_modulePartialExtension';
+    ${useKernel ? '' : "moduleName += '$_modulePartialExtension'"};
   }
   if (window.\$dartLoader.moduleIdToUrl.has(moduleName)) {
     continue;
