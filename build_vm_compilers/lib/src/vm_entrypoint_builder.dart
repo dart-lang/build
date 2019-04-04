@@ -12,6 +12,7 @@ import 'package:build_modules/build_modules.dart';
 import 'package:pool/pool.dart';
 
 import '../builders.dart';
+import 'platform.dart';
 
 /// Because we hold bytes in memory we don't want to compile to many app entry
 /// points at once.
@@ -36,7 +37,7 @@ class VmEntrypointBuilder implements Builder {
       if (!isAppEntrypoint) return;
 
       var moduleId =
-          buildStep.inputId.changeExtension(moduleExtension(DartPlatform.vm));
+          buildStep.inputId.changeExtension(moduleExtension(vmPlatform));
       var module = Module.fromJson(
           json.decode(await buildStep.readAsString(moduleId))
               as Map<String, dynamic>);
