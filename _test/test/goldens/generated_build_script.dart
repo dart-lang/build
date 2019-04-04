@@ -55,7 +55,7 @@ final _builders = <_i1.BuilderApplication>[
       isOptional: true,
       hideOutput: true,
       appliesBuilders: ['build_modules|module_cleanup']),
-  _i1.apply('build_web_compilers|kernel', [_i6.ddcKernelBuilder],
+  _i1.apply('build_web_compilers|ddc_kernel', [_i6.ddcKernelBuilder],
       _i1.toNoneByDefault(),
       isOptional: true, hideOutput: true),
   _i1.apply('build_web_compilers|ddc', [_i6.ddcBuilder], _i1.toAllPackages(),
@@ -63,8 +63,9 @@ final _builders = <_i1.BuilderApplication>[
       hideOutput: true,
       appliesBuilders: [
         'build_web_compilers|ddc_modules',
-        'build_web_compilers|dart_source_cleanup',
-        'build_web_compilers|kernel'
+        'build_web_compilers|ddc_kernel',
+        'build_web_compilers|dart2js_modules',
+        'build_web_compilers|dart_source_cleanup'
       ]),
   _i1.apply('build_web_compilers|entrypoint', [_i6.webEntrypointBuilder],
       _i1.toRoot(),
@@ -82,10 +83,7 @@ final _builders = <_i1.BuilderApplication>[
         'dart2js_args': ['--minify']
       }),
       defaultReleaseOptions: _i7.BuilderOptions({'compiler': 'dart2js'}),
-      appliesBuilders: [
-        'build_web_compilers|dart2js_archive_extractor',
-        'build_web_compilers|dart2js_modules'
-      ]),
+      appliesBuilders: ['build_web_compilers|dart2js_archive_extractor']),
   _i1.apply(
       'build_vm_compilers|modules',
       [_i8.metaModuleBuilder, _i8.metaModuleCleanBuilder, _i8.moduleBuilder],
