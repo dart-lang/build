@@ -54,8 +54,7 @@ main() {
         'a|web/index$jsSourceMapExtension':
             decodedMatches(contains('index.dart')),
       };
-      await testBuilder(DevCompilerBuilder(useKernel: true), assets,
-          outputs: expectedOutputs);
+      await testBuilder(DevCompilerBuilder(), assets, outputs: expectedOutputs);
     });
   });
 
