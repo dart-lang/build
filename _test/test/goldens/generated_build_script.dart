@@ -72,7 +72,7 @@ final _builders = <_i1.BuilderApplication>[
       hideOutput: true,
       defaultGenerateFor: const _i4.InputSet(include: [
         'web/**',
-        'test/**_test.dart',
+        'test/**.dart.browser_test.dart',
         'example/**',
         'benchmark/**'
       ], exclude: [
