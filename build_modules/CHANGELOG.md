@@ -5,6 +5,19 @@
 - Remove the `merge` method from `Module` and replace with a static
   `Module.merge`. Module instances are now immutable.
 - Remove `jsId`, and `jsSourceMapId` from `Module`.
+- `DartPlatform` no longer has hard coded platforms, and its constructor is now
+  public. Anybody is now free to create their own `platform`.
+- Removed the platform specific builder factories from the `builders.dart` file.
+  - Packages that want to target compilation for a platform should create their
+    own builder factories.
+- Removed completely the analyzer based builders - `UnlinkedSummaryBuilder` and
+  `LinkedSummaryBuilder`.
+  - All backends should now be using the `KernelBuilder` instead.
+- Removed the default module builders for each supported platform. These
+  must now be created by the packages that want to add compilation targeting a
+  specific platform.
+  - This will help reduce asset graph bloat caused by platforms that you weren't
+    actually targeting.
 
 ### Improvements
 

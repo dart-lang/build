@@ -19,7 +19,7 @@ import 'matchers.dart';
 
 void main() {
   InMemoryAssetReader reader;
-  final defaultPlatform = DartPlatform.dart2js;
+  final defaultPlatform = DartPlatform.register('test', ['async']);
 
   List<AssetId> makeAssets(Map<String, String> assetDescriptors) {
     reader = InMemoryAssetReader();
@@ -394,10 +394,13 @@ void main() {
       ''',
       'myapp|web/default.dart': '',
       'myapp|web/io.dart': '''
+        import 'dart:io';
       ''',
       'myapp|web/html.dart': '''
+        import 'dart:html';
       ''',
       'myapp|web/ui.dart': '''
+        import 'dart:ui';
       ''',
     });
 
@@ -407,44 +410,33 @@ void main() {
     var ioId = AssetId('myapp', 'web/io.dart');
     var uiId = AssetId('myapp', 'web/ui.dart');
 
+    var htmlPlatform = DartPlatform.register('html', ['html']);
+    var ioPlatform = DartPlatform.register('io', ['io']);
+    var uiPlatform = DartPlatform.register('ui', ['ui']);
+
     var expectedModulesForPlatform = {
-      DartPlatform.dart2js: [
-        matchesModule(Module(
-            primaryId, [primaryId], [htmlId], DartPlatform.dart2js, true)),
-        matchesModule(Module(htmlId, [htmlId], [], DartPlatform.dart2js, true)),
-        matchesModule(Module(ioId, [ioId], [], DartPlatform.dart2js, true)),
+      htmlPlatform: [
         matchesModule(
-            Module(defaultId, [defaultId], [], DartPlatform.dart2js, true)),
-        matchesModule(Module(uiId, [uiId], [], DartPlatform.dart2js, true)),
+            Module(primaryId, [primaryId], [htmlId], htmlPlatform, true)),
+        matchesModule(Module(defaultId, [defaultId], [], htmlPlatform, true)),
+        matchesModule(Module(htmlId, [htmlId], [], htmlPlatform, true)),
+        matchesModule(Module(ioId, [ioId], [], htmlPlatform, false)),
+        matchesModule(Module(uiId, [uiId], [], htmlPlatform, false)),
       ],
-      DartPlatform.dartdevc: [
-        matchesModule(Module(
-            primaryId, [primaryId], [htmlId], DartPlatform.dartdevc, true)),
-        matchesModule(
-            Module(htmlId, [htmlId], [], DartPlatform.dartdevc, true)),
-        matchesModule(Module(ioId, [ioId], [], DartPlatform.dartdevc, true)),
-        matchesModule(
-            Module(defaultId, [defaultId], [], DartPlatform.dartdevc, true)),
-        matchesModule(Module(uiId, [uiId], [], DartPlatform.dartdevc, true)),
+      ioPlatform: [
+        matchesModule(Module(primaryId, [primaryId], [ioId], ioPlatform, true)),
+        matchesModule(Module(defaultId, [defaultId], [], ioPlatform, true)),
+        matchesModule(Module(htmlId, [htmlId], [], ioPlatform, false)),
+        matchesModule(Module(ioId, [ioId], [], ioPlatform, true)),
+        matchesModule(Module(uiId, [uiId], [], ioPlatform, false)),
       ],
-      DartPlatform.flutter: [
-        matchesModule(
-            Module(primaryId, [primaryId], [uiId], DartPlatform.flutter, true)),
-        matchesModule(Module(htmlId, [htmlId], [], DartPlatform.flutter, true)),
-        matchesModule(Module(ioId, [ioId], [], DartPlatform.flutter, true)),
-        matchesModule(
-            Module(defaultId, [defaultId], [], DartPlatform.flutter, true)),
-        matchesModule(Module(uiId, [uiId], [], DartPlatform.flutter, true)),
+      uiPlatform: [
+        matchesModule(Module(primaryId, [primaryId], [uiId], uiPlatform, true)),
+        matchesModule(Module(defaultId, [defaultId], [], uiPlatform, true)),
+        matchesModule(Module(htmlId, [htmlId], [], uiPlatform, false)),
+        matchesModule(Module(ioId, [ioId], [], uiPlatform, false)),
+        matchesModule(Module(uiId, [uiId], [], uiPlatform, true)),
       ],
-      DartPlatform.vm: [
-        matchesModule(
-            Module(primaryId, [primaryId], [ioId], DartPlatform.vm, true)),
-        matchesModule(Module(htmlId, [htmlId], [], DartPlatform.vm, true)),
-        matchesModule(Module(ioId, [ioId], [], DartPlatform.vm, true)),
-        matchesModule(
-            Module(defaultId, [defaultId], [], DartPlatform.vm, true)),
-        matchesModule(Module(uiId, [uiId], [], DartPlatform.vm, true)),
-      ]
     };
 
     for (var platform in expectedModulesForPlatform.keys) {

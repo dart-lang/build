@@ -2,109 +2,52 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-/// A supported platform for compilation of Dart libraries, including knowledge
-/// of which core libraries are supported.
+/// A supported "platform" for compilation of Dart libraries.
+///
+/// Each "platform" has its own compilation pipeline and builders, and could
+/// differ from other platforms in many ways:
+///
+/// - The core libs that are supported
+/// - The implementations of the core libs
+/// - The compilation steps that are required (frontends or backends could be
+///   different).
+///
+/// Typically these should correspond to `libraries.json` files in the SDK.
+///
+/// New platforms should be created with [register], and can later be
+/// fetched by name using the [DartPlatform.byName] static method.
 class DartPlatform {
+  /// A list of all registered platforms by name, populated by
+  /// [register].
+  static final _platformsByName = <String, DartPlatform>{};
+
   final List<String> _supportedLibraries;
 
   final String name;
 
-  static const dartdevc = DartPlatform._('dartdevc', [
-    'async',
-    'collection',
-    'convert',
-    'core',
-    'developer',
-    'html',
-    'html_common',
-    'indexed_db',
-    'js',
-    'js_util',
-    'math',
-    'svg',
-    'typed_data',
-    'web_audio',
-    'web_gl',
-    'web_sql',
-  ]);
-  static const dart2js = DartPlatform._('dart2js', [
-    'async',
-    'collection',
-    'convert',
-    'core',
-    'developer',
-    'html',
-    'html_common',
-    'indexed_db',
-    'js',
-    'js_util',
-    'math',
-    'svg',
-    'typed_data',
-    'web_audio',
-    'web_gl',
-    'web_sql',
-  ]);
-  static const dart2jsServer = DartPlatform._('dart2js_server', [
-    'async',
-    'collection',
-    'convert',
-    'core',
-    'developer',
-    'js',
-    'js_util',
-    'math',
-    'typed_data',
-  ]);
-  static const flutter = DartPlatform._('flutter', [
-    'async',
-    'cli',
-    'collection',
-    'convert',
-    'core',
-    'developer',
-    'io',
-    'isolate',
-    'math',
-    'nativewrappers',
-    'profiler',
-    'typed_data',
-    'ui',
-    'vmservice_io',
-  ]);
-  static const vm = DartPlatform._('vm', [
-    'async',
-    'cli',
-    'collection',
-    'convert',
-    'core',
-    'developer',
-    'io',
-    'isolate',
-    'math',
-    'mirrors',
-    'nativewrappers',
-    'profiler',
-    'typed_data',
-    'vmservice_io',
-  ]);
-
-  factory DartPlatform(String name) {
-    var platform = _byName[name];
-    if (platform == null) {
-      throw ArgumentError('Unrecognized paltform $name, the recognized '
-          'platforms are ${_byName.keys.join(', ')}.');
-    }
-    return platform;
+  /// Returns a [DartPlatform] instance by name.
+  ///
+  /// Throws an [UnrecognizedDartPlatformException] if [name] has not been
+  /// registered with [DartPlatform.register].
+  static DartPlatform byName(String name) {
+    var platform = _platformsByName[name];
+    if (platform != null) return platform;
+    throw UnrecognizedDartPlatformException(name);
   }
 
-  static const _byName = {
-    'dart2js': dart2js,
-    'dart2js_server': dart2jsServer,
-    'dartdevc': dartdevc,
-    'flutter': flutter,
-    'vm': vm
-  };
+  /// Registers a new [DartPlatform].
+  ///
+  /// Throws a [DartPlatformAlreadyRegisteredException] if [name] has already
+  /// been registered by somebody else.
+  static DartPlatform register(String name, List<String> supportedLibraries) {
+    if (_platformsByName.containsKey(name)) {
+      throw DartPlatformAlreadyRegisteredException(name);
+    }
+
+    var platform = DartPlatform._(name, List.of(supportedLibraries));
+    _platformsByName[name] = platform;
+    return platform;
+  }
 
   const DartPlatform._(this.name, this._supportedLibraries);
 
@@ -119,4 +62,23 @@ class DartPlatform {
 
   @override
   bool operator ==(other) => other is DartPlatform && other.name == name;
+}
+
+class DartPlatformAlreadyRegisteredException implements Exception {
+  final String name;
+
+  const DartPlatformAlreadyRegisteredException(this.name);
+
+  @override
+  String toString() => 'The platform `$name`, has already been registered.';
+}
+
+class UnrecognizedDartPlatformException implements Exception {
+  final String name;
+
+  const UnrecognizedDartPlatformException(this.name);
+
+  @override
+  String toString() => 'Unrecognized platform `$name`, it must be registered '
+      'first using `DartPlatform.register`';
 }
