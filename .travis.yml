@@ -16,7 +16,7 @@ jobs:
       env: PKGS="_test _test_common"
       script: ./tool/travis.sh dartanalyzer_0
     - stage: unit_test
-      name: "SDK: dev; PKG: _test; TASKS: [`pub run build_runner test -- -p chrome`, `pub run build_runner test -- -p vm test/config_specific_import_test.dart`]"
+      name: "SDK: dev; PKG: _test; TASKS: [`pub run build_runner test -- -p chrome`, `pub run build_runner test -- -p vm test/configurable_uri_test.dart`]"
       dart: dev
       env: PKGS="_test"
       script: ./tool/travis.sh command_0 command_1

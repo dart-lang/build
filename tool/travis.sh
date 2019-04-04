@@ -27,8 +27,8 @@ for PKG in ${PKGS}; do
       ;;
     command_1) echo
       echo -e '\033[1mTASK: command_1\033[22m'
-      echo -e 'pub run build_runner test -- -p vm test/config_specific_import_test.dart'
-      pub run build_runner test -- -p vm test/config_specific_import_test.dart || EXIT_CODE=$?
+      echo -e 'pub run build_runner test -- -p vm test/configurable_uri_test.dart'
+      pub run build_runner test -- -p vm test/configurable_uri_test.dart || EXIT_CODE=$?
       ;;
     command_2) echo
       echo -e '\033[1mTASK: command_2\033[22m'
