@@ -15,6 +15,7 @@ import 'package:scratch_space/scratch_space.dart';
 import '../builders.dart';
 import 'common.dart';
 import 'errors.dart';
+import 'platforms.dart';
 
 final _sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
 
@@ -30,7 +31,7 @@ class DevCompilerBuilder implements Builder {
 
   @override
   final buildExtensions = {
-    moduleExtension(DartPlatform.dartdevc): [
+    moduleExtension(ddcPlatform): [
       jsModuleExtension,
       jsModuleErrorsExtension,
       jsSourceMapExtension
@@ -67,7 +68,7 @@ Future _createDevCompilerModule(
       () => module.computeTransitiveDependencies(buildStep));
   var transitiveSummaryDeps = transitiveDeps.map((module) => useKernel
       ? module.primarySource.changeExtension(ddcKernelExtension)
-      : module.linkedSummaryId);
+      : module.primarySource.changeExtension('.ddc.linked.sum'));
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
 
   var allAssetIds = Set<AssetId>()
@@ -96,8 +97,7 @@ Future _createDevCompilerModule(
     // Add the default analysis_options.
     await scratchSpace.ensureAssets([defaultAnalysisOptionsId], buildStep);
     var libraryRoot = '/${p.split(p.dirname(jsId.path)).first}';
-    var summaryExtension =
-        linkedSummaryExtension(DartPlatform.dartdevc).substring(1);
+    var summaryExtension = 'ddc.linked.sum';
     request.arguments.addAll([
       '--module-root=.',
       '--library-root=$libraryRoot',
@@ -130,7 +130,7 @@ Future _createDevCompilerModule(
   for (var depModule in transitiveDeps) {
     var summaryId = useKernel
         ? depModule.primarySource.changeExtension(ddcKernelExtension)
-        : depModule.linkedSummaryId;
+        : depModule.primarySource.changeExtension('.ddc.linked.sum');
     var summaryPath = scratchSpace.fileFor(summaryId).path;
 
     if (useKernel) {

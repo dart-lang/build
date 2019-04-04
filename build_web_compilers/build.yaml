@@ -1,4 +1,36 @@
 builders:
+  dart2js_modules:
+      import: "package:build_web_compilers/builders.dart"
+      builder_factories:
+        - dart2jsMetaModuleBuilder
+        - dart2jsMetaModuleCleanBuilder
+        - dart2jsModuleBuilder
+      build_extensions:
+        $lib$:
+          - .dart2js.meta_module.raw
+          - .dart2js.meta_module.clean
+        .dart:
+          - .dart2js.module
+      is_optional: True
+      auto_apply: none
+      required_inputs: [".dart", ".module.library"]
+      applies_builders: ["build_modules|module_cleanup"]
+  ddc_modules:
+      import: "package:build_web_compilers/builders.dart"
+      builder_factories:
+        - ddcMetaModuleBuilder
+        - ddcMetaModuleCleanBuilder
+        - ddcModuleBuilder
+      build_extensions:
+        $lib$:
+          - .ddc.meta_module.raw
+          - .ddc.meta_module.clean
+        .dart:
+          - .ddc.module
+      is_optional: True
+      auto_apply: none
+      required_inputs: [".dart", ".module.library"]
+      applies_builders: ["build_modules|module_cleanup"]
   kernel:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
@@ -10,11 +42,11 @@ builders:
     auto_apply: none
     required_inputs:
       - .dart
-      - .dartdevc.module
+      - .ddc.module
   ddc:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
-      - devCompilerBuilder
+      - ddcBuilder
     build_extensions:
       .dart:
         - .ddc.js.errors
@@ -24,16 +56,15 @@ builders:
     auto_apply: all_packages
     required_inputs:
       - .dart
-      - .dartdevc.module
+      - .ddc.module
       - .ddc.dill
     applies_builders:
       # We want this to apply for dart2js as well - luckily this builder doesn't
       # need to be disabled since it's lazy so we can use is as a handle to get
       # the cleanup builder applied.
+      - build_web_compilers|ddc_modules
       - build_web_compilers|dart_source_cleanup
       - build_web_compilers|kernel
-      - build_modules|dartdevc
-      - build_modules|dart2js
   entrypoint:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
@@ -47,7 +78,7 @@ builders:
     required_inputs:
       - .dart
       - .ddc.js
-      - .dartdevc.module
+      - .ddc.module
       - .dart2js.module
     build_to: cache
     auto_apply: root_package
@@ -68,10 +99,11 @@ builders:
         compiler: dart2js
     applies_builders:
       - build_web_compilers|dart2js_archive_extractor
+      - build_web_compilers|dart2js_modules
 post_process_builders:
   dart2js_archive_extractor:
     import: "package:build_web_compilers/builders.dart"
-    builder_factory: dart2JsArchiveExtractor
+    builder_factory: dart2jsArchiveExtractor
     defaults:
       release_options:
         filter_outputs: true

@@ -8,11 +8,13 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
+import 'package:build_web_compilers/builders.dart';
 import 'package:path/path.dart' as _p; // ignore: library_prefixes
 import 'package:pool/pool.dart';
 
 import 'ddc_names.dart';
 import 'dev_compiler_builder.dart';
+import 'platforms.dart';
 import 'web_entrypoint_builder.dart';
 
 /// Alias `_p.url` to `p`.
@@ -26,11 +28,13 @@ Future<Null> bootstrapDdc(BuildStep buildStep,
   useKernel ??= false;
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
-      buildStep.inputId.changeExtension(moduleExtension(DartPlatform.dartdevc));
+      buildStep.inputId.changeExtension(moduleExtension(ddcPlatform));
   var module = Module.fromJson(json
       .decode(await buildStep.readAsString(moduleId)) as Map<String, dynamic>);
 
-  if (buildRootAppSummary) await buildStep.canRead(module.linkedSummaryId);
+  if (buildRootAppSummary)
+    await buildStep
+        .canRead(module.primarySource.changeExtension(ddcKernelExtension));
 
   // First, ensure all transitive modules are built.
   var transitiveDeps = await _ensureTransitiveModules(module, buildStep);
