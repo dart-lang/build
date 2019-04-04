@@ -10,58 +10,6 @@ builders:
     is_optional: True
     required_inputs: [".dart"]
     applies_builders: ["|module_cleanup"]
-  dartdevc:
-    import: "package:build_modules/builders.dart"
-    builder_factories:
-      - metaModuleBuilderFactoryForPlatform('dartdevc')
-      - metaModuleCleanBuilderFactoryForPlatform('dartdevc')
-      - moduleBuilderFactoryForPlatform('dartdevc')
-      - unlinkedSummaryBuilderForPlatform('dartdevc')
-      - linkedSummaryBuilderForPlatform('dartdevc')
-    build_extensions:
-      $lib$:
-        - .dartdevc.meta_module.raw
-        - .dartdevc.meta_module.clean
-      .dart:
-        - .dartdevc.module
-        - .dartdevc.linked.sum
-        - .dartdevc.unlinked.sum
-    is_optional: True
-    auto_apply: none
-    required_inputs: [".dart", ".module.library"]
-    applies_builders: ["|module_cleanup"]
-  dart2js:
-    import: "package:build_modules/builders.dart"
-    builder_factories:
-      - metaModuleBuilderFactoryForPlatform('dart2js')
-      - metaModuleCleanBuilderFactoryForPlatform('dart2js')
-      - moduleBuilderFactoryForPlatform('dart2js')
-    build_extensions:
-      $lib$:
-        - .dart2js.meta_module.raw
-        - .dart2js.meta_module.clean
-      .dart:
-        - .dart2js.module
-    is_optional: True
-    auto_apply: none
-    required_inputs: [".dart", ".module.library"]
-    applies_builders: ["|module_cleanup"]
-  vm:
-    import: "package:build_modules/builders.dart"
-    builder_factories:
-      - metaModuleBuilderFactoryForPlatform('vm')
-      - metaModuleCleanBuilderFactoryForPlatform('vm')
-      - moduleBuilderFactoryForPlatform('vm')
-    build_extensions:
-      $lib$:
-        - .vm.meta_module.raw
-        - .vm.meta_module.clean
-      .dart:
-        - .vm.module
-    is_optional: True
-    auto_apply: none
-    required_inputs: [".dart", ".module.library"]
-    applies_builders: ["|module_cleanup"]
 post_process_builders:
   module_cleanup:
     import: "package:build_modules/builders.dart"

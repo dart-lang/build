@@ -14,13 +14,14 @@ import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 
+import 'platforms.dart';
 import 'web_entrypoint_builder.dart';
 
 Future<Null> bootstrapDart2Js(
     BuildStep buildStep, List<String> dart2JsArgs) async {
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
-      dartEntrypointId.changeExtension(moduleExtension(DartPlatform.dart2js));
+      dartEntrypointId.changeExtension(moduleExtension(dart2jsPlatform));
   var args = <String>[];
   {
     var module = Module.fromJson(

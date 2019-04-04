@@ -15,6 +15,7 @@ import 'package:scratch_space/scratch_space.dart';
 import '../builders.dart';
 import 'common.dart';
 import 'errors.dart';
+import 'platforms.dart';
 
 final _sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
 
@@ -26,7 +27,7 @@ const jsSourceMapExtension = '.ddc.js.map';
 class DevCompilerBuilder implements Builder {
   @override
   final buildExtensions = {
-    moduleExtension(DartPlatform.dartdevc): [
+    moduleExtension(ddcPlatform): [
       jsModuleExtension,
       jsModuleErrorsExtension,
       jsSourceMapExtension

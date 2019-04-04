@@ -79,6 +79,8 @@ class KernelBuilder implements Builder {
           outputExtension: outputExtension,
           dartSdkDir: platformSdk,
           sdkKernelPath: sdkKernelPath);
+    } on MissingModulesException catch (e) {
+      log.severe(e.toString());
     } on KernelException catch (e, s) {
       log.severe(
           'Error creating '
@@ -174,14 +176,32 @@ Future<void> _findModuleDeps(
 
 /// The transitive dependencies of [root], not including [root] itself.
 Future<List<Module>> _resolveTransitiveModules(
-        Module root, BuildStep buildStep) =>
-    crawlAsync<AssetId, Module>(
-            [root.primarySource],
-            (id) => buildStep.fetchResource(moduleCache).then((c) => c.find(
-                id.changeExtension(moduleExtension(root.platform)), buildStep)),
-            (id, module) => module.directDependencies)
-        .skip(1) // Skip the root.
-        .toList();
+    Module root, BuildStep buildStep) async {
+  var missing = Set<AssetId>();
+  var modules = await crawlAsync<AssetId, Module>(
+          [root.primarySource],
+          (id) => buildStep.fetchResource(moduleCache).then((c) async {
+                var moduleId =
+                    id.changeExtension(moduleExtension(root.platform));
+                var module = await c.find(moduleId, buildStep);
+                if (module == null) {
+                  missing.add(moduleId);
+                } else if (module.isMissing) {
+                  missing.add(module.primarySource);
+                }
+                return module;
+              }),
+          (id, module) => module.directDependencies)
+      .skip(1) // Skip the root.
+      .toList();
+
+  if (missing.isNotEmpty) {
+    throw await MissingModulesException.create(
+        missing, modules.toList()..add(root), buildStep);
+  }
+
+  return modules;
+}
 
 /// Finds the primary source of all transitive parents of any module which does
 /// not have a readable kernel file.

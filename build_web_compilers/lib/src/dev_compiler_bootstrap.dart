@@ -13,6 +13,7 @@ import 'package:pool/pool.dart';
 
 import 'ddc_names.dart';
 import 'dev_compiler_builder.dart';
+import 'platforms.dart';
 import 'web_entrypoint_builder.dart';
 
 /// Alias `_p.url` to `p`.
@@ -23,7 +24,7 @@ var _modulePartialExtension = _context.withoutExtension(jsModuleExtension);
 Future<void> bootstrapDdc(BuildStep buildStep) async {
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
-      buildStep.inputId.changeExtension(moduleExtension(DartPlatform.dartdevc));
+      buildStep.inputId.changeExtension(moduleExtension(ddcPlatform));
   var module = Module.fromJson(json
       .decode(await buildStep.readAsString(moduleId)) as Map<String, dynamic>);
 

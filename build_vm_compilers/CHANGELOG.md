@@ -1,3 +1,8 @@
+## 1.0.0
+
+- Support build_modules 2.0.0
+  - Define our own `vm` platform and builders explicitly.
+
 ## 0.1.2
 
 - Increased the upper bound for `package:analyzer` to `<0.37.0`.

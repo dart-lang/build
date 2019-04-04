@@ -14,7 +14,6 @@ import 'package:json_annotation/json_annotation.dart';
 import 'errors.dart';
 import 'module_builder.dart';
 import 'platform.dart';
-import 'summary_builder.dart';
 
 part 'modules.g.dart';
 
@@ -55,14 +54,6 @@ class Module {
         modules.first.platform, isSupported,
         isMissing: isMissing);
   }
-
-  /// The linked summary for this module.
-  AssetId get linkedSummaryId =>
-      primarySource.changeExtension(linkedSummaryExtension(platform));
-
-  /// The unlinked summary for this module.
-  AssetId get unlinkedSummaryId =>
-      primarySource.changeExtension(unlinkedSummaryExtension(platform));
 
   /// The library which will be used to reference any library in [sources].
   ///
@@ -193,7 +184,7 @@ class _DartPlatformConverter implements JsonConverter<DartPlatform, String> {
   const _DartPlatformConverter();
 
   @override
-  DartPlatform fromJson(String json) => DartPlatform(json);
+  DartPlatform fromJson(String json) => DartPlatform.byName(json);
 
   @override
   String toJson(DartPlatform object) => object.name;
