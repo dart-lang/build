@@ -4,9 +4,6 @@
 
 export 'src/archive_extractor.dart' show Dart2JsArchiveExtractor;
 export 'src/dev_compiler_builder.dart'
-    show
-        DevCompilerBuilder,
-        jsModuleExtension,
-        jsSourceMapExtension;
+    show DevCompilerBuilder, jsModuleExtension, jsSourceMapExtension;
 export 'src/web_entrypoint_builder.dart'
     show WebCompiler, WebEntrypointBuilder, ddcBootstrapExtension;
