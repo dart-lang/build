@@ -1,5 +1,5 @@
 name: build_vm_compilers
-version: 0.1.2-dev
+version: 0.1.2
 description: Builder implementations wrapping Dart VM compilers.
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/build_vm_compilers
@@ -20,11 +20,3 @@ dev_dependencies:
   test_descriptor: ^1.1.0
   _test_common:
     path: ../_test_common
-
-dependency_overrides:
-  build:
-    path: ../build
-  build_modules:
-    path: ../build_modules
-  build_resolvers:
-    path: ../build_resolvers
