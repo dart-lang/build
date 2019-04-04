@@ -39,7 +39,7 @@ class DevCompilerBuilder implements Builder {
         json.decode(await buildStep.readAsString(buildStep.inputId))
             as Map<String, dynamic>);
 
-    Future<Null> handleError(e) async {
+    Future<void> handleError(e) async {
       await buildStep.writeAsString(
           module.primarySource.changeExtension(jsModuleErrorsExtension), '$e');
       log.severe('$e');
@@ -56,7 +56,7 @@ class DevCompilerBuilder implements Builder {
 }
 
 /// Compile [module] with the dev compiler.
-Future _createDevCompilerModule(Module module, BuildStep buildStep,
+Future<void> _createDevCompilerModule(Module module, BuildStep buildStep,
     {bool debugMode = true}) async {
   var transitiveDeps = await buildStep.trackStage('CollectTransitiveDeps',
       () => module.computeTransitiveDependencies(buildStep));
