@@ -20,7 +20,6 @@ main() {
   final assetA = AssetId('a', 'lib/a.dart');
   final assetB = AssetId('b', 'lib/b.dart');
   final platform = DartPlatform.register('test', ['dart:async']);
-  ;
 
   test('unconnected components stay disjoint', () async {
     var moduleA = Module(assetA, [assetA], [], platform, true);
