@@ -20,7 +20,7 @@ _p.Context get _context => _p.url;
 
 var _modulePartialExtension = _context.withoutExtension(jsModuleExtension);
 
-Future<Null> bootstrapDdc(BuildStep buildStep) async {
+Future<void> bootstrapDdc(BuildStep buildStep) async {
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
       buildStep.inputId.changeExtension(moduleExtension(DartPlatform.dartdevc));
