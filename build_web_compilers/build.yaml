@@ -49,19 +49,18 @@ builders:
     builder_factories:
       - ddcKernelBuilder
     build_extensions:
-      .dart:
+      .ddc.module:
         - .ddc.dill
     is_optional: True
     auto_apply: none
     required_inputs:
-      - .dart
       - .ddc.module
   ddc:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
       - ddcBuilder
     build_extensions:
-      .dart:
+      .ddc.module:
         - .ddc.js.errors
         - .ddc.js
         - .ddc.js.map
@@ -88,6 +87,7 @@ builders:
         - .dart.js
         - .dart.js.map
         - .dart.js.tar.gz
+        - .digests
     required_inputs:
       - .dart
       - .ddc.js
