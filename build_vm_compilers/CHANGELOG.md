@@ -1,4 +1,4 @@
-## 0.1.2-dev
+## 0.1.2
 
 - Increased the upper bound for `package:analyzer` to `<0.37.0`.
 - Require Dart SDK `>=2.1.0`.

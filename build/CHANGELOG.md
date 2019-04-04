@@ -1,4 +1,4 @@
-## 1.1.3-dev
+## 1.1.3
 
 - Update the minimum sdk constraint to 2.1.0.
 - Increased the upper bound for `package:analyzer` to `<0.37.0`.
