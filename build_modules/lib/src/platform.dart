@@ -27,26 +27,22 @@ class DartPlatform {
 
   /// Returns a [DartPlatform] instance by name.
   ///
-  /// Throws an [UnrecognizedDartPlatformException] if [name] has not been
+  /// Throws an [UnrecognizedDartPlatform] if [name] has not been
   /// registered with [DartPlatform.register].
-  static DartPlatform byName(String name) {
-    var platform = _platformsByName[name];
-    if (platform != null) return platform;
-    throw UnrecognizedDartPlatformException(name);
-  }
+  static DartPlatform byName(String name) =>
+      _platformsByName[name] ?? (throw UnrecognizedDartPlatform(name));
 
   /// Registers a new [DartPlatform].
   ///
-  /// Throws a [DartPlatformAlreadyRegisteredException] if [name] has already
+  /// Throws a [DartPlatformAlreadyRegistered] if [name] has already
   /// been registered by somebody else.
   static DartPlatform register(String name, List<String> supportedLibraries) {
     if (_platformsByName.containsKey(name)) {
-      throw DartPlatformAlreadyRegisteredException(name);
+      throw DartPlatformAlreadyRegistered(name);
     }
 
-    var platform = DartPlatform._(name, List.of(supportedLibraries));
-    _platformsByName[name] = platform;
-    return platform;
+    return _platformsByName[name] =
+        DartPlatform._(name, List.unmodifiable(supportedLibraries));
   }
 
   const DartPlatform._(this.name, this._supportedLibraries);
@@ -64,19 +60,19 @@ class DartPlatform {
   bool operator ==(other) => other is DartPlatform && other.name == name;
 }
 
-class DartPlatformAlreadyRegisteredException implements Exception {
+class DartPlatformAlreadyRegistered implements Exception {
   final String name;
 
-  const DartPlatformAlreadyRegisteredException(this.name);
+  const DartPlatformAlreadyRegistered(this.name);
 
   @override
   String toString() => 'The platform `$name`, has already been registered.';
 }
 
-class UnrecognizedDartPlatformException implements Exception {
+class UnrecognizedDartPlatform implements Exception {
   final String name;
 
-  const UnrecognizedDartPlatformException(this.name);
+  const UnrecognizedDartPlatform(this.name);
 
   @override
   String toString() => 'Unrecognized platform `$name`, it must be registered '

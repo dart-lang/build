@@ -9,11 +9,11 @@ import 'package:path/path.dart' as p;
 import 'build_web_compilers.dart';
 import 'src/platforms.dart';
 
-/// Shared entrypoint builder
+// Shared entrypoint builder
 Builder webEntrypointBuilder(BuilderOptions options) =>
     WebEntrypointBuilder.fromOptions(options, useKernel: true);
 
-/// Ddc related builders
+// Ddc related builders
 Builder ddcMetaModuleBuilder(BuilderOptions options) =>
     MetaModuleBuilder.forOptions(ddcPlatform, options);
 Builder ddcMetaModuleCleanBuilder(_) => MetaModuleCleanBuilder(ddcPlatform);
@@ -26,7 +26,7 @@ Builder ddcKernelBuilder([_]) => KernelBuilder(
     outputExtension: ddcKernelExtension,
     platform: ddcPlatform);
 
-/// Dart2js related builders
+// Dart2js related builders
 Builder dart2jsMetaModuleBuilder(BuilderOptions options) =>
     MetaModuleBuilder.forOptions(dart2jsPlatform, options);
 Builder dart2jsMetaModuleCleanBuilder(_) =>
@@ -35,7 +35,7 @@ Builder dart2jsModuleBuilder([_]) => ModuleBuilder(dart2jsPlatform);
 PostProcessBuilder dart2jsArchiveExtractor(BuilderOptions options) =>
     Dart2JsArchiveExtractor.fromOptions(options);
 
-/// General purpose builders
+// General purpose builders
 PostProcessBuilder dartSourceCleanup(BuilderOptions options) =>
     (options.config['enabled'] as bool ?? false)
         ? const FileDeletingBuilder(['.dart', '.js.map'])
