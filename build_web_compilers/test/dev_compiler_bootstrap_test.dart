@@ -5,8 +5,9 @@
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
-import 'package:build_web_compilers/build_web_compilers.dart';
 import 'package:build_modules/build_modules.dart';
+import 'package:build_web_compilers/build_web_compilers.dart';
+import 'package:build_web_compilers/builders.dart';
 
 import 'util.dart';
 
@@ -35,8 +36,7 @@ main() {
     await testBuilderAndCollectAssets(MetaModuleBuilder(platform), assets);
     await testBuilderAndCollectAssets(MetaModuleCleanBuilder(platform), assets);
     await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
-    await testBuilderAndCollectAssets(UnlinkedSummaryBuilder(platform), assets);
-    await testBuilderAndCollectAssets(LinkedSummaryBuilder(platform), assets);
+    await testBuilderAndCollectAssets(ddcKernelBuilder(null), assets);
     await testBuilderAndCollectAssets(DevCompilerBuilder(), assets);
   });
 
