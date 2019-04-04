@@ -10,9 +10,9 @@ Builder copyBuilder(_) => _CopyBuilder();
 /// Copies the [_stackTraceMapperJs] file to [_stackTraceMapperCopyJs].
 class _CopyBuilder extends Builder {
   @override
-  Map<String, List<String>> get buildExtensions => {
-        _stackTraceMapperJs.path: [_stackTraceMapperCopyJs.path]
-      };
+  final Map<String, List<String>> buildExtensions = {
+    _stackTraceMapperJs.path: [_stackTraceMapperCopyJs.path]
+  };
 
   @override
   void build(BuildStep buildStep) {
