@@ -11,14 +11,14 @@ import 'src/platforms.dart';
 
 // Shared entrypoint builder
 Builder webEntrypointBuilder(BuilderOptions options) =>
-    WebEntrypointBuilder.fromOptions(options, useKernel: true);
+    WebEntrypointBuilder.fromOptions(options);
 
 // Ddc related builders
 Builder ddcMetaModuleBuilder(BuilderOptions options) =>
     MetaModuleBuilder.forOptions(ddcPlatform, options);
 Builder ddcMetaModuleCleanBuilder(_) => MetaModuleCleanBuilder(ddcPlatform);
 Builder ddcModuleBuilder([_]) => ModuleBuilder(ddcPlatform);
-Builder ddcBuilder([_]) => DevCompilerBuilder(useKernel: true);
+Builder ddcBuilder([_]) => DevCompilerBuilder();
 const ddcKernelExtension = '.ddc.dill';
 Builder ddcKernelBuilder([_]) => KernelBuilder(
     summaryOnly: true,

@@ -36,8 +36,7 @@ main() {
         MetaModuleCleanBuilder(ddcPlatform), assets);
     await testBuilderAndCollectAssets(ModuleBuilder(ddcPlatform), assets);
     await testBuilderAndCollectAssets(ddcKernelBuilder(), assets);
-    await testBuilderAndCollectAssets(
-        DevCompilerBuilder(useKernel: true), assets);
+    await testBuilderAndCollectAssets(DevCompilerBuilder(), assets);
   });
 
   test('can bootstrap dart entrypoints', () async {

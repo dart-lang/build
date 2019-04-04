@@ -51,8 +51,7 @@ main() {
         'a|web/index$jsSourceMapExtension':
             decodedMatches(contains('index.dart')),
       };
-      await testBuilder(DevCompilerBuilder(useKernel: true), assets,
-          outputs: expectedOutputs);
+      await testBuilder(DevCompilerBuilder(), assets, outputs: expectedOutputs);
     });
   });
 
@@ -80,7 +79,7 @@ main() {
               allOf(contains('String'), contains('assigned'), contains('int'))),
         };
         var logs = <LogRecord>[];
-        await testBuilder(DevCompilerBuilder(useKernel: true), assets,
+        await testBuilder(DevCompilerBuilder(), assets,
             outputs: expectedOutputs, onLog: logs.add);
         expect(
             logs,
@@ -114,7 +113,7 @@ main() {
               contains('Unable to find modules for some sources')),
         };
         var logs = <LogRecord>[];
-        await testBuilder(DevCompilerBuilder(useKernel: true), assets,
+        await testBuilder(DevCompilerBuilder(), assets,
             outputs: expectedOutputs, onLog: logs.add);
         expect(
             logs,
