@@ -120,10 +120,10 @@ class UnsupportedModules implements Exception {
           library = ModuleLibrary.deserialize(
               libraryId, await reader.readAsString(libraryId));
         } else {
-          library = ModuleLibrary.fromSource(
-              source, await reader.readAsString(source));
+          // A missing .module.library file indicates a part file, which can't
+          // have import statements, so we just skip them.
+          continue;
         }
-        if (!library.isImportable) continue;
         if (library.sdkDeps
             .any((lib) => !module.platform.supportsLibrary(lib))) {
           yield library;
