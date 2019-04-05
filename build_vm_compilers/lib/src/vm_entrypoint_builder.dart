@@ -46,7 +46,7 @@ class VmEntrypointBuilder implements Builder {
       try {
         transitiveModules = await module
             .computeTransitiveDependencies(buildStep, throwIfUnsupported: true);
-      } on UnsupportedModulesException catch (e) {
+      } on UnsupportedModules catch (e) {
         var librariesString = (await e.exactLibraries(buildStep).toList())
             .map((lib) => AssetId(lib.id.package,
                 lib.id.path.replaceFirst(moduleLibraryExtension, '.dart')))

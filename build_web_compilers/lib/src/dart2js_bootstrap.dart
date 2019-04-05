@@ -32,7 +32,7 @@ Future<Null> bootstrapDart2Js(
       allDeps = (await module.computeTransitiveDependencies(buildStep,
           throwIfUnsupported: true))
         ..add(module);
-    } on UnsupportedModulesException catch (e) {
+    } on UnsupportedModules catch (e) {
       var librariesString = (await e.exactLibraries(buildStep).toList())
           .map((lib) => AssetId(lib.id.package,
               lib.id.path.replaceFirst(moduleLibraryExtension, '.dart')))

@@ -32,7 +32,7 @@ Future<void> bootstrapDdc(BuildStep buildStep) async {
   List<Module> transitiveDeps;
   try {
     transitiveDeps = await _ensureTransitiveModules(module, buildStep);
-  } on UnsupportedModulesException catch (e) {
+  } on UnsupportedModules catch (e) {
     var librariesString = (await e.exactLibraries(buildStep).toList())
         .map((lib) => AssetId(lib.id.package,
             lib.id.path.replaceFirst(moduleLibraryExtension, '.dart')))
@@ -126,7 +126,7 @@ final _lazyBuildPool = Pool(16);
 
 /// Ensures that all transitive js modules for [module] are available and built.
 ///
-/// Throws an [UnsupportedModulesException] exception if there are any
+/// Throws an [UnsupportedModules] exception if there are any
 /// unsupported modules.
 Future<List<Module>> _ensureTransitiveModules(
     Module module, AssetReader reader) async {

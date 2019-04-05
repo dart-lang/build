@@ -135,7 +135,7 @@ class Module {
   /// Throws a [MissingModulesException] if there are any missing modules. This
   /// typically means that somebody is trying to import a non-existing file.
   ///
-  /// If [throwIfUnsupported] is `true`, then an [UnsupportedModulesException]
+  /// If [throwIfUnsupported] is `true`, then an [UnsupportedModules]
   /// will be thrown if there are any modules that are not supported.
   Future<List<Module>> computeTransitiveDependencies(AssetReader reader,
       {bool throwIfUnsupported = false}) async {
@@ -171,7 +171,7 @@ class Module {
           transitiveDeps.values.toList()..add(this), reader);
     }
     if (throwIfUnsupported && unsupportedModules.isNotEmpty) {
-      throw UnsupportedModulesException(unsupportedModules);
+      throw UnsupportedModules(unsupportedModules);
     }
     var orderedModules = stronglyConnectedComponents<Module>(
         transitiveDeps.values,

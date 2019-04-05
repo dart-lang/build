@@ -106,10 +106,10 @@ Future<String> _missingImportMessage(
 }
 
 /// An [Exception] that is thrown when there are some unsupported modules.
-class UnsupportedModulesException implements Exception {
+class UnsupportedModules implements Exception {
   final Set<Module> unsupportedModules;
 
-  UnsupportedModulesException(this.unsupportedModules);
+  UnsupportedModules(this.unsupportedModules);
 
   Stream<ModuleLibrary> exactLibraries(AssetReader reader) async* {
     for (var module in unsupportedModules) {
