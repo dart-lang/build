@@ -6,7 +6,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
-import 'package:test_core/test_core.dart';
+import 'package:test_core/backend.dart';
 
 /// A [Builder] that injects bootstrapping code used by the test runner to run
 /// tests in --precompiled mode.
