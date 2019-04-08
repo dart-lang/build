@@ -56,8 +56,7 @@ class BuildImpl {
   final FinalizedReader _finalizedReader;
   FinalizedReader get finalizedReader => _finalizedReader;
 
-  final AssetGraph _assetGraph;
-  AssetGraph get assetGraph => _assetGraph;
+  final AssetGraph assetGraph;
 
   final BuildScriptUpdates _buildScriptUpdates;
   BuildScriptUpdates get buildScriptUpdates => _buildScriptUpdates;
@@ -84,7 +83,7 @@ class BuildImpl {
             : CachingAssetReader(buildDefinition.reader),
         _resolvers = options.resolvers,
         _writer = buildDefinition.writer,
-        _assetGraph = buildDefinition.assetGraph,
+        assetGraph = buildDefinition.assetGraph,
         _resourceManager = buildDefinition.resourceManager,
         _verbose = options.verbose,
         _environment = buildDefinition.environment,
@@ -171,7 +170,7 @@ class _SingleBuild {
   HungActionsHeartbeat hungActionsHeartbeat;
 
   _SingleBuild(BuildImpl buildImpl, Set<BuildDirectory> buildDirs)
-      : _assetGraph = buildImpl._assetGraph,
+      : _assetGraph = buildImpl.assetGraph,
         _buildPhases = buildImpl._buildPhases,
         _buildPhasePool = List(buildImpl._buildPhases.length),
         _environment = buildImpl._environment,
