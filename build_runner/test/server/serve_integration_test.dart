@@ -146,14 +146,14 @@ void main() {
         'bad path query',
         '?q=bob/bob',
         'Could not find asset for path "bob/bob". Tried:\n'
-        '- example|bob/bob\n'
-        '- example|web/bob/bob');
+            '- example|bob/bob\n'
+            '- example|web/bob/bob');
     test404(
         'valid path, 2nd try',
         '?q=bob/initial.txt',
         'Could not find asset for path "bob/initial.txt". Tried:\n'
-        '- example|bob/initial.txt\n'
-        '- example|web/bob/initial.txt');
+            '- example|bob/initial.txt\n'
+            '- example|web/bob/initial.txt');
 
     void testSuccess(String testName, String path, String expectedId) {
       test(testName, () async {
