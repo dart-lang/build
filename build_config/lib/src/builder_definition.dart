@@ -144,7 +144,7 @@ class BuilderDefinition {
           buildExtensions,
           'buildExtensions',
           'May not overwrite an input, '
-          'the output extensions must not contain the input extension');
+              'the output extensions must not contain the input extension');
     }
   }
 

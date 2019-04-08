@@ -432,8 +432,8 @@ class _SingleBuild {
         assert(
             inputNode.primaryOutputs.containsAll(builderOutputs),
             'input $input with builder $builder missing primary outputs: \n'
-                'Got ${inputNode.primaryOutputs.join(', ')} '
-                'which was missing:\n' +
+                    'Got ${inputNode.primaryOutputs.join(', ')} '
+                    'which was missing:\n' +
                 builderOutputs
                     .where((id) => !inputNode.primaryOutputs.contains(id))
                     .join(', '));
