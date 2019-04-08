@@ -376,7 +376,7 @@ class AssetHandler {
     return (result.isEmpty)
         ? 'Could not find ${from.path} or any files in $directoryPath.'
         : 'Could not find ${from.path}. $directoryPath contains:\n'
-        '${result.join('\n')}';
+            '${result.join('\n')}';
   }
 }
 
