@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
+import 'package:test_core/backend.dart';
 
 /// A [Builder] that injects bootstrapping code used by the test runner to run
 /// tests in --precompiled mode.
@@ -26,8 +27,15 @@ class TestBootstrapBuilder extends Builder {
   @override
   Future<Null> build(BuildStep buildStep) async {
     var id = buildStep.inputId;
+    var contents = await buildStep.readAsString(id);
+    var assetPath = id.pathSegments.first == 'lib'
+        ? p.url.join('packages', id.package, id.path)
+        : id.path;
+    var metadata = parseMetadata(
+        assetPath, contents, Runtime.builtIn.map((r) => r.name).toSet());
 
-    await buildStep.writeAsString(id.addExtension('.vm_test.dart'), '''
+    if (metadata.testOn.evaluate(SuitePlatform(Runtime.vm))) {
+      await buildStep.writeAsString(id.addExtension('.vm_test.dart'), '''
           import "dart:isolate";
 
           import "package:test/bootstrap/vm.dart";
@@ -38,8 +46,12 @@ class TestBootstrapBuilder extends Builder {
             internalBootstrapVmTest(() => test.main, message);
           }
         ''');
+    }
 
-    await buildStep.writeAsString(id.addExtension('.browser_test.dart'), '''
+    var browserRuntimes = Runtime.builtIn.where((r) => r.isBrowser == true);
+    if (browserRuntimes
+        .any((r) => metadata.testOn.evaluate(SuitePlatform(r)))) {
+      await buildStep.writeAsString(id.addExtension('.browser_test.dart'), '''
           import "package:test/bootstrap/browser.dart";
 
           import "${p.url.basename(id.path)}" as test;
@@ -48,8 +60,10 @@ class TestBootstrapBuilder extends Builder {
             internalBootstrapBrowserTest(() => test.main);
           }
         ''');
+    }
 
-    await buildStep.writeAsString(id.addExtension('.node_test.dart'), '''
+    if (metadata.testOn.evaluate(SuitePlatform(Runtime.nodeJS))) {
+      await buildStep.writeAsString(id.addExtension('.node_test.dart'), '''
           import "package:test/bootstrap/node.dart";
 
           import "${p.url.basename(id.path)}" as test;
@@ -58,5 +72,6 @@ class TestBootstrapBuilder extends Builder {
             internalBootstrapNodeTest(() => test.main);
           }
         ''');
+    }
   }
 }
