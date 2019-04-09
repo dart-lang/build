@@ -134,12 +134,18 @@ class Module {
   ///
   /// Throws a [MissingModulesException] if there are any missing modules. This
   /// typically means that somebody is trying to import a non-existing file.
+  ///
+  /// If [throwIfUnsupported] is `true`, then an [UnsupportedModules]
+  /// will be thrown if there are any modules that are not supported.
   Future<List<Module>> computeTransitiveDependencies(
-      BuildStep buildStep) async {
+      BuildStep buildStep,
+      {bool throwIfUnsupported = false}) async {
+    throwIfUnsupported ??= false;
     final modules = await buildStep.fetchResource(moduleCache);
     var transitiveDeps = <AssetId, Module>{};
     var modulesToCrawl = directDependencies.toSet();
     var missingModuleSources = Set<AssetId>();
+    var unsupportedModules = Set<Module>();
     while (modulesToCrawl.isNotEmpty) {
       var next = modulesToCrawl.last;
       modulesToCrawl.remove(next);
@@ -150,12 +156,18 @@ class Module {
         missingModuleSources.add(next);
         continue;
       }
+      if (throwIfUnsupported && !module.isSupported) {
+        unsupportedModules.add(module);
+      }
       transitiveDeps[next] = module;
       modulesToCrawl.addAll(module.directDependencies);
     }
     if (missingModuleSources.isNotEmpty) {
       throw await MissingModulesException.create(missingModuleSources,
           transitiveDeps.values.toList()..add(this), buildStep);
+    }
+    if (throwIfUnsupported && unsupportedModules.isNotEmpty) {
+      throw UnsupportedModules(unsupportedModules);
     }
     var orderedModules = stronglyConnectedComponents<Module>(
         transitiveDeps.values,

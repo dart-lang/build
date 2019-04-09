@@ -11,7 +11,8 @@ import 'package:build/build.dart';
 import 'package:package_resolver/package_resolver.dart';
 import 'package:path/path.dart' as p;
 import 'package:stack_trace/stack_trace.dart';
-import 'package:test/test.dart' show expect;
+import 'package:test/test.dart'
+    show expect, expectLater, emitsThrough, contains;
 import 'package:test_descriptor/test_descriptor.dart' as d;
 import 'package:test_process/test_process.dart';
 
@@ -321,5 +322,16 @@ class BuildServer {
     final response = await request.close();
     expect(response.statusCode, 200);
     expect(await utf8.decodeStream(response), content);
+  }
+
+  StreamQueue<String> get stdout => _process.stdout;
+}
+
+/// Expect that [stdout] emits in order lines that contain every value in
+/// [expected] with any other lines in between.
+Future<void> expectOutput(
+    StreamQueue<String> stdout, Iterable<String> expected) async {
+  for (final line in expected) {
+    await expectLater(stdout, emitsThrough(contains(line)));
   }
 }

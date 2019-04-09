@@ -5,6 +5,22 @@
 - Increased the upper bound for `package:analyzer` to `<0.37.0`.
 - Removed support for `build_root_app_summary` configuration option.
 - Remove support for building DDC with analyzer summaries.
+- Skip trying to compile apps that import known incompatible libraries.
+- By default only `.dart.browser_test.dart` files will be compiled under the
+  `test` directory, instead of all `_test.dart` files.
+  - If you used the previous test debugging workflow in the browser you can
+    restore the old behavior with something like the following in your
+    build.yaml:
+
+```yaml
+targets:
+  $default:
+    builders:
+      build_web_compilers|entrypoint:
+        generate_for:
+        - test/**_test.dart
+        - web/**.dart
+```
 
 ## 1.2.0
 
