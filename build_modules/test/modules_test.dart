@@ -32,7 +32,7 @@ void main() {
               buildExtensions: {
                 moduleExtension(platform): ['.transitive']
               },
-              build: (buildStep, _) async {
+              build: expectAsync2((buildStep, _) async {
                 var transitiveDeps =
                     (await rootModule.computeTransitiveDependencies(buildStep))
                         .map((m) => m.primarySource)
@@ -53,7 +53,7 @@ void main() {
                         .indexOf(deepTransitiveDepModule.primarySource),
                     lessThan(transitiveDeps
                         .indexOf(transitiveDepModule.primarySource)));
-              }),
+              })),
           {
             'a|lib/a${moduleExtension(platform)}':
                 jsonEncode(rootModule.toJson()),
@@ -72,7 +72,7 @@ void main() {
               buildExtensions: {
                 moduleExtension(platform): ['.transitive']
               },
-              build: (buildStep, _) async {
+              build: expectAsync2((buildStep, _) async {
                 await expectLater(
                     () => rootModule.computeTransitiveDependencies(buildStep),
                     throwsA(isA<MissingModulesException>()
@@ -86,7 +86,7 @@ Please check the following imports:
 
 `import 'src/dep.dart';` from b|lib/b.dart at 1:1
 '''))));
-              }),
+              })),
           {
             'a|lib/a${moduleExtension(platform)}':
                 jsonEncode(rootModule.toJson()),
