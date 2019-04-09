@@ -99,7 +99,7 @@ builders:
       generate_for:
         include:
           - web/**
-          - test/**_test.dart
+          - test/**.dart.browser_test.dart
           - example/**
           - benchmark/**
         exclude:

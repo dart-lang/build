@@ -41,8 +41,27 @@ class VmEntrypointBuilder implements Builder {
       var module = Module.fromJson(
           json.decode(await buildStep.readAsString(moduleId))
               as Map<String, dynamic>);
-      var transitiveModules =
-          await module.computeTransitiveDependencies(buildStep);
+
+      List<Module> transitiveModules;
+      try {
+        transitiveModules = await module
+            .computeTransitiveDependencies(buildStep, throwIfUnsupported: true);
+      } on UnsupportedModules catch (e) {
+        var librariesString = (await e.exactLibraries(buildStep).toList())
+            .map((lib) => AssetId(lib.id.package,
+                lib.id.path.replaceFirst(moduleLibraryExtension, '.dart')))
+            .join('\n');
+        log.warning('''
+Skipping compiling ${buildStep.inputId} for the vm because some of its
+transitive libraries have sdk dependencies that not supported on this platform:
+
+$librariesString
+
+https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-skipped-compiling-warnings
+''');
+        return;
+      }
+
       var transitiveKernelModules = [
         module.primarySource.changeExtension(vmKernelModuleExtension)
       ].followedBy(transitiveModules.map(
