@@ -30,7 +30,7 @@ void main() {
       await testBuilder(
           TestBuilder(
               buildExtensions: {
-                moduleExtension(platform): ['.transitive']
+                'lib/a${moduleExtension(platform)}': ['.transitive']
               },
               build: expectAsync2((buildStep, _) async {
                 var transitiveDeps =
@@ -70,7 +70,7 @@ void main() {
       await testBuilder(
           TestBuilder(
               buildExtensions: {
-                moduleExtension(platform): ['.transitive']
+                'lib/a${moduleExtension(platform)}': ['.transitive']
               },
               build: expectAsync2((buildStep, _) async {
                 await expectLater(
