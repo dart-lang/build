@@ -28,9 +28,8 @@ class TestBootstrapBuilder extends Builder {
   Future<Null> build(BuildStep buildStep) async {
     var id = buildStep.inputId;
     var contents = await buildStep.readAsString(id);
-    var metadata = parseMetadata(
-        id.uri.toString(), Runtime.builtIn.map((r) => r.name).toSet(),
-        contents: contents);
+    var metadata = parseMetadata(id.uri.toString(), contents,
+        Runtime.builtIn.map((r) => r.name).toSet());
 
     if (metadata.testOn.evaluate(SuitePlatform(Runtime.vm))) {
       await buildStep.writeAsString(id.addExtension('.vm_test.dart'), '''
