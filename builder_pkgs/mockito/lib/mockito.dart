@@ -39,9 +39,9 @@ export 'src/mock.dart'
         Verification,
 
         // -- deprecated
-        typed, // ignore: deprecated_member_use
-        typedArgThat, // ignore: deprecated_member_use
-        typedCaptureThat, // ignore: deprecated_member_use
+        typed, // ignore: deprecated_member_use_from_same_package
+        typedArgThat, // ignore: deprecated_member_use_from_same_package
+        typedCaptureThat, // ignore: deprecated_member_use_from_same_package
 
         // -- misc
         throwOnMissingStub,

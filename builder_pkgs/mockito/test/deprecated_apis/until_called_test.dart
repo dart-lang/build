@@ -39,7 +39,7 @@ class _RealClass {
       'Real';
   String get getter => 'Real';
   set setter(String arg) {
-    throw new StateError('I must be mocked');
+    throw StateError('I must be mocked');
   }
 }
 
@@ -62,7 +62,7 @@ class _RealClassController {
       ..methodWithPositionalArgs(1, 2)
       ..methodWithNamedArgs(1, y: 2)
       ..methodWithTwoNamedArgs(1, y: 2, z: 3)
-      ..methodWithObjArgs(new _RealClass())
+      ..methodWithObjArgs(_RealClass())
       ..typeParameterizedFn([1, 2], [3, 4], [5, 6], [7, 8])
       ..typeParameterizedNamedFn([1, 2], [3, 4], y: [5, 6], z: [7, 8])
       ..getter
@@ -76,7 +76,7 @@ void main() {
   MockedClass mock;
 
   setUp(() {
-    mock = new MockedClass();
+    mock = MockedClass();
   });
 
   tearDown(() {
@@ -87,7 +87,7 @@ void main() {
 
   group('untilCalled', () {
     StreamController<CallMethodsEvent> streamController =
-        new StreamController.broadcast();
+        StreamController.broadcast();
 
     group('on methods already called', () {
       test('waits for method with normal args', () async {
@@ -124,7 +124,7 @@ void main() {
       });
 
       test('waits for method with obj args', () async {
-        mock.methodWithObjArgs(new _RealClass());
+        mock.methodWithObjArgs(_RealClass());
 
         await untilCalled(mock.methodWithObjArgs(typed(any)));
 
@@ -145,11 +145,11 @@ void main() {
 
     group('on methods not yet called', () {
       setUp(() {
-        new _RealClassController(mock, streamController);
+        _RealClassController(mock, streamController);
       });
 
       test('waits for method with normal args', () async {
-        streamController.add(new CallMethodsEvent());
+        streamController.add(CallMethodsEvent());
         verifyNever(mock.methodWithNormalArgs(typed(any)));
 
         await untilCalled(mock.methodWithNormalArgs(typed(any)));
@@ -158,7 +158,7 @@ void main() {
       });
 
       test('waits for method with list args', () async {
-        streamController.add(new CallMethodsEvent());
+        streamController.add(CallMethodsEvent());
         verifyNever(mock.methodWithListArgs(typed(any)));
 
         await untilCalled(mock.methodWithListArgs(typed(any)));
@@ -167,7 +167,7 @@ void main() {
       });
 
       test('waits for method with positional args', () async {
-        streamController.add(new CallMethodsEvent());
+        streamController.add(CallMethodsEvent());
         verifyNever(mock.methodWithPositionalArgs(typed(any), typed(any)));
 
         await untilCalled(
@@ -177,7 +177,7 @@ void main() {
       });
 
       test('waits for method with obj args', () async {
-        streamController.add(new CallMethodsEvent());
+        streamController.add(CallMethodsEvent());
         verifyNever(mock.methodWithObjArgs(typed(any)));
 
         await untilCalled(mock.methodWithObjArgs(typed(any)));
@@ -186,7 +186,7 @@ void main() {
       });
 
       test('waits for function with positional parameters', () async {
-        streamController.add(new CallMethodsEvent());
+        streamController.add(CallMethodsEvent());
         verifyNever(mock.typeParameterizedFn(
             typed(any), typed(any), typed(any), typed(any)));
 

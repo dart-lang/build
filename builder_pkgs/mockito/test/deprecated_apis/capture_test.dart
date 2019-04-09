@@ -28,7 +28,7 @@ class _RealClass {
   String methodWithListArgs(List<int> x) => 'Real';
   String methodWithPositionalArgs(int x, [int y]) => 'Real';
   set setter(String arg) {
-    throw new StateError('I must be mocked');
+    throw StateError('I must be mocked');
   }
 }
 
@@ -40,7 +40,7 @@ void main() {
   var isNsmForwarding = assessNsmForwarding();
 
   setUp(() {
-    mock = new MockedClass();
+    mock = MockedClass();
   });
 
   tearDown(() {

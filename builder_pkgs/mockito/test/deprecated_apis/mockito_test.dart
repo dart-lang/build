@@ -31,11 +31,11 @@ class _RealClass {
   String methodWithNamedArgs(int x, {int y}) => "Real";
   String methodWithTwoNamedArgs(int x, {int y, int z}) => "Real";
   String methodWithObjArgs(_RealClass x) => "Real";
-  Future<String> methodReturningFuture() => new Future.value("Real");
-  Stream<String> methodReturningStream() => new Stream.fromIterable(["Real"]);
+  Future<String> methodReturningFuture() => Future.value("Real");
+  Stream<String> methodReturningStream() => Stream.fromIterable(["Real"]);
   String get getter => "Real";
   set setter(String arg) {
-    throw new StateError("I must be mocked");
+    throw StateError("I must be mocked");
   }
 }
 
@@ -63,7 +63,7 @@ void expectFail(String expectedMessage, dynamic expectedToFail()) {
       rethrow;
     } else {
       if (expectedMessage != e.message) {
-        throw new TestFailure("Failed, but with wrong message: ${e.message}");
+        throw TestFailure("Failed, but with wrong message: ${e.message}");
       }
     }
   }
@@ -76,7 +76,7 @@ void main() {
   _MockedClass mock;
 
   setUp(() {
-    mock = new _MockedClass();
+    mock = _MockedClass();
   });
 
   tearDown(() {
@@ -116,8 +116,7 @@ void main() {
 
     //no need to mock setter, except if we will have spies later...
     test("should mock method with thrown result", () {
-      when(mock.methodWithNormalArgs(typed(any)))
-          .thenThrow(new StateError('Boo'));
+      when(mock.methodWithNormalArgs(typed(any))).thenThrow(StateError('Boo'));
       expect(() => mock.methodWithNormalArgs(42), throwsStateError);
     });
 

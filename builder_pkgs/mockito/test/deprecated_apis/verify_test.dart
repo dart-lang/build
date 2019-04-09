@@ -32,7 +32,7 @@ class _RealClass {
   String methodWithObjArgs(_RealClass x) => 'Real';
   String get getter => 'Real';
   set setter(String arg) {
-    throw new StateError('I must be mocked');
+    throw StateError('I must be mocked');
   }
 
   String methodWithLongArgs(LongToString a, LongToString b,
@@ -66,7 +66,7 @@ void expectFail(String expectedMessage, dynamic expectedToFail()) {
       rethrow;
     } else {
       if (expectedMessage != e.message) {
-        throw new TestFailure('Failed, but with wrong message: ${e.message}');
+        throw TestFailure('Failed, but with wrong message: ${e.message}');
       }
     }
   }
@@ -79,7 +79,7 @@ void main() {
   _MockedClass mock;
 
   setUp(() {
-    mock = new _MockedClass();
+    mock = _MockedClass();
   });
 
   tearDown(() {

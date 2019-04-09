@@ -29,7 +29,7 @@ class _RealClass {
   String methodWithObjArgs(_RealClass x) => 'Real';
   String get getter => 'Real';
   set setter(String arg) {
-    throw new StateError('I must be mocked');
+    throw StateError('I must be mocked');
   }
 
   String methodWithLongArgs(LongToString a, LongToString b,
@@ -74,7 +74,7 @@ void main() {
   var isNsmForwarding = assessNsmForwarding();
 
   setUp(() {
-    mock = new _MockedClass();
+    mock = _MockedClass();
   });
 
   tearDown(() {
@@ -129,12 +129,12 @@ void main() {
     });
 
     test('should mock method with mock args', () {
-      var m1 = named(new _MockedClass(), name: 'm1');
+      var m1 = named(_MockedClass(), name: 'm1');
       mock.methodWithObjArgs(m1);
       expectFail(
           'No matching calls. All calls: _MockedClass.methodWithObjArgs(m1)\n'
           '$noMatchingCallsFooter', () {
-        verify(mock.methodWithObjArgs(new _MockedClass()));
+        verify(mock.methodWithObjArgs(_MockedClass()));
       });
       verify(mock.methodWithObjArgs(m1));
     });
@@ -191,8 +191,7 @@ void main() {
       final expectedMessage = RegExp.escape('No matching calls. '
           'All calls: _MockedClass.setter==A\n$noMatchingCallsFooter');
       // RegExp needed because of https://github.com/dart-lang/sdk/issues/33565
-      var expectedPattern =
-          new RegExp(expectedMessage.replaceFirst('==', '=?='));
+      var expectedPattern = RegExp(expectedMessage.replaceFirst('==', '=?='));
 
       expectFail(expectedPattern, () => verify(mock.setter = 'B'));
       verify(mock.setter = 'A');
@@ -213,7 +212,7 @@ void main() {
         verify(mock.methodWithNamedArgs(42, y: 17));
         fail('verify call was expected to throw!');
       } catch (e) {
-        expect(e, new TypeMatcher<StateError>());
+        expect(e, TypeMatcher<StateError>());
         expect(
             e.message,
             contains('Verification appears to be in progress. '
@@ -450,8 +449,7 @@ void main() {
     });
 
     test('throws if given a real object', () {
-      expect(() => verifyNoMoreInteractions(new _RealClass()),
-          throwsArgumentError);
+      expect(() => verifyNoMoreInteractions(_RealClass()), throwsArgumentError);
     });
   });
 
@@ -507,11 +505,11 @@ void main() {
     test(
         '"No matching calls" message visibly separates unmatched calls, '
         'if an arg\'s string representations is multiline', () {
-      mock.methodWithLongArgs(new LongToString([1, 2], {1: 'a', 2: 'b'}, 'c'),
-          new LongToString([4, 5], {3: 'd', 4: 'e'}, 'f'));
+      mock.methodWithLongArgs(LongToString([1, 2], {1: 'a', 2: 'b'}, 'c'),
+          LongToString([4, 5], {3: 'd', 4: 'e'}, 'f'));
       mock.methodWithLongArgs(null, null,
-          c: new LongToString([5, 6], {5: 'g', 6: 'h'}, 'i'),
-          d: new LongToString([7, 8], {7: 'j', 8: 'k'}, 'l'));
+          c: LongToString([5, 6], {5: 'g', 6: 'h'}, 'i'),
+          d: LongToString([7, 8], {7: 'j', 8: 'k'}, 'l'));
       var nsmForwardedNamedArgs =
           isNsmForwarding ? '>, {c: null, d: null}),' : '>),';
       expectFail(

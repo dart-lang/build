@@ -18,7 +18,7 @@ import 'package:test/test.dart';
 Invocation lastInvocation;
 
 void main() {
-  const stub = const Stub();
+  const stub = Stub();
 
   group('$isInvocation', () {
     test('positional arguments', () {
@@ -33,8 +33,8 @@ void main() {
         call1,
         isInvocation(call3),
         "Expected: say('Guten Tag') "
-            "Actual: <Instance of '${call3.runtimeType}'> "
-            "Which: Does not match say('Hello')",
+        "Actual: <Instance of '${call3.runtimeType}'> "
+        "Which: Does not match say('Hello')",
       );
     });
 
@@ -50,8 +50,8 @@ void main() {
         call1,
         isInvocation(call3),
         "Expected: eat('Chicken', 'alsoDrink: false') "
-            "Actual: <Instance of '${call3.runtimeType}'> "
-            "Which: Does not match eat('Chicken', 'alsoDrink: true')",
+        "Actual: <Instance of '${call3.runtimeType}'> "
+        "Which: Does not match eat('Chicken', 'alsoDrink: true')",
       );
     });
 
@@ -67,8 +67,8 @@ void main() {
         call1,
         isInvocation(call3),
         "Expected: lie(<false>) "
-            "Actual: <Instance of '${call3.runtimeType}'> "
-            "Which: Does not match lie(<true>)",
+        "Actual: <Instance of '${call3.runtimeType}'> "
+        "Which: Does not match lie(<true>)",
       );
     });
 
@@ -84,7 +84,7 @@ void main() {
         call1,
         isInvocation(call3),
         // RegExp needed because of https://github.com/dart-lang/sdk/issues/33565
-        new RegExp('Expected: set value=? <true> '
+        RegExp('Expected: set value=? <true> '
             "Actual: <Instance of '${call3.runtimeType}'> "
             'Which: Does not match get value'),
       );
@@ -102,7 +102,7 @@ void main() {
         call1,
         isInvocation(call3),
         // RegExp needed because of https://github.com/dart-lang/sdk/issues/33565
-        new RegExp("Expected: set value=? <false> "
+        RegExp("Expected: set value=? <false> "
             "Actual: <Instance of '${call3.runtimeType}'> "
             "Which: Does not match set value=? <true>"),
       );
@@ -119,8 +119,8 @@ void main() {
         call,
         invokes(#say, positionalArguments: [isNull]),
         "Expected: say(null) "
-            "Actual: <Instance of '${call.runtimeType}'> "
-            "Which: Does not match say('Hello')",
+        "Actual: <Instance of '${call.runtimeType}'> "
+        "Which: Does not match say('Hello')",
       );
     });
 
@@ -133,8 +133,8 @@ void main() {
         call,
         invokes(#fly, namedArguments: {#miles: 11}),
         "Expected: fly('miles: 11') "
-            "Actual: <Instance of '${call.runtimeType}'> "
-            "Which: Does not match fly('miles: 10')",
+        "Actual: <Instance of '${call.runtimeType}'> "
+        "Which: Does not match fly('miles: 10')",
       );
     });
   });

@@ -45,7 +45,7 @@ class IssLocator {
     var data = jsonDecode(rs.body);
     var latitude = double.parse(data['iss_position']['latitude'] as String);
     var longitude = double.parse(data['iss_position']['longitude'] as String);
-    _position = new Point<double>(latitude, longitude);
+    _position = Point<double>(latitude, longitude);
   }
 }
 

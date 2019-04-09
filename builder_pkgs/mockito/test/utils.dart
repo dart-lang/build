@@ -7,7 +7,7 @@ abstract class NsmForwardingSignal {
 class MockNsmForwardingSignal extends Mock implements NsmForwardingSignal {}
 
 bool assessNsmForwarding() {
-  var signal = new MockNsmForwardingSignal();
+  var signal = MockNsmForwardingSignal();
   signal.fn();
   try {
     verify(signal.fn(any));

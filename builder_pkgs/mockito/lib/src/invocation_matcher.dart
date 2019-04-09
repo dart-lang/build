@@ -39,15 +39,15 @@ Matcher invokes(
   bool isSetter = false,
 }) {
   if (isGetter && isSetter) {
-    throw new ArgumentError('Cannot set isGetter and iSetter');
+    throw ArgumentError('Cannot set isGetter and iSetter');
   }
   if (positionalArguments == null) {
-    throw new ArgumentError.notNull('positionalArguments');
+    throw ArgumentError.notNull('positionalArguments');
   }
   if (namedArguments == null) {
-    throw new ArgumentError.notNull('namedArguments');
+    throw ArgumentError.notNull('namedArguments');
   }
-  return new _InvocationMatcher(new _InvocationSignature(
+  return _InvocationMatcher(_InvocationSignature(
     memberName: memberName,
     positionalArguments: positionalArguments,
     namedArguments: namedArguments,
@@ -59,8 +59,7 @@ Matcher invokes(
 /// Returns a matcher that matches the name and arguments of an [invocation].
 ///
 /// To expect the same _signature_ see [invokes].
-Matcher isInvocation(Invocation invocation) =>
-    new _InvocationMatcher(invocation);
+Matcher isInvocation(Invocation invocation) => _InvocationMatcher(invocation);
 
 class _InvocationSignature extends Invocation {
   @override
@@ -131,7 +130,7 @@ class _InvocationMatcher implements Matcher {
 
   _InvocationMatcher(this._invocation) {
     if (_invocation == null) {
-      throw new ArgumentError.notNull();
+      throw ArgumentError.notNull();
     }
   }
 
@@ -156,10 +155,10 @@ class _InvocationMatcher implements Matcher {
       _invocation.memberName == item.memberName &&
       _invocation.isSetter == item.isSetter &&
       _invocation.isGetter == item.isGetter &&
-      const ListEquality<dynamic /* Matcher | E */ >(const _MatcherEquality())
+      const ListEquality<dynamic /* Matcher | E */ >(_MatcherEquality())
           .equals(_invocation.positionalArguments, item.positionalArguments) &&
       const MapEquality<dynamic, dynamic /* Matcher | E */ >(
-              values: const _MatcherEquality())
+              values: _MatcherEquality())
           .equals(_invocation.namedArguments, item.namedArguments);
 }
 

@@ -27,8 +27,8 @@ void main() {
   // verify the calculated distance between them.
   group('Spherical distance', () {
     test('London - Paris', () {
-      Point<double> london = new Point(51.5073, -0.1277);
-      Point<double> paris = new Point(48.8566, 2.3522);
+      Point<double> london = Point(51.5073, -0.1277);
+      Point<double> paris = Point(48.8566, 2.3522);
       double d = sphericalDistanceKm(london, paris);
       // London should be approximately 343.5km
       // (+/- 0.1km) from Paris.
@@ -36,8 +36,8 @@ void main() {
     });
 
     test('San Francisco - Mountain View', () {
-      Point<double> sf = new Point(37.783333, -122.416667);
-      Point<double> mtv = new Point(37.389444, -122.081944);
+      Point<double> sf = Point(37.783333, -122.416667);
+      Point<double> mtv = Point(37.389444, -122.081944);
       double d = sphericalDistanceKm(sf, mtv);
       // San Francisco should be approximately 52.8km
       // (+/- 0.1km) from Mountain View.
@@ -52,24 +52,24 @@ void main() {
   // second predefined location. This test runs asynchronously.
   group('ISS spotter', () {
     test('ISS visible', () async {
-      Point<double> sf = new Point(37.783333, -122.416667);
-      Point<double> mtv = new Point(37.389444, -122.081944);
-      IssLocator locator = new MockIssLocator();
+      Point<double> sf = Point(37.783333, -122.416667);
+      Point<double> mtv = Point(37.389444, -122.081944);
+      IssLocator locator = MockIssLocator();
       // Mountain View should be visible from San Francisco.
       when(locator.currentPosition).thenReturn(sf);
 
-      var spotter = new IssSpotter(locator, mtv);
+      var spotter = IssSpotter(locator, mtv);
       expect(spotter.isVisible, true);
     });
 
     test('ISS not visible', () async {
-      Point<double> london = new Point(51.5073, -0.1277);
-      Point<double> mtv = new Point(37.389444, -122.081944);
-      IssLocator locator = new MockIssLocator();
+      Point<double> london = Point(51.5073, -0.1277);
+      Point<double> mtv = Point(37.389444, -122.081944);
+      IssLocator locator = MockIssLocator();
       // London should not be visible from Mountain View.
       when(locator.currentPosition).thenReturn(london);
 
-      var spotter = new IssSpotter(locator, mtv);
+      var spotter = IssSpotter(locator, mtv);
       expect(spotter.isVisible, false);
     });
   });

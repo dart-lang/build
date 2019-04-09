@@ -15,7 +15,7 @@
 import 'package:matcher/matcher.dart';
 
 /// Returns a value dependent on the details of an [invocation].
-typedef T Answer<T>(Invocation invocation);
+typedef Answer<T> = T Function(Invocation invocation);
 
 /// A captured method or property accessor -> a function that returns a value.
 class CallPair<T> {

@@ -28,8 +28,8 @@ class _RealClass {
   String methodWithNamedArgs(int x, {int y}) => "Real";
   String methodWithTwoNamedArgs(int x, {int y, int z}) => "Real";
   String methodWithObjArgs(_RealClass x) => "Real";
-  Future<String> methodReturningFuture() => new Future.value("Real");
-  Stream<String> methodReturningStream() => new Stream.fromIterable(["Real"]);
+  Future<String> methodReturningFuture() => Future.value("Real");
+  Stream<String> methodReturningStream() => Stream.fromIterable(["Real"]);
   String get getter => "Real";
 }
 
@@ -59,7 +59,7 @@ void expectFail(String expectedMessage, dynamic expectedToFail()) {
       rethrow;
     } else {
       if (expectedMessage != e.message) {
-        throw new TestFailure("Failed, but with wrong message: ${e.message}");
+        throw TestFailure("Failed, but with wrong message: ${e.message}");
       }
     }
   }
@@ -74,7 +74,7 @@ void main() {
   var isNsmForwarding = assessNsmForwarding();
 
   setUp(() {
-    mock = new _MockedClass();
+    mock = _MockedClass();
   });
 
   tearDown(() {
@@ -85,7 +85,7 @@ void main() {
 
   group("mixin support", () {
     test("should work", () {
-      var foo = new _MockFoo();
+      var foo = _MockFoo();
       when(foo.baz()).thenReturn('baz');
       expect(foo.bar(), 'baz');
     });
@@ -104,9 +104,9 @@ void main() {
     });
 
     test("should mock method with mock args", () {
-      var m1 = new _MockedClass();
+      var m1 = _MockedClass();
       when(mock.methodWithObjArgs(m1)).thenReturn("Ultimate Answer");
-      expect(mock.methodWithObjArgs(new _MockedClass()), isNull);
+      expect(mock.methodWithObjArgs(_MockedClass()), isNull);
       expect(mock.methodWithObjArgs(m1), equals("Ultimate Answer"));
     });
 
@@ -199,19 +199,19 @@ void main() {
     });
 
     test("should mock equals between mocks when givenHashCode is equals", () {
-      var anotherMock = named(new _MockedClass(), hashCode: 42);
+      var anotherMock = named(_MockedClass(), hashCode: 42);
       named(mock, hashCode: 42);
       expect(mock == anotherMock, isTrue);
     });
 
     test("should use identical equality between it is not mocked", () {
-      var anotherMock = new _MockedClass();
+      var anotherMock = _MockedClass();
       expect(mock == anotherMock, isFalse);
       expect(mock == mock, isTrue);
     });
 
     test("should mock method with thrown result", () {
-      when(mock.methodWithNormalArgs(any)).thenThrow(new StateError('Boo'));
+      when(mock.methodWithNormalArgs(any)).thenThrow(StateError('Boo'));
       expect(() => mock.methodWithNormalArgs(42), throwsStateError);
     });
 
@@ -223,7 +223,7 @@ void main() {
     });
 
     test("should return mock to make simple oneline mocks", () {
-      _RealClass mockWithSetup = new _MockedClass();
+      _RealClass mockWithSetup = _MockedClass();
       when(mockWithSetup.methodWithoutArgs()).thenReturn("oneline");
       expect(mockWithSetup.methodWithoutArgs(), equals("oneline"));
     });
@@ -244,7 +244,7 @@ void main() {
     test("should throw if `when` is called while stubbing", () {
       expect(() {
         var responseHelper = () {
-          var mock2 = new _MockedClass();
+          var mock2 = _MockedClass();
           when(mock2.getter).thenReturn("A");
           return mock2;
         };
@@ -255,27 +255,27 @@ void main() {
     test("thenReturn throws if provided Future", () {
       expect(
           () => when(mock.methodReturningFuture())
-              .thenReturn(new Future.value("stub")),
+              .thenReturn(Future.value("stub")),
           throwsArgumentError);
     });
 
     test("thenReturn throws if provided Stream", () {
       expect(
           () => when(mock.methodReturningStream())
-              .thenReturn(new Stream.fromIterable(["stub"])),
+              .thenReturn(Stream.fromIterable(["stub"])),
           throwsArgumentError);
     });
 
     test("thenAnswer supports stubbing method returning a Future", () async {
       when(mock.methodReturningFuture())
-          .thenAnswer((_) => new Future.value("stub"));
+          .thenAnswer((_) => Future.value("stub"));
 
       expect(await mock.methodReturningFuture(), "stub");
     });
 
     test("thenAnswer supports stubbing method returning a Stream", () async {
       when(mock.methodReturningStream())
-          .thenAnswer((_) => new Stream.fromIterable(["stub"]));
+          .thenAnswer((_) => Stream.fromIterable(["stub"]));
 
       expect(await mock.methodReturningStream().toList(), ["stub"]);
     });
@@ -288,7 +288,7 @@ void main() {
     });
 
     test("should throw if attempting to stub a real method", () {
-      var foo = new _MockFoo();
+      var foo = _MockFoo();
       expect(() {
         when(foo.quux()).thenReturn("Stub");
       }, throwsStateError);

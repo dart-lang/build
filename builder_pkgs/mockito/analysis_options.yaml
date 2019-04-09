@@ -32,6 +32,9 @@ linter:
      - library_names
      - library_prefixes
      - non_constant_identifier_names
+     - prefer_generic_function_type_aliases
      - prefer_is_not_empty
      - slash_for_doc_comments
      - type_init_formals
+     - unnecessary_const
+     - unnecessary_new

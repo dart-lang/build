@@ -29,7 +29,7 @@ bool _verificationInProgress = false;
 _WhenCall _whenCall;
 _UntilCall _untilCall;
 final List<_VerifyCall> _verifyCalls = <_VerifyCall>[];
-final _TimeStampProvider _timer = new _TimeStampProvider();
+final _TimeStampProvider _timer = _TimeStampProvider();
 final List _capturedArgs = [];
 final List<ArgMatcher> _storedArgs = <ArgMatcher>[];
 final Map<String, ArgMatcher> _storedNamedArgs = <String, ArgMatcher>{};
@@ -44,7 +44,7 @@ void setDefaultResponse(Mock mock, CallPair<dynamic> defaultResponse()) {
 /// The default behavior when not using this is to always return `null`.
 void throwOnMissingStub(Mock mock) {
   mock._defaultResponse =
-      () => new CallPair<dynamic>.allInvocations(mock._noSuchMethod);
+      () => CallPair<dynamic>.allInvocations(mock._noSuchMethod);
 }
 
 /// Extend or mixin this class to mark the implementation as a [Mock].
@@ -82,10 +82,10 @@ void throwOnMissingStub(Mock mock) {
 class Mock {
   static Null _answerNull(_) => null;
 
-  static const _nullResponse = const CallPair<Null>.allInvocations(_answerNull);
+  static const _nullResponse = CallPair<Null>.allInvocations(_answerNull);
 
   final StreamController<Invocation> _invocationStreamController =
-      new StreamController.broadcast();
+      StreamController.broadcast();
   final _realCalls = <RealCall>[];
   final _responses = <CallPair<dynamic>>[];
 
@@ -106,16 +106,16 @@ class Mock {
     // See "Emulating Functions and Interactions" on dartlang.org: goo.gl/r3IQUH
     invocation = _useMatchedInvocationIfSet(invocation);
     if (_whenInProgress) {
-      _whenCall = new _WhenCall(this, invocation);
+      _whenCall = _WhenCall(this, invocation);
       return null;
     } else if (_verificationInProgress) {
-      _verifyCalls.add(new _VerifyCall(this, invocation));
+      _verifyCalls.add(_VerifyCall(this, invocation));
       return null;
     } else if (_untilCalledInProgress) {
-      _untilCall = new _UntilCall(this, invocation);
+      _untilCall = _UntilCall(this, invocation);
       return null;
     } else {
-      _realCalls.add(new RealCall(this, invocation));
+      _realCalls.add(RealCall(this, invocation));
       _invocationStreamController.add(invocation);
       var cannedResponse = _responses.lastWhere(
           (cr) => cr.call.matches(invocation, {}),
@@ -152,14 +152,14 @@ class Mock {
   }
 }
 
-typedef CallPair<dynamic> _ReturnsCannedResponse();
+typedef _ReturnsCannedResponse = CallPair<dynamic> Function();
 
 // When using an [ArgMatcher], we transform our invocation to have knowledge of
 // which arguments are wrapped, and which ones are not. Otherwise we just use
 // the existing invocation object.
 Invocation _useMatchedInvocationIfSet(Invocation invocation) {
   if (_storedArgs.isNotEmpty || _storedNamedArgs.isNotEmpty) {
-    invocation = new _InvocationForMatchedArguments(invocation);
+    invocation = _InvocationForMatchedArguments(invocation);
   }
   return invocation;
 }
@@ -182,7 +182,7 @@ class _InvocationForMatchedArguments extends Invocation {
 
   factory _InvocationForMatchedArguments(Invocation invocation) {
     if (_storedArgs.isEmpty && _storedNamedArgs.isEmpty) {
-      throw new StateError(
+      throw StateError(
           "_InvocationForMatchedArguments called when no ArgMatchers have been saved.");
     }
 
@@ -196,7 +196,7 @@ class _InvocationForMatchedArguments extends Invocation {
     _storedArgs.clear();
     _storedNamedArgs.clear();
 
-    return new _InvocationForMatchedArguments._(
+    return _InvocationForMatchedArguments._(
         invocation.memberName,
         positionalArguments,
         namedArguments,
@@ -213,7 +213,7 @@ class _InvocationForMatchedArguments extends Invocation {
   static Map<Symbol, dynamic> _reconstituteNamedArgs(Invocation invocation) {
     var namedArguments = <Symbol, dynamic>{};
     var _storedNamedArgSymbols =
-        _storedNamedArgs.keys.map((name) => new Symbol(name));
+        _storedNamedArgs.keys.map((name) => Symbol(name));
 
     // Iterate through [invocation]'s named args, validate them, and add them
     // to the return map.
@@ -234,12 +234,12 @@ class _InvocationForMatchedArguments extends Invocation {
     // Iterate through the stored named args, validate them, and add them to
     // the return map.
     _storedNamedArgs.forEach((name, arg) {
-      Symbol nameSymbol = new Symbol(name);
+      Symbol nameSymbol = Symbol(name);
       if (!invocation.namedArguments.containsKey(nameSymbol)) {
         // Clear things out for the next call.
         _storedArgs.clear();
         _storedNamedArgs.clear();
-        throw new ArgumentError(
+        throw ArgumentError(
             'An ArgumentMatcher was declared as named $name, but was not '
             'passed as an argument named $name.\n\n'
             'BAD:  when(obj.fn(anyNamed: "a")))\n'
@@ -249,7 +249,7 @@ class _InvocationForMatchedArguments extends Invocation {
         // Clear things out for the next call.
         _storedArgs.clear();
         _storedNamedArgs.clear();
-        throw new ArgumentError(
+        throw ArgumentError(
             'An ArgumentMatcher was declared as named $name, but a different '
             'value (${invocation.namedArguments[nameSymbol]}) was passed as '
             '$name.\n\n'
@@ -274,7 +274,7 @@ class _InvocationForMatchedArguments extends Invocation {
       // `when(obj.fn(a: any))`.
       _storedArgs.clear();
       _storedNamedArgs.clear();
-      throw new ArgumentError(
+      throw ArgumentError(
           'An argument matcher (like `any`) was used as a named argument, but '
           'did not use a Mockito "named" API. Each argument matcher that is '
           'used as a named argument needs to specify the name of the argument '
@@ -329,13 +329,11 @@ void clearInteractions(var mock) {
 class PostExpectation<T> {
   void thenReturn(T expected) {
     if (expected is Future) {
-      throw new ArgumentError(
-          '`thenReturn` should not be used to return a Future. '
+      throw ArgumentError('`thenReturn` should not be used to return a Future. '
           'Instead, use `thenAnswer((_) => future)`.');
     }
     if (expected is Stream) {
-      throw new ArgumentError(
-          '`thenReturn` should not be used to return a Stream. '
+      throw ArgumentError('`thenReturn` should not be used to return a Stream. '
           'Instead, use `thenAnswer((_) => stream)`.');
     }
     return _completeWhen((_) => expected);
@@ -353,7 +351,7 @@ class PostExpectation<T> {
 
   void _completeWhen(Answering<T> answer) {
     if (_whenCall == null) {
-      throw new StateError(
+      throw StateError(
           'Mock method was not called within `when()`. Was a real method called?');
     }
     _whenCall._setExpected<T>(answer);
@@ -453,9 +451,9 @@ class InvocationMatcher {
 class _TimeStampProvider {
   int _now = 0;
   DateTime now() {
-    var candidate = new DateTime.now();
+    var candidate = DateTime.now();
     if (candidate.millisecondsSinceEpoch <= _now) {
-      candidate = new DateTime.fromMillisecondsSinceEpoch(_now + 1);
+      candidate = DateTime.fromMillisecondsSinceEpoch(_now + 1);
     }
     _now = candidate.millisecondsSinceEpoch;
     return candidate;
@@ -511,8 +509,7 @@ class RealCall {
     } else if (invocation.isSetter) {
       method = '$method=$argString';
     } else {
-      throw new StateError(
-          'Invocation should be getter, setter or a method call.');
+      throw StateError('Invocation should be getter, setter or a method call.');
     }
 
     var verifiedText = verified ? '[VERIFIED] ' : '';
@@ -534,7 +531,7 @@ class _WhenCall {
   _WhenCall(this.mock, this.whenInvocation);
 
   void _setExpected<T>(Answering<T> answer) {
-    mock._setExpected(new CallPair<T>(isInvocation(whenInvocation), answer));
+    mock._setExpected(CallPair<T>(isInvocation(whenInvocation), answer));
   }
 }
 
@@ -543,7 +540,7 @@ class _UntilCall {
   final Mock _mock;
 
   _UntilCall(this._mock, Invocation invocation)
-      : _invocationMatcher = new InvocationMatcher(invocation);
+      : _invocationMatcher = InvocationMatcher(invocation);
 
   bool _matchesInvocation(RealCall realCall) =>
       _invocationMatcher.matches(realCall.invocation);
@@ -552,8 +549,7 @@ class _UntilCall {
 
   Future<Invocation> get invocationFuture {
     if (_realCalls.any(_matchesInvocation)) {
-      return new Future.value(
-          _realCalls.firstWhere(_matchesInvocation).invocation);
+      return Future.value(_realCalls.firstWhere(_matchesInvocation).invocation);
     }
 
     return _mock._invocationStreamController.stream
@@ -567,7 +563,7 @@ class _VerifyCall {
   List<RealCall> matchingInvocations;
 
   _VerifyCall(this.mock, this.verifyInvocation) {
-    var expectedMatcher = new InvocationMatcher(verifyInvocation);
+    var expectedMatcher = InvocationMatcher(verifyInvocation);
     matchingInvocations = mock._realCalls.where((RealCall recordedInvocation) {
       return !recordedInvocation.verified &&
           expectedMatcher.matches(recordedInvocation.invocation);
@@ -650,7 +646,7 @@ Null typedCaptureThat(Matcher matcher, {String named}) =>
     captureThat(matcher, named: named);
 
 Null _registerMatcher(Matcher matcher, bool capture, {String named}) {
-  var argMatcher = new ArgMatcher(matcher, capture);
+  var argMatcher = ArgMatcher(matcher, capture);
   if (named == null) {
     _storedArgs.add(argMatcher);
   } else {
@@ -667,7 +663,7 @@ class VerificationResult {
   bool _testApiMismatchHasBeenChecked = false;
 
   VerificationResult(this.callCount) {
-    captured = new List<dynamic>.from(_capturedArgs, growable: false);
+    captured = List<dynamic>.from(_capturedArgs, growable: false);
     _capturedArgs.clear();
   }
 
@@ -718,7 +714,7 @@ class VerificationResult {
   }
 }
 
-typedef T Answering<T>(Invocation realInvocation);
+typedef Answering<T> = T Function(Invocation realInvocation);
 
 typedef Verification = VerificationResult Function<T>(T matchingInvocations);
 
@@ -774,15 +770,14 @@ Verification _makeVerify(bool never) {
           '$message ${_verifyCalls.length} verify calls have been stored. '
           '[${_verifyCalls.first}, ..., ${_verifyCalls.last}]';
     }
-    throw new StateError(message);
+    throw StateError(message);
   }
   _verificationInProgress = true;
   return <T>(T mock) {
     _verificationInProgress = false;
     if (_verifyCalls.length == 1) {
       _VerifyCall verifyCall = _verifyCalls.removeLast();
-      var result =
-          new VerificationResult(verifyCall.matchingInvocations.length);
+      var result = VerificationResult(verifyCall.matchingInvocations.length);
       verifyCall._checkWith(never);
       return result;
     } else {
@@ -793,13 +788,13 @@ Verification _makeVerify(bool never) {
 
 _InOrderVerification get verifyInOrder {
   if (_verifyCalls.isNotEmpty) {
-    throw new StateError(_verifyCalls.join());
+    throw StateError(_verifyCalls.join());
   }
   _verificationInProgress = true;
   return <T>(List<T> _) {
     _verificationInProgress = false;
-    DateTime dt = new DateTime.fromMillisecondsSinceEpoch(0);
-    var tmpVerifyCalls = new List<_VerifyCall>.from(_verifyCalls);
+    DateTime dt = DateTime.fromMillisecondsSinceEpoch(0);
+    var tmpVerifyCalls = List<_VerifyCall>.from(_verifyCalls);
     _verifyCalls.clear();
     List<RealCall> matchedCalls = [];
     for (_VerifyCall verifyCall in tmpVerifyCalls) {
@@ -878,12 +873,12 @@ typedef Expectation = PostExpectation<T> Function<T>(T x);
 /// See the README for more information.
 Expectation get when {
   if (_whenCall != null) {
-    throw new StateError('Cannot call `when` within a stub response');
+    throw StateError('Cannot call `when` within a stub response');
   }
   _whenInProgress = true;
   return <T>(T _) {
     _whenInProgress = false;
-    return new PostExpectation<T>();
+    return PostExpectation<T>();
   };
 }
 
