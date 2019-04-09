@@ -5,6 +5,7 @@
 - Add an explicit error when an `InputSet` has an empty or null value in a glob
   list.
 - Increase lower bound sdk constraint to 2.0.0.
+- Normalize builder keys with the legacy `|` separator to use `:` instead.
 
 ## 0.3.1+4
 
