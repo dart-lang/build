@@ -11,7 +11,8 @@ import 'package:build/build.dart';
 import 'package:package_resolver/package_resolver.dart';
 import 'package:path/path.dart' as p;
 import 'package:stack_trace/stack_trace.dart';
-import 'package:test/test.dart' show expect;
+import 'package:test/test.dart'
+    show expect, expectLater, emitsThrough, contains;
 import 'package:test_descriptor/test_descriptor.dart' as d;
 import 'package:test_process/test_process.dart';
 
