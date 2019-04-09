@@ -129,9 +129,9 @@ final _lazyBuildPool = Pool(16);
 /// Throws an [UnsupportedModules] exception if there are any
 /// unsupported modules.
 Future<List<Module>> _ensureTransitiveModules(
-    Module module, AssetReader reader) async {
+    Module module, BuildStep buildStep) async {
   // Collect all the modules this module depends on, plus this module.
-  var transitiveDeps = await module.computeTransitiveDependencies(reader,
+  var transitiveDeps = await module.computeTransitiveDependencies(buildStep,
       throwIfUnsupported: true);
   var jsModules = transitiveDeps
       .map((module) => module.primarySource.changeExtension(jsModuleExtension))
@@ -139,9 +139,10 @@ Future<List<Module>> _ensureTransitiveModules(
         ..add(module.primarySource.changeExtension(jsModuleExtension));
   // Check that each module is readable, and warn otherwise.
   await Future.wait(jsModules.map((jsId) async {
-    if (await _lazyBuildPool.withResource(() => reader.canRead(jsId))) return;
+    if (await _lazyBuildPool.withResource(() => buildStep.canRead(jsId)))
+      return;
     var errorsId = jsId.addExtension('.errors');
-    await reader.canRead(errorsId);
+    await buildStep.canRead(errorsId);
     log.warning('Unable to read $jsId, check your console or the '
         '`.dart_tool/build/generated/${errorsId.package}/${errorsId.path}` '
         'log file.');
