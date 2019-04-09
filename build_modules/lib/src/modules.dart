@@ -137,8 +137,7 @@ class Module {
   ///
   /// If [throwIfUnsupported] is `true`, then an [UnsupportedModules]
   /// will be thrown if there are any modules that are not supported.
-  Future<List<Module>> computeTransitiveDependencies(
-      BuildStep buildStep,
+  Future<List<Module>> computeTransitiveDependencies(BuildStep buildStep,
       {bool throwIfUnsupported = false}) async {
     throwIfUnsupported ??= false;
     final modules = await buildStep.fetchResource(moduleCache);
