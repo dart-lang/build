@@ -4,7 +4,6 @@
 
 import 'dart:convert';
 
-import 'package:analyzer/src/summary/idl.dart';
 import 'package:test/test.dart';
 
 import 'package:build_modules/src/modules.dart';
@@ -19,30 +18,6 @@ encodedMatchesMetaModule(MetaModule expected) =>
 
 /// Matches a [Module] against an [expected] Module instance.
 matchesModule(Module expected) => ModuleMatcher(expected);
-
-/// A [Matcher] for an analyzer summary that matches against the linked uris.
-class HasLinkedUris extends CustomMatcher {
-  HasLinkedUris(matcher)
-      : super('Summary with linked uris', 'linkedLibraryUris', matcher);
-
-  @override
-  featureValueOf(summaryBytes) {
-    var bundle = PackageBundle.fromBuffer(summaryBytes as List<int>);
-    return bundle.linkedLibraryUris;
-  }
-}
-
-/// A [Matcher] for an analyzer summary that matches against the unlinked uris.
-class HasUnlinkedUris extends CustomMatcher {
-  HasUnlinkedUris(matcher)
-      : super('Summary with unlinked uris', 'unlinkedLibraryUris', matcher);
-
-  @override
-  featureValueOf(summaryBytes) {
-    var bundle = PackageBundle.fromBuffer(summaryBytes as List<int>);
-    return bundle.unlinkedUnitUris;
-  }
-}
 
 /// A [Matcher] for an encoded [MetaModule] against an [expected] instance.
 class EncodedMetaModuleMatcher extends Matcher {

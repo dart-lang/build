@@ -82,9 +82,6 @@ class BuilderActionPerformance extends TimeSlice {
 class BuilderActionStagePerformance extends TimeSliceGroup {
   final String label;
 
-  @override
-  List<TimeSlice> get slices => super.slices;
-
   BuilderActionStagePerformance(this.label, List<TimeSlice> slices)
       : super(slices);
 

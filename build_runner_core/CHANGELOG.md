@@ -1,5 +1,18 @@
-## 2.1.0
+## 3.0.2
 
+- Only track valid and readable assets as inputs to globs. Fixes a crash when
+  attempting to check outputs from an invalid asset.
+
+## 3.0.1
+
+- Remove usage of set literals to fix errors on older sdks that don't support
+  them.
+
+## 3.0.0
+
+- Fix an issue where `--symlink` was forcing outputs to not be hoisted.
+- `BuildImpl` now takes an optional list of  `BuildTargets` instead of a list of
+  `buildDirs`.
 - Warn when there are no assets to write in a specified output directory.
 
 ## 2.0.3

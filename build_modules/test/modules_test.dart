@@ -13,7 +13,7 @@ import 'package:build_modules/build_modules.dart';
 String serializeModule(Module module) => jsonEncode(module.toJson());
 
 void main() {
-  final platform = DartPlatform.dart2js;
+  final platform = DartPlatform.register('test', ['dart:html']);
 
   group('computeTransitiveDeps', () {
     final rootId = AssetId('a', 'lib/a.dart');

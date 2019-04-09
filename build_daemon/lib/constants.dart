@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:io';
+
 import 'package:path/path.dart' as p;
 
 const readyToConnectLog = 'READY TO CONNECT';
@@ -10,7 +11,7 @@ const versionSkew = 'DIFFERENT RUNNING VERSION';
 const optionsSkew = 'DIFFERENT OPTIONS';
 
 // TODO(grouma) - use pubspec version when this is open sourced.
-const currentVersion = '4.0.0';
+const currentVersion = '5.0.0';
 
 var _username = Platform.environment['USER'] ?? '';
 String daemonWorkspace(String workingDirectory) {

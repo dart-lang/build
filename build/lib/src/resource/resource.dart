@@ -4,9 +4,9 @@
 
 import 'dart:async';
 
-typedef FutureOr<T> CreateInstance<T>();
-typedef FutureOr DisposeInstance<T>(T instance);
-typedef FutureOr BeforeExit();
+typedef CreateInstance<T> = FutureOr<T> Function();
+typedef DisposeInstance<T> = FutureOr Function(T instance);
+typedef BeforeExit = FutureOr Function();
 
 /// A [Resource] encapsulates the logic for creating and disposing of some
 /// expensive object which has a lifecycle.

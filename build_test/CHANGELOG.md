@@ -1,3 +1,7 @@
+## 0.10.7-dev
+
+- Support the latest version of `package:html`.
+
 ## 0.10.6
 
 - Allow build_resolvers version `1.0.0`.

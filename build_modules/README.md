@@ -1,5 +1,3 @@
-# build_modules
-
 <p align="center">
   Module builders for web, used by <a href="https://pub.dartlang.org/packages/build_web_compilers"><code>package:build_web_compilers</code></a>.
   <br>

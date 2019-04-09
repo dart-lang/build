@@ -19,29 +19,10 @@ abstract class _WorkerException implements Exception {
   String toString() => '$message:$failedAsset\n\n$error';
 }
 
-/// An [Exception] that is thrown when the analyzer fails to create a summary.
-class AnalyzerSummaryException extends _WorkerException {
-  @override
-  final String message = 'Error creating summary for module';
-
-  AnalyzerSummaryException(AssetId summaryId, String error)
-      : super(summaryId, error);
-}
-
 /// An [Exception] that is thrown when dartdevc compilation fails.
 class DartDevcCompilationException extends _WorkerException {
   @override
   final String message = 'Error compiling dartdevc module';
 
   DartDevcCompilationException(AssetId jsId, String error) : super(jsId, error);
-}
-
-/// An [Exception] that is thrown when the common frontend fails to create a
-/// kernel summary.
-class KernelSummaryException extends _WorkerException {
-  @override
-  final String message = 'Error creating kernel summary for module';
-
-  KernelSummaryException(AssetId summaryId, String error)
-      : super(summaryId, error);
 }

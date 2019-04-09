@@ -10,6 +10,7 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'build.dart';
 import 'clean.dart';
 import 'daemon.dart';
+import 'doctor.dart';
 import 'run_script.dart';
 import 'serve.dart';
 import 'test.dart';
@@ -24,13 +25,14 @@ class BuildCommandRunner extends CommandRunner<int> {
   BuildCommandRunner(List<BuilderApplication> builderApplications)
       : builderApplications = List.unmodifiable(builderApplications),
         super('build_runner', 'Unified interface for running Dart builds.') {
-    addCommand(DaemonCommand());
     addCommand(BuildCommand());
-    addCommand(WatchCommand());
+    addCommand(CleanCommand());
+    addCommand(DaemonCommand());
+    addCommand(DoctorCommand());
+    addCommand(RunCommand());
     addCommand(ServeCommand());
     addCommand(TestCommand(packageGraph));
-    addCommand(CleanCommand());
-    addCommand(RunCommand());
+    addCommand(WatchCommand());
   }
 
   // CommandRunner._usageWithoutDescription is private – this is a reasonable

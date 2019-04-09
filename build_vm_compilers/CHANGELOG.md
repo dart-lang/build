@@ -1,3 +1,13 @@
+## 1.0.0
+
+- Support build_modules 2.0.0
+  - Define our own `vm` platform and builders explicitly.
+
+## 0.1.2
+
+- Increased the upper bound for `package:analyzer` to `<0.37.0`.
+- Require Dart SDK `>=2.1.0`.
+
 ## 0.1.1+5
 
 - Increased the upper bound for `package:analyzer` to `<0.36.0`.
@@ -8,7 +18,7 @@
 
 ## 0.1.1+3
 
-- Increased the upper bound for `package:analyzer` to '<0.34.0'.
+- Increased the upper bound for `package:analyzer` to `<0.34.0`.
 
 ## 0.1.1+2
 

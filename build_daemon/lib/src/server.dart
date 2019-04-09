@@ -19,6 +19,7 @@ import '../data/build_request.dart';
 import '../data/build_target.dart';
 import '../data/build_target_request.dart';
 import '../data/serializers.dart';
+import '../data/shutdown_notification.dart';
 import 'managers/build_target_manager.dart';
 
 class Server {
@@ -77,7 +78,12 @@ class Server {
     return _server.port;
   }
 
-  Future<void> stop() async {
+  Future<void> stop({String message}) async {
+    if (message?.isNotEmpty ?? false) {
+      for (var connection in _buildTargetManager.allChannels) {
+        connection.sink.add(ShutdownNotification((b) => b.message));
+      }
+    }
     _timeout.cancel();
     await _server?.close(force: true);
     await _builder?.stop();

@@ -30,7 +30,7 @@ class BuildCommand extends BuildRunnerCommand {
       deleteFilesByDefault: options.deleteFilesByDefault,
       enableLowResourcesMode: options.enableLowResourcesMode,
       configKey: options.configKey,
-      outputMap: options.outputMap,
+      buildDirs: options.buildDirs,
       outputSymlinksOnly: options.outputSymlinksOnly,
       packageGraph: packageGraph,
       verbose: options.verbose,
@@ -38,7 +38,6 @@ class BuildCommand extends BuildRunnerCommand {
       isReleaseBuild: options.isReleaseBuild,
       trackPerformance: options.trackPerformance,
       skipBuildScriptCheck: options.skipBuildScriptCheck,
-      buildDirs: options.buildDirs,
       logPerformanceDir: options.logPerformanceDir,
     );
     if (result.status == BuildStatus.success) {

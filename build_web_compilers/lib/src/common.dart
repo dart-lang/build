@@ -18,8 +18,7 @@ String defaultAnalysisOptionsArg(ScratchSpace scratchSpace) =>
 
 // TODO: better solution for a .packages file, today we just create a new one
 // for every kernel build action.
-Future<File> createPackagesFile(
-    Iterable<AssetId> allAssets, ScratchSpace scratchSpace) async {
+Future<File> createPackagesFile(Iterable<AssetId> allAssets) async {
   var allPackages = allAssets.map((id) => id.package).toSet();
   var packagesFileDir =
       await Directory.systemTemp.createTemp('kernel_builder_');
