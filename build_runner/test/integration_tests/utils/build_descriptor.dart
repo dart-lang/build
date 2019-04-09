@@ -322,4 +322,15 @@ class BuildServer {
     expect(response.statusCode, 200);
     expect(await utf8.decodeStream(response), content);
   }
+
+  StreamQueue<String> get stdout => _process.stdout;
+}
+
+/// Expect that [stdout] emits in order lines that contain every value in
+/// [expected] with any other lines in between.
+Future<void> expectOutput(
+    StreamQueue<String> stdout, Iterable<String> expected) async {
+  for (final line in expected) {
+    await expectLater(stdout, emitsThrough(contains(line)));
+  }
 }
