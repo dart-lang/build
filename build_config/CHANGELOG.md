@@ -1,10 +1,10 @@
-## 0.3.2-dev
+## 0.3.2
 
 - Add an explicit error when `buildExtensions` is configured to overwrite it's
   input.
 - Add an explicit error when an `InputSet` has an empty or null value in a glob
   list.
-- Increase lower bound sdk constraint to 2.0.0.
+- Increase lower bound SDK constraint to 2.0.0.
 - Normalize builder keys with the legacy `|` separator to use `:` instead.
 
 ## 0.3.1+4
