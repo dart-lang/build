@@ -37,13 +37,11 @@ void main() {
       var content = 'cool';
       await runBuild(trailingArgs: [
         '--define',
-        'provides_builder|some_post_process_builder=default_content=$content'
+        'provides_builder:some_post_process_builder=default_content=$content'
       ]);
       var generated =
           await readGeneratedFileAsString('_test/lib/hello.txt.post');
       expect(generated, equals(content));
-    }, onPlatform: {
-      'windows': const Skip('https://github.com/dart-lang/build/issues/1127')
     });
 
     test('rebuilds if the input file changes and not otherwise', () async {

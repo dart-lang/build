@@ -38,7 +38,7 @@ Each target may also contain the following keys:
 ## Configuring `Builder`s applied to your package
 Each target can specify a `builders` key which configures the builders which are
 applied to that target. The value is a Map from builder to configuration for
-that builder. The key is in the format `'$packageName|$builderName'`. The
+that builder. The key is in the format `'$packageName:$builderName'`. The
 configuration may have the following keys:
 
 - **enabled**: Boolean, Optional: Whether to apply the builder to this target.
@@ -90,7 +90,7 @@ then you can define `Builder`s and have those applied to packages with a
 dependency on yours.
 
 The key for a Builder will be normalized so that consumers of the builder can
-refer to it in `'$definingPackageName|$builderName'` format. If the builder name
+refer to it in `'$definingPackageName:$builderName'` format. If the builder name
 matches the package name it can also be referred to with just the package name.
 
 Exposed `Builder`s are configured in the `builders` section of the `build.yaml`.
@@ -198,7 +198,7 @@ builders:
     builder_factories: ["myBuilder"]
     build_extensions: {".dart": [".tar.gz"]}
     auto_apply: dependents
-    apply_builders: ["|archive_extract_builder"]
+    apply_builders: [":archive_extract_builder"]
 post_process_builders:
   # The post process builder config, extracts `.tar.gz` files.
   extract_archive_builder:
