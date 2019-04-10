@@ -39,7 +39,7 @@ builders:
 targets:
   $default:
     builders:
-      some_package|some_builder:
+      some_package:some_builder:
         generate_for:
         -
 ''';
