@@ -24,14 +24,14 @@ void main() {
       });
       var targetGraph = await TargetGraph.forPackageGraph(packageGraph);
       var builderApplications = [
-        apply('b|cool_builder', [(options) => CoolBuilder(options)],
+        apply('b:cool_builder', [(options) => CoolBuilder(options)],
             toAllPackages())
       ];
       var phases = await createBuildPhases(
           targetGraph,
           builderApplications,
           {
-            'b|cool_builder': {'option_a': 'a', 'option_c': 'c'},
+            'b:cool_builder': {'option_a': 'a', 'option_c': 'c'},
           },
           false);
       for (final phase in phases.cast<InBuildPhase>()) {
@@ -55,7 +55,7 @@ void main() {
               'a:a': BuildTarget(dependencies: Set.of(['b:b']))
             },
             globalOptions: {
-              'b|cool_builder': GlobalBuilderConfig(
+              'b:cool_builder': GlobalBuilderConfig(
                 options: const BuilderOptions(
                     {'option_a': 'global a', 'option_b': 'global b'}),
                 releaseOptions:
@@ -67,14 +67,14 @@ void main() {
         var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
             overrideBuildConfig: overrides);
         var builderApplications = [
-          apply('b|cool_builder', [(options) => CoolBuilder(options)],
+          apply('b:cool_builder', [(options) => CoolBuilder(options)],
               toAllPackages())
         ];
         var phases = await createBuildPhases(
             targetGraph,
             builderApplications,
             {
-              'b|cool_builder': {'option_c': '--define c'},
+              'b:cool_builder': {'option_c': '--define c'},
             },
             true);
         for (final phase in phases.cast<InBuildPhase>()) {
@@ -94,7 +94,7 @@ void main() {
       });
       var targetGraph = await TargetGraph.forPackageGraph(packageGraph);
       var builderApplications = [
-        apply('b|cool_builder', [(options) => CoolBuilder(options)],
+        apply('b:cool_builder', [(options) => CoolBuilder(options)],
             toDependentsOf('b')),
       ];
       var phases =
@@ -110,10 +110,10 @@ void main() {
       });
       var targetGraph = await TargetGraph.forPackageGraph(packageGraph);
       var builderApplications = [
-        apply('b|cool_builder', [(options) => CoolBuilder(options)],
+        apply('b:cool_builder', [(options) => CoolBuilder(options)],
             toDependentsOf('b'),
-            appliesBuilders: ['b|not_by_default']),
-        apply('b|not_by_default', [(_) => TestBuilder()], toNoneByDefault()),
+            appliesBuilders: ['b:not_by_default']),
+        apply('b:not_by_default', [(_) => TestBuilder()], toNoneByDefault()),
       ];
       var phases =
           await createBuildPhases(targetGraph, builderApplications, {}, false);
@@ -132,7 +132,7 @@ void main() {
       });
       var targetGraph = await TargetGraph.forPackageGraph(packageGraph);
       var builderApplications = [
-        apply('c|cool_builder', [(options) => CoolBuilder(options)],
+        apply('c:cool_builder', [(options) => CoolBuilder(options)],
             toDependentsOf('c'),
             hideOutput: false),
       ];
@@ -154,10 +154,10 @@ void main() {
       });
       var targetGraph = await TargetGraph.forPackageGraph(packageGraph);
       var builderApplications = [
-        apply('c|cool_builder', [(options) => CoolBuilder(options)],
+        apply('c:cool_builder', [(options) => CoolBuilder(options)],
             toDependentsOf('c'),
-            appliesBuilders: ['c|not_by_default']),
-        apply('c|not_by_default', [(_) => TestBuilder()], toNoneByDefault(),
+            appliesBuilders: ['c:not_by_default']),
+        apply('c:not_by_default', [(_) => TestBuilder()], toNoneByDefault(),
             hideOutput: false),
       ];
       var phases =
@@ -186,7 +186,7 @@ void main() {
         var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
             overrideBuildConfig: overrides);
         var builderApplications = [
-          apply('b|cool_builder', [(options) => CoolBuilder(options)],
+          apply('b:cool_builder', [(options) => CoolBuilder(options)],
               toAllPackages()),
         ];
         expect(
