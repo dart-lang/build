@@ -188,7 +188,7 @@ class SharedPartBuilder extends _Builder {
           partId,
           'partId',
           '`partId` can only contain letters, numbers, `_` and `.`. '
-          'It cannot start or end with `.`.');
+              'It cannot start or end with `.`.');
     }
   }
 }

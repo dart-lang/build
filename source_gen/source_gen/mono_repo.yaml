@@ -1,0 +1,3 @@
+# See https://github.com/dart-lang/mono_repo for details
+merge_stages:
+- analyze_format
