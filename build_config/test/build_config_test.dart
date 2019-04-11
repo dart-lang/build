@@ -130,6 +130,23 @@ void main() {
     expectPostProcessBuilderDefinitions(
         buildConfig.postProcessBuilderDefinitions, {});
   });
+
+  test('build.yaml can use | separator in builder keys', () {
+    var buildConfig = BuildConfig.parse('example', ['a', 'b'], '''
+builders:
+  example|example:
+    builder_factories: ["createBuilder"]
+    import: package:example/builders.dart
+    build_extensions: {".dart": [".g.dart", ".json"]}
+    runs_before: ["a|foo_builder"]
+    applies_builders: ["a|foo_builder"]
+''');
+    expect(buildConfig.builderDefinitions.keys, ['example:example']);
+    expect(buildConfig.builderDefinitions['example:example'].runsBefore,
+        ['a:foo_builder']);
+    expect(buildConfig.builderDefinitions['example:example'].appliesBuilders,
+        ['a:foo_builder']);
+  });
 }
 
 var buildYaml = r'''
