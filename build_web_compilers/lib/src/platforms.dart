@@ -21,6 +21,7 @@ final ddcPlatform = DartPlatform.register('ddc', [
   'web_audio',
   'web_gl',
   'web_sql',
+  '_internal',
 ]);
 
 final dart2jsPlatform = DartPlatform.register('dart2js', [
@@ -40,4 +41,5 @@ final dart2jsPlatform = DartPlatform.register('dart2js', [
   'web_audio',
   'web_gl',
   'web_sql',
+  '_internal',
 ]);
