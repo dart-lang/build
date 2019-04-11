@@ -1,5 +1,5 @@
 name: build_modules
-version: 2.0.0-dev
+version: 2.0.0
 description: Builders for Dart modules
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/build_modules
