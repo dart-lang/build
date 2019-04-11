@@ -19,4 +19,5 @@ final vmPlatform = DartPlatform.register('vm', [
   'profiler',
   'typed_data',
   'vmservice_io',
+  '_internal',
 ]);
