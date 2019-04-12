@@ -1,4 +1,4 @@
-## 2.0.0-dev
+## 2.0.0-alpha.0
 
 - Update to run DDC in kernel mode, and consume kernel outlines instead of
   analyzer summaries.
