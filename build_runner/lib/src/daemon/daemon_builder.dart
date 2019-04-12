@@ -151,7 +151,6 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
     var environment = OverrideableEnvironment(
         IOEnvironment(packageGraph,
-            assumeTty: true,
             outputSymlinksOnly: sharedOptions.outputSymlinksOnly),
         onLog: (record) {
       outputStreamController.add(ServerLog((b) => b.log = record.toString()));
