@@ -57,7 +57,7 @@ class DaemonCommand extends BuildRunnerCommand {
       BuildRunnerDaemonBuilder builder;
       // Ensure we capture any logs that happen during startup.
       var startupLogSub =
-          Logger.root.onRecord.listen((LogRecord l) => stdout.writeln('$l\n'));
+          Logger.root.onRecord.listen((record) => stdout.writeln('$record\n'));
       builder = await BuildRunnerDaemonBuilder.create(
         packageGraph,
         builderApplications,
