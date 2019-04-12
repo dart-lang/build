@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/src/daemon.dart';
 import 'package:build_runner/src/daemon/constants.dart';
+import 'package:logging/logging.dart';
 
 import '../daemon/asset_server.dart';
 import '../daemon/daemon_builder.dart';
@@ -53,11 +54,17 @@ class DaemonCommand extends BuildRunnerCommand {
       }
     } else {
       stdout.writeln('Starting daemon...');
-      var builder = await BuildRunnerDaemonBuilder.create(
+      BuildRunnerDaemonBuilder builder;
+      // Ensure we capture any logs that happen during startup.
+      var startupLogSub =
+          Logger.root.onRecord.listen((LogRecord l) => stdout.writeln('$l\n'));
+      builder = await BuildRunnerDaemonBuilder.create(
         packageGraph,
         builderApplications,
         options,
       );
+      await startupLogSub.cancel();
+
       // Forward server logs to daemon command STDIO.
       var logSub =
           builder.logs.listen((serverLog) => stdout.writeln(serverLog.log));

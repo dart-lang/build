@@ -1,3 +1,10 @@
+## 1.3.2
+
+- Fix an error where daemon mode would claim support for prompts when it can't
+  actually support them and would hang instead.
+- Improve logging when the daemon fails to start up, previously no logs would
+  be shown.
+
 ## 1.3.1
 
 - Remove usage of set literals to fix errors on older sdks that don't support
