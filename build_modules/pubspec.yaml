@@ -36,12 +36,5 @@ dev_dependencies:
     path: test/fixtures/b
 
 dependency_overrides:
-  build:
-    path: ../build
-  build_resolvers:
-    path: ../build_resolvers
   build_vm_compilers:
     path: ../build_vm_compilers
-
-  # TEMP - enable testing while waiting on source_gen and json_serializable
-  analyzer: 0.36.0
