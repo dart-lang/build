@@ -1,3 +1,7 @@
+## 1.3.3
+
+- Use `HttpMultiServer.loopback` for the daemon asset server.
+
 ## 1.3.2
 
 - Fix an error where daemon mode would claim support for prompts when it can't
