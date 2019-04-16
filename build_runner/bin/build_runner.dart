@@ -17,7 +17,7 @@ import 'package:build_runner/src/build_script_generate/bootstrap.dart';
 import 'package:build_runner/src/entrypoint/runner.dart';
 import 'package:build_runner/src/logging/std_io_logging.dart';
 
-Future<Null> main(List<String> args) async {
+Future<void> main(List<String> args) async {
   // Use the actual command runner to parse the args and immediately print the
   // usage information if there is no command provided or the help command was
   // explicitly invoked.

@@ -21,8 +21,8 @@ class PackageGraphWatcher {
   final PackageNodeWatcher Function(PackageNode) _strategy;
   final PackageGraph _graph;
 
-  final _readyCompleter = Completer<Null>();
-  Future<Null> get ready => _readyCompleter.future;
+  final _readyCompleter = Completer<void>();
+  Future<void> get ready => _readyCompleter.future;
 
   bool _isWatching = false;
 

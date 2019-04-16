@@ -477,5 +477,5 @@ class MockWatchImpl implements WatchImpl {
   }
 
   @override
-  Future<Null> get ready => Future.value(null);
+  Future<void> get ready => Future.value();
 }

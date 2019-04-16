@@ -27,7 +27,7 @@ void main() {
         '--config=dart2js',
         '--output=$_outputDir',
       ]);
-      await expectWasCompiledWithDart2Js(minified: false);
+      await _expectWasCompiledWithDart2JS(minified: false);
     }, onPlatform: {'windows': const Skip('flaky on windows')});
 
     test('via --define flag', () async {
@@ -38,7 +38,7 @@ void main() {
         'build_web_compilers|entrypoint=dart2js_args=["--minify","--checked"]',
         '--output=$_outputDir',
       ]);
-      await expectWasCompiledWithDart2Js(minified: true);
+      await _expectWasCompiledWithDart2JS(minified: true);
     }, onPlatform: {'windows': const Skip('flaky on windows')});
 
     test('via --release mode', () async {
@@ -46,7 +46,7 @@ void main() {
         '--release',
         '--output=$_outputDir',
       ]);
-      await expectWasCompiledWithDart2Js(minified: true);
+      await _expectWasCompiledWithDart2JS(minified: true);
     }, onPlatform: {'windows': const Skip('flaky on windows')});
 
     test('--define overrides --config', () async {
@@ -59,12 +59,12 @@ void main() {
         'build_web_compilers|entrypoint=dart2js_args=["--minify","--checked"]',
         '--output=$_outputDir',
       ]);
-      await expectWasCompiledWithDart2Js(minified: true);
+      await _expectWasCompiledWithDart2JS(minified: true);
     }, onPlatform: {'windows': const Skip('flaky on windows')});
   });
 }
 
-Future<Null> expectWasCompiledWithDart2Js({bool minified = false}) async {
+Future<void> _expectWasCompiledWithDart2JS({bool minified = false}) async {
   var jsFile = File(
       '$_outputDir/test/hello_world_deferred_test.dart.browser_test.dart.js');
   expect(await jsFile.exists(), isTrue);
