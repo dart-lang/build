@@ -9,6 +9,7 @@ import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
 import 'package:build_runner_core/build_runner_core.dart';
@@ -18,8 +19,12 @@ import 'package:build_runner_core/src/asset_graph/node.dart';
 AssetGraph assetGraph;
 PackageGraph packageGraph;
 
+final logger = Logger('graph_inspector');
+
 Future<void> main(List<String> args) async {
-  stdout.writeln(
+  final logSubscription =
+      Logger.root.onRecord.listen((record) => print(record.message));
+  logger.warning(
       'Warning: this tool is unsupported and usage may change at any time, '
       'use at your own risk.');
 
@@ -47,26 +52,29 @@ Future<void> main(List<String> args) async {
   assetGraph = AssetGraph.deserialize(assetGraphFile.readAsBytesSync());
   packageGraph = PackageGraph.forThisPackage();
 
-  var commandRunner =
-      CommandRunner('', 'A tool for inspecting the AssetGraph for your build')
-        ..addCommand(InspectNodeCommand())
-        ..addCommand(GraphCommand());
+  var commandRunner = CommandRunner<bool>(
+      '', 'A tool for inspecting the AssetGraph for your build')
+    ..addCommand(InspectNodeCommand())
+    ..addCommand(GraphCommand())
+    ..addCommand(QuitCommand());
 
   stdout.writeln('Ready, please type in a command:');
 
-  while (true) {
+  var shouldExit = false;
+  while (!shouldExit) {
     stdout
       ..writeln('')
       ..write('> ');
     var nextCommand = stdin.readLineSync();
     stdout.writeln('');
     try {
-      await commandRunner.run(nextCommand.split(' '));
+      shouldExit = await commandRunner.run(nextCommand.split(' '));
     } on UsageException {
       stdout.writeln('Unrecognized option');
       await commandRunner.run(['help']);
     }
   }
+  await logSubscription.cancel();
 }
 
 String _findAssetGraph(ArgResults results) {
@@ -80,7 +88,7 @@ String _findAssetGraph(ArgResults results) {
   return assetGraphPathFor(p.url.joinAll(p.split(scriptPath)));
 }
 
-class InspectNodeCommand extends Command {
+class InspectNodeCommand extends Command<bool> {
   @override
   String get name => 'inspect';
 
@@ -96,7 +104,7 @@ class InspectNodeCommand extends Command {
   }
 
   @override
-  run() {
+  bool run() {
     var stringUris = argResults.rest;
     if (stringUris.isEmpty) {
       stderr.writeln('Expected at least one uri for a node to inspect.');
@@ -145,11 +153,11 @@ class InspectNodeCommand extends Command {
 
       stdout.write(description);
     }
-    return null;
+    return false;
   }
 }
 
-class GraphCommand extends Command {
+class GraphCommand extends Command<bool> {
   @override
   String get name => 'graph';
 
@@ -173,7 +181,7 @@ class GraphCommand extends Command {
   }
 
   @override
-  run() {
+  bool run() {
     var showGenerated = argResults['generated'] as bool;
     var showSources = argResults['original'] as bool;
     Iterable<AssetId> assets;
@@ -199,8 +207,19 @@ class GraphCommand extends Command {
     for (var id in assets) {
       _listAsset(id, stdout, indentation: '  ');
     }
-    return null;
+    return false;
   }
+}
+
+class QuitCommand extends Command<bool> {
+  @override
+  String get name => 'quit';
+
+  @override
+  String get description => 'Exit the inspector';
+
+  @override
+  bool run() => true;
 }
 
 AssetId _idFromString(String stringUri) {
