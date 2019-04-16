@@ -9,10 +9,11 @@ import 'dart:io';
 
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
+import 'package:crypto/crypto.dart';
+import 'package:graphs/graphs.dart' show crawlAsync;
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
-import 'package:graphs/graphs.dart' show crawlAsync;
 
 import 'common.dart';
 import 'errors.dart';
@@ -77,6 +78,7 @@ class KernelBuilder implements Builder {
           buildStep: buildStep,
           summaryOnly: summaryOnly,
           outputExtension: outputExtension,
+          platform: platform,
           dartSdkDir: platformSdk,
           sdkKernelPath: sdkKernelPath);
     } on MissingModulesException catch (e) {
@@ -97,6 +99,7 @@ Future<void> _createKernel(
     @required BuildStep buildStep,
     @required bool summaryOnly,
     @required String outputExtension,
+    @required DartPlatform platform,
     @required String dartSdkDir,
     @required String sdkKernelPath}) async {
   var request = WorkRequest();
@@ -121,7 +124,7 @@ Future<void> _createKernel(
 
     packagesFile = await createPackagesFile(allAssetIds);
 
-    await _addRequestArguments(request, module, kernelDeps, sdkDir,
+    await _addRequestArguments(request, module, kernelDeps, platform, sdkDir,
         sdkKernelPath, outputFile, packagesFile, summaryOnly, buildStep);
   });
 
@@ -240,6 +243,7 @@ Future<void> _addRequestArguments(
     WorkRequest request,
     Module module,
     Iterable<AssetId> transitiveKernelDeps,
+    DartPlatform platform,
     String sdkDir,
     String sdkKernelPath,
     File outputFile,
@@ -265,7 +269,7 @@ Future<void> _addRequestArguments(
   request.inputs.add(Input()
     ..path = '${Uri.file(p.join(sdkDir, sdkKernelPath))}'
     // Sdk updates fully invalidate the build anyways.
-    ..digest = [0]);
+    ..digest = md5.convert(utf8.encode(platform.name)).bytes);
 
   // Add all kernel outlines as summary inputs, with digests.
   var inputs = await Future.wait(transitiveKernelDeps.map((id) async {
