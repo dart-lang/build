@@ -8,7 +8,6 @@ import 'package:args/command_runner.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 
 import 'build.dart';
-import 'clean.dart';
 import 'daemon.dart';
 import 'doctor.dart';
 import 'serve.dart';
@@ -25,7 +24,6 @@ class BuildCommandRunner extends CommandRunner<int> {
       : builderApplications = List.unmodifiable(builderApplications),
         super('build_runner', 'Unified interface for running Dart builds.') {
     addCommand(BuildCommand());
-    addCommand(CleanCommand());
     addCommand(DaemonCommand());
     addCommand(DoctorCommand());
     addCommand(ServeCommand());

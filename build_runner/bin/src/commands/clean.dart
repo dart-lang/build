@@ -1,4 +1,4 @@
-// Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2019, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
@@ -11,23 +11,20 @@ import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:logging/logging.dart';
 
-import '../logging/std_io_logging.dart';
+import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
 
 class CleanCommand extends Command<int> {
   @override
   String get name => 'clean';
+  final logger = Logger('clean');
 
   @override
   String get description =>
       'Cleans up output from previous builds. Does not clean up --output '
       'directories.';
 
-  Logger get logger => Logger(name);
-
   @override
   Future<int> run() async {
-    var logSubscription = Logger.root.onRecord.listen(stdIOLogListener());
-
     logger.warning('Deleting cache and generated source files.\n'
         'This shouldn\'t be necessary for most applications, unless you have '
         'made intentional edits to generated files (i.e. for testing). '
@@ -36,7 +33,7 @@ class CleanCommand extends Command<int> {
         'to work around an apparent (and reproducible) bug.');
 
     await logTimedAsync(logger, 'Cleaning up source outputs', () async {
-      var assetGraphFile = File(assetGraphPath);
+      var assetGraphFile = File(assetGraphPathFor(scriptLocation));
       if (!assetGraphFile.existsSync()) {
         logger.warning('No asset graph found. '
             'Skipping cleanup of generated files in source directories.');
@@ -51,19 +48,17 @@ class CleanCommand extends Command<int> {
         return;
       }
       var packageGraph = PackageGraph.forThisPackage();
-      await cleanUpSourceOutputs(assetGraph, packageGraph);
+      await _cleanUpSourceOutputs(assetGraph, packageGraph);
     });
 
     await logTimedAsync(
-        logger, 'Cleaning up cache directory', cleanUpGeneratedDirectory);
-
-    await logSubscription.cancel();
+        logger, 'Cleaning up cache directory', _cleanUpGeneratedDirectory);
 
     return 0;
   }
 }
 
-Future<void> cleanUpSourceOutputs(
+Future<void> _cleanUpSourceOutputs(
     AssetGraph assetGraph, PackageGraph packageGraph) async {
   var writer = FileBasedAssetWriter(packageGraph);
   for (var id in assetGraph.outputs) {
@@ -79,7 +74,7 @@ Future<void> cleanUpSourceOutputs(
   }
 }
 
-Future<void> cleanUpGeneratedDirectory() async {
+Future<void> _cleanUpGeneratedDirectory() async {
   var generatedDir = Directory(cacheDir);
   if (await generatedDir.exists()) {
     await generatedDir.delete(recursive: true);
