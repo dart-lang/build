@@ -9,10 +9,11 @@ import 'dart:io';
 
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
+import 'package:crypto/crypto.dart';
+import 'package:graphs/graphs.dart' show crawlAsync;
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
-import 'package:graphs/graphs.dart' show crawlAsync;
 
 import 'common.dart';
 import 'errors.dart';
@@ -265,7 +266,7 @@ Future<void> _addRequestArguments(
   request.inputs.add(Input()
     ..path = '${Uri.file(p.join(sdkDir, sdkKernelPath))}'
     // Sdk updates fully invalidate the build anyways.
-    ..digest = [0]);
+    ..digest = md5.convert(utf8.encode(platform.name)).bytes);
 
   // Add all kernel outlines as summary inputs, with digests.
   var inputs = await Future.wait(transitiveKernelDeps.map((id) async {
