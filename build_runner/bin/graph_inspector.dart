@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
@@ -17,28 +18,29 @@ import 'package:build_runner_core/src/asset_graph/node.dart';
 AssetGraph assetGraph;
 PackageGraph packageGraph;
 
-Future main(List<String> args) async {
+Future<void> main(List<String> args) async {
   stdout.writeln(
       'Warning: this tool is unsupported and usage may change at any time, '
       'use at your own risk.');
 
-  if (args.length != 1) {
+  final argParser = ArgParser()
+    ..addOption('graph-file',
+        abbr: 'g', help: 'Specify the asset_graph.json file to inspect.')
+    ..addOption('build-script',
+        abbr: 'b',
+        help: 'Specify the build script to find the asset graph for.',
+        defaultsTo: '.dart_tool/build/entrypoint/build.dart');
+
+  final results = argParser.parse(args);
+
+  if (results.wasParsed('graph-file') && results.wasParsed('build-script')) {
     throw ArgumentError(
-        'Expected exactly one argument, the path to a build script to '
-        'analyze.');
-  }
-  var scriptPath = args.first;
-  var scriptFile = File(scriptPath);
-  if (!scriptFile.existsSync()) {
-    throw ArgumentError(
-        'Expected a build script at $scriptPath but didn\'t find one.');
+        'Expected exactly one of `--graph-file` or `--build-script`.');
   }
 
-  var assetGraphFile =
-      File(assetGraphPathFor(p.url.joinAll(p.split(scriptPath))));
+  var assetGraphFile = File(_findAssetGraph(results));
   if (!assetGraphFile.existsSync()) {
-    throw ArgumentError(
-        'Unable to find AssetGraph for $scriptPath at ${assetGraphFile.path}');
+    throw ArgumentError('Unable to find AssetGraph.');
   }
   stdout.writeln('Loading asset graph at ${assetGraphFile.path}...');
 
@@ -65,6 +67,17 @@ Future main(List<String> args) async {
       await commandRunner.run(['help']);
     }
   }
+}
+
+String _findAssetGraph(ArgResults results) {
+  if (results.wasParsed('graph-file')) return results['graph-file'] as String;
+  final scriptPath = results['build-script'] as String;
+  final scriptFile = File(scriptPath);
+  if (!scriptFile.existsSync()) {
+    throw ArgumentError(
+        'Expected a build script at $scriptPath but didn\'t find one.');
+  }
+  return assetGraphPathFor(p.url.joinAll(p.split(scriptPath)));
 }
 
 class InspectNodeCommand extends Command {
