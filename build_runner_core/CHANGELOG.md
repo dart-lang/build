@@ -1,3 +1,8 @@
+## 3.0.3
+
+- Share an asset graph when building regardless of whether the build script was
+  started from a snapshot.
+
 ## 3.0.2
 
 - Only track valid and readable assets as inputs to globs. Fixes a crash when

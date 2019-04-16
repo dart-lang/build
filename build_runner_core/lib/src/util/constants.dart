@@ -1,7 +1,9 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
@@ -63,8 +65,14 @@ void overrideGeneratedOutputDirectory(String path) {
 /// Relative path to the cache directory from the root package dir.
 const String cacheDir = '.dart_tool/build';
 
-/// Returns a hash for a given path.
-String _scriptHashFor(String path) => md5.convert(path.codeUnits).toString();
+/// Returns a hash for a given Dart script path.
+///
+/// Normalizes between snapshot and Dart source file paths so they give the same
+/// hash.
+String _scriptHashFor(String path) => md5
+    .convert(utf8.encode(
+        path.endsWith('.snapshot') ? path.substring(0, path.length - 9) : path))
+    .toString();
 
 /// The name of the pub binary on the current platform.
 final pubBinary = p.join(sdkBin, Platform.isWindows ? 'pub.bat' : 'pub');
