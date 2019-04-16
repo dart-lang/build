@@ -78,6 +78,7 @@ class KernelBuilder implements Builder {
           buildStep: buildStep,
           summaryOnly: summaryOnly,
           outputExtension: outputExtension,
+          platform: platform,
           dartSdkDir: platformSdk,
           sdkKernelPath: sdkKernelPath);
     } on MissingModulesException catch (e) {
@@ -98,6 +99,7 @@ Future<void> _createKernel(
     @required BuildStep buildStep,
     @required bool summaryOnly,
     @required String outputExtension,
+    @required DartPlatform platform,
     @required String dartSdkDir,
     @required String sdkKernelPath}) async {
   var request = WorkRequest();
@@ -122,7 +124,7 @@ Future<void> _createKernel(
 
     packagesFile = await createPackagesFile(allAssetIds);
 
-    await _addRequestArguments(request, module, kernelDeps, sdkDir,
+    await _addRequestArguments(request, module, kernelDeps, platform, sdkDir,
         sdkKernelPath, outputFile, packagesFile, summaryOnly, buildStep);
   });
 
@@ -241,6 +243,7 @@ Future<void> _addRequestArguments(
     WorkRequest request,
     Module module,
     Iterable<AssetId> transitiveKernelDeps,
+    DartPlatform platform,
     String sdkDir,
     String sdkKernelPath,
     File outputFile,
