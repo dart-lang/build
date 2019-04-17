@@ -1,4 +1,4 @@
-## 2.0.1
+## 2.1.0
 
 - Make using the incremental compiler in the `KernelBuilder` configurable.
 
