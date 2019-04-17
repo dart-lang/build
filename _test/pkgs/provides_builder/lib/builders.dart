@@ -41,7 +41,7 @@ class _SomePostProcessBuilder extends PostProcessBuilder {
       : defaultContent = options.config['default_content'] as String;
 
   @override
-  Future<Null> build(PostProcessBuildStep buildStep) async {
+  Future<void> build(PostProcessBuildStep buildStep) async {
     var content = defaultContent ?? await buildStep.readInputAsString();
     await buildStep.writeAsString(
         buildStep.inputId.changeExtension('.txt.post'), content);
@@ -55,7 +55,7 @@ class _ThrowingBuilder extends Builder {
   };
 
   @override
-  Future<Null> build(BuildStep buildStep) async {
+  Future<void> build(BuildStep buildStep) async {
     throw UnsupportedError(await buildStep.readAsString(buildStep.inputId));
   }
 }

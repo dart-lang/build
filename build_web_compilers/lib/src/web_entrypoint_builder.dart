@@ -91,7 +91,7 @@ class WebEntrypointBuilder implements Builder {
   };
 
   @override
-  Future<Null> build(BuildStep buildStep) async {
+  Future<void> build(BuildStep buildStep) async {
     var dartEntrypointId = buildStep.inputId;
     var isAppEntrypoint = await _isAppEntryPoint(dartEntrypointId, buildStep);
     if (!isAppEntrypoint) return;

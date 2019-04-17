@@ -183,7 +183,7 @@ class UppercaseBuilder implements Builder {
   const UppercaseBuilder();
 
   @override
-  Future<Null> build(BuildStep buildStep) async {
+  Future<void> build(BuildStep buildStep) async {
     final content = await buildStep.readAsString(buildStep.inputId);
     await buildStep.writeAsString(
       buildStep.inputId.changeExtension('.g.txt'),

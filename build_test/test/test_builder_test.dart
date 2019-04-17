@@ -87,7 +87,7 @@ class _ConcatBuilder implements Builder {
   }
 
   @override
-  Future<Null> build(BuildStep buildStep) async {
+  Future<void> build(BuildStep buildStep) async {
     final results = StringBuffer();
     await for (final asset in buildStep.findAssets(Glob('data/*.txt'))) {
       results.writeln(await buildStep.readAsString(asset));
