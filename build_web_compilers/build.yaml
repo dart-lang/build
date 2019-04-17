@@ -44,35 +44,23 @@ builders:
       auto_apply: none
       required_inputs: [".dart", ".module.library"]
       applies_builders: ["build_modules|module_cleanup"]
-  ddc_kernel:
-    import: "package:build_web_compilers/builders.dart"
-    builder_factories:
-      - ddcKernelBuilder
-    build_extensions:
-      .ddc.module:
-        - .ddc.dill
-    is_optional: True
-    auto_apply: none
-    required_inputs:
-      - .ddc.module
   ddc:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
+      - ddcKernelBuilder
       - ddcBuilder
     build_extensions:
       .ddc.module:
+        - .ddc.dill
         - .ddc.js.errors
         - .ddc.js
         - .ddc.js.map
     is_optional: True
     auto_apply: all_packages
     required_inputs:
-      - .dart
       - .ddc.module
-      - .ddc.dill
     applies_builders:
       - build_web_compilers|ddc_modules
-      - build_web_compilers|ddc_kernel
       # This isn't really the best place to apply these, but it is the only
       # place we can (its the only builder which runs on all packages).
       - build_web_compilers|dart2js_modules
