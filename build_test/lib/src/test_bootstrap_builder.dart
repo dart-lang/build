@@ -25,7 +25,7 @@ class TestBootstrapBuilder extends Builder {
   TestBootstrapBuilder();
 
   @override
-  Future<Null> build(BuildStep buildStep) async {
+  Future<void> build(BuildStep buildStep) async {
     var id = buildStep.inputId;
     var contents = await buildStep.readAsString(id);
     var assetPath = id.pathSegments.first == 'lib'

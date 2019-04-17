@@ -37,7 +37,7 @@ void main() {
 
 class ListClassesAndHierarchyBuilder implements Builder {
   @override
-  Future<Null> build(BuildStep buildStep) async {
+  Future<void> build(BuildStep buildStep) async {
     // Ignore part files.
     if (!await buildStep.resolver.isLibrary(buildStep.inputId)) {
       return;

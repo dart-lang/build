@@ -30,7 +30,7 @@ class VmEntrypointBuilder implements Builder {
   };
 
   @override
-  Future<Null> build(BuildStep buildStep) async {
+  Future<void> build(BuildStep buildStep) async {
     await _buildPool.withResource(() async {
       var dartEntrypointId = buildStep.inputId;
       var isAppEntrypoint = await _isAppEntryPoint(dartEntrypointId, buildStep);
