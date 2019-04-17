@@ -22,6 +22,10 @@ targets:
         - web/**.dart
 ```
 
+## 1.2.1
+
+- Allow analyzer version 0.36.x.
+
 ## 1.2.0
 
 - Add a marker to inject code before the application main method is called.
