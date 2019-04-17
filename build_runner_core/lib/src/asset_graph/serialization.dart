@@ -233,6 +233,19 @@ class _AssetGraphSerializer {
       return _WrappedAssetNode(node, this);
     }
   }
+
+  int findAssetIndex(AssetId id,
+      {@required AssetId from, @required String field}) {
+    final index = _assetIdToId[id];
+    if (index == null) {
+      log.severe('The $field field in $from references a non-existent asset '
+          '$id and will corrupt the asset graph. '
+          'If you encounter this error please copy '
+          'the details from this message and add them to '
+          'https://github.com/dart-lang/build/issues/1804.');
+    }
+    return index;
+  }
 }
 
 /// Used to serialize the type of a node using an int.
@@ -328,20 +341,23 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
         }
         break;
       case _AssetField.Id:
-        return serializer._assetIdToId[node.id];
+        return serializer.findAssetIndex(node.id, from: node.id, field: 'id');
       case _AssetField.Outputs:
         return node.outputs
-            .map((id) => serializer._assetIdToId[id])
+            .map((id) =>
+                serializer.findAssetIndex(id, from: node.id, field: 'outputs'))
             .toList(growable: false);
       case _AssetField.PrimaryOutputs:
         return node.primaryOutputs
-            .map((id) => serializer._assetIdToId[id])
+            .map((id) => serializer.findAssetIndex(id,
+                from: node.id, field: 'primaryOutputs'))
             .toList(growable: false);
       case _AssetField.Digest:
         return _serializeDigest(node.lastKnownDigest);
       case _AssetField.DeletedBy:
         return node.deletedBy
-            .map((id) => serializer._assetIdToId[id])
+            .map((id) => serializer.findAssetIndex(id,
+                from: node.id, field: 'deletedBy'))
             .toList(growable: false);
       default:
         throw RangeError.index(index, this);
@@ -380,7 +396,8 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
     switch (fieldId) {
       case _GeneratedField.PrimaryInput:
         return generatedNode.primaryInput != null
-            ? serializer._assetIdToId[generatedNode.primaryInput]
+            ? serializer.findAssetIndex(generatedNode.primaryInput,
+                from: generatedNode.id, field: 'primaryInput')
             : null;
       case _GeneratedField.WasOutput:
         return _serializeBool(generatedNode.wasOutput);
@@ -393,7 +410,8 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
       case _GeneratedField.PreviousInputsDigest:
         return _serializeDigest(generatedNode.previousInputsDigest);
       case _GeneratedField.BuilderOptions:
-        return serializer._assetIdToId[generatedNode.builderOptionsId];
+        return serializer.findAssetIndex(generatedNode.builderOptionsId,
+            from: generatedNode.id, field: 'builderOptions');
       case _GeneratedField.IsHidden:
         return _serializeBool(generatedNode.isHidden);
       default:
@@ -434,7 +452,8 @@ class _WrappedGlobAssetNode extends _WrappedAssetNode {
         return globNode.glob.pattern;
       case _GlobField.Results:
         return globNode.results
-            .map((id) => serializer._assetIdToId[id])
+            .map((id) => serializer.findAssetIndex(id,
+                from: globNode.id, field: 'results'))
             .toList(growable: false);
       default:
         throw RangeError.index(index, this);
@@ -470,12 +489,14 @@ class _WrappedPostProcessAnchorNode extends _WrappedAssetNode {
       case _PostAnchorField.ActionNumber:
         return wrappedNode.actionNumber;
       case _PostAnchorField.BuilderOptions:
-        return serializer._assetIdToId[wrappedNode.builderOptionsId];
+        return serializer.findAssetIndex(wrappedNode.builderOptionsId,
+            from: wrappedNode.id, field: 'builderOptions');
       case _PostAnchorField.PreviousInputsDigest:
         return _serializeDigest(wrappedNode.previousInputsDigest);
       case _PostAnchorField.PrimaryInput:
         return wrappedNode.primaryInput != null
-            ? serializer._assetIdToId[wrappedNode.primaryInput]
+            ? serializer.findAssetIndex(wrappedNode.primaryInput,
+                from: wrappedNode.id, field: 'primaryInput')
             : null;
       default:
         throw RangeError.index(index, this);
