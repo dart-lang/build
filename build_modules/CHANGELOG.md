@@ -1,3 +1,7 @@
+## 2.1.0
+
+- Make using the incremental compiler in the `KernelBuilder` configurable.
+
 ## 2.0.0
 
 ### Breaking Changes
