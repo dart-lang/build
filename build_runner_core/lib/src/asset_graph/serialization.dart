@@ -62,6 +62,13 @@ class _AssetGraphDeserializer {
       if (node is BuilderOptionsAssetNode) continue;
 
       for (var output in node.outputs) {
+        if (output == null) {
+          log.severe('Found a null output from ${node.id} which is a '
+              '${node.runtimeType}. If you encounter this error please copy '
+              'the details from this message and add them to '
+              'https://github.com/dart-lang/build/issues/1804.');
+          throw AssetGraphCorruptedException();
+        }
         var inputsNode = graph.get(output) as NodeWithInputs;
         if (inputsNode == null) {
           log.severe('Failed to locate $output referenced from ${node.id} '
