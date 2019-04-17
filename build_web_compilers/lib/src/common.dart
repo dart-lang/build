@@ -36,6 +36,7 @@ Future<File> createPackagesFile(Iterable<AssetId> allAssets) async {
 void validateOptions(Map<String, dynamic> config, List<String> supportedOptions,
     String builderKey,
     {List<String> deprecatedOptions}) {
+  deprecatedOptions ??= [];
   var unsupported = config.keys.where(
       (o) => !supportedOptions.contains(o) && !deprecatedOptions.contains(o));
   if (unsupported.isNotEmpty) {

@@ -1,5 +1,5 @@
 name: build_web_compilers
-version: 2.0.0-alpha.1
+version: 2.0.0-alpha.2
 description: Builder implementations wrapping Dart compilers.
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/build_web_compilers
@@ -13,7 +13,7 @@ dependencies:
   bazel_worker: ^0.1.18
   build: ">=0.12.8 <2.0.0"
   build_config: ^0.3.0
-  build_modules: ^2.0.0
+  build_modules: ^2.1.0
   crypto: ^2.0.0
   glob: ^1.1.0
   js: ^0.6.1

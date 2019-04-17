@@ -7,6 +7,7 @@ import 'package:build_modules/build_modules.dart';
 import 'package:path/path.dart' as p;
 
 import 'build_web_compilers.dart';
+import 'src/common.dart';
 import 'src/platforms.dart';
 
 // Shared entrypoint builder
@@ -18,13 +19,15 @@ Builder ddcMetaModuleBuilder(BuilderOptions options) =>
     MetaModuleBuilder.forOptions(ddcPlatform, options);
 Builder ddcMetaModuleCleanBuilder(_) => MetaModuleCleanBuilder(ddcPlatform);
 Builder ddcModuleBuilder([_]) => ModuleBuilder(ddcPlatform);
-Builder ddcBuilder([_]) => DevCompilerBuilder();
+Builder ddcBuilder(BuilderOptions options) => DevCompilerBuilder(
+    useIncrementalCompiler: _readUseIncrementalCompilerOption(options));
 const ddcKernelExtension = '.ddc.dill';
-Builder ddcKernelBuilder([_]) => KernelBuilder(
+Builder ddcKernelBuilder(BuilderOptions options) => KernelBuilder(
     summaryOnly: true,
     sdkKernelPath: p.url.join('lib', '_internal', 'ddc_sdk.dill'),
     outputExtension: ddcKernelExtension,
-    platform: ddcPlatform);
+    platform: ddcPlatform,
+    useIncrementalCompiler: _readUseIncrementalCompilerOption(options));
 
 // Dart2js related builders
 Builder dart2jsMetaModuleBuilder(BuilderOptions options) =>
@@ -40,3 +43,10 @@ PostProcessBuilder dartSourceCleanup(BuilderOptions options) =>
     (options.config['enabled'] as bool ?? false)
         ? const FileDeletingBuilder(['.dart', '.js.map'])
         : const FileDeletingBuilder(['.dart', '.js.map'], isEnabled: false);
+
+const _useIncrementalCompilerOption = 'use-incremental-compiler';
+bool _readUseIncrementalCompilerOption(BuilderOptions options) {
+  validateOptions(options.config, [_useIncrementalCompilerOption],
+      'build_web_compilers:ddc');
+  return options.config[_useIncrementalCompilerOption] as bool ?? true;
+}

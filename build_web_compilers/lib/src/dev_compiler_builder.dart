@@ -25,6 +25,11 @@ const jsSourceMapExtension = '.ddc.js.map';
 
 /// A builder which can output ddc modules!
 class DevCompilerBuilder implements Builder {
+  final bool useIncrementalCompiler;
+
+  DevCompilerBuilder({bool useIncrementalCompiler})
+      : useIncrementalCompiler = useIncrementalCompiler ?? true;
+
   @override
   final buildExtensions = {
     moduleExtension(ddcPlatform): [
@@ -47,7 +52,7 @@ class DevCompilerBuilder implements Builder {
     }
 
     try {
-      await _createDevCompilerModule(module, buildStep);
+      await _createDevCompilerModule(module, buildStep, useIncrementalCompiler);
     } on DartDevcCompilationException catch (e) {
       await handleError(e);
     } on MissingModulesException catch (e) {
@@ -57,7 +62,8 @@ class DevCompilerBuilder implements Builder {
 }
 
 /// Compile [module] with the dev compiler.
-Future<void> _createDevCompilerModule(Module module, BuildStep buildStep,
+Future<void> _createDevCompilerModule(
+    Module module, BuildStep buildStep, bool useIncrementalCompiler,
     {bool debugMode = true}) async {
   var transitiveDeps = await buildStep.trackStage('CollectTransitiveDeps',
       () => module.computeTransitiveDependencies(buildStep));
@@ -112,11 +118,16 @@ Future<void> _createDevCompilerModule(Module module, BuildStep buildStep,
     multiRootScheme,
     '--multi-root',
     '.',
-    '--reuse-compiler-result',
-    '--use-incremental-compiler',
     '--track-widget-creation',
     '--inline-source-map',
   ]);
+
+  if (useIncrementalCompiler) {
+    request.arguments.addAll([
+      '--reuse-compiler-result',
+      '--use-incremental-compiler',
+    ]);
+  }
 
   // And finally add all the urls to compile, using the package: path for
   // files under lib and the full absolute path for other files.
