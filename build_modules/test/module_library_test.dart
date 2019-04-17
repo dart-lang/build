@@ -9,7 +9,7 @@ import 'package:build_modules/src/module_library.dart';
 import 'package:build_modules/src/platform.dart';
 
 void main() {
-  final platform = DartPlatform.dart2js;
+  final platform = DartPlatform.register('test', ['async']);
 
   test('Treats libraries as importable', () async {
     final library =
@@ -102,29 +102,24 @@ void main() {
         "    if (dart.library.io) 'for_vm.dart'\n"
         "    if (dart.library.html) 'for_web.dart'\n");
     expect(
-        library.depsForPlatform(DartPlatform.flutter),
+        library.depsForPlatform(DartPlatform.register('flutter', ['ui'])),
         Set.of([
           makeAssetId('myapp|lib/for_flutter.dart'),
         ]));
     expect(
-        library.depsForPlatform(DartPlatform.vm),
+        library.depsForPlatform(DartPlatform.register('vm', ['io'])),
         Set.of([
           makeAssetId('myapp|lib/for_vm.dart'),
         ]));
     expect(
-        library.depsForPlatform(DartPlatform.dart2js),
+        library.depsForPlatform(DartPlatform.register('dart2js', ['html'])),
         Set.of([
           makeAssetId('myapp|lib/for_web.dart'),
         ]));
     expect(
-        library.depsForPlatform(DartPlatform.dartdevc),
+        library.depsForPlatform(DartPlatform.register('dartdevc', ['html'])),
         Set.of([
           makeAssetId('myapp|lib/for_web.dart'),
-        ]));
-    expect(
-        library.depsForPlatform(DartPlatform.dart2jsServer),
-        Set.of([
-          makeAssetId('myapp|lib/default.dart'),
         ]));
   });
 }

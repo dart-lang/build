@@ -28,12 +28,10 @@ enum WebCompiler {
 /// The top level keys supported for the `options` config for the
 /// [WebEntrypointBuilder].
 const _supportedOptions = [
-  _buildRootAppSummary,
   _compiler,
   _dart2jsArgs,
 ];
 
-const _buildRootAppSummary = 'build_root_app_summary';
 const _compiler = 'compiler';
 const _dart2jsArgs = 'dart2js_args';
 
@@ -49,21 +47,14 @@ const _deprecatedOptions = [
 class WebEntrypointBuilder implements Builder {
   final WebCompiler webCompiler;
   final List<String> dart2JsArgs;
-  final bool buildRootAppSummary;
-  final bool useKernel;
 
-  const WebEntrypointBuilder(this.webCompiler,
-      {this.dart2JsArgs = const [],
-      this.useKernel = false,
-      this.buildRootAppSummary = false});
+  const WebEntrypointBuilder(this.webCompiler, {this.dart2JsArgs = const []});
 
   factory WebEntrypointBuilder.fromOptions(BuilderOptions options) {
     validateOptions(
         options.config, _supportedOptions, 'build_web_compilers|entrypoint',
         deprecatedOptions: _deprecatedOptions);
     var compilerOption = options.config[_compiler] as String ?? 'dartdevc';
-    var buildRootAppSummary =
-        options.config[_buildRootAppSummary] as bool ?? false;
     WebCompiler compiler;
     switch (compilerOption) {
       case 'dartdevc':
@@ -85,7 +76,6 @@ class WebEntrypointBuilder implements Builder {
     }
 
     return WebEntrypointBuilder(compiler,
-        buildRootAppSummary: buildRootAppSummary,
         dart2JsArgs: dart2JsArgs as List<String>);
   }
 
@@ -107,8 +97,7 @@ class WebEntrypointBuilder implements Builder {
     if (!isAppEntrypoint) return;
     if (webCompiler == WebCompiler.DartDevc) {
       try {
-        await bootstrapDdc(buildStep,
-            useKernel: useKernel, buildRootAppSummary: buildRootAppSummary);
+        await bootstrapDdc(buildStep);
       } on MissingModulesException catch (e) {
         log.severe('$e');
       }

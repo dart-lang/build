@@ -41,10 +41,6 @@ import 'watch_impl.dart' as watch_impl;
 /// will simply consume the first event and allow the build to continue.
 /// Multiple termination events will cause a normal shutdown.
 ///
-/// If [outputMap] is supplied then after each build a merged output directory
-/// will be created for each value in the map which contains all original
-/// sources and built sources contained in the provided path.
-///
 /// If [outputSymlinksOnly] is `true`, then the merged output directories will
 /// contain only symlinks, which is much faster but not generally suitable for
 /// deployment.
@@ -64,14 +60,13 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     onLog(LogRecord record),
     Stream terminateEventStream,
     bool enableLowResourcesMode,
-    Map<String, String> outputMap,
+    Set<BuildDirectory> buildDirs,
     bool outputSymlinksOnly,
     bool trackPerformance,
     bool skipBuildScriptCheck,
     bool verbose,
     bool isReleaseBuild,
     Map<String, Map<String, dynamic>> builderConfigOverrides,
-    List<String> buildDirs,
     String logPerformanceDir}) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= PackageGraph.forThisPackage();
@@ -79,7 +74,6 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       IOEnvironment(
         packageGraph,
         assumeTty: assumeTty,
-        outputMap: outputMap,
         outputSymlinksOnly: outputSymlinksOnly,
       ),
       reader: reader,
@@ -137,10 +131,6 @@ Future<BuildResult> build(List<BuilderApplication> builders,
 /// first event will allow any ongoing builds to finish, and then the program
 /// will complete normally. Subsequent events are not handled (and will
 /// typically cause a shutdown).
-///
-/// If [outputMap] is supplied then after each build a merged output directory
-/// will be created for each value in the map which contains all original
-/// sources and built sources contained in the provided path.
 Future<ServeHandler> watch(List<BuilderApplication> builders,
         {bool deleteFilesByDefault,
         bool assumeTty,
@@ -155,14 +145,13 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         DirectoryWatcher Function(String) directoryWatcherFactory,
         Stream terminateEventStream,
         bool enableLowResourcesMode,
-        Map<String, String> outputMap,
+        Set<BuildDirectory> buildDirs,
         bool outputSymlinksOnly,
         bool trackPerformance,
         bool skipBuildScriptCheck,
         bool verbose,
         bool isReleaseBuild,
         Map<String, Map<String, dynamic>> builderConfigOverrides,
-        List<String> buildDirs,
         String logPerformanceDir}) =>
     watch_impl.watch(
       builders,
@@ -179,13 +168,12 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
       directoryWatcherFactory: directoryWatcherFactory,
       terminateEventStream: terminateEventStream,
       enableLowResourcesMode: enableLowResourcesMode,
-      outputMap: outputMap,
+      buildDirs: buildDirs,
       outputSymlinksOnly: outputSymlinksOnly,
       trackPerformance: trackPerformance,
       skipBuildScriptCheck: skipBuildScriptCheck,
       verbose: verbose,
       builderConfigOverrides: builderConfigOverrides,
       isReleaseBuild: isReleaseBuild,
-      buildDirs: buildDirs,
       logPerformanceDir: logPerformanceDir,
     );

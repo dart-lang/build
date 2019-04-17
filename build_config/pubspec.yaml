@@ -1,11 +1,11 @@
 name: build_config
-version: 0.3.2-dev
+version: 0.3.2
 description: Support for parsing `build.yaml` configuration.
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/build_config
 
 environment:
-  sdk: '>=2.0.0-dev.54 <3.0.0'
+  sdk: '>=2.0.0 <3.0.0'
 
 dependencies:
   build: '>=0.12.1 <2.0.0'

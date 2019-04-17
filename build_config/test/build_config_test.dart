@@ -17,12 +17,12 @@ void main() {
         'example',
         key: 'example:a',
         builders: {
-          'b|b': TargetBuilderConfig(
+          'b:b': TargetBuilderConfig(
               isEnabled: true, generateFor: InputSet(include: ['lib/a.dart'])),
-          'c|c': TargetBuilderConfig(isEnabled: false),
-          'example|h': TargetBuilderConfig(
+          'c:c': TargetBuilderConfig(isEnabled: false),
+          'example:h': TargetBuilderConfig(
               isEnabled: true, options: BuilderOptions({'foo': 'bar'})),
-          'example|p': TargetBuilderConfig(
+          'example:p': TargetBuilderConfig(
               isEnabled: true, options: BuilderOptions({'baz': 'zap'})),
         },
         // Expecting $default => example:example
@@ -38,9 +38,9 @@ void main() {
       )
     });
     expectBuilderDefinitions(buildConfig.builderDefinitions, {
-      'example|h': createBuilderDefinition(
+      'example:h': createBuilderDefinition(
         'example',
-        key: 'example|h',
+        key: 'example:h',
         builderFactories: ['createBuilder'],
         autoApply: AutoApply.dependents,
         isOptional: true,
@@ -53,8 +53,8 @@ void main() {
           ]
         },
         requiredInputs: ['.dart'],
-        runsBefore: ['foo_builder|foo_builder'].toSet(),
-        appliesBuilders: ['foo_builder|foo_builder'].toSet(),
+        runsBefore: ['foo_builder:foo_builder'].toSet(),
+        appliesBuilders: ['foo_builder:foo_builder'].toSet(),
         defaults: TargetBuilderConfigDefaults(
           generateFor: const InputSet(include: ['lib/**']),
           options: const BuilderOptions({'foo': 'bar'}),
@@ -64,9 +64,9 @@ void main() {
     });
     expectPostProcessBuilderDefinitions(
         buildConfig.postProcessBuilderDefinitions, {
-      'example|p': createPostProcessBuilderDefinition(
+      'example:p': createPostProcessBuilderDefinition(
         'example',
-        key: 'example|p',
+        key: 'example:p',
         builderFactory: 'createPostProcessBuilder',
         import: 'package:example/p.dart',
         defaults: TargetBuilderConfigDefaults(
@@ -77,9 +77,9 @@ void main() {
       ),
     });
     expectGlobalOptions(buildConfig.globalOptions, {
-      'example|h':
+      'example:h':
           GlobalBuilderConfig(options: const BuilderOptions({'foo': 'global'})),
-      'b|b': GlobalBuilderConfig(
+      'b:b': GlobalBuilderConfig(
           devOptions: const BuilderOptions({'foo': 'global_dev'}),
           releaseOptions: const BuilderOptions({'foo': 'global_release'}))
     });
@@ -96,9 +96,9 @@ void main() {
       ),
     });
     expectBuilderDefinitions(buildConfig.builderDefinitions, {
-      'example|a': createBuilderDefinition(
+      'example:a': createBuilderDefinition(
         'example',
-        key: 'example|a',
+        key: 'example:a',
         builderFactories: ['createBuilder'],
         autoApply: AutoApply.none,
         isOptional: false,
@@ -130,14 +130,31 @@ void main() {
     expectPostProcessBuilderDefinitions(
         buildConfig.postProcessBuilderDefinitions, {});
   });
+
+  test('build.yaml can use | separator in builder keys', () {
+    var buildConfig = BuildConfig.parse('example', ['a', 'b'], '''
+builders:
+  example|example:
+    builder_factories: ["createBuilder"]
+    import: package:example/builders.dart
+    build_extensions: {".dart": [".g.dart", ".json"]}
+    runs_before: ["a|foo_builder"]
+    applies_builders: ["a|foo_builder"]
+''');
+    expect(buildConfig.builderDefinitions.keys, ['example:example']);
+    expect(buildConfig.builderDefinitions['example:example'].runsBefore,
+        ['a:foo_builder']);
+    expect(buildConfig.builderDefinitions['example:example'].appliesBuilders,
+        ['a:foo_builder']);
+  });
 }
 
 var buildYaml = r'''
 global_options:
-  "|h":
+  ":h":
     options:
       foo: global
-  b|b:
+  b:b:
     dev_options:
       foo: global_dev
     release_options:
@@ -145,16 +162,16 @@ global_options:
 targets:
   a:
     builders:
-      "|h":
+      ":h":
         options:
           foo: bar
-      "|p":
+      ":p":
         options:
           baz: zap
-      b|b:
+      b:b:
         generate_for:
           - lib/a.dart
-      c|c:
+      c:c:
         enabled: false
     dependencies:
       - $default

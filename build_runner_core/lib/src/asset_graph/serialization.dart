@@ -63,7 +63,13 @@ class _AssetGraphDeserializer {
 
       for (var output in node.outputs) {
         var inputsNode = graph.get(output) as NodeWithInputs;
-        assert(inputsNode != null, 'Asset Graph is missing $output');
+        if (inputsNode == null) {
+          log.severe('Failed to locate $output referenced from ${node.id} '
+              'which is a ${node.runtimeType}. If you encounter this error '
+              'please copy the details from this message and add them to '
+              'https://github.com/dart-lang/build/issues/1804.');
+          throw AssetGraphCorruptedException();
+        }
         inputsNode.inputs ??= HashSet<AssetId>();
         inputsNode.inputs.add(node.id);
       }

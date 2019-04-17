@@ -27,43 +27,44 @@ class CleanCommand extends Command<int> {
   @override
   Future<int> run() async {
     var logSubscription = Logger.root.onRecord.listen(stdIOLogListener());
-
-    logger.warning('Deleting cache and generated source files.\n'
-        'This shouldn\'t be necessary for most applications, unless you have '
-        'made intentional edits to generated files (i.e. for testing). '
-        'Consider filing a bug at '
-        'https://github.com/dart-lang/build/issues/new if you are using this '
-        'to work around an apparent (and reproducible) bug.');
-
-    await logTimedAsync(logger, 'Cleaning up source outputs', () async {
-      var assetGraphFile = File(assetGraphPath);
-      if (!assetGraphFile.existsSync()) {
-        logger.warning('No asset graph found. '
-            'Skipping cleanup of generated files in source directories.');
-        return;
-      }
-      AssetGraph assetGraph;
-      try {
-        assetGraph = AssetGraph.deserialize(await assetGraphFile.readAsBytes());
-      } catch (_) {
-        logger.warning('Failed to deserialize AssetGraph. '
-            'Skipping cleanup of generated files in source directories.');
-        return;
-      }
-      var packageGraph = PackageGraph.forThisPackage();
-      await cleanUpSourceOutputs(assetGraph, packageGraph);
-    });
-
-    await logTimedAsync(
-        logger, 'Cleaning up cache directory', cleanUpGeneratedDirectory);
-
+    await cleanFor(assetGraphPath, logger);
     await logSubscription.cancel();
-
     return 0;
   }
 }
 
-Future<void> cleanUpSourceOutputs(
+Future<void> cleanFor(String assetGraphPath, Logger logger) async {
+  logger.warning('Deleting cache and generated source files.\n'
+      'This shouldn\'t be necessary for most applications, unless you have '
+      'made intentional edits to generated files (i.e. for testing). '
+      'Consider filing a bug at '
+      'https://github.com/dart-lang/build/issues/new if you are using this '
+      'to work around an apparent (and reproducible) bug.');
+
+  await logTimedAsync(logger, 'Cleaning up source outputs', () async {
+    var assetGraphFile = File(assetGraphPath);
+    if (!assetGraphFile.existsSync()) {
+      logger.warning('No asset graph found. '
+          'Skipping cleanup of generated files in source directories.');
+      return;
+    }
+    AssetGraph assetGraph;
+    try {
+      assetGraph = AssetGraph.deserialize(await assetGraphFile.readAsBytes());
+    } catch (_) {
+      logger.warning('Failed to deserialize AssetGraph. '
+          'Skipping cleanup of generated files in source directories.');
+      return;
+    }
+    var packageGraph = PackageGraph.forThisPackage();
+    await _cleanUpSourceOutputs(assetGraph, packageGraph);
+  });
+
+  await logTimedAsync(
+      logger, 'Cleaning up cache directory', _cleanUpGeneratedDirectory);
+}
+
+Future<void> _cleanUpSourceOutputs(
     AssetGraph assetGraph, PackageGraph packageGraph) async {
   var writer = FileBasedAssetWriter(packageGraph);
   for (var id in assetGraph.outputs) {
@@ -79,7 +80,7 @@ Future<void> cleanUpSourceOutputs(
   }
 }
 
-Future<void> cleanUpGeneratedDirectory() async {
+Future<void> _cleanUpGeneratedDirectory() async {
   var generatedDir = Directory(cacheDir);
   if (await generatedDir.exists()) {
     await generatedDir.delete(recursive: true);

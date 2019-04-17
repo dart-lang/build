@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:http_multi_server/http_multi_server.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 
@@ -24,7 +25,7 @@ class AssetServer {
     BuildRunnerDaemonBuilder builder,
     String rootPackage,
   ) async {
-    var server = await HttpServer.bind(InternetAddress.anyIPv6, 0);
+    var server = await HttpMultiServer.loopback(0);
     var cascade = Cascade().add((_) async {
       await builder.building;
       return Response.notFound('');

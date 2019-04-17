@@ -85,13 +85,18 @@ class TestCommand extends BuildRunnerCommand {
     try {
       _ensureBuildTestDependency(packageGraph);
       options = readOptions();
-      var outputMap = (options.outputMap ?? {})..addAll({tempPath: null});
+      var buildDirs = (options.buildDirs ?? Set<BuildDirectory>())
+        // Build test by default.
+        ..add(BuildDirectory('test',
+            outputLocation: OutputLocation(tempPath,
+                useSymlinks: options.outputSymlinksOnly, hoist: false)));
+
       var result = await build(
         builderApplications,
         deleteFilesByDefault: options.deleteFilesByDefault,
         enableLowResourcesMode: options.enableLowResourcesMode,
         configKey: options.configKey,
-        outputMap: outputMap,
+        buildDirs: buildDirs,
         outputSymlinksOnly: options.outputSymlinksOnly,
         packageGraph: packageGraph,
         trackPerformance: options.trackPerformance,
@@ -99,7 +104,6 @@ class TestCommand extends BuildRunnerCommand {
         verbose: options.verbose,
         builderConfigOverrides: options.builderConfigOverrides,
         isReleaseBuild: options.isReleaseBuild,
-        buildDirs: options.buildDirs,
         logPerformanceDir: options.logPerformanceDir,
       );
 

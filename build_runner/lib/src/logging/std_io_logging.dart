@@ -78,6 +78,7 @@ String _loggerName(LogRecord record, bool verbose) {
     // commands
     'build',
     'clean',
+    'doctor',
     'serve',
     'test',
     'watch',

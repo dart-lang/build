@@ -321,7 +321,7 @@ import 'package:build_test/build_test.dart';
 main(List<String> args) async {
   var buildApplications = [
     apply(
-        'root|copy',
+        'root:copy',
         [
           (options) {
             var copyFromId = options.config['copy_from'];
@@ -375,7 +375,7 @@ main(List<String> args) async {
 targets:
   $default:
     builders:
-      root|copy:
+      root:copy:
         options:
           copy_from: a|web/b.txt
 '''),
@@ -394,7 +394,7 @@ targets:
         await expectBuildOutput('b');
 
         // Run another build but add the --define.
-        await runBuild(extraArgs: ['--define=root|copy=copy_from=a|web/c.txt']);
+        await runBuild(extraArgs: ['--define=root:copy=copy_from=a|web/c.txt']);
         await expectBuildOutput('c');
       });
     });
@@ -409,7 +409,7 @@ import 'package:build_test/build_test.dart';
 
 main(List<String> args) async {
   var buildApplications = [
-    apply('root|copy', [(_) => new TestBuilder()], toRoot(),
+    apply('root:copy', [(_) => new TestBuilder()], toRoot(),
         hideOutput: false, isOptional: false),
   ];
   await run(args, buildApplications);
@@ -440,7 +440,7 @@ main(List<String> args) async {
 targets:
   $default:
     builders:
-      bad|builder:
+      bad:builder:
 '''),
         d.dir('tool', [d.file('build.dart', buildContent)]),
         d.dir('web', [
@@ -468,7 +468,7 @@ targets:
         ]),
         d.file('build.yaml', r'''
 global_options:
-  bad|builder:
+  bad:builder:
 '''),
         d.dir('tool', [d.file('build.dart', buildContent)]),
         d.dir('web', [
@@ -502,7 +502,7 @@ global_options:
 
       await pubGet('a');
 
-      var result = await runBuild(extraArgs: ['--define=bad|key=foo=bar']);
+      var result = await runBuild(extraArgs: ['--define=bad:key=foo=bar']);
 
       expect(result, contains('not a known Builder'));
     });

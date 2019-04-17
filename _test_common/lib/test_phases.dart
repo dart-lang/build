@@ -5,19 +5,17 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/environment/io_environment.dart';
 import 'package:build_runner_core/src/environment/overridable_environment.dart';
 import 'package:build_runner_core/src/generate/build_result.dart';
+import 'package:build_runner_core/src/generate/build_runner.dart';
 import 'package:build_runner_core/src/generate/options.dart';
-//import 'package:build_runner/src/logging/std_io_logging.dart';
 import 'package:build_runner_core/src/package_graph/apply_builders.dart';
 import 'package:build_runner_core/src/package_graph/package_graph.dart';
+import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
-
-import 'package:build_test/build_test.dart';
-
-import 'package:build_runner_core/src/generate/build_runner.dart';
 
 import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
@@ -26,7 +24,9 @@ import 'package_graphs.dart';
 Future wait(int milliseconds) =>
     Future.delayed(Duration(milliseconds: milliseconds));
 
-void _nullLog(_) {}
+void _printOnFailure(LogRecord record) {
+  printOnFailure('$record');
+}
 
 /// Runs [builders] in a test environment.
 ///
@@ -84,13 +84,13 @@ Future<BuildResult> testBuilders(
   InMemoryRunnerAssetWriter writer,
   Level logLevel,
   // A better way to "silence" logging than setting logLevel to OFF.
-  onLog(LogRecord record) = _nullLog,
+  onLog(LogRecord record) = _printOnFailure,
   bool checkBuildStatus = true,
   bool deleteFilesByDefault = true,
   bool enableLowResourcesMode = false,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool verbose = false,
-  List<String> buildDirs,
+  Set<BuildDirectory> buildDirs,
   String logPerformanceDir,
   String expectedGeneratedDir,
 }) async {

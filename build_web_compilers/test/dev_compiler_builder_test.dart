@@ -7,13 +7,13 @@ import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 import 'package:build_web_compilers/build_web_compilers.dart';
+import 'package:build_web_compilers/builders.dart';
 import 'package:build_modules/build_modules.dart';
 
 import 'util.dart';
 
 main() {
   Map<String, dynamic> assets;
-  final platform = DartPlatform.dartdevc;
 
   group('error free project', () {
     setUp(() async {
@@ -34,13 +34,11 @@ main() {
 
       // Set up all the other required inputs for this test.
       await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
-      await testBuilderAndCollectAssets(MetaModuleBuilder(platform), assets);
+      await testBuilderAndCollectAssets(MetaModuleBuilder(ddcPlatform), assets);
       await testBuilderAndCollectAssets(
-          MetaModuleCleanBuilder(platform), assets);
-      await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
-      await testBuilderAndCollectAssets(
-          UnlinkedSummaryBuilder(platform), assets);
-      await testBuilderAndCollectAssets(LinkedSummaryBuilder(platform), assets);
+          MetaModuleCleanBuilder(ddcPlatform), assets);
+      await testBuilderAndCollectAssets(ModuleBuilder(ddcPlatform), assets);
+      await testBuilderAndCollectAssets(ddcKernelBuilder(), assets);
     });
 
     test('can compile ddc modules under lib and web', () async {
@@ -67,14 +65,12 @@ main() {
 
         // Set up all the other required inputs for this test.
         await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
-        await testBuilderAndCollectAssets(MetaModuleBuilder(platform), assets);
         await testBuilderAndCollectAssets(
-            MetaModuleCleanBuilder(platform), assets);
-        await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
+            MetaModuleBuilder(ddcPlatform), assets);
         await testBuilderAndCollectAssets(
-            UnlinkedSummaryBuilder(platform), assets);
-        await testBuilderAndCollectAssets(
-            LinkedSummaryBuilder(platform), assets);
+            MetaModuleCleanBuilder(ddcPlatform), assets);
+        await testBuilderAndCollectAssets(ModuleBuilder(ddcPlatform), assets);
+        await testBuilderAndCollectAssets(ddcKernelBuilder(), assets);
       });
 
       test('reports useful messages', () async {
@@ -104,10 +100,11 @@ main() {
 
         // Set up all the other required inputs for this test.
         await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
-        await testBuilderAndCollectAssets(MetaModuleBuilder(platform), assets);
         await testBuilderAndCollectAssets(
-            MetaModuleCleanBuilder(platform), assets);
-        await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
+            MetaModuleBuilder(ddcPlatform), assets);
+        await testBuilderAndCollectAssets(
+            MetaModuleCleanBuilder(ddcPlatform), assets);
+        await testBuilderAndCollectAssets(ModuleBuilder(ddcPlatform), assets);
       });
 
       test('reports useful messages', () async {

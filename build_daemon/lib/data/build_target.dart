@@ -21,4 +21,23 @@ abstract class DefaultBuildTarget
   DefaultBuildTarget._();
 
   BuiltSet<RegExp> get blackListPatterns;
+
+  @nullable
+  OutputLocation get outputLocation;
+}
+
+abstract class OutputLocation
+    implements Built<OutputLocation, OutputLocationBuilder> {
+  static Serializer<OutputLocation> get serializer =>
+      _$outputLocationSerializer;
+
+  factory OutputLocation([updates(OutputLocationBuilder b)]) = _$OutputLocation;
+
+  OutputLocation._();
+
+  String get output;
+
+  bool get useSymlinks;
+
+  bool get hoist;
 }

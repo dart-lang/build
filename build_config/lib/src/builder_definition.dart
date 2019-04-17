@@ -38,7 +38,7 @@ class BuilderDefinition {
   /// The package which provides this Builder.
   String get package => packageExpando[this];
 
-  /// A unique key for this Builder in `'$package|$builder'` format.
+  /// A unique key for this Builder in `'$package:$builder'` format.
   String get key => builderKeyExpando[this];
 
   /// The names of the top-level methods in [import] from args -> Builder.
@@ -79,12 +79,12 @@ class BuilderDefinition {
   @JsonKey(name: 'required_inputs')
   final List<String> requiredInputs;
 
-  /// Builder keys in `$package|$builder` format which should only be run after
+  /// Builder keys in `$package:$builder` format which should only be run after
   /// this Builder.
   @JsonKey(name: 'runs_before')
   final List<String> runsBefore;
 
-  /// Builder keys in `$package|$builder` format which should be run on any
+  /// Builder keys in `$package:$builder` format which should be run on any
   /// target which also runs this Builder.
   @JsonKey(name: 'applies_builders')
   final List<String> appliesBuilders;
@@ -144,7 +144,7 @@ class BuilderDefinition {
           buildExtensions,
           'buildExtensions',
           'May not overwrite an input, '
-          'the output extensions must not contain the input extension');
+              'the output extensions must not contain the input extension');
     }
   }
 
@@ -172,7 +172,7 @@ class PostProcessBuilderDefinition {
   /// The package which provides this Builder.
   String get package => packageExpando[this];
 
-  /// A unique key for this Builder in `'$package|$builder'` format.
+  /// A unique key for this Builder in `'$package:$builder'` format.
   String get key => builderKeyExpando[this];
 
   /// The name of the top-level method in [import] from

@@ -62,7 +62,7 @@ class _ThrowingBuilder extends Builder {
 
 Builder someBuilder(BuilderOptions options) =>
     _SomeBuilder.fromOptions(options);
-Builder notApplied(_) => null;
+Builder notApplied(BuilderOptions options) => _SomeBuilder.fromOptions(options);
 PostProcessBuilder somePostProcessBuilder(BuilderOptions options) =>
     _SomePostProcessBuilder.fromOptions(options);
 Builder throwingBuilder(_) => _ThrowingBuilder();
