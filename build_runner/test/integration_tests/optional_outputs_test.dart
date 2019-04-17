@@ -77,7 +77,7 @@ main() {
 
   group('build', () {
     /// Expects the build output based on [expectCopy].
-    Future<Null> expectBuildOutput(
+    Future<void> expectBuildOutput(
         {@required bool expectCopy, @required String content}) async {
       await d.dir('a', [
         d.dir('build', [

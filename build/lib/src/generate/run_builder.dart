@@ -26,7 +26,7 @@ import 'expected_outputs.dart';
 /// automatically disposed of (its up to the caller to dispose of it later). If
 /// one is not provided then one will be created and disposed at the end of
 /// this function call.
-Future<Null> runBuilder(Builder builder, Iterable<AssetId> inputs,
+Future<void> runBuilder(Builder builder, Iterable<AssetId> inputs,
     AssetReader reader, AssetWriter writer, Resolvers resolvers,
     {Logger logger,
     ResourceManager resourceManager,
@@ -36,7 +36,7 @@ Future<Null> runBuilder(Builder builder, Iterable<AssetId> inputs,
   resourceManager ??= ResourceManager();
   logger ??= Logger('runBuilder');
   //TODO(nbosch) check overlapping outputs?
-  Future<Null> buildForInput(AssetId input) async {
+  Future<void> buildForInput(AssetId input) async {
     var outputs = expectedOutputs(builder, input);
     if (outputs.isEmpty) return;
     var buildStep = BuildStepImpl(input, outputs, reader, writer,

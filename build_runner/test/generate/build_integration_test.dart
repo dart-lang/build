@@ -341,7 +341,7 @@ main(List<String> args) async {
 ''';
 
       /// Expects the build output based on [expectedContent].
-      Future<Null> expectBuildOutput(String expectedContent) async {
+      Future<void> expectBuildOutput(String expectedContent) async {
         await d.dir('a', [
           d.dir('web', [
             d.file('a.txt', 'a'),

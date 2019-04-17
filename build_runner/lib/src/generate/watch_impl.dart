@@ -129,8 +129,8 @@ class WatchImpl implements BuildState {
 
   AssetGraph get assetGraph => _build?.assetGraph;
 
-  final _readyCompleter = Completer<Null>();
-  Future<Null> get ready => _readyCompleter.future;
+  final _readyCompleter = Completer<void>();
+  Future<void> get ready => _readyCompleter.future;
 
   final String _configKey; // may be null
 
@@ -321,7 +321,7 @@ class WatchImpl implements BuildState {
       }
 
       _reader = _build?.finalizedReader;
-      _readyCompleter.complete(null);
+      _readyCompleter.complete();
       // It is possible this is already closed if the user kills the process
       // early, which results in an exception without this check.
       if (!controller.isClosed) controller.add(firstBuild);

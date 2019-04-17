@@ -12,31 +12,31 @@ import 'common/utils.dart';
 
 void main() {
   test('pub run build_runner help', () async {
-    await testHelpCommand(() => runCommand(['help']));
+    await _testHelpCommand(() => runCommand(['help']));
   });
 
   test('pub run build_runner --help', () async {
-    await testHelpCommand(() => runCommand(['--help']));
+    await _testHelpCommand(() => runCommand(['--help']));
   });
 
   test('pub run build_runner build --help', () async {
-    await testHelpCommand(() => runCommand(['build', '--help']));
+    await _testHelpCommand(() => runCommand(['build', '--help']));
   });
 
   test('pub run build_runner serve --help', () async {
-    await testHelpCommand(() => runCommand(['serve', '--help']));
+    await _testHelpCommand(() => runCommand(['serve', '--help']));
   });
 
   test('pub run build_runner test --help', () async {
-    await testHelpCommand(() => runCommand(['test', '--help']));
+    await _testHelpCommand(() => runCommand(['test', '--help']));
   });
 
   test('pub run build_runner watch --help', () async {
-    await testHelpCommand(() => runCommand(['watch', '--help']));
+    await _testHelpCommand(() => runCommand(['watch', '--help']));
   });
 }
 
-Future<Null> testHelpCommand(Future<ProcessResult> runCommand()) async {
+Future<void> _testHelpCommand(Future<ProcessResult> runCommand()) async {
   var asyncResult = runCommand();
   expect(asyncResult, completes,
       reason: 'should not cause the auto build script to hang');

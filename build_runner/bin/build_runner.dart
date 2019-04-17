@@ -18,7 +18,7 @@ import 'package:build_runner/src/logging/std_io_logging.dart';
 import 'src/commands/clean.dart';
 import 'src/commands/generate_build_script.dart';
 
-Future<Null> main(List<String> args) async {
+Future<void> main(List<String> args) async {
   // Use the actual command runner to parse the args and immediately print the
   // usage information if there is no command provided or the help command was
   // explicitly invoked.

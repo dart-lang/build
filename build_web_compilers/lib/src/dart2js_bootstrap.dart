@@ -17,7 +17,7 @@ import 'package:scratch_space/scratch_space.dart';
 import 'platforms.dart';
 import 'web_entrypoint_builder.dart';
 
-Future<Null> bootstrapDart2Js(
+Future<void> bootstrapDart2Js(
     BuildStep buildStep, List<String> dart2JsArgs) async {
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
@@ -111,7 +111,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
   }
 }
 
-Future<Null> _copyIfExists(
+Future<void> _copyIfExists(
     AssetId id, ScratchSpace scratchSpace, AssetWriter writer) async {
   var file = scratchSpace.fileFor(id);
   if (await file.exists()) {
