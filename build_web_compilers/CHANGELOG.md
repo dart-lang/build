@@ -1,3 +1,7 @@
+## 2.0.0-alpha.1
+
+- Combine the `ddc_kernel` and `ddc` workers under a single name (`ddc`).
+
 ## 2.0.0-alpha.0
 
 - Update to run DDC in kernel mode, and consume kernel outlines instead of
