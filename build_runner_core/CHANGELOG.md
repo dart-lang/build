@@ -1,3 +1,8 @@
+## 3.0.4
+
+- Add additional error details and a fallback for
+  https://github.com/dart-lang/build/issues/1804
+
 ## 3.0.3
 
 - Share an asset graph when building regardless of whether the build script was
