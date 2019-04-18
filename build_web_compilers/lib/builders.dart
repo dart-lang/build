@@ -4,6 +4,7 @@
 
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
+import 'package:collection/collection.dart';
 import 'package:path/path.dart' as p;
 
 import 'build_web_compilers.dart';
@@ -46,7 +47,21 @@ PostProcessBuilder dartSourceCleanup(BuilderOptions options) =>
 
 const _useIncrementalCompilerOption = 'use-incremental-compiler';
 bool _readUseIncrementalCompilerOption(BuilderOptions options) {
+  if (_previousDdcConfig != null) {
+    if (!const MapEquality().equals(_previousDdcConfig, options.config)) {
+      throw ArgumentError(
+          'The build_web_compilers:ddc builder must have the same '
+          'configuration in all packages. Saw $_previousDdcConfig and '
+          '${options.config} which are not equal.\n\n '
+          'Please use the `global_options` section in '
+          '`build.yaml` or the `--define` flag to set global options.');
+    }
+  } else {
+    _previousDdcConfig = options.config;
+  }
   validateOptions(options.config, [_useIncrementalCompilerOption],
       'build_web_compilers:ddc');
   return options.config[_useIncrementalCompilerOption] as bool ?? true;
 }
+
+Map<String, dynamic> _previousDdcConfig;
