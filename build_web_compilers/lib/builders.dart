@@ -45,7 +45,10 @@ PostProcessBuilder dartSourceCleanup(BuilderOptions options) =>
         ? const FileDeletingBuilder(['.dart', '.js.map'])
         : const FileDeletingBuilder(['.dart', '.js.map'], isEnabled: false);
 
-const _useIncrementalCompilerOption = 'use-incremental-compiler';
+/// Reads the [_useIncrementalCompilerOption] from [options].
+///
+/// Note that [options] must be consistent across the entire build, and if it is
+/// not then an [ArgumentError] will be thrown.
 bool _readUseIncrementalCompilerOption(BuilderOptions options) {
   if (_previousDdcConfig != null) {
     if (!const MapEquality().equals(_previousDdcConfig, options.config)) {
@@ -65,3 +68,4 @@ bool _readUseIncrementalCompilerOption(BuilderOptions options) {
 }
 
 Map<String, dynamic> _previousDdcConfig;
+const _useIncrementalCompilerOption = 'use-incremental-compiler';
