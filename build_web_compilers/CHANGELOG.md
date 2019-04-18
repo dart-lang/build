@@ -1,3 +1,16 @@
+## 2.0.0-alpha.2
+
+- Add the `use-incremental-compiler` option for the `build_web_compilers:ddc`
+  builder. This is enabled by default but can be disabled if running into build
+  issues by setting it to `false` globally:
+
+```yaml
+global_options:
+  build_web_compilers:ddc:
+    options:
+      use-incremental-compiler: false
+```
+
 ## 2.0.0-alpha.1
 
 - Combine the `ddc_kernel` and `ddc` workers under a single name (`ddc`).

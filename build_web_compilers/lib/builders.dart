@@ -4,9 +4,11 @@
 
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
+import 'package:collection/collection.dart';
 import 'package:path/path.dart' as p;
 
 import 'build_web_compilers.dart';
+import 'src/common.dart';
 import 'src/platforms.dart';
 
 // Shared entrypoint builder
@@ -18,13 +20,15 @@ Builder ddcMetaModuleBuilder(BuilderOptions options) =>
     MetaModuleBuilder.forOptions(ddcPlatform, options);
 Builder ddcMetaModuleCleanBuilder(_) => MetaModuleCleanBuilder(ddcPlatform);
 Builder ddcModuleBuilder([_]) => ModuleBuilder(ddcPlatform);
-Builder ddcBuilder([_]) => DevCompilerBuilder();
+Builder ddcBuilder(BuilderOptions options) => DevCompilerBuilder(
+    useIncrementalCompiler: _readUseIncrementalCompilerOption(options));
 const ddcKernelExtension = '.ddc.dill';
-Builder ddcKernelBuilder([_]) => KernelBuilder(
+Builder ddcKernelBuilder(BuilderOptions options) => KernelBuilder(
     summaryOnly: true,
     sdkKernelPath: p.url.join('lib', '_internal', 'ddc_sdk.dill'),
     outputExtension: ddcKernelExtension,
-    platform: ddcPlatform);
+    platform: ddcPlatform,
+    useIncrementalCompiler: _readUseIncrementalCompilerOption(options));
 
 // Dart2js related builders
 Builder dart2jsMetaModuleBuilder(BuilderOptions options) =>
@@ -40,3 +44,28 @@ PostProcessBuilder dartSourceCleanup(BuilderOptions options) =>
     (options.config['enabled'] as bool ?? false)
         ? const FileDeletingBuilder(['.dart', '.js.map'])
         : const FileDeletingBuilder(['.dart', '.js.map'], isEnabled: false);
+
+/// Reads the [_useIncrementalCompilerOption] from [options].
+///
+/// Note that [options] must be consistent across the entire build, and if it is
+/// not then an [ArgumentError] will be thrown.
+bool _readUseIncrementalCompilerOption(BuilderOptions options) {
+  if (_previousDdcConfig != null) {
+    if (!const MapEquality().equals(_previousDdcConfig, options.config)) {
+      throw ArgumentError(
+          'The build_web_compilers:ddc builder must have the same '
+          'configuration in all packages. Saw $_previousDdcConfig and '
+          '${options.config} which are not equal.\n\n '
+          'Please use the `global_options` section in '
+          '`build.yaml` or the `--define` flag to set global options.');
+    }
+  } else {
+    _previousDdcConfig = options.config;
+  }
+  validateOptions(options.config, [_useIncrementalCompilerOption],
+      'build_web_compilers:ddc');
+  return options.config[_useIncrementalCompilerOption] as bool ?? true;
+}
+
+Map<String, dynamic> _previousDdcConfig;
+const _useIncrementalCompilerOption = 'use-incremental-compiler';

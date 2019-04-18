@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
@@ -35,7 +36,8 @@ main() {
     await testBuilderAndCollectAssets(
         MetaModuleCleanBuilder(ddcPlatform), assets);
     await testBuilderAndCollectAssets(ModuleBuilder(ddcPlatform), assets);
-    await testBuilderAndCollectAssets(ddcKernelBuilder(), assets);
+    await testBuilderAndCollectAssets(
+        ddcKernelBuilder(BuilderOptions({})), assets);
     await testBuilderAndCollectAssets(DevCompilerBuilder(), assets);
   });
 
