@@ -1,3 +1,7 @@
+## 0.5.2
+
+- Significantly increase doc comment coverage.
+
 ## 0.5.1
 
 - Support shutting down the daemon with a notification.

@@ -10,6 +10,10 @@ import 'data/build_status.dart';
 import 'data/build_target.dart';
 import 'data/server_log.dart';
 
+/// A builder for the daemon.
+///
+/// Intended to be used as an interface for specific builder implementations
+/// which actually do the building.
 class DaemonBuilder {
   Stream<BuildResults> get builds => Stream.empty();
 
