@@ -7,7 +7,6 @@ import 'package:built_value/serializer.dart';
 
 part 'server_log.g.dart';
 
-/// A log 
 abstract class ServerLog implements Built<ServerLog, ServerLogBuilder> {
   static Serializer<ServerLog> get serializer => _$serverLogSerializer;
 

@@ -30,7 +30,7 @@ class BuildTargetManager {
 
   Set<BuildTarget> get targets => _buildTargets.keys.toSet();
 
-  /// Returns all tracked channels of the manager.
+  /// All the tracked channels.
   Set<WebSocketChannel> get allChannels =>
       _buildTargets.values.expand((s) => s).toSet();
 
