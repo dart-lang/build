@@ -26,7 +26,7 @@ StringBuffer colorLog(LogRecord record, {bool verbose}) {
   final level = color.wrap('[${record.level}]');
   final eraseLine = ansiOutputEnabled && !verbose ? '\x1b[2K\r' : '';
   var lines = <Object>[
-    '$eraseLine$level ${_loggerName(record, verbose)}${record.message}'
+    '$eraseLine$level ${_recordHeader(record, verbose)}${record.message}'
   ];
 
   if (record.error != null) {
@@ -57,34 +57,11 @@ StringBuffer colorLog(LogRecord record, {bool verbose}) {
 void _stdIOLogListener(LogRecord record, {bool verbose}) =>
     stdout.write(colorLog(record, verbose: verbose));
 
-/// Filter out the Logger names known to come from `build_runner` and splits the
-/// header for levels >= WARNING.
-String _loggerName(LogRecord record, bool verbose) {
-  var knownNames = const [
-    'ApplyBuilders',
-    'Bootstrap',
-    'Build',
-    'BuildConfigOverrides',
-    'BuildDefinition',
-    'BuildOptions',
-    'BuildScriptUpdates',
-    'CreateOutputDir',
-    'Entrypoint',
-    'Heartbeat',
-    'IOEnvironment',
-    'Serve',
-    'Watch',
-    'build_runner',
-    // commands
-    'build',
-    'clean',
-    'doctor',
-    'serve',
-    'test',
-    'watch',
-  ];
+/// Filter out the Logger names which aren't coming from specific builders and
+/// splits the header for levels >= WARNING.
+String _recordHeader(LogRecord record, bool verbose) {
   var maybeSplit = record.level >= Level.WARNING ? '\n' : '';
-  return verbose || !knownNames.contains(record.loggerName)
+  return verbose || record.loggerName.contains(' ')
       ? '${record.loggerName}:$maybeSplit'
       : '';
 }
