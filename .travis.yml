@@ -156,14 +156,9 @@ jobs:
       env: PKGS="build_test"
       script: ./tool/travis.sh dartanalyzer_1
     - stage: analyze_and_format
-      name: "SDK: 2.3.0-dev.0.1; PKG: build_vm_compilers; TASKS: `dartanalyzer --fatal-warnings .`"
+      name: "SDK: 2.3.0-dev.0.1; PKGS: build_vm_compilers, build_web_compilers; TASKS: `dartanalyzer --fatal-warnings .`"
       dart: "2.3.0-dev.0.1"
-      env: PKGS="build_vm_compilers"
-      script: ./tool/travis.sh dartanalyzer_1
-    - stage: analyze_and_format
-      name: "SDK: 2.2.1-dev.4.0; PKG: build_web_compilers; TASKS: `dartanalyzer --fatal-warnings .`"
-      dart: "2.2.1-dev.4.0"
-      env: PKGS="build_web_compilers"
+      env: PKGS="build_vm_compilers build_web_compilers"
       script: ./tool/travis.sh dartanalyzer_1
     - stage: unit_test
       name: "SDK: dev; PKG: build_web_compilers; TASKS: [`pub run test -x presubmit-only`, `pub run test -t presubmit-only --run-skipped`]"
