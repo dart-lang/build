@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build/build.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
@@ -176,7 +175,7 @@ class PostProcessBuilderDefinition {
   String get key => builderKeyExpando[this];
 
   /// The name of the top-level method in [import] from
-  /// BuilderOptions -> Builder.
+  /// Map<String, dynamic> -> Builder.
   @JsonKey(
       name: 'builder_factory',
       nullable: false,
@@ -229,24 +228,23 @@ class TargetBuilderConfigDefaults {
   @JsonKey(name: 'generate_for')
   final InputSet generateFor;
 
-  @JsonKey(fromJson: builderOptionsFromJson)
-  final BuilderOptions options;
+  final Map<String, dynamic> options;
 
-  @JsonKey(name: 'dev_options', fromJson: builderOptionsFromJson)
-  final BuilderOptions devOptions;
+  @JsonKey(name: 'dev_options')
+  final Map<String, dynamic> devOptions;
 
-  @JsonKey(name: 'release_options', fromJson: builderOptionsFromJson)
-  final BuilderOptions releaseOptions;
+  @JsonKey(name: 'release_options')
+  final Map<String, dynamic> releaseOptions;
 
   const TargetBuilderConfigDefaults({
     InputSet generateFor,
-    BuilderOptions options,
-    BuilderOptions devOptions,
-    BuilderOptions releaseOptions,
+    Map<String, dynamic> options,
+    Map<String, dynamic> devOptions,
+    Map<String, dynamic> releaseOptions,
   })  : generateFor = generateFor ?? InputSet.anything,
-        options = options ?? BuilderOptions.empty,
-        devOptions = devOptions ?? BuilderOptions.empty,
-        releaseOptions = releaseOptions ?? BuilderOptions.empty;
+        options = options ?? const {},
+        devOptions = devOptions ?? const {},
+        releaseOptions = releaseOptions ?? const {};
 
   factory TargetBuilderConfigDefaults.fromJson(Map json) =>
       _$TargetBuilderConfigDefaultsFromJson(json);

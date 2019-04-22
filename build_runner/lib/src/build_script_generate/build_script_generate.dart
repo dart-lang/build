@@ -252,6 +252,6 @@ Expression _findToExpression(BuilderDefinition definition) {
 }
 
 /// An expression creating a [BuilderOptions] from a json string.
-Expression _constructBuilderOptions(BuilderOptions options) =>
+Expression _constructBuilderOptions(Map<String, dynamic> options) =>
     refer('BuilderOptions', 'package:build/build.dart')
-        .newInstance([literalMap(options.config)]);
+        .newInstance([literalMap(options)]);
