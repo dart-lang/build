@@ -49,6 +49,9 @@ abstract class DefaultBuildResult
 ///
 /// Since the daemon can build multiple targets in parallel, the results are
 /// grouped together.
+///
+/// Build results will only be provided if the client has registered a target
+/// that was built.
 abstract class BuildResults
     implements Built<BuildResults, BuildResultsBuilder> {
   static Serializer<BuildResults> get serializer => _$buildResultsSerializer;
