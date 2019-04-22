@@ -4,7 +4,7 @@ import 'package:built_value/serializer.dart';
 
 part 'build_target.g.dart';
 
-/// The build target, e.g. folder.
+/// The string representation of a build target, e.g. folder path.
 abstract class BuildTarget {
   String get target;
 }
@@ -21,7 +21,7 @@ abstract class DefaultBuildTarget
 
   DefaultBuildTarget._();
 
-  /// A set of patterns to match changes against.
+  /// A set of file path patterns to match changes against.
   ///
   /// If a change matches a pattern this target will not be built.
   BuiltSet<RegExp> get blackListPatterns;
@@ -49,5 +49,10 @@ abstract class OutputLocation
   ///
   /// Hoisted outputs will not contain the build target folder within their
   /// path.
+  ///
+  /// For example hoisting the build target web:
+  ///   <web>/<web-contents>
+  /// Should result in:
+  ///   <output-folder>/<web-contents>
   bool get hoist;
 }

@@ -63,6 +63,9 @@ bool _isActionMessage(String line) =>
 /// A client of the build daemon.
 ///
 /// Handles starting and connecting to the build daemon.
+///
+/// Example:
+///   https://pub.dartlang.org/packages/build_daemon#-example-tab-
 class BuildDaemonClient {
   final _buildResults = StreamController<BuildResults>.broadcast();
   final Serializers _serializers;
@@ -100,6 +103,9 @@ class BuildDaemonClient {
       _serializers.serialize(BuildTargetRequest((b) => b..target = target))));
 
   /// Builds all registered targets, including those not from this client.
+  ///
+  /// Note this will wait for any ongoing build to finish before starting a new
+  /// one.
   void startBuild() {
     var request = BuildRequest();
     _channel.sink.add(jsonEncode(_serializers.serialize(request)));

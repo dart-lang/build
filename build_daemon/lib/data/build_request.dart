@@ -7,9 +7,7 @@ import 'package:built_value/serializer.dart';
 
 part 'build_request.g.dart';
 
-/// A build request.
-///
-/// Triggers a build of all registered build targets.
+/// A request to trigger a build of all registered build targets.
 abstract class BuildRequest
     implements Built<BuildRequest, BuildRequestBuilder> {
   static Serializer<BuildRequest> get serializer => _$buildRequestSerializer;

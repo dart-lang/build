@@ -1,5 +1,6 @@
-## 0.5.2
+## 0.6.0
 
+- `DaemonBuilder` is now an abstract class.
 - Significantly increase doc comment coverage.
 
 ## 0.5.1
