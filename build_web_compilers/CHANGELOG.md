@@ -14,12 +14,12 @@ something that seems broken or not working as intended.
 ### Major Update - Auto-detection of web support for applications
 
 Previously, all files with a `main` that were matched by the input globs would
-attempt to compile for web. This caused an issue when there were non-web
+attempt to compile for the web. This caused an issue when there were non-web
 applications in the default directories, which specifically happens a lot in the
 `test` directory. Resolving this required custom globs in `build.yaml` files.
 
 Two changes were made to help handle this issue more gracefully, in a way that
-oftend doesn't require custom `build.yaml` files any more.
+often doesn't require custom `build.yaml` files any more.
 
 - Before compiling any app, build_web_compilers will check that all its
   transitive modules are compatible with the web (based on their `dart:`
