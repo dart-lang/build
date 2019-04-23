@@ -56,10 +56,8 @@ void main() {
             },
             globalOptions: {
               'b:cool_builder': GlobalBuilderConfig(
-                options: const BuilderOptions(
-                    {'option_a': 'global a', 'option_b': 'global b'}),
-                releaseOptions:
-                    const BuilderOptions({'option_b': 'release global b'}),
+                options: const {'option_a': 'global a', 'option_b': 'global b'},
+                releaseOptions: const {'option_b': 'release global b'},
               ),
             },
           )

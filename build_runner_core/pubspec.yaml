@@ -10,7 +10,7 @@ environment:
 dependencies:
   async: ">=1.13.3 <3.0.0"
   build: ">=1.1.0 <1.2.0"
-  build_config: ^0.3.1
+  build_config: ">=0.4.0 <0.4.1"
   build_resolvers: ^1.0.0
   collection: ^1.14.0
   convert: ^2.0.1
@@ -37,3 +37,7 @@ dev_dependencies:
   test_process: ^1.0.0
   _test_common:
     path: ../_test_common
+
+dependency_overrides:
+  build_config:
+    path: ../build_config
