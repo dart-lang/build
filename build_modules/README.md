@@ -18,16 +18,17 @@
   </a>
 </p>
 
-This package provides generic module builders which can be used to create
-custom compilation pipelines. It is used by [`build_web_compilers`][] and
+This package provides generic module builders which can be used to create custom
+compilation pipelines. It is used by [`build_web_compilers`][] and
 [`build_vm_compilers`][] package which provides standard builders for the web
 and vm platforms.
 
 ## Usage
 
-There should be no need to import this package directly unless you are developing
-a custom builder for web. See documentation in [`build_web_compilers`][] and
-[`build_vm_compilers`][] for more details on building your Dart code.
+There should be no need to import this package directly unless you are
+developing a custom compiler pipeline. See documentation in
+[`build_web_compilers`][] and [`build_vm_compilers`][] for more details on
+building your Dart code.
 
 [`build_web_compilers`]: https://pub.dartlang.org/packages/build_web_compilers
 [`build_vm_compilers`]: https://pub.dartlang.org/packages/build_vm_compilers
