@@ -23,7 +23,6 @@ builders:
     build_extensions:
       $lib$:
         - lib/src/dev_compiler/dart_sdk.js
-        - lib/src/dev_compiler/dart_sdk.js.map
         - lib/src/dev_compiler/require.js
     is_optional: False
     auto_apply: none
