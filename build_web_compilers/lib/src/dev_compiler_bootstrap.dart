@@ -68,8 +68,8 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
   }());
 
   // Map from module name to module path for custom modules.
-  var modulePaths =
-      SplayTreeMap.of({'dart_sdk': r'packages/$sdk/dev_compiler/amd/dart_sdk'});
+  var modulePaths = SplayTreeMap.of(
+      {'dart_sdk': r'packages/build_web_compilers/src/dev_compiler/dart_sdk'});
   var transitiveJsModules = [jsId]..addAll(transitiveDeps
       .map((dep) => dep.primarySource.changeExtension(jsModuleExtension)));
   for (var jsId in transitiveJsModules) {
@@ -192,7 +192,8 @@ String _entryPointJs(String bootstrapModuleName) => '''
 
   var mapperUri = baseUrl + "packages/build_web_compilers/src/" +
       "dev_compiler_stack_trace/stack_trace_mapper.dart.js";
-  var requireUri = baseUrl + "packages/\$sdk/dev_compiler/amd/require.js";
+  var requireUri = baseUrl +
+      "packages/build_web_compilers/src/dev_compiler/require.js";
   var mainUri = _currentDirectory + "$bootstrapModuleName";
 
   if (typeof document != 'undefined') {

@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
@@ -16,8 +15,6 @@ import '../builders.dart';
 import 'common.dart';
 import 'errors.dart';
 import 'platforms.dart';
-
-final _sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
 
 const jsModuleErrorsExtension = '.ddc.js.errors';
 const jsModuleExtension = '.ddc.js';
@@ -78,7 +75,7 @@ Future<void> _createDevCompilerModule(
       'EnsureAssets', () => scratchSpace.ensureAssets(allAssetIds, buildStep));
   var jsId = module.primarySource.changeExtension(jsModuleExtension);
   var jsOutputFile = scratchSpace.fileFor(jsId);
-  var sdkSummary = p.url.join(_sdkDir, 'lib/_internal/ddc_sdk.dill');
+  var sdkSummary = p.url.join(sdkDir, 'lib/_internal/ddc_sdk.dill');
 
   var request = WorkRequest()
     ..arguments.addAll([

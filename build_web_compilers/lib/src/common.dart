@@ -13,6 +13,8 @@ import 'package:build_modules/build_modules.dart';
 final defaultAnalysisOptionsId =
     AssetId('build_modules', 'lib/src/analysis_options.default.yaml');
 
+final sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
+
 String defaultAnalysisOptionsArg(ScratchSpace scratchSpace) =>
     '--options=${scratchSpace.fileFor(defaultAnalysisOptionsId).path}';
 

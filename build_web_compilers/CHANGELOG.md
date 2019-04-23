@@ -1,3 +1,19 @@
+## 2.0.0-dev
+
+- This package now makes its own copy of the `dart_sdk.js` and `require.js`
+  files, which it deletes during production builds.
+  - In a future build_runner release we will be deleting the entire `$sdk`
+    package to resolve some issues with build output bloat.
+  - If you are using `dartdevc` as your production compiler, you will need to
+    disable the cleanup builder in `build.yaml` (globally) like this:
+
+```yaml
+global_options:
+  build_web_compilers|sdk_js_cleanup:
+    release_options:
+      enabled: false
+```
+
 ## 2.0.0-alpha.2
 
 - Add the `use-incremental-compiler` option for the `build_web_compilers:ddc`
