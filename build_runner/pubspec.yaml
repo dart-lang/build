@@ -57,3 +57,5 @@ dev_dependencies:
 dependency_overrides:
   build_config:
     path: ../build_config
+  build_runner_core:
+    path: ../build_runner_core
