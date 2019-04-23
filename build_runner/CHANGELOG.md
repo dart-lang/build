@@ -1,3 +1,7 @@
+## 1.3.4
+
+- Use the latest `build_config`.
+
 ## 1.3.3
 
 - Use `HttpMultiServer.loopback` for the daemon asset server.
