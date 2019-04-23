@@ -11,7 +11,7 @@ const versionSkew = 'DIFFERENT RUNNING VERSION';
 const optionsSkew = 'DIFFERENT OPTIONS';
 
 // TODO(grouma) - use pubspec version when this is open sourced.
-const currentVersion = '5.0.0';
+const currentVersion = '6.0.0';
 
 var _username = Platform.environment['USER'] ?? '';
 String daemonWorkspace(String workingDirectory) {
@@ -23,6 +23,11 @@ String daemonWorkspace(String workingDirectory) {
       .replaceAll('\\', '_'));
   return p.joinAll(segments);
 }
+
+/// The number of times to retry reading the various state files.
+///
+/// This prevents the likelihood of race conditions.
+const maxRetries = 50;
 
 /// Used to ensure that only one instance of this daemon is running at a time.
 String lockFilePath(String workingDirectory) =>

@@ -17,8 +17,13 @@ import 'server.dart';
 /// Returns the current version of the running build daemon.
 ///
 /// Null if one isn't running.
-String runningVersion(String workingDirectory) {
+Future<String> runningVersion(String workingDirectory) async {
   var versionFile = File(versionFilePath(workingDirectory));
+  var retryCount = 0;
+  while (!versionFile.existsSync() && retryCount < maxRetries) {
+    await Future.delayed(Duration(milliseconds: 100));
+    retryCount++;
+  }
   if (!versionFile.existsSync()) return null;
   return versionFile.readAsStringSync();
 }
@@ -26,8 +31,13 @@ String runningVersion(String workingDirectory) {
 /// Returns the current options of the running build daemon.
 ///
 /// Null if one isn't running.
-Set<String> currentOptions(String workingDirectory) {
+Future<Set<String>> currentOptions(String workingDirectory) async {
   var optionsFile = File(optionsFilePath(workingDirectory));
+  var retryCount = 0;
+  while (!optionsFile.existsSync() && retryCount < maxRetries) {
+    await Future.delayed(Duration(milliseconds: 100));
+    retryCount++;
+  }
   if (!optionsFile.existsSync()) return Set();
   return optionsFile.readAsLinesSync().toSet();
 }

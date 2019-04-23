@@ -83,19 +83,29 @@ void main() {
       expect(await getOutput(daemonTwo), 'RUNNING');
     });
 
+    test('can start two daemons at the same time', () async {
+      var workspace = uuid.v1();
+      testWorkspaces.add(workspace);
+      var daemonOne = await _runDaemon(workspace);
+      var daemonTwo = await _runDaemon(workspace);
+      expect([await getOutput(daemonOne), await getOutput(daemonTwo)],
+          containsAll(['RUNNING', 'ALREADY RUNNING']));
+      testDaemons.addAll([daemonOne, daemonTwo]);
+    });
+
     test('logs the version when running', () async {
       var workspace = uuid.v1();
       testWorkspaces.add(workspace);
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
       expect(await getOutput(daemon), 'RUNNING');
-      expect(runningVersion(workspace), currentVersion);
+      expect(await runningVersion(workspace), currentVersion);
     });
 
     test('does not set the current version if not running', () async {
       var workspace = uuid.v1();
       testWorkspaces.add(workspace);
-      expect(runningVersion(workspace), null);
+      expect(await runningVersion(workspace), null);
     });
 
     test('logs the options when running', () async {
@@ -104,13 +114,13 @@ void main() {
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
       expect(await getOutput(daemon), 'RUNNING');
-      expect(currentOptions(workspace).contains('foo'), isTrue);
+      expect((await currentOptions(workspace)).contains('foo'), isTrue);
     });
 
     test('does not log the options if not running', () async {
       var workspace = uuid.v1();
       testWorkspaces.add(workspace);
-      expect(currentOptions(workspace).isEmpty, isTrue);
+      expect((await currentOptions(workspace)).isEmpty, isTrue);
     });
 
     test('cleans up after itself', () async {
@@ -128,27 +138,37 @@ void main() {
   });
 }
 
-Future<String> getOutput(Process daemon) async {
-  return await daemon.stdout
-      .transform(utf8.decoder)
-      .transform(const LineSplitter())
-      .firstWhere((line) => line == 'RUNNING' || line == 'ALREADY RUNNING');
-}
+Future<String> getOutput(Process daemon) async =>
+    await daemon.stdout
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .firstWhere((line) => line == 'RUNNING' || line == 'ALREADY RUNNING',
+            orElse: () => null) ??
+    (await daemon.stderr
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())
+            .toList())
+        .join('\n');
 
 Future<Process> _runDaemon(var workspace, {int timeout = 30}) async {
   await d.file('test.dart', '''
     import 'package:build_daemon/src/daemon.dart';
     import 'package:build_daemon/daemon_builder.dart';
+    import 'package:build_daemon/client.dart';
 
     main() async {
       var daemon = Daemon('$workspace');
       if (daemon.tryGetLock()) {
         var options = ['foo'].toSet();
         var timeout = Duration(seconds: $timeout);
+        await Future.delayed(Duration(seconds: 1));
         await daemon.start(options, DaemonBuilder(), Stream.empty(),
         timeout: timeout);
         print('RUNNING');
       } else {
+        // Mimic the behavior of actual daemon implementations.
+        var version = await runningVersion('$workspace');
+        if(version != '$currentVersion') throw VersionSkew();
         print('ALREADY RUNNING');
       }
     }

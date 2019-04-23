@@ -1,3 +1,7 @@
+## 0.6.0
+
+- Add retry logic to the state file helpers `runningVersion` and `currentOptions`.
+
 ## 0.5.1
 
 - Support shutting down the daemon with a notification.
