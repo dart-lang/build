@@ -32,9 +32,11 @@ Builder ddcKernelBuilder(BuilderOptions options) => KernelBuilder(
     useIncrementalCompiler: _readUseIncrementalCompilerOption(options));
 Builder sdkJsCopyBuilder(_) => SdkJsCopyBuilder();
 PostProcessBuilder sdkJsCleanupBuilder(BuilderOptions options) =>
-    FileDeletingBuilder(
-        ['lib/src/dev_compiler/dart_sdk.js', 'lib/src/dev_compiler/require.js'],
-        isEnabled: options.config['enabled'] as bool ?? false);
+    FileDeletingBuilder([
+      'lib/src/dev_compiler/dart_sdk.js',
+      'lib/src/dev_compiler/dart_sdk.js.map',
+      'lib/src/dev_compiler/require.js',
+    ], isEnabled: options.config['enabled'] as bool ?? false);
 
 // Dart2js related builders
 Builder dart2jsMetaModuleBuilder(BuilderOptions options) =>
