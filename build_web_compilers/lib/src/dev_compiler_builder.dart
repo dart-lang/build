@@ -177,6 +177,8 @@ Future<void> _createDevCompilerModule(
   }
 }
 
+/// Copied to `web/stack_trace_mapper.dart`, these need to be kept in sync.
+///
 /// Given a list of [uris] as [String]s from a sourcemap, fixes them up so that
 /// they make sense in a browser context.
 ///
