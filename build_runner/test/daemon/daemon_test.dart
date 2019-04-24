@@ -40,9 +40,6 @@ main() {
           'build_web_compilers',
           'test',
         ],
-        versionDependencies: {
-          'build_web_compilers': 'any',
-        },
       ),
       d.dir('test', [
         d.file('hello_test.dart', '''
