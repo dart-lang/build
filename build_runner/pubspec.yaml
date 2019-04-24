@@ -53,11 +53,3 @@ dev_dependencies:
   test_process: ^1.0.0
   _test_common:
     path: ../_test_common
-
-dependency_overrides:
-  build_config:
-    path: ../build_config
-  build_runner_core:
-    path: ../build_runner_core
-  build_daemon:
-    path: ../build_daemon
