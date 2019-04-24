@@ -1,3 +1,8 @@
+## 2.1.2
+
+- Output additional `.module` files for all entrypoints to ease discovery of
+  modules for compilers.
+
 ## 2.1.1
 
 - Allow `build_config` `0.4.x`.
