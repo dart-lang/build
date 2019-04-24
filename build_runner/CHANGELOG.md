@@ -1,3 +1,7 @@
+## 1.3.5
+
+- Use the latest `build_daemon`.
+
 ## 1.3.4
 
 - Use the latest `build_config`.

@@ -16,10 +16,11 @@ import 'data/build_status.dart';
 import 'data/build_target_request.dart';
 import 'data/serializers.dart';
 import 'data/server_log.dart';
+import 'src/file_wait.dart';
 
-int _existingPort(String workingDirectory) {
+Future<int> _existingPort(String workingDirectory) async {
   var portFile = File(portFilePath(workingDirectory));
-  if (!portFile.existsSync()) throw MissingPortFile();
+  if (!await waitForFile(portFile)) throw MissingPortFile();
   return int.parse(portFile.readAsStringSync());
 }
 
@@ -141,7 +142,7 @@ class BuildDaemonClient {
     await _handleDaemonStartup(process, logHandler);
 
     return BuildDaemonClient._(
-        _existingPort(workingDirectory), daemonSerializers, logHandler);
+        await _existingPort(workingDirectory), daemonSerializers, logHandler);
   }
 }
 

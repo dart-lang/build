@@ -32,8 +32,8 @@ class DaemonCommand extends BuildRunnerCommand {
     var daemon = Daemon(workingDirectory);
     var requestedOptions = argResults.arguments.toSet();
     if (!daemon.tryGetLock()) {
-      var runningOptions = currentOptions(workingDirectory);
-      var version = runningVersion(workingDirectory);
+      var runningOptions = await currentOptions(workingDirectory);
+      var version = await runningVersion(workingDirectory);
       if (version != currentVersion) {
         stdout
           ..writeln('Running Version: $version')
