@@ -1,3 +1,7 @@
+## 2.1.1
+
+- Allow `build_config` `0.4.x`.
+
 ## 2.1.0
 
 - Make using the incremental compiler in the `KernelBuilder` configurable.
