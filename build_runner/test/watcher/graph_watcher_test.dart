@@ -26,7 +26,6 @@ void main() {
       final nodes = {
         'a': FakeNodeWatcher(graph['a']),
         'b': FakeNodeWatcher(graph['b']),
-        r'$sdk': FakeNodeWatcher(null),
       };
       final watcher = PackageGraphWatcher(graph, watch: (node) {
         return nodes[node.name];
@@ -75,7 +74,6 @@ void main() {
       });
       final nodes = {
         'a': FakeNodeWatcher(graph['a']),
-        r'$sdk': FakeNodeWatcher(null),
       };
       noBWatcher(PackageNode node) {
         if (node.name == 'b') throw StateError('No watcher for B!');
@@ -101,7 +99,6 @@ void main() {
       final nodes = {
         'a': FakeNodeWatcher(graph['a']),
         'b': FakeNodeWatcher(graph['b']),
-        r'$sdk': FakeNodeWatcher(null),
       };
       final watcher = PackageGraphWatcher(graph, watch: (node) {
         return nodes[node.name];

@@ -37,7 +37,6 @@ void main() {
               'c': graph['c'],
               'd': graph['d'],
               'basic_pkg': graph['basic_pkg'],
-              r'$sdk': anything,
             }));
       });
 
@@ -66,7 +65,6 @@ void main() {
           'a': graph['a'],
           'b': graph['b'],
           'with_dev_deps': graph['with_dev_deps'],
-          r'$sdk': graph[r'$sdk'],
         });
       });
 
@@ -105,7 +103,6 @@ void main() {
               'flutter_gallery_assets',
               'flutter_test',
               'flutter_driver',
-              r'$sdk',
             ]));
       });
     });
@@ -119,8 +116,7 @@ void main() {
       b.dependencies.add(c);
       var graph = PackageGraph.fromRoot(a);
       expect(graph.root, a);
-      expect(graph.allPackages,
-          equals({'a': a, 'b': b, 'c': c, 'd': d, r'$sdk': anything}));
+      expect(graph.allPackages, equals({'a': a, 'b': b, 'c': c, 'd': d}));
     });
 
     test('missing pubspec throws on create', () {

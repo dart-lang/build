@@ -217,7 +217,7 @@ main() {
         'packages/a/a.txt.copy': 'a',
         'packages/b/c.txt': 'c',
         'packages/b/c.txt.copy': 'c',
-        '.packages': 'a:packages/a/\r\nb:packages/b/\r\n\$sdk:packages/\$sdk/',
+        '.packages': 'a:packages/a/\r\nb:packages/b/',
       };
 
       _expectFiles(webFiles, tmpDir);
@@ -311,7 +311,7 @@ main() {
         'packages/a/a.txt': 'a',
         'packages/b/c.txt': 'c',
         'web/b.txt': 'b',
-        '.packages': 'a:packages/a/\r\nb:packages/b/\r\n\$sdk:packages/\$sdk/',
+        '.packages': 'a:packages/a/\r\nb:packages/b/',
       };
       _expectFiles(expectedFiles, tmpDir);
     });
@@ -496,7 +496,7 @@ void _expectAllFiles(Directory dir) {
     'packages/b/c.txt.copy': 'c',
     'web/b.txt': 'b',
     'web/b.txt.copy': 'b',
-    '.packages': 'a:packages/a/\r\nb:packages/b/\r\n\$sdk:packages/\$sdk/',
+    '.packages': 'a:packages/a/\r\nb:packages/b/',
   };
   _expectFiles(expectedFiles, dir);
 }

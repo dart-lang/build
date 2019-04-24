@@ -1,3 +1,9 @@
+## 2.0.0
+
+- **Breaking** Files from the Dart SDK are no longer included in the asset graph
+  as if it was a package named `$sdk`. If using `build_web_compilers` it must be
+  at least version `2.0.0`.
+
 ## 1.3.4
 
 - Use the latest `build_config`.

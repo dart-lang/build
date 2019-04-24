@@ -1,3 +1,8 @@
+## 4.0.0
+
+- **Breaking** Files from the Dart SDK are no longer included in the asset graph
+  as if it was a package named `$sdk`.
+
 ## 3.0.4
 
 - Add additional error details and a fallback for

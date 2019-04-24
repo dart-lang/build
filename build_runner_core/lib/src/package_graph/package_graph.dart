@@ -7,13 +7,6 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
-import '../util/constants.dart';
-
-/// The SDK package, we filter this to the core libs and dev compiler
-/// resources.
-final PackageNode _sdkPackageNode =
-    PackageNode(r'$sdk', sdkPath, DependencyType.hosted);
-
 /// A graph of the package dependencies for an application.
 class PackageGraph {
   /// The root application package.
@@ -23,9 +16,7 @@ class PackageGraph {
   final Map<String, PackageNode> allPackages;
 
   PackageGraph._(this.root, Map<String, PackageNode> allPackages)
-      : allPackages = Map.unmodifiable(
-            Map<String, PackageNode>.from(allPackages)
-              ..putIfAbsent(r'$sdk', () => _sdkPackageNode)) {
+      : allPackages = Map.unmodifiable(allPackages) {
     if (!root.isRoot) {
       throw ArgumentError('Root node must indicate `isRoot`');
     }

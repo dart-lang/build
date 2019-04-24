@@ -99,13 +99,6 @@ void main() {
       var aDigest = await reader.digest(makeAssetId('basic_pkg|web/hello.txt'));
       expect(helloDigest, isNot(equals(aDigest)));
     });
-
-    test('can read from the SDK', () async {
-      expect(
-          await reader
-              .canRead(makeAssetId(r'$sdk|lib/dev_compiler/amd/dart_sdk.js')),
-          true);
-    });
   });
 
   group('FileBasedAssetWriter', () {

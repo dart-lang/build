@@ -35,17 +35,10 @@ class TargetGraph {
     for (final package in packageGraph.allPackages.values) {
       final config = overrideBuildConfig[package.name] ??
           await _packageBuildConfig(package);
-      List<String> defaultInclude;
+      final defaultInclude =
+          package.isRoot ? defaultRootPackageWhitelist : const ['lib/**'];
       if (package.isRoot) {
-        defaultInclude = defaultRootPackageWhitelist;
         rootPackageConfig = config;
-      } else if (package.name == r'$sdk') {
-        defaultInclude = const [
-          'lib/dev_compiler/**.js',
-          'lib/_internal/**.sum',
-        ];
-      } else {
-        defaultInclude = const ['lib/**'];
       }
       final nodes = config.buildTargets.values.map((target) =>
           TargetNode(target, package, defaultInclude: defaultInclude));
