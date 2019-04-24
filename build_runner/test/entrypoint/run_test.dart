@@ -30,6 +30,7 @@ main() {
           'build_runner',
           'build_runner_core',
           'build_test',
+          'build_web_compilers',
           'test',
         ],
         versionDependencies: {
