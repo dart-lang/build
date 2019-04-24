@@ -20,6 +20,7 @@ class BuildStatus extends EnumClass {
   static BuiltSet<BuildStatus> get values => _$values;
 }
 
+/// The build result for a single target.
 abstract class BuildResult {
   BuildStatus get status;
   String get target;
@@ -44,6 +45,13 @@ abstract class DefaultBuildResult
   DefaultBuildResult._();
 }
 
+/// The group of [BuildResult]s for a single build done by the daemon.
+///
+/// Since the daemon can build multiple targets in parallel, the results are
+/// grouped together.
+///
+/// Build results will only be provided if the client has registered a target
+/// that was built.
 abstract class BuildResults
     implements Built<BuildResults, BuildResultsBuilder> {
   static Serializer<BuildResults> get serializer => _$buildResultsSerializer;

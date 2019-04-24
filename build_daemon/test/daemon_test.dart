@@ -6,8 +6,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build_daemon/constants.dart';
-import 'package:build_daemon/daemon_builder.dart';
 import 'package:build_daemon/src/daemon.dart';
+import 'package:build_daemon/src/fake_builder.dart';
 import 'package:package_resolver/package_resolver.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
@@ -41,7 +41,7 @@ void main() {
       testWorkspaces.add(workspace);
       var daemon = Daemon('$workspace');
       expect(daemon.tryGetLock(), isTrue);
-      await daemon.start(Set<String>(), DaemonBuilder(), Stream.empty());
+      await daemon.start(Set<String>(), FakeDaemonBuilder(), Stream.empty());
       expect(daemon.onDone, completes);
       await daemon.stop();
     });
@@ -138,6 +138,7 @@ Future<String> getOutput(Process daemon) async {
 Future<Process> _runDaemon(var workspace, {int timeout = 30}) async {
   await d.file('test.dart', '''
     import 'package:build_daemon/src/daemon.dart';
+    import 'package:build_daemon/src/fake_builder.dart';
     import 'package:build_daemon/daemon_builder.dart';
 
     main() async {
@@ -145,7 +146,7 @@ Future<Process> _runDaemon(var workspace, {int timeout = 30}) async {
       if (daemon.tryGetLock()) {
         var options = ['foo'].toSet();
         var timeout = Duration(seconds: $timeout);
-        await daemon.start(options, DaemonBuilder(), Stream.empty(),
+        await daemon.start(options, FakeDaemonBuilder(), Stream.empty(),
         timeout: timeout);
         print('RUNNING');
       } else {
