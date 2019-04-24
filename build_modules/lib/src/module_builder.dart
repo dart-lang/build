@@ -50,6 +50,7 @@ class ModuleBuilder implements Builder {
             .firstWhere((m) => m.sources.contains(buildStep.inputId));
       }
     }
+    if (outputModule == null) return;
     await buildStep.writeAsString(
         buildStep.inputId.changeExtension(moduleExtension(_platform)),
         jsonEncode(outputModule.toJson()));
