@@ -43,8 +43,7 @@ dependencies:
 
 dev_dependencies:
   build_test: ^0.10.0
-  build_modules: '>=0.4.0 <2.0.0'
-  build_web_compilers: ^1.0.0
+  build_web_compilers: ^2.0.0
   mockito: ^4.0.0
   package_resolver: ^1.0.2
   stream_channel: ">=1.6.0 <3.0.0"
