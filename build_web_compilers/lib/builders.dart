@@ -10,6 +10,7 @@ import 'package:path/path.dart' as p;
 import 'build_web_compilers.dart';
 import 'src/common.dart';
 import 'src/platforms.dart';
+import 'src/sdk_js_copy_builder.dart';
 
 // Shared entrypoint builder
 Builder webEntrypointBuilder(BuilderOptions options) =>
@@ -29,6 +30,11 @@ Builder ddcKernelBuilder(BuilderOptions options) => KernelBuilder(
     outputExtension: ddcKernelExtension,
     platform: ddcPlatform,
     useIncrementalCompiler: _readUseIncrementalCompilerOption(options));
+Builder sdkJsCopyBuilder(_) => SdkJsCopyBuilder();
+PostProcessBuilder sdkJsCleanupBuilder(BuilderOptions options) =>
+    FileDeletingBuilder(
+        ['lib/src/dev_compiler/dart_sdk.js', 'lib/src/dev_compiler/require.js'],
+        isEnabled: options.config['enabled'] as bool ?? false);
 
 // Dart2js related builders
 Builder dart2jsMetaModuleBuilder(BuilderOptions options) =>
