@@ -116,9 +116,9 @@ jobs:
       env: PKGS="build_vm_compilers"
       script: ./tool/travis.sh test_06
     - stage: analyze_and_format
-      name: "SDK: 2.2.1-dev.4.0; PKGS: build_modules, build_web_compilers; TASKS: `dartanalyzer --fatal-warnings .`"
-      dart: "2.2.1-dev.4.0"
-      env: PKGS="build_modules build_web_compilers"
+      name: "SDK: 2.3.0-dev.1.0; PKG: build_modules; TASKS: `dartanalyzer --fatal-warnings .`"
+      dart: "2.3.0-dev.1.0"
+      env: PKGS="build_modules"
       script: ./tool/travis.sh dartanalyzer_1
     - stage: unit_test
       name: "SDK: dev; PKG: build_modules; TASKS: `dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs-- -P presubmit`"
@@ -154,6 +154,11 @@ jobs:
       name: "SDK: 2.3.0-dev.0.1; PKG: build_vm_compilers; TASKS: `dartanalyzer --fatal-warnings .`"
       dart: "2.3.0-dev.0.1"
       env: PKGS="build_vm_compilers"
+      script: ./tool/travis.sh dartanalyzer_1
+    - stage: analyze_and_format
+      name: "SDK: 2.2.1-dev.4.0; PKG: build_web_compilers; TASKS: `dartanalyzer --fatal-warnings .`"
+      dart: "2.2.1-dev.4.0"
+      env: PKGS="build_web_compilers"
       script: ./tool/travis.sh dartanalyzer_1
     - stage: unit_test
       name: "SDK: dev; PKG: build_web_compilers; TASKS: [`pub run test -x presubmit-only`, `pub run test -t presubmit-only --run-skipped`]"
