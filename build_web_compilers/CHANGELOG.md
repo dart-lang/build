@@ -1,44 +1,54 @@
-## 2.0.0-dev
 
-- This package now makes its own copy of the `dart_sdk.js` and `require.js`
-  files, which it deletes during production builds.
-  - In a future build_runner release we will be deleting the entire `$sdk`
-    package to resolve some issues with build output bloat.
-  - If you are using `dartdevc` as your production compiler, you will need to
-    disable the cleanup builder in `build.yaml` (globally) like this:
+## 2.0.0
 
-```yaml
-global_options:
-  build_web_compilers|sdk_js_cleanup:
-    release_options:
-      enabled: false
-```
+### Major Update - Switch to use the common front end.
 
-## 2.0.0-alpha.2
+In this release, the Dart front end for the `dev_compiler` is changing from the
+[analyzer] to the common [front end][front_end]. This should unify error
+messages and general consistency across platforms, as this was one of the last
+compilers left still using the analyzer as a front end.
 
-- Add the `use-incremental-compiler` option for the `build_web_compilers:ddc`
-  builder. This is enabled by default but can be disabled if running into build
-  issues by setting it to `false` globally:
+While this is intended to be a transparent change, it is likely that there will
+be unintended differences. Please [file issues][issue tracker] if you experience
+something that seems broken or not working as intended.
 
-```yaml
-global_options:
-  build_web_compilers:ddc:
-    options:
-      use-incremental-compiler: false
-```
+### Major Update - Auto-detection of web support for applications
 
-## 2.0.0-alpha.1
+Previously, all files with a `main` that were matched by the input globs would
+attempt to compile for the web. This caused an issue when there were non-web
+applications in the default directories, which specifically happens a lot in the
+`test` directory. Resolving this required custom globs in `build.yaml` files.
 
-- Combine the `ddc_kernel` and `ddc` workers under a single name (`ddc`).
+Two changes were made to help handle this issue more gracefully, in a way that
+often doesn't require custom `build.yaml` files any more.
 
-## 2.0.0-alpha.0
+- Before compiling any app, build_web_compilers will check that all its
+  transitive modules are compatible with the web (based on their `dart:`
+  imports).
+  - Today we will log a warning message for any app that isn't compatible, as
+    ultimately it is most efficient to exclude these using globs in your
+    `build.yaml` than waiting for us to detect it. This may change based on
+    feedback.
+- Changed the default glob for the `test` directory to only include the
+  `test/**.dart.browser_test.dart` files (other dirs remain unchanged).
+  - Note that as a result of this, serving the `test` dir and running tests that
+    way no longer works, as those entrypoints won't be compiled. You would need
+    to configure the `generate_for` to explicitly include `test/**_test.dart`
+    to restore that functionality (we will continue pushing on this in the
+    future though to restore similar functionality).
+  - Also note that the `build_test` package will now output
+    `<platform>_test.dart` files based on your [TestOn] annotations, so using
+    those where possible will help reduce build platform support warnings as
+    well.
+
+### Additional Notes
 
 - Update to run DDC in kernel mode, and consume kernel outlines instead of
   analyzer summaries.
+- Skip trying to compile apps that import known incompatible libraries.
 - Increased the upper bound for `package:analyzer` to `<0.37.0`.
 - Removed support for `build_root_app_summary` configuration option.
-- Remove support for building DDC with analyzer summaries.
-- Skip trying to compile apps that import known incompatible libraries.
+- Combine the `ddc_kernel` and `ddc` workers under a single name (`ddc`).
 - By default only `.dart.browser_test.dart` files will be compiled under the
   `test` directory, instead of all `_test.dart` files.
   - If you used the previous test debugging workflow in the browser you can
@@ -54,6 +64,36 @@ targets:
         - test/**_test.dart
         - web/**.dart
 ```
+
+- Added the `use-incremental-compiler` option for the `build_web_compilers:ddc`
+  builder. This is enabled by default but can be disabled if running into build
+  issues by setting it to `false` globally:
+
+```yaml
+global_options:
+  build_web_compilers:ddc:
+    options:
+      use-incremental-compiler: false
+```
+
+- This package now makes its own copy of the `dart_sdk.js` and `require.js`
+  files, which it deletes during production builds.
+  - In a future build_runner release we will be deleting the entire `$sdk`
+    package to resolve some issues with build output bloat.
+  - If you are using `dartdevc` as your production compiler, you will need to
+    disable the cleanup builder in `build.yaml` (globally) like this:
+
+```yaml
+global_options:
+  build_web_compilers|sdk_js_cleanup:
+    release_options:
+      enabled: false
+```
+
+[analyzer]: https://pub.dartlang.org/packages/analyzer
+[front_end]: https://pub.dartlang.org/packages/front_end
+[issue tracker]: https://github.com/dart-lang/build/issues/new
+[TestOn]: https://pub.dartlang.org/documentation/test/latest/#restricting-tests-to-certain-platforms
 
 ## 1.2.1
 
