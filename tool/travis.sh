@@ -35,13 +35,8 @@ for PKG in ${PKGS}; do
       echo -e 'pub run build_runner test'
       pub run build_runner test || EXIT_CODE=$?
       ;;
-    command_3) echo
-      echo -e '\033[1mTASK: command_3\033[22m'
-      echo -e 'dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs'
-      dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs || EXIT_CODE=$?
-      ;;
-    command_5) echo
-      echo -e '\033[1mTASK: command_5\033[22m'
+    command_4) echo
+      echo -e '\033[1mTASK: command_4\033[22m'
       echo -e 'dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs-- -P presubmit'
       dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs-- -P presubmit || EXIT_CODE=$?
       ;;
