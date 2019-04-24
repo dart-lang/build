@@ -12,6 +12,7 @@ import 'package:watcher/watcher.dart';
 import '../constants.dart';
 import '../daemon_builder.dart';
 import '../data/build_target.dart';
+import 'file_wait.dart';
 import 'server.dart';
 
 /// Returns the current version of the running build daemon.
@@ -19,12 +20,7 @@ import 'server.dart';
 /// Null if one isn't running.
 Future<String> runningVersion(String workingDirectory) async {
   var versionFile = File(versionFilePath(workingDirectory));
-  var retryCount = 0;
-  while (!versionFile.existsSync() && retryCount < maxRetries) {
-    await Future.delayed(Duration(milliseconds: 100));
-    retryCount++;
-  }
-  if (!versionFile.existsSync()) return null;
+  if (!await waitForFile(versionFile)) return null;
   return versionFile.readAsStringSync();
 }
 
@@ -33,12 +29,7 @@ Future<String> runningVersion(String workingDirectory) async {
 /// Null if one isn't running.
 Future<Set<String>> currentOptions(String workingDirectory) async {
   var optionsFile = File(optionsFilePath(workingDirectory));
-  var retryCount = 0;
-  while (!optionsFile.existsSync() && retryCount < maxRetries) {
-    await Future.delayed(Duration(milliseconds: 100));
-    retryCount++;
-  }
-  if (!optionsFile.existsSync()) return Set();
+  if (!await waitForFile(optionsFile)) return Set();
   return optionsFile.readAsLinesSync().toSet();
 }
 

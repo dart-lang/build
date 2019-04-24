@@ -50,7 +50,7 @@ void main() {
       var workspace = uuid.v1();
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
-      expect(await getOutput(daemon), 'RUNNING');
+      expect(await _statusOf(daemon), 'RUNNING');
     });
 
     test('shuts down if no client connects', () async {
@@ -65,10 +65,10 @@ void main() {
       var workspace = uuid.v1();
       testWorkspaces.add(workspace);
       var daemonOne = await _runDaemon(workspace);
-      expect(await getOutput(daemonOne), 'RUNNING');
+      expect(await _statusOf(daemonOne), 'RUNNING');
       var daemonTwo = await _runDaemon(workspace);
       testDaemons.addAll([daemonOne, daemonTwo]);
-      expect(await getOutput(daemonTwo), 'ALREADY RUNNING');
+      expect(await _statusOf(daemonTwo), 'ALREADY RUNNING');
     });
 
     test('can run if another daemon is running in a different workspace',
@@ -77,10 +77,10 @@ void main() {
       var workspace2 = uuid.v1();
       testWorkspaces.addAll([workspace1, workspace2]);
       var daemonOne = await _runDaemon(workspace1);
-      expect(await getOutput(daemonOne), 'RUNNING');
+      expect(await _statusOf(daemonOne), 'RUNNING');
       var daemonTwo = await _runDaemon(workspace2);
       testDaemons.addAll([daemonOne, daemonTwo]);
-      expect(await getOutput(daemonTwo), 'RUNNING');
+      expect(await _statusOf(daemonTwo), 'RUNNING');
     });
 
     test('can start two daemons at the same time', () async {
@@ -88,7 +88,7 @@ void main() {
       testWorkspaces.add(workspace);
       var daemonOne = await _runDaemon(workspace);
       var daemonTwo = await _runDaemon(workspace);
-      expect([await getOutput(daemonOne), await getOutput(daemonTwo)],
+      expect([await _statusOf(daemonOne), await _statusOf(daemonTwo)],
           containsAll(['RUNNING', 'ALREADY RUNNING']));
       testDaemons.addAll([daemonOne, daemonTwo]);
     });
@@ -98,7 +98,7 @@ void main() {
       testWorkspaces.add(workspace);
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
-      expect(await getOutput(daemon), 'RUNNING');
+      expect(await _statusOf(daemon), 'RUNNING');
       expect(await runningVersion(workspace), currentVersion);
     });
 
@@ -113,7 +113,7 @@ void main() {
       testWorkspaces.add(workspace);
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
-      expect(await getOutput(daemon), 'RUNNING');
+      expect(await _statusOf(daemon), 'RUNNING');
       expect((await currentOptions(workspace)).contains('foo'), isTrue);
     });
 
@@ -128,7 +128,7 @@ void main() {
       testWorkspaces.add(workspace);
       var daemon = await _runDaemon(workspace);
       // Wait for the daemon to be running before checking the workspace exits.
-      expect(await getOutput(daemon), 'RUNNING');
+      expect(await _statusOf(daemon), 'RUNNING');
       expect(Directory(daemonWorkspace(workspace)).existsSync(), isTrue);
       // Daemon expects sigint twice before quitting.
       daemon..kill(ProcessSignal.sigint)..kill(ProcessSignal.sigint);
@@ -138,17 +138,22 @@ void main() {
   });
 }
 
-Future<String> getOutput(Process daemon) async =>
-    await daemon.stdout
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())
-        .firstWhere((line) => line == 'RUNNING' || line == 'ALREADY RUNNING',
-            orElse: () => null) ??
-    (await daemon.stderr
-            .transform(utf8.decoder)
-            .transform(const LineSplitter())
-            .toList())
-        .join('\n');
+/// Returns the daemon status.
+///
+/// If the status is null, the stderr ir returned.
+Future<String> _statusOf(Process daemon) async {
+  var status = await daemon.stdout
+      .transform(utf8.decoder)
+      .transform(const LineSplitter())
+      .firstWhere((line) => line == 'RUNNING' || line == 'ALREADY RUNNING',
+          orElse: () => null);
+  status ??= (await daemon.stderr
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .toList())
+      .join('\n');
+  return status;
+}
 
 Future<Process> _runDaemon(var workspace, {int timeout = 30}) async {
   await d.file('test.dart', '''
@@ -161,6 +166,8 @@ Future<Process> _runDaemon(var workspace, {int timeout = 30}) async {
       if (daemon.tryGetLock()) {
         var options = ['foo'].toSet();
         var timeout = Duration(seconds: $timeout);
+        // Real implementations of the daemon usually non-trivial set up time
+        // before calling start.
         await Future.delayed(Duration(seconds: 1));
         await daemon.start(options, DaemonBuilder(), Stream.empty(),
         timeout: timeout);

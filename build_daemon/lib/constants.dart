@@ -24,11 +24,6 @@ String daemonWorkspace(String workingDirectory) {
   return p.joinAll(segments);
 }
 
-/// The number of times to retry reading the various state files.
-///
-/// This prevents the likelihood of race conditions.
-const maxRetries = 50;
-
 /// Used to ensure that only one instance of this daemon is running at a time.
 String lockFilePath(String workingDirectory) =>
     p.join(daemonWorkspace(workingDirectory), '.dart_build_lock');
