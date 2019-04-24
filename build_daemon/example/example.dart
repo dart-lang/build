@@ -15,6 +15,8 @@ void main(List<String> args) async {
       p.normalize(p.join(Directory.current.path + '/../example'));
 
   try {
+    // First we connect to the daemon. This will start one if one is not
+    // currently running.
     client = await BuildDaemonClient.connect(
         workingDirectory,
         [
@@ -40,6 +42,10 @@ void main(List<String> args) async {
   }
   if (client == null) throw Exception('Error connecting');
   print('Connected to Dart Build Daemon');
+
+  // Next we register a build target (directory) to build.
+  // Note this will not cause a build to occur unless there are relevant file
+  // changes.
   if (Random().nextBool()) {
     client.registerBuildTarget(DefaultBuildTarget((b) => b
       ..target = 'web'
@@ -59,7 +65,12 @@ void main(List<String> args) async {
 
     print('Registered test target...');
   }
+
+  // Handle events coming from the daemon.
   client.buildResults.listen((status) => print('BUILD STATUS: $status'));
+
+  // Force a build of all registered targets.
   client.startBuild();
+
   await client.finished;
 }

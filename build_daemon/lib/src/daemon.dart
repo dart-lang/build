@@ -32,6 +32,13 @@ Set<String> currentOptions(String workingDirectory) {
   return optionsFile.readAsLinesSync().toSet();
 }
 
+/// The long running daemon process.
+///
+/// Obtains a file lock to ensure a single instance and writes various status
+/// files to be used by clients for connection.
+///
+/// Also starts a [Server] to listen for build target registration and event
+/// notification.
 class Daemon {
   final String _workingDirectory;
 
