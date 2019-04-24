@@ -81,6 +81,10 @@ final _builders = <_i1.BuilderApplication>[
       }),
       defaultReleaseOptions: _i7.BuilderOptions({'compiler': 'dart2js'}),
       appliesBuilders: ['build_web_compilers:dart2js_archive_extractor']),
+  _i1.apply('build_web_compilers:sdk_js_copy', [_i6.sdkJsCopyBuilder],
+      _i1.toNoneByDefault(),
+      hideOutput: true,
+      appliesBuilders: ['build_web_compilers:sdk_js_cleanup']),
   _i1.apply(
       'build_vm_compilers:modules',
       [_i8.metaModuleBuilder, _i8.metaModuleCleanBuilder, _i8.moduleBuilder],
@@ -107,6 +111,10 @@ final _builders = <_i1.BuilderApplication>[
       'provides_builder:some_post_process_builder', _i2.somePostProcessBuilder,
       defaultGenerateFor: const _i4.InputSet()),
   _i1.applyPostProcess('build_modules:module_cleanup', _i5.moduleCleanup,
+      defaultGenerateFor: const _i4.InputSet()),
+  _i1.applyPostProcess(
+      'build_web_compilers:sdk_js_cleanup', _i6.sdkJsCleanupBuilder,
+      defaultReleaseOptions: _i7.BuilderOptions({'enabled': true}),
       defaultGenerateFor: const _i4.InputSet()),
   _i1.applyPostProcess(
       'build_web_compilers:dart_source_cleanup', _i6.dartSourceCleanup,

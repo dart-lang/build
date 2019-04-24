@@ -91,9 +91,9 @@ jobs:
       env: PKGS="scratch_space"
       script: ./tool/travis.sh command_2
     - stage: analyze_and_format
-      name: "SDK: 2.0.0; PKGS: build_config, scratch_space; TASKS: `dartanalyzer --fatal-warnings .`"
-      dart: "2.0.0"
-      env: PKGS="build_config scratch_space"
+      name: "SDK: 2.2.0; PKGS: build_config, build_test; TASKS: `dartanalyzer --fatal-warnings .`"
+      dart: "2.2.0"
+      env: PKGS="build_config build_test"
       script: ./tool/travis.sh dartanalyzer_1
     - stage: unit_test
       name: "SDK: dev; PKG: build_config; TASKS: `dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs`"
@@ -116,9 +116,9 @@ jobs:
       env: PKGS="build_vm_compilers"
       script: ./tool/travis.sh test_06
     - stage: analyze_and_format
-      name: "SDK: 2.2.1-dev.3.0; PKG: build_modules; TASKS: `dartanalyzer --fatal-warnings .`"
-      dart: "2.2.1-dev.3.0"
-      env: PKGS="build_modules"
+      name: "SDK: 2.3.0-dev.0.1; PKGS: build_modules, build_vm_compilers, build_web_compilers; TASKS: `dartanalyzer --fatal-warnings .`"
+      dart: "2.3.0-dev.0.1"
+      env: PKGS="build_modules build_vm_compilers build_web_compilers"
       script: ./tool/travis.sh dartanalyzer_1
     - stage: unit_test
       name: "SDK: dev; PKG: build_modules; TASKS: `dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs-- -P presubmit`"
@@ -150,21 +150,16 @@ jobs:
       dart: dev
       env: PKGS="build_runner"
       script: ./tool/travis.sh test_11
-    - stage: analyze_and_format
-      name: "SDK: 2.2.0; PKG: build_test; TASKS: `dartanalyzer --fatal-warnings .`"
-      dart: "2.2.0"
-      env: PKGS="build_test"
-      script: ./tool/travis.sh dartanalyzer_1
-    - stage: analyze_and_format
-      name: "SDK: 2.3.0-dev.0.1; PKGS: build_vm_compilers, build_web_compilers; TASKS: `dartanalyzer --fatal-warnings .`"
-      dart: "2.3.0-dev.0.1"
-      env: PKGS="build_vm_compilers build_web_compilers"
-      script: ./tool/travis.sh dartanalyzer_1
     - stage: unit_test
       name: "SDK: dev; PKG: build_web_compilers; TASKS: [`pub run test -x presubmit-only`, `pub run test -t presubmit-only --run-skipped`]"
       dart: dev
       env: PKGS="build_web_compilers"
       script: ./tool/travis.sh test_12 test_13
+    - stage: analyze_and_format
+      name: "SDK: 2.0.0; PKG: scratch_space; TASKS: `dartanalyzer --fatal-warnings .`"
+      dart: "2.0.0"
+      env: PKGS="scratch_space"
+      script: ./tool/travis.sh dartanalyzer_1
 
 stages:
   - analyze_and_format

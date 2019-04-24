@@ -1,6 +1,6 @@
 name: build_test
 description: Utilities for writing unit tests of Builders.
-version: 0.10.7
+version: 0.10.7+1
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/build_test
 
@@ -10,7 +10,7 @@ environment:
 dependencies:
   async: ">=1.2.0 <3.0.0"
   build: ">=0.12.0 <2.0.0"
-  build_config: ">=0.2.0 <0.4.0"
+  build_config: ">=0.2.0 <0.5.0"
   build_resolvers: ">=0.2.0 <2.0.0"
   crypto: ">=0.9.2 <3.0.0"
   glob: ^1.1.0

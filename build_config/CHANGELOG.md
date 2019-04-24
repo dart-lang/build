@@ -1,3 +1,14 @@
+## 0.4.0
+
+- Breaking for build systems - change type of `BuilderOptions` fields to
+  `Map<String, dynamic>` to drop dependency on `build`. Does not impact packages
+  only depending on `build.yaml` parsing.
+- Breaking for build systems - versioning scheme is changing to match
+  `package:build`. Changes which are breaking to _users_ - those with
+  `build.yaml` files will be indicated with a breaking major version bump.
+  Changed which are breaking to build system _implementors_ - those who use the
+  Dart API for this package, will be indicated with a minor version bump.
+
 ## 0.3.2
 
 - Add an explicit error when `buildExtensions` is configured to overwrite it's

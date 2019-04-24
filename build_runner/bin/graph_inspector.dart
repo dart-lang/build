@@ -142,7 +142,7 @@ class InspectNodeCommand extends Command<bool> {
         description.writeln('  secondary outputs:');
         node.outputs.difference(node.primaryOutputs).forEach(_printAsset);
 
-        if (node is GeneratedAssetNode) {
+        if (node is NodeWithInputs) {
           description.writeln('  inputs:');
           assetGraph.allNodes
               .where((n) => n.outputs.contains(node.id))
