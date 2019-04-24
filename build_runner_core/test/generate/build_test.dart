@@ -74,8 +74,8 @@ void main() {
             hideOutput: true),
       ], {}, packageGraph: packageGraph);
 
-      // Once per package, including the SDK.
-      expect(invokedCount, 3);
+      // Once per package
+      expect(invokedCount, 2);
     });
 
     test('throws an error if the builderFactory fails', () async {
