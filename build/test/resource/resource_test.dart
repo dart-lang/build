@@ -68,7 +68,7 @@ main() {
     test('can fetch and dispose multiple resources', () async {
       var numDisposed = 0;
       final length = 10;
-      var resources = List<Resource>.generate(
+      var resources = List<Resource<int>>.generate(
           length,
           (i) => Resource(() => i, dispose: (instance) {
                 expect(instance, i);

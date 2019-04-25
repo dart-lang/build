@@ -1,3 +1,7 @@
+## 1.1.4
+
+- Use "strict raw types".
+
 ## 1.1.3
 
 - Update the minimum sdk constraint to 2.1.0.
