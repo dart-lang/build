@@ -99,7 +99,8 @@ main() {
         var args = ['build_runner', command, 'web'];
         expect(await runSingleBuild(command, args), ExitCode.success.code);
         expectOutput('web/main.dart.js', exists: true);
-        expectOutput('test/hello_test.dart.js', exists: false);
+        expectOutput('test/hello_test.dart.browser_test.dart.js',
+            exists: false);
       });
     }
 
@@ -115,7 +116,7 @@ main() {
         ];
         expect(await runSingleBuild(command, args), ExitCode.success.code);
         expectOutput('web/main.dart.js', exists: true);
-        expectOutput('test/hello_test.dart.js', exists: true);
+        expectOutput('test/hello_test.dart.browser_test.dart.js', exists: true);
 
         var outputDir = Directory(p.join(d.sandbox, 'a', 'foo'));
         await outputDir.delete(recursive: true);
@@ -142,7 +143,7 @@ main() {
     var args = ['build_runner', command];
     expect(await runSingleBuild(command, args), ExitCode.success.code);
     expectOutput('web/main.dart.js', exists: false);
-    expectOutput('test/hello_test.dart.js', exists: true);
+    expectOutput('test/hello_test.dart.browser_test.dart.js', exists: true);
   });
 
   test('hoists output correctly even with --symlink', () async {
