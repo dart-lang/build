@@ -5,8 +5,8 @@
 import 'dart:async';
 
 typedef CreateInstance<T> = FutureOr<T> Function();
-typedef DisposeInstance<T> = FutureOr Function(T instance);
-typedef BeforeExit = FutureOr Function();
+typedef DisposeInstance<T> = FutureOr<void> Function(T instance);
+typedef BeforeExit = FutureOr<void> Function();
 
 /// A [Resource] encapsulates the logic for creating and disposing of some
 /// expensive object which has a lifecycle.
@@ -42,7 +42,7 @@ class Resource<T> {
       _instanceByManager.putIfAbsent(manager, () async => await _create());
 
   /// Disposes the actual instance of this resource for [manager] if present.
-  Future _dispose(ResourceManager manager) {
+  Future<void> _dispose(ResourceManager manager) {
     if (!_instanceByManager.containsKey(manager)) return Future.value(null);
     var oldInstance = _fetch(manager);
     _instanceByManager.remove(manager);
@@ -60,14 +60,14 @@ class Resource<T> {
 /// implementations and not general end users. Instead end users should use
 /// the `buildStep#fetchResource` method to get [Resource]s.
 class ResourceManager {
-  final _resources = Set<Resource>();
+  final _resources = Set<Resource<void>>();
 
   /// The [Resource]s that we need to call `beforeExit` on.
   ///
   /// We have to hang on to these forever, but they should be small in number,
   /// and we don't hold on to the actual created instances, just the [Resource]
   /// instances.
-  final _resourcesWithBeforeExit = Set<Resource>();
+  final _resourcesWithBeforeExit = Set<Resource<void>>();
 
   /// Fetches an instance of [resource].
   Future<T> fetch<T>(Resource<T> resource) async {
