@@ -1,6 +1,7 @@
 ## 0.6.0
 
-- Add retry logic to the state file helpers `runningVersion` and `currentOptions`.
+- Add retry logic to the state file helpers `runningVersion` and
+  `currentOptions`.
 - `DaemonBuilder` is now an abstract class.
 - Significantly increase doc comment coverage.
 
