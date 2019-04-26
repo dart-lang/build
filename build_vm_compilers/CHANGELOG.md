@@ -1,3 +1,8 @@
+## 1.1.0
+
+- Use shorter dill manifest files rather than concatenating entire kernel
+  contents.
+
 ## 1.0.0
 
 - Support build_modules 2.0.0

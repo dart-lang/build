@@ -10,6 +10,7 @@ import 'package:analyzer/analyzer.dart';
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:pool/pool.dart';
+import 'package:path/path.dart' as p;
 
 import '../builders.dart';
 import 'platform.dart';
@@ -63,16 +64,19 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
       }
 
       var transitiveKernelModules = [
-        module.primarySource.changeExtension(vmKernelModuleExtension)
-      ].followedBy(transitiveModules.map(
-          (m) => m.primarySource.changeExtension(vmKernelModuleExtension)));
-      var appContents = <int>[];
-      for (var dependencyId in transitiveKernelModules) {
-        appContents.addAll(await buildStep.readAsBytes(dependencyId));
-      }
-      await buildStep.writeAsBytes(
+        module.primarySource.changeExtension(vmKernelModuleExtension),
+        for (var dep in transitiveModules)
+          dep.primarySource.changeExtension(vmKernelModuleExtension),
+      ];
+      await Future.wait(transitiveKernelModules.map(buildStep.canRead));
+      var appContents = [
+        '#@dill',
+        for (var dependencyId in transitiveKernelModules)
+          p.relative(dependencyId.path, from: buildStep.inputId.path),
+      ];
+      await buildStep.writeAsString(
           buildStep.inputId.changeExtension(vmKernelEntrypointExtension),
-          appContents);
+          appContents.join('\n'));
     });
   }
 }
