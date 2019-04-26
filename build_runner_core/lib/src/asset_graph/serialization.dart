@@ -14,7 +14,7 @@ const _version = 22;
 class _AssetGraphDeserializer {
   // Iteration order does not matter
   final _idToAssetId = HashMap<int, AssetId>();
-  final Map _serializedGraph;
+  final Map<String, dynamic> _serializedGraph;
 
   _AssetGraphDeserializer._(this._serializedGraph);
 
@@ -25,8 +25,8 @@ class _AssetGraphDeserializer {
     } on FormatException {
       throw AssetGraphCorruptedException();
     }
-    if (decoded is! Map) throw AssetGraphCorruptedException();
-    final serializedGraph = decoded as Map;
+    if (decoded is! Map<String, dynamic>) throw AssetGraphCorruptedException();
+    final serializedGraph = decoded as Map<String, dynamic>;
     if (serializedGraph['version'] != _version) {
       throw AssetGraphCorruptedException();
     }
@@ -39,10 +39,10 @@ class _AssetGraphDeserializer {
         _deserializeDigest(_serializedGraph['buildActionsDigest'] as String),
         _serializedGraph['dart_version'] as String);
 
-    var packageNames = _serializedGraph['packages'] as List;
+    var packageNames = _serializedGraph['packages'] as List<dynamic>;
 
     // Read in the id => AssetId map from the graph first.
-    var assetPaths = _serializedGraph['assetPaths'] as List;
+    var assetPaths = _serializedGraph['assetPaths'] as List<dynamic>;
     for (var i = 0; i < assetPaths.length; i += 2) {
       var packageName = packageNames[assetPaths[i + 1] as int] as String;
       _idToAssetId[i ~/ 2] = AssetId(packageName, assetPaths[i] as String);
@@ -52,7 +52,7 @@ class _AssetGraphDeserializer {
     //
     // Note that this does not read in the inputs of generated nodes.
     for (var serializedItem in _serializedGraph['nodes']) {
-      graph._add(_deserializeAssetNode(serializedItem as List));
+      graph._add(_deserializeAssetNode(serializedItem as List<dynamic>));
     }
 
     // Update the inputs of all generated nodes based on the outputs of the
@@ -89,7 +89,7 @@ class _AssetGraphDeserializer {
     return graph;
   }
 
-  AssetNode _deserializeAssetNode(List serializedNode) {
+  AssetNode _deserializeAssetNode(List<dynamic> serializedNode) {
     AssetNode node;
     var typeId =
         _NodeType.values[serializedNode[_AssetField.NodeType.index] as int];
@@ -142,7 +142,8 @@ class _AssetGraphDeserializer {
               .values[serializedNode[_GlobField.State.index + offset] as int],
           lastKnownDigest: digest,
           results: _deserializeAssetIds(
-                  serializedNode[_GlobField.Results.index + offset] as List)
+                  serializedNode[_GlobField.Results.index + offset]
+                      as List<dynamic>)
               ?.toList(),
         );
         break;
@@ -176,15 +177,16 @@ class _AssetGraphDeserializer {
         break;
     }
     node.outputs.addAll(_deserializeAssetIds(
-        serializedNode[_AssetField.Outputs.index] as List));
+        serializedNode[_AssetField.Outputs.index] as List<dynamic>));
     node.primaryOutputs.addAll(_deserializeAssetIds(
-        serializedNode[_AssetField.PrimaryOutputs.index] as List));
+        serializedNode[_AssetField.PrimaryOutputs.index] as List<dynamic>));
     node.deletedBy.addAll(_deserializeAssetIds(
-        (serializedNode[_AssetField.DeletedBy.index] as List)?.cast<int>()));
+        (serializedNode[_AssetField.DeletedBy.index] as List<dynamic>)
+            ?.cast<int>()));
     return node;
   }
 
-  Iterable<AssetId> _deserializeAssetIds(List serializedIds) =>
+  Iterable<AssetId> _deserializeAssetIds(List<dynamic> serializedIds) =>
       serializedIds.map((id) => _idToAssetId[id]);
 
   bool _deserializeBool(int value) => value != 0;
@@ -222,7 +224,7 @@ class _AssetGraphSerializer {
     return utf8.encode(json.encode(result));
   }
 
-  List _serializeNode(AssetNode node) {
+  List<dynamic> _serializeNode(AssetNode node) {
     if (node is GeneratedAssetNode) {
       return _WrappedGeneratedAssetNode(node, this);
     } else if (node is PostProcessAnchorNode) {
@@ -300,7 +302,9 @@ enum _PostAnchorField {
 
 /// Wraps an [AssetNode] in a class that implements [List] instead of
 /// creating a new list for each one.
-class _WrappedAssetNode extends Object with ListMixin implements List {
+class _WrappedAssetNode extends Object
+    with ListMixin<dynamic>
+    implements List<dynamic> {
   final AssetNode node;
   final _AssetGraphSerializer serializer;
 
