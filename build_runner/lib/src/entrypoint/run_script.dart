@@ -1,4 +1,4 @@
-// Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2019, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
@@ -22,8 +22,8 @@ class RunCommand extends BuildRunnerCommand {
   String get name => 'run';
 
   @override
-  String get description =>
-      'Performs a single build, and executes a Dart script with the given arguments.';
+  String get description => 'Performs a single build, and executes '
+      'a Dart script with the given arguments.';
 
   @override
   String get invocation =>
@@ -40,8 +40,8 @@ class RunCommand extends BuildRunnerCommand {
     if (separatorPos >= 0) {
       void throwUsageException() {
         throw UsageException(
-            'The `run` command does not support positional args before the, '
-            '`--` separator, which should separate build args from script args.',
+            'The `run` command does not support positional args before the '
+            '`--` separator which should separate build args from script args.',
             usage);
       }
 
@@ -84,8 +84,8 @@ class RunCommand extends BuildRunnerCommand {
 
       // Ensure the extension is .dart.
       if (p.extension(scriptName) != '.dart') {
-        logger.severe(
-            '$scriptName is not a valid Dart file, and cannot be run in the VM.');
+        logger.severe('$scriptName is not a valid Dart file '
+            'and cannot be run in the VM.');
         return ExitCode.usage.code;
       }
 
@@ -106,20 +106,22 @@ class RunCommand extends BuildRunnerCommand {
       var exitCodeCompleter = Completer<int>();
 
       try {
-        var outputMap = (options.outputMap ?? {})..addAll({tempPath: '.'});
+        var buildDirs = (options.buildDirs ?? Set<BuildDirectory>())
+          ..add(BuildDirectory('',
+              outputLocation: OutputLocation(tempPath,
+                  useSymlinks: options.outputSymlinksOnly, hoist: false)));
         var result = await build(
           builderApplications,
           deleteFilesByDefault: options.deleteFilesByDefault,
           enableLowResourcesMode: options.enableLowResourcesMode,
           configKey: options.configKey,
-          outputMap: outputMap,
+          buildDirs: buildDirs,
           packageGraph: packageGraph,
           verbose: options.verbose,
           builderConfigOverrides: options.builderConfigOverrides,
           isReleaseBuild: options.isReleaseBuild,
           trackPerformance: options.trackPerformance,
           skipBuildScriptCheck: options.skipBuildScriptCheck,
-          buildDirs: options.buildDirs,
           logPerformanceDir: options.logPerformanceDir,
         );
 
