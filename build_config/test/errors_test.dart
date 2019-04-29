@@ -2,13 +2,21 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:build_config/build_config.dart';
 import 'package:test/test.dart';
 
-import 'package:build_config/build_config.dart';
+Matcher _throwsError(matcher) => throwsA(
+      isA<ArgumentError>().having(
+        (e) {
+          printOnFailure("ACTUAL\nr'''\n${e.message}'''");
+          return e.message;
+        },
+        'message',
+        matcher,
+      ),
+    );
 
 void main() {
-  Matcher throwsError(String content) => throwsA(TypeMatcher<ArgumentError>()
-      .having((e) => e.message, 'message', contains(content)));
   group('parse errors', () {
     test('for missing default target', () {
       var buildYaml = r'''
@@ -17,7 +25,14 @@ targets:
     sources: ["lib/**"]
 ''';
       expect(() => BuildConfig.parse('package_name', [], buildYaml),
-          throwsError('Must specify a target with the name'));
+          _throwsError(r'''
+line 2, column 3: Could not create `BuildConfig`.
+Unsupported value for `targets`: Must specify a target with the name `package_name` or `$default`.
+
+  ╷
+2 │ ┌   not_package_name:
+3 │ └     sources: ["lib/**"]
+  ╵'''));
     });
 
     test('for bad build extensions', () {
@@ -31,7 +46,16 @@ builders:
     import: package:package_name/builders.dart
 ''';
       expect(() => BuildConfig.parse('package_name', [], buildYaml),
-          throwsError('May not overwrite an input'));
+          _throwsError(r'''
+line 4, column 7: Could not create `BuilderDefinition`.
+Unsupported value for `build_extensions`: May not overwrite an input, the output extensions must not contain the input extension
+
+  ╷
+4 │ ┌       .dart:
+5 │ │       - .dart
+6 │ │     builder_factories: ["someFactory"]
+  │ └────^
+  ╵'''));
     });
 
     test('for empty include globs', () {
@@ -44,7 +68,14 @@ targets:
         -
 ''';
       expect(() => BuildConfig.parse('package_name', [], buildYaml),
-          throwsError('Include globs must not be empty'));
+          _throwsError(r'''
+line 6, column 9: Could not create `TargetBuilderConfig`.
+Unsupported value for `generate_for`: Include globs must not be empty
+
+  ╷
+6 │         -
+  │         ^
+  ╵'''));
     });
   });
 }
