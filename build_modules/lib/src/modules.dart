@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:collection';
-import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:collection/collection.dart' show UnmodifiableSetView;
@@ -13,6 +12,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 import 'errors.dart';
 import 'module_builder.dart';
+import 'module_cache.dart';
 import 'platform.dart';
 
 part 'modules.g.dart';
@@ -134,32 +134,39 @@ class Module {
   ///
   /// Throws a [MissingModulesException] if there are any missing modules. This
   /// typically means that somebody is trying to import a non-existing file.
-  Future<List<Module>> computeTransitiveDependencies(AssetReader reader) async {
+  ///
+  /// If [throwIfUnsupported] is `true`, then an [UnsupportedModules]
+  /// will be thrown if there are any modules that are not supported.
+  Future<List<Module>> computeTransitiveDependencies(BuildStep buildStep,
+      {bool throwIfUnsupported = false}) async {
+    throwIfUnsupported ??= false;
+    final modules = await buildStep.fetchResource(moduleCache);
     var transitiveDeps = <AssetId, Module>{};
     var modulesToCrawl = directDependencies.toSet();
     var missingModuleSources = Set<AssetId>();
+    var unsupportedModules = Set<Module>();
     while (modulesToCrawl.isNotEmpty) {
       var next = modulesToCrawl.last;
       modulesToCrawl.remove(next);
       if (transitiveDeps.containsKey(next)) continue;
       var nextModuleId = next.changeExtension(moduleExtension(platform));
-      if (!await reader.canRead(nextModuleId)) {
+      var module = await modules.find(nextModuleId, buildStep);
+      if (module == null || module.isMissing) {
         missingModuleSources.add(next);
         continue;
       }
-      var module = Module.fromJson(
-          json.decode(await reader.readAsString(nextModuleId))
-              as Map<String, dynamic>);
-      if (module.isMissing) {
-        missingModuleSources.add(module.primarySource);
-        continue;
+      if (throwIfUnsupported && !module.isSupported) {
+        unsupportedModules.add(module);
       }
       transitiveDeps[next] = module;
       modulesToCrawl.addAll(module.directDependencies);
     }
     if (missingModuleSources.isNotEmpty) {
       throw await MissingModulesException.create(missingModuleSources,
-          transitiveDeps.values.toList()..add(this), reader);
+          transitiveDeps.values.toList()..add(this), buildStep);
+    }
+    if (throwIfUnsupported && unsupportedModules.isNotEmpty) {
+      throw UnsupportedModules(unsupportedModules);
     }
     var orderedModules = stronglyConnectedComponents<Module>(
         transitiveDeps.values,

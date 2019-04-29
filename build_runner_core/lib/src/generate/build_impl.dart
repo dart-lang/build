@@ -72,7 +72,7 @@ class BuildImpl {
   final BuildEnvironment _environment;
   final String _logPerformanceDir;
 
-  Future<Null> beforeExit() => _resourceManager.beforeExit();
+  Future<void> beforeExit() => _resourceManager.beforeExit();
 
   BuildImpl._(BuildDefinition buildDefinition, BuildOptions options,
       this._buildPhases, this._finalizedReader)
@@ -149,7 +149,7 @@ class _SingleBuild {
   final List<Pool> _buildPhasePool;
   final BuildEnvironment _environment;
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
-  final _lazyGlobs = <AssetId, Future<Null>>{};
+  final _lazyGlobs = <AssetId, Future<void>>{};
   final PackageGraph _packageGraph;
   final BuildPerformanceTracker _performanceTracker;
   final AssetReader _reader;
@@ -234,7 +234,7 @@ class _SingleBuild {
     return result;
   }
 
-  Future<Null> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
+  Future<void> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
     await logTimedAsync(_logger, 'Updating asset graph', () async {
       var invalidated = await _assetGraph.updateAndInvalidate(
           _buildPhases, updates, _packageGraph.root.name, _delete, _reader);
@@ -764,7 +764,7 @@ class _SingleBuild {
   /// - Setting the `lastKnownDigest` on each output based on the new contents.
   /// - Setting the `previousInputsDigest` on each output based on the inputs.
   /// - Storing the error message with the [_failureReporter].
-  Future<Null> _setOutputsState(
+  Future<void> _setOutputsState(
       Iterable<AssetId> outputs,
       SingleStepReader reader,
       AssetWriterSpy writer,

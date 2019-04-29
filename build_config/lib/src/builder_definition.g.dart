@@ -148,11 +148,11 @@ TargetBuilderConfigDefaults _$TargetBuilderConfigDefaultsFromJson(Map json) {
         generateFor: $checkedConvert(json, 'generate_for',
             (v) => v == null ? null : InputSet.fromJson(v)),
         options: $checkedConvert(json, 'options',
-            (v) => v == null ? null : builderOptionsFromJson(v as Map)),
+            (v) => (v as Map)?.map((k, e) => MapEntry(k as String, e))),
         devOptions: $checkedConvert(json, 'dev_options',
-            (v) => v == null ? null : builderOptionsFromJson(v as Map)),
+            (v) => (v as Map)?.map((k, e) => MapEntry(k as String, e))),
         releaseOptions: $checkedConvert(json, 'release_options',
-            (v) => v == null ? null : builderOptionsFromJson(v as Map)));
+            (v) => (v as Map)?.map((k, e) => MapEntry(k as String, e))));
     return val;
   }, fieldKeyMap: const {
     'generateFor': 'generate_for',

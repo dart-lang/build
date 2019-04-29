@@ -10,6 +10,7 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/ansi.dart' as ansi;
 import 'package:io/io.dart' show ExitCode;
 
+import 'clean.dart';
 import 'runner.dart';
 
 /// A common entry point to parse command line arguments and build or serve with
@@ -18,7 +19,7 @@ import 'runner.dart';
 /// Returns the exit code that should be set when the calling process exits. `0`
 /// implies success.
 Future<int> run(List<String> args, List<BuilderApplication> builders) async {
-  var runner = BuildCommandRunner(builders);
+  var runner = BuildCommandRunner(builders)..addCommand(CleanCommand());
   try {
     var result = await runner.run(args);
     return result ?? 0;

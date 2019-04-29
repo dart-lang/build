@@ -13,6 +13,8 @@ import 'package:build_modules/build_modules.dart';
 final defaultAnalysisOptionsId =
     AssetId('build_modules', 'lib/src/analysis_options.default.yaml');
 
+final sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
+
 String defaultAnalysisOptionsArg(ScratchSpace scratchSpace) =>
     '--options=${scratchSpace.fileFor(defaultAnalysisOptionsId).path}';
 
@@ -36,6 +38,7 @@ Future<File> createPackagesFile(Iterable<AssetId> allAssets) async {
 void validateOptions(Map<String, dynamic> config, List<String> supportedOptions,
     String builderKey,
     {List<String> deprecatedOptions}) {
+  deprecatedOptions ??= [];
   var unsupported = config.keys.where(
       (o) => !supportedOptions.contains(o) && !deprecatedOptions.contains(o));
   if (unsupported.isNotEmpty) {

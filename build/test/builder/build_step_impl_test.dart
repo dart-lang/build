@@ -221,11 +221,11 @@ class SlowAssetWriter implements AssetWriter {
   }
 
   @override
-  Future writeAsBytes(AssetId id, FutureOr<List<int>> bytes) =>
+  Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes) =>
       _writeCompleter.future;
 
   @override
-  Future writeAsString(AssetId id, FutureOr<String> contents,
+  Future<void> writeAsString(AssetId id, FutureOr<String> contents,
           {Encoding encoding = utf8}) =>
       _writeCompleter.future;
 }

@@ -22,7 +22,7 @@ void main() {
         'targets': {
           'a': {
             'builders': {
-              'a|optioned_builder': {
+              'a:optioned_builder': {
                 'options': {'inputExtension': '.matches'}
               }
             }
@@ -32,7 +32,7 @@ void main() {
     });
     await testBuilders(
         [
-          apply('a|optioned_builder', [copyBuilder], toRoot(),
+          apply('a:optioned_builder', [copyBuilder], toRoot(),
               hideOutput: false),
         ],
         {
@@ -54,7 +54,7 @@ void main() {
       package('b'): [],
     });
     await testBuilders([
-      apply('a|optioned_builder', [copyBuilder], toAllPackages(),
+      apply('a:optioned_builder', [copyBuilder], toAllPackages(),
           hideOutput: true),
     ], {
       'a|lib/a.txt': 'a',

@@ -9,10 +9,11 @@ import 'dart:io';
 
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
+import 'package:crypto/crypto.dart';
+import 'package:graphs/graphs.dart' show crawlAsync;
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
-import 'package:graphs/graphs.dart' show crawlAsync;
 
 import 'common.dart';
 import 'errors.dart';
@@ -32,6 +33,8 @@ const multiRootScheme = 'org-dartlang-app';
 class KernelBuilder implements Builder {
   @override
   final Map<String, List<String>> buildExtensions;
+
+  final bool useIncrementalCompiler;
 
   final String outputExtension;
 
@@ -60,8 +63,10 @@ class KernelBuilder implements Builder {
       @required this.summaryOnly,
       @required this.sdkKernelPath,
       @required this.outputExtension,
+      bool useIncrementalCompiler,
       String platformSdk})
       : platformSdk = platformSdk ?? sdkDir,
+        useIncrementalCompiler = useIncrementalCompiler ?? false,
         buildExtensions = {
           moduleExtension(platform): [outputExtension]
         };
@@ -77,8 +82,10 @@ class KernelBuilder implements Builder {
           buildStep: buildStep,
           summaryOnly: summaryOnly,
           outputExtension: outputExtension,
+          platform: platform,
           dartSdkDir: platformSdk,
-          sdkKernelPath: sdkKernelPath);
+          sdkKernelPath: sdkKernelPath,
+          useIncrementalCompiler: useIncrementalCompiler);
     } on MissingModulesException catch (e) {
       log.severe(e.toString());
     } on KernelException catch (e, s) {
@@ -97,8 +104,10 @@ Future<void> _createKernel(
     @required BuildStep buildStep,
     @required bool summaryOnly,
     @required String outputExtension,
+    @required DartPlatform platform,
     @required String dartSdkDir,
-    @required String sdkKernelPath}) async {
+    @required String sdkKernelPath,
+    @required bool useIncrementalCompiler}) async {
   var request = WorkRequest();
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
   var outputId = module.primarySource.changeExtension(outputExtension);
@@ -121,8 +130,18 @@ Future<void> _createKernel(
 
     packagesFile = await createPackagesFile(allAssetIds);
 
-    await _addRequestArguments(request, module, kernelDeps, sdkDir,
-        sdkKernelPath, outputFile, packagesFile, summaryOnly, buildStep);
+    await _addRequestArguments(
+        request,
+        module,
+        kernelDeps,
+        platform,
+        sdkDir,
+        sdkKernelPath,
+        outputFile,
+        packagesFile,
+        summaryOnly,
+        useIncrementalCompiler,
+        buildStep);
   });
 
   // We need to make sure and clean up the temp dir, even if we fail to compile.
@@ -240,11 +259,13 @@ Future<void> _addRequestArguments(
     WorkRequest request,
     Module module,
     Iterable<AssetId> transitiveKernelDeps,
+    DartPlatform platform,
     String sdkDir,
     String sdkKernelPath,
     File outputFile,
     File packagesFile,
     bool summaryOnly,
+    bool useIncrementalCompiler,
     AssetReader reader) async {
   request.arguments.addAll([
     '--dart-sdk-summary',
@@ -259,13 +280,18 @@ Future<void> _addRequestArguments(
     summaryOnly ? '--summary-only' : '--no-summary-only',
     '--libraries-file',
     p.toUri(p.join(sdkDir, 'lib', 'libraries.json')).toString(),
-    '--reuse-compiler-result',
-    '--use-incremental-compiler',
   ]);
+  if (useIncrementalCompiler) {
+    request.arguments.addAll([
+      '--reuse-compiler-result',
+      '--use-incremental-compiler',
+    ]);
+  }
+
   request.inputs.add(Input()
     ..path = '${Uri.file(p.join(sdkDir, sdkKernelPath))}'
     // Sdk updates fully invalidate the build anyways.
-    ..digest = [0]);
+    ..digest = md5.convert(utf8.encode(platform.name)).bytes);
 
   // Add all kernel outlines as summary inputs, with digests.
   var inputs = await Future.wait(transitiveKernelDeps.map((id) async {

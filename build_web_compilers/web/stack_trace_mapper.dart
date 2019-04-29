@@ -25,13 +25,30 @@ library stack_trace_mapper;
 import 'dart:convert';
 
 import 'package:js/js.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 import 'package:source_maps/source_maps.dart';
 import 'package:source_span/source_span.dart';
 import 'package:stack_trace/stack_trace.dart';
 
-import 'package:build_web_compilers/src/dev_compiler_builder.dart';
 import 'source_map_stack_trace.dart';
+
+/// Copied from `lib/src/dev_compiler_builder.dart`, these need to be kept in
+/// sync.
+///
+/// Given a list of [uris] as [String]s from a sourcemap, fixes them up so that
+/// they make sense in a browser context.
+///
+/// - Strips the scheme from the uri
+/// - Strips the top level directory if its not `packages`
+List<String> fixSourceMapSources(List<String> uris) {
+  return uris.map((source) {
+    var uri = Uri.parse(source);
+    var newSegments = uri.pathSegments.first == 'packages'
+        ? uri.pathSegments
+        : uri.pathSegments.skip(1);
+    return Uri(path: p.url.joinAll(['/'].followedBy(newSegments))).toString();
+  }).toList();
+}
 
 typedef ReadyCallback = void Function();
 
@@ -82,7 +99,7 @@ class LazyMapping extends Mapping {
             fixSourceMapSources((parsedMap['sources'] as List).cast());
         var mapping = parse(jsonEncode(parsedMap)) as SingleMapping
           ..targetUrl = uri
-          ..sourceRoot = '${path.dirname(uri)}/';
+          ..sourceRoot = '${p.dirname(uri)}/';
         _bundle.addMapping(mapping);
       }
     }

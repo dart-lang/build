@@ -23,19 +23,19 @@ final _processMode = stdin.hasTerminal
     : ProcessStartMode.detachedWithStdio;
 
 /// Completes once the dartdevk workers have been shut down.
-Future<Null> get dartdevkWorkersAreDone =>
-    _dartdevkWorkersAreDoneCompleter?.future ?? Future.value(null);
-Completer<Null> _dartdevkWorkersAreDoneCompleter;
+Future<void> get dartdevkWorkersAreDone =>
+    _dartdevkWorkersAreDoneCompleter?.future ?? Future.value();
+Completer<void> _dartdevkWorkersAreDoneCompleter;
 
 /// Completes once the dart2js workers have been shut down.
-Future<Null> get dart2jsWorkersAreDone =>
-    _dart2jsWorkersAreDoneCompleter?.future ?? Future.value(null);
-Completer<Null> _dart2jsWorkersAreDoneCompleter;
+Future<void> get dart2jsWorkersAreDone =>
+    _dart2jsWorkersAreDoneCompleter?.future ?? Future.value();
+Completer<void> _dart2jsWorkersAreDoneCompleter;
 
 /// Completes once the common frontend workers have been shut down.
-Future<Null> get frontendWorkersAreDone =>
-    _frontendWorkersAreDoneCompleter?.future ?? Future.value(null);
-Completer<Null> _frontendWorkersAreDoneCompleter;
+Future<void> get frontendWorkersAreDone =>
+    _frontendWorkersAreDoneCompleter?.future ?? Future.value();
+Completer<void> _frontendWorkersAreDoneCompleter;
 
 final int _defaultMaxWorkers = min((Platform.numberOfProcessors / 2).ceil(), 4);
 
@@ -56,7 +56,7 @@ final int _maxWorkersPerTask = () {
 
 /// Manages a shared set of persistent dartdevk workers.
 BazelWorkerDriver get _dartdevkDriver {
-  _dartdevkWorkersAreDoneCompleter ??= Completer<Null>();
+  _dartdevkWorkersAreDoneCompleter ??= Completer<void>();
   return __dartdevkDriver ??= BazelWorkerDriver(
       () => Process.start(
           p.join(sdkDir, 'bin', 'dart'),
@@ -83,7 +83,7 @@ final dartdevkDriverResource =
 
 /// Manages a shared set of persistent common frontend workers.
 BazelWorkerDriver get _frontendDriver {
-  _frontendWorkersAreDoneCompleter ??= Completer<Null>();
+  _frontendWorkersAreDoneCompleter ??= Completer<void>();
   return __frontendDriver ??= BazelWorkerDriver(
       () => Process.start(
           p.join(sdkDir, 'bin', 'dart'),
@@ -109,7 +109,7 @@ final frontendDriverResource =
 
 /// Manages a shared set of persistent dart2js workers.
 Dart2JsBatchWorkerPool get _dart2jsWorkerPool {
-  _dart2jsWorkersAreDoneCompleter ??= Completer<Null>();
+  _dart2jsWorkersAreDoneCompleter ??= Completer<void>();
   var librariesSpec = p.joinAll([sdkDir, 'lib', 'libraries.json']);
   return __dart2jsWorkerPool ??= Dart2JsBatchWorkerPool(() => Process.start(
       p.join(sdkDir, 'bin', 'dart'),
@@ -185,7 +185,7 @@ class Dart2JsBatchWorkerPool {
     }();
   }
 
-  Future<Null> terminateWorkers() async {
+  Future<void> terminateWorkers() async {
     var allWorkers = _allWorkers.toList();
     _allWorkers.clear();
     _availableWorkers.clear();

@@ -12,26 +12,34 @@ import 'package:watcher/watcher.dart';
 import '../constants.dart';
 import '../daemon_builder.dart';
 import '../data/build_target.dart';
+import 'file_wait.dart';
 import 'server.dart';
 
 /// Returns the current version of the running build daemon.
 ///
 /// Null if one isn't running.
-String runningVersion(String workingDirectory) {
+Future<String> runningVersion(String workingDirectory) async {
   var versionFile = File(versionFilePath(workingDirectory));
-  if (!versionFile.existsSync()) return null;
+  if (!await waitForFile(versionFile)) return null;
   return versionFile.readAsStringSync();
 }
 
 /// Returns the current options of the running build daemon.
 ///
 /// Null if one isn't running.
-Set<String> currentOptions(String workingDirectory) {
+Future<Set<String>> currentOptions(String workingDirectory) async {
   var optionsFile = File(optionsFilePath(workingDirectory));
-  if (!optionsFile.existsSync()) return Set();
+  if (!await waitForFile(optionsFile)) return Set();
   return optionsFile.readAsLinesSync().toSet();
 }
 
+/// The long running daemon process.
+///
+/// Obtains a file lock to ensure a single instance and writes various status
+/// files to be used by clients for connection.
+///
+/// Also starts a [Server] to listen for build target registration and event
+/// notification.
 class Daemon {
   final String _workingDirectory;
 

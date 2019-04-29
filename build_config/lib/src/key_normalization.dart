@@ -8,21 +8,33 @@ const _defaultTargetNamePlaceholder = r'$default';
 ///
 /// Example normalizations:
 ///
-///   - "some_builder" => "$packageName|some_builder"
-///   - "|some_builder" => "$packageName|some_builder"
-///   - "some_package|some_builder" => "some_package|some_builder"
+///   - "some_builder" => "$packageName:some_builder"
+///   - ":some_builder" => "$packageName:some_builder"
+///   - "some_package:some_builder" => "some_package:some_builder"
+///
+/// If the legacy separator `|` is used it will be transformed to `:`
 String normalizeBuilderKeyDefinition(String builderKey, String packageName) =>
-    _normalizeDefinition(builderKey, packageName, '|');
+    _normalizeDefinition(
+        builderKey.contains('|')
+            ? builderKey.replaceFirst('|', ':')
+            : builderKey,
+        packageName);
 
 /// Returns the normalized [builderKey] usage when used from [packageName].
 ///
 /// Example normalizations:
 ///
-///   - "some_package" => "some_package|some_package"
-///   - "|some_builder" => "$packageName|some_builder"
-///   - "some_package|some_builder" => "some_package|some_builder"
+///   - "some_package" => "some_package:some_package"
+///   - ":some_builder" => "$packageName:some_builder"
+///   - "some_package:some_builder" => "some_package:some_builder"
+///
+/// If the legacy separator `|` is used it will be transformed to `:`
 String normalizeBuilderKeyUsage(String builderKey, String packageName) =>
-    _normalizeUsage(builderKey, packageName, '|');
+    _normalizeUsage(
+        builderKey.contains('|')
+            ? builderKey.replaceFirst('|', ':')
+            : builderKey,
+        packageName);
 
 /// Returns the normalized [targetKey] definition when used from [packageName].
 ///
@@ -35,7 +47,7 @@ String normalizeBuilderKeyUsage(String builderKey, String packageName) =>
 String normalizeTargetKeyDefinition(String targetKey, String packageName) =>
     targetKey == _defaultTargetNamePlaceholder
         ? '$packageName:$packageName'
-        : _normalizeDefinition(targetKey, packageName, ':');
+        : _normalizeDefinition(targetKey, packageName);
 
 /// Returns the normalized [targetKey] usage when used from [packageName].
 ///
@@ -54,7 +66,7 @@ String normalizeTargetKeyUsage(String targetKey, String packageName) {
     case '$_defaultTargetNamePlaceholder:$_defaultTargetNamePlaceholder':
       return '$packageName:$packageName';
     default:
-      return _normalizeUsage(targetKey, packageName, ':');
+      return _normalizeUsage(targetKey, packageName);
   }
 }
 
@@ -67,9 +79,9 @@ String normalizeTargetKeyUsage(String targetKey, String packageName) {
 ///
 /// For example: If I depend on `angular` from `my_package` it is treated as a
 /// dependency on the globally unique `angular:angular`.
-String _normalizeUsage(String name, String packageName, String separator) {
-  if (name.startsWith(separator)) return '$packageName$name';
-  if (!name.contains(separator)) return '$name$separator$name';
+String _normalizeUsage(String name, String packageName) {
+  if (name.startsWith(':')) return '$packageName$name';
+  if (!name.contains(':')) return '$name:$name';
   return name;
 }
 
@@ -80,8 +92,8 @@ String _normalizeUsage(String name, String packageName, String separator) {
 ///
 /// For example: If I expose a builder `my_builder` within `my_package` it is
 /// turned into the globally unique `my_package|my_builder`.
-String _normalizeDefinition(String name, String packageName, String separator) {
-  if (name.startsWith(separator)) return '$packageName$name';
-  if (!name.contains(separator)) return '$packageName$separator$name';
+String _normalizeDefinition(String name, String packageName) {
+  if (name.startsWith(':')) return '$packageName$name';
+  if (!name.contains(':')) return '$packageName:$name';
   return name;
 }

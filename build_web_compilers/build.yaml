@@ -11,68 +11,71 @@ targets:
           - web/stack_trace_mapper.dart
       build_web_compilers|_stack_trace_mapper_copy:
         enabled: true
+      build_web_compilers|sdk_js_copy:
+        enabled: true
+      build_web_compilers|sdk_js_cleanup:
+        enabled: true
 builders:
-  dart2js_modules:
-      import: "package:build_web_compilers/builders.dart"
-      builder_factories:
-        - dart2jsMetaModuleBuilder
-        - dart2jsMetaModuleCleanBuilder
-        - dart2jsModuleBuilder
-      build_extensions:
-        $lib$:
-          - .dart2js.meta_module.raw
-          - .dart2js.meta_module.clean
-        .dart:
-          - .dart2js.module
-      is_optional: True
-      auto_apply: none
-      required_inputs: [".dart", ".module.library"]
-      applies_builders: ["build_modules|module_cleanup"]
-  ddc_modules:
-      import: "package:build_web_compilers/builders.dart"
-      builder_factories:
-        - ddcMetaModuleBuilder
-        - ddcMetaModuleCleanBuilder
-        - ddcModuleBuilder
-      build_extensions:
-        $lib$:
-          - .ddc.meta_module.raw
-          - .ddc.meta_module.clean
-        .dart:
-          - .ddc.module
-      is_optional: True
-      auto_apply: none
-      required_inputs: [".dart", ".module.library"]
-      applies_builders: ["build_modules|module_cleanup"]
-  ddc_kernel:
+  sdk_js_copy:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
-      - ddcKernelBuilder
+      - sdkJsCopyBuilder
     build_extensions:
-      .ddc.module:
-        - .ddc.dill
+      $lib$:
+        - lib/src/dev_compiler/dart_sdk.js
+        - lib/src/dev_compiler/require.js
+    is_optional: False
+    auto_apply: none
+    applies_builders: ["build_web_compilers|sdk_js_cleanup"]
+  dart2js_modules:
+    import: "package:build_web_compilers/builders.dart"
+    builder_factories:
+      - dart2jsMetaModuleBuilder
+      - dart2jsMetaModuleCleanBuilder
+      - dart2jsModuleBuilder
+    build_extensions:
+      $lib$:
+        - .dart2js.meta_module.raw
+        - .dart2js.meta_module.clean
+      .dart:
+        - .dart2js.module
     is_optional: True
     auto_apply: none
-    required_inputs:
-      - .ddc.module
+    required_inputs: [".dart", ".module.library"]
+    applies_builders: ["build_modules|module_cleanup"]
+  ddc_modules:
+    import: "package:build_web_compilers/builders.dart"
+    builder_factories:
+      - ddcMetaModuleBuilder
+      - ddcMetaModuleCleanBuilder
+      - ddcModuleBuilder
+    build_extensions:
+      $lib$:
+        - .ddc.meta_module.raw
+        - .ddc.meta_module.clean
+      .dart:
+        - .ddc.module
+    is_optional: True
+    auto_apply: none
+    required_inputs: [".dart", ".module.library"]
+    applies_builders: ["build_modules|module_cleanup"]
   ddc:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
+      - ddcKernelBuilder
       - ddcBuilder
     build_extensions:
       .ddc.module:
+        - .ddc.dill
         - .ddc.js.errors
         - .ddc.js
         - .ddc.js.map
     is_optional: True
     auto_apply: all_packages
     required_inputs:
-      - .dart
       - .ddc.module
-      - .ddc.dill
     applies_builders:
       - build_web_compilers|ddc_modules
-      - build_web_compilers|ddc_kernel
       # This isn't really the best place to apply these, but it is the only
       # place we can (its the only builder which runs on all packages).
       - build_web_compilers|dart2js_modules
@@ -99,7 +102,7 @@ builders:
       generate_for:
         include:
           - web/**
-          - test/**_test.dart
+          - test/**.dart.browser_test.dart
           - example/**
           - benchmark/**
         exclude:
@@ -131,6 +134,12 @@ post_process_builders:
   dart_source_cleanup:
     import: "package:build_web_compilers/builders.dart"
     builder_factory: dartSourceCleanup
+    defaults:
+      release_options:
+        enabled: true
+  sdk_js_cleanup:
+    import: "package:build_web_compilers/builders.dart"
+    builder_factory: sdkJsCleanupBuilder
     defaults:
       release_options:
         enabled: true

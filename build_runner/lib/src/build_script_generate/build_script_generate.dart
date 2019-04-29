@@ -151,15 +151,15 @@ Expression _applyBuilder(BuilderDefinition definition) {
         refer('InputSet', 'package:build_config/build_config.dart')
             .constInstance([], inputSetArgs);
   }
-  if (!identical(definition.defaults?.options, BuilderOptions.empty)) {
+  if (definition.defaults?.options?.isNotEmpty ?? false) {
     namedArgs['defaultOptions'] =
         _constructBuilderOptions(definition.defaults.options);
   }
-  if (!identical(definition.defaults?.devOptions, BuilderOptions.empty)) {
+  if (definition.defaults?.devOptions?.isNotEmpty ?? false) {
     namedArgs['defaultDevOptions'] =
         _constructBuilderOptions(definition.defaults.devOptions);
   }
-  if (!identical(definition.defaults?.releaseOptions, BuilderOptions.empty)) {
+  if (definition.defaults?.releaseOptions?.isNotEmpty ?? false) {
     namedArgs['defaultReleaseOptions'] =
         _constructBuilderOptions(definition.defaults.releaseOptions);
   }
@@ -190,15 +190,15 @@ Expression _applyPostProcessBuilder(PostProcessBuilderDefinition definition) {
       inputSetArgs['exclude'] =
           literalConstList(definition.defaults.generateFor.exclude);
     }
-    if (!identical(definition.defaults?.options, BuilderOptions.empty)) {
+    if (definition.defaults?.options?.isNotEmpty ?? false) {
       namedArgs['defaultOptions'] =
           _constructBuilderOptions(definition.defaults.options);
     }
-    if (!identical(definition.defaults?.devOptions, BuilderOptions.empty)) {
+    if (definition.defaults?.devOptions?.isNotEmpty ?? false) {
       namedArgs['defaultDevOptions'] =
           _constructBuilderOptions(definition.defaults.devOptions);
     }
-    if (!identical(definition.defaults?.releaseOptions, BuilderOptions.empty)) {
+    if (definition.defaults?.releaseOptions?.isNotEmpty ?? false) {
       namedArgs['defaultReleaseOptions'] =
           _constructBuilderOptions(definition.defaults.releaseOptions);
     }
@@ -252,6 +252,6 @@ Expression _findToExpression(BuilderDefinition definition) {
 }
 
 /// An expression creating a [BuilderOptions] from a json string.
-Expression _constructBuilderOptions(BuilderOptions options) =>
+Expression _constructBuilderOptions(Map<String, dynamic> options) =>
     refer('BuilderOptions', 'package:build/build.dart')
-        .newInstance([literalMap(options.config)]);
+        .newInstance([literalMap(options)]);

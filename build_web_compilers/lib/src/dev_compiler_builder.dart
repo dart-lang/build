@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
@@ -17,14 +16,17 @@ import 'common.dart';
 import 'errors.dart';
 import 'platforms.dart';
 
-final _sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
-
 const jsModuleErrorsExtension = '.ddc.js.errors';
 const jsModuleExtension = '.ddc.js';
 const jsSourceMapExtension = '.ddc.js.map';
 
 /// A builder which can output ddc modules!
 class DevCompilerBuilder implements Builder {
+  final bool useIncrementalCompiler;
+
+  DevCompilerBuilder({bool useIncrementalCompiler})
+      : useIncrementalCompiler = useIncrementalCompiler ?? true;
+
   @override
   final buildExtensions = {
     moduleExtension(ddcPlatform): [
@@ -47,7 +49,7 @@ class DevCompilerBuilder implements Builder {
     }
 
     try {
-      await _createDevCompilerModule(module, buildStep);
+      await _createDevCompilerModule(module, buildStep, useIncrementalCompiler);
     } on DartDevcCompilationException catch (e) {
       await handleError(e);
     } on MissingModulesException catch (e) {
@@ -57,7 +59,8 @@ class DevCompilerBuilder implements Builder {
 }
 
 /// Compile [module] with the dev compiler.
-Future<void> _createDevCompilerModule(Module module, BuildStep buildStep,
+Future<void> _createDevCompilerModule(
+    Module module, BuildStep buildStep, bool useIncrementalCompiler,
     {bool debugMode = true}) async {
   var transitiveDeps = await buildStep.trackStage('CollectTransitiveDeps',
       () => module.computeTransitiveDependencies(buildStep));
@@ -72,7 +75,7 @@ Future<void> _createDevCompilerModule(Module module, BuildStep buildStep,
       'EnsureAssets', () => scratchSpace.ensureAssets(allAssetIds, buildStep));
   var jsId = module.primarySource.changeExtension(jsModuleExtension);
   var jsOutputFile = scratchSpace.fileFor(jsId);
-  var sdkSummary = p.url.join(_sdkDir, 'lib/_internal/ddc_sdk.dill');
+  var sdkSummary = p.url.join(sdkDir, 'lib/_internal/ddc_sdk.dill');
 
   var request = WorkRequest()
     ..arguments.addAll([
@@ -112,11 +115,16 @@ Future<void> _createDevCompilerModule(Module module, BuildStep buildStep,
     multiRootScheme,
     '--multi-root',
     '.',
-    '--reuse-compiler-result',
-    '--use-incremental-compiler',
     '--track-widget-creation',
     '--inline-source-map',
   ]);
+
+  if (useIncrementalCompiler) {
+    request.arguments.addAll([
+      '--reuse-compiler-result',
+      '--use-incremental-compiler',
+    ]);
+  }
 
   // And finally add all the urls to compile, using the package: path for
   // files under lib and the full absolute path for other files.
@@ -169,6 +177,8 @@ Future<void> _createDevCompilerModule(Module module, BuildStep buildStep,
   }
 }
 
+/// Copied to `web/stack_trace_mapper.dart`, these need to be kept in sync.
+///
 /// Given a list of [uris] as [String]s from a sourcemap, fixes them up so that
 /// they make sense in a browser context.
 ///

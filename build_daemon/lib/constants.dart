@@ -11,7 +11,7 @@ const versionSkew = 'DIFFERENT RUNNING VERSION';
 const optionsSkew = 'DIFFERENT OPTIONS';
 
 // TODO(grouma) - use pubspec version when this is open sourced.
-const currentVersion = '5.0.0';
+const currentVersion = '6.0.0';
 
 var _username = Platform.environment['USER'] ?? '';
 String daemonWorkspace(String workingDirectory) {

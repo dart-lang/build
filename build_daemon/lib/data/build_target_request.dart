@@ -8,6 +8,9 @@ import 'build_target.dart';
 
 part 'build_target_request.g.dart';
 
+/// Registers a build target to be built by the daemon.
+///
+/// Note this does not trigger a build.
 abstract class BuildTargetRequest
     implements Built<BuildTargetRequest, BuildTargetRequestBuilder> {
   static Serializer<BuildTargetRequest> get serializer =>

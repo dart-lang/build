@@ -1,3 +1,9 @@
+## 1.1.4
+
+- Internal cleanup: use "strict raw types".
+- Some return types for interfaces to implement changed from `Future<dynamic>`
+  to `Future<void>`.
+
 ## 1.1.3
 
 - Update the minimum sdk constraint to 2.1.0.

@@ -7,6 +7,7 @@ import 'package:built_value/serializer.dart';
 
 part 'shutdown_notification.g.dart';
 
+/// An event provided by the daemon to clients immediately before shutdown.
 abstract class ShutdownNotification
     implements Built<ShutdownNotification, ShutdownNotificationBuilder> {
   static Serializer<ShutdownNotification> get serializer =>

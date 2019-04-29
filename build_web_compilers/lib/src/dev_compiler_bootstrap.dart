@@ -29,7 +29,24 @@ Future<void> bootstrapDdc(BuildStep buildStep) async {
       .decode(await buildStep.readAsString(moduleId)) as Map<String, dynamic>);
 
   // First, ensure all transitive modules are built.
-  var transitiveDeps = await _ensureTransitiveModules(module, buildStep);
+  List<Module> transitiveDeps;
+  try {
+    transitiveDeps = await _ensureTransitiveModules(module, buildStep);
+  } on UnsupportedModules catch (e) {
+    var librariesString = (await e.exactLibraries(buildStep).toList())
+        .map((lib) => AssetId(lib.id.package,
+            lib.id.path.replaceFirst(moduleLibraryExtension, '.dart')))
+        .join('\n');
+    log.warning('''
+Skipping compiling ${buildStep.inputId} with ddc because some of its
+transitive libraries have sdk dependencies that not supported on this platform:
+
+$librariesString
+
+https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-skipped-compiling-warnings
+''');
+    return;
+  }
   var jsId = module.primarySource.changeExtension(jsModuleExtension);
   var appModuleName = ddcModuleName(jsId);
   var appDigestsOutput =
@@ -51,8 +68,8 @@ Future<void> bootstrapDdc(BuildStep buildStep) async {
   }());
 
   // Map from module name to module path for custom modules.
-  var modulePaths =
-      SplayTreeMap.of({'dart_sdk': r'packages/$sdk/dev_compiler/amd/dart_sdk'});
+  var modulePaths = SplayTreeMap.of(
+      {'dart_sdk': r'packages/build_web_compilers/src/dev_compiler/dart_sdk'});
   var transitiveJsModules = [jsId]..addAll(transitiveDeps
       .map((dep) => dep.primarySource.changeExtension(jsModuleExtension)));
   for (var jsId in transitiveJsModules) {
@@ -108,19 +125,24 @@ Future<void> bootstrapDdc(BuildStep buildStep) async {
 final _lazyBuildPool = Pool(16);
 
 /// Ensures that all transitive js modules for [module] are available and built.
+///
+/// Throws an [UnsupportedModules] exception if there are any
+/// unsupported modules.
 Future<List<Module>> _ensureTransitiveModules(
-    Module module, AssetReader reader) async {
+    Module module, BuildStep buildStep) async {
   // Collect all the modules this module depends on, plus this module.
-  var transitiveDeps = await module.computeTransitiveDependencies(reader);
+  var transitiveDeps = await module.computeTransitiveDependencies(buildStep,
+      throwIfUnsupported: true);
   var jsModules = transitiveDeps
       .map((module) => module.primarySource.changeExtension(jsModuleExtension))
       .toList()
         ..add(module.primarySource.changeExtension(jsModuleExtension));
   // Check that each module is readable, and warn otherwise.
   await Future.wait(jsModules.map((jsId) async {
-    if (await _lazyBuildPool.withResource(() => reader.canRead(jsId))) return;
+    if (await _lazyBuildPool.withResource(() => buildStep.canRead(jsId)))
+      return;
     var errorsId = jsId.addExtension('.errors');
-    await reader.canRead(errorsId);
+    await buildStep.canRead(errorsId);
     log.warning('Unable to read $jsId, check your console or the '
         '`.dart_tool/build/generated/${errorsId.package}/${errorsId.path}` '
         'log file.');
@@ -170,7 +192,8 @@ String _entryPointJs(String bootstrapModuleName) => '''
 
   var mapperUri = baseUrl + "packages/build_web_compilers/src/" +
       "dev_compiler_stack_trace/stack_trace_mapper.dart.js";
-  var requireUri = baseUrl + "packages/\$sdk/dev_compiler/amd/require.js";
+  var requireUri = baseUrl +
+      "packages/build_web_compilers/src/dev_compiler/require.js";
   var mainUri = _currentDirectory + "$bootstrapModuleName";
 
   if (typeof document != 'undefined') {
