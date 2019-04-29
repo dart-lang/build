@@ -3,13 +3,13 @@
 Outputs to `source` will generally be published with the package on pub. **This
 can be risky.** If the generated code depends on _any_ details from the current
 pub solve - that is it reads information from dependencies - then a consumer of
-the package which got different versions of dependencies in their pub solve
+the package which has different versions of dependencies in their pub solve
 **may be broken**. If the generated code imports any libraries, including from
 the package providing the builder, it must only use the API surface area which
 is guaranteed to not break without a major version bump.
 
-Outputs to `cache` will never be published with the package and if they are
-required to compile or run then the build system must be used by every consumer
+Outputs to `cache` will never be published with the package, and if they are
+required to compile or run, then the build system must be used by every consumer
 of the code. **This is always safe**, but may place limitations on the end user.
 Any outputs which are used _during_ a build to produce other outputs, but don't
 need to be compiled or seen by the user, should also be built to `cache`.
