@@ -5,11 +5,11 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:checked_yaml/checked_yaml.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
-import 'package:pubspec_parse/pubspec_parse.dart';
-import 'package:yaml/yaml.dart';
+import 'package:pubspec_parse/pubspec_parse.dart' hide ParsedYamlException;
 
 import 'build_target.dart';
 import 'builder_definition.dart';
@@ -90,10 +90,14 @@ class BuildConfig {
   factory BuildConfig.parse(
       String packageName, Iterable<String> dependencies, String configYaml) {
     try {
-      var parsed = loadYaml(configYaml) as Map;
-      return BuildConfig.fromMap(packageName, dependencies, parsed ?? const {});
-    } on CheckedFromJsonException catch (e) {
-      throw ArgumentError(_prettyPrintCheckedFromJsonException(e));
+      return checkedYamlDecode(
+        configYaml,
+        (map) =>
+            BuildConfig.fromMap(packageName, dependencies, map ?? const {}),
+        allowNull: true,
+      );
+    } on ParsedYamlException catch (e) {
+      throw ArgumentError(e.formattedMessage);
     }
   }
 
@@ -150,42 +154,6 @@ Map<String, T> _normalizeBuilderDefinitions<T>(
         Map<String, T> builderDefinitions, String packageName) =>
     builderDefinitions.map((key, definition) =>
         MapEntry(normalizeBuilderKeyDefinition(key, packageName), definition));
-
-String _prettyPrintCheckedFromJsonException(CheckedFromJsonException err) {
-  var yamlMap = err.map as YamlMap;
-  var message = 'Could not create `${err.className}`.';
-
-  var innerError = err.innerError;
-  if (innerError is UnrecognizedKeysException) {
-    message = 'Invalid key(s), could not create ${err.className}.\n'
-        'Supported keys are [${innerError.allowedKeys.join(', ')}].\n';
-    for (var key in innerError.unrecognizedKeys) {
-      var yamlKey = yamlMap.nodes.keys
-          .singleWhere((k) => (k as YamlScalar).value == key) as YamlScalar;
-      message += '${yamlKey.span.message('')}\n';
-    }
-  } else if (innerError is MissingRequiredKeysException) {
-    message = 'Missing key(s), could not create ${err.className}.\n'
-        'Missing keys are [${innerError.missingKeys.join(', ')}].\n';
-    message = yamlMap.span.message(message);
-  } else {
-    var yamlValue = yamlMap.nodes[err.key];
-
-    if (yamlValue == null) {
-      assert(err.key == null);
-      message = '${yamlMap.span.message(message)} ${err.innerError}';
-    } else {
-      message = '$message\nUnsupported value for `${err.key}`: ';
-      if (err.message != null) {
-        message += '${err.message}\n';
-      } else {
-        message += '${err.innerError}\n';
-      }
-      message = yamlValue.span.message(message);
-    }
-  }
-  return message;
-}
 
 Map<String, BuildTarget> _buildTargetsFromJson(Map json) {
   var targets = json.map((key, target) => MapEntry(
