@@ -14,6 +14,7 @@
 
 export 'src/mock.dart'
     show
+        Fake,
         Mock,
         named,
 

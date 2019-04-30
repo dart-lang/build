@@ -1,3 +1,8 @@
+## 4.1.0
+
+* Add a `Fake` class for implementing a subset of a class API as overrides
+  without misusing the `Mock` class.
+
 ## 4.0.0
 
 * Replace the dependency on the
