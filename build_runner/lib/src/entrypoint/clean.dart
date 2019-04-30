@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
@@ -12,8 +13,12 @@ import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:logging/logging.dart';
 
 import '../logging/std_io_logging.dart';
+import 'base_command.dart';
 
 class CleanCommand extends Command<int> {
+  @override
+  final argParser = ArgParser(usageLineLength: lineLength);
+
   @override
   String get name => 'clean';
 
