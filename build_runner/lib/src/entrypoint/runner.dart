@@ -10,6 +10,7 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'build.dart';
 import 'daemon.dart';
 import 'doctor.dart';
+import 'run_script.dart';
 import 'serve.dart';
 import 'test.dart';
 import 'watch.dart';
@@ -26,6 +27,7 @@ class BuildCommandRunner extends CommandRunner<int> {
     addCommand(BuildCommand());
     addCommand(DaemonCommand());
     addCommand(DoctorCommand());
+    addCommand(RunCommand());
     addCommand(ServeCommand());
     addCommand(TestCommand(packageGraph));
     addCommand(WatchCommand());
