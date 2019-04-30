@@ -1,5 +1,3 @@
-# build_vm_compilers
-
 <p align="center">
   Vm compilers for users of <a href="https://pub.dartlang.org/packages/build"><code>package:build</code></a>.
   <br>
