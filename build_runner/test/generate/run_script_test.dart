@@ -93,7 +93,7 @@ main(List<String> args) async {
       expect(result.exitCode, ExitCode.usage.code,
           reason: result.stderr as String);
       expect(result.stdout,
-          contains('is not a valid Dart file, and cannot be run in the VM.'));
+          contains('is not a valid Dart file and cannot be run in the VM.'));
     });
 
     test('target file must actually exist', () async {
