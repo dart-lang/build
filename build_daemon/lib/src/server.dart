@@ -19,8 +19,13 @@ import '../data/build_request.dart';
 import '../data/build_target.dart';
 import '../data/build_target_request.dart';
 import '../data/serializers.dart';
+import '../data/shutdown_notification.dart';
 import 'managers/build_target_manager.dart';
 
+/// A server which communicates with build daemon clients over websockets.
+///
+/// Handles notifying clients of logs and results for registered build targets.
+/// Note the server will only notify clients of pertinent events.
 class Server {
   final _isDoneCompleter = Completer();
   final BuildTargetManager _buildTargetManager;
@@ -54,6 +59,7 @@ class Server {
 
   Future<void> get onDone => _isDoneCompleter.future;
 
+  /// Starts listening for build daemon clients.
   Future<int> listen() async {
     var handler = webSocketHandler((WebSocketChannel channel) async {
       channel.stream.listen((message) async {
@@ -77,7 +83,12 @@ class Server {
     return _server.port;
   }
 
-  Future<void> stop() async {
+  Future<void> stop({String message}) async {
+    if (message?.isNotEmpty ?? false) {
+      for (var connection in _buildTargetManager.allChannels) {
+        connection.sink.add(ShutdownNotification((b) => b.message));
+      }
+    }
     _timeout.cancel();
     await _server?.close(force: true);
     await _builder?.stop();

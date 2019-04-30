@@ -1,3 +1,22 @@
+## 0.6.0
+
+- Add retry logic to the state file helpers `runningVersion` and
+  `currentOptions`.
+- `DaemonBuilder` is now an abstract class.
+- Significantly increase doc comment coverage.
+
+## 0.5.1
+
+- Support shutting down the daemon with a notification.
+
+## 0.5.0
+
+- Add OutputLocation to DefaultBuildTarget.
+
+## 0.4.2
+
+- Enable configuring the environment for the daemon.
+
 ## 0.4.1
 
 - Support closing a daemon client.

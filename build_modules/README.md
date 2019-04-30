@@ -1,7 +1,5 @@
-# build_modules
-
 <p align="center">
-  Module builders for web, used by <a href="https://pub.dartlang.org/packages/build_web_compilers"><code>package:build_web_compilers</code></a>.
+  Module builders for modular compilation pipelines.
   <br>
   <a href="https://travis-ci.org/dart-lang/build">
     <img src="https://travis-ci.org/dart-lang/build.svg?branch=master" alt="Build Status" />
@@ -20,14 +18,17 @@
   </a>
 </p>
 
-This package provides generic module builders which can be used to create
-custom web compilation pipelines. It is used by [`build_web_compilers`][] 
-package which provides standard builders for DDC and dart2js.
+This package provides generic module builders which can be used to create custom
+compilation pipelines. It is used by [`build_web_compilers`][] and
+[`build_vm_compilers`][] package which provides standard builders for the web
+and vm platforms.
 
 ## Usage
 
-There should be no need to import this package directly unless you are developing
-a custom builder for web. See documentation in [`build_web_compilers`][]
-for more details on building your Dart code with DDC and dart2js.
+There should be no need to import this package directly unless you are
+developing a custom compiler pipeline. See documentation in
+[`build_web_compilers`][] and [`build_vm_compilers`][] for more details on
+building your Dart code.
 
 [`build_web_compilers`]: https://pub.dartlang.org/packages/build_web_compilers
+[`build_vm_compilers`]: https://pub.dartlang.org/packages/build_vm_compilers

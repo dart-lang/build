@@ -5,19 +5,17 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
-import 'package:build/build.dart';
-import 'package:build_config/build_config.dart';
-import 'package:glob/glob.dart';
-import 'package:pedantic/pedantic.dart';
-import 'package:test/test.dart';
-
-import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_runner_core/src/asset_graph/graph.dart';
-import 'package:build_runner_core/src/asset_graph/node.dart';
-
 import 'package:_test_common/build_configs.dart';
 import 'package:_test_common/common.dart';
 import 'package:_test_common/package_graphs.dart';
+import 'package:build/build.dart';
+import 'package:build_config/build_config.dart';
+import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:glob/glob.dart';
+import 'package:pedantic/pedantic.dart';
+import 'package:test/test.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests
@@ -26,9 +24,9 @@ void main() {
   final copyABuilderApplication = applyToRoot(testBuilder);
   final requiresPostProcessBuilderApplication = apply(
       'test_builder', [(_) => testBuilder], toRoot(),
-      appliesBuilders: ['a|post_copy_builder'], hideOutput: false);
+      appliesBuilders: ['a:post_copy_builder'], hideOutput: false);
   final postCopyABuilderApplication = applyPostProcess(
-      'a|post_copy_builder',
+      'a:post_copy_builder',
       (options) => CopyingPostProcessBuilder(
           outputExtension: options.config['extension'] as String ?? '.post'));
   final globBuilder = GlobbingBuilder(Glob('**.txt'));
@@ -185,7 +183,7 @@ void main() {
               toRoot(),
               isOptional: true),
           apply(
-              'a|only_on_1',
+              'a:only_on_1',
               [
                 (_) => TestBuilder(
                     buildExtensions: appendExtension('.copy', from: '.1'))
@@ -235,14 +233,14 @@ void main() {
         var builders = [
           copyABuilderApplication,
           apply(
-              'a|clone_txt',
+              'a:clone_txt',
               [(_) => TestBuilder(buildExtensions: appendExtension('.clone'))],
               toRoot(),
               isOptional: true,
               hideOutput: false,
-              appliesBuilders: ['a|post_copy_builder']),
+              appliesBuilders: ['a:post_copy_builder']),
           apply(
-              'a|copy_web_clones',
+              'a:copy_web_clones',
               [
                 (_) => TestBuilder(
                     buildExtensions: appendExtension('.copy', numCopies: 2))
@@ -257,13 +255,13 @@ void main() {
               'a': {
                 'sources': ['**'],
                 'builders': {
-                  'a|clone_txt': {
+                  'a:clone_txt': {
                     'generate_for': ['**/*.txt']
                   },
-                  'a|copy_web_clones': {
+                  'a:copy_web_clones': {
                     'generate_for': ['web/*.txt.clone']
                   },
-                  'a|post_copy_builder': {
+                  'a:post_copy_builder': {
                     'options': {'extension': '.custom.post'},
                     'generate_for': ['web/*.txt']
                   }
@@ -472,7 +470,7 @@ void main() {
         await testBuilders(
             [
               apply('', [(_) => TestBuilder()], toPackage('b'),
-                  hideOutput: true, appliesBuilders: ['a|post_copy_builder']),
+                  hideOutput: true, appliesBuilders: ['a:post_copy_builder']),
               postCopyABuilderApplication,
             ],
             {'b|lib/b.txt': 'b'},
@@ -707,9 +705,7 @@ void main() {
       }, outputs: {
         r'$$a|web/a.txt.copy': 'a',
         r'$$a|test/b.txt.copy': 'b',
-      }, buildDirs: [
-        'web'
-      ], verbose: true);
+      }, buildDirs: Set.of([BuildDirectory('web')]), verbose: true);
     });
 
     test('build to source builders are always ran regardless of buildDirs',
@@ -723,9 +719,7 @@ void main() {
       }, outputs: {
         r'a|test/a.txt.copy': 'a',
         r'a|web/a.txt.copy': 'a',
-      }, buildDirs: [
-        'web'
-      ], verbose: true);
+      }, buildDirs: Set.of([BuildDirectory('web')]), verbose: true);
     });
 
     test('can output performance logs', () async {
@@ -1301,6 +1295,24 @@ void main() {
             finalGraph.get(AssetId('a', 'web/a.g$i')) as GeneratedAssetNode;
         expect(node.isFailure, isTrue);
       }
+    });
+
+    test('a glob should not be an output of an anchor node', () async {
+      // https://github.com/dart-lang/build/issues/2017
+      var builders = [
+        apply(
+            'test_builder',
+            [
+              (_) => TestBuilder(build: (buildStep, _) {
+                    buildStep.findAssets(Glob('**'));
+                  })
+            ],
+            toRoot(),
+            appliesBuilders: ['a|copy_builder']),
+        applyPostProcess('a|copy_builder', (_) => CopyingPostProcessBuilder())
+      ];
+      // A build does not crash in `_cleanUpStaleOutputs`
+      await testBuilders(builders, {'a|lib/a.txt': 'a'});
     });
   });
 }

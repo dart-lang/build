@@ -24,21 +24,21 @@ void main() {
   tearDown(() => stdoutLines.cancel());
 
   test('Can give the user interactive prompts', () async {
-    await expectEmits(stdoutLines, contains('Select an option!'));
-    await expectEmits(stdoutLines, contains('1 - a'));
-    await expectEmits(stdoutLines, contains('2 - b'));
-    await expectEmits(stdoutLines, contains('3 - c'));
+    await _expectEmits(stdoutLines, contains('Select an option!'));
+    await _expectEmits(stdoutLines, contains('1 - a'));
+    await _expectEmits(stdoutLines, contains('2 - b'));
+    await _expectEmits(stdoutLines, contains('3 - c'));
 
     process.stdin.writeln('4');
     expect(await stdoutLines.next, contains('Unrecognized option 4'));
 
     process.stdin.writeln('3');
-    await expectEmits(stdoutLines, contains('2'));
+    await _expectEmits(stdoutLines, contains('2'));
     await process.exitCode;
   });
 }
 
-Future<Null> expectEmits(StreamQueue<String> stream, Matcher line) async {
+Future<void> _expectEmits(StreamQueue<String> stream, Matcher line) async {
   while (true) {
     if (line.matches(await stream.next, null)) {
       return;

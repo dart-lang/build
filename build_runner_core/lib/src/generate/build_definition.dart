@@ -439,7 +439,7 @@ class _Loader {
 
   /// Handles cleanup of pre-existing outputs for initial builds (where there is
   /// no cached graph).
-  Future<Null> _initialBuildCleanup(
+  Future<void> _initialBuildCleanup(
       Set<AssetId> conflictingAssets, RunnerAssetWriter writer) async {
     if (conflictingAssets.isEmpty) return;
 

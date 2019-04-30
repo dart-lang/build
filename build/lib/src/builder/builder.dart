@@ -58,4 +58,4 @@ class BuilderOptions {
 }
 
 /// Creates a [Builder] honoring the configuation in [options].
-typedef Builder BuilderFactory(BuilderOptions options);
+typedef BuilderFactory = Builder Function(BuilderOptions options);

@@ -42,7 +42,7 @@ class BuildStepImpl implements BuildStep {
   final Set<AssetId> _expectedOutputs;
 
   /// The result of any writes which are starting during this step.
-  final _writeResults = <Future<Result>>[];
+  final _writeResults = <Future<Result<void>>>[];
 
   /// Used internally for reading files.
   final AssetReader _reader;
@@ -109,7 +109,7 @@ class BuildStepImpl implements BuildStep {
   }
 
   @override
-  Future writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
+  Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
     if (_isComplete) throw BuildStepCompletedException();
     _checkOutput(id);
     var done =
@@ -119,7 +119,7 @@ class BuildStepImpl implements BuildStep {
   }
 
   @override
-  Future writeAsString(AssetId id, FutureOr<String> content,
+  Future<void> writeAsString(AssetId id, FutureOr<String> content,
       {Encoding encoding = utf8}) {
     if (_isComplete) throw BuildStepCompletedException();
     _checkOutput(id);
@@ -140,7 +140,8 @@ class BuildStepImpl implements BuildStep {
   T trackStage<T>(String label, action, {bool isExternal = false}) =>
       _stageTracker.trackStage(label, action, isExternal: isExternal);
 
-  Future _futureOrWrite<T>(FutureOr<T> content, Future write(T content)) =>
+  Future<void> _futureOrWrite<T>(
+          FutureOr<T> content, Future<void> write(T content)) =>
       (content is Future<T>) ? content.then(write) : write(content as T);
 
   /// Waits for work to finish and cleans up resources.
@@ -148,7 +149,7 @@ class BuildStepImpl implements BuildStep {
   /// This method should be called after a build has completed. After the
   /// returned [Future] completes then all outputs have been written and the
   /// [Resolver] for this build step - if any - has been released.
-  Future complete() async {
+  Future<void> complete() async {
     _isComplete = true;
     await Future.wait(_writeResults.map(Result.release));
     (await _resolver)?.release();

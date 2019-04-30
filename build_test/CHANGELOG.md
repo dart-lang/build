@@ -1,3 +1,13 @@
+## 0.10.7+1
+
+- Allow `build_config` `0.4.x`.
+
+## 0.10.7
+
+- Support the latest version of `package:html`.
+- Only generate bootstrap scripts for supported platforms based on `TestOn`
+  annotations.
+
 ## 0.10.6
 
 - Allow build_resolvers version `1.0.0`.

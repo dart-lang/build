@@ -5,42 +5,17 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:async/async.dart';
 import 'package:build/build.dart';
 
-import 'meta_module.dart';
 import 'meta_module_clean_builder.dart';
+import 'module_cache.dart';
+import 'module_library.dart';
+import 'module_library_builder.dart' show moduleLibraryExtension;
 import 'modules.dart';
 import 'platform.dart';
 
 /// The extension for serialized module assets.
 String moduleExtension(DartPlatform platform) => '.${platform.name}.module';
-
-/// A [Resource] that provides a [_CleanMetaModuleCache].
-final _cleanMetaModules = Resource<_CleanMetaModuleCache>(
-    () => _CleanMetaModuleCache(),
-    dispose: (c) => c.dispose());
-
-/// Safely caches deserialized [MetaModule] objects by their [AssetId].
-///
-/// Tracks access to assets via [BuildStep.canRead] calls.
-class _CleanMetaModuleCache {
-  final _modules = <AssetId, Future<Result<MetaModule>>>{};
-
-  void dispose() => _modules.clear();
-
-  Future<MetaModule> find(
-      DartPlatform platform, String package, AssetReader reader) async {
-    var cleanMetaAsset =
-        AssetId(package, 'lib/${metaModuleCleanExtension(platform)}');
-    if (!await reader.canRead(cleanMetaAsset)) return null;
-    var metaResult = _modules.putIfAbsent(
-        cleanMetaAsset,
-        () => Result.capture(reader.readAsString(cleanMetaAsset).then((c) =>
-            MetaModule.fromJson(jsonDecode(c) as Map<String, dynamic>))));
-    return Result.release(metaResult);
-  }
-}
 
 /// Creates `.module` files for any `.dart` file that is the primary dart
 /// source of a [Module].
@@ -57,12 +32,24 @@ class ModuleBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    var cleanMetaModules = await buildStep.fetchResource(_cleanMetaModules);
-    var metaModule = await cleanMetaModules.find(
-        _platform, buildStep.inputId.package, buildStep);
-    final outputModule = metaModule.modules.firstWhere(
+    final cleanMetaModules = await buildStep.fetchResource(metaModuleCache);
+    final metaModule = await cleanMetaModules.find(
+        AssetId(buildStep.inputId.package,
+            'lib/${metaModuleCleanExtension(_platform)}'),
+        buildStep);
+    var outputModule = metaModule.modules.firstWhere(
         (m) => m.primarySource == buildStep.inputId,
         orElse: () => null);
+    if (outputModule == null) {
+      final serializedLibrary = await buildStep.readAsString(
+          buildStep.inputId.changeExtension(moduleLibraryExtension));
+      final libraryModule =
+          ModuleLibrary.deserialize(buildStep.inputId, serializedLibrary);
+      if (libraryModule.isEntryPoint) {
+        outputModule = metaModule.modules
+            .firstWhere((m) => m.sources.contains(buildStep.inputId));
+      }
+    }
     if (outputModule == null) return;
     await buildStep.writeAsString(
         buildStep.inputId.changeExtension(moduleExtension(_platform)),

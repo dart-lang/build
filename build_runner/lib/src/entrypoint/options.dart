@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:build_config/build_config.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
@@ -45,10 +46,8 @@ class SharedOptions {
   /// Read `build.$configKey.yaml` instead of `build.yaml`.
   final String configKey;
 
-  /// A mapping of output paths to root input directory.
-  ///
-  /// If null, no directory will be created.
-  final Map<String, String> outputMap;
+  /// A set of targets to build with their corresponding output locations.
+  final Set<BuildDirectory> buildDirs;
 
   /// Whether or not the output directories should contain only symlinks,
   /// or full copies of all files.
@@ -74,28 +73,23 @@ class SharedOptions {
 
   final bool isReleaseBuild;
 
-  /// The directories that should be built.
-  final List<String> buildDirs;
-
   SharedOptions._({
     @required this.deleteFilesByDefault,
     @required this.enableLowResourcesMode,
     @required this.configKey,
-    @required this.outputMap,
+    @required this.buildDirs,
     @required this.outputSymlinksOnly,
     @required this.trackPerformance,
     @required this.skipBuildScriptCheck,
     @required this.verbose,
     @required this.builderConfigOverrides,
     @required this.isReleaseBuild,
-    @required this.buildDirs,
     @required this.logPerformanceDir,
   });
 
   factory SharedOptions.fromParsedArgs(ArgResults argResults,
       Iterable<String> positionalArgs, String rootPackage, Command command) {
-    var outputMap = _parseOutputMap(argResults);
-    var buildDirs = _buildDirsFromOutputMap(outputMap);
+    var buildDirs = _parseBuildDirs(argResults);
     for (var arg in positionalArgs) {
       var parts = p.split(arg);
       if (parts.length > 1) {
@@ -103,14 +97,14 @@ class SharedOptions {
             'Only top level directories are allowed as positional args',
             command.usage);
       }
-      buildDirs.add(arg);
+      buildDirs.add(BuildDirectory(arg));
     }
 
     return SharedOptions._(
       deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
       enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
       configKey: argResults[configOption] as String,
-      outputMap: outputMap,
+      buildDirs: buildDirs,
       outputSymlinksOnly: argResults[symlinkOption] as bool,
       trackPerformance: argResults[trackPerformanceOption] as bool,
       skipBuildScriptCheck: argResults[skipBuildScriptCheckOption] as bool,
@@ -118,7 +112,6 @@ class SharedOptions {
       builderConfigOverrides:
           _parseBuilderConfigOverrides(argResults[defineOption], rootPackage),
       isReleaseBuild: argResults[releaseOption] as bool,
-      buildDirs: buildDirs.toList(),
       logPerformanceDir: argResults[logPerformanceOption] as String,
     );
   }
@@ -139,27 +132,25 @@ class ServeOptions extends SharedOptions {
     @required bool deleteFilesByDefault,
     @required bool enableLowResourcesMode,
     @required String configKey,
-    @required Map<String, String> outputMap,
+    @required Set<BuildDirectory> buildDirs,
     @required bool outputSymlinksOnly,
     @required bool trackPerformance,
     @required bool skipBuildScriptCheck,
     @required bool verbose,
     @required Map<String, Map<String, dynamic>> builderConfigOverrides,
     @required bool isReleaseBuild,
-    @required List<String> buildDirs,
     @required String logPerformanceDir,
   }) : super._(
           deleteFilesByDefault: deleteFilesByDefault,
           enableLowResourcesMode: enableLowResourcesMode,
           configKey: configKey,
-          outputMap: outputMap,
+          buildDirs: buildDirs,
           outputSymlinksOnly: outputSymlinksOnly,
           trackPerformance: trackPerformance,
           skipBuildScriptCheck: skipBuildScriptCheck,
           verbose: verbose,
           builderConfigOverrides: builderConfigOverrides,
           isReleaseBuild: isReleaseBuild,
-          buildDirs: buildDirs,
           logPerformanceDir: logPerformanceDir,
         );
 
@@ -191,9 +182,10 @@ class ServeOptions extends SharedOptions {
       }
     }
 
-    var outputMap = _parseOutputMap(argResults);
-    var buildDirs = _buildDirsFromOutputMap(outputMap)
-      ..addAll(serveTargets.map((t) => t.dir));
+    var buildDirs = _parseBuildDirs(argResults);
+    for (var target in serveTargets) {
+      buildDirs.add(BuildDirectory(target.dir));
+    }
 
     BuildUpdatesOption buildUpdates;
     if (argResults[liveReloadOption] as bool &&
@@ -216,7 +208,7 @@ class ServeOptions extends SharedOptions {
       deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
       enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
       configKey: argResults[configOption] as String,
-      outputMap: _parseOutputMap(argResults),
+      buildDirs: buildDirs,
       outputSymlinksOnly: argResults[symlinkOption] as bool,
       trackPerformance: argResults[trackPerformanceOption] as bool,
       skipBuildScriptCheck: argResults[skipBuildScriptCheckOption] as bool,
@@ -224,7 +216,6 @@ class ServeOptions extends SharedOptions {
       builderConfigOverrides:
           _parseBuilderConfigOverrides(argResults[defineOption], rootPackage),
       isReleaseBuild: argResults[releaseOption] as bool,
-      buildDirs: buildDirs.toList(),
       logPerformanceDir: argResults[logPerformanceOption] as String,
     );
   }
@@ -237,9 +228,6 @@ class ServeTarget {
 
   ServeTarget(this.dir, this.port);
 }
-
-Set<String> _buildDirsFromOutputMap(Map<String, String> outputMap) =>
-    outputMap.values.where((v) => v != null).toSet();
 
 Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
     dynamic parsedArg, String rootPackage) {
@@ -283,22 +271,24 @@ Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
   return builderConfigOverrides;
 }
 
-/// Returns a map of output directory to root input directory to be used
-/// for merging.
+/// Returns build directories with output information parsed from output
+/// arguments.
 ///
 /// Each output option is split on `:` where the first value is the
 /// root input directory and the second value output directory.
 /// If no delimeter is provided the root input directory will be null.
-Map<String, String> _parseOutputMap(ArgResults argResults) {
+Set<BuildDirectory> _parseBuildDirs(ArgResults argResults) {
   var outputs = argResults[outputOption] as List<String>;
-  if (outputs == null) return null;
-  var result = <String, String>{};
+  if (outputs == null) return Set<BuildDirectory>();
+  var result = Set<BuildDirectory>();
+  var outputPaths = Set<String>();
 
   void checkExisting(String outputDir) {
-    if (result.containsKey(outputDir)) {
+    if (outputPaths.contains(outputDir)) {
       throw ArgumentError.value(outputs.join(' '), '--output',
           'Duplicate output directories are not allowed, got');
     }
+    outputPaths.add(outputDir);
   }
 
   for (var option in argResults[outputOption] as List<String>) {
@@ -306,7 +296,8 @@ Map<String, String> _parseOutputMap(ArgResults argResults) {
     if (split.length == 1) {
       var output = split.first;
       checkExisting(output);
-      result[output] = null;
+      result.add(BuildDirectory('',
+          outputLocation: OutputLocation(output, hoist: false)));
     } else if (split.length >= 2) {
       var output = split.sublist(1).join(':');
       checkExisting(output);
@@ -315,7 +306,8 @@ Map<String, String> _parseOutputMap(ArgResults argResults) {
         throw ArgumentError.value(
             option, '--output', 'Input root can not be nested');
       }
-      result[output] = split.first;
+      result.add(
+          BuildDirectory(split.first, outputLocation: OutputLocation(output)));
     }
   }
   return result;

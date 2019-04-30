@@ -37,11 +37,9 @@ main() {
           'build_runner',
           'build_runner_core',
           'build_test',
+          'build_web_compilers',
           'test',
         ],
-        versionDependencies: {
-          'build_web_compilers': 'any',
-        },
       ),
       d.dir('test', [
         d.file('hello_test.dart', '''
@@ -67,11 +65,8 @@ main() {
     await runPub('a', 'run', args: ['build_runner', 'clean']);
   });
 
-  Future<BuildDaemonClient> _startClient({String outputDir}) {
+  Future<BuildDaemonClient> _startClient() {
     var args = ['run', 'build_runner', 'daemon'];
-    if (outputDir != null) {
-      args.addAll(['--output', 'web:$outputDir']);
-    }
     return BuildDaemonClient.connect(
         workspace(),
         [
@@ -79,11 +74,8 @@ main() {
         ]..addAll(args));
   }
 
-  Future<void> _startDaemon({String outputDir}) async {
+  Future<void> _startDaemon() async {
     var args = ['build_runner', 'daemon'];
-    if (outputDir != null) {
-      args.addAll(['--output', 'web:$outputDir']);
-    }
     daemonProcess = await startPub('a', 'run', args: args);
     stdoutLines = daemonProcess.stdout
         .transform(Utf8Decoder())
@@ -100,11 +92,16 @@ main() {
     test('can build to outputs', () async {
       var outputDir = Directory(p.join(d.sandbox, 'a', 'deploy'));
       expect(outputDir.existsSync(), isFalse);
-      await _startDaemon(outputDir: 'deploy');
+      await _startDaemon();
       // Start the client with the same options to prevent OptionSkew.
       // In the future this should be an option on the target.
-      var client = await _startClient(outputDir: 'deploy')
-        ..registerBuildTarget(webTarget)
+      var client = await _startClient()
+        ..registerBuildTarget(DefaultBuildTarget((b) => b
+          ..target = 'web'
+          ..outputLocation = OutputLocation((b) => b
+            ..output = 'deploy'
+            ..hoist = true
+            ..useSymlinks = false).toBuilder()))
         ..startBuild();
       await client.buildResults
           .firstWhere((b) => b.results.first.status != BuildStatus.started);

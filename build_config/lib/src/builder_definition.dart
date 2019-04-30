@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build/build.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
@@ -38,7 +37,7 @@ class BuilderDefinition {
   /// The package which provides this Builder.
   String get package => packageExpando[this];
 
-  /// A unique key for this Builder in `'$package|$builder'` format.
+  /// A unique key for this Builder in `'$package:$builder'` format.
   String get key => builderKeyExpando[this];
 
   /// The names of the top-level methods in [import] from args -> Builder.
@@ -79,12 +78,12 @@ class BuilderDefinition {
   @JsonKey(name: 'required_inputs')
   final List<String> requiredInputs;
 
-  /// Builder keys in `$package|$builder` format which should only be run after
+  /// Builder keys in `$package:$builder` format which should only be run after
   /// this Builder.
   @JsonKey(name: 'runs_before')
   final List<String> runsBefore;
 
-  /// Builder keys in `$package|$builder` format which should be run on any
+  /// Builder keys in `$package:$builder` format which should be run on any
   /// target which also runs this Builder.
   @JsonKey(name: 'applies_builders')
   final List<String> appliesBuilders;
@@ -144,7 +143,7 @@ class BuilderDefinition {
           buildExtensions,
           'buildExtensions',
           'May not overwrite an input, '
-          'the output extensions must not contain the input extension');
+              'the output extensions must not contain the input extension');
     }
   }
 
@@ -172,11 +171,11 @@ class PostProcessBuilderDefinition {
   /// The package which provides this Builder.
   String get package => packageExpando[this];
 
-  /// A unique key for this Builder in `'$package|$builder'` format.
+  /// A unique key for this Builder in `'$package:$builder'` format.
   String get key => builderKeyExpando[this];
 
   /// The name of the top-level method in [import] from
-  /// BuilderOptions -> Builder.
+  /// Map<String, dynamic> -> Builder.
   @JsonKey(
       name: 'builder_factory',
       nullable: false,
@@ -229,24 +228,23 @@ class TargetBuilderConfigDefaults {
   @JsonKey(name: 'generate_for')
   final InputSet generateFor;
 
-  @JsonKey(fromJson: builderOptionsFromJson)
-  final BuilderOptions options;
+  final Map<String, dynamic> options;
 
-  @JsonKey(name: 'dev_options', fromJson: builderOptionsFromJson)
-  final BuilderOptions devOptions;
+  @JsonKey(name: 'dev_options')
+  final Map<String, dynamic> devOptions;
 
-  @JsonKey(name: 'release_options', fromJson: builderOptionsFromJson)
-  final BuilderOptions releaseOptions;
+  @JsonKey(name: 'release_options')
+  final Map<String, dynamic> releaseOptions;
 
   const TargetBuilderConfigDefaults({
     InputSet generateFor,
-    BuilderOptions options,
-    BuilderOptions devOptions,
-    BuilderOptions releaseOptions,
+    Map<String, dynamic> options,
+    Map<String, dynamic> devOptions,
+    Map<String, dynamic> releaseOptions,
   })  : generateFor = generateFor ?? InputSet.anything,
-        options = options ?? BuilderOptions.empty,
-        devOptions = devOptions ?? BuilderOptions.empty,
-        releaseOptions = releaseOptions ?? BuilderOptions.empty;
+        options = options ?? const {},
+        devOptions = devOptions ?? const {},
+        releaseOptions = releaseOptions ?? const {};
 
   factory TargetBuilderConfigDefaults.fromJson(Map json) =>
       _$TargetBuilderConfigDefaultsFromJson(json);

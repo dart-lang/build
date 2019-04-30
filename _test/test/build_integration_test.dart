@@ -5,8 +5,9 @@
 @TestOn('vm')
 import 'dart:io';
 
-import 'package:test/test.dart';
+import 'package:build_runner_core/src/util/constants.dart';
 import 'package:path/path.dart' as p;
+import 'package:test/test.dart';
 
 import 'common/utils.dart';
 
@@ -36,13 +37,11 @@ void main() {
       var content = 'cool';
       await runBuild(trailingArgs: [
         '--define',
-        'provides_builder|some_post_process_builder=default_content=$content'
+        'provides_builder:some_post_process_builder=default_content=$content'
       ]);
       var generated =
           await readGeneratedFileAsString('_test/lib/hello.txt.post');
       expect(generated, equals(content));
-    }, onPlatform: {
-      'windows': const Skip('https://github.com/dart-lang/build/issues/1127')
     });
 
     test('rebuilds if the input file changes and not otherwise', () async {
@@ -91,6 +90,23 @@ void main() {
 
       await runBuild(trailingArgs: ['--output', 'build']);
       expect(dartSource.existsSync(), true);
+    });
+
+    test('Re-snapshots if there is no asset graph', () async {
+      var assetGraph = assetGraphPathFor(p.url
+          .join('.dart_tool', 'build', 'entrypoint', 'build.dart.snapshot'));
+      await File(assetGraph).delete();
+
+      var nextBuild = await runBuild();
+      expect(
+          nextBuild.stdout.split('\n'),
+          containsAllInOrder([
+            contains('Generating build script'),
+            contains('Deleted previous snapshot due to missing asset graph.'),
+            contains('Creating build script snapshot'),
+            contains('Building new asset graph.'),
+            contains('Succeeded after'),
+          ]));
     });
   });
 }

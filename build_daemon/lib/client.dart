@@ -16,10 +16,11 @@ import 'data/build_status.dart';
 import 'data/build_target_request.dart';
 import 'data/serializers.dart';
 import 'data/server_log.dart';
+import 'src/file_wait.dart';
 
-int _existingPort(String workingDirectory) {
+Future<int> _existingPort(String workingDirectory) async {
   var portFile = File(portFilePath(workingDirectory));
-  if (!portFile.existsSync()) throw MissingPortFile();
+  if (!await waitForFile(portFile)) throw MissingPortFile();
   return int.parse(portFile.readAsStringSync());
 }
 
@@ -60,6 +61,12 @@ Future<void> _handleDaemonStartup(
 bool _isActionMessage(String line) =>
     line == versionSkew || line == readyToConnectLog || line == optionsSkew;
 
+/// A client of the build daemon.
+///
+/// Handles starting and connecting to the build daemon.
+///
+/// Example:
+///   https://pub.dartlang.org/packages/build_daemon#-example-tab-
 class BuildDaemonClient {
   final _buildResults = StreamController<BuildResults>.broadcast();
   final Serializers _serializers;
@@ -96,7 +103,10 @@ class BuildDaemonClient {
   void registerBuildTarget(BuildTarget target) => _channel.sink.add(jsonEncode(
       _serializers.serialize(BuildTargetRequest((b) => b..target = target))));
 
-  /// Builds all registered targets.
+  /// Builds all registered targets, including those not from this client.
+  ///
+  /// Note this will wait for any ongoing build to finish before starting a new
+  /// one.
   void startBuild() {
     var request = BuildRequest();
     _channel.sink.add(jsonEncode(_serializers.serialize(request)));
@@ -104,27 +114,45 @@ class BuildDaemonClient {
 
   Future<void> close() => _channel.sink.close();
 
+  /// Connects to the current daemon instance.
+  ///
+  /// If one is not running, a new daemon instance will be started.
   static Future<BuildDaemonClient> connect(
-      String workingDirectory, List<String> daemonCommand,
-      {Serializers serializersOverride,
-      void Function(ServerLog) logHandler}) async {
+    String workingDirectory,
+    List<String> daemonCommand, {
+    Serializers serializersOverride,
+    void Function(ServerLog) logHandler,
+    bool includeParentEnvironment,
+    Map<String, String> environment,
+  }) async {
     logHandler ??= (_) {};
+    includeParentEnvironment ??= true;
+
     var daemonSerializers = serializersOverride ?? serializers;
 
     var process = await Process.start(
-        daemonCommand.first, daemonCommand.sublist(1),
-        mode: ProcessStartMode.detachedWithStdio,
-        workingDirectory: workingDirectory);
+      daemonCommand.first,
+      daemonCommand.sublist(1),
+      mode: ProcessStartMode.detachedWithStdio,
+      workingDirectory: workingDirectory,
+      environment: environment,
+      includeParentEnvironment: includeParentEnvironment,
+    );
 
     await _handleDaemonStartup(process, logHandler);
 
     return BuildDaemonClient._(
-        _existingPort(workingDirectory), daemonSerializers, logHandler);
+        await _existingPort(workingDirectory), daemonSerializers, logHandler);
   }
 }
 
+/// Thrown when the port file for the running daemon instance can't be found.
 class MissingPortFile implements Exception {}
 
+/// Thrown if the client requests conflicting options with the current daemon
+/// instance.
 class OptionsSkew implements Exception {}
 
+/// Thrown if the current daemon instance version does not match that of the
+/// client.
 class VersionSkew implements Exception {}

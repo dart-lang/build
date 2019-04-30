@@ -84,7 +84,7 @@ class ServeCommand extends WatchCommand {
       deleteFilesByDefault: options.deleteFilesByDefault,
       enableLowResourcesMode: options.enableLowResourcesMode,
       configKey: options.configKey,
-      outputMap: options.outputMap,
+      buildDirs: options.buildDirs,
       outputSymlinksOnly: options.outputSymlinksOnly,
       packageGraph: packageGraph,
       trackPerformance: options.trackPerformance,
@@ -92,7 +92,6 @@ class ServeCommand extends WatchCommand {
       verbose: options.verbose,
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
-      buildDirs: options.buildDirs,
       logPerformanceDir: options.logPerformanceDir,
     );
 

@@ -22,15 +22,35 @@
 @JS()
 library stack_trace_mapper;
 
+import 'dart:convert';
+
 import 'package:js/js.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
 import 'package:source_maps/source_maps.dart';
 import 'package:source_span/source_span.dart';
 import 'package:stack_trace/stack_trace.dart';
 
-import 'package:build_web_compilers/src/dev_compiler_stack_trace/source_map_stack_trace.dart';
+import 'source_map_stack_trace.dart';
 
-typedef void ReadyCallback();
+/// Copied from `lib/src/dev_compiler_builder.dart`, these need to be kept in
+/// sync.
+///
+/// Given a list of [uris] as [String]s from a sourcemap, fixes them up so that
+/// they make sense in a browser context.
+///
+/// - Strips the scheme from the uri
+/// - Strips the top level directory if its not `packages`
+List<String> fixSourceMapSources(List<String> uris) {
+  return uris.map((source) {
+    var uri = Uri.parse(source);
+    var newSegments = uri.pathSegments.first == 'packages'
+        ? uri.pathSegments
+        : uri.pathSegments.skip(1);
+    return Uri(path: p.url.joinAll(['/'].followedBy(newSegments))).toString();
+  }).toList();
+}
+
+typedef ReadyCallback = void Function();
 
 /// Global object DDC uses to see if a stack trace utility has been registered.
 @JS(r'$dartStackTraceUtility')
@@ -39,9 +59,9 @@ external set dartStackTraceUtility(DartStackTraceUtility value);
 @JS(r'$dartLoader.rootDirectories')
 external List get rootDirectories;
 
-typedef String StackTraceMapper(String stackTrace);
-typedef dynamic SourceMapProvider(String modulePath);
-typedef void SetSourceMapProvider(SourceMapProvider provider);
+typedef StackTraceMapper = String Function(String stackTrace);
+typedef SourceMapProvider = dynamic Function(String modulePath);
+typedef SetSourceMapProvider = void Function(SourceMapProvider provider);
 
 @JS()
 @anonymous
@@ -49,9 +69,6 @@ class DartStackTraceUtility {
   external factory DartStackTraceUtility(
       {StackTraceMapper mapper, SetSourceMapProvider setSourceMapProvider});
 }
-
-@JS('JSON.stringify')
-external String _stringify(dynamic json);
 
 /// Source mapping that waits to parse source maps until they match the uri
 /// of a requested source map.
@@ -76,11 +93,13 @@ class LazyMapping extends Mapping {
 
     if (!_bundle.containsMapping(uri)) {
       var rawMap = _provider(uri);
-      if (rawMap != null) {
-        var strMap = rawMap is String ? rawMap : _stringify(rawMap);
-        var mapping = parse(strMap) as SingleMapping
+      var parsedMap = (rawMap is String ? jsonDecode(rawMap) : rawMap) as Map;
+      if (parsedMap != null) {
+        parsedMap['sources'] =
+            fixSourceMapSources((parsedMap['sources'] as List).cast());
+        var mapping = parse(jsonEncode(parsedMap)) as SingleMapping
           ..targetUrl = uri
-          ..sourceRoot = '${path.dirname(uri)}/';
+          ..sourceRoot = '${p.dirname(uri)}/';
         _bundle.addMapping(mapping);
       }
     }

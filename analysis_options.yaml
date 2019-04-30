@@ -49,7 +49,7 @@ linter:
     #- implementation_imports
     - invariant_booleans
     - iterable_contains_unrelated_type
-    - join_return_with_assignment
+    #- join_return_with_assignment
     - library_names
     - library_prefixes
     - list_remove_unrelated_type
@@ -71,6 +71,7 @@ linter:
     - prefer_contains
     - prefer_equal_for_default_values
     - prefer_final_fields
+    - prefer_generic_function_type_aliases
     - prefer_initializing_formals
     #- prefer_interpolation_to_compose_strings
     - prefer_is_empty
@@ -93,6 +94,7 @@ linter:
     - unnecessary_parenthesis
     - unnecessary_statements
     - unnecessary_this
+    - unnecessary_overrides
     - unrelated_type_equality_checks
     - use_rethrow_when_possible
     - valid_regexps

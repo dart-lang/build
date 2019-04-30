@@ -29,7 +29,7 @@ class PostProcessBuildStep {
   final void Function(AssetId) _deleteAsset;
 
   /// The result of any writes which are starting during this step.
-  final _writeResults = <Future<Result>>[];
+  final _writeResults = <Future<Result<void>>>[];
 
   PostProcessBuildStep._(this.inputId, this._reader, this._writer,
       this._addAsset, this._deleteAsset);
@@ -43,7 +43,7 @@ class PostProcessBuildStep {
   Future<String> readInputAsString({Encoding encoding = utf8}) =>
       _reader.readAsString(inputId, encoding: encoding);
 
-  Future writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
+  Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
     _addAsset(id);
     var done =
         _futureOrWrite(bytes, (List<int> b) => _writer.writeAsBytes(id, b));
@@ -51,7 +51,7 @@ class PostProcessBuildStep {
     return done;
   }
 
-  Future writeAsString(AssetId id, FutureOr<String> content,
+  Future<void> writeAsString(AssetId id, FutureOr<String> content,
       {Encoding encoding = utf8}) {
     _addAsset(id);
     var done = _futureOrWrite(content,
@@ -69,10 +69,11 @@ class PostProcessBuildStep {
   ///
   /// This method should be called after a build has completed. After the
   /// returned [Future] completes then all outputs have been written.
-  Future complete() async {
+  Future<void> complete() async {
     await Future.wait(_writeResults.map(Result.release));
   }
 }
 
-Future _futureOrWrite<T>(FutureOr<T> content, Future write(T content)) =>
+Future<void> _futureOrWrite<T>(
+        FutureOr<T> content, Future<void> write(T content)) =>
     (content is Future<T>) ? content.then(write) : write(content as T);

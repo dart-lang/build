@@ -2,23 +2,25 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
+
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import 'package:build_modules/build_modules.dart';
 
-import 'matchers.dart';
 import 'util.dart';
 
 main() {
   Map<String, dynamic> assets;
-  final platform = DartPlatform.dart2js;
+  final platform = DartPlatform.register('test', ['dart:html']);
+  final kernelOutputExtension = '.test.dill';
 
   group('basic project', () {
     setUp(() async {
       assets = {
-        'build_modules|lib/src/analysis_options.default.yaml': '',
         'b|lib/b.dart': '''final world = 'world';''',
         'a|lib/a.dart': '''
         import 'package:b/b.dart';
@@ -40,52 +42,30 @@ main() {
       await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
     });
 
-    test('can output unlinked analyzer summaries for modules under lib and web',
-        () async {
+    test('can output kernel summaries for modules under lib and web', () async {
       var expectedOutputs = <String, Matcher>{
-        'b|lib/b${unlinkedSummaryExtension(platform)}':
-            HasUnlinkedUris(['package:b/b.dart']),
-        'a|lib/a${unlinkedSummaryExtension(platform)}':
-            HasUnlinkedUris(['package:a/a.dart']),
-        'a|web/index${unlinkedSummaryExtension(platform)}':
-            HasUnlinkedUris([endsWith('web/index.dart')]),
+        'b|lib/b$kernelOutputExtension':
+            containsAllInOrder(utf8.encode('package:b/b.dart')),
+        'a|lib/a$kernelOutputExtension':
+            containsAllInOrder(utf8.encode('package:a/a.dart')),
+        'a|web/index$kernelOutputExtension':
+            containsAllInOrder(utf8.encode('web/index.dart')),
       };
-      await testBuilder(UnlinkedSummaryBuilder(platform), assets,
-          outputs: expectedOutputs);
-    });
-
-    test('can output linked analyzer summaries for modules under lib and web',
-        () async {
-      // Build the unlinked summaries first.
-      await testBuilderAndCollectAssets(
-          UnlinkedSummaryBuilder(platform), assets);
-
-      // Actual test for LinkedSummaryBuilder;
-      var expectedOutputs = <String, Matcher>{
-        'b|lib/b${linkedSummaryExtension(platform)}': allOf(
-            HasLinkedUris(['package:b/b.dart']),
-            HasUnlinkedUris(['package:b/b.dart'])),
-        'a|lib/a${linkedSummaryExtension(platform)}': allOf(
-            HasLinkedUris(
-                unorderedEquals(['package:b/b.dart', 'package:a/a.dart'])),
-            HasUnlinkedUris(['package:a/a.dart'])),
-        'a|web/index${linkedSummaryExtension(platform)}': allOf(
-            HasLinkedUris(unorderedEquals([
-              'package:b/b.dart',
-              'package:a/a.dart',
-              endsWith('web/index.dart')
-            ])),
-            HasUnlinkedUris([endsWith('web/index.dart')])),
-      };
-      await testBuilder(LinkedSummaryBuilder(platform), assets,
+      await testBuilder(
+          KernelBuilder(
+            platform: platform,
+            outputExtension: kernelOutputExtension,
+            summaryOnly: true,
+            sdkKernelPath: p.url.join('lib', '_internal', 'ddc_sdk.dill'),
+          ),
+          assets,
           outputs: expectedOutputs);
     });
   });
 
-  group('linked summaries with missing imports', () {
+  group('kernel outlines with missing imports', () {
     setUp(() async {
       assets = {
-        'build_modules|lib/src/analysis_options.default.yaml': '',
         'a|web/index.dart': 'import "package:a/a.dart";',
         'a|lib/a.dart': 'import "package:b/b.dart";',
       };
@@ -97,15 +77,29 @@ main() {
           MetaModuleCleanBuilder(platform), assets);
       await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
       await testBuilderAndCollectAssets(
-          UnlinkedSummaryBuilder(platform), assets);
+          KernelBuilder(
+            platform: platform,
+            outputExtension: kernelOutputExtension,
+            summaryOnly: true,
+            sdkKernelPath: p.url.join('lib', '_internal', 'ddc_sdk.dill'),
+          ),
+          assets);
     });
 
     test('print an error if there are any missing transitive modules',
         () async {
       var expectedOutputs = <String, Matcher>{};
       var logs = <LogRecord>[];
-      await testBuilder(LinkedSummaryBuilder(platform), assets,
-          outputs: expectedOutputs, onLog: logs.add);
+      await testBuilder(
+          KernelBuilder(
+            platform: platform,
+            outputExtension: kernelOutputExtension,
+            summaryOnly: true,
+            sdkKernelPath: p.url.join('lib', '_internal', 'ddc_sdk.dill'),
+          ),
+          assets,
+          outputs: expectedOutputs,
+          onLog: logs.add);
       expect(
           logs,
           contains(predicate<LogRecord>((record) =>

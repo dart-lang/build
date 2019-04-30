@@ -17,14 +17,14 @@ import '../validation/config_validation.dart';
 import 'package_graph.dart';
 import 'target_graph.dart';
 
-typedef BuildPhase BuildPhaseFactory(
+typedef BuildPhaseFactory = BuildPhase Function(
     PackageNode package,
     BuilderOptions options,
     InputSet targetSources,
     InputSet generateFor,
     bool isReleaseBuild);
 
-typedef bool PackageFilter(PackageNode node);
+typedef PackageFilter = bool Function(PackageNode node);
 
 /// Run a builder on all packages in the package graph.
 PackageFilter toAllPackages() => (_) => true;
@@ -260,8 +260,9 @@ Future<List<BuildPhase>> createBuildPhases(
   final globalOptions = targetGraph.rootPackageConfig.globalOptions.map(
       (key, config) => MapEntry(
           key,
-          (config?.options ?? BuilderOptions.empty).overrideWith(
-              isReleaseMode ? config?.releaseOptions : config?.devOptions)));
+          _options(config?.options).overrideWith(isReleaseMode
+              ? _options(config?.releaseOptions)
+              : _options(config?.devOptions))));
   for (final key in builderConfigOverrides.keys) {
     final overrides = BuilderOptions(builderConfigOverrides[key]);
     globalOptions[key] =
@@ -340,10 +341,10 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
               builderApplication, targetNode, applyWith, allBuilders))
           .map((node) {
         final builderConfig = targetConfig(node);
-        final options = (builderConfig?.options ?? BuilderOptions.empty)
+        final options = _options(builderConfig?.options)
             .overrideWith(isReleaseMode
-                ? builderConfig?.releaseOptions
-                : builderConfig?.devOptions)
+                ? _options(builderConfig?.releaseOptions)
+                : _options(builderConfig?.devOptions))
             .overrideWith(globalOptionOverrides);
         return createPhase(node.package, options, node.target.sources,
             builderConfig?.generateFor, isReleaseMode);
@@ -403,3 +404,6 @@ T _scopeLogSync<T>(T fn(), Logger log) {
 String _factoryFailure(String packageName, BuilderOptions options) =>
     'Failed to instantiate builder for $packageName with configuration:\n'
     '${JsonEncoder.withIndent(' ').convert(options.config)}';
+
+BuilderOptions _options(Map<String, dynamic> options) =>
+    options?.isEmpty ?? true ? BuilderOptions.empty : BuilderOptions(options);
