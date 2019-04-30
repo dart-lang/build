@@ -1,4 +1,4 @@
-# [![Build Status](https://travis-ci.org/dart-lang/build.svg?branch=master)](https://travis-ci.org/dart-lang/build)
+[![Build Status](https://travis-ci.org/dart-lang/build.svg?branch=master)](https://travis-ci.org/dart-lang/build)
 [![Pub Package](https://img.shields.io/pub/v/scratch_space.svg)](https://pub.dartlang.org/packages/scratch_space)
 
 A [`ScratchSpace`][dartdoc:ScratchSpace] is a thin wrapper around a temporary
