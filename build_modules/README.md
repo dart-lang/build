@@ -46,7 +46,7 @@ The overall process for emitting modules follows these steps:
    have an output. This step is mainly separated out for better invalidation
    behavior since the output will change less frequently than the code. The
    outputs from this step are non differentiated by platform.
-1. Emit package level `.meta_module` assets. This is an aggregation of the
+2. Emit package level `.meta_module` assets. This is an aggregation of the
    `.module.library` information with a first run at creating a module
    structure. The output depends on the algorithm, described below. The outputs
    from this step are specific to a platform and will exclude any libraries
@@ -54,7 +54,7 @@ The overall process for emitting modules follows these steps:
    will also be resolved to a concrete dependency based on the platform. In this
    step the dependencies of modules references the imported library, which may
    not match the primary source of the module containing that library.
-1. Emit package level `.meta_module.clean` assets. This step performs an extra
+3. Emit package level `.meta_module.clean` assets. This step performs an extra
    run of the strongly connected components algorithm so that any libraries
    which are in an import cycle are grouped into a single module. This is done
    as a separate step so that it can be sure it may read all the `.meta_module`
@@ -63,7 +63,7 @@ The overall process for emitting modules follows these steps:
    module becomes the union of their sources and dependencies. Dependencies are
    resolved to the "primary source" of the module containing the imported
    library.
-1. Emit library level `.module` assets which contain a filtered view of the
+4. Emit library level `.module` assets which contain a filtered view of the
    package level meta-module specific to a single module. These are emitted for
    the "primary source" of each module, as well as each library which is an
    entrypoint.
