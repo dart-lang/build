@@ -130,8 +130,8 @@ void main() {
       // Wait for the daemon to be running before checking the workspace exits.
       expect(await _statusOf(daemon), 'RUNNING');
       expect(Directory(daemonWorkspace(workspace)).existsSync(), isTrue);
-      // Daemon expects sigint twice before quitting.
-      daemon..kill(ProcessSignal.sigint)..kill(ProcessSignal.sigint);
+      // Sending an interrupt signal will let the daemon gracefully exit.
+      daemon.kill(ProcessSignal.sigint);
       await daemon.exitCode;
       expect(Directory(daemonWorkspace(workspace)).existsSync(), isFalse);
     });
