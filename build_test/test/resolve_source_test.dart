@@ -8,8 +8,18 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
+import 'package:logging/logging.dart';
 
 void main() {
+  StreamSubscription<LogRecord> logSubscription;
+  setUpAll(() {
+    Logger.root.level = Level.ALL;
+    logSubscription = Logger.root.onRecord.listen(print);
+  });
+  tearDownAll(() {
+    logSubscription.cancel();
+  });
+
   group('should resolveSource of', () {
     test('a simple dart file', () async {
       var libExample = await resolveSource(r'''
