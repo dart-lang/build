@@ -1,3 +1,9 @@
+## 1.0.5
+
+- Fix a race condition where some assets may be resolved with missing
+  dependencies. This was likely to have only manifested in tests using
+  `resolveSource`.
+
 ## 1.0.4
 
 - Increase lower bound sdk constraint to 2.1.0.
