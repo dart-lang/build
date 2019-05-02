@@ -30,7 +30,6 @@ class BuildAssetUriResolver extends UriResolver {
   /// changed.
   final _cachedAssetContents = <AssetId, String>{};
 
-  /// The [ResourceProvider] given to the analyzer.
   final resourceProvider = MemoryResourceProvider(context: p.posix);
 
   /// The assets which are known to be readable at some point during the build.
