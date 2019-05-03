@@ -1,3 +1,7 @@
+## 0.10.7+2
+
+- Avoid throwing for missing files from `PackageAssetReader.canRead`.
+
 ## 0.10.7+1
 
 - Allow `build_config` `0.4.x`.
