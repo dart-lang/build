@@ -21,7 +21,7 @@ const _ignoredSchemes = ['dart', 'dart-ext'];
 class BuildAssetUriResolver extends UriResolver {
   /// A cache of the directives for each Dart library.
   ///
-  /// This stored across builds and is only invalidated if we read a file and
+  /// This is stored across builds and is only invalidated if we read a file and
   /// see that it's content is different from what it was last time it was read.
   final _cachedAssetDependencies = <AssetId, Set<AssetId>>{};
 
@@ -42,6 +42,8 @@ class BuildAssetUriResolver extends UriResolver {
   /// later). If this happens we don't want to hide the asset from the analyzer.
   final seenAssets = HashSet<AssetId>();
 
+  /// Crawl the transitive imports from [entryPoints] and ensure that the
+  /// content of each asset is updated in [resourceProvider] and [driver].
   Future<void> performResolve(BuildStep buildStep, List<AssetId> entryPoints,
       AnalysisDriver driver) async {
     final changes =
