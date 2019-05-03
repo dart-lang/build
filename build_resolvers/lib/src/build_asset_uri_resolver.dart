@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:collection';
 
 // ignore: deprecated_member_use
 import 'package:analyzer/analyzer.dart' show parseDirectives;
@@ -11,6 +12,7 @@ import 'package:analyzer/file_system/memory_file_system.dart';
 import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
 import 'package:analyzer/src/generated/source.dart';
 import 'package:build/build.dart' show AssetId, BuildStep;
+import 'package:crypto/crypto.dart';
 import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 
@@ -23,29 +25,28 @@ class BuildAssetUriResolver extends UriResolver {
   /// see that it's content is different from what it was last time it was read.
   final _cachedAssetDependencies = <AssetId, Set<AssetId>>{};
 
-  /// A cache of the full content for each Dart asset.
+  /// A cache of the digest for each Dart asset.
   ///
   /// This is stored across builds and used to invalidate the values in
   /// [_cachedAssetDependencies] only when the actual content of the library
   /// changed.
-  final _cachedAssetContents = <AssetId, String>{};
+  final _cachedAssetDigests = <AssetId, Digest>{};
 
   final resourceProvider = MemoryResourceProvider(context: p.posix);
 
-  /// The assets which are known to be readable at some point during the build.
+  /// The assets which are known to be readable at some point during the current
+  /// build.
   ///
   /// When actions can run out of order an asset can move from being readable
   /// (in the later phase) to being unreadable (in the earlier phase which ran
   /// later). If this happens we don't want to hide the asset from the analyzer.
-  final seenAssets = Set<AssetId>();
+  final seenAssets = HashSet<AssetId>();
 
   Future<void> performResolve(BuildStep buildStep, List<AssetId> entryPoints,
       AnalysisDriver driver) async {
-    final states =
+    final changes =
         await crawlAsync<AssetId, _AssetState>(entryPoints, (id) async {
-      try {
-        return _AssetState(id, await buildStep.readAsString(id));
-      } catch (e) {
+      if (!await buildStep.canRead(id)) {
         if (seenAssets.contains(id)) {
           // ignore from this graph, some later build step may still be using it
           // so it shouldn't be removed from [resourceProvider], but we also
@@ -53,19 +54,25 @@ class BuildAssetUriResolver extends UriResolver {
           return null;
         }
         _cachedAssetDependencies.remove(id);
-        _cachedAssetContents.remove(id);
+        _cachedAssetDigests.remove(id);
         return _AssetState.removed(id);
+      }
+      final digest = await buildStep.digest(id);
+      if (_cachedAssetDigests[id] == digest) {
+        return _AssetState.unchanged(id);
+      } else {
+        _cachedAssetDigests[id] = digest;
+        return _AssetState(id, await buildStep.readAsString(id));
       }
     }, (id, state) {
       if (state.isRemoved) return const [];
-      if (_cachedAssetContents[id] == state.content) {
+      if (!state.isChanged) {
         return _cachedAssetDependencies[id];
       }
-      _cachedAssetContents[id] = state.content;
       return _cachedAssetDependencies[id] = _parseDirectives(state);
-    }).toList();
+    }).where((state) => state.isChanged).toList();
 
-    for (final state in states) {
+    for (final state in changes) {
       final path = assetPath(state.id);
       if (state.isRemoved) {
         if (resourceProvider.getFile(path).exists) {
@@ -92,12 +99,12 @@ class BuildAssetUriResolver extends UriResolver {
     if (_ignoredSchemes.any(uri.isScheme)) return null;
     if (uri.isScheme('package') || uri.isScheme('asset')) {
       final assetId = AssetId.resolve('$uri');
-      return _cachedAssetContents.containsKey(assetId) ? assetId : null;
+      return _cachedAssetDigests.containsKey(assetId) ? assetId : null;
     }
     if (uri.isScheme('file')) {
       final parts = p.split(uri.path);
       final assetId = AssetId(parts[1], p.posix.joinAll(parts.skip(2)));
-      return _cachedAssetContents.containsKey(assetId) ? assetId : null;
+      return _cachedAssetDigests.containsKey(assetId) ? assetId : null;
     }
     return null;
   }
@@ -116,10 +123,13 @@ class BuildAssetUriResolver extends UriResolver {
       lookupAsset(source.uri)?.uri ?? source.uri;
 }
 
+String assetPath(AssetId assetId) =>
+    p.posix.join('/${assetId.package}', assetId.path);
+
 /// Returns all the directives from a Dart library that can be resolved to an
 /// [AssetId].
 Set<AssetId> _parseDirectives(_AssetState state) =>
-    parseDirectives(state.content, suppressErrors: true)
+    HashSet.of(parseDirectives(state.content, suppressErrors: true)
         .directives
         .whereType<UriBasedDirective>()
         .where((directive) {
@@ -127,19 +137,25 @@ Set<AssetId> _parseDirectives(_AssetState state) =>
           return !_ignoredSchemes.any(uri.isScheme);
         })
         .map((d) => AssetId.resolve(d.uri.stringValue, from: state.id))
-        .where((id) => id != null)
-        .toSet();
+        .where((id) => id != null));
 
 class _AssetState {
   final AssetId id;
   final String content;
   final bool isRemoved;
+  final bool isChanged;
 
-  _AssetState(this.id, this.content) : isRemoved = false;
+  _AssetState(this.id, this.content)
+      : isRemoved = false,
+        isChanged = true;
+
   _AssetState.removed(this.id)
       : isRemoved = true,
+        isChanged = true,
+        content = null;
+
+  _AssetState.unchanged(this.id)
+      : isRemoved = false,
+        isChanged = false,
         content = null;
 }
-
-String assetPath(AssetId assetId) =>
-    p.posix.join('/${assetId.package}', assetId.path);
