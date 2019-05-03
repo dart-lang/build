@@ -83,7 +83,7 @@ class PackageAssetReader extends AssetReader
     if (id.package == _rootPackage) {
       return File(p.canonicalize(p.join(_rootPackagePath, id.path)));
     }
-    throw UnsupportedError('Unable to resolve $id');
+    return null;
   }
 
   String get _rootPackagePath {
@@ -125,29 +125,15 @@ class PackageAssetReader extends AssetReader
   }
 
   @override
-  Future<bool> canRead(AssetId id) {
-    final file = _resolve(id);
-    if (file == null) {
-      return Future.value(false);
-    }
-    return file.exists();
-  }
+  Future<bool> canRead(AssetId id) =>
+      _resolve(id)?.exists() ?? Future.value(false);
 
   @override
-  Future<List<int>> readAsBytes(AssetId id) {
-    final file = _resolve(id);
-    if (file == null) {
-      throw ArgumentError('Could not read $id.');
-    }
-    return file.readAsBytes();
-  }
+  Future<List<int>> readAsBytes(AssetId id) =>
+      _resolve(id)?.readAsBytes() ?? (throw AssetNotFoundException(id));
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
-    final file = _resolve(id);
-    if (file == null) {
-      throw ArgumentError('Could not read $id.');
-    }
-    return file.readAsString(encoding: encoding);
-  }
+  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) =>
+      _resolve(id)?.readAsString(encoding: encoding) ??
+      (throw AssetNotFoundException(id));
 }
