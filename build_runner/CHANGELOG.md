@@ -1,3 +1,7 @@
+## 1.5.0-dev
+
+- Update to the latest `build_daemon`.
+
 ## 1.4.0
 
 - Add a `run` command to execute VM entrypoints with generated sources.

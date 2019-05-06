@@ -65,9 +65,17 @@ class DaemonCommand extends BuildRunnerCommand {
       );
       await startupLogSub.cancel();
 
-      // Forward server logs to daemon command STDIO.
-      var logSub =
-          builder.logs.listen((serverLog) => stdout.writeln(serverLog.log));
+      // Serialize server logs to daemon command STDIO.
+      var logSub = builder.logs.listen((log) {
+        if (log.level > Level.INFO.value) {
+          var buffer = StringBuffer(log.message);
+          if (log.error != null) buffer.writeln(log.error);
+          if (log.stackTrace != null) buffer.writeln(log.stackTrace);
+          stderr.writeln(buffer);
+        } else {
+          stdout.writeln(log.message);
+        }
+      });
       var server = await AssetServer.run(builder, packageGraph.root.name);
       File(assetServerPortFilePath(workingDirectory))
           .writeAsStringSync('${server.port}');

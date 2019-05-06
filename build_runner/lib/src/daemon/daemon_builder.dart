@@ -122,7 +122,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
   void _logMessage(Level level, String message) =>
       _outputStreamController.add(ServerLog(
-        (b) => b.log = '[$level] $message',
+        (b) => b
+          ..message = message
+          ..level = level.value,
       ));
 
   void _signalEnd(Iterable<BuildResult> results) {
@@ -153,7 +155,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         IOEnvironment(packageGraph,
             outputSymlinksOnly: sharedOptions.outputSymlinksOnly),
         onLog: (record) {
-      outputStreamController.add(ServerLog((b) => b.log = record.toString()));
+      outputStreamController.add(ServerLog.fromLogRecord(record));
     });
 
     var daemonEnvironment = OverrideableEnvironment(environment,
