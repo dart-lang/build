@@ -89,7 +89,7 @@ class PackageAssetReader extends AssetReader
   String get _rootPackagePath {
     // If the root package has a pub layout, use `packagePath`.
     final root = _packageResolver.packagePath(_rootPackage);
-    if (Directory(p.join(root, 'lib')).existsSync()) {
+    if (root != null && Directory(p.join(root, 'lib')).existsSync()) {
       return root;
     }
     // Assume the cwd is the package root.
