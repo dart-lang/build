@@ -46,8 +46,9 @@ class BuildAssetUriResolver extends UriResolver {
   /// content of each asset is updated in [resourceProvider] and [driver].
   Future<void> performResolve(BuildStep buildStep, List<AssetId> entryPoints,
       AnalysisDriver driver) async {
-    final changes =
+    final changedPaths =
         await crawlAsync<AssetId, _AssetState>(entryPoints, (id) async {
+      final path = assetPath(id);
       if (!await buildStep.canRead(id)) {
         if (seenAssets.contains(id)) {
           // ignore from this graph, some later build step may still be using it
@@ -57,38 +58,34 @@ class BuildAssetUriResolver extends UriResolver {
         }
         _cachedAssetDependencies.remove(id);
         _cachedAssetDigests.remove(id);
-        return _AssetState.removed(id);
-      }
-      final digest = await buildStep.digest(id);
-      if (_cachedAssetDigests[id] == digest) {
-        return _AssetState.unchanged(id);
-      } else {
-        _cachedAssetDigests[id] = digest;
-        return _AssetState(id, await buildStep.readAsString(id));
-      }
-    }, (id, state) {
-      if (state.isRemoved) return const [];
-      if (!state.isChanged) {
-        return _cachedAssetDependencies[id];
-      }
-      return _cachedAssetDependencies[id] = _parseDirectives(state);
-    }).where((state) => state.isChanged).toList();
-
-    for (final state in changes) {
-      final path = assetPath(state.id);
-      if (state.isRemoved) {
         if (resourceProvider.getFile(path).exists) {
           resourceProvider.deleteFile(path);
         }
+        return _AssetState.removed(path);
+      }
+      seenAssets.add(id);
+      final digest = await buildStep.digest(id);
+      if (_cachedAssetDigests[id] == digest) {
+        return _AssetState.unchanged(path, _cachedAssetDependencies[id]);
       } else {
-        if (resourceProvider.getFile(path).exists) {
-          resourceProvider.updateFile(path, state.content);
-          driver.changeFile(path);
+        final isChange = _cachedAssetDigests.containsKey(id);
+        final content = await buildStep.readAsString(id);
+        _cachedAssetDigests[id] = digest;
+        final dependencies =
+            _cachedAssetDependencies[id] = _parseDirectives(content, id);
+        if (isChange) {
+          resourceProvider.updateFile(path, content);
+          return _AssetState.changed(path, dependencies);
         } else {
-          resourceProvider.newFile(path, state.content);
+          resourceProvider.newFile(path, content);
+          return _AssetState.newAsset(path, dependencies);
         }
       }
-    }
+    }, (id, state) => state.directives)
+            .where((state) => state.isAssetUpdate)
+            .map((state) => state.path)
+            .toList();
+    changedPaths.forEach(driver.changeFile);
   }
 
   /// Attempts to parse [uri] into an [AssetId] and returns it if it is cached.
@@ -130,34 +127,26 @@ String assetPath(AssetId assetId) =>
 
 /// Returns all the directives from a Dart library that can be resolved to an
 /// [AssetId].
-Set<AssetId> _parseDirectives(_AssetState state) =>
-    HashSet.of(parseDirectives(state.content, suppressErrors: true)
+Set<AssetId> _parseDirectives(String content, AssetId from) =>
+    HashSet.of(parseDirectives(content, suppressErrors: true)
         .directives
         .whereType<UriBasedDirective>()
         .where((directive) {
           var uri = Uri.parse(directive.uri.stringValue);
           return !_ignoredSchemes.any(uri.isScheme);
         })
-        .map((d) => AssetId.resolve(d.uri.stringValue, from: state.id))
+        .map((d) => AssetId.resolve(d.uri.stringValue, from: from))
         .where((id) => id != null));
 
 class _AssetState {
-  final AssetId id;
-  final String content;
-  final bool isRemoved;
-  final bool isChanged;
+  final String path;
+  final bool isAssetUpdate;
+  final Iterable<AssetId> directives;
 
-  _AssetState(this.id, this.content)
-      : isRemoved = false,
-        isChanged = true;
-
-  _AssetState.removed(this.id)
-      : isRemoved = true,
-        isChanged = true,
-        content = null;
-
-  _AssetState.unchanged(this.id)
-      : isRemoved = false,
-        isChanged = false,
-        content = null;
+  _AssetState.removed(this.path)
+      : isAssetUpdate = false,
+        directives = const [];
+  _AssetState.changed(this.path, this.directives) : isAssetUpdate = true;
+  _AssetState.unchanged(this.path, this.directives) : isAssetUpdate = false;
+  _AssetState.newAsset(this.path, this.directives) : isAssetUpdate = false;
 }
