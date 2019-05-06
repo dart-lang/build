@@ -8,7 +8,6 @@ import 'dart:io';
 
 import 'package:build_daemon/data/build_target.dart';
 import 'package:built_value/serializer.dart';
-import 'package:logging/logging.dart';
 import 'package:web_socket_channel/io.dart';
 
 import 'constants.dart';
@@ -34,7 +33,7 @@ Future<void> _handleDaemonStartup(
       .transform(const LineSplitter())
       .listen((line) {
     logHandler(ServerLog((b) => b
-      ..level = Level.SEVERE.value
+      ..level = Level.severe
       ..message = line));
   });
   var stdout = process.stdout
@@ -46,7 +45,7 @@ Future<void> _handleDaemonStartup(
   // starting. Capture this data and forward to the logHandler.
   var sub = stdout.where((line) => !_isActionMessage(line)).listen((line) {
     logHandler(ServerLog((b) => b
-      ..level = Level.INFO.value
+      ..level = Level.info
       ..message = line));
   });
 

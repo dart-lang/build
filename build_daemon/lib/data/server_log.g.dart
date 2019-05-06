@@ -19,7 +19,7 @@ class _$ServerLogSerializer implements StructuredSerializer<ServerLog> {
       {FullType specifiedType = FullType.unspecified}) {
     final result = <Object>[
       'level',
-      serializers.serialize(object.level, specifiedType: const FullType(int)),
+      serializers.serialize(object.level, specifiedType: const FullType(Level)),
       'message',
       serializers.serialize(object.message,
           specifiedType: const FullType(String)),
@@ -59,7 +59,7 @@ class _$ServerLogSerializer implements StructuredSerializer<ServerLog> {
       switch (key) {
         case 'level':
           result.level = serializers.deserialize(value,
-              specifiedType: const FullType(int)) as int;
+              specifiedType: const FullType(Level)) as Level;
           break;
         case 'message':
           result.message = serializers.deserialize(value,
@@ -86,7 +86,7 @@ class _$ServerLogSerializer implements StructuredSerializer<ServerLog> {
 
 class _$ServerLog extends ServerLog {
   @override
-  final int level;
+  final Level level;
   @override
   final String message;
   @override
@@ -153,9 +153,9 @@ class _$ServerLog extends ServerLog {
 class ServerLogBuilder implements Builder<ServerLog, ServerLogBuilder> {
   _$ServerLog _$v;
 
-  int _level;
-  int get level => _$this._level;
-  set level(int level) => _$this._level = level;
+  Level _level;
+  Level get level => _$this._level;
+  set level(Level level) => _$this._level = level;
 
   String _message;
   String get message => _$this._message;

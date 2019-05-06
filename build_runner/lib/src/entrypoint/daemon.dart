@@ -6,9 +6,10 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:build_daemon/constants.dart';
+import 'package:build_daemon/data/server_log.dart';
 import 'package:build_daemon/src/daemon.dart';
 import 'package:build_runner/src/daemon/constants.dart';
-import 'package:logging/logging.dart';
+import 'package:logging/logging.dart' hide Level;
 
 import '../daemon/asset_server.dart';
 import '../daemon/daemon_builder.dart';
@@ -67,7 +68,7 @@ class DaemonCommand extends BuildRunnerCommand {
 
       // Serialize server logs to daemon command STDIO.
       var logSub = builder.logs.listen((log) {
-        if (log.level > Level.INFO.value) {
+        if (log.level.index > Level.info.index) {
           var buffer = StringBuffer(log.message);
           if (log.error != null) buffer.writeln(log.error);
           if (log.stackTrace != null) buffer.writeln(log.stackTrace);
