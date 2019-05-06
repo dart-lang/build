@@ -353,7 +353,7 @@ void main() {
             'glob node and its outputs', () async {
           var globNode = GlobAssetNode(primaryInputId.addExtension('.glob'),
               Glob('lib/*.cool'), 0, NodeState.upToDate,
-              inputs: HashSet());
+              inputs: HashSet(), results: []);
           var primaryOutputNode =
               graph.get(primaryOutputId) as GeneratedAssetNode
                 ..state = NodeState.upToDate
@@ -376,19 +376,27 @@ void main() {
           }
 
           await checkChangeType(ChangeType.ADD);
+
           primaryOutputNode.state = NodeState.upToDate;
           globNode.state = NodeState.upToDate;
-
           await checkChangeType(ChangeType.REMOVE);
+
           primaryOutputNode.state = NodeState.upToDate;
           globNode.state = NodeState.upToDate;
-
           await checkChangeType(ChangeType.ADD);
+
           primaryOutputNode.state = NodeState.upToDate;
           globNode.state = NodeState.upToDate;
           globNode.inputs.add(coolAssetId);
+          globNode.results.add(coolAssetId);
           graph.get(coolAssetId).outputs.add(globNode.id);
           await checkChangeType(ChangeType.MODIFY);
+
+          expect(globNode.inputs, contains(coolAssetId));
+          expect(globNode.results, contains(coolAssetId));
+          await checkChangeType(ChangeType.REMOVE);
+          expect(globNode.inputs, isNot(contains(coolAssetId)));
+          expect(globNode.results, isNot(contains(coolAssetId)));
         });
       });
     });
