@@ -139,8 +139,9 @@ Future<List<Module>> _ensureTransitiveModules(
         ..add(module.primarySource.changeExtension(jsModuleExtension));
   // Check that each module is readable, and warn otherwise.
   await Future.wait(jsModules.map((jsId) async {
-    if (await _lazyBuildPool.withResource(() => buildStep.canRead(jsId)))
+    if (await _lazyBuildPool.withResource(() => buildStep.canRead(jsId))) {
       return;
+    }
     var errorsId = jsId.addExtension('.errors');
     await buildStep.canRead(errorsId);
     log.warning('Unable to read $jsId, check your console or the '
