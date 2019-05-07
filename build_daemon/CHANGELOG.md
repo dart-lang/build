@@ -2,6 +2,9 @@
 
 - Changed the `ServerLog` class to have separate `level`, `message`,
   `loggerName`, `error`, and `stackTrace` fields.
+- Accept file change notifications as `Stream<List<WatchEvent>>` instead of
+  `Stream<WatchEvent>`. This allows file change notifications to be sent as
+  batches of simultaneous changes, preventing over-triggering of builds.
 
 ## 0.6.0
 

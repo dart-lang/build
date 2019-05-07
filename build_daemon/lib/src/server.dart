@@ -40,7 +40,7 @@ class Server {
 
   final _subs = <StreamSubscription>[];
 
-  Server(this._builder, Stream<WatchEvent> changes, Duration timeout,
+  Server(this._builder, Stream<List<WatchEvent>> changes, Duration timeout,
       {Serializers serializersOverride,
       bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuild})
       : _serializers = serializersOverride ?? serializers,
@@ -122,8 +122,9 @@ class Server {
       }));
   }
 
-  void _handleChanges(Stream<WatchEvent> changes) {
-    _subs.add(changes.transform(asyncMapBuffer((changes) async {
+  void _handleChanges(Stream<List<WatchEvent>> changes) {
+    _subs.add(changes.transform(asyncMapBuffer((changesLists) async {
+      var changes = changesLists.expand((x) => x).toList();
       if (changes.isEmpty) return;
       if (_buildTargetManager.targets.isEmpty) return;
       var buildTargets = _buildTargetManager.targetsForChanges(changes);
