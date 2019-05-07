@@ -80,7 +80,10 @@ class DaemonCommand extends BuildRunnerCommand {
       var server = await AssetServer.run(builder, packageGraph.root.name);
       File(assetServerPortFilePath(workingDirectory))
           .writeAsStringSync('${server.port}');
-      await daemon.start(requestedOptions, builder, builder.changes);
+      // TODO(davidmorgan): debounce changes instead of passing through as
+      // singleton lists.
+      await daemon.start(
+          requestedOptions, builder, builder.changes.map((change) => [change]));
       stdout.writeln(readyToConnectLog);
       await logSub.cancel();
       await daemon.onDone.whenComplete(() async {
