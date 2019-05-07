@@ -1,3 +1,8 @@
+## 1.0.0-dev
+
+- Changed the `ServerLog` class to have separate `level`, `message`,
+  `loggerName`, `error`, and `stackTrace` fields.
+
 ## 0.6.0
 
 - Add retry logic to the state file helpers `runningVersion` and

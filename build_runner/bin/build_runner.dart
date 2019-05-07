@@ -54,7 +54,23 @@ Future<void> main(List<String> args) async {
     return;
   }
 
-  final logListener = Logger.root.onRecord.listen(stdIOLogListener());
+  StreamSubscription logListener;
+  if (commandName == 'daemon') {
+    // Simple logs only in daemon mode. These get converted into info or
+    // severe logs by the client.
+    logListener = Logger.root.onRecord.listen((record) {
+      if (record.level > Level.INFO) {
+        var buffer = StringBuffer(record.message);
+        if (record.error != null) buffer.writeln(record.error);
+        if (record.stackTrace != null) buffer.writeln(record.stackTrace);
+        stderr.writeln(buffer);
+      } else {
+        stdout.writeln(record.message);
+      }
+    });
+  } else {
+    logListener = Logger.root.onRecord.listen(stdIOLogListener());
+  }
   if (localCommandNames.contains(commandName)) {
     exitCode = await commandRunner.runCommand(parsedArgs);
   } else {

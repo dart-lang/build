@@ -6,9 +6,10 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:build_daemon/constants.dart';
+import 'package:build_daemon/data/server_log.dart';
 import 'package:build_daemon/src/daemon.dart';
 import 'package:build_runner/src/daemon/constants.dart';
-import 'package:logging/logging.dart';
+import 'package:logging/logging.dart' hide Level;
 
 import '../daemon/asset_server.dart';
 import '../daemon/daemon_builder.dart';
@@ -66,8 +67,16 @@ class DaemonCommand extends BuildRunnerCommand {
       await startupLogSub.cancel();
 
       // Forward server logs to daemon command STDIO.
-      var logSub =
-          builder.logs.listen((serverLog) => stdout.writeln(serverLog.log));
+      var logSub = builder.logs.listen((log) {
+        if (log.level > Level.INFO) {
+          var buffer = StringBuffer(log.message);
+          if (log.error != null) buffer.writeln(log.error);
+          if (log.stackTrace != null) buffer.writeln(log.stackTrace);
+          stderr.writeln(buffer);
+        } else {
+          stdout.writeln(log.message);
+        }
+      });
       var server = await AssetServer.run(builder, packageGraph.root.name);
       File(assetServerPortFilePath(workingDirectory))
           .writeAsStringSync('${server.port}');
