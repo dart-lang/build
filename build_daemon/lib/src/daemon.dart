@@ -55,7 +55,6 @@ class Daemon {
 
   Future<void> stop({String message}) => _server.stop(message: message);
 
-
   /// Starts the daemon.
   ///
   /// [changes] is a stream of lists of file changes. If multiple files change
