@@ -67,7 +67,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             (change) => AssetChange(AssetId.parse(change.path), change.type))
         .toList();
     var targetNames = targets.map((t) => t.target).toSet();
-    _logMessage(Level.info, 'About to build ${targetNames.toList()}...');
+    _logMessage(Level.INFO, 'About to build ${targetNames.toList()}...');
     _signalStart(targetNames);
     var results = <BuildResult>[];
     var buildDirs = defaultTargets.map((target) {
@@ -108,7 +108,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
           ..error = '$e'
           ..target = target.target));
       }
-      _logMessage(Level.severe, 'Build Failed:\n${e.toString()}');
+      _logMessage(Level.SEVERE, 'Build Failed:\n${e.toString()}');
     }
     _signalEnd(results);
   }

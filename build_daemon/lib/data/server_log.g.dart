@@ -6,7 +6,68 @@ part of 'server_log.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
+const Level _$finest = const Level._('FINEST');
+const Level _$finer = const Level._('FINER');
+const Level _$fine = const Level._('FINE');
+const Level _$config = const Level._('CONFIG');
+const Level _$info = const Level._('INFO');
+const Level _$warning = const Level._('WARNING');
+const Level _$severe = const Level._('SEVERE');
+const Level _$shout = const Level._('SHOUT');
+
+Level _$valueOf(String name) {
+  switch (name) {
+    case 'FINEST':
+      return _$finest;
+    case 'FINER':
+      return _$finer;
+    case 'FINE':
+      return _$fine;
+    case 'CONFIG':
+      return _$config;
+    case 'INFO':
+      return _$info;
+    case 'WARNING':
+      return _$warning;
+    case 'SEVERE':
+      return _$severe;
+    case 'SHOUT':
+      return _$shout;
+    default:
+      throw new ArgumentError(name);
+  }
+}
+
+final BuiltSet<Level> _$values = new BuiltSet<Level>(const <Level>[
+  _$finest,
+  _$finer,
+  _$fine,
+  _$config,
+  _$info,
+  _$warning,
+  _$severe,
+  _$shout,
+]);
+
+Serializer<Level> _$levelSerializer = new _$LevelSerializer();
 Serializer<ServerLog> _$serverLogSerializer = new _$ServerLogSerializer();
+
+class _$LevelSerializer implements PrimitiveSerializer<Level> {
+  @override
+  final Iterable<Type> types = const <Type>[Level];
+  @override
+  final String wireName = 'Level';
+
+  @override
+  Object serialize(Serializers serializers, Level object,
+          {FullType specifiedType = FullType.unspecified}) =>
+      object.name;
+
+  @override
+  Level deserialize(Serializers serializers, Object serialized,
+          {FullType specifiedType = FullType.unspecified}) =>
+      Level.valueOf(serialized as String);
+}
 
 class _$ServerLogSerializer implements StructuredSerializer<ServerLog> {
   @override

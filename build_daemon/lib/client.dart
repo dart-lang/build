@@ -33,7 +33,7 @@ Future<void> _handleDaemonStartup(
       .transform(const LineSplitter())
       .listen((line) {
     logHandler(ServerLog((b) => b
-      ..level = Level.severe
+      ..level = Level.SEVERE
       ..message = line));
   });
   var stdout = process.stdout
@@ -45,7 +45,7 @@ Future<void> _handleDaemonStartup(
   // starting. Capture this data and forward to the logHandler.
   var sub = stdout.where((line) => !_isActionMessage(line)).listen((line) {
     logHandler(ServerLog((b) => b
-      ..level = Level.info
+      ..level = Level.INFO
       ..message = line));
   });
 

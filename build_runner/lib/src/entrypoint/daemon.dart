@@ -68,7 +68,7 @@ class DaemonCommand extends BuildRunnerCommand {
 
       // Serialize server logs to daemon command STDIO.
       var logSub = builder.logs.listen((log) {
-        if (log.level.index > Level.info.index) {
+        if (log.level > Level.INFO) {
           var buffer = StringBuffer(log.message);
           if (log.error != null) buffer.writeln(log.error);
           if (log.stackTrace != null) buffer.writeln(log.stackTrace);
