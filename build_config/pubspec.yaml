@@ -21,6 +21,8 @@ dev_dependencies:
   test: ^1.6.0
 
 dependency_overrides:
+  build_daemon:
+    path: ../build_daemon
   build_runner:
     path: ../build_runner
   build_runner_core:
