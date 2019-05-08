@@ -43,7 +43,11 @@ class BuildConfig {
     final file = File(configPath);
     if (await file.exists()) {
       return BuildConfig.parse(
-          packageName, dependencies, await file.readAsString());
+        packageName,
+        dependencies,
+        await file.readAsString(),
+        configYamlPath: file.path,
+      );
     } else {
       return BuildConfig.useDefault(packageName, dependencies);
     }
@@ -87,14 +91,22 @@ class BuildConfig {
   }
 
   /// Create a [BuildConfig] by parsing [configYaml].
+  ///
+  /// If [configYamlPath] is passed, it's used as the URL from which
+  /// [configYaml] for error reporting.
   factory BuildConfig.parse(
-      String packageName, Iterable<String> dependencies, String configYaml) {
+    String packageName,
+    Iterable<String> dependencies,
+    String configYaml, {
+    String configYamlPath,
+  }) {
     try {
       return checkedYamlDecode(
         configYaml,
         (map) =>
             BuildConfig.fromMap(packageName, dependencies, map ?? const {}),
         allowNull: true,
+        sourceUrl: configYamlPath,
       );
     } on ParsedYamlException catch (e) {
       throw ArgumentError(e.formattedMessage);

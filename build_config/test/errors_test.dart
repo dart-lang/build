@@ -5,6 +5,66 @@
 import 'package:build_config/build_config.dart';
 import 'package:test/test.dart';
 
+void main() {
+  test('for missing default target', () {
+    var buildYaml = r'''
+targets:
+  not_package_name:
+    sources: ["lib/**"]
+''';
+
+    _expectThrows(buildYaml, r'''
+line 2, column 3 of build.yaml: Unsupported value for "targets". Must specify a target with the name `package_name` or `$default`.
+  ╷
+2 │ ┌   not_package_name:
+3 │ └     sources: ["lib/**"]
+  ╵''');
+  });
+
+  test('for bad build extensions', () {
+    var buildYaml = r'''
+builders:
+  some_builder:
+    build_extensions:
+      .dart:
+      - .dart
+    builder_factories: ["someFactory"]
+    import: package:package_name/builders.dart
+''';
+    _expectThrows(buildYaml, r'''
+line 4, column 7 of build.yaml: Unsupported value for "build_extensions". May not overwrite an input, the output extensions must not contain the input extension
+  ╷
+4 │ ┌       .dart:
+5 │ │       - .dart
+6 │ │     builder_factories: ["someFactory"]
+  │ └────^
+  ╵''');
+  });
+
+  test('for empty include globs', () {
+    var buildYaml = r'''
+targets:
+  $default:
+    builders:
+      some_package:some_builder:
+        generate_for:
+        -
+''';
+
+    _expectThrows(buildYaml, r'''
+line 6, column 9 of build.yaml: Unsupported value for "generate_for". Include globs must not be empty
+  ╷
+6 │         -
+  │         ^
+  ╵''');
+  });
+}
+
+void _expectThrows(String buildYaml, matcher) => expect(
+    () => BuildConfig.parse('package_name', [], buildYaml,
+        configYamlPath: 'build.yaml'),
+    _throwsError(matcher));
+
 Matcher _throwsError(matcher) => throwsA(
       isA<ArgumentError>().having(
         (e) {
@@ -15,61 +75,3 @@ Matcher _throwsError(matcher) => throwsA(
         matcher,
       ),
     );
-
-void main() {
-  group('parse errors', () {
-    test('for missing default target', () {
-      var buildYaml = r'''
-targets:
-  not_package_name:
-    sources: ["lib/**"]
-''';
-      expect(() => BuildConfig.parse('package_name', [], buildYaml),
-          _throwsError(r'''
-line 2, column 3: Unsupported value for "targets". Must specify a target with the name `package_name` or `$default`.
-  ╷
-2 │ ┌   not_package_name:
-3 │ └     sources: ["lib/**"]
-  ╵'''));
-    });
-
-    test('for bad build extensions', () {
-      var buildYaml = r'''
-builders:
-  some_builder:
-    build_extensions:
-      .dart:
-      - .dart
-    builder_factories: ["someFactory"]
-    import: package:package_name/builders.dart
-''';
-      expect(() => BuildConfig.parse('package_name', [], buildYaml),
-          _throwsError(r'''
-line 4, column 7: Unsupported value for "build_extensions". May not overwrite an input, the output extensions must not contain the input extension
-  ╷
-4 │ ┌       .dart:
-5 │ │       - .dart
-6 │ │     builder_factories: ["someFactory"]
-  │ └────^
-  ╵'''));
-    });
-
-    test('for empty include globs', () {
-      var buildYaml = r'''
-targets:
-  $default:
-    builders:
-      some_package:some_builder:
-        generate_for:
-        -
-''';
-      expect(() => BuildConfig.parse('package_name', [], buildYaml),
-          _throwsError(r'''
-line 6, column 9: Unsupported value for "generate_for". Include globs must not be empty
-  ╷
-6 │         -
-  │         ^
-  ╵'''));
-    });
-  });
-}

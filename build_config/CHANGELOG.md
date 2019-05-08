@@ -1,3 +1,9 @@
+## 0.4.1
+
+- Added optional `configYamlPath` parameter to `BuildConfig.parse`. When
+  provided, errors reported when parsing build configuration will include
+  the file path.
+
 ## 0.4.0
 
 - Breaking for build systems - change type of `BuilderOptions` fields to
