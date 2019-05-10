@@ -1,3 +1,7 @@
+## 0.6.1
+
+- Use `HttpMultiServer` to better support IPv6 and IPv4 workflows.
+
 ## 0.6.0
 
 - Add retry logic to the state file helpers `runningVersion` and `currentOptions`.
