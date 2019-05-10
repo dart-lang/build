@@ -178,6 +178,9 @@ class AssetGraph {
       var inputsNode = get(output) as NodeWithInputs;
       if (inputsNode != null) {
         inputsNode.inputs.remove(id);
+        if (inputsNode is GlobAssetNode) {
+          inputsNode.results.remove(id);
+        }
       }
     }
     if (node is NodeWithInputs) {

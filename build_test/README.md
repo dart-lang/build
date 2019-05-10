@@ -1,5 +1,3 @@
-# build_test
-
 <p align="center">
   Testing utilities for users of <a href="https://pub.dartlang.org/packages/build"><code>package:build</code></a>.
   <br>

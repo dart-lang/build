@@ -88,6 +88,7 @@ void main() {
 
   test('throws if you pass a non-root directory', () {
     expect(() => serveHandler.handlerFor('web/sub'), throwsArgumentError);
+    expect(() => serveHandler.handlerFor('.'), throwsArgumentError);
   });
 
   group('build failures', () {

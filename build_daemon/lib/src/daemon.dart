@@ -55,8 +55,13 @@ class Daemon {
 
   Future<void> stop({String message}) => _server.stop(message: message);
 
-  Future<void> start(
-      Set<String> options, DaemonBuilder builder, Stream<WatchEvent> changes,
+  /// Starts the daemon.
+  ///
+  /// [changes] is a stream of lists of file changes. If multiple files change
+  /// together then they should be sent on this stream in the same list.
+  /// Otherwise, at least two builds will be triggered.
+  Future<void> start(Set<String> options, DaemonBuilder builder,
+      Stream<List<WatchEvent>> changes,
       {Serializers serializersOverride,
       bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuild,
       Duration timeout = const Duration(seconds: 30)}) async {

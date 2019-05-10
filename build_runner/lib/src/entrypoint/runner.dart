@@ -4,18 +4,24 @@
 
 import 'dart:convert';
 
+import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 
+import 'base_command.dart' show lineLength;
 import 'build.dart';
 import 'daemon.dart';
 import 'doctor.dart';
+import 'run_script.dart';
 import 'serve.dart';
 import 'test.dart';
 import 'watch.dart';
 
 /// Unified command runner for all build_runner commands.
 class BuildCommandRunner extends CommandRunner<int> {
+  @override
+  final argParser = ArgParser(usageLineLength: lineLength);
+
   final List<BuilderApplication> builderApplications;
 
   final packageGraph = PackageGraph.forThisPackage();
@@ -26,6 +32,7 @@ class BuildCommandRunner extends CommandRunner<int> {
     addCommand(BuildCommand());
     addCommand(DaemonCommand());
     addCommand(DoctorCommand());
+    addCommand(RunCommand());
     addCommand(ServeCommand());
     addCommand(TestCommand(packageGraph));
     addCommand(WatchCommand());

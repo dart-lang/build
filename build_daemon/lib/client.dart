@@ -32,21 +32,25 @@ Future<void> _handleDaemonStartup(
       .transform(utf8.decoder)
       .transform(const LineSplitter())
       .listen((line) {
-    logHandler(ServerLog((b) => b..log = line));
+    logHandler(ServerLog((b) => b
+      ..level = Level.SEVERE
+      ..message = line));
   });
-  var stream = process.stdout
+  var stdout = process.stdout
       .transform(utf8.decoder)
       .transform(const LineSplitter())
       .asBroadcastStream();
 
   // The daemon may log critical information prior to it successfully
   // starting. Capture this data and forward to the logHandler.
-  var sub = stream.where((line) => !_isActionMessage(line)).listen((line) {
-    logHandler(ServerLog((b) => b..log = line));
+  var sub = stdout.where((line) => !_isActionMessage(line)).listen((line) {
+    logHandler(ServerLog((b) => b
+      ..level = Level.INFO
+      ..message = line));
   });
 
   var daemonAction =
-      await stream.firstWhere(_isActionMessage, orElse: () => null);
+      await stdout.firstWhere(_isActionMessage, orElse: () => null);
 
   if (daemonAction == null) {
     throw StateError('Unable to start build daemon.');

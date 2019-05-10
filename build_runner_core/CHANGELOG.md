@@ -1,3 +1,8 @@
+## 3.0.5
+
+- Explicitly require Dart SDK `>=2.2.0 <3.0.0`.
+- Fix an error that could occur when serializing outdated glob nodes.
+
 ## 3.0.4
 
 - Add additional error details and a fallback for
