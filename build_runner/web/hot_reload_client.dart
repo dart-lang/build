@@ -197,7 +197,8 @@ main() async {
   var handler = ReloadHandler(digests,
       (path) => dartLoader.urlToModuleId.get(currentOrigin + path), manager);
 
+  var prefix = window.location.href.startsWith('https:') ? 'wss' : 'ws';
   var webSocket =
-      WebSocket('ws://${window.location.host}', [_buildUpdatesProtocol]);
+      WebSocket('$prefix://${window.location.host}', [_buildUpdatesProtocol]);
   webSocket.onMessage.listen((event) => handler.listener(event.data as String));
 }
