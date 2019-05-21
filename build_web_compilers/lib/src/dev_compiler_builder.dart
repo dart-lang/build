@@ -41,6 +41,12 @@ class DevCompilerBuilder implements Builder {
     var module = Module.fromJson(
         json.decode(await buildStep.readAsString(buildStep.inputId))
             as Map<String, dynamic>);
+    // Entrypoints always have a `.module` file for ease of looking them up,
+    // but they might not be the primary source.
+    if (module.primarySource.changeExtension(moduleExtension(ddcPlatform)) !=
+        buildStep.inputId) {
+      return;
+    }
 
     Future<void> handleError(e) async {
       await buildStep.writeAsString(
