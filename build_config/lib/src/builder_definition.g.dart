@@ -35,8 +35,10 @@ BuilderDefinition _$BuilderDefinitionFromJson(Map json) {
         buildExtensions: $checkedConvert(
             json,
             'build_extensions',
-            (v) => (v as Map).map((k, e) => MapEntry(
-                k as String, (e as List).map((e) => e as String).toList()))),
+            (v) => (v as Map).map(
+                  (k, e) => MapEntry(k as String,
+                      (e as List).map((e) => e as String).toList()),
+                )),
         import: $checkedConvert(json, 'import', (v) => v as String),
         target: $checkedConvert(json, 'target', (v) => v as String),
         autoApply: $checkedConvert(json, 'auto_apply',
@@ -147,12 +149,24 @@ TargetBuilderConfigDefaults _$TargetBuilderConfigDefaultsFromJson(Map json) {
     final val = TargetBuilderConfigDefaults(
         generateFor: $checkedConvert(json, 'generate_for',
             (v) => v == null ? null : InputSet.fromJson(v)),
-        options: $checkedConvert(json, 'options',
-            (v) => (v as Map)?.map((k, e) => MapEntry(k as String, e))),
-        devOptions: $checkedConvert(json, 'dev_options',
-            (v) => (v as Map)?.map((k, e) => MapEntry(k as String, e))),
-        releaseOptions: $checkedConvert(json, 'release_options',
-            (v) => (v as Map)?.map((k, e) => MapEntry(k as String, e))));
+        options: $checkedConvert(
+            json,
+            'options',
+            (v) => (v as Map)?.map(
+                  (k, e) => MapEntry(k as String, e),
+                )),
+        devOptions: $checkedConvert(
+            json,
+            'dev_options',
+            (v) => (v as Map)?.map(
+                  (k, e) => MapEntry(k as String, e),
+                )),
+        releaseOptions: $checkedConvert(
+            json,
+            'release_options',
+            (v) => (v as Map)?.map(
+                  (k, e) => MapEntry(k as String, e),
+                )));
     return val;
   }, fieldKeyMap: const {
     'generateFor': 'generate_for',
