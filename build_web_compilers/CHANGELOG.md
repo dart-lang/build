@@ -1,3 +1,8 @@
+## 2.0.1
+
+- Fix issue #2269, which could cause applications to fail to properly bootstrap.
+- Skip compiling modules with ddc when the primary source isn't the primary
+  input (only shows up in non-lazy builds - essentially just tests).
 
 ## 2.0.0
 

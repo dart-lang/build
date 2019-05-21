@@ -1,3 +1,8 @@
+## 2.1.3
+
+- Skip compiling modules with kernel when the primary source isn't the primary
+  input (only shows up in non-lazy builds - essentially just tests).
+
 ## 2.1.2
 
 - Output additional `.module` files for all entrypoints to ease discovery of
