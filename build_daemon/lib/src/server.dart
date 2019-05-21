@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:built_value/serializer.dart';
+import 'package:http_multi_server/http_multi_server.dart';
 import 'package:pool/pool.dart';
 import 'package:shelf/shelf_io.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
@@ -79,7 +80,9 @@ class Server {
         _removeChannel(channel);
       });
     });
-    _server = await serve(handler, 'localhost', 0);
+
+    _server = await HttpMultiServer.loopback(0);
+    serveRequests(_server, handler);
     return _server.port;
   }
 
