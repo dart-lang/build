@@ -6,6 +6,9 @@ sudo: required
 addons:
   chrome: stable
 
+dart:
+  - dev
+
 # Build stages: https://docs.travis-ci.com/user/build-stages/.
 stages:
   - presubmit
@@ -19,25 +22,18 @@ jobs:
   include:
     - stage: presubmit
       script: ./tool/travis.sh dartfmt
-      dart: dev
     - stage: presubmit
       script: ./tool/travis.sh dartanalyzer
-      dart: dev
     - stage: presubmit
       script: ./tool/travis.sh vm_test
-      dart: dev
     - stage: build
       script: ./tool/travis.sh dartdevc_build
-      dart: dev
     - stage: testing
       script: ./tool/travis.sh dartdevc_test
-      dart: dev
     - stage: testing
       script: ./tool/travis.sh dart2js_test
-      dart: dev
     - stage: testing
       script: ./tool/travis.sh coverage
-      dart: dev
 
 # Only building master means that we don't run two builds for each pull request.
 branches:
