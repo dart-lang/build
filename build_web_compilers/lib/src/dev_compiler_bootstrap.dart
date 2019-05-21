@@ -62,10 +62,8 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
   // See https://github.com/dart-lang/sdk/issues/27262 for the root issue
   // which will allow us to not rely on the naming schemes that dartdevc uses
   // internally, but instead specify our own.
-  var appModuleScope = toJSIdentifier(() {
-    var basename = _context.basename(jsId.path);
-    return basename.substring(0, basename.length - jsModuleExtension.length);
-  }());
+  var appModuleScope = toJSIdentifier(
+      _context.withoutExtension(_context.basename(buildStep.inputId.path)));
 
   // Map from module name to module path for custom modules.
   var modulePaths = SplayTreeMap.of(
