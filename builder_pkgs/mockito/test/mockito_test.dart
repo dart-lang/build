@@ -154,10 +154,11 @@ void main() {
           .thenReturn("x y");
       when(mock.methodWithTwoNamedArgs(any, z: anyNamed('z')))
           .thenReturn("x z");
-      if (isNsmForwarding)
+      if (isNsmForwarding) {
         expect(mock.methodWithTwoNamedArgs(42), "x z");
-      else
+      } else {
         expect(mock.methodWithTwoNamedArgs(42), isNull);
+      }
       expect(mock.methodWithTwoNamedArgs(42, y: 18), equals("x y"));
       expect(mock.methodWithTwoNamedArgs(42, z: 17), equals("x z"));
       expect(mock.methodWithTwoNamedArgs(42, y: 18, z: 17), isNull);
