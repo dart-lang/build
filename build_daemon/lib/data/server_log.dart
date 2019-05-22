@@ -70,8 +70,7 @@ abstract class ServerLog implements Built<ServerLog, ServerLogBuilder> {
         ..level = Level.valueOf(record.level.name)
         ..loggerName = record.loggerName
         ..error = record?.error?.toString()
-        ..stackTrace =
-            record.stackTrace == null ? null : record.stackTrace.toString());
+        ..stackTrace = record.stackTrace?.toString());
 
   logging.LogRecord toLogRecord() {
     return logging.LogRecord(toLoggingLevel(level), message, loggerName ?? '',
