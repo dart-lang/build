@@ -21,10 +21,10 @@ _p.Context get _context => _p.url;
 
 var _modulePartialExtension = _context.withoutExtension(jsModuleExtension);
 
-Future<void> bootstrapDdc(BuildStep buildStep) async {
+Future<void> bootstrapDdc(BuildStep buildStep, {DartPlatform platform}) async {
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
-      buildStep.inputId.changeExtension(moduleExtension(ddcPlatform));
+      buildStep.inputId.changeExtension(moduleExtension(platform ?? ddcPlatform));
   var module = Module.fromJson(json
       .decode(await buildStep.readAsString(moduleId)) as Map<String, dynamic>);
 
