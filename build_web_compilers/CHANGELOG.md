@@ -1,3 +1,8 @@
+## 2.0.2
+
+- Prepare for the next sdk release, which changes what the uris look like for
+  non-package sources, and breaks our existing hot restart logic.
+
 ## 2.0.1
 
 - Fix issue #2269, which could cause applications to fail to properly bootstrap.

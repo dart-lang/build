@@ -164,6 +164,15 @@ define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_s
   app.$moduleScope.main();
   var bootstrap = {
       hot\$onChildUpdate: function(childName, child) {
+        // Special handling for the multi-root scheme uris. We need to strip
+        // out the scheme and the top level directory, to match the source path
+        // that chrome sees.
+        if (childName.startsWith('$multiRootScheme:///')) {
+          childName = childName.substring('$multiRootScheme:///'.length);
+          var firstSlash = childName.indexOf('/');
+          if (firstSlash == -1) return false;
+          childName = childName.substring(firstSlash + 1);
+        }
         if (childName === "$appModuleSource") {
           // Clear static caches.
           dart_sdk.dart.hotRestart();
