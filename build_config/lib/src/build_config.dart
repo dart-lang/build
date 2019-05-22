@@ -168,6 +168,9 @@ Map<String, T> _normalizeBuilderDefinitions<T>(
         MapEntry(normalizeBuilderKeyDefinition(key, packageName), definition));
 
 Map<String, BuildTarget> _buildTargetsFromJson(Map json) {
+  if (json == null) {
+    return null;
+  }
   var targets = json.map((key, target) => MapEntry(
       normalizeTargetKeyDefinition(key as String, currentPackage),
       BuildTarget.fromJson(target as Map)));
