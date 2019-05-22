@@ -296,7 +296,9 @@ Future<void> _addRequestArguments(
     '--exclude-non-sources',
     summaryOnly ? '--summary-only' : '--no-summary-only',
     '--libraries-file',
-    p.toUri(librariesPath ?? p.join(sdkDir, 'lib', 'libraries.json')).toString(),
+    p
+        .toUri(librariesPath ?? p.join(sdkDir, 'lib', 'libraries.json'))
+        .toString(),
   ]);
   if (useIncrementalCompiler) {
     request.arguments.addAll([
