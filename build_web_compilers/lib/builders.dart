@@ -22,7 +22,9 @@ Builder ddcMetaModuleBuilder(BuilderOptions options) =>
 Builder ddcMetaModuleCleanBuilder(_) => MetaModuleCleanBuilder(ddcPlatform);
 Builder ddcModuleBuilder([_]) => ModuleBuilder(ddcPlatform);
 Builder ddcBuilder(BuilderOptions options) => DevCompilerBuilder(
-    useIncrementalCompiler: _readUseIncrementalCompilerOption(options));
+    useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
+    platform: ddcPlatform,
+);
 const ddcKernelExtension = '.ddc.dill';
 Builder ddcKernelBuilder(BuilderOptions options) => KernelBuilder(
     summaryOnly: true,
