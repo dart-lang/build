@@ -1,4 +1,4 @@
-## 2.0.3
+## 2.1.0
 
 - Make `platformSdk`, `sdkKernelPath`, and `platform` configurable in
   `DevCompilerBuilder`.

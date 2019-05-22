@@ -1,4 +1,4 @@
-## 2.1.4
+## 2.2.0
 
 - Make the `librariesPath` in the `KernelBuilder` configurable.
 - Fixed bug where the configured dart SDK was ignored.
