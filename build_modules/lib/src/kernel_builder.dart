@@ -58,9 +58,9 @@ class KernelBuilder implements Builder {
   /// directory, which contains the platform kernel files.
   final String platformSdk;
 
-  /// The libraries file for the current platform.
+  /// The absolute path to the libraries file for the current platform.
   ///
-  /// If not provided, defaults to "lib/libraries.json".
+  /// If not provided, defaults to "lib/libraries.json" in the sdk directory.
   final String librariesPath;
 
   KernelBuilder(
@@ -68,10 +68,12 @@ class KernelBuilder implements Builder {
       @required this.summaryOnly,
       @required this.sdkKernelPath,
       @required this.outputExtension,
-      this.librariesPath,
+      String librariesPath,
       bool useIncrementalCompiler,
       String platformSdk})
       : platformSdk = platformSdk ?? sdkDir,
+        librariesPath = librariesPath ??
+            p.join(platformSdk ?? sdkDir, 'lib', 'libraries.json'),
         useIncrementalCompiler = useIncrementalCompiler ?? false,
         buildExtensions = {
           moduleExtension(platform): [outputExtension]
@@ -296,9 +298,7 @@ Future<void> _addRequestArguments(
     '--exclude-non-sources',
     summaryOnly ? '--summary-only' : '--no-summary-only',
     '--libraries-file',
-    p
-        .toUri(librariesPath ?? p.join(sdkDir, 'lib', 'libraries.json'))
-        .toString(),
+    p.toUri(librariesPath).toString(),
   ]);
   if (useIncrementalCompiler) {
     request.arguments.addAll([

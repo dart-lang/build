@@ -1,3 +1,8 @@
+## 2.1.4
+
+- Make the `librariesPath` in the `KernelBuilder` configurable.
+- Fixed bug where the configured dart SDK was ignored.
+
 ## 2.1.3
 
 - Skip compiling modules with kernel when the primary source isn't the primary

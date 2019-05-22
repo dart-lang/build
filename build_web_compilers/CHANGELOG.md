@@ -1,3 +1,8 @@
+## 2.0.3
+
+- Make `platformSdk`, `sdkKernelPath`, and `platform` configurable in
+  `DevCompilerBuilder`.
+
 ## 2.0.2
 
 - Prepare for the next sdk release, which changes what the uris look like for
