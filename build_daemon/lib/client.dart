@@ -43,10 +43,35 @@ Future<void> _handleDaemonStartup(
 
   // The daemon may log critical information prior to it successfully
   // starting. Capture this data and forward to the logHandler.
+  //
+  // Whenever we see a `logStartMarker` we will parse everything between that
+  // and the `logEndMarker` as a `ServerLog`. Everything else is considered a
+  // normal INFO level log.
+  StringBuffer nextLogRecord;
   var sub = stdout.where((line) => !_isActionMessage(line)).listen((line) {
-    logHandler(ServerLog((b) => b
-      ..level = Level.INFO
-      ..message = line));
+    if (nextLogRecord != null) {
+      if (line == logEndMarker) {
+        try {
+          logHandler(serializers
+              .deserialize(jsonDecode(nextLogRecord.toString())) as ServerLog);
+        } catch (e, s) {
+          logHandler(ServerLog((builder) => builder
+            ..message = 'Failed to read log message:\n$nextLogRecord'
+            ..level = Level.SEVERE
+            ..error = '$e'
+            ..stackTrace = '$s'));
+        }
+        nextLogRecord = null;
+      } else {
+        nextLogRecord.writeln(line);
+      }
+    } else if (line == logStartMarker) {
+      nextLogRecord = StringBuffer();
+    } else {
+      logHandler(ServerLog((b) => b
+        ..level = Level.INFO
+        ..message = line));
+    }
   });
 
   var daemonAction =

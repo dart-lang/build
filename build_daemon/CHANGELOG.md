@@ -1,4 +1,4 @@
-## 1.0.0-dev
+## 1.0.0
 
 - Changed the `ServerLog` class to have separate `level`, `message`,
   `loggerName`, `error`, and `stackTrace` fields.

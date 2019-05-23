@@ -3,9 +3,11 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:build_daemon/constants.dart';
+import 'package:build_daemon/data/serializers.dart';
 import 'package:build_daemon/data/server_log.dart';
 import 'package:build_daemon/src/daemon.dart';
 import 'package:build_runner/src/daemon/constants.dart';
@@ -57,8 +59,15 @@ class DaemonCommand extends BuildRunnerCommand {
       stdout.writeln('Starting daemon...');
       BuildRunnerDaemonBuilder builder;
       // Ensure we capture any logs that happen during startup.
+      //
+      // These are serialized between special `<log-record>` and `</log-record>`
+      // tags to make parsing them on stdout easier. They can have multiline
+      // strings so we can't just serialize the json on a single line.
       var startupLogSub =
-          Logger.root.onRecord.listen((record) => stdout.writeln('$record\n'));
+          Logger.root.onRecord.listen((record) => stdout.writeln('''
+$logStartMarker
+${jsonEncode(serializers.serialize(ServerLog.fromLogRecord(record)))}
+$logEndMarker'''));
       builder = await BuildRunnerDaemonBuilder.create(
         packageGraph,
         builderApplications,
