@@ -51,8 +51,16 @@ Future<void> _handleDaemonStartup(
   var sub = stdout.where((line) => !_isActionMessage(line)).listen((line) {
     if (nextLogRecord != null) {
       if (line == logEndMarker) {
-        logHandler(serializers.deserialize(jsonDecode(nextLogRecord.toString()))
-            as ServerLog);
+        try {
+          logHandler(serializers
+              .deserialize(jsonDecode(nextLogRecord.toString())) as ServerLog);
+        } catch (e, s) {
+          logHandler(ServerLog((builder) => builder
+            ..message = 'Failed to read log message:\n$nextLogRecord'
+            ..level = Level.SEVERE
+            ..error = '$e'
+            ..stackTrace = '$s'));
+        }
         nextLogRecord = null;
       } else {
         nextLogRecord.writeln(line);

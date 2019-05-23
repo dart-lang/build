@@ -10,7 +10,7 @@ const readyToConnectLog = 'READY TO CONNECT';
 const versionSkew = 'DIFFERENT RUNNING VERSION';
 const optionsSkew = 'DIFFERENT OPTIONS';
 
-/// These are used when serializing logs messages over stdout.
+/// These are used when serializing log messages over stdout.
 ///
 /// Serialized logs must be preceded with the [logStartMarker] on its own line,
 /// and terminated with a [logEndMarker] also on its own line.
