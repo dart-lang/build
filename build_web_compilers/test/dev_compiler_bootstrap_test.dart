@@ -102,5 +102,6 @@ Future<void> runPrerequisites(Map<String, dynamic> assets) async {
   await testBuilderAndCollectAssets(ModuleBuilder(ddcPlatform), assets);
   await testBuilderAndCollectAssets(
       ddcKernelBuilder(BuilderOptions({})), assets);
-  await testBuilderAndCollectAssets(DevCompilerBuilder(), assets);
+  await testBuilderAndCollectAssets(
+      DevCompilerBuilder(platform: ddcPlatform), assets);
 }

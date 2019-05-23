@@ -58,14 +58,22 @@ class KernelBuilder implements Builder {
   /// directory, which contains the platform kernel files.
   final String platformSdk;
 
+  /// The absolute path to the libraries file for the current platform.
+  ///
+  /// If not provided, defaults to "lib/libraries.json" in the sdk directory.
+  final String librariesPath;
+
   KernelBuilder(
       {@required this.platform,
       @required this.summaryOnly,
       @required this.sdkKernelPath,
       @required this.outputExtension,
+      String librariesPath,
       bool useIncrementalCompiler,
       String platformSdk})
       : platformSdk = platformSdk ?? sdkDir,
+        librariesPath = librariesPath ??
+            p.join(platformSdk ?? sdkDir, 'lib', 'libraries.json'),
         useIncrementalCompiler = useIncrementalCompiler ?? false,
         buildExtensions = {
           moduleExtension(platform): [outputExtension]
@@ -92,6 +100,7 @@ class KernelBuilder implements Builder {
           platform: platform,
           dartSdkDir: platformSdk,
           sdkKernelPath: sdkKernelPath,
+          librariesPath: librariesPath,
           useIncrementalCompiler: useIncrementalCompiler);
     } on MissingModulesException catch (e) {
       log.severe(e.toString());
@@ -114,6 +123,7 @@ Future<void> _createKernel(
     @required DartPlatform platform,
     @required String dartSdkDir,
     @required String sdkKernelPath,
+    @required String librariesPath,
     @required bool useIncrementalCompiler}) async {
   var request = WorkRequest();
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
@@ -142,8 +152,9 @@ Future<void> _createKernel(
         module,
         kernelDeps,
         platform,
-        sdkDir,
+        dartSdkDir,
         sdkKernelPath,
+        librariesPath,
         outputFile,
         packagesFile,
         summaryOnly,
@@ -269,6 +280,7 @@ Future<void> _addRequestArguments(
     DartPlatform platform,
     String sdkDir,
     String sdkKernelPath,
+    String librariesPath,
     File outputFile,
     File packagesFile,
     bool summaryOnly,
@@ -286,7 +298,7 @@ Future<void> _addRequestArguments(
     '--exclude-non-sources',
     summaryOnly ? '--summary-only' : '--no-summary-only',
     '--libraries-file',
-    p.toUri(p.join(sdkDir, 'lib', 'libraries.json')).toString(),
+    p.toUri(librariesPath).toString(),
   ]);
   if (useIncrementalCompiler) {
     request.arguments.addAll([
