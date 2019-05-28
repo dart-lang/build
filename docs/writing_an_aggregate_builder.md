@@ -140,7 +140,7 @@ separate builder definitions in `build.yaml` and use `runs_before` or
    later. Serialize this to json or similar and write it as an intermediate
    file. This should always be `build_to: cache`.
 2. A `Builder` with `buildExtensiosn` of `{r'$lib$': ['final_output_name']}`.
-   Use the glob APIs to read and desrialize the outputs from the previous step,
+   Use the glob APIs to read and deserialize the outputs from the previous step,
    then generate the final content.
 
 This strategy has the benefit of improved invalidation - only the files that
