@@ -1,4 +1,4 @@
-## 1.5.0-dev
+## 1.5.0
 
 - Update to the latest `build_daemon`.
 
