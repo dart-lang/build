@@ -122,3 +122,31 @@ class ListAllFilesBuilder implements Builder {
   }
 }
 ```
+
+## Using a `Resolver`
+
+The `Resolver` provided by the build system only works when the primary input to
+a build step is a `.dart` library, and then only for the code transitively
+imported by that library. If an aggregate builder needs to resolve Dart code
+from the inputs it globs then it needs to be split into two steps:
+
+1. A `Builder` with `buildExtensions` of `{'.dart': ['.some_name.info']}`. Use
+   the `Resolver` to find the information about the code that will be necessary
+   later. Serialize this to json or similar and write it as an intermediate
+   file. This should always be `build_to: cache`.
+2. A `Builder` with `buildExtensiosn` of `{r'$lib$': ['final_output_name']}`.
+   Use the glob APIs to read and deserialize the outputs from the previous step,
+   then generate the final content.
+
+Each of these steps  must be a separate `Builder` instance in Dart code. They
+can be in the same builder definition in `build.yaml` only if they are both
+output to cache. If the final result should be built to source they must be
+separate builder definitions. In the single builder definition case ordering is
+handled by the order of the `builder_factories` in the config. In the separate
+builder definition case ordering should be handled by configuring the second
+step to have a `required_inputs: ['.some_name.info']` based on the build
+extensions of the first step.
+
+This strategy has the benefit of improved invalidation - only the files that
+_need_ to be re-read with the `Resolver` will be invalidated, the rest of the
+`.info` files will be retained as-is.
