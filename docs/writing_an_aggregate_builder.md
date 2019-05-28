@@ -128,12 +128,7 @@ class ListAllFilesBuilder implements Builder {
 The `Resolver` provided by the build system only works when the primary input to
 a build step is a `.dart` library, and then only for the code transitively
 imported by that library. If an aggregate builder needs to resolve Dart code
-form the inputs it globs then it needs to be split into two steps. Each of these
-steps can be implemented as a separate `builder_factory` (and `Builder` class)
-but roll into the same builder definition in `build.yaml` if they can both
-output to cache - otherwise for the final output to source they need to be
-separate builder definitions in `build.yaml` and use `runs_before` or
-`required_inputs` to ensure that they happen in the correct order.
+form the inputs it globs then it needs to be split into two steps:
 
 1. A `Builder` with `buildExtensions` of `{'.dart': ['.some_name.info']}`. Use
    the `Resolver` to find the information about the code that will be necessary
@@ -142,6 +137,15 @@ separate builder definitions in `build.yaml` and use `runs_before` or
 2. A `Builder` with `buildExtensiosn` of `{r'$lib$': ['final_output_name']}`.
    Use the glob APIs to read and deserialize the outputs from the previous step,
    then generate the final content.
+
+Each of these steps  must be a separate `Builder` instance in Dart code. They
+can be in the same builder definition in `build.yaml` only if they are both
+output to cache. If the final result should be built to source they must be
+separate builder definitions. In the single builder definition case ordering is
+handled by the order of the `builder_factories` in the config. In the separate
+builder definition case ordering should be handled by configuring the second
+step to have a `required_inputs: ['.some_name.info']` based on the build
+extensions of the first step.
 
 This strategy has the benefit of improved invalidation - only the files that
 _need_ to be re-read with the `Resolver` will be invalidated, the rest of the
