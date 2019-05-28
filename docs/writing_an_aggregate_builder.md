@@ -128,7 +128,7 @@ class ListAllFilesBuilder implements Builder {
 The `Resolver` provided by the build system only works when the primary input to
 a build step is a `.dart` library, and then only for the code transitively
 imported by that library. If an aggregate builder needs to resolve Dart code
-form the inputs it globs then it needs to be split into two steps:
+from the inputs it globs then it needs to be split into two steps:
 
 1. A `Builder` with `buildExtensions` of `{'.dart': ['.some_name.info']}`. Use
    the `Resolver` to find the information about the code that will be necessary
