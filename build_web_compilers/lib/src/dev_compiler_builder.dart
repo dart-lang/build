@@ -92,13 +92,13 @@ Future<void> _createDevCompilerModule(Module module, BuildStep buildStep,
     {bool debugMode = true}) async {
   var transitiveDeps = await buildStep.trackStage('CollectTransitiveDeps',
       () => module.computeTransitiveDependencies(buildStep));
-  var transitiveKernelDeps = transitiveDeps.map(
-      (module) => module.primarySource.changeExtension(ddcKernelExtension));
+  var transitiveKernelDeps = [
+    for (var dep in transitiveDeps)
+      dep.primarySource.changeExtension(ddcKernelExtension)
+  ];
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
 
-  var allAssetIds = Set<AssetId>()
-    ..addAll(module.sources)
-    ..addAll(transitiveKernelDeps);
+  var allAssetIds = {...module.sources, ...transitiveKernelDeps};
   await buildStep.trackStage(
       'EnsureAssets', () => scratchSpace.ensureAssets(allAssetIds, buildStep));
   var jsId = module.primarySource.changeExtension(jsModuleExtension);
@@ -106,6 +106,7 @@ Future<void> _createDevCompilerModule(Module module, BuildStep buildStep,
   var sdkSummary =
       p.url.join(dartSdk, sdkKernelPath ?? 'lib/_internal/ddc_sdk.dill');
 
+  var packagesFile = await createPackagesFile(allAssetIds);
   var request = WorkRequest()
     ..arguments.addAll([
       '--dart-sdk-summary=$sdkSummary',
@@ -114,56 +115,33 @@ Future<void> _createDevCompilerModule(Module module, BuildStep buildStep,
       '-o',
       jsOutputFile.path,
       debugMode ? '--source-map' : '--no-source-map',
+      for (var dep in transitiveDeps) _summaryArg(dep),
+      '--packages=${packagesFile.absolute.uri}',
+      '--module-name=${ddcModuleName(jsId)}',
+      '--multi-root-scheme=$multiRootScheme',
+      '--multi-root=.',
+      '--track-widget-creation',
+      '--inline-source-map',
+      if (useIncrementalCompiler) ...[
+        '--reuse-compiler-result',
+        '--use-incremental-compiler',
+      ],
+      // The urls to compile, using the package: path for files under lib and the
+      // full absolute path for other files.
+      ...module.sources.map((id) {
+        var uri = canonicalUriFor(id);
+        return uri.startsWith('package:')
+            ? uri
+            : '$multiRootScheme:///${id.path}';
+      }),
     ])
     ..inputs.add(Input()
       ..path = sdkSummary
       ..digest = [0])
-    ..inputs.addAll(await Future.wait(transitiveDeps.map((dep) async {
-      final kernelAsset = dep.primarySource.changeExtension(ddcKernelExtension);
-      return Input()
-        ..path = scratchSpace.fileFor(kernelAsset).path
-        ..digest = (await buildStep.digest(kernelAsset)).bytes;
-    })))
-    ..arguments.addAll(transitiveDeps.expand((dep) {
-      final kernelAsset = dep.primarySource.changeExtension(ddcKernelExtension);
-      var moduleName =
-          ddcModuleName(dep.primarySource.changeExtension(jsModuleExtension));
-      return ['-s', '${scratchSpace.fileFor(kernelAsset).path}=$moduleName'];
-    }));
-
-  var allDeps = <AssetId>[]
-    ..addAll(module.sources)
-    ..addAll(transitiveKernelDeps);
-  var packagesFile = await createPackagesFile(allDeps);
-  request.arguments.addAll([
-    '--packages',
-    packagesFile.absolute.uri.toString(),
-    '--module-name',
-    ddcModuleName(module.primarySource.changeExtension(jsModuleExtension)),
-    '--multi-root-scheme',
-    multiRootScheme,
-    '--multi-root',
-    '.',
-    '--track-widget-creation',
-    '--inline-source-map',
-  ]);
-
-  if (useIncrementalCompiler) {
-    request.arguments.addAll([
-      '--reuse-compiler-result',
-      '--use-incremental-compiler',
-    ]);
-  }
-
-  // And finally add all the urls to compile, using the package: path for
-  // files under lib and the full absolute path for other files.
-  request.arguments.addAll(module.sources.map((id) {
-    var uri = canonicalUriFor(id);
-    if (uri.startsWith('package:')) {
-      return uri;
-    }
-    return '$multiRootScheme:///${id.path}';
-  }));
+    ..inputs.addAll(
+        await Future.wait(transitiveKernelDeps.map((dep) async => Input()
+          ..path = scratchSpace.fileFor(dep).path
+          ..digest = (await buildStep.digest(dep)).bytes)));
 
   WorkResponse response;
   try {
@@ -204,6 +182,14 @@ Future<void> _createDevCompilerModule(Module module, BuildStep buildStep,
       await buildStep.writeAsString(sourceMapId, jsonEncode(json));
     }
   }
+}
+
+/// Returns the `--summary=` argument for a dependency.
+String _summaryArg(Module module) {
+  final kernelAsset = module.primarySource.changeExtension(ddcKernelExtension);
+  final moduleName =
+      ddcModuleName(module.primarySource.changeExtension(jsModuleExtension));
+  return '--summary=${scratchSpace.fileFor(kernelAsset).path}=$moduleName';
 }
 
 /// Copied to `web/stack_trace_mapper.dart`, these need to be kept in sync.
