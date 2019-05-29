@@ -126,14 +126,7 @@ Future<void> _createDevCompilerModule(Module module, BuildStep buildStep,
         '--reuse-compiler-result',
         '--use-incremental-compiler',
       ],
-      // The urls to compile, using the package: path for files under lib and the
-      // full absolute path for other files.
-      ...module.sources.map((id) {
-        var uri = canonicalUriFor(id);
-        return uri.startsWith('package:')
-            ? uri
-            : '$multiRootScheme:///${id.path}';
-      }),
+      for (var source in module.sources) _sourceArg(source),
     ])
     ..inputs.add(Input()
       ..path = sdkSummary
@@ -190,6 +183,15 @@ String _summaryArg(Module module) {
   final moduleName =
       ddcModuleName(module.primarySource.changeExtension(jsModuleExtension));
   return '--summary=${scratchSpace.fileFor(kernelAsset).path}=$moduleName';
+}
+
+/// The url to compile for a source.
+///
+/// Use the package: path for files under lib and the full absolute path for
+/// other files.
+String _sourceArg(AssetId id) {
+  var uri = canonicalUriFor(id);
+  return uri.startsWith('package:') ? uri : '$multiRootScheme:///${id.path}';
 }
 
 /// Copied to `web/stack_trace_mapper.dart`, these need to be kept in sync.
