@@ -98,7 +98,7 @@ Future<void> _createDevCompilerModule(Module module, BuildStep buildStep,
   ];
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
 
-  var allAssetIds = {...module.sources, ...transitiveKernelDeps};
+  var allAssetIds = <AssetId>{...module.sources, ...transitiveKernelDeps};
   await buildStep.trackStage(
       'EnsureAssets', () => scratchSpace.ensureAssets(allAssetIds, buildStep));
   var jsId = module.primarySource.changeExtension(jsModuleExtension);

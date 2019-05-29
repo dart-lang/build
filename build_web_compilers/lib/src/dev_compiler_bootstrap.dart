@@ -109,11 +109,13 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
   // These can be consumed for hot reloads.
   var moduleDigests = <String, String>{
     for (var jsId in transitiveJsModules)
-      jsId.path.replaceFirst('lib/', 'packages/${jsId.package}/'):
-          '${await buildStep.digest(jsId)}',
+      _moduleDigestKey(jsId): '${await buildStep.digest(jsId)}',
   };
   await buildStep.writeAsString(appDigestsOutput, jsonEncode(moduleDigests));
 }
+
+String _moduleDigestKey(AssetId jsId) =>
+    '${ddcModuleName(jsId)}$jsModuleExtension';
 
 final _lazyBuildPool = Pool(16);
 
