@@ -29,9 +29,9 @@ Future<void> bootstrapDdc(BuildStep buildStep, {DartPlatform platform}) async {
       .decode(await buildStep.readAsString(moduleId)) as Map<String, dynamic>);
 
   // First, ensure all transitive modules are built.
-  List<Module> transitiveDeps;
+  List<AssetId> transitiveJsModules;
   try {
-    transitiveDeps = await _ensureTransitiveModules(module, buildStep);
+    transitiveJsModules = await _ensureTransitiveJsModules(module, buildStep);
   } on UnsupportedModules catch (e) {
     var librariesString = (await e.exactLibraries(buildStep).toList())
         .map((lib) => AssetId(lib.id.package,
@@ -68,8 +68,6 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
   // Map from module name to module path for custom modules.
   var modulePaths = SplayTreeMap.of(
       {'dart_sdk': r'packages/build_web_compilers/src/dev_compiler/dart_sdk'});
-  var transitiveJsModules = [jsId]..addAll(transitiveDeps
-      .map((dep) => dep.primarySource.changeExtension(jsModuleExtension)));
   for (var jsId in transitiveJsModules) {
     // Strip out the top level dir from the path for any module, and set it to
     // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
@@ -109,16 +107,15 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
 
   // Output the digests for transitive modules.
   // These can be consumed for hot reloads.
-  var moduleDigests = <String, String>{};
-  for (var dep in transitiveDeps.followedBy([module])) {
-    var assetId = dep.primarySource.changeExtension(jsModuleExtension);
-    moduleDigests[
-            assetId.path.replaceFirst('lib/', 'packages/${assetId.package}/')] =
-        (await buildStep.digest(assetId)).toString();
-  }
-
+  var moduleDigests = <String, String>{
+    for (var jsId in transitiveJsModules)
+      _moduleDigestKey(jsId): '${await buildStep.digest(jsId)}',
+  };
   await buildStep.writeAsString(appDigestsOutput, jsonEncode(moduleDigests));
 }
+
+String _moduleDigestKey(AssetId jsId) =>
+    '${ddcModuleName(jsId)}$jsModuleExtension';
 
 final _lazyBuildPool = Pool(16);
 
@@ -126,15 +123,17 @@ final _lazyBuildPool = Pool(16);
 ///
 /// Throws an [UnsupportedModules] exception if there are any
 /// unsupported modules.
-Future<List<Module>> _ensureTransitiveModules(
+Future<List<AssetId>> _ensureTransitiveJsModules(
     Module module, BuildStep buildStep) async {
   // Collect all the modules this module depends on, plus this module.
   var transitiveDeps = await module.computeTransitiveDependencies(buildStep,
       throwIfUnsupported: true);
-  var jsModules = transitiveDeps
-      .map((module) => module.primarySource.changeExtension(jsModuleExtension))
-      .toList()
-        ..add(module.primarySource.changeExtension(jsModuleExtension));
+
+  var jsModules = [
+    module.primarySource.changeExtension(jsModuleExtension),
+    for (var dep in transitiveDeps)
+      dep.primarySource.changeExtension(jsModuleExtension),
+  ];
   // Check that each module is readable, and warn otherwise.
   await Future.wait(jsModules.map((jsId) async {
     if (await _lazyBuildPool.withResource(() => buildStep.canRead(jsId))) {
@@ -146,7 +145,7 @@ Future<List<Module>> _ensureTransitiveModules(
         '`.dart_tool/build/generated/${errorsId.package}/${errorsId.path}` '
         'log file.');
   }));
-  return transitiveDeps;
+  return jsModules;
 }
 
 /// Code that actually imports the [moduleName] module, and calls the
