@@ -2,7 +2,7 @@
   <a href="https://travis-ci.org/dart-lang/source_gen">
     <img src="https://travis-ci.org/dart-lang/source_gen.svg?branch=master" alt="Build Status" />
   </a>
-  <a href="https://pub.dartlang.org/packages/source_gen">
+  <a href="https://pub.dev/packages/source_gen">
     <img src="https://img.shields.io/pub/v/source_gen.svg" alt="Pub Package Version" />
   </a>
   <a href="https://gitter.im/dart-lang/build">
@@ -109,17 +109,17 @@ creates `part of` files, while the [`LibraryBuilder`][api:LibraryBuilder] class
 wraps a single Generator to make a `Builder` which creates Dart library files.
 
 <!-- Packages -->
-[analyzer]: https://pub.dartlang.org/packages/analyzer
-[bazel_codegen]: https://pub.dartlang.org/packages/_bazel_codegen
-[build]: https://pub.dartlang.org/packages/build
-[build_config]: https://pub.dartlang.org/packages/build_config
-[build_runner]: https://pub.dartlang.org/packages/build_runner
+[analyzer]: https://pub.dev/packages/analyzer
+[bazel_codegen]: https://pub.dev/packages/_bazel_codegen
+[build]: https://pub.dev/packages/build
+[build_config]: https://pub.dev/packages/build_config
+[build_runner]: https://pub.dev/packages/build_runner
 
 <!-- Dartdoc -->
-[api:Builder]: https://pub.dartlang.org/documentation/build/latest/build/Builder-class.html
-[api:Generator]: https://pub.dartlang.org/documentation/source_gen/latest/source_gen/Generator-class.html
-[api:PartBuilder]: https://pub.dartlang.org/documentation/source_gen/latest/source_gen/PartBuilder-class.html
-[api:LibraryBuilder]: https://pub.dartlang.org/documentation/source_gen/latest/source_gen/LibraryBuilder-class.html
+[api:Builder]: https://pub.dev/documentation/build/latest/build/Builder-class.html
+[api:Generator]: https://pub.dev/documentation/source_gen/latest/source_gen/Generator-class.html
+[api:PartBuilder]: https://pub.dev/documentation/source_gen/latest/source_gen/PartBuilder-class.html
+[api:LibraryBuilder]: https://pub.dev/documentation/source_gen/latest/source_gen/LibraryBuilder-class.html
 
 [Trivial example]: https://github.com/dart-lang/source_gen/blob/master/source_gen/test/src/comment_generator.dart
 [Full example package]: https://github.com/dart-lang/source_gen/tree/master/example
