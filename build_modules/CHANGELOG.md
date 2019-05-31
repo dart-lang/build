@@ -1,6 +1,6 @@
 ## 1.0.11
 
-- Allow build_config 0.5.x.
+- Allow build_config 0.4.x.
 
 ## 1.0.10
 
