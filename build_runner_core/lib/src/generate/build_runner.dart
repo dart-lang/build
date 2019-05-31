@@ -18,7 +18,7 @@ class BuildRunner {
   final BuildImpl _build;
   BuildRunner._(this._build);
 
-  Future<Null> beforeExit() => _build.beforeExit();
+  Future<void> beforeExit() => _build.beforeExit();
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates,
           {Set<BuildDirectory> buildDirs}) =>

@@ -1,3 +1,23 @@
+## 3.0.5
+
+- Explicitly require Dart SDK `>=2.2.0 <3.0.0`.
+- Fix an error that could occur when serializing outdated glob nodes.
+
+## 3.0.4
+
+- Add additional error details and a fallback for
+  https://github.com/dart-lang/build/issues/1804
+
+## 3.0.3
+
+- Share an asset graph when building regardless of whether the build script was
+  started from a snapshot.
+
+## 3.0.2
+
+- Only track valid and readable assets as inputs to globs. Fixes a crash when
+  attempting to check outputs from an invalid asset.
+
 ## 3.0.1
 
 - Remove usage of set literals to fix errors on older sdks that don't support

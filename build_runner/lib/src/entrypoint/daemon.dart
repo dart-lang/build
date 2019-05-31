@@ -3,11 +3,15 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:build_daemon/constants.dart';
+import 'package:build_daemon/data/serializers.dart';
+import 'package:build_daemon/data/server_log.dart';
 import 'package:build_daemon/src/daemon.dart';
 import 'package:build_runner/src/daemon/constants.dart';
+import 'package:logging/logging.dart' hide Level;
 
 import '../daemon/asset_server.dart';
 import '../daemon/daemon_builder.dart';
@@ -31,8 +35,8 @@ class DaemonCommand extends BuildRunnerCommand {
     var daemon = Daemon(workingDirectory);
     var requestedOptions = argResults.arguments.toSet();
     if (!daemon.tryGetLock()) {
-      var runningOptions = currentOptions(workingDirectory);
-      var version = runningVersion(workingDirectory);
+      var runningOptions = await currentOptions(workingDirectory);
+      var version = await runningVersion(workingDirectory);
       if (version != currentVersion) {
         stdout
           ..writeln('Running Version: $version')
@@ -53,18 +57,42 @@ class DaemonCommand extends BuildRunnerCommand {
       }
     } else {
       stdout.writeln('Starting daemon...');
-      var builder = await BuildRunnerDaemonBuilder.create(
+      BuildRunnerDaemonBuilder builder;
+      // Ensure we capture any logs that happen during startup.
+      //
+      // These are serialized between special `<log-record>` and `</log-record>`
+      // tags to make parsing them on stdout easier. They can have multiline
+      // strings so we can't just serialize the json on a single line.
+      var startupLogSub =
+          Logger.root.onRecord.listen((record) => stdout.writeln('''
+$logStartMarker
+${jsonEncode(serializers.serialize(ServerLog.fromLogRecord(record)))}
+$logEndMarker'''));
+      builder = await BuildRunnerDaemonBuilder.create(
         packageGraph,
         builderApplications,
         options,
       );
+      await startupLogSub.cancel();
+
       // Forward server logs to daemon command STDIO.
-      var logSub =
-          builder.logs.listen((serverLog) => stdout.writeln(serverLog.log));
+      var logSub = builder.logs.listen((log) {
+        if (log.level > Level.INFO) {
+          var buffer = StringBuffer(log.message);
+          if (log.error != null) buffer.writeln(log.error);
+          if (log.stackTrace != null) buffer.writeln(log.stackTrace);
+          stderr.writeln(buffer);
+        } else {
+          stdout.writeln(log.message);
+        }
+      });
       var server = await AssetServer.run(builder, packageGraph.root.name);
       File(assetServerPortFilePath(workingDirectory))
           .writeAsStringSync('${server.port}');
-      await daemon.start(requestedOptions, builder, builder.changes);
+      // TODO(davidmorgan): debounce changes instead of passing through as
+      // singleton lists.
+      await daemon.start(
+          requestedOptions, builder, builder.changes.map((change) => [change]));
       stdout.writeln(readyToConnectLog);
       await logSub.cancel();
       await daemon.onDone.whenComplete(() async {

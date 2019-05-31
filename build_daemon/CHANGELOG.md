@@ -1,3 +1,26 @@
+## 1.0.0
+
+- Changed the `ServerLog` class to have separate `level`, `message`,
+  `loggerName`, `error`, and `stackTrace` fields.
+- Accept file change notifications as `Stream<List<WatchEvent>>` instead of
+  `Stream<WatchEvent>`. This allows file change notifications to be sent as
+  batches of simultaneous changes, preventing over-triggering of builds.
+
+## 0.6.1
+
+- Use `HttpMultiServer` to better support IPv6 and IPv4 workflows.
+
+## 0.6.0
+
+- Add retry logic to the state file helpers `runningVersion` and
+  `currentOptions`.
+- `DaemonBuilder` is now an abstract class.
+- Significantly increase doc comment coverage.
+
+## 0.5.1
+
+- Support shutting down the daemon with a notification.
+
 ## 0.5.0
 
 - Add OutputLocation to DefaultBuildTarget.

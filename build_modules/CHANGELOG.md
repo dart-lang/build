@@ -1,3 +1,53 @@
+## 2.2.0
+
+- Make the `librariesPath` in the `KernelBuilder` configurable.
+- Fixed bug where the configured dart SDK was ignored.
+
+## 2.1.3
+
+- Skip compiling modules with kernel when the primary source isn't the primary
+  input (only shows up in non-lazy builds - essentially just tests).
+
+## 2.1.2
+
+- Output additional `.module` files for all entrypoints to ease discovery of
+  modules for compilers.
+
+## 2.1.1
+
+- Allow `build_config` `0.4.x`.
+
+## 2.1.0
+
+- Make using the incremental compiler in the `KernelBuilder` configurable.
+
+## 2.0.0
+
+### Breaking Changes
+
+- Remove the `merge` method from `Module` and replace with a static
+  `Module.merge`. Module instances are now immutable.
+- Remove `jsId`, and `jsSourceMapId` from `Module`.
+- `DartPlatform` no longer has hard coded platforms, and its constructor is now
+  public. Anybody is now free to create their own `platform`.
+- Removed the platform specific builder factories from the `builders.dart` file.
+  - Packages that want to target compilation for a platform should create their
+    own builder factories.
+- Removed completely the analyzer based builders - `UnlinkedSummaryBuilder` and
+  `LinkedSummaryBuilder`.
+  - All backends should now be using the `KernelBuilder` instead.
+- Removed the default module builders for each supported platform. These
+  must now be created by the packages that want to add compilation targeting a
+  specific platform.
+  - This will help reduce asset graph bloat caused by platforms that you weren't
+    actually targeting.
+
+### Improvements
+
+- Update the kernel worker to pass input digests, along with
+  `--reuse-compiler-result` and `--use-incremental-compiler`.
+- Increased the upper bound for `package:analyzer` to `<0.37.0`.
+
 ## 1.0.11
 
 - Allow build_config 0.4.x.

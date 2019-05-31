@@ -2,12 +2,17 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:io';
+
+import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:logging/logging.dart';
 import 'package:build_runner_core/build_runner_core.dart';
+import 'package:logging/logging.dart';
 
 import 'options.dart';
 import 'runner.dart';
+
+final lineLength = stdout.hasTerminal ? stdout.terminalColumns : 80;
 
 abstract class BuildRunnerCommand extends Command<int> {
   Logger get logger => Logger(name);
@@ -20,6 +25,9 @@ abstract class BuildRunnerCommand extends Command<int> {
   BuildRunnerCommand({bool symlinksDefault}) {
     _addBaseFlags(symlinksDefault ?? false);
   }
+
+  @override
+  final argParser = ArgParser(usageLineLength: lineLength);
 
   void _addBaseFlags(bool symlinksDefault) {
     argParser

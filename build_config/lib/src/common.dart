@@ -4,11 +4,6 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart';
-
-BuilderOptions builderOptionsFromJson(Map config) =>
-    BuilderOptions(Map<String, dynamic>.from(config));
-
 final _defaultDependenciesZoneKey = Symbol('buildConfigDefaultDependencies');
 final _packageZoneKey = Symbol('buildConfigPackage');
 

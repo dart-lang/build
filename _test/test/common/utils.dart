@@ -36,7 +36,7 @@ Future<ProcessResult> runCommand(List<String> args) =>
 /// This expects the first build to complete successfully, but you can add extra
 /// expects that happen before that using [extraExpects]. All of these will be
 /// invoked and awaited before awaiting the next successful build.
-Future<Null> startServer(
+Future<void> startServer(
         {bool ensureCleanBuild,
         List<Function> extraExpects,
         List<String> buildArgs}) =>
@@ -65,7 +65,7 @@ Future<ProcessResult> _runBuild(String command, List<String> args,
   return result;
 }
 
-Future<Null> _startServer(String command, List<String> buildArgs,
+Future<void> _startServer(String command, List<String> buildArgs,
     {bool ensureCleanBuild, List<Function> extraExpects}) async {
   ensureCleanBuild ??= false;
   extraExpects ??= [];
@@ -96,7 +96,7 @@ Future<Null> _startServer(String command, List<String> buildArgs,
 /// Kills the current build script.
 ///
 /// To clean up the `.dart_tool` directory as well, set [cleanUp] to `true`.
-Future<Null> stopServer({bool cleanUp}) async {
+Future<void> stopServer({bool cleanUp}) async {
   cleanUp ??= false;
   if (_process != null) {
     expect(_process.kill(), true);
@@ -130,25 +130,25 @@ void ensureCleanGitClient() {
   addTearDown(_resetGitClient);
 }
 
-Future<Null> _resetGitClient() async {
+Future<void> _resetGitClient() async {
   if (_gitIsClean()) return;
 
   // Reset our state after each test, assuming we didn't abandon tests due
   // to a non-pristine git environment.
   Process.runSync('git', ['checkout', 'HEAD', '--', '.']);
 
-  Future<Null> nextBuild;
+  Future<void> nextBuild;
   if (_process != null) nextBuild = nextSuccessfulBuild;
   // Delete the untracked files.
   await Process.run('git', ['clean', '-df', '.']);
   if (nextBuild != null) await nextBuild;
 }
 
-Future<Null> get nextSuccessfulBuild async {
+Future<void> get nextSuccessfulBuild async {
   await _stdOutLines.firstWhere((line) => line.contains('Succeeded after'));
 }
 
-Future<Null> get nextFailedBuild async {
+Future<void> get nextFailedBuild async {
   await _stdOutLines.firstWhere((line) => line.contains('Failed after'));
 }
 
@@ -183,14 +183,14 @@ Future<ProcessResult> _runTests(String executable, List<String> scriptArgs,
   }
 }
 
-Future<Null> expectTestsFail() async {
+Future<void> expectTestsFail() async {
   var result = await runTests();
   printOnFailure('${result.stderr}');
   expect(result.stdout, contains('Some tests failed'));
   expect(result.exitCode, isNot(0));
 }
 
-Future<Null> expectTestsPass(
+Future<void> expectTestsPass(
     {int expectedNumRan, bool usePrecompiled, List<String> args}) async {
   var result = await runTests(usePrecompiled: usePrecompiled, buildArgs: args);
   printOnFailure('${result.stderr}');
@@ -201,14 +201,14 @@ Future<Null> expectTestsPass(
   }
 }
 
-Future<Null> createFile(String path, String contents) async {
+Future<void> createFile(String path, String contents) async {
   var file = File(path);
   expect(await file.exists(), isFalse);
   await file.create(recursive: true);
   await file.writeAsString(contents);
 }
 
-Future<Null> deleteFile(String path) async {
+Future<void> deleteFile(String path) async {
   var file = File(path);
   expect(await file.exists(), isTrue);
   await file.delete();
@@ -220,7 +220,7 @@ Future<String> readGeneratedFileAsString(String path) async {
   return file.readAsString();
 }
 
-Future<Null> replaceAllInFile(String path, Pattern from, String replace) async {
+Future<void> replaceAllInFile(String path, Pattern from, String replace) async {
   var file = File(path);
   expect(await file.exists(), isTrue);
   var content = await file.readAsString();

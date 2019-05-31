@@ -39,7 +39,7 @@ main() {
     BuildEnvironment environment;
     String pkgARoot;
 
-    Future<Null> createFile(String path, dynamic contents) async {
+    Future<void> createFile(String path, dynamic contents) async {
       var file = File(p.join(pkgARoot, path));
       expect(await file.exists(), isFalse);
       await file.create(recursive: true);
@@ -51,13 +51,13 @@ main() {
       addTearDown(() async => await file.exists() ? await file.delete() : null);
     }
 
-    Future<Null> deleteFile(String path) async {
+    Future<void> deleteFile(String path) async {
       var file = File(p.join(pkgARoot, path));
       expect(await file.exists(), isTrue);
       await file.delete();
     }
 
-    Future<Null> modifyFile(String path, String contents) async {
+    Future<void> modifyFile(String path, String contents) async {
       var file = File(p.join(pkgARoot, path));
       expect(await file.exists(), isTrue);
       await file.writeAsString(contents);

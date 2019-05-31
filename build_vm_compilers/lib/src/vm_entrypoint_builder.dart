@@ -12,6 +12,7 @@ import 'package:build_modules/build_modules.dart';
 import 'package:pool/pool.dart';
 
 import '../builders.dart';
+import 'platform.dart';
 
 /// Because we hold bytes in memory we don't want to compile to many app entry
 /// points at once.
@@ -29,19 +30,38 @@ class VmEntrypointBuilder implements Builder {
   };
 
   @override
-  Future<Null> build(BuildStep buildStep) async {
+  Future<void> build(BuildStep buildStep) async {
     await _buildPool.withResource(() async {
       var dartEntrypointId = buildStep.inputId;
       var isAppEntrypoint = await _isAppEntryPoint(dartEntrypointId, buildStep);
       if (!isAppEntrypoint) return;
 
       var moduleId =
-          buildStep.inputId.changeExtension(moduleExtension(DartPlatform.vm));
+          buildStep.inputId.changeExtension(moduleExtension(vmPlatform));
       var module = Module.fromJson(
           json.decode(await buildStep.readAsString(moduleId))
               as Map<String, dynamic>);
-      var transitiveModules =
-          await module.computeTransitiveDependencies(buildStep);
+
+      List<Module> transitiveModules;
+      try {
+        transitiveModules = await module
+            .computeTransitiveDependencies(buildStep, throwIfUnsupported: true);
+      } on UnsupportedModules catch (e) {
+        var librariesString = (await e.exactLibraries(buildStep).toList())
+            .map((lib) => AssetId(lib.id.package,
+                lib.id.path.replaceFirst(moduleLibraryExtension, '.dart')))
+            .join('\n');
+        log.warning('''
+Skipping compiling ${buildStep.inputId} for the vm because some of its
+transitive libraries have sdk dependencies that not supported on this platform:
+
+$librariesString
+
+https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-skipped-compiling-warnings
+''');
+        return;
+      }
+
       var transitiveKernelModules = [
         module.primarySource.changeExtension(vmKernelModuleExtension)
       ].followedBy(transitiveModules.map(

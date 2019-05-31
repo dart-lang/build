@@ -20,10 +20,8 @@ Module _$ModuleFromJson(Map<String, dynamic> json) {
 
 Map<String, dynamic> _$ModuleToJson(Module instance) => <String, dynamic>{
       'p': const _AssetIdConverter().toJson(instance.primarySource),
-      's': instance.sources.map(const _AssetIdConverter().toJson).toList(),
-      'd': instance.directDependencies
-          .map(const _AssetIdConverter().toJson)
-          .toList(),
+      's': _toJsonAssetIds(instance.sources),
+      'd': _toJsonAssetIds(instance.directDependencies),
       'm': instance.isMissing,
       'is': instance.isSupported,
       'pf': const _DartPlatformConverter().toJson(instance.platform)

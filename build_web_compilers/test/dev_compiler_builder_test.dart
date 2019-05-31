@@ -2,18 +2,19 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 import 'package:build_web_compilers/build_web_compilers.dart';
+import 'package:build_web_compilers/builders.dart';
 import 'package:build_modules/build_modules.dart';
 
 import 'util.dart';
 
 main() {
   Map<String, dynamic> assets;
-  final platform = DartPlatform.dartdevc;
 
   group('error free project', () {
     setUp(() async {
@@ -34,13 +35,12 @@ main() {
 
       // Set up all the other required inputs for this test.
       await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
-      await testBuilderAndCollectAssets(MetaModuleBuilder(platform), assets);
+      await testBuilderAndCollectAssets(MetaModuleBuilder(ddcPlatform), assets);
       await testBuilderAndCollectAssets(
-          MetaModuleCleanBuilder(platform), assets);
-      await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
+          MetaModuleCleanBuilder(ddcPlatform), assets);
+      await testBuilderAndCollectAssets(ModuleBuilder(ddcPlatform), assets);
       await testBuilderAndCollectAssets(
-          UnlinkedSummaryBuilder(platform), assets);
-      await testBuilderAndCollectAssets(LinkedSummaryBuilder(platform), assets);
+          ddcKernelBuilder(BuilderOptions({})), assets);
     });
 
     test('can compile ddc modules under lib and web', () async {
@@ -53,7 +53,8 @@ main() {
         'a|web/index$jsSourceMapExtension':
             decodedMatches(contains('index.dart')),
       };
-      await testBuilder(DevCompilerBuilder(), assets, outputs: expectedOutputs);
+      await testBuilder(DevCompilerBuilder(platform: ddcPlatform), assets,
+          outputs: expectedOutputs);
     });
   });
 
@@ -67,14 +68,13 @@ main() {
 
         // Set up all the other required inputs for this test.
         await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
-        await testBuilderAndCollectAssets(MetaModuleBuilder(platform), assets);
         await testBuilderAndCollectAssets(
-            MetaModuleCleanBuilder(platform), assets);
-        await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
+            MetaModuleBuilder(ddcPlatform), assets);
         await testBuilderAndCollectAssets(
-            UnlinkedSummaryBuilder(platform), assets);
+            MetaModuleCleanBuilder(ddcPlatform), assets);
+        await testBuilderAndCollectAssets(ModuleBuilder(ddcPlatform), assets);
         await testBuilderAndCollectAssets(
-            LinkedSummaryBuilder(platform), assets);
+            ddcKernelBuilder(BuilderOptions({})), assets);
       });
 
       test('reports useful messages', () async {
@@ -83,7 +83,7 @@ main() {
               allOf(contains('String'), contains('assigned'), contains('int'))),
         };
         var logs = <LogRecord>[];
-        await testBuilder(DevCompilerBuilder(), assets,
+        await testBuilder(DevCompilerBuilder(platform: ddcPlatform), assets,
             outputs: expectedOutputs, onLog: logs.add);
         expect(
             logs,
@@ -104,10 +104,11 @@ main() {
 
         // Set up all the other required inputs for this test.
         await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
-        await testBuilderAndCollectAssets(MetaModuleBuilder(platform), assets);
         await testBuilderAndCollectAssets(
-            MetaModuleCleanBuilder(platform), assets);
-        await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
+            MetaModuleBuilder(ddcPlatform), assets);
+        await testBuilderAndCollectAssets(
+            MetaModuleCleanBuilder(ddcPlatform), assets);
+        await testBuilderAndCollectAssets(ModuleBuilder(ddcPlatform), assets);
       });
 
       test('reports useful messages', () async {
@@ -116,7 +117,7 @@ main() {
               contains('Unable to find modules for some sources')),
         };
         var logs = <LogRecord>[];
-        await testBuilder(DevCompilerBuilder(), assets,
+        await testBuilder(DevCompilerBuilder(platform: ddcPlatform), assets,
             outputs: expectedOutputs, onLog: logs.add);
         expect(
             logs,

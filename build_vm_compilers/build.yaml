@@ -1,10 +1,26 @@
 builders:
+  modules:
+    import: "package:build_vm_compilers/builders.dart"
+    builder_factories:
+      - metaModuleBuilder
+      - metaModuleCleanBuilder
+      - moduleBuilder
+    build_extensions:
+      $lib$:
+        - .vm.meta_module.raw
+        - .vm.meta_module.clean
+      .dart:
+        - .vm.module
+    is_optional: True
+    auto_apply: none
+    required_inputs: [".dart", ".module.library"]
+    applies_builders: ["build_modules|module_cleanup"]
   vm:
     import: "package:build_vm_compilers/builders.dart"
     builder_factories:
       - vmKernelModuleBuilder
     build_extensions:
-      .dart:
+      .vm.module:
         - .vm.dill
     is_optional: True
     auto_apply: all_packages
@@ -12,7 +28,7 @@ builders:
       - .dart
       - .vm.module
     applies_builders:
-      - build_modules|vm
+      - build_vm_compilers|modules
   entrypoint:
     import: "package:build_vm_compilers/builders.dart"
     builder_factories:

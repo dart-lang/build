@@ -25,7 +25,7 @@ class Dart2JsArchiveExtractor implements PostProcessBuilder {
   final inputExtensions = const [jsEntrypointArchiveExtension];
 
   @override
-  Future<Null> build(PostProcessBuildStep buildStep) async {
+  Future<void> build(PostProcessBuildStep buildStep) async {
     var bytes = await buildStep.readInputAsBytes();
     var archive = TarDecoder().decodeBytes(bytes);
     for (var file in archive.files) {

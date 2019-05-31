@@ -74,7 +74,7 @@ you can:
 - Contact the author of the Builder and ask that a more unique input extension
   is chose, for example only generating for files that end in `_something.dart`
   rather than all files that end in `.dart`.
-  
+
 ## How can I use my own development server to serve generated files?
 
 There are 2 options for using a different server during development:
@@ -115,3 +115,44 @@ to avoid confusion if a build fails with no printed errors. To force the action
 to run again make an edit to any file that is an input to that action, or throw
 away all cached values with `pub run build_runner clean` before starting the
 next build.
+
+## How can I resolve "Skipped compiling" warnings?
+
+These generally come up in the context of a multi-platform package (generally
+due to a mixture of vm and web tests), and look something like this:
+
+```text
+[WARNING] build_vm_compilers|entrypoint on example|test/my_test.dart:
+
+Skipping compiling example|test/my_test.dart for the vm because some of its
+transitive libraries have sdk dependencies that not supported on this platform:
+
+example|test/imports_dart_html.dart
+```
+
+While we are smart enough not to attempt to compile your web tests for the vm,
+it is slow for us to figure that out so we print this warning to encourage you
+to set up the proper configuration so we will never even attempt to compile
+these tests.
+
+You can set up this configuration in your `build.yaml` file, using the
+`generate_for` option on the builder. It helps a lot if you separate your web
+and vm tests into separate directories, but you don't have to.
+
+For example, your `build.yaml` might look like this:
+
+```yaml
+targets:
+  $default:
+    builders:
+      build_web_compilers|entrypoint:
+        generate_for:
+        - test/multiplatform/**_test.dart
+        - test/web/**_test.dart
+        - web/**.dart
+      build_vm_compilers|entrypoint:
+        generate_for:
+        - test/multiplatform/**_test.dart
+        - test/vm/**_test.dart
+        - bin/**.dart
+```

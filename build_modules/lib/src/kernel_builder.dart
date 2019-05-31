@@ -9,6 +9,8 @@ import 'dart:io';
 
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
+import 'package:crypto/crypto.dart';
+import 'package:graphs/graphs.dart' show crawlAsync;
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
@@ -16,6 +18,7 @@ import 'package:scratch_space/scratch_space.dart';
 import 'common.dart';
 import 'errors.dart';
 import 'module_builder.dart';
+import 'module_cache.dart';
 import 'modules.dart';
 import 'platform.dart';
 import 'scratch_space.dart';
@@ -30,6 +33,8 @@ const multiRootScheme = 'org-dartlang-app';
 class KernelBuilder implements Builder {
   @override
   final Map<String, List<String>> buildExtensions;
+
+  final bool useIncrementalCompiler;
 
   final String outputExtension;
 
@@ -53,13 +58,23 @@ class KernelBuilder implements Builder {
   /// directory, which contains the platform kernel files.
   final String platformSdk;
 
+  /// The absolute path to the libraries file for the current platform.
+  ///
+  /// If not provided, defaults to "lib/libraries.json" in the sdk directory.
+  final String librariesPath;
+
   KernelBuilder(
       {@required this.platform,
       @required this.summaryOnly,
       @required this.sdkKernelPath,
       @required this.outputExtension,
+      String librariesPath,
+      bool useIncrementalCompiler,
       String platformSdk})
       : platformSdk = platformSdk ?? sdkDir,
+        librariesPath = librariesPath ??
+            p.join(platformSdk ?? sdkDir, 'lib', 'libraries.json'),
+        useIncrementalCompiler = useIncrementalCompiler ?? false,
         buildExtensions = {
           moduleExtension(platform): [outputExtension]
         };
@@ -69,14 +84,26 @@ class KernelBuilder implements Builder {
     var module = Module.fromJson(
         json.decode(await buildStep.readAsString(buildStep.inputId))
             as Map<String, dynamic>);
+    // Entrypoints always have a `.module` file for ease of looking them up,
+    // but they might not be the primary source.
+    if (module.primarySource.changeExtension(moduleExtension(platform)) !=
+        buildStep.inputId) {
+      return;
+    }
+
     try {
       await _createKernel(
           module: module,
           buildStep: buildStep,
           summaryOnly: summaryOnly,
           outputExtension: outputExtension,
+          platform: platform,
           dartSdkDir: platformSdk,
-          sdkKernelPath: sdkKernelPath);
+          sdkKernelPath: sdkKernelPath,
+          librariesPath: librariesPath,
+          useIncrementalCompiler: useIncrementalCompiler);
+    } on MissingModulesException catch (e) {
+      log.severe(e.toString());
     } on KernelException catch (e, s) {
       log.severe(
           'Error creating '
@@ -93,8 +120,11 @@ Future<void> _createKernel(
     @required BuildStep buildStep,
     @required bool summaryOnly,
     @required String outputExtension,
+    @required DartPlatform platform,
     @required String dartSdkDir,
-    @required String sdkKernelPath}) async {
+    @required String sdkKernelPath,
+    @required String librariesPath,
+    @required bool useIncrementalCompiler}) async {
   var request = WorkRequest();
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
   var outputId = module.primarySource.changeExtension(outputExtension);
@@ -103,28 +133,39 @@ Future<void> _createKernel(
   File packagesFile;
 
   await buildStep.trackStage('CollectDeps', () async {
-    var transitiveKernelDeps = <AssetId>[];
-    var transitiveSourceDeps = <AssetId>[];
+    var kernelDeps = <AssetId>[];
+    var sourceDeps = <AssetId>[];
 
-    await _addModuleDeps(module, transitiveKernelDeps, transitiveSourceDeps,
-        buildStep, outputExtension);
+    await _findModuleDeps(
+        module, kernelDeps, sourceDeps, buildStep, outputExtension);
 
     var allAssetIds = Set<AssetId>()
       ..addAll(module.sources)
-      ..addAll(transitiveKernelDeps)
-      ..addAll(transitiveSourceDeps);
+      ..addAll(kernelDeps)
+      ..addAll(sourceDeps);
     await scratchSpace.ensureAssets(allAssetIds, buildStep);
 
     packagesFile = await createPackagesFile(allAssetIds);
 
-    _addRequestArguments(request, module, transitiveKernelDeps, dartSdkDir,
-        sdkKernelPath, outputFile, packagesFile, summaryOnly);
+    await _addRequestArguments(
+        request,
+        module,
+        kernelDeps,
+        platform,
+        dartSdkDir,
+        sdkKernelPath,
+        librariesPath,
+        outputFile,
+        packagesFile,
+        summaryOnly,
+        useIncrementalCompiler,
+        buildStep);
   });
 
   // We need to make sure and clean up the temp dir, even if we fail to compile.
   try {
-    var analyzer = await buildStep.fetchResource(frontendDriverResource);
-    var response = await analyzer.doWork(request,
+    var frontendWorker = await buildStep.fetchResource(frontendDriverResource);
+    var response = await frontendWorker.doWork(request,
         trackWork: (response) => buildStep
             .trackStage('Kernel Generate', () => response, isExternal: true));
     if (response.exitCode != EXIT_CODE_OK || !await outputFile.exists()) {
@@ -143,81 +184,108 @@ Future<void> _createKernel(
   }
 }
 
-/// Adds the source or kernel dependencies for [root] to
-/// [transitiveKernelDeps] or [transitiveSourceDeps].
-Future<void> _addModuleDeps(
+/// Finds the transitive dependencies of [root] and categorizes them as
+/// [kernelDeps] or [sourceDeps].
+///
+/// A module will have it's kernel file in [kernelDeps] if it and all of it's
+/// transitive dependencies have readable kernel files. If any module has no
+/// readable kernel file then it, and all of it's dependents will be categorized
+/// as [sourceDeps] which will have all of their [Module.sources].
+Future<void> _findModuleDeps(
     Module root,
-    List<AssetId> transitiveKernelDeps,
-    List<AssetId> transitiveSourceDeps,
+    List<AssetId> kernelDeps,
+    List<AssetId> sourceDeps,
     BuildStep buildStep,
     String outputExtension) async {
-  final toCrawl = Queue.of([root.primarySource]);
-  final nodes = {root.primarySource: _ModuleNode(root, true)};
+  final resolvedModules = await _resolveTransitiveModules(root, buildStep);
 
-  // Helper for any time we encounter a module which is provided via source and
-  // not kernel.
-  //
-  // For each of those we have to ensure that all parents of that module are
-  // provided via source as well.
-  void updateParents(AssetId nodeId) {
-    var node = nodes[nodeId];
-    for (var parent in node.parents) {
-      var parentNode = nodes[parent];
-      if (!parentNode.sourceOnly) {
-        parentNode.sourceOnly = true;
-        parentNode.parents.forEach(updateParents);
-      }
-    }
-  }
+  final sourceOnly = await _parentsOfMissingKernelFiles(
+      resolvedModules, buildStep, outputExtension);
 
-  // Builds the module graph, the `sourceOnly` property of nodes gets
-  // incrementally updated so we need to wait until we are done to actually
-  // provide the deps.
-  while (toCrawl.isNotEmpty) {
-    var moduleId = toCrawl.removeLast();
-    var node = nodes[moduleId];
-    for (final dep in node.module.directDependencies) {
-      var depNode = nodes[dep];
-      if (depNode == null) {
-        toCrawl.add(dep);
-        var depKernelId = dep.changeExtension(outputExtension);
-        var sourceOnly = !await buildStep.canRead(depKernelId);
-        var depModule = Module.fromJson(json.decode(
-                await buildStep.readAsString(
-                    dep.changeExtension(moduleExtension(root.platform))))
-            as Map<String, dynamic>);
-        depNode = _ModuleNode(depModule, sourceOnly);
-        nodes[dep] = depNode;
-      }
-      depNode.parents.add(moduleId);
-      if (depNode.sourceOnly && !node.sourceOnly) {
-        node.sourceOnly = true;
-        updateParents(node.id);
-      }
-    }
-  }
-
-  for (var node in nodes.values) {
-    if (node.module == root) continue;
-    if (node.sourceOnly) {
-      transitiveSourceDeps.addAll(node.module.sources);
+  for (final module in resolvedModules) {
+    if (sourceOnly.contains(module.primarySource)) {
+      sourceDeps.addAll(module.sources);
     } else {
-      transitiveKernelDeps.add(node.id.changeExtension(outputExtension));
+      kernelDeps.add(module.primarySource.changeExtension(outputExtension));
     }
   }
 }
 
+/// The transitive dependencies of [root], not including [root] itself.
+Future<List<Module>> _resolveTransitiveModules(
+    Module root, BuildStep buildStep) async {
+  var missing = Set<AssetId>();
+  var modules = await crawlAsync<AssetId, Module>(
+          [root.primarySource],
+          (id) => buildStep.fetchResource(moduleCache).then((c) async {
+                var moduleId =
+                    id.changeExtension(moduleExtension(root.platform));
+                var module = await c.find(moduleId, buildStep);
+                if (module == null) {
+                  missing.add(moduleId);
+                } else if (module.isMissing) {
+                  missing.add(module.primarySource);
+                }
+                return module;
+              }),
+          (id, module) => module.directDependencies)
+      .skip(1) // Skip the root.
+      .toList();
+
+  if (missing.isNotEmpty) {
+    throw await MissingModulesException.create(
+        missing, modules.toList()..add(root), buildStep);
+  }
+
+  return modules;
+}
+
+/// Finds the primary source of all transitive parents of any module which does
+/// not have a readable kernel file.
+///
+/// Inverts the direction of the graph and then crawls to all reachables nodes
+/// from the modules which do not have a readable kernel file
+Future<Set<AssetId>> _parentsOfMissingKernelFiles(
+    List<Module> modules, BuildStep buildStep, String outputExtension) async {
+  final sourceOnly = Set<AssetId>();
+  final parents = <AssetId, Set<AssetId>>{};
+  for (final module in modules) {
+    for (final dep in module.directDependencies) {
+      parents.putIfAbsent(dep, () => Set<AssetId>()).add(module.primarySource);
+    }
+    if (!await buildStep
+        .canRead(module.primarySource.changeExtension(outputExtension))) {
+      sourceOnly.add(module.primarySource);
+    }
+  }
+  final toCrawl = Queue.of(sourceOnly);
+  while (toCrawl.isNotEmpty) {
+    final current = toCrawl.removeFirst();
+    if (!parents.containsKey(current)) continue;
+    for (final next in parents[current]) {
+      if (!sourceOnly.add(next)) {
+        toCrawl.add(next);
+      }
+    }
+  }
+  return sourceOnly;
+}
+
 /// Fills in all the required arguments for [request] in order to compile the
 /// kernel file for [module].
-void _addRequestArguments(
+Future<void> _addRequestArguments(
     WorkRequest request,
     Module module,
     Iterable<AssetId> transitiveKernelDeps,
+    DartPlatform platform,
     String sdkDir,
     String sdkKernelPath,
+    String librariesPath,
     File outputFile,
     File packagesFile,
-    bool summaryOnly) {
+    bool summaryOnly,
+    bool useIncrementalCompiler,
+    AssetReader reader) async {
   request.arguments.addAll([
     '--dart-sdk-summary',
     Uri.file(p.join(sdkDir, sdkKernelPath)).toString(),
@@ -229,18 +297,33 @@ void _addRequestArguments(
     multiRootScheme,
     '--exclude-non-sources',
     summaryOnly ? '--summary-only' : '--no-summary-only',
+    '--libraries-file',
+    p.toUri(librariesPath).toString(),
   ]);
+  if (useIncrementalCompiler) {
+    request.arguments.addAll([
+      '--reuse-compiler-result',
+      '--use-incremental-compiler',
+    ]);
+  }
 
-  // Add all summaries as summary inputs.
-  request.arguments.addAll(transitiveKernelDeps.map((id) {
+  request.inputs.add(Input()
+    ..path = '${Uri.file(p.join(sdkDir, sdkKernelPath))}'
+    // Sdk updates fully invalidate the build anyways.
+    ..digest = md5.convert(utf8.encode(platform.name)).bytes);
+
+  // Add all kernel outlines as summary inputs, with digests.
+  var inputs = await Future.wait(transitiveKernelDeps.map((id) async {
     var relativePath = p.url.relative(scratchSpace.fileFor(id).uri.path,
         from: scratchSpace.tempDir.uri.path);
-    if (summaryOnly) {
-      return '--input-summary=$multiRootScheme:///$relativePath';
-    } else {
-      return '--input-linked=$multiRootScheme:///$relativePath';
-    }
+
+    return Input()
+      ..path = '$multiRootScheme:///$relativePath'
+      ..digest = (await reader.digest(id)).bytes;
   }));
+  request.arguments.addAll(inputs
+      .map((i) => '--input-${summaryOnly ? 'summary' : 'linked'}=${i.path}'));
+  request.inputs.addAll(inputs);
 
   request.arguments.addAll(module.sources.map((id) {
     var uri = id.path.startsWith('lib')
@@ -248,18 +331,4 @@ void _addRequestArguments(
         : '$multiRootScheme:///${id.path}';
     return '--source=$uri';
   }));
-}
-
-/// Used when iterating transitive deps.
-class _ModuleNode {
-  final parents = Set<AssetId>();
-  final Module module;
-
-  /// Whether this module should provide itself as a source dependency instead
-  /// of a dill dependency.
-  bool sourceOnly;
-
-  AssetId get id => module.primarySource;
-
-  _ModuleNode(this.module, this.sourceOnly);
 }

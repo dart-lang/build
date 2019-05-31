@@ -131,7 +131,7 @@ jobs:
     # First, check that everything analyzes properly and is formatted.
     - stage: analyze_and_format
       script:
-        - datanalyzer --fatal-warnings .
+        - dartanalyzer --fatal-warnings .
         - dartfmt -n --set-exit-if-changed .
     # Next, build the entire `test` directory
     - stage: build

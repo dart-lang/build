@@ -54,9 +54,7 @@ BuilderActionPerformance _$BuilderActionPerformanceFromJson(
     Map<String, dynamic> json) {
   return BuilderActionPerformance(
       json['builderKey'] as String,
-      json['primaryInput'] == null
-          ? null
-          : _assetIdFromJson(json['primaryInput'] as String),
+      _assetIdFromJson(json['primaryInput'] as String),
       (json['stages'] as List)?.map((e) => e == null
           ? null
           : BuilderActionStagePerformance.fromJson(e as Map<String, dynamic>)),
@@ -74,9 +72,7 @@ Map<String, dynamic> _$BuilderActionPerformanceToJson(
       'startTime': instance.startTime?.toIso8601String(),
       'stopTime': instance.stopTime?.toIso8601String(),
       'builderKey': instance.builderKey,
-      'primaryInput': instance.primaryInput == null
-          ? null
-          : _assetIdToJson(instance.primaryInput),
+      'primaryInput': _assetIdToJson(instance.primaryInput),
       'stages': instance.stages?.toList()
     };
 
@@ -92,4 +88,4 @@ BuilderActionStagePerformance _$BuilderActionStagePerformanceFromJson(
 
 Map<String, dynamic> _$BuilderActionStagePerformanceToJson(
         BuilderActionStagePerformance instance) =>
-    <String, dynamic>{'label': instance.label, 'slices': instance.slices};
+    <String, dynamic>{'slices': instance.slices, 'label': instance.label};

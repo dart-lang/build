@@ -92,9 +92,10 @@ class SharedOptions {
     var buildDirs = _parseBuildDirs(argResults);
     for (var arg in positionalArgs) {
       var parts = p.split(arg);
-      if (parts.length > 1) {
+      if (parts.length > 1 || arg == '.') {
         throw UsageException(
-            'Only top level directories are allowed as positional args',
+            'Only top level directories such as `web` or `test` are allowed as '
+            'positional args, but got `$arg`',
             command.usage);
       }
       buildDirs.add(BuildDirectory(arg));
@@ -160,18 +161,28 @@ class ServeOptions extends SharedOptions {
     var nextDefaultPort = 8080;
     for (var arg in positionalArgs) {
       var parts = arg.split(':');
-      var path = parts.first;
       if (parts.length > 2) {
         throw UsageException(
             'Invalid format for positional argument to serve `$arg`'
             ', expected <directory>:<port>.',
             command.usage);
       }
+
       var port = parts.length == 2 ? int.tryParse(parts[1]) : nextDefaultPort++;
       if (port == null) {
         throw UsageException(
             'Unable to parse port number in `$arg`', command.usage);
       }
+
+      var path = parts.first;
+      var pathParts = p.split(path);
+      if (pathParts.length > 1 || path == '.') {
+        throw UsageException(
+            'Only top level directories such as `web` or `test` are allowed as '
+            'positional args, but got `$path`',
+            command.usage);
+      }
+
       serveTargets.add(ServeTarget(path, port));
     }
     if (serveTargets.isEmpty) {

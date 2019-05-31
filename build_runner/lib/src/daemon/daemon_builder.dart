@@ -23,7 +23,6 @@ import 'package:build_runner_core/build_runner_core.dart'
 import 'package:build_runner_core/build_runner_core.dart' as core
     show BuildStatus;
 import 'package:build_runner_core/src/generate/build_impl.dart';
-import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
 
 /// A Daemon Builder that uses build_runner_core for building.
@@ -122,7 +121,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
   void _logMessage(Level level, String message) =>
       _outputStreamController.add(ServerLog(
-        (b) => b.log = '[$level] $message',
+        (b) => b
+          ..message = message
+          ..level = level,
       ));
 
   void _signalEnd(Iterable<BuildResult> results) {
@@ -151,10 +152,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
     var environment = OverrideableEnvironment(
         IOEnvironment(packageGraph,
-            assumeTty: true,
             outputSymlinksOnly: sharedOptions.outputSymlinksOnly),
         onLog: (record) {
-      outputStreamController.add(ServerLog((b) => b.log = record.toString()));
+      outputStreamController.add(ServerLog.fromLogRecord(record));
     });
 
     var daemonEnvironment = OverrideableEnvironment(environment,
