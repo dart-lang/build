@@ -110,6 +110,10 @@ global_options:
 [issue tracker]: https://github.com/dart-lang/build/issues/new
 [TestOn]: https://pub.dartlang.org/documentation/test/latest/#restricting-tests-to-certain-platforms
 
+## 1.2.2
+
+- Allow build_config 0.4.x.
+
 ## 1.2.1
 
 - Allow analyzer version 0.36.x.
