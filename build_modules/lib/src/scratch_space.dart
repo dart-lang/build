@@ -29,8 +29,6 @@ final scratchSpaceResource = Resource<ScratchSpace>(() {
 }, beforeExit: () async {
   // The workers are running inside the scratch space, so wait for them to
   // shut down before deleting it.
-  await analyzerWorkersAreDone;
-  await dartdevcWorkersAreDone;
   await dartdevkWorkersAreDone;
   await frontendWorkersAreDone;
   await dart2jsWorkersAreDone;

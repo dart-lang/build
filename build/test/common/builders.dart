@@ -16,7 +16,7 @@ class CopyingPostProcessBuilder implements PostProcessBuilder {
   CopyingPostProcessBuilder({this.outputExtension = '.copy'});
 
   @override
-  Future<Null> build(PostProcessBuildStep buildStep) async {
+  Future<void> build(PostProcessBuildStep buildStep) async {
     await buildStep.writeAsString(
         buildStep.inputId.addExtension(outputExtension),
         await buildStep.readInputAsString());
@@ -32,7 +32,7 @@ class DeletePostProcessBuilder implements PostProcessBuilder {
   DeletePostProcessBuilder();
 
   @override
-  Future<Null> build(PostProcessBuildStep buildStep) async {
+  Future<void> build(PostProcessBuildStep buildStep) async {
     buildStep.deletePrimaryInput();
   }
 }

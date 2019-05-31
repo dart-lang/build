@@ -1,3 +1,14 @@
+## 1.0.5
+
+- Fix a race condition where some assets may be resolved with missing
+  dependencies. This was likely to have only manifested in tests using
+  `resolveSource`.
+
+## 1.0.4
+
+- Increase lower bound sdk constraint to 2.1.0.
+- Increased the upper bound for `package:analyzer` to `<0.37.0`.
+
 ## 1.0.3
 
 - Fixes a bug where transitive `dart-ext:` imports would cause the resolver
@@ -35,7 +46,7 @@
 
 ## 0.2.2+6
 
-- Increased the upper bound for `package:analyzer` to '<0.34.0'.
+- Increased the upper bound for `package:analyzer` to `<0.34.0`.
 
 ## 0.2.2+5
 

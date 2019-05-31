@@ -1,5 +1,3 @@
-# build_runner
-
 <p align="center">
   Standalone generator and watcher for Dart using <a href="https://pub.dartlang.org/packages/build"><code>package:build</code></a>.
   <br>

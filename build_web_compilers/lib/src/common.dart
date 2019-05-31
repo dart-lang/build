@@ -13,13 +13,14 @@ import 'package:build_modules/build_modules.dart';
 final defaultAnalysisOptionsId =
     AssetId('build_modules', 'lib/src/analysis_options.default.yaml');
 
+final sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
+
 String defaultAnalysisOptionsArg(ScratchSpace scratchSpace) =>
     '--options=${scratchSpace.fileFor(defaultAnalysisOptionsId).path}';
 
 // TODO: better solution for a .packages file, today we just create a new one
 // for every kernel build action.
-Future<File> createPackagesFile(
-    Iterable<AssetId> allAssets, ScratchSpace scratchSpace) async {
+Future<File> createPackagesFile(Iterable<AssetId> allAssets) async {
   var allPackages = allAssets.map((id) => id.package).toSet();
   var packagesFileDir =
       await Directory.systemTemp.createTemp('kernel_builder_');
@@ -37,6 +38,7 @@ Future<File> createPackagesFile(
 void validateOptions(Map<String, dynamic> config, List<String> supportedOptions,
     String builderKey,
     {List<String> deprecatedOptions}) {
+  deprecatedOptions ??= [];
   var unsupported = config.keys.where(
       (o) => !supportedOptions.contains(o) && !deprecatedOptions.contains(o));
   if (unsupported.isNotEmpty) {

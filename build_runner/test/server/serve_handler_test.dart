@@ -88,6 +88,7 @@ void main() {
 
   test('throws if you pass a non-root directory', () {
     expect(() => serveHandler.handlerFor('web/sub'), throwsArgumentError);
+    expect(() => serveHandler.handlerFor('.'), throwsArgumentError);
   });
 
   group('build failures', () {
@@ -477,5 +478,5 @@ class MockWatchImpl implements WatchImpl {
   }
 
   @override
-  Future<Null> get ready => Future.value(null);
+  Future<void> get ready => Future.value();
 }

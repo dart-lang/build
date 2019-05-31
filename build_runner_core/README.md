@@ -1,4 +1,3 @@
-
 <p align="center">
   Core functionality of the build_runner package. Exposes the imperative apis
   for running pure Dart builds for

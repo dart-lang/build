@@ -150,7 +150,7 @@ class AssetGraph {
 
   /// Uses [digestReader] to compute the [Digest] for [nodes] and set the
   /// `lastKnownDigest` field.
-  Future<Null> _setLastKnownDigests(
+  Future<void> _setLastKnownDigests(
       Iterable<AssetNode> nodes, AssetReader digestReader) async {
     await Future.wait(nodes.map((node) async {
       node.lastKnownDigest = await digestReader.digest(node.id);
@@ -178,6 +178,9 @@ class AssetGraph {
       var inputsNode = get(output) as NodeWithInputs;
       if (inputsNode != null) {
         inputsNode.inputs.remove(id);
+        if (inputsNode is GlobAssetNode) {
+          inputsNode.results.remove(id);
+        }
       }
     }
     if (node is NodeWithInputs) {

@@ -14,8 +14,6 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:pedantic/pedantic.dart';
 import 'package:pool/pool.dart';
-// TODO(grouma) - remove dependency on ChangeType API to remove the following
-// import.
 import 'package:watcher/watcher.dart';
 
 import '../asset/cache.dart';
@@ -38,6 +36,7 @@ import '../util/async.dart';
 import '../util/build_dirs.dart';
 import '../util/constants.dart';
 import 'build_definition.dart';
+import 'build_directory.dart';
 import 'build_result.dart';
 import 'finalized_assets_view.dart';
 import 'heartbeat.dart';
@@ -47,12 +46,17 @@ import 'phase.dart';
 
 final _logger = Logger('Build');
 
+List<String> _buildPaths(Set<BuildDirectory> buildDirs) =>
+    // The empty string means build everything.
+    buildDirs.any((b) => b.directory == '')
+        ? []
+        : buildDirs.map((b) => b.directory).toList();
+
 class BuildImpl {
   final FinalizedReader _finalizedReader;
   FinalizedReader get finalizedReader => _finalizedReader;
 
-  final AssetGraph _assetGraph;
-  AssetGraph get assetGraph => _assetGraph;
+  final AssetGraph assetGraph;
 
   final BuildScriptUpdates _buildScriptUpdates;
   BuildScriptUpdates get buildScriptUpdates => _buildScriptUpdates;
@@ -68,7 +72,7 @@ class BuildImpl {
   final BuildEnvironment _environment;
   final String _logPerformanceDir;
 
-  Future<Null> beforeExit() => _resourceManager.beforeExit();
+  Future<void> beforeExit() => _resourceManager.beforeExit();
 
   BuildImpl._(BuildDefinition buildDefinition, BuildOptions options,
       this._buildPhases, this._finalizedReader)
@@ -79,7 +83,7 @@ class BuildImpl {
             : CachingAssetReader(buildDefinition.reader),
         _resolvers = options.resolvers,
         _writer = buildDefinition.writer,
-        _assetGraph = buildDefinition.assetGraph,
+        assetGraph = buildDefinition.assetGraph,
         _resourceManager = buildDefinition.resourceManager,
         _verbose = options.verbose,
         _environment = buildDefinition.environment,
@@ -87,9 +91,9 @@ class BuildImpl {
         _logPerformanceDir = options.logPerformanceDir;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates,
-      {List<String> buildDirs}) {
-    buildDirs ??= [];
-    finalizedReader.reset(buildDirs);
+      {Set<BuildDirectory> buildDirs}) {
+    buildDirs ??= Set<BuildDirectory>();
+    finalizedReader.reset(_buildPaths(buildDirs));
     return _SingleBuild(this, buildDirs).run(updates)
       ..whenComplete(_resolvers.reset);
   }
@@ -145,7 +149,7 @@ class _SingleBuild {
   final List<Pool> _buildPhasePool;
   final BuildEnvironment _environment;
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
-  final _lazyGlobs = <AssetId, Future<Null>>{};
+  final _lazyGlobs = <AssetId, Future<void>>{};
   final PackageGraph _packageGraph;
   final BuildPerformanceTracker _performanceTracker;
   final AssetReader _reader;
@@ -153,7 +157,7 @@ class _SingleBuild {
   final ResourceManager _resourceManager;
   final bool _verbose;
   final RunnerAssetWriter _writer;
-  final List<String> _buildDirs;
+  final Set<BuildDirectory> _buildDirs;
   final String _logPerformanceDir;
   final _failureReporter = FailureReporter();
 
@@ -165,8 +169,8 @@ class _SingleBuild {
   /// Can't be final since it needs access to [pendingActions].
   HungActionsHeartbeat hungActionsHeartbeat;
 
-  _SingleBuild(BuildImpl buildImpl, List<String> _buildDirs)
-      : _assetGraph = buildImpl._assetGraph,
+  _SingleBuild(BuildImpl buildImpl, Set<BuildDirectory> buildDirs)
+      : _assetGraph = buildImpl.assetGraph,
         _buildPhases = buildImpl._buildPhases,
         _buildPhasePool = List(buildImpl._buildPhases.length),
         _environment = buildImpl._environment,
@@ -179,7 +183,7 @@ class _SingleBuild {
         _resourceManager = buildImpl._resourceManager,
         _verbose = buildImpl._verbose,
         _writer = buildImpl._writer,
-        _buildDirs = _buildDirs,
+        _buildDirs = buildDirs,
         _logPerformanceDir = buildImpl._logPerformanceDir {
     hungActionsHeartbeat = HungActionsHeartbeat(() {
       final message = StringBuffer();
@@ -203,8 +207,8 @@ class _SingleBuild {
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     var watch = Stopwatch()..start();
     var result = await _safeBuild(updates);
-    var optionalOutputTracker =
-        OptionalOutputTracker(_assetGraph, _buildDirs, _buildPhases);
+    var optionalOutputTracker = OptionalOutputTracker(
+        _assetGraph, _buildPaths(_buildDirs), _buildPhases);
     if (result.status == BuildStatus.success) {
       final failures = _assetGraph.failedOutputs
           .where((n) => optionalOutputTracker.isRequired(n.id));
@@ -215,8 +219,11 @@ class _SingleBuild {
       }
     }
     await _resourceManager.disposeAll();
-    result = await _environment.finalizeBuild(result,
-        FinalizedAssetsView(_assetGraph, optionalOutputTracker), _reader);
+    result = await _environment.finalizeBuild(
+        result,
+        FinalizedAssetsView(_assetGraph, optionalOutputTracker),
+        _reader,
+        _buildDirs);
     if (result.status == BuildStatus.success) {
       _logger.info('Succeeded after ${humanReadable(watch.elapsed)} with '
           '${result.outputs.length} outputs '
@@ -227,7 +234,7 @@ class _SingleBuild {
     return result;
   }
 
-  Future<Null> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
+  Future<void> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
     await logTimedAsync(_logger, 'Updating asset graph', () async {
       var invalidated = await _assetGraph.updateAndInvalidate(
           _buildPhases, updates, _packageGraph.root.name, _delete, _reader);
@@ -335,7 +342,7 @@ class _SingleBuild {
     var phase = _buildPhases[phaseNumber];
     await Future.wait(
         _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
-      if (!shouldBuildForDirs(node.id, _buildDirs, phase)) {
+      if (!shouldBuildForDirs(node.id, _buildPaths(_buildDirs), phase)) {
         return;
       }
 
@@ -424,8 +431,8 @@ class _SingleBuild {
         assert(
             inputNode.primaryOutputs.containsAll(builderOutputs),
             'input $input with builder $builder missing primary outputs: \n'
-                'Got ${inputNode.primaryOutputs.join(', ')} '
-                'which was missing:\n' +
+                    'Got ${inputNode.primaryOutputs.join(', ')} '
+                    'which was missing:\n' +
                 builderOutputs
                     .where((id) => !inputNode.primaryOutputs.contains(id))
                     .join(', '));
@@ -532,13 +539,12 @@ class _SingleBuild {
     // to remove those.
     wrappedReader.assetsRead.clear();
 
-    // Delete old assets from disk.
-    await _cleanUpStaleOutputs(anchorNode.outputs);
+    // Clean out the impacts of the previous run
     await FailureReporter.clean(phaseNum, input);
-
-    // Remove old nodes from the graph and clear `outputs`.
-    anchorNode.outputs.toList().forEach(_assetGraph.remove);
-    anchorNode.outputs.clear();
+    await _cleanUpStaleOutputs(anchorNode.outputs);
+    anchorNode.outputs
+      ..toList().forEach(_assetGraph.remove)
+      ..clear();
     inputNode.deletedBy.remove(anchorNode.id);
 
     var wrappedWriter = AssetWriterSpy(_writer);
@@ -650,14 +656,14 @@ class _SingleBuild {
   /// Deletes any of [outputs] which previously were output.
   ///
   /// This should be called after deciding that an asset really needs to be
-  /// regenerated based on its inputs hash changing.
-  Future<Null> _cleanUpStaleOutputs(Iterable<AssetId> outputs) async {
-    await Future.wait(outputs.map((output) {
-      var node = _assetGraph.get(output) as GeneratedAssetNode;
-      if (node.wasOutput) return _delete(output);
-      return Future.value(null);
-    }));
-  }
+  /// regenerated based on its inputs hash changing. All assets in [outputs]
+  /// must correspond to a [GeneratedAssetNode].
+  Future<void> _cleanUpStaleOutputs(Iterable<AssetId> outputs) =>
+      Future.wait(outputs
+          .map(_assetGraph.get)
+          .cast<GeneratedAssetNode>()
+          .where((n) => n.wasOutput)
+          .map((n) => _delete(n.id)));
 
   Future<GlobAssetNode> _getUpdatedGlobNode(
       Glob glob, String package, int phaseNum) {
@@ -679,22 +685,30 @@ class _SingleBuild {
     return _lazyGlobs.putIfAbsent(globNode.id, () async {
       var potentialNodes = _assetGraph
           .packageNodes(globNode.id.package)
+          .where((n) => n.isReadable && n.isValidInput)
+          .where((n) =>
+              n is! GeneratedAssetNode ||
+              (n as GeneratedAssetNode).phaseNumber < globNode.phaseNumber)
           .where((n) => globNode.glob.matches(n.id.path))
           .toList();
-      globNode.inputs = HashSet.of(potentialNodes.map((n) => n.id));
-      for (var node in potentialNodes) {
-        node.outputs.add(globNode.id);
-      }
+
+      await Future.wait(potentialNodes
+          .whereType<GeneratedAssetNode>()
+          .map(_ensureAssetIsBuilt)
+          .map(toFuture));
 
       var actualMatches = <AssetId>[];
       for (var node in potentialNodes) {
-        if (await _isReadableNode(
-            node, globNode.phaseNumber, globNode.id.package)) {
-          actualMatches.add(node.id);
+        node.outputs.add(globNode.id);
+        if (node is GeneratedAssetNode && (!node.wasOutput || node.isFailure)) {
+          continue;
         }
+        actualMatches.add(node.id);
       }
+
       globNode
         ..results = actualMatches
+        ..inputs = HashSet.of(potentialNodes.map((n) => n.id))
         ..state = NodeState.upToDate
         ..lastKnownDigest =
             md5.convert(utf8.encode(globNode.results.join(' ')));
@@ -750,7 +764,7 @@ class _SingleBuild {
   /// - Setting the `lastKnownDigest` on each output based on the new contents.
   /// - Setting the `previousInputsDigest` on each output based on the inputs.
   /// - Storing the error message with the [_failureReporter].
-  Future<Null> _setOutputsState(
+  Future<void> _setOutputsState(
       Iterable<AssetId> outputs,
       SingleStepReader reader,
       AssetWriterSpy writer,

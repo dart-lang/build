@@ -22,7 +22,7 @@ class MultiplexingBuilder implements Builder {
         .where((builder) =>
             builder.buildExtensions.keys.any(buildStep.inputId.path.endsWith))
         .map((builder) => builder.build(buildStep))
-        .whereType<Future>());
+        .whereType<Future<void>>());
   }
 
   /// Merges output extensions from all builders.

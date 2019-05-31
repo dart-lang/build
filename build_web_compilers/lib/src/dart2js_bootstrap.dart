@@ -14,20 +14,40 @@ import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 
+import 'platforms.dart';
 import 'web_entrypoint_builder.dart';
 
-Future<Null> bootstrapDart2Js(
+Future<void> bootstrapDart2Js(
     BuildStep buildStep, List<String> dart2JsArgs) async {
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
-      dartEntrypointId.changeExtension(moduleExtension(DartPlatform.dart2js));
+      dartEntrypointId.changeExtension(moduleExtension(dart2jsPlatform));
   var args = <String>[];
   {
     var module = Module.fromJson(
         json.decode(await buildStep.readAsString(moduleId))
             as Map<String, dynamic>);
-    var allDeps = (await module.computeTransitiveDependencies(buildStep))
-      ..add(module);
+    List<Module> allDeps;
+    try {
+      allDeps = (await module.computeTransitiveDependencies(buildStep,
+          throwIfUnsupported: true))
+        ..add(module);
+    } on UnsupportedModules catch (e) {
+      var librariesString = (await e.exactLibraries(buildStep).toList())
+          .map((lib) => AssetId(lib.id.package,
+              lib.id.path.replaceFirst(moduleLibraryExtension, '.dart')))
+          .join('\n');
+      log.warning('''
+Skipping compiling ${buildStep.inputId} with dart2js because some of its
+transitive libraries have sdk dependencies that not supported on this platform:
+
+$librariesString
+
+https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-skipped-compiling-warnings
+''');
+      return;
+    }
+
     var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
     var allSrcs = allDeps.expand((module) => module.sources);
     await scratchSpace.ensureAssets(allSrcs, buildStep);
@@ -91,7 +111,7 @@ Future<Null> bootstrapDart2Js(
   }
 }
 
-Future<Null> _copyIfExists(
+Future<void> _copyIfExists(
     AssetId id, ScratchSpace scratchSpace, AssetWriter writer) async {
   var file = scratchSpace.fileFor(id);
   if (await file.exists()) {

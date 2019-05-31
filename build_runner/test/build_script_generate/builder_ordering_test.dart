@@ -25,7 +25,7 @@ void main() {
               'build_extensions': {},
               'target': '',
               'import': '',
-              'runs_before': ['|runs_second'],
+              'runs_before': [':runs_second'],
             },
           }
         }
@@ -33,7 +33,7 @@ void main() {
       final orderedBuilders = findBuilderOrder(
           buildConfigs.values.expand((v) => v.builderDefinitions.values));
       final orderedKeys = orderedBuilders.map((b) => b.key);
-      expect(orderedKeys, ['a|runs_first', 'a|runs_second']);
+      expect(orderedKeys, ['a:runs_first', 'a:runs_second']);
     });
 
     test('orders builders with `required_inputs`', () async {
@@ -61,7 +61,7 @@ void main() {
       final orderedBuilders = findBuilderOrder(
           buildConfigs.values.expand((v) => v.builderDefinitions.values));
       final orderedKeys = orderedBuilders.map((b) => b.key);
-      expect(orderedKeys, ['a|runs_first', 'a|runs_second']);
+      expect(orderedKeys, ['a:runs_first', 'a:runs_second']);
     });
 
     test('disallows cycles', () async {
@@ -74,7 +74,7 @@ void main() {
               'target': '',
               'import': '',
               'required_inputs': ['.output_b'],
-              'runs_before': ['|builder_b'],
+              'runs_before': [':builder_b'],
             },
             'builder_b': {
               'builder_factories': ['createBuilder'],

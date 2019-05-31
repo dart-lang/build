@@ -13,7 +13,10 @@ Serializers _$serializers = (new Serializers().toBuilder()
       ..add(BuildTargetRequest.serializer)
       ..add(DefaultBuildResult.serializer)
       ..add(DefaultBuildTarget.serializer)
+      ..add(Level.serializer)
+      ..add(OutputLocation.serializer)
       ..add(ServerLog.serializer)
+      ..add(ShutdownNotification.serializer)
       ..addBuilderFactory(
           const FullType(BuiltList, const [const FullType(BuildResult)]),
           () => new ListBuilder<BuildResult>())

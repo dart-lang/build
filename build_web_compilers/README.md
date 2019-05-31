@@ -1,5 +1,3 @@
-# build_web_compilers
-
 <p align="center">
   Web compilers for users of <a href="https://pub.dartlang.org/packages/build"><code>package:build</code></a>.
   <br>

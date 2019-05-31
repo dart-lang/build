@@ -1,3 +1,41 @@
+## 1.5.0
+
+- Update to the latest `build_daemon`.
+
+## 1.4.0
+
+- Add a `run` command to execute VM entrypoints with generated sources.
+
+## 1.3.5
+
+- Use the latest `build_daemon`.
+
+## 1.3.4
+
+- Use the latest `build_config`.
+
+## 1.3.3
+
+- Use `HttpMultiServer.loopback` for the daemon asset server.
+
+## 1.3.2
+
+- Fix an error where daemon mode would claim support for prompts when it can't
+  actually support them and would hang instead.
+- Improve logging when the daemon fails to start up, previously no logs would
+  be shown.
+
+## 1.3.1
+
+- Remove usage of set literals to fix errors on older sdks that don't support
+  them.
+
+## 1.3.0
+
+- Fix an issue where we might re-use stale build snapshots, which could only be
+  resolved by deleting the `.dart_tool` dir (or doing a `clean`).
+- Depend on the latest `build_runner_core` and `build_daemon` releases.
+
 ## 1.2.8
 
 - Fix issue where daemon command wouldn't properly shutdown.

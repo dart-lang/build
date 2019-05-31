@@ -30,6 +30,24 @@ void main() {
     expect(manager.channels(targetB), isEmpty);
   });
 
+  test('can return all connected channels', () {
+    var manager = BuildTargetManager();
+    var target = DefaultBuildTarget((b) => b..target = 'foo');
+    var targetB = DefaultBuildTarget((b) => b..target = 'bar');
+    var channelA = DummyChannel();
+    var channelB = DummyChannel();
+    manager
+      ..addBuildTarget(target, channelA)
+      ..addBuildTarget(targetB, channelB);
+    expect(manager.allChannels, containsAll([channelA, channelB]));
+    expect(manager.allChannels.length, 2);
+
+    manager.removeChannel(channelA);
+
+    expect(manager.allChannels, contains(channelB));
+    expect(manager.allChannels.length, 1);
+  });
+
   test('when a channel is removed the corresponding target is removed', () {
     var manager = BuildTargetManager();
     var channelA = DummyChannel();

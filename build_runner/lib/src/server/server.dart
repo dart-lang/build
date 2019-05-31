@@ -84,9 +84,12 @@ class ServeHandler implements BuildState {
       {bool logRequests, BuildUpdatesOption buildUpdates}) {
     buildUpdates ??= BuildUpdatesOption.none;
     logRequests ??= false;
-    if (p.url.split(rootDir).length != 1) {
+    if (p.url.split(rootDir).length != 1 || rootDir == '.') {
       throw ArgumentError.value(
-          rootDir, 'rootDir', 'Only top level directories are supported');
+        rootDir,
+        'directory',
+        'Only top level directories such as `web` or `test` can be served, got',
+      );
     }
     _state.currentBuild.then((_) {
       // If the first build fails with a handled exception, we might not have
@@ -376,7 +379,7 @@ class AssetHandler {
     return (result.isEmpty)
         ? 'Could not find ${from.path} or any files in $directoryPath.'
         : 'Could not find ${from.path}. $directoryPath contains:\n'
-        '${result.join('\n')}';
+            '${result.join('\n')}';
   }
 }
 

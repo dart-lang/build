@@ -1,3 +1,22 @@
+## 0.10.7+3
+
+- Handle the case where the root package in a `PackageAssetReader` is a fake
+  package.
+
+## 0.10.7+2
+
+- Avoid throwing for missing files from `PackageAssetReader.canRead`.
+
+## 0.10.7+1
+
+- Allow `build_config` `0.4.x`.
+
+## 0.10.7
+
+- Support the latest version of `package:html`.
+- Only generate bootstrap scripts for supported platforms based on `TestOn`
+  annotations.
+
 ## 0.10.6
 
 - Allow build_resolvers version `1.0.0`.

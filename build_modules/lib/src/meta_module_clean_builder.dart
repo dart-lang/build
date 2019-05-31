@@ -11,6 +11,7 @@ import 'package:graphs/graphs.dart';
 
 import 'meta_module.dart';
 import 'meta_module_builder.dart';
+import 'module_cache.dart';
 import 'modules.dart';
 import 'platform.dart';
 
@@ -93,9 +94,8 @@ Future<Set<Module>> _transitiveModules(
   var dependentModules = Set<Module>();
   // Ensures we only process a meta file once.
   var seenMetas = Set<AssetId>()..add(metaAsset);
-  var meta = MetaModule.fromJson(
-      jsonDecode(await buildStep.readAsString(buildStep.inputId))
-          as Map<String, dynamic>);
+  var metaModules = await buildStep.fetchResource(metaModuleCache);
+  var meta = await metaModules.find(buildStep.inputId, buildStep);
   var nextModules = List.of(meta.modules);
   while (nextModules.isNotEmpty) {
     var module = nextModules.removeLast();
@@ -122,9 +122,7 @@ Future<Set<Module>> _transitiveModules(
             'on it in your pubspec.');
         continue;
       }
-      var depMeta = MetaModule.fromJson(
-          jsonDecode(await buildStep.readAsString(depMetaAsset))
-              as Map<String, dynamic>);
+      var depMeta = await metaModules.find(depMetaAsset, buildStep);
       nextModules.addAll(depMeta.modules);
     }
   }

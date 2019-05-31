@@ -10,10 +10,8 @@ import 'package:test/test.dart';
 
 import 'package:build_modules/build_modules.dart';
 
-String serializeModule(Module module) => jsonEncode(module.toJson());
-
 void main() {
-  final platform = DartPlatform.dart2js;
+  final platform = DartPlatform.register('test', ['html']);
 
   group('computeTransitiveDeps', () {
     final rootId = AssetId('a', 'lib/a.dart');
@@ -27,54 +25,58 @@ void main() {
         [deepTransitiveDepId], platform, true);
     final deepTransitiveDepModule =
         Module(deepTransitiveDepId, [deepTransitiveDepId], [], platform, true);
-    InMemoryAssetReader reader;
-
-    setUp(() {
-      reader = InMemoryAssetReader()
-        ..cacheStringAsset(rootId.changeExtension(moduleExtension(platform)),
-            serializeModule(rootModule))
-        ..cacheStringAsset(
-            directDepId.changeExtension(moduleExtension(platform)),
-            serializeModule(directDepModule))
-        ..cacheStringAsset(
-            transitiveDepId.changeExtension(moduleExtension(platform)),
-            serializeModule(transitiveDepModule))
-        ..cacheStringAsset(
-            deepTransitiveDepId.changeExtension(moduleExtension(platform)),
-            serializeModule(deepTransitiveDepModule));
-    });
 
     test('finds transitive deps', () async {
-      var transitiveDeps =
-          (await rootModule.computeTransitiveDependencies(reader))
-              .map((m) => m.primarySource)
-              .toList();
-      expect(
-          transitiveDeps,
-          unorderedEquals([
-            directDepModule.primarySource,
-            transitiveDepModule.primarySource,
-            deepTransitiveDepModule.primarySource,
-          ]));
-      expect(transitiveDeps.indexOf(transitiveDepModule.primarySource),
-          lessThan(transitiveDeps.indexOf(directDepModule.primarySource)));
-      expect(transitiveDeps.indexOf(deepTransitiveDepModule.primarySource),
-          lessThan(transitiveDeps.indexOf(transitiveDepModule.primarySource)));
+      await testBuilder(
+          TestBuilder(
+              buildExtensions: {
+                'lib/a${moduleExtension(platform)}': ['.transitive']
+              },
+              build: expectAsync2((buildStep, _) async {
+                var transitiveDeps =
+                    (await rootModule.computeTransitiveDependencies(buildStep))
+                        .map((m) => m.primarySource)
+                        .toList();
+                expect(
+                    transitiveDeps,
+                    unorderedEquals([
+                      directDepModule.primarySource,
+                      transitiveDepModule.primarySource,
+                      deepTransitiveDepModule.primarySource,
+                    ]));
+                expect(
+                    transitiveDeps.indexOf(transitiveDepModule.primarySource),
+                    lessThan(
+                        transitiveDeps.indexOf(directDepModule.primarySource)));
+                expect(
+                    transitiveDeps
+                        .indexOf(deepTransitiveDepModule.primarySource),
+                    lessThan(transitiveDeps
+                        .indexOf(transitiveDepModule.primarySource)));
+              })),
+          {
+            'a|lib/a${moduleExtension(platform)}':
+                jsonEncode(rootModule.toJson()),
+            'a|lib/src/dep${moduleExtension(platform)}':
+                jsonEncode(directDepModule.toJson()),
+            'b|lib/b${moduleExtension(platform)}':
+                jsonEncode(transitiveDepModule.toJson()),
+            'b|lib/src/dep${moduleExtension(platform)}':
+                jsonEncode(deepTransitiveDepModule.toJson()),
+          });
     });
 
-    test('missing modules report nice errors', () {
-      reader.assets.remove(
-          deepTransitiveDepId.changeExtension(moduleExtension(platform)));
-      reader.cacheStringAsset(transitiveDepId, '''
-import 'src/dep.dart';
-''');
-      expect(
-          () => rootModule.computeTransitiveDependencies(reader),
-          allOf(throwsA(TypeMatcher<MissingModulesException>()), throwsA(
-            predicate<MissingModulesException>(
-              (error) {
-                printOnFailure(error.message);
-                return error.message.contains('''
+    test('missing modules report nice errors', () async {
+      await testBuilder(
+          TestBuilder(
+              buildExtensions: {
+                'lib/a${moduleExtension(platform)}': ['.transitive']
+              },
+              build: expectAsync2((buildStep, _) async {
+                await expectLater(
+                    () => rootModule.computeTransitiveDependencies(buildStep),
+                    throwsA(isA<MissingModulesException>()
+                        .having((e) => e.message, 'message', contains('''
 Unable to find modules for some sources, this is usually the result of either a
 bad import, a missing dependency in a package (or possibly a dev_dependency
 needs to move to a real dependency), or a build failure (if importing a
@@ -83,10 +85,18 @@ generated file).
 Please check the following imports:
 
 `import 'src/dep.dart';` from b|lib/b.dart at 1:1
-''');
-              },
-            ),
-          )));
+'''))));
+              })),
+          {
+            'a|lib/a${moduleExtension(platform)}':
+                jsonEncode(rootModule.toJson()),
+            'a|lib/src/dep${moduleExtension(platform)}':
+                jsonEncode(directDepModule.toJson()),
+            'b|lib/b${moduleExtension(platform)}':
+                jsonEncode(transitiveDepModule.toJson()),
+            // No module for b|lib/src/dep.dart
+            'b|lib/b.dart': 'import \'src/dep.dart\';',
+          });
     });
   });
 }

@@ -8,6 +8,8 @@ part of 'build_target.dart';
 
 Serializer<DefaultBuildTarget> _$defaultBuildTargetSerializer =
     new _$DefaultBuildTargetSerializer();
+Serializer<OutputLocation> _$outputLocationSerializer =
+    new _$OutputLocationSerializer();
 
 class _$DefaultBuildTargetSerializer
     implements StructuredSerializer<DefaultBuildTarget> {
@@ -28,6 +30,12 @@ class _$DefaultBuildTargetSerializer
       serializers.serialize(object.target,
           specifiedType: const FullType(String)),
     ];
+    if (object.outputLocation != null) {
+      result
+        ..add('outputLocation')
+        ..add(serializers.serialize(object.outputLocation,
+            specifiedType: const FullType(OutputLocation)));
+    }
 
     return result;
   }
@@ -49,9 +57,67 @@ class _$DefaultBuildTargetSerializer
                       const FullType(BuiltSet, const [const FullType(RegExp)]))
               as BuiltSet);
           break;
+        case 'outputLocation':
+          result.outputLocation.replace(serializers.deserialize(value,
+              specifiedType: const FullType(OutputLocation)) as OutputLocation);
+          break;
         case 'target':
           result.target = serializers.deserialize(value,
               specifiedType: const FullType(String)) as String;
+          break;
+      }
+    }
+
+    return result.build();
+  }
+}
+
+class _$OutputLocationSerializer
+    implements StructuredSerializer<OutputLocation> {
+  @override
+  final Iterable<Type> types = const [OutputLocation, _$OutputLocation];
+  @override
+  final String wireName = 'OutputLocation';
+
+  @override
+  Iterable serialize(Serializers serializers, OutputLocation object,
+      {FullType specifiedType = FullType.unspecified}) {
+    final result = <Object>[
+      'output',
+      serializers.serialize(object.output,
+          specifiedType: const FullType(String)),
+      'useSymlinks',
+      serializers.serialize(object.useSymlinks,
+          specifiedType: const FullType(bool)),
+      'hoist',
+      serializers.serialize(object.hoist, specifiedType: const FullType(bool)),
+    ];
+
+    return result;
+  }
+
+  @override
+  OutputLocation deserialize(Serializers serializers, Iterable serialized,
+      {FullType specifiedType = FullType.unspecified}) {
+    final result = new OutputLocationBuilder();
+
+    final iterator = serialized.iterator;
+    while (iterator.moveNext()) {
+      final key = iterator.current as String;
+      iterator.moveNext();
+      final dynamic value = iterator.current;
+      switch (key) {
+        case 'output':
+          result.output = serializers.deserialize(value,
+              specifiedType: const FullType(String)) as String;
+          break;
+        case 'useSymlinks':
+          result.useSymlinks = serializers.deserialize(value,
+              specifiedType: const FullType(bool)) as bool;
+          break;
+        case 'hoist':
+          result.hoist = serializers.deserialize(value,
+              specifiedType: const FullType(bool)) as bool;
           break;
       }
     }
@@ -64,12 +130,16 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
   @override
   final BuiltSet<RegExp> blackListPatterns;
   @override
+  final OutputLocation outputLocation;
+  @override
   final String target;
 
   factory _$DefaultBuildTarget([void updates(DefaultBuildTargetBuilder b)]) =>
       (new DefaultBuildTargetBuilder()..update(updates)).build();
 
-  _$DefaultBuildTarget._({this.blackListPatterns, this.target}) : super._() {
+  _$DefaultBuildTarget._(
+      {this.blackListPatterns, this.outputLocation, this.target})
+      : super._() {
     if (blackListPatterns == null) {
       throw new BuiltValueNullFieldError(
           'DefaultBuildTarget', 'blackListPatterns');
@@ -92,18 +162,22 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
     if (identical(other, this)) return true;
     return other is DefaultBuildTarget &&
         blackListPatterns == other.blackListPatterns &&
+        outputLocation == other.outputLocation &&
         target == other.target;
   }
 
   @override
   int get hashCode {
-    return $jf($jc($jc(0, blackListPatterns.hashCode), target.hashCode));
+    return $jf($jc(
+        $jc($jc(0, blackListPatterns.hashCode), outputLocation.hashCode),
+        target.hashCode));
   }
 
   @override
   String toString() {
     return (newBuiltValueToStringHelper('DefaultBuildTarget')
           ..add('blackListPatterns', blackListPatterns)
+          ..add('outputLocation', outputLocation)
           ..add('target', target))
         .toString();
   }
@@ -119,6 +193,12 @@ class DefaultBuildTargetBuilder
   set blackListPatterns(SetBuilder<RegExp> blackListPatterns) =>
       _$this._blackListPatterns = blackListPatterns;
 
+  OutputLocationBuilder _outputLocation;
+  OutputLocationBuilder get outputLocation =>
+      _$this._outputLocation ??= new OutputLocationBuilder();
+  set outputLocation(OutputLocationBuilder outputLocation) =>
+      _$this._outputLocation = outputLocation;
+
   String _target;
   String get target => _$this._target;
   set target(String target) => _$this._target = target;
@@ -128,6 +208,7 @@ class DefaultBuildTargetBuilder
   DefaultBuildTargetBuilder get _$this {
     if (_$v != null) {
       _blackListPatterns = _$v.blackListPatterns?.toBuilder();
+      _outputLocation = _$v.outputLocation?.toBuilder();
       _target = _$v.target;
       _$v = null;
     }
@@ -153,18 +234,129 @@ class DefaultBuildTargetBuilder
     try {
       _$result = _$v ??
           new _$DefaultBuildTarget._(
-              blackListPatterns: blackListPatterns.build(), target: target);
+              blackListPatterns: blackListPatterns.build(),
+              outputLocation: _outputLocation?.build(),
+              target: target);
     } catch (_) {
       String _$failedField;
       try {
         _$failedField = 'blackListPatterns';
         blackListPatterns.build();
+        _$failedField = 'outputLocation';
+        _outputLocation?.build();
       } catch (e) {
         throw new BuiltValueNestedFieldError(
             'DefaultBuildTarget', _$failedField, e.toString());
       }
       rethrow;
     }
+    replace(_$result);
+    return _$result;
+  }
+}
+
+class _$OutputLocation extends OutputLocation {
+  @override
+  final String output;
+  @override
+  final bool useSymlinks;
+  @override
+  final bool hoist;
+
+  factory _$OutputLocation([void updates(OutputLocationBuilder b)]) =>
+      (new OutputLocationBuilder()..update(updates)).build();
+
+  _$OutputLocation._({this.output, this.useSymlinks, this.hoist}) : super._() {
+    if (output == null) {
+      throw new BuiltValueNullFieldError('OutputLocation', 'output');
+    }
+    if (useSymlinks == null) {
+      throw new BuiltValueNullFieldError('OutputLocation', 'useSymlinks');
+    }
+    if (hoist == null) {
+      throw new BuiltValueNullFieldError('OutputLocation', 'hoist');
+    }
+  }
+
+  @override
+  OutputLocation rebuild(void updates(OutputLocationBuilder b)) =>
+      (toBuilder()..update(updates)).build();
+
+  @override
+  OutputLocationBuilder toBuilder() =>
+      new OutputLocationBuilder()..replace(this);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(other, this)) return true;
+    return other is OutputLocation &&
+        output == other.output &&
+        useSymlinks == other.useSymlinks &&
+        hoist == other.hoist;
+  }
+
+  @override
+  int get hashCode {
+    return $jf($jc(
+        $jc($jc(0, output.hashCode), useSymlinks.hashCode), hoist.hashCode));
+  }
+
+  @override
+  String toString() {
+    return (newBuiltValueToStringHelper('OutputLocation')
+          ..add('output', output)
+          ..add('useSymlinks', useSymlinks)
+          ..add('hoist', hoist))
+        .toString();
+  }
+}
+
+class OutputLocationBuilder
+    implements Builder<OutputLocation, OutputLocationBuilder> {
+  _$OutputLocation _$v;
+
+  String _output;
+  String get output => _$this._output;
+  set output(String output) => _$this._output = output;
+
+  bool _useSymlinks;
+  bool get useSymlinks => _$this._useSymlinks;
+  set useSymlinks(bool useSymlinks) => _$this._useSymlinks = useSymlinks;
+
+  bool _hoist;
+  bool get hoist => _$this._hoist;
+  set hoist(bool hoist) => _$this._hoist = hoist;
+
+  OutputLocationBuilder();
+
+  OutputLocationBuilder get _$this {
+    if (_$v != null) {
+      _output = _$v.output;
+      _useSymlinks = _$v.useSymlinks;
+      _hoist = _$v.hoist;
+      _$v = null;
+    }
+    return this;
+  }
+
+  @override
+  void replace(OutputLocation other) {
+    if (other == null) {
+      throw new ArgumentError.notNull('other');
+    }
+    _$v = other as _$OutputLocation;
+  }
+
+  @override
+  void update(void updates(OutputLocationBuilder b)) {
+    if (updates != null) updates(this);
+  }
+
+  @override
+  _$OutputLocation build() {
+    final _$result = _$v ??
+        new _$OutputLocation._(
+            output: output, useSymlinks: useSymlinks, hoist: hoist);
     replace(_$result);
     return _$result;
   }
