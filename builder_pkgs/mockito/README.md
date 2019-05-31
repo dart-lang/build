@@ -7,7 +7,7 @@ Current mock libraries suffer from specifying method names as strings, which
 cause a lot of problems:
 
 * Poor refactoring support: rename method and you need manually search/replace
-  it's usage in when/verify clauses.
+  its usage in when/verify clauses.
 * Poor support from IDE: no code-completion, no hints on argument types, can't
   jump to definition
 
@@ -182,7 +182,7 @@ verify(cat.eatFood("Milk", hungry: argThat(isNull))); // BAD: null as named argu
 
 ## Named arguments
 
-Mockito currently has an awkward nuisance to it's syntax: named arguments and
+Mockito currently has an awkward nuisance to its syntax: named arguments and
 argument matchers require more specification than you might think: you must
 declare the name of the argument in the argument matcher. This is because we
 can't rely on the position of a named argument, and the language doesn't
@@ -338,7 +338,7 @@ should be preserved for matching an invocation. Named arguments are trickier:
 their evaluation order is not specified, so if Mockito blindly stored them in
 the order of their evaluation, it wouldn't be able to match up each argument
 matcher with the correct name. This is why each named argument matcher must
-repeat it's own name. `foo: anyNamed('foo')` tells Mockito to store an argument
+repeat its own name. `foo: anyNamed('foo')` tells Mockito to store an argument
 matcher for an invocation under the name 'foo'.
 
 > **Be careful** never to write `when;` (without the function call) anywhere.
