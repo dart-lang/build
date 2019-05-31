@@ -1,3 +1,7 @@
+## 1.2.2
+
+- Allow build_config 0.5.x.
+
 ## 1.2.1
 
 - Allow analyzer version 0.36.x.
