@@ -48,6 +48,10 @@
   `--reuse-compiler-result` and `--use-incremental-compiler`.
 - Increased the upper bound for `package:analyzer` to `<0.37.0`.
 
+## 1.0.11
+
+- Allow build_config 0.4.x.
+
 ## 1.0.10
 
 - Fix a performance issue in the kernel_builder, especially for larger projects.
