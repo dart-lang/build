@@ -11,6 +11,7 @@ import 'package:test/test.dart';
 import 'assets.dart';
 import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
+import 'multi_asset_reader.dart';
 import 'resolve_source.dart';
 
 AssetId _passThrough(AssetId id) => id;
@@ -92,6 +93,15 @@ void checkOutputs(
 /// is the path to a file relative to the package. `PATH_WITHIN_PACKAGE` must
 /// include `lib`, `web`, `bin` or `test`. Example: "myapp|lib/utils.dart".
 ///
+/// If a [reader] is provided, then any asset not in [sourceAssets] will be
+/// read from the provided reader. This allows you to more easily provide
+/// entire packages source to the test, instead of mocking them out, for
+/// example, this exposes all assets available to the test itself:
+///
+///
+///   testBuilder(yourBuilder, {}/* test assets here */,
+///       reader: await PackageAssetReader.currentIsolate());
+///
 /// Callers may optionally provide a [writer] to stub different behavior or do
 /// more complex validation than what is possible with [outputs].
 ///
@@ -102,24 +112,30 @@ Future testBuilder(
     {Set<String> generateFor,
     bool isInput(String assetId),
     String rootPackage,
+    MultiPackageAssetReader reader,
     RecordingAssetWriter writer,
     Map<String, /*String|List<int>|Matcher<String|List<int>>*/ dynamic> outputs,
     void onLog(LogRecord log)}) async {
   writer ??= InMemoryAssetWriter();
-  final reader = InMemoryAssetReader(rootPackage: rootPackage);
+  final inMemoryReader = InMemoryAssetReader(rootPackage: rootPackage);
+  if (reader != null) {
+    reader = MultiAssetReader([inMemoryReader, reader]);
+  } else {
+    reader = inMemoryReader;
+  }
 
   var inputIds = <AssetId>[];
   sourceAssets.forEach((serializedId, contents) {
     var id = makeAssetId(serializedId);
     if (contents is String) {
-      reader.cacheStringAsset(id, contents);
+      inMemoryReader.cacheStringAsset(id, contents);
     } else if (contents is List<int>) {
-      reader.cacheBytesAsset(id, contents);
+      inMemoryReader.cacheBytesAsset(id, contents);
     }
     inputIds.add(id);
   });
 
-  var allPackages = reader.assets.keys.map((a) => a.package).toSet();
+  var allPackages = inMemoryReader.assets.keys.map((a) => a.package).toSet();
   for (var pkg in allPackages) {
     for (var dir in const ['lib', 'web', 'test']) {
       var asset = AssetId(pkg, '$dir/\$$dir\$');
