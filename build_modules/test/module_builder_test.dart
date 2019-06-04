@@ -32,12 +32,8 @@ main() {
       'a|lib/a.dart': '',
       'a|lib/b.dart': '',
       'a|lib/c.dart': '',
-      'a|lib/c$moduleLibraryExtension':
-          ModuleLibrary.fromSource(AssetId('a', 'lib/c.dart'), '').serialize(),
       'a|lib/d.dart': '',
       'a|lib/e.dart': '',
-      'a|lib/e$moduleLibraryExtension':
-          ModuleLibrary.fromSource(AssetId('a', 'lib/e.dart'), '').serialize(),
       'a|lib/${metaModuleCleanExtension(platform)}':
           jsonEncode(metaModule.toJson()),
       'a|lib/c$moduleLibraryExtension':
