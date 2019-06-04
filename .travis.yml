@@ -66,7 +66,7 @@ jobs:
       env: PKGS="build_daemon"
       script: ./tool/travis.sh test_06
     - stage: unit_test
-      name: "SDK: dev; PKG: build_modules; TASKS: `dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs-- -P presubmit`"
+      name: "SDK: dev; PKG: build_modules; TASKS: `dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs -- -P presubmit`"
       dart: dev
       env: PKGS="build_modules"
       script: ./tool/travis.sh command_4
