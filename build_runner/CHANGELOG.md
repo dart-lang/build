@@ -1,3 +1,8 @@
+## 1.5.1
+
+- Fix an issue where exit codes were not set correctly when running the
+  generated build script directly.
+
 ## 1.5.0
 
 - Update to the latest `build_daemon`.

@@ -124,6 +124,7 @@ Method _main() => Method((b) => b
     refer('sendPort')
         .nullSafeProperty('send')
         .call([refer('result')]).statement,
+    refer('exitCode', 'dart:io').assign(refer('result')).statement,
   ]));
 
 /// An expression calling `apply` with appropriate setup for a Builder.
