@@ -121,11 +121,6 @@ class ModuleLibrary {
         deps.add(linkedId);
       }
     }
-    // Allow two or fewer arguments so that entrypoints intended for use with
-    // [spawnUri] get counted.
-    //
-    // TODO: This misses the case where a Dart file doesn't contain main(),
-    // but has a part that does, or it exports a `main` from another library.
     return ModuleLibrary._(id,
         isEntryPoint: isEntryPoint,
         deps: deps,
@@ -217,6 +212,11 @@ Set<AssetId> _deserializeAssetIds(Iterable serlialized) =>
 bool _isPart(CompilationUnit dart) =>
     dart.directives.any((directive) => directive is PartOfDirective);
 
+/// Allows two or fewer arguments to `main` so that entrypoints intended for
+/// use with `spawnUri` get counted.
+//
+// TODO: This misses the case where a Dart file doesn't contain main(),
+// but has a part that does, or it exports a `main` from another library.
 bool _hasMainMethod(CompilationUnit dart) => dart.declarations.any((node) =>
     node is FunctionDeclaration &&
     node.name.name == 'main' &&
