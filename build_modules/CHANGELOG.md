@@ -3,6 +3,8 @@
 - Add a `hasMain` boolean to the `ModuleLibrary` class.
   - This is now used instead of `isEntrypoint` for determining whether or not
     to copy module files for application discovery.
+- Fix `computeTransitiveDeps` to do error checking for the root module as well
+  as transitive modules.
 
 ## 2.2.0
 

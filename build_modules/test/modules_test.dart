@@ -98,5 +98,102 @@ Please check the following imports:
             'b|lib/b.dart': 'import \'src/dep.dart\';',
           });
     });
+
+    group('unsupported modules', () {
+      test('are not allowed as the root', () async {
+        final unsupportedRootModule =
+            Module(rootId, [rootId], [directDepId], platform, false);
+
+        await testBuilder(
+            TestBuilder(
+                buildExtensions: {
+                  'lib/a${moduleExtension(platform)}': ['.transitive']
+                },
+                build: expectAsync2((buildStep, _) async {
+                  await expectLater(
+                      () => rootModule.computeTransitiveDependencies(buildStep,
+                          throwIfUnsupported: true),
+                      throwsA(isA<UnsupportedModules>().having(
+                          (e) =>
+                              e.unsupportedModules.map((m) => m.primarySource),
+                          'unsupportedModules',
+                          equals([unsupportedRootModule.primarySource]))));
+                })),
+            {
+              'a|lib/a${moduleExtension(platform)}':
+                  jsonEncode(unsupportedRootModule.toJson()),
+              'a|lib/src/dep${moduleExtension(platform)}':
+                  jsonEncode(directDepModule.toJson()),
+              'b|lib/b${moduleExtension(platform)}':
+                  jsonEncode(transitiveDepModule.toJson()),
+              'b|lib/src/dep${moduleExtension(platform)}':
+                  jsonEncode(deepTransitiveDepModule.toJson()),
+            });
+      });
+
+      test('are not allowed in immediate deps', () async {
+        final unsupportedDirectDepModule = Module(
+            directDepId, [directDepId], [transitiveDepId], platform, false);
+
+        await testBuilder(
+            TestBuilder(
+                buildExtensions: {
+                  'lib/a${moduleExtension(platform)}': ['.transitive']
+                },
+                build: expectAsync2((buildStep, _) async {
+                  await expectLater(
+                      () => rootModule.computeTransitiveDependencies(buildStep,
+                          throwIfUnsupported: true),
+                      throwsA(isA<UnsupportedModules>().having(
+                          (e) =>
+                              e.unsupportedModules.map((m) => m.primarySource),
+                          'unsupportedModules',
+                          equals([unsupportedDirectDepModule.primarySource]))));
+                })),
+            {
+              'a|lib/a${moduleExtension(platform)}':
+                  jsonEncode(rootModule.toJson()),
+              'a|lib/src/dep${moduleExtension(platform)}':
+                  jsonEncode(unsupportedDirectDepModule.toJson()),
+              'b|lib/b${moduleExtension(platform)}':
+                  jsonEncode(transitiveDepModule.toJson()),
+              'b|lib/src/dep${moduleExtension(platform)}':
+                  jsonEncode(deepTransitiveDepModule.toJson()),
+            });
+      });
+
+      test('are not allowed in transitive deps', () async {
+        final unsupportedTransitiveDepDepModule = Module(transitiveDepId,
+            [transitiveDepId], [deepTransitiveDepId], platform, false);
+
+        await testBuilder(
+            TestBuilder(
+                buildExtensions: {
+                  'lib/a${moduleExtension(platform)}': ['.transitive']
+                },
+                build: expectAsync2((buildStep, _) async {
+                  await expectLater(
+                      () => rootModule.computeTransitiveDependencies(buildStep,
+                          throwIfUnsupported: true),
+                      throwsA(isA<UnsupportedModules>().having(
+                          (e) =>
+                              e.unsupportedModules.map((m) => m.primarySource),
+                          'unsupportedModules',
+                          equals([
+                            unsupportedTransitiveDepDepModule.primarySource
+                          ]))));
+                })),
+            {
+              'a|lib/a${moduleExtension(platform)}':
+                  jsonEncode(rootModule.toJson()),
+              'a|lib/src/dep${moduleExtension(platform)}':
+                  jsonEncode(directDepModule.toJson()),
+              'b|lib/b${moduleExtension(platform)}':
+                  jsonEncode(unsupportedTransitiveDepDepModule.toJson()),
+              'b|lib/src/dep${moduleExtension(platform)}':
+                  jsonEncode(deepTransitiveDepModule.toJson()),
+            });
+      });
+    });
   });
 }
