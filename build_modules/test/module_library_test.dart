@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
@@ -121,5 +122,14 @@ void main() {
         Set.of([
           makeAssetId('myapp|lib/for_web.dart'),
         ]));
+  });
+
+  test('can detect a `main` method', () async {
+    var id = AssetId('myapp', 'lib/a.dart');
+    expect(ModuleLibrary.fromSource(id, '').hasMain, false);
+    expect(ModuleLibrary.fromSource(id, 'main() {}').hasMain, true);
+    expect(ModuleLibrary.fromSource(id, 'main(args) {}').hasMain, true);
+    expect(ModuleLibrary.fromSource(id, 'main(args, receivePort) {}').hasMain,
+        true);
   });
 }
