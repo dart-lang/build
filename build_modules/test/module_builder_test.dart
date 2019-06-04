@@ -10,6 +10,7 @@ import 'package:test/test.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:build_modules/src/meta_module.dart';
 import 'package:build_modules/src/modules.dart';
+import 'package:build_modules/src/module_library.dart';
 
 import 'matchers.dart';
 
@@ -35,6 +36,10 @@ main() {
       'a|lib/e.dart': '',
       'a|lib/${metaModuleCleanExtension(platform)}':
           jsonEncode(metaModule.toJson()),
+      'a|lib/c$moduleLibraryExtension':
+          ModuleLibrary.fromSource(assetC, '').serialize(),
+      'a|lib/e$moduleLibraryExtension':
+          ModuleLibrary.fromSource(assetE, '').serialize(),
     }, outputs: {
       'a|lib/a${moduleExtension(platform)}': encodedMatchesModule(moduleA),
       'a|lib/b${moduleExtension(platform)}': encodedMatchesModule(moduleB),
