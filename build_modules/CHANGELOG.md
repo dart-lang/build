@@ -1,3 +1,9 @@
+## 2.3.0
+
+- Add a `hasMain` boolean to the `ModuleLibrary` class.
+  - This is now used instead of `isEntrypoint` for determining whether or not
+    to copy module files for application discovery.
+
 ## 2.2.0
 
 - Make the `librariesPath` in the `KernelBuilder` configurable.
