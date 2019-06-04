@@ -138,10 +138,8 @@ class ModuleLibrary {
   /// Parse the directives from [source] and compute the library information.
   static ModuleLibrary fromSource(AssetId id, String source) {
     final isLibDir = id.path.startsWith('lib/');
-    final parsed = isLibDir
-        ? parseDirectives(source, name: id.path, suppressErrors: true)
-        : parseCompilationUnit(source,
-            name: id.path, suppressErrors: true, parseFunctionBodies: false);
+    final parsed = parseCompilationUnit(source,
+        name: id.path, suppressErrors: true, parseFunctionBodies: false);
     // Packages within the SDK but published might have libraries that can't be
     // used outside the SDK.
     if (parsed.directives.any((d) =>

@@ -45,7 +45,7 @@ class ModuleBuilder implements Builder {
           buildStep.inputId.changeExtension(moduleLibraryExtension));
       final libraryModule =
           ModuleLibrary.deserialize(buildStep.inputId, serializedLibrary);
-      if (libraryModule.isEntryPoint) {
+      if (libraryModule.hasMain) {
         outputModule = metaModule.modules
             .firstWhere((m) => m.sources.contains(buildStep.inputId));
       }

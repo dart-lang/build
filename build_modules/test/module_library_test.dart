@@ -124,7 +124,7 @@ void main() {
         ]));
   });
 
-  test('can detect a `main` method', () async {
+  test('can detect a main method', () async {
     var id = AssetId('myapp', 'lib/a.dart');
     expect(ModuleLibrary.fromSource(id, '').hasMain, false);
     expect(ModuleLibrary.fromSource(id, 'main() {}').hasMain, true);
