@@ -147,7 +147,7 @@ Future<bool> _createMergedOutputDir(
         'enable-your-device-for-development';
     _logger.severe('Unable to create symlink ${e.path}. Note that to create '
         'symlinks on windows you need to either run in a console with admin '
-        'priviledges or enable developer mode (see $devModeLink).');
+        'privileges or enable developer mode (see $devModeLink).');
     return false;
   }
 }
