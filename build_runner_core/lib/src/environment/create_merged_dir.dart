@@ -141,7 +141,7 @@ Future<bool> _createMergedOutputDir(
 
     return true;
   } on FileSystemException catch (e) {
-    if (e.osError.errorCode != 1314) rethrow;
+    if (e.osError?.errorCode != 1314) rethrow;
     var devModeLink =
         'https://docs.microsoft.com/en-us/windows/uwp/get-started/'
         'enable-your-device-for-development';
