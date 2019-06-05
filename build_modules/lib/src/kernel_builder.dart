@@ -139,10 +139,11 @@ Future<void> _createKernel(
     await _findModuleDeps(
         module, kernelDeps, sourceDeps, buildStep, outputExtension);
 
-    var allAssetIds = Set<AssetId>()
-      ..addAll(module.sources)
-      ..addAll(kernelDeps)
-      ..addAll(sourceDeps);
+    var allAssetIds = <AssetId>{
+      ...module.sources,
+      ...kernelDeps,
+      ...sourceDeps,
+    };
     await scratchSpace.ensureAssets(allAssetIds, buildStep);
 
     packagesFile = await createPackagesFile(allAssetIds);
@@ -234,7 +235,7 @@ Future<List<Module>> _resolveTransitiveModules(
 
   if (missing.isNotEmpty) {
     throw await MissingModulesException.create(
-        missing, modules.toList()..add(root), buildStep);
+        missing, [...modules, root], buildStep);
   }
 
   return modules;
@@ -286,32 +287,6 @@ Future<void> _addRequestArguments(
     bool summaryOnly,
     bool useIncrementalCompiler,
     AssetReader reader) async {
-  request.arguments.addAll([
-    '--dart-sdk-summary',
-    Uri.file(p.join(sdkDir, sdkKernelPath)).toString(),
-    '--output',
-    outputFile.path,
-    '--packages-file',
-    packagesFile.uri.toString(),
-    '--multi-root-scheme',
-    multiRootScheme,
-    '--exclude-non-sources',
-    summaryOnly ? '--summary-only' : '--no-summary-only',
-    '--libraries-file',
-    p.toUri(librariesPath).toString(),
-  ]);
-  if (useIncrementalCompiler) {
-    request.arguments.addAll([
-      '--reuse-compiler-result',
-      '--use-incremental-compiler',
-    ]);
-  }
-
-  request.inputs.add(Input()
-    ..path = '${Uri.file(p.join(sdkDir, sdkKernelPath))}'
-    // Sdk updates fully invalidate the build anyways.
-    ..digest = md5.convert(utf8.encode(platform.name)).bytes);
-
   // Add all kernel outlines as summary inputs, with digests.
   var inputs = await Future.wait(transitiveKernelDeps.map((id) async {
     var relativePath = p.url.relative(scratchSpace.fileFor(id).uri.path,
@@ -321,14 +296,35 @@ Future<void> _addRequestArguments(
       ..path = '$multiRootScheme:///$relativePath'
       ..digest = (await reader.digest(id)).bytes;
   }));
-  request.arguments.addAll(inputs
-      .map((i) => '--input-${summaryOnly ? 'summary' : 'linked'}=${i.path}'));
-  request.inputs.addAll(inputs);
+  request.arguments.addAll([
+    '--dart-sdk-summary=${Uri.file(p.join(sdkDir, sdkKernelPath))}',
+    '--output=${outputFile.path}',
+    '--packages-file=${packagesFile.uri}',
+    '--multi-root-scheme=$multiRootScheme',
+    '--exclude-non-sources',
+    summaryOnly ? '--summary-only' : '--no-summary-only',
+    '--libraries-file=${p.toUri(librariesPath)}',
+    if (useIncrementalCompiler) ...[
+      '--reuse-compiler-result',
+      '--use-incremental-compiler',
+    ],
+    for (var input in inputs)
+      '--input-${summaryOnly ? 'summary' : 'linked'}=${input.path}',
+    for (var source in module.sources) _sourceArg(source),
+  ]);
 
-  request.arguments.addAll(module.sources.map((id) {
-    var uri = id.path.startsWith('lib')
-        ? canonicalUriFor(id)
-        : '$multiRootScheme:///${id.path}';
-    return '--source=$uri';
-  }));
+  request.inputs.addAll([
+    ...inputs,
+    Input()
+      ..path = '${Uri.file(p.join(sdkDir, sdkKernelPath))}'
+      // Sdk updates fully invalidate the build anyways.
+      ..digest = md5.convert(utf8.encode(platform.name)).bytes,
+  ]);
+}
+
+String _sourceArg(AssetId id) {
+  var uri = id.path.startsWith('lib')
+      ? canonicalUriFor(id)
+      : '$multiRootScheme:///${id.path}';
+  return '--source=$uri';
 }
