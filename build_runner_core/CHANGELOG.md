@@ -1,3 +1,7 @@
+## 3.0.6
+
+- Handle symlink creation failures and link to dev mode docs for windows.
+
 ## 3.0.5
 
 - Explicitly require Dart SDK `>=2.2.0 <3.0.0`.
