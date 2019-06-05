@@ -21,7 +21,7 @@ dependencies:
   dart_style: ^1.0.0
   glob: ^1.1.0
   graphs: ^0.2.0
-  http_multi_server: ^2.0.0
+  http_multi_server: ^2.1.0
   io: ^0.3.0
   js: ^0.6.1+1
   logging: ^0.11.2
