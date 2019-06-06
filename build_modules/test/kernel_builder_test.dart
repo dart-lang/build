@@ -15,7 +15,7 @@ import 'util.dart';
 
 main() {
   Map<String, dynamic> assets;
-  final platform = DartPlatform.register('test', ['dart:html']);
+  final platform = DartPlatform.register('ddc', ['dart:html']);
   final kernelOutputExtension = '.test.dill';
 
   group('basic project', () {
