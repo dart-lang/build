@@ -303,6 +303,7 @@ Future<void> _addRequestArguments(
     '--multi-root-scheme=$multiRootScheme',
     '--exclude-non-sources',
     summaryOnly ? '--summary-only' : '--no-summary-only',
+    '--target=${platform.name}',
     '--libraries-file=${p.toUri(librariesPath)}',
     if (useIncrementalCompiler) ...[
       '--reuse-compiler-result',
