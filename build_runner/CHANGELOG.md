@@ -1,3 +1,7 @@
+## 1.5.2
+
+- Use a polling directory watcher by default on windows again.
+
 ## 1.5.1
 
 - Fix an issue where exit codes were not set correctly when running the
