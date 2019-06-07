@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_daemon/daemon_builder.dart';
@@ -11,6 +10,7 @@ import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart' hide OutputLocation;
 import 'package:build_daemon/data/server_log.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
+import 'package:build_runner/src/generate/directory_watcher_factory.dart';
 import 'package:build_runner/src/package_graph/build_config_overrides.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/change_filter.dart';
@@ -182,10 +182,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         isReleaseBuild: sharedOptions.isReleaseBuild);
 
     var graphEvents = PackageGraphWatcher(packageGraph,
-            watch: (node) => PackageNodeWatcher(node,
-                watch: (path) => Platform.isWindows
-                    ? PollingDirectoryWatcher(path)
-                    : DirectoryWatcher(path)))
+            watch: (node) =>
+                PackageNodeWatcher(node, watch: defaultDirectoryWatcherFactory))
         .watch()
         .where((change) => shouldProcess(
               change,
