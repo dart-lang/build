@@ -43,6 +43,8 @@ import 'source_map_stack_trace.dart';
 List<String> fixSourceMapSources(List<String> uris) {
   return uris.map((source) {
     var uri = Uri.parse(source);
+    // We only want to rewrite multi-root scheme uris.
+    if (uri.scheme.isEmpty) return source;
     var newSegments = uri.pathSegments.first == 'packages'
         ? uri.pathSegments
         : uri.pathSegments.skip(1);
