@@ -1,3 +1,8 @@
+## 2.1.1
+
+- Prepare for source map change from dartdevc, don't modify relative paths in
+  source maps.
+
 ## 2.1.0
 
 - Make `platformSdk`, `sdkKernelPath`, and `platform` configurable in
