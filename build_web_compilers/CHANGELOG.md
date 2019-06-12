@@ -2,6 +2,7 @@
 
 - Prepare for source map change from dartdevc, don't modify relative paths in
   source maps.
+- Fix hot reload bootstrap logic for app entrypoints under lib.
 
 ## 2.1.0
 

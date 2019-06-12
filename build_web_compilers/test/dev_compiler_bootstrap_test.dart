@@ -90,6 +90,25 @@ main() {
       await testBuilder(WebEntrypointBuilder(WebCompiler.DartDevc), assets,
           outputs: expectedOutputs);
     });
+
+    test('root dart file is under lib', () async {
+      assets = {
+        'a|lib/app.dart': 'void main() {}',
+      };
+      await runPrerequisites(assets);
+
+      var expectedOutputs = {
+        'a|lib/app.dart.bootstrap.js': decodedMatches(allOf([
+          // Confirm that the child name is referenced via a package: uri
+          // and not relative path to the root dir being served.
+          contains('if (childName === "package:a/app.dart")'),
+        ])),
+        'a|lib/app.digests': isNotEmpty,
+        'a|lib/app.dart.js': isNotEmpty,
+      };
+      await testBuilder(WebEntrypointBuilder(WebCompiler.DartDevc), assets,
+          outputs: expectedOutputs);
+    });
   });
 }
 
