@@ -84,11 +84,12 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
       bootstrapId.path,
       from: _context.dirname(dartEntrypointId.path)));
 
-  // Strip top-level directory
   var primarySourceParts = _context.split(module.primarySource.path);
   var appModuleUri = _context.joinAll([
+    // Convert to a package: uri for files under lib.
     if (primarySourceParts.first == 'lib')
       'package:${module.primarySource.package}',
+    // Strip top-level directory from the path.
     ...primarySourceParts.skip(1),
   ]);
 

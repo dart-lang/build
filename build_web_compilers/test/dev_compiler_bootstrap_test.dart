@@ -97,7 +97,6 @@ main() {
       };
       await runPrerequisites(assets);
 
-      // Check that we are invoking the correct
       var expectedOutputs = {
         'a|lib/app.dart.bootstrap.js': decodedMatches(allOf([
           // Confirm that the child name is referenced via a package: uri
