@@ -85,8 +85,12 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
       from: _context.dirname(dartEntrypointId.path)));
 
   // Strip top-level directory
-  var appModuleSource =
-      _context.joinAll(_context.split(module.primarySource.path).sublist(1));
+  var primarySourceParts = _context.split(module.primarySource.path);
+  var appModuleUri = _context.joinAll([
+    if (primarySourceParts.first == 'lib')
+      'package:${module.primarySource.package}',
+    ...primarySourceParts.skip(1),
+  ]);
 
   var bootstrapContent =
       StringBuffer('$_entrypointExtensionMarker\n(function() {\n')
@@ -95,8 +99,8 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
             _p.url.relative(appDigestsOutput.path,
                 from: _p.url.dirname(bootstrapId.path))))
         ..write(_requireJsConfig)
-        ..write(_appBootstrap(bootstrapModuleName, appModuleName,
-            appModuleScope, appModuleSource));
+        ..write(_appBootstrap(
+            bootstrapModuleName, appModuleName, appModuleScope, appModuleUri));
 
   await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
 
@@ -153,7 +157,7 @@ Future<List<AssetId>> _ensureTransitiveJsModules(
 ///
 /// Also performs other necessary initialization.
 String _appBootstrap(String bootstrapModuleName, String moduleName,
-        String moduleScope, String appModuleSource) =>
+        String moduleScope, String appModuleUri) =>
     '''
 define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_sdk) {
   dart_sdk.dart.setStartAsyncSynchronously(true);
@@ -172,7 +176,7 @@ define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_s
           if (firstSlash == -1) return false;
           childName = childName.substring(firstSlash + 1);
         }
-        if (childName === "$appModuleSource") {
+        if (childName === "$appModuleUri") {
           // Clear static caches.
           dart_sdk.dart.hotRestart();
           child.main();
