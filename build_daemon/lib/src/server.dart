@@ -74,7 +74,13 @@ class Server {
         if (request is BuildTargetRequest) {
           _buildTargetManager.addBuildTarget(request.target, channel);
         } else if (request is BuildRequest) {
-          await _build(_buildTargetManager.targets, <WatchEvent>[]);
+          var events = <WatchEvent>[];
+          if (request.invalidatedFiles != null) {
+            for (var filePath in request.invalidatedFiles) {
+              events.add(WatchEvent(ChangeType.ADD, filePath));
+            }
+          }
+          await _build(_buildTargetManager.targets, events);
         }
       }, onDone: () {
         _removeChannel(channel);

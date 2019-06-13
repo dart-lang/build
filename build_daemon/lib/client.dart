@@ -135,9 +135,17 @@ class BuildDaemonClient {
   /// Builds all registered targets, including those not from this client.
   ///
   /// Note this will wait for any ongoing build to finish before starting a new
-  /// one.
-  void startBuild() {
+  /// one. May optionally provide a list of files that should be treated as
+  /// invalidated for the purpose of informing build_runner. This can be
+  /// combined with the `--no-build-watch` (TBD) flag to have full control
+  /// over when builds happen.
+    void startBuild({
+    List<String> invalidatedFiles,
+  }) {
     var request = BuildRequest();
+    if (invalidatedFiles != null) {
+      request.invalidatedFiles = invalidatedFiles;
+    }
     _channel.sink.add(jsonEncode(_serializers.serialize(request)));
   }
 
