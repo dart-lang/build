@@ -15,7 +15,7 @@ abstract class BuildRequest
   factory BuildRequest([updates(BuildRequestBuilder b)]) = _$BuildRequest;
 
   @nullable
-  List<String> invalidatedFiles;
+  List<String> get invalidatedFiles;
 
   BuildRequest._();
 }
