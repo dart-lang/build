@@ -29,13 +29,13 @@ class _$BuildRequestSerializer implements StructuredSerializer<BuildRequest> {
 }
 
 class _$BuildRequest extends BuildRequest {
-  factory _$BuildRequest([void updates(BuildRequestBuilder b)]) =>
+  factory _$BuildRequest([void Function(BuildRequestBuilder) updates]) =>
       (new BuildRequestBuilder()..update(updates)).build();
 
   _$BuildRequest._() : super._();
 
   @override
-  BuildRequest rebuild(void updates(BuildRequestBuilder b)) =>
+  BuildRequest rebuild(void Function(BuildRequestBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
@@ -73,7 +73,7 @@ class BuildRequestBuilder
   }
 
   @override
-  void update(void updates(BuildRequestBuilder b)) {
+  void update(void Function(BuildRequestBuilder) updates) {
     if (updates != null) updates(this);
   }
 
@@ -85,4 +85,4 @@ class BuildRequestBuilder
   }
 }
 
-// ignore_for_file: always_put_control_body_on_new_line,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,lines_longer_than_80_chars,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new
+// ignore_for_file: always_put_control_body_on_new_line,always_specify_types,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,lines_longer_than_80_chars,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new

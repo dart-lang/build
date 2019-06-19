@@ -54,7 +54,8 @@ class _$BuildTargetRequest extends BuildTargetRequest {
   @override
   final BuildTarget target;
 
-  factory _$BuildTargetRequest([void updates(BuildTargetRequestBuilder b)]) =>
+  factory _$BuildTargetRequest(
+          [void Function(BuildTargetRequestBuilder) updates]) =>
       (new BuildTargetRequestBuilder()..update(updates)).build();
 
   _$BuildTargetRequest._({this.target}) : super._() {
@@ -64,7 +65,8 @@ class _$BuildTargetRequest extends BuildTargetRequest {
   }
 
   @override
-  BuildTargetRequest rebuild(void updates(BuildTargetRequestBuilder b)) =>
+  BuildTargetRequest rebuild(
+          void Function(BuildTargetRequestBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
@@ -117,7 +119,7 @@ class BuildTargetRequestBuilder
   }
 
   @override
-  void update(void updates(BuildTargetRequestBuilder b)) {
+  void update(void Function(BuildTargetRequestBuilder) updates) {
     if (updates != null) updates(this);
   }
 
@@ -129,4 +131,4 @@ class BuildTargetRequestBuilder
   }
 }
 
-// ignore_for_file: always_put_control_body_on_new_line,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,lines_longer_than_80_chars,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new
+// ignore_for_file: always_put_control_body_on_new_line,always_specify_types,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,lines_longer_than_80_chars,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new

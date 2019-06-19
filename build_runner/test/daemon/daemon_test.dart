@@ -15,6 +15,7 @@ import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart';
 import 'package:build_runner/src/daemon/constants.dart';
 import 'package:path/path.dart' as p;
+import 'package:pedantic/pedantic.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
@@ -87,6 +88,23 @@ main() {
   group('Build Daemon', () {
     test('successfully starts', () async {
       await _startDaemon();
+    });
+
+    test('shuts down on build script change', () async {
+      await _startDaemon();
+      var client = await _startClient()
+        ..registerBuildTarget(webTarget)
+        ..startBuild();
+      // We need to add a listener othersise we won't get the event.
+      unawaited(expectLater(client.shutdownNotifications.first, isNotNull));
+      // Force a build script change.
+      await d.dir('a', [
+        d.dir('.dart_tool', [
+          d.dir('build', [
+            d.dir('entrypoint', [d.file('build.dart', '\n')])
+          ])
+        ])
+      ]).create();
     });
 
     test('can build to outputs', () async {

@@ -1,3 +1,8 @@
+## 1.6.0
+
+- Depend on the latest `build_daemon` and provide a shutdown notification on
+  build script updates.
+
 ## 1.5.2
 
 - Use a polling directory watcher by default on windows again.

@@ -16,6 +16,7 @@ import 'data/build_status.dart';
 import 'data/build_target_request.dart';
 import 'data/serializers.dart';
 import 'data/server_log.dart';
+import 'data/shutdown_notification.dart';
 import 'src/file_wait.dart';
 
 Future<int> _existingPort(String workingDirectory) async {
@@ -98,6 +99,8 @@ bool _isActionMessage(String line) =>
 ///   https://pub.dartlang.org/packages/build_daemon#-example-tab-
 class BuildDaemonClient {
   final _buildResults = StreamController<BuildResults>.broadcast();
+  final _shutdownNotifications =
+      StreamController<ShutdownNotification>.broadcast();
   final Serializers _serializers;
 
   IOWebSocketChannel _channel;
@@ -114,6 +117,8 @@ class BuildDaemonClient {
           logHandler(message);
         } else if (message is BuildResults) {
           _buildResults.add(message);
+        } else if (message is ShutdownNotification) {
+          _shutdownNotifications.add(message);
         } else {
           // In practice we should never reach this state due to the
           // deserialize call.
@@ -126,6 +131,8 @@ class BuildDaemonClient {
   }
 
   Stream<BuildResults> get buildResults => _buildResults.stream;
+  Stream<ShutdownNotification> get shutdownNotifications =>
+      _shutdownNotifications.stream;
   Future<void> get finished async => await _channel.sink.done;
 
   /// Registers a build target to be built upon any file change.

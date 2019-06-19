@@ -12,6 +12,7 @@ import 'package:build_daemon/data/server_log.dart';
 import 'package:build_daemon/src/daemon.dart';
 import 'package:build_runner/src/daemon/constants.dart';
 import 'package:logging/logging.dart' hide Level;
+import 'package:pedantic/pedantic.dart';
 
 import '../daemon/asset_server.dart';
 import '../daemon/daemon_builder.dart';
@@ -89,6 +90,11 @@ $logEndMarker'''));
       var server = await AssetServer.run(builder, packageGraph.root.name);
       File(assetServerPortFilePath(workingDirectory))
           .writeAsStringSync('${server.port}');
+      unawaited(builder.buildScriptUpdated.then((_) async {
+        await daemon.stop(
+            message: 'Build script updated. Shutting down the Build Daemon.',
+            failureType: 75);
+      }));
       // TODO(davidmorgan): debounce changes instead of passing through as
       // singleton lists.
       await daemon.start(

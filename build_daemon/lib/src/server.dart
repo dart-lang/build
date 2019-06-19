@@ -86,10 +86,15 @@ class Server {
     return _server.port;
   }
 
-  Future<void> stop({String message}) async {
-    if (message?.isNotEmpty ?? false) {
+  Future<void> stop({String message, int failureType}) async {
+    message ??= '';
+    failureType ??= 0;
+    if (message.isNotEmpty && failureType != 0) {
       for (var connection in _buildTargetManager.allChannels) {
-        connection.sink.add(ShutdownNotification((b) => b.message));
+        connection.sink
+            .add(jsonEncode(_serializers.serialize(ShutdownNotification((b) => b
+              ..message = message
+              ..failureType = failureType))));
       }
     }
     _timeout.cancel();
