@@ -58,6 +58,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
   FinalizedReader get reader => _builder.finalizedReader;
 
+  final _buildScriptUpdateCompleter = Completer();
+  Future<void> get buildScriptUpdated => _buildScriptUpdateCompleter.future;
+
   @override
   Future<void> build(
       Set<BuildTarget> targets, Iterable<WatchEvent> fileChanges) async {
@@ -66,6 +69,11 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         .map<AssetChange>(
             (change) => AssetChange(AssetId.parse(change.path), change.type))
         .toList();
+    if (_builder.buildScriptUpdates
+        .hasBeenUpdated(changes.map<AssetId>((change) => change.id).toSet())) {
+      _buildScriptUpdateCompleter.complete();
+      return;
+    }
     var targetNames = targets.map((t) => t.target).toSet();
     _logMessage(Level.INFO, 'About to build ${targetNames.toList()}...');
     _signalStart(targetNames);

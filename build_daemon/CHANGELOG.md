@@ -1,3 +1,7 @@
+## 1.1.0
+
+- Add `failureType` to `ShutdownNotification`.
+
 ## 1.0.0
 
 - Changed the `ServerLog` class to have separate `level`, `message`,

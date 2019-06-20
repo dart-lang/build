@@ -186,7 +186,8 @@ class _$DefaultBuildResult extends DefaultBuildResult {
   @override
   final bool isCached;
 
-  factory _$DefaultBuildResult([void updates(DefaultBuildResultBuilder b)]) =>
+  factory _$DefaultBuildResult(
+          [void Function(DefaultBuildResultBuilder) updates]) =>
       (new DefaultBuildResultBuilder()..update(updates)).build();
 
   _$DefaultBuildResult._(
@@ -201,7 +202,8 @@ class _$DefaultBuildResult extends DefaultBuildResult {
   }
 
   @override
-  DefaultBuildResult rebuild(void updates(DefaultBuildResultBuilder b)) =>
+  DefaultBuildResult rebuild(
+          void Function(DefaultBuildResultBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
@@ -288,7 +290,7 @@ class DefaultBuildResultBuilder
   }
 
   @override
-  void update(void updates(DefaultBuildResultBuilder b)) {
+  void update(void Function(DefaultBuildResultBuilder) updates) {
     if (updates != null) updates(this);
   }
 
@@ -310,7 +312,7 @@ class _$BuildResults extends BuildResults {
   @override
   final BuiltList<BuildResult> results;
 
-  factory _$BuildResults([void updates(BuildResultsBuilder b)]) =>
+  factory _$BuildResults([void Function(BuildResultsBuilder) updates]) =>
       (new BuildResultsBuilder()..update(updates)).build();
 
   _$BuildResults._({this.results}) : super._() {
@@ -320,7 +322,7 @@ class _$BuildResults extends BuildResults {
   }
 
   @override
-  BuildResults rebuild(void updates(BuildResultsBuilder b)) =>
+  BuildResults rebuild(void Function(BuildResultsBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
@@ -373,7 +375,7 @@ class BuildResultsBuilder
   }
 
   @override
-  void update(void updates(BuildResultsBuilder b)) {
+  void update(void Function(BuildResultsBuilder) updates) {
     if (updates != null) updates(this);
   }
 
@@ -398,4 +400,4 @@ class BuildResultsBuilder
   }
 }
 
-// ignore_for_file: always_put_control_body_on_new_line,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,lines_longer_than_80_chars,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new
+// ignore_for_file: always_put_control_body_on_new_line,always_specify_types,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,lines_longer_than_80_chars,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new
