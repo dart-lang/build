@@ -3,7 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @TestOn('vm')
-@Timeout(Duration(minutes: 5))
+@Tags(['integration'])
+
 import 'dart:async';
 import 'dart:io';
 
