@@ -128,6 +128,7 @@ String assetPath(AssetId assetId) =>
 /// Returns all the directives from a Dart library that can be resolved to an
 /// [AssetId].
 Set<AssetId> _parseDirectives(String content, AssetId from) =>
+    // ignore: deprecated_member_use
     HashSet.of(parseDirectives(content, suppressErrors: true)
         .directives
         .whereType<UriBasedDirective>()

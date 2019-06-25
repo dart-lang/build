@@ -83,6 +83,7 @@ Future<bool> _isAppEntryPoint(AssetId dartId, AssetReader reader) async {
   assert(dartId.extension == '.dart');
   // Skip reporting errors here, dartdevc will report them later with nicer
   // formatting.
+  // ignore: deprecated_member_use
   var parsed = parseCompilationUnit(await reader.readAsString(dartId),
       suppressErrors: true);
   // Allow two or fewer arguments so that entrypoints intended for use with
