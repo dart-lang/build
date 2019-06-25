@@ -159,7 +159,6 @@ void _ensureBuildTestDependency(PackageGraph packageGraph) {
 void _ensureProcessExit(Process process) {
   var signalsSub = _exitProcessSignals.listen((signal) async {
     stdout.writeln('waiting for subprocess to exit...');
-    await process.exitCode;
   });
   process.exitCode.then((_) {
     signalsSub?.cancel();
