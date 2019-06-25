@@ -133,7 +133,7 @@ class ModuleLibrary {
   /// Parse the directives from [source] and compute the library information.
   static ModuleLibrary fromSource(AssetId id, String source) {
     final isLibDir = id.path.startsWith('lib/');
-  // ignore: deprecated_member_use
+    // ignore: deprecated_member_use
     final parsed = parseCompilationUnit(source,
         name: id.path, suppressErrors: true, parseFunctionBodies: false);
     // Packages within the SDK but published might have libraries that can't be
