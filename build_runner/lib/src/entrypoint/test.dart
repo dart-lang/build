@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
+import 'package:async/async.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
@@ -135,7 +136,9 @@ class TestCommand extends BuildRunnerCommand {
           precompiledPath,
         ]..addAll(extraTestArgs),
         mode: ProcessStartMode.inheritStdio);
-    return testProcess.exitCode;
+    _ensureProcessExit(testProcess);
+    final testExitCode = await testProcess.exitCode;
+    return testExitCode;
   }
 }
 
@@ -153,6 +156,21 @@ void _ensureBuildTestDependency(PackageGraph packageGraph) {
     throw _BuildTestDependencyError();
   }
 }
+
+void _ensureProcessExit(Process process) {
+  var signalsSub = _exitProcessSignals.listen((signal) async {
+    await process.exitCode;
+  });
+  process.exitCode.then((_) {
+    signalsSub?.cancel();
+    signalsSub = null;
+  });
+}
+
+Stream<ProcessSignal> get _exitProcessSignals => Platform.isWindows
+    ? ProcessSignal.sigint.watch()
+    : StreamGroup.merge(
+        [ProcessSignal.sigterm.watch(), ProcessSignal.sigint.watch()]);
 
 class _BuildTestDependencyError extends StateError {
   _BuildTestDependencyError() : super('''
