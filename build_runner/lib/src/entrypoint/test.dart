@@ -137,8 +137,7 @@ class TestCommand extends BuildRunnerCommand {
         ]..addAll(extraTestArgs),
         mode: ProcessStartMode.inheritStdio);
     _ensureProcessExit(testProcess);
-    final testExitCode = await testProcess.exitCode;
-    return testExitCode;
+    return testProcess.exitCode;
   }
 }
 
@@ -159,6 +158,7 @@ void _ensureBuildTestDependency(PackageGraph packageGraph) {
 
 void _ensureProcessExit(Process process) {
   var signalsSub = _exitProcessSignals.listen((signal) async {
+    stdout.writeln('waiting for subprocess to exit...');
     await process.exitCode;
   });
   process.exitCode.then((_) {
