@@ -92,6 +92,7 @@ Please check the following imports:\n
 Future<String> _missingImportMessage(
     AssetId sourceId, AssetId missingId, AssetReader reader) async {
   var contents = await reader.readAsString(sourceId);
+  // ignore: deprecated_member_use
   var parsed = parseDirectives(contents, suppressErrors: true);
   var import =
       parsed.directives.whereType<UriBasedDirective>().firstWhere((directive) {
