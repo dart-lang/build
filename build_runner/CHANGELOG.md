@@ -1,3 +1,7 @@
+## 1.6.1
+
+- Update the `test` command to wait to exit until the inner test process exits.
+
 ## 1.6.0
 
 - Depend on the latest `build_daemon` and provide a shutdown notification on
