@@ -267,11 +267,12 @@ var _currentDirectory = (function () {
 /// Sets up `window.$dartLoader` based on [modulePaths].
 String _dartLoaderSetup(Map<String, String> modulePaths, String appDigests) =>
     '''
+$_currentDirectoryScript
 $_baseUrlScript
 let modulePaths = ${const JsonEncoder.withIndent(" ").convert(modulePaths)};
 if(!window.\$dartLoader) {
    window.\$dartLoader = {
-     appDigests: '$appDigests',
+     appDigests: _currentDirectory + '$appDigests',
      moduleIdToUrl: new Map(),
      urlToModuleId: new Map(),
      rootDirectories: new Array(),
