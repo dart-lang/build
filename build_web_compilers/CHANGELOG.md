@@ -1,3 +1,8 @@
+## 2.1.2
+
+- Fix hot restart bootstrapping logic for dart scripts that live in a
+  different directory than the html file.
+
 ## 2.1.1
 
 - Prepare for source map change from dartdevc, don't modify relative paths in
