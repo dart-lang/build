@@ -15,6 +15,7 @@ import 'package:stream_transform/stream_transform.dart' hide concat;
 import 'package:watcher/watcher.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../change_provider.dart';
 import '../daemon_builder.dart';
 import '../data/build_request.dart';
 import '../data/build_target.dart';
@@ -32,6 +33,7 @@ class Server {
   final BuildTargetManager _buildTargetManager;
   final _pool = Pool(1);
   final Serializers _serializers;
+  final ChangeProvider _changeProvider;
   Timer _timeout;
 
   HttpServer _server;
@@ -41,14 +43,18 @@ class Server {
 
   final _subs = <StreamSubscription>[];
 
-  Server(this._builder, Stream<List<WatchEvent>> changes, Duration timeout,
+  Server(this._builder, Duration timeout, ChangeProvider changeProvider,
       {Serializers serializersOverride,
       bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuild})
-      : _serializers = serializersOverride ?? serializers,
+      : _changeProvider = changeProvider,
+        _serializers = serializersOverride ?? serializers,
         _buildTargetManager =
             BuildTargetManager(shouldBuildOverride: shouldBuild) {
     _forwardData();
-    _handleChanges(changes);
+
+    if (changeProvider is AutoChangeProvider) {
+      _handleChanges(changeProvider.changes);
+    }
 
     // Stop the server if nobody connects.
     _timeout = Timer(timeout, () async {
@@ -74,7 +80,15 @@ class Server {
         if (request is BuildTargetRequest) {
           _buildTargetManager.addBuildTarget(request.target, channel);
         } else if (request is BuildRequest) {
-          await _build(_buildTargetManager.targets, <WatchEvent>[]);
+          var changes = <WatchEvent>[];
+          var changeProvider = _changeProvider;
+          if (changeProvider is ManualChangeProvider) {
+            changes = await changeProvider.collectChanges();
+          }
+          var targets = changes.isEmpty
+              ? _buildTargetManager.targets
+              : _buildTargetManager.targetsForChanges(changes);
+          await _builder.build(targets, changes);
         }
       }, onDone: () {
         _removeChannel(channel);

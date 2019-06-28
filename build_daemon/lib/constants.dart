@@ -9,6 +9,12 @@ import 'package:path/path.dart' as p;
 const readyToConnectLog = 'READY TO CONNECT';
 const versionSkew = 'DIFFERENT RUNNING VERSION';
 const optionsSkew = 'DIFFERENT OPTIONS';
+const buildModeFlag = '--build-mode';
+
+enum BuildMode {
+  Manual,
+  Auto,
+}
 
 /// These are used when serializing log messages over stdout.
 ///

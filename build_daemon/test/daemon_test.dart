@@ -6,8 +6,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build_daemon/constants.dart';
-import 'package:build_daemon/src/daemon.dart';
-import 'package:build_daemon/src/fake_builder.dart';
+import 'package:build_daemon/daemon.dart';
+import 'package:build_daemon/src/fakes/fake_builder.dart';
+import 'package:build_daemon/src/fakes/fake_change_provider.dart';
+import 'package:build_daemon/utilities.dart';
 import 'package:package_resolver/package_resolver.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
@@ -39,9 +41,12 @@ void main() {
     test('can be stopped', () async {
       var workspace = uuid.v1();
       testWorkspaces.add(workspace);
-      var daemon = Daemon('$workspace');
-      expect(daemon.tryGetLock(), isTrue);
-      await daemon.start(Set<String>(), FakeDaemonBuilder(), Stream.empty());
+      var daemon = await Daemon.start(
+        '$workspace',
+        Set<String>(),
+        FakeDaemonBuilder(),
+        FakeAutoChangeProvider(),
+      );
       expect(daemon.onDone, completes);
       await daemon.stop();
     });
@@ -157,23 +162,28 @@ Future<String> _statusOf(Process daemon) async {
 
 Future<Process> _runDaemon(var workspace, {int timeout = 30}) async {
   await d.file('test.dart', '''
-    import 'package:build_daemon/src/daemon.dart';
-    import 'package:build_daemon/src/fake_builder.dart';
+    import 'package:build_daemon/daemon.dart';
     import 'package:build_daemon/daemon_builder.dart';
     import 'package:build_daemon/client.dart';
+    import 'package:build_daemon/utilities.dart';
+    import 'package:build_daemon/src/fakes/fake_builder.dart';
+    import 'package:build_daemon/src/fakes/fake_change_provider.dart';
 
     main() async {
-      var daemon = Daemon('$workspace');
-      if (daemon.tryGetLock()) {
+      try {
         var options = ['foo'].toSet();
         var timeout = Duration(seconds: $timeout);
-        // Real implementations of the daemon usually non-trivial set up time
-        // before calling start.
+        var daemon = await Daemon.start(
+          '$workspace',
+          options,
+          FakeDaemonBuilder(),
+          FakeAutoChangeProvider(),
+          timeout: timeout);
+        // Real implementations of the daemon usually have
+        // non-trivial set up time.
         await Future.delayed(Duration(seconds: 1));
-        await daemon.start(options, FakeDaemonBuilder(), Stream.empty(),
-        timeout: timeout);
         print('RUNNING');
-      } else {
+      } on LockError {
         // Mimic the behavior of actual daemon implementations.
         var version = await runningVersion('$workspace');
         if(version != '$currentVersion') throw VersionSkew();

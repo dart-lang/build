@@ -160,15 +160,19 @@ class BuildDaemonClient {
     void Function(ServerLog) logHandler,
     bool includeParentEnvironment,
     Map<String, String> environment,
+    BuildMode buildMode,
   }) async {
     logHandler ??= (_) {};
     includeParentEnvironment ??= true;
+    buildMode ??= BuildMode.Auto;
 
     var daemonSerializers = serializersOverride ?? serializers;
 
+    var daemonArgs = daemonCommand.sublist(1)..add('$buildModeFlag=$buildMode');
+
     var process = await Process.start(
       daemonCommand.first,
-      daemonCommand.sublist(1),
+      daemonArgs,
       mode: ProcessStartMode.detachedWithStdio,
       workingDirectory: workingDirectory,
       environment: environment,
