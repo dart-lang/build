@@ -321,7 +321,7 @@ class BuildServer {
     final request = await _client.get('localhost', 8080, path);
     final response = await request.close();
     expect(response.statusCode, 200);
-    expect(await utf8.decodeStream(response), content);
+    expect(await utf8.decodeStream(response.cast<List<int>>()), content);
   }
 
   StreamQueue<String> get stdout => _process.stdout;
