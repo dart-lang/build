@@ -39,7 +39,7 @@ void main() {
     var request = await httpClient.get('localhost', 8080, 'dir_without_index/');
     var firstResponse = await request.close();
     expect(firstResponse.statusCode, HttpStatus.notFound);
-    expect(await utf8.decodeStream(firstResponse),
+    expect(await utf8.decodeStream(firstResponse.cast<List<int>>()),
         contains('dir_without_index/hello.txt'));
   });
 
