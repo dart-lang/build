@@ -6,12 +6,14 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:built_value/serializer.dart';
+import 'package:pedantic/pedantic.dart';
 import 'package:watcher/watcher.dart';
 
 import 'change_provider.dart';
 import 'constants.dart';
 import 'daemon_builder.dart';
 import 'data/build_target.dart';
+import 'src/file_wait.dart';
 import 'src/server.dart';
 
 /// The long running daemon process.
@@ -24,33 +26,39 @@ import 'src/server.dart';
 class Daemon {
   final String _workingDirectory;
   final RandomAccessFile _lock;
-  final Server _server;
   final _doneCompleter = Completer();
 
+  Server _server;
   StreamSubscription _sub;
 
-  Daemon._(
-    this._workingDirectory,
-    this._lock,
-    this._server,
-    int port,
-    Set<String> options,
-  ) {
-    _handleGracefulExit();
-
-    _createVersionFile();
-    _createOptionsFile(options);
-    _createPortFile(port);
-
-    _server.onDone.then((_) async {
-      await _cleanUp();
-    });
-  }
+  Daemon(String workingDirectory)
+      : _workingDirectory = workingDirectory,
+        _lock = _tryGetLock(workingDirectory);
 
   Future<void> get onDone => _doneCompleter.future;
 
   Future<void> stop({String message, int failureType}) =>
       _server.stop(message: message, failureType: failureType);
+
+  bool get hasLock => _lock != null;
+
+  /// Returns the current version of the running build daemon.
+  ///
+  /// Null if one isn't running.
+  Future<String> runningVersion() async {
+    var versionFile = File(versionFilePath(_workingDirectory));
+    if (!await waitForFile(versionFile)) return null;
+    return versionFile.readAsStringSync();
+  }
+
+  /// Returns the current options of the running build daemon.
+  ///
+  /// Null if one isn't running.
+  Future<Set<String>> currentOptions() async {
+    var optionsFile = File(optionsFilePath(_workingDirectory));
+    if (!await waitForFile(optionsFile)) return Set();
+    return optionsFile.readAsLinesSync().toSet();
+  }
 
   /// Starts the daemon.
   ///
@@ -59,8 +67,7 @@ class Daemon {
   ///
   /// If [changeProvider] is a [ManualChangeProvider] then builds will only
   /// occur when triggered by a client.
-  static Future<Daemon> start(
-    String workingDirectory,
+  Future<void> start(
     Set<String> options,
     DaemonBuilder builder,
     ChangeProvider changeProvider, {
@@ -68,17 +75,25 @@ class Daemon {
     bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuild,
     Duration timeout = const Duration(seconds: 30),
   }) async {
-    var lock = _tryGetLock(workingDirectory);
-    if (lock == null) throw LockError();
-    var server = Server(
+    if (_server != null || _lock == null) return;
+    _handleGracefulExit();
+
+    _createVersionFile();
+    _createOptionsFile(options);
+
+    _server = Server(
       builder,
       timeout,
       changeProvider,
       serializersOverride: serializersOverride,
       shouldBuild: shouldBuild,
     );
-    var port = await server.listen();
-    return Daemon._(workingDirectory, lock, server, port, options);
+    var port = await _server.listen();
+    _createPortFile(port);
+
+    unawaited(_server.onDone.then((_) async {
+      await _cleanUp();
+    }));
   }
 
   Future<void> _cleanUp() async {
@@ -115,14 +130,6 @@ class Daemon {
   }
 }
 
-void _createDaemonWorkspace(String workingDirectory) {
-  try {
-    Directory(daemonWorkspace(workingDirectory)).createSync(recursive: true);
-  } catch (e) {
-    throw Exception('Unable to create daemon workspace: $e');
-  }
-}
-
 RandomAccessFile _tryGetLock(String workingDirectory) {
   try {
     _createDaemonWorkspace(workingDirectory);
@@ -135,5 +142,10 @@ RandomAccessFile _tryGetLock(String workingDirectory) {
   }
 }
 
-/// Thrown if the Daemon can't get the required lock file.
-class LockError implements Exception {}
+void _createDaemonWorkspace(String workingDirectory) {
+  try {
+    Directory(daemonWorkspace(workingDirectory)).createSync(recursive: true);
+  } catch (e) {
+    throw Exception('Unable to create daemon workspace: $e');
+  }
+}
