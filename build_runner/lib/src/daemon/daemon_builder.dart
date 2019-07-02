@@ -209,8 +209,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         .map((change) => [change]);
 
     var changeProvider = daemonOptions.buildMode == BuildMode.Auto
-        ? BuildRunnerAutoChangeProvider(changes)
-        : BuildRunnerManualChangeProvider(changes);
+        ? AutoChangeProvider(changes)
+        : ManualChangeProvider(changes);
 
     return BuildRunnerDaemonBuilder._(
         builder, buildOptions, outputStreamController, changeProvider);

@@ -5,22 +5,25 @@
 import 'package:build_daemon/change_provider.dart';
 import 'package:watcher/src/watch_event.dart';
 
-class BuildRunnerAutoChangeProvider implements AutoChangeProvider {
+class AutoChangeProvider implements ChangeProvider {
   final Stream<List<WatchEvent>> _changes;
 
-  BuildRunnerAutoChangeProvider(this._changes);
+  AutoChangeProvider(this._changes);
 
   @override
   Stream<List<WatchEvent>> get changes => _changes;
+
+  @override
+  Future<List<WatchEvent>> collectChanges() async => [];
 }
 
 // TODO(grouma) - collect changes through a one time file scan instead of
 // buffering changes from a change stream. This will have better performance
 // on Windows.
-class BuildRunnerManualChangeProvider implements ManualChangeProvider {
+class ManualChangeProvider implements ChangeProvider {
   final _changes = <WatchEvent>[];
 
-  BuildRunnerManualChangeProvider(Stream<List<WatchEvent>> changes) {
+  ManualChangeProvider(Stream<List<WatchEvent>> changes) {
     changes.listen(_changes.addAll);
   }
 
@@ -30,4 +33,7 @@ class BuildRunnerManualChangeProvider implements ManualChangeProvider {
     _changes.clear();
     return result;
   }
+
+  @override
+  Stream<List<WatchEvent>> get changes => Stream.empty();
 }
