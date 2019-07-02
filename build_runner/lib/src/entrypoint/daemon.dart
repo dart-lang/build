@@ -7,9 +7,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build_daemon/constants.dart';
+import 'package:build_daemon/daemon.dart';
 import 'package:build_daemon/data/serializers.dart';
 import 'package:build_daemon/data/server_log.dart';
-import 'package:build_daemon/src/daemon.dart';
 import 'package:build_runner/src/daemon/constants.dart';
 import 'package:logging/logging.dart' hide Level;
 import 'package:pedantic/pedantic.dart';
@@ -17,6 +17,7 @@ import 'package:pedantic/pedantic.dart';
 import '../daemon/asset_server.dart';
 import '../daemon/daemon_builder.dart';
 import 'base_command.dart';
+import 'options.dart';
 
 /// A command that starts the Build Daemon.
 class DaemonCommand extends BuildRunnerCommand {
@@ -29,15 +30,25 @@ class DaemonCommand extends BuildRunnerCommand {
   @override
   String get name => 'daemon';
 
+  DaemonCommand() {
+    argParser.addOption(buildModeFlag,
+        help: 'Specify the build mode of the daemon, e.g. auto or manual.',
+        defaultsTo: 'BuildMode.Auto');
+  }
+
+  @override
+  DaemonOptions readOptions() => DaemonOptions.fromParsedArgs(
+      argResults, argResults.rest, packageGraph.root.name, this);
+
   @override
   Future<int> run() async {
     var workingDirectory = Directory.current.path;
     var options = readOptions();
     var daemon = Daemon(workingDirectory);
     var requestedOptions = argResults.arguments.toSet();
-    if (!daemon.tryGetLock()) {
-      var runningOptions = await currentOptions(workingDirectory);
-      var version = await runningVersion(workingDirectory);
+    if (!daemon.hasLock) {
+      var runningOptions = await daemon.currentOptions();
+      var version = await daemon.runningVersion();
       if (version != currentVersion) {
         stdout
           ..writeln('Running Version: $version')
@@ -95,10 +106,7 @@ $logEndMarker'''));
             message: 'Build script updated. Shutting down the Build Daemon.',
             failureType: 75);
       }));
-      // TODO(davidmorgan): debounce changes instead of passing through as
-      // singleton lists.
-      await daemon.start(
-          requestedOptions, builder, builder.changes.map((change) => [change]));
+      await daemon.start(requestedOptions, builder, builder.changeProvider);
       stdout.writeln(readyToConnectLog);
       await logSub.cancel();
       await daemon.onDone.whenComplete(() async {
