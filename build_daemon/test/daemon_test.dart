@@ -44,7 +44,7 @@ void main() {
       await daemon.start(
         Set<String>(),
         FakeDaemonBuilder(),
-        FakeAutoChangeProvider(),
+        FakeChangeProvider(),
       );
       expect(daemon.onDone, completes);
       await daemon.stop();
@@ -176,7 +176,7 @@ Future<Process> _runDaemon(var workspace, {int timeout = 30}) async {
         await daemon.start(
           options,
           FakeDaemonBuilder(),
-          FakeAutoChangeProvider(),
+          FakeChangeProvider(),
           timeout: timeout);
         // Real implementations of the daemon usually have
         // non-trivial set up time.

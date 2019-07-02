@@ -52,9 +52,7 @@ class Server {
             BuildTargetManager(shouldBuildOverride: shouldBuild) {
     _forwardData();
 
-    if (changeProvider is AutoChangeProvider) {
-      _handleChanges(changeProvider.changes);
-    }
+    _handleChanges(changeProvider.changes);
 
     // Stop the server if nobody connects.
     _timeout = Timer(timeout, () async {
@@ -80,11 +78,7 @@ class Server {
         if (request is BuildTargetRequest) {
           _buildTargetManager.addBuildTarget(request.target, channel);
         } else if (request is BuildRequest) {
-          var changes = <WatchEvent>[];
-          var changeProvider = _changeProvider;
-          if (changeProvider is ManualChangeProvider) {
-            changes = await changeProvider.collectChanges();
-          }
+          var changes = await _changeProvider.collectChanges();
           var targets = changes.isEmpty
               ? _buildTargetManager.targets
               : _buildTargetManager.targetsForChanges(changes);

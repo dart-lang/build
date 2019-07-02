@@ -6,15 +6,17 @@ import 'dart:async';
 
 import 'package:watcher/src/watch_event.dart';
 
-abstract class ChangeProvider {}
-
-/// A provider of changes which are manually collected right before a build.
-abstract class ManualChangeProvider implements ChangeProvider {
+abstract class ChangeProvider {
+  /// Returns a list of file changes.
+  ///
+  /// Called immediately before a manual build. If the list is empty a no-op
+  /// build of all tracked targets will be attempted.
   Future<List<WatchEvent>> collectChanges();
-}
 
-/// A provider of changes which automatically cause builds to occur.
-abstract class AutoChangeProvider implements ChangeProvider {
+  /// A stream of file changes.
+  ///
+  /// A build is triggered upon each stream event.
+  ///
   /// If multiple files change together then they should be sent in the same
   /// event. Otherwise, at least two builds will be triggered.
   Stream<List<WatchEvent>> get changes;

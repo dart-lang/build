@@ -7,7 +7,10 @@ import 'dart:async';
 import 'package:build_daemon/change_provider.dart';
 import 'package:watcher/src/watch_event.dart';
 
-class FakeAutoChangeProvider implements AutoChangeProvider {
+class FakeChangeProvider implements ChangeProvider {
   @override
   Stream<List<WatchEvent>> get changes => Stream.empty();
+
+  @override
+  Future<List<WatchEvent>> collectChanges() async => [];
 }
