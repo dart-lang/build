@@ -168,7 +168,8 @@ class BuildDaemonClient {
 
     var daemonSerializers = serializersOverride ?? serializers;
 
-    var daemonArgs = daemonCommand.sublist(1)..add('$buildModeFlag=$buildMode');
+    var daemonArgs = daemonCommand.sublist(1)
+      ..add('--$buildModeFlag=$buildMode');
 
     var process = await Process.start(
       daemonCommand.first,

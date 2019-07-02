@@ -9,8 +9,8 @@ import 'package:path/path.dart' as p;
 const readyToConnectLog = 'READY TO CONNECT';
 const versionSkew = 'DIFFERENT RUNNING VERSION';
 const optionsSkew = 'DIFFERENT OPTIONS';
-const buildModeFlag = '--build-mode';
 
+const buildModeFlag = 'build-mode';
 enum BuildMode {
   Manual,
   Auto,
@@ -27,7 +27,7 @@ const logStartMarker = 'BUILD DAEMON LOG START';
 const logEndMarker = 'BUILD DAEMON LOG END';
 
 // TODO(grouma) - use pubspec version when this is open sourced.
-const currentVersion = '7.0.0';
+const currentVersion = '8';
 
 var _username = Platform.environment['USER'] ?? '';
 String daemonWorkspace(String workingDirectory) {

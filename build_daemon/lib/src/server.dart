@@ -88,7 +88,7 @@ class Server {
           var targets = changes.isEmpty
               ? _buildTargetManager.targets
               : _buildTargetManager.targetsForChanges(changes);
-          await _builder.build(targets, changes);
+          await _build(targets, changes);
         }
       }, onDone: () {
         _removeChannel(channel);
