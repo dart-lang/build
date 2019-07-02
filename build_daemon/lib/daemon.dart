@@ -60,13 +60,6 @@ class Daemon {
     return optionsFile.readAsLinesSync().toSet();
   }
 
-  /// Starts the daemon.
-  ///
-  /// If [changeProvider] is an [AutoChangeProvider] then builds will
-  /// automatically occur upon changes.
-  ///
-  /// If [changeProvider] is a [ManualChangeProvider] then builds will only
-  /// occur when triggered by a client.
   Future<void> start(
     Set<String> options,
     DaemonBuilder builder,
