@@ -66,17 +66,20 @@ main() {
     await runPub('a', 'run', args: ['build_runner', 'clean']);
   });
 
-  Future<BuildDaemonClient> _startClient() {
+  Future<BuildDaemonClient> _startClient({BuildMode buildMode}) {
+    buildMode ??= BuildMode.Auto;
     var args = ['run', 'build_runner', 'daemon'];
     return BuildDaemonClient.connect(
         workspace(),
         [
           pubBinary.toString(),
-        ]..addAll(args));
+        ]..addAll(args),
+        buildMode: buildMode);
   }
 
-  Future<void> _startDaemon() async {
-    var args = ['build_runner', 'daemon'];
+  Future<void> _startDaemon({BuildMode buildMode}) async {
+    buildMode ??= BuildMode.Auto;
+    var args = ['build_runner', 'daemon', '--$buildModeFlag=$buildMode'];
     daemonProcess = await startPub('a', 'run', args: args);
     stdoutLines = daemonProcess.stdout
         .transform(Utf8Decoder())
@@ -105,6 +108,62 @@ main() {
           ])
         ])
       ]).create();
+    });
+
+    test('errors if build modes conflict', () async {
+      await _startDaemon();
+      expect(_startClient(buildMode: BuildMode.Manual),
+          throwsA(TypeMatcher<OptionsSkew>()));
+    });
+
+    test('can build in manual mode', () async {
+      await _startDaemon(buildMode: BuildMode.Manual);
+      var client = await _startClient(buildMode: BuildMode.Manual)
+        ..registerBuildTarget(webTarget)
+        ..startBuild();
+      var buildResults = await client.buildResults.first;
+      expect(buildResults.results.first.status, BuildStatus.started);
+    });
+
+    test('auto build mode automatically builds on file change', () async {
+      await _startDaemon();
+      var client = await _startClient()
+        ..registerBuildTarget(webTarget);
+      // Let the target request propagate.
+      await Future.delayed(Duration(seconds: 2));
+      // Trigger a file change.
+      await d.dir('a', [
+        d.dir('web', [
+          d.file('main.dart', '''
+                main() {
+                  print('hello world');
+                }'''),
+        ])
+      ]).create();
+      var buildResults = await client.buildResults.first;
+      expect(buildResults.results.first.status, BuildStatus.started);
+    });
+
+    test('manual build mode does not automatically build on file change',
+        () async {
+      await _startDaemon(buildMode: BuildMode.Manual);
+      var client = await _startClient(buildMode: BuildMode.Manual)
+        ..registerBuildTarget(webTarget);
+      // Let the target request propagate.
+      await Future.delayed(Duration(seconds: 2));
+      // Trigger a file change.
+      await d.dir('a', [
+        d.dir('web', [
+          d.file('main.dart', '''
+                main() {
+                  print('hello world');
+                }'''),
+        ])
+      ]).create();
+      // There shouldn't be any build results.
+      var buildResults = await client.buildResults.first
+          .timeout(Duration(seconds: 2), onTimeout: () => null);
+      expect(buildResults, isNull);
     });
 
     test('can build to outputs', () async {

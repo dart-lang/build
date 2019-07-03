@@ -1,3 +1,7 @@
+## 1.6.2
+
+- Support the latest `build_daemon` version.
+
 ## 1.6.1
 
 - Update the `test` command to wait to exit until the inner test process exits.

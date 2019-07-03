@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:build_config/build_config.dart';
+import 'package:build_daemon/constants.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
@@ -102,6 +103,81 @@ class SharedOptions {
     }
 
     return SharedOptions._(
+      deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
+      enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
+      configKey: argResults[configOption] as String,
+      buildDirs: buildDirs,
+      outputSymlinksOnly: argResults[symlinkOption] as bool,
+      trackPerformance: argResults[trackPerformanceOption] as bool,
+      skipBuildScriptCheck: argResults[skipBuildScriptCheckOption] as bool,
+      verbose: argResults[verboseOption] as bool,
+      builderConfigOverrides:
+          _parseBuilderConfigOverrides(argResults[defineOption], rootPackage),
+      isReleaseBuild: argResults[releaseOption] as bool,
+      logPerformanceDir: argResults[logPerformanceOption] as String,
+    );
+  }
+}
+
+/// Options specific to the `daemon` command.
+class DaemonOptions extends SharedOptions {
+  BuildMode buildMode;
+
+  DaemonOptions._({
+    @required this.buildMode,
+    @required bool deleteFilesByDefault,
+    @required bool enableLowResourcesMode,
+    @required String configKey,
+    @required Set<BuildDirectory> buildDirs,
+    @required bool outputSymlinksOnly,
+    @required bool trackPerformance,
+    @required bool skipBuildScriptCheck,
+    @required bool verbose,
+    @required Map<String, Map<String, dynamic>> builderConfigOverrides,
+    @required bool isReleaseBuild,
+    @required String logPerformanceDir,
+  }) : super._(
+          deleteFilesByDefault: deleteFilesByDefault,
+          enableLowResourcesMode: enableLowResourcesMode,
+          configKey: configKey,
+          buildDirs: buildDirs,
+          outputSymlinksOnly: outputSymlinksOnly,
+          trackPerformance: trackPerformance,
+          skipBuildScriptCheck: skipBuildScriptCheck,
+          verbose: verbose,
+          builderConfigOverrides: builderConfigOverrides,
+          isReleaseBuild: isReleaseBuild,
+          logPerformanceDir: logPerformanceDir,
+        );
+
+  factory DaemonOptions.fromParsedArgs(ArgResults argResults,
+      Iterable<String> positionalArgs, String rootPackage, Command command) {
+    var buildDirs = _parseBuildDirs(argResults);
+    for (var arg in positionalArgs) {
+      var parts = p.split(arg);
+      if (parts.length > 1 || arg == '.') {
+        throw UsageException(
+            'Only top level directories such as `web` or `test` are allowed as '
+            'positional args, but got `$arg`',
+            command.usage);
+      }
+      buildDirs.add(BuildDirectory(arg));
+    }
+
+    var buildModeValue = argResults[buildModeFlag] as String;
+    BuildMode buildMode;
+    if (buildModeValue == BuildMode.Auto.toString()) {
+      buildMode = BuildMode.Auto;
+    } else if (buildModeValue == BuildMode.Manual.toString()) {
+      buildMode = BuildMode.Manual;
+    } else {
+      throw UsageException(
+          'Unexpected value for $buildModeFlag: $buildModeValue',
+          command.usage);
+    }
+
+    return DaemonOptions._(
+      buildMode: buildMode,
       deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
       enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
       configKey: argResults[configOption] as String,

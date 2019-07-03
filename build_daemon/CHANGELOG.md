@@ -1,3 +1,13 @@
+## 2.0.0
+
+- Create a public entrypoint for backend implementations of the daemon protocol.
+  - Refer to `lib/daemon.dart`.
+- Update client `connect` method to now take an optional `buildMode`.
+  The default mode is auto in which builds will automatically occur on changes.
+  The alternative mode is manual in which builds will only occur when triggered
+  with the client `startBuild` method.
+- Add enum of build modes to `constants.dart`.
+
 ## 1.1.0
 
 - Add `failureType` to `ShutdownNotification`.

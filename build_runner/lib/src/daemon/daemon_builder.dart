@@ -5,6 +5,8 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:build_daemon/change_provider.dart';
+import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/daemon_builder.dart';
 import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart' hide OutputLocation;
@@ -25,6 +27,8 @@ import 'package:build_runner_core/build_runner_core.dart' as core
 import 'package:build_runner_core/src/generate/build_impl.dart';
 import 'package:watcher/watcher.dart';
 
+import 'change_providers.dart';
+
 /// A Daemon Builder that uses build_runner_core for building.
 class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final _buildResults = StreamController<BuildResults>();
@@ -32,7 +36,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final BuildImpl _builder;
   final BuildOptions _buildOptions;
   final StreamController<ServerLog> _outputStreamController;
-  final Stream<WatchEvent> _changes;
+  final ChangeProvider changeProvider;
 
   Completer<Null> _buildingCompleter;
 
@@ -43,7 +47,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     this._builder,
     this._buildOptions,
     this._outputStreamController,
-    this._changes,
+    this.changeProvider,
   ) : logs = _outputStreamController.stream.asBroadcastStream();
 
   /// Waits for a running build to complete before returning.
@@ -53,8 +57,6 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
   @override
   Stream<BuildResults> get builds => _buildResults.stream;
-
-  Stream<WatchEvent> get changes => _changes;
 
   FinalizedReader get reader => _builder.finalizedReader;
 
@@ -153,14 +155,14 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   static Future<BuildRunnerDaemonBuilder> create(
     PackageGraph packageGraph,
     List<BuilderApplication> builders,
-    SharedOptions sharedOptions,
+    DaemonOptions daemonOptions,
   ) async {
     var expectedDeletes = Set<AssetId>();
     var outputStreamController = StreamController<ServerLog>();
 
     var environment = OverrideableEnvironment(
         IOEnvironment(packageGraph,
-            outputSymlinksOnly: sharedOptions.outputSymlinksOnly),
+            outputSymlinksOnly: daemonOptions.outputSymlinksOnly),
         onLog: (record) {
       outputStreamController.add(ServerLog.fromLogRecord(record));
     });
@@ -169,25 +171,25 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         writer: OnDeleteWriter(environment.writer, expectedDeletes.add));
 
     var logSubscription =
-        LogSubscription(environment, verbose: sharedOptions.verbose);
+        LogSubscription(environment, verbose: daemonOptions.verbose);
 
     var overrideBuildConfig =
-        await findBuildConfigOverrides(packageGraph, sharedOptions.configKey);
+        await findBuildConfigOverrides(packageGraph, daemonOptions.configKey);
 
     var buildOptions = await BuildOptions.create(
       logSubscription,
       packageGraph: packageGraph,
-      deleteFilesByDefault: sharedOptions.deleteFilesByDefault,
+      deleteFilesByDefault: daemonOptions.deleteFilesByDefault,
       overrideBuildConfig: overrideBuildConfig,
-      skipBuildScriptCheck: sharedOptions.skipBuildScriptCheck,
-      enableLowResourcesMode: sharedOptions.enableLowResourcesMode,
-      trackPerformance: sharedOptions.trackPerformance,
-      logPerformanceDir: sharedOptions.logPerformanceDir,
+      skipBuildScriptCheck: daemonOptions.skipBuildScriptCheck,
+      enableLowResourcesMode: daemonOptions.enableLowResourcesMode,
+      trackPerformance: daemonOptions.trackPerformance,
+      logPerformanceDir: daemonOptions.logPerformanceDir,
     );
 
     var builder = await BuildImpl.create(buildOptions, daemonEnvironment,
-        builders, sharedOptions.builderConfigOverrides,
-        isReleaseBuild: sharedOptions.isReleaseBuild);
+        builders, daemonOptions.builderConfigOverrides,
+        isReleaseBuild: daemonOptions.isReleaseBuild);
 
     var graphEvents = PackageGraphWatcher(packageGraph,
             watch: (node) =>
@@ -202,10 +204,15 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
               expectedDeletes,
             ));
 
-    var changes =
-        graphEvents.map((data) => WatchEvent(data.type, '${data.id}'));
+    var changes = graphEvents
+        .map((data) => WatchEvent(data.type, '${data.id}'))
+        .map((change) => [change]);
+
+    var changeProvider = daemonOptions.buildMode == BuildMode.Auto
+        ? AutoChangeProvider(changes)
+        : ManualChangeProvider(changes);
 
     return BuildRunnerDaemonBuilder._(
-        builder, buildOptions, outputStreamController, changes);
+        builder, buildOptions, outputStreamController, changeProvider);
   }
 }

@@ -6,8 +6,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build_daemon/constants.dart';
-import 'package:build_daemon/src/daemon.dart';
-import 'package:build_daemon/src/fake_builder.dart';
+import 'package:build_daemon/daemon.dart';
+import 'package:build_daemon/src/fakes/fake_builder.dart';
+import 'package:build_daemon/src/fakes/fake_change_provider.dart';
 import 'package:package_resolver/package_resolver.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
@@ -39,9 +40,12 @@ void main() {
     test('can be stopped', () async {
       var workspace = uuid.v1();
       testWorkspaces.add(workspace);
-      var daemon = Daemon('$workspace');
-      expect(daemon.tryGetLock(), isTrue);
-      await daemon.start(Set<String>(), FakeDaemonBuilder(), Stream.empty());
+      var daemon = Daemon(workspace);
+      await daemon.start(
+        Set<String>(),
+        FakeDaemonBuilder(),
+        FakeChangeProvider(),
+      );
       expect(daemon.onDone, completes);
       await daemon.stop();
     });
@@ -99,13 +103,13 @@ void main() {
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
       expect(await _statusOf(daemon), 'RUNNING');
-      expect(await runningVersion(workspace), currentVersion);
+      expect(await Daemon(workspace).runningVersion(), currentVersion);
     });
 
     test('does not set the current version if not running', () async {
       var workspace = uuid.v1();
       testWorkspaces.add(workspace);
-      expect(await runningVersion(workspace), null);
+      expect(await Daemon(workspace).runningVersion(), null);
     });
 
     test('logs the options when running', () async {
@@ -114,13 +118,14 @@ void main() {
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
       expect(await _statusOf(daemon), 'RUNNING');
-      expect((await currentOptions(workspace)).contains('foo'), isTrue);
+      expect(
+          (await Daemon(workspace).currentOptions()).contains('foo'), isTrue);
     });
 
     test('does not log the options if not running', () async {
       var workspace = uuid.v1();
       testWorkspaces.add(workspace);
-      expect((await currentOptions(workspace)).isEmpty, isTrue);
+      expect((await Daemon(workspace).currentOptions()).isEmpty, isTrue);
     });
 
     test('cleans up after itself', () async {
@@ -157,25 +162,29 @@ Future<String> _statusOf(Process daemon) async {
 
 Future<Process> _runDaemon(var workspace, {int timeout = 30}) async {
   await d.file('test.dart', '''
-    import 'package:build_daemon/src/daemon.dart';
-    import 'package:build_daemon/src/fake_builder.dart';
+    import 'package:build_daemon/daemon.dart';
     import 'package:build_daemon/daemon_builder.dart';
     import 'package:build_daemon/client.dart';
+    import 'package:build_daemon/src/fakes/fake_builder.dart';
+    import 'package:build_daemon/src/fakes/fake_change_provider.dart';
 
     main() async {
+      var options = ['foo'].toSet();
+      var timeout = Duration(seconds: $timeout);
       var daemon = Daemon('$workspace');
-      if (daemon.tryGetLock()) {
-        var options = ['foo'].toSet();
-        var timeout = Duration(seconds: $timeout);
-        // Real implementations of the daemon usually non-trivial set up time
-        // before calling start.
+      if(daemon.hasLock) {
+        await daemon.start(
+          options,
+          FakeDaemonBuilder(),
+          FakeChangeProvider(),
+          timeout: timeout);
+        // Real implementations of the daemon usually have
+        // non-trivial set up time.
         await Future.delayed(Duration(seconds: 1));
-        await daemon.start(options, FakeDaemonBuilder(), Stream.empty(),
-        timeout: timeout);
         print('RUNNING');
-      } else {
+      }else{
         // Mimic the behavior of actual daemon implementations.
-        var version = await runningVersion('$workspace');
+        var version = await daemon.runningVersion();
         if(version != '$currentVersion') throw VersionSkew();
         print('ALREADY RUNNING');
       }
