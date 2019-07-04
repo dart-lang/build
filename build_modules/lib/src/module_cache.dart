@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
+import 'package:crypto/crypto.dart';
 
 import 'meta_module.dart';
 import 'modules.dart';
@@ -37,14 +38,20 @@ class DecodingCache<T> {
       Resource<DecodingCache<T>>(() => DecodingCache._(fromBytes, toBytes),
           dispose: (c) => c._dispose());
 
-  final _cached = <AssetId, Future<Result<T>>>{};
+  final _cached = <AssetId, _Entry<T>>{};
 
   final T Function(List<int>) _fromBytes;
   final List<int> Function(T) _toBytes;
 
   DecodingCache._(this._fromBytes, this._toBytes);
 
-  void _dispose() => _cached.clear();
+  void _dispose() {
+    // Entries with no digest can't be correctly invalidated.
+    _cached.removeWhere((id, entry) => entry.digest == null);
+    for (var entry in _cached.values) {
+      entry.needsCheck = true;
+    }
+  }
 
   /// Find and deserialize a [T] stored in [id].
   ///
@@ -53,9 +60,26 @@ class DecodingCache<T> {
   /// content dependencies will be tracked through [reader].
   Future<T> find(AssetId id, AssetReader reader) async {
     if (!await reader.canRead(id)) return null;
-    var result = _cached.putIfAbsent(
-        id, () => Result.capture(reader.readAsBytes(id).then(_fromBytes)));
-    return Result.release(result);
+    if (_cached.containsKey(id)) {
+      final entry = _cached[id];
+      if (entry.needsCheck) {
+        final digest = await reader.digest(id);
+        if (digest != entry.digest) {
+          entry
+            ..needsCheck = false
+            ..digest = digest
+            ..value = Result.capture(reader.readAsBytes(id).then(_fromBytes));
+        } else {
+          entry.needsCheck = false;
+        }
+      }
+    } else {
+      _cached[id] = _Entry()
+        ..needsCheck = false
+        ..digest = await reader.digest(id)
+        ..value = Result.capture(reader.readAsBytes(id).then(_fromBytes));
+    }
+    return Result.release(_cached[id].value);
   }
 
   /// Serialized and write a [T] to [id].
@@ -64,6 +88,15 @@ class DecodingCache<T> {
   /// instances without deserializing it.
   Future<void> write(AssetId id, AssetWriter writer, T instance) async {
     await writer.writeAsBytes(id, _toBytes(instance));
-    _cached[id] = Result.capture(Future.value(instance));
+    _cached[id] = _Entry()
+      ..needsCheck = false
+      ..value = Result.capture(Future.value(instance));
   }
+}
+
+/// A cached [T] and it's digest that may not need to be checked.
+class _Entry<T> {
+  bool needsCheck;
+  Digest digest;
+  Future<Result<T>> value;
 }
