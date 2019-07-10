@@ -37,7 +37,7 @@ class Server {
   Timer _timeout;
 
   HttpServer _server;
-  DaemonBuilder _builder;
+  final DaemonBuilder _builder;
   // Channels that are interested in the current build.
   var _interestedChannels = Set<WebSocketChannel>();
 
