@@ -80,7 +80,7 @@ class DartStackTraceUtility {
 /// LazyMapping is used.
 class LazyMapping extends Mapping {
   final _bundle = MappingBundle();
-  SourceMapProvider _provider;
+  final SourceMapProvider _provider;
 
   LazyMapping(this._provider);
 
