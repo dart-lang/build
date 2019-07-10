@@ -68,7 +68,11 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
         for (var dep in transitiveModules)
           dep.primarySource.changeExtension(vmKernelModuleExtension),
       ];
-      await Future.wait(transitiveKernelModules.map(buildStep.canRead));
+      await Future.wait(transitiveKernelModules.map((module) async {
+        if (!await buildStep.canRead(module)) {
+          log.severe('Missing module: $module');
+        }
+      }));
       var appContents = [
         '#@dill',
         for (var dependencyId in transitiveKernelModules)
