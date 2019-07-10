@@ -73,6 +73,12 @@ post_process_builders:
 After running a build, or by running the `generate-build-script` command, a
 build script will be written to `.dart_tool/build/entrypoint/build.dart`. This
 is a Dart VM application that can be run manually, including with the
-observatory enabled. See the [observatory docs][] for usage instructions.
+observatory enabled. See the [observatory docs][] or [IntelliJ debugging docs][]
+for usage instructions. The build script takes the same arguments as `pub run
+build_runner`, for example:
+
+`dart --observe --pause-isolates-on-start .dart_tool/build/entrypoint/build.dart build`
+
 
 [observatory docs]:https://dart-lang.github.io/observatory/get-started.html
+[IntelliJ debugging docs]:https://www.jetbrains.com/help/idea/dart.html#dart_run_debug_command_line_application
