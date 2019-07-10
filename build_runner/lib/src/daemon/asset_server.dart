@@ -13,7 +13,7 @@ import '../server/server.dart';
 import 'daemon_builder.dart';
 
 class AssetServer {
-  HttpServer _server;
+  final HttpServer _server;
 
   AssetServer._(this._server);
 
