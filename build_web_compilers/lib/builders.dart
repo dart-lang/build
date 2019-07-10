@@ -28,7 +28,7 @@ Builder ddcBuilder(BuilderOptions options) => DevCompilerBuilder(
 const ddcKernelExtension = '.ddc.dill';
 Builder ddcKernelBuilder(BuilderOptions options) => KernelBuilder(
     summaryOnly: true,
-    sdkKernelPath: p.url.join('lib', '_internal', 'ddc_sdk.dill'),
+    sdkKernelPath: p.join('lib', '_internal', 'ddc_sdk.dill'),
     outputExtension: ddcKernelExtension,
     platform: ddcPlatform,
     useIncrementalCompiler: _readUseIncrementalCompilerOption(options));

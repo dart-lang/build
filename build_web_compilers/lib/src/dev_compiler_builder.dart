@@ -103,8 +103,8 @@ Future<void> _createDevCompilerModule(Module module, BuildStep buildStep,
       'EnsureAssets', () => scratchSpace.ensureAssets(allAssetIds, buildStep));
   var jsId = module.primarySource.changeExtension(jsModuleExtension);
   var jsOutputFile = scratchSpace.fileFor(jsId);
-  var sdkSummary =
-      p.url.join(dartSdk, sdkKernelPath ?? 'lib/_internal/ddc_sdk.dill');
+  var sdkSummary = p.join(
+      dartSdk, sdkKernelPath ?? p.join('lib', '_internal', 'ddc_sdk.dill'));
 
   var packagesFile = await createPackagesFile(allAssetIds);
   var request = WorkRequest()
