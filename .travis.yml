@@ -36,8 +36,8 @@ jobs:
       env: PKGS="build_modules build_web_compilers"
       script: ./tool/travis.sh dartanalyzer_1
     - stage: analyze_and_format
-      name: "SDK: 2.3.0-dev.0.1; PKG: build_vm_compilers; TASKS: `dartanalyzer --fatal-warnings .`"
-      dart: "2.3.0-dev.0.1"
+      name: "SDK: 2.4.0; PKG: build_vm_compilers; TASKS: `dartanalyzer --fatal-warnings .`"
+      dart: "2.4.0"
       env: PKGS="build_vm_compilers"
       script: ./tool/travis.sh dartanalyzer_1
     - stage: analyze_and_format
