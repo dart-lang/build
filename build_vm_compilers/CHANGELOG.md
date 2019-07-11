@@ -1,7 +1,9 @@
-## 1.1.0
+## 2.0.0
 
 - Use shorter dill manifest files rather than concatenating entire kernel
-  contents.
+  contents. This is breaking for the use case of having a single compiled file
+  to copy around and run with the Dart VM. Please file an issue if this broke
+  you.
 
 ## 1.0.0
 
