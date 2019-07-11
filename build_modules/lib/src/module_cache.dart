@@ -66,12 +66,10 @@ class DecodingCache<T> {
         final digest = await reader.digest(id);
         if (digest != entry.digest) {
           entry
-            ..needsCheck = false
             ..digest = digest
             ..value = Result.capture(reader.readAsBytes(id).then(_fromBytes));
-        } else {
-          entry.needsCheck = false;
         }
+        entry.needsCheck = false;
       }
     } else {
       _cached[id] = _Entry()
