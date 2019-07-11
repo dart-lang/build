@@ -76,7 +76,8 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
       var appContents = [
         '#@dill',
         for (var dependencyId in transitiveKernelModules)
-          p.url.relative(dependencyId.path, from: buildStep.inputId.path),
+          p.url.relative(dependencyId.path, from: buildStep.inputId.path) +
+              'nonsense',
       ];
       await buildStep.writeAsString(
           buildStep.inputId.changeExtension(vmKernelEntrypointExtension),
