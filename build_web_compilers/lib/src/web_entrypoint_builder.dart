@@ -68,15 +68,16 @@ class WebEntrypointBuilder implements Builder {
             'Only `dartdevc` and `dart2js` are supported.');
     }
 
-    var dart2JsArgs =
-        options.config[_dart2jsArgs]?.cast<String>() ?? const <String>[];
-    if (dart2JsArgs is! List<String>) {
-      throw ArgumentError.value(dart2JsArgs, _dart2jsArgs,
-          'Expected a list of strings, but got a ${dart2JsArgs.runtimeType}:');
+    if (options.config[_dart2jsArgs] is! List) {
+      throw ArgumentError.value(options.config[_dart2jsArgs], _dart2jsArgs,
+          'Expected a list for $_dart2jsArgs.');
     }
+    var dart2JsArgs = (options.config[_dart2jsArgs] as List)
+            ?.map((arg) => '$arg')
+            ?.toList() ??
+        const <String>[];
 
-    return WebEntrypointBuilder(compiler,
-        dart2JsArgs: dart2JsArgs as List<String>);
+    return WebEntrypointBuilder(compiler, dart2JsArgs: dart2JsArgs);
   }
 
   @override
