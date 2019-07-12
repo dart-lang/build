@@ -21,17 +21,17 @@ _p.Context get _context => _p.url;
 
 var _modulePartialExtension = _context.withoutExtension(jsModuleExtension);
 
-Future<void> bootstrapDdc(BuildStep buildStep) async {
+Future<void> bootstrapDdc(BuildStep buildStep, {DartPlatform platform}) async {
   var dartEntrypointId = buildStep.inputId;
-  var moduleId =
-      buildStep.inputId.changeExtension(moduleExtension(ddcPlatform));
+  var moduleId = buildStep.inputId
+      .changeExtension(moduleExtension(platform ?? ddcPlatform));
   var module = Module.fromJson(json
       .decode(await buildStep.readAsString(moduleId)) as Map<String, dynamic>);
 
   // First, ensure all transitive modules are built.
-  List<Module> transitiveDeps;
+  List<AssetId> transitiveJsModules;
   try {
-    transitiveDeps = await _ensureTransitiveModules(module, buildStep);
+    transitiveJsModules = await _ensureTransitiveJsModules(module, buildStep);
   } on UnsupportedModules catch (e) {
     var librariesString = (await e.exactLibraries(buildStep).toList())
         .map((lib) => AssetId(lib.id.package,
@@ -62,16 +62,12 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
   // See https://github.com/dart-lang/sdk/issues/27262 for the root issue
   // which will allow us to not rely on the naming schemes that dartdevc uses
   // internally, but instead specify our own.
-  var appModuleScope = toJSIdentifier(() {
-    var basename = _context.basename(jsId.path);
-    return basename.substring(0, basename.length - jsModuleExtension.length);
-  }());
+  var appModuleScope = toJSIdentifier(
+      _context.withoutExtension(_context.basename(buildStep.inputId.path)));
 
   // Map from module name to module path for custom modules.
   var modulePaths = SplayTreeMap.of(
       {'dart_sdk': r'packages/build_web_compilers/src/dev_compiler/dart_sdk'});
-  var transitiveJsModules = [jsId]..addAll(transitiveDeps
-      .map((dep) => dep.primarySource.changeExtension(jsModuleExtension)));
   for (var jsId in transitiveJsModules) {
     // Strip out the top level dir from the path for any module, and set it to
     // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
@@ -88,9 +84,14 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
       bootstrapId.path,
       from: _context.dirname(dartEntrypointId.path)));
 
-  // Strip top-level directory
-  var appModuleSource =
-      _context.joinAll(_context.split(module.primarySource.path).sublist(1));
+  var primarySourceParts = _context.split(module.primarySource.path);
+  var appModuleUri = _context.joinAll([
+    // Convert to a package: uri for files under lib.
+    if (primarySourceParts.first == 'lib')
+      'package:${module.primarySource.package}',
+    // Strip top-level directory from the path.
+    ...primarySourceParts.skip(1),
+  ]);
 
   var bootstrapContent =
       StringBuffer('$_entrypointExtensionMarker\n(function() {\n')
@@ -99,8 +100,8 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
             _p.url.relative(appDigestsOutput.path,
                 from: _p.url.dirname(bootstrapId.path))))
         ..write(_requireJsConfig)
-        ..write(_appBootstrap(bootstrapModuleName, appModuleName,
-            appModuleScope, appModuleSource));
+        ..write(_appBootstrap(
+            bootstrapModuleName, appModuleName, appModuleScope, appModuleUri));
 
   await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
 
@@ -111,16 +112,15 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
 
   // Output the digests for transitive modules.
   // These can be consumed for hot reloads.
-  var moduleDigests = <String, String>{};
-  for (var dep in transitiveDeps.followedBy([module])) {
-    var assetId = dep.primarySource.changeExtension(jsModuleExtension);
-    moduleDigests[
-            assetId.path.replaceFirst('lib/', 'packages/${assetId.package}/')] =
-        (await buildStep.digest(assetId)).toString();
-  }
-
+  var moduleDigests = <String, String>{
+    for (var jsId in transitiveJsModules)
+      _moduleDigestKey(jsId): '${await buildStep.digest(jsId)}',
+  };
   await buildStep.writeAsString(appDigestsOutput, jsonEncode(moduleDigests));
 }
+
+String _moduleDigestKey(AssetId jsId) =>
+    '${ddcModuleName(jsId)}$jsModuleExtension';
 
 final _lazyBuildPool = Pool(16);
 
@@ -128,26 +128,29 @@ final _lazyBuildPool = Pool(16);
 ///
 /// Throws an [UnsupportedModules] exception if there are any
 /// unsupported modules.
-Future<List<Module>> _ensureTransitiveModules(
+Future<List<AssetId>> _ensureTransitiveJsModules(
     Module module, BuildStep buildStep) async {
   // Collect all the modules this module depends on, plus this module.
   var transitiveDeps = await module.computeTransitiveDependencies(buildStep,
       throwIfUnsupported: true);
-  var jsModules = transitiveDeps
-      .map((module) => module.primarySource.changeExtension(jsModuleExtension))
-      .toList()
-        ..add(module.primarySource.changeExtension(jsModuleExtension));
+
+  var jsModules = [
+    module.primarySource.changeExtension(jsModuleExtension),
+    for (var dep in transitiveDeps)
+      dep.primarySource.changeExtension(jsModuleExtension),
+  ];
   // Check that each module is readable, and warn otherwise.
   await Future.wait(jsModules.map((jsId) async {
-    if (await _lazyBuildPool.withResource(() => buildStep.canRead(jsId)))
+    if (await _lazyBuildPool.withResource(() => buildStep.canRead(jsId))) {
       return;
+    }
     var errorsId = jsId.addExtension('.errors');
     await buildStep.canRead(errorsId);
     log.warning('Unable to read $jsId, check your console or the '
         '`.dart_tool/build/generated/${errorsId.package}/${errorsId.path}` '
         'log file.');
   }));
-  return transitiveDeps;
+  return jsModules;
 }
 
 /// Code that actually imports the [moduleName] module, and calls the
@@ -155,7 +158,7 @@ Future<List<Module>> _ensureTransitiveModules(
 ///
 /// Also performs other necessary initialization.
 String _appBootstrap(String bootstrapModuleName, String moduleName,
-        String moduleScope, String appModuleSource) =>
+        String moduleScope, String appModuleUri) =>
     '''
 define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_sdk) {
   dart_sdk.dart.setStartAsyncSynchronously(true);
@@ -165,7 +168,16 @@ define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_s
   app.$moduleScope.main();
   var bootstrap = {
       hot\$onChildUpdate: function(childName, child) {
-        if (childName === "$appModuleSource") {
+        // Special handling for the multi-root scheme uris. We need to strip
+        // out the scheme and the top level directory, to match the source path
+        // that chrome sees.
+        if (childName.startsWith('$multiRootScheme:///')) {
+          childName = childName.substring('$multiRootScheme:///'.length);
+          var firstSlash = childName.indexOf('/');
+          if (firstSlash == -1) return false;
+          childName = childName.substring(firstSlash + 1);
+        }
+        if (childName === "$appModuleUri") {
           // Clear static caches.
           dart_sdk.dart.hotRestart();
           child.main();
@@ -255,11 +267,12 @@ var _currentDirectory = (function () {
 /// Sets up `window.$dartLoader` based on [modulePaths].
 String _dartLoaderSetup(Map<String, String> modulePaths, String appDigests) =>
     '''
+$_currentDirectoryScript
 $_baseUrlScript
 let modulePaths = ${const JsonEncoder.withIndent(" ").convert(modulePaths)};
 if(!window.\$dartLoader) {
    window.\$dartLoader = {
-     appDigests: '$appDigests',
+     appDigests: _currentDirectory + '$appDigests',
      moduleIdToUrl: new Map(),
      urlToModuleId: new Map(),
      rootDirectories: new Array(),

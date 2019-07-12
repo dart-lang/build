@@ -1,3 +1,33 @@
+## 2.1.3
+
+- Improve error message when `dart2js_args` is configured improperly.
+
+## 2.1.2
+
+- Fix hot restart bootstrapping logic for dart scripts that live in a
+  different directory than the html file.
+
+## 2.1.1
+
+- Prepare for source map change from dartdevc, don't modify relative paths in
+  source maps.
+- Fix hot reload bootstrap logic for app entrypoints under lib.
+
+## 2.1.0
+
+- Make `platformSdk`, `sdkKernelPath`, and `platform` configurable in
+  `DevCompilerBuilder`.
+
+## 2.0.2
+
+- Prepare for the next sdk release, which changes what the uris look like for
+  non-package sources, and breaks our existing hot restart logic.
+
+## 2.0.1
+
+- Fix issue #2269, which could cause applications to fail to properly bootstrap.
+- Skip compiling modules with ddc when the primary source isn't the primary
+  input (only shows up in non-lazy builds - essentially just tests).
 
 ## 2.0.0
 
@@ -94,6 +124,10 @@ global_options:
 [front_end]: https://pub.dartlang.org/packages/front_end
 [issue tracker]: https://github.com/dart-lang/build/issues/new
 [TestOn]: https://pub.dartlang.org/documentation/test/latest/#restricting-tests-to-certain-platforms
+
+## 1.2.2
+
+- Allow build_config 0.4.x.
 
 ## 1.2.1
 

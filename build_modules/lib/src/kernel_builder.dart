@@ -58,14 +58,22 @@ class KernelBuilder implements Builder {
   /// directory, which contains the platform kernel files.
   final String platformSdk;
 
+  /// The absolute path to the libraries file for the current platform.
+  ///
+  /// If not provided, defaults to "lib/libraries.json" in the sdk directory.
+  final String librariesPath;
+
   KernelBuilder(
       {@required this.platform,
       @required this.summaryOnly,
       @required this.sdkKernelPath,
       @required this.outputExtension,
+      String librariesPath,
       bool useIncrementalCompiler,
       String platformSdk})
       : platformSdk = platformSdk ?? sdkDir,
+        librariesPath = librariesPath ??
+            p.join(platformSdk ?? sdkDir, 'lib', 'libraries.json'),
         useIncrementalCompiler = useIncrementalCompiler ?? false,
         buildExtensions = {
           moduleExtension(platform): [outputExtension]
@@ -76,6 +84,13 @@ class KernelBuilder implements Builder {
     var module = Module.fromJson(
         json.decode(await buildStep.readAsString(buildStep.inputId))
             as Map<String, dynamic>);
+    // Entrypoints always have a `.module` file for ease of looking them up,
+    // but they might not be the primary source.
+    if (module.primarySource.changeExtension(moduleExtension(platform)) !=
+        buildStep.inputId) {
+      return;
+    }
+
     try {
       await _createKernel(
           module: module,
@@ -85,6 +100,7 @@ class KernelBuilder implements Builder {
           platform: platform,
           dartSdkDir: platformSdk,
           sdkKernelPath: sdkKernelPath,
+          librariesPath: librariesPath,
           useIncrementalCompiler: useIncrementalCompiler);
     } on MissingModulesException catch (e) {
       log.severe(e.toString());
@@ -107,6 +123,7 @@ Future<void> _createKernel(
     @required DartPlatform platform,
     @required String dartSdkDir,
     @required String sdkKernelPath,
+    @required String librariesPath,
     @required bool useIncrementalCompiler}) async {
   var request = WorkRequest();
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
@@ -122,10 +139,11 @@ Future<void> _createKernel(
     await _findModuleDeps(
         module, kernelDeps, sourceDeps, buildStep, outputExtension);
 
-    var allAssetIds = Set<AssetId>()
-      ..addAll(module.sources)
-      ..addAll(kernelDeps)
-      ..addAll(sourceDeps);
+    var allAssetIds = <AssetId>{
+      ...module.sources,
+      ...kernelDeps,
+      ...sourceDeps,
+    };
     await scratchSpace.ensureAssets(allAssetIds, buildStep);
 
     packagesFile = await createPackagesFile(allAssetIds);
@@ -135,8 +153,9 @@ Future<void> _createKernel(
         module,
         kernelDeps,
         platform,
-        sdkDir,
+        dartSdkDir,
         sdkKernelPath,
+        librariesPath,
         outputFile,
         packagesFile,
         summaryOnly,
@@ -216,7 +235,7 @@ Future<List<Module>> _resolveTransitiveModules(
 
   if (missing.isNotEmpty) {
     throw await MissingModulesException.create(
-        missing, modules.toList()..add(root), buildStep);
+        missing, [...modules, root], buildStep);
   }
 
   return modules;
@@ -262,37 +281,12 @@ Future<void> _addRequestArguments(
     DartPlatform platform,
     String sdkDir,
     String sdkKernelPath,
+    String librariesPath,
     File outputFile,
     File packagesFile,
     bool summaryOnly,
     bool useIncrementalCompiler,
     AssetReader reader) async {
-  request.arguments.addAll([
-    '--dart-sdk-summary',
-    Uri.file(p.join(sdkDir, sdkKernelPath)).toString(),
-    '--output',
-    outputFile.path,
-    '--packages-file',
-    packagesFile.uri.toString(),
-    '--multi-root-scheme',
-    multiRootScheme,
-    '--exclude-non-sources',
-    summaryOnly ? '--summary-only' : '--no-summary-only',
-    '--libraries-file',
-    p.toUri(p.join(sdkDir, 'lib', 'libraries.json')).toString(),
-  ]);
-  if (useIncrementalCompiler) {
-    request.arguments.addAll([
-      '--reuse-compiler-result',
-      '--use-incremental-compiler',
-    ]);
-  }
-
-  request.inputs.add(Input()
-    ..path = '${Uri.file(p.join(sdkDir, sdkKernelPath))}'
-    // Sdk updates fully invalidate the build anyways.
-    ..digest = md5.convert(utf8.encode(platform.name)).bytes);
-
   // Add all kernel outlines as summary inputs, with digests.
   var inputs = await Future.wait(transitiveKernelDeps.map((id) async {
     var relativePath = p.url.relative(scratchSpace.fileFor(id).uri.path,
@@ -302,14 +296,36 @@ Future<void> _addRequestArguments(
       ..path = '$multiRootScheme:///$relativePath'
       ..digest = (await reader.digest(id)).bytes;
   }));
-  request.arguments.addAll(inputs
-      .map((i) => '--input-${summaryOnly ? 'summary' : 'linked'}=${i.path}'));
-  request.inputs.addAll(inputs);
+  request.arguments.addAll([
+    '--dart-sdk-summary=${Uri.file(p.join(sdkDir, sdkKernelPath))}',
+    '--output=${outputFile.path}',
+    '--packages-file=${packagesFile.uri}',
+    '--multi-root-scheme=$multiRootScheme',
+    '--exclude-non-sources',
+    summaryOnly ? '--summary-only' : '--no-summary-only',
+    '--target=${platform.name}',
+    '--libraries-file=${p.toUri(librariesPath)}',
+    if (useIncrementalCompiler) ...[
+      '--reuse-compiler-result',
+      '--use-incremental-compiler',
+    ],
+    for (var input in inputs)
+      '--input-${summaryOnly ? 'summary' : 'linked'}=${input.path}',
+    for (var source in module.sources) _sourceArg(source),
+  ]);
 
-  request.arguments.addAll(module.sources.map((id) {
-    var uri = id.path.startsWith('lib')
-        ? canonicalUriFor(id)
-        : '$multiRootScheme:///${id.path}';
-    return '--source=$uri';
-  }));
+  request.inputs.addAll([
+    ...inputs,
+    Input()
+      ..path = '${Uri.file(p.join(sdkDir, sdkKernelPath))}'
+      // Sdk updates fully invalidate the build anyways.
+      ..digest = md5.convert(utf8.encode(platform.name)).bytes,
+  ]);
+}
+
+String _sourceArg(AssetId id) {
+  var uri = id.path.startsWith('lib')
+      ? canonicalUriFor(id)
+      : '$multiRootScheme:///${id.path}';
+  return '--source=$uri';
 }

@@ -68,15 +68,16 @@ class WebEntrypointBuilder implements Builder {
             'Only `dartdevc` and `dart2js` are supported.');
     }
 
-    var dart2JsArgs =
-        options.config[_dart2jsArgs]?.cast<String>() ?? const <String>[];
-    if (dart2JsArgs is! List<String>) {
-      throw ArgumentError.value(dart2JsArgs, _dart2jsArgs,
-          'Expected a list of strings, but got a ${dart2JsArgs.runtimeType}:');
+    if (options.config[_dart2jsArgs] is! List) {
+      throw ArgumentError.value(options.config[_dart2jsArgs], _dart2jsArgs,
+          'Expected a list for $_dart2jsArgs.');
     }
+    var dart2JsArgs = (options.config[_dart2jsArgs] as List)
+            ?.map((arg) => '$arg')
+            ?.toList() ??
+        const <String>[];
 
-    return WebEntrypointBuilder(compiler,
-        dart2JsArgs: dart2JsArgs as List<String>);
+    return WebEntrypointBuilder(compiler, dart2JsArgs: dart2JsArgs);
   }
 
   @override
@@ -113,6 +114,7 @@ Future<bool> _isAppEntryPoint(AssetId dartId, AssetReader reader) async {
   assert(dartId.extension == '.dart');
   // Skip reporting errors here, dartdevc will report them later with nicer
   // formatting.
+  // ignore: deprecated_member_use
   var parsed = parseCompilationUnit(await reader.readAsString(dartId),
       suppressErrors: true);
   // Allow two or fewer arguments so that entrypoints intended for use with

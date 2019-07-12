@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:collection';
 
 // ignore: deprecated_member_use
 import 'package:analyzer/analyzer.dart' show parseDirectives;
@@ -11,70 +12,80 @@ import 'package:analyzer/file_system/memory_file_system.dart';
 import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
 import 'package:analyzer/src/generated/source.dart';
 import 'package:build/build.dart' show AssetId, BuildStep;
+import 'package:crypto/crypto.dart';
+import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 
 const _ignoredSchemes = ['dart', 'dart-ext'];
 
 class BuildAssetUriResolver extends UriResolver {
+  /// A cache of the directives for each Dart library.
+  ///
+  /// This is stored across builds and is only invalidated if we read a file and
+  /// see that it's content is different from what it was last time it was read.
   final _cachedAssetDependencies = <AssetId, Set<AssetId>>{};
-  final _cachedAssetContents = <AssetId, String>{};
+
+  /// A cache of the digest for each Dart asset.
+  ///
+  /// This is stored across builds and used to invalidate the values in
+  /// [_cachedAssetDependencies] only when the actual content of the library
+  /// changed.
+  final _cachedAssetDigests = <AssetId, Digest>{};
+
   final resourceProvider = MemoryResourceProvider(context: p.posix);
 
-  /// The assets which are known to be readable at some point during the build.
+  /// The assets which are known to be readable at some point during the current
+  /// build.
   ///
   /// When actions can run out of order an asset can move from being readable
   /// (in the later phase) to being unreadable (in the earlier phase which ran
   /// later). If this happens we don't want to hide the asset from the analyzer.
-  final seenAssets = Set<AssetId>();
+  final seenAssets = HashSet<AssetId>();
 
-  Future<void> performResolve(
-      BuildStep buildStep, List<AssetId> entryPoints, AnalysisDriver driver) {
-    // Basic approach is to start at the first file, update it's contents
-    // and see if it changed, then walk all files accessed by it.
-    var visited = Set<AssetId>();
-    var visiting = _FutureGroup();
-
-    void processAsset(AssetId assetId) {
-      visited.add(assetId);
-
-      visiting.add(buildStep.readAsString(assetId).then((contents) {
-        if (_cachedAssetContents[assetId] != contents) {
-          if (_cachedAssetContents.containsKey(assetId)) {
-            var path = assetPath(assetId);
-            resourceProvider.updateFile(path, contents);
-            driver.changeFile(path);
-          } else {
-            resourceProvider.newFile(assetPath(assetId), contents);
-          }
-          _cachedAssetContents[assetId] = contents;
-          var unit = parseDirectives(contents, suppressErrors: true);
-          var dependencies = unit.directives
-              .whereType<UriBasedDirective>()
-              .where((directive) {
-                var uri = Uri.parse(directive.uri.stringValue);
-                return !_ignoredSchemes.any(uri.isScheme);
-              })
-              .map((d) => AssetId.resolve(d.uri.stringValue, from: assetId))
-              .where((id) => id != null)
-              .toSet();
-          _cachedAssetDependencies[assetId] = dependencies;
+  /// Crawl the transitive imports from [entryPoints] and ensure that the
+  /// content of each asset is updated in [resourceProvider] and [driver].
+  Future<void> performResolve(BuildStep buildStep, List<AssetId> entryPoints,
+      AnalysisDriver driver) async {
+    final changedPaths =
+        await crawlAsync<AssetId, _AssetState>(entryPoints, (id) async {
+      final path = assetPath(id);
+      if (!await buildStep.canRead(id)) {
+        if (seenAssets.contains(id)) {
+          // ignore from this graph, some later build step may still be using it
+          // so it shouldn't be removed from [resourceProvider], but we also
+          // don't care about it's transitive imports.
+          return null;
         }
-        _cachedAssetDependencies[assetId]
-            .where((id) => !visited.contains(id))
-            .forEach(processAsset);
-      }, onError: (e) {
-        if (seenAssets.contains(assetId)) return;
-        _cachedAssetDependencies.remove(assetId);
-        _cachedAssetContents.remove(assetId);
-        final path = assetPath(assetId);
+        _cachedAssetDependencies.remove(id);
+        _cachedAssetDigests.remove(id);
         if (resourceProvider.getFile(path).exists) {
           resourceProvider.deleteFile(path);
         }
-      }));
-    }
-
-    entryPoints.forEach(processAsset);
-    return visiting.future;
+        return _AssetState.removed(path);
+      }
+      seenAssets.add(id);
+      final digest = await buildStep.digest(id);
+      if (_cachedAssetDigests[id] == digest) {
+        return _AssetState.unchanged(path, _cachedAssetDependencies[id]);
+      } else {
+        final isChange = _cachedAssetDigests.containsKey(id);
+        final content = await buildStep.readAsString(id);
+        _cachedAssetDigests[id] = digest;
+        final dependencies =
+            _cachedAssetDependencies[id] = _parseDirectives(content, id);
+        if (isChange) {
+          resourceProvider.updateFile(path, content);
+          return _AssetState.changed(path, dependencies);
+        } else {
+          resourceProvider.newFile(path, content);
+          return _AssetState.newAsset(path, dependencies);
+        }
+      }
+    }, (id, state) => state.directives)
+            .where((state) => state.isAssetUpdate)
+            .map((state) => state.path)
+            .toList();
+    changedPaths.forEach(driver.changeFile);
   }
 
   /// Attempts to parse [uri] into an [AssetId] and returns it if it is cached.
@@ -87,12 +98,12 @@ class BuildAssetUriResolver extends UriResolver {
     if (_ignoredSchemes.any(uri.isScheme)) return null;
     if (uri.isScheme('package') || uri.isScheme('asset')) {
       final assetId = AssetId.resolve('$uri');
-      return _cachedAssetContents.containsKey(assetId) ? assetId : null;
+      return _cachedAssetDigests.containsKey(assetId) ? assetId : null;
     }
     if (uri.isScheme('file')) {
       final parts = p.split(uri.path);
       final assetId = AssetId(parts[1], p.posix.joinAll(parts.skip(2)));
-      return _cachedAssetContents.containsKey(assetId) ? assetId : null;
+      return _cachedAssetDigests.containsKey(assetId) ? assetId : null;
     }
     return null;
   }
@@ -114,51 +125,29 @@ class BuildAssetUriResolver extends UriResolver {
 String assetPath(AssetId assetId) =>
     p.posix.join('/${assetId.package}', assetId.path);
 
-/// A completer that waits until all added [Future]s complete.
-class _FutureGroup<E> {
-  static const _FINISHED = -1;
+/// Returns all the directives from a Dart library that can be resolved to an
+/// [AssetId].
+Set<AssetId> _parseDirectives(String content, AssetId from) =>
+    // ignore: deprecated_member_use
+    HashSet.of(parseDirectives(content, suppressErrors: true)
+        .directives
+        .whereType<UriBasedDirective>()
+        .where((directive) {
+          var uri = Uri.parse(directive.uri.stringValue);
+          return !_ignoredSchemes.any(uri.isScheme);
+        })
+        .map((d) => AssetId.resolve(d.uri.stringValue, from: from))
+        .where((id) => id != null));
 
-  int _pending = 0;
-  Future _failedTask;
-  final Completer<List<E>> _completer = Completer<List<E>>();
-  final List<E> results = [];
+class _AssetState {
+  final String path;
+  final bool isAssetUpdate;
+  final Iterable<AssetId> directives;
 
-  /// The task that failed, if any.
-  Future get failedTask => _failedTask;
-
-  /// Wait for [task] to complete.
-  ///
-  /// If this group has already been marked as completed, a [StateError] will
-  /// be thrown.
-  ///
-  /// If this group has a [failedTask], new tasks will be ignored, because the
-  /// error has already been signaled.
-  void add(Future<E> task) {
-    if (_failedTask != null) return;
-    if (_pending == _FINISHED) throw StateError('Future already completed');
-
-    _pending++;
-    var i = results.length;
-    results.add(null);
-    task.then((res) {
-      results[i] = res;
-      if (_failedTask != null) return;
-      _pending--;
-      if (_pending == 0) {
-        _pending = _FINISHED;
-        _completer.complete(results);
-      }
-    }, onError: (e, s) {
-      if (_failedTask != null) return;
-      _failedTask = task;
-      _completer.completeError(e, s as StackTrace);
-    });
-  }
-
-  /// A Future that completes with a List of the values from all the added
-  /// tasks, when they have all completed.
-  ///
-  /// If any task fails, this Future will receive the error. Only the first
-  /// error will be sent to the Future.
-  Future<List<E>> get future => _completer.future;
+  _AssetState.removed(this.path)
+      : isAssetUpdate = false,
+        directives = const [];
+  _AssetState.changed(this.path, this.directives) : isAssetUpdate = true;
+  _AssetState.unchanged(this.path, this.directives) : isAssetUpdate = false;
+  _AssetState.newAsset(this.path, this.directives) : isAssetUpdate = false;
 }

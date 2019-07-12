@@ -54,7 +54,8 @@ class _$BuildTargetRequest extends BuildTargetRequest {
   @override
   final BuildTarget target;
 
-  factory _$BuildTargetRequest([void updates(BuildTargetRequestBuilder b)]) =>
+  factory _$BuildTargetRequest(
+          [void Function(BuildTargetRequestBuilder) updates]) =>
       (new BuildTargetRequestBuilder()..update(updates)).build();
 
   _$BuildTargetRequest._({this.target}) : super._() {
@@ -64,7 +65,8 @@ class _$BuildTargetRequest extends BuildTargetRequest {
   }
 
   @override
-  BuildTargetRequest rebuild(void updates(BuildTargetRequestBuilder b)) =>
+  BuildTargetRequest rebuild(
+          void Function(BuildTargetRequestBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
@@ -117,7 +119,7 @@ class BuildTargetRequestBuilder
   }
 
   @override
-  void update(void updates(BuildTargetRequestBuilder b)) {
+  void update(void Function(BuildTargetRequestBuilder) updates) {
     if (updates != null) updates(this);
   }
 

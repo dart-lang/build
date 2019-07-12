@@ -16,10 +16,12 @@ import 'data/build_status.dart';
 import 'data/build_target_request.dart';
 import 'data/serializers.dart';
 import 'data/server_log.dart';
+import 'data/shutdown_notification.dart';
+import 'src/file_wait.dart';
 
-int _existingPort(String workingDirectory) {
+Future<int> _existingPort(String workingDirectory) async {
   var portFile = File(portFilePath(workingDirectory));
-  if (!portFile.existsSync()) throw MissingPortFile();
+  if (!await waitForFile(portFile)) throw MissingPortFile();
   return int.parse(portFile.readAsStringSync());
 }
 
@@ -31,21 +33,50 @@ Future<void> _handleDaemonStartup(
       .transform(utf8.decoder)
       .transform(const LineSplitter())
       .listen((line) {
-    logHandler(ServerLog((b) => b..log = line));
+    logHandler(ServerLog((b) => b
+      ..level = Level.SEVERE
+      ..message = line));
   });
-  var stream = process.stdout
+  var stdout = process.stdout
       .transform(utf8.decoder)
       .transform(const LineSplitter())
       .asBroadcastStream();
 
   // The daemon may log critical information prior to it successfully
   // starting. Capture this data and forward to the logHandler.
-  var sub = stream.where((line) => !_isActionMessage(line)).listen((line) {
-    logHandler(ServerLog((b) => b..log = line));
+  //
+  // Whenever we see a `logStartMarker` we will parse everything between that
+  // and the `logEndMarker` as a `ServerLog`. Everything else is considered a
+  // normal INFO level log.
+  StringBuffer nextLogRecord;
+  var sub = stdout.where((line) => !_isActionMessage(line)).listen((line) {
+    if (nextLogRecord != null) {
+      if (line == logEndMarker) {
+        try {
+          logHandler(serializers
+              .deserialize(jsonDecode(nextLogRecord.toString())) as ServerLog);
+        } catch (e, s) {
+          logHandler(ServerLog((builder) => builder
+            ..message = 'Failed to read log message:\n$nextLogRecord'
+            ..level = Level.SEVERE
+            ..error = '$e'
+            ..stackTrace = '$s'));
+        }
+        nextLogRecord = null;
+      } else {
+        nextLogRecord.writeln(line);
+      }
+    } else if (line == logStartMarker) {
+      nextLogRecord = StringBuffer();
+    } else {
+      logHandler(ServerLog((b) => b
+        ..level = Level.INFO
+        ..message = line));
+    }
   });
 
   var daemonAction =
-      await stream.firstWhere(_isActionMessage, orElse: () => null);
+      await stdout.firstWhere(_isActionMessage, orElse: () => null);
 
   if (daemonAction == null) {
     throw StateError('Unable to start build daemon.');
@@ -68,6 +99,8 @@ bool _isActionMessage(String line) =>
 ///   https://pub.dartlang.org/packages/build_daemon#-example-tab-
 class BuildDaemonClient {
   final _buildResults = StreamController<BuildResults>.broadcast();
+  final _shutdownNotifications =
+      StreamController<ShutdownNotification>.broadcast();
   final Serializers _serializers;
 
   IOWebSocketChannel _channel;
@@ -84,6 +117,8 @@ class BuildDaemonClient {
           logHandler(message);
         } else if (message is BuildResults) {
           _buildResults.add(message);
+        } else if (message is ShutdownNotification) {
+          _shutdownNotifications.add(message);
         } else {
           // In practice we should never reach this state due to the
           // deserialize call.
@@ -96,6 +131,8 @@ class BuildDaemonClient {
   }
 
   Stream<BuildResults> get buildResults => _buildResults.stream;
+  Stream<ShutdownNotification> get shutdownNotifications =>
+      _shutdownNotifications.stream;
   Future<void> get finished async => await _channel.sink.done;
 
   /// Registers a build target to be built upon any file change.
@@ -123,15 +160,20 @@ class BuildDaemonClient {
     void Function(ServerLog) logHandler,
     bool includeParentEnvironment,
     Map<String, String> environment,
+    BuildMode buildMode,
   }) async {
     logHandler ??= (_) {};
     includeParentEnvironment ??= true;
+    buildMode ??= BuildMode.Auto;
 
     var daemonSerializers = serializersOverride ?? serializers;
 
+    var daemonArgs = daemonCommand.sublist(1)
+      ..add('--$buildModeFlag=$buildMode');
+
     var process = await Process.start(
       daemonCommand.first,
-      daemonCommand.sublist(1),
+      daemonArgs,
       mode: ProcessStartMode.detachedWithStdio,
       workingDirectory: workingDirectory,
       environment: environment,
@@ -141,7 +183,7 @@ class BuildDaemonClient {
     await _handleDaemonStartup(process, logHandler);
 
     return BuildDaemonClient._(
-        _existingPort(workingDirectory), daemonSerializers, logHandler);
+        await _existingPort(workingDirectory), daemonSerializers, logHandler);
   }
 }
 

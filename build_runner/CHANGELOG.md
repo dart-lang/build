@@ -4,6 +4,40 @@
   as if it was a package named `$sdk`. If using `build_web_compilers` it must be
   at least version `2.0.0`.
 
+## 1.6.2
+
+- Support the latest `build_daemon` version.
+
+## 1.6.1
+
+- Update the `test` command to wait to exit until the inner test process exits.
+
+## 1.6.0
+
+- Depend on the latest `build_daemon` and provide a shutdown notification on
+  build script updates.
+
+## 1.5.2
+
+- Use a polling directory watcher by default on windows again.
+
+## 1.5.1
+
+- Fix an issue where exit codes were not set correctly when running the
+  generated build script directly.
+
+## 1.5.0
+
+- Update to the latest `build_daemon`.
+
+## 1.4.0
+
+- Add a `run` command to execute VM entrypoints with generated sources.
+
+## 1.3.5
+
+- Use the latest `build_daemon`.
+
 ## 1.3.4
 
 - Use the latest `build_config`.

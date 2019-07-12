@@ -1,10 +1,9 @@
-# [![Build Status](https://travis-ci.org/dart-lang/build.svg?branch=master)](https://travis-ci.org/dart-lang/build)
+[![Build Status](https://travis-ci.org/dart-lang/build.svg?branch=master)](https://travis-ci.org/dart-lang/build)
+[![Pub Package](https://img.shields.io/pub/v/scratch_space.svg)](https://pub.dartlang.org/packages/scratch_space)
 
-## [`ScratchSpace`][dartdoc:ScratchSpace]
-
-A `ScratchSpace` is a thin wrapper around a temporary directory. The
-constructor takes zero arguments, so making one is as simple as doing
-`new ScratchSpace()`.
+A [`ScratchSpace`][dartdoc:ScratchSpace] is a thin wrapper around a temporary
+directory. The constructor takes zero arguments, so making one is as simple as
+doing `new ScratchSpace()`.
 
 In general, you should wrap a `ScratchSpace` in a `Resource`, so that you can
 re-use the scratch space across build steps in an individual build. This is

@@ -10,9 +10,17 @@ import 'package:build/build.dart';
 import 'meta_module.dart';
 import 'modules.dart';
 
-final metaModuleCache = DecodingCache.resource((m) => MetaModule.fromJson(m));
+Map<String, dynamic> _deserialize(List<int> bytes) =>
+    jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>;
 
-final moduleCache = DecodingCache.resource((m) => Module.fromJson(m));
+List<int> _serialize(Map<String, dynamic> data) =>
+    utf8.encode(jsonEncode(data));
+
+final metaModuleCache = DecodingCache.resource(
+    (m) => MetaModule.fromJson(_deserialize(m)), (m) => _serialize(m.toJson()));
+
+final moduleCache = DecodingCache.resource(
+    (m) => Module.fromJson(_deserialize(m)), (m) => _serialize(m.toJson()));
 
 /// A cache of objects decoded from written assets suitable for use as a
 /// [Resource].
@@ -25,15 +33,16 @@ class DecodingCache<T> {
   /// Create a [Resource] which can decoded instances of [T] serialized via json
   /// to assets.
   static Resource<DecodingCache<T>> resource<T>(
-          T Function(Map<String, dynamic>) _fromJson) =>
-      Resource<DecodingCache<T>>(() => DecodingCache._(_fromJson),
+          T Function(List<int>) fromBytes, List<int> Function(T) toBytes) =>
+      Resource<DecodingCache<T>>(() => DecodingCache._(fromBytes, toBytes),
           dispose: (c) => c._dispose());
 
   final _cached = <AssetId, Future<Result<T>>>{};
 
-  final T Function(Map<String, dynamic>) _fromJson;
+  final T Function(List<int>) _fromBytes;
+  final List<int> Function(T) _toBytes;
 
-  DecodingCache._(this._fromJson);
+  DecodingCache._(this._fromBytes, this._toBytes);
 
   void _dispose() => _cached.clear();
 
@@ -45,11 +54,16 @@ class DecodingCache<T> {
   Future<T> find(AssetId id, AssetReader reader) async {
     if (!await reader.canRead(id)) return null;
     var result = _cached.putIfAbsent(
-        id,
-        () => Result.capture(reader
-            .readAsString(id)
-            .then((c) => jsonDecode(c) as Map<String, dynamic>)
-            .then(_fromJson)));
+        id, () => Result.capture(reader.readAsBytes(id).then(_fromBytes)));
     return Result.release(result);
+  }
+
+  /// Serialized and write a [T] to [id].
+  ///
+  /// The instance will be cached so that later calls to [find] may return the
+  /// instances without deserializing it.
+  Future<void> write(AssetId id, AssetWriter writer, T instance) async {
+    await writer.writeAsBytes(id, _toBytes(instance));
+    _cached[id] = Result.capture(Future.value(instance));
   }
 }

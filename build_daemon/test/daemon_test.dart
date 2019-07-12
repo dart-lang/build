@@ -6,8 +6,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build_daemon/constants.dart';
-import 'package:build_daemon/src/daemon.dart';
-import 'package:build_daemon/src/fake_builder.dart';
+import 'package:build_daemon/daemon.dart';
+import 'package:build_daemon/src/fakes/fake_builder.dart';
+import 'package:build_daemon/src/fakes/fake_change_provider.dart';
 import 'package:package_resolver/package_resolver.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
@@ -39,9 +40,12 @@ void main() {
     test('can be stopped', () async {
       var workspace = uuid.v1();
       testWorkspaces.add(workspace);
-      var daemon = Daemon('$workspace');
-      expect(daemon.tryGetLock(), isTrue);
-      await daemon.start(Set<String>(), FakeDaemonBuilder(), Stream.empty());
+      var daemon = Daemon(workspace);
+      await daemon.start(
+        Set<String>(),
+        FakeDaemonBuilder(),
+        FakeChangeProvider(),
+      );
       expect(daemon.onDone, completes);
       await daemon.stop();
     });
@@ -50,7 +54,7 @@ void main() {
       var workspace = uuid.v1();
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
-      expect(await getOutput(daemon), 'RUNNING');
+      expect(await _statusOf(daemon), 'RUNNING');
     });
 
     test('shuts down if no client connects', () async {
@@ -65,10 +69,10 @@ void main() {
       var workspace = uuid.v1();
       testWorkspaces.add(workspace);
       var daemonOne = await _runDaemon(workspace);
-      expect(await getOutput(daemonOne), 'RUNNING');
+      expect(await _statusOf(daemonOne), 'RUNNING');
       var daemonTwo = await _runDaemon(workspace);
       testDaemons.addAll([daemonOne, daemonTwo]);
-      expect(await getOutput(daemonTwo), 'ALREADY RUNNING');
+      expect(await _statusOf(daemonTwo), 'ALREADY RUNNING');
     });
 
     test('can run if another daemon is running in a different workspace',
@@ -77,10 +81,20 @@ void main() {
       var workspace2 = uuid.v1();
       testWorkspaces.addAll([workspace1, workspace2]);
       var daemonOne = await _runDaemon(workspace1);
-      expect(await getOutput(daemonOne), 'RUNNING');
+      expect(await _statusOf(daemonOne), 'RUNNING');
       var daemonTwo = await _runDaemon(workspace2);
       testDaemons.addAll([daemonOne, daemonTwo]);
-      expect(await getOutput(daemonTwo), 'RUNNING');
+      expect(await _statusOf(daemonTwo), 'RUNNING');
+    });
+
+    test('can start two daemons at the same time', () async {
+      var workspace = uuid.v1();
+      testWorkspaces.add(workspace);
+      var daemonOne = await _runDaemon(workspace);
+      var daemonTwo = await _runDaemon(workspace);
+      expect([await _statusOf(daemonOne), await _statusOf(daemonTwo)],
+          containsAll(['RUNNING', 'ALREADY RUNNING']));
+      testDaemons.addAll([daemonOne, daemonTwo]);
     });
 
     test('logs the version when running', () async {
@@ -88,14 +102,14 @@ void main() {
       testWorkspaces.add(workspace);
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
-      expect(await getOutput(daemon), 'RUNNING');
-      expect(runningVersion(workspace), currentVersion);
+      expect(await _statusOf(daemon), 'RUNNING');
+      expect(await Daemon(workspace).runningVersion(), currentVersion);
     });
 
     test('does not set the current version if not running', () async {
       var workspace = uuid.v1();
       testWorkspaces.add(workspace);
-      expect(runningVersion(workspace), null);
+      expect(await Daemon(workspace).runningVersion(), null);
     });
 
     test('logs the options when running', () async {
@@ -103,14 +117,15 @@ void main() {
       testWorkspaces.add(workspace);
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
-      expect(await getOutput(daemon), 'RUNNING');
-      expect(currentOptions(workspace).contains('foo'), isTrue);
+      expect(await _statusOf(daemon), 'RUNNING');
+      expect(
+          (await Daemon(workspace).currentOptions()).contains('foo'), isTrue);
     });
 
     test('does not log the options if not running', () async {
       var workspace = uuid.v1();
       testWorkspaces.add(workspace);
-      expect(currentOptions(workspace).isEmpty, isTrue);
+      expect((await Daemon(workspace).currentOptions()).isEmpty, isTrue);
     });
 
     test('cleans up after itself', () async {
@@ -118,38 +133,59 @@ void main() {
       testWorkspaces.add(workspace);
       var daemon = await _runDaemon(workspace);
       // Wait for the daemon to be running before checking the workspace exits.
-      expect(await getOutput(daemon), 'RUNNING');
+      expect(await _statusOf(daemon), 'RUNNING');
       expect(Directory(daemonWorkspace(workspace)).existsSync(), isTrue);
-      // Daemon expects sigint twice before quitting.
-      daemon..kill(ProcessSignal.sigint)..kill(ProcessSignal.sigint);
+      // Sending an interrupt signal will let the daemon gracefully exit.
+      daemon.kill(ProcessSignal.sigint);
       await daemon.exitCode;
       expect(Directory(daemonWorkspace(workspace)).existsSync(), isFalse);
     });
   });
 }
 
-Future<String> getOutput(Process daemon) async {
-  return await daemon.stdout
+/// Returns the daemon status.
+///
+/// If the status is null, the stderr ir returned.
+Future<String> _statusOf(Process daemon) async {
+  var status = await daemon.stdout
       .transform(utf8.decoder)
       .transform(const LineSplitter())
-      .firstWhere((line) => line == 'RUNNING' || line == 'ALREADY RUNNING');
+      .firstWhere((line) => line == 'RUNNING' || line == 'ALREADY RUNNING',
+          orElse: () => null);
+  status ??= (await daemon.stderr
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .toList())
+      .join('\n');
+  return status;
 }
 
 Future<Process> _runDaemon(var workspace, {int timeout = 30}) async {
   await d.file('test.dart', '''
-    import 'package:build_daemon/src/daemon.dart';
-    import 'package:build_daemon/src/fake_builder.dart';
+    import 'package:build_daemon/daemon.dart';
     import 'package:build_daemon/daemon_builder.dart';
+    import 'package:build_daemon/client.dart';
+    import 'package:build_daemon/src/fakes/fake_builder.dart';
+    import 'package:build_daemon/src/fakes/fake_change_provider.dart';
 
     main() async {
+      var options = ['foo'].toSet();
+      var timeout = Duration(seconds: $timeout);
       var daemon = Daemon('$workspace');
-      if (daemon.tryGetLock()) {
-        var options = ['foo'].toSet();
-        var timeout = Duration(seconds: $timeout);
-        await daemon.start(options, FakeDaemonBuilder(), Stream.empty(),
-        timeout: timeout);
+      if(daemon.hasLock) {
+        await daemon.start(
+          options,
+          FakeDaemonBuilder(),
+          FakeChangeProvider(),
+          timeout: timeout);
+        // Real implementations of the daemon usually have
+        // non-trivial set up time.
+        await Future.delayed(Duration(seconds: 1));
         print('RUNNING');
-      } else {
+      }else{
+        // Mimic the behavior of actual daemon implementations.
+        var version = await daemon.runningVersion();
+        if(version != '$currentVersion') throw VersionSkew();
         print('ALREADY RUNNING');
       }
     }

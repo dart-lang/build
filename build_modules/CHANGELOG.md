@@ -1,3 +1,21 @@
+## 2.3.0
+
+- Add a `hasMain` boolean to the `ModuleLibrary` class.
+  - This is now used instead of `isEntrypoint` for determining whether or not
+    to copy module files for application discovery.
+- Fix `computeTransitiveDeps` to do error checking for the root module as well
+  as transitive modules.
+
+## 2.2.0
+
+- Make the `librariesPath` in the `KernelBuilder` configurable.
+- Fixed bug where the configured dart SDK was ignored.
+
+## 2.1.3
+
+- Skip compiling modules with kernel when the primary source isn't the primary
+  input (only shows up in non-lazy builds - essentially just tests).
+
 ## 2.1.2
 
 - Output additional `.module` files for all entrypoints to ease discovery of
@@ -37,6 +55,10 @@
 - Update the kernel worker to pass input digests, along with
   `--reuse-compiler-result` and `--use-incremental-compiler`.
 - Increased the upper bound for `package:analyzer` to `<0.37.0`.
+
+## 1.0.11
+
+- Allow build_config 0.4.x.
 
 ## 1.0.10
 

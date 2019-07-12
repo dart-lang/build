@@ -134,7 +134,8 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
   @override
   final String target;
 
-  factory _$DefaultBuildTarget([void updates(DefaultBuildTargetBuilder b)]) =>
+  factory _$DefaultBuildTarget(
+          [void Function(DefaultBuildTargetBuilder) updates]) =>
       (new DefaultBuildTargetBuilder()..update(updates)).build();
 
   _$DefaultBuildTarget._(
@@ -150,7 +151,8 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
   }
 
   @override
-  DefaultBuildTarget rebuild(void updates(DefaultBuildTargetBuilder b)) =>
+  DefaultBuildTarget rebuild(
+          void Function(DefaultBuildTargetBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
@@ -224,7 +226,7 @@ class DefaultBuildTargetBuilder
   }
 
   @override
-  void update(void updates(DefaultBuildTargetBuilder b)) {
+  void update(void Function(DefaultBuildTargetBuilder) updates) {
     if (updates != null) updates(this);
   }
 
@@ -263,7 +265,7 @@ class _$OutputLocation extends OutputLocation {
   @override
   final bool hoist;
 
-  factory _$OutputLocation([void updates(OutputLocationBuilder b)]) =>
+  factory _$OutputLocation([void Function(OutputLocationBuilder) updates]) =>
       (new OutputLocationBuilder()..update(updates)).build();
 
   _$OutputLocation._({this.output, this.useSymlinks, this.hoist}) : super._() {
@@ -279,7 +281,7 @@ class _$OutputLocation extends OutputLocation {
   }
 
   @override
-  OutputLocation rebuild(void updates(OutputLocationBuilder b)) =>
+  OutputLocation rebuild(void Function(OutputLocationBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
@@ -348,7 +350,7 @@ class OutputLocationBuilder
   }
 
   @override
-  void update(void updates(OutputLocationBuilder b)) {
+  void update(void Function(OutputLocationBuilder) updates) {
     if (updates != null) updates(this);
   }
 

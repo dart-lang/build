@@ -18,5 +18,7 @@ abstract class ShutdownNotification
 
   String get message;
 
+  int get failureType;
+
   ShutdownNotification._();
 }

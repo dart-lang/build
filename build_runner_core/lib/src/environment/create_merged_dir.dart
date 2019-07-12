@@ -88,57 +88,68 @@ Future<bool> _createMergedOutputDir(
     FinalizedAssetsView finalizedOutputsView,
     bool symlinkOnly,
     bool hoist) async {
-  if (root == null) return false;
-  var outputDir = Directory(outputPath);
-  var outputDirExists = await outputDir.exists();
-  if (outputDirExists) {
-    if (!await _cleanUpOutputDir(outputDir, environment)) return false;
-  }
-  var builtAssets = finalizedOutputsView.allAssets(rootDir: root).toList();
-  if (root != '' &&
-      !builtAssets
-          .where((id) => id.package == packageGraph.root.name)
-          .any((id) => p.isWithin(root, id.path))) {
-    _logger.severe('No assets exist in $root, skipping output');
-    return false;
-  }
-
-  var outputAssets = <AssetId>[];
-
-  await logTimedAsync(_logger, 'Creating merged output dir `$outputPath`',
-      () async {
-    if (!outputDirExists) {
-      await outputDir.create(recursive: true);
+  try {
+    if (root == null) return false;
+    var outputDir = Directory(outputPath);
+    var outputDirExists = await outputDir.exists();
+    if (outputDirExists) {
+      if (!await _cleanUpOutputDir(outputDir, environment)) return false;
+    }
+    var builtAssets = finalizedOutputsView.allAssets(rootDir: root).toList();
+    if (root != '' &&
+        !builtAssets
+            .where((id) => id.package == packageGraph.root.name)
+            .any((id) => p.isWithin(root, id.path))) {
+      _logger.severe('No assets exist in $root, skipping output');
+      return false;
     }
 
-    outputAssets.addAll(await Future.wait(builtAssets.map((id) => _writeAsset(
-        id, outputDir, root, packageGraph, reader, symlinkOnly, hoist))));
+    var outputAssets = <AssetId>[];
 
-    var packagesFileContent = packageGraph.allPackages.keys
-        .map((p) => '$p:packages/$p/')
-        .join('\r\n');
-    var packagesAsset = AssetId(packageGraph.root.name, '.packages');
-    await _writeAsString(outputDir, packagesAsset, packagesFileContent);
-    outputAssets.add(packagesAsset);
+    await logTimedAsync(_logger, 'Creating merged output dir `$outputPath`',
+        () async {
+      if (!outputDirExists) {
+        await outputDir.create(recursive: true);
+      }
 
-    if (!hoist) {
-      for (var dir in _findRootDirs(builtAssets, outputPath)) {
-        var link = Link(p.join(outputDir.path, dir, 'packages'));
-        if (!link.existsSync()) {
-          link.createSync(p.join('..', 'packages'), recursive: true);
+      outputAssets.addAll(await Future.wait(builtAssets.map((id) => _writeAsset(
+          id, outputDir, root, packageGraph, reader, symlinkOnly, hoist))));
+
+      var packagesFileContent = packageGraph.allPackages.keys
+          .map((p) => '$p:packages/$p/')
+          .join('\r\n');
+      var packagesAsset = AssetId(packageGraph.root.name, '.packages');
+      await _writeAsString(outputDir, packagesAsset, packagesFileContent);
+      outputAssets.add(packagesAsset);
+
+      if (!hoist) {
+        for (var dir in _findRootDirs(builtAssets, outputPath)) {
+          var link = Link(p.join(outputDir.path, dir, 'packages'));
+          if (!link.existsSync()) {
+            link.createSync(p.join('..', 'packages'), recursive: true);
+          }
         }
       }
-    }
-  });
+    });
 
-  await logTimedAsync(_logger, 'Writing asset manifest', () async {
-    var paths = outputAssets.map((id) => id.path).toList()..sort();
-    var content = paths.join(_manifestSeparator);
-    await _writeAsString(
-        outputDir, AssetId(packageGraph.root.name, _manifestName), content);
-  });
+    await logTimedAsync(_logger, 'Writing asset manifest', () async {
+      var paths = outputAssets.map((id) => id.path).toList()..sort();
+      var content = paths.join(_manifestSeparator);
+      await _writeAsString(
+          outputDir, AssetId(packageGraph.root.name, _manifestName), content);
+    });
 
-  return true;
+    return true;
+  } on FileSystemException catch (e) {
+    if (e.osError?.errorCode != 1314) rethrow;
+    var devModeLink =
+        'https://docs.microsoft.com/en-us/windows/uwp/get-started/'
+        'enable-your-device-for-development';
+    _logger.severe('Unable to create symlink ${e.path}. Note that to create '
+        'symlinks on windows you need to either run in a console with admin '
+        'privileges or enable developer mode (see $devModeLink).');
+    return false;
+  }
 }
 
 Set<String> _findRootDirs(Iterable<AssetId> allAssets, String outputPath) {

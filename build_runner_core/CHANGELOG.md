@@ -3,6 +3,15 @@
 - **Breaking** Files from the Dart SDK are no longer included in the asset graph
   as if it was a package named `$sdk`.
 
+## 3.0.6
+
+- Handle symlink creation failures and link to dev mode docs for windows.
+
+## 3.0.5
+
+- Explicitly require Dart SDK `>=2.2.0 <3.0.0`.
+- Fix an error that could occur when serializing outdated glob nodes.
+
 ## 3.0.4
 
 - Add additional error details and a fallback for

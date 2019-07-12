@@ -142,9 +142,10 @@ class Module {
     throwIfUnsupported ??= false;
     final modules = await buildStep.fetchResource(moduleCache);
     var transitiveDeps = <AssetId, Module>{};
-    var modulesToCrawl = directDependencies.toSet();
+    var modulesToCrawl = {primarySource};
     var missingModuleSources = Set<AssetId>();
     var unsupportedModules = Set<Module>();
+
     while (modulesToCrawl.isNotEmpty) {
       var next = modulesToCrawl.last;
       modulesToCrawl.remove(next);
@@ -158,9 +159,11 @@ class Module {
       if (throwIfUnsupported && !module.isSupported) {
         unsupportedModules.add(module);
       }
-      transitiveDeps[next] = module;
+      // Don't include the root module in the transitive deps.
+      if (next != primarySource) transitiveDeps[next] = module;
       modulesToCrawl.addAll(module.directDependencies);
     }
+
     if (missingModuleSources.isNotEmpty) {
       throw await MissingModulesException.create(missingModuleSources,
           transitiveDeps.values.toList()..add(this), buildStep);

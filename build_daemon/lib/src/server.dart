@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:built_value/serializer.dart';
+import 'package:http_multi_server/http_multi_server.dart';
 import 'package:pool/pool.dart';
 import 'package:shelf/shelf_io.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
@@ -14,6 +15,7 @@ import 'package:stream_transform/stream_transform.dart' hide concat;
 import 'package:watcher/watcher.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../change_provider.dart';
 import '../daemon_builder.dart';
 import '../data/build_request.dart';
 import '../data/build_target.dart';
@@ -31,23 +33,26 @@ class Server {
   final BuildTargetManager _buildTargetManager;
   final _pool = Pool(1);
   final Serializers _serializers;
+  final ChangeProvider _changeProvider;
   Timer _timeout;
 
   HttpServer _server;
-  DaemonBuilder _builder;
+  final DaemonBuilder _builder;
   // Channels that are interested in the current build.
   var _interestedChannels = Set<WebSocketChannel>();
 
   final _subs = <StreamSubscription>[];
 
-  Server(this._builder, Stream<WatchEvent> changes, Duration timeout,
+  Server(this._builder, Duration timeout, ChangeProvider changeProvider,
       {Serializers serializersOverride,
       bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuild})
-      : _serializers = serializersOverride ?? serializers,
+      : _changeProvider = changeProvider,
+        _serializers = serializersOverride ?? serializers,
         _buildTargetManager =
             BuildTargetManager(shouldBuildOverride: shouldBuild) {
     _forwardData();
-    _handleChanges(changes);
+
+    _handleChanges(changeProvider.changes);
 
     // Stop the server if nobody connects.
     _timeout = Timer(timeout, () async {
@@ -73,20 +78,31 @@ class Server {
         if (request is BuildTargetRequest) {
           _buildTargetManager.addBuildTarget(request.target, channel);
         } else if (request is BuildRequest) {
-          await _build(_buildTargetManager.targets, <WatchEvent>[]);
+          var changes = await _changeProvider.collectChanges();
+          var targets = changes.isEmpty
+              ? _buildTargetManager.targets
+              : _buildTargetManager.targetsForChanges(changes);
+          await _build(targets, changes);
         }
       }, onDone: () {
         _removeChannel(channel);
       });
     });
-    _server = await serve(handler, 'localhost', 0);
+
+    _server = await HttpMultiServer.loopback(0);
+    serveRequests(_server, handler);
     return _server.port;
   }
 
-  Future<void> stop({String message}) async {
-    if (message?.isNotEmpty ?? false) {
+  Future<void> stop({String message, int failureType}) async {
+    message ??= '';
+    failureType ??= 0;
+    if (message.isNotEmpty && failureType != 0) {
       for (var connection in _buildTargetManager.allChannels) {
-        connection.sink.add(ShutdownNotification((b) => b.message));
+        connection.sink
+            .add(jsonEncode(_serializers.serialize(ShutdownNotification((b) => b
+              ..message = message
+              ..failureType = failureType))));
       }
     }
     _timeout.cancel();
@@ -122,8 +138,9 @@ class Server {
       }));
   }
 
-  void _handleChanges(Stream<WatchEvent> changes) {
-    _subs.add(changes.transform(asyncMapBuffer((changes) async {
+  void _handleChanges(Stream<List<WatchEvent>> changes) {
+    _subs.add(changes.transform(asyncMapBuffer((changesLists) async {
+      var changes = changesLists.expand((x) => x).toList();
       if (changes.isEmpty) return;
       if (_buildTargetManager.targets.isEmpty) return;
       var buildTargets = _buildTargetManager.targetsForChanges(changes);

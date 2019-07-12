@@ -1,3 +1,17 @@
+## 0.10.8
+
+- Allow a custom AssetReader to be passed to `testBuilder`. This will be used
+  as a fallback for any sources that don't exist in the `sourceAssets` map.
+
+## 0.10.7+3
+
+- Handle the case where the root package in a `PackageAssetReader` is a fake
+  package.
+
+## 0.10.7+2
+
+- Avoid throwing for missing files from `PackageAssetReader.canRead`.
+
 ## 0.10.7+1
 
 - Allow `build_config` `0.4.x`.

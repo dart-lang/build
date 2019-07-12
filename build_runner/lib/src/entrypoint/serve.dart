@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:build_runner/src/generate/directory_watcher_factory.dart';
 import 'package:http_multi_server/http_multi_server.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
@@ -67,7 +68,8 @@ class ServeCommand extends WatchCommand {
     var options = readOptions();
     try {
       await Future.wait(options.serveTargets.map((target) async {
-        servers[target] = await _bindServer(options, target);
+        servers[target] =
+            await HttpMultiServer.bind(options.hostName, target.port);
       }));
     } on SocketException catch (e) {
       var listener = Logger.root.onRecord.listen(stdIOLogListener());
@@ -93,6 +95,7 @@ class ServeCommand extends WatchCommand {
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
       logPerformanceDir: options.logPerformanceDir,
+      directoryWatcherFactory: defaultDirectoryWatcherFactory,
     );
 
     if (handler == null) return ExitCode.config.code;
@@ -128,18 +131,6 @@ class ServeCommand extends WatchCommand {
             'http://${options.hostName}:${target.port}');
       }
     }
-  }
-}
-
-Future<HttpServer> _bindServer(ServeOptions options, ServeTarget target) {
-  switch (options.hostName) {
-    case 'any':
-      // Listens on both IPv6 and IPv4
-      return HttpServer.bind(InternetAddress.anyIPv6, target.port);
-    case 'localhost':
-      return HttpMultiServer.loopback(target.port);
-    default:
-      return HttpServer.bind(options.hostName, target.port);
   }
 }
 

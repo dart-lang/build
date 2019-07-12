@@ -26,6 +26,9 @@ class _$ShutdownNotificationSerializer
       'message',
       serializers.serialize(object.message,
           specifiedType: const FullType(String)),
+      'failureType',
+      serializers.serialize(object.failureType,
+          specifiedType: const FullType(int)),
     ];
 
     return result;
@@ -46,6 +49,10 @@ class _$ShutdownNotificationSerializer
           result.message = serializers.deserialize(value,
               specifiedType: const FullType(String)) as String;
           break;
+        case 'failureType':
+          result.failureType = serializers.deserialize(value,
+              specifiedType: const FullType(int)) as int;
+          break;
       }
     }
 
@@ -56,19 +63,25 @@ class _$ShutdownNotificationSerializer
 class _$ShutdownNotification extends ShutdownNotification {
   @override
   final String message;
+  @override
+  final int failureType;
 
   factory _$ShutdownNotification(
-          [void updates(ShutdownNotificationBuilder b)]) =>
+          [void Function(ShutdownNotificationBuilder) updates]) =>
       (new ShutdownNotificationBuilder()..update(updates)).build();
 
-  _$ShutdownNotification._({this.message}) : super._() {
+  _$ShutdownNotification._({this.message, this.failureType}) : super._() {
     if (message == null) {
       throw new BuiltValueNullFieldError('ShutdownNotification', 'message');
+    }
+    if (failureType == null) {
+      throw new BuiltValueNullFieldError('ShutdownNotification', 'failureType');
     }
   }
 
   @override
-  ShutdownNotification rebuild(void updates(ShutdownNotificationBuilder b)) =>
+  ShutdownNotification rebuild(
+          void Function(ShutdownNotificationBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
@@ -78,18 +91,21 @@ class _$ShutdownNotification extends ShutdownNotification {
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is ShutdownNotification && message == other.message;
+    return other is ShutdownNotification &&
+        message == other.message &&
+        failureType == other.failureType;
   }
 
   @override
   int get hashCode {
-    return $jf($jc(0, message.hashCode));
+    return $jf($jc($jc(0, message.hashCode), failureType.hashCode));
   }
 
   @override
   String toString() {
     return (newBuiltValueToStringHelper('ShutdownNotification')
-          ..add('message', message))
+          ..add('message', message)
+          ..add('failureType', failureType))
         .toString();
   }
 }
@@ -102,11 +118,16 @@ class ShutdownNotificationBuilder
   String get message => _$this._message;
   set message(String message) => _$this._message = message;
 
+  int _failureType;
+  int get failureType => _$this._failureType;
+  set failureType(int failureType) => _$this._failureType = failureType;
+
   ShutdownNotificationBuilder();
 
   ShutdownNotificationBuilder get _$this {
     if (_$v != null) {
       _message = _$v.message;
+      _failureType = _$v.failureType;
       _$v = null;
     }
     return this;
@@ -121,13 +142,15 @@ class ShutdownNotificationBuilder
   }
 
   @override
-  void update(void updates(ShutdownNotificationBuilder b)) {
+  void update(void Function(ShutdownNotificationBuilder) updates) {
     if (updates != null) updates(this);
   }
 
   @override
   _$ShutdownNotification build() {
-    final _$result = _$v ?? new _$ShutdownNotification._(message: message);
+    final _$result = _$v ??
+        new _$ShutdownNotification._(
+            message: message, failureType: failureType);
     replace(_$result);
     return _$result;
   }

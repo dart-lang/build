@@ -41,10 +41,18 @@ Future<int> generateAndRun(List<String> args, {Logger logger}) async {
     await errorListener?.cancel();
 
     try {
-      var buildScript = await generateBuildScript();
-      File(scriptLocation)
-        ..createSync(recursive: true)
-        ..writeAsStringSync(buildScript);
+      var buildScript = File(scriptLocation);
+      var oldContents = '';
+      if (buildScript.existsSync()) {
+        oldContents = buildScript.readAsStringSync();
+      }
+      var newContents = await generateBuildScript();
+      // Only trigger a build script update if necessary.
+      if (newContents != oldContents) {
+        buildScript
+          ..createSync(recursive: true)
+          ..writeAsStringSync(newContents);
+      }
     } on CannotBuildException {
       return ExitCode.config.code;
     }

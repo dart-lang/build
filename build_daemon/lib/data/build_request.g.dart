@@ -29,13 +29,13 @@ class _$BuildRequestSerializer implements StructuredSerializer<BuildRequest> {
 }
 
 class _$BuildRequest extends BuildRequest {
-  factory _$BuildRequest([void updates(BuildRequestBuilder b)]) =>
+  factory _$BuildRequest([void Function(BuildRequestBuilder) updates]) =>
       (new BuildRequestBuilder()..update(updates)).build();
 
   _$BuildRequest._() : super._();
 
   @override
-  BuildRequest rebuild(void updates(BuildRequestBuilder b)) =>
+  BuildRequest rebuild(void Function(BuildRequestBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
@@ -73,7 +73,7 @@ class BuildRequestBuilder
   }
 
   @override
-  void update(void updates(BuildRequestBuilder b)) {
+  void update(void Function(BuildRequestBuilder) updates) {
     if (updates != null) updates(this);
   }
 

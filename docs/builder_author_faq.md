@@ -1,21 +1,18 @@
 ## When should a Builder build to `cache` vs `source`?
 
-Use `build_to: source` when:
-- The generated code _does not_ depend on details outside of the containing
-  package that might change with a different version of its dependencies. Any
-  details from the _generating_ package, or any other dependency used by the
-  generated code must not change without a major version bump.
-- The generated code should be `pub publish`ed with the package and used by
-  downstream packages without running a build themselves.
+Outputs to `source` will generally be published with the package on pub. **This
+can be risky.** If the generated code depends on _any_ details from the current
+pub solve - that is it reads information from dependencies - then a consumer of
+the package which has different versions of dependencies in their pub solve
+**may be broken**. If the generated code imports any libraries, including from
+the package providing the builder, it must only use the API surface area which
+is guaranteed to not break without a major version bump.
 
-Use `build_to: cache` when:
-- The generated code uses details from outside of the package with the generated
-  code, including from the _generating_ package which may change without a major
-  version bump.
-- The builder generates lots of files that the user might not expect to see.
-- The builder targets use cases for "application" packages that are unlikely to
-  be published rather than packages which will be published and become
-  dependencies.
+Outputs to `cache` will never be published with the package, and if they are
+required to compile or run, then the build system must be used by every consumer
+of the code. **This is always safe**, but may place limitations on the end user.
+Any outputs which are used _during_ a build to produce other outputs, but don't
+need to be compiled or seen by the user, should also be built to `cache`.
 
 ## How can I have temporary outputs only used during the Build?
 
@@ -76,6 +73,12 @@ post_process_builders:
 After running a build, or by running the `generate-build-script` command, a
 build script will be written to `.dart_tool/build/entrypoint/build.dart`. This
 is a Dart VM application that can be run manually, including with the
-observatory enabled. See the [observatory docs][] for usage instructions.
+observatory enabled. See the [observatory docs][] or [IntelliJ debugging docs][]
+for usage instructions. The build script takes the same arguments as `pub run
+build_runner`, for example:
+
+`dart --observe --pause-isolates-on-start .dart_tool/build/entrypoint/build.dart build`
+
 
 [observatory docs]:https://dart-lang.github.io/observatory/get-started.html
+[IntelliJ debugging docs]:https://www.jetbrains.com/help/idea/dart.html#dart_run_debug_command_line_application

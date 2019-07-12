@@ -1,5 +1,3 @@
-# build_test
-
 <p align="center">
   Testing utilities for users of <a href="https://pub.dartlang.org/packages/build"><code>package:build</code></a>.
   <br>
@@ -67,6 +65,19 @@ _See the `test` folder in the `build` package for more examples_.
 Using [`testBuilder`][api:testBuilder], you can run a functional test of a
 `Builder`, including feeding specific assets, and more. It automatically
 creates an in-memory representation of various utility classes.
+
+### Exposing actual package sources to `testBuilder`
+
+You can expose real package sources to the builder in addition to your in
+memory sources, by passing a `PackageAssetReader` to the `reader` parameter:
+
+```dart
+testBuilder(yourBuilder, {}/* test assets here */,
+    reader: await PackageAssetReader.currentIsolate());
+```
+
+You can pass any custom AssetReader here, which will be used as a fallback
+for any source not defined in the source assets map.
 
 ### Resolve source code for testing
 

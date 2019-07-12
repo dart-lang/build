@@ -35,8 +35,8 @@ for PKG in ${PKGS}; do
       pub run build_runner test || EXIT_CODE=$?
       ;;
     command_4)
-      echo 'dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs-- -P presubmit'
-      dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs-- -P presubmit || EXIT_CODE=$?
+      echo 'dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs -- -P presubmit'
+      dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs -- -P presubmit || EXIT_CODE=$?
       ;;
     dartanalyzer_0)
       echo 'dartanalyzer --fatal-infos --fatal-warnings .'

@@ -74,6 +74,23 @@ void main() {
       });
     }
   });
+
+  test('can pass a custom reader', () async {
+    var reader =
+        await PackageAssetReader.currentIsolate(rootPackage: 'build_test');
+    var builder = TestBuilder(
+        buildExtensions: {
+          '.txt': ['.txt.copy']
+        },
+        build: (buildStep, _) async {
+          await buildStep.writeAsString(
+              buildStep.inputId.addExtension('.copy'),
+              buildStep
+                  .readAsString(AssetId('build_test', 'test/data/hello.txt')));
+        });
+    await testBuilder(builder, {'build_test|data/1.txt': ''},
+        outputs: {'build_test|data/1.txt.copy': 'hello world'}, reader: reader);
+  });
 }
 
 /// Concatenates the contents of multiple text files into a single output.

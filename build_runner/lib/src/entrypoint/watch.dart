@@ -8,6 +8,7 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 
 import '../generate/build.dart';
+import '../generate/directory_watcher_factory.dart';
 import 'base_command.dart';
 
 /// A command that watches the file system for updates and rebuilds as
@@ -41,6 +42,7 @@ class WatchCommand extends BuildRunnerCommand {
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
       logPerformanceDir: options.logPerformanceDir,
+      directoryWatcherFactory: defaultDirectoryWatcherFactory,
     );
     if (handler == null) return ExitCode.config.code;
 

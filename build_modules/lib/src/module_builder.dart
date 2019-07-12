@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:build/build.dart';
 
@@ -45,14 +44,16 @@ class ModuleBuilder implements Builder {
           buildStep.inputId.changeExtension(moduleLibraryExtension));
       final libraryModule =
           ModuleLibrary.deserialize(buildStep.inputId, serializedLibrary);
-      if (libraryModule.isEntryPoint) {
+      if (libraryModule.hasMain) {
         outputModule = metaModule.modules
             .firstWhere((m) => m.sources.contains(buildStep.inputId));
       }
     }
     if (outputModule == null) return;
-    await buildStep.writeAsString(
+    final modules = await buildStep.fetchResource(moduleCache);
+    await modules.write(
         buildStep.inputId.changeExtension(moduleExtension(_platform)),
-        jsonEncode(outputModule.toJson()));
+        buildStep,
+        outputModule);
   }
 }
