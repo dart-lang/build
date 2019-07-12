@@ -1,3 +1,7 @@
+## 2.1.4
+
+- Allow analyzer version 0.37.0.
+
 ## 2.1.3
 
 - Improve error message when `dart2js_args` is configured improperly.
