@@ -1,6 +1,7 @@
 ## 1.6.2
 
 - Support the latest `build_daemon` version.
+- Expose `assetServerPort` as a top level helper method.
 
 ## 1.6.1
 
