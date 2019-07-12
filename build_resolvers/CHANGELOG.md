@@ -1,3 +1,7 @@
+## 1.0.6
+
+- Allow analyzer version 0.37.0.
+
 ## 1.0.5
 
 - Fix a race condition where some assets may be resolved with missing
