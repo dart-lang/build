@@ -71,8 +71,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         .map<AssetChange>(
             (change) => AssetChange(AssetId.parse(change.path), change.type))
         .toList();
-    if (_builder.buildScriptUpdates
-        .hasBeenUpdated(changes.map<AssetId>((change) => change.id).toSet())) {
+    if (!_buildOptions.skipBuildScriptCheck &&
+        _builder.buildScriptUpdates.hasBeenUpdated(
+            changes.map<AssetId>((change) => change.id).toSet())) {
       _buildScriptUpdateCompleter.complete();
       return;
     }
