@@ -1,3 +1,7 @@
+## 2.3.1
+
+- Allow analyzer version 0.37.0.
+
 ## 2.3.0
 
 - Add a `hasMain` boolean to the `ModuleLibrary` class.
