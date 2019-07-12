@@ -19,15 +19,6 @@ import '../daemon/daemon_builder.dart';
 import 'base_command.dart';
 import 'options.dart';
 
-/// Returns the port of the daemon asset server.
-int assetServerPort(String workingDirectory) {
-  var portFile = File(assetServerPortFilePath(workingDirectory));
-  if (!portFile.existsSync()) {
-    throw Exception('Unable to read daemon asset port file.');
-  }
-  return int.parse(portFile.readAsStringSync());
-}
-
 /// A command that starts the Build Daemon.
 class DaemonCommand extends BuildRunnerCommand {
   @override
