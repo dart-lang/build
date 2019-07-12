@@ -84,7 +84,10 @@ main() {
     stdoutLines = daemonProcess.stdout
         .transform(Utf8Decoder())
         .transform(LineSplitter())
-        .asBroadcastStream();
+        .map((line) {
+      printOnFailure(line);
+      return line;
+    }).asBroadcastStream();
     expect(await stdoutLines.contains(readyToConnectLog), isTrue);
   }
 
