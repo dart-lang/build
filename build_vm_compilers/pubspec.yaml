@@ -21,7 +21,3 @@ dev_dependencies:
   test_descriptor: ^1.1.0
   _test_common:
     path: ../_test_common
-
-# Ensures tests run on the latest analyzer, will revert before submitting.
-dependency_overrides:
-  analyzer: ^0.37.0

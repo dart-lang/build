@@ -24,7 +24,3 @@ dev_dependencies:
   build_vm_compilers: ">=0.1.0 <2.0.0"
   pedantic: ^1.0.0
   test: ^1.2.0
-
-# Ensures tests run on the latest analyzer, will revert before submitting.
-dependency_overrides:
-  analyzer: ^0.37.0

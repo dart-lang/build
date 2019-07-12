@@ -35,7 +35,3 @@ dev_dependencies:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
-
-# Ensures tests run on the latest analyzer, will revert before submitting.
-dependency_overrides:
-  analyzer: ^0.37.0

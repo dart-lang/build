@@ -12,8 +12,6 @@ dev_dependencies:
     path: pkgs/provides_builder/
 
 dependency_overrides:
-  # Ensures tests run on the latest analyzer, will revert before submitting.
-  analyzer: ^0.37.0
   build:
     path: ../build
   build_config:
