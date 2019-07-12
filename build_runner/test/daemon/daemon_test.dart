@@ -13,6 +13,7 @@ import 'package:build_daemon/client.dart';
 import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart';
+import 'package:build_daemon/data/shutdown_notification.dart';
 import 'package:build_runner/src/daemon/constants.dart';
 import 'package:path/path.dart' as p;
 import 'package:pedantic/pedantic.dart';
@@ -66,9 +67,11 @@ main() {
     await runPub('a', 'run', args: ['build_runner', 'clean']);
   });
 
-  Future<BuildDaemonClient> _startClient({BuildMode buildMode}) {
+  Future<BuildDaemonClient> _startClient(
+      {BuildMode buildMode, List<String> options}) {
+    options ??= [];
     buildMode ??= BuildMode.Auto;
-    var args = ['run', 'build_runner', 'daemon'];
+    var args = ['run', 'build_runner', 'daemon', ...options];
     return BuildDaemonClient.connect(
         workspace(),
         [
@@ -77,9 +80,15 @@ main() {
         buildMode: buildMode);
   }
 
-  Future<void> _startDaemon({BuildMode buildMode}) async {
+  Future<void> _startDaemon({BuildMode buildMode, List<String> options}) async {
+    options ??= [];
     buildMode ??= BuildMode.Auto;
-    var args = ['build_runner', 'daemon', '--$buildModeFlag=$buildMode'];
+    var args = [
+      'build_runner',
+      'daemon',
+      '--$buildModeFlag=$buildMode',
+      ...options
+    ];
     daemonProcess = await startPub('a', 'run', args: args);
     stdoutLines = daemonProcess.stdout
         .transform(Utf8Decoder())
@@ -101,7 +110,7 @@ main() {
       var client = await _startClient()
         ..registerBuildTarget(webTarget)
         ..startBuild();
-      // We need to add a listener othersise we won't get the event.
+      // We need to add a listener otherwise we won't get the event.
       unawaited(expectLater(client.shutdownNotifications.first, isNotNull));
       // Force a build script change.
       await d.dir('a', [
@@ -111,6 +120,29 @@ main() {
           ])
         ])
       ]).create();
+    });
+
+    test('does not shut down down on build script change when configured',
+        () async {
+      await _startDaemon(options: ['--skip-build-script-check']);
+      var client = await _startClient(options: ['--skip-build-script-check'])
+        ..registerBuildTarget(webTarget)
+        ..startBuild();
+      ShutdownNotification notification;
+      // We need to add a listener otherwise we won't get the event.
+      unawaited(client.shutdownNotifications.first
+          .then((value) => notification = value));
+      // Force a build script change.
+      await d.dir('a', [
+        d.dir('.dart_tool', [
+          d.dir('build', [
+            d.dir('entrypoint', [d.file('build.dart', '\n')])
+          ])
+        ])
+      ]).create();
+      // Give time for the notification to propogate if there was one.
+      await Future.delayed(Duration(seconds: 4));
+      expect(notification, isNull);
     });
 
     test('errors if build modes conflict', () async {
