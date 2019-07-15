@@ -1,3 +1,7 @@
+## 1.1.5
+
+- Allow analyzer version 0.37.0.
+
 ## 1.1.4
 
 - Internal cleanup: use "strict raw types".
