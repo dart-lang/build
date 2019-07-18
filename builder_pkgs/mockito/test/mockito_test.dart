@@ -181,28 +181,12 @@ void main() {
       expect(mock.getter, equals("A"));
     });
 
-    test("should mock hashCode", () {
-      named(mock, hashCode: 42);
-      expect(mock.hashCode, equals(42));
-    });
-
     test("should have hashCode when it is not mocked", () {
       expect(mock.hashCode, isNotNull);
     });
 
     test("should have default toString when it is not mocked", () {
       expect(mock.toString(), equals("_MockedClass"));
-    });
-
-    test("should have toString as name when it is not mocked", () {
-      named(mock, name: "Cat");
-      expect(mock.toString(), equals("Cat"));
-    });
-
-    test("should mock equals between mocks when givenHashCode is equals", () {
-      var anotherMock = named(_MockedClass(), hashCode: 42);
-      named(mock, hashCode: 42);
-      expect(mock == anotherMock, isTrue);
     });
 
     test("should use identical equality between it is not mocked", () {

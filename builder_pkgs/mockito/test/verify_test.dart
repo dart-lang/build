@@ -128,17 +128,6 @@ void main() {
       verify(mock.methodWithNamedArgs(42, y: 17));
     });
 
-    test('should mock method with mock args', () {
-      var m1 = named(_MockedClass(), name: 'm1');
-      mock.methodWithObjArgs(m1);
-      expectFail(
-          'No matching calls. All calls: _MockedClass.methodWithObjArgs(m1)\n'
-          '$noMatchingCallsFooter', () {
-        verify(mock.methodWithObjArgs(_MockedClass()));
-      });
-      verify(mock.methodWithObjArgs(m1));
-    });
-
     test('should mock method with list args', () {
       mock.methodWithListArgs([42]);
       expectFail(

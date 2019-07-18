@@ -1,3 +1,9 @@
+## 4.1.1
+
+* Mark the unexported and accidentally public `setDefaultResponse` as
+  deprecated.
+* Mark the not useful, and not generally used, `named` function as deprecated.
+
 ## 4.1.0
 
 * Add a `Fake` class for implementing a subset of a class API as overrides

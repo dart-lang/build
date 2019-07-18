@@ -16,7 +16,7 @@ export 'src/mock.dart'
     show
         Fake,
         Mock,
-        named,
+        named, // ignore: deprecated_member_use_from_same_package
 
         // -- setting behaviour
         when,

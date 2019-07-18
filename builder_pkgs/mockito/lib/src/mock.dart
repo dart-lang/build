@@ -34,7 +34,9 @@ final List _capturedArgs = [];
 final List<ArgMatcher> _storedArgs = <ArgMatcher>[];
 final Map<String, ArgMatcher> _storedNamedArgs = <String, ArgMatcher>{};
 
-// Hidden from the public API, used by spy.dart.
+@Deprecated(
+    'This function is not a supported function, and may be deleted as early as '
+    'Mockito 5.0.0')
 void setDefaultResponse(Mock mock, CallPair<dynamic> defaultResponse()) {
   mock._defaultResponse = defaultResponse;
 }
@@ -364,6 +366,10 @@ class _InvocationForMatchedArguments extends Invocation {
       this.namedArguments, this.isGetter, this.isMethod, this.isSetter);
 }
 
+@Deprecated(
+    'This function does not provide value; hashCode and toString() can be '
+    'stubbed individually. This function may be deleted as early as Mockito '
+    '5.0.0')
 T named<T extends Mock>(T mock, {String name, int hashCode}) => mock
   .._givenName = name
   .._givenHashCode = hashCode;

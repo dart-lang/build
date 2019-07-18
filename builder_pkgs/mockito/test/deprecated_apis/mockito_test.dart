@@ -134,5 +134,21 @@ void main() {
           .thenReturn("42");
       expect(mock.methodWithNormalArgs(43), equals("43"));
     });
+
+    test("should mock hashCode", () {
+      named(mock, hashCode: 42);
+      expect(mock.hashCode, equals(42));
+    });
+
+    test("should have toString as name when it is not mocked", () {
+      named(mock, name: "Cat");
+      expect(mock.toString(), equals("Cat"));
+    });
+
+    test("should mock equals between mocks when givenHashCode is equals", () {
+      var anotherMock = named(_MockedClass(), hashCode: 42);
+      named(mock, hashCode: 42);
+      expect(mock == anotherMock, isTrue);
+    });
   });
 }
