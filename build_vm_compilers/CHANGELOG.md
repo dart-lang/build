@@ -5,6 +5,10 @@
   to copy around and run with the Dart VM. Please file an issue if this broke
   you.
 
+## 1.0.1
+
+- Allow analyzer version 0.37.0.
+
 ## 1.0.0
 
 - Support build_modules 2.0.0

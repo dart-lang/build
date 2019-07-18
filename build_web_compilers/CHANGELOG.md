@@ -1,3 +1,11 @@
+## 2.1.4
+
+- Allow analyzer version 0.37.0.
+
+## 2.1.3
+
+- Improve error message when `dart2js_args` is configured improperly.
+
 ## 2.1.2
 
 - Fix hot restart bootstrapping logic for dart scripts that live in a
