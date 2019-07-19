@@ -47,12 +47,12 @@ while (( "$#" )); do
   dartdevc_test) echo
     echo -e '\033[1mTASK: dartdevc_test\033[22m'
     echo -e 'pub run build_runner test -- -p chrome'
-    pub run build_runner test -- -p chrome || EXIT_CODE=$?
+    xvfb-run pub run build_runner test -- -p chrome || EXIT_CODE=$?
     ;;
   dart2js_test) echo
     echo -e '\033[1mTASK: dart2js_test\033[22m'
     echo -e 'pub run test -p chrome'
-    pub run test -p chrome || EXIT_CODE=$?
+    xvfb-run pub run test -p chrome || EXIT_CODE=$?
     ;;
   coverage) echo
     echo -e '\033[1mTASK: coverage\033[22m'
