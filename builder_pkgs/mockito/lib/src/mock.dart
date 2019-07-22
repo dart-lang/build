@@ -662,6 +662,12 @@ class _VerifyCall {
       'VerifyCall<mock: $mock, memberName: ${verifyInvocation.memberName}>';
 }
 
+// An argument matcher that acts like an argument during stubbing or
+// verification, and stores "matching" information.
+//
+/// Users do not need to construct this manually; users can instead use the
+/// built-in values, [any], [anyNamed], [captureAny], [captureAnyNamed], or the
+/// functions [argThat] and [captureThat].
 class ArgMatcher {
   final Matcher matcher;
   final bool _capture;
@@ -675,12 +681,17 @@ class ArgMatcher {
 /// An argument matcher that matches any argument passed in "this" position.
 Null get any => _registerMatcher(anything, false);
 
+/// An argument matcher that matches any named argument passed in for the
+/// parameter named [named].
 Null anyNamed(String named) => _registerMatcher(anything, false, named: named);
 
 /// An argument matcher that matches any argument passed in "this" position, and
 /// captures the argument for later access with `captured`.
 Null get captureAny => _registerMatcher(anything, true);
 
+/// An argument matcher that matches any named argument passed in for the
+/// parameter named [named], and captures the argument for later access with
+/// `captured`.
 Null captureAnyNamed(String named) =>
     _registerMatcher(anything, true, named: named);
 
