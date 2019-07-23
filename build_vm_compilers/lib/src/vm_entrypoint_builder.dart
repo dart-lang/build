@@ -73,14 +73,14 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
           log.severe('Missing module: $module');
         }
       }));
-      var appContents = [
-        '#@dill',
-        for (var dependencyId in transitiveKernelModules)
-          p.url.relative(dependencyId.path, from: buildStep.inputId.path),
-      ];
+      var appContents = StringBuffer('#@dill\n');
+      for (var dependencyId in transitiveKernelModules) {
+        appContents.writeln(p.url.relative(dependencyId.path,
+            from: p.url.dirname(buildStep.inputId.path)));
+      }
       await buildStep.writeAsString(
           buildStep.inputId.changeExtension(vmKernelEntrypointExtension),
-          appContents.join('\n'));
+          '$appContents');
     });
   }
 }
