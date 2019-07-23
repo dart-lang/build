@@ -105,11 +105,8 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
                 from: _p.url.dirname(bootstrapId.path))))
         ..write(_requireJsConfig)
         ..write(_appBootstrap(
-            bootstrapModuleName,
-            appModuleName,
-            appModuleScope,
-            appModuleUri,
-            oldModuleScope = simpleAppModuleScope));
+            bootstrapModuleName, appModuleName, appModuleScope, appModuleUri,
+            oldModuleScope: simpleAppModuleScope));
 
   await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
 

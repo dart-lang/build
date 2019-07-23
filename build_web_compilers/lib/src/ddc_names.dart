@@ -9,7 +9,7 @@ import 'package:path/path.dart' as _p;
 /// This logic must be synchronized with [pathToJSIdentifier] in DDC at:
 /// pkg/dev_compiler/lib/src/compiler/module_builder.dart
 String pathToJSIdentifier(String path) {
-  path = _p.normalize(path);
+  path = _p.basenameWithoutExtension(_p.normalize(path));
   if (path.startsWith('/') || path.startsWith('\\')) {
     path = path.substring(1, path.length);
   }
