@@ -62,7 +62,7 @@ Implement this function to handle update of child modules.
 Accessing properties of provided `child` object is tricky thing. As dart libraries have no type
 themselves, the provided object is an arbitrary JavaScript object with properties matched with
 exported symbols in the child library. To access them you need to use either
-[`package:js`](https://pub.dartlang.org/packages/js) or 
+[`package:js`](https://pub.dev/packages/js) or 
 [`dart:js_utils`](https://api.dartlang.org/stable/2.0.0/dart-js_util/dart-js_util-library.html).
 See example below for details how to use it.
 

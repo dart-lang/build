@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/dart-lang/build.svg?branch=master)](https://travis-ci.org/dart-lang/build)
-[![Pub Package](https://img.shields.io/pub/v/scratch_space.svg)](https://pub.dartlang.org/packages/scratch_space)
+[![Pub Package](https://img.shields.io/pub/v/scratch_space.svg)](https://pub.dev/packages/scratch_space)
 
 A [`ScratchSpace`][dartdoc:ScratchSpace] is a thin wrapper around a temporary
 directory. The constructor takes zero arguments, so making one is as simple as
@@ -75,4 +75,4 @@ back to your actual output directory.
 Please file feature requests and bugs at the [issue tracker][tracker].
 
 [tracker]: https://github.com/dart-lang/build/issues
-[dartdoc:ScratchSpace]: https://www.dartdocs.org/documentation/scratch_space/latest/scratch_space/ScratchSpace-class.html
+[dartdoc:ScratchSpace]: https://pub.dev/documentation/scratch_space/latest/scratch_space/ScratchSpace-class.html

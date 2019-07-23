@@ -96,7 +96,7 @@ bool _isActionMessage(String line) =>
 /// Handles starting and connecting to the build daemon.
 ///
 /// Example:
-///   https://pub.dartlang.org/packages/build_daemon#-example-tab-
+///   https://pub.dev/packages/build_daemon#-example-tab-
 class BuildDaemonClient {
   final _buildResults = StreamController<BuildResults>.broadcast();
   final _shutdownNotifications =

@@ -7,10 +7,10 @@
   <a href="https://github.com/dart-lang/build/labels/package%3A%20build_modules">
     <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3A%20build_modules.svg" alt="Issues related to build_modules" />
   </a>
-  <a href="https://pub.dartlang.org/packages/build_modules">
+  <a href="https://pub.dev/packages/build_modules">
     <img src="https://img.shields.io/pub/v/build_modules.svg" alt="Pub Package Version" />
   </a>
-  <a href="https://pub.dartlang.org/documentation/build_modules/latest">
+  <a href="https://pub.dev/documentation/build_modules/latest/">
     <img src="https://img.shields.io/badge/dartdocs-latest-blue.svg" alt="Latest Dartdocs" />
   </a>
   <a href="https://gitter.im/dart-lang/build">
@@ -30,8 +30,8 @@ developing a custom compiler pipeline. See documentation in
 [`build_web_compilers`][] and [`build_vm_compilers`][] for more details on
 building your Dart code.
 
-[`build_web_compilers`]: https://pub.dartlang.org/packages/build_web_compilers
-[`build_vm_compilers`]: https://pub.dartlang.org/packages/build_vm_compilers
+[`build_web_compilers`]: https://pub.dev/packages/build_web_compilers
+[`build_vm_compilers`]: https://pub.dev/packages/build_vm_compilers
 
 ## Module creation
 
