@@ -154,8 +154,8 @@ Please file feature requests and bugs at the [issue tracker][tracker].
 
 [tracker]: https://github.com/dart-lang/build/issues
 
-[dartdoc:Builder]: https://www.dartdocs.org/documentation/build/latest/build/Builder-class.html
-[dartdoc:BuildStep]: https://www.dartdocs.org/documentation/build/latest/build/BuildStep-class.html
-[dartdoc:Resolver]: https://www.dartdocs.org/documentation/build/latest/build/Resolver-class.html
-[pub:analyzer]: https://pub.dartlang.org/packages/analyzer
+[dartdoc:Builder]: https://pub.dev/documentation/build/latest/build/Builder-class.html
+[dartdoc:BuildStep]: https://pub.dev/documentation/build/latest/build/BuildStep-class.html
+[dartdoc:Resolver]: https://pub.dev/documentation/build/latest/build/Resolver-class.html
+[pub:analyzer]: https://pub.dev/packages/analyzer
 [Upgrading from barback]: https://github.com/dart-lang/build/blob/master/docs/from_barback_transformer.md

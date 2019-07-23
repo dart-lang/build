@@ -1,5 +1,5 @@
 <p align="center">
-  Web compilers for users of <a href="https://pub.dartlang.org/packages/build"><code>package:build</code></a>.
+  Web compilers for users of <a href="https://pub.dev/packages/build"><code>package:build</code></a>.
   <br>
   <a href="https://travis-ci.org/dart-lang/build">
     <img src="https://travis-ci.org/dart-lang/build.svg?branch=master" alt="Build Status" />
@@ -7,10 +7,10 @@
   <a href="https://github.com/dart-lang/build/labels/package%3A%20build_web_compilers">
     <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3A%20build_web_compilers.svg" alt="Issues related to build_web_compilers" />
   </a>
-  <a href="https://pub.dartlang.org/packages/build_web_compilers">
+  <a href="https://pub.dev/packages/build_web_compilers">
     <img src="https://img.shields.io/pub/v/build_web_compilers.svg" alt="Pub Package Version" />
   </a>
-  <a href="https://pub.dartlang.org/documentation/build_web_compilers/latest">
+  <a href="https://pub.dev/documentation/build_web_compilers/latest">
     <img src="https://img.shields.io/badge/dartdocs-latest-blue.svg" alt="Latest Dartdocs" />
   </a>
   <a href="https://gitter.im/dart-lang/build">
@@ -98,4 +98,4 @@ the list (unless you need to post-process the js files).
 ```
 
 [development dependency]: https://www.dartlang.org/tools/pub/dependencies#dev-dependencies
-[`package:build`]: https://pub.dartlang.org/packages/build
+[`package:build`]: https://pub.dev/packages/build

@@ -124,10 +124,10 @@ global_options:
       enabled: false
 ```
 
-[analyzer]: https://pub.dartlang.org/packages/analyzer
-[front_end]: https://pub.dartlang.org/packages/front_end
+[analyzer]: https://pub.dev/packages/analyzer
+[front_end]: https://pub.dev/packages/front_end
 [issue tracker]: https://github.com/dart-lang/build/issues/new
-[TestOn]: https://pub.dartlang.org/documentation/test/latest/#restricting-tests-to-certain-platforms
+[TestOn]: https://pub.dev/documentation/test/latest/#restricting-tests-to-certain-platforms
 
 ## 1.2.2
 
