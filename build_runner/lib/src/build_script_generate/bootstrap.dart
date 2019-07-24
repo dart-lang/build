@@ -57,7 +57,7 @@ Future<int> generateAndRun(List<String> args, {Logger logger}) async {
       return ExitCode.config.code;
     }
 
-    scriptExitCode = await _createSnapshotIfMissing(logger);
+    scriptExitCode = await _createSnapshotIfNeeded(logger);
     if (scriptExitCode != 0) return scriptExitCode;
 
     exitPort = ReceivePort();
@@ -118,11 +118,17 @@ Future<int> generateAndRun(List<String> args, {Logger logger}) async {
   return scriptExitCode;
 }
 
-/// Creates a script snapshot for the build script.
+/// Creates a script snapshot for the build script in necessary.
+///
+/// A snapshot is generated if:
+///
+/// - It doesn't exist currently
+/// - Either build_runner or build_daemon point at a different location than
+///   they used to, see https://github.com/dart-lang/build/issues/1929.
 ///
 /// Returns zero for success or a number for failure which should be set to the
 /// exit code.
-Future<int> _createSnapshotIfMissing(Logger logger) async {
+Future<int> _createSnapshotIfNeeded(Logger logger) async {
   var assetGraphFile = File(assetGraphPathFor(scriptSnapshotLocation));
   var snapshotFile = File(scriptSnapshotLocation);
 
@@ -131,6 +137,11 @@ Future<int> _createSnapshotIfMissing(Logger logger) async {
   if (!await assetGraphFile.exists() && await snapshotFile.exists()) {
     await snapshotFile.delete();
     logger.warning('Deleted previous snapshot due to missing asset graph.');
+  }
+
+  if (!await _checkImportantPackageDeps()) {
+    await snapshotFile.delete();
+    logger.warning('Deleted previous snapshot due to core package update');
   }
 
   String stderr;
@@ -158,4 +169,34 @@ Future<int> _createSnapshotIfMissing(Logger logger) async {
     }
   }
   return 0;
+}
+
+const _importantPackages = [
+  'build_daemon',
+  'build_runner',
+];
+final _previousLocationsFile = File(
+    p.url.join(p.url.dirname(scriptSnapshotLocation), '.packageLocations'));
+
+/// Returns whether the [_importantPackages] are all pointing at same locations
+/// from the previous run.
+///
+/// Also updates the [_previousLocationsFile] with the new locations if not.
+///
+/// This is used to detect potential changes to the user facing api and
+/// pre-emptively resolve them by resnapshotting, see
+/// https://github.com/dart-lang/build/issues/1929.
+Future<bool> _checkImportantPackageDeps() async {
+  var currentLocationsContent = _importantPackages
+      .map((pkg) => Isolate.resolvePackageUri(
+          Uri(scheme: 'package', path: '$pkg/fake.dart')))
+      .join('\n');
+
+  if (!_previousLocationsFile.existsSync() ||
+      currentLocationsContent != _previousLocationsFile.readAsStringSync()) {
+    _previousLocationsFile.writeAsStringSync(currentLocationsContent);
+    return false;
+  }
+
+  return true;
 }

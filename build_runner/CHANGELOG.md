@@ -1,3 +1,8 @@
+## 1.6.3
+
+- Pre-emptively re-snapshot when the `build_runner` or `build_daemon`
+  packages are updated.
+
 ## 1.6.2
 
 - Support the latest `build_daemon` version.
