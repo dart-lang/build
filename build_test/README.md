@@ -109,7 +109,7 @@ test('should resolve a simple dart file', () async {
 * [`StubAssetReader`][api:StubAssetReader]
 * [`StubAssetWriter`][api:StubAssetWriter]
 
-[development dependency]: https://www.dartlang.org/tools/pub/dependencies#dev-dependencies
+[development dependency]: https://dart.dev/tools/pub/dependencies#dev-dependencies
 [`package:build`]: https://pub.dev/packages/build
 
 [api:FakeWatcher]: https://pub.dev/documentation/build_test/latest/build_test/FakeWatcher-class.html

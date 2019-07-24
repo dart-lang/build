@@ -3,8 +3,8 @@
 To use `build_runner`, you need a 2.x version of
 the Dart SDK.
 
-* [Automated installers](https://www.dartlang.org/install#automated-installation-and-updates)
-* [Direct downloads](https://www.dartlang.org/install/archive#dev-channel)
+* [Automated installers](https://dart.dev/get-dart#install)
+* [Direct downloads](https://dart.dev/tools/sdk/archive#dev-channel)
 
 If you have issues using `build_runner`, see the
 [Troubleshooting section](#troubleshooting), below.

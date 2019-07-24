@@ -42,7 +42,7 @@ targets:
 
 By default, the `build_runner` package only includes some specifically
 whitelisted directories, derived from the [package layout conventions](
-https://www.dartlang.org/tools/pub/package-layout).
+https://dart.dev/tools/pub/package-layout).
 
 If you have some additional files which you would like to be included as part of
 the build, you will need a custom `build.yaml` file. You will want to modify the
