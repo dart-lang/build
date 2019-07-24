@@ -131,18 +131,19 @@ Future<int> generateAndRun(List<String> args, {Logger logger}) async {
 Future<int> _createSnapshotIfNeeded(Logger logger) async {
   var assetGraphFile = File(assetGraphPathFor(scriptSnapshotLocation));
   var snapshotFile = File(scriptSnapshotLocation);
-  var snapshotExists = await snapshotFile.exists();
 
-  // If we failed to serialize an asset graph for the snapshot, then we don't
-  // want to re-use it because we can't check if it is up to date.
-  if (snapshotExists && !await assetGraphFile.exists()) {
-    await snapshotFile.delete();
-    logger.warning('Deleted previous snapshot due to missing asset graph.');
-  }
+  if (await snapshotFile.exists()) {
+    // If we failed to serialize an asset graph for the snapshot, then we don't
+    // want to re-use it because we can't check if it is up to date.
+    if (!await assetGraphFile.exists()) {
+      await snapshotFile.delete();
+      logger.warning('Deleted previous snapshot due to missing asset graph.');
+    }
 
-  if (snapshotExists && !await _checkImportantPackageDeps()) {
-    await snapshotFile.delete();
-    logger.warning('Deleted previous snapshot due to core package update');
+    if (!await _checkImportantPackageDeps()) {
+      await snapshotFile.delete();
+      logger.warning('Deleted previous snapshot due to core package update');
+    }
   }
 
   String stderr;
