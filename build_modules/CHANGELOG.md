@@ -1,3 +1,7 @@
+## 2.4.0
+
+- Allow overriding the target name passed to the kernel worker.
+
 ## 2.3.1
 
 - Allow analyzer version 0.37.0.

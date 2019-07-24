@@ -63,6 +63,11 @@ class KernelBuilder implements Builder {
   /// If not provided, defaults to "lib/libraries.json" in the sdk directory.
   final String librariesPath;
 
+  /// The `--target` argument passed to the kernel worker.
+  ///
+  /// Optional. When omitted the [platform] name is used.
+  final String kernelTargetName;
+
   KernelBuilder(
       {@required this.platform,
       @required this.summaryOnly,
@@ -70,8 +75,10 @@ class KernelBuilder implements Builder {
       @required this.outputExtension,
       String librariesPath,
       bool useIncrementalCompiler,
-      String platformSdk})
+      String platformSdk,
+      String kernelTargetName})
       : platformSdk = platformSdk ?? sdkDir,
+        kernelTargetName = kernelTargetName ?? platform.name,
         librariesPath = librariesPath ??
             p.join(platformSdk ?? sdkDir, 'lib', 'libraries.json'),
         useIncrementalCompiler = useIncrementalCompiler ?? false,
@@ -97,7 +104,7 @@ class KernelBuilder implements Builder {
           buildStep: buildStep,
           summaryOnly: summaryOnly,
           outputExtension: outputExtension,
-          platform: platform,
+          targetName: kernelTargetName,
           dartSdkDir: platformSdk,
           sdkKernelPath: sdkKernelPath,
           librariesPath: librariesPath,
@@ -120,7 +127,7 @@ Future<void> _createKernel(
     @required BuildStep buildStep,
     @required bool summaryOnly,
     @required String outputExtension,
-    @required DartPlatform platform,
+    @required String targetName,
     @required String dartSdkDir,
     @required String sdkKernelPath,
     @required String librariesPath,
@@ -152,7 +159,7 @@ Future<void> _createKernel(
         request,
         module,
         kernelDeps,
-        platform,
+        targetName,
         dartSdkDir,
         sdkKernelPath,
         librariesPath,
@@ -278,7 +285,7 @@ Future<void> _addRequestArguments(
     WorkRequest request,
     Module module,
     Iterable<AssetId> transitiveKernelDeps,
-    DartPlatform platform,
+    String targetName,
     String sdkDir,
     String sdkKernelPath,
     String librariesPath,
@@ -303,7 +310,7 @@ Future<void> _addRequestArguments(
     '--multi-root-scheme=$multiRootScheme',
     '--exclude-non-sources',
     summaryOnly ? '--summary-only' : '--no-summary-only',
-    '--target=${platform.name}',
+    '--target=$targetName',
     '--libraries-file=${p.toUri(librariesPath)}',
     if (useIncrementalCompiler) ...[
       '--reuse-compiler-result',
@@ -319,7 +326,7 @@ Future<void> _addRequestArguments(
     Input()
       ..path = '${Uri.file(p.join(sdkDir, sdkKernelPath))}'
       // Sdk updates fully invalidate the build anyways.
-      ..digest = md5.convert(utf8.encode(platform.name)).bytes,
+      ..digest = md5.convert(utf8.encode(targetName)).bytes,
   ]);
 }
 
