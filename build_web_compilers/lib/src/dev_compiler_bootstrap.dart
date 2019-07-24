@@ -62,10 +62,10 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
   // See https://github.com/dart-lang/sdk/issues/27262 for the root issue
   // which will allow us to not rely on the naming schemes that dartdevc uses
   // internally, but instead specify our own.
-  var simpleAppModuleScope = toJSIdentifier(
+  var oldAppModuleScope = toJSIdentifier(
       _context.withoutExtension(_context.basename(buildStep.inputId.path)));
 
-  // Like above but with a more modern module-relative entrypoint.
+  // Like above but with a package-relative entrypoint.
   var appModuleScope =
       pathToJSIdentifier(_context.withoutExtension(buildStep.inputId.path));
 
@@ -106,7 +106,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
         ..write(_requireJsConfig)
         ..write(_appBootstrap(
             bootstrapModuleName, appModuleName, appModuleScope, appModuleUri,
-            oldModuleScope: simpleAppModuleScope));
+            oldModuleScope: oldAppModuleScope));
 
   await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
 
