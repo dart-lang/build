@@ -76,8 +76,9 @@ class KernelBuilder implements Builder {
       String librariesPath,
       bool useIncrementalCompiler,
       String platformSdk,
-      this.kernelTargetName})
+      String kernelTargetName})
       : platformSdk = platformSdk ?? sdkDir,
+        kernelTargetName = kernelTargetName ?? platform.name,
         librariesPath = librariesPath ??
             p.join(platformSdk ?? sdkDir, 'lib', 'libraries.json'),
         useIncrementalCompiler = useIncrementalCompiler ?? false,
@@ -103,7 +104,7 @@ class KernelBuilder implements Builder {
           buildStep: buildStep,
           summaryOnly: summaryOnly,
           outputExtension: outputExtension,
-          targetName: kernelTargetName ?? platform.name,
+          targetName: kernelTargetName,
           dartSdkDir: platformSdk,
           sdkKernelPath: sdkKernelPath,
           librariesPath: librariesPath,
