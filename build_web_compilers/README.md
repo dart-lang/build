@@ -97,5 +97,5 @@ the list (unless you need to post-process the js files).
 ]
 ```
 
-[development dependency]: https://www.dartlang.org/tools/pub/dependencies#dev-dependencies
+[development dependency]: https://dart.dev/tools/pub/dependencies#dev-dependencies
 [`package:build`]: https://pub.dev/packages/build

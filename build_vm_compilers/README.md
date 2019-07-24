@@ -66,5 +66,5 @@ builder applications to what you already have, sometime after the
 ]
 ```
 
-[development dependency]: https://www.dartlang.org/tools/pub/dependencies#dev-dependencies
+[development dependency]: https://dart.dev/tools/pub/dependencies#dev-dependencies
 [`package:build`]: https://pub.dev/packages/build

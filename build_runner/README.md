@@ -249,8 +249,8 @@ $ pub run test
 [build_extensions]: https://pub.dev/documentation/build/latest/build/Builder/buildExtensions.html
 
 [travis]: https://travis-ci.org/
-[dev_sdk]: https://www.dartlang.org/install
-[dev_dependencies]: https://www.dartlang.org/tools/pub/dependencies#dev-dependencies
-[pubspec]: https://www.dartlang.org/tools/pub/pubspec
+[dev_sdk]: https://dart.dev/get-dart
+[dev_dependencies]: https://dart.dev/tools/pub/dependencies#dev-dependencies
+[pubspec]: https://dart.dev/tools/pub/pubspec
 [file_an_issue]: https://github.com/dart-lang/build/issues/new
 [pull_request]: https://github.com/dart-lang/build/pulls
