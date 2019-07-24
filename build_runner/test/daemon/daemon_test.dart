@@ -64,6 +64,7 @@ main() {
   tearDown(() async {
     stdoutLines = null;
     daemonProcess?.kill(ProcessSignal.sigkill);
+    await daemonProcess?.exitCode;
     await runPub('a', 'run', args: ['build_runner', 'clean']);
   });
 
