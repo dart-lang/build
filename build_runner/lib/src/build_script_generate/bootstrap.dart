@@ -138,9 +138,7 @@ Future<int> _createSnapshotIfNeeded(Logger logger) async {
     if (!await assetGraphFile.exists()) {
       await snapshotFile.delete();
       logger.warning('Deleted previous snapshot due to missing asset graph.');
-    }
-
-    if (!await _checkImportantPackageDeps()) {
+    } else if (!await _checkImportantPackageDeps()) {
       await snapshotFile.delete();
       logger.warning('Deleted previous snapshot due to core package update');
     }
