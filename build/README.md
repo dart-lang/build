@@ -19,28 +19,22 @@ and allows reading/writing files and resolving Dart source code.
 An interface into the dart [analyzer][pub:analyzer] to allow resolution of code
 that needs static analysis and/or code generation.
 
-## Differences between the `build` package and `pub` + `barback`.
-
-If you currently implement transformers with `package:barback` for use with
-Dart v1 `pub build` and `pub serve`, see [Upgrading from barback][].
-
 ## Implementing your own Builders
 
-If you have written a `barback` `Transformer` in the past, then the
-[`Builder`][dartdoc:Builder] API should be familiar to you. The main difference
-is that `Builders` must always configure outputs based on input extensions.
+A `Builder` gets invoked one by one on it's inputs, and may read other files and
+output new files based on those inputs.
 
 The basic API looks like this:
 
 ```dart
 abstract class Builder {
-  /// You can only output files in `build` that are configured here. You are not
-  /// required to output all of these files, but no other [Builder] is allowed
-  /// to produce the same outputs.
+  /// You can only output files that are configured here by suffix substitution.
+  /// You are not required to output all of these files, but no other builder
+  /// may declare the same outputs.
   Map<String, List<String>> get buildExtensions;
 
-  /// Similar to `Transformer.apply`. This is where you build and output files.
-  Future build(BuildStep buildStep);
+  /// This is where you build and output files.
+  FutureOr<void> build(BuildStep buildStep);
 }
 ```
 
@@ -48,31 +42,27 @@ Here is an implementation of a `Builder` which just copies files to other files
 with the same name, but an additional extension:
 
 ```dart
-/// A really simple [Builder], it just makes copies!
+import 'package:build/build.dart';
+
+/// A really simple [Builder], it just makes copies of .txt files!
 class CopyBuilder implements Builder {
-  final String extension;
+  @override
+  final buildExtensions = const {
+    '.txt': ['.txt.copy']
+  };
 
-  CopyBuilder(this.extension);
-
-  Future build(BuildStep buildStep) async {
-    /// Each [buildStep] has a single input.
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    // Each `buildStep` has a single input.
     var inputId = buildStep.inputId;
 
-    /// Create a new target [AssetId] based on the old one.
-    var copy = inputId.addExtension(extension);
+    // Create a new target `AssetId` based on the old one.
+    var copy = inputId.addExtension('.copy');
     var contents = await buildStep.readAsString(inputId);
 
-    /// Write out the new asset.
-    ///
-    /// There is no need to `await` here, the system handles waiting on these
-    /// files as necessary before advancing to the next phase.
-    buildStep.writeAsString(copy, contents);
+    // Write out the new asset.
+    await buildStep.writeAsString(copy, contents);
   }
-
-  /// Configure output extensions. All possible inputs match the empty input
-  /// extension. For each input 1 output is created with `extension` appended to
-  /// the path.
-  Map<String, List<String>> get buildExtensions => {'': [extension]};
 }
 ```
 
@@ -92,20 +82,27 @@ analysis context, which greatly speeds up the overall system when multiple
 Here is an example of a `Builder` which uses the `resolve` method:
 
 ```dart
+import 'package:build/build.dart';
+
 class ResolvingCopyBuilder implements Builder {
-  Future build(BuildStep buildStep) async {
-    // Get the [LibraryElement] for the primary input.
+  // Take a `.dart` file as input so that the Resolver has code to resolve
+  @override
+  final buildExtensions = const {
+    '.dart': ['.dart.copy']
+  };
+
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    // Get the `LibraryElement` for the primary input.
     var entryLib = await buildStep.inputLibrary;
     // Resolves all libraries reachable from the primary input.
     var resolver = buildStep.resolver;
-    // Get a [LibraryElement] for another asset.
+    // Get a `LibraryElement` for another asset.
     var libFromAsset = await resolver.libraryFor(
-        new AssetId.resolve('some_import.dart', from: buildStep.inputId));
-    // Or get a [LibraryElement] by name.
+        AssetId.resolve('some_import.dart', from: buildStep.inputId));
+    // Or get a `LibraryElement` by name.
     var libByName = await resolver.findLibraryByName('my.library');
   }
-
-  /// Configure outputs as well....
 }
 ```
 
@@ -128,7 +125,7 @@ instance that should be disposed. This returns a `FutureOr<dynamic>`.
 So a simple example `Resource` would look like this:
 
 ```dart
-final resource = new Resource(
+final resource = Resource(
   () => createMyExpensiveResource(),
   dispose: (instance) async {
     await instance.doSomeCleanup();
@@ -158,4 +155,3 @@ Please file feature requests and bugs at the [issue tracker][tracker].
 [dartdoc:BuildStep]: https://pub.dev/documentation/build/latest/build/BuildStep-class.html
 [dartdoc:Resolver]: https://pub.dev/documentation/build/latest/build/Resolver-class.html
 [pub:analyzer]: https://pub.dev/packages/analyzer
-[Upgrading from barback]: https://github.com/dart-lang/build/blob/master/docs/from_barback_transformer.md
