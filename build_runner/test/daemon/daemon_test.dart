@@ -26,7 +26,7 @@ main() {
   String workspace() => p.join(d.sandbox, 'a');
   final webTarget = DefaultBuildTarget((b) => b..target = 'web');
   final testTarget = DefaultBuildTarget((b) => b..target = 'test');
-  setUpAll(() async {
+  setUp(() async {
     await d.dir('a', [
       await pubspec(
         'a',
@@ -65,7 +65,6 @@ main() {
     stdoutLines = null;
     daemonProcess?.kill(ProcessSignal.sigkill);
     await daemonProcess?.exitCode;
-    await runPub('a', 'run', args: ['build_runner', 'clean']);
   });
 
   Future<BuildDaemonClient> _startClient(
