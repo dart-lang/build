@@ -59,7 +59,7 @@ Future<void> main(List<String> args) async {
     // Simple logs only in daemon mode. These get converted into info or
     // severe logs by the client.
     logListener = Logger.root.onRecord.listen((record) {
-      if (record.level > Level.INFO) {
+      if (record.level >= Level.SEVERE) {
         var buffer = StringBuffer(record.message);
         if (record.error != null) buffer.writeln(record.error);
         if (record.stackTrace != null) buffer.writeln(record.stackTrace);

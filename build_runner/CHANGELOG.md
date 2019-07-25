@@ -1,3 +1,8 @@
+## 1.6.4
+
+- Fix an issue where warning logs on startup were accidentally upgraded to
+  severe logs in the daemon mode.
+
 ## 1.6.3
 
 - Pre-emptively re-snapshot when the `build_runner` or `build_daemon`
