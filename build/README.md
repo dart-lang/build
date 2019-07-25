@@ -21,15 +21,16 @@ that needs static analysis and/or code generation.
 
 ## Implementing your own Builders
 
-A `Builder` gets invoked one by one on it's inputs, and may output new files.
+A `Builder` gets invoked one by one on it's inputs, and may read other files and
+output new files based on those inputs.
 
 The basic API looks like this:
 
 ```dart
 abstract class Builder {
-  /// You can only output files that are configured here. You are not required
-  /// to output all of these files, but no other builder is allowed to produce
-  /// the same outputs.
+  /// You can only output files that are configured here by suffix substitution.
+  /// You are not required to output all of these files, but no other builder
+  /// may declare the same outputs.
   Map<String, List<String>> get buildExtensions;
 
   /// This is where you build and output files.
