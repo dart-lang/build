@@ -49,7 +49,7 @@ main() {
           // Requires the top level module and dart sdk.
           contains('define("index.dart.bootstrap", ["web/index", "dart_sdk"]'),
           // Calls main on the top level module.
-          contains('index.main()'),
+          contains('(app.web__index || app.index).main()'),
           isNot(contains('lib/a')),
         ])),
       };
