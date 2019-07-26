@@ -107,7 +107,7 @@ Lets assume you have a builder that transforms your css files into dart code exp
 As this string doesn't have any impact on your logic, you want to handle reloading of these modules,
 to prevent parent from reloading
 
-To simplify the example, lets assume we have `addCss` and `removeCss` methods thad do real DOM
+To simplify the example, lets assume we have `addCss` and `removeCss` methods that do real DOM
 modifications. In this example we will just add and remove the styles from a `Set`.
 
 ```dart
