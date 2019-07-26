@@ -1,4 +1,7 @@
-# NOTICE: THESE HOOKS WILL LIKELY SOON BE DEPRECATED/DELETED 
+# NOTICE: THESE HOOKS WILL SOON BE DEPRECATED/DELETED
+
+If this breaks your use case please comment on this issue
+https://github.com/dart-lang/webdev/issues/434
 
 ## What is Hot Module Reloading?
 
