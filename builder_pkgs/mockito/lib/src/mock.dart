@@ -30,7 +30,7 @@ _WhenCall _whenCall;
 _UntilCall _untilCall;
 final List<_VerifyCall> _verifyCalls = <_VerifyCall>[];
 final _TimeStampProvider _timer = _TimeStampProvider();
-final List _capturedArgs = [];
+final List<dynamic> _capturedArgs = [];
 final List<ArgMatcher> _storedArgs = <ArgMatcher>[];
 final Map<String, ArgMatcher> _storedNamedArgs = <String, ArgMatcher>{};
 
@@ -411,7 +411,8 @@ class PostExpectation<T> {
   void _completeWhen(Answering<T> answer) {
     if (_whenCall == null) {
       throw StateError(
-          'Mock method was not called within `when()`. Was a real method called?');
+          'Mock method was not called within `when()`. Was a real method '
+          'called?');
     }
     _whenCall._setExpected<T>(answer);
     _whenCall = null;
@@ -725,15 +726,66 @@ Null _registerMatcher(Matcher matcher, bool capture, {String named}) {
   return null;
 }
 
+/// Information about a stub call verification.
+///
+/// This class is most useful to users in two ways:
+///
+/// * verifying call count, via [called],
+/// * collecting captured arguments, via [captured].
 class VerificationResult {
-  List<dynamic> captured = [];
+  List<dynamic> _captured;
+
+  /// List of all arguments captured in real calls.
+  ///
+  /// This list will include any captured default arguments and has no
+  /// structure differentiating the arguments of one call from another. Given
+  /// the following class:
+  ///
+  /// ```dart
+  /// class C {
+  ///   String methodWithPositionalArgs(int x, [int y]) => '';
+  ///   String methodWithTwoNamedArgs(int x, {int y, int z}) => '';
+  /// }
+  /// ```
+  ///
+  /// the following stub calls will result in the following captured arguments:
+  ///
+  /// ```dart
+  /// mock.methodWithPositionalArgs(1);
+  /// mock.methodWithPositionalArgs(2, 3);
+  /// var captured = verify(
+  ///     mock.methodWithPositionalArgs(captureAny, captureAny)).captured;
+  /// print(captured); // Prints "[1, null, 2, 3]"
+  ///
+  /// mock.methodWithTwoNamedArgs(1, y: 42, z: 43);
+  /// mock.methodWithTwoNamedArgs(1, y: 44, z: 45);
+  /// var captured = verify(
+  ///     mock.methodWithTwoNamedArgs(any,
+  ///         y: captureAnyNamed('y'), z: captureAnyNamed('z'))).captured;
+  /// print(captured); // Prints "[42, 43, 44, 45]"
+  /// ```
+  ///
+  /// Named arguments are listed in the order they are captured in, not the
+  /// order in which they were passed.
+  List<dynamic> get captured => _captured;
+
+  @Deprecated(
+      'captured should be considered final - assigning this field may be '
+      'removed as early as Mockito 5.0.0')
+  set captured(List<dynamic> captured) => _captured = captured;
+
+  /// The number of calls matched in this verification.
   int callCount;
 
-  // Whether the test API mismatch has been checked.
   bool _testApiMismatchHasBeenChecked = false;
 
-  VerificationResult(this.callCount) {
-    captured = List<dynamic>.from(_capturedArgs, growable: false);
+  @Deprecated(
+      'User-constructed VerificationResult is deprecated; this constructor may '
+      'be deleted as early as Mockito 5.0.0')
+  VerificationResult(int callCount) : this._(callCount);
+
+  VerificationResult._(this.callCount)
+      : _captured = List<dynamic>.from(_capturedArgs, growable: false) {
     _capturedArgs.clear();
   }
 
@@ -772,7 +824,16 @@ class VerificationResult {
     }
   }
 
-  void called(matcher) {
+  /// Assert that the number of calls matches [matcher].
+  ///
+  /// Examples:
+  ///
+  /// * `verify(mock.m()).called(1)` asserts that `m()` is called exactly once.
+  /// * `verify(mock.m()).called(greaterThan(2))` asserts that `m()` is called
+  ///   more than two times.
+  ///
+  /// To assert that a method was called zero times, use [verifyNever].
+  void called(dynamic matcher) {
     if (!_testApiMismatchHasBeenChecked) {
       // Only execute the check below once. `Invoker.current` may look like a
       // cheap getter, but it involves Zones and casting.
@@ -847,7 +908,7 @@ Verification _makeVerify(bool never) {
     _verificationInProgress = false;
     if (_verifyCalls.length == 1) {
       _VerifyCall verifyCall = _verifyCalls.removeLast();
-      var result = VerificationResult(verifyCall.matchingInvocations.length);
+      var result = VerificationResult._(verifyCall.matchingInvocations.length);
       verifyCall._checkWith(never);
       return result;
     } else {

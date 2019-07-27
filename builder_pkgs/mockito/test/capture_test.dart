@@ -117,7 +117,7 @@ void main() {
           equals([42, 43, 44, 45]));
     });
 
-    test('should capture invocations with named arguments', () {
+    test('should capture invocations with out-of-order named arguments', () {
       mock.methodWithTwoNamedArgs(1, z: 42, y: 43);
       mock.methodWithTwoNamedArgs(1, y: 44, z: 45);
       expect(
