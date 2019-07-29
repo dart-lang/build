@@ -1,3 +1,7 @@
+## 3.0.7
+
+- Support the latest `package:build_config`.
+
 ## 3.0.6
 
 - Handle symlink creation failures and link to dev mode docs for windows.
