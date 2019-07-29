@@ -1,3 +1,8 @@
+## 1.0.2
+
+- Fix kernel concat ordering to be topological instead of reverse
+  topological.
+
 ## 1.0.1
 
 - Allow analyzer version 0.37.0.

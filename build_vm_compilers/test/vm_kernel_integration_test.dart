@@ -82,6 +82,6 @@ void printAsync() async {
 
       expect(runResult.exitCode, 0, reason: runResult.stderr as String);
       expect(runResult.stdout, 'before\nrunning\nafter\n');
-    }, skip: 'https://github.com/dart-lang/sdk/issues/34852');
+    });
   });
 }
