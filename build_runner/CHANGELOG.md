@@ -1,3 +1,8 @@
+## 1.6.5
+
+- Require `package:build_config` `">=0.4.1 <0.4.2"`. Use new API that improves
+  error information when a build configuration file is malformed.
+
 ## 1.6.4
 
 - Fix an issue where warning logs on startup were accidentally upgraded to
@@ -5,8 +10,8 @@
 
 ## 1.6.3
 
-- Pre-emptively re-snapshot when the `build_runner` or `build_daemon`
-  packages are updated.
+- Preemptively re-snapshot when the `build_runner` or `build_daemon` packages
+  are updated.
 
 ## 1.6.2
 
