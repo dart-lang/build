@@ -1,3 +1,7 @@
+## 2.4.1
+
+- Require non-empty output from kernel build steps.
+
 ## 2.4.0
 
 - Allow overriding the target name passed to the kernel worker.

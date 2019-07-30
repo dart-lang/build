@@ -1,5 +1,5 @@
 name: build_modules
-version: 2.4.0
+version: 2.4.1
 description: Builders for Dart modules
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/build_modules
@@ -22,7 +22,7 @@ dependencies:
   meta: ^1.1.0
   path: ^1.4.2
   pedantic: ^1.0.0
-  scratch_space: ^0.0.3
+  scratch_space: ^0.0.4
 
 dev_dependencies:
   build_runner: ^1.0.0
@@ -34,3 +34,7 @@ dev_dependencies:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
+
+dependency_overrides:
+  scratch_space:
+    path: ../scratch_space
