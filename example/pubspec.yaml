@@ -29,3 +29,5 @@ dependency_overrides:
     path: ../build_web_compilers
   build_config:
     path: ../build_config
+  scratch_space:
+    path: ../scratch_space

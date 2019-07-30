@@ -1,3 +1,8 @@
+## 0.0.4
+
+- Add `requireContent` argument to `copyOutput` to allow asserting that a file
+  produced in a scratch space is not empty.
+
 ## 0.0.3+2
 
 - Declare support for `package:build` version `1.x.x`.

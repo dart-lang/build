@@ -51,9 +51,14 @@ class ScratchSpace {
   /// This must be called for all outputs which you want to be included as a
   /// part of the actual build (any other outputs will be deleted with the
   /// tmp dir and won't be available to other [Builder]s).
-  Future copyOutput(AssetId id, AssetWriter writer) async {
+  ///
+  /// If [requireContent] is true and the file is empty an
+  /// [EmptyOutputException] is thrown.
+  Future copyOutput(AssetId id, AssetWriter writer,
+      {bool requireContent = false}) async {
     var file = fileFor(id);
     var bytes = await _descriptorPool.withResource(file.readAsBytes);
+    if (requireContent && bytes.isEmpty) throw EmptyOutputException(id);
     await writer.writeAsBytes(id, bytes);
   }
 
@@ -137,3 +142,10 @@ String canonicalUriFor(AssetId id) {
 /// The path relative to the root of the environment for a given [id].
 String _relativePathFor(AssetId id) =>
     canonicalUriFor(id).replaceFirst('package:', 'packages/');
+
+/// An indication that an output file which was expect to be non-empty had no
+/// content.
+class EmptyOutputException implements Exception {
+  final AssetId id;
+  EmptyOutputException(this.id);
+}

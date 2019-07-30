@@ -186,7 +186,7 @@ Future<void> _createKernel(
     }
 
     // Copy the output back using the buildStep.
-    await scratchSpace.copyOutput(outputId, buildStep);
+    await scratchSpace.copyOutput(outputId, buildStep, requireContent: true);
   } finally {
     await packagesFile.parent.delete(recursive: true);
   }
