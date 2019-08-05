@@ -32,16 +32,16 @@ class Cat {
 // Mock class
 class MockCat extends Mock implements Cat {}
 
-// mock creation
+// Create mock object.
 var cat = MockCat();
 ```
 
 ## Let's verify some behaviour!
 
 ```dart
-//using mock object
+// Interact with the mock object.
 cat.sound();
-//verify interaction
+// Verify the interaction.
 verify(cat.sound());
 ```
 
@@ -51,29 +51,29 @@ verify whatever interaction you are interested in.
 ## How about some stubbing?
 
 ```dart
-// Unstubbed methods return null:
+// Unstubbed methods return null.
 expect(cat.sound(), nullValue);
 
-// Stubbing - before execution:
+// Stub a mock method before interacting.
 when(cat.sound()).thenReturn("Purr");
 expect(cat.sound(), "Purr");
 
-// You can call it again:
+// You can call it again.
 expect(cat.sound(), "Purr");
 
-// Let's change the stub:
+// Let's change the stub.
 when(cat.sound()).thenReturn("Meow");
 expect(cat.sound(), "Meow");
 
-// You can stub getters:
+// You can stub getters.
 when(cat.lives).thenReturn(9);
 expect(cat.lives, 9);
 
-// You can stub a method to throw:
+// You can stub a method to throw.
 when(cat.lives).thenThrow(RangeError('Boo'));
 expect(() => cat.lives, throwsRangeError);
 
-// We can calculate a response at call time:
+// We can calculate a response at call time.
 var responses = ["Purr", "Meow"];
 when(cat.sound()).thenAnswer(() => responses.removeAt(0));
 expect(cat.sound(), "Purr");
@@ -138,28 +138,28 @@ In most cases, both plain arguments and argument matchers can be passed into
 mock methods:
 
 ```dart
-// You can use plain arguments themselves:
+// You can use plain arguments themselves
 when(cat.eatFood("fish")).thenReturn(true);
 
-// ... including collections:
+// ... including collections
 when(cat.walk(["roof","tree"])).thenReturn(2);
 
-// ... or matchers:
-when(cat.eatFood(argThat(startsWith("dry"))).thenReturn(false);
+// ... or matchers
+when(cat.eatFood(argThat(startsWith("dry")))).thenReturn(false);
 
-// ... or mix aguments with matchers:
-when(cat.eatFood(argThat(startsWith("dry")), true).thenReturn(true);
+// ... or mix aguments with matchers
+when(cat.eatFood(argThat(startsWith("dry")), hungry: true)).thenReturn(true);
 expect(cat.eatFood("fish"), isTrue);
 expect(cat.walk(["roof","tree"]), equals(2));
 expect(cat.eatFood("dry food"), isFalse);
 expect(cat.eatFood("dry food", hungry: true), isTrue);
 
-// You can also verify using an argument matcher:
+// You can also verify using an argument matcher.
 verify(cat.eatFood("fish"));
 verify(cat.walk(["roof","tree"]));
 verify(cat.eatFood(argThat(contains("food"))));
 
-// You can verify setters:
+// You can verify setters.
 cat.lives = 9;
 verify(cat.lives=9);
 ```
@@ -173,11 +173,11 @@ However, note that `null` cannot be used as an argument adjacent to ArgMatcher
 arguments, nor as an un-wrapped value passed as a named argument. For example:
 
 ```dart
-verify(cat.hunt("back yard", null)); // OK: no ArgMatchers.
+verify(cat.hunt("backyard", null)); // OK: no arg matchers.
 verify(cat.hunt(argThat(contains("yard")), null)); // BAD: adjacent null.
-verify(cat.hunt(argThat(contains("yard")), argThat(isNull))); // OK: wrapped in ArgMatcher.
-verify(cat.eatFood("Milk", hungry: null)); // BAD: null as named argument.
-verify(cat.eatFood("Milk", hungry: argThat(isNull))); // BAD: null as named argument.
+verify(cat.hunt(argThat(contains("yard")), argThat(isNull))); // OK: wrapped in an arg matcher.
+verify(cat.eatFood("Milk", hungry: null)); // BAD: null as a named argument.
+verify(cat.eatFood("Milk", hungry: argThat(isNull))); // BAD: null as a named argument.
 ```
 
 ## Named arguments
@@ -190,16 +190,16 @@ provide a mechanism to answer "Is this element being used as a named element?"
 
 ```dart
 // GOOD: argument matchers include their names.
-when(cat.eatFood(any, hungry: anyNamed('hungry'))).thenReturn(0);
-when(cat.eatFood(any, hungry: argThat(isNotNull, named: 'hungry'))).thenReturn(0);
-when(cat.eatFood(any, hungry: captureAnyNamed('hungry'))).thenReturn(0);
-when(cat.eatFood(any, hungry: captureArgThat(isNotNull, named: 'hungry'))).thenReturn(0);
+when(cat.eatFood(any, hungry: anyNamed('hungry'))).thenReturn(true);
+when(cat.eatFood(any, hungry: argThat(isNotNull, named: 'hungry'))).thenReturn(false);
+when(cat.eatFood(any, hungry: captureAnyNamed('hungry'))).thenReturn(false);
+when(cat.eatFood(any, hungry: captureThat(isNotNull, named: 'hungry'))).thenReturn(true);
 
 // BAD: argument matchers do not include their names.
-when(cat.eatFood(any, hungry: any)).thenReturn(0);
-when(cat.eatFood(any, hungry: argThat(isNotNull))).thenReturn(0);
-when(cat.eatFood(any, hungry: captureAny)).thenReturn(0);
-when(cat.eatFood(any, hungry: captureArgThat(isNotNull))).thenReturn(0);
+when(cat.eatFood(any, hungry: any)).thenReturn(true);
+when(cat.eatFood(any, hungry: argThat(isNotNull))).thenReturn(false);
+when(cat.eatFood(any, hungry: captureAny)).thenReturn(false);
+when(cat.eatFood(any, hungry: captureThat(isNotNull))).thenReturn(true);
 ```
 
 ## Verifying exact number of invocations / at least x / never
@@ -208,13 +208,13 @@ when(cat.eatFood(any, hungry: captureArgThat(isNotNull))).thenReturn(0);
 cat.sound();
 cat.sound();
 
-// Exact number of invocations:
+// Exact number of invocations
 verify(cat.sound()).called(2);
 
-// Or using matcher:
+// Or using matcher
 verify(cat.sound()).called(greaterThan(1));
 
-// Or never called:
+// Or never called
 verifyNever(cat.eatFood(any));
 ```
 
@@ -237,7 +237,7 @@ one-by-one but only those that you are interested in testing in order.
 ## Making sure interaction(s) never happened on mock
 
 ```dart
-  verifyZeroInteractions(cat);
+verifyZeroInteractions(cat);
 ```
 
 ## Finding redundant invocations
@@ -251,16 +251,16 @@ verifyNoMoreInteractions(cat);
 ## Capturing arguments for further assertions
 
 ```dart
-// Simple capture:
+// Simple capture
 cat.eatFood("Fish");
 expect(verify(cat.eatFood(captureAny)).captured.single, "Fish");
 
-// Capture multiple calls:
+// Capture multiple calls
 cat.eatFood("Milk");
 cat.eatFood("Fish");
 expect(verify(cat.eatFood(captureAny)).captured, ["Milk", "Fish"]);
 
-// Conditional capture:
+// Conditional capture
 cat.eatFood("Milk");
 cat.eatFood("Fish");
 expect(verify(cat.eatFood(captureThat(startsWith("F")))).captured, ["Fish"]);
@@ -269,13 +269,13 @@ expect(verify(cat.eatFood(captureThat(startsWith("F")))).captured, ["Fish"]);
 ## Waiting for an interaction
 
 ```dart
-// Waiting for a call:
+// Waiting for a call.
 cat.eatFood("Fish");
-await untilCalled(cat.chew()); //completes when cat.chew() is called
+await untilCalled(cat.chew()); // Completes when cat.chew() is called.
 
-// Waiting for a call that has already happened:
+// Waiting for a call that has already happened.
 cat.eatFood("Fish");
-await untilCalled(cat.eatFood(any)); //will complete immediately
+await untilCalled(cat.eatFood(any)); // Completes immediately.
 ```
 
 ## Resetting mocks
