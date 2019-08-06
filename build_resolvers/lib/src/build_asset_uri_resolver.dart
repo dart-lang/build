@@ -149,5 +149,5 @@ class _AssetState {
         directives = const [];
   _AssetState.changed(this.path, this.directives) : isAssetUpdate = true;
   _AssetState.unchanged(this.path, this.directives) : isAssetUpdate = false;
-  _AssetState.newAsset(this.path, this.directives) : isAssetUpdate = false;
+  _AssetState.newAsset(this.path, this.directives) : isAssetUpdate = true;
 }

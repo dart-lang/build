@@ -1,3 +1,7 @@
+## 1.0.7
+
+- Fix an issue where `AnalysisDriver.changeFile` was not called for new files.
+
 ## 1.0.6
 
 - Allow analyzer version 0.37.0.
