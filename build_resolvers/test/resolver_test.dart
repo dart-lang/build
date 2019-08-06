@@ -102,7 +102,7 @@ void main() {
         var lib = await resolver.libraryFor(entryPoint);
         var clazz = lib.getType('A');
         expect(clazz, isNotNull);
-        expect(clazz.interfaces.length, 1);
+        expect(clazz.interfaces, hasLength(1));
         expect(clazz.interfaces.first.name, 'B');
       }, resolvers: resolvers);
     }, skip: 'Failing due to https://github.com/dart-lang/build/issues/2389');
