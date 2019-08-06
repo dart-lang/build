@@ -74,6 +74,39 @@ void main() {
       }, resolvers: AnalyzerResolvers());
     });
 
+    test('handles discovering previously missing parts', () async {
+      var resolvers = AnalyzerResolvers();
+      await resolveSources({
+        'a|web/main.dart': '''
+              part 'main.g.dart';
+
+              class A implements B {}
+              ''',
+      }, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        var clazz = lib.getType('A');
+        expect(clazz, isNotNull);
+        expect(clazz.interfaces, isEmpty);
+      }, resolvers: resolvers);
+
+      await resolveSources({
+        'a|web/main.dart': '''
+              part 'main.g.dart';
+
+              class A implements B {}
+              ''',
+        'a|web/main.g.dart': '''
+              class B {}
+              ''',
+      }, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        var clazz = lib.getType('A');
+        expect(clazz, isNotNull);
+        expect(clazz.interfaces.length, 1);
+        expect(clazz.interfaces.first.name, 'B');
+      }, resolvers: resolvers);
+    }, skip: 'Failing due to https://github.com/dart-lang/build/issues/2389');
+
     test('should list all libraries', () {
       return resolveSources({
         'a|web/main.dart': '''
