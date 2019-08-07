@@ -1,3 +1,8 @@
+## 3.0.8
+
+- Fix --log-performance crash on windows by ensuring we use valid
+  windows directory names.
+
 ## 3.0.7
 
 - Support the latest `package:build_config`.
