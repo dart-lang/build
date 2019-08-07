@@ -277,8 +277,12 @@ class _SingleBuild {
       // Log performance information if requested
       if (_logPerformanceDir != null) {
         assert(result.performance != null);
-        var logPath =
-            p.join(_logPerformanceDir, DateTime.now().toIso8601String());
+        var now = DateTime.now();
+        var logPath = p.join(
+            _logPerformanceDir,
+            '${_fourDigits(now.year)}-${_twoDigits(now.month)}-'
+            '${_twoDigits(now.day)}_${_twoDigits(now.hour)}-'
+            '${_twoDigits(now.minute)}-${_twoDigits(now.second)}');
         await logTimedAsync(_logger, 'Writing performance log to $logPath', () {
           var performanceLogId = AssetId(_packageGraph.root.name, logPath);
           var serialized = jsonEncode(result.performance);
@@ -854,4 +858,16 @@ String _actionLoggerName(
       ? primaryInput.path
       : primaryInput.uri;
   return '${phase.builderLabel} on $asset';
+}
+
+String _twoDigits(int n) {
+  if (n >= 10) return '$n';
+  return '0n';
+}
+
+String _fourDigits(int n) {
+  if (n >= 1000) return '$n';
+  if (n >= 100) return '0$n';
+  if (n >= 10) return '00$n';
+  return '000$n';
 }
