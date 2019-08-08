@@ -72,6 +72,7 @@ main() {
     options ??= [];
     buildMode ??= BuildMode.Auto;
     var args = ['run', 'build_runner', 'daemon', ...options];
+    printOnFailure('Starting client in: ${workspace()}');
     return BuildDaemonClient.connect(
         workspace(),
         [
@@ -90,6 +91,7 @@ main() {
       '--$buildModeFlag=$buildMode',
       ...options
     ];
+    printOnFailure('Starting daemon in: ${workspace()}');
     daemonProcess = await startPub('a', 'run', args: args);
     stdoutLines = daemonProcess.stdout
         .transform(Utf8Decoder())
