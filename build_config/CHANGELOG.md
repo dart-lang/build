@@ -1,6 +1,7 @@
 ## 0.4.1+1
 
 - Support the latest release of `package:json_annotation`.
+- Increased the lower bound for the Dart SDK to `>=2.3.0`.
 
 ## 0.4.1
 
