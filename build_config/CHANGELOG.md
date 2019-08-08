@@ -1,3 +1,7 @@
+## 0.4.2
+
+- Support the latest release of `package:json_annotation`.
+
 ## 0.4.1
 
 - Added optional `configYamlPath` parameter to `BuildConfig.parse`. When

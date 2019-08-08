@@ -9,7 +9,7 @@ import 'package:checked_yaml/checked_yaml.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
-import 'package:pubspec_parse/pubspec_parse.dart' hide ParsedYamlException;
+import 'package:pubspec_parse/pubspec_parse.dart';
 
 import 'build_target.dart';
 import 'builder_definition.dart';
