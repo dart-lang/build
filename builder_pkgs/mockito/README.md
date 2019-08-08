@@ -282,9 +282,9 @@ await untilCalled(cat.eatFood(any)); // Completes immediately.
 
 You can also write a simple fake class that implements a real class, by
 extending [Fake]. Fake allows your subclass to satisfy the implementation of
-your real class, without overriding each method with a fake; the Fake class
-implements the default behavior of throwing [UnimplementedError] (which you can
-override in your fake class):
+your real class, without overriding the methods that aren't used in your test;
+the Fake class implements the default behavior of throwing [UnimplementedError]
+(which you can override in your fake class):
 
 ```dart
 // Fake class
