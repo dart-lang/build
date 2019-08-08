@@ -77,6 +77,7 @@ main() {
         [
           pubBinary.toString(),
         ]..addAll(args),
+        logHandler: (log) => printOnFailure('Client: ${log.message}'),
         buildMode: buildMode);
   }
 
@@ -94,7 +95,7 @@ main() {
         .transform(Utf8Decoder())
         .transform(LineSplitter())
         .map((line) {
-      printOnFailure(line);
+      printOnFailure('Daemon: $line');
       return line;
     }).asBroadcastStream();
     expect(await stdoutLines.contains(readyToConnectLog), isTrue);
