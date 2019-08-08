@@ -1,4 +1,4 @@
-## 0.4.2
+## 0.4.1+1
 
 - Support the latest release of `package:json_annotation`.
 
