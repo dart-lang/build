@@ -1,3 +1,7 @@
+## 3.0.9
+
+- Support the latest release of `package:json_annotation`.
+
 ## 3.0.8
 
 - Fix --log-performance crash on windows by ensuring we use valid
