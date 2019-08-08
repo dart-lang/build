@@ -15,6 +15,15 @@ class Cat {
 // Mock class
 class MockCat extends Mock implements Cat {}
 
+// Fake class
+class FakeCat extends Fake implements Cat {
+  @override
+  bool eatFood(String food, {bool hungry}) {
+    print('Fake eat $food');
+    return true;
+  }
+}
+
 void main() {
   Cat cat;
 
@@ -168,5 +177,13 @@ void main() {
     // Waiting for a call that has already happened.
     cat.eatFood("Fish");
     await untilCalled(cat.eatFood(any)); // This completes immediately.
+  });
+
+  test("Fake class", () {
+    // Create a new fake Cat at runtime.
+    var cat = new FakeCat();
+
+    cat.eatFood("Milk"); // Prints 'Fake eat Milk'.
+    expect(() => cat.sleep(), throwsUnimplementedError);
   });
 }

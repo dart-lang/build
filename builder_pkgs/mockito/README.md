@@ -278,6 +278,36 @@ cat.eatFood("Fish");
 await untilCalled(cat.eatFood(any)); // Completes immediately.
 ```
 
+## Writing a fake
+
+You can also write a simple fake class that implements a real class, by
+extending [Fake]. Fake allows your subclass to satisfy the implementation of
+your real class, without overriding each method with a fake; the Fake class
+implements the default behavior of throwing [UnimplementedError] (which you can
+override in your fake class):
+
+```dart
+// Fake class
+class FakeCat extends Fake implements Cat {
+  @override
+  bool eatFood(String food, {bool hungry}) {
+    print('Fake eat $food');
+    return true;
+  }
+}
+
+void main() {
+  // Create a new fake Cat at runtime.
+  var cat = new FakeCat();
+
+  cat.eatFood("Milk"); // Prints 'Fake eat Milk'.
+  cat.sleep(); // Throws.
+}
+```
+
+[Fake]: https://pub.dev/documentation/mockito/latest/mockito/Fake-class.html
+[UnimplementedError]: https://api.dartlang.org/stable/dart-core/UnimplementedError-class.html
+
 ## Resetting mocks
 
 ```dart
