@@ -324,6 +324,31 @@ logInvocations([catOne, catTwo]);
 throwOnMissingStub(cat);
 ```
 
+## Best Practices
+
+Testing with real objects is preferred over testing with mocks - if you can
+construct a real instance for your tests, you should! If there are no calls to
+`verify` in your test, it is a strong signal that you may not need mocks at all,
+though it's also OK to use a `Mock` like a stub. When it's not possible to use
+the real object, a tested implementation of a fake is the next best thing - it's
+more likely to behave similarly to the real class than responses stubbed out in
+tests. Finally an object which `extends Fake` using manually overridden methods
+is preferred over an object which `extends Mock` used as either a stub or a
+mock.
+
+A class which `extends Mock` should _never_ stub out it's own responses with
+`when` in it's constructor or anywhere else. Stubbed responses should be defined
+in the tests where they are used. For responses controlled outside of the test
+use `@override` methods for either the entire interface, or with `extends Fake`
+to skip some parts of the interface.
+
+Similarly, a class which `extends Mock` should _never_ have any `@override`
+methods. These can't be stubbed by tests and can't be tracked and verified by
+Mockito. A mix of test defined stubbed responses and mock defined overrides will
+lead to confusion. It is OK to define _static_ utilities on a class which
+`extends Mock` if it helps with code structure.
+
+
 ## How it works
 
 The basics of the `Mock` class are nothing special: It uses `noSuchMethod` to
