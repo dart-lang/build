@@ -1,3 +1,6 @@
+## 2.2.0
+- Make `librariesPath` configurable in `DevCompilerBuilder`.
+
 ## 2.1.5
 
 - Add pre-emptive support for an upcoming breaking change in ddc

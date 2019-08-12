@@ -39,13 +39,21 @@ class DevCompilerBuilder implements Builder {
   /// directory, which contains the platform kernel files.
   final String platformSdk;
 
+  /// The absolute path to the libraries file for the current platform.
+  ///
+  /// If not provided, defaults to "lib/libraries.json" in the sdk directory.
+  final String librariesPath;
+
   DevCompilerBuilder(
       {bool useIncrementalCompiler,
       @required this.platform,
       this.sdkKernelPath,
+      String librariesPath,
       String platformSdk})
       : useIncrementalCompiler = useIncrementalCompiler ?? true,
         platformSdk = platformSdk ?? sdkDir,
+        librariesPath = librariesPath ??
+            p.join(platformSdk ?? sdkDir, 'lib', 'libraries.json'),
         buildExtensions = {
           moduleExtension(platform): [
             jsModuleExtension,
@@ -77,7 +85,7 @@ class DevCompilerBuilder implements Builder {
 
     try {
       await _createDevCompilerModule(module, buildStep, useIncrementalCompiler,
-          platformSdk, sdkKernelPath);
+          platformSdk, sdkKernelPath, librariesPath);
     } on DartDevcCompilationException catch (e) {
       await handleError(e);
     } on MissingModulesException catch (e) {
@@ -87,8 +95,13 @@ class DevCompilerBuilder implements Builder {
 }
 
 /// Compile [module] with the dev compiler.
-Future<void> _createDevCompilerModule(Module module, BuildStep buildStep,
-    bool useIncrementalCompiler, String dartSdk, String sdkKernelPath,
+Future<void> _createDevCompilerModule(
+    Module module,
+    BuildStep buildStep,
+    bool useIncrementalCompiler,
+    String dartSdk,
+    String sdkKernelPath,
+    String librariesPath,
     {bool debugMode = true}) async {
   var transitiveDeps = await buildStep.trackStage('CollectTransitiveDeps',
       () => module.computeTransitiveDependencies(buildStep));
@@ -122,6 +135,7 @@ Future<void> _createDevCompilerModule(Module module, BuildStep buildStep,
       '--multi-root=.',
       '--track-widget-creation',
       '--inline-source-map',
+      '--libraries-file=${p.toUri(librariesPath)}',
       if (useIncrementalCompiler) ...[
         '--reuse-compiler-result',
         '--use-incremental-compiler',
