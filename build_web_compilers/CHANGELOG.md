@@ -1,5 +1,5 @@
-
 ## 2.2.0
+
 - Make `librariesPath` configurable in `DevCompilerBuilder`.
 
 ## 2.1.5
