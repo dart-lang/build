@@ -96,10 +96,16 @@ main() {
     stdoutLines = daemonProcess.stdout
         .transform(Utf8Decoder())
         .transform(LineSplitter())
-        .map((line) {
-      printOnFailure('Daemon: $line');
-      return line;
-    }).asBroadcastStream();
+        .asBroadcastStream()
+          ..listen((line) {
+            printOnFailure('Daemon: $line');
+          });
+    daemonProcess.stderr
+        .transform(Utf8Decoder())
+        .transform(LineSplitter())
+        .listen((line) {
+      printOnFailure('Daemon Error: $line');
+    });
     expect(await stdoutLines.contains(readyToConnectLog), isTrue);
   }
 
