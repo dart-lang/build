@@ -406,7 +406,9 @@ class _SingleBuild {
     if (node is GeneratedAssetNode) {
       if (node.phaseNumber >= phaseNum) return false;
       return doAfter(
-          _ensureAssetIsBuilt(node), (_) => node.wasOutput && !node.isFailure);
+          // ignore: void_checks
+          _ensureAssetIsBuilt(node),
+          (_) => node.wasOutput && !node.isFailure);
     }
     return node.isReadable && node.isValidInput;
   }
@@ -679,8 +681,10 @@ class _SingleBuild {
       _assetGraph.add(globNode);
     }
 
-    return toFuture(
-        doAfter(_updateGlobNodeIfNecessary(globNode), (_) => globNode));
+    return toFuture(doAfter(
+        // ignore: void_checks
+        _updateGlobNodeIfNecessary(globNode),
+        (_) => globNode));
   }
 
   FutureOr<void> _updateGlobNodeIfNecessary(GlobAssetNode globNode) {
