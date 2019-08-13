@@ -1,3 +1,11 @@
+## 2.2.1
+
+- Revert of bad 2.2.0 release (had a bad min sdk).
+
+## 2.2.0
+
+- Make `librariesPath` configurable in `DevCompilerBuilder`.
+
 ## 2.1.5
 
 - Add pre-emptive support for an upcoming breaking change in ddc
