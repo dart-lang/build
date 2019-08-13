@@ -81,13 +81,13 @@ main() {
     options ??= [];
     buildMode ??= BuildMode.Auto;
     var args = ['run', 'build_runner', 'daemon', ...options];
-    print('Starting client in: ${workspace()}');
+    printOnFailure('Starting client in: ${workspace()}');
     return BuildDaemonClient.connect(
         workspace(),
         [
           pubBinary.toString(),
         ]..addAll(args),
-        logHandler: (log) => print('Client: ${log.message}'),
+        logHandler: (log) => printOnFailure('Client: ${log.message}'),
         buildMode: buildMode);
   }
 
@@ -100,20 +100,20 @@ main() {
       '--$buildModeFlag=$buildMode',
       ...options
     ];
-    print('Starting daemon in: ${workspace()}');
+    printOnFailure('Starting daemon in: ${workspace()}');
     daemonProcess = await startPub('a', 'run', args: args);
     stdoutLines = daemonProcess.stdout
         .transform(Utf8Decoder())
         .transform(LineSplitter())
         .asBroadcastStream()
           ..listen((line) {
-            print('Daemon: $line');
+            printOnFailure('Daemon: $line');
           });
     daemonProcess.stderr
         .transform(Utf8Decoder())
         .transform(LineSplitter())
         .listen((line) {
-      print('Daemon Error: $line');
+      printOnFailure('Daemon Error: $line');
     });
     expect(await stdoutLines.contains(readyToConnectLog), isTrue);
   }
