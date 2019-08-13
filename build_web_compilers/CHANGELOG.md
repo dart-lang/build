@@ -1,3 +1,11 @@
+## 2.2.2
+
+- Re-publish 2.2.0 with proper minimum sdk constraint of >=2.4.0.
+
+## 2.2.1
+
+- Revert of bad 2.2.0 release (had a bad min sdk).
+
 ## 2.2.0
 
 - Make `librariesPath` configurable in `DevCompilerBuilder`.
