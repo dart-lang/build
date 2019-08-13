@@ -176,8 +176,8 @@ main() {
         ..registerBuildTarget(webTarget)
         ..startBuild();
       clients.add(client);
-      var buildResults = await client.buildResults.first;
-      expect(buildResults.results.first.status, BuildStatus.started);
+      await client.buildResults
+          .firstWhere((b) => b.results.first.status == BuildStatus.succeeded);
     });
 
     test('auto build mode automatically builds on file change', () async {
@@ -196,8 +196,8 @@ main() {
                 }'''),
         ])
       ]).create();
-      var buildResults = await client.buildResults.first;
-      expect(buildResults.results.first.status, BuildStatus.started);
+      await client.buildResults
+          .firstWhere((b) => b.results.first.status == BuildStatus.succeeded);
     });
 
     test('manual build mode does not automatically build on file change',
@@ -239,7 +239,7 @@ main() {
         ..startBuild();
       clients.add(client);
       await client.buildResults
-          .firstWhere((b) => b.results.first.status != BuildStatus.started);
+          .firstWhere((b) => b.results.first.status == BuildStatus.succeeded);
       expect(outputDir.existsSync(), isTrue);
     });
 
@@ -254,8 +254,8 @@ main() {
         ..registerBuildTarget(webTarget)
         ..startBuild();
       clients.add(client);
-      var buildResults = await client.buildResults.first;
-      expect(buildResults.results.first.status, BuildStatus.started);
+      await client.buildResults
+          .firstWhere((b) => b.results.first.status == BuildStatus.succeeded);
     });
 
     test('can complete builds', () async {
@@ -264,9 +264,8 @@ main() {
         ..registerBuildTarget(webTarget)
         ..startBuild();
       clients.add(client);
-      var buildResults = await client.buildResults
-          .firstWhere((b) => b.results.first.status != BuildStatus.started);
-      expect(buildResults.results.first.status, BuildStatus.succeeded);
+      await client.buildResults
+          .firstWhere((b) => b.results.first.status == BuildStatus.succeeded);
     });
 
     test('allows multiple clients to connect and build', () async {
