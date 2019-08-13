@@ -62,8 +62,12 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
   // See https://github.com/dart-lang/sdk/issues/27262 for the root issue
   // which will allow us to not rely on the naming schemes that dartdevc uses
   // internally, but instead specify our own.
-  var appModuleScope = toJSIdentifier(
+  var oldAppModuleScope = toJSIdentifier(
       _context.withoutExtension(_context.basename(buildStep.inputId.path)));
+
+  // Like above but with a package-relative entrypoint.
+  var appModuleScope =
+      pathToJSIdentifier(_context.withoutExtension(buildStep.inputId.path));
 
   // Map from module name to module path for custom modules.
   var modulePaths = SplayTreeMap.of(
@@ -101,7 +105,8 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
                 from: _p.url.dirname(bootstrapId.path))))
         ..write(_requireJsConfig)
         ..write(_appBootstrap(
-            bootstrapModuleName, appModuleName, appModuleScope, appModuleUri));
+            bootstrapModuleName, appModuleName, appModuleScope, appModuleUri,
+            oldModuleScope: oldAppModuleScope));
 
   await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
 
@@ -158,14 +163,15 @@ Future<List<AssetId>> _ensureTransitiveJsModules(
 ///
 /// Also performs other necessary initialization.
 String _appBootstrap(String bootstrapModuleName, String moduleName,
-        String moduleScope, String appModuleUri) =>
+        String moduleScope, String appModuleUri,
+        {String oldModuleScope}) =>
     '''
 define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_sdk) {
   dart_sdk.dart.setStartAsyncSynchronously(true);
   dart_sdk._isolate_helper.startRootIsolate(() => {}, []);
   $_initializeTools
   $_mainExtensionMarker
-  app.$moduleScope.main();
+  (app.$moduleScope || app.$oldModuleScope).main();
   var bootstrap = {
       hot\$onChildUpdate: function(childName, child) {
         // Special handling for the multi-root scheme uris. We need to strip

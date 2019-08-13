@@ -49,7 +49,7 @@ main() {
           // Requires the top level module and dart sdk.
           contains('define("index.dart.bootstrap", ["web/index", "dart_sdk"]'),
           // Calls main on the top level module.
-          contains('index.main()'),
+          contains('(app.web__index || app.index).main()'),
           isNot(contains('lib/a')),
         ])),
       };
@@ -82,7 +82,7 @@ main() {
           // And `b.dart` is the application, but its module is `web/a`.
           contains('define("b.dart.bootstrap", ["web/a", "dart_sdk"]'),
           // Calls main on the `b.dart` library, not the `a.dart` library.
-          contains('app.b.main()'),
+          contains('(app.web__b || app.b).main()'),
         ])),
         'a|web/b.digests': isNotEmpty,
         'a|web/b.dart.js': isNotEmpty,

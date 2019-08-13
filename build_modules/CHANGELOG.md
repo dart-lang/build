@@ -1,3 +1,7 @@
+## 2.4.2
+
+- Support the latest release of `package:json_annotation`.
+
 ## 2.4.1
 
 - Require non-empty output from kernel build steps.

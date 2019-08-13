@@ -1,3 +1,12 @@
+## 2.2.0
+
+- Make `librariesPath` configurable in `DevCompilerBuilder`.
+
+## 2.1.5
+
+- Add pre-emptive support for an upcoming breaking change in ddc
+  around entrypoint naming.
+
 ## 2.1.4
 
 - Allow analyzer version 0.37.0.

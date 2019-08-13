@@ -1,3 +1,8 @@
+# NOTICE: THESE HOOKS WILL SOON BE DEPRECATED/DELETED
+
+If this breaks your use case please comment on this issue
+https://github.com/dart-lang/webdev/issues/434
+
 ## What is Hot Module Reloading?
 
 This is a feature that allows you to speed up development process by reducing time between writing

@@ -1,5 +1,5 @@
 name: build_modules
-version: 2.4.1
+version: 2.4.2
 description: Builders for Dart modules
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/build_modules
@@ -17,7 +17,7 @@ dependencies:
   crypto: ^2.0.0
   glob: ^1.0.0
   graphs: ^0.2.0
-  json_annotation: ">=1.2.0 <3.0.0"
+  json_annotation: ">=1.2.0 <4.0.0"
   logging: ^0.11.2
   meta: ^1.1.0
   path: ^1.4.2

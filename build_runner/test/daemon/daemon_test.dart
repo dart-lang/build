@@ -26,6 +26,7 @@ main() {
   String workspace() => p.join(d.sandbox, 'a');
   final webTarget = DefaultBuildTarget((b) => b..target = 'web');
   final testTarget = DefaultBuildTarget((b) => b..target = 'test');
+  var clients = <BuildDaemonClient>[];
   setUp(() async {
     await d.dir('a', [
       await pubspec(
@@ -62,6 +63,10 @@ main() {
   });
 
   tearDown(() async {
+    for (var client in clients) {
+      await client.close();
+    }
+    clients.clear();
     stdoutLines = null;
     daemonProcess?.kill(ProcessSignal.sigkill);
     await daemonProcess?.exitCode;
@@ -72,11 +77,13 @@ main() {
     options ??= [];
     buildMode ??= BuildMode.Auto;
     var args = ['run', 'build_runner', 'daemon', ...options];
+    printOnFailure('Starting client in: ${workspace()}');
     return BuildDaemonClient.connect(
         workspace(),
         [
           pubBinary.toString(),
         ]..addAll(args),
+        logHandler: (log) => printOnFailure('Client: ${log.message}'),
         buildMode: buildMode);
   }
 
@@ -89,14 +96,21 @@ main() {
       '--$buildModeFlag=$buildMode',
       ...options
     ];
+    printOnFailure('Starting daemon in: ${workspace()}');
     daemonProcess = await startPub('a', 'run', args: args);
     stdoutLines = daemonProcess.stdout
         .transform(Utf8Decoder())
         .transform(LineSplitter())
-        .map((line) {
-      printOnFailure(line);
-      return line;
-    }).asBroadcastStream();
+        .asBroadcastStream()
+          ..listen((line) {
+            printOnFailure('Daemon: $line');
+          });
+    daemonProcess.stderr
+        .transform(Utf8Decoder())
+        .transform(LineSplitter())
+        .listen((line) {
+      printOnFailure('Daemon Error: $line');
+    });
     expect(await stdoutLines.contains(readyToConnectLog), isTrue);
   }
 
@@ -128,6 +142,7 @@ main() {
       var client = await _startClient(options: ['--skip-build-script-check'])
         ..registerBuildTarget(webTarget)
         ..startBuild();
+      clients.add(client);
       ShutdownNotification notification;
       // We need to add a listener otherwise we won't get the event.
       unawaited(client.shutdownNotifications.first
@@ -156,6 +171,7 @@ main() {
       var client = await _startClient(buildMode: BuildMode.Manual)
         ..registerBuildTarget(webTarget)
         ..startBuild();
+      clients.add(client);
       var buildResults = await client.buildResults.first;
       expect(buildResults.results.first.status, BuildStatus.started);
     });
@@ -164,6 +180,7 @@ main() {
       await _startDaemon();
       var client = await _startClient()
         ..registerBuildTarget(webTarget);
+      clients.add(client);
       // Let the target request propagate.
       await Future.delayed(Duration(seconds: 2));
       // Trigger a file change.
@@ -184,6 +201,7 @@ main() {
       await _startDaemon(buildMode: BuildMode.Manual);
       var client = await _startClient(buildMode: BuildMode.Manual)
         ..registerBuildTarget(webTarget);
+      clients.add(client);
       // Let the target request propagate.
       await Future.delayed(Duration(seconds: 2));
       // Trigger a file change.
@@ -215,6 +233,7 @@ main() {
             ..hoist = true
             ..useSymlinks = false).toBuilder()))
         ..startBuild();
+      clients.add(client);
       await client.buildResults
           .firstWhere((b) => b.results.first.status != BuildStatus.started);
       expect(outputDir.existsSync(), isTrue);
@@ -230,6 +249,7 @@ main() {
       var client = await _startClient()
         ..registerBuildTarget(webTarget)
         ..startBuild();
+      clients.add(client);
       var buildResults = await client.buildResults.first;
       expect(buildResults.results.first.status, BuildStatus.started);
     });
@@ -239,6 +259,7 @@ main() {
       var client = await _startClient()
         ..registerBuildTarget(webTarget)
         ..startBuild();
+      clients.add(client);
       var buildResults = await client.buildResults
           .firstWhere((b) => b.results.first.status != BuildStatus.started);
       expect(buildResults.results.first.status, BuildStatus.succeeded);
@@ -249,10 +270,12 @@ main() {
 
       var clientA = await _startClient();
       clientA.registerBuildTarget(webTarget);
+      clients.add(clientA);
 
       var clientB = await _startClient()
         ..registerBuildTarget(testTarget)
         ..startBuild();
+      clients.add(clientB);
 
       // Both clients should be notified.
       await clientA.buildResults.first;
