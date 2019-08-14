@@ -25,6 +25,7 @@ import 'package:build_runner_core/build_runner_core.dart'
 import 'package:build_runner_core/build_runner_core.dart' as core
     show BuildStatus;
 import 'package:build_runner_core/src/generate/build_impl.dart';
+import 'package:stream_transform/stream_transform.dart' show debounceBuffer;
 import 'package:watcher/watcher.dart';
 
 import 'change_providers.dart';
@@ -210,7 +211,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         .map((change) => [change]);
 
     var changeProvider = daemonOptions.buildMode == BuildMode.Auto
-        ? AutoChangeProvider(changes)
+        ? AutoChangeProvider(changes
+            .transform(debounceBuffer(buildOptions.debounceDelay))
+            .map((changeLists) => changeLists.expand((l) => l).toList()))
         : ManualChangeProvider(changes);
 
     return BuildRunnerDaemonBuilder._(
