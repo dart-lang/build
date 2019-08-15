@@ -10,7 +10,7 @@ import '../generate/phase.dart';
 /// Returns whether or not [id] should be built based upon [buildDirs],
 /// [phase], and optional [buildFilters].
 bool shouldBuildForDirs(AssetId id, List<String> buildDirs, BuildPhase phase,
-    {List<BuildFilter> buildFilters}) {
+    {Iterable<BuildFilter> buildFilters}) {
   // Always build non-hidden outputs, since they ship with the package.
   // Otherwise it is too easy to ship not up to date files on accident.
   if (!phase.hideOutput) return true;

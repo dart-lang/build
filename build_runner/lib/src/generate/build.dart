@@ -67,7 +67,8 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     bool verbose,
     bool isReleaseBuild,
     Map<String, Map<String, dynamic>> builderConfigOverrides,
-    String logPerformanceDir}) async {
+    String logPerformanceDir,
+    Iterable<BuildFilter> buildFilters}) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= PackageGraph.forThisPackage();
   var environment = OverrideableEnvironment(
@@ -92,6 +93,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     trackPerformance: trackPerformance,
     logPerformanceDir: logPerformanceDir,
     resolvers: resolvers,
+    buildFilters: buildFilters,
   );
   var terminator = Terminator(terminateEventStream);
   try {
@@ -152,7 +154,8 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         bool verbose,
         bool isReleaseBuild,
         Map<String, Map<String, dynamic>> builderConfigOverrides,
-        String logPerformanceDir}) =>
+        String logPerformanceDir,
+        Iterable<BuildFilter> buildFilters}) =>
     watch_impl.watch(
       builders,
       assumeTty: assumeTty,
@@ -176,4 +179,5 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
       builderConfigOverrides: builderConfigOverrides,
       isReleaseBuild: isReleaseBuild,
       logPerformanceDir: logPerformanceDir,
+      buildFilters: buildFilters,
     );

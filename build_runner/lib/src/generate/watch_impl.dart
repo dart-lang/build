@@ -51,6 +51,7 @@ Future<ServeHandler> watch(
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool isReleaseBuild,
   String logPerformanceDir,
+  Iterable<BuildFilter> buildFilters,
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= PackageGraph.forThisPackage();
@@ -77,6 +78,7 @@ Future<ServeHandler> watch(
     trackPerformance: trackPerformance,
     logPerformanceDir: logPerformanceDir,
     resolvers: resolvers,
+    buildFilters: buildFilters,
   );
   var terminator = Terminator(terminateEventStream);
 

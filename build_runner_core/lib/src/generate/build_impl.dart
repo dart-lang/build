@@ -61,7 +61,7 @@ class BuildImpl {
   final BuildScriptUpdates _buildScriptUpdates;
   BuildScriptUpdates get buildScriptUpdates => _buildScriptUpdates;
 
-  final List<BuildFilter> _buildFilters;
+  final Iterable<BuildFilter> _buildFilters;
   final List<BuildPhase> _buildPhases;
   final PackageGraph _packageGraph;
   final AssetReader _reader;
@@ -147,7 +147,7 @@ class BuildImpl {
 /// build.
 class _SingleBuild {
   final AssetGraph _assetGraph;
-  final List<BuildFilter> _buildFilters;
+  final Iterable<BuildFilter> _buildFilters;
   final List<BuildPhase> _buildPhases;
   final List<Pool> _buildPhasePool;
   final BuildEnvironment _environment;

@@ -73,7 +73,7 @@ class BuildFilter {
 class BuildOptions {
   // If non-empty, only required outputs matching one of the filters will
   // be built.
-  final List<BuildFilter> buildFilters;
+  final Iterable<BuildFilter> buildFilters;
   final bool deleteFilesByDefault;
   final bool enableLowResourcesMode;
   final StreamSubscription logListener;
@@ -110,7 +110,7 @@ class BuildOptions {
 
   static Future<BuildOptions> create(
     LogSubscription logSubscription, {
-    List<BuildFilter> buildFilters,
+    Iterable<BuildFilter> buildFilters,
     Duration debounceDelay,
     bool deleteFilesByDefault,
     bool enableLowResourcesMode,

@@ -88,7 +88,11 @@ abstract class BuildRunnerCommand extends Command<int> {
       ..addFlag(symlinkOption,
           defaultsTo: symlinksDefault,
           negatable: true,
-          help: 'Symlink files in the output directories, instead of copying.');
+          help: 'Symlink files in the output directories, instead of copying.')
+      ..addMultiOption(buildFilterOption,
+          help: 'An explicit filter of files to build. Relative paths and '
+              '`package:` uris are supported, including glob syntax for paths '
+              'portions (but not package names).');
   }
 
   /// Must be called inside [run] so that [argResults] is non-null.

@@ -1,3 +1,8 @@
+## 1.7.0-dev
+
+- Added a `--build-filter` option which can be used to build explicit files
+  matching a glob pattern.
+
 ## 1.6.6
 
 - Added watch event debouncing to the `daemon` command to line up with the

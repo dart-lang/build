@@ -43,6 +43,7 @@ class WatchCommand extends BuildRunnerCommand {
       isReleaseBuild: options.isReleaseBuild,
       logPerformanceDir: options.logPerformanceDir,
       directoryWatcherFactory: defaultDirectoryWatcherFactory,
+      buildFilters: options.buildFilters,
     );
     if (handler == null) return ExitCode.config.code;
 

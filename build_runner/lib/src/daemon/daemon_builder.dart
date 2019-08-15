@@ -187,6 +187,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       enableLowResourcesMode: daemonOptions.enableLowResourcesMode,
       trackPerformance: daemonOptions.trackPerformance,
       logPerformanceDir: daemonOptions.logPerformanceDir,
+      buildFilters: daemonOptions.buildFilters,
     );
 
     var builder = await BuildImpl.create(buildOptions, daemonEnvironment,
