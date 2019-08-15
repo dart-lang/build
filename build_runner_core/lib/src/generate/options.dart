@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_resolvers/build_resolvers.dart';
+import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
@@ -54,21 +55,37 @@ class LogSubscription {
   final StreamSubscription<LogRecord> logListener;
 }
 
+/// Describes a set files that should be built.
+class BuildFilter {
+  /// The package the files must live under in order to match.
+  final String _package;
+
+  /// A glob for files under [_package] that must match.
+  final Glob _glob;
+
+  BuildFilter(this._package, this._glob);
+
+  /// Returns whether or not [id] mathes this filter.
+  bool matches(AssetId id) => id.package == _package && _glob.matches(id.path);
+}
+
 /// Manages setting up consistent defaults for all options and build modes.
 class BuildOptions {
-  // Build mode options.
-  final StreamSubscription logListener;
-  final PackageGraph packageGraph;
-
+  // If non-empty, only required outputs matching one of the filters will
+  // be built.
+  final List<BuildFilter> buildFilters;
   final bool deleteFilesByDefault;
   final bool enableLowResourcesMode;
-  final bool trackPerformance;
-  final bool verbose;
-  final TargetGraph targetGraph;
-  final Resolvers resolvers;
+  final StreamSubscription logListener;
 
   /// If present, the path to a directory to write performance logs to.
   final String logPerformanceDir;
+
+  final PackageGraph packageGraph;
+  final Resolvers resolvers;
+  final TargetGraph targetGraph;
+  final bool trackPerformance;
+  final bool verbose;
 
   // Watch mode options.
   Duration debounceDelay;
@@ -80,6 +97,7 @@ class BuildOptions {
     @required this.debounceDelay,
     @required this.deleteFilesByDefault,
     @required this.enableLowResourcesMode,
+    @required this.buildFilters,
     @required this.logListener,
     @required this.packageGraph,
     @required this.skipBuildScriptCheck,
@@ -92,6 +110,7 @@ class BuildOptions {
 
   static Future<BuildOptions> create(
     LogSubscription logSubscription, {
+    List<BuildFilter> buildFilters,
     Duration debounceDelay,
     bool deleteFilesByDefault,
     bool enableLowResourcesMode,
@@ -114,6 +133,7 @@ class BuildOptions {
     }
 
     /// Set up other defaults.
+    buildFilters ??= [];
     debounceDelay ??= const Duration(milliseconds: 250);
     deleteFilesByDefault ??= false;
     skipBuildScriptCheck ??= false;
@@ -132,6 +152,7 @@ class BuildOptions {
     resolvers ??= AnalyzerResolvers();
 
     return BuildOptions._(
+      buildFilters: buildFilters,
       debounceDelay: debounceDelay,
       deleteFilesByDefault: deleteFilesByDefault,
       enableLowResourcesMode: enableLowResourcesMode,

@@ -1,3 +1,8 @@
+## 3.1.0-dev
+
+- Add `buildFilters` to `BuildOptions` which allows you to filter which
+  outputs will be generated (even non-optional ones).
+
 ## 3.0.9
 
 - Support the latest release of `package:json_annotation`.

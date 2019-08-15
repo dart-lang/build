@@ -61,6 +61,7 @@ class BuildImpl {
   final BuildScriptUpdates _buildScriptUpdates;
   BuildScriptUpdates get buildScriptUpdates => _buildScriptUpdates;
 
+  final List<BuildFilter> _buildFilters;
   final List<BuildPhase> _buildPhases;
   final PackageGraph _packageGraph;
   final AssetReader _reader;
@@ -76,7 +77,8 @@ class BuildImpl {
 
   BuildImpl._(BuildDefinition buildDefinition, BuildOptions options,
       this._buildPhases, this._finalizedReader)
-      : _buildScriptUpdates = buildDefinition.buildScriptUpdates,
+      : _buildFilters = options.buildFilters,
+        _buildScriptUpdates = buildDefinition.buildScriptUpdates,
         _packageGraph = buildDefinition.packageGraph,
         _reader = options.enableLowResourcesMode
             ? buildDefinition.reader
@@ -145,6 +147,7 @@ class BuildImpl {
 /// build.
 class _SingleBuild {
   final AssetGraph _assetGraph;
+  final List<BuildFilter> _buildFilters;
   final List<BuildPhase> _buildPhases;
   final List<Pool> _buildPhasePool;
   final BuildEnvironment _environment;
@@ -171,6 +174,7 @@ class _SingleBuild {
 
   _SingleBuild(BuildImpl buildImpl, Set<BuildDirectory> buildDirs)
       : _assetGraph = buildImpl.assetGraph,
+        _buildFilters = buildImpl._buildFilters,
         _buildPhases = buildImpl._buildPhases,
         _buildPhasePool = List(buildImpl._buildPhases.length),
         _environment = buildImpl._environment,
@@ -346,7 +350,8 @@ class _SingleBuild {
     var phase = _buildPhases[phaseNumber];
     await Future.wait(
         _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
-      if (!shouldBuildForDirs(node.id, _buildPaths(_buildDirs), phase)) {
+      if (!shouldBuildForDirs(node.id, _buildPaths(_buildDirs), phase,
+          buildFilters: _buildFilters)) {
         return;
       }
 
