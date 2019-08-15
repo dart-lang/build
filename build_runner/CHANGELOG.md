@@ -1,3 +1,9 @@
+## 1.6.6
+
+- Added watch event debouncing to the `daemon` command to line up with the
+  `watch` command. This makes things work more nicely with swap files as well
+  as "save all" type scenarios (you will only get a single build most times). 
+
 ## 1.6.5
 
 - Require `package:build_config` `">=0.4.1 <0.4.2"`. Use new API that improves
