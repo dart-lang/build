@@ -1,3 +1,7 @@
+## 1.1.6
+
+- Allow analyzer version 0.38.0.
+
 ## 1.1.5
 
 - Allow analyzer version 0.37.0.

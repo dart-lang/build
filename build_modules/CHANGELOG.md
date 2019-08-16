@@ -1,3 +1,7 @@
+## 2.4.3
+
+- Allow analyzer version 0.38.0.
+
 ## 2.4.2
 
 - Support the latest release of `package:json_annotation`.
