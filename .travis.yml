@@ -26,14 +26,9 @@ jobs:
       env: PKGS="build build_daemon build_resolvers"
       script: ./tool/travis.sh dartanalyzer_1
     - stage: analyze_and_format
-      name: "SDK: 2.3.0; PKGS: build_config, build_modules; TASKS: `dartanalyzer --fatal-warnings .`"
+      name: "SDK: 2.3.0; PKGS: build_config, build_modules, build_runner_core; TASKS: `dartanalyzer --fatal-warnings .`"
       dart: "2.3.0"
-      env: PKGS="build_config build_modules"
-      script: ./tool/travis.sh dartanalyzer_1
-    - stage: analyze_and_format
-      name: "SDK: 2.2.2; PKG: build_runner_core; TASKS: `dartanalyzer --fatal-warnings .`"
-      dart: "2.2.2"
-      env: PKGS="build_runner_core"
+      env: PKGS="build_config build_modules build_runner_core"
       script: ./tool/travis.sh dartanalyzer_1
     - stage: analyze_and_format
       name: "SDK: 2.2.0; PKG: build_test; TASKS: `dartanalyzer --fatal-warnings .`"
@@ -91,8 +86,8 @@ jobs:
       env: PKGS="build_runner"
       script: ./tool/travis.sh test_07
     - stage: unit_test
-      name: "SDK: 2.2.2; PKG: build_runner_core; TASKS: `pub run test`"
-      dart: "2.2.2"
+      name: "SDK: 2.3.0; PKG: build_runner_core; TASKS: `pub run test`"
+      dart: "2.3.0"
       env: PKGS="build_runner_core"
       script: ./tool/travis.sh test_06
     - stage: unit_test
