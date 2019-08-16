@@ -57,16 +57,39 @@ class LogSubscription {
 
 /// Describes a set files that should be built.
 class BuildFilter {
-  /// The package the files must live under in order to match.
-  final String _package;
+  /// The package name glob that files must live under in order to match.
+  final Glob _package;
 
   /// A glob for files under [_package] that must match.
   final Glob _glob;
 
   BuildFilter(this._package, this._glob);
 
+  /// Builds a [BuildFilter] from a command line argument.
+  ///
+  /// Both relative paths and package: uris are supported. Relative
+  /// paths are treated as relative to the [rootPackage].
+  ///
+  /// Globs are supported in package names and paths.
+  factory BuildFilter.fromArg(String arg, String rootPackage) {
+    var uri = Uri.parse(arg);
+    if (uri.scheme == 'package') {
+      var package = uri.pathSegments.first;
+      var glob = Glob(p.joinAll([
+        'lib',
+        ...uri.pathSegments.skip(1),
+      ]));
+      return BuildFilter(Glob(package), glob);
+    } else if (uri.scheme.isEmpty) {
+      return BuildFilter(Glob(rootPackage), Glob(uri.path));
+    } else {
+      throw FormatException('Unsupported scheme ${uri.scheme}', uri);
+    }
+  }
+
   /// Returns whether or not [id] mathes this filter.
-  bool matches(AssetId id) => id.package == _package && _glob.matches(id.path);
+  bool matches(AssetId id) =>
+      _package.matches(id.package) && _glob.matches(id.path);
 }
 
 /// Manages setting up consistent defaults for all options and build modes.

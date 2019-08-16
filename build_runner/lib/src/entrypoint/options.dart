@@ -423,32 +423,20 @@ Set<BuildDirectory> _parseBuildDirs(ArgResults argResults) {
 /// Returns build filters parsed from [buildFilterOption] arguments.
 ///
 /// These support `package:` uri syntax as well as regular path syntax,
-/// with glob support.
+/// with glob support for both package names and paths.
 List<BuildFilter> _parseBuildFilters(
     ArgResults argResults, String rootPackage) {
   var filterArgs = argResults[buildFilterOption] as List<String>;
   if (filterArgs?.isNotEmpty != true) return null;
-  var filters = <BuildFilter>[];
-  for (var arg in filterArgs) {
-    try {
-      var uri = Uri.parse(arg);
-      if (uri.scheme == 'package') {
-        var package = uri.pathSegments.first;
-        var glob = Glob(p.joinAll(uri.pathSegments.skip(1)));
-        filters.add(BuildFilter(package, glob));
-      } else if (uri.scheme.isEmpty) {
-        filters.add(BuildFilter(rootPackage, Glob(uri.path)));
-      } else {
-        throw FormatException('Unsupported scheme ${uri.scheme}');
-      }
-    } on FormatException catch (e) {
-      throw ArgumentError.value(
-          arg,
-          '--build-filter',
-          'Not a valid build filter, must be either a relative path or '
-              '`package:` uri (glob patterns are allowed in paths, but not '
-              'package names).\n\n$e');
-    }
+  try {
+    return [
+      for (var arg in filterArgs) BuildFilter.fromArg(arg, rootPackage),
+    ];
+  } on FormatException catch (e) {
+    throw ArgumentError.value(
+        e.source,
+        '--build-filter',
+        'Not a valid build filter, must be either a relative path or '
+            '`package:` uri.\n\n$e');
   }
-  return filters;
 }
