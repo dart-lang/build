@@ -78,7 +78,6 @@ Future<ServeHandler> watch(
     trackPerformance: trackPerformance,
     logPerformanceDir: logPerformanceDir,
     resolvers: resolvers,
-    buildFilters: buildFilters,
   );
   var terminator = Terminator(terminateEventStream);
 
@@ -93,6 +92,7 @@ Future<ServeHandler> watch(
       buildDirs
           .any((target) => target?.outputLocation?.path?.isNotEmpty ?? false),
       buildDirs,
+      buildFilters,
       isReleaseMode: isReleaseBuild ?? false);
 
   unawaited(watch.buildResults.drain().then((_) async {
@@ -121,9 +121,19 @@ WatchImpl _runWatch(
         String configKey,
         bool willCreateOutputDirs,
         Set<BuildDirectory> buildDirs,
+        Iterable<BuildFilter> buildFilters,
         {bool isReleaseMode = false}) =>
-    WatchImpl(options, environment, builders, builderConfigOverrides, until,
-        directoryWatcherFactory, configKey, willCreateOutputDirs, buildDirs,
+    WatchImpl(
+        options,
+        environment,
+        builders,
+        builderConfigOverrides,
+        until,
+        directoryWatcherFactory,
+        configKey,
+        willCreateOutputDirs,
+        buildDirs,
+        buildFilters,
         isReleaseMode: isReleaseMode);
 
 class WatchImpl implements BuildState {
@@ -156,6 +166,9 @@ class WatchImpl implements BuildState {
   /// The directories to build upon file changes and where to output them.
   final Set<BuildDirectory> _buildDirs;
 
+  /// Filters for specific files to build.
+  final Iterable<BuildFilter> _buildFilters;
+
   @override
   Future<BuildResult> currentBuild;
 
@@ -175,6 +188,7 @@ class WatchImpl implements BuildState {
       this._configKey,
       this._willCreateOutputDirs,
       this._buildDirs,
+      this._buildFilters,
       {bool isReleaseMode = false})
       : _debounceDelay = options.debounceDelay,
         packageGraph = options.packageGraph {
@@ -220,7 +234,8 @@ class WatchImpl implements BuildState {
               failureType: FailureType.buildScriptChanged);
         }
       }
-      return _build.run(mergedChanges, buildDirs: _buildDirs);
+      return _build.run(mergedChanges,
+          buildDirs: _buildDirs, buildFilters: _buildFilters);
     }
 
     var terminate = Future.any([until, _terminateCompleter.future]).then((_) {

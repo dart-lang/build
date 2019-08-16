@@ -61,7 +61,6 @@ class BuildImpl {
   final BuildScriptUpdates _buildScriptUpdates;
   BuildScriptUpdates get buildScriptUpdates => _buildScriptUpdates;
 
-  final Iterable<BuildFilter> _buildFilters;
   final List<BuildPhase> _buildPhases;
   final PackageGraph _packageGraph;
   final AssetReader _reader;
@@ -77,8 +76,7 @@ class BuildImpl {
 
   BuildImpl._(BuildDefinition buildDefinition, BuildOptions options,
       this._buildPhases, this._finalizedReader)
-      : _buildFilters = options.buildFilters,
-        _buildScriptUpdates = buildDefinition.buildScriptUpdates,
+      : _buildScriptUpdates = buildDefinition.buildScriptUpdates,
         _packageGraph = buildDefinition.packageGraph,
         _reader = options.enableLowResourcesMode
             ? buildDefinition.reader
@@ -93,10 +91,11 @@ class BuildImpl {
         _logPerformanceDir = options.logPerformanceDir;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates,
-      {Set<BuildDirectory> buildDirs}) {
+      {Set<BuildDirectory> buildDirs, Iterable<BuildFilter> buildFilters}) {
     buildDirs ??= Set<BuildDirectory>();
+    buildFilters ??= [];
     finalizedReader.reset(_buildPaths(buildDirs));
-    return _SingleBuild(this, buildDirs).run(updates)
+    return _SingleBuild(this, buildDirs, buildFilters).run(updates)
       ..whenComplete(_resolvers.reset);
   }
 
@@ -172,9 +171,10 @@ class _SingleBuild {
   /// Can't be final since it needs access to [pendingActions].
   HungActionsHeartbeat hungActionsHeartbeat;
 
-  _SingleBuild(BuildImpl buildImpl, Set<BuildDirectory> buildDirs)
+  _SingleBuild(BuildImpl buildImpl, Set<BuildDirectory> buildDirs,
+      Iterable<BuildFilter> buildFilters)
       : _assetGraph = buildImpl.assetGraph,
-        _buildFilters = buildImpl._buildFilters,
+        _buildFilters = buildFilters,
         _buildPhases = buildImpl._buildPhases,
         _buildPhasePool = List(buildImpl._buildPhases.length),
         _environment = buildImpl._environment,

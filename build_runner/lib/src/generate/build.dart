@@ -93,7 +93,6 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     trackPerformance: trackPerformance,
     logPerformanceDir: logPerformanceDir,
     resolvers: resolvers,
-    buildFilters: buildFilters,
   );
   var terminator = Terminator(terminateEventStream);
   try {
@@ -104,7 +103,8 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       builderConfigOverrides,
       isReleaseBuild: isReleaseBuild ?? false,
     );
-    var result = await build.run({}, buildDirs: buildDirs);
+    var result =
+        await build.run({}, buildDirs: buildDirs, buildFilters: buildFilters);
     await build?.beforeExit();
     return result;
   } finally {

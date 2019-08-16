@@ -94,9 +94,6 @@ class BuildFilter {
 
 /// Manages setting up consistent defaults for all options and build modes.
 class BuildOptions {
-  // If non-empty, only required outputs matching one of the filters will
-  // be built.
-  final Iterable<BuildFilter> buildFilters;
   final bool deleteFilesByDefault;
   final bool enableLowResourcesMode;
   final StreamSubscription logListener;
@@ -120,7 +117,6 @@ class BuildOptions {
     @required this.debounceDelay,
     @required this.deleteFilesByDefault,
     @required this.enableLowResourcesMode,
-    @required this.buildFilters,
     @required this.logListener,
     @required this.packageGraph,
     @required this.skipBuildScriptCheck,
@@ -133,7 +129,6 @@ class BuildOptions {
 
   static Future<BuildOptions> create(
     LogSubscription logSubscription, {
-    Iterable<BuildFilter> buildFilters,
     Duration debounceDelay,
     bool deleteFilesByDefault,
     bool enableLowResourcesMode,
@@ -156,7 +151,6 @@ class BuildOptions {
     }
 
     /// Set up other defaults.
-    buildFilters ??= [];
     debounceDelay ??= const Duration(milliseconds: 250);
     deleteFilesByDefault ??= false;
     skipBuildScriptCheck ??= false;
@@ -175,7 +169,6 @@ class BuildOptions {
     resolvers ??= AnalyzerResolvers();
 
     return BuildOptions._(
-      buildFilters: buildFilters,
       debounceDelay: debounceDelay,
       deleteFilesByDefault: deleteFilesByDefault,
       enableLowResourcesMode: enableLowResourcesMode,

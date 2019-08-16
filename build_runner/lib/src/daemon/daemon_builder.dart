@@ -82,21 +82,27 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     _logMessage(Level.INFO, 'About to build ${targetNames.toList()}...');
     _signalStart(targetNames);
     var results = <BuildResult>[];
-    var buildDirs = defaultTargets.map((target) {
-      OutputLocation outputLocation;
-      if (target.outputLocation != null) {
-        outputLocation = OutputLocation(target.outputLocation.output,
-            useSymlinks: target.outputLocation.useSymlinks,
-            hoist: target.outputLocation.hoist);
+    var buildDirs = <BuildDirectory>{};
+    var buildFilters = <BuildFilter>[];
+    for (var target in defaultTargets) {
+      if (_looksLikeBuildFilter(target.target)) {
+        buildFilters.add(BuildFilter.fromArg(
+            target.target, _buildOptions.packageGraph.root.name));
+      } else {
+        OutputLocation outputLocation;
+        if (target.outputLocation != null) {
+          outputLocation = OutputLocation(target.outputLocation.output,
+              useSymlinks: target.outputLocation.useSymlinks,
+              hoist: target.outputLocation.hoist);
+        }
+        buildDirs
+            .add(BuildDirectory(target.target, outputLocation: outputLocation));
       }
-      return BuildDirectory(
-        target.target,
-        outputLocation: outputLocation,
-      );
-    }).toSet();
+    }
     try {
       var mergedChanges = collectChanges([changes]);
-      var result = await _builder.run(mergedChanges, buildDirs: buildDirs);
+      var result = await _builder.run(mergedChanges,
+          buildDirs: buildDirs, buildFilters: buildFilters);
       for (var target in targets) {
         if (result.status == core.BuildStatus.success) {
           // TODO(grouma) - Can we notify if a target was cached?
@@ -187,7 +193,6 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       enableLowResourcesMode: daemonOptions.enableLowResourcesMode,
       trackPerformance: daemonOptions.trackPerformance,
       logPerformanceDir: daemonOptions.logPerformanceDir,
-      buildFilters: daemonOptions.buildFilters,
     );
 
     var builder = await BuildImpl.create(buildOptions, daemonEnvironment,
@@ -221,3 +226,10 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         builder, buildOptions, outputStreamController, changeProvider);
   }
 }
+
+/// Basic hueristic for discovering if a target is a build directory or a
+/// build filter.
+///
+/// Generally filters will contain either a * or a /.
+bool _looksLikeBuildFilter(String target) =>
+    target.contains('/') || target.contains('*');
