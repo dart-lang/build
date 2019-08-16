@@ -19,10 +19,9 @@ bool shouldBuildForDirs(AssetId id, List<String> buildDirs, BuildPhase phase,
   if (id.path.startsWith('lib/')) return true;
 
   // Apply the build filters, if present.
-  if (buildFilters?.isNotEmpty == true) {
-    if (!buildFilters.any((f) => f.matches(id))) {
-      return false;
-    }
+  if ((buildFilters?.isNotEmpty ?? false) &&
+      !buildFilters.any((f) => f.matches(id))) {
+    return false;
   }
 
   // Empty `buildDirs` implies building everything.

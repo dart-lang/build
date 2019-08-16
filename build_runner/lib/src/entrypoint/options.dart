@@ -10,7 +10,6 @@ import 'package:args/command_runner.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_daemon/constants.dart';
 import 'package:build_runner_core/build_runner_core.dart';
-import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
@@ -427,7 +426,7 @@ Set<BuildDirectory> _parseBuildDirs(ArgResults argResults) {
 List<BuildFilter> _parseBuildFilters(
     ArgResults argResults, String rootPackage) {
   var filterArgs = argResults[buildFilterOption] as List<String>;
-  if (filterArgs?.isNotEmpty != true) return null;
+  if (filterArgs?.isNotEmpty ?? false) return null;
   try {
     return [
       for (var arg in filterArgs) BuildFilter.fromArg(arg, rootPackage),
