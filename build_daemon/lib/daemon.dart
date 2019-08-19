@@ -129,10 +129,8 @@ RandomAccessFile _tryGetLock(String workingDirectory) {
     var lock = File(lockFilePath(workingDirectory))
         .openSync(mode: FileMode.write)
           ..lockSync();
-    print('GOT LOCK IN $workingDirectory');
     return lock;
   } on FileSystemException {
-    print('DID NOT GET LOCK IN $workingDirectory');
     return null;
   }
 }
