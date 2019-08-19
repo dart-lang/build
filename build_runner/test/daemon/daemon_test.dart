@@ -28,19 +28,6 @@ main() {
   final testTarget = DefaultBuildTarget((b) => b..target = 'test');
   var clients = <BuildDaemonClient>[];
 
-  // This needs to be run before setUp since a call to `d.create` will add
-  // a sandbox teardown. We want to ensure the client / daemon exit before
-  // we start mucking with the file system.
-  tearDown(() async {
-    for (var client in clients) {
-      await client.close();
-    }
-    clients.clear();
-    stdoutLines = null;
-    daemonProcess?.kill(ProcessSignal.sigkill);
-    await daemonProcess?.exitCode;
-  });
-
   setUp(() async {
     await d.dir('a', [
       await pubspec(
@@ -74,6 +61,16 @@ main() {
     ]).create();
 
     await pubGet('a', offline: false);
+  });
+
+  tearDown(() async {
+    for (var client in clients) {
+      await client.close();
+    }
+    clients.clear();
+    stdoutLines = null;
+    daemonProcess?.kill(ProcessSignal.sigkill);
+    await daemonProcess?.exitCode;
   });
 
   Future<BuildDaemonClient> _startClient(
