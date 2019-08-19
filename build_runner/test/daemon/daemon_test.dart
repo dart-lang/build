@@ -112,6 +112,9 @@ main() {
         .listen((line) {
       printOnFailure('Daemon Error: $line');
     });
+    unawaited(daemonProcess.exitCode.then((exitCode) {
+      printOnFailure('GOT EXIT CODE: $exitCode');
+    }));
     expect(await stdoutLines.contains(readyToConnectLog), isTrue);
   }
 
