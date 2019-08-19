@@ -106,7 +106,8 @@ $logEndMarker'''));
             message: 'Build script updated. Shutting down the Build Daemon.',
             failureType: 75);
       }));
-      await daemon.start(requestedOptions, builder, builder.changeProvider);
+      await daemon.start(requestedOptions, builder, builder.changeProvider,
+          timeout: Duration(seconds: 60));
       stdout.writeln(readyToConnectLog);
       await logSub.cancel();
       await daemon.onDone.whenComplete(() async {

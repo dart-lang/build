@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @Tags(['integration'])
-@Skip('Flaky tests https://github.com/dart-lang/build/issues/2413')
 
 import 'dart:async';
 import 'dart:convert';
@@ -28,6 +27,7 @@ main() {
   final webTarget = DefaultBuildTarget((b) => b..target = 'web');
   final testTarget = DefaultBuildTarget((b) => b..target = 'test');
   var clients = <BuildDaemonClient>[];
+
   setUp(() async {
     await d.dir('a', [
       await pubspec(
@@ -112,6 +112,9 @@ main() {
         .listen((line) {
       printOnFailure('Daemon Error: $line');
     });
+    unawaited(daemonProcess.exitCode.then((exitCode) {
+      printOnFailure('GOT EXIT CODE: $exitCode');
+    }));
     expect(await stdoutLines.contains(readyToConnectLog), isTrue);
   }
 
@@ -173,8 +176,8 @@ main() {
         ..registerBuildTarget(webTarget)
         ..startBuild();
       clients.add(client);
-      var buildResults = await client.buildResults.first;
-      expect(buildResults.results.first.status, BuildStatus.started);
+      expect(client.buildResults,
+          emitsThrough((b) => b.results.first.status == BuildStatus.succeeded));
     });
 
     test('auto build mode automatically builds on file change', () async {
@@ -193,8 +196,8 @@ main() {
                 }'''),
         ])
       ]).create();
-      var buildResults = await client.buildResults.first;
-      expect(buildResults.results.first.status, BuildStatus.started);
+      expect(client.buildResults,
+          emitsThrough((b) => b.results.first.status == BuildStatus.succeeded));
     });
 
     test('manual build mode does not automatically build on file change',
@@ -236,7 +239,7 @@ main() {
         ..startBuild();
       clients.add(client);
       await client.buildResults
-          .firstWhere((b) => b.results.first.status != BuildStatus.started);
+          .firstWhere((b) => b.results.first.status == BuildStatus.succeeded);
       expect(outputDir.existsSync(), isTrue);
     });
 
@@ -251,8 +254,11 @@ main() {
         ..registerBuildTarget(webTarget)
         ..startBuild();
       clients.add(client);
-      var buildResults = await client.buildResults.first;
-      expect(buildResults.results.first.status, BuildStatus.started);
+      expect(client.buildResults,
+          emitsThrough((b) => b.results.first.status == BuildStatus.started));
+      // Wait for the build to finish before exiting to prevent flakiness.
+      expect(client.buildResults,
+          emitsThrough((b) => b.results.first.status == BuildStatus.succeeded));
     });
 
     test('can complete builds', () async {
@@ -261,9 +267,8 @@ main() {
         ..registerBuildTarget(webTarget)
         ..startBuild();
       clients.add(client);
-      var buildResults = await client.buildResults
-          .firstWhere((b) => b.results.first.status != BuildStatus.started);
-      expect(buildResults.results.first.status, BuildStatus.succeeded);
+      expect(client.buildResults,
+          emitsThrough((b) => b.results.first.status == BuildStatus.succeeded));
     });
 
     test('allows multiple clients to connect and build', () async {
