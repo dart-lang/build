@@ -1,3 +1,7 @@
+## 0.9.4+4
+
+* Allow `pkg:analyzer` version `0.38.x`.
+
 ## 0.9.4+3
 
 * Allow `pkg:analyzer` version `0.37.x`.
