@@ -1,8 +1,12 @@
+## 1.6.7
+
+- Set the `charset` to `utf-8` for Dart content returned by the `AssetHandler`.
+
 ## 1.6.6
 
 - Added watch event debouncing to the `daemon` command to line up with the
   `watch` command. This makes things work more nicely with swap files as well
-  as "save all" type scenarios (you will only get a single build most times). 
+  as "save all" type scenarios (you will only get a single build most times).
 
 ## 1.6.5
 
