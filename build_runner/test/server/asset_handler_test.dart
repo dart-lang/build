@@ -63,6 +63,14 @@ void main() {
     expect(await response.readAsString(), 'content');
   });
 
+  test('properly sets charset for dart content', () async {
+    _addAsset('b|lib/b.dart', 'content');
+    var response = await handler.handle(
+        Request('GET', Uri.parse('http://server.com/packages/b/b.dart')),
+        rootDir: 'web');
+    expect(response.headers['content-type'], contains('charset=utf-8'));
+  });
+
   test('can read from dependencies nested under top-level dir', () async {
     _addAsset('b|lib/b.dart', 'content');
     var response = await handler.handle(

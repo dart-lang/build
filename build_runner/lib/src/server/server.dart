@@ -350,8 +350,10 @@ class AssetHandler {
     }
 
     var etag = base64.encode((await _reader.digest(assetId)).bytes);
+    var contentType = _typeResolver.lookup(assetId.path);
+    if (contentType == 'text/x-dart') contentType += '; charset=utf-8';
     var headers = {
-      HttpHeaders.contentTypeHeader: _typeResolver.lookup(assetId.path),
+      HttpHeaders.contentTypeHeader: contentType,
       HttpHeaders.etagHeader: etag,
       // We always want this revalidated, which requires specifying both
       // max-age=0 and must-revalidate.
