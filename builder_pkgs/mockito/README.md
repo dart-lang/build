@@ -12,7 +12,8 @@ import 'package:mockito/mockito.dart';
 class Cat {
   String sound() => "Meow";
   bool eatFood(String food, {bool hungry}) => true;
-  int walk(List<String> places);
+  Future<void> chew() async => print("Chewing...");
+  int walk(List<String> places) => 7;
   void sleep() {}
   void hunt(String place, String prey) {}
   int lives = 9;
@@ -287,7 +288,7 @@ class FakeCat extends Fake implements Cat {
 
 void main() {
   // Create a new fake Cat at runtime.
-  var cat = new FakeCat();
+  var cat = FakeCat();
 
   cat.eatFood("Milk"); // Prints 'Fake eat Milk'.
   cat.sleep(); // Throws.

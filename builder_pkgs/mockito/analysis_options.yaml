@@ -5,6 +5,7 @@ analyzer:
     implicit-dynamic: false
   errors:
     # These are for 2.5.0-dev.2.0 and after
+    implicit_dynamic_function: ignore
     implicit_dynamic_list_literal: ignore
     implicit_dynamic_map_literal: ignore
     implicit_dynamic_parameter: ignore
