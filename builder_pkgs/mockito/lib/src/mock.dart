@@ -680,30 +680,33 @@ class ArgMatcher {
 }
 
 /// An argument matcher that matches any argument passed in "this" position.
-Null get any => _registerMatcher(anything, false);
+Null get any => _registerMatcher(anything, false, argumentMatcher: 'any');
 
 /// An argument matcher that matches any named argument passed in for the
 /// parameter named [named].
-Null anyNamed(String named) => _registerMatcher(anything, false, named: named);
+Null anyNamed(String named) => _registerMatcher(anything, false,
+    named: named, argumentMatcher: 'anyNamed');
 
 /// An argument matcher that matches any argument passed in "this" position, and
 /// captures the argument for later access with `captured`.
-Null get captureAny => _registerMatcher(anything, true);
+Null get captureAny =>
+    _registerMatcher(anything, true, argumentMatcher: 'captureAny');
 
 /// An argument matcher that matches any named argument passed in for the
 /// parameter named [named], and captures the argument for later access with
 /// `captured`.
-Null captureAnyNamed(String named) =>
-    _registerMatcher(anything, true, named: named);
+Null captureAnyNamed(String named) => _registerMatcher(anything, true,
+    named: named, argumentMatcher: 'captureAnyNamed');
 
 /// An argument matcher that matches an argument that matches [matcher].
 Null argThat(Matcher matcher, {String named}) =>
-    _registerMatcher(matcher, false, named: named);
+    _registerMatcher(matcher, false, named: named, argumentMatcher: 'argThat');
 
 /// An argument matcher that matches an argument that matches [matcher], and
 /// captures the argument for later access with `captured`.
 Null captureThat(Matcher matcher, {String named}) =>
-    _registerMatcher(matcher, true, named: named);
+    _registerMatcher(matcher, true,
+        named: named, argumentMatcher: 'captureThat');
 
 @Deprecated('ArgMatchers no longer need to be wrapped in Mockito 3.0')
 Null typed<T>(ArgMatcher matcher, {String named}) => null;
@@ -716,7 +719,27 @@ Null typedArgThat(Matcher matcher, {String named}) =>
 Null typedCaptureThat(Matcher matcher, {String named}) =>
     captureThat(matcher, named: named);
 
-Null _registerMatcher(Matcher matcher, bool capture, {String named}) {
+/// Registers [matcher] into the stored arguments collections.
+///
+/// Creates an [ArgMatcher] with [matcher] and [capture], then if [named] is
+/// non-null, stores that into the positional stored arguments list; otherwise
+/// stores it into the named stored arguments map, keyed on [named].
+/// [argumentMatcher] is the name of the public API used to register [matcher],
+/// for error messages.
+Null _registerMatcher(Matcher matcher, bool capture,
+    {String named, String argumentMatcher}) {
+  if (!_whenInProgress && !_untilCalledInProgress && !_verificationInProgress) {
+    // It is not meaningful to store argument matchers outside of stubbing
+    // (`when`), or verification (`verify` and `untilCalled`). Such argument
+    // matchers will be processed later erroneously.
+    _storedArgs.clear();
+    _storedNamedArgs.clear();
+    throw ArgumentError(
+        'The "$argumentMatcher" argument matcher is used outside of method '
+        'stubbing (via `when`) or verification (via `verify` or `untilCalled`). '
+        'This is invalid, and results in bad behavior during the next stubbing '
+        'or verification.');
+  }
   var argMatcher = ArgMatcher(matcher, capture);
   if (named == null) {
     _storedArgs.add(argMatcher);

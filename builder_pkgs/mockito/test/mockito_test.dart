@@ -296,4 +296,10 @@ void main() {
       expect(() => mock.methodWithoutArgs(), returnsNormally);
     });
   });
+
+  test(
+      "reports an error when using an argument matcher outside of stubbing or "
+      "verification", () {
+    expect(() => mock.methodWithNormalArgs(any), throwsArgumentError);
+  });
 }
