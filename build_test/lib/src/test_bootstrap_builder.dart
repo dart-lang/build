@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
+// ignore: deprecated_member_use
 import 'package:test_core/backend.dart';
 
 /// A [Builder] that injects bootstrapping code used by the test runner to run
