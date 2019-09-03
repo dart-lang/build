@@ -1,13 +1,10 @@
-## 4.1.2
-
-* Produce a meaningful error message if an argument matcher is used outside of
-  stubbing (`when`) or verification (`verify` and `untilCalled`).
-
 ## 4.1.1
 
 * Mark the unexported and accidentally public `setDefaultResponse` as
   deprecated.
 * Mark the not useful, and not generally used, `named` function as deprecated.
+* Produce a meaningful error message if an argument matcher is used outside of
+  stubbing (`when`) or verification (`verify` and `untilCalled`).
 
 ## 4.1.0
 
