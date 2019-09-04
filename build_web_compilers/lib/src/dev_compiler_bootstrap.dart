@@ -8,6 +8,7 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as _p; // ignore: library_prefixes
 import 'package:pool/pool.dart';
 
@@ -22,7 +23,8 @@ _p.Context get _context => _p.url;
 var _modulePartialExtension = _context.withoutExtension(jsModuleExtension);
 
 Future<void> bootstrapDdc(BuildStep buildStep,
-    {DartPlatform platform, bool checkPlatformSupport = true}) async {
+    {DartPlatform platform,
+    Set<String> skipPlatformCheckPackages = const {}}) async {
   var dartEntrypointId = buildStep.inputId;
   var moduleId = buildStep.inputId
       .changeExtension(moduleExtension(platform ?? ddcPlatform));
@@ -33,7 +35,7 @@ Future<void> bootstrapDdc(BuildStep buildStep,
   List<AssetId> transitiveJsModules;
   try {
     transitiveJsModules = await _ensureTransitiveJsModules(module, buildStep,
-        checkPlatformSupport: checkPlatformSupport);
+        skipPlatformCheckPackages: skipPlatformCheckPackages);
   } on UnsupportedModules catch (e) {
     var librariesString = (await e.exactLibraries(buildStep).toList())
         .map((lib) => AssetId(lib.id.package,
@@ -137,10 +139,11 @@ final _lazyBuildPool = Pool(16);
 /// unsupported modules.
 Future<List<AssetId>> _ensureTransitiveJsModules(
     Module module, BuildStep buildStep,
-    {bool checkPlatformSupport = true}) async {
+    {@required Set<String> skipPlatformCheckPackages}) async {
   // Collect all the modules this module depends on, plus this module.
   var transitiveDeps = await module.computeTransitiveDependencies(buildStep,
-      throwIfUnsupported: checkPlatformSupport);
+      throwIfUnsupported: true,
+      skipPlatformCheckPackages: skipPlatformCheckPackages);
 
   var jsModules = [
     module.primarySource.changeExtension(jsModuleExtension),
