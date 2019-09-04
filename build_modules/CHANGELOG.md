@@ -1,3 +1,8 @@
+## 2.5.0
+
+- Add an option to skip the unsupported module check for modules in specified
+  packages.
+
 ## 2.4.3
 
 - Allow analyzer version 0.38.0.
