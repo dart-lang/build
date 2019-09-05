@@ -31,7 +31,7 @@ main() {
       var reader = FileBasedAssetReader(packageGraph);
       var aId = AssetId('a', 'web/a.txt');
       var assetGraph =
-          await AssetGraph.build([], {aId}, {}, packageGraph, reader);
+          await AssetGraph.build([], {aId}, <AssetId>{}, packageGraph, reader);
       // We need to pre-emptively assign a digest so we determine that the
       // node is "interesting".
       assetGraph.get(aId).lastKnownDigest = await reader.digest(aId);
