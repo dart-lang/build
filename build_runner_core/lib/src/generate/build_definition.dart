@@ -12,6 +12,7 @@ import 'package:logging/logging.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/build_cache.dart';
+import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
@@ -32,6 +33,7 @@ final _logger = Logger('BuildDefinition');
 
 class BuildDefinition {
   final AssetGraph assetGraph;
+  final TargetGraph targetGraph;
 
   final AssetReader reader;
   final RunnerAssetWriter writer;
@@ -50,6 +52,7 @@ class BuildDefinition {
 
   BuildDefinition._(
       this.assetGraph,
+      this.targetGraph,
       this.reader,
       this.writer,
       this.packageGraph,
@@ -62,6 +65,120 @@ class BuildDefinition {
   static Future<BuildDefinition> prepareWorkspace(BuildEnvironment environment,
           BuildOptions options, List<BuildPhase> buildPhases) =>
       _Loader(environment, options, buildPhases).prepareWorkspace();
+}
+
+/// Understands how to find all assets relevant to a build as well as compute
+/// updates to those assets.
+class AssetManager {
+  final AssetGraph _assetGraph;
+  final RunnerAssetReader _reader;
+  final TargetGraph _targetGraph;
+
+  AssetManager(this._assetGraph, this._reader, this._targetGraph);
+
+  Future<Map<AssetId, ChangeType>> collectChanges() async {
+    var inputSources = await _findInputSources();
+    var generatedSources = await _findCacheDirSources();
+    var internalSources = await _findInternalSources();
+    return _computeSourceUpdates(
+        inputSources, generatedSources, internalSources);
+  }
+
+  /// Returns the all the sources found in the cache directory.
+  Future<Set<AssetId>> _findCacheDirSources() =>
+      _listGeneratedAssetIds().toSet();
+
+  /// Returns the set of original package inputs on disk.
+  Future<Set<AssetId>> _findInputSources() {
+    final targets =
+        Stream<TargetNode>.fromIterable(_targetGraph.allModules.values);
+    return targets.asyncExpand(_listAssetIds).toSet();
+  }
+
+  /// Returns all the internal sources, such as those under [entryPointDir].
+  Future<Set<AssetId>> _findInternalSources() =>
+      _listIdsSafe(Glob('$entryPointDir/**')).toSet();
+
+  /// Finds the asset changes which have happened while unwatched between builds
+  /// by taking a difference between the assets in the graph and the assets on
+  /// disk.
+  Future<Map<AssetId, ChangeType>> _computeSourceUpdates(
+      Set<AssetId> inputSources,
+      Set<AssetId> generatedSources,
+      Set<AssetId> internalSources) async {
+    final allSources = Set<AssetId>()
+      ..addAll(inputSources)
+      ..addAll(generatedSources)
+      ..addAll(internalSources);
+    var updates = <AssetId, ChangeType>{};
+    addUpdates(Iterable<AssetId> assets, ChangeType type) {
+      for (var asset in assets) {
+        updates[asset] = type;
+      }
+    }
+
+    var newSources = inputSources.difference(_assetGraph.allNodes
+        .where((node) => node.isValidInput)
+        .map((node) => node.id)
+        .toSet());
+    addUpdates(newSources, ChangeType.ADD);
+    var removedAssets = _assetGraph.allNodes
+        .where((n) {
+          if (!n.isReadable) return false;
+          if (n is GeneratedAssetNode) return n.wasOutput;
+          return true;
+        })
+        .map((n) => n.id)
+        .where((id) => !allSources.contains(id));
+
+    addUpdates(removedAssets, ChangeType.REMOVE);
+
+    var originalGraphSources = _assetGraph.sources.toSet();
+    var preExistingSources = originalGraphSources.intersection(inputSources)
+      ..addAll(internalSources.where(_assetGraph.contains));
+    var modifyChecks = preExistingSources.map((id) async {
+      var node = _assetGraph.get(id);
+      assert(node != null);
+      var originalDigest = node.lastKnownDigest;
+      if (originalDigest == null) return;
+      var currentDigest = await _reader.digest(id);
+      if (currentDigest != originalDigest) {
+        updates[id] = ChangeType.MODIFY;
+      }
+    });
+    await Future.wait(modifyChecks);
+    return updates;
+  }
+
+  Stream<AssetId> _listAssetIds(TargetNode targetNode) => targetNode
+          .sourceIncludes.isEmpty
+      ? Stream<AssetId>.empty()
+      : StreamGroup.merge(targetNode.sourceIncludes.map((glob) =>
+          _listIdsSafe(glob, package: targetNode.package.name)
+              .where((id) =>
+                  targetNode.package.isRoot || id.pathSegments.first == 'lib')
+              .where((id) => !targetNode.excludesSource(id))));
+
+  Stream<AssetId> _listGeneratedAssetIds() {
+    var glob = Glob('$generatedOutputDirectory/**');
+
+    return _listIdsSafe(glob).map((id) {
+      var packagePath = id.path.substring(generatedOutputDirectory.length + 1);
+      var firstSlash = packagePath.indexOf('/');
+      if (firstSlash == -1) return null;
+      var package = packagePath.substring(0, firstSlash);
+      var path = packagePath.substring(firstSlash + 1);
+      return AssetId(package, path);
+    }).where((id) => id != null);
+  }
+
+  /// Lists asset ids and swallows file not found errors.
+  ///
+  /// Ideally we would warn but in practice the default whitelist will give this
+  /// error a lot and it would be noisy.
+  Stream<AssetId> _listIdsSafe(Glob glob, {String package}) =>
+      _reader.findAssets(glob, package: package).handleError((e) {},
+          test: (e) => e is FileSystemException && e.osError.errorCode == 2);
 }
 
 class _Loader {
@@ -77,17 +194,19 @@ class _Loader {
     _logger.info('Initializing inputs');
 
     var assetGraph = await _tryReadCachedAssetGraph();
-    var inputSources = await _findInputSources();
-    var cacheDirSources = await _findCacheDirSources();
-    var internalSources = await _findInternalSources();
+    var assetManager =
+        AssetManager(assetGraph, _environment.reader, _options.targetGraph);
+    var inputSources = await assetManager._findInputSources();
+    var cacheDirSources = await assetManager._findCacheDirSources();
+    var internalSources = await assetManager._findInternalSources();
 
     BuildScriptUpdates buildScriptUpdates;
     if (assetGraph != null) {
       var updates = await logTimedAsync(
           _logger,
           'Checking for updates since last build',
-          () => _updateAssetGraph(assetGraph, _buildPhases, inputSources,
-              cacheDirSources, internalSources));
+          () => _updateAssetGraph(assetGraph, assetManager, _buildPhases,
+              inputSources, cacheDirSources, internalSources));
 
       buildScriptUpdates = await BuildScriptUpdates.create(
           _environment.reader, _options.packageGraph, assetGraph);
@@ -146,6 +265,7 @@ class _Loader {
 
     return BuildDefinition._(
         assetGraph,
+        _options.targetGraph,
         _wrapReader(_environment.reader, assetGraph),
         _wrapWriter(_environment.writer, assetGraph),
         _options.packageGraph,
@@ -192,14 +312,6 @@ class _Loader {
       await generatedDir.delete(recursive: true);
     }
   }
-
-  /// Returns the all the sources found in the cache directory.
-  Future<Set<AssetId>> _findCacheDirSources() =>
-      _listGeneratedAssetIds().toSet();
-
-  /// Returns all the internal sources, such as those under [entryPointDir].
-  Future<Set<AssetId>> _findInternalSources() =>
-      _listIdsSafe(Glob('$entryPointDir/**')).toSet();
 
   /// Attempts to read in an [AssetGraph] from disk, and returns `null` if it
   /// fails for any reason.
@@ -282,12 +394,13 @@ class _Loader {
   /// changes.
   Future<Map<AssetId, ChangeType>> _updateAssetGraph(
       AssetGraph assetGraph,
+      AssetManager assetManager,
       List<BuildPhase> buildPhases,
       Set<AssetId> inputSources,
       Set<AssetId> cacheDirSources,
       Set<AssetId> internalSources) async {
-    var updates = await _findSourceUpdates(
-        assetGraph, inputSources, cacheDirSources, internalSources);
+    var updates = await assetManager._computeSourceUpdates(
+        inputSources, cacheDirSources, internalSources);
     updates.addAll(_computeBuilderOptionsUpdates(assetGraph, buildPhases));
     await assetGraph.updateAndInvalidate(
         _buildPhases,
@@ -311,58 +424,6 @@ class _Loader {
     assert(assetGraph != null);
     return BuildCacheReader(
         original, assetGraph, _options.packageGraph.root.name);
-  }
-
-  /// Finds the asset changes which have happened while unwatched between builds
-  /// by taking a difference between the assets in the graph and the assets on
-  /// disk.
-  Future<Map<AssetId, ChangeType>> _findSourceUpdates(
-      AssetGraph assetGraph,
-      Set<AssetId> inputSources,
-      Set<AssetId> generatedSources,
-      Set<AssetId> internalSources) async {
-    final allSources = Set<AssetId>()
-      ..addAll(inputSources)
-      ..addAll(generatedSources)
-      ..addAll(internalSources);
-    var updates = <AssetId, ChangeType>{};
-    addUpdates(Iterable<AssetId> assets, ChangeType type) {
-      for (var asset in assets) {
-        updates[asset] = type;
-      }
-    }
-
-    var newSources = inputSources.difference(assetGraph.allNodes
-        .where((node) => node.isValidInput)
-        .map((node) => node.id)
-        .toSet());
-    addUpdates(newSources, ChangeType.ADD);
-    var removedAssets = assetGraph.allNodes
-        .where((n) {
-          if (!n.isReadable) return false;
-          if (n is GeneratedAssetNode) return n.wasOutput;
-          return true;
-        })
-        .map((n) => n.id)
-        .where((id) => !allSources.contains(id));
-
-    addUpdates(removedAssets, ChangeType.REMOVE);
-
-    var originalGraphSources = assetGraph.sources.toSet();
-    var preExistingSources = originalGraphSources.intersection(inputSources)
-      ..addAll(internalSources.where((id) => assetGraph.contains(id)));
-    var modifyChecks = preExistingSources.map((id) async {
-      var node = assetGraph.get(id);
-      assert(node != null);
-      var originalDigest = node.lastKnownDigest;
-      if (originalDigest == null) return;
-      var currentDigest = await _environment.reader.digest(id);
-      if (currentDigest != originalDigest) {
-        updates[id] = ChangeType.MODIFY;
-      }
-    });
-    await Future.wait(modifyChecks);
-    return updates;
   }
 
   /// Checks for any updates to the [BuilderOptionsAssetNode]s for
@@ -399,43 +460,6 @@ class _Loader {
     }
     return result;
   }
-
-  /// Returns the set of original package inputs on disk.
-  Future<Set<AssetId>> _findInputSources() {
-    final targets =
-        Stream<TargetNode>.fromIterable(_options.targetGraph.allModules.values);
-    return targets.asyncExpand(_listAssetIds).toSet();
-  }
-
-  Stream<AssetId> _listAssetIds(TargetNode targetNode) => targetNode
-          .sourceIncludes.isEmpty
-      ? Stream<AssetId>.empty()
-      : StreamGroup.merge(targetNode.sourceIncludes.map((glob) =>
-          _listIdsSafe(glob, package: targetNode.package.name)
-              .where((id) =>
-                  targetNode.package.isRoot || id.pathSegments.first == 'lib')
-              .where((id) => !targetNode.excludesSource(id))));
-
-  Stream<AssetId> _listGeneratedAssetIds() {
-    var glob = Glob('$generatedOutputDirectory/**');
-
-    return _listIdsSafe(glob).map((id) {
-      var packagePath = id.path.substring(generatedOutputDirectory.length + 1);
-      var firstSlash = packagePath.indexOf('/');
-      if (firstSlash == -1) return null;
-      var package = packagePath.substring(0, firstSlash);
-      var path = packagePath.substring(firstSlash + 1);
-      return AssetId(package, path);
-    }).where((id) => id != null);
-  }
-
-  /// Lists asset ids and swallows file not found errors.
-  ///
-  /// Ideally we would warn but in practice the default whitelist will give this
-  /// error a lot and it would be noisy.
-  Stream<AssetId> _listIdsSafe(Glob glob, {String package}) =>
-      _environment.reader.findAssets(glob, package: package).handleError((e) {},
-          test: (e) => e is FileSystemException && e.osError.errorCode == 2);
 
   /// Handles cleanup of pre-existing outputs for initial builds (where there is
   /// no cached graph).
