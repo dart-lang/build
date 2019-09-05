@@ -195,7 +195,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         isReleaseBuild: daemonOptions.isReleaseBuild);
 
     // Only actually used for the AutoChangeProvider.
-    Stream<WatchEvent> graphEvents() => PackageGraphWatcher(packageGraph,
+    Stream<List<WatchEvent>> graphEvents() => PackageGraphWatcher(packageGraph,
             watch: (node) =>
                 PackageNodeWatcher(node, watch: defaultDirectoryWatcherFactory))
         .watch()
@@ -207,11 +207,11 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
               true,
               expectedDeletes,
             ))
-        .map((data) => WatchEvent(data.type, '${data.id}'));
+        .map((data) => WatchEvent(data.type, '${data.id}'))
+        .transform(debounceBuffer(buildOptions.debounceDelay));
 
     var changeProvider = daemonOptions.buildMode == BuildMode.Auto
-        ? AutoChangeProvider(
-            graphEvents().transform(debounceBuffer(buildOptions.debounceDelay)))
+        ? AutoChangeProvider(graphEvents())
         : ManualChangeProvider(AssetManager(builder.assetGraph,
             daemonEnvironment.reader, buildOptions.targetGraph));
 
