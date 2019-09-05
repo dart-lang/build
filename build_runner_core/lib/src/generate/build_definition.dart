@@ -76,6 +76,8 @@ class AssetTracker {
 
   AssetTracker(this._assetGraph, this._reader, this._targetGraph);
 
+  /// Checks for and returns any file system changes compared to the current
+  /// state of the asset graph.
   Future<Map<AssetId, ChangeType>> collectChanges() async {
     var inputSources = await _findInputSources();
     var generatedSources = await _findCacheDirSources();
