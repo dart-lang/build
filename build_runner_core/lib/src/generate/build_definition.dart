@@ -69,12 +69,12 @@ class BuildDefinition {
 
 /// Understands how to find all assets relevant to a build as well as compute
 /// updates to those assets.
-class AssetManager {
+class AssetTracker {
   final AssetGraph _assetGraph;
   final RunnerAssetReader _reader;
   final TargetGraph _targetGraph;
 
-  AssetManager(this._assetGraph, this._reader, this._targetGraph);
+  AssetTracker(this._assetGraph, this._reader, this._targetGraph);
 
   Future<Map<AssetId, ChangeType>> collectChanges() async {
     var inputSources = await _findInputSources();
@@ -194,18 +194,18 @@ class _Loader {
     _logger.info('Initializing inputs');
 
     var assetGraph = await _tryReadCachedAssetGraph();
-    var assetManager =
-        AssetManager(assetGraph, _environment.reader, _options.targetGraph);
-    var inputSources = await assetManager._findInputSources();
-    var cacheDirSources = await assetManager._findCacheDirSources();
-    var internalSources = await assetManager._findInternalSources();
+    var assetTracker =
+        AssetTracker(assetGraph, _environment.reader, _options.targetGraph);
+    var inputSources = await assetTracker._findInputSources();
+    var cacheDirSources = await assetTracker._findCacheDirSources();
+    var internalSources = await assetTracker._findInternalSources();
 
     BuildScriptUpdates buildScriptUpdates;
     if (assetGraph != null) {
       var updates = await logTimedAsync(
           _logger,
           'Checking for updates since last build',
-          () => _updateAssetGraph(assetGraph, assetManager, _buildPhases,
+          () => _updateAssetGraph(assetGraph, assetTracker, _buildPhases,
               inputSources, cacheDirSources, internalSources));
 
       buildScriptUpdates = await BuildScriptUpdates.create(
@@ -394,12 +394,12 @@ class _Loader {
   /// changes.
   Future<Map<AssetId, ChangeType>> _updateAssetGraph(
       AssetGraph assetGraph,
-      AssetManager assetManager,
+      AssetTracker assetTracker,
       List<BuildPhase> buildPhases,
       Set<AssetId> inputSources,
       Set<AssetId> cacheDirSources,
       Set<AssetId> internalSources) async {
-    var updates = await assetManager._computeSourceUpdates(
+    var updates = await assetTracker._computeSourceUpdates(
         inputSources, cacheDirSources, internalSources);
     updates.addAll(_computeBuilderOptionsUpdates(assetGraph, buildPhases));
     await assetGraph.updateAndInvalidate(

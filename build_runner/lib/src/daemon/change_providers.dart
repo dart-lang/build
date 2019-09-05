@@ -25,13 +25,13 @@ class AutoChangeProvider implements ChangeProvider {
 /// Computes changes with a file scan when requested by a call to
 /// [collectChanges].
 class ManualChangeProvider implements ChangeProvider {
-  final AssetManager _assetManager;
+  final AssetTracker _assetTracker;
 
-  ManualChangeProvider(this._assetManager);
+  ManualChangeProvider(this._assetTracker);
 
   @override
   Future<List<WatchEvent>> collectChanges() async {
-    var updates = await _assetManager.collectChanges();
+    var updates = await _assetTracker.collectChanges();
     return List.of(updates.entries
         .map((entry) => WatchEvent(entry.value, '${entry.key}')));
   }
