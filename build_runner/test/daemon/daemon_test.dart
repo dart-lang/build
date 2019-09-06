@@ -191,9 +191,9 @@ main() {
       await d.dir('a', [
         d.dir('web', [
           d.file('main.dart', '''
-                main() {
-                  print('hello world');
-                }'''),
+main() {
+  print('goodbye world');
+}'''),
         ])
       ]).create();
       expect(client.buildResults,
@@ -212,15 +212,25 @@ main() {
       await d.dir('a', [
         d.dir('web', [
           d.file('main.dart', '''
-                main() {
-                  print('hello world');
-                }'''),
+main() {
+  print('goodbye world');
+}'''),
         ])
       ]).create();
       // There shouldn't be any build results.
       var buildResults = await client.buildResults.first
           .timeout(Duration(seconds: 2), onTimeout: () => null);
       expect(buildResults, isNull);
+      client.startBuild();
+      var startedResult = await client.buildResults.first;
+      expect(startedResult.results.first.status, BuildStatus.started,
+          reason: 'Should do a build once requested');
+      var succeededResult = await client.buildResults.first;
+      expect(succeededResult.results.first.status, BuildStatus.succeeded);
+      var ddcContent = await File(p.join(d.sandbox, 'a', '.dart_tool', 'build',
+              'generated', 'a', 'web', 'main.ddc.js'))
+          .readAsString();
+      expect(ddcContent, contains('goodbye world'));
     });
 
     test('can build to outputs', () async {

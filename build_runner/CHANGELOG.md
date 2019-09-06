@@ -1,3 +1,8 @@
+## 1.6.8-dev
+
+- Improve the manual change detector to do a file system scan on demand instead
+  of using a file watcher. 
+
 ## 1.6.7
 
 - Set the `charset` to `utf-8` for Dart content returned by the `AssetHandler`.
