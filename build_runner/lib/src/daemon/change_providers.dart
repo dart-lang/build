@@ -3,8 +3,13 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build_daemon/change_provider.dart';
+import 'package:build_runner_core/src/generate/build_definition.dart';
 import 'package:watcher/src/watch_event.dart';
 
+/// Continually updates the [changes] stream as watch events are seen on the
+/// input stream.
+///
+/// The [collectChanges] method is a no-op for this implementation.
 class AutoChangeProvider implements ChangeProvider {
   final Stream<List<WatchEvent>> _changes;
 
@@ -17,21 +22,18 @@ class AutoChangeProvider implements ChangeProvider {
   Future<List<WatchEvent>> collectChanges() async => [];
 }
 
-// TODO(grouma) - collect changes through a one time file scan instead of
-// buffering changes from a change stream. This will have better performance
-// on Windows.
+/// Computes changes with a file scan when requested by a call to
+/// [collectChanges].
 class ManualChangeProvider implements ChangeProvider {
-  final _changes = <WatchEvent>[];
+  final AssetTracker _assetTracker;
 
-  ManualChangeProvider(Stream<List<WatchEvent>> changes) {
-    changes.listen(_changes.addAll);
-  }
+  ManualChangeProvider(this._assetTracker);
 
   @override
   Future<List<WatchEvent>> collectChanges() async {
-    var result = _changes.toList();
-    _changes.clear();
-    return result;
+    var updates = await _assetTracker.collectChanges();
+    return List.of(updates.entries
+        .map((entry) => WatchEvent(entry.value, '${entry.key}')));
   }
 
   @override

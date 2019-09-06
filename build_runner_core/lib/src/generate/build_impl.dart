@@ -53,8 +53,7 @@ List<String> _buildPaths(Set<BuildDirectory> buildDirs) =>
         : buildDirs.map((b) => b.directory).toList();
 
 class BuildImpl {
-  final FinalizedReader _finalizedReader;
-  FinalizedReader get finalizedReader => _finalizedReader;
+  final FinalizedReader finalizedReader;
 
   final AssetGraph assetGraph;
 
@@ -75,7 +74,7 @@ class BuildImpl {
   Future<void> beforeExit() => _resourceManager.beforeExit();
 
   BuildImpl._(BuildDefinition buildDefinition, BuildOptions options,
-      this._buildPhases, this._finalizedReader)
+      this._buildPhases, this.finalizedReader)
       : _buildScriptUpdates = buildDefinition.buildScriptUpdates,
         _packageGraph = buildDefinition.packageGraph,
         _reader = options.enableLowResourcesMode

@@ -26,7 +26,7 @@ dependencies:
   js: ^0.6.1+1
   logging: ^0.11.2
   meta: ^1.1.0
-  mime: ^0.9.3
+  mime: ^0.9.3+3
   path: ^1.1.0
   pedantic: ^1.0.0
   pool: ^1.0.0

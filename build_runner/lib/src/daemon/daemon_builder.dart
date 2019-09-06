@@ -24,6 +24,7 @@ import 'package:build_runner_core/build_runner_core.dart'
     hide BuildResult, BuildStatus;
 import 'package:build_runner_core/build_runner_core.dart' as core
     show BuildStatus;
+import 'package:build_runner_core/src/generate/build_definition.dart';
 import 'package:build_runner_core/src/generate/build_impl.dart';
 import 'package:stream_transform/stream_transform.dart' show debounceBuffer;
 import 'package:watcher/watcher.dart';
@@ -199,7 +200,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         builders, daemonOptions.builderConfigOverrides,
         isReleaseBuild: daemonOptions.isReleaseBuild);
 
-    var graphEvents = PackageGraphWatcher(packageGraph,
+    // Only actually used for the AutoChangeProvider.
+    Stream<List<WatchEvent>> graphEvents() => PackageGraphWatcher(packageGraph,
             watch: (node) =>
                 PackageNodeWatcher(node, watch: defaultDirectoryWatcherFactory))
         .watch()
@@ -210,17 +212,14 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
               // Assume we will create an outputDir.
               true,
               expectedDeletes,
-            ));
-
-    var changes = graphEvents
+            ))
         .map((data) => WatchEvent(data.type, '${data.id}'))
-        .map((change) => [change]);
+        .transform(debounceBuffer(buildOptions.debounceDelay));
 
     var changeProvider = daemonOptions.buildMode == BuildMode.Auto
-        ? AutoChangeProvider(changes
-            .transform(debounceBuffer(buildOptions.debounceDelay))
-            .map((changeLists) => changeLists.expand((l) => l).toList()))
-        : ManualChangeProvider(changes);
+        ? AutoChangeProvider(graphEvents())
+        : ManualChangeProvider(AssetTracker(builder.assetGraph,
+            daemonEnvironment.reader, buildOptions.targetGraph));
 
     return BuildRunnerDaemonBuilder._(
         builder, buildOptions, outputStreamController, changeProvider);

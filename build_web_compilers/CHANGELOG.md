@@ -1,3 +1,14 @@
+## 2.3.0
+
+- Add an option to the DDC bootstrap to skip the checks around modules that have
+  imports to unsupported SDK libraries like `dart:io` when the module is from a
+  specified package. This is not used in the default build, but is available for
+  custom DDC integrations.
+
+## 2.2.3
+
+- Allow analyzer version 0.38.0.
+
 ## 2.2.2
 
 - Re-publish 2.2.0 with proper minimum sdk constraint of >=2.4.0.

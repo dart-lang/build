@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @Tags(['integration'])
-@Skip('Flaky tests https://github.com/dart-lang/build/issues/2413')
 
 import 'dart:async';
 import 'dart:convert';
@@ -28,6 +27,7 @@ main() {
   final webTarget = DefaultBuildTarget((b) => b..target = 'web');
   final testTarget = DefaultBuildTarget((b) => b..target = 'test');
   var clients = <BuildDaemonClient>[];
+
   setUp(() async {
     await d.dir('a', [
       await pubspec(
@@ -112,6 +112,9 @@ main() {
         .listen((line) {
       printOnFailure('Daemon Error: $line');
     });
+    unawaited(daemonProcess.exitCode.then((exitCode) {
+      printOnFailure('GOT EXIT CODE: $exitCode');
+    }));
     expect(await stdoutLines.contains(readyToConnectLog), isTrue);
   }
 
@@ -173,8 +176,8 @@ main() {
         ..registerBuildTarget(webTarget)
         ..startBuild();
       clients.add(client);
-      var buildResults = await client.buildResults.first;
-      expect(buildResults.results.first.status, BuildStatus.started);
+      expect(client.buildResults,
+          emitsThrough((b) => b.results.first.status == BuildStatus.succeeded));
     });
 
     test('auto build mode automatically builds on file change', () async {
@@ -188,13 +191,13 @@ main() {
       await d.dir('a', [
         d.dir('web', [
           d.file('main.dart', '''
-                main() {
-                  print('hello world');
-                }'''),
+main() {
+  print('goodbye world');
+}'''),
         ])
       ]).create();
-      var buildResults = await client.buildResults.first;
-      expect(buildResults.results.first.status, BuildStatus.started);
+      expect(client.buildResults,
+          emitsThrough((b) => b.results.first.status == BuildStatus.succeeded));
     });
 
     test('manual build mode does not automatically build on file change',
@@ -209,15 +212,25 @@ main() {
       await d.dir('a', [
         d.dir('web', [
           d.file('main.dart', '''
-                main() {
-                  print('hello world');
-                }'''),
+main() {
+  print('goodbye world');
+}'''),
         ])
       ]).create();
       // There shouldn't be any build results.
       var buildResults = await client.buildResults.first
           .timeout(Duration(seconds: 2), onTimeout: () => null);
       expect(buildResults, isNull);
+      client.startBuild();
+      var startedResult = await client.buildResults.first;
+      expect(startedResult.results.first.status, BuildStatus.started,
+          reason: 'Should do a build once requested');
+      var succeededResult = await client.buildResults.first;
+      expect(succeededResult.results.first.status, BuildStatus.succeeded);
+      var ddcContent = await File(p.join(d.sandbox, 'a', '.dart_tool', 'build',
+              'generated', 'a', 'web', 'main.ddc.js'))
+          .readAsString();
+      expect(ddcContent, contains('goodbye world'));
     });
 
     test('can build to outputs', () async {
@@ -236,7 +249,7 @@ main() {
         ..startBuild();
       clients.add(client);
       await client.buildResults
-          .firstWhere((b) => b.results.first.status != BuildStatus.started);
+          .firstWhere((b) => b.results.first.status == BuildStatus.succeeded);
       expect(outputDir.existsSync(), isTrue);
     });
 
@@ -251,8 +264,11 @@ main() {
         ..registerBuildTarget(webTarget)
         ..startBuild();
       clients.add(client);
-      var buildResults = await client.buildResults.first;
-      expect(buildResults.results.first.status, BuildStatus.started);
+      expect(client.buildResults,
+          emitsThrough((b) => b.results.first.status == BuildStatus.started));
+      // Wait for the build to finish before exiting to prevent flakiness.
+      expect(client.buildResults,
+          emitsThrough((b) => b.results.first.status == BuildStatus.succeeded));
     });
 
     test('can complete builds', () async {
@@ -261,9 +277,8 @@ main() {
         ..registerBuildTarget(webTarget)
         ..startBuild();
       clients.add(client);
-      var buildResults = await client.buildResults
-          .firstWhere((b) => b.results.first.status != BuildStatus.started);
-      expect(buildResults.results.first.status, BuildStatus.succeeded);
+      expect(client.buildResults,
+          emitsThrough((b) => b.results.first.status == BuildStatus.succeeded));
     });
 
     test('allows multiple clients to connect and build', () async {

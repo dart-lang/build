@@ -50,6 +50,20 @@ This package will automatically create `*.debug.html` files next to all your
 `*_test.dart` files, which can be loaded in a browser from the normal
 development server (`pub run build_runner serve`).
 
+**Note:** In order to run the tests this way, you will need to configure them
+to be compiled (by default we only compile `*.browser_test.dart` files). You
+can do this in your build.yaml file, with something like the following:
+
+```yaml
+targets:
+  $default:
+    builders:
+      build_web_compilers|entrypoint:
+        generate_for:
+        - test/**_test.dart
+        - web/**.dart
+```
+
 You may also view an index of links to every `*.debug.html` file by navigating
 to `http://localhost:8081` (or wherever your `test` folder is being served).
 

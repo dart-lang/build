@@ -1,7 +1,14 @@
-## 3.1.0-dev
+## 3.2.0-dev
 
 - Add `buildFilters` to `BuildOptions` which allows you to filter which
   outputs will be generated (even non-optional ones).
+
+## 3.1.0
+
+- Factor out the logic to do a manual file system scan for changes into a
+  new `AssetTracker` class.
+  - This is not exposed publicly and is only intended to be used from the
+    `build_runner` package.
 
 ## 3.0.9
 
