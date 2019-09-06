@@ -13,14 +13,26 @@ import '../asset/reader.dart';
 import '../asset_graph/graph.dart';
 import '../package_graph/package_graph.dart';
 
+/// Functionality for detecting if the build script itself or any of its
+/// transitive imports have changed.
 class BuildScriptUpdates {
   final Set<AssetId> _allSources;
   final bool _supportsIncrementalRebuilds;
 
   BuildScriptUpdates._(this._supportsIncrementalRebuilds, this._allSources);
 
-  static Future<BuildScriptUpdates> create(RunnerAssetReader reader,
-      PackageGraph packageGraph, AssetGraph graph) async {
+  /// Creates a [BuildScriptUpdates] object, using [reader] to ensure that
+  /// the [graph] is tracking digests for all transitive sources.
+  ///
+  /// If [skipUpdatesCheck] is `true` then all checks are skipped and
+  /// [hasBeenUpdated] will always return `false`.
+  static Future<BuildScriptUpdates> create(
+      RunnerAssetReader reader,
+      PackageGraph packageGraph,
+      AssetGraph graph,
+      bool skipUpdatesCheck) async {
+    if (skipUpdatesCheck) return _NoopBuildScriptUpdates();
+
     var supportsIncrementalRebuilds = true;
     var rootPackage = packageGraph.root.name;
     Set<AssetId> allSources;
@@ -93,4 +105,17 @@ class BuildScriptUpdates {
     }
     return null;
   }
+}
+
+/// Always returns false for [hasBeenUpdated], used when we want to skip
+/// the build script checks.
+class _NoopBuildScriptUpdates implements BuildScriptUpdates {
+  @override
+  bool hasBeenUpdated(_) => false;
+
+  @override
+  Set<AssetId> get _allSources => throw UnimplementedError();
+
+  @override
+  bool get _supportsIncrementalRebuilds => throw UnimplementedError();
 }
