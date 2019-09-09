@@ -15,24 +15,36 @@ import '../package_graph/package_graph.dart';
 
 /// Functionality for detecting if the build script itself or any of its
 /// transitive imports have changed.
-class BuildScriptUpdates {
-  final Set<AssetId> _allSources;
-  final bool _supportsIncrementalRebuilds;
-
-  BuildScriptUpdates._(this._supportsIncrementalRebuilds, this._allSources);
+abstract class BuildScriptUpdates {
+  /// Checks if the current running program has been updated, based on
+  /// [updatedIds].
+  bool hasBeenUpdated(Set<AssetId> updatedIds);
 
   /// Creates a [BuildScriptUpdates] object, using [reader] to ensure that
-  /// the [graph] is tracking digests for all transitive sources.
+  /// the [assetGraph] is tracking digests for all transitive sources.
   ///
   /// If [skipUpdatesCheck] is `true` then all checks are skipped and
   /// [hasBeenUpdated] will always return `false`.
   static Future<BuildScriptUpdates> create(
       RunnerAssetReader reader,
       PackageGraph packageGraph,
-      AssetGraph graph,
+      AssetGraph assetGraph,
       bool skipUpdatesCheck) async {
     if (skipUpdatesCheck) return _NoopBuildScriptUpdates();
+    return _MirrorBuildScriptUpdates.create(reader, packageGraph, assetGraph);
+  }
+}
 
+/// Uses mirrors to find all transitive imports of the current script.
+class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
+  final Set<AssetId> _allSources;
+  final bool _supportsIncrementalRebuilds;
+
+  _MirrorBuildScriptUpdates._(
+      this._supportsIncrementalRebuilds, this._allSources);
+
+  static Future<BuildScriptUpdates> create(RunnerAssetReader reader,
+      PackageGraph packageGraph, AssetGraph graph) async {
     var supportsIncrementalRebuilds = true;
     var rootPackage = packageGraph.root.name;
     Set<AssetId> allSources;
@@ -60,7 +72,7 @@ class BuildScriptUpdates {
       supportsIncrementalRebuilds = false;
       allSources = Set<AssetId>();
     }
-    return BuildScriptUpdates._(supportsIncrementalRebuilds, allSources);
+    return _MirrorBuildScriptUpdates._(supportsIncrementalRebuilds, allSources);
   }
 
   static Iterable<Uri> get _urisForThisScript =>
@@ -68,6 +80,7 @@ class BuildScriptUpdates {
 
   /// Checks if the current running program has been updated, based on
   /// [updatedIds].
+  @override
   bool hasBeenUpdated(Set<AssetId> updatedIds) {
     if (!_supportsIncrementalRebuilds) return true;
     return updatedIds.intersection(_allSources).isNotEmpty;
@@ -112,10 +125,4 @@ class BuildScriptUpdates {
 class _NoopBuildScriptUpdates implements BuildScriptUpdates {
   @override
   bool hasBeenUpdated(_) => false;
-
-  @override
-  Set<AssetId> get _allSources => throw UnimplementedError();
-
-  @override
-  bool get _supportsIncrementalRebuilds => throw UnimplementedError();
 }
