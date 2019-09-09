@@ -189,10 +189,10 @@ final _previousLocationsFile = File(
 /// pre-emptively resolve them by resnapshotting, see
 /// https://github.com/dart-lang/build/issues/1929.
 Future<bool> _checkImportantPackageDeps() async {
-  var currentLocationsContent = await Stream.fromIterable(_importantPackages)
-      .asyncMap((pkg) => Isolate.resolvePackageUri(
-          Uri(scheme: 'package', path: '$pkg/fake.dart')))
-      .join('\n');
+  var currentLocations = await Future.wait(_importantPackages.map((pkg) =>
+      Isolate.resolvePackageUri(
+          Uri(scheme: 'package', path: '$pkg/fake.dart'))));
+  var currentLocationsContent = currentLocations.join('\n');
 
   if (!_previousLocationsFile.existsSync()) {
     _logger.fine('Core package locations file does not exist');
