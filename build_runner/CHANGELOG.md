@@ -1,3 +1,7 @@
+## 1.6.9
+- Fix bugs in snapshot invalidation logic that prevented invalidation when
+  core packages changed and always created a new snapshot on the second build.
+
 ## 1.6.8
 
 - Improve the manual change detector to do a file system scan on demand instead
