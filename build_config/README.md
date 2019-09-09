@@ -83,7 +83,7 @@ arguments.
   depending on the particular builder. The values in this map override all other
   values per-key when the build is done in release mode.
 
-## Defining `Builder`s to apply to dependents (similar to transformers)
+## Defining `Builder`s to apply to dependents
 
 If users of your package need to apply some code generation to their package,
 then you can define `Builder`s and have those applied to packages with a
