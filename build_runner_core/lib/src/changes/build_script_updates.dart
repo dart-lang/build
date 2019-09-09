@@ -23,14 +23,13 @@ abstract class BuildScriptUpdates {
   /// Creates a [BuildScriptUpdates] object, using [reader] to ensure that
   /// the [assetGraph] is tracking digests for all transitive sources.
   ///
-  /// If [skipUpdatesCheck] is `true` then all checks are skipped and
+  /// If [disabled] is `true` then all checks are skipped and
   /// [hasBeenUpdated] will always return `false`.
-  static Future<BuildScriptUpdates> create(
-      RunnerAssetReader reader,
-      PackageGraph packageGraph,
-      AssetGraph assetGraph,
-      bool skipUpdatesCheck) async {
-    if (skipUpdatesCheck) return _NoopBuildScriptUpdates();
+  static Future<BuildScriptUpdates> create(RunnerAssetReader reader,
+      PackageGraph packageGraph, AssetGraph assetGraph,
+      {bool disabled = false}) async {
+    disabled ??= false;
+    if (disabled) return _NoopBuildScriptUpdates();
     return _MirrorBuildScriptUpdates.create(reader, packageGraph, assetGraph);
   }
 }
