@@ -3,6 +3,11 @@
 - Add `buildFilters` to `BuildOptions` which allows you to filter which
   outputs will be generated (even non-optional ones).
 
+## 3.1.1
+
+- When skipping build script updates, don't check if the build script is a
+  part of the asset graph either.
+
 ## 3.1.0
 
 - Factor out the logic to do a manual file system scan for changes into a
