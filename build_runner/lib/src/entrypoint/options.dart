@@ -426,7 +426,7 @@ Set<BuildDirectory> _parseBuildDirs(ArgResults argResults) {
 List<BuildFilter> _parseBuildFilters(
     ArgResults argResults, String rootPackage) {
   var filterArgs = argResults[buildFilterOption] as List<String>;
-  if (filterArgs?.isNotEmpty ?? false) return null;
+  if (filterArgs?.isEmpty ?? true) return null;
   try {
     return [
       for (var arg in filterArgs) BuildFilter.fromArg(arg, rootPackage),
