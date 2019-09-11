@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
@@ -22,9 +23,9 @@ class FinalizedReader implements AssetReader {
   final String _rootPackage;
   final List<BuildPhase> _buildPhases;
 
-  void reset(List<String> buildDirs) {
-    _optionalOutputTracker =
-        OptionalOutputTracker(_assetGraph, buildDirs, _buildPhases);
+  void reset(List<String> buildDirs, Iterable<BuildFilter> buildFilters) {
+    _optionalOutputTracker = OptionalOutputTracker(
+        _assetGraph, buildDirs, buildFilters, _buildPhases);
   }
 
   FinalizedReader(

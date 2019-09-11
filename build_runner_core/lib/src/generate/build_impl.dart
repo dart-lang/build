@@ -93,7 +93,7 @@ class BuildImpl {
       {Set<BuildDirectory> buildDirs, Iterable<BuildFilter> buildFilters}) {
     buildDirs ??= Set<BuildDirectory>();
     buildFilters ??= [];
-    finalizedReader.reset(_buildPaths(buildDirs));
+    finalizedReader.reset(_buildPaths(buildDirs), buildFilters);
     return _SingleBuild(this, buildDirs, buildFilters).run(updates)
       ..whenComplete(_resolvers.reset);
   }
@@ -211,7 +211,7 @@ class _SingleBuild {
     var watch = Stopwatch()..start();
     var result = await _safeBuild(updates);
     var optionalOutputTracker = OptionalOutputTracker(
-        _assetGraph, _buildPaths(_buildDirs), _buildPhases);
+        _assetGraph, _buildPaths(_buildDirs), _buildFilters, _buildPhases);
     if (result.status == BuildStatus.success) {
       final failures = _assetGraph.failedOutputs
           .where((n) => optionalOutputTracker.isRequired(n.id));
