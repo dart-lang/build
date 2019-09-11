@@ -7,7 +7,6 @@ import 'dart:math' as math;
 
 import 'package:_test_common/build_configs.dart';
 import 'package:_test_common/common.dart';
-import 'package:_test_common/package_graphs.dart';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
@@ -744,6 +743,86 @@ void main() {
               as Map<String, dynamic>);
       expect(perf.phases.length, 1);
       expect(perf.phases.first.builderKeys, equals(['test_builder']));
+    });
+
+    group('buildFilters', () {
+      var packageGraphWithDep = buildPackageGraph({
+        package('b'): [],
+        rootPackage('a'): ['b'],
+      });
+
+      test('explicit files by uri and path', () async {
+        await testBuilders([
+          apply('', [(_) => TestBuilder()], toAllPackages(),
+              defaultGenerateFor: InputSet(include: ['**/*.txt'])),
+        ], {
+          'a|lib/a.txt': '',
+          'a|web/a.txt': '',
+          'a|web/a0.txt': '',
+          'b|lib/b.txt': '',
+          'b|lib/b0.txt': '',
+        }, outputs: {
+          r'$$a|lib/a.txt.copy': '',
+          r'$$a|web/a.txt.copy': '',
+          r'$$b|lib/b.txt.copy': '',
+        }, buildFilters: {
+          BuildFilter.fromArg('web/a.txt.copy', 'a'),
+          BuildFilter.fromArg('package:a/a.txt.copy', 'a'),
+          BuildFilter.fromArg('package:b/b.txt.copy', 'a'),
+        }, verbose: true, packageGraph: packageGraphWithDep);
+      });
+
+      test('with package globs', () async {
+        await testBuilders([
+          apply('', [(_) => TestBuilder()], toAllPackages(),
+              defaultGenerateFor: InputSet(include: ['**/*.txt'])),
+        ], {
+          'a|lib/a.txt': '',
+          'b|lib/a.txt': '',
+        }, outputs: {
+          r'$$a|lib/a.txt.copy': '',
+          r'$$b|lib/a.txt.copy': '',
+        }, buildFilters: {
+          BuildFilter.fromArg('package:*/a.txt.copy', 'a'),
+        }, verbose: true, packageGraph: packageGraphWithDep);
+      });
+
+      test('with path globs', () async {
+        await testBuilders([
+          apply('', [(_) => TestBuilder()], toAllPackages(),
+              defaultGenerateFor: InputSet(include: ['**/*.txt'])),
+        ], {
+          'a|lib/a.txt': '',
+          'a|lib/a0.txt': '',
+          'a|web/a.txt': '',
+          'a|web/a1.txt': '',
+          'b|lib/b.txt': '',
+          'b|lib/b2.txt': '',
+        }, outputs: {
+          r'$$a|lib/a0.txt.copy': '',
+          r'$$a|web/a1.txt.copy': '',
+          r'$$b|lib/b2.txt.copy': '',
+        }, buildFilters: {
+          BuildFilter.fromArg('package:a/*0.txt.copy', 'a'),
+          BuildFilter.fromArg('web/*1.txt.copy', 'a'),
+          BuildFilter.fromArg('package:b/*2.txt.copy', 'a'),
+        }, verbose: true, packageGraph: packageGraphWithDep);
+      });
+
+      test('with package and path globs', () async {
+        await testBuilders([
+          apply('', [(_) => TestBuilder()], toAllPackages(),
+              defaultGenerateFor: InputSet(include: ['**/*.txt'])),
+        ], {
+          'a|lib/a.txt': '',
+          'b|lib/b.txt': '',
+        }, outputs: {
+          r'$$a|lib/a.txt.copy': '',
+          r'$$b|lib/b.txt.copy': '',
+        }, buildFilters: {
+          BuildFilter.fromArg('package:*/*.txt.copy', 'a'),
+        }, verbose: true, packageGraph: packageGraphWithDep);
+      });
     });
   });
 
