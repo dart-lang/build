@@ -85,6 +85,31 @@ main(List<String> args) async {
         ]).validate();
       });
 
+      test('--output respects build filters', () async {
+        await d.dir('a', [
+          d.dir('web', [
+            d.file('b.txt', 'b'),
+          ]),
+        ]).create();
+        // Run a build and validate the full rebuild output.
+        var result = await runDart('a', 'tool/build.dart', args: [
+          'build',
+          '--output',
+          'build',
+          '--build-filter',
+          'web/b.txt.copy',
+        ]);
+        expect(result.exitCode, 0, reason: result.stderr as String);
+        await d.dir('a', [
+          d.dir('build', [
+            d.dir('web', [
+              d.nothing('a.txt.copy'),
+              d.file('b.txt.copy', 'b'),
+            ])
+          ])
+        ]).validate();
+      });
+
       test('when --output fails a proper error code is returned', () async {
         await d.dir('a', [
           d.dir('build', [
@@ -119,6 +144,82 @@ main(List<String> args) async {
           ]),
           d.dir('foo', [
             d.dir('web', [d.file('a.txt.copy', 'a')])
+          ])
+        ]).validate();
+      });
+    });
+
+    group('--build-filter', () {
+      setUp(() async {
+        await d.dir('a', [
+          await pubspec('a', currentIsolateDependencies: [
+            'build',
+            'build_config',
+            'build_daemon',
+            'build_resolvers',
+            'build_runner',
+            'build_runner_core',
+            'build_test',
+            'glob'
+          ], pathDependencies: {
+            'b': '../b'
+          }),
+          d.dir('tool', [
+            d.file('build.dart', '''
+import 'dart:io';
+import 'package:build_runner/build_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_test/build_test.dart';
+
+main(List<String> args) async {
+  exitCode = await run(
+      args, [
+          apply('', [(_) => TestBuilder()], toAllPackages(), hideOutput: true)
+      ]);
+}
+''')
+          ]),
+          d.dir('lib', [d.file('a.txt', 'a'), d.file('b.txt', 'b')]),
+          d.dir('web', [d.file('a.txt', 'a'), d.file('b.txt', 'b')])
+        ]).create();
+
+        await d.dir('b', [
+          await pubspec('b'),
+          d.dir('lib', [d.file('a.txt', 'a'), d.file('b.txt', 'b')])
+        ]).create();
+
+        await pubGet('a');
+      });
+
+      test('only builds matching files', () async {
+        await runBuild(extraArgs: [
+          '--build-filter',
+          'package:*/a.txt.copy',
+          '--build-filter',
+          'web/a.txt.copy'
+        ]);
+        await d.dir('a', [
+          d.dir('.dart_tool', [
+            d.dir('build', [
+              d.dir('generated', [
+                d.dir('a', [
+                  d.dir('lib', [
+                    d.file('a.txt.copy', 'a'),
+                    d.nothing('b.txt.copy'),
+                  ]),
+                  d.dir('web', [
+                    d.file('a.txt.copy', 'a'),
+                    d.nothing('b.txt.copy'),
+                  ])
+                ]),
+                d.dir('b', [
+                  d.dir('lib', [
+                    d.file('a.txt.copy', 'a'),
+                    d.nothing('b.txt.copy'),
+                  ]),
+                ]),
+              ])
+            ])
           ])
         ]).validate();
       });
@@ -350,16 +451,6 @@ main(List<String> args) async {
         ]).validate();
       }
 
-      Future<String> runBuild({List<String> extraArgs}) async {
-        extraArgs ??= [];
-        var buildArgs = ['build', '-o', 'build']..addAll(extraArgs);
-        var result = await runDart('a', 'tool/build.dart', args: buildArgs);
-        expect(result.exitCode, 0,
-            reason: '${result.stdout}\n${result.stderr}');
-        printOnFailure('${result.stdout}\n${result.stderr}');
-        return '${result.stdout}';
-      }
-
       test('--define overrides build.yaml', () async {
         await d.dir('a', [
           await pubspec('a', currentIsolateDependencies: [
@@ -415,15 +506,6 @@ main(List<String> args) async {
   await run(args, buildApplications);
 }
 ''';
-
-    Future<String> runBuild({List<String> extraArgs}) async {
-      extraArgs ??= [];
-      var buildArgs = ['build', '-o', 'build']..addAll(extraArgs);
-      var result = await runDart('a', 'tool/build.dart', args: buildArgs);
-      expect(result.exitCode, 0, reason: '${result.stdout}\n${result.stderr}');
-      printOnFailure('${result.stdout}\n${result.stderr}');
-      return '${result.stdout}';
-    }
 
     test('warns on invalid builder key in target options', () async {
       await d.dir('a', [
@@ -614,4 +696,13 @@ main() async {
       fail('No warning issued when running the "serve" command');
     });
   });
+}
+
+Future<String> runBuild({List<String> extraArgs}) async {
+  extraArgs ??= [];
+  var buildArgs = ['build', '-o', 'build']..addAll(extraArgs);
+  var result = await runDart('a', 'tool/build.dart', args: buildArgs);
+  expect(result.exitCode, 0, reason: '${result.stdout}\n${result.stderr}');
+  printOnFailure('${result.stdout}\n${result.stderr}');
+  return '${result.stdout}';
 }

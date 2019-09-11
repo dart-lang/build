@@ -56,6 +56,7 @@ Future<ServeHandler> watch(
   builderConfigOverrides ??= const {};
   packageGraph ??= PackageGraph.forThisPackage();
   buildDirs ??= Set<BuildDirectory>();
+  buildFilters ??= <BuildFilter>[];
 
   var environment = OverrideableEnvironment(
       IOEnvironment(packageGraph,
@@ -325,7 +326,8 @@ class WatchImpl implements BuildState {
             options, watcherEnvironment, builders, builderConfigOverrides,
             isReleaseBuild: isReleaseMode);
 
-        firstBuild = await _build.run({}, buildDirs: _buildDirs);
+        firstBuild = await _build
+            .run({}, buildDirs: _buildDirs, buildFilters: _buildFilters);
       } on CannotBuildException {
         _terminateCompleter.complete();
 

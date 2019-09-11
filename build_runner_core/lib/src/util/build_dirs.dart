@@ -34,5 +34,5 @@ bool shouldBuildForDirs(AssetId id, Iterable<String> buildDirs,
 
   if (buildDirs.isEmpty) return true;
 
-  return buildDirs.any(id.path.startsWith);
+  return id.path.startsWith('lib/') || buildDirs.any(id.path.startsWith);
 }

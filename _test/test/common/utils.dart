@@ -45,7 +45,8 @@ Future<void> startServer(
         [
           '--packages=.packages',
           p.join('..', 'build_runner', 'bin', 'build_runner.dart'),
-          'serve'
+          'serve',
+          ...buildArgs,
         ],
         ensureCleanBuild: ensureCleanBuild,
         extraExpects: extraExpects);
@@ -183,16 +184,24 @@ Future<ProcessResult> _runTests(String executable, List<String> scriptArgs,
   }
 }
 
-Future<void> expectTestsFail() async {
-  var result = await runTests();
+Future<void> expectTestsFail(
+    {bool usePrecompiled,
+    List<String> buildArgs,
+    List<String> testArgs}) async {
+  var result = await runTests(
+      usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
   printOnFailure('${result.stderr}');
   expect(result.stdout, contains('Some tests failed'));
   expect(result.exitCode, isNot(0));
 }
 
 Future<void> expectTestsPass(
-    {int expectedNumRan, bool usePrecompiled, List<String> args}) async {
-  var result = await runTests(usePrecompiled: usePrecompiled, buildArgs: args);
+    {int expectedNumRan,
+    bool usePrecompiled,
+    List<String> buildArgs,
+    List<String> testArgs}) async {
+  var result = await runTests(
+      usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
   printOnFailure('${result.stderr}');
   expect(result.stdout, contains('All tests passed!'));
   if (expectedNumRan != null) {
