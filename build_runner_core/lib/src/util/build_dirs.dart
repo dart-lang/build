@@ -9,22 +9,29 @@ import '../generate/phase.dart';
 
 /// Returns whether or not [id] should be built based upon [buildDirs],
 /// [phase], and optional [buildFilters].
+///
+/// The logic for this is as follows:
+///
+/// - If any [buildFilters] are supplied, then this only returns `true` if [id]
+///   explicitly matches one of the filters.
+/// - If no [buildFilters] are supplied, then the old behavior applies - all
+///   build to source builders and all files under `lib` of all packages are
+///   always built.
+/// - Regardless of the [buildFilters] setting, if [buildDirs] is supplied then
+///   `id.path` must start with one of the specified directory names.
 bool shouldBuildForDirs(AssetId id, List<String> buildDirs, BuildPhase phase,
     {Iterable<BuildFilter> buildFilters}) {
-  // Always build non-hidden outputs, since they ship with the package.
-  // Otherwise it is too easy to ship not up to date files on accident.
-  if (!phase.hideOutput) return true;
+  buildFilters ??= [];
+  if (buildFilters.isEmpty) {
+    if (!phase.hideOutput) return true;
 
-  // Always build `lib/` dirs, anything in them might be available to any app.
-  if (id.path.startsWith('lib/')) return true;
-
-  // Apply the build filters, if present.
-  if ((buildFilters?.isNotEmpty ?? false) &&
-      !buildFilters.any((f) => f.matches(id))) {
-    return false;
+    if (id.path.startsWith('lib/')) return true;
+  } else {
+    if (!buildFilters.any((f) => f.matches(id))) {
+      return false;
+    }
   }
 
-  // Empty `buildDirs` implies building everything.
   if (buildDirs.isEmpty) return true;
 
   return buildDirs.any(id.path.startsWith);
