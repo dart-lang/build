@@ -19,8 +19,8 @@ import '../generate/phase.dart';
 ///   always built.
 /// - Regardless of the [buildFilters] setting, if [buildDirs] is supplied then
 ///   `id.path` must start with one of the specified directory names.
-bool shouldBuildForDirs(AssetId id, List<String> buildDirs, BuildPhase phase,
-    {Iterable<BuildFilter> buildFilters}) {
+bool shouldBuildForDirs(AssetId id, Iterable<String> buildDirs,
+    Iterable<BuildFilter> buildFilters, BuildPhase phase) {
   buildFilters ??= [];
   if (buildFilters.isEmpty) {
     if (!phase.hideOutput) return true;

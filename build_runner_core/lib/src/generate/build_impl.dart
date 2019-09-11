@@ -349,8 +349,8 @@ class _SingleBuild {
     var phase = _buildPhases[phaseNumber];
     await Future.wait(
         _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
-      if (!shouldBuildForDirs(node.id, _buildPaths(_buildDirs), phase,
-          buildFilters: _buildFilters)) {
+      if (!shouldBuildForDirs(
+          node.id, _buildPaths(_buildDirs), _buildFilters, phase)) {
         return;
       }
 
