@@ -11,7 +11,7 @@ supported for each.
 Whenever a build filter is provided, only required outputs matching one of the
 build filters will be built, in addition to the inputs to those outputs.
 
-### Command line usage
+### Command Line Usage
 
 Build filters are supplied using the new `--build-filter` option, which accepts
 relative paths under the package as well as `package:` uris.
@@ -26,6 +26,19 @@ pub run build_runner serve \
   --build-filter="web/main.dart.js" \
   --build-filter="package:build_web_compilers/**/*.js"
 ```
+
+### Build Daemon Usage
+
+The build daemon now accepts build filter syntax when registering targets. It
+also still recognizes the old style targets for now and continues to treat
+those as build directories.
+
+In the future we plan to deprecate support for passing top level directories as
+targets and instead will force build filter syntax only. The equivalent of an
+old style directory target would be the following two build filters:
+
+- `<dir>/**/*`
+- `package:*/**/*`
 
 ### Common Use Cases
 
