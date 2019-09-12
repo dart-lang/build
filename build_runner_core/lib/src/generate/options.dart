@@ -56,7 +56,7 @@ class LogSubscription {
   final StreamSubscription<LogRecord> logListener;
 }
 
-/// Describes a set files that should be built.
+/// Describes a set of files that should be built.
 class BuildFilter {
   /// The package name glob that files must live under in order to match.
   final Glob _package;
