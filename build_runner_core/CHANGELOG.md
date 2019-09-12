@@ -1,7 +1,22 @@
-## 3.2.0-dev
+## 4.0.0
 
-- Add `buildFilters` to `BuildOptions` which allows you to filter which
-  outputs will be generated (even non-optional ones).
+### New Feature: Build Filters
+
+- Added a new `BuildFilter` class which matches a set of assets with glob
+  syntax support for both package and file names.
+- Added `buildFilters` to `BuildOptions` which is a `Set<BuildFilter>` and
+  is used to filter exactly which outputs will be generated.
+  - Note that any inputs to the specified files will also necessarily be built.
+- `BuildRunner.run` also now accepts an optional `Set<BuildFilter>` argument.
+- `FinalizedReader` also  now accepts a `Set<BuildFilter>` optional parameter
+  and will only allow reading matched files.
+  - This means you can create output directories or servers that respect build
+    filters.
+
+### Breaking Changes
+
+- `FinalizedReader.reset` now requires an additional `Set<BuildFilter>`
+  argument.
 
 ## 3.1.1
 
