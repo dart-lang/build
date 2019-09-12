@@ -40,6 +40,18 @@ now build just that test instead of all tests under the `test` directory.
 
 This can greatly speed up iteration times in packages with lots of tests.
 
+**Example**: This will build a single web test and run it:
+
+```
+pub run build_runner test \
+  --build-filter="test/my_test.dart.browser_test.dart.js" \
+  --build-filter="package:build_web_compilers/**/*.js" \
+  -- -p chrome test/my_test.dart
+```
+
+**Note**: If your test requires any other generated files (css, etc) you will
+need to add additional filters.
+
 #### Applications
 
 This feature works as expected with the `--output <dir>` and the `serve`
