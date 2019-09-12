@@ -51,12 +51,12 @@ Future<ServeHandler> watch(
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool isReleaseBuild,
   String logPerformanceDir,
-  Iterable<BuildFilter> buildFilters,
+  Set<BuildFilter> buildFilters,
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= PackageGraph.forThisPackage();
-  buildDirs ??= Set<BuildDirectory>();
-  buildFilters ??= <BuildFilter>[];
+  buildDirs ??= <BuildDirectory>{};
+  buildFilters ??= <BuildFilter>{};
 
   var environment = OverrideableEnvironment(
       IOEnvironment(packageGraph,
@@ -122,7 +122,7 @@ WatchImpl _runWatch(
         String configKey,
         bool willCreateOutputDirs,
         Set<BuildDirectory> buildDirs,
-        Iterable<BuildFilter> buildFilters,
+        Set<BuildFilter> buildFilters,
         {bool isReleaseMode = false}) =>
     WatchImpl(
         options,
@@ -168,7 +168,7 @@ class WatchImpl implements BuildState {
   final Set<BuildDirectory> _buildDirs;
 
   /// Filters for specific files to build.
-  final Iterable<BuildFilter> _buildFilters;
+  final Set<BuildFilter> _buildFilters;
 
   @override
   Future<BuildResult> currentBuild;

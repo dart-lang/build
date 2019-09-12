@@ -68,7 +68,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     bool isReleaseBuild,
     Map<String, Map<String, dynamic>> builderConfigOverrides,
     String logPerformanceDir,
-    Iterable<BuildFilter> buildFilters}) async {
+    Set<BuildFilter> buildFilters}) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= PackageGraph.forThisPackage();
   var environment = OverrideableEnvironment(
@@ -155,7 +155,7 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         bool isReleaseBuild,
         Map<String, Map<String, dynamic>> builderConfigOverrides,
         String logPerformanceDir,
-        Iterable<BuildFilter> buildFilters}) =>
+        Set<BuildFilter> buildFilters}) =>
     watch_impl.watch(
       builders,
       assumeTty: assumeTty,

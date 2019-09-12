@@ -31,8 +31,8 @@ import 'node.dart';
 class OptionalOutputTracker {
   final _checkedOutputs = <AssetId, bool>{};
   final AssetGraph _assetGraph;
-  final List<String> _buildDirs;
-  final Iterable<BuildFilter> _buildFilters;
+  final Set<String> _buildDirs;
+  final Set<BuildFilter> _buildFilters;
   final List<BuildPhase> _buildPhases;
 
   OptionalOutputTracker(

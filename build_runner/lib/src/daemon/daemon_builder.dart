@@ -84,7 +84,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     _signalStart(targetNames);
     var results = <BuildResult>[];
     var buildDirs = <BuildDirectory>{};
-    var buildFilters = <BuildFilter>[];
+    var buildFilters = <BuildFilter>{};
     for (var target in defaultTargets) {
       if (_looksLikeBuildFilter(target.target)) {
         buildFilters.add(BuildFilter.fromArg(

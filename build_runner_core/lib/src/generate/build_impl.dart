@@ -46,11 +46,11 @@ import 'phase.dart';
 
 final _logger = Logger('Build');
 
-List<String> _buildPaths(Set<BuildDirectory> buildDirs) =>
+Set<String> _buildPaths(Set<BuildDirectory> buildDirs) =>
     // The empty string means build everything.
     buildDirs.any((b) => b.directory == '')
-        ? []
-        : buildDirs.map((b) => b.directory).toList();
+        ? <String>{}
+        : buildDirs.map((b) => b.directory).toSet();
 
 class BuildImpl {
   final FinalizedReader finalizedReader;
@@ -90,9 +90,9 @@ class BuildImpl {
         _logPerformanceDir = options.logPerformanceDir;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates,
-      {Set<BuildDirectory> buildDirs, Iterable<BuildFilter> buildFilters}) {
+      {Set<BuildDirectory> buildDirs, Set<BuildFilter> buildFilters}) {
     buildDirs ??= Set<BuildDirectory>();
-    buildFilters ??= [];
+    buildFilters ??= {};
     finalizedReader.reset(_buildPaths(buildDirs), buildFilters);
     return _SingleBuild(this, buildDirs, buildFilters).run(updates)
       ..whenComplete(_resolvers.reset);
@@ -145,7 +145,7 @@ class BuildImpl {
 /// build.
 class _SingleBuild {
   final AssetGraph _assetGraph;
-  final Iterable<BuildFilter> _buildFilters;
+  final Set<BuildFilter> _buildFilters;
   final List<BuildPhase> _buildPhases;
   final List<Pool> _buildPhasePool;
   final BuildEnvironment _environment;
@@ -171,7 +171,7 @@ class _SingleBuild {
   HungActionsHeartbeat hungActionsHeartbeat;
 
   _SingleBuild(BuildImpl buildImpl, Set<BuildDirectory> buildDirs,
-      Iterable<BuildFilter> buildFilters)
+      Set<BuildFilter> buildFilters)
       : _assetGraph = buildImpl.assetGraph,
         _buildFilters = buildFilters,
         _buildPhases = buildImpl._buildPhases,

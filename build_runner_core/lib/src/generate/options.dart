@@ -15,6 +15,7 @@ import 'package:path/path.dart' as p;
 import '../environment/build_environment.dart';
 import '../package_graph/package_graph.dart';
 import '../package_graph/target_graph.dart';
+import '../util/hash.dart';
 import 'exceptions.dart';
 
 /// The default list of files to include when an explicit include is not
@@ -61,9 +62,9 @@ class BuildFilter {
   final Glob _package;
 
   /// A glob for files under [_package] that must match.
-  final Glob _glob;
+  final Glob _path;
 
-  BuildFilter(this._package, this._glob);
+  BuildFilter(this._package, this._path);
 
   /// Builds a [BuildFilter] from a command line argument.
   ///
@@ -89,7 +90,29 @@ class BuildFilter {
 
   /// Returns whether or not [id] mathes this filter.
   bool matches(AssetId id) =>
-      _package.matches(id.package) && _glob.matches(id.path);
+      _package.matches(id.package) && _path.matches(id.path);
+
+  @override
+  int hashCode() {
+    var hash = 0;
+    hash = hashCombine(hash, _package.context.hashCode);
+    hash = hashCombine(hash, _package.pattern.hashCode);
+    hash = hashCombine(hash, _package.recursive.hashCode);
+    hash = hashCombine(hash, _path.context.hashCode);
+    hash = hashCombine(hash, _path.pattern.hashCode);
+    hash = hashCombine(hash, _path.recursive.hashCode);
+    return hashComplete(hash);
+  }
+
+  @override
+  operator ==(other) =>
+      other is BuildFilter &&
+      other._path.context == _path.context &&
+      other._path.pattern == _path.pattern &&
+      other._path.recursive == _path.recursive &&
+      other._package.context == _package.context &&
+      other._package.pattern == _package.pattern &&
+      other._package.recursive == _package.recursive;
 }
 
 /// Manages setting up consistent defaults for all options and build modes.
