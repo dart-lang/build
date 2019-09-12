@@ -93,7 +93,7 @@ class BuildFilter {
       _package.matches(id.package) && _path.matches(id.path);
 
   @override
-  int hashCode() {
+  int get hashCode {
     var hash = 0;
     hash = hashCombine(hash, _package.context.hashCode);
     hash = hashCombine(hash, _package.pattern.hashCode);
