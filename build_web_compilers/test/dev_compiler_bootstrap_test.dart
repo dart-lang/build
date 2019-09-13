@@ -114,6 +114,14 @@ main() {
 
 // Runs all the DDC related builders except the entrypoint builder.
 Future<void> runPrerequisites(Map<String, dynamic> assets) async {
+  // Uses the real sdk copy builder to copy required files from the SDK.
+  //
+  // It is necessary to add a fake asset so that the build_web_compilers
+  // package exists.
+  var sdkAssets = <String, dynamic>{'build_web_compilers|fake.txt': ''};
+  await testBuilderAndCollectAssets(sdkJsCopyBuilder(null), sdkAssets);
+  assets.addAll(sdkAssets);
+
   await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
   await testBuilderAndCollectAssets(MetaModuleBuilder(ddcPlatform), assets);
   await testBuilderAndCollectAssets(
