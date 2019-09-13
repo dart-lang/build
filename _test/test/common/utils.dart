@@ -46,7 +46,7 @@ Future<void> startServer(
           '--packages=.packages',
           p.join('..', 'build_runner', 'bin', 'build_runner.dart'),
           'serve',
-          ...buildArgs,
+          if (buildArgs != null) ...buildArgs,
         ],
         ensureCleanBuild: ensureCleanBuild,
         extraExpects: extraExpects);
