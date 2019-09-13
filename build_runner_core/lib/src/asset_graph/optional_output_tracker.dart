@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 
 import '../generate/phase.dart';
 import '../util/build_dirs.dart';
@@ -13,7 +14,7 @@ import 'node.dart';
 /// were required by in the current build.
 ///
 /// An optional output becomes required if:
-/// - Any of it's transitive outputs is non-optional.
+/// - Any of it's transitive outputs is required (based on the criteria below).
 /// - It was output by the same build step as any required output.
 ///
 /// Any outputs from non-optional phases are considered required, unless the
@@ -21,17 +22,21 @@ import 'node.dart';
 ///  - [_buildDirs] is non-empty.
 ///  - The output lives in a non-lib directory.
 ///  - The outputs path is not prefixed by one of [_buildDirs].
+///  - If [_buildFilters] is non-empty and the output doesn't match one of the
+///    filters.
 ///
-/// Non-required optional output might still exist in the generated directory an
-/// the asset graph but we should avoid serving them, outputting them in the
-/// merged directories, or considering a failed output as an overall.
+/// Non-required optional output might still exist in the generated directory
+/// and the asset graph but we should avoid serving them, outputting them in
+/// the merged directories, or considering a failed output as an overall.
 class OptionalOutputTracker {
   final _checkedOutputs = <AssetId, bool>{};
   final AssetGraph _assetGraph;
-  final List<String> _buildDirs;
+  final Set<String> _buildDirs;
+  final Set<BuildFilter> _buildFilters;
   final List<BuildPhase> _buildPhases;
 
-  OptionalOutputTracker(this._assetGraph, this._buildDirs, this._buildPhases);
+  OptionalOutputTracker(
+      this._assetGraph, this._buildDirs, this._buildFilters, this._buildPhases);
 
   /// Returns whether [output] is required.
   ///
@@ -48,7 +53,8 @@ class OptionalOutputTracker {
     if (node is! GeneratedAssetNode) return true;
     final generatedNode = node as GeneratedAssetNode;
     final phase = _buildPhases[generatedNode.phaseNumber];
-    if (!phase.isOptional && shouldBuildForDirs(output, _buildDirs, phase)) {
+    if (!phase.isOptional &&
+        shouldBuildForDirs(output, _buildDirs, _buildFilters, phase)) {
       return true;
     }
     return _checkedOutputs.putIfAbsent(

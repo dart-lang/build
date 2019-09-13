@@ -83,21 +83,34 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     _logMessage(Level.INFO, 'About to build ${targetNames.toList()}...');
     _signalStart(targetNames);
     var results = <BuildResult>[];
-    var buildDirs = defaultTargets.map((target) {
+    var buildDirs = <BuildDirectory>{};
+    var buildFilters = <BuildFilter>{};
+    for (var target in defaultTargets) {
       OutputLocation outputLocation;
       if (target.outputLocation != null) {
         outputLocation = OutputLocation(target.outputLocation.output,
             useSymlinks: target.outputLocation.useSymlinks,
             hoist: target.outputLocation.hoist);
       }
-      return BuildDirectory(
-        target.target,
-        outputLocation: outputLocation,
-      );
-    }).toSet();
+      buildDirs
+          .add(BuildDirectory(target.target, outputLocation: outputLocation));
+      if (target.buildFilters != null && target.buildFilters.isNotEmpty) {
+        buildFilters.addAll([
+          for (var pattern in target.buildFilters)
+            BuildFilter.fromArg(pattern, _buildOptions.packageGraph.root.name)
+        ]);
+      } else {
+        buildFilters
+          ..add(BuildFilter.fromArg(
+              'package:*/**', _buildOptions.packageGraph.root.name))
+          ..add(BuildFilter.fromArg(
+              '${target.target}/**', _buildOptions.packageGraph.root.name));
+      }
+    }
     try {
       var mergedChanges = collectChanges([changes]);
-      var result = await _builder.run(mergedChanges, buildDirs: buildDirs);
+      var result = await _builder.run(mergedChanges,
+          buildDirs: buildDirs, buildFilters: buildFilters);
       for (var target in targets) {
         if (result.status == core.BuildStatus.success) {
           // TODO(grouma) - Can we notify if a target was cached?

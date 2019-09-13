@@ -52,7 +52,7 @@ main() {
       environment = TestBuildEnvironment(reader: assetReader);
       graph = await AssetGraph.build(phases, sources.keys.toSet(),
           Set<AssetId>(), packageGraph, assetReader);
-      optionalOutputTracker = OptionalOutputTracker(graph, [], phases);
+      optionalOutputTracker = OptionalOutputTracker(graph, {}, {}, phases);
       finalizedAssetsView = FinalizedAssetsView(graph, optionalOutputTracker);
       for (var id in graph.outputs) {
         var node = graph.get(id) as GeneratedAssetNode
@@ -292,7 +292,7 @@ main() {
     });
 
     test('doesnt always write files not matching outputDirs', () async {
-      optionalOutputTracker = OptionalOutputTracker(graph, ['foo'], phases);
+      optionalOutputTracker = OptionalOutputTracker(graph, {'foo'}, {}, phases);
       finalizedAssetsView = FinalizedAssetsView(graph, optionalOutputTracker);
       var success = await createMergedOutputDirectories(
           Set.of([

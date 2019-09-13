@@ -123,6 +123,7 @@ class RunCommand extends BuildRunnerCommand {
           trackPerformance: options.trackPerformance,
           skipBuildScriptCheck: options.skipBuildScriptCheck,
           logPerformanceDir: options.logPerformanceDir,
+          buildFilters: options.buildFilters,
         );
 
         if (result.status == BuildStatus.failure) {

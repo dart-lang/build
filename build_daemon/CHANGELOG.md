@@ -1,3 +1,7 @@
+## 2.1.0
+
+- Added optional `DefaultBuildTarget.buildFilters` field.
+
 ## 2.0.0
 
 - Create a public entrypoint for backend implementations of the daemon protocol.

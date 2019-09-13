@@ -51,10 +51,12 @@ Future<ServeHandler> watch(
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool isReleaseBuild,
   String logPerformanceDir,
+  Set<BuildFilter> buildFilters,
 }) async {
   builderConfigOverrides ??= const {};
   packageGraph ??= PackageGraph.forThisPackage();
-  buildDirs ??= Set<BuildDirectory>();
+  buildDirs ??= <BuildDirectory>{};
+  buildFilters ??= <BuildFilter>{};
 
   var environment = OverrideableEnvironment(
       IOEnvironment(packageGraph,
@@ -91,6 +93,7 @@ Future<ServeHandler> watch(
       buildDirs
           .any((target) => target?.outputLocation?.path?.isNotEmpty ?? false),
       buildDirs,
+      buildFilters,
       isReleaseMode: isReleaseBuild ?? false);
 
   unawaited(watch.buildResults.drain().then((_) async {
@@ -119,9 +122,19 @@ WatchImpl _runWatch(
         String configKey,
         bool willCreateOutputDirs,
         Set<BuildDirectory> buildDirs,
+        Set<BuildFilter> buildFilters,
         {bool isReleaseMode = false}) =>
-    WatchImpl(options, environment, builders, builderConfigOverrides, until,
-        directoryWatcherFactory, configKey, willCreateOutputDirs, buildDirs,
+    WatchImpl(
+        options,
+        environment,
+        builders,
+        builderConfigOverrides,
+        until,
+        directoryWatcherFactory,
+        configKey,
+        willCreateOutputDirs,
+        buildDirs,
+        buildFilters,
         isReleaseMode: isReleaseMode);
 
 class WatchImpl implements BuildState {
@@ -154,6 +167,9 @@ class WatchImpl implements BuildState {
   /// The directories to build upon file changes and where to output them.
   final Set<BuildDirectory> _buildDirs;
 
+  /// Filters for specific files to build.
+  final Set<BuildFilter> _buildFilters;
+
   @override
   Future<BuildResult> currentBuild;
 
@@ -173,6 +189,7 @@ class WatchImpl implements BuildState {
       this._configKey,
       this._willCreateOutputDirs,
       this._buildDirs,
+      this._buildFilters,
       {bool isReleaseMode = false})
       : _debounceDelay = options.debounceDelay,
         packageGraph = options.packageGraph {
@@ -218,7 +235,8 @@ class WatchImpl implements BuildState {
               failureType: FailureType.buildScriptChanged);
         }
       }
-      return _build.run(mergedChanges, buildDirs: _buildDirs);
+      return _build.run(mergedChanges,
+          buildDirs: _buildDirs, buildFilters: _buildFilters);
     }
 
     var terminate = Future.any([until, _terminateCompleter.future]).then((_) {
@@ -308,7 +326,8 @@ class WatchImpl implements BuildState {
             options, watcherEnvironment, builders, builderConfigOverrides,
             isReleaseBuild: isReleaseMode);
 
-        firstBuild = await _build.run({}, buildDirs: _buildDirs);
+        firstBuild = await _build
+            .run({}, buildDirs: _buildDirs, buildFilters: _buildFilters);
       } on CannotBuildException {
         _terminateCompleter.complete();
 

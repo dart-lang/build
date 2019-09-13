@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import '../util/hash.dart';
+
 class BuildDirectory {
   final String directory;
   final OutputLocation outputLocation;
@@ -16,9 +18,9 @@ class BuildDirectory {
   @override
   int get hashCode {
     var hash = 0;
-    hash = _hashCombine(hash, directory.hashCode);
-    hash = _hashCombine(hash, outputLocation.hashCode);
-    return _hashComplete(hash);
+    hash = hashCombine(hash, directory.hashCode);
+    hash = hashCombine(hash, outputLocation.hashCode);
+    return hashComplete(hash);
   }
 }
 
@@ -44,21 +46,9 @@ class OutputLocation {
   @override
   int get hashCode {
     var hash = 0;
-    hash = _hashCombine(hash, path.hashCode);
-    hash = _hashCombine(hash, useSymlinks.hashCode);
-    hash = _hashCombine(hash, hoist.hashCode);
-    return _hashComplete(hash);
+    hash = hashCombine(hash, path.hashCode);
+    hash = hashCombine(hash, useSymlinks.hashCode);
+    hash = hashCombine(hash, hoist.hashCode);
+    return hashComplete(hash);
   }
-}
-
-int _hashCombine(int hash, int value) {
-  hash = 0x1fffffff & (hash + value);
-  hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
-  return hash ^ (hash >> 6);
-}
-
-int _hashComplete(int hash) {
-  hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
-  hash = hash ^ (hash >> 11);
-  return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
 }

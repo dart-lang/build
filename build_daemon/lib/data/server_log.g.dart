@@ -76,7 +76,7 @@ class _$ServerLogSerializer implements StructuredSerializer<ServerLog> {
   final String wireName = 'ServerLog';
 
   @override
-  Iterable serialize(Serializers serializers, ServerLog object,
+  Iterable<Object> serialize(Serializers serializers, ServerLog object,
       {FullType specifiedType = FullType.unspecified}) {
     final result = <Object>[
       'level',
@@ -103,12 +103,11 @@ class _$ServerLogSerializer implements StructuredSerializer<ServerLog> {
         ..add(serializers.serialize(object.stackTrace,
             specifiedType: const FullType(String)));
     }
-
     return result;
   }
 
   @override
-  ServerLog deserialize(Serializers serializers, Iterable serialized,
+  ServerLog deserialize(Serializers serializers, Iterable<Object> serialized,
       {FullType specifiedType = FullType.unspecified}) {
     final result = new ServerLogBuilder();
 

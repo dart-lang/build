@@ -24,7 +24,7 @@ void main() {
     });
 
     test('via build.yaml config flag', () async {
-      await expectTestsPass(usePrecompiled: true, args: [
+      await expectTestsPass(usePrecompiled: true, buildArgs: [
         '--config=dart2js',
         '--output=$_outputDir',
       ]);
@@ -32,7 +32,7 @@ void main() {
     }, onPlatform: {'windows': const Skip('flaky on windows')});
 
     test('via --define flag', () async {
-      await expectTestsPass(usePrecompiled: true, args: [
+      await expectTestsPass(usePrecompiled: true, buildArgs: [
         '--define',
         'build_web_compilers|entrypoint=compiler=dart2js',
         '--define',
@@ -43,7 +43,7 @@ void main() {
     }, onPlatform: {'windows': const Skip('flaky on windows')});
 
     test('via --release mode', () async {
-      await expectTestsPass(usePrecompiled: true, args: [
+      await expectTestsPass(usePrecompiled: true, buildArgs: [
         '--release',
         '--output=$_outputDir',
       ]);
@@ -51,7 +51,7 @@ void main() {
     }, onPlatform: {'windows': const Skip('flaky on windows')});
 
     test('--define overrides --config', () async {
-      await expectTestsPass(usePrecompiled: true, args: [
+      await expectTestsPass(usePrecompiled: true, buildArgs: [
         '--config',
         'dart2js',
         '--define',

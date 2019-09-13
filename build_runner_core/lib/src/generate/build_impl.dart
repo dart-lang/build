@@ -46,11 +46,11 @@ import 'phase.dart';
 
 final _logger = Logger('Build');
 
-List<String> _buildPaths(Set<BuildDirectory> buildDirs) =>
+Set<String> _buildPaths(Set<BuildDirectory> buildDirs) =>
     // The empty string means build everything.
     buildDirs.any((b) => b.directory == '')
-        ? []
-        : buildDirs.map((b) => b.directory).toList();
+        ? <String>{}
+        : buildDirs.map((b) => b.directory).toSet();
 
 class BuildImpl {
   final FinalizedReader finalizedReader;
@@ -90,10 +90,11 @@ class BuildImpl {
         _logPerformanceDir = options.logPerformanceDir;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates,
-      {Set<BuildDirectory> buildDirs}) {
+      {Set<BuildDirectory> buildDirs, Set<BuildFilter> buildFilters}) {
     buildDirs ??= Set<BuildDirectory>();
-    finalizedReader.reset(_buildPaths(buildDirs));
-    return _SingleBuild(this, buildDirs).run(updates)
+    buildFilters ??= {};
+    finalizedReader.reset(_buildPaths(buildDirs), buildFilters);
+    return _SingleBuild(this, buildDirs, buildFilters).run(updates)
       ..whenComplete(_resolvers.reset);
   }
 
@@ -144,6 +145,7 @@ class BuildImpl {
 /// build.
 class _SingleBuild {
   final AssetGraph _assetGraph;
+  final Set<BuildFilter> _buildFilters;
   final List<BuildPhase> _buildPhases;
   final List<Pool> _buildPhasePool;
   final BuildEnvironment _environment;
@@ -168,8 +170,10 @@ class _SingleBuild {
   /// Can't be final since it needs access to [pendingActions].
   HungActionsHeartbeat hungActionsHeartbeat;
 
-  _SingleBuild(BuildImpl buildImpl, Set<BuildDirectory> buildDirs)
+  _SingleBuild(BuildImpl buildImpl, Set<BuildDirectory> buildDirs,
+      Set<BuildFilter> buildFilters)
       : _assetGraph = buildImpl.assetGraph,
+        _buildFilters = buildFilters,
         _buildPhases = buildImpl._buildPhases,
         _buildPhasePool = List(buildImpl._buildPhases.length),
         _environment = buildImpl._environment,
@@ -207,7 +211,7 @@ class _SingleBuild {
     var watch = Stopwatch()..start();
     var result = await _safeBuild(updates);
     var optionalOutputTracker = OptionalOutputTracker(
-        _assetGraph, _buildPaths(_buildDirs), _buildPhases);
+        _assetGraph, _buildPaths(_buildDirs), _buildFilters, _buildPhases);
     if (result.status == BuildStatus.success) {
       final failures = _assetGraph.failedOutputs
           .where((n) => optionalOutputTracker.isRequired(n.id));
@@ -345,7 +349,8 @@ class _SingleBuild {
     var phase = _buildPhases[phaseNumber];
     await Future.wait(
         _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
-      if (!shouldBuildForDirs(node.id, _buildPaths(_buildDirs), phase)) {
+      if (!shouldBuildForDirs(
+          node.id, _buildPaths(_buildDirs), _buildFilters, phase)) {
         return;
       }
 

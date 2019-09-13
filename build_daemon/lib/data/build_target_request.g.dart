@@ -17,7 +17,7 @@ class _$BuildTargetRequestSerializer
   final String wireName = 'BuildTargetRequest';
 
   @override
-  Iterable serialize(Serializers serializers, BuildTargetRequest object,
+  Iterable<Object> serialize(Serializers serializers, BuildTargetRequest object,
       {FullType specifiedType = FullType.unspecified}) {
     final result = <Object>[
       'target',
@@ -29,7 +29,8 @@ class _$BuildTargetRequestSerializer
   }
 
   @override
-  BuildTargetRequest deserialize(Serializers serializers, Iterable serialized,
+  BuildTargetRequest deserialize(
+      Serializers serializers, Iterable<Object> serialized,
       {FullType specifiedType = FullType.unspecified}) {
     final result = new BuildTargetRequestBuilder();
 
