@@ -29,16 +29,17 @@ pub run build_runner serve \
 
 ### Build Daemon Usage
 
-The build daemon now accepts build filter syntax when registering targets. It
-also still recognizes the old style targets for now and continues to treat
-those as build directories.
+The build daemon now accepts build filters when registering a build target. If
+no filters are supplied these default filters are used, which is designed to
+match the previous behavior as closely as possible:
 
-In the future we plan to deprecate support for passing top level directories as
-targets and instead will force build filter syntax only. The equivalent of an
-old style directory target would be the following two build filters:
+- `<target-dir>/**`
+- `package:*/**`
 
-- `<dir>/**/*`
-- `package:*/**/*`
+**Note**: There is one small difference compared to the previous behavior,
+which is that build to source outputs from other top level directories in the
+root package will no longer be built when they would have before. This should
+have no meaningful impact other than being more efficient.
 
 ### Common Use Cases
 
