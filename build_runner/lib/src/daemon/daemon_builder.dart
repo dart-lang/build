@@ -86,18 +86,25 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     var buildDirs = <BuildDirectory>{};
     var buildFilters = <BuildFilter>{};
     for (var target in defaultTargets) {
-      if (_looksLikeBuildFilter(target.target)) {
-        buildFilters.add(BuildFilter.fromArg(
-            target.target, _buildOptions.packageGraph.root.name));
+      OutputLocation outputLocation;
+      if (target.outputLocation != null) {
+        outputLocation = OutputLocation(target.outputLocation.output,
+            useSymlinks: target.outputLocation.useSymlinks,
+            hoist: target.outputLocation.hoist);
+      }
+      buildDirs
+          .add(BuildDirectory(target.target, outputLocation: outputLocation));
+      if (target.buildFilters != null && target.buildFilters.isNotEmpty) {
+        buildFilters.addAll([
+          for (var pattern in target.buildFilters)
+            BuildFilter.fromArg(pattern, _buildOptions.packageGraph.root.name)
+        ]);
       } else {
-        OutputLocation outputLocation;
-        if (target.outputLocation != null) {
-          outputLocation = OutputLocation(target.outputLocation.output,
-              useSymlinks: target.outputLocation.useSymlinks,
-              hoist: target.outputLocation.hoist);
-        }
-        buildDirs
-            .add(BuildDirectory(target.target, outputLocation: outputLocation));
+        buildFilters
+          ..add(BuildFilter.fromArg(
+              'package:*/**', _buildOptions.packageGraph.root.name))
+          ..add(BuildFilter.fromArg(
+              '${target.target}/**', _buildOptions.packageGraph.root.name));
       }
     }
     try {
@@ -225,10 +232,3 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         builder, buildOptions, outputStreamController, changeProvider);
   }
 }
-
-/// Basic hueristic for discovering if a target is a build directory or a
-/// build filter.
-///
-/// Generally filters will contain either a * or a /.
-bool _looksLikeBuildFilter(String target) =>
-    target.contains('/') || target.contains('*');

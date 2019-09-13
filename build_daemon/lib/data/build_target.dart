@@ -28,6 +28,18 @@ abstract class DefaultBuildTarget
 
   @nullable
   OutputLocation get outputLocation;
+
+  /// A set of globs patterns for files to build.
+  ///
+  /// Relative glob paths (from the package) root as well as `package:` uris
+  /// are supported. In the case of a `package:` uri glob syntax is supported
+  /// for the package name as well as the path.
+  ///
+  /// If null then the default is the following patterns:
+  /// - package:*/**
+  /// - $target/**
+  @nullable
+  BuiltSet<String> get buildFilters;
 }
 
 /// The location to write the build outputs.

@@ -301,5 +301,46 @@ main() {
       expect(buildResultsB.results.first.status, BuildStatus.succeeded);
       expect(buildResultsB.results.length, equals(2));
     });
+
+    group('build filters', () {
+      setUp(() async {
+        // Adds an additional entrypoint.
+        await d.dir('a', [
+          d.dir('web', [
+            d.file('other.dart', '''
+main() {
+  print('goodbye world');
+}'''),
+          ])
+        ]).create();
+      });
+
+      test('can build specific outputs', () async {
+        await _startDaemon(buildMode: BuildMode.Manual);
+        var client = await _startClient(buildMode: BuildMode.Manual)
+          ..registerBuildTarget(DefaultBuildTarget((b) => b
+            ..target = 'web'
+            ..buildFilters.add('web/other.dart.js')))
+          ..startBuild();
+        clients.add(client);
+        await client.buildResults
+            .firstWhere((b) => b.results.first.status == BuildStatus.succeeded);
+
+        await d.dir('a', [
+          d.dir('.dart_tool', [
+            d.dir('build', [
+              d.dir('generated', [
+                d.dir('a', [
+                  d.dir('web', [
+                    d.file('other.dart.js', isNotEmpty),
+                    d.nothing('main.dart.js'),
+                  ]),
+                ])
+              ])
+            ])
+          ])
+        ]).validate();
+      });
+    });
   });
 }
