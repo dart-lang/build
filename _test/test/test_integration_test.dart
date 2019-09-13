@@ -21,7 +21,7 @@ void main() {
       '--build-filter',
       'test/hello_world_test.*.dart.js',
       '--build-filter',
-      'package:build_web_compilers/**/*'
+      'package:build_web_compilers/**'
     ];
     await expectTestsPass(
         usePrecompiled: true,

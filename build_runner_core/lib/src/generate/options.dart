@@ -76,7 +76,7 @@ class BuildFilter {
     var uri = Uri.parse(arg);
     if (uri.scheme == 'package') {
       var package = uri.pathSegments.first;
-      var glob = Glob(p.joinAll([
+      var glob = Glob(p.url.joinAll([
         'lib',
         ...uri.pathSegments.skip(1),
       ]));
