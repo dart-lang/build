@@ -25,6 +25,9 @@ var _modulePartialExtension = _context.withoutExtension(jsModuleExtension);
 Future<void> bootstrapDdc(BuildStep buildStep,
     {DartPlatform platform,
     Set<String> skipPlatformCheckPackages = const {}}) async {
+  // Ensures that the sdk resources are built and available.
+  await _ensureSdkResources(buildStep);
+
   var dartEntrypointId = buildStep.inputId;
   var moduleId = buildStep.inputId
       .changeExtension(moduleExtension(platform ?? ddcPlatform));
@@ -490,3 +493,23 @@ var baseUrl = (function () {
   return "/";
 }());
 ''';
+
+/// Files copied from the SDK that are required at runtime to run a DDC
+/// application.
+final _sdkResources = [
+  AssetId('build_web_compilers', 'lib/src/dev_compiler/dart_sdk.js'),
+  AssetId('build_web_compilers', 'lib/src/dev_compiler/require.js'),
+];
+
+/// Ensures that all of [_sdkResources] are built successfully.
+///
+/// This also has the effect of ensuring the sdk resources are present whenever
+/// a DDC app is built - reducing the need to explicitly list these files as
+/// build filters.
+Future<void> _ensureSdkResources(BuildStep buildStep) async {
+  for (var resource in _sdkResources) {
+    if (!await buildStep.canRead(resource)) {
+      throw StateError('Unable to locate required sdk resource $resource');
+    }
+  }
+}

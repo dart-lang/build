@@ -1,3 +1,21 @@
+## 2.4.0
+
+### New Feature: Better --build-filter support for building a single test.
+
+You can now build a basic app or test in isolation by only requesting the
+`*.dart.js` file using a build filter, for example adding this argument to any
+build_runner command would build the `web/main.dart` app only:
+`--build-filter=web/main.dart.js`.
+
+For tests you will need to specify the bootstrapped test file, so:
+`--build-filter=test/hello_world.dart.browser_test.dart.js`.
+
+Previously you also had to explicitly require the SDK resources like:
+`--build-filter="package:build_web_compilers/**.js"` or similar.
+
+**Note**: If your app relies on any non-Dart generated files you will likely
+have to ask for those explicitly as well with additinal filters. 
+
 ## 2.3.0
 
 - Add an option to the DDC bootstrap to skip the checks around modules that have

@@ -134,8 +134,6 @@ void main() {
       'web',
       '--build-filter',
       'web/sub/main.dart.js',
-      '--build-filter',
-      'package:build_web_compilers/**/*'
     ]);
 
     addTearDown(() async {

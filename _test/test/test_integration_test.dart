@@ -17,12 +17,7 @@ void main() {
 
   test('Can build and run a single test with --precompiled and --build-filter',
       () async {
-    var buildArgs = [
-      '--build-filter',
-      'test/hello_world_test.*.dart.js',
-      '--build-filter',
-      'package:build_web_compilers/**'
-    ];
+    var buildArgs = ['--build-filter', 'test/hello_world_test.*.dart.js'];
     await expectTestsPass(
         usePrecompiled: true,
         testArgs: ['test/hello_world_test.dart'],
