@@ -1,4 +1,4 @@
-## 1.7.0-dev
+## 1.7.0
 
 ### New Feature: Build Filters
 
