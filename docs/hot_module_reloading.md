@@ -15,7 +15,7 @@ hot-reloading reloads all the modules from a changed module up to the root modul
 and reruns `main()` function for changes to take effect. This means that without special measures
 the state of your application won't be preserved, nevertheless hot-reloading is much faster than
 full page reloading.
-     
+
 ## Turning hot-reloading on
 
 `build_runner` server has built-in support of hot reloading. To activate it just run the `serve`

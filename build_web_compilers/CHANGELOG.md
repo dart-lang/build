@@ -14,7 +14,7 @@ Previously you also had to explicitly require the SDK resources like:
 `--build-filter="package:build_web_compilers/**.js"` or similar.
 
 **Note**: If your app relies on any non-Dart generated files you will likely
-have to ask for those explicitly as well with additinal filters. 
+have to ask for those explicitly as well with additinal filters.
 
 ## 2.3.0
 
