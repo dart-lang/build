@@ -1,3 +1,7 @@
+## 2.6.0-dev
+
+- Add support for removing unused kernel dependencies after each compile step.
+
 ## 2.5.0
 
 - Add an option to skip the unsupported module check for modules in specified

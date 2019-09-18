@@ -36,6 +36,8 @@ class KernelBuilder implements Builder {
 
   final bool useIncrementalCompiler;
 
+  final bool trackUnusedInputs;
+
   final String outputExtension;
 
   final DartPlatform platform;
@@ -75,6 +77,7 @@ class KernelBuilder implements Builder {
       @required this.outputExtension,
       String librariesPath,
       bool useIncrementalCompiler,
+      bool trackUnusedInputs,
       String platformSdk,
       String kernelTargetName})
       : platformSdk = platformSdk ?? sdkDir,
@@ -82,6 +85,7 @@ class KernelBuilder implements Builder {
         librariesPath = librariesPath ??
             p.join(platformSdk ?? sdkDir, 'lib', 'libraries.json'),
         useIncrementalCompiler = useIncrementalCompiler ?? false,
+        trackUnusedInputs = trackUnusedInputs ?? false,
         buildExtensions = {
           moduleExtension(platform): [outputExtension]
         };
@@ -108,7 +112,8 @@ class KernelBuilder implements Builder {
           dartSdkDir: platformSdk,
           sdkKernelPath: sdkKernelPath,
           librariesPath: librariesPath,
-          useIncrementalCompiler: useIncrementalCompiler);
+          useIncrementalCompiler: useIncrementalCompiler,
+          trackUnusedInputs: trackUnusedInputs);
     } on MissingModulesException catch (e) {
       log.severe(e.toString());
     } on KernelException catch (e, s) {
@@ -131,16 +136,19 @@ Future<void> _createKernel(
     @required String dartSdkDir,
     @required String sdkKernelPath,
     @required String librariesPath,
-    @required bool useIncrementalCompiler}) async {
+    @required bool useIncrementalCompiler,
+    @required bool trackUnusedInputs}) async {
   var request = WorkRequest();
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
   var outputId = module.primarySource.changeExtension(outputExtension);
   var outputFile = scratchSpace.fileFor(outputId);
 
   File packagesFile;
+  File usedInputsFile;
+  Map<String, AssetId> kernelInputPathToId;
+  var kernelDeps = <AssetId>[];
 
   await buildStep.trackStage('CollectDeps', () async {
-    var kernelDeps = <AssetId>[];
     var sourceDeps = <AssetId>[];
 
     await _findModuleDeps(
@@ -154,6 +162,13 @@ Future<void> _createKernel(
     await scratchSpace.ensureAssets(allAssetIds, buildStep);
 
     packagesFile = await createPackagesFile(allAssetIds);
+    if (trackUnusedInputs) {
+      usedInputsFile = await File(p.join(
+              (await Directory.systemTemp.createTemp('kernel_builder_')).path,
+              'unused_inputs.txt'))
+          .create();
+      kernelInputPathToId = {};
+    }
 
     await _addRequestArguments(
         request,
@@ -167,7 +182,9 @@ Future<void> _createKernel(
         packagesFile,
         summaryOnly,
         useIncrementalCompiler,
-        buildStep);
+        buildStep,
+        usedInputsFile: usedInputsFile,
+        kernelInputPathToId: kernelInputPathToId);
   });
 
   // We need to make sure and clean up the temp dir, even if we fail to compile.
@@ -189,6 +206,18 @@ Future<void> _createKernel(
     await scratchSpace.copyOutput(outputId, buildStep, requireContent: true);
   } finally {
     await packagesFile.parent.delete(recursive: true);
+    if (usedInputsFile != null) {
+      var usedInputs = (await usedInputsFile.readAsLines())
+          .map((line) => kernelInputPathToId[line])
+          .where((id) => id != null)
+          .toSet();
+      for (var dep in kernelDeps) {
+        if (!usedInputs.contains(dep)) {
+          buildStep.removeDependency(dep);
+        }
+      }
+      await usedInputsFile.parent.delete(recursive: true);
+    }
   }
 }
 
@@ -282,25 +311,31 @@ Future<Set<AssetId>> _parentsOfMissingKernelFiles(
 /// Fills in all the required arguments for [request] in order to compile the
 /// kernel file for [module].
 Future<void> _addRequestArguments(
-    WorkRequest request,
-    Module module,
-    Iterable<AssetId> transitiveKernelDeps,
-    String targetName,
-    String sdkDir,
-    String sdkKernelPath,
-    String librariesPath,
-    File outputFile,
-    File packagesFile,
-    bool summaryOnly,
-    bool useIncrementalCompiler,
-    AssetReader reader) async {
+  WorkRequest request,
+  Module module,
+  Iterable<AssetId> transitiveKernelDeps,
+  String targetName,
+  String sdkDir,
+  String sdkKernelPath,
+  String librariesPath,
+  File outputFile,
+  File packagesFile,
+  bool summaryOnly,
+  bool useIncrementalCompiler,
+  AssetReader reader, {
+  File usedInputsFile,
+  Map<String, AssetId> kernelInputPathToId,
+}) async {
   // Add all kernel outlines as summary inputs, with digests.
   var inputs = await Future.wait(transitiveKernelDeps.map((id) async {
     var relativePath = p.url.relative(scratchSpace.fileFor(id).uri.path,
         from: scratchSpace.tempDir.uri.path);
-
+    var path = '$multiRootScheme:///$relativePath';
+    if (kernelInputPathToId != null) {
+      kernelInputPathToId[path] = id;
+    }
     return Input()
-      ..path = '$multiRootScheme:///$relativePath'
+      ..path = path
       ..digest = (await reader.digest(id)).bytes;
   }));
   request.arguments.addAll([
@@ -316,6 +351,8 @@ Future<void> _addRequestArguments(
       '--reuse-compiler-result',
       '--use-incremental-compiler',
     ],
+    if (usedInputsFile != null)
+      '--used-inputs=${usedInputsFile.uri.toFilePath()}',
     for (var input in inputs)
       '--input-${summaryOnly ? 'summary' : 'linked'}=${input.path}',
     for (var source in module.sources) _sourceArg(source),
