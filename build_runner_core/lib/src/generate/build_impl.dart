@@ -472,13 +472,15 @@ class _SingleBuild {
             .putIfAbsent(phaseNumber, () => Set<String>())
             .add(actionDescription);
 
+        var removedDependencies = <AssetId, Iterable<AssetId>>{};
         await tracker.trackStage(
             'Build',
             () => runBuilder(builder, [input], wrappedReader, wrappedWriter,
                         PerformanceTrackingResolvers(_resolvers, tracker),
                         logger: logger,
                         resourceManager: _resourceManager,
-                        stageTracker: tracker)
+                        stageTracker: tracker,
+                        removedDependencies: removedDependencies)
                     .catchError((_) {
                   // Errors tracked through the logger
                 }));
@@ -490,8 +492,14 @@ class _SingleBuild {
         // read and written.
         await tracker.trackStage(
             'Finalize',
-            () => _setOutputsState(builderOutputs, wrappedReader, wrappedWriter,
-                actionDescription, logger.errorsSeen));
+            () => _setOutputsState(
+                  builderOutputs,
+                  wrappedReader,
+                  wrappedWriter,
+                  actionDescription,
+                  logger.errorsSeen,
+                  removedDependencies: removedDependencies[input],
+                ));
 
         return wrappedWriter.assetsWritten;
       });
@@ -781,11 +789,15 @@ class _SingleBuild {
       SingleStepReader reader,
       AssetWriterSpy writer,
       String actionDescription,
-      Iterable<ErrorReport> errors) async {
+      Iterable<ErrorReport> errors,
+      {Iterable<AssetId> removedDependencies}) async {
     if (outputs.isEmpty) return;
+    var actualInputs = removedDependencies != null
+        ? reader.assetsRead.difference(removedDependencies as Set<AssetId>)
+        : reader.assetsRead;
 
     final inputsDigest = await _computeCombinedDigest(
-        reader.assetsRead,
+        actualInputs,
         (_assetGraph.get(outputs.first) as GeneratedAssetNode).builderOptionsId,
         reader);
 
@@ -799,8 +811,8 @@ class _SingleBuild {
       // **IMPORTANT**: All updates to `node` must be synchronous. With lazy
       // builders we can run arbitrary code between updates otherwise, at which
       // time a node might not be in a valid state.
-      _removeOldInputs(node, reader.assetsRead);
-      _addNewInputs(node, reader.assetsRead);
+      _removeOldInputs(node, actualInputs);
+      _addNewInputs(node, actualInputs);
       node
         ..state = NodeState.upToDate
         ..wasOutput = wasOutput

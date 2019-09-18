@@ -1,3 +1,8 @@
+## 4.1.0-dev
+
+- Add support for trimming builds based on `BuildStep.removeDependency`
+  calls.
+
 ## 4.0.0
 
 ### New Feature: Build Filters
