@@ -80,6 +80,10 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// Returns value returned by [action].
   /// [action] can be async function returning [Future].
   T trackStage<T>(String label, T Function() action, {bool isExternal = false});
+
+  void removeDependency(AssetId id);
+
+  Iterable<AssetId> get removedDependencies;
 }
 
 abstract class StageTracker {

@@ -57,10 +57,17 @@ class BuildStepImpl implements BuildStep {
 
   bool _isComplete = false;
 
+  @override
+  final removedDependencies = <AssetId>{};
+
   BuildStepImpl(this.inputId, Iterable<AssetId> expectedOutputs, this._reader,
       this._writer, this._rootPackage, this._resolvers, this._resourceManager,
       [this._stageTracker = NoOpStageTracker.instance])
       : _expectedOutputs = expectedOutputs.toSet();
+
+  @override
+  void removeDependency(AssetId id) =>
+      (removedDependencies as Set<AssetId>).add(id);
 
   @override
   Resolver get resolver {

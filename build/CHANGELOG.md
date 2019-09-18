@@ -1,3 +1,12 @@
+## 1.2.0
+
+- Add `BuildStep.removeDependency(AssetId id)` method to `BuildStep` which
+  allows you to delete a dependency on some input after the fact.
+  - This should be used very carefully as it can easily lead to correctness
+    issues if abused.
+- Add the `BuildStep.removedDependencies` iterable which gives access to all
+  the removed deps.
+
 ## 1.1.6
 
 - Allow analyzer version 0.38.0.

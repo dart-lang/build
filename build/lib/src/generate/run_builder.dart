@@ -26,12 +26,16 @@ import 'expected_outputs.dart';
 /// automatically disposed of (its up to the caller to dispose of it later). If
 /// one is not provided then one will be created and disposed at the end of
 /// this function call.
+///
+/// If [removedDependencies] is provided an entry will be added for each input
+/// which gives all the removed dependencies for that input.
 Future<void> runBuilder(Builder builder, Iterable<AssetId> inputs,
     AssetReader reader, AssetWriter writer, Resolvers resolvers,
     {Logger logger,
     ResourceManager resourceManager,
     String rootPackage,
-    StageTracker stageTracker = NoOpStageTracker.instance}) async {
+    StageTracker stageTracker = NoOpStageTracker.instance,
+    Map<AssetId, Iterable<AssetId>> removedDependencies}) async {
   var shouldDisposeResourceManager = resourceManager == null;
   resourceManager ??= ResourceManager();
   logger ??= Logger('runBuilder');
@@ -45,6 +49,7 @@ Future<void> runBuilder(Builder builder, Iterable<AssetId> inputs,
       await builder.build(buildStep);
     } finally {
       await buildStep.complete();
+      removedDependencies[input] = buildStep.removedDependencies;
     }
   }
 
