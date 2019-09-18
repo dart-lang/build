@@ -21,17 +21,29 @@ Builder ddcMetaModuleBuilder(BuilderOptions options) =>
     MetaModuleBuilder.forOptions(ddcPlatform, options);
 Builder ddcMetaModuleCleanBuilder(_) => MetaModuleCleanBuilder(ddcPlatform);
 Builder ddcModuleBuilder([_]) => ModuleBuilder(ddcPlatform);
-Builder ddcBuilder(BuilderOptions options) => DevCompilerBuilder(
-      useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
-      platform: ddcPlatform,
-    );
-const ddcKernelExtension = '.ddc.dill';
-Builder ddcKernelBuilder(BuilderOptions options) => KernelBuilder(
-    summaryOnly: true,
-    sdkKernelPath: p.url.join('lib', '_internal', 'ddc_sdk.dill'),
-    outputExtension: ddcKernelExtension,
+Builder ddcBuilder(BuilderOptions options) {
+  validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
+
+  return DevCompilerBuilder(
+    useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
+    trackUnusedInputs: _readTrackInputsCompilerOption(options),
     platform: ddcPlatform,
-    useIncrementalCompiler: _readUseIncrementalCompilerOption(options));
+  );
+}
+
+const ddcKernelExtension = '.ddc.dill';
+Builder ddcKernelBuilder(BuilderOptions options) {
+  validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
+
+  return KernelBuilder(
+      summaryOnly: true,
+      sdkKernelPath: p.url.join('lib', '_internal', 'ddc_sdk.dill'),
+      outputExtension: ddcKernelExtension,
+      platform: ddcPlatform,
+      useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
+      trackUnusedInputs: _readTrackInputsCompilerOption(options));
+}
+
 Builder sdkJsCopyBuilder(_) => SdkJsCopyBuilder();
 PostProcessBuilder sdkJsCleanupBuilder(BuilderOptions options) =>
     FileDeletingBuilder(
@@ -70,10 +82,18 @@ bool _readUseIncrementalCompilerOption(BuilderOptions options) {
   } else {
     _previousDdcConfig = options.config;
   }
-  validateOptions(options.config, [_useIncrementalCompilerOption],
-      'build_web_compilers:ddc');
+  validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
   return options.config[_useIncrementalCompilerOption] as bool ?? true;
+}
+
+bool _readTrackInputsCompilerOption(BuilderOptions options) {
+  return options.config[_trackUnusedInputsCompilerOption] as bool ?? true;
 }
 
 Map<String, dynamic> _previousDdcConfig;
 const _useIncrementalCompilerOption = 'use-incremental-compiler';
+const _trackUnusedInputsCompilerOption = 'track-unused-inputs';
+const _supportedOptions = [
+  _useIncrementalCompilerOption,
+  _trackUnusedInputsCompilerOption
+];

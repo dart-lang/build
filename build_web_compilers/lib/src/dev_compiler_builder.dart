@@ -25,6 +25,8 @@ const jsSourceMapExtension = '.ddc.js.map';
 class DevCompilerBuilder implements Builder {
   final bool useIncrementalCompiler;
 
+  final bool trackUnusedInputs;
+
   final DartPlatform platform;
 
   /// The sdk kernel file for the current platform.
@@ -46,6 +48,7 @@ class DevCompilerBuilder implements Builder {
 
   DevCompilerBuilder(
       {bool useIncrementalCompiler,
+      bool trackUnusedInputs,
       @required this.platform,
       this.sdkKernelPath,
       String librariesPath,
@@ -54,6 +57,7 @@ class DevCompilerBuilder implements Builder {
         platformSdk = platformSdk ?? sdkDir,
         librariesPath = librariesPath ??
             p.join(platformSdk ?? sdkDir, 'lib', 'libraries.json'),
+        trackUnusedInputs = trackUnusedInputs ?? false,
         buildExtensions = {
           moduleExtension(platform): [
             jsModuleExtension,
@@ -85,7 +89,7 @@ class DevCompilerBuilder implements Builder {
 
     try {
       await _createDevCompilerModule(module, buildStep, useIncrementalCompiler,
-          platformSdk, sdkKernelPath, librariesPath);
+          trackUnusedInputs, platformSdk, sdkKernelPath, librariesPath);
     } on DartDevcCompilationException catch (e) {
       await handleError(e);
     } on MissingModulesException catch (e) {
@@ -99,6 +103,7 @@ Future<void> _createDevCompilerModule(
     Module module,
     BuildStep buildStep,
     bool useIncrementalCompiler,
+    bool trackUnusedInputs,
     String dartSdk,
     String sdkKernelPath,
     String librariesPath,
@@ -118,6 +123,16 @@ Future<void> _createDevCompilerModule(
   var jsOutputFile = scratchSpace.fileFor(jsId);
   var sdkSummary =
       p.url.join(dartSdk, sdkKernelPath ?? 'lib/_internal/ddc_sdk.dill');
+
+  File usedInputsFile;
+  Map<String, AssetId> kernelInputPathToId;
+  if (trackUnusedInputs) {
+    usedInputsFile = await File(p.join(
+            (await Directory.systemTemp.createTemp('ddk_builder_')).path,
+            'unused_inputs.txt'))
+        .create();
+    kernelInputPathToId = {};
+  }
 
   var packagesFile = await createPackagesFile(allAssetIds);
   var request = WorkRequest()
@@ -140,15 +155,22 @@ Future<void> _createDevCompilerModule(
         '--reuse-compiler-result',
         '--use-incremental-compiler',
       ],
+      if (usedInputsFile != null)
+        '--used-inputs-file=${usedInputsFile.uri.toFilePath()}',
       for (var source in module.sources) _sourceArg(source),
     ])
     ..inputs.add(Input()
       ..path = sdkSummary
       ..digest = [0])
-    ..inputs.addAll(
-        await Future.wait(transitiveKernelDeps.map((dep) async => Input()
-          ..path = scratchSpace.fileFor(dep).path
-          ..digest = (await buildStep.digest(dep)).bytes)));
+    ..inputs.addAll(await Future.wait(transitiveKernelDeps.map((dep) async {
+      var file = scratchSpace.fileFor(dep);
+      if (kernelInputPathToId != null) {
+        kernelInputPathToId[file.uri.toString()] = dep;
+      }
+      return Input()
+        ..path = file.path
+        ..digest = (await buildStep.digest(dep)).bytes;
+    })));
 
   WorkResponse response;
   try {
@@ -159,6 +181,18 @@ Future<void> _createDevCompilerModule(
             buildStep.trackStage('Compile', () => response, isExternal: true));
   } finally {
     await packagesFile.parent.delete(recursive: true);
+
+    if (usedInputsFile != null) {
+      var usedInputs = (await usedInputsFile.readAsLines())
+          .map((line) => kernelInputPathToId[line])
+          .toSet();
+      for (var dep in transitiveKernelDeps) {
+        if (!usedInputs.contains(dep)) {
+          buildStep.removeDependency(dep);
+        }
+      }
+      await usedInputsFile.parent.delete(recursive: true);
+    }
   }
 
   // TODO(jakemac53): Fix the ddc worker mode so it always sends back a bad
