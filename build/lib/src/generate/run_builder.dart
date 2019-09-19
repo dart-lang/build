@@ -28,7 +28,7 @@ import 'expected_outputs.dart';
 /// this function call.
 ///
 /// If [reportUnusedAssetsForInput] is provided then all calls to
-/// `BuildStep.reportUnusedAsests` in [builder] will be forwarded to this
+/// `BuildStep.reportUnusedAssets` in [builder] will be forwarded to this
 /// function with the associated primary input.
 Future<void> runBuilder(Builder builder, Iterable<AssetId> inputs,
     AssetReader reader, AssetWriter writer, Resolvers resolvers,

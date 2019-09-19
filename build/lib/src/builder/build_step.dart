@@ -81,12 +81,10 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// [action] can be async function returning [Future].
   T trackStage<T>(String label, T Function() action, {bool isExternal = false});
 
-  /// **WARNING**: Expert level feature only, use at your own risk.
+  /// Indicates that [ids] were read but their content has no impact on the
+  /// outputs of this step.
   ///
-  /// Marks a set of ids as unused even if they were read by this build step.
-  ///
-  /// This should only be used if an asset was read, but none of it's content,
-  /// or the fact that it exists, actually has an impact on the output.
+  /// **WARNING**: Using this introduces serious risk of non-hermetic builds.
   ///
   /// If this file changes or becomes unreadable on the next build this build
   /// step may not run.
@@ -94,7 +92,7 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// **Note**: This is not guaranteed to have any effect and it should be
   /// assumed to be a no-op by default. Implementations must explicitly
   /// choose to support this feature.
-  void reportUnusedAssets(Iterable<AssetId> id);
+  void reportUnusedAssets(Iterable<AssetId> ids);
 }
 
 abstract class StageTracker {

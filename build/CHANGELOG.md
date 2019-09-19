@@ -1,11 +1,12 @@
 ## 1.2.0
 
-- Add `BuildStep.removeDependency(AssetId id)` method to `BuildStep` which
-  allows you to delete a dependency on some input after the fact.
-  - This should be used very carefully as it can easily lead to correctness
-    issues if abused.
-- Add the `BuildStep.removedDependencies` iterable which gives access to all
-  the removed deps.
+- Add the `void reportUnusedAssets(Iterable<AssetId> ids)` method to the
+  `BuildStep` class.
+  - **WARNING**: Using this introduces serious risk of non-hermetic builds.
+  - Indicates to the build system that `ids` were read but their content has
+    no impact on the outputs of the build.
+  - Build system implementations can choose to support this feature or not,
+    and it should be assumed to be a no-op by default.
 
 ## 1.1.6
 
