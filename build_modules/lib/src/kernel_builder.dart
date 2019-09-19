@@ -211,11 +211,8 @@ Future<void> _createKernel(
           .map((line) => kernelInputPathToId[line])
           .where((id) => id != null)
           .toSet();
-      for (var dep in kernelDeps) {
-        if (!usedInputs.contains(dep)) {
-          buildStep.removeDependency(dep);
-        }
-      }
+      buildStep.reportUnusedAssets(
+          kernelDeps.where((id) => !usedInputs.contains(id)));
       await usedInputsFile.parent.delete(recursive: true);
     }
   }

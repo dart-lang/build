@@ -186,11 +186,8 @@ Future<void> _createDevCompilerModule(
       var usedInputs = (await usedInputsFile.readAsLines())
           .map((line) => kernelInputPathToId[line])
           .toSet();
-      for (var dep in transitiveKernelDeps) {
-        if (!usedInputs.contains(dep)) {
-          buildStep.removeDependency(dep);
-        }
-      }
+      buildStep.reportUnusedAssets(
+          transitiveKernelDeps.where((id) => !usedInputs.contains(id)));
       await usedInputsFile.parent.delete(recursive: true);
     }
   }
