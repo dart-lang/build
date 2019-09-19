@@ -41,3 +41,5 @@ dev_dependencies:
 dependency_overrides:
   build:
     path: ../build
+  build_resolvers:
+    path: ../build_resolvers

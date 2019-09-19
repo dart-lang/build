@@ -1,3 +1,7 @@
+## 1.0.8
+
+- Allow `build` version 1.2.0.
+
 ## 1.0.7
 
 - Allow analyzer version 0.38.0.
