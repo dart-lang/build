@@ -1,3 +1,8 @@
+## 4.0.1
+
+- Include `node/**` in the default set of sources (when there is no target
+  defined) for the root package.
+
 ## 4.0.0
 
 ### New Feature: Build Filters
