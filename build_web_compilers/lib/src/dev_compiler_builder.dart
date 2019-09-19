@@ -179,17 +179,19 @@ Future<void> _createDevCompilerModule(
     response = await driver.doWork(request,
         trackWork: (response) =>
             buildStep.trackStage('Compile', () => response, isExternal: true));
-  } finally {
-    await packagesFile.parent.delete(recursive: true);
 
+    // Note that we only want to do this on success, we can't trust the unused
+    // inputs if there is a failure.
     if (usedInputsFile != null) {
       var usedInputs = (await usedInputsFile.readAsLines())
           .map((line) => kernelInputPathToId[line])
           .toSet();
       buildStep.reportUnusedAssets(
           transitiveKernelDeps.where((id) => !usedInputs.contains(id)));
-      await usedInputsFile.parent.delete(recursive: true);
     }
+  } finally {
+    await packagesFile.parent.delete(recursive: true);
+    await usedInputsFile.parent.delete(recursive: true);
   }
 
   // TODO(jakemac53): Fix the ddc worker mode so it always sends back a bad

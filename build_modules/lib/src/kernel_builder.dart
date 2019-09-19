@@ -204,8 +204,9 @@ Future<void> _createKernel(
 
     // Copy the output back using the buildStep.
     await scratchSpace.copyOutput(outputId, buildStep, requireContent: true);
-  } finally {
-    await packagesFile.parent.delete(recursive: true);
+
+    // Note that we only want to do this on success, we can't trust the unused
+    // inputs if there is a failure.
     if (usedInputsFile != null) {
       var usedInputs = (await usedInputsFile.readAsLines())
           .map((line) => kernelInputPathToId[line])
@@ -213,8 +214,10 @@ Future<void> _createKernel(
           .toSet();
       buildStep.reportUnusedAssets(
           kernelDeps.where((id) => !usedInputs.contains(id)));
-      await usedInputsFile.parent.delete(recursive: true);
     }
+  } finally {
+    await packagesFile.parent.delete(recursive: true);
+    await usedInputsFile.parent.delete(recursive: true);
   }
 }
 
