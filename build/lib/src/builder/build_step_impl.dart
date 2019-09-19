@@ -57,17 +57,15 @@ class BuildStepImpl implements BuildStep {
 
   bool _isComplete = false;
 
-  @override
-  final removedDependencies = <AssetId>{};
+  final void Function(Iterable<AssetId>) _reportUnusedAssets;
 
   BuildStepImpl(this.inputId, Iterable<AssetId> expectedOutputs, this._reader,
       this._writer, this._rootPackage, this._resolvers, this._resourceManager,
-      [this._stageTracker = NoOpStageTracker.instance])
-      : _expectedOutputs = expectedOutputs.toSet();
-
-  @override
-  void removeDependency(AssetId id) =>
-      (removedDependencies as Set<AssetId>).add(id);
+      {StageTracker stageTracker,
+      void Function(Iterable<AssetId>) reportUnusedAssets})
+      : _expectedOutputs = expectedOutputs.toSet(),
+        _stageTracker = stageTracker ?? NoOpStageTracker.instance,
+        _reportUnusedAssets = reportUnusedAssets;
 
   @override
   Resolver get resolver {
@@ -176,6 +174,11 @@ class BuildStepImpl implements BuildStep {
     if (!_expectedOutputs.contains(id)) {
       throw UnexpectedOutputException(id, expected: _expectedOutputs);
     }
+  }
+
+  @override
+  void reportUnusedAssets(Iterable<AssetId> assets) {
+    if (_reportUnusedAssets != null) _reportUnusedAssets(assets);
   }
 }
 

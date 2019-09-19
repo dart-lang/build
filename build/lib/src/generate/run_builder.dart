@@ -27,15 +27,17 @@ import 'expected_outputs.dart';
 /// one is not provided then one will be created and disposed at the end of
 /// this function call.
 ///
-/// If [removedDependencies] is provided an entry will be added for each input
-/// which gives all the removed dependencies for that input.
+/// If [reportUnusedAssetsForInput] is provided then all calls to
+/// `BuildStep.reportUnusedAsests` in [builder] will be forwarded to this
+/// function with the associated primary input.
 Future<void> runBuilder(Builder builder, Iterable<AssetId> inputs,
     AssetReader reader, AssetWriter writer, Resolvers resolvers,
     {Logger logger,
     ResourceManager resourceManager,
     String rootPackage,
     StageTracker stageTracker = NoOpStageTracker.instance,
-    Map<AssetId, Iterable<AssetId>> removedDependencies}) async {
+    void Function(AssetId input, Iterable<AssetId> assets)
+        reportUnusedAssetsForInput}) async {
   var shouldDisposeResourceManager = resourceManager == null;
   resourceManager ??= ResourceManager();
   logger ??= Logger('runBuilder');
@@ -44,12 +46,15 @@ Future<void> runBuilder(Builder builder, Iterable<AssetId> inputs,
     var outputs = expectedOutputs(builder, input);
     if (outputs.isEmpty) return;
     var buildStep = BuildStepImpl(input, outputs, reader, writer,
-        rootPackage ?? input.package, resolvers, resourceManager, stageTracker);
+        rootPackage ?? input.package, resolvers, resourceManager,
+        stageTracker: stageTracker,
+        reportUnusedAssets: reportUnusedAssetsForInput == null
+            ? null
+            : (assets) => reportUnusedAssetsForInput(input, assets));
     try {
       await builder.build(buildStep);
     } finally {
       await buildStep.complete();
-      removedDependencies[input] = buildStep.removedDependencies;
     }
   }
 

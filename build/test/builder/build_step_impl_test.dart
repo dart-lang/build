@@ -195,15 +195,9 @@ void main() {
       var writer = StubAssetWriter();
       primary = makeAssetId();
       output = makeAssetId();
-      buildStep = BuildStepImpl(
-          primary,
-          [output],
-          reader,
-          writer,
-          primary.package,
-          AnalyzerResolvers(),
-          resourceManager,
-          NoOpStageTracker.instance);
+      buildStep = BuildStepImpl(primary, [output], reader, writer,
+          primary.package, AnalyzerResolvers(), resourceManager,
+          stageTracker: NoOpStageTracker.instance);
     });
 
     test('Captures failed asynchronous writes', () {
