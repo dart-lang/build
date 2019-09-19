@@ -33,4 +33,4 @@ dependency_overrides:
   build_runner_core:
     path: ../build_runner_core
   # https://github.com/dart-lang/build/issues/2450
-  front_end: "<0.1.24"
+  front_end: "0.1.23"
