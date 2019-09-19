@@ -205,6 +205,22 @@ void main() {
       expect(buildStep.complete(), throwsA('error'));
     });
   });
+
+  test('reportUnusedAssets forwards calls if provided', () {
+    var reader = StubAssetReader();
+    var writer = StubAssetWriter();
+    var unused = <AssetId>{};
+    var buildStep = BuildStepImpl(makeAssetId(), [], reader, writer, 'a',
+        AnalyzerResolvers(), resourceManager,
+        reportUnusedAssets: unused.addAll);
+    var reported = [
+      makeAssetId(),
+      makeAssetId(),
+      makeAssetId(),
+    ];
+    buildStep.reportUnusedAssets(unused);
+    expect(unused, equals(reported));
+  });
 }
 
 class SlowAssetWriter implements AssetWriter {
