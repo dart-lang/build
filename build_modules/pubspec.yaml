@@ -40,3 +40,5 @@ dependency_overrides:
     path: ../build
   build_runner_core:
     path: ../build_runner_core
+  build_resolvers:
+    path: ../build_resolvers
