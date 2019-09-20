@@ -98,7 +98,7 @@ class WebEntrypointBuilder implements Builder {
     if (!isAppEntrypoint) return;
     if (webCompiler == WebCompiler.DartDevc) {
       try {
-        await bootstrapDdc(buildStep);
+        await bootstrapDdc(buildStep, requiredAssets: _ddcSdkResources);
       } on MissingModulesException catch (e) {
         log.severe('$e');
       }
@@ -128,3 +128,10 @@ Future<bool> _isAppEntryPoint(AssetId dartId, AssetReader reader) async {
         node.functionExpression.parameters.parameters.length <= 2;
   });
 }
+
+/// Files copied from the SDK that are required at runtime to run a DDC
+/// application.
+final _ddcSdkResources = [
+  AssetId('build_web_compilers', 'lib/src/dev_compiler/dart_sdk.js'),
+  AssetId('build_web_compilers', 'lib/src/dev_compiler/require.js'),
+];
