@@ -218,7 +218,7 @@ void main() {
       makeAssetId(),
       makeAssetId(),
     ];
-    buildStep.reportUnusedAssets(unused);
+    buildStep.reportUnusedAssets(reported);
     expect(unused, equals(reported));
   });
 }
