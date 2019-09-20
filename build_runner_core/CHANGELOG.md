@@ -1,4 +1,4 @@
-## 4.1.0-dev
+## 4.1.0
 
 - Add support for trimming builds based on `BuildStep.reportUnusedAssets`
   calls. See the `build` package for more details.
