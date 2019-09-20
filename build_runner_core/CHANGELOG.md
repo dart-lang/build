@@ -1,3 +1,8 @@
+## 4.1.0-dev
+
+- Add support for trimming builds based on `BuildStep.reportUnusedAssets`
+  calls. See the `build` package for more details.
+
 ## 4.0.0
 
 ### New Feature: Build Filters

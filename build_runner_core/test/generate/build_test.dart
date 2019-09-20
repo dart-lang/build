@@ -1025,6 +1025,184 @@ void main() {
           writer: writer);
     });
 
+    group('reportUnusedAssets', () {
+      test('removes input dependencies', () async {
+        final builder = TestBuilder(
+            buildExtensions: appendExtension('.copy', from: '.txt'),
+            // Add two extra deps, but remove one since we decided not to use it.
+            build: (BuildStep buildStep, _) async {
+              var usedId = buildStep.inputId.addExtension('.used');
+
+              var content = await buildStep.readAsString(buildStep.inputId) +
+                  await buildStep.readAsString(usedId);
+              await buildStep.writeAsString(
+                  buildStep.inputId.addExtension('.copy'), content);
+
+              var unusedId = buildStep.inputId.addExtension('.unused');
+              await buildStep.canRead(unusedId);
+              buildStep.reportUnusedAssets([unusedId]);
+            });
+        var builders = [applyToRoot(builder)];
+
+        // Initial build.
+        var writer = InMemoryRunnerAssetWriter();
+        await testBuilders(
+            builders,
+            {
+              'a|lib/a.txt': 'a',
+              'a|lib/a.txt.used': 'b',
+              'a|lib/a.txt.unused': 'c',
+            },
+            outputs: {
+              'a|lib/a.txt.copy': 'ab',
+            },
+            writer: writer);
+
+        // Followup build with modified unused inputs should have no outputs.
+        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        writer.assets.clear();
+        await testBuilders(
+            builders,
+            {
+              'a|lib/a.txt': 'a',
+              'a|lib/a.txt.used': 'b',
+              'a|lib/a.txt.unused': 'd', // changed the content of this one
+              'a|lib/a.txt.copy': 'ab',
+              'a|$assetGraphPath': serializedGraph,
+            },
+            outputs: {},
+            writer: writer);
+
+        // And now modify a real input.
+        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        writer.assets.clear();
+        await testBuilders(
+            builders,
+            {
+              'a|lib/a.txt': 'a',
+              'a|lib/a.txt.used': 'e',
+              'a|lib/a.txt.unused': 'd',
+              'a|lib/a.txt.copy': 'ab',
+              'a|$assetGraphPath': serializedGraph,
+            },
+            outputs: {
+              'a|lib/a.txt.copy': 'ae',
+            },
+            writer: writer);
+
+        // Finally modify the primary input.
+        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        writer.assets.clear();
+        await testBuilders(
+            builders,
+            {
+              'a|lib/a.txt': 'f',
+              'a|lib/a.txt.used': 'e',
+              'a|lib/a.txt.unused': 'd',
+              'a|lib/a.txt.copy': 'ae',
+              'a|$assetGraphPath': serializedGraph,
+            },
+            outputs: {
+              'a|lib/a.txt.copy': 'fe',
+            },
+            writer: writer);
+      });
+
+      test('allows marking the primary input as unused', () async {
+        final builder = TestBuilder(
+            buildExtensions: appendExtension('.copy', from: '.txt'),
+            // Add two extra deps, but remove one since we decided not to use it.
+            extraWork: (BuildStep buildStep, _) async {
+              buildStep.reportUnusedAssets([buildStep.inputId]);
+              var usedId = buildStep.inputId.addExtension('.used');
+              await buildStep.canRead(usedId);
+            });
+        var builders = [applyToRoot(builder)];
+
+        // Initial build.
+        var writer = InMemoryRunnerAssetWriter();
+        await testBuilders(
+            builders,
+            {
+              'a|lib/a.txt': 'a',
+              'a|lib/a.txt.used': '',
+            },
+            outputs: {
+              'a|lib/a.txt.copy': 'a',
+            },
+            writer: writer);
+
+        // Followup build with modified primary input should have no outputs.
+        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        writer.assets.clear();
+        await testBuilders(
+            builders,
+            {
+              'a|lib/a.txt': 'b',
+              'a|lib/a.txt.used': '',
+              'a|lib/a.txt.copy': 'a',
+              'a|$assetGraphPath': serializedGraph,
+            },
+            outputs: {},
+            writer: writer);
+
+        // But modifying other inputs still causes a rebuild.
+        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        writer.assets.clear();
+        await testBuilders(
+            builders,
+            {
+              'a|lib/a.txt': 'b',
+              'a|lib/a.txt.used': 'b',
+              'a|lib/a.txt.copy': 'a',
+              'a|$assetGraphPath': serializedGraph,
+            },
+            outputs: {
+              'a|lib/a.txt.copy': 'b',
+            },
+            writer: writer);
+      });
+
+      test('marking the primary input as unused still tracks if it is deleted',
+          () async {
+        final builder = TestBuilder(
+            buildExtensions: appendExtension('.copy', from: '.txt'),
+            // Add two extra deps, but remove one since we decided not to use it.
+            extraWork: (BuildStep buildStep, _) async {
+              buildStep.reportUnusedAssets([buildStep.inputId]);
+            });
+        var builders = [applyToRoot(builder)];
+
+        // Initial build.
+        var writer = InMemoryRunnerAssetWriter();
+        await testBuilders(
+            builders,
+            {
+              'a|lib/a.txt': 'a',
+            },
+            outputs: {
+              'a|lib/a.txt.copy': 'a',
+            },
+            writer: writer);
+
+        // Delete the primary input, the output shoud still be deleted
+        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        writer.assets.clear();
+        await testBuilders(
+            builders,
+            {
+              'a|lib/a.txt.copy': 'a',
+              'a|$assetGraphPath': serializedGraph,
+            },
+            outputs: {},
+            writer: writer);
+
+        var graph = AssetGraph.deserialize(
+            writer.assets[makeAssetId('a|$assetGraphPath')]);
+        expect(graph.get(makeAssetId('a|lib/a.txt.copy')), isNull);
+      });
+    });
+
     test('graph/file system get cleaned up for deleted inputs', () async {
       var builders = [
         copyABuilderApplication,
