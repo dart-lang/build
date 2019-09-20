@@ -38,7 +38,5 @@ dev_dependencies:
 
 
 dependency_overrides:
-  build_runner_core:
-    path: ../build_runner_core
   build_modules:
     path: ../build_modules
