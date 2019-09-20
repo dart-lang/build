@@ -86,7 +86,7 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   ///
   /// **WARNING**: Using this introduces serious risk of non-hermetic builds.
   ///
-  /// If this file changes or becomes unreadable on the next build this build
+  /// If these files change or become unreadable on the next build this build
   /// step may not run.
   ///
   /// **Note**: This is not guaranteed to have any effect and it should be

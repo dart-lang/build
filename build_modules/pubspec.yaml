@@ -36,9 +36,5 @@ dev_dependencies:
     path: test/fixtures/b
 
 dependency_overrides:
-  build:
-    path: ../build
-  build_runner_core:
-    path: ../build_runner_core
-  build_resolvers:
-    path: ../build_resolvers
+  # https://github.com/dart-lang/build/issues/2450
+  front_end: "0.1.23"

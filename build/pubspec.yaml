@@ -5,7 +5,7 @@ author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/build
 
 environment:
-  sdk: ">=2.2.0 <3.0.0"
+  sdk: ">=2.3.0 <3.0.0"
 
 dependencies:
   analyzer: '>=0.35.0 <0.39.0'
@@ -32,3 +32,5 @@ dependency_overrides:
     path: ../build_runner
   build_runner_core:
     path: ../build_runner_core
+  # https://github.com/dart-lang/build/issues/2450
+  front_end: "0.1.23"

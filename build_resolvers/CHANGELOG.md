@@ -1,6 +1,6 @@
 ## 1.0.8
 
-- Allow `build` version 1.2.0.
+- Allow `build` version 1.2.x.
 
 ## 1.0.7
 
