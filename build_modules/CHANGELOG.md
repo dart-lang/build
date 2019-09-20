@@ -1,6 +1,11 @@
 ## 2.6.0-dev
 
-- Add support for removing unused kernel dependencies after each compile step.
+Add support for dependency pruning to the `KernelBuilder`. This should greatly
+improve the invalidation semantics for builds, meaning that less code will be
+recompiled for each edit you make.
+
+This is not enabled by default but can be enabled by passing
+`trackUnusedInputs: true` to the `KernelBuilder` constructor.
 
 ## 2.5.0
 

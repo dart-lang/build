@@ -1,3 +1,25 @@
+## 2.5.0-dev
+
+Add support for dependency pruning to the `DevCompilerBuilder`. This should
+greatly improve the invalidation semantics for builds, meaning that less code
+will be recompiled for each edit you make.
+
+This is enabled by default when using build_runner, and can be disabled using
+the `track-unused-inputs: false` option if you run into issues, so in your
+`build.yaml` it would look like this:
+
+```yaml
+targets:
+  $default:
+    build_web_compilers:ddc:
+      options:
+        track-unused-inputs: false
+```
+
+When using the builder programatically it is disabled by default and can be
+enabled by passing `trackUnusedInputs: true` to the `DevCompilerBuilder`
+constructor.
+
 ## 2.4.0
 
 ### New Feature: Better --build-filter support for building a single test.
