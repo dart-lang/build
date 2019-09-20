@@ -20,6 +20,13 @@ When using the builder programatically it is disabled by default and can be
 enabled by passing `trackUnusedInputs: true` to the `DevCompilerBuilder`
 constructor.
 
+## 2.4.1
+
+Make the required assets for DDC applications configurable in the
+`bootstrapDdc` method instead of hard coded. This allows custom integrations
+like flutter web to not require the same assets, or require additional custom
+assets.
+
 ## 2.4.0
 
 ### New Feature: Better --build-filter support for building a single test.

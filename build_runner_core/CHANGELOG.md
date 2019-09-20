@@ -1,7 +1,9 @@
-## 4.1.0-dev
+## 4.1.0
 
 - Add support for trimming builds based on `BuildStep.reportUnusedAssets`
   calls. See the `build` package for more details.
+- Include `node/**` in the default set of sources (when there is no target
+  defined) for the root package.
 
 ## 4.0.0
 

@@ -22,11 +22,23 @@ _p.Context get _context => _p.url;
 
 var _modulePartialExtension = _context.withoutExtension(jsModuleExtension);
 
-Future<void> bootstrapDdc(BuildStep buildStep,
-    {DartPlatform platform,
-    Set<String> skipPlatformCheckPackages = const {}}) async {
+/// Bootstraps a ddc application, creating the main entrypoint as well as the
+/// bootstrap and digest entrypoints.
+///
+/// If [skipPlatformCheckPackages] is provided then any dart: imports will be
+/// allowed in the specified packages.
+///
+/// If [requiredAssets] is provided then this will ensure those assets are
+/// available to the app by making them inputs of this build action.
+Future<void> bootstrapDdc(
+  BuildStep buildStep, {
+  DartPlatform platform,
+  Set<String> skipPlatformCheckPackages = const {},
+  Iterable<AssetId> requiredAssets,
+}) async {
+  requiredAssets ??= [];
   // Ensures that the sdk resources are built and available.
-  await _ensureSdkResources(buildStep);
+  await _ensureResources(buildStep, requiredAssets);
 
   var dartEntrypointId = buildStep.inputId;
   var moduleId = buildStep.inputId
@@ -494,20 +506,15 @@ var baseUrl = (function () {
 }());
 ''';
 
-/// Files copied from the SDK that are required at runtime to run a DDC
-/// application.
-final _sdkResources = [
-  AssetId('build_web_compilers', 'lib/src/dev_compiler/dart_sdk.js'),
-  AssetId('build_web_compilers', 'lib/src/dev_compiler/require.js'),
-];
-
-/// Ensures that all of [_sdkResources] are built successfully.
+/// Ensures that all of [resources] are built successfully, and adds them as
+/// an input dependency to this action.
 ///
-/// This also has the effect of ensuring the sdk resources are present whenever
+/// This also has the effect of ensuring these resources are present whenever
 /// a DDC app is built - reducing the need to explicitly list these files as
 /// build filters.
-Future<void> _ensureSdkResources(BuildStep buildStep) async {
-  for (var resource in _sdkResources) {
+Future<void> _ensureResources(
+    BuildStep buildStep, Iterable<AssetId> resources) async {
+  for (var resource in resources) {
     if (!await buildStep.canRead(resource)) {
       throw StateError('Unable to locate required sdk resource $resource');
     }

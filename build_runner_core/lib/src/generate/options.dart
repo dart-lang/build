@@ -28,6 +28,7 @@ const List<String> defaultRootPackageWhitelist = [
   'test/**',
   'tool/**',
   'web/**',
+  'node/**',
   'pubspec.yaml',
   'pubspec.lock',
 ];
