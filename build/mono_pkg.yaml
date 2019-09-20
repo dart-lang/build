@@ -8,7 +8,7 @@ stages:
       - dartanalyzer: --fatal-infos --fatal-warnings .
     - dartanalyzer: --fatal-warnings .
       dart:
-        - 2.1.0
+        - 2.3.0
   - unit_test:
     - command: pub run build_runner test
 

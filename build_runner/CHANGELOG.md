@@ -1,3 +1,7 @@
+## 1.7.1
+
+- Allow `build` version 1.2.x.
+
 ## 1.7.0
 
 ### New Feature: Build Filters

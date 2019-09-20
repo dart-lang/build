@@ -1,11 +1,11 @@
 name: build
-version: 1.1.6
+version: 1.2.0
 description: A build system for Dart.
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/build
 
 environment:
-  sdk: ">=2.1.0 <3.0.0"
+  sdk: ">=2.2.2 <3.0.0"
 
 dependencies:
   analyzer: '>=0.35.0 <0.39.0'
@@ -25,3 +25,12 @@ dev_dependencies:
   pedantic: ^1.0.0
   test: ^1.2.0
 
+dependency_overrides:
+  build_resolvers:
+    path: ../build_resolvers
+  build_runner:
+    path: ../build_runner
+  build_runner_core:
+    path: ../build_runner_core
+  # https://github.com/dart-lang/build/issues/2450
+  front_end: "0.1.23"
