@@ -1,3 +1,13 @@
+## 1.2.0
+
+- Add the `void reportUnusedAssets(Iterable<AssetId> ids)` method to the
+  `BuildStep` class.
+  - **WARNING**: Using this introduces serious risk of non-hermetic builds.
+  - Indicates to the build system that `ids` were read but their content has
+    no impact on the outputs of the build.
+  - Build system implementations can choose to support this feature or not,
+    and it should be assumed to be a no-op by default.
+
 ## 1.1.6
 
 - Allow analyzer version 0.38.0.

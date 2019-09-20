@@ -1,3 +1,7 @@
+## 1.7.1
+
+- Allow `build` version 1.2.x.
+
 ## 1.7.0
 
 ### New Feature: Build Filters
@@ -85,7 +89,7 @@ also work when you create an output directory.
 ## 1.6.8
 
 - Improve the manual change detector to do a file system scan on demand instead
-  of using a file watcher. 
+  of using a file watcher.
 
 ## 1.6.7
 

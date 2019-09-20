@@ -1,3 +1,10 @@
+## 2.4.1
+
+Make the required assets for DDC applications configurable in the
+`bootstrapDdc` method instead of hard coded. This allows custom integrations
+like flutter web to not require the same assets, or require additional custom
+assets.
+
 ## 2.4.0
 
 ### New Feature: Better --build-filter support for building a single test.
@@ -14,7 +21,7 @@ Previously you also had to explicitly require the SDK resources like:
 `--build-filter="package:build_web_compilers/**.js"` or similar.
 
 **Note**: If your app relies on any non-Dart generated files you will likely
-have to ask for those explicitly as well with additinal filters. 
+have to ask for those explicitly as well with additinal filters.
 
 ## 2.3.0
 

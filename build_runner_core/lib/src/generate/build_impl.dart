@@ -472,14 +472,21 @@ class _SingleBuild {
             .putIfAbsent(phaseNumber, () => Set<String>())
             .add(actionDescription);
 
+        var unusedAssets = Set<AssetId>();
         await tracker.trackStage(
             'Build',
-            () => runBuilder(builder, [input], wrappedReader, wrappedWriter,
-                        PerformanceTrackingResolvers(_resolvers, tracker),
-                        logger: logger,
-                        resourceManager: _resourceManager,
-                        stageTracker: tracker)
-                    .catchError((_) {
+            () => runBuilder(
+                  builder,
+                  [input],
+                  wrappedReader,
+                  wrappedWriter,
+                  PerformanceTrackingResolvers(_resolvers, tracker),
+                  logger: logger,
+                  resourceManager: _resourceManager,
+                  stageTracker: tracker,
+                  reportUnusedAssetsForInput: (_, assets) =>
+                      unusedAssets.addAll(assets),
+                ).catchError((_) {
                   // Errors tracked through the logger
                 }));
         actionsCompletedCount++;
@@ -490,8 +497,14 @@ class _SingleBuild {
         // read and written.
         await tracker.trackStage(
             'Finalize',
-            () => _setOutputsState(builderOutputs, wrappedReader, wrappedWriter,
-                actionDescription, logger.errorsSeen));
+            () => _setOutputsState(
+                  builderOutputs,
+                  wrappedReader,
+                  wrappedWriter,
+                  actionDescription,
+                  logger.errorsSeen,
+                  unusedAssets: unusedAssets,
+                ));
 
         return wrappedWriter.assetsWritten;
       });
@@ -781,11 +794,15 @@ class _SingleBuild {
       SingleStepReader reader,
       AssetWriterSpy writer,
       String actionDescription,
-      Iterable<ErrorReport> errors) async {
+      Iterable<ErrorReport> errors,
+      {Set<AssetId> unusedAssets}) async {
     if (outputs.isEmpty) return;
+    var usedInputs = unusedAssets != null
+        ? reader.assetsRead.difference(unusedAssets)
+        : reader.assetsRead;
 
     final inputsDigest = await _computeCombinedDigest(
-        reader.assetsRead,
+        usedInputs,
         (_assetGraph.get(outputs.first) as GeneratedAssetNode).builderOptionsId,
         reader);
 
@@ -799,8 +816,8 @@ class _SingleBuild {
       // **IMPORTANT**: All updates to `node` must be synchronous. With lazy
       // builders we can run arbitrary code between updates otherwise, at which
       // time a node might not be in a valid state.
-      _removeOldInputs(node, reader.assetsRead);
-      _addNewInputs(node, reader.assetsRead);
+      _removeOldInputs(node, usedInputs);
+      _addNewInputs(node, usedInputs);
       node
         ..state = NodeState.upToDate
         ..wasOutput = wasOutput
