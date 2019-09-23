@@ -165,7 +165,7 @@ Future<void> _createKernel(
     if (trackUnusedInputs) {
       usedInputsFile = await File(p.join(
               (await Directory.systemTemp.createTemp('kernel_builder_')).path,
-              'unused_inputs.txt'))
+              'used_inputs.txt'))
           .create();
       kernelInputPathToId = {};
     }

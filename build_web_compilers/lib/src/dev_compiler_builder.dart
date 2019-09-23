@@ -129,7 +129,7 @@ Future<void> _createDevCompilerModule(
   if (trackUnusedInputs) {
     usedInputsFile = await File(p.join(
             (await Directory.systemTemp.createTemp('ddk_builder_')).path,
-            'unused_inputs.txt'))
+            'used_inputs.txt'))
         .create();
     kernelInputPathToId = {};
   }
