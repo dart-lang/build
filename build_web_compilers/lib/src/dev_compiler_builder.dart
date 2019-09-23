@@ -172,39 +172,29 @@ Future<void> _createDevCompilerModule(
         ..digest = (await buildStep.digest(dep)).bytes;
     })));
 
-  WorkResponse response;
   try {
     var driverResource = dartdevkDriverResource;
     var driver = await buildStep.fetchResource(driverResource);
-    response = await driver.doWork(request,
+    var response = await driver.doWork(request,
         trackWork: (response) =>
             buildStep.trackStage('Compile', () => response, isExternal: true));
 
-    // Note that we only want to do this on success, we can't trust the unused
-    // inputs if there is a failure.
-    if (usedInputsFile != null) {
-      await reportUnusedKernelInputs(
-          usedInputsFile, transitiveKernelDeps, kernelInputPathToId, buildStep);
+    // TODO(jakemac53): Fix the ddc worker mode so it always sends back a bad
+    // status code if something failed. Today we just make sure there is an output
+    // JS file to verify it was successful.
+    var message = response.output
+        .replaceAll('${scratchSpace.tempDir.path}/', '')
+        .replaceAll('$multiRootScheme:///', '');
+    if (response.exitCode != EXIT_CODE_OK ||
+        !jsOutputFile.existsSync() ||
+        message.contains('Error:')) {
+      throw DartDevcCompilationException(jsId, message);
     }
-  } finally {
-    await packagesFile.parent.delete(recursive: true);
-    await usedInputsFile.parent.delete(recursive: true);
-  }
 
-  // TODO(jakemac53): Fix the ddc worker mode so it always sends back a bad
-  // status code if something failed. Today we just make sure there is an output
-  // JS file to verify it was successful.
-  var message = response.output
-      .replaceAll('${scratchSpace.tempDir.path}/', '')
-      .replaceAll('$multiRootScheme:///', '');
-  if (response.exitCode != EXIT_CODE_OK ||
-      !jsOutputFile.existsSync() ||
-      message.contains('Error:')) {
-    throw DartDevcCompilationException(jsId, message);
-  } else {
     if (message.isNotEmpty) {
       log.info('\n$message');
     }
+
     // Copy the output back using the buildStep.
     await scratchSpace.copyOutput(jsId, buildStep);
     if (debugMode) {
@@ -218,6 +208,16 @@ Future<void> _createDevCompilerModule(
       json['sources'] = fixSourceMapSources((json['sources'] as List).cast());
       await buildStep.writeAsString(sourceMapId, jsonEncode(json));
     }
+
+    // Note that we only want to do this on success, we can't trust the unused
+    // inputs if there is a failure.
+    if (usedInputsFile != null) {
+      await reportUnusedKernelInputs(
+          usedInputsFile, transitiveKernelDeps, kernelInputPathToId, buildStep);
+    }
+  } finally {
+    await packagesFile.parent.delete(recursive: true);
+    await usedInputsFile.parent.delete(recursive: true);
   }
 }
 
