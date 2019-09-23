@@ -183,11 +183,8 @@ Future<void> _createDevCompilerModule(
     // Note that we only want to do this on success, we can't trust the unused
     // inputs if there is a failure.
     if (usedInputsFile != null) {
-      var usedInputs = (await usedInputsFile.readAsLines())
-          .map((line) => kernelInputPathToId[line])
-          .toSet();
-      buildStep.reportUnusedAssets(
-          transitiveKernelDeps.where((id) => !usedInputs.contains(id)));
+      await reportUnusedKernelInputs(
+          usedInputsFile, transitiveKernelDeps, kernelInputPathToId, buildStep);
     }
   } finally {
     await packagesFile.parent.delete(recursive: true);

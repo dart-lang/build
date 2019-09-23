@@ -208,17 +208,51 @@ Future<void> _createKernel(
     // Note that we only want to do this on success, we can't trust the unused
     // inputs if there is a failure.
     if (usedInputsFile != null) {
-      var usedInputs = (await usedInputsFile.readAsLines())
-          .map((line) => kernelInputPathToId[line])
-          .where((id) => id != null)
-          .toSet();
-      buildStep.reportUnusedAssets(
-          kernelDeps.where((id) => !usedInputs.contains(id)));
+      await reportUnusedKernelInputs(
+          usedInputsFile, kernelDeps, kernelInputPathToId, buildStep);
     }
   } finally {
     await packagesFile.parent.delete(recursive: true);
     await usedInputsFile.parent.delete(recursive: true);
   }
+}
+
+/// Reports any unused kernel inputs based on the [usedInputsFile] we get
+/// back from the kernel/ddk workers.
+///
+/// This file logs paths as they were given in the original [WorkRequest],
+/// so [inputPathToId] is used to map those paths back to the kernel asset ids.
+///
+/// This function will not report any unused dependencies if:
+///
+/// - It isn't able to match all reported used dependencies to an asset id (it
+///   would be unsafe to do so in that case).
+/// - No used dependencies are reported (it is assumed something went wrong
+///   or there were zero deps to begin with).
+Future<void> reportUnusedKernelInputs(
+    File usedInputsFile,
+    Iterable<AssetId> transitiveKernelDeps,
+    Map<String, AssetId> inputPathToId,
+    BuildStep buildStep) async {
+  var usedPaths = await usedInputsFile.readAsLines();
+  if (usedPaths.isEmpty || usedPaths.first == '') return;
+
+  String firstMissingInputPath;
+  var usedIds = usedPaths.map((usedPath) {
+    var id = inputPathToId[usedPath];
+    if (id == null) firstMissingInputPath ??= usedPath;
+    return id;
+  }).toSet();
+
+  if (firstMissingInputPath != null) {
+    log.warning('Error reporting unused kernel deps, unable to map path: '
+        '`$firstMissingInputPath` back to an asset id.\n\nPlease file an issue '
+        'at https://github.com/dart-lang/build/issues/new.');
+    return;
+  }
+
+  buildStep.reportUnusedAssets(
+      transitiveKernelDeps.where((id) => !usedIds.contains(id)));
 }
 
 /// Finds the transitive dependencies of [root] and categorizes them as
