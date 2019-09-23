@@ -95,7 +95,7 @@ main() {
           reportedUnused[AssetId('a', 'web/index${moduleExtension(platform)}')],
           equals([AssetId('b', 'lib/b$kernelOutputExtension')]),
           reason: 'Should report unused transitive deps.');
-    }, solo: true);
+    });
   });
 
   group('kernel outlines with missing imports', () {
