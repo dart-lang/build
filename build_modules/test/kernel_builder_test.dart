@@ -4,6 +4,7 @@
 
 import 'dart:convert';
 
+import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
@@ -22,14 +23,15 @@ main() {
     setUp(() async {
       assets = {
         'b|lib/b.dart': '''final world = 'world';''',
-        'a|lib/a.dart': '''
+        'a|lib/a.dart': r'''
         import 'package:b/b.dart';
-        final hello = world;
+        final helloWorld = 'hello $world';
       ''',
-        'a|web/index.dart': '''
+        'a|web/index.dart': r'''
         import "package:a/a.dart";
+
         main() {
-          print(hello);
+          print(helloWorld);
         }
       ''',
       };
@@ -43,24 +45,57 @@ main() {
     });
 
     test('can output kernel summaries for modules under lib and web', () async {
+      var builder = KernelBuilder(
+        platform: platform,
+        outputExtension: kernelOutputExtension,
+        summaryOnly: true,
+        sdkKernelPath: p.url.join('lib', '_internal', 'ddc_sdk.dill'),
+        useIncrementalCompiler: true,
+        trackUnusedInputs: true,
+      );
+      // We need to compile package:b first - so its kernel file is
+      // available.
       var expectedOutputs = <String, Matcher>{
         'b|lib/b$kernelOutputExtension':
             containsAllInOrder(utf8.encode('package:b/b.dart')),
+      };
+
+      await testBuilderAndCollectAssets(builder, assets,
+          outputs: expectedOutputs,
+          onLog: print,
+          generateFor: {'b|lib/b${moduleExtension(platform)}'});
+
+      // Next, compile package:a
+      expectedOutputs = {
         'a|lib/a$kernelOutputExtension':
             containsAllInOrder(utf8.encode('package:a/a.dart')),
+      };
+
+      await testBuilderAndCollectAssets(builder, assets,
+          outputs: expectedOutputs,
+          onLog: print,
+          generateFor: {
+            'a|lib/a${moduleExtension(platform)}',
+          });
+
+      expectedOutputs = {
         'a|web/index$kernelOutputExtension':
             containsAllInOrder(utf8.encode('web/index.dart')),
       };
-      await testBuilder(
-          KernelBuilder(
-            platform: platform,
-            outputExtension: kernelOutputExtension,
-            summaryOnly: true,
-            sdkKernelPath: p.url.join('lib', '_internal', 'ddc_sdk.dill'),
-          ),
-          assets,
-          outputs: expectedOutputs);
-    });
+
+      // And finally compile a|web/index.dart
+      var reportedUnused = <AssetId, Iterable<AssetId>>{};
+      await testBuilder(builder, assets,
+          outputs: expectedOutputs,
+          reportUnusedAssetsForInput: (input, unused) =>
+              reportedUnused[input] = unused,
+          onLog: print,
+          generateFor: {'a|web/index${moduleExtension(platform)}'});
+      expect(
+          reportedUnused[AssetId('a', 'web/index${moduleExtension(platform)}')],
+          equals([AssetId('b', 'lib/b$kernelOutputExtension')]),
+          reason: 'Should report unused transitive deps.');
+    }, solo: true);
   });
 
   group('kernel outlines with missing imports', () {
