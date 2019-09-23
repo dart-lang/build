@@ -21,9 +21,9 @@ main() {
       assets = {
         'build_modules|lib/src/analysis_options.default.yaml': '',
         'b|lib/b.dart': '''final world = 'world';''',
-        'a|lib/a.dart': '''
+        'a|lib/a.dart': r'''
         import 'package:b/b.dart';
-        final hello = world;
+        final hello = 'hello $world';
       ''',
         'a|web/index.dart': '''
         import "package:a/a.dart";
@@ -53,8 +53,22 @@ main() {
         'a|web/index$jsSourceMapExtension':
             decodedMatches(contains('index.dart')),
       };
-      await testBuilder(DevCompilerBuilder(platform: ddcPlatform), assets,
-          outputs: expectedOutputs);
+      var reportedUnused = <AssetId, Iterable<AssetId>>{};
+      await testBuilder(
+          DevCompilerBuilder(
+              platform: ddcPlatform,
+              useIncrementalCompiler: true,
+              trackUnusedInputs: true),
+          assets,
+          outputs: expectedOutputs,
+          reportUnusedAssetsForInput: (input, unused) =>
+              reportedUnused[input] = unused);
+
+      expect(
+          reportedUnused[
+              AssetId('a', 'web/index${moduleExtension(ddcPlatform)}')],
+          equals([AssetId('b', 'lib/b.${ddcPlatform.name}.dill')]),
+          reason: 'Should report unused transitive deps.');
     });
   });
 
