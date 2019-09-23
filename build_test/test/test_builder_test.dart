@@ -91,6 +91,21 @@ void main() {
     await testBuilder(builder, {'build_test|data/1.txt': ''},
         outputs: {'build_test|data/1.txt.copy': 'hello world'}, reader: reader);
   });
+
+  test('can capture reportUnusedInputs calls', () async {
+    var unusedInput = AssetId('a', 'lib/unused.txt');
+    var recorded = <AssetId, Iterable<AssetId>>{};
+    await testBuilder(TestBuilder(build: (BuildStep buildStep, _) async {
+      buildStep.reportUnusedAssets([unusedInput]);
+    }), {
+      'a|lib/a.txt': 'a',
+    }, reportUnusedAssetsForInput: (input, unused) => recorded[input] = unused);
+    expect(
+        recorded,
+        equals({
+          AssetId('a', 'lib/a.txt'): [unusedInput]
+        }));
+  });
 }
 
 /// Concatenates the contents of multiple text files into a single output.
