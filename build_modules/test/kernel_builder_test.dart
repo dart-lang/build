@@ -62,7 +62,6 @@ main() {
 
       await testBuilderAndCollectAssets(builder, assets,
           outputs: expectedOutputs,
-          onLog: print,
           generateFor: {'b|lib/b${moduleExtension(platform)}'});
 
       // Next, compile package:a
@@ -73,7 +72,6 @@ main() {
 
       await testBuilderAndCollectAssets(builder, assets,
           outputs: expectedOutputs,
-          onLog: print,
           generateFor: {
             'a|lib/a${moduleExtension(platform)}',
           });
@@ -89,7 +87,6 @@ main() {
           outputs: expectedOutputs,
           reportUnusedAssetsForInput: (input, unused) =>
               reportedUnused[input] = unused,
-          onLog: print,
           generateFor: {'a|web/index${moduleExtension(platform)}'});
       expect(
           reportedUnused[AssetId('a', 'web/index${moduleExtension(platform)}')],
