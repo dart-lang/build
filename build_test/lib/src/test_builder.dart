@@ -117,7 +117,9 @@ Future testBuilder(
     MultiPackageAssetReader reader,
     RecordingAssetWriter writer,
     Map<String, /*String|List<int>|Matcher<String|List<int>>*/ dynamic> outputs,
-    void onLog(LogRecord log)}) async {
+    void onLog(LogRecord log),
+    void Function(AssetId, Iterable<AssetId>)
+        reportUnusedAssetsForInput}) async {
   writer ??= InMemoryAssetWriter();
   final inMemoryReader = InMemoryAssetReader(rootPackage: rootPackage);
   if (reader != null) {
@@ -152,7 +154,7 @@ Future testBuilder(
   var logger = Logger('testBuilder');
   var logSubscription = logger.onRecord.listen(onLog);
   await runBuilder(builder, inputIds, reader, writerSpy, defaultResolvers,
-      logger: logger);
+      logger: logger, reportUnusedAssetsForInput: reportUnusedAssetsForInput);
   await logSubscription.cancel();
   var actualOutputs = writerSpy.assetsWritten;
   checkOutputs(outputs, actualOutputs, writer);

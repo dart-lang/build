@@ -1,3 +1,9 @@
+## 0.10.9
+
+- Allow tracking of reported unused assets in `testBuilder` calls with the
+  `reportUnusedAssetsForInput(AssetId input, Iterable<AssetId> unused)`
+  callback.
+
 ## 0.10.8
 
 - Allow a custom AssetReader to be passed to `testBuilder`. This will be used
