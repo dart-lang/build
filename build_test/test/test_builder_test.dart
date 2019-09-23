@@ -92,7 +92,7 @@ void main() {
         outputs: {'build_test|data/1.txt.copy': 'hello world'}, reader: reader);
   });
 
-  test('can capture reportUnusedInputs calls', () async {
+  test('can capture reportUnusedAssets calls', () async {
     var unusedInput = AssetId('a', 'lib/unused.txt');
     var recorded = <AssetId, Iterable<AssetId>>{};
     await testBuilder(TestBuilder(build: (BuildStep buildStep, _) async {
