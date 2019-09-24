@@ -43,33 +43,40 @@ main() {
           ddcKernelBuilder(BuilderOptions({})), assets);
     });
 
-    test('can compile ddc modules under lib and web', () async {
-      var expectedOutputs = {
-        'b|lib/b$jsModuleExtension': decodedMatches(contains('world')),
-        'b|lib/b$jsSourceMapExtension': decodedMatches(contains('b.dart')),
-        'a|lib/a$jsModuleExtension': decodedMatches(contains('hello')),
-        'a|lib/a$jsSourceMapExtension': decodedMatches(contains('a.dart')),
-        'a|web/index$jsModuleExtension': decodedMatches(contains('main')),
-        'a|web/index$jsSourceMapExtension':
-            decodedMatches(contains('index.dart')),
-      };
-      var reportedUnused = <AssetId, Iterable<AssetId>>{};
-      await testBuilder(
-          DevCompilerBuilder(
-              platform: ddcPlatform,
-              useIncrementalCompiler: true,
-              trackUnusedInputs: true),
-          assets,
-          outputs: expectedOutputs,
-          reportUnusedAssetsForInput: (input, unused) =>
-              reportedUnused[input] = unused);
+    for (var trackUnusedInputs in [true, false]) {
+      test(
+          'can compile ddc modules under lib and web'
+          '${trackUnusedInputs ? ' and track unused inputs' : ''}', () async {
+        var expectedOutputs = {
+          'b|lib/b$jsModuleExtension': decodedMatches(contains('world')),
+          'b|lib/b$jsSourceMapExtension': decodedMatches(contains('b.dart')),
+          'a|lib/a$jsModuleExtension': decodedMatches(contains('hello')),
+          'a|lib/a$jsSourceMapExtension': decodedMatches(contains('a.dart')),
+          'a|web/index$jsModuleExtension': decodedMatches(contains('main')),
+          'a|web/index$jsSourceMapExtension':
+              decodedMatches(contains('index.dart')),
+        };
+        var reportedUnused = <AssetId, Iterable<AssetId>>{};
+        await testBuilder(
+            DevCompilerBuilder(
+                platform: ddcPlatform,
+                useIncrementalCompiler: trackUnusedInputs,
+                trackUnusedInputs: trackUnusedInputs),
+            assets,
+            outputs: expectedOutputs,
+            reportUnusedAssetsForInput: (input, unused) =>
+                reportedUnused[input] = unused);
 
-      expect(
-          reportedUnused[
-              AssetId('a', 'web/index${moduleExtension(ddcPlatform)}')],
-          equals([AssetId('b', 'lib/b.${ddcPlatform.name}.dill')]),
-          reason: 'Should report unused transitive deps.');
-    });
+        expect(
+            reportedUnused[
+                AssetId('a', 'web/index${moduleExtension(ddcPlatform)}')],
+            equals(trackUnusedInputs
+                ? [AssetId('b', 'lib/b.${ddcPlatform.name}.dill')]
+                : null),
+            reason: 'Should${trackUnusedInputs ? '' : ' not'} report unused '
+                'transitive deps.');
+      });
+    }
   });
 
   group('projects with errors due to', () {
