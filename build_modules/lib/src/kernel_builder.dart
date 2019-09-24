@@ -144,9 +144,14 @@ Future<void> _createKernel(
   var outputFile = scratchSpace.fileFor(outputId);
 
   File packagesFile;
-  File usedInputsFile;
-  Map<String, AssetId> kernelInputPathToId;
   var kernelDeps = <AssetId>[];
+
+  // Maps the inputs paths we provide to the kernel worker to asset ids,
+  // if `trackUnusedInputs` is `true`.
+  Map<String, AssetId> kernelInputPathToId;
+  // If `trackUnusedInputs` is `true`, this is the file we will use to
+  // communicate the used inputs with the kernel worker.
+  File usedInputsFile;
 
   await buildStep.trackStage('CollectDeps', () async {
     var sourceDeps = <AssetId>[];
@@ -213,7 +218,7 @@ Future<void> _createKernel(
     }
   } finally {
     await packagesFile.parent.delete(recursive: true);
-    await usedInputsFile.parent.delete(recursive: true);
+    await usedInputsFile?.parent?.delete(recursive: true);
   }
 }
 

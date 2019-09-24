@@ -124,8 +124,13 @@ Future<void> _createDevCompilerModule(
   var sdkSummary =
       p.url.join(dartSdk, sdkKernelPath ?? 'lib/_internal/ddc_sdk.dill');
 
-  File usedInputsFile;
+  // Maps the inputs paths we provide to the ddc worker to asset ids, if
+  // `trackUnusedInputs` is `true`.
   Map<String, AssetId> kernelInputPathToId;
+  // If `trackUnusedInputs` is `true`, this is the file we will use to
+  // communicate the used inputs with the ddc worker.
+  File usedInputsFile;
+
   if (trackUnusedInputs) {
     usedInputsFile = await File(p.join(
             (await Directory.systemTemp.createTemp('ddk_builder_')).path,
@@ -217,7 +222,7 @@ Future<void> _createDevCompilerModule(
     }
   } finally {
     await packagesFile.parent.delete(recursive: true);
-    await usedInputsFile.parent.delete(recursive: true);
+    await usedInputsFile?.parent?.delete(recursive: true);
   }
 }
 
