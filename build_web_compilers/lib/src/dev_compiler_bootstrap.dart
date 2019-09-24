@@ -212,9 +212,6 @@ define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_s
         }
       }
     }
-  dart_sdk.dart.trackLibraries("$bootstrapModuleName", {
-    "$bootstrapModuleName": bootstrap
-  }, '');
   return {
     bootstrap: bootstrap
   };
