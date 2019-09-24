@@ -3,7 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 export 'src/errors.dart' show MissingModulesException, UnsupportedModules;
-export 'src/kernel_builder.dart' show KernelBuilder, multiRootScheme;
+export 'src/kernel_builder.dart'
+    show KernelBuilder, multiRootScheme, reportUnusedKernelInputs;
 export 'src/meta_module_builder.dart'
     show MetaModuleBuilder, metaModuleExtension;
 export 'src/meta_module_clean_builder.dart'

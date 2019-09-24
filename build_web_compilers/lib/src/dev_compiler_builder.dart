@@ -25,6 +25,8 @@ const jsSourceMapExtension = '.ddc.js.map';
 class DevCompilerBuilder implements Builder {
   final bool useIncrementalCompiler;
 
+  final bool trackUnusedInputs;
+
   final DartPlatform platform;
 
   /// The sdk kernel file for the current platform.
@@ -46,6 +48,7 @@ class DevCompilerBuilder implements Builder {
 
   DevCompilerBuilder(
       {bool useIncrementalCompiler,
+      bool trackUnusedInputs,
       @required this.platform,
       this.sdkKernelPath,
       String librariesPath,
@@ -54,6 +57,7 @@ class DevCompilerBuilder implements Builder {
         platformSdk = platformSdk ?? sdkDir,
         librariesPath = librariesPath ??
             p.join(platformSdk ?? sdkDir, 'lib', 'libraries.json'),
+        trackUnusedInputs = trackUnusedInputs ?? false,
         buildExtensions = {
           moduleExtension(platform): [
             jsModuleExtension,
@@ -85,7 +89,7 @@ class DevCompilerBuilder implements Builder {
 
     try {
       await _createDevCompilerModule(module, buildStep, useIncrementalCompiler,
-          platformSdk, sdkKernelPath, librariesPath);
+          trackUnusedInputs, platformSdk, sdkKernelPath, librariesPath);
     } on DartDevcCompilationException catch (e) {
       await handleError(e);
     } on MissingModulesException catch (e) {
@@ -99,6 +103,7 @@ Future<void> _createDevCompilerModule(
     Module module,
     BuildStep buildStep,
     bool useIncrementalCompiler,
+    bool trackUnusedInputs,
     String dartSdk,
     String sdkKernelPath,
     String librariesPath,
@@ -118,6 +123,21 @@ Future<void> _createDevCompilerModule(
   var jsOutputFile = scratchSpace.fileFor(jsId);
   var sdkSummary =
       p.url.join(dartSdk, sdkKernelPath ?? 'lib/_internal/ddc_sdk.dill');
+
+  // Maps the inputs paths we provide to the ddc worker to asset ids, if
+  // `trackUnusedInputs` is `true`.
+  Map<String, AssetId> kernelInputPathToId;
+  // If `trackUnusedInputs` is `true`, this is the file we will use to
+  // communicate the used inputs with the ddc worker.
+  File usedInputsFile;
+
+  if (trackUnusedInputs) {
+    usedInputsFile = await File(p.join(
+            (await Directory.systemTemp.createTemp('ddk_builder_')).path,
+            'used_inputs.txt'))
+        .create();
+    kernelInputPathToId = {};
+  }
 
   var packagesFile = await createPackagesFile(allAssetIds);
   var request = WorkRequest()
@@ -140,41 +160,46 @@ Future<void> _createDevCompilerModule(
         '--reuse-compiler-result',
         '--use-incremental-compiler',
       ],
+      if (usedInputsFile != null)
+        '--used-inputs-file=${usedInputsFile.uri.toFilePath()}',
       for (var source in module.sources) _sourceArg(source),
     ])
     ..inputs.add(Input()
       ..path = sdkSummary
       ..digest = [0])
-    ..inputs.addAll(
-        await Future.wait(transitiveKernelDeps.map((dep) async => Input()
-          ..path = scratchSpace.fileFor(dep).path
-          ..digest = (await buildStep.digest(dep)).bytes)));
+    ..inputs.addAll(await Future.wait(transitiveKernelDeps.map((dep) async {
+      var file = scratchSpace.fileFor(dep);
+      if (kernelInputPathToId != null) {
+        kernelInputPathToId[file.uri.toString()] = dep;
+      }
+      return Input()
+        ..path = file.path
+        ..digest = (await buildStep.digest(dep)).bytes;
+    })));
 
-  WorkResponse response;
   try {
     var driverResource = dartdevkDriverResource;
     var driver = await buildStep.fetchResource(driverResource);
-    response = await driver.doWork(request,
+    var response = await driver.doWork(request,
         trackWork: (response) =>
             buildStep.trackStage('Compile', () => response, isExternal: true));
-  } finally {
-    await packagesFile.parent.delete(recursive: true);
-  }
 
-  // TODO(jakemac53): Fix the ddc worker mode so it always sends back a bad
-  // status code if something failed. Today we just make sure there is an output
-  // JS file to verify it was successful.
-  var message = response.output
-      .replaceAll('${scratchSpace.tempDir.path}/', '')
-      .replaceAll('$multiRootScheme:///', '');
-  if (response.exitCode != EXIT_CODE_OK ||
-      !jsOutputFile.existsSync() ||
-      message.contains('Error:')) {
-    throw DartDevcCompilationException(jsId, message);
-  } else {
+    // TODO(jakemac53): Fix the ddc worker mode so it always sends back a bad
+    // status code if something failed. Today we just make sure there is an output
+    // JS file to verify it was successful.
+    var message = response.output
+        .replaceAll('${scratchSpace.tempDir.path}/', '')
+        .replaceAll('$multiRootScheme:///', '');
+    if (response.exitCode != EXIT_CODE_OK ||
+        !jsOutputFile.existsSync() ||
+        message.contains('Error:')) {
+      throw DartDevcCompilationException(jsId, message);
+    }
+
     if (message.isNotEmpty) {
       log.info('\n$message');
     }
+
     // Copy the output back using the buildStep.
     await scratchSpace.copyOutput(jsId, buildStep);
     if (debugMode) {
@@ -188,6 +213,16 @@ Future<void> _createDevCompilerModule(
       json['sources'] = fixSourceMapSources((json['sources'] as List).cast());
       await buildStep.writeAsString(sourceMapId, jsonEncode(json));
     }
+
+    // Note that we only want to do this on success, we can't trust the unused
+    // inputs if there is a failure.
+    if (usedInputsFile != null) {
+      await reportUnusedKernelInputs(
+          usedInputsFile, transitiveKernelDeps, kernelInputPathToId, buildStep);
+    }
+  } finally {
+    await packagesFile.parent.delete(recursive: true);
+    await usedInputsFile?.parent?.delete(recursive: true);
   }
 }
 
