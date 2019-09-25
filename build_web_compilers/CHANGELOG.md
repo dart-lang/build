@@ -1,3 +1,7 @@
+## 2.5.2
+
+Republish of `2.5.0` with the proper min sdk contraint.
+
 ## 2.5.1
 
 ### Bug fix for issue #2464
