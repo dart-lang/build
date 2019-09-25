@@ -1,3 +1,12 @@
+## 2.6.1
+
+### Bug fix for issue #2464
+
+Ignore the `trackUnusedInputs` option that was added in `2.6.0`.
+
+This option will be respected again in the next release which will have the
+proper minimum sdk constraint.
+
 ## 2.6.0
 
 Add support for dependency pruning to the `KernelBuilder`. This should greatly
