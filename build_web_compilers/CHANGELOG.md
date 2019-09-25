@@ -1,4 +1,4 @@
-## 2.5.0-dev
+## 2.5.0
 
 Add support for dependency pruning to the `DevCompilerBuilder`. This should
 greatly improve the invalidation semantics for builds, meaning that less code
