@@ -1,3 +1,7 @@
+## 2.6.2
+
+Republish of `2.6.0` with the proper min sdk contraint.
+
 ## 2.6.1
 
 ### Bug fix for issue #2464

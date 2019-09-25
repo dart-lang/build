@@ -108,9 +108,6 @@ Future<void> _createDevCompilerModule(
     String sdkKernelPath,
     String librariesPath,
     {bool debugMode = true}) async {
-  // TODO: https://github.com/dart-lang/build/issues/2464
-  trackUnusedInputs = false;
-
   var transitiveDeps = await buildStep.trackStage('CollectTransitiveDeps',
       () => module.computeTransitiveDependencies(buildStep));
   var transitiveKernelDeps = [
