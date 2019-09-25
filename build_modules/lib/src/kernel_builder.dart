@@ -138,6 +138,9 @@ Future<void> _createKernel(
     @required String librariesPath,
     @required bool useIncrementalCompiler,
     @required bool trackUnusedInputs}) async {
+  // TODO: https://github.com/dart-lang/build/issues/2464
+  trackUnusedInputs = false;
+
   var request = WorkRequest();
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
   var outputId = module.primarySource.changeExtension(outputExtension);
