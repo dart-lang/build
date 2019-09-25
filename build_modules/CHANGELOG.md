@@ -1,4 +1,4 @@
-## 2.6.0-dev
+## 2.6.0
 
 Add support for dependency pruning to the `KernelBuilder`. This should greatly
 improve the invalidation semantics for builds, meaning that less code will be
