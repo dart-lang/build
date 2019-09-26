@@ -34,7 +34,3 @@ dev_dependencies:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
-
-dependency_overrides:
-  # https://github.com/dart-lang/build/issues/2450
-  front_end: "0.1.23"
