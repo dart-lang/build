@@ -1,3 +1,10 @@
+## 1.1.1
+
+### Bug Fix
+
+Check the analyzer path before reading cached summaries in addition to the
+SDK version.
+
 ## 1.1.0
 
 ### Bug Fix: #38499

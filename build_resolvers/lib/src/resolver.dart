@@ -13,6 +13,7 @@ import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/summary/summary_file_builder.dart';
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
+import 'package:package_resolver/package_resolver.dart';
 import 'package:path/path.dart' as p;
 
 import 'analysis_driver.dart';
@@ -191,18 +192,20 @@ Future<String> _defaultSdkSummaryGenerator() async {
 
   var cacheDir = p.join(dartToolPath, 'build_resolvers');
   var summaryPath = p.join(cacheDir, 'sdk.sum');
-  var versionFile = File('$summaryPath.version');
+  var analyzerPathFile = File('$summaryPath.analyzer.path');
+  var sdkVersionFile = File('$summaryPath.sdk.version');
   var summaryFile = File(summaryPath);
 
-  // Invalidate existing summary/version files if present.
-  if (await versionFile.exists()) {
-    var lastVersion = await versionFile.readAsString();
-    if (lastVersion != Platform.version) {
-      await versionFile.delete();
+  // Invalidate existing summary/version/analyzer files if present.
+  if (await sdkVersionFile.exists() && await analyzerPathFile.exists()) {
+    if (!await _checkSdkVersion(sdkVersionFile) ||
+        !await _checkAnalyzerPath(analyzerPathFile)) {
+      await sdkVersionFile.delete();
+      await analyzerPathFile.delete();
       if (await summaryFile.exists()) await summaryFile.delete();
     }
   } else if (await summaryFile.exists()) {
-    // If there is no version file we can't validate the version here.
+    // Fallback for cases where we could not do a proper version check.
     await summaryFile.delete();
   }
 
@@ -214,12 +217,35 @@ Future<String> _defaultSdkSummaryGenerator() async {
     var sdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
     await summaryFile.writeAsBytes(SummaryBuilder.forSdk(sdkPath).build());
 
-    await versionFile.create(recursive: true);
-    await versionFile.writeAsString(Platform.version);
+    await _createSdkVersionFile(sdkVersionFile);
+    await _createAnalyzerPathFile(analyzerPathFile);
     watch.stop();
     _logger.info('Generating SDK summary completed, took '
         '${humanReadable(watch.elapsed)}\n');
   }
 
   return p.absolute(summaryPath);
+}
+
+Future<String> get _analyzerPath =>
+    PackageResolver.current.packagePath('analyzer');
+
+Future<bool> _checkAnalyzerPath(File analyzerPathFile) async {
+  var lastPath = await analyzerPathFile.readAsString();
+  return lastPath == await _analyzerPath;
+}
+
+Future<void> _createAnalyzerPathFile(File analyzerPathFile) async {
+  await analyzerPathFile.create(recursive: true);
+  await analyzerPathFile.writeAsString(await _analyzerPath);
+}
+
+Future<bool> _checkSdkVersion(File sdkVersionFile) async {
+  var lastVersion = await sdkVersionFile.readAsString();
+  return lastVersion == Platform.version;
+}
+
+Future<void> _createSdkVersionFile(File sdkVersionFile) async {
+  await sdkVersionFile.create(recursive: true);
+  await sdkVersionFile.writeAsString(Platform.version);
 }
