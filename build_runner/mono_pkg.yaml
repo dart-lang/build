@@ -2,12 +2,6 @@ dart:
   - be/raw/latest
 
 stages:
-  - analyze_and_format:
-    - group:
-      - dartfmt: sdk
-      - dartanalyzer: --fatal-infos --fatal-warnings .
-  - unit_test:
-    - test: -x integration
   - e2e_test:
     - test: -t integration --total-shards 4 --shard-index 0
     - test: -t integration --total-shards 4 --shard-index 1

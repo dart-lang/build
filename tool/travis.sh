@@ -79,30 +79,26 @@ for PKG in ${PKGS}; do
       pub run test || EXIT_CODE=$?
       ;;
     test_07)
-      echo 'pub run test -x integration'
-      pub run test -x integration || EXIT_CODE=$?
-      ;;
-    test_08)
       echo 'pub run test -t integration --total-shards 4 --shard-index 0'
       pub run test -t integration --total-shards 4 --shard-index 0 || EXIT_CODE=$?
       ;;
-    test_09)
+    test_08)
       echo 'pub run test -t integration --total-shards 4 --shard-index 1'
       pub run test -t integration --total-shards 4 --shard-index 1 || EXIT_CODE=$?
       ;;
-    test_10)
+    test_09)
       echo 'pub run test -t integration --total-shards 4 --shard-index 2'
       pub run test -t integration --total-shards 4 --shard-index 2 || EXIT_CODE=$?
       ;;
-    test_11)
+    test_10)
       echo 'pub run test -t integration --total-shards 4 --shard-index 3'
       pub run test -t integration --total-shards 4 --shard-index 3 || EXIT_CODE=$?
       ;;
-    test_12)
+    test_11)
       echo 'pub run test -x presubmit-only'
       pub run test -x presubmit-only || EXIT_CODE=$?
       ;;
-    test_13)
+    test_12)
       echo 'pub run test -t presubmit-only --run-skipped'
       pub run test -t presubmit-only --run-skipped || EXIT_CODE=$?
       ;;
