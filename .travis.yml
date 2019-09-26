@@ -16,9 +16,9 @@ jobs:
       env: PKGS="_test _test_common"
       script: ./tool/travis.sh dartanalyzer_0
     - stage: analyze_and_format
-      name: "SDK: dev/release/2.6.0-dev.1.0; PKGS: build, build_config, build_daemon, build_modules, build_resolvers, build_runner, build_test, build_vm_compilers, build_web_compilers, example, scratch_space; TASKS: [`dartfmt -n --set-exit-if-changed .`, `dartanalyzer --fatal-infos --fatal-warnings .`]"
+      name: "SDK: dev/release/2.6.0-dev.1.0; PKGS: build, build_config, build_daemon, build_modules, build_resolvers, build_test, build_vm_compilers, build_web_compilers, example, scratch_space; TASKS: [`dartfmt -n --set-exit-if-changed .`, `dartanalyzer --fatal-infos --fatal-warnings .`]"
       dart: "dev/release/2.6.0-dev.1.0"
-      env: PKGS="build build_config build_daemon build_modules build_resolvers build_runner build_test build_vm_compilers build_web_compilers example scratch_space"
+      env: PKGS="build build_config build_daemon build_modules build_resolvers build_test build_vm_compilers build_web_compilers example scratch_space"
       script: ./tool/travis.sh dartfmt dartanalyzer_0
     - stage: analyze_and_format
       name: "SDK: 2.3.0; PKGS: build, build_config, build_daemon, build_resolvers, build_runner_core, build_test, scratch_space; TASKS: `dartanalyzer --fatal-warnings .`"
@@ -30,6 +30,11 @@ jobs:
       dart: "2.5.0"
       env: PKGS="build_modules build_web_compilers"
       script: ./tool/travis.sh dartanalyzer_1
+    - stage: analyze_and_format
+      name: "SDK: be/raw/latest; PKG: build_runner; TASKS: [`dartfmt -n --set-exit-if-changed .`, `dartanalyzer --fatal-infos --fatal-warnings .`]"
+      dart: be/raw/latest
+      env: PKGS="build_runner"
+      script: ./tool/travis.sh dartfmt dartanalyzer_0
     - stage: analyze_and_format
       name: "SDK: dev; PKG: build_runner_core; TASKS: [`dartfmt -n --set-exit-if-changed .`, `dartanalyzer --fatal-infos --fatal-warnings .`]"
       dart: dev
@@ -71,8 +76,8 @@ jobs:
       env: PKGS="build_resolvers"
       script: ./tool/travis.sh command_2
     - stage: unit_test
-      name: "SDK: dev/release/2.6.0-dev.1.0; PKG: build_runner; TASKS: `pub run test -x integration`"
-      dart: "dev/release/2.6.0-dev.1.0"
+      name: "SDK: be/raw/latest; PKG: build_runner; TASKS: `pub run test -x integration`"
+      dart: be/raw/latest
       env: PKGS="build_runner"
       script: ./tool/travis.sh test_07
     - stage: unit_test
@@ -136,23 +141,23 @@ jobs:
       env: PKGS="_test"
       script: ./tool/travis.sh test_05
     - stage: e2e_test
-      name: "SDK: dev/release/2.6.0-dev.1.0; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 4 --shard-index 0`"
-      dart: "dev/release/2.6.0-dev.1.0"
+      name: "SDK: be/raw/latest; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 4 --shard-index 0`"
+      dart: be/raw/latest
       env: PKGS="build_runner"
       script: ./tool/travis.sh test_08
     - stage: e2e_test
-      name: "SDK: dev/release/2.6.0-dev.1.0; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 4 --shard-index 1`"
-      dart: "dev/release/2.6.0-dev.1.0"
+      name: "SDK: be/raw/latest; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 4 --shard-index 1`"
+      dart: be/raw/latest
       env: PKGS="build_runner"
       script: ./tool/travis.sh test_09
     - stage: e2e_test
-      name: "SDK: dev/release/2.6.0-dev.1.0; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 4 --shard-index 2`"
-      dart: "dev/release/2.6.0-dev.1.0"
+      name: "SDK: be/raw/latest; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 4 --shard-index 2`"
+      dart: be/raw/latest
       env: PKGS="build_runner"
       script: ./tool/travis.sh test_10
     - stage: e2e_test
-      name: "SDK: dev/release/2.6.0-dev.1.0; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 4 --shard-index 3`"
-      dart: "dev/release/2.6.0-dev.1.0"
+      name: "SDK: be/raw/latest; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 4 --shard-index 3`"
+      dart: be/raw/latest
       env: PKGS="build_runner"
       script: ./tool/travis.sh test_11
     - stage: e2e_test_cron
