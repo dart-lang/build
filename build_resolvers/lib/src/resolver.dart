@@ -4,19 +4,22 @@
 
 import 'dart:async';
 import 'dart:collection';
+import 'dart:io';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
-import 'package:analyzer/src/generated/engine.dart';
+import 'package:analyzer/src/generated/engine.dart' hide Logger;
 import 'package:analyzer/src/generated/source.dart';
+import 'package:analyzer/src/summary/summary_file_builder.dart';
 import 'package:build/build.dart';
-import 'package:path/path.dart' as native_path;
+import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 
 import 'analysis_driver.dart';
 import 'build_asset_uri_resolver.dart';
+import 'human_readable_duration.dart';
 
-// We should always be using url paths here since it's always Dart/pub code.
-final path = native_path.url;
+final _logger = Logger('build_resolvers');
 
 /// Implements [Resolver.libraries] and [Resolver.findLibraryByName] by crawling
 /// down from entrypoints.
@@ -124,24 +127,41 @@ class AnalyzerResolver implements ReleasableResolver {
 }
 
 class AnalyzerResolvers implements Resolvers {
-  final AnalyzerResolver _resolver;
-  final BuildAssetUriResolver _uriResolver;
+  /// Nullable, the default analysis options are used if not provided.
+  final AnalysisOptions _analysisOptions;
 
-  AnalyzerResolvers._(this._resolver, this._uriResolver);
+  /// A function that returns the path to the SDK summary when invoked.
+  ///
+  /// Defaults to [_defaultSdkSummaryGenerator].
+  final Future<String> Function() _sdkSummaryGenerator;
+
+  // Lazy, all access must be preceded by a call to `_ensureInitialized`.
+  AnalyzerResolver _resolver;
+  BuildAssetUriResolver _uriResolver;
+
+  /// Nullable, should not be accessed outside of [_ensureInitialized].
+  Future<void> _initialized;
+
+  AnalyzerResolvers(
+      [this._analysisOptions, Future<String> Function() sdkSummaryGenerator])
+      : _sdkSummaryGenerator =
+            sdkSummaryGenerator ?? _defaultSdkSummaryGenerator;
 
   /// Create a Resolvers backed by an [AnalysisContext] using options
-  /// [analysisOptions].
-  ///
-  /// If no argument is passed a default AnalysisOptions is used.
-  factory AnalyzerResolvers([AnalysisOptions analysisOptions]) {
-    var uriResolver = BuildAssetUriResolver();
-    var driver = analysisDriver(uriResolver, analysisOptions);
-    return AnalyzerResolvers._(
-        AnalyzerResolver(driver, uriResolver), uriResolver);
+  /// [_analysisOptions].
+  Future<void> _ensureInitialized() {
+    return _initialized ??= () async {
+      _uriResolver = BuildAssetUriResolver();
+      var driver = analysisDriver(
+          _uriResolver, _analysisOptions, await _sdkSummaryGenerator());
+      _resolver = AnalyzerResolver(driver, _uriResolver);
+    }();
   }
 
   @override
   Future<ReleasableResolver> get(BuildStep buildStep) async {
+    await _ensureInitialized();
+
     await _uriResolver.performResolve(
         buildStep, [buildStep.inputId], _resolver._driver);
     return PerActionResolver(_resolver, [buildStep.inputId]);
@@ -149,5 +169,57 @@ class AnalyzerResolvers implements Resolvers {
 
   /// Must be called between each build.
   @override
-  void reset() => _uriResolver.seenAssets.clear();
+  void reset() {
+    _uriResolver?.seenAssets?.clear();
+  }
+}
+
+/// Lazily creates a summary of the users SDK and caches it under
+/// `.dart_tool/build_resolvers`.
+///
+/// This is only intended for use in typical dart packages, which must
+/// have an already existing `.dart_tool` directory (this is how we
+/// validate we are running under a typical dart package and not a custom
+/// environment).
+Future<String> _defaultSdkSummaryGenerator() async {
+  var dartToolPath = '.dart_tool';
+  if (!await Directory(dartToolPath).exists()) {
+    throw StateError(
+        'The default analyzer resolver can only be used when the current '
+        'working directory is a standard pub package.');
+  }
+
+  var cacheDir = p.join(dartToolPath, 'build_resolvers');
+  var summaryPath = p.join(cacheDir, 'sdk.sum');
+  var versionFile = File('$summaryPath.version');
+  var summaryFile = File(summaryPath);
+
+  // Invalidate existing summary/version files if present.
+  if (await versionFile.exists()) {
+    var lastVersion = await versionFile.readAsString();
+    if (lastVersion != Platform.version) {
+      await versionFile.delete();
+      if (await summaryFile.exists()) await summaryFile.delete();
+    }
+  } else if (await summaryFile.exists()) {
+    // If there is no version file we can't validate the version here.
+    await summaryFile.delete();
+  }
+
+  // Generate the summary and version files if necessary.
+  if (!await summaryFile.exists()) {
+    var watch = Stopwatch()..start();
+    _logger.info('Generating SDK summary...');
+    await summaryFile.create(recursive: true);
+    var sdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
+    await summaryFile.writeAsBytes(SummaryBuilder.forSdk(sdkPath).build());
+
+    await versionFile.create(recursive: true);
+    await versionFile.writeAsString(Platform.version);
+    watch.stop();
+    _logger.info('Generating SDK summary completed, took '
+        '${humanReadable(watch.elapsed)}\n');
+  }
+
+  return p.absolute(summaryPath);
 }
