@@ -1,3 +1,16 @@
+## 1.1.0
+
+### Bug Fix: #38499
+
+Update the `AnalysisResolvers` class to no longer use the SDK summary that is
+shipped with the SDK by default. This is not guaranteed compatible with
+analyzer versions shipped on pub and should not be used by any non-sdk code.
+
+In order to fix this the `AnalysisResolvers` class now takes an optional method
+that returns the path to an arbitrary SDK summary. By default it will lazily
+generate a summary under `.dart_tool/build_resolvers` which is invalidated
+based on the `Platform.version` from `dart:io`.
+
 ## 1.0.8
 
 - Allow `build` version 1.2.x.

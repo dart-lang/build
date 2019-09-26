@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:io';
-
 import 'package:analyzer/src/dart/analysis/byte_store.dart'
     show MemoryByteStore;
 import 'package:analyzer/src/dart/analysis/driver.dart';
@@ -13,7 +11,6 @@ import 'package:analyzer/src/dart/analysis/performance_logger.dart'
 import 'package:analyzer/src/generated/engine.dart'
     show AnalysisOptionsImpl, AnalysisOptions;
 import 'package:analyzer/src/generated/source.dart';
-import 'package:path/path.dart' as p;
 import 'package:analyzer/src/summary/package_bundle_reader.dart';
 import 'package:analyzer/src/summary/summary_sdk.dart' show SummaryBasedDartSdk;
 
@@ -25,17 +22,14 @@ import 'build_asset_uri_resolver.dart';
 /// Any code which is not covered by the summaries must be resolvable through
 /// [buildAssetUriResolver].
 AnalysisDriver analysisDriver(BuildAssetUriResolver buildAssetUriResolver,
-    AnalysisOptions analysisOptions) {
-  var sdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
-  var sdkSummary = p.join(sdkPath, 'lib', '_internal', 'strong.sum');
-  var sdk = SummaryBasedDartSdk(sdkSummary, true);
+    AnalysisOptions analysisOptions, String sdkSummaryPath) {
+  var sdk = SummaryBasedDartSdk(sdkSummaryPath, true);
   var sdkResolver = DartUriResolver(sdk);
 
   var resolvers = [sdkResolver, buildAssetUriResolver];
   var sourceFactory = SourceFactory(resolvers);
 
-  var dataStore =
-      SummaryDataStore([p.join(sdkPath, 'lib', '_internal', 'strong.sum')]);
+  var dataStore = SummaryDataStore([sdkSummaryPath]);
 
   var logger = PerformanceLog(null);
   var scheduler = AnalysisDriverScheduler(logger);
