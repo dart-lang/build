@@ -126,8 +126,6 @@ class AnalyzerResolver implements ReleasableResolver {
   }
 }
 
-typedef ResolverFactory = Future<Resolver> Function();
-
 class AnalyzerResolvers implements Resolvers {
   /// Nullable, the default analysis options are used if not provided.
   final AnalysisOptions _analysisOptions;
