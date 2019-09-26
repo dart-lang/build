@@ -1,3 +1,8 @@
+## 0.9.4+5
+
+* Fix a bug for finding the element for a function with recent versions of
+  `analyzer`.
+
 ## 0.9.4+4
 
 * Allow `pkg:analyzer` version `0.38.x`.
