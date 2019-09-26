@@ -135,7 +135,7 @@ class AnalyzerResolvers implements Resolvers {
   /// Defaults to [_defaultSdkSummaryGenerator].
   final Future<String> Function() _sdkSummaryGenerator;
 
-  /// Lazy, all access must be preceded by a call to [_ensureInitialized].
+  // Lazy, all access must be preceded by a call to `_ensureInitialized`.
   AnalyzerResolver _resolver;
   BuildAssetUriResolver _uriResolver;
 
@@ -191,7 +191,7 @@ Future<String> _defaultSdkSummaryGenerator() async {
 
   var cacheDir = p.join(dartToolPath, 'build_resolvers');
   var summaryPath = p.join(cacheDir, 'sdk.sum');
-  var versionFile = File(summaryPath + '.version');
+  var versionFile = File('$summaryPath.version');
   var summaryFile = File(summaryPath);
 
   // Invalidate existing summary/version files if present.
@@ -206,7 +206,7 @@ Future<String> _defaultSdkSummaryGenerator() async {
     await summaryFile.delete();
   }
 
-  /// Generate the summary and version files if necessary.
+  // Generate the summary and version files if necessary.
   if (!await summaryFile.exists()) {
     var watch = Stopwatch()..start();
     _logger.info('Generating SDK summary...');
