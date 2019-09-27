@@ -62,7 +62,7 @@ abstract class Resolvers {
   /// this [Resolvers].
   ///
   /// In between calls to [reset] no Assets should change, so every call to
-  /// [BuildStep.readAsString] for a given AssetId should return identical
+  /// `BuildStep.readAsString` for a given AssetId should return identical
   /// contents. Any time an Asset's contents may change [reset] must be called.
   void reset() {}
 }
