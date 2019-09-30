@@ -1,6 +1,6 @@
 dart:
   - 2.3.0
-  - dev/release/2.6.0-dev.1.0
+  - dev
 
 stages:
   - analyze_and_format:
