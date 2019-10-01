@@ -139,7 +139,7 @@ class Module {
   /// will be thrown if there are any modules that are not supported.
   Future<List<Module>> computeTransitiveDependencies(BuildStep buildStep,
       {bool throwIfUnsupported = false,
-      Set<String> skipPlatformCheckPackages = const {}}) async {
+      @deprecated Set<String> skipPlatformCheckPackages = const {}}) async {
     throwIfUnsupported ??= false;
     skipPlatformCheckPackages ??= const {};
     final modules = await buildStep.fetchResource(moduleCache);

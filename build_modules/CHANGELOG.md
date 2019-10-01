@@ -1,3 +1,9 @@
+## 2.6.3-dev
+
+- **Deprecated**: The package specific unsupported module whitelist option
+  provided by `computeTransitiveDependencies`. The only known uses are being
+  removed.
+
 ## 2.6.2
 
 Republish of `2.6.0` with the proper min sdk contraint.

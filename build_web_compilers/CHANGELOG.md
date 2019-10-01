@@ -1,3 +1,8 @@
+## 2.6.0
+
+Add an option to globally skip the platform checks instead of only skipping
+them for a set of whitelisted packages.
+
 ## 2.5.2
 
 Republish of `2.5.0` with the proper min sdk contraint.

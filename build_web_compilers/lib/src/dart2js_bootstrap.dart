@@ -17,8 +17,12 @@ import 'package:scratch_space/scratch_space.dart';
 import 'platforms.dart';
 import 'web_entrypoint_builder.dart';
 
-Future<void> bootstrapDart2Js(
-    BuildStep buildStep, List<String> dart2JsArgs) async {
+/// Compiles an the primary input of [buildStep] with dart2js.
+///
+/// If [skipPlatformCheck] is `true` then all `dart:` imports will be
+/// allowed in all packages.
+Future<void> bootstrapDart2Js(BuildStep buildStep, List<String> dart2JsArgs,
+    {bool skipPlatformCheck}) async {
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
       dartEntrypointId.changeExtension(moduleExtension(dart2jsPlatform));
@@ -30,7 +34,7 @@ Future<void> bootstrapDart2Js(
     List<Module> allDeps;
     try {
       allDeps = (await module.computeTransitiveDependencies(buildStep,
-          throwIfUnsupported: true))
+          throwIfUnsupported: skipPlatformCheck))
         ..add(module);
     } on UnsupportedModules catch (e) {
       var librariesString = (await e.exactLibraries(buildStep).toList())
