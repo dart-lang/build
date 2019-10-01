@@ -25,18 +25,23 @@ var _modulePartialExtension = _context.withoutExtension(jsModuleExtension);
 /// Bootstraps a ddc application, creating the main entrypoint as well as the
 /// bootstrap and digest entrypoints.
 ///
-/// If [skipPlatformCheckPackages] is provided then any dart: imports will be
-/// allowed in the specified packages.
+/// If [skipPlatformCheck] is `true` then all `dart:` imports will be
+/// allowed in all packages.
+///
+/// Deprecated: If [skipPlatformCheckPackages] is provided then any dart:
+/// imports will be allowed in the specified packages.
 ///
 /// If [requiredAssets] is provided then this will ensure those assets are
 /// available to the app by making them inputs of this build action.
 Future<void> bootstrapDdc(
   BuildStep buildStep, {
   DartPlatform platform,
-  Set<String> skipPlatformCheckPackages = const {},
+  bool skipPlatformCheck = false,
+  @deprecated Set<String> skipPlatformCheckPackages = const {},
   Iterable<AssetId> requiredAssets,
 }) async {
   requiredAssets ??= [];
+  skipPlatformCheck ??= false;
   // Ensures that the sdk resources are built and available.
   await _ensureResources(buildStep, requiredAssets);
 
@@ -50,6 +55,7 @@ Future<void> bootstrapDdc(
   List<AssetId> transitiveJsModules;
   try {
     transitiveJsModules = await _ensureTransitiveJsModules(module, buildStep,
+        skipPlatformCheck: skipPlatformCheck,
         skipPlatformCheckPackages: skipPlatformCheckPackages);
   } on UnsupportedModules catch (e) {
     var librariesString = (await e.exactLibraries(buildStep).toList())
@@ -154,10 +160,12 @@ final _lazyBuildPool = Pool(16);
 /// unsupported modules.
 Future<List<AssetId>> _ensureTransitiveJsModules(
     Module module, BuildStep buildStep,
-    {@required Set<String> skipPlatformCheckPackages}) async {
+    {@required bool skipPlatformCheck,
+    @required Set<String> skipPlatformCheckPackages}) async {
   // Collect all the modules this module depends on, plus this module.
   var transitiveDeps = await module.computeTransitiveDependencies(buildStep,
-      throwIfUnsupported: true,
+      throwIfUnsupported: skipPlatformCheck,
+      // ignore: deprecated_member_use
       skipPlatformCheckPackages: skipPlatformCheckPackages);
 
   var jsModules = [
