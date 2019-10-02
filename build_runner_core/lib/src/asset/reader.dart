@@ -40,7 +40,7 @@ class Readability {
 }
 
 typedef IsReadable = FutureOr<Readability> Function(
-    AssetNode node, int phaseNum, String fromPackage);
+    AssetNode node, int phaseNum, AssetId primaryInput);
 
 /// An [AssetReader] with a lifetime equivalent to that of a single step in a
 /// build.
@@ -58,6 +58,7 @@ class SingleStepReader implements AssetReader {
   final AssetReader _delegate;
   final int _phaseNumber;
   final String _primaryPackage;
+  final AssetId _primaryInput;
   final IsReadable _isReadableNode;
   final FutureOr<GlobAssetNode> Function(
       Glob glob, String package, int phaseNum) _getGlobNode;
@@ -67,7 +68,7 @@ class SingleStepReader implements AssetReader {
 
   SingleStepReader(this._delegate, this._assetGraph, this._phaseNumber,
       this._primaryPackage, this._isReadableNode,
-      [this._getGlobNode]);
+      [this._getGlobNode, this._primaryInput]);
 
   /// Checks whether [id] can be read by this step - attempting to build the
   /// asset if necessary.
@@ -79,7 +80,7 @@ class SingleStepReader implements AssetReader {
       return false;
     }
 
-    return doAfter(_isReadableNode(node, _phaseNumber, _primaryPackage),
+    return doAfter(_isReadableNode(node, _phaseNumber, _primaryInput),
         (Readability readability) {
       if (readability.addToInputs) {
         assetsRead.add(id);

@@ -132,7 +132,7 @@ class BuildImpl {
   }
 
   static IsReadable _isReadableAfterBuildFactory(List<BuildPhase> buildPhases) {
-    return (AssetNode node, int phaseNum, String package) {
+    return (AssetNode node, int phaseNum, AssetId primaryInput) {
       if (node is GeneratedAssetNode) {
         return Readability.fromPreviousPhase(node.wasOutput && !node.isFailure);
       }
@@ -408,12 +408,16 @@ class _SingleBuild {
   /// Checks whether [node] can be read by this step - attempting to build the
   /// asset if necessary.
   FutureOr<Readability> _isReadableNode(
-      AssetNode node, int phaseNum, String fromPackage) {
+      AssetNode node, int phaseNum, AssetId primaryInput) {
     if (node is GeneratedAssetNode) {
       if (node.phaseNumber > phaseNum) {
         return Readability.notReadable;
       } else if (node.phaseNumber == phaseNum) {
-        final isInBuild = _buildPhases[phaseNum] is InBuildPhase;
+        // a build step can read its own outputs, so allow read if both the
+        // phase and the input matches
+        final isInBuild = _buildPhases[phaseNum] is InBuildPhase &&
+            node.primaryInput == primaryInput;
+
         return isInBuild ? Readability.ownOutput : Readability.notReadable;
       }
 
@@ -457,7 +461,7 @@ class _SingleBuild {
                     .join(', '));
 
         var wrappedReader = SingleStepReader(_reader, _assetGraph, phaseNumber,
-            input.package, _isReadableNode, _getUpdatedGlobNode);
+            input.package, _isReadableNode, _getUpdatedGlobNode, input);
 
         if (!await tracker.trackStage(
             'Setup', () => _buildShouldRun(builderOutputs, wrappedReader))) {
@@ -561,8 +565,8 @@ class _SingleBuild {
     assert(inputNode != null,
         'Inputs should be known in the static graph. Missing $input');
 
-    var wrappedReader = SingleStepReader(
-        _reader, _assetGraph, phaseNum, input.package, _isReadableNode);
+    var wrappedReader = SingleStepReader(_reader, _assetGraph, phaseNum,
+        input.package, _isReadableNode, null, input);
 
     if (!await _postProcessBuildShouldRun(anchorNode, wrappedReader)) {
       return <AssetId>[];
