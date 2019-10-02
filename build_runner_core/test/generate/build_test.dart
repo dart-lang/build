@@ -947,6 +947,42 @@ void main() {
         equalsAssetGraph(expectedGraph, checkPreviousInputsDigest: false));
   });
 
+  test("builders reading their output don't cause self-referential nodes",
+      () async {
+    final writer = InMemoryRunnerAssetWriter();
+
+    await testBuilders([
+      apply(
+          '',
+          [
+            (_) {
+              return TestBuilder(
+                build: (step, __) async {
+                  final output = step.inputId.addExtension('.out');
+                  await step.writeAsString(output, 'a');
+                  await step.readAsString(output);
+                },
+                buildExtensions: appendExtension('.out', from: '.txt'),
+              );
+            }
+          ],
+          toRoot(),
+          isOptional: false,
+          hideOutput: false),
+    ], {
+      'a|lib/a.txt': 'a',
+    }, outputs: {
+      'a|lib/a.txt.out': 'a'
+    }, writer: writer);
+
+    final graphId = makeAssetId('a|$assetGraphPath');
+    final cachedGraph = AssetGraph.deserialize(writer.assets[graphId]);
+    final outputId = AssetId('a', 'lib/a.txt.out');
+
+    final outputNode = cachedGraph.get(outputId) as GeneratedAssetNode;
+    expect(outputNode.inputs, isNot(contains(outputId)));
+  });
+
   test('outputs from previous full builds shouldn\'t be inputs to later ones',
       () async {
     final writer = InMemoryRunnerAssetWriter();

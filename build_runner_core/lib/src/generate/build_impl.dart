@@ -131,14 +131,16 @@ class BuildImpl {
     return build;
   }
 
-  static bool Function(AssetNode, int, String) _isReadableAfterBuildFactory(
-          List<BuildPhase> buildPhases) =>
-      (AssetNode node, int phaseNum, String package) {
-        if (node is GeneratedAssetNode) {
-          return node.wasOutput && !node.isFailure;
-        }
-        return node.isReadable && node.isValidInput;
-      };
+  static IsReadable _isReadableAfterBuildFactory(List<BuildPhase> buildPhases) {
+    return (AssetNode node, int phaseNum, String package) {
+      if (node is GeneratedAssetNode) {
+        return Readability.fromPreviousPhase(node.wasOutput && !node.isFailure);
+      }
+
+      return Readability.fromPreviousPhase(
+          node.isReadable && node.isValidInput);
+    };
+  }
 }
 
 /// Performs a single build and manages state that only lives for a single
@@ -405,16 +407,23 @@ class _SingleBuild {
 
   /// Checks whether [node] can be read by this step - attempting to build the
   /// asset if necessary.
-  FutureOr<bool> _isReadableNode(
+  FutureOr<Readability> _isReadableNode(
       AssetNode node, int phaseNum, String fromPackage) {
     if (node is GeneratedAssetNode) {
-      if (node.phaseNumber >= phaseNum) return false;
+      if (node.phaseNumber > phaseNum) {
+        return Readability.notReadable;
+      } else if (node.phaseNumber == phaseNum) {
+        final isInBuild = _buildPhases[phaseNum] is InBuildPhase;
+        return isInBuild ? Readability.ownOutput : Readability.notReadable;
+      }
+
       return doAfter(
           // ignore: void_checks
           _ensureAssetIsBuilt(node),
-          (_) => node.wasOutput && !node.isFailure);
+          (_) =>
+              Readability.fromPreviousPhase(node.wasOutput && !node.isFailure));
     }
-    return node.isReadable && node.isValidInput;
+    return Readability.fromPreviousPhase(node.isReadable && node.isValidInput);
   }
 
   FutureOr<void> _ensureAssetIsBuilt(AssetNode node) {

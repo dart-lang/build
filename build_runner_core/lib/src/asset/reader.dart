@@ -22,6 +22,26 @@ abstract class PathProvidingAssetReader implements AssetReader {
   String pathTo(AssetId id);
 }
 
+/// Describes if and how a [SingleStepReader] should read an [AssetId].
+class Readability {
+  final bool canRead;
+  final bool addToInputs;
+
+  const Readability(this.canRead, this.addToInputs);
+
+  /// Determines readability for a node written in a previous build phase, which
+  /// means that [ownOutput] is impossible.
+  factory Readability.fromPreviousPhase(bool readable) =>
+      readable ? Readability.readable : Readability.notReadable;
+
+  static const Readability notReadable = Readability(false, true);
+  static const Readability readable = Readability(true, true);
+  static const Readability ownOutput = Readability(true, false);
+}
+
+typedef IsReadable = FutureOr<Readability> Function(
+    AssetNode node, int phaseNum, String fromPackage);
+
 /// An [AssetReader] with a lifetime equivalent to that of a single step in a
 /// build.
 ///
@@ -38,8 +58,7 @@ class SingleStepReader implements AssetReader {
   final AssetReader _delegate;
   final int _phaseNumber;
   final String _primaryPackage;
-  final FutureOr<bool> Function(
-      AssetNode node, int phaseNum, String fromPackage) _isReadableNode;
+  final IsReadable _isReadableNode;
   final FutureOr<GlobAssetNode> Function(
       Glob glob, String package, int phaseNum) _getGlobNode;
 
@@ -53,13 +72,21 @@ class SingleStepReader implements AssetReader {
   /// Checks whether [id] can be read by this step - attempting to build the
   /// asset if necessary.
   FutureOr<bool> _isReadable(AssetId id) {
-    assetsRead.add(id);
-    var node = _assetGraph.get(id);
+    final node = _assetGraph.get(id);
     if (node == null) {
+      assetsRead.add(id);
       _assetGraph.add(SyntheticSourceAssetNode(id));
       return false;
     }
-    return _isReadableNode(node, _phaseNumber, _primaryPackage);
+
+    return doAfter(_isReadableNode(node, _phaseNumber, _primaryPackage),
+        (Readability readability) {
+      if (readability.addToInputs) {
+        assetsRead.add(id);
+      }
+
+      return readability.canRead;
+    });
   }
 
   @override
