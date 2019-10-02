@@ -25,10 +25,11 @@ final _logger = Logger('build_resolvers');
 /// Implements [Resolver.libraries] and [Resolver.findLibraryByName] by crawling
 /// down from entrypoints.
 class PerActionResolver implements ReleasableResolver {
-  final ReleasableResolver _delegate;
+  final AnalyzerResolver _delegate;
+  final BuildStep _step;
   final Iterable<AssetId> _entryPoints;
 
-  PerActionResolver(this._delegate, this._entryPoints);
+  PerActionResolver(this._delegate, this._step, this._entryPoints);
 
   @override
   Stream<LibraryElement> get libraries async* {
@@ -60,11 +61,20 @@ class PerActionResolver implements ReleasableResolver {
       libraries.firstWhere((l) => l.name == libraryName, orElse: () => null);
 
   @override
-  Future<bool> isLibrary(AssetId assetId) => _delegate.isLibrary(assetId);
+  Future<bool> isLibrary(AssetId assetId) =>
+      _resolveIfNecesssary(assetId).then(_delegate.isLibrary);
 
   @override
   Future<LibraryElement> libraryFor(AssetId assetId) =>
-      _delegate.libraryFor(assetId);
+      _resolveIfNecesssary(assetId).then(_delegate.libraryFor);
+
+  Future<AssetId> _resolveIfNecesssary(AssetId id) async {
+    if (!_delegate._uriResolver.seenAssets.contains(id)) {
+      await _delegate._uriResolver
+          .performResolve(_step, [id], _delegate._driver);
+    }
+    return id;
+  }
 
   @override
   void release() => _delegate.release();
@@ -165,7 +175,7 @@ class AnalyzerResolvers implements Resolvers {
 
     await _uriResolver.performResolve(
         buildStep, [buildStep.inputId], _resolver._driver);
-    return PerActionResolver(_resolver, [buildStep.inputId]);
+    return PerActionResolver(_resolver, buildStep, [buildStep.inputId]);
   }
 
   /// Must be called between each build.
