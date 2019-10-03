@@ -132,7 +132,7 @@ class BuildImpl {
   }
 
   static IsReadable _isReadableAfterBuildFactory(List<BuildPhase> buildPhases) {
-    return (AssetNode node, int phaseNum, AssetId primaryInput) {
+    return (AssetNode node, int phaseNum, AssetWriterSpy writtenAssets) {
       if (node is GeneratedAssetNode) {
         return Readability.fromPreviousPhase(node.wasOutput && !node.isFailure);
       }
@@ -408,15 +408,14 @@ class _SingleBuild {
   /// Checks whether [node] can be read by this step - attempting to build the
   /// asset if necessary.
   FutureOr<Readability> _isReadableNode(
-      AssetNode node, int phaseNum, AssetId primaryInput) {
+      AssetNode node, int phaseNum, AssetWriterSpy writtenAssets) {
     if (node is GeneratedAssetNode) {
       if (node.phaseNumber > phaseNum) {
         return Readability.notReadable;
       } else if (node.phaseNumber == phaseNum) {
-        // a build step can read its own outputs, so allow read if both the
-        // phase and the input matches
+        // allow a build step to read its outputs (contained in writtenAssets)
         final isInBuild = _buildPhases[phaseNum] is InBuildPhase &&
-            node.primaryInput == primaryInput;
+            writtenAssets.assetsWritten.contains(node.id);
 
         return isInBuild ? Readability.ownOutput : Readability.notReadable;
       }
@@ -460,8 +459,10 @@ class _SingleBuild {
                     .where((id) => !inputNode.primaryOutputs.contains(id))
                     .join(', '));
 
+        var wrappedWriter = AssetWriterSpy(_writer);
+
         var wrappedReader = SingleStepReader(_reader, _assetGraph, phaseNumber,
-            input.package, _isReadableNode, _getUpdatedGlobNode, input);
+            input.package, _isReadableNode, _getUpdatedGlobNode, wrappedWriter);
 
         if (!await tracker.trackStage(
             'Setup', () => _buildShouldRun(builderOutputs, wrappedReader))) {
@@ -475,7 +476,6 @@ class _SingleBuild {
         // to remove those.
         wrappedReader.assetsRead.clear();
 
-        var wrappedWriter = AssetWriterSpy(_writer);
         var actionDescription =
             _actionLoggerName(phase, input, _packageGraph.root.name);
         var logger = BuildForInputLogger(Logger(actionDescription));
@@ -565,8 +565,9 @@ class _SingleBuild {
     assert(inputNode != null,
         'Inputs should be known in the static graph. Missing $input');
 
+    var wrappedWriter = AssetWriterSpy(_writer);
     var wrappedReader = SingleStepReader(_reader, _assetGraph, phaseNum,
-        input.package, _isReadableNode, null, input);
+        input.package, _isReadableNode, null, wrappedWriter);
 
     if (!await _postProcessBuildShouldRun(anchorNode, wrappedReader)) {
       return <AssetId>[];
@@ -583,7 +584,6 @@ class _SingleBuild {
       ..clear();
     inputNode.deletedBy.remove(anchorNode.id);
 
-    var wrappedWriter = AssetWriterSpy(_writer);
     var actionDescription = '$builder on $input';
     var logger = BuildForInputLogger(Logger(actionDescription));
 
