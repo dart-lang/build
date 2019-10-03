@@ -58,6 +58,24 @@ void main() {
       }, resolvers: AnalyzerResolvers());
     });
 
+    test('should resolve files that aren\'t a transitive import of input', () {
+      return resolveSources({
+        'a|web/main.dart': '''
+          main() {}
+        ''',
+        'a|lib/other.dart': '''
+          fun() {}
+        '''
+      }, (resolver) async {
+        final main = await resolver.libraryFor(entryPoint);
+        expect(main, isNotNull);
+
+        final other =
+            await resolver.libraryFor(AssetId.parse('a|lib/other.dart'));
+        expect(other.topLevelElements.any((e) => e.name == 'fun'), isTrue);
+      });
+    });
+
     test('handles missing files', () {
       return resolveSources({
         'a|web/main.dart': '''
