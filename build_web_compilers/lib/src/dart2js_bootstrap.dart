@@ -23,6 +23,7 @@ import 'web_entrypoint_builder.dart';
 /// allowed in all packages.
 Future<void> bootstrapDart2Js(BuildStep buildStep, List<String> dart2JsArgs,
     {bool skipPlatformCheck}) async {
+  skipPlatformCheck ??= false;
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
       dartEntrypointId.changeExtension(moduleExtension(dart2jsPlatform));
@@ -34,7 +35,7 @@ Future<void> bootstrapDart2Js(BuildStep buildStep, List<String> dart2JsArgs,
     List<Module> allDeps;
     try {
       allDeps = (await module.computeTransitiveDependencies(buildStep,
-          throwIfUnsupported: skipPlatformCheck))
+          throwIfUnsupported: !skipPlatformCheck))
         ..add(module);
     } on UnsupportedModules catch (e) {
       var librariesString = (await e.exactLibraries(buildStep).toList())

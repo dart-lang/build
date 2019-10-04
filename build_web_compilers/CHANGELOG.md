@@ -1,3 +1,8 @@
+## 2.6.2
+
+Fix the skipPlatformCheck option which was accidentally doing the opposite
+of what it claimed.
+
 ## 2.6.1
 
 - Use the kernel version of `dart_sdk.js` rather than the analyzer version.
