@@ -1,3 +1,7 @@
+## 2.6.1
+
+- Use the kernel version of `dart_sdk.js` rather than the analyzer version.
+
 ## 2.6.0
 
 Add an option to globally skip the platform checks instead of only skipping
