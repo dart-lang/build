@@ -164,7 +164,7 @@ Future<List<AssetId>> _ensureTransitiveJsModules(
     @required Set<String> skipPlatformCheckPackages}) async {
   // Collect all the modules this module depends on, plus this module.
   var transitiveDeps = await module.computeTransitiveDependencies(buildStep,
-      throwIfUnsupported: skipPlatformCheck,
+      throwIfUnsupported: !skipPlatformCheck,
       // ignore: deprecated_member_use
       skipPlatformCheckPackages: skipPlatformCheckPackages);
 

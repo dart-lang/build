@@ -34,7 +34,7 @@ Future<void> bootstrapDart2Js(BuildStep buildStep, List<String> dart2JsArgs,
     List<Module> allDeps;
     try {
       allDeps = (await module.computeTransitiveDependencies(buildStep,
-          throwIfUnsupported: skipPlatformCheck))
+          throwIfUnsupported: !skipPlatformCheck))
         ..add(module);
     } on UnsupportedModules catch (e) {
       var librariesString = (await e.exactLibraries(buildStep).toList())
