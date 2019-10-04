@@ -69,15 +69,18 @@ class PerActionResolver implements ReleasableResolver {
       _resolveIfNecesssary(assetId).then(_delegate.libraryFor);
 
   Future<AssetId> _resolveIfNecesssary(AssetId id) async {
-    if (!_delegate._uriResolver.seenAssets.contains(id)) {
-      await _delegate._uriResolver
-          .performResolve(_step, [id], _delegate._driver);
-    }
+    // the resolver will only visit assets that haven't been resolved in this
+    // step yet
+    await _delegate._uriResolver.performResolve(_step, [id], _delegate._driver);
+
     return id;
   }
 
   @override
-  void release() => _delegate.release();
+  void release() {
+    _delegate._uriResolver.notifyBuildStepFinished(_step);
+    _delegate.release();
+  }
 
   @override
   Future<AssetId> assetIdForElement(Element element) =>
@@ -181,7 +184,7 @@ class AnalyzerResolvers implements Resolvers {
   /// Must be called between each build.
   @override
   void reset() {
-    _uriResolver?.seenAssets?.clear();
+    _uriResolver?.resetForBuild();
   }
 }
 
