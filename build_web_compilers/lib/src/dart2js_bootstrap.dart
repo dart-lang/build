@@ -23,6 +23,7 @@ import 'web_entrypoint_builder.dart';
 /// allowed in all packages.
 Future<void> bootstrapDart2Js(BuildStep buildStep, List<String> dart2JsArgs,
     {bool skipPlatformCheck}) async {
+  skipPlatformCheck ??= false;
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
       dartEntrypointId.changeExtension(moduleExtension(dart2jsPlatform));
