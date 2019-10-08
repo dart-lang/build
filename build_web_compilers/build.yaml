@@ -27,6 +27,7 @@ builders:
     is_optional: False
     auto_apply: none
     applies_builders: ["build_web_compilers|sdk_js_cleanup"]
+    runs_before: ["build_web_compilers|entrypoint"]
   dart2js_modules:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
