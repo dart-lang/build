@@ -141,7 +141,7 @@ void main() {
 void expectPkg(PackageNode node, String name, String location,
     DependencyType dependencyType,
     [Iterable<PackageNode> dependencies]) {
-  location = p.absolute(location);
+  location = p.canonicalize(location);
   expect(node.name, name);
   expect(node.path, location);
   expect(node.dependencyType, dependencyType);

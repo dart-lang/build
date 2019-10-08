@@ -122,7 +122,8 @@ class ScratchSpace {
   ///
   /// The returned [File] may or may not already exist. Call [ensureAssets]
   /// with [id] to make sure it is actually present.
-  File fileFor(AssetId id) => File(p.join(tempDir.path, _relativePathFor(id)));
+  File fileFor(AssetId id) =>
+      File(p.join(tempDir.path, p.normalize(_relativePathFor(id))));
 }
 
 /// Returns a canonical uri for [id].
