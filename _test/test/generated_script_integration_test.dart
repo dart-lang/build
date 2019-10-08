@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @TestOn('vm')
+@OnPlatform({'windows': Skip('https://github.com/dart-lang/build/issues/2487')})
 import 'dart:io' show File;
 
 import 'package:test/test.dart';

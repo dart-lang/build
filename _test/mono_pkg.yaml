@@ -1,9 +1,14 @@
 dart:
   - dev
 
+os:
+  - linux
+  - windows
+
 stages:
   - analyze_and_format:
     - dartanalyzer: --fatal-infos --fatal-warnings .
+      os: linux
   - unit_test:
     - group:
       - command: pub run build_runner test -- -p chrome

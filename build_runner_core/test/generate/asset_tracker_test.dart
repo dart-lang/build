@@ -24,6 +24,7 @@ main() {
         d.dir('web', [
           d.file('a.txt', 'hello'),
         ]),
+        d.dir('.dart_tool'),
       ]).create();
       var packageGraph = PackageGraph.fromRoot(PackageNode(
           'a', p.join(d.sandbox, 'a'), DependencyType.path,

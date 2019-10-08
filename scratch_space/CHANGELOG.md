@@ -1,3 +1,8 @@
+## 0.0.4+1
+
+- Fix `ScratchSpace.fileFor` on windows to normalize the paths so they dont
+  contain mixed separators.
+
 ## 0.0.4
 
 - Add `requireContent` argument to `copyOutput` to allow asserting that a file

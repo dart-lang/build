@@ -3,7 +3,8 @@ travis:
   sudo: required
   addons:
     chrome: stable
-
+  before_install:
+  - tool/travis_setup.sh
   after_failure:
   - tool/report_failure.sh
   stages:

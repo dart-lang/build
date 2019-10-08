@@ -1,3 +1,8 @@
+## 0.10.9+1
+
+- Fix the `DebugTestBuilder` on windows.
+- Fix `PackageAssetReader` on windows.
+
 ## 0.10.9
 
 - Allow tracking of reported unused assets in `testBuilder` calls with the

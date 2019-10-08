@@ -66,7 +66,7 @@ void main() {
               p.join('packages', id.package, p.relative(id.path, from: 'lib'));
           expect(relativeFilePath, equals(expectedPackagesPath));
         } else {
-          expect(relativeFilePath, equals(id.path));
+          expect(relativeFilePath, equals(p.normalize(id.path)));
         }
       }
     });

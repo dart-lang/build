@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:io';
+
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
@@ -67,21 +69,25 @@ void printAsync() async {
       var runResult = await runDart('a', 'out/bin/hello.vm.app.dill');
 
       expect(runResult.exitCode, 0, reason: runResult.stderr as String);
-      expect(runResult.stdout, 'hello/world\n');
+      expect(runResult.stdout, 'hello/world$_newLine');
     });
 
     test(' and run root libraries main', () async {
       var runResult = await runDart('a', 'out/bin/goodbye.vm.app.dill');
 
       expect(runResult.exitCode, 0, reason: runResult.stderr as String);
-      expect(runResult.stdout, 'goodbye/world\n');
+      expect(runResult.stdout, 'goodbye/world$_newLine');
     });
 
     test(' and enables sync-async', () async {
       var runResult = await runDart('a', 'out/bin/sync_async.vm.app.dill');
 
       expect(runResult.exitCode, 0, reason: runResult.stderr as String);
-      expect(runResult.stdout, 'before\nrunning\nafter\n');
+
+      expect(runResult.stdout,
+          'before${_newLine}running${_newLine}after$_newLine');
     });
   });
 }
+
+final _newLine = Platform.isWindows ? '\r\n' : '\n';
