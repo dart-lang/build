@@ -199,21 +199,9 @@ jobs:
       env: PKGS="_test"
       script: ./tool/travis.sh test_00
     - stage: e2e_test
-      name: "SDK: dev; PKG: _test; TASKS: `pub run test --total-shards 2 --shard-index 0`"
-      dart: dev
-      os: windows
-      env: PKGS="_test"
-      script: ./tool/travis.sh test_00
-    - stage: e2e_test
       name: "SDK: dev; PKG: _test; TASKS: `pub run test --total-shards 2 --shard-index 1`"
       dart: dev
       os: linux
-      env: PKGS="_test"
-      script: ./tool/travis.sh test_01
-    - stage: e2e_test
-      name: "SDK: dev; PKG: _test; TASKS: `pub run test --total-shards 2 --shard-index 1`"
-      dart: dev
-      os: windows
       env: PKGS="_test"
       script: ./tool/travis.sh test_01
     - stage: e2e_test

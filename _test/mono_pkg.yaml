@@ -15,7 +15,9 @@ stages:
       - command: pub run build_runner test -- -p vm test/configurable_uri_test.dart
   - e2e_test:
     - test: --total-shards 2 --shard-index 0
+      os: linux
     - test: --total-shards 2 --shard-index 1
+      os: linux
     - test: --total-shards 3 --shard-index 0
       os: windows
     - test: --total-shards 3 --shard-index 1
