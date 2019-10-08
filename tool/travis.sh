@@ -83,52 +83,52 @@ for PKG in ${PKGS}; do
       dartfmt -n --set-exit-if-changed . || EXIT_CODE=$?
       ;;
     test_00)
-      echo 'pub run test --total-shards 6 --shard-index 0'
-      pub run test --total-shards 6 --shard-index 0 || EXIT_CODE=$?
+      echo 'pub run test --total-shards 2 --shard-index 0'
+      pub run test --total-shards 2 --shard-index 0 || EXIT_CODE=$?
       ;;
     test_01)
-      echo 'pub run test --total-shards 6 --shard-index 1'
-      pub run test --total-shards 6 --shard-index 1 || EXIT_CODE=$?
+      echo 'pub run test --total-shards 2 --shard-index 1'
+      pub run test --total-shards 2 --shard-index 1 || EXIT_CODE=$?
       ;;
     test_02)
-      echo 'pub run test --total-shards 6 --shard-index 2'
-      pub run test --total-shards 6 --shard-index 2 || EXIT_CODE=$?
+      echo 'pub run test --total-shards 3 --shard-index 0'
+      pub run test --total-shards 3 --shard-index 0 || EXIT_CODE=$?
       ;;
     test_03)
-      echo 'pub run test --total-shards 6 --shard-index 3'
-      pub run test --total-shards 6 --shard-index 3 || EXIT_CODE=$?
+      echo 'pub run test --total-shards 3 --shard-index 1'
+      pub run test --total-shards 3 --shard-index 1 || EXIT_CODE=$?
       ;;
     test_04)
-      echo 'pub run test --total-shards 6 --shard-index 4'
-      pub run test --total-shards 6 --shard-index 4 || EXIT_CODE=$?
+      echo 'pub run test --total-shards 3 --shard-index 2'
+      pub run test --total-shards 3 --shard-index 2 || EXIT_CODE=$?
       ;;
     test_05)
-      echo 'pub run test --total-shards 6 --shard-index 5'
-      pub run test --total-shards 6 --shard-index 5 || EXIT_CODE=$?
-      ;;
-    test_06)
       echo 'pub run test'
       pub run test || EXIT_CODE=$?
       ;;
-    test_07)
+    test_06)
       echo 'pub run test -x integration'
       pub run test -x integration || EXIT_CODE=$?
       ;;
+    test_07)
+      echo 'pub run test -t integration --total-shards 5 --shard-index 0'
+      pub run test -t integration --total-shards 5 --shard-index 0 || EXIT_CODE=$?
+      ;;
     test_08)
-      echo 'pub run test -t integration --total-shards 4 --shard-index 0'
-      pub run test -t integration --total-shards 4 --shard-index 0 || EXIT_CODE=$?
+      echo 'pub run test -t integration --total-shards 5 --shard-index 1'
+      pub run test -t integration --total-shards 5 --shard-index 1 || EXIT_CODE=$?
       ;;
     test_09)
-      echo 'pub run test -t integration --total-shards 4 --shard-index 1'
-      pub run test -t integration --total-shards 4 --shard-index 1 || EXIT_CODE=$?
+      echo 'pub run test -t integration --total-shards 5 --shard-index 2'
+      pub run test -t integration --total-shards 5 --shard-index 2 || EXIT_CODE=$?
       ;;
     test_10)
-      echo 'pub run test -t integration --total-shards 4 --shard-index 2'
-      pub run test -t integration --total-shards 4 --shard-index 2 || EXIT_CODE=$?
+      echo 'pub run test -t integration --total-shards 5 --shard-index 3'
+      pub run test -t integration --total-shards 5 --shard-index 3 || EXIT_CODE=$?
       ;;
     test_11)
-      echo 'pub run test -t integration --total-shards 4 --shard-index 3'
-      pub run test -t integration --total-shards 4 --shard-index 3 || EXIT_CODE=$?
+      echo 'pub run test -t integration --total-shards 5 --shard-index 4'
+      pub run test -t integration --total-shards 5 --shard-index 4 || EXIT_CODE=$?
       ;;
     *)
       echo -e "\033[31mNot expecting TASK '${TASK}'. Error!\033[0m"

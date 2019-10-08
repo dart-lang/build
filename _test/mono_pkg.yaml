@@ -14,12 +14,16 @@ stages:
       - command: pub run build_runner test -- -p chrome
       - command: pub run build_runner test -- -p vm test/configurable_uri_test.dart
   - e2e_test:
-    - test: --total-shards 6 --shard-index 0
-    - test: --total-shards 6 --shard-index 1
-    - test: --total-shards 6 --shard-index 2
-    - test: --total-shards 6 --shard-index 3
-    - test: --total-shards 6 --shard-index 4
-    - test: --total-shards 6 --shard-index 5
+    - test: --total-shards 2 --shard-index 0
+      os: linux
+    - test: --total-shards 2 --shard-index 1
+      os: linux
+    - test: --total-shards 3 --shard-index 0
+      os: windows
+    - test: --total-shards 3 --shard-index 1
+      os: windows
+    - test: --total-shards 3 --shard-index 2
+      os: windows
   - e2e_test_cron:
     - test:
       dart:

@@ -9,7 +9,8 @@ stages:
   - unit_test:
     - test: -x integration
   - e2e_test:
-    - test: -t integration --total-shards 4 --shard-index 0
-    - test: -t integration --total-shards 4 --shard-index 1
-    - test: -t integration --total-shards 4 --shard-index 2
-    - test: -t integration --total-shards 4 --shard-index 3
+    - test: -t integration --total-shards 5 --shard-index 0
+    - test: -t integration --total-shards 5 --shard-index 1
+    - test: -t integration --total-shards 5 --shard-index 2
+    - test: -t integration --total-shards 5 --shard-index 3
+    - test: -t integration --total-shards 5 --shard-index 4

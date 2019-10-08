@@ -104,6 +104,7 @@ void main() {
       }
       var concurrentCount = 0;
       var maxConcurrentCount = 0;
+      var reachedMax = Completer<Null>();
       await testBuilders(
           [
             apply(
@@ -114,7 +115,12 @@ void main() {
                       concurrentCount += 1;
                       maxConcurrentCount =
                           math.max(concurrentCount, maxConcurrentCount);
-                      await Future.delayed(Duration(milliseconds: 100));
+                      if (concurrentCount >= buildPhasePoolSize &&
+                          !reachedMax.isCompleted) {
+                        await Future.delayed(Duration(milliseconds: 100));
+                        if (!reachedMax.isCompleted) reachedMax.complete(null);
+                      }
+                      await reachedMax.future;
                       concurrentCount -= 1;
                     });
                   }
