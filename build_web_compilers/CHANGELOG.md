@@ -1,3 +1,8 @@
+## 2.6.3
+
+- Enforce builder application ordering between the SDK JS copy builder and the
+  DDC entrypoint builder.
+
 ## 2.6.2
 
 Fix the skipPlatformCheck option which was accidentally doing the opposite
