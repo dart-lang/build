@@ -11,6 +11,9 @@ stages:
         - 2.3.0
   - unit_test:
     - command: pub run build_runner test
+      os:
+        - linux
+        - windows
 
 cache:
   directories:

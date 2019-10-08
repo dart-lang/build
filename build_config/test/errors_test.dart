@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+@OnPlatform({'windows': Skip('yaml errors look different on windows')})
 import 'package:build_config/build_config.dart';
 import 'package:test/test.dart';
 

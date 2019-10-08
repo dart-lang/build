@@ -10,4 +10,7 @@ stages:
       dart:
         - 2.3.0-dev.0.1
   - unit_test:
-    - test
+    - test:
+      os:
+        - linux
+        - windows

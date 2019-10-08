@@ -1,4 +1,1 @@
 timeout: 2x
-tags:
-  presubmit-only:
-    skip: "Should only be run during presubmit"

@@ -11,3 +11,6 @@ stages:
         - 2.3.0
   - unit_test:
     - command: pub run test
+      os:
+        - linux
+        - windows
