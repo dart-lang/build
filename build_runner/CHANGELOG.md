@@ -1,3 +1,8 @@
+## 1.7.2-dev
+
+- Give a more consistent ordering for Builders when their ordering is allowed to
+  be arbitrary.
+
 ## 1.7.1
 
 - Allow `build` version 1.2.x.

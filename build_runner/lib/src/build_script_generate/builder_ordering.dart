@@ -13,11 +13,13 @@ import 'package:graphs/graphs.dart';
 /// constraints are met, but the rest of the ordering is arbitrary.
 Iterable<BuilderDefinition> findBuilderOrder(
     Iterable<BuilderDefinition> builders) {
+  final consistentOrderBuilders = builders.toList()
+    ..sort((a, b) => a.key.compareTo(b.key));
   Iterable<BuilderDefinition> dependencies(BuilderDefinition parent) =>
-      builders.where((child) =>
+      consistentOrderBuilders.where((child) =>
           _hasInputDependency(parent, child) || _mustRunBefore(parent, child));
   var components = stronglyConnectedComponents<BuilderDefinition>(
-    builders,
+    consistentOrderBuilders,
     dependencies,
     equals: (a, b) => a.key == b.key,
     hashCode: (b) => b.key.hashCode,
