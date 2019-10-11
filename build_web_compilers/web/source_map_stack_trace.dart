@@ -84,7 +84,7 @@ String _prettifyMember(String member) {
   member = suffix == 'fn' ? member : suffix;
   // '|' is sometimes escaped as $124, but we avoid unescaping the entire member
   // here due to DDC's deduping mechanism introducing trailing $N.
-  member = member.replaceAll("\$124", '|');
+  member = member.replaceAll('\$124', '|');
   return member.contains('|') ? _prettifyExtension(member) : member;
 }
 
@@ -93,24 +93,24 @@ String _prettifyExtension(String member) {
   var isSetter = false;
   var pipeIndex = member.indexOf('|');
   var spaceIndex = member.indexOf(' ');
-  var poundIndex = member.indexOf("\$35");
+  var poundIndex = member.indexOf('\$35');
   if (spaceIndex >= 0) {
     // member is a static field or static getter/setter
-    isSetter = member.substring(0, spaceIndex) == "set";
+    isSetter = member.substring(0, spaceIndex) == 'set';
     member = member.substring(spaceIndex + 1, member.length);
   } else if (poundIndex >= 0) {
     // member is a tearoff or local property getter/setter
-    isSetter = member.substring(pipeIndex + 1, poundIndex) == "set";
-    member = member.replaceRange(pipeIndex + 1, poundIndex + 3, "");
+    isSetter = member.substring(pipeIndex + 1, poundIndex) == 'set';
+    member = member.replaceRange(pipeIndex + 1, poundIndex + 3, '');
   } else {
     var body = member.substring(pipeIndex + 1, member.length);
-    if (body.startsWith('unary') || body.startsWith("\$")) {
+    if (body.startsWith('unary') || body.startsWith('\$')) {
       // member is an operator, so it's safe to unescape everything lazily
       member = _unescape(member);
     }
   }
   member = member.replaceAll('|', '.');
-  return isSetter ? member + '=' : member;
+  return isSetter ? '$member=' : member;
 }
 
 /// Unescapes a DDC-escaped JS identifier name.
@@ -118,7 +118,6 @@ String _prettifyExtension(String member) {
 /// Assumes decimal-to-UTF16.
 /// Warning: this greedily escapes characters, so it can be unsafe in the event
 /// that an escaped sequence precedes a number literal in the JS name.
-/// E.g., The name X+1 -> X$431 unescapes as X[INVALID].
 String _unescape(String name) {
   return name.replaceAllMapped(
       RegExp(r'\$[0-9]+'),
