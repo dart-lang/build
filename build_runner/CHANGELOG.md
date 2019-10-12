@@ -2,6 +2,7 @@
 
 - Give a more consistent ordering for Builders when their ordering is allowed to
   be arbitrary.
+- Handle more `--help` invocations without generating the build script.
 
 ## 1.7.1
 
