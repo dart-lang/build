@@ -80,6 +80,9 @@ final escapedPipe = '\$124';
 final escapedPound = '\$35';
 
 /// Reformats a JS member name to make it look more Dart-like.
+///
+/// TODO(https://github.com/dart-lang/sdk/issues/38869): Remove this logic when
+/// DDC stack trace deobfuscation is overhauled.
 String _prettifyMember(String member) {
   var last = member.lastIndexOf('.');
   if (last < 0) return member;

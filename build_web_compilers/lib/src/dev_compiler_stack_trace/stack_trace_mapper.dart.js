@@ -1932,7 +1932,7 @@ a=u==="fn"?a:u
 a=H.K(a,"$124","|")
 if(C.a.B(a,"|")){t=C.a.aq(a,"|")
 s=C.a.aq(a," ")
-r=C.a.aq(a,"$35")
+r=C.a.aq(a,"escapedPound")
 if(s>=0){q=C.a.i(a,0,s)==="set"
 a=C.a.i(a,s+1,a.length)}else{p=t+1
 if(r>=0){q=C.a.i(a,p,r)==="set"
@@ -2347,7 +2347,7 @@ return a.charCodeAt(b)},
 aB:function(a,b,c){var u
 if(typeof b!=="string")H.l(H.D(b))
 u=b.length
-if(c>u)throw H.a(P.n(c,0,u,null,null))
+if(c>u)throw H.a(P.n(c,0,b.length,null,null))
 return new H.dW(b,a,c)},
 aA:function(a,b){return this.aB(a,b,0)},
 bG:function(a,b,c){var u,t
@@ -2858,8 +2858,7 @@ if(typeof a!=="string")H.l(H.D(a))
 u=this.b.exec(a)
 if(u==null)return
 return new H.aV(u)},
-aB:function(a,b,c){var u=b.length
-if(c>u)throw H.a(P.n(c,0,u,null,null))
+aB:function(a,b,c){if(c>b.length)throw H.a(P.n(c,0,b.length,null,null))
 return new H.dL(this,b,c)},
 aA:function(a,b){return this.aB(a,b,0)},
 bp:function(a,b){var u,t=this.gbt()
