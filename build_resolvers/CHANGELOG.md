@@ -1,3 +1,9 @@
+## 1.2.0
+
+Add flutters embedded sdk to the summary if available. This has the effect of
+making `dart:ui` and any future libraries available if using the flutter sdk
+instead of the dart sdk.
+
 ## 1.1.1
 
 ### Bug Fix
