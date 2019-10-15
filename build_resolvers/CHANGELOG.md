@@ -1,3 +1,7 @@
+## 1.2.1
+
+Check the build_resolvers version as a part of sdk summary invalidation.
+
 ## 1.2.0
 
 Add flutters embedded sdk to the summary if available. This has the effect of

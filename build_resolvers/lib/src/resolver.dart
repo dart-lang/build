@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:analyzer/src/summary/summary_file_builder.dart';
@@ -197,16 +198,19 @@ Future<String> _defaultSdkSummaryGenerator() async {
 
   var cacheDir = p.join(dartToolPath, 'build_resolvers');
   var summaryPath = p.join(cacheDir, 'sdk.sum');
-  var analyzerPathFile = File('$summaryPath.analyzer.path');
-  var sdkVersionFile = File('$summaryPath.sdk.version');
+  var depsFile = File('$summaryPath.deps');
   var summaryFile = File(summaryPath);
 
+  var currentDeps = {
+    'sdk': Platform.version,
+    for (var package in _packageDepsToCheck)
+      package: await PackageResolver.current.packagePath(package),
+  };
+
   // Invalidate existing summary/version/analyzer files if present.
-  if (await sdkVersionFile.exists() && await analyzerPathFile.exists()) {
-    if (!await _checkSdkVersion(sdkVersionFile) ||
-        !await _checkAnalyzerPath(analyzerPathFile)) {
-      await sdkVersionFile.delete();
-      await analyzerPathFile.delete();
+  if (await depsFile.exists()) {
+    if (!await _checkDeps(depsFile, currentDeps)) {
+      await depsFile.delete();
       if (await summaryFile.exists()) await summaryFile.delete();
     }
   } else if (await summaryFile.exists()) {
@@ -222,8 +226,7 @@ Future<String> _defaultSdkSummaryGenerator() async {
     var sdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
     await summaryFile.writeAsBytes(_buildSdkSummary(sdkPath));
 
-    await _createSdkVersionFile(sdkVersionFile);
-    await _createAnalyzerPathFile(analyzerPathFile);
+    await _createDepsFile(depsFile, currentDeps);
     watch.stop();
     _logger.info('Generating SDK summary completed, took '
         '${humanReadable(watch.elapsed)}\n');
@@ -232,27 +235,26 @@ Future<String> _defaultSdkSummaryGenerator() async {
   return p.absolute(summaryPath);
 }
 
-Future<String> get _analyzerPath =>
-    PackageResolver.current.packagePath('analyzer');
+final _packageDepsToCheck = ['analyzer', 'build_resolvers'];
 
-Future<bool> _checkAnalyzerPath(File analyzerPathFile) async {
-  var lastPath = await analyzerPathFile.readAsString();
-  return lastPath == await _analyzerPath;
+Future<bool> _checkDeps(
+    File versionsFile, Map<String, Object> currentDeps) async {
+  var previous =
+      jsonDecode(await versionsFile.readAsString()) as Map<String, Object>;
+
+  if (previous.keys.length != currentDeps.keys.length) return false;
+
+  for (var entry in previous.entries) {
+    if (entry.value != currentDeps[entry.key]) return false;
+  }
+
+  return true;
 }
 
-Future<void> _createAnalyzerPathFile(File analyzerPathFile) async {
-  await analyzerPathFile.create(recursive: true);
-  await analyzerPathFile.writeAsString(await _analyzerPath);
-}
-
-Future<bool> _checkSdkVersion(File sdkVersionFile) async {
-  var lastVersion = await sdkVersionFile.readAsString();
-  return lastVersion == Platform.version;
-}
-
-Future<void> _createSdkVersionFile(File sdkVersionFile) async {
-  await sdkVersionFile.create(recursive: true);
-  await sdkVersionFile.writeAsString(Platform.version);
+Future<void> _createDepsFile(
+    File depsFile, Map<String, Object> currentDeps) async {
+  await depsFile.create(recursive: true);
+  await depsFile.writeAsString(jsonEncode(currentDeps));
 }
 
 List<int> _buildSdkSummary(String dartSdkPath) {
