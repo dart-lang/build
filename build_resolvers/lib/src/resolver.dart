@@ -201,9 +201,15 @@ Future<String> _defaultSdkSummaryGenerator() async {
   var depsFile = File('$summaryPath.deps');
   var summaryFile = File(summaryPath);
 
+  var currentDeps = {
+    'sdk': Platform.version,
+    for (var package in _packageDepsToCheck)
+      package: await PackageResolver.current.packagePath(package),
+  };
+
   // Invalidate existing summary/version/analyzer files if present.
   if (await depsFile.exists()) {
-    if (!await _checkDeps(depsFile)) {
+    if (!await _checkDeps(depsFile, currentDeps)) {
       await depsFile.delete();
       if (await summaryFile.exists()) await summaryFile.delete();
     }
@@ -220,7 +226,7 @@ Future<String> _defaultSdkSummaryGenerator() async {
     var sdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
     await summaryFile.writeAsBytes(_buildSdkSummary(sdkPath));
 
-    await _createDepsFile(depsFile);
+    await _createDepsFile(depsFile, currentDeps);
     watch.stop();
     _logger.info('Generating SDK summary completed, took '
         '${humanReadable(watch.elapsed)}\n');
@@ -231,28 +237,24 @@ Future<String> _defaultSdkSummaryGenerator() async {
 
 final _packageDepsToCheck = ['analyzer', 'build_resolvers'];
 
-var _currentDeps = {
-  'sdk': Platform.version,
-  for (var package in _packageDepsToCheck)
-    package: PackageResolver.current.packagePath(package),
-};
-
-Future<bool> _checkDeps(File versionsFile) async {
+Future<bool> _checkDeps(
+    File versionsFile, Map<String, Object> currentDeps) async {
   var previous =
       jsonDecode(await versionsFile.readAsString()) as Map<String, Object>;
 
-  if (previous.keys.length != _currentDeps.keys.length) return false;
+  if (previous.keys.length != currentDeps.keys.length) return false;
 
   for (var entry in previous.entries) {
-    if (entry.value != _currentDeps[entry.key]) return false;
+    if (entry.value != currentDeps[entry.key]) return false;
   }
 
   return true;
 }
 
-Future<void> _createDepsFile(File depsFile) async {
+Future<void> _createDepsFile(
+    File depsFile, Map<String, Object> currentDeps) async {
   await depsFile.create(recursive: true);
-  await depsFile.writeAsString(jsonEncode(_currentDeps));
+  await depsFile.writeAsString(jsonEncode(currentDeps));
 }
 
 List<int> _buildSdkSummary(String dartSdkPath) {
