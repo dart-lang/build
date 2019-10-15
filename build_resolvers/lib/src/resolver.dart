@@ -280,10 +280,8 @@ void _addFlutterLibraries(AbstractDartSdk sdk,
   var embedderYamlFile =
       resourceProvider.getFile(p.join(embedderSdkPath, '_embedder.yaml'));
   if (!embedderYamlFile.exists) {
-    _logger.warning(
-        'Unable to find flutter _embedder.yaml file, flutter types will not '
-        'be resolvable.');
-    return;
+    throw StateError('Unable to find flutter libraries, please run '
+        '`flutter precache` and try again.');
   }
 
   var embedderYaml = loadYaml(embedderYamlFile.readAsStringSync()) as YamlMap;
