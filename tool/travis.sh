@@ -70,6 +70,10 @@ for PKG in ${PKGS}; do
       echo 'dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs -- -P presubmit'
       dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs -- -P presubmit || EXIT_CODE=$?
       ;;
+    command_5)
+      echo 'tool/flutter_test.sh'
+      tool/flutter_test.sh || EXIT_CODE=$?
+      ;;
     dartanalyzer_0)
       echo 'dartanalyzer --fatal-infos --fatal-warnings .'
       dartanalyzer --fatal-infos --fatal-warnings . || EXIT_CODE=$?

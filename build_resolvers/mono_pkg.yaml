@@ -10,7 +10,9 @@ stages:
       dart:
         - 2.3.0
   - unit_test:
-    - command: pub run build_runner test
+    - group:
+      - command: pub run build_runner test
+      - command: tool/flutter_test.sh
       os:
         - linux
         - windows
