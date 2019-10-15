@@ -1,3 +1,7 @@
+## 2.6.4
+
+- Deobfuscate DDC extension method stack traces.
+
 ## 2.6.3
 
 - Enforce builder application ordering between the SDK JS copy builder and the
