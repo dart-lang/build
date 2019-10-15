@@ -15,6 +15,7 @@ dependencies:
   logging: ^0.11.2
   package_resolver: ^1.0.0
   path: ^1.1.0
+  yaml: ^2.0.0
 
 dev_dependencies:
   test: ^1.0.0
