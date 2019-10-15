@@ -103,13 +103,13 @@ jobs:
       env: PKGS="build_modules"
       script: ./tool/travis.sh command_4
     - stage: unit_test
-      name: "SDK: dev; PKG: build_resolvers; TASKS: [`pub run build_runner test`, `tool/flutter_test.sh`]"
+      name: "SDK: dev; PKG: build_resolvers; TASKS: [`pub run build_runner test`, `test/flutter_test.sh`]"
       dart: dev
       os: linux
       env: PKGS="build_resolvers"
       script: ./tool/travis.sh command_2 command_5
     - stage: unit_test
-      name: "SDK: dev; PKG: build_resolvers; TASKS: [`pub run build_runner test`, `tool/flutter_test.sh`]"
+      name: "SDK: dev; PKG: build_resolvers; TASKS: [`pub run build_runner test`, `test/flutter_test.sh`]"
       dart: dev
       os: windows
       env: PKGS="build_resolvers"

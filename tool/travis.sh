@@ -71,8 +71,8 @@ for PKG in ${PKGS}; do
       dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs -- -P presubmit || EXIT_CODE=$?
       ;;
     command_5)
-      echo 'tool/flutter_test.sh'
-      tool/flutter_test.sh || EXIT_CODE=$?
+      echo 'test/flutter_test.sh'
+      test/flutter_test.sh || EXIT_CODE=$?
       ;;
     dartanalyzer_0)
       echo 'dartanalyzer --fatal-infos --fatal-warnings .'

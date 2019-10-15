@@ -12,7 +12,7 @@ stages:
   - unit_test:
     - group:
       - command: pub run build_runner test
-      - command: tool/flutter_test.sh
+      - command: test/flutter_test.sh
       os:
         - linux
         - windows
