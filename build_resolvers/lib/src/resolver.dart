@@ -7,8 +7,8 @@ import 'dart:collection';
 import 'dart:io';
 
 import 'package:analyzer/src/summary/summary_file_builder.dart';
-
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/file_system/file_system.dart' hide File;
 import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer/src/generated/sdk.dart';
 import 'package:analyzer/src/generated/source.dart';
@@ -220,7 +220,7 @@ Future<String> _defaultSdkSummaryGenerator() async {
     _logger.info('Generating SDK summary...');
     await summaryFile.create(recursive: true);
     var sdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
-    await summaryFile.writeAsBytes(buildSdkSummary(sdkPath));
+    await summaryFile.writeAsBytes(_buildSdkSummary(sdkPath));
 
     await _createSdkVersionFile(sdkVersionFile);
     await _createAnalyzerPathFile(analyzerPathFile);
@@ -255,37 +255,45 @@ Future<void> _createSdkVersionFile(File sdkVersionFile) async {
   await sdkVersionFile.writeAsString(Platform.version);
 }
 
-List<int> buildSdkSummary(String dartSdkPath) {
-  // Prepare the Dart SDK.
+List<int> _buildSdkSummary(String dartSdkPath) {
   var resourceProvider = PhysicalResourceProvider.INSTANCE;
   var dartSdkFolder = resourceProvider.getFolder(dartSdkPath);
-  var dartSdk = FolderBasedDartSdk(resourceProvider, dartSdkFolder, true)
+  var sdk = FolderBasedDartSdk(resourceProvider, dartSdkFolder, true)
     ..useSummary = false
     ..analysisOptions = AnalysisOptionsImpl();
 
-  // Try to load the flutter engine _embedder.yaml file and add any missing
-  // libraries to the dart sdk.
+  if (_isFlutter) _addFlutterLibraries(sdk, resourceProvider, dartSdkPath);
+
+  var sdkSources = {
+    for (var library in sdk.sdkLibraries) sdk.mapDartUri(library.shortName),
+  };
+
+  return SummaryBuilder(sdkSources, sdk.context).build();
+}
+
+/// Loads the flutter engine _embedder.yaml file and adds any new libraries to
+/// [sdk].
+void _addFlutterLibraries(AbstractDartSdk sdk,
+    ResourceProvider resourceProvider, String dartSdkPath) {
   var embedderSdkPath =
       p.join(p.dirname(dartSdkPath), 'pkg', 'sky_engine', 'lib');
   var embedderYamlFile =
       resourceProvider.getFile(p.join(embedderSdkPath, '_embedder.yaml'));
-  if (embedderYamlFile.exists) {
-    var embedderYaml = loadYaml(embedderYamlFile.readAsStringSync()) as YamlMap;
-    var flutterSdk = EmbedderSdk(resourceProvider,
-        {resourceProvider.getFolder(embedderSdkPath): embedderYaml});
-
-    for (var library in flutterSdk.sdkLibraries) {
-      if (dartSdk.libraryMap.getLibrary(library.shortName) != null) continue;
-      dartSdk.libraryMap
-          .setLibrary(library.shortName, library as SdkLibraryImpl);
-    }
+  if (!embedderYamlFile.exists) {
+    _logger.warning(
+        'Unable to find flutter _embedder.yaml file, flutter types will not '
+        'be resolvable.');
+    return;
   }
 
-  // Prepare 'dart:' libraries for serialization.
-  var librarySources = {
-    for (var library in dartSdk.sdkLibraries)
-      dartSdk.mapDartUri(library.shortName),
-  };
+  var embedderYaml = loadYaml(embedderYamlFile.readAsStringSync()) as YamlMap;
+  var flutterSdk = EmbedderSdk(resourceProvider,
+      {resourceProvider.getFolder(embedderSdkPath): embedderYaml});
 
-  return SummaryBuilder(librarySources, dartSdk.context).build();
+  for (var library in flutterSdk.sdkLibraries) {
+    if (sdk.libraryMap.getLibrary(library.shortName) != null) continue;
+    sdk.libraryMap.setLibrary(library.shortName, library as SdkLibraryImpl);
+  }
 }
+
+final _isFlutter = Platform.version.contains('flutter');

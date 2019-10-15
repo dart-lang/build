@@ -229,4 +229,4 @@ void main() {
   });
 }
 
-final bool _isFlutter = Platform.version.contains('flutter');
+final _isFlutter = Platform.version.contains('flutter');
