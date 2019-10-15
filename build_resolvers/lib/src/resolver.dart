@@ -6,15 +6,20 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 
-import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
-import 'package:analyzer/src/generated/engine.dart' hide Logger;
-import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/summary/summary_file_builder.dart';
+import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/file_system/file_system.dart' hide File;
+import 'package:analyzer/file_system/physical_file_system.dart';
+import 'package:analyzer/src/generated/sdk.dart';
+import 'package:analyzer/src/generated/source.dart';
+import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
+import 'package:analyzer/src/dart/sdk/sdk.dart';
+import 'package:analyzer/src/generated/engine.dart' hide Logger;
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 import 'package:package_resolver/package_resolver.dart';
 import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
 
 import 'analysis_driver.dart';
 import 'build_asset_uri_resolver.dart';
@@ -215,7 +220,7 @@ Future<String> _defaultSdkSummaryGenerator() async {
     _logger.info('Generating SDK summary...');
     await summaryFile.create(recursive: true);
     var sdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
-    await summaryFile.writeAsBytes(SummaryBuilder.forSdk(sdkPath).build());
+    await summaryFile.writeAsBytes(_buildSdkSummary(sdkPath));
 
     await _createSdkVersionFile(sdkVersionFile);
     await _createAnalyzerPathFile(analyzerPathFile);
@@ -249,3 +254,44 @@ Future<void> _createSdkVersionFile(File sdkVersionFile) async {
   await sdkVersionFile.create(recursive: true);
   await sdkVersionFile.writeAsString(Platform.version);
 }
+
+List<int> _buildSdkSummary(String dartSdkPath) {
+  var resourceProvider = PhysicalResourceProvider.INSTANCE;
+  var dartSdkFolder = resourceProvider.getFolder(dartSdkPath);
+  var sdk = FolderBasedDartSdk(resourceProvider, dartSdkFolder, true)
+    ..useSummary = false
+    ..analysisOptions = AnalysisOptionsImpl();
+
+  if (_isFlutter) _addFlutterLibraries(sdk, resourceProvider, dartSdkPath);
+
+  var sdkSources = {
+    for (var library in sdk.sdkLibraries) sdk.mapDartUri(library.shortName),
+  };
+
+  return SummaryBuilder(sdkSources, sdk.context).build();
+}
+
+/// Loads the flutter engine _embedder.yaml file and adds any new libraries to
+/// [sdk].
+void _addFlutterLibraries(AbstractDartSdk sdk,
+    ResourceProvider resourceProvider, String dartSdkPath) {
+  var embedderSdkPath =
+      p.join(p.dirname(dartSdkPath), 'pkg', 'sky_engine', 'lib');
+  var embedderYamlFile =
+      resourceProvider.getFile(p.join(embedderSdkPath, '_embedder.yaml'));
+  if (!embedderYamlFile.exists) {
+    throw StateError('Unable to find flutter libraries, please run '
+        '`flutter precache` and try again.');
+  }
+
+  var embedderYaml = loadYaml(embedderYamlFile.readAsStringSync()) as YamlMap;
+  var flutterSdk = EmbedderSdk(resourceProvider,
+      {resourceProvider.getFolder(embedderSdkPath): embedderYaml});
+
+  for (var library in flutterSdk.sdkLibraries) {
+    if (sdk.libraryMap.getLibrary(library.shortName) != null) continue;
+    sdk.libraryMap.setLibrary(library.shortName, library as SdkLibraryImpl);
+  }
+}
+
+final _isFlutter = Platform.version.contains('flutter');
