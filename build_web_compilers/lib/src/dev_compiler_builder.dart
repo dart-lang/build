@@ -46,13 +46,17 @@ class DevCompilerBuilder implements Builder {
   /// If not provided, defaults to "lib/libraries.json" in the sdk directory.
   final String librariesPath;
 
+  /// Any extra args to pass to ddc.
+  final List<String> ddcArgs;
+
   DevCompilerBuilder(
       {bool useIncrementalCompiler,
       bool trackUnusedInputs,
       @required this.platform,
       this.sdkKernelPath,
       String librariesPath,
-      String platformSdk})
+      String platformSdk,
+      List<String> ddcArgs})
       : useIncrementalCompiler = useIncrementalCompiler ?? true,
         platformSdk = platformSdk ?? sdkDir,
         librariesPath = librariesPath ??
@@ -64,7 +68,8 @@ class DevCompilerBuilder implements Builder {
             jsModuleErrorsExtension,
             jsSourceMapExtension
           ],
-        };
+        },
+        ddcArgs = ddcArgs ?? <String>[];
 
   @override
   final Map<String, List<String>> buildExtensions;
@@ -88,8 +93,15 @@ class DevCompilerBuilder implements Builder {
     }
 
     try {
-      await _createDevCompilerModule(module, buildStep, useIncrementalCompiler,
-          trackUnusedInputs, platformSdk, sdkKernelPath, librariesPath);
+      await _createDevCompilerModule(
+          module,
+          buildStep,
+          useIncrementalCompiler,
+          trackUnusedInputs,
+          platformSdk,
+          sdkKernelPath,
+          librariesPath,
+          ddcArgs);
     } on DartDevcCompilationException catch (e) {
       await handleError(e);
     } on MissingModulesException catch (e) {
@@ -107,6 +119,7 @@ Future<void> _createDevCompilerModule(
     String dartSdk,
     String sdkKernelPath,
     String librariesPath,
+    List<String> ddcArgs,
     {bool debugMode = true}) async {
   var transitiveDeps = await buildStep.trackStage('CollectTransitiveDeps',
       () => module.computeTransitiveDependencies(buildStep));
@@ -163,6 +176,7 @@ Future<void> _createDevCompilerModule(
       if (usedInputsFile != null)
         '--used-inputs-file=${usedInputsFile.uri.toFilePath()}',
       for (var source in module.sources) _sourceArg(source),
+      ...ddcArgs,
     ])
     ..inputs.add(Input()
       ..path = sdkSummary

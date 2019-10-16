@@ -129,11 +129,13 @@ void main() {
     });
   });
 
-  test('can serve a single app', () async {
+  test('can serve a single app with custom environment defines', () async {
     await startServer(buildArgs: [
       'web',
       '--build-filter',
       'web/sub/main.dart.js',
+      '--define',
+      'build_web_compilers|ddc=ddc-args=["-Dmessage=goodbye"]',
     ]);
 
     addTearDown(() async {
@@ -148,5 +150,9 @@ void main() {
     var badResponse =
         await (await httpClient.get('localhost', 8080, 'main.dart.js')).close();
     expect(badResponse.statusCode, HttpStatus.notFound);
+
+    var ddcFileResponse =
+        await (await httpClient.get('localhost', 8080, 'main.ddc.js')).close();
+    expect(await utf8.decodeStream(ddcFileResponse), contains('"goodbye"'));
   });
 }

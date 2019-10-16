@@ -1,3 +1,13 @@
+## 2.7.0
+
+- Added a `ddc-args` option to the `build_web_compilers|ddc` builder.
+  - This enables use of the `-Dfoo=bar` environment variables, as well as
+    language experiments or other custom flags.
+  - This option should only be set globally, and will throw if it ever recieves
+    two different values. This is to ensure all modules are compiled with the
+    same options. Configuring multiple apps with different configuration is
+    not supported since they ultimately share the same compiled dependencies.
+
 ## 2.6.4
 
 - Deobfuscate DDC extension method stack traces.
