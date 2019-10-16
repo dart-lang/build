@@ -5,7 +5,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:build_runner/src/generate/directory_watcher_factory.dart';
 import 'package:http_multi_server/http_multi_server.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
@@ -95,7 +94,7 @@ class ServeCommand extends WatchCommand {
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
       logPerformanceDir: options.logPerformanceDir,
-      directoryWatcherFactory: defaultDirectoryWatcherFactory,
+      directoryWatcherFactory: options.directoryWatcherFactory,
       buildFilters: options.buildFilters,
     );
 

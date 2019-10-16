@@ -12,24 +12,28 @@ import 'package:build_daemon/constants.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
+import 'package:watcher/watcher.dart';
+
+import '../generate/directory_watcher_factory.dart';
 
 const buildFilterOption = 'build-filter';
+const configOption = 'config';
 const defineOption = 'define';
 const deleteFilesByDefaultOption = 'delete-conflicting-outputs';
-const liveReloadOption = 'live-reload';
+const failOnSevereOption = 'fail-on-severe';
+const hostnameOption = 'hostname';
 const hotReloadOption = 'hot-reload';
+const liveReloadOption = 'live-reload';
 const logPerformanceOption = 'log-performance';
 const logRequestsOption = 'log-requests';
 const lowResourcesModeOption = 'low-resources-mode';
-const failOnSevereOption = 'fail-on-severe';
-const hostnameOption = 'hostname';
 const outputOption = 'output';
-const configOption = 'config';
-const verboseOption = 'verbose';
 const releaseOption = 'release';
 const trackPerformanceOption = 'track-performance';
 const skipBuildScriptCheckOption = 'skip-build-script-check';
 const symlinkOption = 'symlink';
+const usePollingWatcherOption = 'use-polling-watcher';
+const verboseOption = 'verbose';
 
 enum BuildUpdatesOption { none, liveReload, hotReload }
 
@@ -98,18 +102,9 @@ class SharedOptions {
 
   factory SharedOptions.fromParsedArgs(ArgResults argResults,
       Iterable<String> positionalArgs, String rootPackage, Command command) {
-    var buildDirs = _parseBuildDirs(argResults);
+    var buildDirs = _parseBuildDirs(argResults)
+      ..addAll(_parsePositionalBuildDirs(positionalArgs, command));
     var buildFilters = _parseBuildFilters(argResults, rootPackage);
-    for (var arg in positionalArgs) {
-      var parts = p.split(arg);
-      if (parts.length > 1 || arg == '.') {
-        throw UsageException(
-            'Only top level directories such as `web` or `test` are allowed as '
-            'positional args, but got `$arg`',
-            command.usage);
-      }
-      buildDirs.add(BuildDirectory(arg));
-    }
 
     return SharedOptions._(
       buildFilters: buildFilters,
@@ -130,7 +125,7 @@ class SharedOptions {
 }
 
 /// Options specific to the `daemon` command.
-class DaemonOptions extends SharedOptions {
+class DaemonOptions extends WatchOptions {
   BuildMode buildMode;
 
   DaemonOptions._({
@@ -147,6 +142,7 @@ class DaemonOptions extends SharedOptions {
     @required Map<String, Map<String, dynamic>> builderConfigOverrides,
     @required bool isReleaseBuild,
     @required String logPerformanceDir,
+    @required bool usePollingWatcher,
   }) : super._(
           buildFilters: buildFilters,
           deleteFilesByDefault: deleteFilesByDefault,
@@ -160,22 +156,14 @@ class DaemonOptions extends SharedOptions {
           builderConfigOverrides: builderConfigOverrides,
           isReleaseBuild: isReleaseBuild,
           logPerformanceDir: logPerformanceDir,
+          usePollingWatcher: usePollingWatcher,
         );
 
   factory DaemonOptions.fromParsedArgs(ArgResults argResults,
       Iterable<String> positionalArgs, String rootPackage, Command command) {
-    var buildDirs = _parseBuildDirs(argResults);
+    var buildDirs = _parseBuildDirs(argResults)
+      ..addAll(_parsePositionalBuildDirs(positionalArgs, command));
     var buildFilters = _parseBuildFilters(argResults, rootPackage);
-    for (var arg in positionalArgs) {
-      var parts = p.split(arg);
-      if (parts.length > 1 || arg == '.') {
-        throw UsageException(
-            'Only top level directories such as `web` or `test` are allowed as '
-            'positional args, but got `$arg`',
-            command.usage);
-      }
-      buildDirs.add(BuildDirectory(arg));
-    }
 
     var buildModeValue = argResults[buildModeFlag] as String;
     BuildMode buildMode;
@@ -204,22 +192,21 @@ class DaemonOptions extends SharedOptions {
           _parseBuilderConfigOverrides(argResults[defineOption], rootPackage),
       isReleaseBuild: argResults[releaseOption] as bool,
       logPerformanceDir: argResults[logPerformanceOption] as String,
+      usePollingWatcher: argResults[usePollingWatcherOption] as bool,
     );
   }
 }
 
-/// Options specific to the `serve` command.
-class ServeOptions extends SharedOptions {
-  final String hostName;
-  final BuildUpdatesOption buildUpdates;
-  final bool logRequests;
-  final List<ServeTarget> serveTargets;
+class WatchOptions extends SharedOptions {
+  final bool usePollingWatcher;
 
-  ServeOptions._({
-    @required this.hostName,
-    @required this.buildUpdates,
-    @required this.logRequests,
-    @required this.serveTargets,
+  DirectoryWatcher Function(String) get directoryWatcherFactory =>
+      usePollingWatcher
+          ? pollingDirectoryWatcherFactory
+          : defaultDirectoryWatcherFactory;
+
+  WatchOptions._({
+    @required this.usePollingWatcher,
     @required Set<BuildFilter> buildFilters,
     @required bool deleteFilesByDefault,
     @required bool enableLowResourcesMode,
@@ -245,6 +232,72 @@ class ServeOptions extends SharedOptions {
           builderConfigOverrides: builderConfigOverrides,
           isReleaseBuild: isReleaseBuild,
           logPerformanceDir: logPerformanceDir,
+        );
+
+  factory WatchOptions.fromParsedArgs(ArgResults argResults,
+      Iterable<String> positionalArgs, String rootPackage, Command command) {
+    var buildDirs = _parseBuildDirs(argResults)
+      ..addAll(_parsePositionalBuildDirs(positionalArgs, command));
+    var buildFilters = _parseBuildFilters(argResults, rootPackage);
+
+    return WatchOptions._(
+      buildFilters: buildFilters,
+      deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
+      enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
+      configKey: argResults[configOption] as String,
+      buildDirs: buildDirs,
+      outputSymlinksOnly: argResults[symlinkOption] as bool,
+      trackPerformance: argResults[trackPerformanceOption] as bool,
+      skipBuildScriptCheck: argResults[skipBuildScriptCheckOption] as bool,
+      verbose: argResults[verboseOption] as bool,
+      builderConfigOverrides:
+          _parseBuilderConfigOverrides(argResults[defineOption], rootPackage),
+      isReleaseBuild: argResults[releaseOption] as bool,
+      logPerformanceDir: argResults[logPerformanceOption] as String,
+      usePollingWatcher: argResults[usePollingWatcherOption] as bool,
+    );
+  }
+}
+
+/// Options specific to the `serve` command.
+class ServeOptions extends WatchOptions {
+  final String hostName;
+  final BuildUpdatesOption buildUpdates;
+  final bool logRequests;
+  final List<ServeTarget> serveTargets;
+
+  ServeOptions._({
+    @required this.hostName,
+    @required this.buildUpdates,
+    @required this.logRequests,
+    @required this.serveTargets,
+    @required Set<BuildFilter> buildFilters,
+    @required bool deleteFilesByDefault,
+    @required bool enableLowResourcesMode,
+    @required String configKey,
+    @required Set<BuildDirectory> buildDirs,
+    @required bool outputSymlinksOnly,
+    @required bool trackPerformance,
+    @required bool skipBuildScriptCheck,
+    @required bool verbose,
+    @required Map<String, Map<String, dynamic>> builderConfigOverrides,
+    @required bool isReleaseBuild,
+    @required String logPerformanceDir,
+    @required bool usePollingWatcher,
+  }) : super._(
+          buildFilters: buildFilters,
+          deleteFilesByDefault: deleteFilesByDefault,
+          enableLowResourcesMode: enableLowResourcesMode,
+          configKey: configKey,
+          buildDirs: buildDirs,
+          outputSymlinksOnly: outputSymlinksOnly,
+          trackPerformance: trackPerformance,
+          skipBuildScriptCheck: skipBuildScriptCheck,
+          verbose: verbose,
+          builderConfigOverrides: builderConfigOverrides,
+          isReleaseBuild: isReleaseBuild,
+          logPerformanceDir: logPerformanceDir,
+          usePollingWatcher: usePollingWatcher,
         );
 
   factory ServeOptions.fromParsedArgs(ArgResults argResults,
@@ -323,6 +376,7 @@ class ServeOptions extends SharedOptions {
           _parseBuilderConfigOverrides(argResults[defineOption], rootPackage),
       isReleaseBuild: argResults[releaseOption] as bool,
       logPerformanceDir: argResults[logPerformanceOption] as String,
+      usePollingWatcher: argResults[usePollingWatcherOption] as bool,
     );
   }
 }
@@ -417,6 +471,26 @@ Set<BuildDirectory> _parseBuildDirs(ArgResults argResults) {
     }
   }
   return result;
+}
+
+/// Parses positional arguments as plain build directories.
+///
+/// Only allows top level directories as arguments, otherwise a
+/// [UsageException] is thrown.
+Set<BuildDirectory> _parsePositionalBuildDirs(
+    Iterable<String> positionalArgs, Command command) {
+  var buildDirs = <BuildDirectory>{};
+  for (var arg in positionalArgs) {
+    var parts = p.split(arg);
+    if (parts.length > 1 || arg == '.') {
+      throw UsageException(
+          'Only top level directories such as `web` or `test` are allowed as '
+          'positional args, but got `$arg`',
+          command.usage);
+    }
+    buildDirs.add(BuildDirectory(arg));
+  }
+  return buildDirs;
 }
 
 /// Returns build filters parsed from [buildFilterOption] arguments.

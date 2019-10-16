@@ -12,7 +12,6 @@ import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart' hide OutputLocation;
 import 'package:build_daemon/data/server_log.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
-import 'package:build_runner/src/generate/directory_watcher_factory.dart';
 import 'package:build_runner/src/package_graph/build_config_overrides.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/change_filter.dart';
@@ -209,8 +208,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
     // Only actually used for the AutoChangeProvider.
     Stream<List<WatchEvent>> graphEvents() => PackageGraphWatcher(packageGraph,
-            watch: (node) =>
-                PackageNodeWatcher(node, watch: defaultDirectoryWatcherFactory))
+            watch: (node) => PackageNodeWatcher(node,
+                watch: daemonOptions.directoryWatcherFactory))
         .watch()
         .where((change) => shouldProcess(
               change,
