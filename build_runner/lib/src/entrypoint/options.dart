@@ -102,8 +102,10 @@ class SharedOptions {
 
   factory SharedOptions.fromParsedArgs(ArgResults argResults,
       Iterable<String> positionalArgs, String rootPackage, Command command) {
-    var buildDirs = _parseBuildDirs(argResults)
-      ..addAll(_parsePositionalBuildDirs(positionalArgs, command));
+    var buildDirs = {
+      ..._parseBuildDirs(argResults),
+      ..._parsePositionalBuildDirs(positionalArgs, command),
+    };
     var buildFilters = _parseBuildFilters(argResults, rootPackage);
 
     return SharedOptions._(
@@ -161,8 +163,10 @@ class DaemonOptions extends WatchOptions {
 
   factory DaemonOptions.fromParsedArgs(ArgResults argResults,
       Iterable<String> positionalArgs, String rootPackage, Command command) {
-    var buildDirs = _parseBuildDirs(argResults)
-      ..addAll(_parsePositionalBuildDirs(positionalArgs, command));
+    var buildDirs = {
+      ..._parseBuildDirs(argResults),
+      ..._parsePositionalBuildDirs(positionalArgs, command),
+    };
     var buildFilters = _parseBuildFilters(argResults, rootPackage);
 
     var buildModeValue = argResults[buildModeFlag] as String;
@@ -236,8 +240,10 @@ class WatchOptions extends SharedOptions {
 
   factory WatchOptions.fromParsedArgs(ArgResults argResults,
       Iterable<String> positionalArgs, String rootPackage, Command command) {
-    var buildDirs = _parseBuildDirs(argResults)
-      ..addAll(_parsePositionalBuildDirs(positionalArgs, command));
+    var buildDirs = {
+      ..._parseBuildDirs(argResults),
+      ..._parsePositionalBuildDirs(positionalArgs, command),
+    };
     var buildFilters = _parseBuildFilters(argResults, rootPackage);
 
     return WatchOptions._(
@@ -473,25 +479,26 @@ Set<BuildDirectory> _parseBuildDirs(ArgResults argResults) {
   return result;
 }
 
-/// Parses positional arguments as plain build directories.
-///
-/// Only allows top level directories as arguments, otherwise a
-/// [UsageException] is thrown.
-Set<BuildDirectory> _parsePositionalBuildDirs(
-    Iterable<String> positionalArgs, Command command) {
-  var buildDirs = <BuildDirectory>{};
-  for (var arg in positionalArgs) {
-    var parts = p.split(arg);
-    if (parts.length > 1 || arg == '.') {
-      throw UsageException(
-          'Only top level directories such as `web` or `test` are allowed as '
-          'positional args, but got `$arg`',
-          command.usage);
-    }
-    buildDirs.add(BuildDirectory(arg));
+/// Throws a [UsageException] if [arg] looks like anything other than a top
+/// level directory.
+String _checkTopLevel(String arg, Command command) {
+  var parts = p.split(arg);
+  if (parts.length > 1 || arg == '.') {
+    throw UsageException(
+        'Only top level directories such as `web` or `test` are allowed as '
+        'positional args, but got `$arg`',
+        command.usage);
   }
-  return buildDirs;
+  return arg;
 }
+
+/// Parses positional arguments as plain build directories.
+Set<BuildDirectory> _parsePositionalBuildDirs(
+        Iterable<String> positionalArgs, Command command) =>
+    {
+      for (var arg in positionalArgs)
+        BuildDirectory(_checkTopLevel(arg, command))
+    };
 
 /// Returns build filters parsed from [buildFilterOption] arguments.
 ///
