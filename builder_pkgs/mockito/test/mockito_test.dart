@@ -302,4 +302,11 @@ void main() {
       "verification", () {
     expect(() => mock.methodWithNormalArgs(any), throwsArgumentError);
   });
+
+  test(
+      "reports an error when using an argument matcher in a position other "
+      "than an argument for the stubbed method", () {
+    expect(() => when(mock.methodWithListArgs(List.filled(7, any))),
+        throwsArgumentError);
+  });
 }

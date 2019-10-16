@@ -266,15 +266,15 @@ class _InvocationForMatchedArguments extends Invocation {
   // The `namedArguments` in [invocation] which are null should be represented
   // by a stored value in [_storedNamedArgs].
   static Map<Symbol, dynamic> _reconstituteNamedArgs(Invocation invocation) {
-    var namedArguments = <Symbol, dynamic>{};
-    var _storedNamedArgSymbols =
+    final namedArguments = <Symbol, dynamic>{};
+    final storedNamedArgSymbols =
         _storedNamedArgs.keys.map((name) => Symbol(name));
 
     // Iterate through [invocation]'s named args, validate them, and add them
     // to the return map.
     invocation.namedArguments.forEach((name, arg) {
       if (arg == null) {
-        if (!_storedNamedArgSymbols.contains(name)) {
+        if (!storedNamedArgSymbols.contains(name)) {
           // Either this is a parameter with default value `null`, or a `null`
           // argument was passed, or an unnamed ArgMatcher was used. Just use
           // `null`.
@@ -318,22 +318,31 @@ class _InvocationForMatchedArguments extends Invocation {
   }
 
   static List<dynamic> _reconstitutePositionalArgs(Invocation invocation) {
-    var positionalArguments = <dynamic>[];
-    var nullPositionalArguments =
+    final positionalArguments = <dynamic>[];
+    final nullPositionalArguments =
         invocation.positionalArguments.where((arg) => arg == null);
     if (_storedArgs.length > nullPositionalArguments.length) {
       // More _positional_ ArgMatchers were stored than were actually passed as
-      // positional arguments. The only way this call was parsed and resolved is
-      // if an ArgMatcher was passed as a named argument, but without a name,
-      // and thus stored in [_storedArgs], something like
-      // `when(obj.fn(a: any))`.
+      // positional arguments. There are three ways this call could have been
+      // parsed and resolved:
+      //
+      // * an ArgMatcher was passed in [invocation] as a named argument, but
+      //   without a name, and thus stored in [_storedArgs], something like
+      //   `when(obj.fn(a: any))`,
+      // * an ArgMatcher was passed in an expression which was passed in
+      //   [invocation], and thus stored in [_storedArgs], something like
+      //   `when(obj.fn(Foo(any)))`, or
+      // * a combination of the above.
       _storedArgs.clear();
       _storedNamedArgs.clear();
       throw ArgumentError(
-          'An argument matcher (like `any`) was used as a named argument, but '
-          'did not use a Mockito "named" API. Each argument matcher that is '
-          'used as a named argument needs to specify the name of the argument '
-          'it is being used in. For example: `when(obj.fn(x: anyNamed("x")))`.');
+          'An argument matcher (like `any`) was either not used as an '
+          'immediate argument to ${invocation.memberName} (argument matchers '
+          'can only be used as an argument for the very method being stubbed '
+          'or verified), or was used as a named argument without the Mockito '
+          '"named" API (Each argument matcher that is used as a named argument '
+          'needs to specify the name of the argument it is being used in. For '
+          'example: `when(obj.fn(x: anyNamed("x")))`).');
     }
     int storedIndex = 0;
     int positionalIndex = 0;
