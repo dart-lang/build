@@ -2,11 +2,14 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-@OnPlatform({'windows': Skip('yaml errors look different on windows')})
 import 'package:build_config/build_config.dart';
+import 'package:term_glyph/term_glyph.dart' as glyph;
 import 'package:test/test.dart';
 
 void main() {
+  // Ensures consistent rendering on windows/linux.
+  glyph.ascii = false;
+
   test('for missing default target', () {
     var buildYaml = r'''
 targets:
