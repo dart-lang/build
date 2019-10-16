@@ -1,5 +1,10 @@
-## 1.7.2-dev
+## 1.7.2
 
+- Enable the native windows directory watcher by default.
+  - Added a --use-polling-watcher option which overrides this to use a polling
+    watcher again.
+  - Increased the lower bound for the SDK to a version which contains various
+    fixes for the native windows directory watcher.
 - Give a more consistent ordering for Builders when their ordering is allowed to
   be arbitrary.
 - Handle more `--help` invocations without generating the build script.

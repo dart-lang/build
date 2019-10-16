@@ -16,11 +16,11 @@ import 'package:pedantic/pedantic.dart';
 
 import '../daemon/asset_server.dart';
 import '../daemon/daemon_builder.dart';
-import 'base_command.dart';
 import 'options.dart';
+import 'watch.dart';
 
 /// A command that starts the Build Daemon.
-class DaemonCommand extends BuildRunnerCommand {
+class DaemonCommand extends WatchCommand {
   @override
   String get description => 'Starts the build daemon.';
 
