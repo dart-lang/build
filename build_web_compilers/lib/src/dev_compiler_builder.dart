@@ -47,7 +47,7 @@ class DevCompilerBuilder implements Builder {
   final String librariesPath;
 
   /// Any extra args to pass to ddc.
-  final List<String> ddcArgs;
+  final Map<String, String> environment;
 
   DevCompilerBuilder(
       {bool useIncrementalCompiler,
@@ -56,7 +56,7 @@ class DevCompilerBuilder implements Builder {
       this.sdkKernelPath,
       String librariesPath,
       String platformSdk,
-      List<String> ddcArgs})
+      Map<String, String> environment})
       : useIncrementalCompiler = useIncrementalCompiler ?? true,
         platformSdk = platformSdk ?? sdkDir,
         librariesPath = librariesPath ??
@@ -69,7 +69,7 @@ class DevCompilerBuilder implements Builder {
             jsSourceMapExtension
           ],
         },
-        ddcArgs = ddcArgs ?? <String>[];
+        environment = environment ?? {};
 
   @override
   final Map<String, List<String>> buildExtensions;
@@ -101,7 +101,7 @@ class DevCompilerBuilder implements Builder {
           platformSdk,
           sdkKernelPath,
           librariesPath,
-          ddcArgs);
+          environment);
     } on DartDevcCompilationException catch (e) {
       await handleError(e);
     } on MissingModulesException catch (e) {
@@ -119,7 +119,7 @@ Future<void> _createDevCompilerModule(
     String dartSdk,
     String sdkKernelPath,
     String librariesPath,
-    List<String> ddcArgs,
+    Map<String, String> environment,
     {bool debugMode = true}) async {
   var transitiveDeps = await buildStep.trackStage('CollectTransitiveDeps',
       () => module.computeTransitiveDependencies(buildStep));
@@ -176,7 +176,7 @@ Future<void> _createDevCompilerModule(
       if (usedInputsFile != null)
         '--used-inputs-file=${usedInputsFile.uri.toFilePath()}',
       for (var source in module.sources) _sourceArg(source),
-      ...ddcArgs,
+      for (var define in environment.entries) '-D${define.key}=${define.value}'
     ])
     ..inputs.add(Input()
       ..path = sdkSummary

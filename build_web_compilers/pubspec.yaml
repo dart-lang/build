@@ -13,7 +13,7 @@ dependencies:
   bazel_worker: ^0.1.18
   build: ">=1.2.0 <2.0.0"
   build_config: ">=0.3.0 <0.5.0"
-  build_modules: ^2.6.0
+  build_modules: ^2.7.0
   collection: ^1.0.0
   crypto: ^2.0.0
   glob: ^1.1.0
@@ -35,3 +35,7 @@ dev_dependencies:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
+
+dependency_overrides:
+  build_modules:
+    path: ../build_modules

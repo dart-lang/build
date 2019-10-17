@@ -29,7 +29,7 @@ Builder ddcBuilder(BuilderOptions options) {
     useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
     trackUnusedInputs: _readTrackInputsCompilerOption(options),
     platform: ddcPlatform,
-    ddcArgs: _readDdcArgsOption(options),
+    environment: _readEnvironmentOption(options),
   );
 }
 
@@ -44,7 +44,8 @@ Builder ddcKernelBuilder(BuilderOptions options) {
       outputExtension: ddcKernelExtension,
       platform: ddcPlatform,
       useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
-      trackUnusedInputs: _readTrackInputsCompilerOption(options));
+      trackUnusedInputs: _readTrackInputsCompilerOption(options),
+      environment: _readEnvironmentOption(options));
 }
 
 Builder sdkJsCopyBuilder(_) => SdkJsCopyBuilder();
@@ -92,16 +93,17 @@ bool _readTrackInputsCompilerOption(BuilderOptions options) {
   return options.config[_trackUnusedInputsCompilerOption] as bool ?? true;
 }
 
-List<String> _readDdcArgsOption(BuilderOptions options) {
-  return (options.config[_ddcArgsOption] as List ?? []).cast();
+Map<String, String> _readEnvironmentOption(BuilderOptions options) {
+  return (options.config[_environmentOption] as Map<String, dynamic> ?? {})
+      .cast();
 }
 
 Map<String, dynamic> _previousDdcConfig;
 const _useIncrementalCompilerOption = 'use-incremental-compiler';
 const _trackUnusedInputsCompilerOption = 'track-unused-inputs';
-const _ddcArgsOption = 'ddc-args';
+const _environmentOption = 'environment';
 const _supportedOptions = [
-  _ddcArgsOption,
+  _environmentOption,
   _useIncrementalCompilerOption,
   _trackUnusedInputsCompilerOption
 ];

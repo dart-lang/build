@@ -135,7 +135,7 @@ void main() {
       '--build-filter',
       'web/sub/main.dart.js',
       '--define',
-      'build_web_compilers|ddc=ddc-args=["-Dmessage=goodbye"]',
+      'build_web_compilers|ddc=environment={"message": "goodbye"}',
     ]);
 
     addTearDown(() async {

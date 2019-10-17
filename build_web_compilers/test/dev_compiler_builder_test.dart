@@ -79,7 +79,7 @@ main() {
       });
     }
 
-    test('accepts custom ddc arguments', () async {
+    test('allows a custom environment', () async {
       var expectedOutputs = {
         'b|lib/b$jsModuleExtension': isNotEmpty,
         'b|lib/b$jsSourceMapExtension': isNotEmpty,
@@ -90,7 +90,8 @@ main() {
         'a|web/index$jsSourceMapExtension': isNotEmpty,
       };
       await testBuilder(
-          DevCompilerBuilder(platform: ddcPlatform, ddcArgs: ['-Dfoo=zap']),
+          DevCompilerBuilder(
+              platform: ddcPlatform, environment: {'foo': 'zap'}),
           assets,
           outputs: expectedOutputs);
     });

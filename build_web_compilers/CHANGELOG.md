@@ -1,12 +1,13 @@
 ## 2.7.0
 
-- Added a `ddc-args` option to the `build_web_compilers|ddc` builder.
-  - This enables use of the `-Dfoo=bar` environment variables, as well as
-    language experiments or other custom flags.
+- Added an `environment` option to the `DevCompilerBuilder`.
+  - This can be configured using the `environment` option of the
+    `build_web_compilers|ddc` builder.
+  - The expected value is a `Map<String, String>` and is equivalent to
+    providing `-D<key>=<value>` command line arguments.
   - This option should only be set globally, and will throw if it ever recieves
     two different values. This is to ensure all modules are compiled with the
-    same options. Configuring multiple apps with different configuration is
-    not supported since they ultimately share the same compiled dependencies.
+    same environment.
 
 ## 2.6.4
 

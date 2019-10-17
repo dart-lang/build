@@ -70,6 +70,8 @@ class KernelBuilder implements Builder {
   /// Optional. When omitted the [platform] name is used.
   final String kernelTargetName;
 
+  final Map<String, String> environment;
+
   KernelBuilder(
       {@required this.platform,
       @required this.summaryOnly,
@@ -79,7 +81,8 @@ class KernelBuilder implements Builder {
       bool useIncrementalCompiler,
       bool trackUnusedInputs,
       String platformSdk,
-      String kernelTargetName})
+      String kernelTargetName,
+      Map<String, String> environment})
       : platformSdk = platformSdk ?? sdkDir,
         kernelTargetName = kernelTargetName ?? platform.name,
         librariesPath = librariesPath ??
@@ -88,7 +91,8 @@ class KernelBuilder implements Builder {
         trackUnusedInputs = trackUnusedInputs ?? false,
         buildExtensions = {
           moduleExtension(platform): [outputExtension]
-        };
+        },
+        environment = environment ?? {};
 
   @override
   Future build(BuildStep buildStep) async {
@@ -113,7 +117,8 @@ class KernelBuilder implements Builder {
           sdkKernelPath: sdkKernelPath,
           librariesPath: librariesPath,
           useIncrementalCompiler: useIncrementalCompiler,
-          trackUnusedInputs: trackUnusedInputs);
+          trackUnusedInputs: trackUnusedInputs,
+          environment: environment);
     } on MissingModulesException catch (e) {
       log.severe(e.toString());
     } on KernelException catch (e, s) {
@@ -137,7 +142,8 @@ Future<void> _createKernel(
     @required String sdkKernelPath,
     @required String librariesPath,
     @required bool useIncrementalCompiler,
-    @required bool trackUnusedInputs}) async {
+    @required bool trackUnusedInputs,
+    @required Map<String, String> environment}) async {
   var request = WorkRequest();
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
   var outputId = module.primarySource.changeExtension(outputExtension);
@@ -188,6 +194,7 @@ Future<void> _createKernel(
         summaryOnly,
         useIncrementalCompiler,
         buildStep,
+        environment,
         usedInputsFile: usedInputsFile,
         kernelInputPathToId: kernelInputPathToId);
   });
@@ -361,7 +368,8 @@ Future<void> _addRequestArguments(
   File packagesFile,
   bool summaryOnly,
   bool useIncrementalCompiler,
-  AssetReader reader, {
+  AssetReader reader,
+  Map<String, String> environment, {
   File usedInputsFile,
   Map<String, AssetId> kernelInputPathToId,
 }) async {
@@ -395,6 +403,7 @@ Future<void> _addRequestArguments(
     for (var input in inputs)
       '--input-${summaryOnly ? 'summary' : 'linked'}=${input.path}',
     for (var source in module.sources) _sourceArg(source),
+    for (var define in environment.entries) '-D${define.key}=${define.value}'
   ]);
 
   request.inputs.addAll([
