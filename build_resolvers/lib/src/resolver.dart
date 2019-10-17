@@ -27,9 +27,12 @@ final _logger = Logger('build_resolvers');
 class PerActionResolver implements ReleasableResolver {
   final AnalyzerResolver _delegate;
   final BuildStep _step;
-  final Iterable<AssetId> _entryPoints;
 
-  PerActionResolver(this._delegate, this._step, this._entryPoints);
+  Set<AssetId> _entryPoints;
+
+  PerActionResolver(this._delegate, this._step, Iterable<AssetId> entryPoints) {
+    _entryPoints = entryPoints.toSet();
+  }
 
   @override
   Stream<LibraryElement> get libraries async* {
@@ -69,9 +72,14 @@ class PerActionResolver implements ReleasableResolver {
       _resolveIfNecesssary(assetId).then(_delegate.libraryFor);
 
   Future<AssetId> _resolveIfNecesssary(AssetId id) async {
-    // the resolver will only visit assets that haven't been resolved in this
-    // step yet
-    await _delegate._uriResolver.performResolve(_step, [id], _delegate._driver);
+    if (!_entryPoints.contains(id)) {
+      _entryPoints.add(id);
+
+      // the resolver will only visit assets that haven't been resolved in this
+      // step yet
+      await _delegate._uriResolver
+          .performResolve(_step, [id], _delegate._driver);
+    }
 
     return id;
   }
