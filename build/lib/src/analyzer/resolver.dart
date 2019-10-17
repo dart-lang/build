@@ -16,7 +16,8 @@ abstract class Resolver {
   /// or is a `part of` file (not a standalone Dart library).
   Future<bool> isLibrary(AssetId assetId);
 
-  /// All libraries accessible from the entry point, recursively.
+  /// All libraries recursively accessible from the entry point or subsequent
+  /// calls to [libraryFor] and [isLibrary].
   ///
   /// **NOTE**: This includes all Dart SDK libraries as well.
   Stream<LibraryElement> get libraries;

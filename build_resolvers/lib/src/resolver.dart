@@ -38,7 +38,11 @@ class PerActionResolver implements ReleasableResolver {
   Stream<LibraryElement> get libraries async* {
     final seen = Set<LibraryElement>();
     final toVisit = Queue<LibraryElement>();
-    for (final entryPoint in _entryPoints) {
+
+    // keep a copy of entry points in case [_resolveIfNecessary] is called
+    // before this stream is done.
+    final entryPoints = Set.of(_entryPoints);
+    for (final entryPoint in entryPoints) {
       if (!await _delegate.isLibrary(entryPoint)) continue;
       final library = await _delegate.libraryFor(entryPoint);
       toVisit.add(library);
