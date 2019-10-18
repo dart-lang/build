@@ -42,11 +42,11 @@ void main() {
 
 // There are deprecated values in this library!
 
-// String foo
+// foo
 
-// String bar
+// bar
 
-// String baz
+// baz
 '''
     });
   });
@@ -106,7 +106,7 @@ class RepeatingGenerator extends GeneratorForAnnotation<Deprecated> {
       Element element, ConstantReader annotation, BuildStep buildStep) sync* {
     yield '// There are deprecated values in this library!';
 
-    yield '// $element';
+    yield '// ${element.name}';
   }
 }
 

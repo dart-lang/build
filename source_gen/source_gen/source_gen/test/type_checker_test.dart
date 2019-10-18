@@ -17,16 +17,16 @@ import 'package:test/test.dart';
 void main() {
   // Resolved top-level types from dart:core and dart:collection.
   InterfaceType staticUri;
-  DartType staticMap;
-  DartType staticHashMap;
-  DartType staticUnmodifiableListView;
+  InterfaceType staticMap;
+  InterfaceType staticHashMap;
+  InterfaceType staticUnmodifiableListView;
   TypeChecker staticIterableChecker;
   TypeChecker staticMapChecker;
   TypeChecker staticHashMapChecker;
 
   // Resolved top-level types from package:source_gen.
-  DartType staticGenerator;
-  DartType staticGeneratorForAnnotation;
+  InterfaceType staticGenerator;
+  InterfaceType staticGeneratorForAnnotation;
   TypeChecker staticGeneratorChecker;
   TypeChecker staticGeneratorForAnnotationChecker;
 
@@ -81,7 +81,7 @@ void main() {
     group('(Map)', () {
       test('should equal dart:core#Map', () {
         expect(checkMap().isExactlyType(staticMap), isTrue,
-            reason: '${checkMap()} != $staticMap');
+            reason: '${checkMap()} != ${staticMap.element.name}');
       });
 
       test('should not be a super type of dart:core#Map', () {
@@ -130,27 +130,28 @@ void main() {
     group('(Generator)', () {
       test('should equal Generator', () {
         expect(checkGenerator().isExactlyType(staticGenerator), isTrue,
-            reason: '${checkGenerator()} != $staticGenerator');
+            reason: '${checkGenerator()} != ${staticGenerator.element.name}');
       });
 
       test('should not be a super type of Generator', () {
         expect(checkGenerator().isSuperTypeOf(staticGenerator), isFalse,
-            reason: '${checkGenerator()} is super of $staticGenerator');
+            reason: '${checkGenerator()} is super of '
+                '${staticGenerator.element.name}');
       });
 
       test('should be a super type of GeneratorForAnnotation', () {
         expect(checkGenerator().isSuperTypeOf(staticGeneratorForAnnotation),
             isTrue,
-            reason:
-                '${checkGenerator()} is not super of $staticGeneratorForAnnotation');
+            reason: '${checkGenerator()} is not super of '
+                '${staticGeneratorForAnnotation.element.name}');
       });
 
       test('should be assignable from GeneratorForAnnotation', () {
         expect(
             checkGenerator().isAssignableFromType(staticGeneratorForAnnotation),
             isTrue,
-            reason:
-                '${checkGenerator()} is not assignable from $staticGeneratorForAnnotation');
+            reason: '${checkGenerator()} is not assignable from '
+                '${staticGeneratorForAnnotation.element.name}');
       });
     });
   }
