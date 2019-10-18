@@ -103,38 +103,6 @@ main() {
     }
   });
 
-  group('with a custom environment', () {
-    setUp(() async {
-      assets = {
-        'a|lib/a.dart': '''
-        const foobar = const String.fromEnvironment('message');''',
-      };
-
-      // Set up all the other required inputs for this test.
-      await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
-      await testBuilderAndCollectAssets(MetaModuleBuilder(platform), assets);
-      await testBuilderAndCollectAssets(
-          MetaModuleCleanBuilder(platform), assets);
-      await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
-    });
-
-    test('with a custom environment', () async {
-      var expectedOutputs = {
-        'a|lib/a$kernelOutputExtension':
-            containsAllInOrder(utf8.encode('goodbye')),
-      };
-      await testBuilder(
-          KernelBuilder(
-              platform: platform,
-              outputExtension: kernelOutputExtension,
-              summaryOnly: false,
-              sdkKernelPath: p.url.join('lib', '_internal', 'ddc_sdk.dill'),
-              environment: {'message': 'goodbye'}),
-          assets,
-          outputs: expectedOutputs);
-    }, skip: 'Kernel doesnt appear to inline the environment constants.');
-  });
-
   group('kernel outlines with missing imports', () {
     setUp(() async {
       assets = {

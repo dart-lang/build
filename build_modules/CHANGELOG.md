@@ -1,9 +1,5 @@
-## 2.7.0
+## 2.6.3-dev
 
-- Added support for the passing an `environment` to the KernelBuilder.
-  - It is up to uses of this package to enforce that the value is consistent
-    for all builder instances. Failing to do this will result in inconsistent
-    builds.
 - **Deprecated**: The package specific unsupported module whitelist option
   provided by `computeTransitiveDependencies`. The only known uses are being
   removed.

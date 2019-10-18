@@ -44,8 +44,7 @@ Builder ddcKernelBuilder(BuilderOptions options) {
       outputExtension: ddcKernelExtension,
       platform: ddcPlatform,
       useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
-      trackUnusedInputs: _readTrackInputsCompilerOption(options),
-      environment: _readEnvironmentOption(options));
+      trackUnusedInputs: _readTrackInputsCompilerOption(options));
 }
 
 Builder sdkJsCopyBuilder(_) => SdkJsCopyBuilder();
