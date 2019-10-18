@@ -93,7 +93,7 @@ bool _readTrackInputsCompilerOption(BuilderOptions options) {
 }
 
 Map<String, String> _readEnvironmentOption(BuilderOptions options) {
-  return ((options.config[_environmentOption] as Map) ?? {}).cast();
+  return Map.from((options.config[_environmentOption] as Map) ?? {});
 }
 
 Map<String, dynamic> _previousDdcConfig;
