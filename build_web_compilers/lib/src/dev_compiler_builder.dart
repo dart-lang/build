@@ -46,7 +46,7 @@ class DevCompilerBuilder implements Builder {
   /// If not provided, defaults to "lib/libraries.json" in the sdk directory.
   final String librariesPath;
 
-  /// Any extra args to pass to ddc.
+  /// Environment defines to pass to ddc (as -D variables).
   final Map<String, String> environment;
 
   DevCompilerBuilder(
