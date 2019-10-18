@@ -1,3 +1,14 @@
+## 2.7.0
+
+- Added an `environment` option to the `DevCompilerBuilder`.
+  - This can be configured using the `environment` option of the
+    `build_web_compilers|ddc` builder.
+  - The expected value is a `Map<String, String>` and is equivalent to
+    providing `-D<key>=<value>` command line arguments.
+  - This option should only be set globally, and will throw if it ever recieves
+    two different values. This is to ensure all modules are compiled with the
+    same environment.
+
 ## 2.6.4
 
 - Deobfuscate DDC extension method stack traces.

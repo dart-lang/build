@@ -23,17 +23,20 @@ Builder ddcMetaModuleCleanBuilder(_) => MetaModuleCleanBuilder(ddcPlatform);
 Builder ddcModuleBuilder([_]) => ModuleBuilder(ddcPlatform);
 Builder ddcBuilder(BuilderOptions options) {
   validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
+  _ensureSameDdcOptions(options);
 
   return DevCompilerBuilder(
     useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
     trackUnusedInputs: _readTrackInputsCompilerOption(options),
     platform: ddcPlatform,
+    environment: _readEnvironmentOption(options),
   );
 }
 
 const ddcKernelExtension = '.ddc.dill';
 Builder ddcKernelBuilder(BuilderOptions options) {
   validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
+  _ensureSameDdcOptions(options);
 
   return KernelBuilder(
       summaryOnly: true,
@@ -65,11 +68,8 @@ PostProcessBuilder dartSourceCleanup(BuilderOptions options) =>
         ? const FileDeletingBuilder(['.dart', '.js.map'])
         : const FileDeletingBuilder(['.dart', '.js.map'], isEnabled: false);
 
-/// Reads the [_useIncrementalCompilerOption] from [options].
-///
-/// Note that [options] must be consistent across the entire build, and if it is
-/// not then an [ArgumentError] will be thrown.
-bool _readUseIncrementalCompilerOption(BuilderOptions options) {
+/// Throws if it is ever given different options.
+void _ensureSameDdcOptions(BuilderOptions options) {
   if (_previousDdcConfig != null) {
     if (!const MapEquality().equals(_previousDdcConfig, options.config)) {
       throw ArgumentError(
@@ -82,7 +82,9 @@ bool _readUseIncrementalCompilerOption(BuilderOptions options) {
   } else {
     _previousDdcConfig = options.config;
   }
-  validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
+}
+
+bool _readUseIncrementalCompilerOption(BuilderOptions options) {
   return options.config[_useIncrementalCompilerOption] as bool ?? true;
 }
 
@@ -90,10 +92,16 @@ bool _readTrackInputsCompilerOption(BuilderOptions options) {
   return options.config[_trackUnusedInputsCompilerOption] as bool ?? true;
 }
 
+Map<String, String> _readEnvironmentOption(BuilderOptions options) {
+  return Map.from((options.config[_environmentOption] as Map) ?? {});
+}
+
 Map<String, dynamic> _previousDdcConfig;
 const _useIncrementalCompilerOption = 'use-incremental-compiler';
 const _trackUnusedInputsCompilerOption = 'track-unused-inputs';
+const _environmentOption = 'environment';
 const _supportedOptions = [
+  _environmentOption,
   _useIncrementalCompilerOption,
   _trackUnusedInputsCompilerOption
 ];

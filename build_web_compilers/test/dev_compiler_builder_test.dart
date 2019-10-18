@@ -29,6 +29,7 @@ main() {
         import "package:a/a.dart";
         main() {
           print(hello);
+          print(const String.fromEnvironment('foo', defaultValue: 'bar'));
         }
       ''',
       };
@@ -77,6 +78,23 @@ main() {
                 'transitive deps.');
       });
     }
+
+    test('allows a custom environment', () async {
+      var expectedOutputs = {
+        'b|lib/b$jsModuleExtension': isNotEmpty,
+        'b|lib/b$jsSourceMapExtension': isNotEmpty,
+        'a|lib/a$jsModuleExtension': isNotEmpty,
+        'a|lib/a$jsSourceMapExtension': isNotEmpty,
+        'a|web/index$jsModuleExtension':
+            decodedMatches(contains('print("zap")')),
+        'a|web/index$jsSourceMapExtension': isNotEmpty,
+      };
+      await testBuilder(
+          DevCompilerBuilder(
+              platform: ddcPlatform, environment: {'foo': 'zap'}),
+          assets,
+          outputs: expectedOutputs);
+    });
   });
 
   group('projects with errors due to', () {
