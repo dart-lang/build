@@ -17,6 +17,8 @@ import '../generate/build.dart';
 import 'base_command.dart';
 import 'options.dart';
 
+const _testStdout = 'test-stdout';
+
 /// A command that does a single build and then runs tests using the compiled
 /// assets.
 class TestCommand extends BuildRunnerCommand {
@@ -25,7 +27,10 @@ class TestCommand extends BuildRunnerCommand {
           // Use symlinks by default, if package:test supports it.
           symlinksDefault:
               _packageTestSupportsSymlinks(packageGraph) && !Platform.isWindows,
-        );
+        ) {
+    argParser.addOption(_testStdout,
+        help: 'Write the test process stdout to this file path.');
+  }
 
   @override
   String get invocation =>
@@ -114,7 +119,11 @@ class TestCommand extends BuildRunnerCommand {
         return result.failureType.exitCode;
       }
 
-      return await _runTests(tempPath);
+      File testStdout;
+      if (argResults[_testStdout] != null) {
+        testStdout = File(argResults[_testStdout] as String);
+      }
+      return await _runTests(tempPath, testStdout: testStdout);
     } on _BuildTestDependencyError catch (e) {
       stdout.writeln(e);
       return ExitCode.config.code;
@@ -125,9 +134,10 @@ class TestCommand extends BuildRunnerCommand {
   }
 
   /// Runs tests using [precompiledPath] as the precompiled test directory.
-  Future<int> _runTests(String precompiledPath) async {
+  Future<int> _runTests(String precompiledPath, {File testStdout}) async {
     stdout.writeln('Running tests...\n');
     var extraTestArgs = argResults.rest;
+    var shouldCaptureOutput = testStdout != null;
     var testProcess = await Process.start(
         pubBinary,
         [
@@ -136,8 +146,30 @@ class TestCommand extends BuildRunnerCommand {
           '--precompiled',
           precompiledPath,
         ]..addAll(extraTestArgs),
-        mode: ProcessStartMode.inheritStdio);
-    _ensureProcessExit(testProcess);
+        mode: shouldCaptureOutput
+            ? ProcessStartMode.normal
+            : ProcessStartMode.inheritStdio);
+    _ensureProcessExit(testProcess, forwardExitSignals: shouldCaptureOutput);
+    if (shouldCaptureOutput) {
+      try {
+        final futures = [
+          // Forward stderr so that non-test errors are still visible.
+          stderr.addStream(testProcess.stderr),
+        ];
+        if (testStdout != null) {
+          var sink = testStdout.openWrite();
+          futures.add(sink
+              .addStream(testProcess.stdout)
+              .then((_) => sink.flush)
+              .then((_) => sink.close));
+        }
+        await Future.wait(futures);
+        stdout.writeln('Test results written to ${testStdout.path}');
+      } catch (e) {
+        stdout.writeln(e);
+        return ExitCode.ioError.code;
+      }
+    }
     return testProcess.exitCode;
   }
 }
@@ -157,9 +189,13 @@ void _ensureBuildTestDependency(PackageGraph packageGraph) {
   }
 }
 
-void _ensureProcessExit(Process process) {
+void _ensureProcessExit(Process process, {bool forwardExitSignals}) {
+  forwardExitSignals ??= false;
   var signalsSub = _exitProcessSignals.listen((signal) async {
     stdout.writeln('waiting for subprocess to exit...');
+    if (forwardExitSignals) {
+      process.kill(signal);
+    }
   });
   process.exitCode.then((_) {
     signalsSub?.cancel();
