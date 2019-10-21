@@ -68,7 +68,7 @@ class DecodingCache<T> {
     } else {
       entry = _cached[id];
       if (entry.needsCheck) {
-        entry.onGoingCheck ??= () async {
+        await (entry.onGoingCheck ??= () async {
           var previousDigest = await Result.release(entry.digest);
           entry.digest = Result.capture(reader.digest(id));
           if (await Result.release(entry.digest) != previousDigest) {
@@ -78,8 +78,7 @@ class DecodingCache<T> {
           entry
             ..needsCheck = false
             ..onGoingCheck = null;
-        }();
-        await entry.onGoingCheck;
+        }());
       }
     }
     return Result.release(entry.value);
