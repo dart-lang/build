@@ -1,3 +1,7 @@
+## 2.7.1-dev
+
+- Allow analyzer version `0.39.x`.
+
 ## 2.7.0
 
 - Added an `environment` option to the `DevCompilerBuilder`.

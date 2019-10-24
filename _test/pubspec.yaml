@@ -5,7 +5,7 @@ environment:
   sdk: ">=2.3.0 <3.0.0"
 
 dev_dependencies:
-  analyzer: ">=0.30.0 <0.38.0"
+  analyzer: ">=0.30.0 <0.39.0"
   path: ^1.4.2
   test: ^1.6.2
   provides_builder:
@@ -34,3 +34,4 @@ dependency_overrides:
     path: ../build_web_compilers
   scratch_space:
     path: ../scratch_space
+  analyzer: ^0.39.0
