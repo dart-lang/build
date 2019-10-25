@@ -26,3 +26,5 @@ dependency_overrides:
   analyzer: ^0.39.0
   build_resolvers:
     path: ../build_resolvers
+  build_modules:
+    path: ../build_modules
