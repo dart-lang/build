@@ -1,5 +1,5 @@
 name: build
-version: 1.2.1-dev
+version: 1.2.1
 description: A build system for Dart.
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/build
@@ -24,8 +24,3 @@ dev_dependencies:
   build_vm_compilers: ">=0.1.0 <2.0.0"
   pedantic: ^1.0.0
   test: ^1.2.0
-
-dependency_overrides:
-  analyzer: ^0.39.0
-  build_resolvers:
-    path: ../build_resolvers

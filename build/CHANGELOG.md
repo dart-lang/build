@@ -1,4 +1,4 @@
-## 1.2.1-dev
+## 1.2.1
 
 - Allow analyzer `0.39.x`.
 
