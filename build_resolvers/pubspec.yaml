@@ -32,5 +32,5 @@ dependency_overrides:
     path: ../build_modules
   dart_style:
     git:
-      url: git@github.com:dart-lang/dart_style.git
+      url: git://github.com/dart-lang/dart_style.git
       ref: upgrade-analyzer
