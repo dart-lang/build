@@ -1,3 +1,7 @@
+## 1.2.2
+
+- Update to `package:analyzer` version `0.39.0`.
+
 ## 1.2.1
 
 Check the build_resolvers version as a part of sdk summary invalidation.
