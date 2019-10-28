@@ -5,6 +5,7 @@
 - **Deprecated**: The package specific unsupported module whitelist option
   provided by `computeTransitiveDependencies`. The only known uses are being
   removed.
+- Allow analyzer version `0.39.x`.
 
 ## 2.6.2
 

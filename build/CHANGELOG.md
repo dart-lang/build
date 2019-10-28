@@ -1,3 +1,7 @@
+## 1.2.1-dev
+
+- Allow analyzer `0.39.x`.
+
 ## 1.2.0
 
 - Add the `void reportUnusedAssets(Iterable<AssetId> ids)` method to the

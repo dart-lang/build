@@ -14,6 +14,7 @@ void main() {
     setUpAll(() async {
       await d.dir('a', [
         await pubspec('a', currentIsolateDependencies: [
+          'analyzer',
           'build',
           'build_config',
           'build_daemon',

@@ -260,7 +260,7 @@ Future<void> _createDepsFile(
 List<int> _buildSdkSummary(String dartSdkPath) {
   var resourceProvider = PhysicalResourceProvider.INSTANCE;
   var dartSdkFolder = resourceProvider.getFolder(dartSdkPath);
-  var sdk = FolderBasedDartSdk(resourceProvider, dartSdkFolder, true)
+  var sdk = FolderBasedDartSdk(resourceProvider, dartSdkFolder)
     ..useSummary = false
     ..analysisOptions = AnalysisOptionsImpl();
 
