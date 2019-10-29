@@ -72,10 +72,14 @@ class ServeCommand extends WatchCommand {
       }));
     } on SocketException catch (e) {
       var listener = Logger.root.onRecord.listen(stdIOLogListener());
-      logger.severe(
-          'Error starting server at ${e.address.address}:${e.port}, address '
-          'is already in use. Please kill the server running on that port or '
-          'serve on a different port and restart this process.');
+      if (e.address != null && e.port != null) {
+        logger.severe(
+            'Error starting server at ${e.address.address}:${e.port}, address '
+            'is already in use. Please kill the server running on that port or '
+            'serve on a different port and restart this process.');
+      } else {
+        logger.severe('Error starting server on ${options.hostName}.');
+      }
       await listener.cancel();
       return ExitCode.osError.code;
     }
