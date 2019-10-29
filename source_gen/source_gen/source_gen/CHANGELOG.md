@@ -1,3 +1,7 @@
+## 0.9.4+6
+
+* Allow `package:analyzer` version `0.39.x`.
+
 ## 0.9.4+5
 
 * Fix a bug for finding the element for a function with recent versions of
