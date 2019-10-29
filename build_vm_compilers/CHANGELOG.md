@@ -1,4 +1,4 @@
-## 1.0.4-dev
+## 1.0.4
 
 - Allow analyzer version `0.39.0`.
 
