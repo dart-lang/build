@@ -1,4 +1,4 @@
-## 2.6.3-dev
+## 2.6.3
 
 - Keep cached deserialized module instances in more cases. This may improve
   performance of incremental builds in watch mode.
