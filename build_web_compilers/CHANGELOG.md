@@ -1,4 +1,4 @@
-## 2.7.1-dev
+## 2.7.1
 
 - Allow analyzer version `0.39.x`.
 
