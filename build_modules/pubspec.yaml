@@ -33,12 +33,7 @@ dev_dependencies:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
-  dart_style: any
 
 dependency_overrides:
-  dart_style:
-    git:
-      url: git://github.com/dart-lang/dart_style.git
-      ref: upgrade-analyzer
   build_vm_compilers:
     path: ../build_vm_compilers
