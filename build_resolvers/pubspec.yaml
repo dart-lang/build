@@ -22,7 +22,6 @@ dev_dependencies:
   build_test: ^0.10.1
   build_runner: ^1.0.0
   build_vm_compilers: ">=0.1.0 <2.0.0"
-  dart_style: any
   build_modules: any
 
 dependency_overrides:
@@ -30,7 +29,3 @@ dependency_overrides:
     path: ../build_vm_compilers
   build_modules:
     path: ../build_modules
-  dart_style:
-    git:
-      url: git://github.com/dart-lang/dart_style.git
-      ref: upgrade-analyzer
