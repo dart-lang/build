@@ -1,3 +1,7 @@
+## 1.7.3-dev
+
+- Improve the error message when a `--hostname` argument is invalid.
+
 ## 1.7.2
 
 - Enable the native windows directory watcher by default.
