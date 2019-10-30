@@ -1,3 +1,8 @@
+## 1.2.3-dev
+
+Change a `hide` declaration to a `show` declaration to support a
+`package:analyzer` change.
+
 ## 1.2.2
 
 - Update to `package:analyzer` version `0.39.0`.
