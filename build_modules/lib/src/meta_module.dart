@@ -112,8 +112,9 @@ List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
       modules.where((m) => m.sources.any(entrypoints.contains)).toList();
 
   // Groups of modules that can be merged into an existing entrypoint module.
-  var entrypointModuleGroups = Map.fromIterable(entrypointModules,
-      key: (m) => (m as Module).primarySource, value: (m) => [m as Module]);
+  var entrypointModuleGroups = {
+    for (var m in entrypointModules) m.primarySource: [m],
+  };
 
   // Maps modules to entrypoint modules that transitively depend on them.
   var modulesToEntryPoints =
