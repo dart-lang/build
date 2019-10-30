@@ -155,7 +155,7 @@ class AnalyzerResolvers implements Resolvers {
       : _sdkSummaryGenerator =
             sdkSummaryGenerator ?? _defaultSdkSummaryGenerator;
 
-  /// Create a Resolvers backed by an [AnalysisContext] using options
+  /// Create a Resolvers backed by an `AnalysisContext` using options
   /// [_analysisOptions].
   Future<void> _ensureInitialized() {
     return _initialized ??= () async {
