@@ -15,7 +15,8 @@ import 'package:analyzer/src/generated/sdk.dart';
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
 import 'package:analyzer/src/dart/sdk/sdk.dart';
-import 'package:analyzer/src/generated/engine.dart' hide Logger;
+import 'package:analyzer/src/generated/engine.dart'
+    show AnalysisOptions, AnalysisOptionsImpl;
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 import 'package:package_resolver/package_resolver.dart';
