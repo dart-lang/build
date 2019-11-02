@@ -117,14 +117,15 @@ class BuildAssetUriResolver extends UriResolver {
     return null;
   }
 
-  void notifyBuildStepFinished(BuildStep step) {
+  void notifyComplete(BuildStep step) {
     _buildStepAssets.remove(step);
   }
 
   /// Clear cached information specific to an individual build.
-  void resetForBuild() {
-    globallySeenAssets?.clear();
-    _buildStepAssets.clear();
+  void reset() {
+    assert(_buildStepAssets.isEmpty,
+        'Reset was called before all build steps completed');
+    globallySeenAssets.clear();
   }
 
   @override
