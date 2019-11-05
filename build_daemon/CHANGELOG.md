@@ -1,3 +1,7 @@
+# 2.1.1-dev
+
+- Require SDK version `2.6.0` to enable extension methods.
+
 ## 2.1.0
 
 - Added optional `DefaultBuildTarget.buildFilters` field.
