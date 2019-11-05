@@ -111,15 +111,15 @@ class PackageAssetReader extends AssetReader
 
     var packageFiles = Directory.fromUri(packageLibDir)
         .list(recursive: true)
-        .where((e) => e is File)
+        .whereType<File>()
         .map((f) =>
             p.join('lib', p.relative(f.path, from: p.fromUri(packageLibDir))));
     if (package == _rootPackage) {
-      packageFiles = packageFiles.transform(merge(Directory(_rootPackagePath)
+      packageFiles = packageFiles.merge(Directory(_rootPackagePath)
           .list(recursive: true)
-          .where((e) => e is File)
+          .whereType<File>()
           .map((f) => p.relative(f.path, from: _rootPackagePath))
-          .where((p) => !(p.startsWith('packages/') || p.startsWith('lib/')))));
+          .where((p) => !(p.startsWith('packages/') || p.startsWith('lib/'))));
     }
     return packageFiles.where(glob.matches).map((p) => AssetId(package, p));
   }

@@ -1,11 +1,11 @@
 name: build_daemon
-version: 2.1.0
+version: 2.1.1-dev
 description: A daemon for running Dart builds.
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/build_daemon
 
 environment:
-  sdk: ">=2.3.0 <3.0.0"
+  sdk: ">=2.6.0 <3.0.0"
 
 dependencies:
   built_collection: ^4.1.0
@@ -18,7 +18,7 @@ dependencies:
   pool: ^1.3.6
   shelf: ^0.7.4
   shelf_web_socket: ^0.2.2+4
-  stream_transform: ^0.0.14+1
+  stream_transform: ^0.0.20
   watcher: ^0.9.7
   web_socket_channel: ^1.0.9
 

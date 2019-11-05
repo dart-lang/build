@@ -297,10 +297,10 @@ class WatchImpl implements BuildState {
             _expectedDeletes,
           );
         })
-        .transform(debounceBuffer(_debounceDelay))
-        .transform(takeUntil(terminate))
-        .transform(asyncMapBuffer((changes) => currentBuild = doBuild(changes)
-          ..whenComplete(() => currentBuild = null)))
+        .debounceBuffer(_debounceDelay)
+        .takeUntil(terminate)
+        .asyncMapBuffer((changes) => currentBuild = doBuild(changes)
+          ..whenComplete(() => currentBuild = null))
         .listen((BuildResult result) {
           if (controller.isClosed) return;
           controller.add(result);

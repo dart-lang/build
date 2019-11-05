@@ -1,6 +1,7 @@
 ## 1.7.3-dev
 
 - Improve the error message when a `--hostname` argument is invalid.
+- Require SDK version `2.6.0` to enable extension methods.
 
 ## 1.7.2
 

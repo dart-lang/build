@@ -1,3 +1,7 @@
+## 0.10.9+2-dev
+
+- Require SDK version `2.6.0` to enable extension methods.
+
 ## 0.10.9+1
 
 - Fix the `DebugTestBuilder` on windows.
