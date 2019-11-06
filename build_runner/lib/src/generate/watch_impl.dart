@@ -37,7 +37,7 @@ Future<ServeHandler> watch(
   RunnerAssetWriter writer,
   Resolvers resolvers,
   Level logLevel,
-  onLog(LogRecord record),
+  void Function(LogRecord) onLog,
   Duration debounceDelay,
   DirectoryWatcher Function(String) directoryWatcherFactory,
   Stream terminateEventStream,

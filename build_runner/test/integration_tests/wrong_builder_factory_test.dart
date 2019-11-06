@@ -16,7 +16,7 @@ final correctKey = TestBuilder(buildExtensions: {
 });
 // test-package-end ###########################################################
 
-main() {
+void main() {
   final builders = [
     builder('wrongKey', correctKey),
   ];

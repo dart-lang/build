@@ -134,7 +134,7 @@ class ServeHandler implements BuildState {
     return pipeline.addHandler(cascade.handler);
   }
 
-  Future<shelf.Response> _blockOnCurrentBuild(_) async {
+  Future<shelf.Response> _blockOnCurrentBuild(void _) async {
     await currentBuild;
     return shelf.Response.notFound('');
   }
@@ -649,7 +649,7 @@ shelf.Handler _logRequests(shelf.Handler innerHandler) {
           request.requestedUri, request.method, watch.elapsed);
       logFn(msg);
       return response;
-    }, onError: (error, stackTrace) {
+    }, onError: (dynamic error, StackTrace stackTrace) {
       if (error is shelf.HijackException) throw error;
       var msg = _getMessage(
           startTime, 500, request.requestedUri, request.method, watch.elapsed);

@@ -61,7 +61,7 @@ a:file://fake/pkg/path
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
 
         // Wait for the `_debounceDelay` before terminating.
-        await Future.delayed(_debounceDelay);
+        await Future<void>.delayed(_debounceDelay);
 
         await terminateWatch();
         expect(await results.hasNext, isFalse);
@@ -513,7 +513,7 @@ a:file://different/fake/pkg/path
             await writer.writeAsString(
                 AssetId('b', 'build.cool.yaml'), '# New build.yaml file');
 
-            await Future.delayed(_debounceDelay);
+            await Future<void>.delayed(_debounceDelay);
             expect(logs, isEmpty);
 
             await terminateWatch();
@@ -565,7 +565,7 @@ a:file://different/fake/pkg/path
         checkBuild(result, status: BuildStatus.failure);
 
         // Wait for the `_debounceDelay` before terminating.
-        await Future.delayed(_debounceDelay);
+        await Future<void>.delayed(_debounceDelay);
 
         await terminateWatch();
         expect(await results.hasNext, isFalse);
@@ -762,7 +762,7 @@ Future<BuildState> startWatch(List<BuilderApplication> builders,
     Map<String, String> inputs, InMemoryRunnerAssetWriter writer,
     {PackageGraph packageGraph,
     Map<String, BuildConfig> overrideBuildConfig,
-    onLog(LogRecord record),
+    void Function(LogRecord) onLog,
     Level logLevel = Level.OFF,
     String configKey}) {
   onLog ??= (_) {};

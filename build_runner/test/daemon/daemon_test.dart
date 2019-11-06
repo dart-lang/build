@@ -20,7 +20,7 @@ import 'package:pedantic/pedantic.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
-main() {
+void main() {
   Process daemonProcess;
   Stream<String> stdoutLines;
   String workspace() => p.join(d.sandbox, 'a');
@@ -160,7 +160,7 @@ main() {
         ])
       ]).create();
       // Give time for the notification to propogate if there was one.
-      await Future.delayed(Duration(seconds: 4));
+      await Future<void>.delayed(Duration(seconds: 4));
       expect(notification, isNull);
     });
 
@@ -177,7 +177,7 @@ main() {
         ..startBuild();
       clients.add(client);
       expect(client.buildResults,
-          emitsThrough((b) => b.results.first.status == BuildStatus.succeeded));
+          emitsThrough((BuildResults b) => b.results.first.status == BuildStatus.succeeded));
     });
 
     test('auto build mode automatically builds on file change', () async {
@@ -186,7 +186,7 @@ main() {
         ..registerBuildTarget(webTarget);
       clients.add(client);
       // Let the target request propagate.
-      await Future.delayed(Duration(seconds: 2));
+      await Future<void>.delayed(Duration(seconds: 2));
       // Trigger a file change.
       await d.dir('a', [
         d.dir('web', [
@@ -197,7 +197,7 @@ main() {
         ])
       ]).create();
       expect(client.buildResults,
-          emitsThrough((b) => b.results.first.status == BuildStatus.succeeded));
+          emitsThrough((BuildResults b) => b.results.first.status == BuildStatus.succeeded));
     });
 
     test('manual build mode does not automatically build on file change',
@@ -207,7 +207,7 @@ main() {
         ..registerBuildTarget(webTarget);
       clients.add(client);
       // Let the target request propagate.
-      await Future.delayed(Duration(seconds: 2));
+      await Future<void>.delayed(Duration(seconds: 2));
       // Trigger a file change.
       await d.dir('a', [
         d.dir('web', [
@@ -265,10 +265,10 @@ main() {
         ..startBuild();
       clients.add(client);
       expect(client.buildResults,
-          emitsThrough((b) => b.results.first.status == BuildStatus.started));
+          emitsThrough((BuildResults b) => b.results.first.status == BuildStatus.started));
       // Wait for the build to finish before exiting to prevent flakiness.
       expect(client.buildResults,
-          emitsThrough((b) => b.results.first.status == BuildStatus.succeeded));
+          emitsThrough((BuildResults b) => b.results.first.status == BuildStatus.succeeded));
     });
 
     test('can complete builds', () async {
@@ -278,7 +278,7 @@ main() {
         ..startBuild();
       clients.add(client);
       expect(client.buildResults,
-          emitsThrough((b) => b.results.first.status == BuildStatus.succeeded));
+          emitsThrough((BuildResults b) => b.results.first.status == BuildStatus.succeeded));
     });
 
     test('allows multiple clients to connect and build', () async {

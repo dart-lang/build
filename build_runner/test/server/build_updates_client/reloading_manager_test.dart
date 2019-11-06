@@ -14,7 +14,7 @@ abstract class Methods {
 
   Module getModuleLibraries(String moduleId);
 
-  reloadPage();
+  void reloadPage();
 }
 
 class MockMethods extends Mock implements Methods {}

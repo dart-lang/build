@@ -111,15 +111,15 @@ void main() {
 
       var done = false;
       unawaited(watcher.ready.then((_) => done = true));
-      await Future.value();
+      await Future<void>.value();
 
       for (final node in nodes.values) {
         expect(done, isFalse);
         node.markReady();
-        await Future.value();
+        await Future<void>.value();
       }
 
-      await Future.value();
+      await Future<void>.value();
       expect(done, isTrue);
     });
   });
@@ -148,7 +148,7 @@ class FakeNodeWatcher implements PackageNodeWatcher {
   }
 
   @override
-  Stream<AssetChange> watch([_]) => _events.stream;
+  Stream<AssetChange> watch() => _events.stream;
 }
 
 class _FakeWatcher implements Watcher {
