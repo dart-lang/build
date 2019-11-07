@@ -136,7 +136,7 @@ final _builders = <_i1.BuilderApplication>[
       defaultReleaseOptions: _i10.BuilderOptions({'enabled': true}),
       defaultGenerateFor: const _i3.InputSet())
 ];
-main(List<String> args, [_i11.SendPort sendPort]) async {
+void main(List<String> args, [_i11.SendPort sendPort]) async {
   var result = await _i12.run(args, _builders);
   sendPort?.send(result);
   _i13.exitCode = result;
