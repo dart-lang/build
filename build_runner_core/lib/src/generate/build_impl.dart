@@ -294,7 +294,7 @@ class _SingleBuild {
       }
 
       if (!done.isCompleted) done.complete(result);
-    }, onError: (e, StackTrace st) {
+    }, onError: (Object e, StackTrace st) {
       if (!done.isCompleted) {
         _logger.severe('Unhandled build failure!', e, st);
         done.complete(BuildResult(BuildStatus.failure, []));
@@ -486,7 +486,7 @@ class _SingleBuild {
                   stageTracker: tracker,
                   reportUnusedAssetsForInput: (_, assets) =>
                       unusedAssets.addAll(assets),
-                ).catchError((_) {
+                ).catchError((void _) {
                   // Errors tracked through the logger
                 }));
         actionsCompletedCount++;
@@ -603,7 +603,7 @@ class _SingleBuild {
         throw InvalidOutputException(assetId, 'Can only delete primary input');
       }
       _assetGraph.get(assetId).deletedBy.add(anchorNode.id);
-    }).catchError((_) {
+    }).catchError((void _) {
       // Errors tracked through the logger
     });
     actionsCompletedCount++;
