@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 
 import 'package:build/build.dart';
 
-main() {
+void main() {
   ResourceManager resourceManager;
   setUp(() {
     resourceManager = ResourceManager();
@@ -57,7 +57,7 @@ main() {
     test('can asynchronously dispose resources', () async {
       var disposed = false;
       var intResource = Resource(() => 0, dispose: (_) async {
-        await Future.delayed(Duration(milliseconds: 20));
+        await Future<void>.delayed(Duration(milliseconds: 20));
         disposed = true;
       });
       await resourceManager.fetch(intResource);
