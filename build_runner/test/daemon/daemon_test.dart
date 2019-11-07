@@ -176,8 +176,10 @@ main() {
         ..registerBuildTarget(webTarget)
         ..startBuild();
       clients.add(client);
-      expect(client.buildResults,
-          emitsThrough((BuildResults b) => b.results.first.status == BuildStatus.succeeded));
+      expect(
+          client.buildResults,
+          emitsThrough((BuildResults b) =>
+              b.results.first.status == BuildStatus.succeeded));
     });
 
     test('auto build mode automatically builds on file change', () async {
@@ -196,8 +198,10 @@ main() {
 }'''),
         ])
       ]).create();
-      expect(client.buildResults,
-          emitsThrough((BuildResults b) => b.results.first.status == BuildStatus.succeeded));
+      expect(
+          client.buildResults,
+          emitsThrough((BuildResults b) =>
+              b.results.first.status == BuildStatus.succeeded));
     });
 
     test('manual build mode does not automatically build on file change',
@@ -264,11 +268,15 @@ main() {
         ..registerBuildTarget(webTarget)
         ..startBuild();
       clients.add(client);
-      expect(client.buildResults,
-          emitsThrough((BuildResults b) => b.results.first.status == BuildStatus.started));
+      expect(
+          client.buildResults,
+          emitsThrough((BuildResults b) =>
+              b.results.first.status == BuildStatus.started));
       // Wait for the build to finish before exiting to prevent flakiness.
-      expect(client.buildResults,
-          emitsThrough((BuildResults b) => b.results.first.status == BuildStatus.succeeded));
+      expect(
+          client.buildResults,
+          emitsThrough((BuildResults b) =>
+              b.results.first.status == BuildStatus.succeeded));
     });
 
     test('can complete builds', () async {
@@ -277,8 +285,10 @@ main() {
         ..registerBuildTarget(webTarget)
         ..startBuild();
       clients.add(client);
-      expect(client.buildResults,
-          emitsThrough((BuildResults b) => b.results.first.status == BuildStatus.succeeded));
+      expect(
+          client.buildResults,
+          emitsThrough((BuildResults b) =>
+              b.results.first.status == BuildStatus.succeeded));
     });
 
     test('allows multiple clients to connect and build', () async {

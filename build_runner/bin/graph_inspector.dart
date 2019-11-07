@@ -236,7 +236,8 @@ AssetId _idFromString(String stringUri) {
   }
 }
 
-void _listAsset(AssetId output, StringSink buffer, {String indentation = '  '}) {
+void _listAsset(AssetId output, StringSink buffer,
+    {String indentation = '  '}) {
   var outputUri = output.uri;
   if (outputUri.scheme == 'package') {
     buffer.writeln('$indentation${output.uri}');
