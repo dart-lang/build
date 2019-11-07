@@ -117,7 +117,7 @@ void main() {
                           math.max(concurrentCount, maxConcurrentCount);
                       if (concurrentCount >= buildPhasePoolSize &&
                           !reachedMax.isCompleted) {
-                        await Future.delayed(Duration(milliseconds: 100));
+                        await Future<void>.delayed(Duration(milliseconds: 100));
                         if (!reachedMax.isCompleted) reachedMax.complete(null);
                       }
                       await reachedMax.future;
@@ -340,7 +340,7 @@ void main() {
 
       test('asset is deleted mid-build, use cached canRead result', () async {
         var aTxtId = AssetId('a', 'lib/file.a');
-        var ready = Completer();
+        var ready = Completer<void>();
         var firstBuilder = TestBuilder(
             buildExtensions: appendExtension('.exists', from: '.a'),
             build: writeCanRead(aTxtId));
@@ -988,7 +988,7 @@ void main() {
     var done = testBuilders([copyABuilderApplication], inputs,
         outputs: outputs, writer: writer);
     // Should block on user input.
-    await Future.delayed(Duration(seconds: 1));
+    await Future<void>.delayed(Duration(seconds: 1));
     // Now it should complete!
     await done;
   });

@@ -53,12 +53,10 @@ void main() {
       });
 
       test('add, contains, get, allNodes', () {
-        var expectedNodes = [];
-        for (var i = 0; i < 5; i++) {
-          expectedNodes.add(testAddNode());
-        }
-        expectedNodes.addAll(
-            placeholderIdsFor(fooPackageGraph).map((id) => graph.get(id)));
+        var expectedNodes = [
+          for (var i = 0; i < 5; i++) testAddNode(),
+          for (var id in placeholderIdsFor(fooPackageGraph)) graph.get(id),
+        ];
         expect(graph.allNodes, unorderedEquals(expectedNodes));
       });
 
@@ -215,7 +213,7 @@ void main() {
             ]..addAll(placeholders)));
         var node = graph.get(primaryInputId);
         expect(node.primaryOutputs, [primaryOutputId]);
-        expect(node.outputs, []);
+        expect(node.outputs, isEmpty);
         expect(node.lastKnownDigest, isNotNull,
             reason: 'Nodes with outputs should get an eager digest.');
 
@@ -283,7 +281,7 @@ void main() {
           expect(graph.contains(primaryInputId), isTrue);
           expect(graph.contains(primaryOutputId), isTrue);
           // We don't pre-emptively delete the file in the case of modifications
-          expect(deletes, equals([]));
+          expect(deletes, isEmpty);
           var outputNode = graph.get(primaryOutputId) as GeneratedAssetNode;
           // But we should mark it as needing an update
           expect(outputNode.state, NodeState.mayNeedUpdate);

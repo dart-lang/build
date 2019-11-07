@@ -179,7 +179,7 @@ class AssetTracker {
   /// Ideally we would warn but in practice the default whitelist will give this
   /// error a lot and it would be noisy.
   Stream<AssetId> _listIdsSafe(Glob glob, {String package}) =>
-      _reader.findAssets(glob, package: package).handleError((e) {},
+      _reader.findAssets(glob, package: package).handleError((void _) {},
           test: (e) => e is FileSystemException && e.osError.errorCode == 2);
 }
 

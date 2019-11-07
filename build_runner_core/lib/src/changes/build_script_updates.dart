@@ -123,5 +123,5 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
 /// the build script checks.
 class _NoopBuildScriptUpdates implements BuildScriptUpdates {
   @override
-  bool hasBeenUpdated(_) => false;
+  bool hasBeenUpdated(void _) => false;
 }

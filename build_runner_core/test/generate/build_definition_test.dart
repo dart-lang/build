@@ -28,7 +28,7 @@ import 'package:_test_common/common.dart';
 import 'package:_test_common/package_graphs.dart';
 import 'package:_test_common/runner_asset_writer_spy.dart';
 
-main() {
+void main() {
   final aPackageGraph = buildPackageGraph({
     rootPackage('a'): ['b'],
     package('b'): []
@@ -565,7 +565,7 @@ targets:
             overrideBuildConfig: {
               rootPkg: BuildConfig.fromMap(rootPkg, [], {
                 'targets': {
-                  'another': {},
+                  'another': <String, dynamic>{},
                   '\$default': {
                     'sources': {
                       'exclude': [
@@ -593,7 +593,7 @@ targets:
             overrideBuildConfig: {
               rootPkg: BuildConfig.fromMap(rootPkg, [], {
                 'targets': {
-                  'another': {},
+                  'another': <String, dynamic>{},
                   '\$default': {
                     'sources': {
                       'exclude': [
@@ -621,9 +621,9 @@ targets:
             overrideBuildConfig: {
               rootPkg: BuildConfig.fromMap(rootPkg, [], {
                 'targets': {
-                  'another': {},
+                  'another': <String, dynamic>{},
                   '\$default': {
-                    'sources': {'include': []}
+                    'sources': {'include': <String>[]}
                   }
                 }
               })
