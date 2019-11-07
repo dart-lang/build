@@ -1,3 +1,7 @@
+## 1.2.2-dev
+
+- Internal cleanup.
+
 ## 1.2.1
 
 - Allow analyzer `0.39.x`.

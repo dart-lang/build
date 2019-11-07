@@ -142,7 +142,8 @@ class BuildStepImpl implements BuildStep {
   }
 
   @override
-  T trackStage<T>(String label, action, {bool isExternal = false}) =>
+  T trackStage<T>(String label, T Function() action,
+          {bool isExternal = false}) =>
       _stageTracker.trackStage(label, action, isExternal: isExternal);
 
   Future<void> _futureOrWrite<T>(
