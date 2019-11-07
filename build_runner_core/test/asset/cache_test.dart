@@ -66,7 +66,7 @@ void main() {
     test('can be invalidated with invalidate', () async {
       expect(await reader.readAsBytes(fooTxt), fooutf8Bytes);
       delegate.assetsRead.clear();
-      expect(delegate.assetsRead, []);
+      expect(delegate.assetsRead, isEmpty);
 
       reader.invalidate([fooTxt]);
       expect(await reader.readAsBytes(fooTxt), fooutf8Bytes);
@@ -93,13 +93,13 @@ void main() {
       expect(await reader.readAsString(fooTxt), fooContent);
       delegate.assetsRead.clear();
       expect(await reader.readAsString(fooTxt), fooContent);
-      expect(delegate.assetsRead, []);
+      expect(delegate.assetsRead, isEmpty);
     });
 
     test('can be invalidated with invalidate', () async {
       expect(await reader.readAsString(fooTxt), fooContent);
       delegate.assetsRead.clear();
-      expect(delegate.assetsRead, []);
+      expect(delegate.assetsRead, isEmpty);
 
       reader.invalidate([fooTxt]);
       expect(await reader.readAsString(fooTxt), fooContent);
@@ -112,7 +112,7 @@ void main() {
       delegate.assetsRead.clear();
 
       expect(await reader.readAsString(fooTxt), fooContent);
-      expect(delegate.assetsRead, []);
+      expect(delegate.assetsRead, isEmpty);
     });
   });
 
