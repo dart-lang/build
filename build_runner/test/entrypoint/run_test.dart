@@ -16,7 +16,7 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
-main() {
+void main() {
   setUpAll(() async {
     await d.dir('a', [
       await pubspec(

@@ -20,7 +20,7 @@ import 'utils/build_descriptor.dart';
 final copyBuilder = TestBuilder();
 // test-package-end ###########################################################
 
-main() {
+void main() {
   final builders = [
     builder('copyBuilder', copyBuilder),
   ];

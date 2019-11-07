@@ -291,8 +291,10 @@ void main() {
       WebSocketChannel serverChannel2;
 
       setUp(() {
-        var mockHandlerFactory = (Function onConnect, {protocols}) =>
-            (request) => Response(200, context: {'onConnect': onConnect});
+        var mockHandlerFactory = (Function onConnect,
+                {Iterable<String> protocols}) =>
+            (Request request) =>
+                Response(200, context: {'onConnect': onConnect});
 
         createMockConnection =
             (WebSocketChannel serverChannel, String rootDir) async {
@@ -445,15 +447,17 @@ class MockWatchImpl implements WatchImpl {
   @override
   Future<BuildResult> get currentBuild => _currentBuild;
   @override
-  set currentBuild(newValue) => throw UnsupportedError('unsupported!');
+  set currentBuild(Future<BuildResult> _) =>
+      throw UnsupportedError('unsupported!');
 
   final _futureBuildResultsController = StreamController<Future<BuildResult>>();
   final _buildResultsController = StreamController<BuildResult>();
 
   @override
-  get buildResults => _buildResultsController.stream;
+  Stream<BuildResult> get buildResults => _buildResultsController.stream;
   @override
-  set buildResults(_) => throw UnsupportedError('unsupported!');
+  set buildResults(Stream<BuildResult> _) =>
+      throw UnsupportedError('unsupported!');
 
   @override
   final PackageGraph packageGraph;

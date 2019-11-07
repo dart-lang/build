@@ -54,7 +54,7 @@ class PackageGraphWatcher {
         .map((w) => w
                 .watch()
                 .where(_nestedPathFilter(w.node))
-                .handleError((e, StackTrace s) {
+                .handleError((dynamic e, StackTrace s) {
               _logger.severe(
                   'Error from directory watcher for package:${w.node.name}\n\n'
                   'If you see this consistently then it is recommended that '

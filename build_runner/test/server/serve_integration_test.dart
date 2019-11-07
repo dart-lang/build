@@ -89,7 +89,7 @@ void main() {
   test('should serve newly added files', () async {
     final getNew = Uri.parse('http://localhost/new.txt');
     reader.cacheStringAsset(AssetId('example', 'web/new.txt'), 'New');
-    await Future.value();
+    await Future<void>.value();
     FakeWatcher.notifyWatchers(
       WatchEvent(ChangeType.ADD, '$path/web/new.txt'),
     );
@@ -101,7 +101,7 @@ void main() {
   test('should serve built newly added files', () async {
     final getNew = Uri.parse('http://localhost/new.g.txt');
     reader.cacheStringAsset(AssetId('example', 'web/new.txt'), 'New');
-    await Future.value();
+    await Future<void>.value();
     FakeWatcher.notifyWatchers(
       WatchEvent(ChangeType.ADD, '$path/web/new.txt'),
     );

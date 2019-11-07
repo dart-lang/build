@@ -29,7 +29,7 @@ main() async {
 }
 ''';
 
-main() {
+void main() {
   group('watch integration tests', () {
     setUp(() async {
       await d.dir('a', [

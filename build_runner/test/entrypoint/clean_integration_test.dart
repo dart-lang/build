@@ -9,7 +9,7 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 
 import 'package:_test_common/common.dart';
 
-main() {
+void main() {
   group('clean command', () {
     setUp(() async {
       await d.dir('a', [
