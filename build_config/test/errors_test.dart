@@ -64,12 +64,12 @@ line 6, column 9 of build.yaml: Unsupported value for "generate_for". Include gl
   });
 }
 
-void _expectThrows(String buildYaml, matcher) => expect(
+void _expectThrows(String buildYaml, Object matcher) => expect(
     () => BuildConfig.parse('package_name', [], buildYaml,
         configYamlPath: 'build.yaml'),
     _throwsError(matcher));
 
-Matcher _throwsError(matcher) => throwsA(
+Matcher _throwsError(Object matcher) => throwsA(
       isA<ArgumentError>().having(
         (e) {
           printOnFailure("ACTUAL\nr'''\n${e.message}'''");
