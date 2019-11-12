@@ -17,7 +17,6 @@ import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:mockito/src/call_pair.dart';
 import 'package:mockito/src/invocation_matcher.dart';
-// ignore: deprecated_member_use
 import 'package:test_api/test_api.dart';
 // TODO(srawlins): Remove this when we no longer need to check for an
 // incompatiblity between test_api and test.
@@ -38,8 +37,7 @@ final Map<String, ArgMatcher> _storedNamedArgs = <String, ArgMatcher>{};
 @Deprecated(
     'This function is not a supported function, and may be deleted as early as '
     'Mockito 5.0.0')
-void setDefaultResponse(
-    Mock mock, CallPair<dynamic> Function() defaultResponse) {
+void setDefaultResponse(Mock mock, CallPair<dynamic> defaultResponse()) {
   mock._defaultResponse = defaultResponse;
 }
 
@@ -138,7 +136,7 @@ class Mock {
       const Object().noSuchMethod(invocation);
 
   @override
-  int get hashCode => _givenHashCode ?? 0;
+  int get hashCode => _givenHashCode == null ? 0 : _givenHashCode;
 
   @override
   bool operator ==(other) => (_givenHashCode != null && other is Mock)
@@ -146,7 +144,7 @@ class Mock {
       : identical(this, other);
 
   @override
-  String toString() => _givenName ?? runtimeType.toString();
+  String toString() => _givenName != null ? _givenName : runtimeType.toString();
 
   String _realCallsToString() {
     var stringRepresentations = _realCalls.map((call) => call.toString());
@@ -240,7 +238,7 @@ class _InvocationForMatchedArguments extends Invocation {
   factory _InvocationForMatchedArguments(Invocation invocation) {
     if (_storedArgs.isEmpty && _storedNamedArgs.isEmpty) {
       throw StateError(
-          '_InvocationForMatchedArguments called when no ArgMatchers have been saved.');
+          "_InvocationForMatchedArguments called when no ArgMatchers have been saved.");
     }
 
     // Handle named arguments first, so that we can provide useful errors for
@@ -291,7 +289,7 @@ class _InvocationForMatchedArguments extends Invocation {
     // Iterate through the stored named args, validate them, and add them to
     // the return map.
     _storedNamedArgs.forEach((name, arg) {
-      var nameSymbol = Symbol(name);
+      Symbol nameSymbol = Symbol(name);
       if (!invocation.namedArguments.containsKey(nameSymbol)) {
         // Clear things out for the next call.
         _storedArgs.clear();
@@ -346,8 +344,8 @@ class _InvocationForMatchedArguments extends Invocation {
           'needs to specify the name of the argument it is being used in. For '
           'example: `when(obj.fn(x: anyNamed("x")))`).');
     }
-    var storedIndex = 0;
-    var positionalIndex = 0;
+    int storedIndex = 0;
+    int positionalIndex = 0;
     while (storedIndex < _storedArgs.length &&
         positionalIndex < invocation.positionalArguments.length) {
       var arg = _storedArgs[storedIndex];
@@ -458,7 +456,7 @@ class InvocationMatcher {
   }
 
   void _captureArguments(Invocation invocation) {
-    var index = 0;
+    int index = 0;
     for (var roleArg in roleInvocation.positionalArguments) {
       var actArg = invocation.positionalArguments[index];
       if (roleArg is ArgMatcher && roleArg._capture) {
@@ -486,7 +484,7 @@ class InvocationMatcher {
         roleInvocation.namedArguments.length) {
       return false;
     }
-    var index = 0;
+    int index = 0;
     for (var roleArg in roleInvocation.positionalArguments) {
       var actArg = invocation.positionalArguments[index];
       if (!isMatchingArg(roleArg, actArg)) {
@@ -543,7 +541,8 @@ class RealCall {
   @override
   String toString() {
     var argString = '';
-    var args = invocation.positionalArguments.map((v) => '$v');
+    var args = invocation.positionalArguments
+        .map((v) => v == null ? "null" : v.toString());
     if (args.any((arg) => arg.contains('\n'))) {
       // As one or more arg contains newlines, put each on its own line, and
       // indent each, for better readability.
@@ -650,18 +649,18 @@ class _VerifyCall {
     if (!never && matchingInvocations.isEmpty) {
       var message;
       if (mock._realCalls.isEmpty) {
-        message = 'No matching calls (actually, no calls at all).';
+        message = "No matching calls (actually, no calls at all).";
       } else {
         var otherCalls = mock._realCallsToString();
-        message = 'No matching calls. All calls: $otherCalls';
+        message = "No matching calls. All calls: $otherCalls";
       }
-      fail('$message\n'
-          '(If you called `verify(...).called(0);`, please instead use '
-          '`verifyNever(...);`.)');
+      fail("$message\n"
+          "(If you called `verify(...).called(0);`, please instead use "
+          "`verifyNever(...);`.)");
     }
     if (never && matchingInvocations.isNotEmpty) {
       var calls = mock._realCallsToString();
-      fail('Unexpected calls. All calls: $calls');
+      fail("Unexpected calls. All calls: $calls");
     }
     matchingInvocations.forEach((inv) {
       inv.verified = true;
@@ -874,7 +873,7 @@ class VerificationResult {
       _checkTestApiMismatch();
     }
     expect(callCount, wrapMatcher(matcher),
-        reason: 'Unexpected number of calls');
+        reason: "Unexpected number of calls");
   }
 }
 
@@ -940,12 +939,12 @@ Verification _makeVerify(bool never) {
   return <T>(T mock) {
     _verificationInProgress = false;
     if (_verifyCalls.length == 1) {
-      var verifyCall = _verifyCalls.removeLast();
+      _VerifyCall verifyCall = _verifyCalls.removeLast();
       var result = VerificationResult._(verifyCall.matchingInvocations.length);
       verifyCall._checkWith(never);
       return result;
     } else {
-      fail('Used on a non-mockito object');
+      fail("Used on a non-mockito object");
     }
   };
 }
@@ -971,22 +970,23 @@ _InOrderVerification get verifyInOrder {
   _verificationInProgress = true;
   return <T>(List<T> _) {
     _verificationInProgress = false;
-    var dt = DateTime.fromMillisecondsSinceEpoch(0);
+    DateTime dt = DateTime.fromMillisecondsSinceEpoch(0);
     var tmpVerifyCalls = List<_VerifyCall>.from(_verifyCalls);
     _verifyCalls.clear();
-    var matchedCalls = <RealCall>[];
-    for (var verifyCall in tmpVerifyCalls) {
-      var matched = verifyCall._findAfter(dt);
+    List<RealCall> matchedCalls = [];
+    for (_VerifyCall verifyCall in tmpVerifyCalls) {
+      RealCall matched = verifyCall._findAfter(dt);
       if (matched != null) {
         matchedCalls.add(matched);
         dt = matched.timeStamp;
       } else {
-        var mocks = tmpVerifyCalls.map((vc) => vc.mock).toSet();
-        var allInvocations =
+        Set<Mock> mocks =
+            tmpVerifyCalls.map((_VerifyCall vc) => vc.mock).toSet();
+        List<RealCall> allInvocations =
             mocks.expand((m) => m._realCalls).toList(growable: false);
         allInvocations
             .sort((inv1, inv2) => inv1.timeStamp.compareTo(inv2.timeStamp));
-        var otherCalls = '';
+        String otherCalls = "";
         if (allInvocations.isNotEmpty) {
           otherCalls = " All calls: ${allInvocations.join(", ")}";
         }
@@ -1011,7 +1011,7 @@ void verifyNoMoreInteractions(var mock) {
   if (mock is Mock) {
     var unverified = mock._realCalls.where((inv) => !inv.verified).toList();
     if (unverified.isNotEmpty) {
-      fail('No more calls expected, but following found: ' + unverified.join());
+      fail("No more calls expected, but following found: " + unverified.join());
     }
   } else {
     _throwMockArgumentError('verifyNoMoreInteractions', mock);
@@ -1021,7 +1021,7 @@ void verifyNoMoreInteractions(var mock) {
 void verifyZeroInteractions(var mock) {
   if (mock is Mock) {
     if (mock._realCalls.isNotEmpty) {
-      fail('No interaction expected, but following found: ' +
+      fail("No interaction expected, but following found: " +
           mock._realCalls.join());
     }
   } else {
@@ -1084,7 +1084,7 @@ InvocationLoader get untilCalled {
 
 /// Print all collected invocations of any mock methods of [mocks].
 void logInvocations(List<Mock> mocks) {
-  var allInvocations =
+  List<RealCall> allInvocations =
       mocks.expand((m) => m._realCalls).toList(growable: false);
   allInvocations.sort((inv1, inv2) => inv1.timeStamp.compareTo(inv2.timeStamp));
   allInvocations.forEach((inv) {

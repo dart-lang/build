@@ -66,9 +66,9 @@ void main() {
       shouldFail(
         call1,
         isInvocation(call3),
-        'Expected: lie(<false>) '
+        "Expected: lie(<false>) "
         "Actual: <Instance of '${call3.runtimeType}'> "
-        'Which: Does not match lie(<true>)',
+        "Which: Does not match lie(<true>)",
       );
     });
 
@@ -102,9 +102,9 @@ void main() {
         call1,
         isInvocation(call3),
         // RegExp needed because of https://github.com/dart-lang/sdk/issues/33565
-        RegExp('Expected: set value=? <false> '
+        RegExp("Expected: set value=? <false> "
             "Actual: <Instance of '${call3.runtimeType}'> "
-            'Which: Does not match set value=? <true>'),
+            "Which: Does not match set value=? <true>"),
       );
     });
   });
@@ -118,7 +118,7 @@ void main() {
       shouldFail(
         call,
         invokes(#say, positionalArguments: [isNull]),
-        'Expected: say(null) '
+        "Expected: say(null) "
         "Actual: <Instance of '${call.runtimeType}'> "
         "Which: Does not match say('Hello')",
       );

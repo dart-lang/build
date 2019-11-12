@@ -1,0 +1,6 @@
+builders:
+  mockBuilder:
+    import: "package:mockito/src/builder.dart"
+    builder_factories: ["buildMocks"]
+    build_extensions: {".dart": [".mocks.dart"]}
+    build_to: source

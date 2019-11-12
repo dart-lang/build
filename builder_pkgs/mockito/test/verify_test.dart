@@ -54,7 +54,7 @@ class LongToString {
 
 class _MockedClass extends Mock implements _RealClass {}
 
-void expectFail(Pattern expectedMessage, void Function() expectedToFail) {
+void expectFail(Pattern expectedMessage, dynamic expectedToFail()) {
   try {
     expectedToFail();
     fail('It was expected to fail!');

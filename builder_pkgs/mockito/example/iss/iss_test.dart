@@ -27,18 +27,18 @@ void main() {
   // verify the calculated distance between them.
   group('Spherical distance', () {
     test('London - Paris', () {
-      var london = Point(51.5073, -0.1277);
-      var paris = Point(48.8566, 2.3522);
-      var d = sphericalDistanceKm(london, paris);
+      Point<double> london = Point(51.5073, -0.1277);
+      Point<double> paris = Point(48.8566, 2.3522);
+      double d = sphericalDistanceKm(london, paris);
       // London should be approximately 343.5km
       // (+/- 0.1km) from Paris.
       expect(d, closeTo(343.5, 0.1));
     });
 
     test('San Francisco - Mountain View', () {
-      var sf = Point(37.783333, -122.416667);
-      var mtv = Point(37.389444, -122.081944);
-      var d = sphericalDistanceKm(sf, mtv);
+      Point<double> sf = Point(37.783333, -122.416667);
+      Point<double> mtv = Point(37.389444, -122.081944);
+      double d = sphericalDistanceKm(sf, mtv);
       // San Francisco should be approximately 52.8km
       // (+/- 0.1km) from Mountain View.
       expect(d, closeTo(52.8, 0.1));
@@ -52,8 +52,8 @@ void main() {
   // second predefined location. This test runs asynchronously.
   group('ISS spotter', () {
     test('ISS visible', () async {
-      var sf = Point(37.783333, -122.416667);
-      var mtv = Point(37.389444, -122.081944);
+      Point<double> sf = Point(37.783333, -122.416667);
+      Point<double> mtv = Point(37.389444, -122.081944);
       IssLocator locator = MockIssLocator();
       // Mountain View should be visible from San Francisco.
       when(locator.currentPosition).thenReturn(sf);
@@ -63,8 +63,8 @@ void main() {
     });
 
     test('ISS not visible', () async {
-      var london = Point(51.5073, -0.1277);
-      var mtv = Point(37.389444, -122.081944);
+      Point<double> london = Point(51.5073, -0.1277);
+      Point<double> mtv = Point(37.389444, -122.081944);
       IssLocator locator = MockIssLocator();
       // London should not be visible from Mountain View.
       when(locator.currentPosition).thenReturn(london);
