@@ -52,7 +52,7 @@ class BuildAssetUriResolver extends UriResolver {
       AnalysisDriver driver) async {
     final seenInBuildStep =
         _buildStepAssets.putIfAbsent(buildStep, () => HashSet());
-    final notCrawled = (AssetId asset) => !seenInBuildStep.contains(asset);
+    bool notCrawled(AssetId asset) => !seenInBuildStep.contains(asset);
 
     final changedPaths = await crawlAsync<AssetId, _AssetState>(
             entryPoints.where(notCrawled), (id) async {
