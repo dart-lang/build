@@ -25,7 +25,7 @@ import 'package:dart_style/dart_style.dart';
 /// example:
 ///
 /// ```dart
-/// @GenerateMocks[Foo]
+/// @GenerateMocks([Foo])
 /// void main() {}
 /// ```
 ///
@@ -52,17 +52,40 @@ class MockBuilder implements Builder {
       final generateMocksValue = annotation.computeConstantValue();
       // TODO(srawlins): handle `generateMocksValue == null`?
       final classesToMock = generateMocksValue.getField('classes');
-      if (classesToMock.isNull)
-        // TODO(srawlins): Log severe instead? How? How to test?
-        throw StateError(
-            'Unresolved "classes" argument for GenerateMocks has errors: '
-            '"${generateMocksValue}');
+      if (classesToMock.isNull) {
+        throw InvalidMockitoAnnotationException(
+            'The "classes" argument has unknown types');
+      }
       for (final classToMock in classesToMock.toListValue()) {
         final dartTypeToMock = classToMock.toTypeValue();
         // TODO(srawlins): Import the library which declares [dartTypeToMock].
         // TODO(srawlins): Import all supporting libraries, used in type
         // signatures.
-        _buildCodeForClass(dartTypeToMock, mockClasses);
+        if (dartTypeToMock == null) {
+          throw InvalidMockitoAnnotationException(
+              'The "classes" argument includes a non-type: $classToMock');
+        }
+
+        final elementToMock = dartTypeToMock.element;
+        if (elementToMock is ClassElement) {
+          if (elementToMock.isEnum) {
+            throw InvalidMockitoAnnotationException(
+                'The "classes" argument includes an enum: '
+                '${elementToMock.displayName}');
+          }
+          // TODO(srawlins): Catch when someone tries to generate mocks for an
+          // un-subtypable class, like bool, String, FutureOr, etc.
+          mockClasses.add(_buildCodeForClass(dartTypeToMock, elementToMock));
+        } else if (elementToMock is GenericFunctionTypeElement &&
+            elementToMock.enclosingElement is FunctionTypeAliasElement) {
+          throw InvalidMockitoAnnotationException(
+              'The "classes" argument includes a typedef: '
+              '${elementToMock.enclosingElement.displayName}');
+        } else {
+          throw InvalidMockitoAnnotationException(
+              'The "classes" argument includes a non-class: '
+              '${elementToMock.displayName}');
+        }
       }
     }
 
@@ -78,15 +101,10 @@ class MockBuilder implements Builder {
     await buildStep.writeAsString(mockLibrary, mockLibraryContent);
   }
 
-  void _buildCodeForClass(final DartType dartType, List<Class> mockClasses) {
-    final elementToMock = dartType.element;
-    // TODO(srawlins): Log/throw here.
-    if (elementToMock is! ClassElement) return;
-    final classToMock = elementToMock as ClassElement;
+  Class _buildCodeForClass(DartType dartType, ClassElement classToMock) {
     final className = dartType.displayName;
 
-    // TODO(srawlins): Add a dartdoc to the Mock class.
-    final mockClass = Class((cBuilder) {
+    return Class((cBuilder) {
       cBuilder
         ..name = 'Mock$className'
         ..extend = refer('Mock')
@@ -114,8 +132,6 @@ class MockBuilder implements Builder {
             Method((mBuilder) => _buildOverridingMethod(mBuilder, method)));
       }
     });
-
-    mockClasses.add(mockClass);
   }
 
   /// Build a method which overrides [method], with all non-nullable
@@ -225,4 +241,14 @@ class MockBuilder implements Builder {
   final buildExtensions = const {
     '.dart': ['.mocks.dart']
   };
+}
+
+/// An exception which is thrown when Mockito encounters an invalid annotation.
+class InvalidMockitoAnnotationException implements Exception {
+  final String message;
+
+  InvalidMockitoAnnotationException(this.message);
+
+  @override
+  String toString() => 'Invalid @GenerateMocks annotation: $message';
 }

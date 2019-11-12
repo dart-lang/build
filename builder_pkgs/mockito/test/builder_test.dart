@@ -14,6 +14,7 @@
 
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
+import 'package:meta/meta.dart';
 import 'package:mockito/src/builder.dart';
 import 'package:test/test.dart';
 
@@ -235,25 +236,78 @@ void main() {
       },
     );
   });
-  test('throws given bad input', () async {
-    expect(
-        () async => await testBuilder(
-              buildMocks(BuilderOptions({})),
-              {
-                ...annotationsAsset,
-                'foo|lib/foo.dart': dedent(r'''
-                class Foo {}
-                '''),
-                'foo|test/foo_test.dart': dedent('''
-                // missing foo.dart import.
-                import 'package:mockito/annotations.dart';
-                @GenerateMocks([Foo])
-                void main() {}
-                '''),
-              },
-            ),
-        throwsStateError);
+
+  test('throws when GenerateMocks references an unresolved type', () async {
+    expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {}
+        '''),
+        'foo|test/foo_test.dart': dedent('''
+        // missing foo.dart import.
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([List, Foo])
+        void main() {}
+        '''),
+      },
+      message: 'The "classes" argument has unknown types',
+    );
   });
+
+  test('throws when GenerateMocks references a non-type', () async {
+    expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {}
+        '''),
+        'foo|test/foo_test.dart': dedent('''
+        // missing foo.dart import.
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([7])
+        void main() {}
+        '''),
+      },
+      message: 'The "classes" argument includes a non-type: int (7)',
+    );
+  });
+
+  test('throws when GenerateMocks references a typedef', () async {
+    expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        typedef Foo = void Function();
+        '''),
+      },
+      message: 'The "classes" argument includes a typedef: Foo',
+    );
+  });
+
+  test('throws when GenerateMocks references an enum', () async {
+    expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        enum Foo {}
+        '''),
+      },
+      message: 'The "classes" argument includes an enum: Foo',
+    );
+  });
+}
+
+/// Expect that [testBuilder], given [assets], throws an
+/// [InvalidMockitoAnnotationException] with a message containing [message].
+void expectBuilderThrows(
+    {@required Map<String, String> assets, @required String message}) {
+  expect(
+      () async => await testBuilder(buildMocks(BuilderOptions({})), assets),
+      throwsA(TypeMatcher<InvalidMockitoAnnotationException>()
+          .having((e) => e.message, 'message', contains(message))));
 }
 
 /// Dedent [input], so that each line is shifted to the left, so that the first
