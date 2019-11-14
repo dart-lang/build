@@ -107,6 +107,12 @@ final frontendDriverResource =
   __frontendDriver = null;
 });
 
+const _dart2jsVmArgsEnvVar = 'BUILD_DART2JS_VM_ARGS';
+final _dart2jsVmArgs = () {
+  var env = Platform.environment[_dart2jsVmArgsEnvVar];
+  return env?.split(' ') ?? <String>[];
+}();
+
 /// Manages a shared set of persistent dart2js workers.
 Dart2JsBatchWorkerPool get _dart2jsWorkerPool {
   _dart2jsWorkersAreDoneCompleter ??= Completer<void>();
@@ -114,6 +120,7 @@ Dart2JsBatchWorkerPool get _dart2jsWorkerPool {
   return __dart2jsWorkerPool ??= Dart2JsBatchWorkerPool(() => Process.start(
       p.join(sdkDir, 'bin', 'dart'),
       [
+        ..._dart2jsVmArgs,
         p.join(sdkDir, 'bin', 'snapshots', 'dart2js.dart.snapshot'),
         '--libraries-spec=$librariesSpec',
         '--batch',
