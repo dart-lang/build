@@ -110,8 +110,7 @@ final frontendDriverResource =
 const _dart2jsVmArgsEnvVar = 'BUILD_DART2JS_VM_ARGS';
 final _dart2jsVmArgs = () {
   var env = Platform.environment[_dart2jsVmArgsEnvVar];
-  if (env == null) return <String>[];
-  return env.split(' ');
+  return env?.split(' ') ?? <String>[];
 }();
 
 /// Manages a shared set of persistent dart2js workers.
