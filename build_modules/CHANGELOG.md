@@ -1,4 +1,4 @@
-## 2.7.0-dev
+## 2.7.0
 
 - Add support for an environment variable `BUILD_DART2JS_VM_ARGS` which can
   be used to supply Dart vm arguments for the dart2js processes.
