@@ -1,6 +1,7 @@
-# 2.1.1-dev
+# 2.1.1
 
 - Require SDK version `2.6.0` to enable extension methods.
+- Depend on the latest `built_value`.
 
 ## 2.1.0
 
