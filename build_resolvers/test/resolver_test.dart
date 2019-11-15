@@ -60,6 +60,48 @@ void main() {
       }, resolvers: AnalyzerResolvers());
     });
 
+    group('assets that aren\'t a transitive import of input', () {
+      Future _runWith(Future Function(Resolver) test) {
+        return resolveSources({
+          'a|web/main.dart': '''
+          main() {}
+        ''',
+          'a|lib/other.dart': '''
+          library other;
+        '''
+        }, test);
+      }
+
+      test('can be resolved', () {
+        return _runWith((resolver) async {
+          final main = await resolver.libraryFor(entryPoint);
+          expect(main, isNotNull);
+
+          final other =
+              await resolver.libraryFor(AssetId.parse('a|lib/other.dart'));
+          expect(other.name, 'other');
+        });
+      });
+
+      test('are included in library stream', () {
+        return _runWith((resolver) async {
+          expect(resolver.libraries.map((l) => l.name), neverEmits('other'));
+
+          await resolver.libraryFor(entryPoint);
+
+          expect(resolver.libraries.map((l) => l.name), emits('other'));
+        });
+      });
+
+      test('can be found by name', () {
+        return _runWith((resolver) async {
+          await resolver.libraryFor(entryPoint);
+
+          expect(resolver.findLibraryByName('other'), completion(isNotNull));
+        });
+      });
+    });
+
     test('handles missing files', () {
       return resolveSources({
         'a|web/main.dart': '''

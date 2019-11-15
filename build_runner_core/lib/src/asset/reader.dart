@@ -10,6 +10,7 @@ import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
+import 'package:meta/meta.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../util/async.dart';
@@ -21,6 +22,29 @@ abstract class RunnerAssetReader implements MultiPackageAssetReader {}
 abstract class PathProvidingAssetReader implements AssetReader {
   String pathTo(AssetId id);
 }
+
+/// Describes if and how a [SingleStepReader] should read an [AssetId].
+class Readability {
+  final bool canRead;
+  final bool inSamePhase;
+
+  const Readability({@required this.canRead, @required this.inSamePhase});
+
+  /// Determines readability for a node written in a previous build phase, which
+  /// means that [ownOutput] is impossible.
+  factory Readability.fromPreviousPhase(bool readable) =>
+      readable ? Readability.readable : Readability.notReadable;
+
+  static const Readability notReadable =
+      Readability(canRead: false, inSamePhase: false);
+  static const Readability readable =
+      Readability(canRead: true, inSamePhase: false);
+  static const Readability ownOutput =
+      Readability(canRead: true, inSamePhase: true);
+}
+
+typedef IsReadable = FutureOr<Readability> Function(
+    AssetNode node, int phaseNum, AssetWriterSpy writtenAssets);
 
 /// An [AssetReader] with a lifetime equivalent to that of a single step in a
 /// build.
@@ -38,8 +62,8 @@ class SingleStepReader implements AssetReader {
   final AssetReader _delegate;
   final int _phaseNumber;
   final String _primaryPackage;
-  final FutureOr<bool> Function(
-      AssetNode node, int phaseNum, String fromPackage) _isReadableNode;
+  final AssetWriterSpy _writtenAssets;
+  final IsReadable _isReadableNode;
   final FutureOr<GlobAssetNode> Function(
       Glob glob, String package, int phaseNum) _getGlobNode;
 
@@ -48,18 +72,26 @@ class SingleStepReader implements AssetReader {
 
   SingleStepReader(this._delegate, this._assetGraph, this._phaseNumber,
       this._primaryPackage, this._isReadableNode,
-      [this._getGlobNode]);
+      [this._getGlobNode, this._writtenAssets]);
 
   /// Checks whether [id] can be read by this step - attempting to build the
   /// asset if necessary.
   FutureOr<bool> _isReadable(AssetId id) {
-    assetsRead.add(id);
-    var node = _assetGraph.get(id);
+    final node = _assetGraph.get(id);
     if (node == null) {
+      assetsRead.add(id);
       _assetGraph.add(SyntheticSourceAssetNode(id));
       return false;
     }
-    return _isReadableNode(node, _phaseNumber, _primaryPackage);
+
+    return doAfter(_isReadableNode(node, _phaseNumber, _writtenAssets),
+        (Readability readability) {
+      if (!readability.inSamePhase) {
+        assetsRead.add(id);
+      }
+
+      return readability.canRead;
+    });
   }
 
   @override

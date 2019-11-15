@@ -131,14 +131,16 @@ class BuildImpl {
     return build;
   }
 
-  static bool Function(AssetNode, int, String) _isReadableAfterBuildFactory(
-          List<BuildPhase> buildPhases) =>
-      (AssetNode node, int phaseNum, String package) {
-        if (node is GeneratedAssetNode) {
-          return node.wasOutput && !node.isFailure;
-        }
-        return node.isReadable && node.isValidInput;
-      };
+  static IsReadable _isReadableAfterBuildFactory(List<BuildPhase> buildPhases) {
+    return (AssetNode node, int phaseNum, AssetWriterSpy writtenAssets) {
+      if (node is GeneratedAssetNode) {
+        return Readability.fromPreviousPhase(node.wasOutput && !node.isFailure);
+      }
+
+      return Readability.fromPreviousPhase(
+          node.isReadable && node.isValidInput);
+    };
+  }
 }
 
 /// Performs a single build and manages state that only lives for a single
@@ -405,16 +407,26 @@ class _SingleBuild {
 
   /// Checks whether [node] can be read by this step - attempting to build the
   /// asset if necessary.
-  FutureOr<bool> _isReadableNode(
-      AssetNode node, int phaseNum, String fromPackage) {
+  FutureOr<Readability> _isReadableNode(
+      AssetNode node, int phaseNum, AssetWriterSpy writtenAssets) {
     if (node is GeneratedAssetNode) {
-      if (node.phaseNumber >= phaseNum) return false;
+      if (node.phaseNumber > phaseNum) {
+        return Readability.notReadable;
+      } else if (node.phaseNumber == phaseNum) {
+        // allow a build step to read its outputs (contained in writtenAssets)
+        final isInBuild = _buildPhases[phaseNum] is InBuildPhase &&
+            writtenAssets.assetsWritten.contains(node.id);
+
+        return isInBuild ? Readability.ownOutput : Readability.notReadable;
+      }
+
       return doAfter(
           // ignore: void_checks
           _ensureAssetIsBuilt(node),
-          (_) => node.wasOutput && !node.isFailure);
+          (_) =>
+              Readability.fromPreviousPhase(node.wasOutput && !node.isFailure));
     }
-    return node.isReadable && node.isValidInput;
+    return Readability.fromPreviousPhase(node.isReadable && node.isValidInput);
   }
 
   FutureOr<void> _ensureAssetIsBuilt(AssetNode node) {
@@ -447,8 +459,10 @@ class _SingleBuild {
                     .where((id) => !inputNode.primaryOutputs.contains(id))
                     .join(', '));
 
+        var wrappedWriter = AssetWriterSpy(_writer);
+
         var wrappedReader = SingleStepReader(_reader, _assetGraph, phaseNumber,
-            input.package, _isReadableNode, _getUpdatedGlobNode);
+            input.package, _isReadableNode, _getUpdatedGlobNode, wrappedWriter);
 
         if (!await tracker.trackStage(
             'Setup', () => _buildShouldRun(builderOutputs, wrappedReader))) {
@@ -462,7 +476,6 @@ class _SingleBuild {
         // to remove those.
         wrappedReader.assetsRead.clear();
 
-        var wrappedWriter = AssetWriterSpy(_writer);
         var actionDescription =
             _actionLoggerName(phase, input, _packageGraph.root.name);
         var logger = BuildForInputLogger(Logger(actionDescription));
@@ -552,8 +565,9 @@ class _SingleBuild {
     assert(inputNode != null,
         'Inputs should be known in the static graph. Missing $input');
 
-    var wrappedReader = SingleStepReader(
-        _reader, _assetGraph, phaseNum, input.package, _isReadableNode);
+    var wrappedWriter = AssetWriterSpy(_writer);
+    var wrappedReader = SingleStepReader(_reader, _assetGraph, phaseNum,
+        input.package, _isReadableNode, null, wrappedWriter);
 
     if (!await _postProcessBuildShouldRun(anchorNode, wrappedReader)) {
       return <AssetId>[];
@@ -570,7 +584,6 @@ class _SingleBuild {
       ..clear();
     inputNode.deletedBy.remove(anchorNode.id);
 
-    var wrappedWriter = AssetWriterSpy(_writer);
     var actionDescription = '$builder on $input';
     var logger = BuildForInputLogger(Logger(actionDescription));
 

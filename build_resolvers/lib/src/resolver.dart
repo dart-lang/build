@@ -32,16 +32,23 @@ final _logger = Logger('build_resolvers');
 /// Implements [Resolver.libraries] and [Resolver.findLibraryByName] by crawling
 /// down from entrypoints.
 class PerActionResolver implements ReleasableResolver {
-  final ReleasableResolver _delegate;
-  final Iterable<AssetId> _entryPoints;
+  final AnalyzerResolver _delegate;
+  final BuildStep _step;
 
-  PerActionResolver(this._delegate, this._entryPoints);
+  final Set<AssetId> _entryPoints;
+
+  PerActionResolver(this._delegate, this._step, Iterable<AssetId> entryPoints)
+      : _entryPoints = entryPoints.toSet();
 
   @override
   Stream<LibraryElement> get libraries async* {
     final seen = Set<LibraryElement>();
     final toVisit = Queue<LibraryElement>();
-    for (final entryPoint in _entryPoints) {
+
+    // keep a copy of entry points in case [_resolveIfNecessary] is called
+    // before this stream is done.
+    final entryPoints = _entryPoints.toList();
+    for (final entryPoint in entryPoints) {
       if (!await _delegate.isLibrary(entryPoint)) continue;
       final library = await _delegate.libraryFor(entryPoint);
       toVisit.add(library);
@@ -67,14 +74,33 @@ class PerActionResolver implements ReleasableResolver {
       libraries.firstWhere((l) => l.name == libraryName, orElse: () => null);
 
   @override
-  Future<bool> isLibrary(AssetId assetId) => _delegate.isLibrary(assetId);
+  Future<bool> isLibrary(AssetId assetId) async {
+    await _resolveIfNecesssary(assetId);
+    return _delegate.isLibrary(assetId);
+  }
 
   @override
-  Future<LibraryElement> libraryFor(AssetId assetId) =>
-      _delegate.libraryFor(assetId);
+  Future<LibraryElement> libraryFor(AssetId assetId) async {
+    await _resolveIfNecesssary(assetId);
+    return _delegate.libraryFor(assetId);
+  }
+
+  Future<void> _resolveIfNecesssary(AssetId id) async {
+    if (!_entryPoints.contains(id)) {
+      _entryPoints.add(id);
+
+      // the resolver will only visit assets that haven't been resolved in this
+      // step yet
+      await _delegate._uriResolver
+          .performResolve(_step, [id], _delegate._driver);
+    }
+  }
 
   @override
-  void release() => _delegate.release();
+  void release() {
+    _delegate._uriResolver.notifyComplete(_step);
+    _delegate.release();
+  }
 
   @override
   Future<AssetId> assetIdForElement(Element element) =>
@@ -172,13 +198,13 @@ class AnalyzerResolvers implements Resolvers {
 
     await _uriResolver.performResolve(
         buildStep, [buildStep.inputId], _resolver._driver);
-    return PerActionResolver(_resolver, [buildStep.inputId]);
+    return PerActionResolver(_resolver, buildStep, [buildStep.inputId]);
   }
 
   /// Must be called between each build.
   @override
   void reset() {
-    _uriResolver?.seenAssets?.clear();
+    _uriResolver?.reset();
   }
 }
 
