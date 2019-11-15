@@ -1,3 +1,9 @@
+## 4.2.0
+
+### New Feature
+
+- Allow reading assets created previously by the same `BuildStep`.
+
 ## 4.1.0
 
 - Add support for trimming builds based on `BuildStep.reportUnusedAssets`

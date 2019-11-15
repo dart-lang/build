@@ -1,6 +1,23 @@
-## 1.2.3-dev
+## 1.3.0
 
-Change a `hide` declaration to a `show` declaration to support a
+### New feature
+
+You can now resolve additional libraries other than those imported by the
+primary entrypoint.
+
+  - This is supported through the `isLibrary` and `libraryFor` methods on
+    `Resolver`, which will now resolve the provided asset if it is not already
+    resolved.
+  - **Note**: Doing this may affect the result of subsequent calls to
+    `resolver.libraries` and `resolver.findLibraryByName` if new libraries are
+    discovered.
+
+**Note**: If using `build_runner` then this will also require you to upgrade
+to version `4.2.0` of `build_runner_core` .
+
+### Other
+
+- Changed a `hide` declaration to a `show` declaration to support a
 `package:analyzer` change.
 
 ## 1.2.2
