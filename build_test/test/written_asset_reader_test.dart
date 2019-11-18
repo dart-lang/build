@@ -17,7 +17,7 @@ void main() {
 
   test("doesn't read assets that weren't written", () async {
     final doesntExist = AssetId.parse('foo|c.txt');
-    expect(reader.canRead(doesntExist), completion(isFalse));
+    expect(await reader.canRead(doesntExist), isFalse);
 
     expect(() => reader.readAsString(doesntExist),
         throwsA(const TypeMatcher<AssetNotFoundException>()));
@@ -26,8 +26,8 @@ void main() {
   test('can read written assets', () async {
     final fooA = AssetId.parse('foo|a.txt');
 
-    expect(reader.canRead(fooA), completion(isTrue));
-    expect(reader.readAsString(fooA), completion(equals('a')));
+    expect(await reader.canRead(fooA), isTrue);
+    expect(await reader.readAsString(fooA), equals('a'));
   });
 
   test('can find stream of assets', () {

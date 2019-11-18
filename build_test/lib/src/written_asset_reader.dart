@@ -22,14 +22,13 @@ class WrittenAssetReader extends MultiPackageAssetReader {
   }
 
   @override
-  Stream<AssetId> findAssets(Glob glob, {String package}) {
-    var assetStream = Stream.fromIterable(source.assets.keys)
-        .where((asset) => glob.matches(asset.path));
-    if (package != null) {
-      assetStream = assetStream.where((asset) => asset.package == package);
-    }
+  Stream<AssetId> findAssets(Glob glob, {String package}) async* {
+    for (var asset in source.assets.keys) {
+      if (!glob.matches(asset.path)) continue;
+      if (package != null && asset.package != package) continue;
 
-    return assetStream;
+      yield asset;
+    }
   }
 
   @override
@@ -41,10 +40,8 @@ class WrittenAssetReader extends MultiPackageAssetReader {
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding}) {
-    return readAsBytes(id).then((byteContent) {
-      final resolvedEncoding = encoding ?? utf8;
-      return resolvedEncoding.decode(byteContent);
-    });
+  Future<String> readAsString(AssetId id, {Encoding encoding}) async {
+    encoding ??= utf8;
+    return encoding.decode(await readAsBytes(id));
   }
 }
