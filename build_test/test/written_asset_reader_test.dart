@@ -4,7 +4,7 @@ import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
 void main() {
-  WrittenAssetsReader reader;
+  WrittenAssetReader reader;
 
   setUp(() async {
     final writer = InMemoryAssetWriter();
@@ -12,7 +12,7 @@ void main() {
     await writer.writeAsString(AssetId.parse('foo|lib/b.dart'), 'b');
     await writer.writeAsString(AssetId.parse('bar|a.txt'), 'b_a');
 
-    reader = WrittenAssetsReader(writer);
+    reader = WrittenAssetReader(writer);
   });
 
   test("doesn't read assets that weren't written", () async {

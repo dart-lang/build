@@ -11,10 +11,10 @@ import 'in_memory_writer.dart';
 
 /// A [MultiPackageAssetReader] reading outputs written into a
 /// [RecordingAssetWriter].
-class WrittenAssetsReader extends MultiPackageAssetReader {
+class WrittenAssetReader extends MultiPackageAssetReader {
   final RecordingAssetWriter source;
 
-  WrittenAssetsReader(this.source);
+  WrittenAssetReader(this.source);
 
   @override
   Future<bool> canRead(AssetId id) {

@@ -13,7 +13,7 @@ import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
 import 'multi_asset_reader.dart';
 import 'resolve_source.dart';
-import 'written_assets_reader.dart';
+import 'written_asset_reader.dart';
 
 AssetId _passThrough(AssetId id) => id;
 
@@ -127,7 +127,7 @@ Future testBuilder(
   reader = MultiAssetReader([
     inMemoryReader,
     if (reader != null) reader,
-    WrittenAssetsReader(writer),
+    WrittenAssetReader(writer),
   ]);
 
   var inputIds = <AssetId>[];
