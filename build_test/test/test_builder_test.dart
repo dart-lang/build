@@ -106,6 +106,29 @@ void main() {
           AssetId('a', 'lib/a.txt'): [unusedInput]
         }));
   });
+
+  test('can read own outputs', () {
+    return testBuilder(
+      TestBuilder(
+        buildExtensions: {
+          '.txt': ['.temp']
+        },
+        build: (step, _) async {
+          final input = step.inputId;
+          final content = await step.readAsString(input);
+
+          final tempOut = input.changeExtension('.temp');
+          await step.writeAsString(tempOut, content.toUpperCase());
+
+          final readOutput = await step.readAsString(tempOut);
+          expect(readOutput, content.toUpperCase());
+        },
+      ),
+      {
+        'a|foo.txt': 'foo',
+      },
+    );
+  });
 }
 
 /// Concatenates the contents of multiple text files into a single output.

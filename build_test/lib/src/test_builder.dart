@@ -13,6 +13,7 @@ import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
 import 'multi_asset_reader.dart';
 import 'resolve_source.dart';
+import 'written_assets_reader.dart';
 
 AssetId _passThrough(AssetId id) => id;
 
@@ -121,12 +122,13 @@ Future testBuilder(
     void Function(AssetId, Iterable<AssetId>)
         reportUnusedAssetsForInput}) async {
   writer ??= InMemoryAssetWriter();
+
   final inMemoryReader = InMemoryAssetReader(rootPackage: rootPackage);
-  if (reader != null) {
-    reader = MultiAssetReader([inMemoryReader, reader]);
-  } else {
-    reader = inMemoryReader;
-  }
+  reader = MultiAssetReader([
+    inMemoryReader,
+    if (reader != null) reader,
+    WrittenAssetsReader(writer),
+  ]);
 
   var inputIds = <AssetId>[];
   sourceAssets.forEach((serializedId, contents) {
