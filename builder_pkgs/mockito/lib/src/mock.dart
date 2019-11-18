@@ -107,20 +107,27 @@ class Mock {
 
   @override
   @visibleForTesting
-  dynamic noSuchMethod(Invocation invocation) {
+
+  /// Handles method stubbing, method call verification, and real method calls.
+  ///
+  /// If passed, [returnValue] will be returned during method stubbing and
+  /// method call verification. This is useful in cases where the method
+  /// invocation which led to `noSuchMethod` being called has a non-nullable
+  /// return type.
+  dynamic noSuchMethod(Invocation invocation, [Object /*?*/ returnValue]) {
     // noSuchMethod is that 'magic' that allows us to ignore implementing fields
     // and methods and instead define them later at compile-time per instance.
     // See "Emulating Functions and Interactions" on dartlang.org: goo.gl/r3IQUH
     invocation = _useMatchedInvocationIfSet(invocation);
     if (_whenInProgress) {
       _whenCall = _WhenCall(this, invocation);
-      return null;
+      return returnValue;
     } else if (_verificationInProgress) {
       _verifyCalls.add(_VerifyCall(this, invocation));
-      return null;
+      return returnValue;
     } else if (_untilCalledInProgress) {
       _untilCall = _UntilCall(this, invocation);
-      return null;
+      return returnValue;
     } else {
       _realCalls.add(RealCall(this, invocation));
       _invocationStreamController.add(invocation);

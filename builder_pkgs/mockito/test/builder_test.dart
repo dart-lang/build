@@ -50,7 +50,7 @@ void main() {
         ...simpleTestAsset,
         'foo|lib/foo.dart': dedent(r'''
         class Foo {
-          int a() => 7;
+          dynamic a() => 7;
           int _b(int x) => 8;
           static int c(int y) => 9;
         }
@@ -58,10 +58,12 @@ void main() {
       },
       outputs: {
         'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+
         /// A class which mocks [Foo].
         ///
         /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends Mock implements Foo {}
+        class MockFoo extends _i1.Mock implements Foo {}
         '''),
       },
     );
@@ -84,10 +86,12 @@ void main() {
       },
       outputs: {
         'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+
         /// A class which mocks [Foo].
         ///
         /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends Mock implements Foo {}
+        class MockFoo extends _i1.Mock implements Foo {}
         '''),
       },
     );
@@ -112,10 +116,12 @@ void main() {
       },
       outputs: {
         'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+
         /// A class which mocks [Foo].
         ///
         /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends Mock implements Foo {
+        class MockFoo extends _i1.Mock implements Foo {
           dynamic a(int m, String n) =>
               super.noSuchMethod(Invocation.method(#a, [m, n]));
         }
@@ -146,10 +152,12 @@ void main() {
       },
       outputs: {
         'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+
         /// A class which mocks [Foo].
         ///
         /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends Mock implements Foo {
+        class MockFoo extends _i1.Mock implements Foo {
           dynamic a(int m, String n) =>
               super.noSuchMethod(Invocation.method(#a, [m, n]));
           dynamic b(List<int> list) =>
@@ -188,10 +196,12 @@ void main() {
       },
       outputs: {
         'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+
         /// A class which mocks [Foo].
         ///
         /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends Mock implements Foo {
+        class MockFoo extends _i1.Mock implements Foo {
           dynamic a(int m, String n) =>
               super.noSuchMethod(Invocation.method(#a, [m, n]));
         }
@@ -199,7 +209,7 @@ void main() {
         /// A class which mocks [Bar].
         ///
         /// See the documentation for Mockito's code generation for more information.
-        class MockBar extends Mock implements Bar {
+        class MockBar extends _i1.Mock implements Bar {
           dynamic b(List<int> list) =>
               super.noSuchMethod(Invocation.method(#b, [list]));
         }
@@ -208,7 +218,39 @@ void main() {
     );
   });
 
-  test('generates a mock class and overrides getters and setters', () async {
+  test('overrides generic methods', () async {
+    await testBuilder(
+      buildMocks(BuilderOptions({})),
+      {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {
+          dynamic f<T>(int a) {}
+          // Bounded type parameters blocked by
+          // https://github.com/dart-lang/code_builder/issues/251.
+          // dynamic g<T extends Comparable>(int a) {}
+        }
+        '''),
+      },
+      outputs: {
+        // TODO(srawlins): The getter will appear when it has a non-nullable
+        // return type.
+        'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+
+        /// A class which mocks [Foo].
+        ///
+        /// See the documentation for Mockito's code generation for more information.
+        class MockFoo extends _i1.Mock implements Foo {
+          dynamic f<T>(int a) => super.noSuchMethod(Invocation.method(#f, [a]));
+        }
+        '''),
+      },
+    );
+  });
+
+  test('overrides getters and setters', () async {
     await testBuilder(
       buildMocks(BuilderOptions({})),
       {
@@ -226,11 +268,81 @@ void main() {
         // TODO(srawlins): The getter will appear when it has a non-nullable
         // return type.
         'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+
         /// A class which mocks [Foo].
         ///
         /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends Mock implements Foo {
+        class MockFoo extends _i1.Mock implements Foo {
           set b(int value) => super.noSuchMethod(Invocation.setter(#b, [value]));
+        }
+        '''),
+      },
+    );
+  });
+
+  test('creates dummy non-null return values for known core classes', () async {
+    await testBuilder(
+      buildMocks(BuilderOptions({})),
+      {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {
+          bool m1() => false;
+          double m2() => 3.14;
+          int m3() => 7;
+          String m4() => "Hello";
+          List<Foo> m5() => [Foo()];
+          Set<Foo> m6() => {Foo()};
+          Map<int, Foo> m7() => {7: Foo()};
+        }
+        '''),
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+
+        /// A class which mocks [Foo].
+        ///
+        /// See the documentation for Mockito's code generation for more information.
+        class MockFoo extends _i1.Mock implements Foo {
+          bool m1() => super.noSuchMethod(Invocation.method(#m1, []), false);
+          double m2() => super.noSuchMethod(Invocation.method(#m2, []), 0.0);
+          int m3() => super.noSuchMethod(Invocation.method(#m3, []), 0);
+          String m4() => super.noSuchMethod(Invocation.method(#m4, []), '');
+          List<Foo> m5() => super.noSuchMethod(Invocation.method(#m5, []), []);
+          Set<Foo> m6() => super.noSuchMethod(Invocation.method(#m6, []), {});
+          Map<int, Foo> m7() => super.noSuchMethod(Invocation.method(#m7, []), {});
+        }
+        '''),
+      },
+    );
+  });
+
+  test('creates dummy non-null return values for Futures of known core classes',
+      () async {
+    await testBuilder(
+      buildMocks(BuilderOptions({})),
+      {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {
+          Future<bool> m1() async => false;
+        }
+        '''),
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+
+        /// A class which mocks [Foo].
+        ///
+        /// See the documentation for Mockito's code generation for more information.
+        class MockFoo extends _i1.Mock implements Foo {
+          Future<bool> m1() async =>
+              super.noSuchMethod(Invocation.method(#m1, []), Future.value(false));
         }
         '''),
       },

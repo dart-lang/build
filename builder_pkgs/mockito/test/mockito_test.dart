@@ -65,9 +65,6 @@ void expectFail(String expectedMessage, dynamic expectedToFail()) {
   }
 }
 
-String noMatchingCallsFooter = "(If you called `verify(...).called(0);`, "
-    "please instead use `verifyNever(...);`.)";
-
 void main() {
   _MockedClass mock;
 

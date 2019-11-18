@@ -1,3 +1,12 @@
+## 4.1.2
+
+* Introduce experimental code-generated mocks. This is primarily to support
+  the new "Non-nullable by default" (NNBD) type system coming soon to Dart.
+* Add an optional second parameter to `Mock.noSuchMethod`. This may break
+  clients who use the Mock class in unconventional ways, such as overriding
+  `noSuchMethod` on a class which extends Mock. To fix, or prepare such code,
+  add a second parameter to such overriding `noSuchMethod` declaration.
+
 ## 4.1.1
 
 * Mark the unexported and accidentally public `setDefaultResponse` as
