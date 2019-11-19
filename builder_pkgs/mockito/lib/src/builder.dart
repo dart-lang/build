@@ -79,9 +79,6 @@ class MockBuilder implements Builder {
       List<DartObject> classesToMock, LibraryBuilder lBuilder) {
     for (final classToMock in classesToMock) {
       final dartTypeToMock = classToMock.toTypeValue();
-      // TODO(srawlins): Import the library which declares [dartTypeToMock].
-      // TODO(srawlins): Import all supporting libraries, used in type
-      // signatures.
       if (dartTypeToMock == null) {
         throw InvalidMockitoAnnotationException(
             'The "classes" argument includes a non-type: $classToMock');
@@ -118,11 +115,26 @@ class MockBuilder implements Builder {
       cBuilder
         ..name = 'Mock$className'
         ..extend = refer('Mock', 'package:mockito/mockito.dart')
-        ..implements.add(_typeReference(dartType))
         ..docs.add('/// A class which mocks [$className].')
         ..docs.add('///')
         ..docs.add('/// See the documentation for Mockito\'s code generation '
             'for more information.');
+      // For each type parameter on [classToMock], the Mock class needs a type
+      // parameter with same type variables, and a mirrored type argument for
+      // the "implements" clause.
+      var typeArguments = <Reference>[];
+      if (classToMock.typeParameters != null) {
+        for (var typeParameter in classToMock.typeParameters) {
+          cBuilder.types.add(_typeParameterReference(typeParameter));
+          typeArguments.add(refer(typeParameter.name));
+        }
+      }
+      cBuilder.implements.add(TypeReference((b) {
+        b
+          ..symbol = dartType.name
+          ..url = _typeImport(dartType)
+          ..types.addAll(typeArguments);
+      }));
       for (final field in classToMock.fields) {
         if (field.isPrivate || field.isStatic) {
           continue;
@@ -185,8 +197,8 @@ class MockBuilder implements Builder {
       ..name = method.displayName
       ..returns = _typeReference(method.returnType);
 
-    if (method.typeParameters != null && method.typeParameters.isNotEmpty) {
-      builder.types.addAll(method.typeParameters.map((p) => refer(p.name)));
+    if (method.typeParameters != null) {
+      builder.types.addAll(method.typeParameters.map(_typeParameterReference));
     }
 
     if (method.isAsynchronous) {
@@ -310,6 +322,17 @@ class MockBuilder implements Builder {
         refer('super').property('noSuchMethod').call([invocation]);
 
     builder.body = returnNoSuchMethod.code;
+  }
+
+  /// Create a reference for [typeParameter], properly referencing all types
+  /// in bounds.
+  TypeReference _typeParameterReference(TypeParameterElement typeParameter) {
+    return TypeReference((b) {
+      b.symbol = typeParameter.name;
+      if (typeParameter.bound != null) {
+        b.bound = _typeReference(typeParameter.bound);
+      }
+    });
   }
 
   /// Create a reference for [type], properly referencing all attached types.

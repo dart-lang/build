@@ -224,6 +224,82 @@ void main() {
     );
   });
 
+  test('generates generic mock classes', () async {
+    await testBuilder(
+      buildMocks(BuilderOptions({})),
+      {
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo<T, U> {
+          dynamic a(int m) => m + 1;
+        }
+        '''),
+        'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([Foo])
+        void main() {}
+        '''
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+        import 'package:foo/foo.dart' as _i2;
+
+        /// A class which mocks [Foo].
+        ///
+        /// See the documentation for Mockito's code generation for more information.
+        class MockFoo<T, U> extends _i1.Mock implements _i2.Foo<T, U> {
+          dynamic a(int m) => super.noSuchMethod(Invocation.method(#a, [m]));
+        }
+        '''),
+      },
+    );
+  });
+
+  test('generates generic mock classes with type bounds', () async {
+    await testBuilder(
+      buildMocks(BuilderOptions({})),
+      {
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {
+          dynamic a(int m) => m + 1;
+        }
+        class Bar<T extends Foo> {
+          dynamic b(int m) => m + 1;
+        }
+        '''),
+        'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([Foo, Bar])
+        void main() {}
+        '''
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+        import 'package:foo/foo.dart' as _i2;
+
+        /// A class which mocks [Foo].
+        ///
+        /// See the documentation for Mockito's code generation for more information.
+        class MockFoo extends _i1.Mock implements _i2.Foo {
+          dynamic a(int m) => super.noSuchMethod(Invocation.method(#a, [m]));
+        }
+
+        /// A class which mocks [Bar].
+        ///
+        /// See the documentation for Mockito's code generation for more information.
+        class MockBar<T extends _i2.Foo> extends _i1.Mock implements _i2.Bar<T> {
+          dynamic b(int m) => super.noSuchMethod(Invocation.method(#b, [m]));
+        }
+        '''),
+      },
+    );
+  });
+
   test('imports libraries for external class types', () async {
     await testBuilder(
       buildMocks(BuilderOptions({})),
@@ -345,9 +421,7 @@ void main() {
         'foo|lib/foo.dart': dedent(r'''
         class Foo {
           dynamic f<T>(int a) {}
-          // Bounded type parameters blocked by
-          // https://github.com/dart-lang/code_builder/issues/251.
-          // dynamic g<T extends Comparable>(int a) {}
+          dynamic g<T extends Foo>(int a) {}
         }
         '''),
       },
@@ -363,6 +437,8 @@ void main() {
         /// See the documentation for Mockito's code generation for more information.
         class MockFoo extends _i1.Mock implements _i2.Foo {
           dynamic f<T>(int a) => super.noSuchMethod(Invocation.method(#f, [a]));
+          dynamic g<T extends _i2.Foo>(int a) =>
+              super.noSuchMethod(Invocation.method(#g, [a]));
         }
         '''),
       },
