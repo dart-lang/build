@@ -60,7 +60,7 @@ String computePartUrl(AssetId input, AssetId output) =>
 
 /// Returns a URL representing [element].
 String urlOfElement(Element element) => element.kind == ElementKind.DYNAMIC
-    ? 'dart:core#dynmaic'
+    ? 'dart:core#dynamic'
     // using librarySource.uri – in case the element is in a part
     : normalizeUrl(element.librarySource.uri)
         .replace(fragment: element.name)
