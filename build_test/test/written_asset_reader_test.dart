@@ -37,6 +37,9 @@ void main() {
     final filteringReader = WrittenAssetReader(writer, writerSpy);
 
     expect(await filteringReader.canRead(fooA), isFalse);
+    await expectLater(
+        filteringReader.findAssets(Glob('*.txt')), neverEmits(fooA));
+
     await writerSpy.writeAsString(fooA, 'written through spy');
     expect(await filteringReader.canRead(fooA), isTrue);
   });
