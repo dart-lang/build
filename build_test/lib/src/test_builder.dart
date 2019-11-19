@@ -124,11 +124,6 @@ Future testBuilder(
   writer ??= InMemoryAssetWriter();
 
   final inMemoryReader = InMemoryAssetReader(rootPackage: rootPackage);
-  reader = MultiAssetReader([
-    inMemoryReader,
-    if (reader != null) reader,
-    WrittenAssetReader(writer),
-  ]);
 
   var inputIds = <AssetId>[];
   sourceAssets.forEach((serializedId, contents) {
@@ -155,8 +150,22 @@ Future testBuilder(
   var writerSpy = AssetWriterSpy(writer);
   var logger = Logger('testBuilder');
   var logSubscription = logger.onRecord.listen(onLog);
-  await runBuilder(builder, inputIds, reader, writerSpy, defaultResolvers,
-      logger: logger, reportUnusedAssetsForInput: reportUnusedAssetsForInput);
+
+  for (var input in inputIds) {
+    // create another writer spy and reader for each input. This prevents writes
+    // from a previous input being readable when processing the current input.
+    final spyForStep = AssetWriterSpy(writerSpy);
+    final readerForStep = MultiAssetReader([
+      inMemoryReader,
+      if (reader != null) reader,
+      WrittenAssetReader(writer, spyForStep),
+    ]);
+
+    await runBuilder(
+        builder, {input}, readerForStep, spyForStep, defaultResolvers,
+        logger: logger, reportUnusedAssetsForInput: reportUnusedAssetsForInput);
+  }
+
   await logSubscription.cancel();
   var actualOutputs = writerSpy.assetsWritten;
   checkOutputs(outputs, actualOutputs, writer);

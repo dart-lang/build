@@ -9,21 +9,36 @@ import 'package:glob/glob.dart';
 
 import 'in_memory_writer.dart';
 
-/// A [MultiPackageAssetReader] reading outputs written into a
-/// [RecordingAssetWriter].
+/// A [MultiPackageAssetReader] which supports reads from previous outputs.
 class WrittenAssetReader extends MultiPackageAssetReader {
   final RecordingAssetWriter source;
 
-  WrittenAssetReader(this.source);
+  /// An optional [AssetWriterSpy] to limit what's readable through this reader.
+  ///
+  /// Only assets reported as written trough this [AssetWriterSpy] can be read
+  /// from this reader. When null, all assets from [source] are available.
+  final AssetWriterSpy filterSpy;
+
+  WrittenAssetReader(this.source, [this.filterSpy]);
 
   @override
   Future<bool> canRead(AssetId id) {
-    return Future.value(source.assets.containsKey(id));
+    var canRead = source.assets.containsKey(id);
+    if (filterSpy != null) {
+      canRead = canRead && filterSpy.assetsWritten.contains(id);
+    }
+
+    return Future.value(canRead);
   }
 
   @override
   Stream<AssetId> findAssets(Glob glob, {String package}) async* {
-    for (var asset in source.assets.keys) {
+    var available = source.assets.keys.toSet();
+    if (filterSpy != null) {
+      available = available.intersection(filterSpy.assetsWritten.toSet());
+    }
+
+    for (var asset in available) {
       if (!glob.matches(asset.path)) continue;
       if (package != null && asset.package != package) continue;
 

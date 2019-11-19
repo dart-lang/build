@@ -5,9 +5,10 @@ import 'package:test/test.dart';
 
 void main() {
   WrittenAssetReader reader;
+  InMemoryAssetWriter writer;
 
   setUp(() async {
-    final writer = InMemoryAssetWriter();
+    writer = InMemoryAssetWriter();
     await writer.writeAsString(AssetId.parse('foo|a.txt'), 'a');
     await writer.writeAsString(AssetId.parse('foo|lib/b.dart'), 'b');
     await writer.writeAsString(AssetId.parse('bar|a.txt'), 'b_a');
@@ -28,6 +29,16 @@ void main() {
 
     expect(await reader.canRead(fooA), isTrue);
     expect(await reader.readAsString(fooA), equals('a'));
+  });
+
+  test('limits to outputs from spy writer when set', () async {
+    final fooA = AssetId.parse('foo|a.txt');
+    final writerSpy = AssetWriterSpy(writer);
+    final filteringReader = WrittenAssetReader(writer, writerSpy);
+
+    expect(await filteringReader.canRead(fooA), isFalse);
+    await writerSpy.writeAsString(fooA, 'written through spy');
+    expect(await filteringReader.canRead(fooA), isTrue);
   });
 
   test('can find stream of assets', () {
