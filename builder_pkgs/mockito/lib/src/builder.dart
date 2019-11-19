@@ -14,7 +14,7 @@
 
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer/dart/element/type.dart';
+import 'package:analyzer/dart/element/type.dart' as analyzer;
 import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
@@ -110,15 +110,15 @@ class MockBuilder implements Builder {
     }
   }
 
-  Class _buildCodeForClass(DartType dartType, ClassElement classToMock) {
+  Class _buildCodeForClass(
+      analyzer.DartType dartType, ClassElement classToMock) {
     final className = dartType.displayName;
 
     return Class((cBuilder) {
       cBuilder
         ..name = 'Mock$className'
         ..extend = refer('Mock', 'package:mockito/mockito.dart')
-        // TODO(srawlins): Add URI of dartType.
-        ..implements.add(refer(className))
+        ..implements.add(_typeReference(dartType))
         ..docs.add('/// A class which mocks [$className].')
         ..docs.add('///')
         ..docs.add('/// See the documentation for Mockito\'s code generation '
@@ -154,7 +154,7 @@ class MockBuilder implements Builder {
     if (type.isDynamic || type.isVoid) return false;
     if (method.isAsynchronous && type.isDartAsyncFuture ||
         type.isDartAsyncFutureOr) {
-      var typeArgument = (type as InterfaceType).typeArguments.first;
+      var typeArgument = (type as analyzer.InterfaceType).typeArguments.first;
       if (typeArgument.isDynamic || typeArgument.isVoid) {
         // An asynchronous method which returns `Future<void>`, for example,
         // does not need a dummy return value.
@@ -183,7 +183,7 @@ class MockBuilder implements Builder {
     // TODO(srawlins): abstract methods?
     builder
       ..name = method.displayName
-      ..returns = refer(method.returnType.displayName);
+      ..returns = _typeReference(method.returnType);
 
     if (method.typeParameters != null && method.typeParameters.isNotEmpty) {
       builder.types.addAll(method.typeParameters.map((p) => refer(p.name)));
@@ -235,13 +235,13 @@ class MockBuilder implements Builder {
     builder.body = returnNoSuchMethod.code;
   }
 
-  Expression _dummyValue(DartType type) {
+  Expression _dummyValue(analyzer.DartType type) {
     if (type.isDartCoreBool) {
       return literalFalse;
     } else if (type.isDartCoreDouble) {
       return literalNum(0.0);
     } else if (type.isDartAsyncFuture || type.isDartAsyncFutureOr) {
-      var typeArgument = (type as InterfaceType).typeArguments.first;
+      var typeArgument = (type as analyzer.InterfaceType).typeArguments.first;
       return refer('Future')
           .property('value')
           .call([_dummyValue(typeArgument)]);
@@ -272,8 +272,7 @@ class MockBuilder implements Builder {
       Parameter((pBuilder) {
         pBuilder
           ..name = parameter.displayName
-          // TODO(srawlins): Add URI of `parameter.type`.
-          ..type = refer(parameter.type.displayName);
+          ..type = _typeReference(parameter.type);
         if (parameter.isNamed) pBuilder.named = true;
         if (parameter.defaultValueCode != null) {
           pBuilder.defaultTo = Code(parameter.defaultValueCode);
@@ -298,7 +297,7 @@ class MockBuilder implements Builder {
       if (parameter.isRequiredPositional) {
         builder.requiredParameters.add(Parameter((pBuilder) => pBuilder
           ..name = parameter.displayName
-          ..type = refer(parameter.type.displayName)));
+          ..type = _typeReference(parameter.type)));
         invocationPositionalArgs.add(refer(parameter.displayName));
       }
     }
@@ -311,6 +310,66 @@ class MockBuilder implements Builder {
         refer('super').property('noSuchMethod').call([invocation]);
 
     builder.body = returnNoSuchMethod.code;
+  }
+
+  /// Create a reference for [type], properly referencing all attached types.
+  ///
+  /// This creates proper references for:
+  /// * [InterfaceType]s (classes, generic classes),
+  /// * FunctionType parameters (like `void callback(int i)`),
+  /// * type aliases (typedefs), both new- and old-style.
+  // TODO(srawlins): Contribute this back to a common location, like
+  // package:source_gen?
+  Reference _typeReference(analyzer.DartType type) {
+    if (type is analyzer.InterfaceType) {
+      return TypeReference((TypeReferenceBuilder trBuilder) {
+        trBuilder
+          ..symbol = type.name
+          ..url = _typeImport(type);
+        for (var typeArgument in type.typeArguments) {
+          trBuilder.types.add(_typeReference(typeArgument));
+        }
+      });
+    } else if (type is analyzer.FunctionType) {
+      GenericFunctionTypeElement element = type.element;
+      if (element == null) {
+        // [type] represents a FunctionTypedFormalParameter.
+        return FunctionType((b) {
+          b
+            ..returnType = _typeReference(type.returnType)
+            ..requiredParameters
+                .addAll(type.normalParameterTypes.map(_typeReference))
+            ..optionalParameters
+                .addAll(type.optionalParameterTypes.map(_typeReference));
+          for (var parameter in type.namedParameterTypes.entries) {
+            b.namedParameters[parameter.key] = _typeReference(parameter.value);
+          }
+        });
+      }
+      return TypeReference((TypeReferenceBuilder trBuilder) {
+        var typedef = element.enclosingElement;
+        trBuilder
+          ..symbol = typedef.name
+          ..url = _typeImport(type);
+        for (var typeArgument in type.typeArguments)
+          trBuilder.types.add(_typeReference(typeArgument));
+      });
+    } else {
+      return refer(type.displayName, _typeImport(type));
+    }
+  }
+
+  /// Returns the import URL for [type].
+  ///
+  /// For some types, like `dynamic`, this may return null.
+  String _typeImport(analyzer.DartType type) {
+    var library = type.element?.library;
+
+    // For types like `dynamic`, return null; no import needed.
+    if (library == null) return null;
+    // TODO(srawlins): See what other code generators do here to guarantee sane
+    // URIs.
+    return library.source.uri.toString();
   }
 
   @override
