@@ -156,3 +156,18 @@ targets:
         - test/vm/**_test.dart
         - bin/**.dart
 ```
+
+## Why can't I see a file I know exists?
+
+A file may not be served or be present in the output of a build because:
+
+-   You may be looking for it in the wrong place. For example if a server for
+    the `web/` directory is running on port `8080` then the file at
+    `web/index.html` will be loaded from `localhost:8080/index.html`.
+-   It may have be excluded from the build entirely because it isn't present as
+    in the `sources` for any `target` in `build.yaml`. Only assets that are
+    present in the build (as either a source or a generated output from a
+    source) can be served.
+-   It may have been removed by a `PostProcessBuilder`. For example in release
+    modes, by default, the `build_web_compilers` package enables a
+    `dart_source_cleanup` builder that removes all `.dart` source files.

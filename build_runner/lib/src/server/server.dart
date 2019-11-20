@@ -378,10 +378,19 @@ class AssetHandler {
     var glob = p.url.join(directoryPath, '*');
     var result =
         await _reader.findAssets(Glob(glob)).map((a) => a.path).toList();
-    return (result.isEmpty)
-        ? 'Could not find ${from.path} or any files in $directoryPath.'
-        : 'Could not find ${from.path}. $directoryPath contains:\n'
-            '${result.join('\n')}';
+    var message = StringBuffer('Could not find ${from.path}');
+    if (result.isEmpty) {
+      message.write(' or any files in $directoryPath. ');
+    } else {
+      message
+        ..write('. $directoryPath contains:')
+        ..writeAll(result, '\n')
+        ..writeln();
+    }
+    message
+        .write(' See https://github.com/dart-lang/build/blob/master/docs/faq.md'
+            '#why-cant-i-see-a-file-i-know-exists');
+    return '$message';
   }
 }
 
