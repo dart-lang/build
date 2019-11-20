@@ -13,6 +13,7 @@ import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
 import 'multi_asset_reader.dart';
 import 'resolve_source.dart';
+import 'written_asset_reader.dart';
 
 AssetId _passThrough(AssetId id) => id;
 
@@ -121,12 +122,8 @@ Future testBuilder(
     void Function(AssetId, Iterable<AssetId>)
         reportUnusedAssetsForInput}) async {
   writer ??= InMemoryAssetWriter();
+
   final inMemoryReader = InMemoryAssetReader(rootPackage: rootPackage);
-  if (reader != null) {
-    reader = MultiAssetReader([inMemoryReader, reader]);
-  } else {
-    reader = inMemoryReader;
-  }
 
   var inputIds = <AssetId>[];
   sourceAssets.forEach((serializedId, contents) {
@@ -153,8 +150,22 @@ Future testBuilder(
   var writerSpy = AssetWriterSpy(writer);
   var logger = Logger('testBuilder');
   var logSubscription = logger.onRecord.listen(onLog);
-  await runBuilder(builder, inputIds, reader, writerSpy, defaultResolvers,
-      logger: logger, reportUnusedAssetsForInput: reportUnusedAssetsForInput);
+
+  for (var input in inputIds) {
+    // create another writer spy and reader for each input. This prevents writes
+    // from a previous input being readable when processing the current input.
+    final spyForStep = AssetWriterSpy(writerSpy);
+    final readerForStep = MultiAssetReader([
+      inMemoryReader,
+      if (reader != null) reader,
+      WrittenAssetReader(writer, spyForStep),
+    ]);
+
+    await runBuilder(
+        builder, {input}, readerForStep, spyForStep, defaultResolvers,
+        logger: logger, reportUnusedAssetsForInput: reportUnusedAssetsForInput);
+  }
+
   await logSubscription.cancel();
   var actualOutputs = writerSpy.assetsWritten;
   checkOutputs(outputs, actualOutputs, writer);
