@@ -548,6 +548,145 @@ void main() {
     );
   });
 
+  test('creates dummy non-null return values for unknown classes', () async {
+    await testBuilder(
+      buildMocks(BuilderOptions({})),
+      {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {
+          Bar m1() => Bar('name');
+        }
+        class Bar {
+          final String name;
+          Bar(this.name);
+        }
+        '''),
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+        import 'package:foo/foo.dart' as _i2;
+
+        class _FakeBar extends _i1.Fake implements _i2.Bar {}
+
+        /// A class which mocks [Foo].
+        ///
+        /// See the documentation for Mockito's code generation for more information.
+        class MockFoo extends _i1.Mock implements _i2.Foo {
+          _i2.Bar m1() => super.noSuchMethod(Invocation.method(#m1, []), _FakeBar());
+        }
+        '''),
+      },
+    );
+  });
+
+  test('deduplicates fake classes', () async {
+    await testBuilder(
+      buildMocks(BuilderOptions({})),
+      {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {
+          Bar m1() => Bar('name1');
+          Bar m2() => Bar('name2');
+        }
+        class Bar {
+          final String name;
+          Bar(this.name);
+        }
+        '''),
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+        import 'package:foo/foo.dart' as _i2;
+
+        class _FakeBar extends _i1.Fake implements _i2.Bar {}
+
+        /// A class which mocks [Foo].
+        ///
+        /// See the documentation for Mockito's code generation for more information.
+        class MockFoo extends _i1.Mock implements _i2.Foo {
+          _i2.Bar m1() => super.noSuchMethod(Invocation.method(#m1, []), _FakeBar());
+          _i2.Bar m2() => super.noSuchMethod(Invocation.method(#m2, []), _FakeBar());
+        }
+        '''),
+      },
+    );
+  });
+
+  test('creates dummy non-null return values for enums', () async {
+    await testBuilder(
+      buildMocks(BuilderOptions({})),
+      {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {
+          Bar m1() => Bar('name');
+        }
+        enum Bar {
+          one,
+          two,
+        }
+        '''),
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+        import 'package:foo/foo.dart' as _i2;
+
+        /// A class which mocks [Foo].
+        ///
+        /// See the documentation for Mockito's code generation for more information.
+        class MockFoo extends _i1.Mock implements _i2.Foo {
+          _i2.Bar m1() => super.noSuchMethod(Invocation.method(#m1, []), _i2.Bar.one);
+        }
+        '''),
+      },
+    );
+  });
+
+  test('creates dummy non-null return values for functions', () async {
+    await testBuilder(
+      buildMocks(BuilderOptions({})),
+      {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {
+          void Function(int, [String]) m1() => (int i, [String s]) {};
+          void Function(Foo, {bool b}) m2() => (Foo f, {bool b}) {};
+          Foo Function() m3() => () => Foo();
+        }
+        '''),
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+        import 'package:foo/foo.dart' as _i2;
+
+        class _FakeFoo extends _i1.Fake implements _i2.Foo {}
+
+        /// A class which mocks [Foo].
+        ///
+        /// See the documentation for Mockito's code generation for more information.
+        class MockFoo extends _i1.Mock implements _i2.Foo {
+          void Function(int, [String]) m1() => super
+              .noSuchMethod(Invocation.method(#m1, []), (int __p0, [String __p1]) {});
+          void Function(_i2.Foo, {bool b}) m2() => super
+              .noSuchMethod(Invocation.method(#m2, []), (_i2.Foo __p0, {bool b}) {});
+          _i2.Foo Function() m3() =>
+              super.noSuchMethod(Invocation.method(#m3, []), () => _FakeFoo());
+        }
+        '''),
+      },
+    );
+  });
+
   test('throws when GenerateMocks references an unresolved type', () async {
     expectBuilderThrows(
       assets: {

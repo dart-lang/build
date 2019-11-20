@@ -41,24 +41,29 @@ class MockBuilder implements Builder {
 
     final mockLibraryAsset = buildStep.inputId.changeExtension('.mocks.dart');
 
-    final mockLibrary = Library((lBuilder) {
-      for (final element in entryLib.topLevelElements) {
-        final annotation = element.metadata.firstWhere(
-            (annotation) =>
-                annotation.element is ConstructorElement &&
-                annotation.element.enclosingElement.name == 'GenerateMocks',
-            orElse: () => null);
-        if (annotation == null) continue;
-        final generateMocksValue = annotation.computeConstantValue();
-        // TODO(srawlins): handle `generateMocksValue == null`?
-        final classesToMock = generateMocksValue.getField('classes');
-        if (classesToMock.isNull) {
-          throw InvalidMockitoAnnotationException(
-              'The "classes" argument has unknown types');
-        }
+    final classesToMock = <DartObject>[];
 
-        _buildMockClasses(classesToMock.toListValue(), lBuilder);
+    for (final element in entryLib.topLevelElements) {
+      final annotation = element.metadata.firstWhere(
+          (annotation) =>
+              annotation.element is ConstructorElement &&
+              annotation.element.enclosingElement.name == 'GenerateMocks',
+          orElse: () => null);
+      if (annotation == null) continue;
+      final generateMocksValue = annotation.computeConstantValue();
+      // TODO(srawlins): handle `generateMocksValue == null`?
+      final classesField = generateMocksValue.getField('classes');
+      if (classesField.isNull) {
+        throw InvalidMockitoAnnotationException(
+            'The "classes" argument has unknown types');
       }
+      classesToMock.addAll(classesField.toListValue());
+    }
+
+    final mockLibrary = Library((b) {
+      var mockLibraryInfo = _MockLibraryInfo(classesToMock);
+      b.body.addAll(mockLibraryInfo.fakeClasses);
+      b.body.addAll(mockLibraryInfo.mockClasses);
     });
 
     if (mockLibrary.body.isEmpty) {
@@ -73,10 +78,29 @@ class MockBuilder implements Builder {
     await buildStep.writeAsString(mockLibraryAsset, mockLibraryContent);
   }
 
+  @override
+  final buildExtensions = const {
+    '.dart': ['.mocks.dart']
+  };
+}
+
+class _MockLibraryInfo {
+  /// Mock classes to be added to the generated library.
+  final mockClasses = <Class>[];
+
+  /// Fake classes to be added to the library.
+  ///
+  /// A fake class is only generated when it is needed for non-nullable return
+  /// values.
+  final fakeClasses = <Class>[];
+
+  /// [ClassElement]s which are used in non-nullable return types, for which
+  /// fake classes are added to the generated library.
+  final fakedClassElements = <ClassElement>[];
+
   /// Build mock classes for [classesToMock], a list of classes obtained from a
   /// `@GenerateMocks` annotation.
-  void _buildMockClasses(
-      List<DartObject> classesToMock, LibraryBuilder lBuilder) {
+  _MockLibraryInfo(List<DartObject> classesToMock) {
     for (final classToMock in classesToMock) {
       final dartTypeToMock = classToMock.toTypeValue();
       if (dartTypeToMock == null) {
@@ -93,7 +117,7 @@ class MockBuilder implements Builder {
         }
         // TODO(srawlins): Catch when someone tries to generate mocks for an
         // un-subtypable class, like bool, String, FutureOr, etc.
-        lBuilder.body.add(_buildCodeForClass(dartTypeToMock, elementToMock));
+        mockClasses.add(_buildMockClass(dartTypeToMock, elementToMock));
       } else if (elementToMock is GenericFunctionTypeElement &&
           elementToMock.enclosingElement is FunctionTypeAliasElement) {
         throw InvalidMockitoAnnotationException(
@@ -107,8 +131,7 @@ class MockBuilder implements Builder {
     }
   }
 
-  Class _buildCodeForClass(
-      analyzer.DartType dartType, ClassElement classToMock) {
+  Class _buildMockClass(analyzer.DartType dartType, ClassElement classToMock) {
     final className = dartType.displayName;
 
     return Class((cBuilder) {
@@ -272,24 +295,92 @@ class MockBuilder implements Builder {
     } else if (type.isDartCoreString) {
       return literalString('');
     } else {
-      // TODO(srawlins): Returning null for now, but really this should only
-      // ever get to a state where we have to make a Fake class which implements
-      // the type, and return a no-op constructor call to that Fake class here.
-      return literalNull;
+      // This class is unknown; we must likely generate a fake class, and return
+      // an instance here.
+      return _dummyValueImplementing(type);
     }
   }
 
-  /// Returns a [Parameter] which matches [parameter].
-  Parameter _matchingParameter(ParameterElement parameter) =>
-      Parameter((pBuilder) {
-        pBuilder
-          ..name = parameter.displayName
-          ..type = _typeReference(parameter.type);
-        if (parameter.isNamed) pBuilder.named = true;
-        if (parameter.defaultValueCode != null) {
-          pBuilder.defaultTo = Code(parameter.defaultValueCode);
+  Expression _dummyValueImplementing(analyzer.DartType dartType) {
+    // For each type parameter on [classToMock], the Mock class needs a type
+    // parameter with same type variables, and a mirrored type argument for
+    // the "implements" clause.
+    var typeArguments = <Reference>[];
+    var elementToFake = dartType.element;
+    if (elementToFake is ClassElement) {
+      if (elementToFake.isEnum) {
+        return _typeReference(dartType).property(
+            elementToFake.fields.firstWhere((f) => f.isEnumConstant).name);
+      } else {
+        var fakeName = '_Fake${dartType.name}';
+        // Only make one fake class for each class that needs to be faked.
+        if (!fakedClassElements.contains(elementToFake)) {
+          fakeClasses.add(Class((cBuilder) {
+            cBuilder
+              ..name = fakeName
+              ..extend = refer('Fake', 'package:mockito/mockito.dart');
+            if (elementToFake.typeParameters != null) {
+              for (var typeParameter in elementToFake.typeParameters) {
+                cBuilder.types.add(_typeParameterReference(typeParameter));
+                typeArguments.add(refer(typeParameter.name));
+              }
+            }
+            cBuilder.implements.add(TypeReference((b) {
+              b
+                ..symbol = dartType.name
+                ..url = _typeImport(dartType)
+                ..types.addAll(typeArguments);
+            }));
+          }));
+          fakedClassElements.add(elementToFake);
         }
-      });
+        return refer(fakeName).newInstance([]);
+      }
+    } else if (dartType is analyzer.FunctionType) {
+      return Method((b) {
+        // The positional parameters in a FunctionType have no names. This
+        // counter lets us create unique dummy names.
+        var counter = 0;
+        for (final parameter in dartType.parameters) {
+          if (parameter.isRequiredPositional) {
+            b.requiredParameters
+                .add(_matchingParameter(parameter, defaultName: '__p$counter'));
+            counter++;
+          } else if (parameter.isOptionalPositional) {
+            b.optionalParameters
+                .add(_matchingParameter(parameter, defaultName: '__p$counter'));
+            counter++;
+          } else if (parameter.isNamed) {
+            b.optionalParameters.add(_matchingParameter(parameter));
+          }
+        }
+        if (dartType.returnType.isVoid) {
+          b.body = Code('');
+        } else {
+          b.body = _dummyValue(dartType.returnType).code;
+        }
+      }).closure;
+    }
+
+    // We shouldn't get here.
+    return literalNull;
+  }
+
+  /// Returns a [Parameter] which matches [parameter].
+  Parameter _matchingParameter(ParameterElement parameter,
+      {String defaultName}) {
+    String name =
+        parameter.name?.isEmpty ?? false ? defaultName : parameter.name;
+    return Parameter((pBuilder) {
+      pBuilder
+        ..name = name
+        ..type = _typeReference(parameter.type);
+      if (parameter.isNamed) pBuilder.named = true;
+      if (parameter.defaultValueCode != null) {
+        pBuilder.defaultTo = Code(parameter.defaultValueCode);
+      }
+    });
+  }
 
   /// Build a setter which overrides [setter], widening the single parameter
   /// type to be nullable if it is non-nullable.
@@ -340,18 +431,17 @@ class MockBuilder implements Builder {
   /// This creates proper references for:
   /// * [InterfaceType]s (classes, generic classes),
   /// * FunctionType parameters (like `void callback(int i)`),
-  /// * type aliases (typedefs), both new- and old-style.
+  /// * type aliases (typedefs), both new- and old-style,
+  /// * enums.
   // TODO(srawlins): Contribute this back to a common location, like
   // package:source_gen?
   Reference _typeReference(analyzer.DartType type) {
     if (type is analyzer.InterfaceType) {
-      return TypeReference((TypeReferenceBuilder trBuilder) {
-        trBuilder
+      return TypeReference((TypeReferenceBuilder b) {
+        b
           ..symbol = type.name
-          ..url = _typeImport(type);
-        for (var typeArgument in type.typeArguments) {
-          trBuilder.types.add(_typeReference(typeArgument));
-        }
+          ..url = _typeImport(type)
+          ..types.addAll(type.typeArguments.map(_typeReference));
       });
     } else if (type is analyzer.FunctionType) {
       GenericFunctionTypeElement element = type.element;
@@ -394,11 +484,6 @@ class MockBuilder implements Builder {
     // URIs.
     return library.source.uri.toString();
   }
-
-  @override
-  final buildExtensions = const {
-    '.dart': ['.mocks.dart']
-  };
 }
 
 /// An exception which is thrown when Mockito encounters an invalid annotation.
