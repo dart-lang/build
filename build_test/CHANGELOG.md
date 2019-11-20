@@ -1,5 +1,7 @@
-## 0.10.9+2-dev
+## 0.10.10
 
+- Allow reading of assets written from the same build step.
+  - This mirrors the latest behavior in build_runner_core.
 - Require SDK version `2.6.0` to enable extension methods.
 
 ## 0.10.9+1
