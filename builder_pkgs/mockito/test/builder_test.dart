@@ -412,6 +412,35 @@ void main() {
     );
   });
 
+  test('overrides absrtact methods', () async {
+    await testBuilder(
+      buildMocks(BuilderOptions({})),
+      {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        abstract class Foo {
+          dynamic f(int a);
+          dynamic _g(int a);
+        }
+        '''),
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+        import 'package:foo/foo.dart' as _i2;
+
+        /// A class which mocks [Foo].
+        ///
+        /// See the documentation for Mockito's code generation for more information.
+        class MockFoo extends _i1.Mock implements _i2.Foo {
+          dynamic f(int a) => super.noSuchMethod(Invocation.method(#f, [a]));
+        }
+        '''),
+      },
+    );
+  });
+
   test('overrides generic methods', () async {
     await testBuilder(
       buildMocks(BuilderOptions({})),
@@ -471,6 +500,39 @@ void main() {
         /// See the documentation for Mockito's code generation for more information.
         class MockFoo extends _i1.Mock implements _i2.Foo {
           set b(int value) => super.noSuchMethod(Invocation.setter(#b, [value]));
+        }
+        '''),
+      },
+    );
+  });
+
+  test('overrides operators', () async {
+    await testBuilder(
+      buildMocks(BuilderOptions({})),
+      {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {
+          int _b;
+          int operator +(Foo other) => _b + other._b;
+          bool operator ==(Object other) => other is Foo && _b == other._b;
+        }
+        '''),
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+        import 'package:foo/foo.dart' as _i2;
+
+        /// A class which mocks [Foo].
+        ///
+        /// See the documentation for Mockito's code generation for more information.
+        class MockFoo extends _i1.Mock implements _i2.Foo {
+          int operator +(_i2.Foo other) =>
+              super.noSuchMethod(Invocation.method(#+, [other]), 0);
+          bool operator ==(Object other) =>
+              super.noSuchMethod(Invocation.method(#==, [other]), false);
         }
         '''),
       },

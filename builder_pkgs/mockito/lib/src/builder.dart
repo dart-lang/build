@@ -215,9 +215,10 @@ class _MockLibraryInfo {
   // yet.
   void _buildOverridingMethod(MethodBuilder builder, MethodElement method) {
     // TODO(srawlins): generator methods like async*, sync*.
-    // TODO(srawlins): abstract methods?
+    var name = method.displayName;
+    if (method.isOperator) name = 'operator$name';
     builder
-      ..name = method.displayName
+      ..name = name
       ..returns = _typeReference(method.returnType);
 
     if (method.typeParameters != null) {
