@@ -48,12 +48,11 @@ class LogSubscription {
     Logger.root.level = logLevel;
 
     var logListener = Logger.root.onRecord.listen(environment.onLog);
-    return LogSubscription._(verbose, logListener);
+    return LogSubscription._(logListener);
   }
 
-  LogSubscription._(this.verbose, this.logListener);
+  LogSubscription._(this.logListener);
 
-  final bool verbose;
   final StreamSubscription<LogRecord> logListener;
 }
 
@@ -129,7 +128,6 @@ class BuildOptions {
   final Resolvers resolvers;
   final TargetGraph targetGraph;
   final bool trackPerformance;
-  final bool verbose;
 
   // Watch mode options.
   Duration debounceDelay;
@@ -145,7 +143,6 @@ class BuildOptions {
     @required this.packageGraph,
     @required this.skipBuildScriptCheck,
     @required this.trackPerformance,
-    @required this.verbose,
     @required this.targetGraph,
     @required this.logPerformanceDir,
     @required this.resolvers,
@@ -200,7 +197,6 @@ class BuildOptions {
       packageGraph: packageGraph,
       skipBuildScriptCheck: skipBuildScriptCheck,
       trackPerformance: trackPerformance,
-      verbose: logSubscription.verbose,
       targetGraph: targetGraph,
       logPerformanceDir: logPerformanceDir,
       resolvers: resolvers,
