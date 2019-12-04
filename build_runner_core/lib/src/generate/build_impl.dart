@@ -67,7 +67,6 @@ class BuildImpl {
   final ResourceManager _resourceManager;
   final RunnerAssetWriter _writer;
   final bool _trackPerformance;
-  final bool _verbose;
   final BuildEnvironment _environment;
   final String _logPerformanceDir;
 
@@ -84,7 +83,6 @@ class BuildImpl {
         _writer = buildDefinition.writer,
         assetGraph = buildDefinition.assetGraph,
         _resourceManager = buildDefinition.resourceManager,
-        _verbose = options.verbose,
         _environment = buildDefinition.environment,
         _trackPerformance = options.trackPerformance,
         _logPerformanceDir = options.logPerformanceDir;
@@ -158,7 +156,6 @@ class _SingleBuild {
   final AssetReader _reader;
   final Resolvers _resolvers;
   final ResourceManager _resourceManager;
-  final bool _verbose;
   final RunnerAssetWriter _writer;
   final Set<BuildDirectory> _buildDirs;
   final String _logPerformanceDir;
@@ -186,7 +183,6 @@ class _SingleBuild {
         _reader = buildImpl._reader,
         _resolvers = buildImpl._resolvers,
         _resourceManager = buildImpl._resourceManager,
-        _verbose = buildImpl._verbose,
         _writer = buildImpl._writer,
         _buildDirs = buildDirs,
         _logPerformanceDir = buildImpl._logPerformanceDir {
