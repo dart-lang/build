@@ -39,6 +39,7 @@ class LogSubscription {
   factory LogSubscription(BuildEnvironment environment,
       {bool verbose, Level logLevel}) {
     // Set up logging
+    verbose ??= false;
     logLevel ??= verbose ? Level.ALL : Level.INFO;
 
     // Severe logs can fail the build and should always be shown.
