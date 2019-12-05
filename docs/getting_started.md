@@ -54,7 +54,7 @@ incremental builds are faster.
 Build with `--output <directory name>` to write files into a merged output
 directory with file paths that match internally referenced URIs. This can be
 used with the `build`, `watch`, and `serve` commands. This directory can also
-used with a different server if the `serve` command is insufficient.
+be used with a different server if the `serve` command is insufficient.
 
 To output only part of the package, for example to output only the `web`
 directory, use `--output web:<directory name>`.
