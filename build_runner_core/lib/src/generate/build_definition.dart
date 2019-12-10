@@ -381,8 +381,16 @@ class _Loader {
       await Future.wait(graph.outputs.map((id) {
         var node = graph.get(id) as GeneratedAssetNode;
         if (node.wasOutput && !node.isHidden) {
-          deletedSources.add(id);
-          return _environment.writer.delete(id);
+          var idToDelete = id;
+          // If the package no longer exists, then the user must have renamed
+          // the root package.
+          //
+          // In that case we change `idToDelete` to be in the root package.
+          if (_options.packageGraph[id.package] == null) {
+            idToDelete = AssetId(_options.packageGraph.root.name, id.path);
+          }
+          deletedSources.add(idToDelete);
+          return _environment.writer.delete(idToDelete);
         }
         return null;
       }).whereType<Future>());

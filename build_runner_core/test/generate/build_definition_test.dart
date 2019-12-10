@@ -63,6 +63,12 @@ void main() {
       await file.writeAsString(contents);
     }
 
+    Future<String> readFile(String path) async {
+      var file = File(p.join(pkgARoot, path));
+      expect(await file.exists(), isTrue);
+      return file.readAsString();
+    }
+
     setUp(() async {
       await d.dir(
         'pkg_a',
@@ -546,6 +552,47 @@ targets:
                 environment, options, buildPhases),
             throwsA(const TypeMatcher<BuildScriptChangedException>()));
         expect(writerSpy.assetsDeleted, contains(aTxtCopy));
+      });
+
+      test('invalidates the graph if the root package name changes', () async {
+        var buildPhases = [InBuildPhase(TestBuilder(), 'a', hideOutput: false)];
+        var aTxt = AssetId('a', 'lib/a.txt');
+        await createFile(aTxt.path, 'hello');
+
+        var originalAssetGraph = await AssetGraph.build(buildPhases,
+            <AssetId>[aTxt].toSet(), Set(), aPackageGraph, environment.reader);
+
+        var aTxtCopy = AssetId('a', 'lib/a.txt.copy');
+        // Pretend we already output this without actually running a build.
+        (originalAssetGraph.get(aTxtCopy) as GeneratedAssetNode).wasOutput =
+            true;
+        await createFile(aTxtCopy.path, 'hello');
+
+        await createFile(assetGraphPath, originalAssetGraph.serialize());
+
+        await modifyFile(
+            'pubspec.yaml',
+            (await readFile('pubspec.yaml'))
+                .replaceFirst('name: a', 'name: c'));
+        await modifyFile('.packages',
+            (await readFile('.packages')).replaceFirst('a:', 'c:'));
+
+        var packageGraph = PackageGraph.forPath(pkgARoot);
+        environment =
+            OverrideableEnvironment(IOEnvironment(packageGraph), onLog: (_) {});
+        var writerSpy = RunnerAssetWriterSpy(environment.writer);
+        environment = OverrideableEnvironment(environment, writer: writerSpy);
+        options = await BuildOptions.create(
+            LogSubscription(environment, logLevel: Level.OFF),
+            packageGraph: packageGraph,
+            skipBuildScriptCheck: true);
+
+        buildPhases = [InBuildPhase(TestBuilder(), 'c', hideOutput: false)];
+        await expectLater(
+            () => BuildDefinition.prepareWorkspace(
+                environment, options, buildPhases),
+            throwsA(const TypeMatcher<BuildScriptChangedException>()));
+        expect(writerSpy.assetsDeleted, contains(AssetId('c', aTxtCopy.path)));
       });
     });
 

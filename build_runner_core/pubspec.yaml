@@ -1,5 +1,5 @@
 name: build_runner_core
-version: 4.2.1-dev
+version: 4.2.1
 description: Core tools to write binaries that run builders.
 author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/build_runner_core
