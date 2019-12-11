@@ -1,3 +1,8 @@
+## 4.2.1
+
+- Bug fix: Changing the root package name will no longer cause subsequent
+  builds to fail (Issue #2566).
+
 ## 4.2.0
 
 ### New Feature
