@@ -1,7 +1,6 @@
 name: scratch_space
 version: 0.0.4+1
 description: A tool to manage running external executables within package:build
-author: Dart Team <misc@dartlang.org>
 homepage: https://github.com/dart-lang/build/tree/master/scratch_space
 
 environment:
