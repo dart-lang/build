@@ -62,6 +62,18 @@ class WebEntrypointBuilder implements Builder {
         options.config, _supportedOptions, 'build_web_compilers|entrypoint',
         deprecatedOptions: _deprecatedOptions);
     var compilerOption = options.config[_compiler] as String ?? 'dartdevc';
+    if (compilerOption == 'dartdevc') {
+      final message = '''
+Support for dartdevc in build_web_compilers < 2.0.0 has been removed.
+
+Please upgrade your dependency to:
+
+dev_dependencies:
+  build_web_compilers: ">=2.0.0"
+''';
+      log.severe(message);
+      throw Exception('dartdevc is no longer supported by this version');
+    }
     var buildRootAppSummary =
         options.config[_buildRootAppSummary] as bool ?? false;
     WebCompiler compiler;

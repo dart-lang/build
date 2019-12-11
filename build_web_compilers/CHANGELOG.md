@@ -1,3 +1,7 @@
+## 1.2.3
+
+- Add a warning about using old versions of this package with newer SDKs.
+
 ## 1.2.2
 
 - Allow build_config 0.4.x.
