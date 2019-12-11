@@ -32,6 +32,7 @@ const List<String> defaultRootPackageWhitelist = [
   'node/**',
   'pubspec.yaml',
   'pubspec.lock',
+  r'$package$',
 ];
 
 final _logger = Logger('BuildOptions');
