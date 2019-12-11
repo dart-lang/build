@@ -1,3 +1,7 @@
+## 4.3.0-dev
+
+- Add the `assets` directory to the default sources whitelist.
+
 ## 4.2.1
 
 - Bug fix: Changing the root package name will no longer cause subsequent
