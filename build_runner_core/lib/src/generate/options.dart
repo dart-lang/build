@@ -21,6 +21,7 @@ import 'exceptions.dart';
 /// The default list of files to include when an explicit include is not
 /// provided.
 const List<String> defaultRootPackageWhitelist = [
+  'assets/**',
   'benchmark/**',
   'bin/**',
   'example/**',
