@@ -1,3 +1,15 @@
+## 0.10.11
+
+- Add support for the new `$package$` placeholder.
+
+### Potentially Breaking Change
+
+- Only add the non-lib placeholders when a root package is specified
+  - Infer the root package when there is only one package in the sources
+  - This is being released as a non-breaking change because the only expected
+    use cases already would have been broken - `findAssets` calls already
+    required a root package.
+
 ## 0.10.10
 
 - Allow reading of assets written from the same build step.

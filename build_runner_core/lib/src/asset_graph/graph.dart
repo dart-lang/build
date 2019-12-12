@@ -552,4 +552,5 @@ Set<AssetId> placeholderIdsFor(PackageGraph packageGraph) =>
           AssetId(package, r'lib/$lib$'),
           AssetId(package, r'test/$test$'),
           AssetId(package, r'web/$web$'),
+          AssetId(package, r'$package$'),
         ]));

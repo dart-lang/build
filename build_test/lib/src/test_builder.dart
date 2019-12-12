@@ -123,9 +123,23 @@ Future testBuilder(
         reportUnusedAssetsForInput}) async {
   writer ??= InMemoryAssetWriter();
 
+  var inputIds = {
+    for (var descriptor in sourceAssets.keys) makeAssetId(descriptor)
+  };
+  var allPackages = {for (var id in inputIds) id.package};
+  if (allPackages.length == 1) rootPackage ??= allPackages.first;
+
+  inputIds.addAll([
+    for (var package in allPackages) AssetId(package, r'lib/$lib$'),
+    if (rootPackage != null) ...[
+      AssetId(rootPackage, r'$package$'),
+      AssetId(rootPackage, r'test/$test$'),
+      AssetId(rootPackage, r'web/$web$'),
+    ]
+  ]);
+
   final inMemoryReader = InMemoryAssetReader(rootPackage: rootPackage);
 
-  var inputIds = <AssetId>[];
   sourceAssets.forEach((serializedId, contents) {
     var id = makeAssetId(serializedId);
     if (contents is String) {
@@ -133,19 +147,10 @@ Future testBuilder(
     } else if (contents is List<int>) {
       inMemoryReader.cacheBytesAsset(id, contents);
     }
-    inputIds.add(id);
   });
 
-  var allPackages = inMemoryReader.assets.keys.map((a) => a.package).toSet();
-  for (var pkg in allPackages) {
-    for (var dir in const ['lib', 'web', 'test']) {
-      var asset = AssetId(pkg, '$dir/\$$dir\$');
-      inputIds.add(asset);
-    }
-  }
-
   isInput ??= generateFor?.contains ?? (_) => true;
-  inputIds = inputIds.where((id) => isInput('$id')).toList();
+  inputIds.retainWhere((id) => isInput('$id'));
 
   var writerSpy = AssetWriterSpy(writer);
   var logger = Logger('testBuilder');

@@ -1,6 +1,9 @@
-## 4.3.0-dev
+## 4.3.0
 
-- Add the `assets` directory to the default sources whitelist.
+- Add the `$package$` synthetic placeholder file and update the docs to prefer
+  using only that or `lib/$lib$`.
+- Add the `assets` directory and `$package$` placeholders to the default
+  sources whitelist.
 
 ## 4.2.1
 

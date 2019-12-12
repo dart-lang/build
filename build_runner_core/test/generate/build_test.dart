@@ -158,9 +158,13 @@ void main() {
 
       test('with placeholder as input', () async {
         await testBuilders([
-          applyToRoot(PlaceholderBuilder({'placeholder.txt': 'sometext'}))
+          applyToRoot(PlaceholderBuilder({'lib.txt': 'libText'},
+              inputExtension: r'$lib$')),
+          applyToRoot(PlaceholderBuilder({'root.txt': 'rootText'},
+              inputExtension: r'$package$')),
         ], {}, outputs: {
-          'a|lib/placeholder.txt': 'sometext'
+          'a|lib/lib.txt': 'libText',
+          'a|root.txt': 'rootText',
         });
       });
 
