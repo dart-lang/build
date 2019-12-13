@@ -8,6 +8,7 @@ import 'dart:collection';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:meta/meta.dart';
@@ -43,21 +44,37 @@ void main() {
           .libraryFor(AssetId.resolve('asset:source_gen/lib/source_gen.dart')));
     });
 
-    final staticIterable = core.getType('Iterable').type;
+    final staticIterable = core.getType('Iterable').instantiate(
+        typeArguments: [core.typeProvider.dynamicType],
+        nullabilitySuffix: NullabilitySuffix.none);
     staticIterableChecker = TypeChecker.fromStatic(staticIterable);
-    staticUri = core.getType('Uri').type;
-    staticMap = core.getType('Map').type;
+    staticUri = core.getType('Uri').instantiate(
+        typeArguments: [], nullabilitySuffix: NullabilitySuffix.none);
+    staticMap = core.getType('Map').instantiate(typeArguments: [
+      core.typeProvider.dynamicType,
+      core.typeProvider.dynamicType
+    ], nullabilitySuffix: NullabilitySuffix.none);
     staticMapChecker = TypeChecker.fromStatic(staticMap);
 
-    staticHashMap = collection.getType('HashMap').type;
+    staticHashMap = collection.getType('HashMap').instantiate(typeArguments: [
+      core.typeProvider.dynamicType,
+      core.typeProvider.dynamicType
+    ], nullabilitySuffix: NullabilitySuffix.none);
     staticHashMapChecker = TypeChecker.fromStatic(staticHashMap);
-    staticUnmodifiableListView =
-        collection.getType('UnmodifiableListView').type;
+    staticUnmodifiableListView = collection
+        .getType('UnmodifiableListView')
+        .instantiate(
+            typeArguments: [core.typeProvider.dynamicType],
+            nullabilitySuffix: NullabilitySuffix.none);
 
-    staticGenerator = sourceGen.findType('Generator').type;
+    staticGenerator = sourceGen.findType('Generator').instantiate(
+        typeArguments: [], nullabilitySuffix: NullabilitySuffix.none);
     staticGeneratorChecker = TypeChecker.fromStatic(staticGenerator);
-    staticGeneratorForAnnotation =
-        sourceGen.findType('GeneratorForAnnotation').type;
+    staticGeneratorForAnnotation = sourceGen
+        .findType('GeneratorForAnnotation')
+        .instantiate(
+            typeArguments: [core.typeProvider.dynamicType],
+            nullabilitySuffix: NullabilitySuffix.none);
     staticGeneratorForAnnotationChecker =
         TypeChecker.fromStatic(staticGeneratorForAnnotation);
   });
@@ -255,9 +272,12 @@ void main() {
         const C();
       }
     ''', (resolver) => resolver.findLibraryByName('_test'));
-      $A = TypeChecker.fromStatic(library.getType('A').type);
-      $B = TypeChecker.fromStatic(library.getType('B').type);
-      $C = TypeChecker.fromStatic(library.getType('C').type);
+      $A = TypeChecker.fromStatic(library.getType('A').instantiate(
+          typeArguments: [], nullabilitySuffix: NullabilitySuffix.none));
+      $B = TypeChecker.fromStatic(library.getType('B').instantiate(
+          typeArguments: [], nullabilitySuffix: NullabilitySuffix.none));
+      $C = TypeChecker.fromStatic(library.getType('C').instantiate(
+          typeArguments: [], nullabilitySuffix: NullabilitySuffix.none));
       $ExampleOfA = library.getType('ExampleOfA');
       $ExampleOfMultiA = library.getType('ExampleOfMultiA');
       $ExampleOfAPlusB = library.getType('ExampleOfAPlusB');
@@ -315,7 +335,8 @@ void main() {
         const A();
       }
     ''', (resolver) => resolver.findLibraryByName('_test'));
-      $A = TypeChecker.fromStatic(library.getType('A').type);
+      $A = TypeChecker.fromStatic(library.getType('A').instantiate(
+          typeArguments: [], nullabilitySuffix: NullabilitySuffix.none));
       $ExampleOfA = library.getType('ExampleOfA');
     });
 
