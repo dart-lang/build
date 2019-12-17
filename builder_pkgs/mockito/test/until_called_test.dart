@@ -81,8 +81,7 @@ void main() {
   });
 
   group('untilCalled', () {
-    StreamController<CallMethodsEvent> streamController =
-        StreamController.broadcast();
+    var streamController = StreamController<CallMethodsEvent>.broadcast();
 
     group('on methods already called', () {
       test('waits for method without args', () async {

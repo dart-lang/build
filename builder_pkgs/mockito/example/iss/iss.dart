@@ -31,9 +31,7 @@ class IssLocator {
 
   /// Returns the current GPS position in [latitude, longitude] format.
   Future update() async {
-    if (_ongoingRequest == null) {
-      _ongoingRequest = _doUpdate();
-    }
+    _ongoingRequest ??= _doUpdate();
     await _ongoingRequest;
     _ongoingRequest = null;
   }
@@ -41,7 +39,7 @@ class IssLocator {
   Future _doUpdate() async {
     // Returns the point on the earth directly under the space station
     // at this moment.
-    Response rs = await client.get('http://api.open-notify.org/iss-now.json');
+    var rs = await client.get('http://api.open-notify.org/iss-now.json');
     var data = jsonDecode(rs.body);
     var latitude = double.parse(data['iss_position']['latitude'] as String);
     var longitude = double.parse(data['iss_position']['longitude'] as String);
@@ -60,7 +58,7 @@ class IssSpotter {
   // The ISS is defined to be visible if the distance from the observer to
   // the point on the earth directly under the space station is less than 80km.
   bool get isVisible {
-    double distance = sphericalDistanceKm(locator.currentPosition, observer);
+    var distance = sphericalDistanceKm(locator.currentPosition, observer);
     return distance < 80.0;
   }
 }
