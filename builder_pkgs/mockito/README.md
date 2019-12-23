@@ -65,7 +65,7 @@ expect(() => cat.lives, throwsRangeError);
 
 // We can calculate a response at call time.
 var responses = ["Purr", "Meow"];
-when(cat.sound()).thenAnswer(() => responses.removeAt(0));
+when(cat.sound()).thenAnswer((_) => responses.removeAt(0));
 expect(cat.sound(), "Purr");
 expect(cat.sound(), "Meow");
 ```
