@@ -197,11 +197,10 @@ class _NoOpBuildPerformanceTracker extends NoOpTimeTracker
 class BuildPhaseTracker extends SimpleAsyncTimeTracker
     implements BuildPhasePerformance {
   @override
-  List<String> get builderKeys => _builderKeys;
-  final List<String> _builderKeys;
+  final List<String> builderKeys;
 
   BuildPhaseTracker(BuildPhase action)
-      : _builderKeys = action is InBuildPhase
+      : builderKeys = action is InBuildPhase
             ? [action.builderLabel]
             : (action as PostBuildPhase)
                 .builderActions
