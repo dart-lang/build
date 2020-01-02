@@ -1,3 +1,8 @@
+## 0.9.4+7
+
+* Fix an exception during error reporting when the `Element` reported is in
+  a summary file rather than a source file.
+
 ## 0.9.4+6
 
 * Allow `package:analyzer` version `0.39.x`.
