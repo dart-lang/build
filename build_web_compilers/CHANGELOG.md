@@ -1,3 +1,8 @@
+## 2.7.2
+
+- Fix a bug with hot restart,
+  [#2586](https://github.com/dart-lang/build/issues/2586).
+
 ## 2.7.1
 
 - Allow analyzer version `0.39.x`.

@@ -113,13 +113,13 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
       bootstrapId.path,
       from: _context.dirname(dartEntrypointId.path)));
 
-  var primarySourceParts = _context.split(module.primarySource.path);
-  var appModuleUri = _context.joinAll([
+  var dartEntrypointParts = _context.split(dartEntrypointId.path);
+  var entrypointLibraryName = _context.joinAll([
     // Convert to a package: uri for files under lib.
-    if (primarySourceParts.first == 'lib')
+    if (dartEntrypointParts.first == 'lib')
       'package:${module.primarySource.package}',
     // Strip top-level directory from the path.
-    ...primarySourceParts.skip(1),
+    ...dartEntrypointParts.skip(1),
   ]);
 
   var bootstrapContent =
@@ -129,8 +129,8 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
             _p.url.relative(appDigestsOutput.path,
                 from: _p.url.dirname(bootstrapId.path))))
         ..write(_requireJsConfig)
-        ..write(_appBootstrap(
-            bootstrapModuleName, appModuleName, appModuleScope, appModuleUri,
+        ..write(_appBootstrap(bootstrapModuleName, appModuleName,
+            appModuleScope, entrypointLibraryName,
             oldModuleScope: oldAppModuleScope));
 
   await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
@@ -192,7 +192,7 @@ Future<List<AssetId>> _ensureTransitiveJsModules(
 ///
 /// Also performs other necessary initialization.
 String _appBootstrap(String bootstrapModuleName, String moduleName,
-        String moduleScope, String appModuleUri,
+        String moduleScope, String entrypointLibraryName,
         {String oldModuleScope}) =>
     '''
 define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_sdk) {
@@ -212,7 +212,7 @@ define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_s
           if (firstSlash == -1) return false;
           childName = childName.substring(firstSlash + 1);
         }
-        if (childName === "$appModuleUri") {
+        if (childName === "$entrypointLibraryName") {
           // Clear static caches.
           dart_sdk.dart.hotRestart();
           child.main();
