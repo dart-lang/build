@@ -1,3 +1,7 @@
+## 4.3.1-dev
+
+- Internal changes.
+
 ## 4.3.0
 
 - Add the `$package$` synthetic placeholder file and update the docs to prefer

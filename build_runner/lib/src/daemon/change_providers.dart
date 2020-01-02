@@ -11,12 +11,10 @@ import 'package:watcher/src/watch_event.dart';
 ///
 /// The [collectChanges] method is a no-op for this implementation.
 class AutoChangeProvider implements ChangeProvider {
-  final Stream<List<WatchEvent>> _changes;
-
-  AutoChangeProvider(this._changes);
-
   @override
-  Stream<List<WatchEvent>> get changes => _changes;
+  final Stream<List<WatchEvent>> changes;
+
+  AutoChangeProvider(this.changes);
 
   @override
   Future<List<WatchEvent>> collectChanges() async => [];

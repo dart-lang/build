@@ -57,8 +57,7 @@ class BuildImpl {
 
   final AssetGraph assetGraph;
 
-  final BuildScriptUpdates _buildScriptUpdates;
-  BuildScriptUpdates get buildScriptUpdates => _buildScriptUpdates;
+  final BuildScriptUpdates buildScriptUpdates;
 
   final List<BuildPhase> _buildPhases;
   final PackageGraph _packageGraph;
@@ -74,7 +73,7 @@ class BuildImpl {
 
   BuildImpl._(BuildDefinition buildDefinition, BuildOptions options,
       this._buildPhases, this.finalizedReader)
-      : _buildScriptUpdates = buildDefinition.buildScriptUpdates,
+      : buildScriptUpdates = buildDefinition.buildScriptUpdates,
         _packageGraph = buildDefinition.packageGraph,
         _reader = options.enableLowResourcesMode
             ? buildDefinition.reader
