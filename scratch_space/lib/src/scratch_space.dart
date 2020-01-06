@@ -66,13 +66,21 @@ class ScratchSpace {
   ///
   /// This class is no longer valid once the directory is deleted, you must
   /// create a new [ScratchSpace].
-  Future delete() {
+  Future delete() async {
     if (!exists) {
       throw StateError(
           'Tried to delete a ScratchSpace which was already deleted');
     }
     exists = false;
     _digests.clear();
+    if (_pendingWrites.isNotEmpty) {
+      try {
+        await Future.wait(_pendingWrites.values);
+      } catch (_) {
+        // Ignore any errors, we are essentially just draining this queue
+        // of pending writes but don't care about the result.
+      }
+    }
     return tempDir.delete(recursive: true);
   }
 
@@ -115,7 +123,7 @@ class ScratchSpace {
       }
     }).toList();
 
-    return Future.wait(futures, eagerError: true);
+    return Future.wait(futures);
   }
 
   /// Returns the actual [File] in this environment corresponding to [id].

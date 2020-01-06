@@ -1,3 +1,9 @@
+## 0.0.4+2
+
+- Fix a race condition bug where `ensureAssets` would complete before all
+  pending writes were completed. If the next build was scheduled before these
+  writes finished then they would get the old result.
+
 ## 0.0.4+1
 
 - Fix `ScratchSpace.fileFor` on windows to normalize the paths so they dont
