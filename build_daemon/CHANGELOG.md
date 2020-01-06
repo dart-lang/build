@@ -1,3 +1,7 @@
+# 2.1.3
+
+- Allow the latest `stream_transform`.
+
 # 2.1.2
 
 - Depend on the latest `built_value`.
