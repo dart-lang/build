@@ -66,7 +66,7 @@ class ScratchSpace {
   ///
   /// This class is no longer valid once the directory is deleted, you must
   /// create a new [ScratchSpace].
-  Future<void> delete() async {
+  Future delete() async {
     if (!exists) {
       throw StateError(
           'Tried to delete a ScratchSpace which was already deleted');
