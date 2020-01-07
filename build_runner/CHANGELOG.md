@@ -1,3 +1,8 @@
+## 1.7.4-dev
+
+- Give a warning instead of a stack trace when using a build config override
+  file for a package that does not exist.
+
 ## 1.7.3
 
 - Improve the error message when a `--hostname` argument is invalid.
