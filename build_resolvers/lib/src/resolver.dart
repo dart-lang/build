@@ -127,7 +127,7 @@ class AnalyzerResolver implements ReleasableResolver {
     var source = _driver.sourceFactory.forUri2(uri);
     if (source == null) throw ArgumentError('missing source for $uri');
     var kind = await _driver.getSourceKind(path);
-    if (kind != SourceKind.LIBRARY) return null;
+    if (kind != SourceKind.LIBRARY) throw NonLibraryAssetException(assetId);
     return _driver.getLibraryByUri(assetId.uri.toString());
   }
 

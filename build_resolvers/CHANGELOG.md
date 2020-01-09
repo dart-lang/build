@@ -1,6 +1,8 @@
-## 1.3.1-dev
+## 1.3.1
 
-- Internal changes.
+- Add an exception on trying to resolve an `AssetId` that is not a Dart
+  library with `libraryFor` to fit the contract expressed by the doc comment on
+  `Resolver`.
 
 ## 1.3.0
 

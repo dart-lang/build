@@ -240,6 +240,27 @@ void main() {
     });
   });
 
+  test('throws when reading a part-of file', () {
+    return resolveSources(
+      {
+        'a|lib/a.dart': '''
+          part 'b.dart';
+        ''',
+        'a|lib/b.dart': '''
+          part of 'a.dart';
+        '''
+      },
+      (resolver) async {
+        final assetId = AssetId.parse('a|lib/b.dart');
+        await expectLater(
+          () => resolver.libraryFor(assetId),
+          throwsA(const TypeMatcher<NonLibraryAssetException>()
+              .having((e) => e.assetId, 'assetId', equals(assetId))),
+        );
+      },
+    );
+  });
+
   group('The ${_isFlutter ? 'flutter' : 'dart'} sdk', () {
     test('can${_isFlutter ? '' : ' not'} resolve types from dart:ui', () async {
       return resolveSources({
