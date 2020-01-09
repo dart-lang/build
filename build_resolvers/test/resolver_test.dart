@@ -278,14 +278,14 @@ void main() {
         var color = classDefinition.getField('color');
 
         if (_isFlutter) {
-          expect(color.type.name, equals('Color'));
+          expect(color.type.element.name, equals('Color'));
           expect(color.type.element.library.name, equals('dart.ui'));
           expect(
               color.type.element.library.definingCompilationUnit.source.uri
                   .toString(),
               equals('dart:ui'));
         } else {
-          expect(color.type.name, equals('dynamic'));
+          expect(color.type.element.name, equals('dynamic'));
         }
       }, resolvers: AnalyzerResolvers());
     });

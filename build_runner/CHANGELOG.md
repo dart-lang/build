@@ -1,7 +1,13 @@
-## 1.7.3-dev
+## 1.7.4-dev
+
+- Give a warning instead of a stack trace when using a build config override
+  file for a package that does not exist.
+
+## 1.7.3
 
 - Improve the error message when a `--hostname` argument is invalid.
 - Require SDK version `2.6.0` to enable extension methods.
+- Allow the latest `stream_transform`.
 
 ## 1.7.2
 

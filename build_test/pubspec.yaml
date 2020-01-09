@@ -1,6 +1,6 @@
 name: build_test
 description: Utilities for writing unit tests of Builders.
-version: 0.10.11
+version: 0.10.12-dev
 homepage: https://github.com/dart-lang/build/tree/master/build_test
 
 environment:

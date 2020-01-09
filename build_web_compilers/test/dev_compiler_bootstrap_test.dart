@@ -83,6 +83,7 @@ main() {
           contains('define("b.dart.bootstrap", ["web/a", "dart_sdk"]'),
           // Calls main on the `b.dart` library, not the `a.dart` library.
           contains('(app.web__b || app.b).main()'),
+          contains('if (childName === "b.dart")'),
         ])),
         'a|web/b.digests': isNotEmpty,
         'a|web/b.dart.js': isNotEmpty,
