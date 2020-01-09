@@ -71,7 +71,7 @@ void main() {
       );
       final type = library.getType('ExamplePrime');
       expect(type, isNotNull);
-      expect(type.supertype.name, 'Example');
+      expect(type.supertype.element.name, 'Example');
     });
 
     test('waits for tearDown', () async {
@@ -122,4 +122,4 @@ void main() {
 }
 
 String _toStringId(InterfaceType t) =>
-    '${t.element.source.uri.toString().split('/').first}#${t.name}';
+    '${t.element.source.uri.toString().split('/').first}#${t.element.name}';
