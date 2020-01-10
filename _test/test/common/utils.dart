@@ -204,10 +204,11 @@ Future<void> expectTestsPass(
     List<String> testArgs}) async {
   var result = await runTests(
       usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
-  expect(result.stdout, emitsThrough(contains('All tests passed!')));
+  var allLines = await result.stdout.rest.toList();
+  expect(allLines, contains(contains('All tests passed!')));
   if (expectedNumRan != null) {
-    expect(result.stdout, emitsThrough(contains('+$expectedNumRan')));
-    expect(result.stdout, neverEmits(contains('+${expectedNumRan + 1}')));
+    expect(allLines, contains(contains('+$expectedNumRan')));
+    expect(allLines, isNot(contains(contains('+${expectedNumRan + 1}'))));
   }
   expect(await result.exitCode, 0);
 }
