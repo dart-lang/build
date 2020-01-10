@@ -193,7 +193,7 @@ Future<void> expectTestsFail(
     List<String> testArgs}) async {
   var result = await runTests(
       usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
-  expect(result.stdout, emitsThrough('Some tests failed'));
+  expect(result.stdout, emitsThrough(contains('Some tests failed')));
   expect(await result.exitCode, isNot(0));
 }
 
@@ -207,8 +207,7 @@ Future<void> expectTestsPass(
   expect(result.stdout, emitsThrough(contains('All tests passed!')));
   if (expectedNumRan != null) {
     expect(result.stdout, emitsThrough(contains('+$expectedNumRan')));
-    expect(
-        result.stdout, isNot(emitsThrough(contains('+${expectedNumRan + 1}'))));
+    expect(result.stdout, neverEmits(contains('+${expectedNumRan + 1}')));
   }
   expect(await result.exitCode, 0);
 }
