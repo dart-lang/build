@@ -103,6 +103,9 @@ final _builders = <_i1.BuilderApplication>[
       defaultOptions: _i8.BuilderOptions({
         'dart2js_args': ['--minify']
       }),
+      defaultDevOptions: _i8.BuilderOptions({
+        'dart2js_args': ['--enable-asserts']
+      }),
       defaultReleaseOptions: _i8.BuilderOptions({'compiler': 'dart2js'}),
       appliesBuilders: ['build_web_compilers:dart2js_archive_extractor']),
   _i1.apply('provides_builder:throwing_builder', [_i4.throwingBuilder],
