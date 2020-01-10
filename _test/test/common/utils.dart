@@ -8,6 +8,7 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
+import 'package:test_process/test_process.dart';
 
 Directory _generatedDir = Directory(p.join(_toolDir.path, 'generated'));
 Directory _toolDir = Directory(p.join('.dart_tool', 'build'));
@@ -157,13 +158,15 @@ Future<String> nextStdOutLine(String message) =>
     _stdOutLines.firstWhere((line) => line.contains(message));
 
 /// Runs tests using the auto build script.
-Future<ProcessResult> runTests(
-    {bool usePrecompiled, List<String> buildArgs, List<String> testArgs}) {
+Future<TestProcess> runTests(
+    {bool usePrecompiled,
+    List<String> buildArgs,
+    List<String> testArgs}) async {
   return _runTests(_pubBinary, ['run', 'build_runner'],
       usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
 }
 
-Future<ProcessResult> _runTests(String executable, List<String> scriptArgs,
+Future<TestProcess> _runTests(String executable, List<String> scriptArgs,
     {bool usePrecompiled,
     List<String> buildArgs,
     List<String> testArgs}) async {
@@ -177,10 +180,10 @@ Future<ProcessResult> _runTests(String executable, List<String> scriptArgs,
       ..addAll(buildArgs ?? [])
       ..add('--')
       ..addAll(testArgs);
-    return Process.run(executable, args);
+    return TestProcess.start(executable, args);
   } else {
     var args = ['run', 'test', '--pub-serve', '8081']..addAll(testArgs);
-    return Process.run(_pubBinary, args);
+    return TestProcess.start(_pubBinary, args);
   }
 }
 
@@ -190,9 +193,8 @@ Future<void> expectTestsFail(
     List<String> testArgs}) async {
   var result = await runTests(
       usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
-  printOnFailure('${result.stderr}');
-  expect(result.stdout, contains('Some tests failed'));
-  expect(result.exitCode, isNot(0));
+  expect(result.stdout, emitsThrough(contains('Some tests failed')));
+  expect(await result.exitCode, isNot(0));
 }
 
 Future<void> expectTestsPass(
@@ -202,12 +204,13 @@ Future<void> expectTestsPass(
     List<String> testArgs}) async {
   var result = await runTests(
       usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
-  printOnFailure('${result.stderr}');
-  expect(result.stdout, contains('All tests passed!'));
+  var allLines = await result.stdout.rest.toList();
+  expect(allLines, contains(contains('All tests passed!')));
   if (expectedNumRan != null) {
-    expect(result.stdout, contains('+$expectedNumRan'));
-    expect(result.stdout, isNot(contains('+${expectedNumRan + 1}')));
+    expect(allLines, contains(contains('+$expectedNumRan')));
+    expect(allLines, isNot(contains(contains('+${expectedNumRan + 1}'))));
   }
+  expect(await result.exitCode, 0);
 }
 
 Future<void> createFile(String path, String contents) async {
