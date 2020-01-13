@@ -16,7 +16,7 @@ import 'package:path/path.dart' as p;
 /// typedef VoidFunc = void Function();
 /// ```
 ///
-/// This function will return `'VoidFunc'`, unlike [DartType.name].
+/// This function will return `'VoidFunc'`, unlike [DartType.element.name].
 String typeNameOf(DartType type) {
   if (type is FunctionType) {
     final element = type.element;
@@ -24,7 +24,7 @@ String typeNameOf(DartType type) {
       return element.enclosingElement.name;
     }
   }
-  return type.name;
+  return type.element.name;
 }
 
 /// Returns a name suitable for `part of "..."` when pointing to [element].
