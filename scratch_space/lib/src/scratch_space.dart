@@ -54,7 +54,7 @@ class ScratchSpace {
   ///
   /// If [requireContent] is true and the file is empty an
   /// [EmptyOutputException] is thrown.
-  Future copyOutput(AssetId id, AssetWriter writer,
+  Future<void> copyOutput(AssetId id, AssetWriter writer,
       {bool requireContent = false}) async {
     var file = fileFor(id);
     var bytes = await _descriptorPool.withResource(file.readAsBytes);
@@ -66,7 +66,7 @@ class ScratchSpace {
   ///
   /// This class is no longer valid once the directory is deleted, you must
   /// create a new [ScratchSpace].
-  Future delete() async {
+  Future<void> delete() async {
     if (!exists) {
       throw StateError(
           'Tried to delete a ScratchSpace which was already deleted');
@@ -93,7 +93,7 @@ class ScratchSpace {
   /// Any asset that is under a `lib` dir will be output under a `packages`
   /// directory corresponding to its package, and any other assets are output
   /// directly under the temp dir using their unmodified path.
-  Future ensureAssets(Iterable<AssetId> assetIds, AssetReader reader) {
+  Future<void> ensureAssets(Iterable<AssetId> assetIds, AssetReader reader) {
     if (!exists) {
       throw StateError('Tried to use a deleted ScratchSpace!');
     }
