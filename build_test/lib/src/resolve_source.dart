@@ -228,10 +228,8 @@ class _ResolveSourceBuilder<T> implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
     if (_resolverFor != buildStep.inputId) return;
-    T result;
     try {
-      result = await _action(buildStep.resolver);
-      onDone.complete(result);
+      onDone.complete(await _action(buildStep.resolver));
     } catch (e, s) {
       onDone.completeError(e, s);
     }
