@@ -1,3 +1,7 @@
+## 0.0.4+3-dev
+
+- Change returns from `Future<dynamic>` to `Future<void>`.
+
 ## 0.0.4+2
 
 - Fix a race condition bug where `ensureAssets` would complete before all

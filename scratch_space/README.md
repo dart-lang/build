@@ -3,7 +3,7 @@
 
 A [`ScratchSpace`][dartdoc:ScratchSpace] is a thin wrapper around a temporary
 directory. The constructor takes zero arguments, so making one is as simple as
-doing `new ScratchSpace()`.
+doing `ScratchSpace()`.
 
 In general, you should wrap a `ScratchSpace` in a `Resource`, so that you can
 re-use the scratch space across build steps in an individual build. This is
@@ -13,14 +13,14 @@ This should look something like the following:
 
 ```
 final myScratchSpaceResource =
-    new Resource(() => new ScratchSpace(), dispose: (old) => old.delete());
+    Resource(() => ScratchSpace(), dispose: (old) => old.delete());
 ```
 
 And then you can get access to it through the `BuildStep#fetchResource` api:
 
 ```
 class MyBuilder extends Builder {
-  Future build(BuildStep buildStep) async {
+  Future<void> build(BuildStep buildStep) async {
     var scratchSpace = await buildStep.fetchResource(myScratchSpaceResource);
   }
 }
