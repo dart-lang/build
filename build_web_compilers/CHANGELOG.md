@@ -1,3 +1,7 @@
+## 2.8.0
+
+- Enable asserts in dev mode with dart2js by default.
+
 ## 2.7.2
 
 - Fix a bug with hot restart,
