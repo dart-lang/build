@@ -1,6 +1,7 @@
-## 0.10.12-dev
+## 0.10.12
 
-- Internal changes.
+- Fix a bug with the `resolve*` apis where they would leak unhandled async
+  errors to client code if the provided action callback threw an error.
 
 ## 0.10.11
 
