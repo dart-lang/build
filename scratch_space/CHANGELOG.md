@@ -1,3 +1,8 @@
+## 0.1.0-dev
+
+- Change `copyOutput` to take a `BuildStep` instead of an `AssetWriter`. This
+  shouldn't break most uses which are likely already passing in a `BuildStep`.
+
 ## 0.0.4+2
 
 - Fix a race condition bug where `ensureAssets` would complete before all

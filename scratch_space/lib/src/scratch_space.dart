@@ -43,10 +43,7 @@ class ScratchSpace {
     return ScratchSpace._(tempDir);
   }
 
-  /// Copies [id] from the tmp dir and writes it back using the [writer].
-  ///
-  /// Note that [BuildStep] implements [AssetWriter] and that is typically
-  /// what you will want to pass in.
+  /// Copies [id] from the tmp dir and writes it back using the [buildStep].
   ///
   /// This must be called for all outputs which you want to be included as a
   /// part of the actual build (any other outputs will be deleted with the
@@ -54,12 +51,14 @@ class ScratchSpace {
   ///
   /// If [requireContent] is true and the file is empty an
   /// [EmptyOutputException] is thrown.
-  Future copyOutput(AssetId id, AssetWriter writer,
-      {bool requireContent = false}) async {
+  Future<void> copyOutput(AssetId id, BuildStep buildStep,
+      {bool requireContent = false}) {
     var file = fileFor(id);
-    var bytes = await _descriptorPool.withResource(file.readAsBytes);
-    if (requireContent && bytes.isEmpty) throw EmptyOutputException(id);
-    await writer.writeAsBytes(id, bytes);
+    return buildStep.writeAsBytes(id, () async {
+      var bytes = await _descriptorPool.withResource(file.readAsBytes);
+      if (requireContent && bytes.isEmpty) throw EmptyOutputException(id);
+      return bytes;
+    }());
   }
 
   /// Deletes the temp directory for this environment.
