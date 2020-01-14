@@ -193,14 +193,22 @@ Future<T> _resolveAssets<T>(
     sourceAssets: inputAssets,
     rootPackage: rootPackage,
   );
-  // We don't care about the results of this build.
-  unawaited(runBuilder(
-    resolveBuilder,
-    inputAssets.keys,
-    MultiAssetReader([inMemory, assetReader]),
-    InMemoryAssetWriter(),
-    resolvers ?? defaultResolvers,
-  ));
+  // We don't care about the results of this build, but we also can't await
+  // it because that would block on the `tearDown` of the `resolveBuilder`.
+  //
+  // We also dont want to leak unhandled async errors so we swallow them.
+  //
+  // Errors will still be reported through the resolver itself as well as the
+  // `onDone` future that we return.
+  unawaited(runZoned(
+      () => runBuilder(
+            resolveBuilder,
+            inputAssets.keys,
+            MultiAssetReader([inMemory, assetReader]),
+            InMemoryAssetWriter(),
+            resolvers ?? defaultResolvers,
+          ),
+      onError: (_) {}));
   return resolveBuilder.onDone.future;
 }
 
@@ -220,8 +228,13 @@ class _ResolveSourceBuilder<T> implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
     if (_resolverFor != buildStep.inputId) return;
-    var result = await _action(buildStep.resolver);
-    onDone.complete(result);
+    T result;
+    try {
+      result = await _action(buildStep.resolver);
+      onDone.complete(result);
+    } catch (e, s) {
+      onDone.completeError(e, s);
+    }
     await _tearDown;
   }
 

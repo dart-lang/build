@@ -119,6 +119,18 @@ void main() {
       expect(libExample.getType('Example'), isNotNull);
     });
   });
+
+  group('error handling', () {
+    test('getting the library for a part file', () async {
+      var partAsset = AssetId('build_test', 'test/_files/example_part.dart');
+      await resolveAsset(partAsset, (resolver) async {
+        expect(
+            () => resolver.libraryFor(partAsset),
+            throwsA(isA<NonLibraryAssetException>()
+                .having((e) => e.assetId, 'assetId', partAsset)));
+      });
+    });
+  });
 }
 
 String _toStringId(InterfaceType t) =>
