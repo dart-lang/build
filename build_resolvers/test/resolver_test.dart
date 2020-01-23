@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:io';
-
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
@@ -261,8 +259,8 @@ void main() {
     );
   });
 
-  group('The ${_isFlutter ? 'flutter' : 'dart'} sdk', () {
-    test('can${_isFlutter ? '' : ' not'} resolve types from dart:ui', () async {
+  group('The ${isFlutter ? 'flutter' : 'dart'} sdk', () {
+    test('can${isFlutter ? '' : ' not'} resolve types from dart:ui', () async {
       return resolveSources({
         'a|lib/a.dart': '''
               import 'dart:ui';
@@ -277,7 +275,7 @@ void main() {
         var classDefinition = entry.getType('MyClass');
         var color = classDefinition.getField('color');
 
-        if (_isFlutter) {
+        if (isFlutter) {
           expect(color.type.element.name, equals('Color'));
           expect(color.type.element.library.name, equals('dart.ui'));
           expect(
@@ -291,5 +289,3 @@ void main() {
     });
   });
 }
-
-final _isFlutter = Platform.version.contains('flutter');
