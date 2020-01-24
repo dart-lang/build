@@ -1,3 +1,7 @@
+## 1.3.2
+
+- Improve detection of the flutter SDK for older flutter versions.  
+
 ## 1.3.1
 
 - Add an exception on trying to resolve an `AssetId` that is not a Dart
