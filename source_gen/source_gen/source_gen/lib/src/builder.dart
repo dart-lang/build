@@ -42,7 +42,10 @@ class _Builder extends Builder {
       String header})
       : _generatedExtension = generatedExtension,
         buildExtensions = {
-          '.dart': [generatedExtension]..addAll(additionalOutputExtensions)
+          '.dart': [
+            generatedExtension,
+            ...additionalOutputExtensions,
+          ]
         },
         formatOutput = formatOutput ?? _formatter.format,
         _header = (header ?? defaultFileHeader).trim() {

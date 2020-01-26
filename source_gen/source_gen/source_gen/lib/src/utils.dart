@@ -116,8 +116,8 @@ Uri packageToAssetUrl(Uri url) => url.scheme == 'package'
 Uri assetToPackageUrl(Uri url) => url.scheme == 'asset' &&
         url.pathSegments.isNotEmpty &&
         url.pathSegments[1] == 'lib'
-    ? url.replace(
-        scheme: 'package',
-        pathSegments: [url.pathSegments.first]
-          ..addAll(url.pathSegments.skip(2)))
+    ? url.replace(scheme: 'package', pathSegments: [
+        url.pathSegments.first,
+        ...url.pathSegments.skip(2),
+      ])
     : url;

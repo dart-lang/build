@@ -41,7 +41,7 @@ abstract class GeneratorForAnnotation<T> extends Generator {
 
   @override
   FutureOr<String> generate(LibraryReader library, BuildStep buildStep) async {
-    final values = Set<String>();
+    final values = <String>{};
 
     for (var annotatedElement in library.annotatedWith(typeChecker)) {
       final generatedValue = generateForAnnotatedElement(

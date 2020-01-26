@@ -24,8 +24,7 @@ class CommentGenerator extends Generator {
       output.add('// Code for "$name"');
     }
     if (forClasses) {
-      for (var classElement
-          in library.allElements.where((e) => e is ClassElement)) {
+      for (var classElement in library.allElements.whereType<ClassElement>()) {
         if (classElement.displayName.contains('GoodError')) {
           throw InvalidGenerationSourceError(
               "Don't use classes with the word 'Error' in the name",
