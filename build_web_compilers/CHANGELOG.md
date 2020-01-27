@@ -1,4 +1,4 @@
-## 2.9.0-dev
+## 2.9.0
 
 - Add support for enabling experiments through the `experiments` option on the
   `build_web_compilers|ddc` builder. This must be configured globally.
