@@ -107,7 +107,7 @@ Map<String, dynamic> _previousDdcConfig;
 const _useIncrementalCompilerOption = 'use-incremental-compiler';
 const _trackUnusedInputsCompilerOption = 'track-unused-inputs';
 const _environmentOption = 'environment';
-const _experimentOption = 'experiment';
+const _experimentOption = 'experiments';
 const _supportedOptions = [
   _environmentOption,
   _experimentOption,
