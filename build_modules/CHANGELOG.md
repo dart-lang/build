@@ -1,3 +1,7 @@
+## 2.8.0
+
+- Add the ability to pass a list of experiments to enable to the KernelBuilder.
+
 ## 2.7.0
 
 - Add support for an environment variable `BUILD_DART2JS_VM_ARGS` which can
