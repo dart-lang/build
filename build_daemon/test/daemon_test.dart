@@ -45,7 +45,7 @@ void main() {
       testWorkspaces.add(workspace);
       var daemon = Daemon(workspace);
       await daemon.start(
-        Set<String>(),
+        <String>{},
         FakeDaemonBuilder(),
         FakeChangeProvider(),
       );

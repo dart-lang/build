@@ -94,7 +94,7 @@ main() {
   }
 
   group('Building explicit output directories', () {
-    testBasicBuildCommand(String command) {
+    void testBasicBuildCommand(String command) {
       test('is supported by the $command command', () async {
         var args = ['build_runner', command, 'web'];
         expect(await runSingleBuild(command, args), ExitCode.success.code);
@@ -104,7 +104,7 @@ main() {
       });
     }
 
-    testBuildCommandWithOutput(String command) {
+    void testBuildCommandWithOutput(String command) {
       test('works with -o and the $command command', () async {
         var outputDirName = 'foo';
         var args = [

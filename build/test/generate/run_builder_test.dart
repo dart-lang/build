@@ -73,7 +73,7 @@ void main() {
 
 class TrackingResourceManager extends ResourceManager {
   bool disposed = false;
-  final fetchedResources = Set<Resource>();
+  final fetchedResources = <Resource>{};
 
   @override
   Future<T> fetch<T>(Resource<T> resource) {

@@ -42,7 +42,7 @@ class PerActionResolver implements ReleasableResolver {
 
   @override
   Stream<LibraryElement> get libraries async* {
-    final seen = Set<LibraryElement>();
+    final seen = <LibraryElement>{};
     final toVisit = Queue<LibraryElement>();
 
     // keep a copy of entry points in case [_resolveIfNecessary] is called

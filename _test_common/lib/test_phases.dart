@@ -84,7 +84,7 @@ Future<BuildResult> testBuilders(
   InMemoryRunnerAssetWriter writer,
   Level logLevel,
   // A better way to "silence" logging than setting logLevel to OFF.
-  onLog(LogRecord record) = _printOnFailure,
+  Function(LogRecord record) onLog = _printOnFailure,
   bool checkBuildStatus = true,
   bool deleteFilesByDefault = true,
   bool enableLowResourcesMode = false,
@@ -158,7 +158,7 @@ void checkBuild(BuildResult result,
   expect(result.status, status, reason: '$result');
 
   final unhiddenOutputs = <String, dynamic>{};
-  final unhiddenAssets = Set<AssetId>();
+  final unhiddenAssets = <AssetId>{};
   for (final id in outputs?.keys ?? const <String>[]) {
     if (id.startsWith(r'$$')) {
       final unhidden = id.substring(2);

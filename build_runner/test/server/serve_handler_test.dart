@@ -33,7 +33,8 @@ void main() {
   setUp(() async {
     reader = InMemoryRunnerAssetReader();
     final packageGraph = buildPackageGraph({rootPackage('a'): []});
-    assetGraph = await AssetGraph.build([], Set(), Set(), packageGraph, reader);
+    assetGraph = await AssetGraph.build(
+        [], <AssetId>{}, <AssetId>{}, packageGraph, reader);
     watchImpl = MockWatchImpl(
         FinalizedReader(reader, assetGraph, [], 'a'), packageGraph, assetGraph);
     serveHandler = createServeHandler(watchImpl);
@@ -199,7 +200,7 @@ void main() {
   });
 
   group('build updates', () {
-    createBuildUpdatesGroup(String groupName, String injectionMarker,
+    void createBuildUpdatesGroup(String groupName, String injectionMarker,
             BuildUpdatesOption buildUpdates) =>
         group(groupName, () {
           test('injects client code if enabled', () async {

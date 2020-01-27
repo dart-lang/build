@@ -22,12 +22,11 @@ final String _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
 /// Runs a single build using `pub run build_runner build`, and returns the
 /// [ProcessResult].
 Future<ProcessResult> runBuild({List<String> trailingArgs = const []}) =>
-    _runBuild(
-        _pubBinary, ['run', 'build_runner', 'build']..addAll(trailingArgs));
+    _runBuild(_pubBinary, ['run', 'build_runner', 'build', ...trailingArgs]);
 
 /// Runs `pub run build_runner <args>`, and returns the [ProcessResult].
 Future<ProcessResult> runCommand(List<String> args) =>
-    _runBuild(_pubBinary, ['run', 'build_runner']..addAll(args));
+    _runBuild(_pubBinary, ['run', 'build_runner', ...args]);
 
 /// Runs `pub run build_runner serve` in this package, and waits for the first
 /// build to complete.
@@ -182,7 +181,7 @@ Future<TestProcess> _runTests(String executable, List<String> scriptArgs,
       ..addAll(testArgs);
     return TestProcess.start(executable, args);
   } else {
-    var args = ['run', 'test', '--pub-serve', '8081']..addAll(testArgs);
+    var args = ['run', 'test', '--pub-serve', '8081', ...testArgs];
     return TestProcess.start(_pubBinary, args);
   }
 }

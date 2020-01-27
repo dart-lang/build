@@ -83,7 +83,8 @@ main() {
         workspace(),
         [
           pubBinary.toString(),
-        ]..addAll(args),
+          ...args,
+        ],
         logHandler: (log) => printOnFailure('Client: ${log.message}'),
         buildMode: buildMode);
   }

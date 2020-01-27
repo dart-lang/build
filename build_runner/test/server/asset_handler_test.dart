@@ -22,8 +22,8 @@ void main() {
   AssetGraph graph;
 
   setUp(() async {
-    graph = await AssetGraph.build(
-        [], Set(), Set(), buildPackageGraph({rootPackage('foo'): []}), null);
+    graph = await AssetGraph.build([], <AssetId>{}, <AssetId>{},
+        buildPackageGraph({rootPackage('foo'): []}), null);
     delegate = InMemoryRunnerAssetReader();
     reader = FinalizedReader(delegate, graph, [], 'a');
     handler = AssetHandler(reader, 'a');

@@ -47,7 +47,7 @@ class FailureReporter {
 
   /// A set of Strings which uniquely identify a particular build action and
   /// it's primary input.
-  final _reportedActions = Set<String>();
+  final _reportedActions = <String>{};
 
   /// Indicate that a failure reason for the build step which would produce
   /// [output] and all other outputs from the same build step has been printed.

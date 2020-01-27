@@ -290,7 +290,7 @@ Future<void> _findModuleDeps(
 /// The transitive dependencies of [root], not including [root] itself.
 Future<List<Module>> _resolveTransitiveModules(
     Module root, BuildStep buildStep) async {
-  var missing = Set<AssetId>();
+  var missing = <AssetId>{};
   var modules = await crawlAsync<AssetId, Module>(
           [root.primarySource],
           (id) => buildStep.fetchResource(moduleCache).then((c) async {
@@ -323,11 +323,11 @@ Future<List<Module>> _resolveTransitiveModules(
 /// from the modules which do not have a readable kernel file
 Future<Set<AssetId>> _parentsOfMissingKernelFiles(
     List<Module> modules, BuildStep buildStep, String outputExtension) async {
-  final sourceOnly = Set<AssetId>();
+  final sourceOnly = <AssetId>{};
   final parents = <AssetId, Set<AssetId>>{};
   for (final module in modules) {
     for (final dep in module.directDependencies) {
-      parents.putIfAbsent(dep, () => Set<AssetId>()).add(module.primarySource);
+      parents.putIfAbsent(dep, () => <AssetId>{}).add(module.primarySource);
     }
     if (!await buildStep
         .canRead(module.primarySource.changeExtension(outputExtension))) {

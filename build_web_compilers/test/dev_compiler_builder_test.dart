@@ -13,7 +13,7 @@ import 'package:build_modules/build_modules.dart';
 
 import 'util.dart';
 
-main() {
+void main() {
   Map<String, dynamic> assets;
 
   group('error free project', () {

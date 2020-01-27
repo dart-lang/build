@@ -20,7 +20,8 @@ void main() {
 
     BuildPerformanceTracker tracker;
 
-    T scopedTrack<T>(T f()) => scopeClock(fakeClock, () => tracker.track(f));
+    T scopedTrack<T>(T Function() f) =>
+        scopeClock(fakeClock, () => tracker.track(f));
 
     setUp(() {
       time = startTime;

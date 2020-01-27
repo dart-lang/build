@@ -14,5 +14,5 @@ DateTime _defaultClock() => DateTime.now();
 DateTime now() => (Zone.current[_Clock] as _Clock ?? _defaultClock)();
 
 /// Runs [f], with [clock] scoped whenever [now] is called.
-T scopeClock<T>(DateTime clock(), T f()) =>
+T scopeClock<T>(DateTime Function() clock, T Function() f) =>
     runZoned(f, zoneValues: {_Clock: clock});

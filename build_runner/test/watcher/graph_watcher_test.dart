@@ -4,17 +4,15 @@
 
 import 'dart:async';
 
+import 'package:_test_common/package_graphs.dart';
 import 'package:build/build.dart';
-import 'package:pedantic/pedantic.dart';
-import 'package:test/test.dart';
-import 'package:watcher/watcher.dart';
-
-import 'package:build_runner_core/src/package_graph/package_graph.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
-
-import 'package:_test_common/package_graphs.dart';
+import 'package:build_runner_core/src/package_graph/package_graph.dart';
+import 'package:pedantic/pedantic.dart';
+import 'package:test/test.dart';
+import 'package:watcher/watcher.dart';
 
 void main() {
   group('PackageGraphWatcher', () {
@@ -77,7 +75,7 @@ void main() {
         'a': FakeNodeWatcher(graph['a']),
         r'$sdk': FakeNodeWatcher(null),
       };
-      noBWatcher(PackageNode node) {
+      PackageNodeWatcher noBWatcher(PackageNode node) {
         if (node.name == 'b') throw StateError('No watcher for B!');
         return nodes[node.name];
       }

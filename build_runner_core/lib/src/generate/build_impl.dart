@@ -88,7 +88,7 @@ class BuildImpl {
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates,
       {Set<BuildDirectory> buildDirs, Set<BuildFilter> buildFilters}) {
-    buildDirs ??= Set<BuildDirectory>();
+    buildDirs ??= <BuildDirectory>{};
     buildFilters ??= {};
     finalizedReader.reset(_buildPaths(buildDirs), buildFilters);
     return _SingleBuild(this, buildDirs, buildFilters).run(updates)
@@ -342,7 +342,7 @@ class _SingleBuild {
   /// a primary input to this phase.
   Future<Set<AssetId>> _matchingPrimaryInputs(
       String package, int phaseNumber) async {
-    var ids = Set<AssetId>();
+    var ids = <AssetId>{};
     var phase = _buildPhases[phaseNumber];
     await Future.wait(
         _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
@@ -477,10 +477,10 @@ class _SingleBuild {
 
         actionsStartedCount++;
         pendingActions
-            .putIfAbsent(phaseNumber, () => Set<String>())
+            .putIfAbsent(phaseNumber, () => <String>{})
             .add(actionDescription);
 
-        var unusedAssets = Set<AssetId>();
+        var unusedAssets = <AssetId>{};
         await tracker.trackStage(
             'Build',
             () => runBuilder(
@@ -584,7 +584,7 @@ class _SingleBuild {
 
     actionsStartedCount++;
     pendingActions
-        .putIfAbsent(phaseNum, () => Set<String>())
+        .putIfAbsent(phaseNum, () => <String>{})
         .add(actionDescription);
 
     await runPostProcessBuilder(

@@ -13,6 +13,7 @@ analyzer:
     # Common top level directories containing generated files in any package.
     - "*/build/**"
     - "*/.dart_tool/**"
+
 linter:
   rules:
     - always_declare_return_types

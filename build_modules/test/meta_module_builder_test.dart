@@ -13,7 +13,7 @@ import 'package:build_modules/src/platform.dart';
 
 import 'matchers.dart';
 
-main() {
+void main() {
   var testPlatform = DartPlatform.register('test', ['dart:async']);
 
   test('can serialize meta modules', () async {

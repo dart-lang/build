@@ -406,7 +406,8 @@ void main() {
               makeAssetId('a|web/a.txt.copy.clone'),
               makeAssetId('a|Phase0.builderOptions'),
               makeAssetId('a|Phase1.builderOptions'),
-            ]..addAll(placeholders)));
+              ...placeholders,
+            ]));
         expect(cachedGraph.sources, [makeAssetId('a|web/a.txt')]);
         expect(
             cachedGraph.outputs,
@@ -714,7 +715,9 @@ void main() {
       }, outputs: {
         r'$$a|web/a.txt.copy': 'a',
         r'$$a|test/b.txt.copy': 'b',
-      }, buildDirs: Set.of([BuildDirectory('web')]), verbose: true);
+      }, buildDirs: {
+        BuildDirectory('web')
+      }, verbose: true);
     });
 
     test('build to source builders are always ran regardless of buildDirs',
@@ -728,7 +731,9 @@ void main() {
       }, outputs: {
         r'a|test/a.txt.copy': 'a',
         r'a|web/a.txt.copy': 'a',
-      }, buildDirs: Set.of([BuildDirectory('web')]), verbose: true);
+      }, buildDirs: {
+        BuildDirectory('web')
+      }, verbose: true);
     });
 
     test('can output performance logs', () async {
@@ -855,8 +860,8 @@ void main() {
     expect(writer.assets, contains(graphId));
     var cachedGraph = AssetGraph.deserialize(writer.assets[graphId]);
 
-    var expectedGraph = await AssetGraph.build(
-        [], Set(), Set(), buildPackageGraph({rootPackage('a'): []}), null);
+    var expectedGraph = await AssetGraph.build([], <AssetId>{}, <AssetId>{},
+        buildPackageGraph({rootPackage('a'): []}), null);
 
     // Source nodes
     var aSourceNode = makeAssetNode(

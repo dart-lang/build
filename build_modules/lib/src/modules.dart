@@ -145,8 +145,8 @@ class Module {
     final modules = await buildStep.fetchResource(moduleCache);
     var transitiveDeps = <AssetId, Module>{};
     var modulesToCrawl = {primarySource};
-    var missingModuleSources = Set<AssetId>();
-    var unsupportedModules = Set<Module>();
+    var missingModuleSources = <AssetId>{};
+    var unsupportedModules = <Module>{};
 
     while (modulesToCrawl.isNotEmpty) {
       var next = modulesToCrawl.last;

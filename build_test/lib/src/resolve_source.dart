@@ -26,7 +26,7 @@ const useAssetReader = '__useAssetReader__';
 /// A convenience method for using [resolveSources] with a single source file.
 Future<T> resolveSource<T>(
   String inputSource,
-  FutureOr<T> action(Resolver resolver), {
+  FutureOr<T> Function(Resolver resolver) action, {
   AssetId inputId,
   PackageResolver resolver,
   Future<Null> tearDown,
@@ -117,7 +117,7 @@ Future<T> resolveSource<T>(
 /// be provided to map files not visible to the current package's runtime.
 Future<T> resolveSources<T>(
   Map<String, String> inputs,
-  FutureOr<T> action(Resolver resolver), {
+  FutureOr<T> Function(Resolver resolver) action, {
   PackageResolver resolver,
   String resolverFor,
   String rootPackage,
@@ -141,7 +141,7 @@ Future<T> resolveSources<T>(
 /// A convenience for using [resolveSources] with a single [inputId] from disk.
 Future<T> resolveAsset<T>(
   AssetId inputId,
-  FutureOr<T> action(Resolver resolver), {
+  FutureOr<T> Function(Resolver resolver) action, {
   PackageResolver resolver,
   Future<Null> tearDown,
   Resolvers resolvers,
@@ -167,7 +167,7 @@ Future<T> resolveAsset<T>(
 Future<T> _resolveAssets<T>(
   Map<String, String> inputs,
   String rootPackage,
-  FutureOr<T> action(Resolver resolver), {
+  FutureOr<T> Function(Resolver resolver) action, {
   PackageResolver resolver,
   AssetId resolverFor,
   Future<Null> tearDown,

@@ -1,5 +1,5 @@
 import '../main.dart' as other;
 
-main() {
+void main() {
   other.main();
 }

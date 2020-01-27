@@ -6,7 +6,7 @@ import 'package:test/test.dart';
 
 import 'package:build_daemon/data/server_log.dart';
 
-main() {
+void main() {
   group('Levels', () {
     test('are comparable', () {
       for (var matcher in [lessThan, lessThanOrEqualTo]) {

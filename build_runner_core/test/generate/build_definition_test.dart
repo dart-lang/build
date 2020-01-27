@@ -128,8 +128,8 @@ targets:
 
         var originalAssetGraph = await AssetGraph.build(
             buildPhases,
-            [makeAssetId('a|lib/a.txt'), makeAssetId('a|lib/b.txt')].toSet(),
-            Set(),
+            {makeAssetId('a|lib/a.txt'), makeAssetId('a|lib/b.txt')},
+            <AssetId>{},
             aPackageGraph,
             environment.reader);
         var generatedAId = makeAssetId('a|lib/a.txt.copy');
@@ -159,7 +159,7 @@ targets:
         var buildPhases = [InBuildPhase(TestBuilder(), 'a', hideOutput: true)];
 
         var originalAssetGraph = await AssetGraph.build(buildPhases,
-            <AssetId>[].toSet(), Set(), aPackageGraph, environment.reader);
+            <AssetId>{}, <AssetId>{}, aPackageGraph, environment.reader);
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
@@ -183,8 +183,8 @@ targets:
         await createFile(p.join('lib', 'a.txt'), 'a');
         var buildPhases = [InBuildPhase(TestBuilder(), 'a', hideOutput: true)];
 
-        var originalAssetGraph = await AssetGraph.build(buildPhases,
-            [aTxt].toSet(), Set(), aPackageGraph, environment.reader);
+        var originalAssetGraph = await AssetGraph.build(buildPhases, {aTxt},
+            <AssetId>{}, aPackageGraph, environment.reader);
 
         // pretend a build happened
         (originalAssetGraph.get(aTxtCopy) as GeneratedAssetNode)
@@ -212,8 +212,8 @@ targets:
 
         var originalAssetGraph = await AssetGraph.build(
             buildPhases,
-            [makeAssetId('a|lib/test.txt')].toSet(),
-            Set(),
+            {makeAssetId('a|lib/test.txt')},
+            <AssetId>{},
             aPackageGraph,
             environment.reader);
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
@@ -243,8 +243,8 @@ targets:
 
         var originalAssetGraph = await AssetGraph.build(
             buildPhases,
-            [makeAssetId('a|lib/a.txt')].toSet(),
-            Set(),
+            {makeAssetId('a|lib/a.txt')},
+            <AssetId>{},
             aPackageGraph,
             environment.reader);
         var generatedACopyId = makeAssetId('a|lib/a.txt.copy');
@@ -299,8 +299,8 @@ targets:
               hideOutput: true)
         ];
 
-        var assetGraph = await AssetGraph.build(buildPhases, Set<AssetId>(),
-            Set(), aPackageGraph, environment.reader);
+        var assetGraph = await AssetGraph.build(buildPhases, <AssetId>{},
+            <AssetId>{}, aPackageGraph, environment.reader);
         var expectedIds = placeholderIdsFor(aPackageGraph)
           ..addAll([makeAssetId('a|Phase0.builderOptions')]);
         expect(assetGraph.allNodes.map((node) => node.id),
@@ -373,7 +373,7 @@ targets:
         var buildPhases = [InBuildPhase(TestBuilder(), 'a', hideOutput: true)];
 
         var originalAssetGraph = await AssetGraph.build(buildPhases,
-            <AssetId>[].toSet(), Set(), aPackageGraph, environment.reader);
+            <AssetId>{}, <AssetId>{}, aPackageGraph, environment.reader);
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
@@ -401,7 +401,7 @@ targets:
         var buildPhases = [InBuildPhase(TestBuilder(), 'a', hideOutput: true)];
 
         var originalAssetGraph = await AssetGraph.build(buildPhases,
-            <AssetId>[].toSet(), Set(), aPackageGraph, environment.reader);
+            <AssetId>{}, <AssetId>{}, aPackageGraph, environment.reader);
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
@@ -430,7 +430,7 @@ targets:
         var buildPhases = [InBuildPhase(TestBuilder(), 'a', hideOutput: true)];
 
         var originalAssetGraph = await AssetGraph.build(buildPhases,
-            <AssetId>[].toSet(), Set(), aPackageGraph, environment.reader);
+            <AssetId>{}, <AssetId>{}, aPackageGraph, environment.reader);
 
         var bytes = originalAssetGraph.serialize();
         var serialized = json.decode(utf8.decode(bytes));
@@ -465,7 +465,7 @@ targets:
         ];
 
         var originalAssetGraph = await AssetGraph.build(buildPhases,
-            <AssetId>[].toSet(), Set(), aPackageGraph, environment.reader);
+            <AssetId>{}, <AssetId>{}, aPackageGraph, environment.reader);
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
@@ -499,7 +499,7 @@ targets:
         ];
 
         var originalAssetGraph = await AssetGraph.build(buildPhases,
-            <AssetId>[].toSet(), Set(), aPackageGraph, environment.reader);
+            <AssetId>{}, <AssetId>{}, aPackageGraph, environment.reader);
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
@@ -533,7 +533,7 @@ targets:
         environment = OverrideableEnvironment(environment, writer: writerSpy);
 
         var originalAssetGraph = await AssetGraph.build(buildPhases,
-            <AssetId>[aTxt].toSet(), Set(), aPackageGraph, environment.reader);
+            <AssetId>{aTxt}, <AssetId>{}, aPackageGraph, environment.reader);
 
         var aTxtCopy = AssetId('a', 'lib/a.txt.copy');
         // Pretend we already output this without actually running a build.
@@ -560,7 +560,7 @@ targets:
         await createFile(aTxt.path, 'hello');
 
         var originalAssetGraph = await AssetGraph.build(buildPhases,
-            <AssetId>[aTxt].toSet(), Set(), aPackageGraph, environment.reader);
+            <AssetId>{aTxt}, <AssetId>{}, aPackageGraph, environment.reader);
 
         var aTxtCopy = AssetId('a', 'lib/a.txt.copy');
         // Pretend we already output this without actually running a build.

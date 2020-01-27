@@ -52,7 +52,7 @@ void main() {
           'a': BuildConfig(
             packageName: 'a',
             buildTargets: {
-              'a:a': BuildTarget(dependencies: Set.of(['b:b']))
+              'a:a': BuildTarget(dependencies: {'b:b'})
             },
             globalOptions: {
               'b:cool_builder': GlobalBuilderConfig(
@@ -177,7 +177,7 @@ void main() {
           'a': BuildConfig(
             packageName: 'a',
             buildTargets: {
-              'a:a': BuildTarget(dependencies: Set.of(['b:not_default']))
+              'a:a': BuildTarget(dependencies: {'b:not_default'})
             },
           )
         };

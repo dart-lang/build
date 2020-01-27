@@ -12,7 +12,8 @@ abstract class BuildRequest
     implements Built<BuildRequest, BuildRequestBuilder> {
   static Serializer<BuildRequest> get serializer => _$buildRequestSerializer;
 
-  factory BuildRequest([updates(BuildRequestBuilder b)]) = _$BuildRequest;
+  factory BuildRequest([Function(BuildRequestBuilder b) updates]) =
+      _$BuildRequest;
 
   BuildRequest._();
 }
