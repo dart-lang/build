@@ -99,8 +99,7 @@ Map<String, String> _readEnvironmentOption(BuilderOptions options) {
 }
 
 List<String> _readExperimentOption(BuilderOptions options) {
-  return List<String>.from(
-      (options.config[_experimentOption] as List) ?? <String>[]);
+  return List.from((options.config[_experimentOption] as List) ?? []);
 }
 
 Map<String, dynamic> _previousDdcConfig;
