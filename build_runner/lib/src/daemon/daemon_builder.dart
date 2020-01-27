@@ -172,7 +172,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     List<BuilderApplication> builders,
     DaemonOptions daemonOptions,
   ) async {
-    var expectedDeletes = Set<AssetId>();
+    var expectedDeletes = <AssetId>{};
     var outputStreamController = StreamController<ServerLog>();
 
     var environment = OverrideableEnvironment(

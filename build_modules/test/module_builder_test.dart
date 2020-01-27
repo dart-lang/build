@@ -14,7 +14,7 @@ import 'package:build_modules/src/module_library.dart';
 
 import 'matchers.dart';
 
-main() {
+void main() {
   final platform = DartPlatform.register('test', ['dart:async']);
 
   test('can serialize modules and only output for primary sources', () async {

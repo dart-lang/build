@@ -69,8 +69,8 @@ Future<bool> createMergedOutputDirectories(
 }
 
 Set<String> _conflicts(Set<BuildDirectory> buildDirs) {
-  final seen = Set<String>();
-  final conflicts = Set<String>();
+  final seen = <String>{};
+  final conflicts = <String>{};
   var outputLocations =
       buildDirs.map((d) => d.outputLocation?.path).where((p) => p != null);
   for (var location in outputLocations) {
@@ -153,7 +153,7 @@ Future<bool> _createMergedOutputDir(
 }
 
 Set<String> _findRootDirs(Iterable<AssetId> allAssets, String outputPath) {
-  var rootDirs = Set<String>();
+  var rootDirs = <String>{};
   for (var id in allAssets) {
     var parts = p.url.split(id.path);
     if (parts.length == 1) continue;

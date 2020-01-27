@@ -255,8 +255,8 @@ a:file://fake/pkg/path
         var cachedGraph = AssetGraph.deserialize(
             writer.assets[makeAssetId('a|$assetGraphPath')]);
 
-        var expectedGraph = await AssetGraph.build(
-            [], Set(), Set(), buildPackageGraph({rootPackage('a'): []}), null);
+        var expectedGraph = await AssetGraph.build([], <AssetId>{}, <AssetId>{},
+            buildPackageGraph({rootPackage('a'): []}), null);
 
         var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
         var builderOptionsNode = BuilderOptionsAssetNode(builderOptionsId,

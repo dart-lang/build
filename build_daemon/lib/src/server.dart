@@ -39,7 +39,7 @@ class Server {
   HttpServer _server;
   final DaemonBuilder _builder;
   // Channels that are interested in the current build.
-  var _interestedChannels = Set<WebSocketChannel>();
+  var _interestedChannels = <WebSocketChannel>{};
 
   final _subs = <StreamSubscription>[];
 

@@ -56,7 +56,7 @@ class Daemon {
   /// Null if one isn't running.
   Future<Set<String>> currentOptions() async {
     var optionsFile = File(optionsFilePath(_workingDirectory));
-    if (!await waitForFile(optionsFile)) return Set();
+    if (!await waitForFile(optionsFile)) return <String>{};
     return optionsFile.readAsLinesSync().toSet();
   }
 

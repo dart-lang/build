@@ -69,7 +69,7 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
       }
     } on ArgumentError catch (_) {
       supportsIncrementalRebuilds = false;
-      allSources = Set<AssetId>();
+      allSources = <AssetId>{};
     }
     return _MirrorBuildScriptUpdates._(supportsIncrementalRebuilds, allSources);
   }
@@ -97,7 +97,7 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
       case 'package':
         var parts = uri.pathSegments;
         return AssetId(parts[0],
-            p.url.joinAll(['lib']..addAll(parts.getRange(1, parts.length))));
+            p.url.joinAll(['lib', ...parts.getRange(1, parts.length)]));
       case 'file':
         var relativePath = p.relative(uri.toFilePath(), from: p.current);
         return AssetId(_rootPackage, relativePath);

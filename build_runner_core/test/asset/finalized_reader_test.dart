@@ -18,8 +18,8 @@ void main() {
     AssetNode deleted;
 
     setUp(() async {
-      var graph = await AssetGraph.build(
-          [], Set(), Set(), buildPackageGraph({rootPackage('foo'): []}), null);
+      var graph = await AssetGraph.build([], <AssetId>{}, <AssetId>{},
+          buildPackageGraph({rootPackage('foo'): []}), null);
 
       notDeleted = makeAssetNode(
           'a|web/a.txt', [], computeDigest(AssetId('a', 'web/a.txt'), 'a'));

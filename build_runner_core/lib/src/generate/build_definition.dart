@@ -108,12 +108,12 @@ class AssetTracker {
       Set<AssetId> inputSources,
       Set<AssetId> generatedSources,
       Set<AssetId> internalSources) async {
-    final allSources = Set<AssetId>()
+    final allSources = <AssetId>{}
       ..addAll(inputSources)
       ..addAll(generatedSources)
       ..addAll(internalSources);
     var updates = <AssetId, ChangeType>{};
-    addUpdates(Iterable<AssetId> assets, ChangeType type) {
+    void addUpdates(Iterable<AssetId> assets, ChangeType type) {
       for (var asset in assets) {
         updates[asset] = type;
       }

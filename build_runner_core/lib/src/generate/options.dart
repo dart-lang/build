@@ -107,7 +107,7 @@ class BuildFilter {
   }
 
   @override
-  operator ==(Object other) =>
+  bool operator ==(Object other) =>
       other is BuildFilter &&
       other._path.context == _path.context &&
       other._path.pattern == _path.pattern &&

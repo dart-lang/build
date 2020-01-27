@@ -132,7 +132,7 @@ class InspectNodeCommand extends Command<bool> {
           ..writeln('  isFailure: ${node.isFailure}');
       }
 
-      _printAsset(AssetId asset) =>
+      void _printAsset(AssetId asset) =>
           _listAsset(asset, description, indentation: '    ');
 
       if (argResults['verbose'] == true) {

@@ -22,7 +22,7 @@ import 'package:logging/logging.dart';
 ///   ]);
 /// });
 /// ```
-Stream<LogRecord> recordLogs(dynamic run(), {String name = ''}) {
+Stream<LogRecord> recordLogs(dynamic Function() run, {String name = ''}) {
   final logger = Logger(name);
   Timer.run(() async {
     await scopeLogAsync(() => Future.value(run()), logger);

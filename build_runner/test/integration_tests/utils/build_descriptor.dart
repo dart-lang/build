@@ -231,7 +231,7 @@ d.FileDescriptor _pubspec(String name,
 
   var buffer = StringBuffer()..writeln('name: $name');
 
-  writeDeps(String group) {
+  void writeDeps(String group) {
     buffer.writeln(group);
 
     pathDependencies.forEach((package, path) {

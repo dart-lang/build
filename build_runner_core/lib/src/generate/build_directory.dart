@@ -10,7 +10,7 @@ class BuildDirectory {
   BuildDirectory(this.directory, {this.outputLocation});
 
   @override
-  operator ==(Object other) =>
+  bool operator ==(Object other) =>
       other is BuildDirectory &&
       other.directory == directory &&
       other.outputLocation == outputLocation;
@@ -37,7 +37,7 @@ class OutputLocation {
   }
 
   @override
-  operator ==(Object other) =>
+  bool operator ==(Object other) =>
       other is OutputLocation &&
       other.path == path &&
       other.useSymlinks == useSymlinks &&

@@ -22,8 +22,9 @@ Future<String> _readAsset(BuildStep buildStep, AssetId assetId) =>
 /// Pass the input assetId through [readFrom] and duplicate the results of
 /// [read] on that asset into every matching output based on [buildExtensions].
 void _copyToAll(BuildStep buildStep, Map<String, List<String>> buildExtensions,
-    {AssetId readFrom(AssetId assetId) = _identity,
-    Future<String> read(BuildStep buildStep, AssetId assetId) = _readAsset}) {
+    {AssetId Function(AssetId assetId) readFrom = _identity,
+    Future<String> Function(BuildStep buildStep, AssetId assetId) read =
+        _readAsset}) {
   if (!buildExtensions.keys.any((e) => buildStep.inputId.path.endsWith(e))) {
     throw ArgumentError('Only expected inputs with extension in '
         '${buildExtensions.keys.toList()} but got ${buildStep.inputId}');

@@ -7,4 +7,4 @@ import 'package:test/test.dart';
 
 import '../hello_world_test.dart' as original;
 
-main() => original.main();
+void main() => original.main();

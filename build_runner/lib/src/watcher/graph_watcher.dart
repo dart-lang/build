@@ -33,7 +33,7 @@ class PackageGraphWatcher {
   PackageGraphWatcher(
     this._graph, {
     Logger logger,
-    PackageNodeWatcher watch(PackageNode node),
+    PackageNodeWatcher Function(PackageNode node) watch,
   })  : _logger = logger ?? Logger('build_runner'),
         _strategy = watch ?? _default;
 

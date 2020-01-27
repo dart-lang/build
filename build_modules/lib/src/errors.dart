@@ -69,8 +69,8 @@ Please check the following imports:\n
     for (var module in transitiveModules) {
       var missingIds = module.directDependencies.intersection(missingSources);
       for (var missingId in missingIds) {
-        var checkedAlready = checkedSourceDependencies.putIfAbsent(
-            missingId, () => Set<AssetId>());
+        var checkedAlready =
+            checkedSourceDependencies.putIfAbsent(missingId, () => <AssetId>{});
         for (var sourceId in module.sources) {
           if (checkedAlready.contains(sourceId)) {
             continue;

@@ -17,7 +17,7 @@ Logger get log => Zone.current[logKey] as Logger ?? _default;
 /// be logged with `log.severe`.
 ///
 /// Completes with the first error or result of `fn`, whichever comes first.
-Future<T> scopeLogAsync<T>(Future<T> fn(), Logger log) {
+Future<T> scopeLogAsync<T>(Future<T> Function() fn, Logger log) {
   var done = Completer<T>();
   runZoned(fn,
       zoneSpecification:

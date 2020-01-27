@@ -147,7 +147,7 @@ class BuildStepImpl implements BuildStep {
       _stageTracker.trackStage(label, action, isExternal: isExternal);
 
   Future<void> _futureOrWrite<T>(
-          FutureOr<T> content, Future<void> write(T content)) =>
+          FutureOr<T> content, Future<void> Function(T content) write) =>
       (content is Future<T>) ? content.then(write) : write(content as T);
 
   /// Waits for work to finish and cleans up resources.

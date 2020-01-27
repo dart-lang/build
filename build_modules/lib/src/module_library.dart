@@ -75,9 +75,9 @@ class ModuleLibrary {
 
   factory ModuleLibrary._fromCompilationUnit(
       AssetId id, bool isEntryPoint, CompilationUnit parsed) {
-    var deps = Set<AssetId>();
-    var parts = Set<AssetId>();
-    var sdkDeps = Set<String>();
+    var deps = <AssetId>{};
+    var parts = <AssetId>{};
+    var sdkDeps = <String>{};
     var conditionalDeps = <Map<String, AssetId>>[];
     for (var directive in parsed.directives) {
       if (directive is! UriBasedDirective) continue;

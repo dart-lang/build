@@ -23,7 +23,7 @@ void main() {
 
   List<AssetId> makeAssets(Map<String, String> assetDescriptors) {
     reader = InMemoryAssetReader();
-    var assets = Set<AssetId>();
+    var assets = <AssetId>{};
     assetDescriptors.forEach((serializedId, content) {
       var id = AssetId.parse(serializedId);
       reader.cacheStringAsset(id, content);

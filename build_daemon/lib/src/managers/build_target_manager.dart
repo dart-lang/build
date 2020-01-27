@@ -36,14 +36,12 @@ class BuildTargetManager {
 
   /// Adds a tracked build target with corresponding interested channel.
   void addBuildTarget(BuildTarget target, WebSocketChannel channel) {
-    _buildTargets
-        .putIfAbsent(target, () => Set<WebSocketChannel>())
-        .add(channel);
+    _buildTargets.putIfAbsent(target, () => <WebSocketChannel>{}).add(channel);
   }
 
   /// Returns channels that are interested in the provided target.
   Set<WebSocketChannel> channels(BuildTarget target) =>
-      _buildTargets[target] ?? Set();
+      _buildTargets[target] ?? <WebSocketChannel>{};
 
   void removeChannel(WebSocketChannel channel) =>
       _buildTargets = Map.fromEntries(_buildTargets.entries

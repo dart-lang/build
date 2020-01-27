@@ -10,7 +10,7 @@ import 'package:build/build.dart';
 class RunnerAssetWriterSpy extends AssetWriterSpy implements RunnerAssetWriter {
   final RunnerAssetWriter _delegate;
 
-  final _assetsDeleted = Set<AssetId>();
+  final _assetsDeleted = <AssetId>{};
   Iterable<AssetId> get assetsDeleted => _assetsDeleted;
 
   RunnerAssetWriterSpy(this._delegate) : super(_delegate);

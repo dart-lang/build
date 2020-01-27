@@ -37,7 +37,7 @@ void checkOutputs(
     Map<String, /*List<int>|String|Matcher<String|List<int>>*/ dynamic> outputs,
     Iterable<AssetId> actualAssets,
     RecordingAssetWriter writer,
-    {AssetId mapAssetIds(AssetId id) = _passThrough}) {
+    {AssetId Function(AssetId id) mapAssetIds = _passThrough}) {
   var modifiableActualAssets = Set.from(actualAssets);
   if (outputs != null) {
     outputs.forEach((serializedId, contentsMatcher) {
@@ -113,12 +113,12 @@ void checkOutputs(
 Future testBuilder(
     Builder builder, Map<String, /*String|List<int>*/ dynamic> sourceAssets,
     {Set<String> generateFor,
-    bool isInput(String assetId),
+    bool Function(String assetId) isInput,
     String rootPackage,
     MultiPackageAssetReader reader,
     RecordingAssetWriter writer,
     Map<String, /*String|List<int>|Matcher<String|List<int>>*/ dynamic> outputs,
-    void onLog(LogRecord log),
+    void Function(LogRecord log) onLog,
     void Function(AssetId, Iterable<AssetId>)
         reportUnusedAssetsForInput}) async {
   writer ??= InMemoryAssetWriter();
