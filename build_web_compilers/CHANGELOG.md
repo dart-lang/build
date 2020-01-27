@@ -1,3 +1,10 @@
+## 2.9.0-dev
+
+- Add support for enabling experiments through the `experiments` option on the
+  `build_web_compilers|ddc` builder. This must be configured globally.
+  - This is a list of experiment names, which translates into
+    `--enable-experiment=<name>` arguments.
+
 ## 2.8.0
 
 - Enable asserts in dev mode with dart2js by default.

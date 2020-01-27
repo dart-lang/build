@@ -55,6 +55,18 @@ void main() {
     });
   });
 
+  group('experiments', () {
+    test('can serve a single app with experiments enabled', () async {
+      var result = await runBuild(trailingArgs: [
+        '--define',
+        'build_web_compilers|ddc=experiments=["fake-experiment"]',
+      ]);
+
+      expect(result.exitCode, isNot(0));
+      expect(result.stdout, contains('Unknown experiment: fake-experiment'));
+    });
+  });
+
   group('regression tests', () {
     test('Failing optional outputs which are required during the next build',
         () async {

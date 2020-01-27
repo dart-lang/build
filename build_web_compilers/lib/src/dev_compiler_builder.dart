@@ -49,6 +49,9 @@ class DevCompilerBuilder implements Builder {
   /// Environment defines to pass to ddc (as -D variables).
   final Map<String, String> environment;
 
+  /// Experiments to pass to ddc (as --enable-experiment=<experiment> args).
+  final Iterable<String> experiments;
+
   DevCompilerBuilder(
       {bool useIncrementalCompiler,
       bool trackUnusedInputs,
@@ -56,7 +59,8 @@ class DevCompilerBuilder implements Builder {
       this.sdkKernelPath,
       String librariesPath,
       String platformSdk,
-      Map<String, String> environment})
+      Map<String, String> environment,
+      Iterable<String> experiments})
       : useIncrementalCompiler = useIncrementalCompiler ?? true,
         platformSdk = platformSdk ?? sdkDir,
         librariesPath = librariesPath ??
@@ -69,7 +73,8 @@ class DevCompilerBuilder implements Builder {
             jsSourceMapExtension
           ],
         },
-        environment = environment ?? {};
+        environment = environment ?? {},
+        experiments = experiments ?? {};
 
   @override
   final Map<String, List<String>> buildExtensions;
@@ -101,7 +106,8 @@ class DevCompilerBuilder implements Builder {
           platformSdk,
           sdkKernelPath,
           librariesPath,
-          environment);
+          environment,
+          experiments);
     } on DartDevcCompilationException catch (e) {
       await handleError(e);
     } on MissingModulesException catch (e) {
@@ -120,6 +126,7 @@ Future<void> _createDevCompilerModule(
     String sdkKernelPath,
     String librariesPath,
     Map<String, String> environment,
+    Iterable<String> experiments,
     {bool debugMode = true}) async {
   var transitiveDeps = await buildStep.trackStage('CollectTransitiveDeps',
       () => module.computeTransitiveDependencies(buildStep));
@@ -176,7 +183,8 @@ Future<void> _createDevCompilerModule(
       if (usedInputsFile != null)
         '--used-inputs-file=${usedInputsFile.uri.toFilePath()}',
       for (var source in module.sources) _sourceArg(source),
-      for (var define in environment.entries) '-D${define.key}=${define.value}'
+      for (var define in environment.entries) '-D${define.key}=${define.value}',
+      for (var experiment in experiments) '--enable-experiment=$experiment',
     ])
     ..inputs.add(Input()
       ..path = sdkSummary
