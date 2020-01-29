@@ -26,6 +26,7 @@ import 'package:yaml/yaml.dart';
 import 'analysis_driver.dart';
 import 'build_asset_uri_resolver.dart';
 import 'human_readable_duration.dart';
+import 'sdk_path.dart';
 
 final _logger = Logger('build_resolvers');
 
@@ -285,7 +286,7 @@ Future<void> _createDepsFile(
 
 List<int> _buildSdkSummary() {
   var resourceProvider = PhysicalResourceProvider.INSTANCE;
-  var dartSdkFolder = resourceProvider.getFolder(_runningDartSdkPath);
+  var dartSdkFolder = resourceProvider.getFolder(runningDartSdkPath);
   var sdk = FolderBasedDartSdk(resourceProvider, dartSdkFolder)
     ..useSummary = false
     ..analysisOptions = AnalysisOptionsImpl();
@@ -322,13 +323,10 @@ void _addFlutterLibraries(
   }
 }
 
-/// Path to the running dart's SDK root.
-final _runningDartSdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
-
 /// Path where the dart:ui package will be found, if executing via the dart
 /// binary provided by the Flutter SDK.
 final _dartUiPath =
-    p.normalize(p.join(_runningDartSdkPath, '..', 'pkg', 'sky_engine', 'lib'));
+    p.normalize(p.join(runningDartSdkPath, '..', 'pkg', 'sky_engine', 'lib'));
 
 /// `true` if the currently running dart was provided by the Flutter SDK.
 final isFlutter =
