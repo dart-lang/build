@@ -806,11 +806,15 @@ class VerificationResult {
   ///
   /// Named arguments are listed in the order they are captured in, not the
   /// order in which they were passed.
+  // TODO(https://github.com/dart-lang/linter/issues/1992): Remove ignore
+  // comments below when google3 has linter with this bug fixed.
+  // ignore: unnecessary_getters_setters
   List<dynamic> get captured => _captured;
 
   @Deprecated(
       'captured should be considered final - assigning this field may be '
       'removed as early as Mockito 5.0.0')
+  // ignore: unnecessary_getters_setters
   set captured(List<dynamic> captured) => _captured = captured;
 
   /// The number of calls matched in this verification.

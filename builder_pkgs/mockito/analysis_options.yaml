@@ -1,20 +1,4 @@
 include: package:pedantic/analysis_options.yaml
-analyzer:
-  strong-mode:
-    implicit-casts: false
-    implicit-dynamic: false
-  errors:
-    # These are for 2.5.0-dev.2.0 and after
-    implicit_dynamic_function: ignore
-    implicit_dynamic_list_literal: ignore
-    implicit_dynamic_map_literal: ignore
-    implicit_dynamic_parameter: ignore
-    implicit_dynamic_variable: ignore
-    # These are pre-2.5.0-dev.2.0
-    strong_mode_implicit_dynamic_list_literal: ignore
-    strong_mode_implicit_dynamic_map_literal: ignore
-    strong_mode_implicit_dynamic_parameter: ignore
-    strong_mode_implicit_dynamic_variable: ignore
 linter:
   rules:
      # Errors

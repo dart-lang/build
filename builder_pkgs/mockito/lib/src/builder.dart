@@ -370,8 +370,7 @@ class _MockLibraryInfo {
   /// Returns a [Parameter] which matches [parameter].
   Parameter _matchingParameter(ParameterElement parameter,
       {String defaultName}) {
-    String name =
-        parameter.name?.isEmpty ?? false ? defaultName : parameter.name;
+    var name = parameter.name?.isEmpty ?? false ? defaultName : parameter.name;
     return Parameter((pBuilder) {
       pBuilder
         ..name = name
@@ -465,8 +464,9 @@ class _MockLibraryInfo {
         trBuilder
           ..symbol = typedef.name
           ..url = _typeImport(type);
-        for (var typeArgument in type.typeArguments)
+        for (var typeArgument in type.typeArguments) {
           trBuilder.types.add(_typeReference(typeArgument));
+        }
       });
     } else {
       return refer(type.displayName, _typeImport(type));
