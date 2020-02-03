@@ -37,10 +37,7 @@ class MockBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
     final entryLib = await buildStep.inputLibrary;
-    final resolver = buildStep.resolver;
-
     final mockLibraryAsset = buildStep.inputId.changeExtension('.mocks.dart');
-
     final classesToMock = <DartObject>[];
 
     for (final element in entryLib.topLevelElements) {
@@ -429,7 +426,7 @@ class _MockLibraryInfo {
   /// Create a reference for [type], properly referencing all attached types.
   ///
   /// This creates proper references for:
-  /// * [InterfaceType]s (classes, generic classes),
+  /// * InterfaceTypes (classes, generic classes),
   /// * FunctionType parameters (like `void callback(int i)`),
   /// * type aliases (typedefs), both new- and old-style,
   /// * enums.
@@ -496,3 +493,6 @@ class InvalidMockitoAnnotationException implements Exception {
   @override
   String toString() => 'Invalid @GenerateMocks annotation: $message';
 }
+
+/// A [MockBuilder] instance for use by `build.yaml`.
+Builder buildMocks(BuilderOptions options) => MockBuilder();

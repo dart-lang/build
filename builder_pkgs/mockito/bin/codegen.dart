@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'package:mockito/src/builder.dart';
-
 import 'package:build/build.dart';
+import 'package:mockito/src/builder.dart' as b;
 
-Builder buildMocks(BuilderOptions options) => MockBuilder();
+Builder buildMocks(BuilderOptions options) => b.buildMocks(options);
