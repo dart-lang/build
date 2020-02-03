@@ -194,6 +194,50 @@ void main() {
       }, packageGraph.root.name,
           packageGraph.root.dependencies.map((node) => node.name).toList());
     });
+
+    group('autoApplyBuilders', () {
+      Future<List<BuildPhase>> _createPhases(
+          {Map<String, TargetBuilderConfig> builderConfigs}) async {
+        var packageGraph = buildPackageGraph({
+          rootPackage('a'): ['b'],
+          package('b'): [],
+        });
+        var targetGraph = await runInBuildConfigZone(
+            () =>
+                TargetGraph.forPackageGraph(packageGraph, overrideBuildConfig: {
+                  'a': BuildConfig(packageName: 'a', buildTargets: {
+                    'a|a': BuildTarget(
+                        autoApplyBuilders: false, builders: builderConfigs),
+                  })
+                }),
+            'a',
+            []);
+        var builderApplications = [
+          apply('b:cool_builder', [(options) => CoolBuilder(options)],
+              toDependentsOf('b')),
+          apply('b:cool_builder_2', [(options) => CoolBuilder(options)],
+              toDependentsOf('b')),
+        ];
+        return await createBuildPhases(
+            targetGraph, builderApplications, {}, false);
+      }
+
+      test('can be disabled for a target', () async {
+        var phases = await _createPhases();
+        expect(phases, isEmpty);
+      });
+
+      test('individual builders can still be enabled', () async {
+        var phases = await _createPhases(builderConfigs: {
+          'b:cool_builder_2': TargetBuilderConfig(isEnabled: true)
+        });
+        expect(phases, hasLength(1));
+        expect(
+            phases.first,
+            isA<InBuildPhase>().having((p) => p.package, 'package', 'a').having(
+                (p) => p.builderLabel, 'builderLabel', 'b:cool_builder_2'));
+      });
+    });
   });
 }
 
