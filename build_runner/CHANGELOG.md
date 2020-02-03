@@ -2,6 +2,7 @@
 
 - Give a warning instead of a stack trace when using a build config override
   file for a package that does not exist.
+- Allow the latest build_config version.
 
 ## 1.7.3
 
