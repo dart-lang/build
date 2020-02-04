@@ -214,7 +214,8 @@ void main() {
             []);
         var builderApplications = [
           apply('b:cool_builder', [(options) => CoolBuilder(options)],
-              toDependentsOf('b')),
+              toDependentsOf('b'),
+              appliesBuilders: ['b:cool_builder_2']),
           apply('b:cool_builder_2', [(options) => CoolBuilder(options)],
               toDependentsOf('b')),
         ];
@@ -236,6 +237,26 @@ void main() {
             phases.first,
             isA<InBuildPhase>().having((p) => p.package, 'package', 'a').having(
                 (p) => p.builderLabel, 'builderLabel', 'b:cool_builder_2'));
+      });
+
+      test('enabling a builder also enables other builders it applies',
+          () async {
+        var phases = await _createPhases(builderConfigs: {
+          'b:cool_builder': TargetBuilderConfig(isEnabled: true)
+        });
+        expect(phases, hasLength(2));
+        expect(
+            phases,
+            equals([
+              isA<InBuildPhase>()
+                  .having((p) => p.package, 'package', 'a')
+                  .having(
+                      (p) => p.builderLabel, 'builderLabel', 'b:cool_builder'),
+              isA<InBuildPhase>()
+                  .having((p) => p.package, 'package', 'a')
+                  .having((p) => p.builderLabel, 'builderLabel',
+                      'b:cool_builder_2'),
+            ]));
       });
     });
   });
