@@ -366,13 +366,12 @@ bool _shouldApply(
   if (builderConfig?.isEnabled != null) {
     return builderConfig.isEnabled;
   }
-  if (node.target.autoApplyBuilders) {
-    return builderApplication.filter(node.package) ||
-        (applyWith[builderApplication.builderKey] ?? const []).any(
-            (anchorBuilder) =>
-                _shouldApply(anchorBuilder, node, applyWith, allBuilders));
-  }
-  return false;
+  final shouldAutoApply =
+      node.target.autoApplyBuilders && builderApplication.filter(node.package);
+  return shouldAutoApply ||
+      (applyWith[builderApplication.builderKey] ?? const []).any(
+          (anchorBuilder) =>
+              _shouldApply(anchorBuilder, node, applyWith, allBuilders));
 }
 
 /// Inverts the dependency map from 'applies builders' to 'applied with
