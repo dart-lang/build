@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+@TestOn('vm')
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:meta/meta.dart';
