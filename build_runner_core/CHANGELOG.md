@@ -1,4 +1,4 @@
-## 4.4.0-dev
+## 4.4.0
 
 - Support the `auto_apply_builders` target configuration added in
   `build_config` version `0.4.2`.
