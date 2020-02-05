@@ -144,12 +144,11 @@ class BuildAssetUriResolver extends UriResolver {
   @override
   Source resolveAbsolute(Uri uri, [Uri actualUri]) {
     final assetId = parseAsset(uri);
-    if (assetId == null) {
-      return null;
-    }
-    final source =
-        resourceProvider.getFile(assetPath(assetId)).createSource(assetId.uri);
-    return source;
+    if (assetId == null) return null;
+
+    return resourceProvider
+        .getFile(assetPath(assetId))
+        .createSource(assetId.uri);
   }
 
   @override
