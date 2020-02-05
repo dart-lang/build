@@ -116,6 +116,24 @@ void main() {
       }, resolvers: AnalyzerResolvers());
     });
 
+    test('can read missing files that appear later', () async {
+      var resolvers = AnalyzerResolvers();
+      var sources = {
+        'a|web/main.dart': "part 'a.g.dart';",
+      };
+      await resolveSources(sources, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        expect(lib.getType('A'), isNull);
+      }, resolvers: resolvers);
+
+      sources['a|web/a.g.dart'] = 'class A {}';
+
+      await resolveSources(sources, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        expect(lib.getType('A'), isNotNull);
+      }, resolvers: resolvers);
+    }, skip: 'https://github.com/dart-lang/build/issues/2389');
+
     test('should list all libraries', () {
       return resolveSources({
         'a|web/main.dart': '''
