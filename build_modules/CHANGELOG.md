@@ -1,3 +1,52 @@
+## 2.8.0
+
+- Add the ability to pass a list of experiments to enable to the KernelBuilder.
+
+## 2.7.0
+
+- Add support for an environment variable `BUILD_DART2JS_VM_ARGS` which can
+  be used to supply Dart vm arguments for the dart2js processes.
+
+## 2.6.3
+
+- Keep cached deserialized module instances in more cases. This may improve
+  performance of incremental builds in watch mode.
+- **Deprecated**: The package specific unsupported module whitelist option
+  provided by `computeTransitiveDependencies`. The only known uses are being
+  removed.
+- Allow analyzer version `0.39.x`.
+
+## 2.6.2
+
+Republish of `2.6.0` with the proper min sdk contraint.
+
+## 2.6.1
+
+### Bug fix for issue #2464
+
+Ignore the `trackUnusedInputs` option that was added in `2.6.0`.
+
+This option will be respected again in the next release which will have the
+proper minimum sdk constraint.
+
+## 2.6.0
+
+Add support for dependency pruning to the `KernelBuilder`. This should greatly
+improve the invalidation semantics for builds, meaning that less code will be
+recompiled for each edit you make.
+
+This is not enabled by default but can be enabled by passing
+`trackUnusedInputs: true` to the `KernelBuilder` constructor.
+
+## 2.5.0
+
+- Add an option to skip the unsupported module check for modules in specified
+  packages.
+
+## 2.4.3
+
+- Allow analyzer version 0.38.0.
+
 ## 2.4.2
 
 - Support the latest release of `package:json_annotation`.

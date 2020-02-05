@@ -21,17 +21,34 @@ Builder ddcMetaModuleBuilder(BuilderOptions options) =>
     MetaModuleBuilder.forOptions(ddcPlatform, options);
 Builder ddcMetaModuleCleanBuilder(_) => MetaModuleCleanBuilder(ddcPlatform);
 Builder ddcModuleBuilder([_]) => ModuleBuilder(ddcPlatform);
-Builder ddcBuilder(BuilderOptions options) => DevCompilerBuilder(
-      useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
-      platform: ddcPlatform,
-    );
-const ddcKernelExtension = '.ddc.dill';
-Builder ddcKernelBuilder(BuilderOptions options) => KernelBuilder(
-    summaryOnly: true,
-    sdkKernelPath: p.url.join('lib', '_internal', 'ddc_sdk.dill'),
-    outputExtension: ddcKernelExtension,
+Builder ddcBuilder(BuilderOptions options) {
+  validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
+  _ensureSameDdcOptions(options);
+
+  return DevCompilerBuilder(
+    useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
+    trackUnusedInputs: _readTrackInputsCompilerOption(options),
     platform: ddcPlatform,
-    useIncrementalCompiler: _readUseIncrementalCompilerOption(options));
+    environment: _readEnvironmentOption(options),
+    experiments: _readExperimentOption(options),
+  );
+}
+
+const ddcKernelExtension = '.ddc.dill';
+Builder ddcKernelBuilder(BuilderOptions options) {
+  validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
+  _ensureSameDdcOptions(options);
+
+  return KernelBuilder(
+      summaryOnly: true,
+      sdkKernelPath: p.url.join('lib', '_internal', 'ddc_sdk.dill'),
+      outputExtension: ddcKernelExtension,
+      platform: ddcPlatform,
+      useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
+      trackUnusedInputs: _readTrackInputsCompilerOption(options),
+      experiments: _readExperimentOption(options));
+}
+
 Builder sdkJsCopyBuilder(_) => SdkJsCopyBuilder();
 PostProcessBuilder sdkJsCleanupBuilder(BuilderOptions options) =>
     FileDeletingBuilder(
@@ -53,11 +70,8 @@ PostProcessBuilder dartSourceCleanup(BuilderOptions options) =>
         ? const FileDeletingBuilder(['.dart', '.js.map'])
         : const FileDeletingBuilder(['.dart', '.js.map'], isEnabled: false);
 
-/// Reads the [_useIncrementalCompilerOption] from [options].
-///
-/// Note that [options] must be consistent across the entire build, and if it is
-/// not then an [ArgumentError] will be thrown.
-bool _readUseIncrementalCompilerOption(BuilderOptions options) {
+/// Throws if it is ever given different options.
+void _ensureSameDdcOptions(BuilderOptions options) {
   if (_previousDdcConfig != null) {
     if (!const MapEquality().equals(_previousDdcConfig, options.config)) {
       throw ArgumentError(
@@ -70,10 +84,32 @@ bool _readUseIncrementalCompilerOption(BuilderOptions options) {
   } else {
     _previousDdcConfig = options.config;
   }
-  validateOptions(options.config, [_useIncrementalCompilerOption],
-      'build_web_compilers:ddc');
+}
+
+bool _readUseIncrementalCompilerOption(BuilderOptions options) {
   return options.config[_useIncrementalCompilerOption] as bool ?? true;
+}
+
+bool _readTrackInputsCompilerOption(BuilderOptions options) {
+  return options.config[_trackUnusedInputsCompilerOption] as bool ?? true;
+}
+
+Map<String, String> _readEnvironmentOption(BuilderOptions options) {
+  return Map.from((options.config[_environmentOption] as Map) ?? {});
+}
+
+List<String> _readExperimentOption(BuilderOptions options) {
+  return List.from((options.config[_experimentOption] as List) ?? []);
 }
 
 Map<String, dynamic> _previousDdcConfig;
 const _useIncrementalCompilerOption = 'use-incremental-compiler';
+const _trackUnusedInputsCompilerOption = 'track-unused-inputs';
+const _environmentOption = 'environment';
+const _experimentOption = 'experiments';
+const _supportedOptions = [
+  _environmentOption,
+  _experimentOption,
+  _useIncrementalCompilerOption,
+  _trackUnusedInputsCompilerOption
+];

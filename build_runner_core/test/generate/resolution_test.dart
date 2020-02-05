@@ -53,7 +53,7 @@ class ListClassesAndHierarchyBuilder implements Builder {
     for (final type in types) {
       output
         ..write('${type.name}: [')
-        ..writeAll(type.allSupertypes.map((t) => t.name), ', ')
+        ..writeAll(type.allSupertypes.map((t) => t.element.name), ', ')
         ..writeln(']');
     }
     await buildStep.writeAsString(outputId, output.toString());

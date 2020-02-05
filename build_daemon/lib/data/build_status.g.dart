@@ -61,7 +61,7 @@ class _$DefaultBuildResultSerializer
   final String wireName = 'DefaultBuildResult';
 
   @override
-  Iterable serialize(Serializers serializers, DefaultBuildResult object,
+  Iterable<Object> serialize(Serializers serializers, DefaultBuildResult object,
       {FullType specifiedType = FullType.unspecified}) {
     final result = <Object>[
       'status',
@@ -89,12 +89,12 @@ class _$DefaultBuildResultSerializer
         ..add(serializers.serialize(object.isCached,
             specifiedType: const FullType(bool)));
     }
-
     return result;
   }
 
   @override
-  DefaultBuildResult deserialize(Serializers serializers, Iterable serialized,
+  DefaultBuildResult deserialize(
+      Serializers serializers, Iterable<Object> serialized,
       {FullType specifiedType = FullType.unspecified}) {
     final result = new DefaultBuildResultBuilder();
 
@@ -138,7 +138,7 @@ class _$BuildResultsSerializer implements StructuredSerializer<BuildResults> {
   final String wireName = 'BuildResults';
 
   @override
-  Iterable serialize(Serializers serializers, BuildResults object,
+  Iterable<Object> serialize(Serializers serializers, BuildResults object,
       {FullType specifiedType = FullType.unspecified}) {
     final result = <Object>[
       'results',
@@ -151,7 +151,7 @@ class _$BuildResultsSerializer implements StructuredSerializer<BuildResults> {
   }
 
   @override
-  BuildResults deserialize(Serializers serializers, Iterable serialized,
+  BuildResults deserialize(Serializers serializers, Iterable<Object> serialized,
       {FullType specifiedType = FullType.unspecified}) {
     final result = new BuildResultsBuilder();
 
@@ -165,7 +165,7 @@ class _$BuildResultsSerializer implements StructuredSerializer<BuildResults> {
           result.results.replace(serializers.deserialize(value,
                   specifiedType: const FullType(
                       BuiltList, const [const FullType(BuildResult)]))
-              as BuiltList);
+              as BuiltList<dynamic>);
           break;
       }
     }

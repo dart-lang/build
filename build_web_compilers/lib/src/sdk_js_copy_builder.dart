@@ -20,11 +20,11 @@ class SdkJsCopyBuilder implements Builder {
 
   /// Path to the dart_sdk.js file that should be used for all ddc web apps.
   final _sdkJsLocation =
-      p.join(sdkDir, 'lib', 'dev_compiler', 'amd', 'dart_sdk.js');
+      p.join(sdkDir, 'lib', 'dev_compiler', 'kernel', 'amd', 'dart_sdk.js');
 
   /// Path to the require.js file that should be used for all ddc web apps.
   final _sdkRequireJsLocation =
-      p.join(sdkDir, 'lib', 'dev_compiler', 'amd', 'require.js');
+      p.join(sdkDir, 'lib', 'dev_compiler', 'kernel', 'amd', 'require.js');
 
   @override
   FutureOr<void> build(BuildStep buildStep) async {

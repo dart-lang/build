@@ -4,7 +4,7 @@
 
 import 'package:build/build.dart';
 
-Builder copyCompiledJs(_) => _CopyBuilder();
+Builder copyCompiledJs(void _) => _CopyBuilder();
 
 /// A Builder to copy compiled dart2js output to source.
 class _CopyBuilder extends Builder {

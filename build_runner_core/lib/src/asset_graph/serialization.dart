@@ -312,7 +312,7 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
   int get length => _length;
 
   @override
-  set length(_) => throw UnsupportedError(
+  set length(void _) => throw UnsupportedError(
       'length setter not unsupported for WrappedAssetNode');
 
   @override
@@ -365,7 +365,7 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
   }
 
   @override
-  operator []=(_, __) =>
+  operator []=(void _, void __) =>
       throw UnsupportedError('[]= not supported for WrappedAssetNode');
 }
 

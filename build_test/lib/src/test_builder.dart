@@ -13,6 +13,7 @@ import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
 import 'multi_asset_reader.dart';
 import 'resolve_source.dart';
+import 'written_asset_reader.dart';
 
 AssetId _passThrough(AssetId id) => id;
 
@@ -36,7 +37,7 @@ void checkOutputs(
     Map<String, /*List<int>|String|Matcher<String|List<int>>*/ dynamic> outputs,
     Iterable<AssetId> actualAssets,
     RecordingAssetWriter writer,
-    {AssetId mapAssetIds(AssetId id) = _passThrough}) {
+    {AssetId Function(AssetId id) mapAssetIds = _passThrough}) {
   var modifiableActualAssets = Set.from(actualAssets);
   if (outputs != null) {
     outputs.forEach((serializedId, contentsMatcher) {
@@ -112,21 +113,33 @@ void checkOutputs(
 Future testBuilder(
     Builder builder, Map<String, /*String|List<int>*/ dynamic> sourceAssets,
     {Set<String> generateFor,
-    bool isInput(String assetId),
+    bool Function(String assetId) isInput,
     String rootPackage,
     MultiPackageAssetReader reader,
     RecordingAssetWriter writer,
     Map<String, /*String|List<int>|Matcher<String|List<int>>*/ dynamic> outputs,
-    void onLog(LogRecord log)}) async {
+    void Function(LogRecord log) onLog,
+    void Function(AssetId, Iterable<AssetId>)
+        reportUnusedAssetsForInput}) async {
   writer ??= InMemoryAssetWriter();
-  final inMemoryReader = InMemoryAssetReader(rootPackage: rootPackage);
-  if (reader != null) {
-    reader = MultiAssetReader([inMemoryReader, reader]);
-  } else {
-    reader = inMemoryReader;
-  }
 
-  var inputIds = <AssetId>[];
+  var inputIds = {
+    for (var descriptor in sourceAssets.keys) makeAssetId(descriptor)
+  };
+  var allPackages = {for (var id in inputIds) id.package};
+  if (allPackages.length == 1) rootPackage ??= allPackages.first;
+
+  inputIds.addAll([
+    for (var package in allPackages) AssetId(package, r'lib/$lib$'),
+    if (rootPackage != null) ...[
+      AssetId(rootPackage, r'$package$'),
+      AssetId(rootPackage, r'test/$test$'),
+      AssetId(rootPackage, r'web/$web$'),
+    ]
+  ]);
+
+  final inMemoryReader = InMemoryAssetReader(rootPackage: rootPackage);
+
   sourceAssets.forEach((serializedId, contents) {
     var id = makeAssetId(serializedId);
     if (contents is String) {
@@ -134,25 +147,30 @@ Future testBuilder(
     } else if (contents is List<int>) {
       inMemoryReader.cacheBytesAsset(id, contents);
     }
-    inputIds.add(id);
   });
 
-  var allPackages = inMemoryReader.assets.keys.map((a) => a.package).toSet();
-  for (var pkg in allPackages) {
-    for (var dir in const ['lib', 'web', 'test']) {
-      var asset = AssetId(pkg, '$dir/\$$dir\$');
-      inputIds.add(asset);
-    }
-  }
-
   isInput ??= generateFor?.contains ?? (_) => true;
-  inputIds = inputIds.where((id) => isInput('$id')).toList();
+  inputIds.retainWhere((id) => isInput('$id'));
 
   var writerSpy = AssetWriterSpy(writer);
   var logger = Logger('testBuilder');
   var logSubscription = logger.onRecord.listen(onLog);
-  await runBuilder(builder, inputIds, reader, writerSpy, defaultResolvers,
-      logger: logger);
+
+  for (var input in inputIds) {
+    // create another writer spy and reader for each input. This prevents writes
+    // from a previous input being readable when processing the current input.
+    final spyForStep = AssetWriterSpy(writerSpy);
+    final readerForStep = MultiAssetReader([
+      inMemoryReader,
+      if (reader != null) reader,
+      WrittenAssetReader(writer, spyForStep),
+    ]);
+
+    await runBuilder(
+        builder, {input}, readerForStep, spyForStep, defaultResolvers,
+        logger: logger, reportUnusedAssetsForInput: reportUnusedAssetsForInput);
+  }
+
   await logSubscription.cancel();
   var actualOutputs = writerSpy.assetsWritten;
   checkOutputs(outputs, actualOutputs, writer);

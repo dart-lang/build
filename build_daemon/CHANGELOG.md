@@ -1,3 +1,19 @@
+# 2.1.3
+
+- Allow the latest `stream_transform`.
+
+# 2.1.2
+
+- Depend on the latest `built_value`.
+
+# 2.1.1
+
+- Require SDK version `2.6.0` to enable extension methods.
+
+## 2.1.0
+
+- Added optional `DefaultBuildTarget.buildFilters` field.
+
 ## 2.0.0
 
 - Create a public entrypoint for backend implementations of the daemon protocol.

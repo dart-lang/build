@@ -56,7 +56,8 @@ abstract class BuildResults
     implements Built<BuildResults, BuildResultsBuilder> {
   static Serializer<BuildResults> get serializer => _$buildResultsSerializer;
 
-  factory BuildResults([updates(BuildResultsBuilder b)]) = _$BuildResults;
+  factory BuildResults([Function(BuildResultsBuilder b) updates]) =
+      _$BuildResults;
 
   BuildResults._();
 

@@ -132,7 +132,7 @@ class InspectNodeCommand extends Command<bool> {
           ..writeln('  isFailure: ${node.isFailure}');
       }
 
-      _printAsset(AssetId asset) =>
+      void _printAsset(AssetId asset) =>
           _listAsset(asset, description, indentation: '    ');
 
       if (argResults['verbose'] == true) {
@@ -236,7 +236,8 @@ AssetId _idFromString(String stringUri) {
   }
 }
 
-_listAsset(AssetId output, StringSink buffer, {String indentation = '  '}) {
+void _listAsset(AssetId output, StringSink buffer,
+    {String indentation = '  '}) {
   var outputUri = output.uri;
   if (outputUri.scheme == 'package') {
     buffer.writeln('$indentation${output.uri}');

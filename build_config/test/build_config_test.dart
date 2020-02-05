@@ -52,8 +52,8 @@ void main() {
           ]
         },
         requiredInputs: ['.dart'],
-        runsBefore: ['foo_builder:foo_builder'].toSet(),
-        appliesBuilders: ['foo_builder:foo_builder'].toSet(),
+        runsBefore: {'foo_builder:foo_builder'},
+        appliesBuilders: {'foo_builder:foo_builder'},
         defaults: TargetBuilderConfigDefaults(
           generateFor: const InputSet(include: ['lib/**']),
           options: const {'foo': 'bar'},
@@ -89,7 +89,7 @@ void main() {
     expectBuildTargets(buildConfig.buildTargets, {
       'example:example': createBuildTarget(
         'example',
-        dependencies: ['a:a', 'b:b'].toSet(),
+        dependencies: {'a:a', 'b:b'},
         sources: InputSet(),
       ),
     });
@@ -109,8 +109,8 @@ void main() {
           ]
         },
         requiredInputs: const [],
-        runsBefore: Set<String>(),
-        appliesBuilders: Set<String>(),
+        runsBefore: <String>{},
+        appliesBuilders: <String>{},
       ),
     });
   });
@@ -120,7 +120,7 @@ void main() {
     expectBuildTargets(buildConfig.buildTargets, {
       'example:example': createBuildTarget(
         'example',
-        dependencies: ['a:a', 'b:b'].toSet(),
+        dependencies: {'a:a', 'b:b'},
         sources: InputSet(),
       ),
     });

@@ -21,7 +21,11 @@ export 'src/generate/exceptions.dart'
         CannotBuildException;
 export 'src/generate/finalized_assets_view.dart' show FinalizedAssetsView;
 export 'src/generate/options.dart'
-    show defaultRootPackageWhitelist, LogSubscription, BuildOptions;
+    show
+        defaultRootPackageWhitelist,
+        LogSubscription,
+        BuildOptions,
+        BuildFilter;
 export 'src/generate/performance_tracker.dart'
     show BuildPerformance, BuilderActionPerformance, BuildPhasePerformance;
 export 'src/logging/human_readable_duration.dart';

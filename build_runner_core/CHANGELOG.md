@@ -1,3 +1,64 @@
+## 4.3.1-dev
+
+- Internal changes.
+
+## 4.3.0
+
+- Add the `$package$` synthetic placeholder file and update the docs to prefer
+  using only that or `lib/$lib$`.
+- Add the `assets` directory and `$package$` placeholders to the default
+  sources whitelist.
+
+## 4.2.1
+
+- Bug fix: Changing the root package name will no longer cause subsequent
+  builds to fail (Issue #2566).
+
+## 4.2.0
+
+### New Feature
+
+- Allow reading assets created previously by the same `BuildStep`.
+
+## 4.1.0
+
+- Add support for trimming builds based on `BuildStep.reportUnusedAssets`
+  calls. See the `build` package for more details.
+- Include `node/**` in the default set of sources (when there is no target
+  defined) for the root package.
+
+## 4.0.0
+
+### New Feature: Build Filters
+
+- Added a new `BuildFilter` class which matches a set of assets with glob
+  syntax support for both package and file names.
+- Added `buildFilters` to `BuildOptions` which is a `Set<BuildFilter>` and
+  is used to filter exactly which outputs will be generated.
+  - Note that any inputs to the specified files will also necessarily be built.
+- `BuildRunner.run` also now accepts an optional `Set<BuildFilter>` argument.
+- `FinalizedReader` also  now accepts a `Set<BuildFilter>` optional parameter
+  and will only allow reading matched files.
+  - This means you can create output directories or servers that respect build
+    filters.
+
+### Breaking Changes
+
+- `FinalizedReader.reset` now requires an additional `Set<BuildFilter>`
+  argument.
+
+## 3.1.1
+
+- When skipping build script updates, don't check if the build script is a
+  part of the asset graph either.
+
+## 3.1.0
+
+- Factor out the logic to do a manual file system scan for changes into a
+  new `AssetTracker` class.
+  - This is not exposed publicly and is only intended to be used from the
+    `build_runner` package.
+
 ## 3.0.9
 
 - Support the latest release of `package:json_annotation`.

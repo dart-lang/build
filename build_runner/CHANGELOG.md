@@ -1,3 +1,128 @@
+## 1.7.4-dev
+
+- Give a warning instead of a stack trace when using a build config override
+  file for a package that does not exist.
+
+## 1.7.3
+
+- Improve the error message when a `--hostname` argument is invalid.
+- Require SDK version `2.6.0` to enable extension methods.
+- Allow the latest `stream_transform`.
+
+## 1.7.2
+
+- Enable the native windows directory watcher by default.
+  - Added a --use-polling-watcher option which overrides this to use a polling
+    watcher again.
+  - Increased the lower bound for the SDK to a version which contains various
+    fixes for the native windows directory watcher.
+- Give a more consistent ordering for Builders when their ordering is allowed to
+  be arbitrary.
+- Handle more `--help` invocations without generating the build script.
+
+## 1.7.1
+
+- Allow `build` version 1.2.x.
+
+## 1.7.0
+
+### New Feature: Build Filters
+
+Build filters allow you to choose explicitly which files to build instead of
+building entire directories.
+
+A build filter is a combination of a package and a path, with glob syntax
+supported for each.
+
+Whenever a build filter is provided, only required outputs matching one of the
+build filters will be built, in addition to the inputs to those outputs.
+
+### Command Line Usage
+
+Build filters are supplied using the new `--build-filter` option, which accepts
+relative paths under the package as well as `package:` uris.
+
+Glob syntax is allowed in both package names and paths.
+
+**Example**: The following would build and serve the JS output for an
+application, as well as copy over the required SDK resources for that app:
+
+```
+pub run build_runner serve \
+  --build-filter="web/main.dart.js" \
+  --build-filter="package:build_web_compilers/**/*.js"
+```
+
+### Build Daemon Usage
+
+The build daemon now accepts build filters when registering a build target. If
+no filters are supplied these default filters are used, which is designed to
+match the previous behavior as closely as possible:
+
+- `<target-dir>/**`
+- `package:*/**`
+
+**Note**: There is one small difference compared to the previous behavior,
+which is that build to source outputs from other top level directories in the
+root package will no longer be built when they would have before. This should
+have no meaningful impact other than being more efficient.
+
+### Common Use Cases
+
+**Note**: For all the listed use cases it is up to the user or tool the user is
+using to request all the required files for the desired task. This package only
+provides the core building blocks for these use cases.
+
+#### Testing
+
+If you have a large number of tests but only want to run a single one you can
+now build just that test instead of all tests under the `test` directory.
+
+This can greatly speed up iteration times in packages with lots of tests.
+
+**Example**: This will build a single web test and run it:
+
+```
+pub run build_runner test \
+  --build-filter="test/my_test.dart.browser_test.dart.js" \
+  --build-filter="package:build_web_compilers/**/*.js" \
+  -- -p chrome test/my_test.dart
+```
+
+**Note**: If your test requires any other generated files (css, etc) you will
+need to add additional filters.
+
+#### Applications
+
+This feature works as expected with the `--output <dir>` and the `serve`
+command.  This means you can create an output directory for a single
+application in your package instead of all applications under the same
+directory.
+
+The serve command also uses the build filters to restrict what files are
+available, which means it ensures if something works in serve mode it will
+also work when you create an output directory.
+
+## 1.6.9
+
+- Fix bugs in snapshot invalidation logic that prevented invalidation when
+  core packages changed and always created a new snapshot on the second build.
+
+## 1.6.8
+
+- Improve the manual change detector to do a file system scan on demand instead
+  of using a file watcher.
+
+## 1.6.7
+
+- Set the `charset` to `utf-8` for Dart content returned by the `AssetHandler`.
+
+## 1.6.6
+
+- Added watch event debouncing to the `daemon` command to line up with the
+  `watch` command. This makes things work more nicely with swap files as well
+  as "save all" type scenarios (you will only get a single build most times).
+
 ## 1.6.5
 
 - Require `package:build_config` `">=0.4.1 <0.4.2"`. Use new API that improves

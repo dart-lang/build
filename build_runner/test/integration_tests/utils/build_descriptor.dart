@@ -89,18 +89,16 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
       .dir(
           'a',
           <d.Descriptor>[
-            await _pubspecWithDeps('a',
-                currentIsolateDependencies: [
-                  'build',
-                  'build_config',
-                  'build_daemon',
-                  'build_resolvers',
-                  'build_runner',
-                  'build_runner_core',
-                ],
-                pathDependencies: Map.fromIterable(otherPackages,
-                    key: (o) => (o as d.Descriptor).name,
-                    value: (o) => p.join(d.sandbox, (o as d.Descriptor).name))),
+            await _pubspecWithDeps('a', currentIsolateDependencies: [
+              'build',
+              'build_config',
+              'build_daemon',
+              'build_resolvers',
+              'build_runner',
+              'build_runner_core',
+            ], pathDependencies: {
+              for (var o in otherPackages) o.name: p.join(d.sandbox, o.name),
+            }),
           ].followedBy(packageContents))
       .create();
   await Future.wait(otherPackages.map((d) => d.create()));
@@ -233,7 +231,7 @@ d.FileDescriptor _pubspec(String name,
 
   var buffer = StringBuffer()..writeln('name: $name');
 
-  writeDeps(String group) {
+  void writeDeps(String group) {
     buffer.writeln(group);
 
     pathDependencies.forEach((package, path) {

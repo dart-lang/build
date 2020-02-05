@@ -13,10 +13,6 @@ If you have issues using `build_runner`, see the
 * [Creating an output directory](#creating-an-output-directory)
 * [Using other `build_runner` commands](#using-other-build_runner-commands)
 * [Switching to Dart2JS](#switching-to-dart2js)
-* [Compatibility with other packages](#compatibility-with-other-packages)
-  * [Upgrading from transformers](#upgrading-from-transformers)
-  * [Upgrading from manual `build.dart` files](#upgrading-from-manual-builddart-files)
-  * [Replacing `dart_to_js_script_rewriter`](#replacing-dart_to_js_script_rewriter)
 * [Troubleshooting](#troubleshooting)
   * [`build_runner` has no versions that match...](#build_runner-has-no-versions-that-match)
   * [Too many open files](#too-many-open-files)
@@ -58,7 +54,7 @@ incremental builds are faster.
 Build with `--output <directory name>` to write files into a merged output
 directory with file paths that match internally referenced URIs. This can be
 used with the `build`, `watch`, and `serve` commands. This directory can also
-used with a different server if the `serve` command is insufficient.
+be used with a different server if the `serve` command is insufficient.
 
 To output only part of the package, for example to output only the `web`
 directory, use `--output web:<directory name>`.
@@ -95,35 +91,6 @@ targets:
           - --minify
           - --fast-startup
 ```
-
-## Compatibility with other packages
-
-### Upgrading from transformers
-
-`build_runner` can only run Builders that are published with a `build.yaml`
-file; it can't use legacy `Transformers`. If your pubspec lists transformers,
-switch to a version of the transformer-containing package that has a
-`build.yaml` file.
-
-### Upgrading from manual `build.dart` files
-
-Older versions of `build_runner` were designed to run with manually written
-build scripts referencing the Builders available in the local package or in
-dependencies. This pattern can still be used when customization is needed
-outside of `build.yaml`, but we recommend using the generated build script
-with `pub run build_runner`, because it will be kept up to date with changes
-in the build packages. If your pubspec lists transformers, switch to a version of
-the builder-containing package that has a `build.yaml` file.
-
-## Replacing `dart_to_js_script_rewriter`
-
-When the development process included `dartium` HTML files typically referenced
-`main.dart` and used a transformer to rewrite to `main.dart.js` for deployment.
-The new development process uses DDC and so always compiles to javascript. Any
-script tags should be manually rewritten to always reference `*.dart.js` with a
-`type` of `application/javascript` rather than `application/dart`.
-`dart_to_js_script_rewriter` and `browser` dependencies can be dropped.
-
 
 ## Troubleshooting
 

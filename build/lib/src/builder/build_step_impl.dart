@@ -57,10 +57,15 @@ class BuildStepImpl implements BuildStep {
 
   bool _isComplete = false;
 
+  final void Function(Iterable<AssetId>) _reportUnusedAssets;
+
   BuildStepImpl(this.inputId, Iterable<AssetId> expectedOutputs, this._reader,
       this._writer, this._rootPackage, this._resolvers, this._resourceManager,
-      [this._stageTracker = NoOpStageTracker.instance])
-      : _expectedOutputs = expectedOutputs.toSet();
+      {StageTracker stageTracker,
+      void Function(Iterable<AssetId>) reportUnusedAssets})
+      : _expectedOutputs = expectedOutputs.toSet(),
+        _stageTracker = stageTracker ?? NoOpStageTracker.instance,
+        _reportUnusedAssets = reportUnusedAssets;
 
   @override
   Resolver get resolver {
@@ -137,11 +142,12 @@ class BuildStepImpl implements BuildStep {
   }
 
   @override
-  T trackStage<T>(String label, action, {bool isExternal = false}) =>
+  T trackStage<T>(String label, T Function() action,
+          {bool isExternal = false}) =>
       _stageTracker.trackStage(label, action, isExternal: isExternal);
 
   Future<void> _futureOrWrite<T>(
-          FutureOr<T> content, Future<void> write(T content)) =>
+          FutureOr<T> content, Future<void> Function(T content) write) =>
       (content is Future<T>) ? content.then(write) : write(content as T);
 
   /// Waits for work to finish and cleans up resources.
@@ -169,6 +175,11 @@ class BuildStepImpl implements BuildStep {
     if (!_expectedOutputs.contains(id)) {
       throw UnexpectedOutputException(id, expected: _expectedOutputs);
     }
+  }
+
+  @override
+  void reportUnusedAssets(Iterable<AssetId> assets) {
+    if (_reportUnusedAssets != null) _reportUnusedAssets(assets);
   }
 }
 

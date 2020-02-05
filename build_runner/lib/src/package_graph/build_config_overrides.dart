@@ -21,6 +21,13 @@ Future<Map<String, BuildConfig>> findBuildConfigOverrides(
     if (file is File) {
       final packageName = p.basename(file.path).split('.').first;
       final packageNode = packageGraph.allPackages[packageName];
+      if (packageNode == null) {
+        _log.warning('A build config override is provided for $packageName but '
+            'that package does not exist. '
+            'Remove the ${p.basename(file.path)} override or add a dependency '
+            'on $packageName.');
+        continue;
+      }
       final yaml = file.readAsStringSync();
       final config = BuildConfig.parse(
         packageName,

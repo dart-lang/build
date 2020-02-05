@@ -18,15 +18,15 @@ abstract class AssetNode {
 
   /// The assets that any [Builder] in the build graph declares it may output
   /// when run on this asset.
-  final Set<AssetId> primaryOutputs = Set<AssetId>();
+  final Set<AssetId> primaryOutputs = <AssetId>{};
 
   /// The [AssetId]s of all generated assets which are output by a [Builder]
   /// which reads this asset.
-  final Set<AssetId> outputs = Set<AssetId>();
+  final Set<AssetId> outputs = <AssetId>{};
 
   /// The [AssetId]s of all [PostProcessAnchorNode] assets for which this node
   /// is the primary input.
-  final Set<AssetId> anchorOutputs = Set<AssetId>();
+  final Set<AssetId> anchorOutputs = <AssetId>{};
 
   /// The [Digest] for this node in its last known state.
   ///
@@ -45,7 +45,7 @@ abstract class AssetNode {
 
   /// The IDs of the [PostProcessAnchorNode] for post process builder which
   /// requested to delete this asset.
-  final Set<AssetId> deletedBy = Set<AssetId>();
+  final Set<AssetId> deletedBy = <AssetId>{};
 
   /// Whether the node is deleted.
   ///

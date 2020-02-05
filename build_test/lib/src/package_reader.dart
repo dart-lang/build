@@ -50,7 +50,7 @@ class PackageAssetReader extends AssetReader
     for (final entity in directory.listSync()) {
       if (entity is Directory) {
         final name = p.basename(entity.path);
-        packages[name] = entity.uri.toString();
+        packages[name] = entity.uri.toFilePath(windows: false);
       }
     }
     return PackageAssetReader.forPackages(packages, rootPackage);
@@ -60,8 +60,8 @@ class PackageAssetReader extends AssetReader
   factory PackageAssetReader.forPackages(Map<String, String> packageToPath,
           [String rootPackage]) =>
       PackageAssetReader(
-          SyncPackageResolver.config(packageToPath.map((k, v) => MapEntry(
-              k, Uri.parse(p.absolute(v, 'lib')).replace(scheme: 'file')))),
+          SyncPackageResolver.config(packageToPath
+              .map((k, v) => MapEntry(k, Uri.parse(p.url.absolute(v, 'lib'))))),
           rootPackage);
 
   /// A reader that can resolve files known to the current isolate.
@@ -111,15 +111,15 @@ class PackageAssetReader extends AssetReader
 
     var packageFiles = Directory.fromUri(packageLibDir)
         .list(recursive: true)
-        .where((e) => e is File)
+        .whereType<File>()
         .map((f) =>
             p.join('lib', p.relative(f.path, from: p.fromUri(packageLibDir))));
     if (package == _rootPackage) {
-      packageFiles = packageFiles.transform(merge(Directory(_rootPackagePath)
+      packageFiles = packageFiles.merge(Directory(_rootPackagePath)
           .list(recursive: true)
-          .where((e) => e is File)
+          .whereType<File>()
           .map((f) => p.relative(f.path, from: _rootPackagePath))
-          .where((p) => !(p.startsWith('packages/') || p.startsWith('lib/')))));
+          .where((p) => !(p.startsWith('packages/') || p.startsWith('lib/'))));
     }
     return packageFiles.where(glob.matches).map((p) => AssetId(package, p));
   }

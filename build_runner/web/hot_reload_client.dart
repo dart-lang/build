@@ -176,7 +176,7 @@ void _reloadPage() {
   window.location.reload();
 }
 
-main() async {
+void main() async {
   var currentOrigin = '${window.location.origin}/';
   var modulePaths = keys(dartLoader.urlToModuleId)
       .map((key) => key.replaceFirst(currentOrigin, ''))

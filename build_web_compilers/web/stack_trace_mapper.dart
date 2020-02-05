@@ -133,7 +133,7 @@ void setSourceMapProvider(SourceMapProvider provider) {
   _mapping = LazyMapping(provider);
 }
 
-main() {
+void main() {
   // Register with DDC.
   dartStackTraceUtility = DartStackTraceUtility(
       mapper: allowInterop(mapper),

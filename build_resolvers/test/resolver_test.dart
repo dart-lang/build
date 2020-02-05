@@ -58,6 +58,48 @@ void main() {
       }, resolvers: AnalyzerResolvers());
     });
 
+    group('assets that aren\'t a transitive import of input', () {
+      Future _runWith(Future Function(Resolver) test) {
+        return resolveSources({
+          'a|web/main.dart': '''
+          main() {}
+        ''',
+          'a|lib/other.dart': '''
+          library other;
+        '''
+        }, test);
+      }
+
+      test('can be resolved', () {
+        return _runWith((resolver) async {
+          final main = await resolver.libraryFor(entryPoint);
+          expect(main, isNotNull);
+
+          final other =
+              await resolver.libraryFor(AssetId.parse('a|lib/other.dart'));
+          expect(other.name, 'other');
+        });
+      });
+
+      test('are included in library stream', () {
+        return _runWith((resolver) async {
+          expect(resolver.libraries.map((l) => l.name), neverEmits('other'));
+
+          await resolver.libraryFor(entryPoint);
+
+          expect(resolver.libraries.map((l) => l.name), emits('other'));
+        });
+      });
+
+      test('can be found by name', () {
+        return _runWith((resolver) async {
+          await resolver.libraryFor(entryPoint);
+
+          expect(resolver.findLibraryByName('other'), completion(isNotNull));
+        });
+      });
+    });
+
     test('handles missing files', () {
       return resolveSources({
         'a|web/main.dart': '''
@@ -225,6 +267,57 @@ void main() {
             .singleWhere((c) => c != null);
         expect(await resolver.assetIdForElement(classDefinition),
             AssetId('a', 'lib/b.dart'));
+      }, resolvers: AnalyzerResolvers());
+    });
+  });
+
+  test('throws when reading a part-of file', () {
+    return resolveSources(
+      {
+        'a|lib/a.dart': '''
+          part 'b.dart';
+        ''',
+        'a|lib/b.dart': '''
+          part of 'a.dart';
+        '''
+      },
+      (resolver) async {
+        final assetId = AssetId.parse('a|lib/b.dart');
+        await expectLater(
+          () => resolver.libraryFor(assetId),
+          throwsA(const TypeMatcher<NonLibraryAssetException>()
+              .having((e) => e.assetId, 'assetId', equals(assetId))),
+        );
+      },
+    );
+  });
+
+  group('The ${isFlutter ? 'flutter' : 'dart'} sdk', () {
+    test('can${isFlutter ? '' : ' not'} resolve types from dart:ui', () async {
+      return resolveSources({
+        'a|lib/a.dart': '''
+              import 'dart:ui';
+
+              class MyClass {
+                final Color color;
+
+                MyClass(this.color);
+              } ''',
+      }, (resolver) async {
+        var entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
+        var classDefinition = entry.getType('MyClass');
+        var color = classDefinition.getField('color');
+
+        if (isFlutter) {
+          expect(color.type.element.name, equals('Color'));
+          expect(color.type.element.library.name, equals('dart.ui'));
+          expect(
+              color.type.element.library.definingCompilationUnit.source.uri
+                  .toString(),
+              equals('dart:ui'));
+        } else {
+          expect(color.type.element.name, equals('dynamic'));
+        }
       }, resolvers: AnalyzerResolvers());
     });
   });

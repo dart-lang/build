@@ -106,6 +106,7 @@ Future<Iterable<Expression>> _findBuilderApplications() async {
 /// A method forwarding to `run`.
 Method _main() => Method((b) => b
   ..name = 'main'
+  ..returns = refer('void')
   ..modifier = MethodModifier.async
   ..requiredParameters.add(Parameter((b) => b
     ..name = 'args'

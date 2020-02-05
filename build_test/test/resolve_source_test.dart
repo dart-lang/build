@@ -71,7 +71,7 @@ void main() {
       );
       final type = library.getType('ExamplePrime');
       expect(type, isNotNull);
-      expect(type.supertype.name, 'Example');
+      expect(type.supertype.element.name, 'Example');
     });
 
     test('waits for tearDown', () async {
@@ -119,7 +119,19 @@ void main() {
       expect(libExample.getType('Example'), isNotNull);
     });
   });
+
+  group('error handling', () {
+    test('getting the library for a part file', () async {
+      var partAsset = AssetId('build_test', 'test/_files/example_part.dart');
+      await resolveAsset(partAsset, (resolver) async {
+        expect(
+            () => resolver.libraryFor(partAsset),
+            throwsA(isA<NonLibraryAssetException>()
+                .having((e) => e.assetId, 'assetId', partAsset)));
+      });
+    });
+  });
 }
 
 String _toStringId(InterfaceType t) =>
-    '${t.element.source.uri.toString().split('/').first}#${t.name}';
+    '${t.element.source.uri.toString().split('/').first}#${t.element.name}';

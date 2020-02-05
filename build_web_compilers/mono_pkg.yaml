@@ -8,8 +8,10 @@ stages:
       - dartanalyzer: --fatal-infos --fatal-warnings .
     - dartanalyzer: --fatal-warnings .
       dart:
-        - 2.3.0
+        - 2.5.0
   - unit_test:
     - group:
-      - test: -x presubmit-only
-      - test: -t presubmit-only --run-skipped
+      - test:
+      os:
+        - linux
+        - windows

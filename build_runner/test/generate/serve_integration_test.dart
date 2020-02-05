@@ -13,7 +13,7 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 
 import 'package:_test_common/common.dart';
 
-main() {
+void main() {
   group('serve integration tests', () {
     Process pubProcess;
     Stream<String> pubStdOutLines;

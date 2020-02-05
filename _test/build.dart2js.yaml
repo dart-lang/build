@@ -5,7 +5,7 @@ targets:
         options:
           compiler: dart2js
           dart2js_args:
-          - --checked
+          - --enable-asserts
         generate_for:
           - web/main.dart
           - web/sub/main.dart

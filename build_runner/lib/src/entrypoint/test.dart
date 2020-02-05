@@ -86,7 +86,7 @@ class TestCommand extends BuildRunnerCommand {
     try {
       _ensureBuildTestDependency(packageGraph);
       options = readOptions();
-      var buildDirs = (options.buildDirs ?? Set<BuildDirectory>())
+      var buildDirs = (options.buildDirs ?? <BuildDirectory>{})
         // Build test by default.
         ..add(BuildDirectory('test',
             outputLocation: OutputLocation(tempPath,
@@ -106,6 +106,7 @@ class TestCommand extends BuildRunnerCommand {
         builderConfigOverrides: options.builderConfigOverrides,
         isReleaseBuild: options.isReleaseBuild,
         logPerformanceDir: options.logPerformanceDir,
+        buildFilters: options.buildFilters,
       );
 
       if (result.status == BuildStatus.failure) {
@@ -134,7 +135,8 @@ class TestCommand extends BuildRunnerCommand {
           'test',
           '--precompiled',
           precompiledPath,
-        ]..addAll(extraTestArgs),
+          ...extraTestArgs,
+        ],
         mode: ProcessStartMode.inheritStdio);
     _ensureProcessExit(testProcess);
     return testProcess.exitCode;

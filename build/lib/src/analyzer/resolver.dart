@@ -16,7 +16,8 @@ abstract class Resolver {
   /// or is a `part of` file (not a standalone Dart library).
   Future<bool> isLibrary(AssetId assetId);
 
-  /// All libraries accessible from the entry point, recursively.
+  /// All libraries recursively accessible from the entry point or subsequent
+  /// calls to [libraryFor] and [isLibrary].
   ///
   /// **NOTE**: This includes all Dart SDK libraries as well.
   Stream<LibraryElement> get libraries;
@@ -26,9 +27,11 @@ abstract class Resolver {
   /// * Throws [NonLibraryAssetException] if [assetId] is not a Dart library.
   Future<LibraryElement> libraryFor(AssetId assetId);
 
-  /// Returns the first library identified by [libraryName].
+  /// Returns the first resolved library identified by [libraryName].
   ///
-  /// If no library can be found, returns `null`.
+  /// A library is resolved if it's recursively accessible from the entry point
+  /// or subsequent calls to [libraryFor] and [isLibrary]. If no library can be
+  /// found, returns `null`.
   ///
   /// **NOTE**: In general, its recommended to use [libraryFor] with an absolute
   /// asset id instead of a named identifier that has the possibility of not
@@ -62,7 +65,7 @@ abstract class Resolvers {
   /// this [Resolvers].
   ///
   /// In between calls to [reset] no Assets should change, so every call to
-  /// [BuildStep.readAsString] for a given AssetId should return identical
+  /// `BuildStep.readAsString` for a given AssetId should return identical
   /// contents. Any time an Asset's contents may change [reset] must be called.
   void reset() {}
 }

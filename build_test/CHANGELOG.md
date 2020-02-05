@@ -1,3 +1,37 @@
+## 0.10.12
+
+- Fix a bug with the `resolve*` apis where they would leak unhandled async
+  errors to client code if the provided action callback threw an error.
+
+## 0.10.11
+
+- Add support for the new `$package$` placeholder.
+
+### Potentially Breaking Change
+
+- Only add the non-lib placeholders when a root package is specified
+  - Infer the root package when there is only one package in the sources
+  - This is being released as a non-breaking change because the only expected
+    use cases already would have been broken - `findAssets` calls already
+    required a root package.
+
+## 0.10.10
+
+- Allow reading of assets written from the same build step.
+  - This mirrors the latest behavior in build_runner_core.
+- Require SDK version `2.6.0` to enable extension methods.
+
+## 0.10.9+1
+
+- Fix the `DebugTestBuilder` on windows.
+- Fix `PackageAssetReader` on windows.
+
+## 0.10.9
+
+- Allow tracking of reported unused assets in `testBuilder` calls with the
+  `reportUnusedAssetsForInput(AssetId input, Iterable<AssetId> unused)`
+  callback.
+
 ## 0.10.8
 
 - Allow a custom AssetReader to be passed to `testBuilder`. This will be used

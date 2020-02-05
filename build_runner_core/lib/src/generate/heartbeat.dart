@@ -65,7 +65,7 @@ abstract class Heartbeat {
     _timer = null;
   }
 
-  void _checkDuration(_) {
+  void _checkDuration(void _) {
     if (_intervalWatch.elapsed < waitDuration) return;
     onTimeout(_intervalWatch.elapsed);
     ping();
@@ -107,7 +107,7 @@ class HeartbeatLogger extends Heartbeat {
 
   /// Logs a heartbeat message if we reach the timeout.
   @override
-  void onTimeout(_) {
+  void onTimeout(void _) {
     var formattedTime = humanReadable(_totalWatch.elapsed);
     var message = '$formattedTime elapsed';
     if (transformLog != null) {

@@ -16,7 +16,7 @@ void main() {
           'builders': {
             'runs_second': {
               'builder_factories': ['createBuilder'],
-              'build_extensions': {},
+              'build_extensions': <String, List<String>>{},
               'target': '',
               'import': '',
             },

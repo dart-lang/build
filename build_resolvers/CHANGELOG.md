@@ -1,6 +1,82 @@
+## 1.3.3
+
+- Fix an issue where non-existing Dart assets weren't visible to the analyzer, even
+  when they are created later.
+
+## 1.3.2
+
+- Improve detection of the flutter SDK for older flutter versions.  
+
+## 1.3.1
+
+- Add an exception on trying to resolve an `AssetId` that is not a Dart
+  library with `libraryFor` to fit the contract expressed by the doc comment on
+  `Resolver`.
+
+## 1.3.0
+
+### New feature
+
+You can now resolve additional libraries other than those imported by the
+primary entrypoint.
+
+  - This is supported through the `isLibrary` and `libraryFor` methods on
+    `Resolver`, which will now resolve the provided asset if it is not already
+    resolved.
+  - **Note**: Doing this may affect the result of subsequent calls to
+    `resolver.libraries` and `resolver.findLibraryByName` if new libraries are
+    discovered.
+
+**Note**: If using `build_runner` then this will also require you to upgrade
+to version `4.2.0` of `build_runner_core` .
+
+### Other
+
+- Changed a `hide` declaration to a `show` declaration to support a
+`package:analyzer` change.
+
+## 1.2.2
+
+- Update to `package:analyzer` version `0.39.0`.
+
+## 1.2.1
+
+Check the build_resolvers version as a part of sdk summary invalidation.
+
+## 1.2.0
+
+Add flutters embedded sdk to the summary if available. This has the effect of
+making `dart:ui` and any future libraries available if using the flutter sdk
+instead of the dart sdk.
+
+## 1.1.1
+
+### Bug Fix
+
+Check the analyzer path before reading cached summaries in addition to the
+SDK version.
+
+## 1.1.0
+
+### Bug Fix: #38499
+
+Update the `AnalysisResolvers` class to no longer use the SDK summary that is
+shipped with the SDK by default. This is not guaranteed compatible with
+analyzer versions shipped on pub and should not be used by any non-sdk code.
+
+In order to fix this the `AnalysisResolvers` class now takes an optional method
+that returns the path to an arbitrary SDK summary. By default it will lazily
+generate a summary under `.dart_tool/build_resolvers` which is invalidated
+based on the `Platform.version` from `dart:io`.
+
+## 1.0.8
+
+- Allow `build` version 1.2.x.
+
 ## 1.0.7
 
-- Fix an issue where `AnalysisDriver.changeFile` was not called for new files.
+- Allow analyzer version 0.38.0.
+>>>>>>> master
 
 ## 1.0.6
 

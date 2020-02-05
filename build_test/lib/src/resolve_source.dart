@@ -26,7 +26,7 @@ const useAssetReader = '__useAssetReader__';
 /// A convenience method for using [resolveSources] with a single source file.
 Future<T> resolveSource<T>(
   String inputSource,
-  FutureOr<T> action(Resolver resolver), {
+  FutureOr<T> Function(Resolver resolver) action, {
   AssetId inputId,
   PackageResolver resolver,
   Future<Null> tearDown,
@@ -117,7 +117,7 @@ Future<T> resolveSource<T>(
 /// be provided to map files not visible to the current package's runtime.
 Future<T> resolveSources<T>(
   Map<String, String> inputs,
-  FutureOr<T> action(Resolver resolver), {
+  FutureOr<T> Function(Resolver resolver) action, {
   PackageResolver resolver,
   String resolverFor,
   String rootPackage,
@@ -141,7 +141,7 @@ Future<T> resolveSources<T>(
 /// A convenience for using [resolveSources] with a single [inputId] from disk.
 Future<T> resolveAsset<T>(
   AssetId inputId,
-  FutureOr<T> action(Resolver resolver), {
+  FutureOr<T> Function(Resolver resolver) action, {
   PackageResolver resolver,
   Future<Null> tearDown,
   Resolvers resolvers,
@@ -167,7 +167,7 @@ Future<T> resolveAsset<T>(
 Future<T> _resolveAssets<T>(
   Map<String, String> inputs,
   String rootPackage,
-  FutureOr<T> action(Resolver resolver), {
+  FutureOr<T> Function(Resolver resolver) action, {
   PackageResolver resolver,
   AssetId resolverFor,
   Future<Null> tearDown,
@@ -193,14 +193,21 @@ Future<T> _resolveAssets<T>(
     sourceAssets: inputAssets,
     rootPackage: rootPackage,
   );
-  // We don't care about the results of this build.
+  // We don't care about the results of this build, but we also can't await
+  // it because that would block on the `tearDown` of the `resolveBuilder`.
+  //
+  // We also dont want to leak errors as unhandled async errors so we swallow
+  // them here.
+  //
+  // Errors will still be reported through the resolver itself as well as the
+  // `onDone` future that we return.
   unawaited(runBuilder(
     resolveBuilder,
     inputAssets.keys,
     MultiAssetReader([inMemory, assetReader]),
     InMemoryAssetWriter(),
     resolvers ?? defaultResolvers,
-  ));
+  ).catchError((_) {}));
   return resolveBuilder.onDone.future;
 }
 
@@ -220,8 +227,11 @@ class _ResolveSourceBuilder<T> implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
     if (_resolverFor != buildStep.inputId) return;
-    var result = await _action(buildStep.resolver);
-    onDone.complete(result);
+    try {
+      onDone.complete(await _action(buildStep.resolver));
+    } catch (e, s) {
+      onDone.completeError(e, s);
+    }
     await _tearDown;
   }
 

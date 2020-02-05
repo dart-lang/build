@@ -58,7 +58,7 @@ class CachingAssetReader implements AssetReader {
       _canReadCache.putIfAbsent(id, () => _delegate.canRead(id));
 
   @override
-  Future<Digest> digest(id) => _delegate.digest(id);
+  Future<Digest> digest(AssetId id) => _delegate.digest(id);
 
   @override
   Stream<AssetId> findAssets(Glob glob) =>

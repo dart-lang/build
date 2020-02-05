@@ -54,7 +54,7 @@ class ScratchSpace {
   ///
   /// If [requireContent] is true and the file is empty an
   /// [EmptyOutputException] is thrown.
-  Future copyOutput(AssetId id, AssetWriter writer,
+  Future<void> copyOutput(AssetId id, AssetWriter writer,
       {bool requireContent = false}) async {
     var file = fileFor(id);
     var bytes = await _descriptorPool.withResource(file.readAsBytes);
@@ -66,13 +66,21 @@ class ScratchSpace {
   ///
   /// This class is no longer valid once the directory is deleted, you must
   /// create a new [ScratchSpace].
-  Future delete() {
+  Future<void> delete() async {
     if (!exists) {
       throw StateError(
           'Tried to delete a ScratchSpace which was already deleted');
     }
     exists = false;
     _digests.clear();
+    if (_pendingWrites.isNotEmpty) {
+      try {
+        await Future.wait(_pendingWrites.values);
+      } catch (_) {
+        // Ignore any errors, we are essentially just draining this queue
+        // of pending writes but don't care about the result.
+      }
+    }
     return tempDir.delete(recursive: true);
   }
 
@@ -85,7 +93,7 @@ class ScratchSpace {
   /// Any asset that is under a `lib` dir will be output under a `packages`
   /// directory corresponding to its package, and any other assets are output
   /// directly under the temp dir using their unmodified path.
-  Future ensureAssets(Iterable<AssetId> assetIds, AssetReader reader) {
+  Future<void> ensureAssets(Iterable<AssetId> assetIds, AssetReader reader) {
     if (!exists) {
       throw StateError('Tried to use a deleted ScratchSpace!');
     }
@@ -115,14 +123,15 @@ class ScratchSpace {
       }
     }).toList();
 
-    return Future.wait(futures, eagerError: true);
+    return Future.wait(futures);
   }
 
   /// Returns the actual [File] in this environment corresponding to [id].
   ///
   /// The returned [File] may or may not already exist. Call [ensureAssets]
   /// with [id] to make sure it is actually present.
-  File fileFor(AssetId id) => File(p.join(tempDir.path, _relativePathFor(id)));
+  File fileFor(AssetId id) =>
+      File(p.join(tempDir.path, p.normalize(_relativePathFor(id))));
 }
 
 /// Returns a canonical uri for [id].

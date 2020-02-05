@@ -40,17 +40,25 @@ class BuildAssetUriResolver extends UriResolver {
   /// When actions can run out of order an asset can move from being readable
   /// (in the later phase) to being unreadable (in the earlier phase which ran
   /// later). If this happens we don't want to hide the asset from the analyzer.
-  final seenAssets = HashSet<AssetId>();
+  final globallySeenAssets = HashSet<AssetId>();
+
+  /// The assets which have been resolved from a [BuildStep], either as an
+  /// input, subsequent calls to a resolver, or a transitive import thereof.
+  final _buildStepAssets = <BuildStep, HashSet<AssetId>>{};
 
   /// Crawl the transitive imports from [entryPoints] and ensure that the
   /// content of each asset is updated in [resourceProvider] and [driver].
   Future<void> performResolve(BuildStep buildStep, List<AssetId> entryPoints,
       AnalysisDriver driver) async {
-    final changedPaths =
-        await crawlAsync<AssetId, _AssetState>(entryPoints, (id) async {
+    final seenInBuildStep =
+        _buildStepAssets.putIfAbsent(buildStep, () => HashSet());
+    bool notCrawled(AssetId asset) => !seenInBuildStep.contains(asset);
+
+    final changedPaths = await crawlAsync<AssetId, _AssetState>(
+            entryPoints.where(notCrawled), (id) async {
       final path = assetPath(id);
       if (!await buildStep.canRead(id)) {
-        if (seenAssets.contains(id)) {
+        if (globallySeenAssets.contains(id)) {
           // ignore from this graph, some later build step may still be using it
           // so it shouldn't be removed from [resourceProvider], but we also
           // don't care about it's transitive imports.
@@ -63,7 +71,8 @@ class BuildAssetUriResolver extends UriResolver {
         }
         return _AssetState.removed(path);
       }
-      seenAssets.add(id);
+      globallySeenAssets.add(id);
+      seenInBuildStep.add(id);
       final digest = await buildStep.digest(id);
       if (_cachedAssetDigests[id] == digest) {
         return _AssetState.unchanged(path, _cachedAssetDependencies[id]);
@@ -81,10 +90,10 @@ class BuildAssetUriResolver extends UriResolver {
           return _AssetState.newAsset(path, dependencies);
         }
       }
-    }, (id, state) => state.directives)
-            .where((state) => state.isAssetUpdate)
-            .map((state) => state.path)
-            .toList();
+    }, (id, state) => state.directives.where(notCrawled))
+        .where((state) => state.isAssetUpdate)
+        .map((state) => state.path)
+        .toList();
     changedPaths.forEach(driver.changeFile);
   }
 
@@ -106,6 +115,17 @@ class BuildAssetUriResolver extends UriResolver {
       return _cachedAssetDigests.containsKey(assetId) ? assetId : null;
     }
     return null;
+  }
+
+  void notifyComplete(BuildStep step) {
+    _buildStepAssets.remove(step);
+  }
+
+  /// Clear cached information specific to an individual build.
+  void reset() {
+    assert(_buildStepAssets.isEmpty,
+        'Reset was called before all build steps completed');
+    globallySeenAssets.clear();
   }
 
   @override

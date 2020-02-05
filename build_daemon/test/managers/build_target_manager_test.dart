@@ -16,9 +16,7 @@ void main() {
     var target = DefaultBuildTarget((b) => b..target = 'foo');
     expect(manager.targets.isEmpty, isTrue);
     manager.addBuildTarget(target, channel);
-    expect(
-        manager.targets.map((target) => target.target).toList().contains('foo'),
-        isTrue);
+    expect(manager.targets.map((target) => target.target), contains('foo'));
   });
 
   test('returns an empty set when no channels are interested', () {
@@ -54,9 +52,7 @@ void main() {
     var channelB = DummyChannel();
     var targetA = DefaultBuildTarget((b) => b..target = 'foo');
     manager.addBuildTarget(targetA, channelA);
-    expect(
-        manager.targets.map((target) => target.target).toList().contains('foo'),
-        isTrue);
+    expect(manager.targets.map((target) => target.target), contains('foo'));
     var targetB = DefaultBuildTarget((b) => b..target = 'bar');
     manager.addBuildTarget(targetB, channelB);
     expect(manager.targets.isNotEmpty, isTrue);
@@ -123,8 +119,7 @@ void main() {
     manager.addBuildTarget(target, channel);
     var targets = manager.targetsForChanges(
         [WatchEvent(ChangeType.ADD, 'foo/bar/blah/some_file.dart')]);
-    expect(targets.map((target) => target.target).toList().contains('foo'),
-        isTrue);
+    expect(targets.map((target) => target.target), contains('foo'));
     targets = manager.targetsForChanges(
         [WatchEvent(ChangeType.ADD, 'foo/bar/blah/some_test.dart')]);
     expect(targets.isEmpty, isTrue);

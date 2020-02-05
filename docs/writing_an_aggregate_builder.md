@@ -43,17 +43,42 @@ Map<String, List<String>> get buildExtensions {
 
 However, we only want a single output file in (this) aggregate builder. So,
 instead we will build on a _synthetic_ input - a file that does not actually
-exist on disk, but rather is used as an identifier for us. We currently support:
+exist on disk, but rather is used as an identifier for build extensions. We
+currently support the following synthetic files for this purpose:
 
-* `$lib$`
-* `$test$`
-* `$web$`
+* `lib/$lib$`
+* `$package$`
+* `test/$test$` (deprecated)
+* `web/$web$` (deprecated)
 
-## Writing the `Builder`
+When choosing whether to use `$package$` or `lib/$lib$`, there are two primary
+considerations.
 
-Each of these exist if the folder exists, but they cannot be read. So, for this
-example, lets write one based on `$lib$`, and say that we will always emit the
-file `all_files.txt`:
+- _where_ do you want to output your files (which directory should they be
+  written to).
+  - If you want to output to directories other than `lib`, you should use
+    `$package$`.
+  - If you want to output files only under `lib`, then use `lib/$lib$`.
+- _which_ packages will this builder run on (only the root package or any
+  package in the dependency tree).
+  - If want to run on any package other than the root, you _must_ use
+    `lib/$lib$` since only files under `lib` are accessible from dependencies -
+    even synthetic files.
+
+## Writing the `Builder` using a synthetic input
+
+Each of these synthetic inputs exist if the folder exists (and is available to
+the build), but they cannot be read. So, for this example, lets write one based
+on `lib/$lib$`, and say that we will always emit the file `lib/all_files.txt`.
+
+Since out files are declared by simply replacing the declared input extension
+with the declared output extensions, we can use `$lib$` as the input extension,
+and `all_files.txt` as the output extension, which will declare an output at
+`lib/all_files.txt`.
+
+**Note:** If using `$package$` as an input extension you need to declare the
+full output path from the root of the package, since it lives at the root of
+the package.
 
 ```dart
 import 'package:build/build.dart';
@@ -80,7 +105,7 @@ import 'package:build/build.dart';
 class ListAllFilesBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
-    // Will throw for aggregate builders, because '$lib' isn't a real input!
+    // Will throw for aggregate builders, because '$lib$' isn't a real input!
     buildStep.readAsString(buildStep.inputId);
   }
 }

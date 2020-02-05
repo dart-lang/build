@@ -12,7 +12,7 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 
 import 'package:_test_common/common.dart';
 
-main() {
+void main() {
   group('run_script validation tests', () {
     // The TestBuilder() will create a `*.copy` of
     // whatever it is given, so we'll use it to create a

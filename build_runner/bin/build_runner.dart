@@ -49,8 +49,16 @@ Future<void> main(List<String> args) async {
     return;
   }
 
-  if (commandName == null || commandName == 'help') {
+  if (commandName == 'help' ||
+      parsedArgs.wasParsed('help') ||
+      (parsedArgs.command?.wasParsed('help') ?? false)) {
+    await commandRunner.runCommand(parsedArgs);
+    return;
+  }
+
+  if (commandName == null) {
     commandRunner.printUsage();
+    exitCode = ExitCode.usage.code;
     return;
   }
 

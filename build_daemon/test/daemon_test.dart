@@ -2,6 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+@OnPlatform({
+  'windows': Skip('Directories cant be deleted while processes are still open')
+})
 import 'dart:convert';
 import 'dart:io';
 
@@ -42,7 +45,7 @@ void main() {
       testWorkspaces.add(workspace);
       var daemon = Daemon(workspace);
       await daemon.start(
-        Set<String>(),
+        <String>{},
         FakeDaemonBuilder(),
         FakeChangeProvider(),
       );

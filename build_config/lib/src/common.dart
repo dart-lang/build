@@ -8,7 +8,7 @@ final _defaultDependenciesZoneKey = Symbol('buildConfigDefaultDependencies');
 final _packageZoneKey = Symbol('buildConfigPackage');
 
 T runInBuildConfigZone<T>(
-        T fn(), String package, List<String> defaultDependencies) =>
+        T Function() fn, String package, List<String> defaultDependencies) =>
     runZoned(fn, zoneValues: {
       _packageZoneKey: package,
       _defaultDependenciesZoneKey: defaultDependencies,

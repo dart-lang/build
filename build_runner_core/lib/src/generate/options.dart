@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_resolvers/build_resolvers.dart';
+import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
@@ -14,11 +15,13 @@ import 'package:path/path.dart' as p;
 import '../environment/build_environment.dart';
 import '../package_graph/package_graph.dart';
 import '../package_graph/target_graph.dart';
+import '../util/hash.dart';
 import 'exceptions.dart';
 
 /// The default list of files to include when an explicit include is not
 /// provided.
 const List<String> defaultRootPackageWhitelist = [
+  'assets/**',
   'benchmark/**',
   'bin/**',
   'example/**',
@@ -26,8 +29,10 @@ const List<String> defaultRootPackageWhitelist = [
   'test/**',
   'tool/**',
   'web/**',
+  'node/**',
   'pubspec.yaml',
   'pubspec.lock',
+  r'$package$',
 ];
 
 final _logger = Logger('BuildOptions');
@@ -45,30 +50,86 @@ class LogSubscription {
     Logger.root.level = logLevel;
 
     var logListener = Logger.root.onRecord.listen(environment.onLog);
-    return LogSubscription._(verbose, logListener);
+    return LogSubscription._(logListener);
   }
 
-  LogSubscription._(this.verbose, this.logListener);
+  LogSubscription._(this.logListener);
 
-  final bool verbose;
   final StreamSubscription<LogRecord> logListener;
+}
+
+/// Describes a set of files that should be built.
+class BuildFilter {
+  /// The package name glob that files must live under in order to match.
+  final Glob _package;
+
+  /// A glob for files under [_package] that must match.
+  final Glob _path;
+
+  BuildFilter(this._package, this._path);
+
+  /// Builds a [BuildFilter] from a command line argument.
+  ///
+  /// Both relative paths and package: uris are supported. Relative
+  /// paths are treated as relative to the [rootPackage].
+  ///
+  /// Globs are supported in package names and paths.
+  factory BuildFilter.fromArg(String arg, String rootPackage) {
+    var uri = Uri.parse(arg);
+    if (uri.scheme == 'package') {
+      var package = uri.pathSegments.first;
+      var glob = Glob(p.url.joinAll([
+        'lib',
+        ...uri.pathSegments.skip(1),
+      ]));
+      return BuildFilter(Glob(package), glob);
+    } else if (uri.scheme.isEmpty) {
+      return BuildFilter(Glob(rootPackage), Glob(uri.path));
+    } else {
+      throw FormatException('Unsupported scheme ${uri.scheme}', uri);
+    }
+  }
+
+  /// Returns whether or not [id] mathes this filter.
+  bool matches(AssetId id) =>
+      _package.matches(id.package) && _path.matches(id.path);
+
+  @override
+  int get hashCode {
+    var hash = 0;
+    hash = hashCombine(hash, _package.context.hashCode);
+    hash = hashCombine(hash, _package.pattern.hashCode);
+    hash = hashCombine(hash, _package.recursive.hashCode);
+    hash = hashCombine(hash, _path.context.hashCode);
+    hash = hashCombine(hash, _path.pattern.hashCode);
+    hash = hashCombine(hash, _path.recursive.hashCode);
+    return hashComplete(hash);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is BuildFilter &&
+      other._path.context == _path.context &&
+      other._path.pattern == _path.pattern &&
+      other._path.recursive == _path.recursive &&
+      other._package.context == _package.context &&
+      other._package.pattern == _package.pattern &&
+      other._package.recursive == _package.recursive;
 }
 
 /// Manages setting up consistent defaults for all options and build modes.
 class BuildOptions {
-  // Build mode options.
-  final StreamSubscription logListener;
-  final PackageGraph packageGraph;
-
   final bool deleteFilesByDefault;
   final bool enableLowResourcesMode;
-  final bool trackPerformance;
-  final bool verbose;
-  final TargetGraph targetGraph;
-  final Resolvers resolvers;
+  final StreamSubscription logListener;
 
   /// If present, the path to a directory to write performance logs to.
   final String logPerformanceDir;
+
+  final PackageGraph packageGraph;
+  final Resolvers resolvers;
+  final TargetGraph targetGraph;
+  final bool trackPerformance;
 
   // Watch mode options.
   Duration debounceDelay;
@@ -84,7 +145,6 @@ class BuildOptions {
     @required this.packageGraph,
     @required this.skipBuildScriptCheck,
     @required this.trackPerformance,
-    @required this.verbose,
     @required this.targetGraph,
     @required this.logPerformanceDir,
     @required this.resolvers,
@@ -139,7 +199,6 @@ class BuildOptions {
       packageGraph: packageGraph,
       skipBuildScriptCheck: skipBuildScriptCheck,
       trackPerformance: trackPerformance,
-      verbose: logSubscription.verbose,
       targetGraph: targetGraph,
       logPerformanceDir: logPerformanceDir,
       resolvers: resolvers,

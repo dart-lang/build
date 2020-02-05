@@ -106,7 +106,7 @@ class RunCommand extends BuildRunnerCommand {
       var exitCodeCompleter = Completer<int>();
 
       try {
-        var buildDirs = (options.buildDirs ?? Set<BuildDirectory>())
+        var buildDirs = (options.buildDirs ?? <BuildDirectory>{})
           ..add(BuildDirectory('',
               outputLocation: OutputLocation(tempPath,
                   useSymlinks: options.outputSymlinksOnly, hoist: false)));
@@ -123,6 +123,7 @@ class RunCommand extends BuildRunnerCommand {
           trackPerformance: options.trackPerformance,
           skipBuildScriptCheck: options.skipBuildScriptCheck,
           logPerformanceDir: options.logPerformanceDir,
+          buildFilters: options.buildFilters,
         );
 
         if (result.status == BuildStatus.failure) {

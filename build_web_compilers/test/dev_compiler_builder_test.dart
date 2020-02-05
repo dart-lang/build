@@ -13,7 +13,7 @@ import 'package:build_modules/build_modules.dart';
 
 import 'util.dart';
 
-main() {
+void main() {
   Map<String, dynamic> assets;
 
   group('error free project', () {
@@ -21,14 +21,15 @@ main() {
       assets = {
         'build_modules|lib/src/analysis_options.default.yaml': '',
         'b|lib/b.dart': '''final world = 'world';''',
-        'a|lib/a.dart': '''
+        'a|lib/a.dart': r'''
         import 'package:b/b.dart';
-        final hello = world;
+        final hello = 'hello $world';
       ''',
         'a|web/index.dart': '''
         import "package:a/a.dart";
         main() {
           print(hello);
+          print(const String.fromEnvironment('foo', defaultValue: 'bar'));
         }
       ''',
       };
@@ -43,17 +44,55 @@ main() {
           ddcKernelBuilder(BuilderOptions({})), assets);
     });
 
-    test('can compile ddc modules under lib and web', () async {
+    for (var trackUnusedInputs in [true, false]) {
+      test(
+          'can compile ddc modules under lib and web'
+          '${trackUnusedInputs ? ' and track unused inputs' : ''}', () async {
+        var expectedOutputs = {
+          'b|lib/b$jsModuleExtension': decodedMatches(contains('world')),
+          'b|lib/b$jsSourceMapExtension': decodedMatches(contains('b.dart')),
+          'a|lib/a$jsModuleExtension': decodedMatches(contains('hello')),
+          'a|lib/a$jsSourceMapExtension': decodedMatches(contains('a.dart')),
+          'a|web/index$jsModuleExtension': decodedMatches(contains('main')),
+          'a|web/index$jsSourceMapExtension':
+              decodedMatches(contains('index.dart')),
+        };
+        var reportedUnused = <AssetId, Iterable<AssetId>>{};
+        await testBuilder(
+            DevCompilerBuilder(
+                platform: ddcPlatform,
+                useIncrementalCompiler: trackUnusedInputs,
+                trackUnusedInputs: trackUnusedInputs),
+            assets,
+            outputs: expectedOutputs,
+            reportUnusedAssetsForInput: (input, unused) =>
+                reportedUnused[input] = unused);
+
+        expect(
+            reportedUnused[
+                AssetId('a', 'web/index${moduleExtension(ddcPlatform)}')],
+            equals(trackUnusedInputs
+                ? [AssetId('b', 'lib/b.${ddcPlatform.name}.dill')]
+                : null),
+            reason: 'Should${trackUnusedInputs ? '' : ' not'} report unused '
+                'transitive deps.');
+      });
+    }
+
+    test('allows a custom environment', () async {
       var expectedOutputs = {
-        'b|lib/b$jsModuleExtension': decodedMatches(contains('world')),
-        'b|lib/b$jsSourceMapExtension': decodedMatches(contains('b.dart')),
-        'a|lib/a$jsModuleExtension': decodedMatches(contains('hello')),
-        'a|lib/a$jsSourceMapExtension': decodedMatches(contains('a.dart')),
-        'a|web/index$jsModuleExtension': decodedMatches(contains('main')),
-        'a|web/index$jsSourceMapExtension':
-            decodedMatches(contains('index.dart')),
+        'b|lib/b$jsModuleExtension': isNotEmpty,
+        'b|lib/b$jsSourceMapExtension': isNotEmpty,
+        'a|lib/a$jsModuleExtension': isNotEmpty,
+        'a|lib/a$jsSourceMapExtension': isNotEmpty,
+        'a|web/index$jsModuleExtension':
+            decodedMatches(contains('print("zap")')),
+        'a|web/index$jsSourceMapExtension': isNotEmpty,
       };
-      await testBuilder(DevCompilerBuilder(platform: ddcPlatform), assets,
+      await testBuilder(
+          DevCompilerBuilder(
+              platform: ddcPlatform, environment: {'foo': 'zap'}),
+          assets,
           outputs: expectedOutputs);
     });
   });

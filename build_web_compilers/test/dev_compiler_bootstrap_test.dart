@@ -12,7 +12,7 @@ import 'package:build_modules/build_modules.dart';
 
 import 'util.dart';
 
-main() {
+void main() {
   Map<String, dynamic> assets;
 
   group('simple project', () {
@@ -83,6 +83,7 @@ main() {
           contains('define("b.dart.bootstrap", ["web/a", "dart_sdk"]'),
           // Calls main on the `b.dart` library, not the `a.dart` library.
           contains('(app.web__b || app.b).main()'),
+          contains('if (childName === "b.dart")'),
         ])),
         'a|web/b.digests': isNotEmpty,
         'a|web/b.dart.js': isNotEmpty,
@@ -114,6 +115,14 @@ main() {
 
 // Runs all the DDC related builders except the entrypoint builder.
 Future<void> runPrerequisites(Map<String, dynamic> assets) async {
+  // Uses the real sdk copy builder to copy required files from the SDK.
+  //
+  // It is necessary to add a fake asset so that the build_web_compilers
+  // package exists.
+  var sdkAssets = <String, dynamic>{'build_web_compilers|fake.txt': ''};
+  await testBuilderAndCollectAssets(sdkJsCopyBuilder(null), sdkAssets);
+  assets.addAll(sdkAssets);
+
   await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
   await testBuilderAndCollectAssets(MetaModuleBuilder(ddcPlatform), assets);
   await testBuilderAndCollectAssets(
