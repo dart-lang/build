@@ -1,3 +1,7 @@
+## 0.10.12+1
+
+- Allow the latest test_core package (`0.3.x`).
+
 ## 0.10.12
 
 - Fix a bug with the `resolve*` apis where they would leak unhandled async
