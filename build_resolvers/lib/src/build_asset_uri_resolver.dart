@@ -123,7 +123,7 @@ class BuildAssetUriResolver extends UriResolver {
   /// Returns null if the Uri cannot be parsed or is not cached.
   AssetId lookupCachedAsset(Uri uri) {
     final assetId = parseAsset(uri);
-    if (assetId == null || _cachedAssetDigests.containsKey(assetId)) {
+    if (assetId == null || !_cachedAssetDigests.containsKey(assetId)) {
       return null;
     }
 
