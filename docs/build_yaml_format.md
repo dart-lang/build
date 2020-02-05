@@ -19,6 +19,7 @@ global_options | Map<String, [GlobalBuilderOptions](#globalBuilderOptions)> | em
 
 key | value | default
 --- | --- | ---
+auto_apply_builders | bool | true
 builders | Map<[BuilderKey](#builderkey), [TargetBuilderConfig](#targetbuilderconfig)> | empty
 dependencies | List<[TargetKey](#targetkey)> | all default targets from all dependencies in your pubspec
 sources | [InputSet](#inputset) | all whitelisted directories

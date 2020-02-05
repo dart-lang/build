@@ -8,25 +8,29 @@ part of 'build_target.dart';
 
 BuildTarget _$BuildTargetFromJson(Map json) {
   return $checkedNew('BuildTarget', json, () {
-    $checkKeys(json,
-        allowedKeys: const ['builders', 'dependencies', 'sources']);
+    $checkKeys(json, allowedKeys: const [
+      'auto_apply_builders',
+      'builders',
+      'dependencies',
+      'sources'
+    ]);
     final val = BuildTarget(
-        sources: $checkedConvert(
-            json, 'sources', (v) => v == null ? null : InputSet.fromJson(v)),
-        dependencies: $checkedConvert(
-            json, 'dependencies', (v) => (v as List)?.map((e) => e as String)),
-        builders: $checkedConvert(
-            json,
-            'builders',
-            (v) => (v as Map)?.map(
-                  (k, e) => MapEntry(
-                      k as String,
-                      e == null
-                          ? null
-                          : TargetBuilderConfig.fromJson(e as Map)),
-                )));
+      autoApplyBuilders:
+          $checkedConvert(json, 'auto_apply_builders', (v) => v as bool),
+      sources: $checkedConvert(
+          json, 'sources', (v) => v == null ? null : InputSet.fromJson(v)),
+      dependencies: $checkedConvert(
+          json, 'dependencies', (v) => (v as List)?.map((e) => e as String)),
+      builders: $checkedConvert(
+          json,
+          'builders',
+          (v) => (v as Map)?.map(
+                (k, e) => MapEntry(k as String,
+                    e == null ? null : TargetBuilderConfig.fromJson(e as Map)),
+              )),
+    );
     return val;
-  });
+  }, fieldKeyMap: const {'autoApplyBuilders': 'auto_apply_builders'});
 }
 
 TargetBuilderConfig _$TargetBuilderConfigFromJson(Map json) {
@@ -39,27 +43,28 @@ TargetBuilderConfig _$TargetBuilderConfigFromJson(Map json) {
       'release_options'
     ]);
     final val = TargetBuilderConfig(
-        isEnabled: $checkedConvert(json, 'enabled', (v) => v as bool),
-        generateFor: $checkedConvert(json, 'generate_for',
-            (v) => v == null ? null : InputSet.fromJson(v)),
-        options: $checkedConvert(
-            json,
-            'options',
-            (v) => (v as Map)?.map(
-                  (k, e) => MapEntry(k as String, e),
-                )),
-        devOptions: $checkedConvert(
-            json,
-            'dev_options',
-            (v) => (v as Map)?.map(
-                  (k, e) => MapEntry(k as String, e),
-                )),
-        releaseOptions: $checkedConvert(
-            json,
-            'release_options',
-            (v) => (v as Map)?.map(
-                  (k, e) => MapEntry(k as String, e),
-                )));
+      isEnabled: $checkedConvert(json, 'enabled', (v) => v as bool),
+      generateFor: $checkedConvert(
+          json, 'generate_for', (v) => v == null ? null : InputSet.fromJson(v)),
+      options: $checkedConvert(
+          json,
+          'options',
+          (v) => (v as Map)?.map(
+                (k, e) => MapEntry(k as String, e),
+              )),
+      devOptions: $checkedConvert(
+          json,
+          'dev_options',
+          (v) => (v as Map)?.map(
+                (k, e) => MapEntry(k as String, e),
+              )),
+      releaseOptions: $checkedConvert(
+          json,
+          'release_options',
+          (v) => (v as Map)?.map(
+                (k, e) => MapEntry(k as String, e),
+              )),
+    );
     return val;
   }, fieldKeyMap: const {
     'isEnabled': 'enabled',
@@ -74,24 +79,25 @@ GlobalBuilderConfig _$GlobalBuilderConfigFromJson(Map json) {
     $checkKeys(json,
         allowedKeys: const ['options', 'dev_options', 'release_options']);
     final val = GlobalBuilderConfig(
-        options: $checkedConvert(
-            json,
-            'options',
-            (v) => (v as Map)?.map(
-                  (k, e) => MapEntry(k as String, e),
-                )),
-        devOptions: $checkedConvert(
-            json,
-            'dev_options',
-            (v) => (v as Map)?.map(
-                  (k, e) => MapEntry(k as String, e),
-                )),
-        releaseOptions: $checkedConvert(
-            json,
-            'release_options',
-            (v) => (v as Map)?.map(
-                  (k, e) => MapEntry(k as String, e),
-                )));
+      options: $checkedConvert(
+          json,
+          'options',
+          (v) => (v as Map)?.map(
+                (k, e) => MapEntry(k as String, e),
+              )),
+      devOptions: $checkedConvert(
+          json,
+          'dev_options',
+          (v) => (v as Map)?.map(
+                (k, e) => MapEntry(k as String, e),
+              )),
+      releaseOptions: $checkedConvert(
+          json,
+          'release_options',
+          (v) => (v as Map)?.map(
+                (k, e) => MapEntry(k as String, e),
+              )),
+    );
     return val;
   }, fieldKeyMap: const {
     'devOptions': 'dev_options',

@@ -1,6 +1,7 @@
-## 4.3.1-dev
+## 4.4.0-dev
 
-- Internal changes.
+- Support the `auto_apply_builders` target configuration added in
+  `build_config` version `0.4.2`.
 
 ## 4.3.0
 
