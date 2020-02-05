@@ -116,6 +116,39 @@ void main() {
       }, resolvers: AnalyzerResolvers());
     });
 
+    test('handles discovering previously missing parts', () async {
+      var resolvers = AnalyzerResolvers();
+      await resolveSources({
+        'a|web/main.dart': '''
+              part 'main.g.dart';
+
+              class A implements B {}
+              ''',
+      }, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        var clazz = lib.getType('A');
+        expect(clazz, isNotNull);
+        expect(clazz.interfaces, isEmpty);
+      }, resolvers: resolvers);
+
+      await resolveSources({
+        'a|web/main.dart': '''
+              part 'main.g.dart';
+
+              class A implements B {}
+              ''',
+        'a|web/main.g.dart': '''
+              class B {}
+              ''',
+      }, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        var clazz = lib.getType('A');
+        expect(clazz, isNotNull);
+        expect(clazz.interfaces, hasLength(1));
+        expect(clazz.interfaces.first.getDisplayString(), 'B');
+      }, resolvers: resolvers);
+    });
+
     test('should list all libraries', () {
       return resolveSources({
         'a|web/main.dart': '''
