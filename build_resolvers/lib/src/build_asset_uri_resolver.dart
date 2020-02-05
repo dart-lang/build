@@ -97,24 +97,37 @@ class BuildAssetUriResolver extends UriResolver {
     changedPaths.forEach(driver.changeFile);
   }
 
+  /// Attempts to parse [uri] into an [AssetId].
+  ///
+  /// Handles 'package:' or 'asset:' URIs, as well as 'file:' URIs that have the
+  /// same pattern used by [assetPath].
+  ///
+  /// Returns null if the Uri cannot be parsed.
+  AssetId parseAsset(Uri uri) {
+    if (_ignoredSchemes.any(uri.isScheme)) return null;
+    if (uri.isScheme('package') || uri.isScheme('asset')) {
+      return AssetId.resolve('$uri');
+    }
+    if (uri.isScheme('file')) {
+      final parts = p.split(uri.path);
+      return AssetId(parts[1], p.posix.joinAll(parts.skip(2)));
+    }
+    return null;
+  }
+
   /// Attempts to parse [uri] into an [AssetId] and returns it if it is cached.
   ///
   /// Handles 'package:' or 'asset:' URIs, as well as 'file:' URIs that have the
   /// same pattern used by [assetPath].
   ///
   /// Returns null if the Uri cannot be parsed or is not cached.
-  AssetId lookupAsset(Uri uri) {
-    if (_ignoredSchemes.any(uri.isScheme)) return null;
-    if (uri.isScheme('package') || uri.isScheme('asset')) {
-      final assetId = AssetId.resolve('$uri');
-      return _cachedAssetDigests.containsKey(assetId) ? assetId : null;
+  AssetId lookupCachedAsset(Uri uri) {
+    final assetId = parseAsset(uri);
+    if (assetId == null || _cachedAssetDigests.containsKey(assetId)) {
+      return null;
     }
-    if (uri.isScheme('file')) {
-      final parts = p.split(uri.path);
-      final assetId = AssetId(parts[1], p.posix.joinAll(parts.skip(2)));
-      return _cachedAssetDigests.containsKey(assetId) ? assetId : null;
-    }
-    return null;
+
+    return assetId;
   }
 
   void notifyComplete(BuildStep step) {
@@ -130,16 +143,18 @@ class BuildAssetUriResolver extends UriResolver {
 
   @override
   Source resolveAbsolute(Uri uri, [Uri actualUri]) {
-    final cachedId = lookupAsset(uri);
-    if (cachedId == null) return null;
-    return resourceProvider
-        .getFile(assetPath(cachedId))
-        .createSource(cachedId.uri);
+    final assetId = parseAsset(uri);
+    if (assetId == null) {
+      return null;
+    }
+    final source =
+        resourceProvider.getFile(assetPath(assetId)).createSource(assetId.uri);
+    return source;
   }
 
   @override
   Uri restoreAbsolute(Source source) =>
-      lookupAsset(source.uri)?.uri ?? source.uri;
+      lookupCachedAsset(source.uri)?.uri ?? source.uri;
 }
 
 String assetPath(AssetId assetId) =>

@@ -147,7 +147,7 @@ void main() {
         expect(clazz.interfaces, hasLength(1));
         expect(clazz.interfaces.first.name, 'B');
       }, resolvers: resolvers);
-    }, skip: 'Failing due to https://github.com/dart-lang/build/issues/2389');
+    });
 
     test('should list all libraries', () {
       return resolveSources({

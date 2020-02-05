@@ -76,7 +76,6 @@ based on the `Platform.version` from `dart:io`.
 ## 1.0.7
 
 - Allow analyzer version 0.38.0.
->>>>>>> master
 
 ## 1.0.6
 
