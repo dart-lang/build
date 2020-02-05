@@ -1,4 +1,4 @@
-## 1.7.4-dev
+## 1.7.4
 
 - Give a warning instead of a stack trace when using a build config override
   file for a package that does not exist.
