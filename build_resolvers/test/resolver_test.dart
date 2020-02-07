@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
+
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
@@ -138,6 +140,7 @@ void main() {
               class A implements B {}
               ''',
         'a|web/main.g.dart': '''
+              part of 'main.dart';
               class B {}
               ''',
       }, (resolver) async {
@@ -321,4 +324,38 @@ void main() {
       }, resolvers: AnalyzerResolvers());
     });
   });
+
+  test('generated part files are not considered libraries', () async {
+    var writer = InMemoryAssetWriter();
+    var reader = InMemoryAssetReader.shareAssetCache(writer.assets);
+    var input = AssetId('a', 'lib/input.dart');
+    writer.assets[input] =
+        utf8.encode("part 'input.a.dart'; part 'input.b.dart';");
+
+    var builder = TestBuilder(
+        buildExtensions: {
+          '.dart': ['.a.dart']
+        },
+        build: (buildStep, buildExtensions) async {
+          var isLibrary = await buildStep.resolver.isLibrary(buildStep.inputId);
+          if (buildStep.inputId == input) {
+            await buildStep.writeAsString(
+                buildStep.inputId
+                    .changeExtension(buildExtensions['.dart'].first),
+                "part of 'input.dart';");
+            expect(isLibrary, true);
+          } else {
+            expect(isLibrary, false,
+                reason:
+                    '${buildStep.inputId} should not be considered a library');
+          }
+        });
+    var resolvers = AnalyzerResolvers();
+    await runBuilder(builder, [input], reader, writer, resolvers);
+
+    // Same builder but with a different extension.
+    builder.buildExtensions['.dart'] = ['.b.dart'];
+    await runBuilder(builder, [input, input.changeExtension('.a.dart')], reader,
+        writer, resolvers);
+  }, skip: 'https://github.com/dart-lang/source_gen/issues/447');
 }
