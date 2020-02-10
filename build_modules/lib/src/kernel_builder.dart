@@ -15,7 +15,6 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 
-import 'common.dart';
 import 'errors.dart';
 import 'module_builder.dart';
 import 'module_cache.dart';
@@ -149,8 +148,6 @@ Future<void> _createKernel(
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
   var outputId = module.primarySource.changeExtension(outputExtension);
   var outputFile = scratchSpace.fileFor(outputId);
-
-  File packagesFile;
   var kernelDeps = <AssetId>[];
 
   // Maps the inputs paths we provide to the kernel worker to asset ids,
@@ -173,7 +170,6 @@ Future<void> _createKernel(
     };
     await scratchSpace.ensureAssets(allAssetIds, buildStep);
 
-    packagesFile = await createPackagesFile(allAssetIds);
     if (trackUnusedInputs) {
       usedInputsFile = await File(p.join(
               (await Directory.systemTemp.createTemp('kernel_builder_')).path,
@@ -191,7 +187,6 @@ Future<void> _createKernel(
         sdkKernelPath,
         librariesPath,
         outputFile,
-        packagesFile,
         summaryOnly,
         useIncrementalCompiler,
         buildStep,
@@ -225,7 +220,6 @@ Future<void> _createKernel(
           usedInputsFile, kernelDeps, kernelInputPathToId, buildStep);
     }
   } finally {
-    await packagesFile.parent.delete(recursive: true);
     await usedInputsFile?.parent?.delete(recursive: true);
   }
 }
@@ -366,7 +360,6 @@ Future<void> _addRequestArguments(
   String sdkKernelPath,
   String librariesPath,
   File outputFile,
-  File packagesFile,
   bool summaryOnly,
   bool useIncrementalCompiler,
   AssetReader reader,
@@ -389,7 +382,7 @@ Future<void> _addRequestArguments(
   request.arguments.addAll([
     '--dart-sdk-summary=${Uri.file(p.join(sdkDir, sdkKernelPath))}',
     '--output=${outputFile.path}',
-    '--packages-file=${packagesFile.uri}',
+    '--packages-file=.dart_tool/package_config.json',
     '--multi-root-scheme=$multiRootScheme',
     '--exclude-non-sources',
     summaryOnly ? '--summary-only' : '--no-summary-only',
