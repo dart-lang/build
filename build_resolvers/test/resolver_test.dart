@@ -329,8 +329,7 @@ void main() {
     var writer = InMemoryAssetWriter();
     var reader = InMemoryAssetReader.shareAssetCache(writer.assets);
     var input = AssetId('a', 'lib/input.dart');
-    writer.assets[input] =
-        utf8.encode("part 'input.a.dart'; part 'input.b.dart';");
+    writer.assets[input] = utf8.encode("part 'input.a.dart';");
 
     var builder = TestBuilder(
         buildExtensions: {
@@ -353,9 +352,7 @@ void main() {
     var resolvers = AnalyzerResolvers();
     await runBuilder(builder, [input], reader, writer, resolvers);
 
-    // Same builder but with a different extension.
-    builder.buildExtensions['.dart'] = ['.b.dart'];
-    await runBuilder(builder, [input, input.changeExtension('.a.dart')], reader,
-        writer, resolvers);
+    await runBuilder(
+        builder, [input.changeExtension('.a.dart')], reader, writer, resolvers);
   }, skip: 'https://github.com/dart-lang/source_gen/issues/447');
 }
