@@ -1,5 +1,8 @@
 ## 0.9.5-dev
 
+* Expand documentation for `GeneratorForAnnotation` to make it clear that it
+  only targets elements at the top level of a library.
+
 ## 0.9.4+7
 
 * Fix an exception during error reporting when the `Element` reported is in
