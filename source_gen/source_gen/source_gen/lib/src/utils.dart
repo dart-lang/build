@@ -98,10 +98,12 @@ Uri normalizeDartUrl(Uri url) => url.pathSegments.isNotEmpty
 Uri packageToAssetUrl(Uri url) => url.scheme == 'package'
     ? url.replace(
         scheme: 'asset',
-        pathSegments: <String>[]
-          ..add(url.pathSegments.first)
-          ..add('lib')
-          ..addAll(url.pathSegments.skip(1)))
+        pathSegments: <String>[
+          url.pathSegments.first,
+          'lib',
+          ...url.pathSegments.skip(1),
+        ],
+      )
     : url;
 
 /// Returns a `asset:` URL converted to a `package:` URL.

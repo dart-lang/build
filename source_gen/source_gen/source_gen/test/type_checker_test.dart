@@ -212,7 +212,7 @@ void main() {
       class X {}
     ''', (resolver) => resolver.findLibraryByName('_test'));
     final classX = library.getType('X');
-    final $deprecated = const TypeChecker.fromRuntime(Deprecated);
+    const $deprecated = TypeChecker.fromRuntime(Deprecated);
 
     expect(
         () => $deprecated.annotationsOf(classX),
@@ -224,7 +224,7 @@ void main() {
   });
 
   test('should check multiple checkers', () {
-    final listOrMap = const TypeChecker.any([
+    const listOrMap = TypeChecker.any([
       TypeChecker.fromRuntime(List),
       TypeChecker.fromRuntime(Map),
     ]);

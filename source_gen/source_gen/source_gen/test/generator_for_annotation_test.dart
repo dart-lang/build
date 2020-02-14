@@ -30,7 +30,7 @@ void main() {
   });
 
   test('Supports and dedupes multiple return values', () async {
-    final generator = const RepeatingGenerator();
+    const generator = RepeatingGenerator();
     final builder = LibraryBuilder(generator);
     await testBuilder(builder, _inputMap, outputs: {
       'a|lib/file.g.dart': r'''

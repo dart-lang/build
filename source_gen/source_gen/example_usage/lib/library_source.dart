@@ -9,6 +9,6 @@ import 'package:source_gen_example/annotations.dart';
 part 'library_source.g.dart';
 
 @Multiplier(2)
-final answer = 42;
+const answer = 42;
 
 final tau = pi * 2;

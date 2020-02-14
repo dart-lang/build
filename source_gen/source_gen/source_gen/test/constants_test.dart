@@ -173,7 +173,7 @@ void main() {
 
     test('should compare using TypeChecker', () {
       final $deprecated = constants[8];
-      final check = const TypeChecker.fromRuntime(Deprecated);
+      const check = TypeChecker.fromRuntime(Deprecated);
       expect($deprecated.instanceOf(check), isTrue, reason: '$deprecated');
     });
   });

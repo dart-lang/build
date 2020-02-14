@@ -7,7 +7,7 @@ import 'package:build_test/build_test.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:test/test.dart';
 
-final _source = r'''
+const _source = r'''
   library test_lib;
 
   export 'dart:collection' show LinkedHashMap;
@@ -20,7 +20,7 @@ final _source = r'''
   enum Enum{A,B}
 ''';
 
-final _partSource = r'''
+const _partSource = r'''
 part of 'source.dart';
 
 class PartClass {}
@@ -69,4 +69,4 @@ void main() {
   });
 }
 
-final _isClassElement = const TypeMatcher<ClassElement>();
+const _isClassElement = TypeMatcher<ClassElement>();

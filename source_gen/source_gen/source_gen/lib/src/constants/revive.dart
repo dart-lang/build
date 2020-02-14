@@ -129,9 +129,8 @@ class Revivable {
   ///
   /// Builds tools may use this to fail when the symbol is expected to be
   /// importable (i.e. isn't used with `part of`).
-  bool get isPrivate {
-    return source.fragment.startsWith('_') || accessor.startsWith('_');
-  }
+  bool get isPrivate =>
+      source.fragment.startsWith('_') || accessor.startsWith('_');
 
   @override
   String toString() {

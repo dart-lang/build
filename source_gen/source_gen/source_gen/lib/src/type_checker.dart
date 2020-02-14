@@ -207,7 +207,7 @@ class _LibraryTypeChecker extends TypeChecker {
       element is ClassElement && element == _type.element;
 
   @override
-  String toString() => '${urlOfElement(_type.element)}';
+  String toString() => urlOfElement(_type.element);
 }
 
 // Checks a runtime type against a static type.

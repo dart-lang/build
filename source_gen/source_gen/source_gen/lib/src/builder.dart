@@ -135,7 +135,7 @@ class _Builder extends Builder {
       genPartContent = formatOutput(genPartContent);
     } catch (e, stack) {
       log.severe(
-          'Error formatting generated source code for ${library.identifier}'
+          'Error formatting generated source code for ${library.identifier} '
           'which was output to ${outputId.path}.\n'
           'This may indicate an issue in the generated code or in the '
           'formatter.\n'
@@ -149,9 +149,8 @@ class _Builder extends Builder {
   }
 
   @override
-  String toString() {
-    return 'Generating $_generatedExtension: ${_generators.join(', ')}';
-  }
+  String toString() =>
+      'Generating $_generatedExtension: ${_generators.join(', ')}';
 }
 
 /// A [Builder] which generates content intended for `part of` files.

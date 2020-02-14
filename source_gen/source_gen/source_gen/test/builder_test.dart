@@ -15,9 +15,7 @@ import 'src/unformatted_code_generator.dart';
 
 void main() {
   test('Simple Generator test', () async {
-    await _generateTest(
-        const CommentGenerator(forClasses: true, forLibrary: false),
-        _testGenPartContent);
+    await _generateTest(const CommentGenerator(), _testGenPartContent);
   });
 
   test('Bad generated source', () async {
@@ -104,8 +102,7 @@ void main() {
 
   test(
       'Simple Generator test for classes and library',
-      () => _generateTest(
-          const CommentGenerator(forClasses: true, forLibrary: true),
+      () => _generateTest(const CommentGenerator(forLibrary: true),
           _testGenPartContentForClassesAndLibrary));
 
   test('null result produces no generated parts', () async {
@@ -410,7 +407,7 @@ void main() {
   });
 
   test('can pass a custom formatter with formatOutput', () async {
-    final customOutput = 'final String hello = "hello";';
+    const customOutput = 'final String hello = "hello";';
     await testBuilder(
         PartBuilder([const UnformattedCodeGenerator()], '.foo.dart',
             formatOutput: (_) => customOutput),
@@ -451,13 +448,12 @@ Future _generateTest(CommentGenerator gen, String expectedContent) async {
 }
 
 Map<String, String> _createPackageStub(
-    {String testLibContent, String testLibPartContent}) {
-  return {
-    '$_pkgName|lib/test_lib.dart': testLibContent ?? _testLibContent,
-    '$_pkgName|lib/test_lib.foo.dart':
-        testLibPartContent ?? _testLibPartContent,
-  };
-}
+        {String testLibContent, String testLibPartContent}) =>
+    {
+      '$_pkgName|lib/test_lib.dart': testLibContent ?? _testLibContent,
+      '$_pkgName|lib/test_lib.foo.dart':
+          testLibPartContent ?? _testLibPartContent,
+    };
 
 PartBuilder _unformattedLiteral([String content]) =>
     PartBuilder([_LiteralGenerator(content)], '.foo.dart',
@@ -480,7 +476,7 @@ class _BadOutputGenerator extends Generator {
   String generate(_, __) => 'not valid code!';
 }
 
-final _customHeader = '// Copyright 1979';
+const _customHeader = '// Copyright 1979';
 
 const _pkgName = 'pkg';
 
