@@ -71,10 +71,6 @@ for PKG in ${PKGS}; do
       dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs -- -P presubmit --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
     command_5)
-      echo 'pub run build_runner test -- -test-randomize-ordering-seed=random'
-      pub run build_runner test -- -test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    command_6)
       echo 'test/flutter_test.sh'
       test/flutter_test.sh || EXIT_CODE=$?
       ;;
