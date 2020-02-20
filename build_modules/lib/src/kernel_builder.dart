@@ -382,7 +382,7 @@ Future<void> _addRequestArguments(
   request.arguments.addAll([
     '--dart-sdk-summary=${Uri.file(p.join(sdkDir, sdkKernelPath))}',
     '--output=${outputFile.path}',
-    '--packages-file=.dart_tool/package_config.json',
+    '--packages-file=${p.join('.dart_tool', 'package_config.json')}',
     '--multi-root-scheme=$multiRootScheme',
     '--exclude-non-sources',
     summaryOnly ? '--summary-only' : '--no-summary-only',

@@ -91,10 +91,10 @@ String _multiRootPackageConfig(String rootConfig) {
         'version 2 is supported.');
   }
   var packages =
-      List<Map<String, dynamic>>.from(parsedRootConfig['packages'] as List);
+      (parsedRootConfig['packages'] as List).cast<Map<String, dynamic>>();
   for (var package in packages) {
     package['rootUri'] = '$multiRootScheme:///packages/${package['name']}';
     package['packageUri'] = '';
   }
-  return jsonEncode(packages);
+  return jsonEncode(parsedRootConfig);
 }
