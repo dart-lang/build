@@ -161,7 +161,7 @@ class LibraryReader {
         fromSegments[1] == toSegments[1];
   }
 
-  /// All of the elements reperesenting classes in this library.
+  /// All of the elements representing classes in this library.
   Iterable<ClassElement> get classes => element.units.expand((cu) => cu.types);
 
   @Deprecated('Use classes instead')

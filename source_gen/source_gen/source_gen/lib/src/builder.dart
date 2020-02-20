@@ -35,12 +35,13 @@ class _Builder extends Builder {
   final Map<String, List<String>> buildExtensions;
 
   /// Wrap [_generators] to form a [Builder]-compatible API.
-  _Builder(this._generators,
-      {String Function(String code) formatOutput,
-      String generatedExtension = '.g.dart',
-      List<String> additionalOutputExtensions = const [],
-      String header})
-      : _generatedExtension = generatedExtension,
+  _Builder(
+    this._generators, {
+    String Function(String code) formatOutput,
+    String generatedExtension = '.g.dart',
+    List<String> additionalOutputExtensions = const [],
+    String header,
+  })  : _generatedExtension = generatedExtension,
         buildExtensions = {
           '.dart': [
             generatedExtension,
@@ -71,7 +72,9 @@ class _Builder extends Builder {
   }
 
   Future _generateForLibrary(
-      LibraryElement library, BuildStep buildStep) async {
+    LibraryElement library,
+    BuildStep buildStep,
+  ) async {
     final generatedOutputs =
         await _generate(library, _generators, buildStep).toList();
 
@@ -158,7 +161,7 @@ class _Builder extends Builder {
 /// Generated files will be prefixed with a `partId` to ensure multiple
 /// [SharedPartBuilder]s can produce non conflicting `part of` files. When the
 /// `source_gen|combining_builder` is applied to the primary input these
-/// snippets will be conacatenated into the final `.g.dart` output.
+/// snippets will be concatenated into the final `.g.dart` output.
 ///
 /// This builder can be used when multiple generators may need to output to the
 /// same part file but [PartBuilder] can't be used because the generators are
@@ -177,14 +180,18 @@ class SharedPartBuilder extends _Builder {
   ///
   /// [formatOutput] is called to format the generated code. Defaults to
   /// [DartFormatter.format].
-  SharedPartBuilder(List<Generator> generators, String partId,
-      {String Function(String code) formatOutput,
-      List<String> additionalOutputExtensions = const []})
-      : super(generators,
-            formatOutput: formatOutput,
-            generatedExtension: '.$partId.g.part',
-            additionalOutputExtensions: additionalOutputExtensions,
-            header: '') {
+  SharedPartBuilder(
+    List<Generator> generators,
+    String partId, {
+    String Function(String code) formatOutput,
+    List<String> additionalOutputExtensions = const [],
+  }) : super(
+          generators,
+          formatOutput: formatOutput,
+          generatedExtension: '.$partId.g.part',
+          additionalOutputExtensions: additionalOutputExtensions,
+          header: '',
+        ) {
     if (!_partIdRegExp.hasMatch(partId)) {
       throw ArgumentError.value(
           partId,
@@ -223,15 +230,19 @@ class PartBuilder extends _Builder {
   /// [header] is used to specify the content at the top of each generated file.
   /// If `null`, the content of [defaultFileHeader] is used.
   /// If [header] is an empty `String` no header is added.
-  PartBuilder(List<Generator> generators, String generatedExtension,
-      {String Function(String code) formatOutput,
-      List<String> additionalOutputExtensions = const [],
-      String header})
-      : super(generators,
-            formatOutput: formatOutput,
-            generatedExtension: generatedExtension,
-            additionalOutputExtensions: additionalOutputExtensions,
-            header: header);
+  PartBuilder(
+    List<Generator> generators,
+    String generatedExtension, {
+    String Function(String code) formatOutput,
+    List<String> additionalOutputExtensions = const [],
+    String header,
+  }) : super(
+          generators,
+          formatOutput: formatOutput,
+          generatedExtension: generatedExtension,
+          additionalOutputExtensions: additionalOutputExtensions,
+          header: header,
+        );
 }
 
 /// A [Builder] which generates standalone Dart library files.
@@ -261,15 +272,20 @@ class LibraryBuilder extends _Builder {
     String generatedExtension = '.g.dart',
     List<String> additionalOutputExtensions = const [],
     String header,
-  }) : super([generator],
-            formatOutput: formatOutput,
-            generatedExtension: generatedExtension,
-            additionalOutputExtensions: additionalOutputExtensions,
-            header: header);
+  }) : super(
+          [generator],
+          formatOutput: formatOutput,
+          generatedExtension: generatedExtension,
+          additionalOutputExtensions: additionalOutputExtensions,
+          header: header,
+        );
 }
 
-Stream<GeneratedOutput> _generate(LibraryElement library,
-    List<Generator> generators, BuildStep buildStep) async* {
+Stream<GeneratedOutput> _generate(
+  LibraryElement library,
+  List<Generator> generators,
+  BuildStep buildStep,
+) async* {
   final libraryReader = LibraryReader(library);
   for (var i = 0; i < generators.length; i++) {
     final gen = generators[i];

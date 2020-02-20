@@ -69,7 +69,7 @@
   functionality _and_ allows generators that use separate libraries to emit more
   actionable error messages (i.e. `"cannot use private class _X"`).
 
-* `Revivable.isPrivate` now returns `true` when the underyling class was public
+* `Revivable.isPrivate` now returns `true` when the underlying class was public
   but the constructor was private, or the `Revivable` was pointing to a
   top-level or static private field or method. Previously it was only `true`
   when referencing a private class.
