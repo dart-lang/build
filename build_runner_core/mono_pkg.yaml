@@ -11,7 +11,7 @@ stages:
     - dartanalyzer: --fatal-warnings .
       dart: 2.6.0
   - unit_test:
-    - test:
+    - test: --test-randomize-ordering-seed=random
       os:
         - linux
         - windows
