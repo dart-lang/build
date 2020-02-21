@@ -98,8 +98,12 @@ class AssetTracker {
   }
 
   /// Returns all the internal sources, such as those under [entryPointDir].
-  Future<Set<AssetId>> _findInternalSources() =>
-      _listIdsSafe(Glob('$entryPointDir/**')).toSet();
+  Future<Set<AssetId>> _findInternalSources() async {
+    var ids = await _listIdsSafe(Glob('$entryPointDir/**')).toSet();
+    ids.add(AssetId(_targetGraph.rootPackageConfig.packageName,
+        '.dart_tool/package_config.json'));
+    return ids;
+  }
 
   /// Finds the asset changes which have happened while unwatched between builds
   /// by taking a difference between the assets in the graph and the assets on
