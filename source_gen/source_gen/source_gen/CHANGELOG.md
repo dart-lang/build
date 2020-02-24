@@ -1,4 +1,4 @@
-## 0.9.5-dev
+## 0.9.5
 
 * Add support for an `ignore_for_file` option to `combining_builder`.
 
