@@ -93,6 +93,30 @@ builders:
     applies_builders: ["source_gen|combining_builder"]
 ```
 
+### Configuring `combining_builder` `ignore_for_file`
+
+Sometimes generated code does not support all of the
+[lints](https://dart-lang.github.io/linter/) specified in the target package.
+When using a `Builder` based on `package:source_gen` which applies
+`combining_builder`, set the `ignore_for_file` option to a list of lints you
+wish to be ignored in all generated libraries.
+
+_Example `build.yaml` configuration:_
+
+```yaml
+targets:
+  $default":
+    builders:
+      source_gen|combining_builder:
+        options:
+          ignore_for_file:
+          - lint_alpha
+          - lint_beta
+```
+
+If you provide a builder that uses `SharedPartBuilder` and `combining_builder`,
+you should document this feature for your users.
+
 ## FAQ
 
 ### What is the difference between `source_gen` and [build][]?

@@ -388,6 +388,33 @@ void main() {
             '// Part: a.only_whitespace.g.part\n\n')),
       });
     });
+
+    test('includes ignore for file if enabled', () async {
+      await testBuilder(
+        const CombiningBuilder(ignoreForFile: {
+          'lines_longer_than_80_chars',
+          'prefer_expression_function_bodies',
+        }),
+        {
+          '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
+          '$_pkgName|lib/a.foo.g.part': '\n\nfoo generated content\n',
+          '$_pkgName|lib/a.only_whitespace.g.part': '\n\n\t  \n \n',
+          '$_pkgName|lib/a.bar.g.part': '\nbar generated content',
+        },
+        generateFor: {'$_pkgName|lib/a.dart'},
+        outputs: {
+          '$_pkgName|lib/a.g.dart': decodedMatches(endsWith(r'''
+// ignore_for_file: lines_longer_than_80_chars, prefer_expression_function_bodies
+
+part of a;
+
+bar generated content
+
+foo generated content
+''')),
+        },
+      );
+    });
   });
 
   test('can skip formatting with a trivial lambda', () async {

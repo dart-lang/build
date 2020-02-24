@@ -14,3 +14,10 @@ targets:
       source_gen_example|property_product:
         generate_for:
           - lib/*.dart
+      # The end-user of a builder which applies "source_gen|combining_builder"
+      # may configure the builder to ignore specific lints for their project
+      source_gen|combining_builder:
+        options:
+          ignore_for_file:
+          - lint_a
+          - lint_b

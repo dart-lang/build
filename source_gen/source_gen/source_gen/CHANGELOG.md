@@ -1,5 +1,7 @@
 ## 0.9.5-dev
 
+* Add support for an `ignore_for_file` option to `combining_builder`.
+
 * Expand documentation for `GeneratorForAnnotation` to make it clear that it
   only targets elements at the top level of a library.
 

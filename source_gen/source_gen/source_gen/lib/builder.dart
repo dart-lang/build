@@ -27,8 +27,15 @@ const _partFiles = '.g.part';
 Builder combiningBuilder([BuilderOptions options]) {
   final optionsMap = Map<String, dynamic>.from(options?.config ?? {});
 
+  final includePartName = optionsMap.remove('include_part_name') as bool;
+  final ignoreForFile = Set<String>.from(
+    optionsMap.remove('ignore_for_file') as List ?? <String>[],
+  );
+
   final builder = CombiningBuilder(
-      includePartName: optionsMap.remove('include_part_name') as bool);
+    includePartName: includePartName,
+    ignoreForFile: ignoreForFile,
+  );
 
   if (optionsMap.isNotEmpty) {
     if (log == null) {
@@ -49,6 +56,8 @@ PostProcessBuilder partCleanup(BuilderOptions options) =>
 class CombiningBuilder implements Builder {
   final bool _includePartName;
 
+  final Set<String> _ignoreForFile;
+
   @override
   Map<String, List<String>> get buildExtensions => const {
         '.dart': [_outputExtensions]
@@ -59,8 +68,11 @@ class CombiningBuilder implements Builder {
   /// If [includePartName] is `true`, the name of each source part file
   /// is output as a comment before its content. This can be useful when
   /// debugging build issues.
-  const CombiningBuilder({bool includePartName = false})
-      : _includePartName = includePartName ?? false;
+  const CombiningBuilder({
+    bool includePartName = false,
+    Set<String> ignoreForFile,
+  })  : _includePartName = includePartName ?? false,
+        _ignoreForFile = ignoreForFile ?? const <String>{};
 
   @override
   Future build(BuildStep buildStep) async {
@@ -100,9 +112,13 @@ class CombiningBuilder implements Builder {
     if (assets.isEmpty) return;
     final partOf =
         nameOfPartial(await buildStep.inputLibrary, buildStep.inputId);
+
+    final ignoreForFile = _ignoreForFile.isEmpty
+        ? ''
+        : '\n// ignore_for_file: ${_ignoreForFile.join(', ')}\n';
     final output = '''
 $defaultFileHeader
-
+$ignoreForFile
 part of $partOf;
 
 $assets
