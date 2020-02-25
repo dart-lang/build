@@ -238,8 +238,7 @@ class _Dart2JsWorker {
         _jobsSinceLastRestartCount = 0;
         __worker ??= await _spawnWorker();
         _spawningWorker = null;
-        // exitCode can be null: https://github.com/dart-lang/sdk/issues/35874
-        unawaited(__worker.exitCode?.then((_) {
+        unawaited(_workerStdoutLines.drain().whenComplete(() {
           __worker = null;
           __workerStdoutLines = null;
           __workerStderrLines = null;
@@ -317,6 +316,7 @@ class _Dart2JsWorker {
 
   Future<void> terminate() async {
     var worker = __worker ?? await _spawningWorker;
+    var oldStdout = __workerStdoutLines;
     __worker = null;
     __workerStdoutLines = null;
     __workerStderrLines = null;
@@ -324,7 +324,7 @@ class _Dart2JsWorker {
       worker.kill();
       await worker.stdin.close();
     }
-    await worker?.exitCode;
+    await oldStdout?.drain();
   }
 }
 

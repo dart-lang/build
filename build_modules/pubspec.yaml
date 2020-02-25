@@ -1,5 +1,5 @@
 name: build_modules
-version: 2.8.0
+version: 2.8.1
 description: Builders for Dart modules
 homepage: https://github.com/dart-lang/build/tree/master/build_modules
 
