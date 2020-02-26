@@ -244,7 +244,10 @@ class WatchImpl implements BuildState {
     });
 
     Digest originalRootPackagesDigest;
+    Digest originalRootPackageConfigDigest;
     final rootPackagesId = AssetId(packageGraph.root.name, '.packages');
+    final rootPackageConfigId =
+        AssetId(packageGraph.root.name, '.dart_tool/package_config.json');
 
     // Start watching files immediately, before the first build is even started.
     var graphWatcher = PackageGraphWatcher(packageGraph,
@@ -260,13 +263,14 @@ class WatchImpl implements BuildState {
         })
         .asyncMap<AssetChange>((change) {
           var id = change.id;
-          assert(originalRootPackagesDigest != null);
-          if (id == rootPackagesId) {
+          if (id == rootPackagesId || id == rootPackageConfigId) {
+            var digest = id == rootPackagesId
+                ? originalRootPackagesDigest
+                : originalRootPackageConfigDigest;
+            assert(digest != null);
             // Kill future builds if the root packages file changes.
-            return watcherEnvironment.reader
-                .readAsBytes(rootPackagesId)
-                .then((bytes) {
-              if (md5.convert(bytes) != originalRootPackagesDigest) {
+            return watcherEnvironment.reader.readAsBytes(id).then((bytes) {
+              if (md5.convert(bytes) != digest) {
                 _terminateCompleter.complete();
                 _logger
                     .severe('Terminating builds due to package graph update, '
@@ -319,6 +323,8 @@ class WatchImpl implements BuildState {
           () => graphWatcher.ready);
       originalRootPackagesDigest = md5
           .convert(await watcherEnvironment.reader.readAsBytes(rootPackagesId));
+      originalRootPackageConfigDigest = md5.convert(
+          await watcherEnvironment.reader.readAsBytes(rootPackageConfigId));
 
       BuildResult firstBuild;
       try {

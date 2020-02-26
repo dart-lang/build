@@ -213,6 +213,12 @@ class _Loader {
           'Checking for updates since last build',
           () => _updateAssetGraph(assetGraph, assetTracker, _buildPhases,
               inputSources, cacheDirSources, internalSources));
+      if (updates.containsKey(AssetId(
+          _options.packageGraph.root.name, '.dart_tool/package_config.json'))) {
+        await _cleanupOldOutputs(assetGraph);
+        await FailureReporter.cleanErrorCache();
+        throw BuildScriptChangedException();
+      }
 
       buildScriptUpdates = await BuildScriptUpdates.create(
           _environment.reader, _options.packageGraph, assetGraph,
