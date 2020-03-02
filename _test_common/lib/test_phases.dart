@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
@@ -99,6 +100,22 @@ Future<BuildResult> testBuilders(
   writer ??= InMemoryRunnerAssetWriter();
   reader ??= InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
       rootPackage: packageGraph?.root?.name);
+  var pkgConfigId =
+      AssetId(packageGraph.root.name, '.dart_tool/package_config.json');
+  if (!await reader.canRead(pkgConfigId)) {
+    var packageConfig = {
+      'configVersion': 2,
+      'packages': [
+        for (var pkgNode in packageGraph.allPackages.values)
+          {
+            'name': pkgNode.name,
+            'rootUri': pkgNode.path,
+            'packageUri': 'lib/',
+          },
+      ],
+    };
+    await writer.writeAsString(pkgConfigId, jsonEncode(packageConfig));
+  }
 
   inputs.forEach((serializedId, contents) {
     var id = makeAssetId(serializedId);

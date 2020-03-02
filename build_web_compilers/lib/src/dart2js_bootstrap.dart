@@ -66,6 +66,8 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
     args = dart2JsArgs.toList()
       ..addAll([
         '--packages=${p.join('.dart_tool', 'package_config.json')}',
+        '--multi-root-scheme=$multiRootScheme',
+        '--multi-root=./',
         '-o$jsOutputPath',
         dartPath,
       ]);

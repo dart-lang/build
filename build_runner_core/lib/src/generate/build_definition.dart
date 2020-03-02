@@ -100,8 +100,17 @@ class AssetTracker {
   /// Returns all the internal sources, such as those under [entryPointDir].
   Future<Set<AssetId>> _findInternalSources() async {
     var ids = await _listIdsSafe(Glob('$entryPointDir/**')).toSet();
-    ids.add(AssetId(_targetGraph.rootPackageConfig.packageName,
-        '.dart_tool/package_config.json'));
+    var packageConfigId = AssetId(_targetGraph.rootPackageConfig.packageName,
+        '.dart_tool/package_config.json');
+
+    if (await _reader.canRead(packageConfigId)) {
+      ids.add(packageConfigId);
+    } else {
+      _logger.severe(
+          'No .dart_tool/package_config.json found - compilation will not '
+          'work.');
+      throw CannotBuildException();
+    }
     return ids;
   }
 
