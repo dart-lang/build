@@ -9,6 +9,7 @@ import 'dart:io';
 
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
+import 'package:build_modules/build_modules.dart';
 import 'package:crypto/crypto.dart';
 import 'package:graphs/graphs.dart' show crawlAsync;
 import 'package:meta/meta.dart';
@@ -382,7 +383,7 @@ Future<void> _addRequestArguments(
   request.arguments.addAll([
     '--dart-sdk-summary=${Uri.file(p.join(sdkDir, sdkKernelPath))}',
     '--output=${outputFile.path}',
-    '--packages-file=${p.join('.dart_tool', 'package_config.json')}',
+    '--packages-file=$multiRootScheme:///${p.join('.dart_tool', 'package_config.json')}',
     '--multi-root-scheme=$multiRootScheme',
     '--exclude-non-sources',
     summaryOnly ? '--summary-only' : '--no-summary-only',

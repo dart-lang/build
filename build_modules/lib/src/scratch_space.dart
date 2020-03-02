@@ -12,7 +12,6 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 
-import 'kernel_builder.dart' show multiRootScheme;
 import 'workers.dart';
 
 final _logger = Logger('BuildModules');
@@ -31,7 +30,7 @@ final scratchSpaceResource = Resource<ScratchSpace>(() {
   var packageConfigFile = File(
       p.join(scratchSpace.tempDir.path, '.dart_tool', 'package_config.json'));
   if (!packageConfigFile.existsSync()) {
-    var packageConfigContents = _multiRootPackageConfig(
+    var packageConfigContents = _scratchSpacePackageConfig(
         File(p.join('.dart_tool', 'package_config.json')).readAsStringSync());
     packageConfigFile
       ..createSync(recursive: true)
@@ -74,15 +73,15 @@ final scratchSpaceResource = Resource<ScratchSpace>(() {
   }
 });
 
-/// Modifies all package uris in [rootConfig] to be multi-root uris of
-/// the form [multiRootScheme]:///packages/<package-name>.
+/// Modifies all package uris in [rootConfig] to work with the sctrach_space
+/// layout. These are uris of the form `../packages/<package-name>`.
 ///
 /// Also modifies the `packageUri` for each package to be empty since the
 /// `lib/` directory is hoisted directly into the `packages/<package>`
 /// directory.
 ///
 /// Returns the new file contents.
-String _multiRootPackageConfig(String rootConfig) {
+String _scratchSpacePackageConfig(String rootConfig) {
   var parsedRootConfig = jsonDecode(rootConfig) as Map<String, dynamic>;
   var version = parsedRootConfig['configVersion'] as int;
   if (version != 2) {
@@ -93,7 +92,7 @@ String _multiRootPackageConfig(String rootConfig) {
   var packages =
       (parsedRootConfig['packages'] as List).cast<Map<String, dynamic>>();
   for (var package in packages) {
-    package['rootUri'] = '$multiRootScheme:///packages/${package['name']}';
+    package['rootUri'] = '../packages/${package['name']}';
     package['packageUri'] = '';
   }
   return jsonEncode(parsedRootConfig);
