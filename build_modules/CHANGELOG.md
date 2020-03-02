@@ -1,3 +1,10 @@
+## 2.9.0-dev
+
+- Copy the `package_config.json` file to the scratch space directory, which
+  allows us to respect language versions properly during compilation.
+  - Also removes the custom `.packages` files that were previously created for
+    each action.
+
 ## 2.8.0
 
 - Add the ability to pass a list of experiments to enable to the KernelBuilder.

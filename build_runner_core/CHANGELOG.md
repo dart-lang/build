@@ -1,3 +1,8 @@
+## 4.5.0-dev
+
+- Add the `package_config.json` file as an internal source, and invalidate
+  builds when it changes.
+
 ## 4.4.0
 
 - Support the `auto_apply_builders` target configuration added in
