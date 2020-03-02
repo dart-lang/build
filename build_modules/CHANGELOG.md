@@ -5,6 +5,11 @@
   - Also removes the custom `.packages` files that were previously created for
     each action.
 
+## 2.8.1
+
+- Avoid waiting for `exitCode` from detached worker processes. In previous SDKs
+  this was `null` but it was changed to throw.
+
 ## 2.8.0
 
 - Add the ability to pass a list of experiments to enable to the KernelBuilder.

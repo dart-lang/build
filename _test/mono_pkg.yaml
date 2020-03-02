@@ -11,18 +11,18 @@ stages:
       os: linux
   - unit_test:
     - group:
-      - command: pub run build_runner test -- -p chrome
-      - command: pub run build_runner test -- -p vm test/configurable_uri_test.dart
+      - command: pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random
+      - command: pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random
   - e2e_test:
-    - test: --total-shards 2 --shard-index 0
+    - test: --total-shards 2 --shard-index 0 --test-randomize-ordering-seed=random
       os: linux
-    - test: --total-shards 2 --shard-index 1
+    - test: --total-shards 2 --shard-index 1 --test-randomize-ordering-seed=random
       os: linux
-    - test: --total-shards 3 --shard-index 0
+    - test: --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random
       os: windows
-    - test: --total-shards 3 --shard-index 1
+    - test: --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random
       os: windows
-    - test: --total-shards 3 --shard-index 2
+    - test: --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random
       os: windows
   - e2e_test_cron:
     - test:

@@ -11,7 +11,7 @@ stages:
         - 2.3.0
   - unit_test:
     - group:
-      - command: pub run build_runner test
+      - command: pub run build_runner test -- --test-randomize-ordering-seed=random
       - command: test/flutter_test.sh
       os:
         - linux
