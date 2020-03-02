@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
@@ -34,6 +35,8 @@ void main() {
 # Fake packages file
 a:file://fake/pkg/path
 ''');
+    await writer.writeAsString(makeAssetId('a|.dart_tool/package_config.json'),
+        jsonEncode(_packageConfig));
   });
 
   group('watch', () {
@@ -374,6 +377,32 @@ a:file://fake/pkg/path
 # Fake packages file
 a:file://different/fake/pkg/path
 ''');
+
+        expect(await results.hasNext, isFalse);
+        expect(logs.length, 1);
+        expect(
+            logs.first.message,
+            contains('Terminating builds due to package graph update, '
+                'please restart the build.'));
+      });
+
+      test(
+          'edits to .dart_tool/package_config.json prevent future builds '
+          'and ask you to restart', () async {
+        var logs = <LogRecord>[];
+        var buildState = await startWatch(
+            [copyABuildApplication], {'a|web/a.txt': 'a'}, writer,
+            logLevel: Level.SEVERE, onLog: logs.add);
+        var results = StreamQueue(buildState.buildResults);
+
+        var result = await results.next;
+        checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
+
+        var newConfig = Map.of(_packageConfig);
+        newConfig['extra'] = 'stuff';
+        await writer.writeAsString(
+            AssetId('a', '.dart_tool/package_config.json'),
+            jsonEncode(newConfig));
 
         expect(await results.hasNext, isFalse);
         expect(logs.length, 1);
@@ -799,3 +828,10 @@ Future terminateWatch() async {
   await _terminateWatchController.close();
   _terminateWatchController = null;
 }
+
+final _packageConfig = {
+  'configVersion': 2,
+  'packages': [
+    {'name': 'a', 'rootUri': 'file://fake/pkg/path', 'packageUri': 'lib/'},
+  ],
+};
