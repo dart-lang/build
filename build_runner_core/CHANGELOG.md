@@ -1,3 +1,7 @@
+## 4.4.1-dev
+
+- Avoid treating `AssetId` paths as URIs.
+
 ## 4.4.0
 
 - Support the `auto_apply_builders` target configuration added in

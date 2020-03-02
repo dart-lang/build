@@ -28,7 +28,7 @@ class FailureReporter {
   /// This should be called any time the build phases change since the naming
   /// scheme is dependent on the build phases.
   static Future<void> cleanErrorCache() async {
-    final errorCacheDirectory = Directory(p.fromUri(errorCachePath));
+    final errorCacheDirectory = Directory(errorCachePath);
     if (await errorCacheDirectory.exists()) {
       await errorCacheDirectory.delete(recursive: true);
     }
@@ -109,12 +109,17 @@ class ErrorReport {
 String _actionKey(GeneratedAssetNode node) =>
     '${node.builderOptionsId} on ${node.primaryInput}';
 
-String _errorPathForOutput(GeneratedAssetNode output) => p.join(
-    p.fromUri(errorCachePath),
-    output.id.package,
-    '${output.phaseNumber}',
-    p.fromUri(output.primaryInput.path));
+String _errorPathForOutput(GeneratedAssetNode output) => p.joinAll([
+      errorCachePath,
+      output.id.package,
+      '${output.phaseNumber}',
+      ...p.posix.split(output.primaryInput.path)
+    ]);
 
 String _errorPathForPrimaryInput(int phaseNumber, AssetId primaryInput) =>
-    p.join(p.fromUri(errorCachePath), primaryInput.package, '$phaseNumber',
-        p.fromUri(primaryInput.path));
+    p.joinAll([
+      errorCachePath,
+      primaryInput.package,
+      '$phaseNumber',
+      ...p.posix.split(primaryInput.path)
+    ]);

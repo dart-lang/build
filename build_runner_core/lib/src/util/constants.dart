@@ -18,7 +18,7 @@ String assetGraphPathFor(String path) =>
 /// Relative path to the directory which holds serialized versions of errors
 /// reported during previous builds.
 final errorCachePath =
-    p.url.join(cacheDir, _scriptHashFor(_scriptPath), 'error_cache');
+    p.join(cacheDir, _scriptHashFor(_scriptPath), 'error_cache');
 
 final String _scriptPath = Platform.script.scheme == 'file'
     ? p.url.joinAll(
