@@ -829,7 +829,7 @@ Future terminateWatch() async {
   _terminateWatchController = null;
 }
 
-final _packageConfig = {
+const _packageConfig = {
   'configVersion': 2,
   'packages': [
     {'name': 'a', 'rootUri': 'file://fake/pkg/path', 'packageUri': 'lib/'},
