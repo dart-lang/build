@@ -154,8 +154,9 @@ class Mock {
   @override
   String toString() => _givenName ?? runtimeType.toString();
 
-  String _realCallsToString() {
-    var stringRepresentations = _realCalls.map((call) => call.toString());
+  String _realCallsToString([Iterable<RealCall> realCalls]) {
+    var stringRepresentations =
+        (realCalls ?? _realCalls).map((call) => call.toString());
     if (stringRepresentations.any((s) => s.contains('\n'))) {
       // As each call contains newlines, put each on its own line, for better
       // readability.
@@ -165,6 +166,9 @@ class Mock {
       return stringRepresentations.join(', ');
     }
   }
+
+  String _unverifiedCallsToString() =>
+      _realCallsToString(_realCalls.where((call) => !call.verified));
 }
 
 /// Extend or mixin this class to mark the implementation as a [Fake].
@@ -666,8 +670,8 @@ class _VerifyCall {
           '`verifyNever(...);`.)');
     }
     if (never && matchingInvocations.isNotEmpty) {
-      var calls = mock._realCallsToString();
-      fail('Unexpected calls. All calls: $calls');
+      var calls = mock._unverifiedCallsToString();
+      fail('Unexpected calls: $calls');
     }
     matchingInvocations.forEach((inv) {
       inv.verified = true;
