@@ -379,7 +379,7 @@ a:file://different/fake/pkg/path
 ''');
 
         expect(await results.hasNext, isFalse);
-        expect(logs.length, 1);
+        expect(logs, hasLength(1));
         expect(
             logs.first.message,
             contains('Terminating builds due to package graph update, '
@@ -405,7 +405,7 @@ a:file://different/fake/pkg/path
             jsonEncode(newConfig));
 
         expect(await results.hasNext, isFalse);
-        expect(logs.length, 1);
+        expect(logs, hasLength(1));
         expect(
             logs.first.message,
             contains('Terminating builds due to package graph update, '
@@ -439,7 +439,7 @@ a:file://different/fake/pkg/path
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
-            expect(logs.length, 1);
+            expect(logs, hasLength(1));
             expect(logs.first.message,
                 contains('Terminating builds due to a:build.yaml update'));
           });
@@ -452,7 +452,7 @@ a:file://different/fake/pkg/path
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
-            expect(logs.length, 1);
+            expect(logs, hasLength(1));
             expect(logs.first.message,
                 contains('Terminating builds due to b:build.yaml update'));
           });
@@ -464,7 +464,7 @@ a:file://different/fake/pkg/path
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
-            expect(logs.length, 1);
+            expect(logs, hasLength(1));
             expect(logs.first.message,
                 contains('Terminating builds due to a:b.build.yaml update'));
           });
@@ -490,7 +490,7 @@ a:file://different/fake/pkg/path
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
-            expect(logs.length, 1);
+            expect(logs, hasLength(1));
             expect(logs.first.message,
                 contains('Terminating builds due to a:build.yaml update'));
           });
@@ -503,7 +503,7 @@ a:file://different/fake/pkg/path
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
-            expect(logs.length, 1);
+            expect(logs, hasLength(1));
             expect(logs.first.message,
                 contains('Terminating builds due to b:build.yaml update'));
           });
@@ -533,7 +533,7 @@ a:file://different/fake/pkg/path
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
-            expect(logs.length, 1);
+            expect(logs, hasLength(1));
             expect(logs.first.message,
                 contains('Terminating builds due to a:build.yaml update'));
           });
@@ -556,7 +556,7 @@ a:file://different/fake/pkg/path
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
-            expect(logs.length, 1);
+            expect(logs, hasLength(1));
             expect(logs.first.message,
                 contains('Terminating builds due to a:build.cool.yaml update'));
           });
