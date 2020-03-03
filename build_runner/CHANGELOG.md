@@ -1,3 +1,8 @@
+## 1.8.0-dev
+
+- Kill the watcher script when we see edits to the package_config.json file in
+  the same way that we already do for the .packages file.
+
 ## 1.7.4
 
 - Give a warning instead of a stack trace when using a build config override

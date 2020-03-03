@@ -72,6 +72,14 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         .map<AssetChange>(
             (change) => AssetChange(AssetId.parse(change.path), change.type))
         .toList();
+
+    var packageConfig = AssetId(
+        _buildOptions.packageGraph.root.name, '.dart_tool/package_config.json');
+    if (changes.any((change) => change.id == packageConfig)) {
+      _buildScriptUpdateCompleter.complete();
+      return;
+    }
+
     if (!_buildOptions.skipBuildScriptCheck &&
         _builder.buildScriptUpdates.hasBeenUpdated(
             changes.map<AssetId>((change) => change.id).toSet())) {

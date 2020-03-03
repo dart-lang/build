@@ -79,7 +79,16 @@ void main() {
           d.dir('.dart_tool', [
             d.dir('build', [
               d.dir('entrypoint', [d.file('build.dart', '// builds!')])
-            ])
+            ]),
+            d.file(
+                'package_config.json',
+                jsonEncode({
+                  'configVersion': 2,
+                  'packages': [
+                    {'name': 'a', 'rootUri': './', 'packageUri': 'lib/'},
+                    {'name': 'b', 'rootUri': '../pkg_b/', 'packageUri': 'lib/'},
+                  ],
+                }))
           ]),
           d.file('build.yaml', '''
 targets:
@@ -593,6 +602,43 @@ targets:
                 environment, options, buildPhases),
             throwsA(const TypeMatcher<BuildScriptChangedException>()));
         expect(writerSpy.assetsDeleted, contains(AssetId('c', aTxtCopy.path)));
+      });
+
+      test('invalidates the graph if the package_config.json file changes',
+          () async {
+        var assetGraph = await AssetGraph.build(
+            [],
+            <AssetId>{},
+            {AssetId('a', '.dart_tool/package_config.json')},
+            aPackageGraph,
+            environment.reader);
+
+        await createFile(assetGraphPath, assetGraph.serialize());
+
+        await modifyFile(
+            '.dart_tool/package_config.json',
+            jsonEncode({
+              'configVersion': 2,
+              'packages': [
+                {
+                  'name': 'a',
+                  'rootUri': './',
+                  'packageUri': 'lib/',
+                  'languageVersion': '2.0',
+                },
+                {
+                  'name': 'b',
+                  'rootUri': '../pkg_b/',
+                  'packageUri': 'lib/',
+                },
+              ],
+            }));
+
+        await expectLater(
+            () => BuildDefinition.prepareWorkspace(environment, options, []),
+            throwsA(const TypeMatcher<BuildScriptChangedException>()));
+
+        expect(File(assetGraphPath).existsSync(), isFalse);
       });
     });
 

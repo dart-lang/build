@@ -39,7 +39,20 @@ void main() {
       ..cacheStringAsset(
           AssetId('example', '.packages'),
           '# Fake packages file\n'
-          'example:file://fake/pkg/path');
+          'example:file://fake/pkg/path')
+      ..cacheStringAsset(
+          makeAssetId('example|.dart_tool/package_config.json'),
+          jsonEncode({
+            'configVersion': 2,
+            'packages': [
+              {
+                'name': 'example',
+                'rootUri': 'file://fake/pkg/path',
+                'packageUri': 'lib/'
+              },
+            ],
+          }));
+
     terminateController = StreamController();
     final server = await watch_impl.watch(
       [applyToRoot(const UppercaseBuilder())],

@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:_test_common/common.dart';
@@ -35,6 +36,22 @@ void main() {
       makeAssetId('a|web/b.txt'): 'b',
       makeAssetId('b|lib/c.txt'): 'c',
       makeAssetId('a|foo/d.txt'): 'd',
+      makeAssetId('a|.dart_tool/package_config.json'): '''
+{
+  "configVersion": 2,
+  "packages": [
+    {
+      "name": "a",
+      "rootUri": "file:///packages/a",
+      "packageUri": "lib/"
+    }, {
+      "name": "b",
+      "rootUri": "file:///packages/b",
+      "packageUri": "lib/"
+    }
+  ]
+}
+'''
     };
     final packageGraph = buildPackageGraph({
       rootPackage('a'): ['b'],
@@ -185,6 +202,7 @@ void main() {
         'packages/b/c.txt': 'c',
         'packages/b/c.txt.copy': 'c',
         '.packages': 'a:packages/a/\r\nb:packages/b/\r\n\$sdk:packages/\$sdk/',
+        '.dart_tool/package_config.json': _expectedPackageConfig(['a', 'b']),
       };
 
       _expectFiles(webFiles, tmpDir);
@@ -267,6 +285,7 @@ void main() {
         'packages/b/c.txt': 'c',
         'web/b.txt': 'b',
         '.packages': 'a:packages/a/\r\nb:packages/b/\r\n\$sdk:packages/\$sdk/',
+        '.dart_tool/package_config.json': _expectedPackageConfig(['a', 'b'])
       };
       _expectFiles(expectedFiles, tmpDir);
     });
@@ -407,6 +426,18 @@ void main() {
   });
 }
 
+String _expectedPackageConfig(List<String> packages) => jsonEncode({
+      'configVersion': 2,
+      'packages': [
+        for (var package in packages)
+          {
+            'name': '$package',
+            'rootUri': 'packages/$package',
+            'packageUri': '',
+          },
+      ]
+    });
+
 void _expectFiles(Map<String, dynamic> expectedFiles, Directory dir) {
   expectedFiles['.build.manifest'] =
       allOf(expectedFiles.keys.map(contains).toList());
@@ -436,6 +467,7 @@ void _expectAllFiles(Directory dir) {
     'web/b.txt': 'b',
     'web/b.txt.copy': 'b',
     '.packages': 'a:packages/a/\r\nb:packages/b/\r\n\$sdk:packages/\$sdk/',
+    '.dart_tool/package_config.json': _expectedPackageConfig(['a', 'b'])
   };
   _expectFiles(expectedFiles, dir);
 }

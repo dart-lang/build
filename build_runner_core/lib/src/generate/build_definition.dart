@@ -98,8 +98,21 @@ class AssetTracker {
   }
 
   /// Returns all the internal sources, such as those under [entryPointDir].
-  Future<Set<AssetId>> _findInternalSources() =>
-      _listIdsSafe(Glob('$entryPointDir/**')).toSet();
+  Future<Set<AssetId>> _findInternalSources() async {
+    var ids = await _listIdsSafe(Glob('$entryPointDir/**')).toSet();
+    var packageConfigId = AssetId(_targetGraph.rootPackageConfig.packageName,
+        '.dart_tool/package_config.json');
+
+    if (await _reader.canRead(packageConfigId)) {
+      ids.add(packageConfigId);
+    } else {
+      _logger.severe(
+          'No .dart_tool/package_config.json found - compilation will not '
+          'work.');
+      throw CannotBuildException();
+    }
+    return ids;
+  }
 
   /// Finds the asset changes which have happened while unwatched between builds
   /// by taking a difference between the assets in the graph and the assets on
@@ -209,6 +222,12 @@ class _Loader {
           'Checking for updates since last build',
           () => _updateAssetGraph(assetGraph, assetTracker, _buildPhases,
               inputSources, cacheDirSources, internalSources));
+      if (updates.containsKey(AssetId(
+          _options.packageGraph.root.name, '.dart_tool/package_config.json'))) {
+        await _cleanupOldOutputs(assetGraph);
+        await FailureReporter.cleanErrorCache();
+        throw BuildScriptChangedException();
+      }
 
       buildScriptUpdates = await BuildScriptUpdates.create(
           _environment.reader, _options.packageGraph, assetGraph,

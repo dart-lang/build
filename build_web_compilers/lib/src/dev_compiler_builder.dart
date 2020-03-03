@@ -159,7 +159,6 @@ Future<void> _createDevCompilerModule(
     kernelInputPathToId = {};
   }
 
-  var packagesFile = await createPackagesFile(allAssetIds);
   var request = WorkRequest()
     ..arguments.addAll([
       '--dart-sdk-summary=$sdkSummary',
@@ -169,7 +168,7 @@ Future<void> _createDevCompilerModule(
       jsOutputFile.path,
       debugMode ? '--source-map' : '--no-source-map',
       for (var dep in transitiveDeps) _summaryArg(dep),
-      '--packages=${packagesFile.absolute.uri}',
+      '--packages=${p.join('.dart_tool', 'package_config.json')}',
       '--module-name=${ddcModuleName(jsId)}',
       '--multi-root-scheme=$multiRootScheme',
       '--multi-root=.',
@@ -243,7 +242,6 @@ Future<void> _createDevCompilerModule(
           usedInputsFile, transitiveKernelDeps, kernelInputPathToId, buildStep);
     }
   } finally {
-    await packagesFile.parent.delete(recursive: true);
     await usedInputsFile?.parent?.delete(recursive: true);
   }
 }

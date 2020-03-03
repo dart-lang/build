@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
@@ -24,7 +25,10 @@ void main() {
         d.dir('web', [
           d.file('a.txt', 'hello'),
         ]),
-        d.dir('.dart_tool'),
+        d.dir('.dart_tool', [
+          d.file('package_config.json',
+              jsonEncode({'configVersion': 2, 'packages': []})),
+        ]),
       ]).create();
       var packageGraph = PackageGraph.fromRoot(PackageNode(
           'a', p.join(d.sandbox, 'a'), DependencyType.path,

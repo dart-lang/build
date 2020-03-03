@@ -1,3 +1,8 @@
+## 2.10.0
+
+- Pass the package_config.json file when compiling with ddc/dart2js instead of
+  the .packages file.
+
 ## 2.9.0
 
 - Add support for enabling experiments through the `experiments` option on the

@@ -1,5 +1,7 @@
-## 4.4.1-dev
+## 4.5.0-dev
 
+- Add the `package_config.json` file as an internal source, and invalidate
+  builds when it changes.
 - Avoid treating `AssetId` paths as URIs.
 
 ## 4.4.0

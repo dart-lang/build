@@ -12,6 +12,7 @@ import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
 import 'package:pedantic/pedantic.dart';
 import 'package:test/test.dart';
@@ -262,7 +263,6 @@ void main() {
           'a': {
             'targets': {
               'a': {
-                'sources': ['**'],
                 'builders': {
                   'a:clone_txt': {
                     'generate_for': ['**/*.txt']
@@ -407,6 +407,7 @@ void main() {
               makeAssetId('a|Phase0.builderOptions'),
               makeAssetId('a|Phase1.builderOptions'),
               ...placeholders,
+              makeAssetId('a|.dart_tool/package_config.json'),
             ]));
         expect(cachedGraph.sources, [makeAssetId('a|web/a.txt')]);
         expect(
@@ -860,8 +861,12 @@ void main() {
     expect(writer.assets, contains(graphId));
     var cachedGraph = AssetGraph.deserialize(writer.assets[graphId]);
 
-    var expectedGraph = await AssetGraph.build([], <AssetId>{}, <AssetId>{},
-        buildPackageGraph({rootPackage('a'): []}), null);
+    var expectedGraph = await AssetGraph.build(
+        [],
+        <AssetId>{},
+        {makeAssetId('a|.dart_tool/package_config.json')},
+        buildPackageGraph({rootPackage('a'): []}),
+        InMemoryAssetReader(sourceAssets: writer.assets));
 
     // Source nodes
     var aSourceNode = makeAssetNode(
