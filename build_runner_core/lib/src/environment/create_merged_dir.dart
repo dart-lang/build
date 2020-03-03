@@ -113,12 +113,12 @@ Future<bool> _createMergedOutputDir(
         await outputDir.create(recursive: true);
       }
 
-      outputAssets
-        ..addAll(await Future.wait(builtAssets.map((id) => _writeAsset(
-            id, outputDir, root, packageGraph, reader, symlinkOnly, hoist))))
-        ..add(await _writeCustomPackagesFile(packageGraph, outputDir))
-        ..add(await _writeModifiedPackageConfig(
-            packageGraph.root.name, reader, outputDir));
+      outputAssets.addAll(await Future.wait([
+          for(var id in builtAssets)
+             _writeAsset(id, outputDir, root, packageGraph, reader, symlinkOnly, hoist),
+           _writeCustomPackagesFile(packageGraph, outputDir),
+           _writeModifiedPackageConfig(packageGraph.root.name, reader, outputDir),
+       ]);
 
       if (!hoist) {
         for (var dir in _findRootDirs(builtAssets, outputPath)) {
