@@ -1,4 +1,4 @@
-## 2.9.0-dev
+## 2.9.0
 
 - Copy the `package_config.json` file to the scratch space directory, which
   allows us to respect language versions properly during compilation.
