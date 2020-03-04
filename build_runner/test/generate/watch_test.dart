@@ -258,8 +258,12 @@ a:file://fake/pkg/path
         var cachedGraph = AssetGraph.deserialize(
             writer.assets[makeAssetId('a|$assetGraphPath')]);
 
-        var expectedGraph = await AssetGraph.build([], <AssetId>{}, <AssetId>{},
-            buildPackageGraph({rootPackage('a'): []}), null);
+        var expectedGraph = await AssetGraph.build(
+            [],
+            <AssetId>{},
+            {AssetId('a', '.dart_tool/package_config.json')},
+            buildPackageGraph({rootPackage('a'): []}),
+            InMemoryAssetReader(sourceAssets: writer.assets));
 
         var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
         var builderOptionsNode = BuilderOptionsAssetNode(builderOptionsId,
