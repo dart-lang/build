@@ -432,7 +432,7 @@ String _expectedPackageConfig(List<String> packages) => jsonEncode({
         for (var package in packages)
           {
             'name': '$package',
-            'rootUri': 'packages/$package',
+            'rootUri': '../packages/$package',
             'packageUri': '',
           },
       ]
