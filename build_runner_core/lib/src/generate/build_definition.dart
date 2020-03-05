@@ -105,11 +105,6 @@ class AssetTracker {
 
     if (await _reader.canRead(packageConfigId)) {
       ids.add(packageConfigId);
-    } else {
-      _logger.severe(
-          'No .dart_tool/package_config.json found - compilation will not '
-          'work.');
-      throw CannotBuildException();
     }
     return ids;
   }
