@@ -262,6 +262,7 @@ class _Loader {
         buildScriptUpdates = await BuildScriptUpdates.create(
             _environment.reader, _options.packageGraph, assetGraph,
             disabled: _options.skipBuildScriptCheck);
+
         conflictingOutputs = assetGraph.outputs
             .where((n) => n.package == _options.packageGraph.root.name)
             .where(inputSources.contains)

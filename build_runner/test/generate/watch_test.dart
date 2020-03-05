@@ -258,8 +258,12 @@ a:file://fake/pkg/path
         var cachedGraph = AssetGraph.deserialize(
             writer.assets[makeAssetId('a|$assetGraphPath')]);
 
-        var expectedGraph = await AssetGraph.build([], <AssetId>{}, <AssetId>{},
-            buildPackageGraph({rootPackage('a'): []}), null);
+        var expectedGraph = await AssetGraph.build(
+            [],
+            <AssetId>{},
+            {AssetId('a', '.dart_tool/package_config.json')},
+            buildPackageGraph({rootPackage('a'): []}),
+            InMemoryAssetReader(sourceAssets: writer.assets));
 
         var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
         var builderOptionsNode = BuilderOptionsAssetNode(builderOptionsId,
@@ -565,7 +569,7 @@ a:file://different/fake/pkg/path
     });
 
     group('file updates to same contents', () {
-      test('keeps error state', () async {
+      test('does not rebuild', () async {
         var runCount = 0;
         var buildState = await startWatch([
           applyToRoot(TestBuilder(
@@ -587,14 +591,9 @@ a:file://different/fake/pkg/path
 
         await writer.writeAsString(makeAssetId('a|web/a.txt'), 'a');
 
-        result = await results.next;
-        expect(runCount, 1,
-            reason:
-                'Should not have reran since input digest should be identical');
-        checkBuild(result, status: BuildStatus.failure);
-
-        // Wait for the `_debounceDelay` before terminating.
-        await Future<void>.delayed(_debounceDelay);
+        // Wait for the `_debounceDelay * 4` before terminating to
+        // give it a chance to pick up the change.
+        await Future<void>.delayed(_debounceDelay * 4);
 
         await terminateWatch();
         expect(await results.hasNext, isFalse);

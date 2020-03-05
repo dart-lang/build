@@ -1,4 +1,4 @@
-## 4.5.0-dev
+## 4.5.0
 
 - Add the `package_config.json` file as an internal source, and invalidate
   builds when it changes.

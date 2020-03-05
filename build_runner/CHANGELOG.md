@@ -1,4 +1,4 @@
-## 1.8.0-dev
+## 1.8.0
 
 - Kill the watcher script when we see edits to the package_config.json file in
   the same way that we already do for the .packages file.
