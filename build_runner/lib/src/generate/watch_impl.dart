@@ -291,7 +291,7 @@ class WatchImpl implements BuildState {
           }
           return change;
         })
-        .where((change) {
+        .asyncWhere((change) {
           assert(_readyCompleter.isCompleted);
           return shouldProcess(
             change,
@@ -299,6 +299,7 @@ class WatchImpl implements BuildState {
             options,
             _willCreateOutputDirs,
             _expectedDeletes,
+            watcherEnvironment.reader,
           );
         })
         .debounceBuffer(_debounceDelay)

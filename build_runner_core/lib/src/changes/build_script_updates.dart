@@ -52,7 +52,9 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
       allSources = _urisForThisScript
           .map((id) => _idForUri(id, rootPackage))
           .where((id) => id != null)
-          .toSet();
+          .toSet()
+            ..add(AssetId(
+                packageGraph.root.name, '.dart_tool/package_config.json'));
       var missing = allSources.firstWhere((id) => !graph.contains(id),
           orElse: () => null);
       if (missing != null) {

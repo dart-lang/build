@@ -73,13 +73,6 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             (change) => AssetChange(AssetId.parse(change.path), change.type))
         .toList();
 
-    var packageConfig = AssetId(
-        _buildOptions.packageGraph.root.name, '.dart_tool/package_config.json');
-    if (changes.any((change) => change.id == packageConfig)) {
-      _buildScriptUpdateCompleter.complete();
-      return;
-    }
-
     if (!_buildOptions.skipBuildScriptCheck &&
         _builder.buildScriptUpdates.hasBeenUpdated(
             changes.map<AssetId>((change) => change.id).toSet())) {
@@ -219,13 +212,14 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             watch: (node) => PackageNodeWatcher(node,
                 watch: daemonOptions.directoryWatcherFactory))
         .watch()
-        .where((change) => shouldProcess(
+        .asyncWhere((change) => shouldProcess(
               change,
               builder.assetGraph,
               buildOptions,
               // Assume we will create an outputDir.
               true,
               expectedDeletes,
+              environment.reader,
             ))
         .map((data) => WatchEvent(data.type, '${data.id}'))
         .debounceBuffer(buildOptions.debounceDelay);
