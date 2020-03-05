@@ -1,3 +1,7 @@
+## 4.5.1
+
+- Don't fail if there is no .dart_tool/package_config.json file.
+
 ## 4.5.0
 
 - Add the `package_config.json` file as an internal source, and invalidate
