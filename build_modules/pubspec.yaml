@@ -1,5 +1,5 @@
 name: build_modules
-version: 2.9.0-dev
+version: 2.9.0
 description: Builders for Dart modules
 homepage: https://github.com/dart-lang/build/tree/master/build_modules
 
@@ -32,7 +32,3 @@ dev_dependencies:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
-
-dependency_overrides:
-  build_vm_compilers:
-    path: ../build_vm_compilers
