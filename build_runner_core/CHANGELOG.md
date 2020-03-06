@@ -1,3 +1,8 @@
+## 4.5.2
+
+- Don't assume the existence of a .dart_tool/package_config.json file when
+  creating output directories.
+
 ## 4.5.1
 
 - Don't fail if there is no .dart_tool/package_config.json file.

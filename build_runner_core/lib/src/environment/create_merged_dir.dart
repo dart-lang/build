@@ -118,7 +118,9 @@ Future<bool> _createMergedOutputDir(
           _writeAsset(
               id, outputDir, root, packageGraph, reader, symlinkOnly, hoist),
         _writeCustomPackagesFile(packageGraph, outputDir),
-        _writeModifiedPackageConfig(packageGraph.root.name, reader, outputDir),
+        if (await reader.canRead(_packageConfigId(packageGraph.root.name)))
+          _writeModifiedPackageConfig(
+              packageGraph.root.name, reader, outputDir),
       ]));
 
       if (!hoist) {
@@ -164,6 +166,9 @@ Future<AssetId> _writeCustomPackagesFile(
   return packagesAsset;
 }
 
+AssetId _packageConfigId(String rootPackage) =>
+    AssetId(rootPackage, '.dart_tool/package_config.json');
+
 /// Creates a modified `.dart_tool/package_config.json` file in [outputDir]
 /// based on the current one but with modified root and package uris.
 ///
@@ -175,8 +180,7 @@ Future<AssetId> _writeCustomPackagesFile(
 /// All other fields are left as is.
 Future<AssetId> _writeModifiedPackageConfig(
     String rootPackage, AssetReader reader, Directory outputDir) async {
-  var packageConfigAsset =
-      AssetId(rootPackage, '.dart_tool/package_config.json');
+  var packageConfigAsset = _packageConfigId(rootPackage);
   var packageConfig = jsonDecode(await reader.readAsString(packageConfigAsset))
       as Map<String, dynamic>;
 
