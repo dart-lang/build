@@ -1,3 +1,5 @@
+## 1.2.3-dev
+
 ## 1.2.2
 
 ### Updated docs for some minor behavior changes in build_resolvers 1.3.0
