@@ -13,4 +13,5 @@ stages:
     - command: pub run test --test-randomize-ordering-seed=random
       os:
         - linux
-        - windows
+        # currently broken on travis
+        #- windows
