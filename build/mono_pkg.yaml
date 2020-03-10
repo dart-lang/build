@@ -13,8 +13,9 @@ stages:
     - command: pub run build_runner test -- --test-randomize-ordering-seed=random
       os:
         - linux
-        - windows
-
+        # currently broken on travis
+        #- windows
 cache:
   directories:
   - .dart_tool/build
+

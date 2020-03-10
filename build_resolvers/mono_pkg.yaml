@@ -15,8 +15,8 @@ stages:
       - command: test/flutter_test.sh
       os:
         - linux
-        - windows
-
+        # currently broken on travis
+        #- windows
 cache:
   directories:
     - .dart_tool/build

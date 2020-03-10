@@ -15,8 +15,8 @@ stages:
     - command: dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs -- -P presubmit --test-randomize-ordering-seed=random
       os:
         - linux
-        - windows
-
+        # currently broken on travis
+        #- windows
 cache:
   directories:
     - .dart_tool/build

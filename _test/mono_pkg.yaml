@@ -3,7 +3,8 @@ dart:
 
 os:
   - linux
-  - windows
+  # currently broken on travis
+  #- windows
 
 stages:
   - analyze_and_format:
@@ -18,12 +19,12 @@ stages:
       os: linux
     - test: --total-shards 2 --shard-index 1 --test-randomize-ordering-seed=random
       os: linux
-    - test: --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random
-      os: windows
-    - test: --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random
-      os: windows
-    - test: --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random
-      os: windows
+    #- test: --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random
+    #  os: windows
+    #- test: --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random
+    #  os: windows
+    #- test: --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random
+    #  os: windows
   - e2e_test_cron:
     - test:
       dart:

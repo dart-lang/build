@@ -13,4 +13,5 @@ stages:
     - test:
       os:
         - linux
-        - windows
+        # currently broken on travis
+        #- windows
