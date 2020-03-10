@@ -86,43 +86,55 @@ for PKG in ${PKGS}; do
       echo 'dartfmt -n --set-exit-if-changed .'
       dartfmt -n --set-exit-if-changed . || EXIT_CODE=$?
       ;;
-    test_0)
+    test_00)
       echo 'pub run test --total-shards 2 --shard-index 0 --test-randomize-ordering-seed=random'
       pub run test --total-shards 2 --shard-index 0 --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
-    test_1)
+    test_01)
       echo 'pub run test --total-shards 2 --shard-index 1 --test-randomize-ordering-seed=random'
       pub run test --total-shards 2 --shard-index 1 --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
-    test_2)
+    test_02)
+      echo 'pub run test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random'
+      pub run test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+      ;;
+    test_03)
+      echo 'pub run test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random'
+      pub run test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+      ;;
+    test_04)
+      echo 'pub run test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random'
+      pub run test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+      ;;
+    test_05)
       echo 'pub run test'
       pub run test || EXIT_CODE=$?
       ;;
-    test_3)
+    test_06)
       echo 'pub run test -x integration --test-randomize-ordering-seed=random'
       pub run test -x integration --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
-    test_4)
+    test_07)
       echo 'pub run test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random'
       pub run test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
-    test_5)
+    test_08)
       echo 'pub run test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random'
       pub run test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
-    test_6)
+    test_09)
       echo 'pub run test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random'
       pub run test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
-    test_7)
+    test_10)
       echo 'pub run test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random'
       pub run test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
-    test_8)
+    test_11)
       echo 'pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random'
       pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
-    test_9)
+    test_12)
       echo 'pub run test --test-randomize-ordering-seed=random'
       pub run test --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
