@@ -14,5 +14,4 @@ stages:
     - test: --test-randomize-ordering-seed=random
       os:
         - linux
-        # currently broken on travis
-        #- windows
+        - windows
