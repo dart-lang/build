@@ -4,13 +4,11 @@
 
 // The first test that runs `testBuilder` takes a LOT longer than the rest.
 @Timeout.factor(3)
-
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:test/test.dart';
-
 import 'package:source_gen/source_gen.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('skips output if per-annotation output is', () {
@@ -58,17 +56,17 @@ void main() {
     }.entries) {
       test(entry.key, () async {
         final builder = LibraryBuilder(entry.value);
-        await testBuilder(builder, _inputMap, outputs: {
-          'a|lib/file.g.dart': r'''
-// GENERATED CODE - DO NOT MODIFY BY HAND
 
-// **************************************************************************
-// FailingGenerator
-// **************************************************************************
-
-// Error: Bad state: not supported!
-'''
-        });
+        await expectLater(
+          () => testBuilder(builder, _inputMap),
+          throwsA(
+            isA<StateError>().having(
+              (source) => source.message,
+              'message',
+              'not supported!',
+            ),
+          ),
+        );
       });
     }
   });

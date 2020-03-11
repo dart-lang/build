@@ -114,11 +114,21 @@ void main() {
   test('handle generator errors well', () async {
     final srcs = _createPackageStub(testLibContent: _testLibContentWithError);
     final builder = PartBuilder([const CommentGenerator()], '.foo.dart');
-    await testBuilder(builder, srcs, generateFor: {
-      '$_pkgName|lib/test_lib.dart'
-    }, outputs: {
-      '$_pkgName|lib/test_lib.foo.dart': _testGenPartContentError,
-    });
+
+    await expectLater(
+      () => testBuilder(
+        builder,
+        srcs,
+        generateFor: {'$_pkgName|lib/test_lib.dart'},
+      ),
+      throwsA(
+        isA<InvalidGenerationSourceError>().having(
+          (source) => source.message,
+          'message',
+          "Don't use classes with the word 'Error' in the name",
+        ),
+      ),
+    );
   });
 
   test('warns when a non-standalone builder does not see "part"', () async {
@@ -585,23 +595,6 @@ part of test_lib;
 // Code for "test_lib"
 // Code for "class Person"
 // Code for "class Customer"
-''';
-
-const _testGenPartContentError = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
-
-part of test_lib;
-
-// **************************************************************************
-// CommentGenerator
-// **************************************************************************
-
-// Error: Don't use classes with the word 'Error' in the name
-//        package:pkg/test_lib.dart:4:7
-//          ╷
-//        4 │ class MyGoodError { }
-//          │       ^^^^^^^^^^^
-//          ╵
-// TODO: Rename MyGoodError to something else.
 ''';
 
 const _testGenNoLibrary = r'''// GENERATED CODE - DO NOT MODIFY BY HAND

@@ -126,7 +126,9 @@ class _Builder extends Builder {
         ..writeln()
         ..writeln(_headerLine)
         ..writeAll(
-            LineSplitter.split(item.toString()).map((line) => '// $line\n'))
+          LineSplitter.split(item.generatorDescription)
+              .map((line) => '// $line\n'),
+        )
         ..writeln(_headerLine)
         ..writeln()
         ..writeln(item.output);
@@ -289,28 +291,23 @@ Stream<GeneratedOutput> _generate(
   final libraryReader = LibraryReader(library);
   for (var i = 0; i < generators.length; i++) {
     final gen = generators[i];
-    try {
-      var msg = 'Running $gen';
-      if (generators.length > 1) {
-        msg = '$msg - ${i + 1} of ${generators.length}';
-      }
-      log.fine(msg);
-      var createdUnit = await gen.generate(libraryReader, buildStep);
-
-      if (createdUnit == null) {
-        continue;
-      }
-
-      createdUnit = createdUnit.trim();
-      if (createdUnit.isEmpty) {
-        continue;
-      }
-
-      yield GeneratedOutput(gen, createdUnit);
-    } catch (e, stack) {
-      log.severe('Error running $gen', e, stack);
-      yield GeneratedOutput.fromError(gen, e, stack);
+    var msg = 'Running $gen';
+    if (generators.length > 1) {
+      msg = '$msg - ${i + 1} of ${generators.length}';
     }
+    log.fine(msg);
+    var createdUnit = await gen.generate(libraryReader, buildStep);
+
+    if (createdUnit == null) {
+      continue;
+    }
+
+    createdUnit = createdUnit.trim();
+    if (createdUnit.isEmpty) {
+      continue;
+    }
+
+    yield GeneratedOutput(gen, createdUnit);
   }
 }
 
