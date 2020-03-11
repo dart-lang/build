@@ -1,3 +1,7 @@
+## 1.3.4-dev
+
+- Remove dependency on `package_resolver`.
+
 ## 1.3.3
 
 - Fix an issue where non-existing Dart assets weren't visible to the analyzer, even

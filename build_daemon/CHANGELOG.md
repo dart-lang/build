@@ -1,3 +1,7 @@
+# 2.1.4-dev
+
+- Remove dependency on `package:package_resolver`.
+
 # 2.1.3
 
 - Allow the latest `stream_transform`.

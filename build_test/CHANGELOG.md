@@ -1,3 +1,7 @@
+## 0.10.12+2-dev
+
+- Remove dependency on `package:package_resolver`.
+
 ## 0.10.12+1
 
 - Allow the latest test_core package (`0.3.x`).
