@@ -9,7 +9,7 @@
 
 ## 1.3.2
 
-- Improve detection of the flutter SDK for older flutter versions.  
+- Improve detection of the flutter SDK for older flutter versions.
 
 ## 1.3.1
 
