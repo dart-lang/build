@@ -1,3 +1,7 @@
+## 1.3.4-dev
+
+- Remove dependency on `package_resolver`.
+
 ## 1.3.3
 
 - Fix an issue where non-existing Dart assets weren't visible to the analyzer, even
@@ -5,7 +9,7 @@
 
 ## 1.3.2
 
-- Improve detection of the flutter SDK for older flutter versions.  
+- Improve detection of the flutter SDK for older flutter versions.
 
 ## 1.3.1
 

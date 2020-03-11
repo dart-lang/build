@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:analyzer/src/summary/summary_file_builder.dart';
 import 'package:analyzer/dart/element/element.dart';
@@ -19,7 +20,6 @@ import 'package:analyzer/src/generated/engine.dart'
     show AnalysisOptions, AnalysisOptionsImpl;
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
-import 'package:package_resolver/package_resolver.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
@@ -28,6 +28,11 @@ import 'build_asset_uri_resolver.dart';
 import 'human_readable_duration.dart';
 
 final _logger = Logger('build_resolvers');
+
+Future<String> _packagePath(String package) async {
+  var libRoot = await Isolate.resolvePackageUri(Uri.parse('package:$package/'));
+  return p.dirname(p.fromUri(libRoot));
+}
 
 /// Implements [Resolver.libraries] and [Resolver.findLibraryByName] by crawling
 /// down from entrypoints.
@@ -231,7 +236,7 @@ Future<String> _defaultSdkSummaryGenerator() async {
   var currentDeps = {
     'sdk': Platform.version,
     for (var package in _packageDepsToCheck)
-      package: await PackageResolver.current.packagePath(package),
+      package: await _packagePath(package),
   };
 
   // Invalidate existing summary/version/analyzer files if present.

@@ -10,8 +10,13 @@ dependencies:
   build_config: any
   build_runner_core: any
   build_test: any
-  test_descriptor: ^1.0.0
+  crypto: ^2.0.0
+  logging: ^0.11.0
+  package_resolver: ^1.0.0
+  path: ^1.6.0
   test: '>=0.12.42 <2.0.0'
+  test_descriptor: ^1.0.0
+  watcher: ^0.9.7
 
 dependency_overrides:
   build:
