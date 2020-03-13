@@ -1,10 +1,6 @@
 name: mockito
 version: 4.1.2-dev
 
-authors:
-  - Dmitriy Fibulwinter <fibulwinter@gmail.com>
-  - Dart Team <misc@dartlang.org>
-
 description: A mock framework inspired by Mockito.
 homepage: https://github.com/dart-lang/mockito
 
