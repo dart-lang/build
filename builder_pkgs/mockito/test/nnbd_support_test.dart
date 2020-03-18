@@ -27,7 +27,7 @@ class MockFoo extends Mock implements Foo {
   @override
   String /*!*/ returnsNonNullableString() {
     return super.noSuchMethod(
-        Invocation.method(#returnsNonNullableString, []), 'Dummy');
+        Invocation.method(#returnsNonNullableString, []), 'Dummy') as String;
   }
 }
 

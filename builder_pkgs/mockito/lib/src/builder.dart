@@ -441,7 +441,7 @@ class _MockLibraryInfo {
           ..types.addAll(type.typeArguments.map(_typeReference));
       });
     } else if (type is analyzer.FunctionType) {
-      GenericFunctionTypeElement element = type.element;
+      var element = type.element;
       if (element == null) {
         // [type] represents a FunctionTypedFormalParameter.
         return FunctionType((b) {
