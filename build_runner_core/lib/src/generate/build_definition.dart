@@ -217,19 +217,23 @@ class _Loader {
           'Checking for updates since last build',
           () => _updateAssetGraph(assetGraph, assetTracker, _buildPhases,
               inputSources, cacheDirSources, internalSources));
-      if (updates.containsKey(AssetId(
-          _options.packageGraph.root.name, '.dart_tool/package_config.json'))) {
-        await _cleanupOldOutputs(assetGraph);
-        await FailureReporter.cleanErrorCache();
-        throw BuildScriptChangedException();
-      }
-
       buildScriptUpdates = await BuildScriptUpdates.create(
           _environment.reader, _options.packageGraph, assetGraph,
           disabled: _options.skipBuildScriptCheck);
-      if (!_options.skipBuildScriptCheck &&
-          buildScriptUpdates.hasBeenUpdated(updates.keys.toSet())) {
-        _logger.warning('Invalidating asset graph due to build script update!');
+
+      var packageConfigUpdated = updates.containsKey(AssetId(
+          _options.packageGraph.root.name, '.dart_tool/package_config.json'));
+      var buildScriptUpdated = !_options.skipBuildScriptCheck &&
+          buildScriptUpdates.hasBeenUpdated(updates.keys.toSet());
+      if (packageConfigUpdated || buildScriptUpdated) {
+        if (packageConfigUpdated) {
+          _logger
+              .warning('Invalidating asset graph due package config update!');
+        }
+        if (buildScriptUpdated) {
+          _logger
+              .warning('Invalidating asset graph due to build script update!');
+        }
         var deletedSourceOutputs = await _cleanupOldOutputs(assetGraph);
 
         if (_runningFromSnapshot) {

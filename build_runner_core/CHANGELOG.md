@@ -1,3 +1,8 @@
+## 4.5.3
+
+- Don't throw a `BuildScriptInvalidated` exception on package_config.json
+  updates unless running from snapshot.
+
 ## 4.5.2
 
 - Don't assume the existence of a .dart_tool/package_config.json file when
