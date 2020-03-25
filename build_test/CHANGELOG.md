@@ -1,6 +1,8 @@
-## 0.10.12+2-dev
+## 1.0.0
 
-- Remove dependency on `package:package_resolver`.
+- Removed dependency on `package:package_resolver`, changed to 
+  `package:package_config`.
+  - All apis which used to take a `PackageResolver` now take a `PackageConfig`.
 
 ## 0.10.12+1
 

@@ -3,10 +3,11 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:isolate';
 
 import 'package:build/build.dart';
 import 'package:build_resolvers/build_resolvers.dart';
-import 'package:package_resolver/package_resolver.dart';
+import 'package:package_config/package_config.dart';
 import 'package:pedantic/pedantic.dart';
 
 import 'in_memory_reader.dart';
@@ -28,7 +29,7 @@ Future<T> resolveSource<T>(
   String inputSource,
   FutureOr<T> Function(Resolver resolver) action, {
   AssetId inputId,
-  PackageResolver resolver,
+  PackageConfig packageConfig,
   Future<Null> tearDown,
   Resolvers resolvers,
 }) {
@@ -39,7 +40,7 @@ Future<T> resolveSource<T>(
     },
     inputId.package,
     action,
-    resolver: resolver,
+    packageConfig: packageConfig,
     resolverFor: inputId,
     tearDown: tearDown,
     resolvers: resolvers,
@@ -113,12 +114,12 @@ Future<T> resolveSource<T>(
 /// otherwise defaults to the first one in [inputs].
 ///
 /// **NOTE**: All `package` dependencies are resolved using [PackageAssetReader]
-/// - by default, [PackageAssetReader.currentIsolate]. A custom [resolver] may
-/// be provided to map files not visible to the current package's runtime.
+/// - by default, [PackageAssetReader.currentIsolate]. A custom [packageConfig]
+/// may be provided to map files not visible to the current package's runtime.
 Future<T> resolveSources<T>(
   Map<String, String> inputs,
   FutureOr<T> Function(Resolver resolver) action, {
-  PackageResolver resolver,
+  PackageConfig packageConfig,
   String resolverFor,
   String rootPackage,
   Future<Null> tearDown,
@@ -131,7 +132,7 @@ Future<T> resolveSources<T>(
     inputs,
     rootPackage ?? AssetId.parse(inputs.keys.first).package,
     action,
-    resolver: resolver,
+    packageConfig: packageConfig,
     resolverFor: AssetId.parse(resolverFor ?? inputs.keys.first),
     tearDown: tearDown,
     resolvers: resolvers,
@@ -142,7 +143,7 @@ Future<T> resolveSources<T>(
 Future<T> resolveAsset<T>(
   AssetId inputId,
   FutureOr<T> Function(Resolver resolver) action, {
-  PackageResolver resolver,
+  PackageConfig packageConfig,
   Future<Null> tearDown,
   Resolvers resolvers,
 }) {
@@ -152,7 +153,7 @@ Future<T> resolveAsset<T>(
     },
     inputId.package,
     action,
-    resolver: resolver,
+    packageConfig: packageConfig,
     resolverFor: inputId,
     tearDown: tearDown,
     resolvers: resolvers,
@@ -168,13 +169,13 @@ Future<T> _resolveAssets<T>(
   Map<String, String> inputs,
   String rootPackage,
   FutureOr<T> Function(Resolver resolver) action, {
-  PackageResolver resolver,
+  PackageConfig packageConfig,
   AssetId resolverFor,
   Future<Null> tearDown,
   Resolvers resolvers,
 }) async {
-  final syncResolver = await (resolver ?? PackageResolver.current).asSync;
-  final assetReader = PackageAssetReader(syncResolver, rootPackage);
+  packageConfig ??= await loadPackageConfigUri(await Isolate.packageConfig);
+  final assetReader = PackageAssetReader(packageConfig, rootPackage);
   final resolveBuilder = _ResolveSourceBuilder(
     action,
     resolverFor,
