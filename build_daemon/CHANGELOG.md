@@ -1,4 +1,4 @@
-# 2.1.4-dev
+# 2.1.4
 
 - Remove dependency on `package:package_resolver`.
 

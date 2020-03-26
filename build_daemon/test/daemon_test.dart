@@ -7,12 +7,12 @@
 })
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/daemon.dart';
 import 'package:build_daemon/src/fakes/fake_builder.dart';
 import 'package:build_daemon/src/fakes/fake_change_provider.dart';
-import 'package:package_resolver/package_resolver.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 import 'package:uuid/uuid.dart';
@@ -194,7 +194,7 @@ Future<Process> _runDaemon(var workspace, {int timeout = 30}) async {
     }
       ''').create();
 
-  var packageArg = await PackageResolver.current.processArgument;
+  var packageArg = '--packages=${(await Isolate.packageConfig).path}';
 
   var process = await Process.start(
       Platform.resolvedExecutable, [packageArg, 'test.dart'],
