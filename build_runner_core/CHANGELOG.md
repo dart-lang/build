@@ -1,3 +1,7 @@
+## 4.5.4-dev
+
+- Remove unused dev dependency on `package_resolver`.
+
 ## 4.5.3
 
 - Don't throw a `BuildScriptInvalidated` exception on package_config.json
