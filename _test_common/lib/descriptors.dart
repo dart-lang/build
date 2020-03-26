@@ -35,7 +35,7 @@ Future<d.FileDescriptor> pubspec(String name,
 
   var packageConfig = await loadPackageConfigUri(await Isolate.packageConfig);
   await Future.forEach(currentIsolateDependencies, (String package) async {
-    pathDependencies[package] = packageConfig[package].root.path;
+    pathDependencies[package] = packageConfig[package].root.toFilePath();
   });
 
   pathDependencies.forEach((package, path) {
