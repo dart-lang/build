@@ -3,6 +3,7 @@
 - Removed dependency on `package:package_resolver`, changed to 
   `package:package_config`.
   - All apis which used to take a `PackageResolver` now take a `PackageConfig`.
+- Require SDK version `2.7.0`.
 
 ## 0.10.12+1
 
