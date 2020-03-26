@@ -1,5 +1,5 @@
 dart:
-  - 2.6.0
+  - 2.7.0
   - dev
 
 stages:
@@ -9,7 +9,7 @@ stages:
       - dartanalyzer: --fatal-infos --fatal-warnings .
       dart: dev
     - dartanalyzer: --fatal-warnings .
-      dart: 2.6.0
+      dart: 2.7.0
   - unit_test:
     - test: --test-randomize-ordering-seed=random
       os:
