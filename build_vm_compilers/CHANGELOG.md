@@ -1,3 +1,7 @@
+## 1.0.5-dev
+
+- Increase min sdk constraint to `>=2.7.0`.
+
 ## 1.0.4
 
 - Allow analyzer version `0.39.0`.
