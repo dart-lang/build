@@ -1,3 +1,7 @@
+## 1.8.1-dev
+
+- Remove dev dependency on `package_resolver`.
+
 ## 1.8.0
 
 - Kill the watcher script when we see edits to the package_config.json file in
