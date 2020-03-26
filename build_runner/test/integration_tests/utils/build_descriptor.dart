@@ -5,10 +5,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
-import 'package:package_resolver/package_resolver.dart';
+import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:stack_trace/stack_trace.dart';
 import 'package:test/test.dart'
@@ -207,9 +208,9 @@ Future<d.FileDescriptor> _pubspecWithDeps(String name,
     Map<String, String> versionDependencies}) async {
   currentIsolateDependencies ??= [];
   pathDependencies ??= {};
-  var resolver = PackageResolver.current;
+  var packageConfig = await loadPackageConfigUri(await Isolate.packageConfig);
   await Future.forEach(currentIsolateDependencies, (String package) async {
-    pathDependencies[package] = await resolver.packagePath(package);
+    pathDependencies[package] = packageConfig[package].root.path;
   });
   return _pubspec(name,
       pathDependencies: pathDependencies,
