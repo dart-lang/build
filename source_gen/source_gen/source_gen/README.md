@@ -105,7 +105,7 @@ _Example `build.yaml` configuration:_
 
 ```yaml
 targets:
-  $default":
+  $default:
     builders:
       source_gen|combining_builder:
         options:
