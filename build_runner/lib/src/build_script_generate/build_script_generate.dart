@@ -55,7 +55,7 @@ Future<String> _generateBuildScript() async {
 /// which has a `build.yaml`.
 Future<Iterable<Expression>> _findBuilderApplications() async {
   final builderApplications = <Expression>[];
-  final packageGraph = PackageGraph.forThisPackage();
+  final packageGraph = await PackageGraph.forThisPackage();
   final orderedPackages = stronglyConnectedComponents<PackageNode>(
     [packageGraph.root],
     (node) => node.dependencies,

@@ -54,7 +54,7 @@ Future<ServeHandler> watch(
   Set<BuildFilter> buildFilters,
 }) async {
   builderConfigOverrides ??= const {};
-  packageGraph ??= PackageGraph.forThisPackage();
+  packageGraph ??= await PackageGraph.forThisPackage();
   buildDirs ??= <BuildDirectory>{};
   buildFilters ??= <BuildFilter>{};
 
