@@ -101,7 +101,8 @@ class PackageGraph {
 
   /// Creates a [PackageGraph] for the package in which you are currently
   /// running.
-  static Future<PackageGraph> forThisPackage() => PackageGraph.forPath('./');
+  static Future<PackageGraph> forThisPackage() =>
+      PackageGraph.forPath(p.current);
 
   /// Shorthand to get a package by name.
   PackageNode operator [](String packageName) => allPackages[packageName];
