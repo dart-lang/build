@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build_runner_core/build_runner_core.dart';
+import 'package:package_config/package_config.dart';
 
 PackageGraph buildPackageGraph(Map<PackageNode, Iterable<String>> packages) {
   var packagesByName = Map<String, PackageNode>.fromIterable(packages.keys,
@@ -15,8 +16,11 @@ PackageGraph buildPackageGraph(Map<PackageNode, Iterable<String>> packages) {
   return PackageGraph.fromRoot(root);
 }
 
-PackageNode package(String packageName, {String path, DependencyType type}) =>
-    PackageNode(packageName, path, type);
+PackageNode package(String packageName,
+        {String path, DependencyType type, LanguageVersion languageVersion}) =>
+    PackageNode(packageName, path, type, languageVersion);
 
-PackageNode rootPackage(String packageName, {String path}) =>
-    PackageNode(packageName, path, DependencyType.path, isRoot: true);
+PackageNode rootPackage(String packageName,
+        {String path, LanguageVersion languageVersion}) =>
+    PackageNode(packageName, path, DependencyType.path, languageVersion,
+        isRoot: true);

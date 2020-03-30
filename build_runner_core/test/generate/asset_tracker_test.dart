@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:test_descriptor/test_descriptor.dart' as d;
 import 'package:test/test.dart';
@@ -30,8 +31,8 @@ void main() {
               jsonEncode({'configVersion': 2, 'packages': []})),
         ]),
       ]).create();
-      var packageGraph = PackageGraph.fromRoot(PackageNode(
-          'a', p.join(d.sandbox, 'a'), DependencyType.path,
+      var packageGraph = PackageGraph.fromRoot(PackageNode('a',
+          p.join(d.sandbox, 'a'), DependencyType.path, LanguageVersion(2, 6),
           isRoot: true));
       var reader = FileBasedAssetReader(packageGraph);
       var aId = AssetId('a', 'web/a.txt');

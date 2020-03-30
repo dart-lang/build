@@ -116,7 +116,7 @@ targets:
         d.dir('lib', [d.file('some_lib.dart')]),
       ]).create();
       pkgARoot = p.join(d.sandbox, 'pkg_a');
-      var packageGraph = PackageGraph.forPath(pkgARoot);
+      var packageGraph = await PackageGraph.forPath(pkgARoot);
       environment =
           OverrideableEnvironment(IOEnvironment(packageGraph), onLog: (_) {});
       options = await BuildOptions.create(
@@ -586,7 +586,7 @@ targets:
         await modifyFile('.packages',
             (await readFile('.packages')).replaceFirst('a:', 'c:'));
 
-        var packageGraph = PackageGraph.forPath(pkgARoot);
+        var packageGraph = await PackageGraph.forPath(pkgARoot);
         environment =
             OverrideableEnvironment(IOEnvironment(packageGraph), onLog: (_) {});
         var writerSpy = RunnerAssetWriterSpy(environment.writer);
