@@ -7,8 +7,10 @@ import 'dart:io';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
+import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
 import '../asset/build_cache.dart';
@@ -221,19 +223,11 @@ class _Loader {
           _environment.reader, _options.packageGraph, assetGraph,
           disabled: _options.skipBuildScriptCheck);
 
-      var packageConfigUpdated = updates.containsKey(AssetId(
-          _options.packageGraph.root.name, '.dart_tool/package_config.json'));
       var buildScriptUpdated = !_options.skipBuildScriptCheck &&
           buildScriptUpdates.hasBeenUpdated(updates.keys.toSet());
-      if (packageConfigUpdated || buildScriptUpdated) {
-        if (packageConfigUpdated) {
-          _logger
-              .warning('Invalidating asset graph due package config update!');
-        }
-        if (buildScriptUpdated) {
-          _logger
-              .warning('Invalidating asset graph due to build script update!');
-        }
+      if (buildScriptUpdated) {
+        _logger.warning('Invalidating asset graph due to build script update!');
+
         var deletedSourceOutputs = await _cleanupOldOutputs(assetGraph);
 
         if (_runningFromSnapshot) {
@@ -349,13 +343,29 @@ class _Loader {
       try {
         var cachedGraph = AssetGraph.deserialize(
             await _environment.reader.readAsBytes(assetGraphId));
-        if (computeBuildPhasesDigest(_buildPhases) !=
-            cachedGraph.buildPhasesDigest) {
-          _logger.warning(
-              'Throwing away cached asset graph because the build phases have '
-              'changed. This most commonly would happen as a result of adding a '
-              'new dependency or updating your dependencies.');
+        var buildPhasesChanged = computeBuildPhasesDigest(_buildPhases) !=
+            cachedGraph.buildPhasesDigest;
+        var pkgVersionsChanged = !const DeepCollectionEquality()
+            .equals(cachedGraph.packageLanguageVersions, {
+          for (var pkg in _options.packageGraph.allPackages.values)
+            pkg.name: pkg.languageVersion
+        });
+        if (buildPhasesChanged || pkgVersionsChanged) {
+          if (buildPhasesChanged) {
+            _logger.warning(
+                'Throwing away cached asset graph because the build phases have '
+                'changed. This most commonly would happen as a result of adding a '
+                'new dependency or updating your dependencies.');
+          }
+          if (pkgVersionsChanged) {
+            _logger.warning(
+                'Throwing away cached asset graph because the language '
+                'version of some package(s) changed. This would most commonly '
+                'happen when updating dependencies or changing your min sdk '
+                'constraint.');
+          }
           await Future.wait([
+            _deleteAssetGraph(_options.packageGraph),
             _cleanupOldOutputs(cachedGraph),
             FailureReporter.cleanErrorCache(),
           ]);
@@ -368,6 +378,7 @@ class _Loader {
           _logger.warning(
               'Throwing away cached asset graph due to Dart SDK update.');
           await Future.wait([
+            _deleteAssetGraph(_options.packageGraph),
             _cleanupOldOutputs(cachedGraph),
             FailureReporter.cleanErrorCache(),
           ]);
@@ -418,6 +429,9 @@ class _Loader {
     });
     return deletedSources;
   }
+
+  Future<void> _deleteAssetGraph(PackageGraph packageGraph) =>
+      File(p.join(packageGraph.root.path, assetGraphPath)).delete();
 
   /// Updates [assetGraph] based on a the new view of the world.
   ///

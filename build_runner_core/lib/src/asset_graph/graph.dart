@@ -12,6 +12,7 @@ import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
+import 'package:package_config/package_config.dart';
 import 'package:watcher/watcher.dart';
 
 import '../generate/phase.dart';
@@ -35,7 +36,10 @@ class AssetGraph {
   /// The [Platform.version] this graph was created with.
   final String dartVersion;
 
-  AssetGraph._(this.buildPhasesDigest, this.dartVersion);
+  final Map<String, LanguageVersion> packageLanguageVersions;
+
+  AssetGraph._(
+      this.buildPhasesDigest, this.dartVersion, this.packageLanguageVersions);
 
   /// Deserializes this graph.
   factory AssetGraph.deserialize(List<int> serializedGraph) =>
@@ -47,8 +51,12 @@ class AssetGraph {
       Set<AssetId> internalSources,
       PackageGraph packageGraph,
       AssetReader digestReader) async {
-    var graph =
-        AssetGraph._(computeBuildPhasesDigest(buildPhases), Platform.version);
+    var packageLanguageVersions = {
+      for (var pkg in packageGraph.allPackages.values)
+        pkg.name: pkg.languageVersion
+    };
+    var graph = AssetGraph._(computeBuildPhasesDigest(buildPhases),
+        Platform.version, packageLanguageVersions);
     var placeholders = graph._addPlaceHolderNodes(packageGraph);
     var sourceNodes = graph._addSources(sources);
     graph

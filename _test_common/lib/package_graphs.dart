@@ -18,9 +18,11 @@ PackageGraph buildPackageGraph(Map<PackageNode, Iterable<String>> packages) {
 
 PackageNode package(String packageName,
         {String path, DependencyType type, LanguageVersion languageVersion}) =>
-    PackageNode(packageName, path, type, languageVersion);
+    PackageNode(
+        packageName, path, type, languageVersion ?? LanguageVersion(0, 0));
 
 PackageNode rootPackage(String packageName,
         {String path, LanguageVersion languageVersion}) =>
-    PackageNode(packageName, path, DependencyType.path, languageVersion,
+    PackageNode(packageName, path, DependencyType.path,
+        languageVersion ?? LanguageVersion(0, 0),
         isRoot: true);

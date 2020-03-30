@@ -111,6 +111,7 @@ Future<BuildResult> testBuilders(
             'name': pkgNode.name,
             'rootUri': pkgNode.path,
             'packageUri': 'lib/',
+            'languageVersion': pkgNode.languageVersion.toString()
           },
       ],
     };

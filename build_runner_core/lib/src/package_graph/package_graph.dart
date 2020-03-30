@@ -77,9 +77,13 @@ class PackageGraph {
 
     final nodes = <String, PackageNode>{};
     for (final package in packageConfig.packages) {
-      nodes[package.name] = PackageNode(package.name, package.root.toFilePath(),
-          dependencyTypes[package.name], package.languageVersion,
-          isRoot: package.name == rootPackageName);
+      var isRoot = package.name == rootPackageName;
+      nodes[package.name] = PackageNode(
+          package.name,
+          package.root.toFilePath(),
+          isRoot ? DependencyType.path : dependencyTypes[package.name],
+          package.languageVersion,
+          isRoot: isRoot);
     }
     final rootNode = nodes[rootPackageName];
     rootNode.dependencies
