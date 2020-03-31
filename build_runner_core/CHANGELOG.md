@@ -1,5 +1,4 @@
-## 5.0.0-dev
-
+## 5.0.0
 ### Breaking changes
 
 - `PackageGraph.forPath` and `PackageGraph.forThisPackage` are now static
@@ -11,6 +10,8 @@
 - Builds no longer depend on the contents of the package_config.json file,
   instead they depend only on the language versions inside of it.
   - This should help CI builds that want to share a cache across runs.
+- Improve the error message for build.yaml parsing errors, suggesting a clean
+  build if you believe the parse error is incorrect.
 - Remove unused dev dependency on `package_resolver`.
 
 ## 4.5.3
