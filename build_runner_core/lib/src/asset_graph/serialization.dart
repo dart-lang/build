@@ -39,7 +39,9 @@ class _AssetGraphDeserializer {
       for (var entry in (_serializedGraph['packageLanguageVersions']
               as Map<String, dynamic>)
           .entries)
-        entry.key: LanguageVersion.parse(entry.value as String)
+        entry.key: entry.value != null
+            ? LanguageVersion.parse(entry.value as String)
+            : null
     };
     var graph = AssetGraph._(
       _deserializeDigest(_serializedGraph['buildActionsDigest'] as String),
@@ -227,7 +229,7 @@ class _AssetGraphSerializer {
       'packages': packages,
       'assetPaths': assetPaths,
       'packageLanguageVersions': _graph.packageLanguageVersions
-          .map((pkg, version) => MapEntry(pkg, version.toString())),
+          .map((pkg, version) => MapEntry(pkg, version?.toString())),
     };
     return utf8.encode(json.encode(result));
   }
