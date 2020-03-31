@@ -70,7 +70,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     String logPerformanceDir,
     Set<BuildFilter> buildFilters}) async {
   builderConfigOverrides ??= const {};
-  packageGraph ??= PackageGraph.forThisPackage();
+  packageGraph ??= await PackageGraph.forThisPackage();
   var environment = OverrideableEnvironment(
       IOEnvironment(
         packageGraph,

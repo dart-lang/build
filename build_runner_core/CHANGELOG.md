@@ -1,5 +1,16 @@
-## 4.5.4-dev
+## 5.0.0-dev
 
+### Breaking changes
+
+- `PackageGraph.forPath` and `PackageGraph.forThisPackage` are now static
+  methods which return a `Future<PackageGraph>` instead of constructors.
+- `PackageNode` now requires a `LanguageVersion`.
+
+### Other changes
+
+- Builds no longer depend on the contents of the package_config.json file,
+  instead they depend only on the language versions inside of it.
+  - This should help CI builds that want to share a cache across runs.
 - Remove unused dev dependency on `package_resolver`.
 
 ## 4.5.3

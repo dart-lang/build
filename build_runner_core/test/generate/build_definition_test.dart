@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:logging/logging.dart';
+import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
@@ -29,17 +30,19 @@ import 'package:_test_common/package_graphs.dart';
 import 'package:_test_common/runner_asset_writer_spy.dart';
 
 void main() {
+  final languageVersion = LanguageVersion(2, 0);
   final aPackageGraph = buildPackageGraph({
-    rootPackage('a'): ['b'],
-    package('b'): []
+    rootPackage('a', languageVersion: languageVersion): ['b'],
+    package('b', languageVersion: languageVersion): []
   });
 
   group('BuildDefinition.prepareWorkspace', () {
     BuildOptions options;
     BuildEnvironment environment;
     String pkgARoot;
+    String pkgBRoot;
 
-    Future<void> createFile(String path, dynamic contents) async {
+    Future<File> createFile(String path, dynamic contents) async {
       var file = File(p.join(pkgARoot, path));
       expect(await file.exists(), isFalse);
       await file.create(recursive: true);
@@ -49,6 +52,7 @@ void main() {
         await file.writeAsBytes(contents as List<int>);
       }
       addTearDown(() async => await file.exists() ? await file.delete() : null);
+      return file;
     }
 
     Future<void> deleteFile(String path) async {
@@ -70,6 +74,8 @@ void main() {
     }
 
     setUp(() async {
+      pkgARoot = p.join(d.sandbox, 'pkg_a');
+      pkgBRoot = p.join(d.sandbox, 'pkg_b');
       await d.dir(
         'pkg_a',
         [
@@ -85,8 +91,18 @@ void main() {
                 jsonEncode({
                   'configVersion': 2,
                   'packages': [
-                    {'name': 'a', 'rootUri': './', 'packageUri': 'lib/'},
-                    {'name': 'b', 'rootUri': '../pkg_b/', 'packageUri': 'lib/'},
+                    {
+                      'name': 'a',
+                      'rootUri': p.toUri(pkgARoot).toString(),
+                      'packageUri': 'lib/',
+                      'languageVersion': languageVersion.toString()
+                    },
+                    {
+                      'name': 'b',
+                      'rootUri': p.toUri(pkgBRoot).toString(),
+                      'packageUri': 'lib/',
+                      'languageVersion': languageVersion.toString()
+                    },
                   ],
                 }))
           ]),
@@ -115,8 +131,7 @@ targets:
         d.dir('test', [d.file('some_test.dart')]),
         d.dir('lib', [d.file('some_lib.dart')]),
       ]).create();
-      pkgARoot = p.join(d.sandbox, 'pkg_a');
-      var packageGraph = PackageGraph.forPath(pkgARoot);
+      var packageGraph = await PackageGraph.forPath(pkgARoot);
       environment =
           OverrideableEnvironment(IOEnvironment(packageGraph), onLog: (_) {});
       options = await BuildOptions.create(
@@ -126,7 +141,7 @@ targets:
     });
 
     tearDown(() async {
-      await options.logListener.cancel();
+      await options?.logListener?.cancel();
     });
 
     group('updates the asset graph', () {
@@ -585,8 +600,12 @@ targets:
                 .replaceFirst('name: a', 'name: c'));
         await modifyFile('.packages',
             (await readFile('.packages')).replaceFirst('a:', 'c:'));
+        await modifyFile(
+            '.dart_tool/package_config.json',
+            (await readFile('.dart_tool/package_config.json'))
+                .replaceFirst('"name":"a"', '"name":"c"'));
 
-        var packageGraph = PackageGraph.forPath(pkgARoot);
+        var packageGraph = await PackageGraph.forPath(pkgARoot);
         environment =
             OverrideableEnvironment(IOEnvironment(packageGraph), onLog: (_) {});
         var writerSpy = RunnerAssetWriterSpy(environment.writer);
@@ -604,7 +623,7 @@ targets:
         expect(writerSpy.assetsDeleted, contains(AssetId('c', aTxtCopy.path)));
       });
 
-      test('invalidates the graph if the package_config.json file changes',
+      test('invalidates the graph if the language version of a package changes',
           () async {
         var assetGraph = await AssetGraph.build(
             [],
@@ -613,7 +632,7 @@ targets:
             aPackageGraph,
             environment.reader);
 
-        await createFile(assetGraphPath, assetGraph.serialize());
+        var graph = await createFile(assetGraphPath, assetGraph.serialize());
 
         await modifyFile(
             '.dart_tool/package_config.json',
@@ -622,23 +641,31 @@ targets:
               'packages': [
                 {
                   'name': 'a',
-                  'rootUri': './',
+                  'rootUri': p.toUri(pkgARoot).toString(),
                   'packageUri': 'lib/',
-                  'languageVersion': '2.0',
+                  'languageVersion': languageVersion.toString(),
                 },
                 {
                   'name': 'b',
-                  'rootUri': '../pkg_b/',
+                  'rootUri': p.toUri(pkgBRoot).toString(),
                   'packageUri': 'lib/',
+                  'languageVersion': LanguageVersion(
+                          languageVersion.major, languageVersion.minor + 1)
+                      .toString(),
                 },
               ],
             }));
 
+        var newOptions = await BuildOptions.create(
+            LogSubscription(environment, logLevel: Level.OFF),
+            packageGraph: await PackageGraph.forPath(pkgARoot),
+            skipBuildScriptCheck: true);
+
         await expectLater(
-            () => BuildDefinition.prepareWorkspace(environment, options, []),
+            () => BuildDefinition.prepareWorkspace(environment, newOptions, []),
             throwsA(const TypeMatcher<BuildScriptChangedException>()));
 
-        expect(File(assetGraphPath).existsSync(), isFalse);
+        expect(graph.existsSync(), isFalse);
       });
     });
 
