@@ -1,5 +1,5 @@
 name: build_runner
-version: 1.8.1-dev
+version: 1.8.1
 description: Tools to write binaries that run builders.
 homepage: https://github.com/dart-lang/build/tree/master/build_runner
 
@@ -51,7 +51,3 @@ dev_dependencies:
   test_process: ^1.0.0
   _test_common:
     path: ../_test_common
-
-dependency_overrides:
-  build_runner_core:
-    path: ../build_runner_core
