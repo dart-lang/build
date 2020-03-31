@@ -1,4 +1,4 @@
-## 1.8.1-dev
+## 1.8.1
 
 - Update to `build_runner_core` version `^5.0.0`.
 - Remove dev dependency on `package_resolver`.
