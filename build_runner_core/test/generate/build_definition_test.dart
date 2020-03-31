@@ -93,13 +93,13 @@ void main() {
                   'packages': [
                     {
                       'name': 'a',
-                      'rootUri': pkgARoot,
+                      'rootUri': p.toUri(pkgARoot).toString(),
                       'packageUri': 'lib/',
                       'languageVersion': languageVersion.toString()
                     },
                     {
                       'name': 'b',
-                      'rootUri': pkgBRoot,
+                      'rootUri': p.toUri(pkgBRoot).toString(),
                       'packageUri': 'lib/',
                       'languageVersion': languageVersion.toString()
                     },
@@ -641,13 +641,13 @@ targets:
               'packages': [
                 {
                   'name': 'a',
-                  'rootUri': pkgARoot,
+                  'rootUri': p.toUri(pkgARoot).toString(),
                   'packageUri': 'lib/',
                   'languageVersion': languageVersion.toString(),
                 },
                 {
                   'name': 'b',
-                  'rootUri': pkgBRoot,
+                  'rootUri': p.toUri(pkgBRoot).toString(),
                   'packageUri': 'lib/',
                   'languageVersion': LanguageVersion(
                           languageVersion.major, languageVersion.minor + 1)
