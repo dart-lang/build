@@ -1,4 +1,10 @@
+## 5.1.0-dev
+
+- Add a warning if a package is missing some required placholder files,
+  including `$package$` and `lib/$lib$`. 
+
 ## 5.0.0
+
 ### Breaking changes
 
 - `PackageGraph.forPath` and `PackageGraph.forThisPackage` are now static
