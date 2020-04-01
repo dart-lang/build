@@ -123,7 +123,7 @@ class ListAllFilesBuilder implements Builder {
   static final _allFilesInLib = new Glob('lib/**');
 
   static AssetId _allFileOutput(BuildStep buildStep) {
-    return new AssetId(
+    return AssetId(
       buildStep.inputId.package,
       p.join('lib', 'all_files.txt'),
     );
@@ -132,7 +132,7 @@ class ListAllFilesBuilder implements Builder {
   @override
   Map<String, List<String>> get buildExtensions {
     return const {
-      r'$lib$': const ['all_files.txt'],
+      r'$lib$': ['all_files.txt'],
     };
   }
 
@@ -150,10 +150,72 @@ class ListAllFilesBuilder implements Builder {
 
 ## Using a `Resolver`
 
-The `Resolver` provided by the build system only works when the primary input to
-a build step is a `.dart` library, and then only for the code transitively
-imported by that library. If an aggregate builder needs to resolve Dart code
-from the inputs it globs then it needs to be split into two steps:
+Since the input of aggregate builders isn't a real asset that could be read,
+we also can't use `buildStep.inputLibrary` to resolve it.
+However, recent versions of the build system allow us to resolve any asset our
+builder can read.
+
+For instance, we could adapt the `ListAllFilesBuilder` from before to instead 
+list the names of all classes defined in `lib/`:
+
+```dart
+import 'package:build/build.dart';
+import 'package:glob/glob.dart';
+import 'package:source_gen/source_gen.dart';
+import 'package:path/path.dart' as p;
+
+class ListAllClassesBuilder implements Builder {
+  @override
+  Map<String, List<String>> get buildExtensions {
+    return const {r'$lib$': ['all_classes.txt']};
+  }
+
+  static AssetId _allFileOutput(BuildStep buildStep) {
+    return AssetId(
+      buildStep.inputId.package,
+      p.join('lib', 'all_classes.txt'),
+    );
+  }
+
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    final classNames = <String>[];
+
+    await for (final input in buildStep.findAssets(Glob('lib/**'))) {
+      final library = await buildStep.resolver.libraryFor(input);
+      final classesInLibrary = LibraryReader(library).classes;
+
+      classNames.addAll(classesInLibrary.map((c) => c.name));
+    }
+
+    await buildStep.writeAsString(
+        _allFileOutput(buildStep), classNames.join('\n'));
+  }
+}
+```
+
+As the resolver has no single entry point in aggregate builders, be aware that
+[`findLibraryByName`][findLibraryByName] and [`libraries`][libraries] can only
+find libraries that have been discovered through `libraryFor` or `isLibrary`.
+
+Note that older versions of the build `Resolver` only picked up libraries based
+on the builder's input. As the synthetic input asset of an aggregate builder
+isn't readable, the `Resolver` wasn't available for aggregate builders in older
+versions of the build system.
+
+To ensure your builder only runs in an environment where this is supported, you
+can set the minimum version in your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  build_resolvers: ^1.3.0
+  # ...
+```
+
+### Workaround for older versions
+
+If you want to support older versions of the build system as well, you can split
+your aggregate builder into two steps:
 
 1. A `Builder` with `buildExtensions` of `{'.dart': ['.some_name.info']}`. Use
    the `Resolver` to find the information about the code that will be necessary
@@ -175,3 +237,6 @@ extensions of the first step.
 This strategy has the benefit of improved invalidation - only the files that
 _need_ to be re-read with the `Resolver` will be invalidated, the rest of the
 `.info` files will be retained as-is.
+
+[findLibraryByName]: https://pub.dev/documentation/build/latest/build/Resolver/findLibraryByName.html
+[libraries]: https://pub.dev/documentation/build/latest/build/Resolver/libraries.html
