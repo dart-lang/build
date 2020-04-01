@@ -131,7 +131,7 @@ class BuildConfigParseException implements Exception {
   BuildConfigParseException(this.packageName, this.exception);
 }
 
-/// Returns whether [sources] are included in any [targets].
+/// Returns the [sources] are not included in any [targets].
 Iterable<AssetId> _missingSources(
         Iterable<TargetNode> targets, Iterable<AssetId> sources) =>
     sources.where((s) => !targets.any((t) => t.matchesSource(s)));
