@@ -61,16 +61,18 @@ main() {
     ]).create();
 
     await pubGet('a', offline: false);
-  });
 
-  tearDown(() async {
-    for (var client in clients) {
-      await client.close();
-    }
-    clients.clear();
-    stdoutLines = null;
-    daemonProcess?.kill(ProcessSignal.sigkill);
-    await daemonProcess?.exitCode;
+    // We use `addTearDown` to ensure this runs before the temp dir gets
+    // cleaned up, otherwise there is a race condition that causes flaky tests.
+    addTearDown(() async {
+      for (var client in clients) {
+        await client.close();
+      }
+      clients.clear();
+      stdoutLines = null;
+      daemonProcess?.kill(ProcessSignal.sigkill);
+      await daemonProcess?.exitCode;
+    });
   });
 
   Future<BuildDaemonClient> _startClient(
