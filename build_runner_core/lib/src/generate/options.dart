@@ -166,7 +166,9 @@ class BuildOptions {
     try {
       targetGraph = await TargetGraph.forPackageGraph(packageGraph,
           overrideBuildConfig: overrideBuildConfig,
-          defaultRootPackageWhitelist: defaultRootPackageWhitelist);
+          defaultRootPackageWhitelist: defaultRootPackageWhitelist,
+          requiredSourcePaths: [r'lib/$lib$'],
+          requiredRootSourcePaths: [r'$package$', r'lib/$lib$']);
     } on BuildConfigParseException catch (e, s) {
       _logger.severe('''
 Failed to parse `build.yaml` for ${e.packageName}.
