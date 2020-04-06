@@ -9,6 +9,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:analyzer/src/summary/summary_file_builder.dart';
+import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/file_system/file_system.dart' hide File;
 import 'package:analyzer/file_system/physical_file_system.dart';
@@ -303,7 +304,8 @@ List<int> _buildSdkSummary() {
     for (var library in sdk.sdkLibraries) sdk.mapDartUri(library.shortName),
   };
 
-  return SummaryBuilder(sdkSources, sdk.context).build();
+  return SummaryBuilder(sdkSources, sdk.context)
+      .build(featureSet: FeatureSet.fromEnableFlags([]));
 }
 
 /// Loads the flutter engine _embedder.yaml file and adds any new libraries to
