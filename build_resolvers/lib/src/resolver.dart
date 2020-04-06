@@ -9,6 +9,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:analyzer/src/summary/summary_file_builder.dart';
+import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/file_system/file_system.dart' hide File;
 import 'package:analyzer/file_system/physical_file_system.dart';
@@ -21,6 +22,7 @@ import 'package:analyzer/src/generated/engine.dart'
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 
 import 'analysis_driver.dart';
@@ -303,7 +305,15 @@ List<int> _buildSdkSummary() {
     for (var library in sdk.sdkLibraries) sdk.mapDartUri(library.shortName),
   };
 
-  return SummaryBuilder(sdkSources, sdk.context).build();
+  var sdkVersion = Version.parse(dartSdkFolder
+      .getChildAssumingFile('version')
+      .readAsStringSync()
+      .trimRight());
+  var sdkLanguageVersion = Version(sdkVersion.major, sdkVersion.minor, 0);
+
+  return SummaryBuilder(sdkSources, sdk.context).build(
+      featureSet:
+          FeatureSet.fromEnableFlags([]).restrictToVersion(sdkLanguageVersion));
 }
 
 /// Loads the flutter engine _embedder.yaml file and adds any new libraries to

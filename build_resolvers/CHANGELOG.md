@@ -1,6 +1,7 @@
-## 1.3.4-dev
+## 1.3.4
 
 - Remove dependency on `package_resolver`.
+- Add new required `featureSet` argument to `SummaryBuilder.build` call.
 
 ## 1.3.3
 

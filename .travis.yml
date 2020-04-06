@@ -25,8 +25,8 @@ jobs:
       env: PKGS="build build_config build_daemon build_modules build_resolvers build_runner build_runner_core build_test build_vm_compilers build_web_compilers example scratch_space"
       script: ./tool/travis.sh dartfmt dartanalyzer_0
     - stage: analyze_and_format
-      name: "SDK: 2.3.0; PKGS: build, build_resolvers, scratch_space; TASKS: `dartanalyzer --fatal-warnings .`"
-      dart: "2.3.0"
+      name: "SDK: 2.6.0; PKGS: build, build_resolvers, scratch_space; TASKS: `dartanalyzer --fatal-warnings .`"
+      dart: "2.6.0"
       os: linux
       env: PKGS="build build_resolvers scratch_space"
       script: ./tool/travis.sh dartanalyzer_1
