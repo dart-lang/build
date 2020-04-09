@@ -354,5 +354,5 @@ void main() {
 
     await runBuilder(
         builder, [input.changeExtension('.a.dart')], reader, writer, resolvers);
-  }, skip: 'https://github.com/dart-lang/source_gen/issues/447');
+  });
 }
