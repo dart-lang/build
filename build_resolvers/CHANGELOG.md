@@ -1,3 +1,9 @@
+## 1.3.5
+
+- Create and pass a correct `Packages` argument to analysis driver, this
+  enables getting the proper language version for a given `LibraryElement`
+  using the `languageVersionMajor` and `languageVersionMinor` getters.
+
 ## 1.3.4
 
 - Remove dependency on `package_resolver`.

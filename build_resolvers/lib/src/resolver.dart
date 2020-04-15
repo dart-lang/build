@@ -21,6 +21,7 @@ import 'package:analyzer/src/generated/engine.dart'
     show AnalysisOptions, AnalysisOptionsImpl;
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
+import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
@@ -183,9 +184,28 @@ class AnalyzerResolvers implements Resolvers {
   /// Nullable, should not be accessed outside of [_ensureInitialized].
   Future<void> _initialized;
 
+  PackageConfig _packageConfig;
+
+  /// Lazily creates and manages a single [AnalysisDriver], that can be shared
+  /// across [BuildStep]s.
+  ///
+  /// If no [_analysisOptions] is provided, then an empty one is used.
+  ///
+  /// If no [sdkSummaryGenerator] is provided, a default one is used that only
+  /// works for typical `pub` packages.
+  ///
+  /// If no [_packageConfig] is provided, then one is created from the current
+  /// [Isolate.packageConfig].
+  ///
+  /// **NOTE**: The [_packageConfig] is not used for path resolution, it is
+  /// primarily used to get the language versions. Any other data (including
+  /// extra data), may be passed to the analyzer on an as needed basis.
   AnalyzerResolvers(
-      [this._analysisOptions, Future<String> Function() sdkSummaryGenerator])
-      : _sdkSummaryGenerator =
+      [AnalysisOptions analysisOptions,
+      Future<String> Function() sdkSummaryGenerator,
+      this._packageConfig])
+      : _analysisOptions = analysisOptions ?? AnalysisOptionsImpl(),
+        _sdkSummaryGenerator =
             sdkSummaryGenerator ?? _defaultSdkSummaryGenerator;
 
   /// Create a Resolvers backed by an `AnalysisContext` using options
@@ -193,8 +213,10 @@ class AnalyzerResolvers implements Resolvers {
   Future<void> _ensureInitialized() {
     return _initialized ??= () async {
       _uriResolver = BuildAssetUriResolver();
-      var driver = analysisDriver(
-          _uriResolver, _analysisOptions, await _sdkSummaryGenerator());
+      _packageConfig ??=
+          await loadPackageConfigUri(await Isolate.packageConfig);
+      var driver = await analysisDriver(_uriResolver, _analysisOptions,
+          await _sdkSummaryGenerator(), _packageConfig);
       _resolver = AnalyzerResolver(driver, _uriResolver);
     }();
   }
