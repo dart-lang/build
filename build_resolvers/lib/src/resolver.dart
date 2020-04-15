@@ -197,9 +197,9 @@ class AnalyzerResolvers implements Resolvers {
   /// If no [_packageConfig] is provided, then one is created from the current
   /// [Isolate.packageConfig].
   ///
-  /// **NOTE**: The [_packageConfig] is used only for language versions, we
-  /// have provide custom fake paths to the analyzer for packages so the root
-  /// uri and package uri are ignored.
+  /// **NOTE**: The [_packageConfig] is not used for path resolution, it is
+  /// primarily used to get the language versions. Any other data (including
+  /// extra data), may be passed to the analyzer on an as needed basis.
   AnalyzerResolvers(
       [AnalysisOptions analysisOptions,
       Future<String> Function() sdkSummaryGenerator,
