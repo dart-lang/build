@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:convert';
+import 'dart:isolate';
 
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
@@ -10,6 +11,7 @@ import 'package:test/test.dart';
 
 import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_resolvers/src/resolver.dart';
+import 'package:package_config/package_config.dart';
 
 void main() {
   final entryPoint = AssetId('a', 'web/main.dart');
@@ -58,6 +60,52 @@ void main() {
         var libB = lib.importedLibraries.where((l) => l.name == 'b').single;
         expect(libB.getType('Foo'), isNull);
       }, resolvers: AnalyzerResolvers());
+    });
+
+    group('language versioning', () {
+      test('gives a correct languageVersion based on comments', () async {
+        await resolveSources({
+          'a|web/main.dart': '// @dart=2.1\n\nmain() {}',
+        }, (resolver) async {
+          var lib = await resolver.libraryFor(entryPoint);
+          expect(lib.languageVersionMajor, 2);
+          expect(lib.languageVersionMinor, 1);
+        }, resolvers: AnalyzerResolvers());
+      });
+
+      test('defaults to the current isolate package config', () async {
+        await resolveSources({
+          'a|web/main.dart': 'main() {}',
+        }, (resolver) async {
+          var buildResolversId =
+              AssetId('build_resolvers', 'lib/build_resolvers.dart');
+          var lib = await resolver.libraryFor(buildResolversId);
+          var currentPackageConfig =
+              await loadPackageConfigUri(await Isolate.packageConfig);
+          var expectedVersion =
+              currentPackageConfig['build_resolvers'].languageVersion;
+          expect(lib.languageVersionMajor, expectedVersion.major);
+          expect(lib.languageVersionMinor, expectedVersion.minor);
+        }, resolvers: AnalyzerResolvers());
+      });
+
+      test('uses the overridden package config if provided', () async {
+        // An arbitrary past version that could never be selected for this
+        // package.
+        var customVersion = LanguageVersion(2, 1);
+        var customPackageConfig = PackageConfig([
+          Package('a', Uri.file('/fake/a/'),
+              packageUriRoot: Uri.file('/fake/a/lib/'),
+              languageVersion: customVersion)
+        ]);
+        await resolveSources({
+          'a|web/main.dart': 'main() {}',
+        }, (resolver) async {
+          var lib = await resolver.libraryFor(entryPoint);
+          expect(lib.languageVersionMajor, customVersion.major);
+          expect(lib.languageVersionMinor, customVersion.minor);
+        }, resolvers: AnalyzerResolvers(null, null, customPackageConfig));
+      });
     });
 
     group('assets that aren\'t a transitive import of input', () {
