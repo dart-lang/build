@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:analyzer/file_system/file_system.dart' show ResourceProvider;
 import 'package:analyzer/src/dart/analysis/byte_store.dart'
     show MemoryByteStore;
 import 'package:analyzer/src/dart/analysis/driver.dart';
@@ -42,21 +43,8 @@ Future<AnalysisDriver> analysisDriver(
 
   var logger = PerformanceLog(null);
   var scheduler = AnalysisDriverScheduler(logger);
-  var packages = Packages({
-    for (var package in packageConfig.packages)
-      package.name: Package(
-        name: package.name,
-        languageVersion: Version(
-            package.languageVersion.major, package.languageVersion.minor, 0),
-        // Analyzer does not see the original file paths at all, we need to
-        // make them match the paths that we give it, so we use the `assetPath`
-        // function to create those.
-        rootFolder: buildAssetUriResolver.resourceProvider
-            .getFolder(p.normalize(assetPath(AssetId(package.name, '')))),
-        libFolder: buildAssetUriResolver.resourceProvider
-            .getFolder(p.normalize(assetPath(AssetId(package.name, 'lib')))),
-      ),
-  });
+  var packages = _buildAnalyzerPackages(
+      packageConfig, buildAssetUriResolver.resourceProvider);
   var driver = AnalysisDriver(
       scheduler,
       logger,
@@ -72,3 +60,21 @@ Future<AnalysisDriver> analysisDriver(
   scheduler.start();
   return driver;
 }
+
+Packages _buildAnalyzerPackages(
+        PackageConfig packageConfig, ResourceProvider resourceProvider) =>
+    Packages({
+      for (var package in packageConfig.packages)
+        package.name: Package(
+          name: package.name,
+          languageVersion: Version(
+              package.languageVersion.major, package.languageVersion.minor, 0),
+          // Analyzer does not see the original file paths at all, we need to
+          // make them match the paths that we give it, so we use the `assetPath`
+          // function to create those.
+          rootFolder: resourceProvider
+              .getFolder(p.normalize(assetPath(AssetId(package.name, '')))),
+          libFolder: resourceProvider
+              .getFolder(p.normalize(assetPath(AssetId(package.name, 'lib')))),
+        ),
+    });
