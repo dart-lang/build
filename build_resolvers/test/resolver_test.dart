@@ -5,13 +5,14 @@
 import 'dart:convert';
 import 'dart:isolate';
 
+import 'package:analyzer/src/dart/analysis/experiments.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
+import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
 import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_resolvers/src/resolver.dart';
-import 'package:package_config/package_config.dart';
 
 void main() {
   final entryPoint = AssetId('a', 'web/main.dart');
@@ -104,6 +105,21 @@ void main() {
           var lib = await resolver.libraryFor(entryPoint);
           expect(lib.languageVersionMajor, customVersion.major);
           expect(lib.languageVersionMinor, customVersion.minor);
+        }, resolvers: AnalyzerResolvers(null, null, customPackageConfig));
+      });
+
+      test('gives the current language version if not provided', () async {
+        var customPackageConfig = PackageConfig([
+          Package('a', Uri.file('/fake/a/'),
+              packageUriRoot: Uri.file('/fake/a/lib/'), languageVersion: null),
+        ]);
+        await resolveSources({
+          'a|web/main.dart': 'main() {}',
+        }, (resolver) async {
+          var lib = await resolver.libraryFor(entryPoint);
+          var currentLangVersion = ExperimentStatus.currentVersion;
+          expect(lib.languageVersionMajor, currentLangVersion.major);
+          expect(lib.languageVersionMinor, currentLangVersion.minor);
         }, resolvers: AnalyzerResolvers(null, null, customPackageConfig));
       });
     });
