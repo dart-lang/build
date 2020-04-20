@@ -106,6 +106,20 @@ void main() {
           expect(lib.languageVersionMinor, customVersion.minor);
         }, resolvers: AnalyzerResolvers(null, null, customPackageConfig));
       });
+
+      test('gives a null language version if not provided', () async {
+        var customPackageConfig = PackageConfig([
+          Package('a', Uri.file('/fake/a/'),
+              packageUriRoot: Uri.file('/fake/a/lib/'), languageVersion: null),
+        ]);
+        await resolveSources({
+          'a|web/main.dart': 'main() {}',
+        }, (resolver) async {
+          var lib = await resolver.libraryFor(entryPoint);
+          expect(lib.languageVersionMajor, isNull);
+          expect(lib.languageVersionMinor, isNull);
+        }, resolvers: AnalyzerResolvers(null, null, customPackageConfig));
+      });
     });
 
     group('assets that aren\'t a transitive import of input', () {
