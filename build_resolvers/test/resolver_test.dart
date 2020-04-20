@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:convert';
+import 'dart:io';
 import 'dart:isolate';
 
 import 'package:build/build.dart';
@@ -12,6 +13,7 @@ import 'package:test/test.dart';
 import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_resolvers/src/resolver.dart';
 import 'package:package_config/package_config.dart';
+import 'package:pub_semver/pub_semver.dart';
 
 void main() {
   final entryPoint = AssetId('a', 'web/main.dart');
@@ -107,7 +109,7 @@ void main() {
         }, resolvers: AnalyzerResolvers(null, null, customPackageConfig));
       });
 
-      test('gives a null language version if not provided', () async {
+      test('gives the current language version if not provided', () async {
         var customPackageConfig = PackageConfig([
           Package('a', Uri.file('/fake/a/'),
               packageUriRoot: Uri.file('/fake/a/lib/'), languageVersion: null),
@@ -116,8 +118,10 @@ void main() {
           'a|web/main.dart': 'main() {}',
         }, (resolver) async {
           var lib = await resolver.libraryFor(entryPoint);
-          expect(lib.languageVersionMajor, isNull);
-          expect(lib.languageVersionMinor, isNull);
+          var currentLangVersion =
+              Version.parse(Platform.version.split(' ').first);
+          expect(lib.languageVersionMajor, currentLangVersion.major);
+          expect(lib.languageVersionMinor, currentLangVersion.minor);
         }, resolvers: AnalyzerResolvers(null, null, customPackageConfig));
       });
     });
