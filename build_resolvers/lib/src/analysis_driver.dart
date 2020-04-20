@@ -67,8 +67,10 @@ Packages _buildAnalyzerPackages(
       for (var package in packageConfig.packages)
         package.name: Package(
           name: package.name,
-          languageVersion: Version(package.languageVersion?.major ?? 0,
-              package.languageVersion?.minor ?? 0, 0),
+          languageVersion: package.languageVersion == null
+              ? null
+              : Version(package.languageVersion.major,
+                  package.languageVersion.minor, 0),
           // Analyzer does not see the original file paths at all, we need to
           // make them match the paths that we give it, so we use the `assetPath`
           // function to create those.
