@@ -1,3 +1,8 @@
+## 1.3.6
+
+- Fix bug when a package has no language version (as a result of having no sdk
+  constraint).
+
 ## 1.3.5
 
 - Create and pass a correct `Packages` argument to analysis driver, this
