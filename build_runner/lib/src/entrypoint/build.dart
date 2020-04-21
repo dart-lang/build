@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 
@@ -40,6 +41,7 @@ class BuildCommand extends BuildRunnerCommand {
       trackPerformance: options.trackPerformance,
       skipBuildScriptCheck: options.skipBuildScriptCheck,
       logPerformanceDir: options.logPerformanceDir,
+      resolvers: AnalyzerResolvers(null, null, null, options.enableExperiments),
     );
     if (result.status == BuildStatus.success) {
       return ExitCode.success.code;

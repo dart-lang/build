@@ -5,8 +5,9 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:http_multi_server/http_multi_server.dart';
+import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_runner_core/build_runner_core.dart';
+import 'package:http_multi_server/http_multi_server.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf_io.dart';
@@ -100,6 +101,7 @@ class ServeCommand extends WatchCommand {
       logPerformanceDir: options.logPerformanceDir,
       directoryWatcherFactory: options.directoryWatcherFactory,
       buildFilters: options.buildFilters,
+      resolvers: AnalyzerResolvers(null, null, null, options.enableExperiments),
     );
 
     if (handler == null) return ExitCode.config.code;

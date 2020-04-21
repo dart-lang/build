@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
@@ -56,6 +57,7 @@ class WatchCommand extends BuildRunnerCommand {
       logPerformanceDir: options.logPerformanceDir,
       directoryWatcherFactory: options.directoryWatcherFactory,
       buildFilters: options.buildFilters,
+      resolvers: AnalyzerResolvers(null, null, null, options.enableExperiments),
     );
     if (handler == null) return ExitCode.config.code;
 

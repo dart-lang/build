@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart';
 import 'package:async/async.dart';
+import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
@@ -107,6 +108,8 @@ class TestCommand extends BuildRunnerCommand {
         isReleaseBuild: options.isReleaseBuild,
         logPerformanceDir: options.logPerformanceDir,
         buildFilters: options.buildFilters,
+        resolvers:
+            AnalyzerResolvers(null, null, null, options.enableExperiments),
       );
 
       if (result.status == BuildStatus.failure) {

@@ -11,6 +11,7 @@ import 'package:build_daemon/daemon_builder.dart';
 import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart' hide OutputLocation;
 import 'package:build_daemon/data/server_log.dart';
+import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner/src/package_graph/build_config_overrides.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
@@ -201,6 +202,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       enableLowResourcesMode: daemonOptions.enableLowResourcesMode,
       trackPerformance: daemonOptions.trackPerformance,
       logPerformanceDir: daemonOptions.logPerformanceDir,
+      resolvers:
+          AnalyzerResolvers(null, null, null, daemonOptions.enableExperiments),
     );
 
     var builder = await BuildImpl.create(buildOptions, daemonEnvironment,

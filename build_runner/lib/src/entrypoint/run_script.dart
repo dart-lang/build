@@ -7,6 +7,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:args/command_runner.dart';
+import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_runner/src/logging/std_io_logging.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
@@ -124,6 +125,8 @@ class RunCommand extends BuildRunnerCommand {
           skipBuildScriptCheck: options.skipBuildScriptCheck,
           logPerformanceDir: options.logPerformanceDir,
           buildFilters: options.buildFilters,
+          resolvers:
+              AnalyzerResolvers(null, null, null, options.enableExperiments),
         );
 
         if (result.status == BuildStatus.failure) {

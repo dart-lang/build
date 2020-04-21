@@ -20,6 +20,7 @@ const buildFilterOption = 'build-filter';
 const configOption = 'config';
 const defineOption = 'define';
 const deleteFilesByDefaultOption = 'delete-conflicting-outputs';
+const enableExperimentOption = 'enable-experiment';
 const failOnSevereOption = 'fail-on-severe';
 const hostnameOption = 'hostname';
 const hotReloadOption = 'hot-reload';
@@ -85,6 +86,8 @@ class SharedOptions {
 
   final bool isReleaseBuild;
 
+  final List<String> enableExperiments;
+
   SharedOptions._({
     @required this.buildFilters,
     @required this.deleteFilesByDefault,
@@ -98,6 +101,7 @@ class SharedOptions {
     @required this.builderConfigOverrides,
     @required this.isReleaseBuild,
     @required this.logPerformanceDir,
+    @required this.enableExperiments,
   });
 
   factory SharedOptions.fromParsedArgs(ArgResults argResults,
@@ -122,6 +126,7 @@ class SharedOptions {
           _parseBuilderConfigOverrides(argResults[defineOption], rootPackage),
       isReleaseBuild: argResults[releaseOption] as bool,
       logPerformanceDir: argResults[logPerformanceOption] as String,
+      enableExperiments: argResults[enableExperimentOption] as List<String>,
     );
   }
 }
@@ -145,6 +150,7 @@ class DaemonOptions extends WatchOptions {
     @required bool isReleaseBuild,
     @required String logPerformanceDir,
     @required bool usePollingWatcher,
+    @required List<String> enableExperiments,
   }) : super._(
           buildFilters: buildFilters,
           deleteFilesByDefault: deleteFilesByDefault,
@@ -159,6 +165,7 @@ class DaemonOptions extends WatchOptions {
           isReleaseBuild: isReleaseBuild,
           logPerformanceDir: logPerformanceDir,
           usePollingWatcher: usePollingWatcher,
+          enableExperiments: enableExperiments,
         );
 
   factory DaemonOptions.fromParsedArgs(ArgResults argResults,
@@ -197,6 +204,7 @@ class DaemonOptions extends WatchOptions {
       isReleaseBuild: argResults[releaseOption] as bool,
       logPerformanceDir: argResults[logPerformanceOption] as String,
       usePollingWatcher: argResults[usePollingWatcherOption] as bool,
+      enableExperiments: argResults[enableExperimentOption] as List<String>,
     );
   }
 }
@@ -223,6 +231,7 @@ class WatchOptions extends SharedOptions {
     @required Map<String, Map<String, dynamic>> builderConfigOverrides,
     @required bool isReleaseBuild,
     @required String logPerformanceDir,
+    @required List<String> enableExperiments,
   }) : super._(
           buildFilters: buildFilters,
           deleteFilesByDefault: deleteFilesByDefault,
@@ -236,6 +245,7 @@ class WatchOptions extends SharedOptions {
           builderConfigOverrides: builderConfigOverrides,
           isReleaseBuild: isReleaseBuild,
           logPerformanceDir: logPerformanceDir,
+          enableExperiments: enableExperiments,
         );
 
   factory WatchOptions.fromParsedArgs(ArgResults argResults,
@@ -261,6 +271,7 @@ class WatchOptions extends SharedOptions {
       isReleaseBuild: argResults[releaseOption] as bool,
       logPerformanceDir: argResults[logPerformanceOption] as String,
       usePollingWatcher: argResults[usePollingWatcherOption] as bool,
+      enableExperiments: argResults[enableExperimentOption] as List<String>,
     );
   }
 }
@@ -290,6 +301,7 @@ class ServeOptions extends WatchOptions {
     @required bool isReleaseBuild,
     @required String logPerformanceDir,
     @required bool usePollingWatcher,
+    @required List<String> enableExperiments,
   }) : super._(
           buildFilters: buildFilters,
           deleteFilesByDefault: deleteFilesByDefault,
@@ -304,6 +316,7 @@ class ServeOptions extends WatchOptions {
           isReleaseBuild: isReleaseBuild,
           logPerformanceDir: logPerformanceDir,
           usePollingWatcher: usePollingWatcher,
+          enableExperiments: enableExperiments,
         );
 
   factory ServeOptions.fromParsedArgs(ArgResults argResults,
@@ -383,6 +396,7 @@ class ServeOptions extends WatchOptions {
       isReleaseBuild: argResults[releaseOption] as bool,
       logPerformanceDir: argResults[logPerformanceOption] as String,
       usePollingWatcher: argResults[usePollingWatcherOption] as bool,
+      enableExperiments: argResults[enableExperimentOption] as List<String>,
     );
   }
 }
