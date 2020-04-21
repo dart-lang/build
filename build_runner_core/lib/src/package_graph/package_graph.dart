@@ -76,7 +76,9 @@ class PackageGraph {
     final dependencyTypes = _parseDependencyTypes(packagePath);
 
     final nodes = <String, PackageNode>{};
-    for (final package in packageConfig.packages) {
+    final consistentlyOrderedPackages = packageConfig.packages.toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
+    for (final package in consistentlyOrderedPackages) {
       var isRoot = package.name == rootPackageName;
       nodes[package.name] = PackageNode(
           package.name,

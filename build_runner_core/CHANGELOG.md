@@ -1,7 +1,9 @@
 ## 5.1.0-dev
 
 - Add a warning if a package is missing some required placholder files,
-  including `$package$` and `lib/$lib$`. 
+  including `$package$` and `lib/$lib$`.
+- Reduce chances for changing apparent build phases across machines with a
+  different order of packages from `package_config.json`.
 
 ## 5.0.0
 
