@@ -8,6 +8,7 @@ import 'dart:isolate';
 import 'package:analyzer/src/dart/analysis/experiments.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
+import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
@@ -122,6 +123,24 @@ void main() {
           expect(lib.languageVersionMinor, currentLangVersion.minor);
         }, resolvers: AnalyzerResolvers(null, null, customPackageConfig));
       });
+
+      test('allows a version of analyzer compatibile with the current sdk',
+          () async {
+        var originalLevel = Logger.root.level;
+        Logger.root.level = Level.WARNING;
+        var listener = Logger.root.onRecord.listen((record) {
+          fail('Got an unexpected warning during analyzsis:\n\n$record');
+        });
+        addTearDown(() {
+          Logger.root.level = originalLevel;
+          listener.cancel();
+        });
+        await resolveSources({
+          'a|web/main.dart': 'main() {}',
+        }, (resolver) async {
+          await resolver.libraryFor(entryPoint);
+        }, resolvers: AnalyzerResolvers());
+      }, skip: 'https://github.com/dart-lang/sdk/issues/41607');
     });
 
     group('assets that aren\'t a transitive import of input', () {

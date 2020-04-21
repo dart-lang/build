@@ -1,3 +1,10 @@
+## 1.3.7-dev
+
+- Pass an explicit `FeatureSet` to the analyzer based on the current sdk
+  version.
+- Added a warning if the current analyzers language version does not support
+  the current SDK language version.
+
 ## 1.3.6
 
 - Fix bug when a package has no language version (as a result of having no sdk
