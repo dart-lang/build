@@ -204,11 +204,21 @@ class AnalyzerResolvers implements Resolvers {
   AnalyzerResolvers(
       [AnalysisOptions analysisOptions,
       Future<String> Function() sdkSummaryGenerator,
-      this._packageConfig])
+      this._packageConfig,
+      List<String> enableExperiments])
       : _analysisOptions = analysisOptions ??
-            (AnalysisOptionsImpl()..contextFeatures = _featureSet),
+            (AnalysisOptionsImpl()
+              ..contextFeatures =
+                  _featureSet(enableExperiments: enableExperiments)),
         _sdkSummaryGenerator =
-            sdkSummaryGenerator ?? _defaultSdkSummaryGenerator;
+            sdkSummaryGenerator ?? _defaultSdkSummaryGenerator {
+    if (analysisOptions != null && enableExperiments != null) {
+      throw ArgumentError(
+          'Both `analysisOptions` and `enableExperiments` were passed, which '
+          'is not allowed. You must enable the experiments yourself on the '
+          'analysis options you pass in, by setting the `contextFeatures`.');
+    }
+  }
 
   /// Create a Resolvers backed by an `AnalysisContext` using options
   /// [_analysisOptions].
@@ -330,7 +340,8 @@ List<int> _buildSdkSummary() {
     for (var library in sdk.sdkLibraries) sdk.mapDartUri(library.shortName),
   };
 
-  return SummaryBuilder(sdkSources, sdk.context).build(featureSet: _featureSet);
+  return SummaryBuilder(sdkSources, sdk.context)
+      .build(featureSet: _featureSet());
 }
 
 /// Loads the flutter engine _embedder.yaml file and adds any new libraries to
@@ -382,8 +393,9 @@ final _dartUiPath =
     p.normalize(p.join(_runningDartSdkPath, '..', 'pkg', 'sky_engine', 'lib'));
 
 /// The current feature set based on the current sdk version
-final _featureSet =
-    FeatureSet.fromEnableFlags([]).restrictToVersion(_sdkLanguageVersion);
+FeatureSet _featureSet({List<String> enableExperiments}) =>
+    FeatureSet.fromEnableFlags(enableExperiments ?? [])
+        .restrictToVersion(_sdkLanguageVersion);
 
 /// Path to the running dart's SDK root.
 final _runningDartSdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
