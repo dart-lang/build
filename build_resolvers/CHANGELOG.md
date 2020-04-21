@@ -1,7 +1,8 @@
-## 1.3.7-dev
+## 1.3.7
 
 - Pass an explicit `FeatureSet` to the analyzer based on the current sdk
   version.
+- Add an extra option `enableExperiments` to `AnalyzerResolvers`.
 - Added a warning if the current analyzers language version does not support
   the current SDK language version.
 
