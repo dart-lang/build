@@ -111,9 +111,6 @@ final _builders = <_i1.BuilderApplication>[
   _i1.apply('provides_builder:throwing_builder', [_i4.throwingBuilder],
       _i1.toDependentsOf('provides_builder'),
       hideOutput: true),
-  _i1.applyPostProcess(
-      'provides_builder:some_post_process_builder', _i4.somePostProcessBuilder,
-      defaultGenerateFor: const _i3.InputSet()),
   _i1.applyPostProcess('build_modules:module_cleanup', _i5.moduleCleanup,
       defaultGenerateFor: const _i3.InputSet()),
   _i1.applyPostProcess('build_web_compilers:dart2js_archive_extractor',
@@ -127,6 +124,9 @@ final _builders = <_i1.BuilderApplication>[
   _i1.applyPostProcess(
       'build_web_compilers:sdk_js_cleanup', _i7.sdkJsCleanupBuilder,
       defaultReleaseOptions: _i8.BuilderOptions({'enabled': true}),
+      defaultGenerateFor: const _i3.InputSet()),
+  _i1.applyPostProcess(
+      'provides_builder:some_post_process_builder', _i4.somePostProcessBuilder,
       defaultGenerateFor: const _i3.InputSet())
 ];
 void main(List<String> args, [_i9.SendPort sendPort]) async {
