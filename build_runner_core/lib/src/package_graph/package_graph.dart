@@ -76,6 +76,9 @@ class PackageGraph {
     final dependencyTypes = _parseDependencyTypes(packagePath);
 
     final nodes = <String, PackageNode>{};
+    // A consistent package order _should_ mean a consistent order of build
+    // phases. It's not a guarantee, but also not required for correctness, only
+    // an optimization.
     final consistentlyOrderedPackages = packageConfig.packages.toList()
       ..sort((a, b) => a.name.compareTo(b.name));
     for (final package in consistentlyOrderedPackages) {
@@ -198,8 +201,9 @@ DependencyType _dependencyTypeFromSource(String source) {
 
 /// Read the pubspec for each package in [packages] and finds it's
 /// dependencies.
-Map<String, Set<String>> _parsePackageDependencies(Iterable<Package> packages) {
-  final dependencies = <String, Set<String>>{};
+Map<String, List<String>> _parsePackageDependencies(
+    Iterable<Package> packages) {
+  final dependencies = <String, List<String>>{};
   for (final package in packages) {
     final pubspec = _pubspecForPath(package.root.toFilePath());
     dependencies[package.name] = _depsFromYaml(pubspec);
@@ -208,14 +212,16 @@ Map<String, Set<String>> _parsePackageDependencies(Iterable<Package> packages) {
 }
 
 /// Gets the deps from a yaml file, taking into account dependency_overrides.
-Set<String> _depsFromYaml(YamlMap yaml, {bool isRoot = false}) {
-  var deps = <String>{}..addAll(_stringKeys(yaml['dependencies'] as Map));
-  if (isRoot) {
-    deps
-      ..addAll(_stringKeys(yaml['dev_dependencies'] as Map))
-      ..addAll(_stringKeys(yaml['dependency_overrides'] as Map));
-  }
-  return deps;
+List<String> _depsFromYaml(YamlMap yaml, {bool isRoot = false}) {
+  var deps = <String>{
+    ..._stringKeys(yaml['dependencies'] as Map),
+    if (isRoot) ..._stringKeys(yaml['dev_dependencies'] as Map),
+    if (isRoot) ..._stringKeys(yaml['dependency_overrides'] as Map),
+  };
+  // A consistent package order _should_ mean a consistent order of build
+  // phases. It's not a guarantee, but also not required for correctness, only
+  // an optimization.
+  return deps.toList()..sort();
 }
 
 Iterable<String> _stringKeys(Map m) =>
