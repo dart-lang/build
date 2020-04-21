@@ -9,6 +9,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:analyzer/src/summary/summary_file_builder.dart';
+import 'package:analyzer/src/dart/analysis/experiments.dart';
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/file_system/file_system.dart' hide File;
@@ -204,7 +205,8 @@ class AnalyzerResolvers implements Resolvers {
       [AnalysisOptions analysisOptions,
       Future<String> Function() sdkSummaryGenerator,
       this._packageConfig])
-      : _analysisOptions = analysisOptions ?? AnalysisOptionsImpl(),
+      : _analysisOptions = analysisOptions ??
+            (AnalysisOptionsImpl()..contextFeatures = _featureSet),
         _sdkSummaryGenerator =
             sdkSummaryGenerator ?? _defaultSdkSummaryGenerator;
 
@@ -212,6 +214,7 @@ class AnalyzerResolvers implements Resolvers {
   /// [_analysisOptions].
   Future<void> _ensureInitialized() {
     return _initialized ??= () async {
+      _warnOnLanguageVersionMismatch();
       _uriResolver = BuildAssetUriResolver();
       _packageConfig ??=
           await loadPackageConfigUri(await Isolate.packageConfig);
@@ -327,15 +330,7 @@ List<int> _buildSdkSummary() {
     for (var library in sdk.sdkLibraries) sdk.mapDartUri(library.shortName),
   };
 
-  var sdkVersion = Version.parse(dartSdkFolder
-      .getChildAssumingFile('version')
-      .readAsStringSync()
-      .trimRight());
-  var sdkLanguageVersion = Version(sdkVersion.major, sdkVersion.minor, 0);
-
-  return SummaryBuilder(sdkSources, sdk.context).build(
-      featureSet:
-          FeatureSet.fromEnableFlags([]).restrictToVersion(sdkLanguageVersion));
+  return SummaryBuilder(sdkSources, sdk.context).build(featureSet: _featureSet);
 }
 
 /// Loads the flutter engine _embedder.yaml file and adds any new libraries to
@@ -359,13 +354,45 @@ void _addFlutterLibraries(
   }
 }
 
-/// Path to the running dart's SDK root.
-final _runningDartSdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
+/// Checks that the current analyzer version supports the current language
+/// version.
+void _warnOnLanguageVersionMismatch() {
+  if (_sdkLanguageVersion <= ExperimentStatus.currentVersion) return;
+
+  var upgradeCommand = isFlutter ? 'flutter packages upgrade' : 'pub upgrade';
+  log.warning('''
+Your current `analyzer` version may not fully support your current SDK version.
+
+Please try upgrading to the latest `analyzer` by running `$upgradeCommand`.
+
+Analyzer language version: ${ExperimentStatus.currentVersion}
+SDK language version: $_sdkLanguageVersion
+
+If you are getting this message and have the latest analyzer please file
+an issue at https://github.com/dart-lang/sdk/issues/new with the title
+"No published analyzer available for language version $_sdkLanguageVersion".
+Please search the issue tracker first and thumbs up and/or subscribe to
+existing issues if present to avoid duplicates.
+''');
+}
 
 /// Path where the dart:ui package will be found, if executing via the dart
 /// binary provided by the Flutter SDK.
 final _dartUiPath =
     p.normalize(p.join(_runningDartSdkPath, '..', 'pkg', 'sky_engine', 'lib'));
+
+/// The current feature set based on the current sdk version
+final _featureSet =
+    FeatureSet.fromEnableFlags([]).restrictToVersion(_sdkLanguageVersion);
+
+/// Path to the running dart's SDK root.
+final _runningDartSdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
+
+/// The language version of the current sdk parsed from the [Platform.version].
+final _sdkLanguageVersion = () {
+  var sdkVersion = Version.parse(Platform.version.split(' ').first);
+  return Version(sdkVersion.major, sdkVersion.minor, 0);
+}();
 
 /// `true` if the currently running dart was provided by the Flutter SDK.
 final isFlutter =
