@@ -1,4 +1,9 @@
-## 1.8.2-dev
+## 1.9.0
+
+- Add a warning if a package is missing some required placholder files,
+  including `$package$` and `lib/$lib$`.
+- Reduce chances for changing apparent build phases across machines with a
+  different order of packages from `package_config.json`.
 
 ## 1.8.1
 
