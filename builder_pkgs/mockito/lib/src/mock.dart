@@ -930,6 +930,10 @@ Verification get verifyNever => _makeVerify(true);
 /// verify(cat.eatFood("fish")).called(greaterThan(3));
 /// ```
 ///
+/// Note: When mockito verifies a method call, said call is then excluded from
+/// further verifications. A single method call cannot be verified from multiple
+/// calls to `verify`, or `verifyInOrder`. See more details in the FAQ.
+///
 /// Note: because of an unintended limitation, `verify(...).called(0);` will
 /// not work as expected. Please use `verifyNever(...);` instead.
 ///

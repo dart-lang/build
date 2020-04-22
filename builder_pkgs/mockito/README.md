@@ -243,7 +243,7 @@ verifyNoMoreInteractions(cat);
 ```dart
 // Simple capture
 cat.eatFood("Fish");
-expect(verify(cat.eatFood(captureAny)).captured.single, "Fish");
+expect(verify(cat.eatFood(captureAny)).captured.single, ["Fish"]);
 
 // Capture multiple calls
 cat.eatFood("Milk");
@@ -349,70 +349,9 @@ Mockito. A mix of test defined stubbed responses and mock defined overrides will
 lead to confusion. It is OK to define _static_ utilities on a class which
 `extends Mock` if it helps with code structure.
 
+## Frequently asked questions
 
-## How it works
-
-The basics of the `Mock` class are nothing special: It uses `noSuchMethod` to
-catch all method invocations, and returns the value that you have configured
-beforehand with `when()` calls.
-
-The implementation of `when()` is a bit more tricky. Take this example:
-
-```dart
-// Unstubbed methods return null:
-expect(cat.sound(), nullValue);
-
-// Stubbing - before execution:
-when(cat.sound()).thenReturn("Purr");
-```
-
-Since `cat.sound()` returns `null`, how can the `when()` call configure it?
-
-It works, because `when` is not a function, but a top level getter that
-_returns_ a function.  Before returning the function, it sets a flag
-(`_whenInProgress`), so that all `Mock` objects know to return a "matcher"
-(internally `_WhenCall`) instead of the expected value. As soon as the function
-has been invoked `_whenInProgress` is set back to `false` and Mock objects
-behave as normal.
-
-Argument matchers work by storing the wrapped arguments, one after another,
-until the `when` (or `verify`) call gathers everything that has been stored,
-and creates an InvocationMatcher with the arguments. This is a simple process
-for positional arguments: the order in which the arguments has been stored
-should be preserved for matching an invocation. Named arguments are trickier:
-their evaluation order is not specified, so if Mockito blindly stored them in
-the order of their evaluation, it wouldn't be able to match up each argument
-matcher with the correct name. This is why each named argument matcher must
-repeat its own name. `foo: anyNamed('foo')` tells Mockito to store an argument
-matcher for an invocation under the name 'foo'.
-
-> **Be careful** never to write `when;` (without the function call) anywhere.
-> This would set `_whenInProgress` to `true`, and the next mock invocation will
-> return an unexpected value.
-
-The same goes for "chaining" mock objects in a test call. This will fail:
-
-```dart
-var mockUtils = MockUtils();
-var mockStringUtils = MockStringUtils();
-
-// Setting up mockUtils.stringUtils to return a mock StringUtils implementation
-when(mockUtils.stringUtils).thenReturn(mockStringUtils);
-
-// Some tests
-
-// FAILS!
-verify(mockUtils.stringUtils.uppercase()).called(1);
-// Instead use this:
-verify(mockStringUtils.uppercase()).called(1);
-```
-
-This fails, because `verify` sets an internal flag, so mock objects don't
-return their mocked values anymore but their matchers. So
-`mockUtils.stringUtils` will *not* return the mocked `stringUtils` object you
-put inside.
-
-You can look at the `when` and `Mock.noSuchMethod` implementations to see how
-it's done.  It's very straightforward.
+Read more information about this package in the
+[FAQ](https://github.com/dart-lang/mockito/blob/master/FAQ.md).
 
 **NOTE:** This is not an official Google product
