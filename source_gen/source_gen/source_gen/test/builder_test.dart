@@ -476,12 +476,24 @@ Future _generateTest(CommentGenerator gen, String expectedContent) async {
   final srcs = _createPackageStub();
   final builder = PartBuilder([gen], '.foo.dart');
 
-  await testBuilder(builder, srcs,
-      generateFor: {'$_pkgName|lib/test_lib.dart'},
-      outputs: {
-        '$_pkgName|lib/test_lib.foo.dart': decodedMatches(expectedContent),
-      },
-      onLog: (log) => fail('Unexpected log message: ${log.message}'));
+  await testBuilder(
+    builder,
+    srcs,
+    generateFor: {'$_pkgName|lib/test_lib.dart'},
+    outputs: {
+      '$_pkgName|lib/test_lib.foo.dart': decodedMatches(expectedContent),
+    },
+    onLog: (log) {
+      if (log.message.contains(
+        'Your current `analyzer` version may not fully support your current '
+        'SDK version.',
+      )) {
+        // This may happen with pre-release SDKs. Not an error.
+        return;
+      }
+      fail('Unexpected log message: ${log.message}');
+    },
+  );
 }
 
 Map<String, String> _createPackageStub(
