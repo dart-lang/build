@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
@@ -350,7 +351,12 @@ class _Loader {
           for (var pkg in _options.packageGraph.allPackages.values)
             pkg.name: pkg.languageVersion
         });
-        if (buildPhasesChanged || pkgVersionsChanged) {
+        var enabledExperimentsChanged =
+            !const DeepCollectionEquality.unordered()
+                .equals(cachedGraph.enabledExperiments, enabledExperiments);
+        if (buildPhasesChanged ||
+            pkgVersionsChanged ||
+            enabledExperimentsChanged) {
           if (buildPhasesChanged) {
             _logger.warning(
                 'Throwing away cached asset graph because the build phases have '
@@ -363,6 +369,13 @@ class _Loader {
                 'version of some package(s) changed. This would most commonly '
                 'happen when updating dependencies or changing your min sdk '
                 'constraint.');
+          }
+          if (enabledExperimentsChanged) {
+            _logger.warning(
+                'Throwing away cached asset graph because the enabled Dart '
+                'language experiments changed:\n\n'
+                'Previous value: ${cachedGraph.enabledExperiments.join(' ')}\n'
+                'Current value: ${enabledExperiments.join(' ')}');
           }
           await Future.wait([
             _deleteAssetGraph(_options.packageGraph),

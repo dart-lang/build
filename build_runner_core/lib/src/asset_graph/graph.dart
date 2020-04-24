@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build/experiments.dart' as experiments_zone;
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
@@ -36,10 +37,14 @@ class AssetGraph {
   /// The [Platform.version] this graph was created with.
   final String dartVersion;
 
+  /// The Dart language experiments that were enabled when this graph was
+  /// originally created from the [build] constructor.
+  final List<String> enabledExperiments;
+
   final Map<String, LanguageVersion> packageLanguageVersions;
 
-  AssetGraph._(
-      this.buildPhasesDigest, this.dartVersion, this.packageLanguageVersions);
+  AssetGraph._(this.buildPhasesDigest, this.dartVersion,
+      this.packageLanguageVersions, this.enabledExperiments);
 
   /// Deserializes this graph.
   factory AssetGraph.deserialize(List<int> serializedGraph) =>
@@ -55,8 +60,11 @@ class AssetGraph {
       for (var pkg in packageGraph.allPackages.values)
         pkg.name: pkg.languageVersion
     };
-    var graph = AssetGraph._(computeBuildPhasesDigest(buildPhases),
-        Platform.version, packageLanguageVersions);
+    var graph = AssetGraph._(
+        computeBuildPhasesDigest(buildPhases),
+        Platform.version,
+        packageLanguageVersions,
+        experiments_zone.enabledExperiments);
     var placeholders = graph._addPlaceHolderNodes(packageGraph);
     var sourceNodes = graph._addSources(sources);
     graph

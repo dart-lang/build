@@ -1,3 +1,10 @@
+## 5.2.0-dev
+
+- Dart language experiments are now tracked on the asset graph and will
+  invalidate the build if they change.
+  - Experiments are enabled for a zone by using the `withEnabledExperiments`
+    function from `package:build/experiments.dart`.
+
 ## 5.1.0-dev
 
 - Add a warning if a package is missing some required placholder files,

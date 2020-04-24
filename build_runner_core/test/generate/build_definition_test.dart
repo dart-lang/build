@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
 import 'package:build_config/build_config.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
@@ -31,16 +32,13 @@ import 'package:_test_common/runner_asset_writer_spy.dart';
 
 void main() {
   final languageVersion = LanguageVersion(2, 0);
-  final aPackageGraph = buildPackageGraph({
-    rootPackage('a', languageVersion: languageVersion): ['b'],
-    package('b', languageVersion: languageVersion): []
-  });
 
   group('BuildDefinition.prepareWorkspace', () {
     BuildOptions options;
     BuildEnvironment environment;
     String pkgARoot;
     String pkgBRoot;
+    PackageGraph aPackageGraph;
 
     Future<File> createFile(String path, dynamic contents) async {
       var file = File(p.join(pkgARoot, path));
@@ -76,6 +74,12 @@ void main() {
     setUp(() async {
       pkgARoot = p.join(d.sandbox, 'pkg_a');
       pkgBRoot = p.join(d.sandbox, 'pkg_b');
+      aPackageGraph = buildPackageGraph({
+        rootPackage('a', languageVersion: languageVersion, path: pkgARoot): [
+          'b'
+        ],
+        package('b', languageVersion: languageVersion, path: pkgBRoot): []
+      });
       await d.dir(
         'pkg_a',
         [
@@ -659,6 +663,27 @@ targets:
         var newOptions = await BuildOptions.create(
             LogSubscription(environment, logLevel: Level.OFF),
             packageGraph: await PackageGraph.forPath(pkgARoot),
+            skipBuildScriptCheck: true);
+
+        await expectLater(
+            () => BuildDefinition.prepareWorkspace(environment, newOptions, []),
+            throwsA(const TypeMatcher<BuildScriptChangedException>()));
+
+        expect(graph.existsSync(), isFalse);
+      });
+
+      test('invalidates the graph if the enabled experiments change', () async {
+        AssetGraph assetGraph;
+        assetGraph = await withEnabledExperiments(
+            () => AssetGraph.build([], <AssetId>{}, <AssetId>{}, aPackageGraph,
+                environment.reader),
+            ['a']);
+
+        var graph = await createFile(assetGraphPath, assetGraph.serialize());
+
+        var newOptions = await BuildOptions.create(
+            LogSubscription(environment, logLevel: Level.OFF),
+            packageGraph: aPackageGraph,
             skipBuildScriptCheck: true);
 
         await expectLater(
