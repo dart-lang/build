@@ -5,7 +5,7 @@
   - Experiments are enabled for a zone by using the `withEnabledExperiments`
     function from `package:build/experiments.dart`.
 
-## 5.1.0-dev
+## 5.1.0
 
 - Add a warning if a package is missing some required placholder files,
   including `$package$` and `lib/$lib$`.

@@ -1,7 +1,14 @@
-## 1.9.0
+## 1.10.0-dev
 
 - Add an `--enable-experiment` flag which enables running builders on code that
   requires a language experiment to be enabled.
+
+## 1.9.0
+
+- Add a warning if a package is missing some required placholder files,
+  including `$package$` and `lib/$lib$`.
+- Reduce chances for changing apparent build phases across machines with a
+  different order of packages from `package_config.json`.
 
 ## 1.8.1
 
