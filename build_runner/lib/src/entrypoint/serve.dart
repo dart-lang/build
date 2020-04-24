@@ -5,7 +5,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:build_resolvers/build_resolvers.dart';
+import 'package:build/experiments.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:http_multi_server/http_multi_server.dart';
 import 'package:io/io.dart';
@@ -56,16 +56,19 @@ class ServeCommand extends WatchCommand {
       argResults, argResults.rest, packageGraph.root.name, this);
 
   @override
-  Future<int> run() async {
+  Future<int> run() {
     final servers = <ServeTarget, HttpServer>{};
-    return _runServe(servers).whenComplete(() async {
-      await Future.wait(
-          servers.values.map((server) => server.close(force: true)));
-    });
+    var options = readOptions();
+    return withEnabledExperiments(
+        () => _runServe(servers, options).whenComplete(() async {
+              await Future.wait(
+                  servers.values.map((server) => server.close(force: true)));
+            }),
+        options.enableExperiments);
   }
 
-  Future<int> _runServe(Map<ServeTarget, HttpServer> servers) async {
-    var options = readOptions();
+  Future<int> _runServe(
+      Map<ServeTarget, HttpServer> servers, ServeOptions options) async {
     try {
       await Future.wait(options.serveTargets.map((target) async {
         servers[target] =
@@ -101,7 +104,6 @@ class ServeCommand extends WatchCommand {
       logPerformanceDir: options.logPerformanceDir,
       directoryWatcherFactory: options.directoryWatcherFactory,
       buildFilters: options.buildFilters,
-      resolvers: AnalyzerResolvers(null, null, null, options.enableExperiments),
     );
 
     if (handler == null) return ExitCode.config.code;
