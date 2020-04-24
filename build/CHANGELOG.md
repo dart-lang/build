@@ -1,4 +1,9 @@
-## 1.2.3-dev
+## 1.3.0-dev
+
+Added a new experiments library which exposes a list of language experiments
+through a Zone variable. This should only be used by builders which are
+invoking compilers or some other tool and need to pass on the language
+experiments.
 
 ## 1.2.2
 
