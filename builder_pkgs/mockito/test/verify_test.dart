@@ -367,9 +367,7 @@ void main() {
         verify(mock.methodWithNormalArgs(1)).called(1);
 
         mock.methodWithoutArgs();
-        expectFail(
-            'Unexpected calls: _MockedClass.methodWithoutArgs()',
-            () {
+        expectFail('Unexpected calls: _MockedClass.methodWithoutArgs()', () {
           verifyNever(mock.methodWithoutArgs());
         });
       });
