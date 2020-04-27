@@ -5,15 +5,15 @@ analyzer:
 
 linter:
   rules:
-    # Errors
-    - comment_references
-    - control_flow_in_finally
-    - empty_statements
-    - hash_and_equals
-    - test_types_in_equals
-    - throw_in_finally
+     # Errors
+     - comment_references
+     - control_flow_in_finally
+     - empty_statements
+     - hash_and_equals
+     - test_types_in_equals
+     - throw_in_finally
 
-    # Style
-    - await_only_futures
-    - camel_case_types
-    - non_constant_identifier_names
+     # Style
+     - await_only_futures
+     - camel_case_types
+     - non_constant_identifier_names
