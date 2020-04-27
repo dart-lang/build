@@ -9,6 +9,7 @@ import 'dart:io';
 
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:crypto/crypto.dart';
 import 'package:graphs/graphs.dart' show crawlAsync;
@@ -83,7 +84,7 @@ class KernelBuilder implements Builder {
       bool trackUnusedInputs,
       String platformSdk,
       String kernelTargetName,
-      Iterable<String> experiments})
+      @Deprecated(_deprecatedExperimentsMessage) Iterable<String> experiments})
       : platformSdk = platformSdk ?? sdkDir,
         kernelTargetName = kernelTargetName ?? platform.name,
         librariesPath = librariesPath ??
@@ -93,7 +94,7 @@ class KernelBuilder implements Builder {
         buildExtensions = {
           moduleExtension(platform): [outputExtension]
         },
-        experiments = experiments ?? [];
+        experiments = experiments ?? enabledExperiments;
 
   @override
   Future build(BuildStep buildStep) async {
@@ -416,3 +417,8 @@ String _sourceArg(AssetId id) {
       : '$multiRootScheme:///${id.path}';
   return '--source=$uri';
 }
+
+// Extracted into a local variable to avoid
+// https://github.com/dart-lang/dart_style/issues/860
+const _deprecatedExperimentsMessage =
+    'Use `withEnabledExperiments` from package:build/experiments.dart.';

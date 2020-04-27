@@ -1,3 +1,8 @@
+## 2.10.0-dev
+
+- Deprecated the `experiments` argument to `KernelBuilder` and default it to
+  use the value from the current zone.
+
 ## 2.9.0
 
 - Copy the `package_config.json` file to the scratch space directory, which
