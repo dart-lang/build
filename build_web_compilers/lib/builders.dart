@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:collection/collection.dart';
 import 'package:path/path.dart' as p;
@@ -46,6 +47,7 @@ Builder ddcKernelBuilder(BuilderOptions options) {
       platform: ddcPlatform,
       useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
       trackUnusedInputs: _readTrackInputsCompilerOption(options),
+      // ignore: deprecated_member_use
       experiments: _readExperimentOption(options));
 }
 
@@ -99,7 +101,21 @@ Map<String, String> _readEnvironmentOption(BuilderOptions options) {
 }
 
 List<String> _readExperimentOption(BuilderOptions options) {
-  return List.from((options.config[_experimentOption] as List) ?? []);
+  var deprecatedConfig = options.config[_experimentOption] as List;
+  if (deprecatedConfig != null) {
+    log.warning('The `experiments` option to build_web_compilers|entrypoint '
+        'has been deprecated in favor of the new `--enable-experiment` '
+        'command line argument which matches other dart tooling and is shared '
+        'across all builders.');
+    if (enabledExperiments.isNotEmpty &&
+        !const ListEquality().equals(deprecatedConfig, enabledExperiments)) {
+      throw ArgumentError('The (deprecated) `experiments` option to the '
+          'build_web_compilers|entrypoint builder cannot be used in '
+          'conjunction with the `--enable-experiment` command line option.');
+    }
+    return List.from(deprecatedConfig);
+  }
+  return enabledExperiments;
 }
 
 Map<String, dynamic> _previousDdcConfig;
