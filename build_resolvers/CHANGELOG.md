@@ -1,8 +1,16 @@
+## 1.3.8-dev
+
+- Reverts the `enableExperiments` option on `AnalyzerResolvers`.
+  - To enable experiments you should instead run your code in an experiment
+    Zone using the `withEnabledExperiments` function from
+    `package:build/experiments.dart`.
+
 ## 1.3.7
 
 - Pass an explicit `FeatureSet` to the analyzer based on the current sdk
   version.
-- Add an extra option `enableExperiments` to `AnalyzerResolvers`.
+- ~Add an extra option `enableExperiments` to `AnalyzerResolvers`.~
+  - This was reverted in `1.3.8` and replaced with a different mechanism.
 - Added a warning if the current analyzers language version does not support
   the current SDK language version.
 

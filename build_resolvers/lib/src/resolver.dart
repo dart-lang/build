@@ -21,6 +21,7 @@ import 'package:analyzer/src/dart/sdk/sdk.dart';
 import 'package:analyzer/src/generated/engine.dart'
     show AnalysisOptions, AnalysisOptionsImpl;
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
@@ -204,21 +205,13 @@ class AnalyzerResolvers implements Resolvers {
   AnalyzerResolvers(
       [AnalysisOptions analysisOptions,
       Future<String> Function() sdkSummaryGenerator,
-      this._packageConfig,
-      List<String> enableExperiments])
+      this._packageConfig])
       : _analysisOptions = analysisOptions ??
             (AnalysisOptionsImpl()
               ..contextFeatures =
-                  _featureSet(enableExperiments: enableExperiments)),
+                  _featureSet(enableExperiments: enabledExperiments)),
         _sdkSummaryGenerator =
-            sdkSummaryGenerator ?? _defaultSdkSummaryGenerator {
-    if (analysisOptions != null && enableExperiments != null) {
-      throw ArgumentError(
-          'Both `analysisOptions` and `enableExperiments` were passed, which '
-          'is not allowed. You must enable the experiments yourself on the '
-          'analysis options you pass in, by setting the `contextFeatures`.');
-    }
-  }
+            sdkSummaryGenerator ?? _defaultSdkSummaryGenerator;
 
   /// Create a Resolvers backed by an `AnalysisContext` using options
   /// [_analysisOptions].

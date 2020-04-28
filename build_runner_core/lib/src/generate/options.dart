@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_resolvers/build_resolvers.dart';
 import 'package:glob/glob.dart';
@@ -150,6 +151,10 @@ class BuildOptions {
     @required this.resolvers,
   });
 
+  /// Creates a [BuildOptions] with sane defaults.
+  ///
+  /// NOTE: If a custom [resolvers] instance is passed it must ensure that it
+  /// enables [enabledExperiments] on any analysis options it creates.
   static Future<BuildOptions> create(
     LogSubscription logSubscription, {
     Duration debounceDelay,

@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart';
 import 'package:async/async.dart';
+import 'package:build/experiments.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 import 'package:path/path.dart' as p;
@@ -86,35 +87,8 @@ class TestCommand extends BuildRunnerCommand {
     try {
       _ensureBuildTestDependency(packageGraph);
       options = readOptions();
-      var buildDirs = (options.buildDirs ?? <BuildDirectory>{})
-        // Build test by default.
-        ..add(BuildDirectory('test',
-            outputLocation: OutputLocation(tempPath,
-                useSymlinks: options.outputSymlinksOnly, hoist: false)));
-
-      var result = await build(
-        builderApplications,
-        deleteFilesByDefault: options.deleteFilesByDefault,
-        enableLowResourcesMode: options.enableLowResourcesMode,
-        configKey: options.configKey,
-        buildDirs: buildDirs,
-        outputSymlinksOnly: options.outputSymlinksOnly,
-        packageGraph: packageGraph,
-        trackPerformance: options.trackPerformance,
-        skipBuildScriptCheck: options.skipBuildScriptCheck,
-        verbose: options.verbose,
-        builderConfigOverrides: options.builderConfigOverrides,
-        isReleaseBuild: options.isReleaseBuild,
-        logPerformanceDir: options.logPerformanceDir,
-        buildFilters: options.buildFilters,
-      );
-
-      if (result.status == BuildStatus.failure) {
-        stdout.writeln('Skipping tests due to build failure');
-        return result.failureType.exitCode;
-      }
-
-      return await _runTests(tempPath);
+      return withEnabledExperiments(
+          () => _run(options, tempPath), options.enableExperiments);
     } on _BuildTestDependencyError catch (e) {
       stdout.writeln(e);
       return ExitCode.config.code;
@@ -122,6 +96,38 @@ class TestCommand extends BuildRunnerCommand {
       // Clean up the output dir.
       await Directory(tempPath).delete(recursive: true);
     }
+  }
+
+  Future<int> _run(SharedOptions options, String tempPath) async {
+    var buildDirs = (options.buildDirs ?? <BuildDirectory>{})
+      // Build test by default.
+      ..add(BuildDirectory('test',
+          outputLocation: OutputLocation(tempPath,
+              useSymlinks: options.outputSymlinksOnly, hoist: false)));
+
+    var result = await build(
+      builderApplications,
+      deleteFilesByDefault: options.deleteFilesByDefault,
+      enableLowResourcesMode: options.enableLowResourcesMode,
+      configKey: options.configKey,
+      buildDirs: buildDirs,
+      outputSymlinksOnly: options.outputSymlinksOnly,
+      packageGraph: packageGraph,
+      trackPerformance: options.trackPerformance,
+      skipBuildScriptCheck: options.skipBuildScriptCheck,
+      verbose: options.verbose,
+      builderConfigOverrides: options.builderConfigOverrides,
+      isReleaseBuild: options.isReleaseBuild,
+      logPerformanceDir: options.logPerformanceDir,
+      buildFilters: options.buildFilters,
+    );
+
+    if (result.status == BuildStatus.failure) {
+      stdout.writeln('Skipping tests due to build failure');
+      return result.failureType.exitCode;
+    }
+
+    return await _runTests(tempPath);
   }
 
   /// Runs tests using [precompiledPath] as the precompiled test directory.

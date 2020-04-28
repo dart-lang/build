@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:build/experiments.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
@@ -38,8 +39,13 @@ class WatchCommand extends BuildRunnerCommand {
       argResults, argResults.rest, packageGraph.root.name, this);
 
   @override
-  Future<int> run() async {
+  Future<int> run() {
     var options = readOptions();
+    return withEnabledExperiments(
+        () => _run(options), options.enableExperiments);
+  }
+
+  Future<int> _run(WatchOptions options) async {
     var handler = await watch(
       builderApplications,
       deleteFilesByDefault: options.deleteFilesByDefault,

@@ -22,6 +22,10 @@ dev_dependencies:
     path: ../_test_common
 
 dependency_overrides:
+  build:
+    path: ../build
+  build_resolvers:
+    path: ../build_resolvers
   build_runner:
     path: ../build_runner
   build_runner_core:

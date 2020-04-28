@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 23;
+const _version = 24;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -47,6 +47,7 @@ class _AssetGraphDeserializer {
       _deserializeDigest(_serializedGraph['buildActionsDigest'] as String),
       _serializedGraph['dart_version'] as String,
       packageLanguageVersions,
+      List.from(_serializedGraph['enabledExperiments'] as List),
     );
 
     var packageNames = _serializedGraph['packages'] as List;
@@ -230,6 +231,7 @@ class _AssetGraphSerializer {
       'assetPaths': assetPaths,
       'packageLanguageVersions': _graph.packageLanguageVersions
           .map((pkg, version) => MapEntry(pkg, version?.toString())),
+      'enabledExperiments': _graph.enabledExperiments,
     };
     return utf8.encode(json.encode(result));
   }

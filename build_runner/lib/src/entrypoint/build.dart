@@ -4,11 +4,13 @@
 
 import 'dart:async';
 
+import 'package:build/experiments.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 
 import '../generate/build.dart';
 import 'base_command.dart';
+import 'options.dart';
 
 /// A command that does a single build and then exits.
 class BuildCommand extends BuildRunnerCommand {
@@ -23,8 +25,13 @@ class BuildCommand extends BuildRunnerCommand {
       'Performs a single build on the specified targets and then exits.';
 
   @override
-  Future<int> run() async {
+  Future<int> run() {
     var options = readOptions();
+    return withEnabledExperiments(
+        () => _run(options), options.enableExperiments);
+  }
+
+  Future<int> _run(SharedOptions options) async {
     var result = await build(
       builderApplications,
       buildFilters: options.buildFilters,
