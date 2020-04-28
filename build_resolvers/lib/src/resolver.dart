@@ -25,7 +25,6 @@ import 'package:build/experiments.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
-import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 
 import 'analysis_driver.dart';
@@ -361,7 +360,7 @@ void _addFlutterLibraries(
 /// Checks that the current analyzer version supports the current language
 /// version.
 void _warnOnLanguageVersionMismatch() {
-  if (_sdkLanguageVersion <= ExperimentStatus.currentVersion) return;
+  if (sdkLanguageVersion <= ExperimentStatus.currentVersion) return;
 
   var upgradeCommand = isFlutter ? 'flutter packages upgrade' : 'pub upgrade';
   log.warning('''
@@ -370,11 +369,11 @@ Your current `analyzer` version may not fully support your current SDK version.
 Please try upgrading to the latest `analyzer` by running `$upgradeCommand`.
 
 Analyzer language version: ${ExperimentStatus.currentVersion}
-SDK language version: $_sdkLanguageVersion
+SDK language version: $sdkLanguageVersion
 
 If you are getting this message and have the latest analyzer please file
 an issue at https://github.com/dart-lang/sdk/issues/new with the title
-"No published analyzer available for language version $_sdkLanguageVersion".
+"No published analyzer available for language version $sdkLanguageVersion".
 Please search the issue tracker first and thumbs up and/or subscribe to
 existing issues if present to avoid duplicates.
 ''');
@@ -385,19 +384,14 @@ existing issues if present to avoid duplicates.
 final _dartUiPath =
     p.normalize(p.join(_runningDartSdkPath, '..', 'pkg', 'sky_engine', 'lib'));
 
-/// The current feature set based on the current sdk version
+/// The current feature set based on the current sdk version and enabled
+/// experiments
 FeatureSet _featureSet({List<String> enableExperiments}) =>
     FeatureSet.fromEnableFlags(enableExperiments ?? [])
-        .restrictToVersion(_sdkLanguageVersion);
+        .restrictToVersion(sdkLanguageVersion);
 
 /// Path to the running dart's SDK root.
 final _runningDartSdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
-
-/// The language version of the current sdk parsed from the [Platform.version].
-final _sdkLanguageVersion = () {
-  var sdkVersion = Version.parse(Platform.version.split(' ').first);
-  return Version(sdkVersion.major, sdkVersion.minor, 0);
-}();
 
 /// `true` if the currently running dart was provided by the Flutter SDK.
 final isFlutter =
