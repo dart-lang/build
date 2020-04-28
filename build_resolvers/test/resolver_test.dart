@@ -5,7 +5,6 @@
 import 'dart:convert';
 import 'dart:isolate';
 
-import 'package:analyzer/src/dart/analysis/experiments.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_test/build_test.dart';
@@ -120,9 +119,8 @@ void main() {
           'a|web/main.dart': 'main() {}',
         }, (resolver) async {
           var lib = await resolver.libraryFor(entryPoint);
-          var currentLangVersion = ExperimentStatus.currentVersion;
-          expect(lib.languageVersionMajor, currentLangVersion.major);
-          expect(lib.languageVersionMinor, currentLangVersion.minor);
+          expect(lib.languageVersionMajor, sdkLanguageVersion.major);
+          expect(lib.languageVersionMinor, sdkLanguageVersion.minor);
         }, resolvers: AnalyzerResolvers(null, null, customPackageConfig));
       });
 
