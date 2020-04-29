@@ -26,6 +26,9 @@ class MockCat extends Mock implements Cat {}
 var cat = MockCat();
 ```
 
+By declaring a class which extends Mockito's Mock class and implements the Cat
+class under test, we have a class which supports stubbing and verifying.
+
 ## Let's verify some behaviour!
 
 ```dart
@@ -35,8 +38,9 @@ cat.sound();
 verify(cat.sound());
 ```
 
-Once created, mock will remember all interactions. Then you can selectively
-verify whatever interaction you are interested in.
+Once created, the mock instance will remember all interactions. Then you can
+selectively [`verify`] (or [`verifyInOrder`], or [`verifyNever`]) the
+interactions you are interested in.
 
 ## How about some stubbing?
 
@@ -70,19 +74,16 @@ expect(cat.sound(), "Purr");
 expect(cat.sound(), "Meow");
 ```
 
-By default, for all methods that return a value, `mock` returns `null`.
-Stubbing can be overridden: for example common stubbing can go to fixture setup
-but the test methods can override it.  Please note that overridding stubbing is
-a potential code smell that points out too much stubbing.  Once stubbed, the
-method will always return stubbed value regardless of how many times it is
-called.  Last stubbing is more important, when you stubbed the same method with
-the same arguments many times. In other words: the order of stubbing matters,
-but it is meaningful rarely, e.g. when stubbing exactly the same method calls
-or sometimes when argument matchers are used, etc.
+By default, any instance method of the mock instance returns `null`. The
+[`when`], [`thenReturn`], [`thenAnswer`], and [`thenThrow`] APIs provide a
+stubbing mechanism to override this behavior.  Once stubbed, the method will
+always return stubbed value regardless of how many times it is called.  If a
+method invocation matches multiple stubs, the one which was declared last will
+be used.
 
 ### A quick word on async stubbing
 
-**Using `thenReturn` to return a `Future` or `Stream` will throw an
+**Using [`thenReturn`] to return a `Future` or `Stream` will throw an
 `ArgumentError`.** This is because it can lead to unexpected behaviors. For
 example:
 
@@ -154,10 +155,10 @@ cat.lives = 9;
 verify(cat.lives=9);
 ```
 
-If an argument other than an ArgMatcher (like `any`, `anyNamed()`, `argThat`,
-`captureArg`, etc.) is passed to a mock method, then the `equals` matcher is
-used for argument matching. If you need more strict matching consider use
-`argThat(identical(arg))`.
+If an argument other than an ArgMatcher (like [`any`], [`anyNamed`],
+[`argThat`], [`captureThat`], etc.) is passed to a mock method, then the
+[`equals`] matcher is used for argument matching. If you need more strict
+matching consider use `argThat(identical(arg))`.
 
 However, note that `null` cannot be used as an argument adjacent to ArgMatcher
 arguments, nor as an un-wrapped value passed as a named argument. For example:
@@ -194,6 +195,8 @@ when(cat.eatFood(any, hungry: captureThat(isNotNull))).thenReturn(true);
 
 ## Verifying exact number of invocations / at least x / never
 
+Use [`verify`] or [`verifyNever`]:
+
 ```dart
 cat.sound();
 cat.sound();
@@ -209,6 +212,8 @@ verifyNever(cat.eatFood(any));
 ```
 
 ## Verification in order
+
+Use [`verifyInOrder`]:
 
 ```dart
 cat.eatFood("Milk");
@@ -226,11 +231,15 @@ one-by-one but only those that you are interested in testing in order.
 
 ## Making sure interaction(s) never happened on mock
 
+Use [`verifyZeroInteractions`]:
+
 ```dart
 verifyZeroInteractions(cat);
 ```
 
 ## Finding redundant invocations
+
+Use [`verifyNoMoreInteractions`]:
 
 ```dart
 cat.sound();
@@ -239,6 +248,8 @@ verifyNoMoreInteractions(cat);
 ```
 
 ## Capturing arguments for further assertions
+
+Use the [`captureAny`], [`captureThat`], and [`captureNamed`] argument matchers:
 
 ```dart
 // Simple capture
@@ -257,6 +268,8 @@ expect(verify(cat.eatFood(captureThat(startsWith("F")))).captured, ["Fish"]);
 ```
 
 ## Waiting for an interaction
+
+Use [`untilCalled`]:
 
 ```dart
 // Waiting for a call.
@@ -295,10 +308,9 @@ void main() {
 }
 ```
 
-[Fake]: https://pub.dev/documentation/mockito/latest/mockito/Fake-class.html
-[UnimplementedError]: https://api.dartlang.org/stable/dart-core/UnimplementedError-class.html
-
 ## Resetting mocks
+
+Use [`reset`]:
 
 ```dart
 // Clearing collected interactions:
@@ -317,6 +329,8 @@ expect(cat.eatFood("Fish"), false);
 
 ## Debugging
 
+Use [`logInvocations`] and [`throwOnMissingStub`]:
+
 ```dart
 // Print all collected invocations of any mock methods of a list of mock objects:
 logInvocations([catOne, catTwo]);
@@ -329,7 +343,7 @@ throwOnMissingStub(cat);
 
 Testing with real objects is preferred over testing with mocks - if you can
 construct a real instance for your tests, you should! If there are no calls to
-`verify` in your test, it is a strong signal that you may not need mocks at all,
+[`verify`] in your test, it is a strong signal that you may not need mocks at all,
 though it's also OK to use a `Mock` like a stub. When it's not possible to use
 the real object, a tested implementation of a fake is the next best thing - it's
 more likely to behave similarly to the real class than responses stubbed out in
@@ -355,3 +369,26 @@ Read more information about this package in the
 [FAQ](https://github.com/dart-lang/mockito/blob/master/FAQ.md).
 
 **NOTE:** This is not an official Google product
+
+[`verify`]: https://pub.dev/documentation/mockito/latest/mockito/verify.html
+[`verifyInOrder`]: https://pub.dev/documentation/mockito/latest/mockito/verifyInOrder.html
+[`verifyNever`]: https://pub.dev/documentation/mockito/latest/mockito/verifyNever.html
+[`when`]: https://pub.dev/documentation/mockito/latest/mockito/when.html
+[`thenReturn`]: https://pub.dev/documentation/mockito/latest/mockito/PostExpectation/thenReturn.html
+[`thenAnswer`]: https://pub.dev/documentation/mockito/latest/mockito/PostExpectation/thenAnswer.html
+[`thenThrow`]: https://pub.dev/documentation/mockito/latest/mockito/PostExpectation/thenThrow.html
+[`any`]: https://pub.dev/documentation/mockito/latest/mockito/any.html
+[`anyNamed`]: https://pub.dev/documentation/mockito/latest/mockito/anyNamed.html
+[`argThat`]: https://pub.dev/documentation/mockito/latest/mockito/argThat.html
+[`captureAny`]: https://pub.dev/documentation/mockito/latest/mockito/captureAny.html
+[`captureThat`]: https://pub.dev/documentation/mockito/latest/mockito/captureThat.html
+[`captureAnyNamed`]: https://pub.dev/documentation/mockito/latest/mockito/captureAnyNamed.html
+[`equals`]: https://pub.dev/documentation/matcher/latest/matcher/equals.html
+[`verifyZeroInteractions`]: https://pub.dev/documentation/mockito/latest/mockito/verifyZeroInteractions.html
+[`verifyNoMoreInteractions`]: https://pub.dev/documentation/mockito/latest/mockito/verifyNoMoreInteractions.html
+[`untilCalled`]: https://pub.dev/documentation/mockito/latest/mockito/untilCalled.html
+[Fake]: https://pub.dev/documentation/mockito/latest/mockito/Fake-class.html
+[UnimplementedError]: https://api.dartlang.org/stable/dart-core/UnimplementedError-class.html
+[`reset`]: https://pub.dev/documentation/mockito/latest/mockito/reset.html
+[`logInvocations]: https://pub.dev/documentation/mockito/latest/mockito/logInvocations.html
+[`throwOnMissingStub`]: https://pub.dev/documentation/mockito/latest/mockito/throwOnMissingStub.html

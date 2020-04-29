@@ -407,6 +407,10 @@ void clearInteractions(var mock) {
 }
 
 class PostExpectation<T> {
+  /// Store a canned response for this method stub.
+  ///
+  /// Note: [expected] cannot be a Future or Stream, due to Zone considerations.
+  /// To return a Future or Stream from a method stub, use [thenAnswer].
   void thenReturn(T expected) {
     if (expected is Future) {
       throw ArgumentError('`thenReturn` should not be used to return a Future. '
@@ -419,12 +423,16 @@ class PostExpectation<T> {
     return _completeWhen((_) => expected);
   }
 
+  /// Store an exception to throw when this method stub is called.
   void thenThrow(throwable) {
     return _completeWhen((_) {
       throw throwable;
     });
   }
 
+  /// Store a function which is called when this method stub is called.
+  ///
+  /// The function will be called, and the return value will be returned.
   void thenAnswer(Answering<T> answer) {
     return _completeWhen(answer);
   }
