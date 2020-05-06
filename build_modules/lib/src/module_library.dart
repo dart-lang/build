@@ -4,8 +4,8 @@
 
 import 'dart:convert';
 
-// ignore: deprecated_member_use
-import 'package:analyzer/analyzer.dart';
+import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:build/build.dart';
 import 'package:meta/meta.dart';
 
@@ -133,9 +133,7 @@ class ModuleLibrary {
   /// Parse the directives from [source] and compute the library information.
   static ModuleLibrary fromSource(AssetId id, String source) {
     final isLibDir = id.path.startsWith('lib/');
-    // ignore: deprecated_member_use
-    final parsed = parseCompilationUnit(source,
-        name: id.path, suppressErrors: true, parseFunctionBodies: false);
+    final parsed = parseString(content: source, throwIfDiagnostics: false).unit;
     // Packages within the SDK but published might have libraries that can't be
     // used outside the SDK.
     if (parsed.directives.any((d) =>
