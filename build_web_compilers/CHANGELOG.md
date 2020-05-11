@@ -1,4 +1,4 @@
-## 2.11.0-dev
+## 2.11.0
 
 - Deprecated support for the `experiments` configuration in favor of the
   general mechanism exposed by the build package(exposed through the 

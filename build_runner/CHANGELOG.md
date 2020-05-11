@@ -1,4 +1,4 @@
-## 1.10.0-dev
+## 1.10.0
 
 - Add an `--enable-experiment` flag which enables running builders on code that
   requires a language experiment to be enabled.
