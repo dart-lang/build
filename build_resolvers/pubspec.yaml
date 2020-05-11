@@ -23,11 +23,3 @@ dev_dependencies:
   build_runner: ^1.0.0
   build_vm_compilers: ">=0.1.0 <2.0.0"
   build_modules: any
-
-dependency_overrides:
-  build:
-    path: ../build
-  build_vm_compilers:
-    path: ../build_vm_compilers
-  build_modules:
-    path: ../build_modules

@@ -31,8 +31,8 @@ jobs:
       env: PKGS="build build_config build_daemon build_resolvers build_runner_core build_test build_vm_compilers"
       script: ./tool/travis.sh dartanalyzer_1
     - stage: analyze_and_format
-      name: "SDK: 2.8.0-dev.10.0; PKGS: build_modules, build_web_compilers; TASKS: `dartanalyzer --fatal-warnings .`"
-      dart: "2.8.0-dev.10.0"
+      name: "SDK: 2.8.1; PKGS: build_modules, build_web_compilers; TASKS: `dartanalyzer --fatal-warnings .`"
+      dart: "2.8.1"
       os: linux
       env: PKGS="build_modules build_web_compilers"
       script: ./tool/travis.sh dartanalyzer_1
