@@ -1,5 +1,7 @@
 ## 1.3.8-dev
 
+- Enables the `non-nullable` experiment when summarizing the SDK, see
+  https://github.com/dart-lang/sdk/issues/41820.
 - Reverts the `enableExperiments` option on `AnalyzerResolvers`.
   - To enable experiments you should instead run your code in an experiment
     Zone using the `withEnabledExperiments` function from

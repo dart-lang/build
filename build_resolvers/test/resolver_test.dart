@@ -5,14 +5,15 @@
 import 'dart:convert';
 import 'dart:isolate';
 
-import 'package:analyzer/src/dart/analysis/experiments.dart';
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
 import 'package:build_resolvers/build_resolvers.dart';
+import 'package:build_resolvers/src/analysis_driver.dart';
 import 'package:build_resolvers/src/resolver.dart';
 
 void main() {
@@ -118,9 +119,8 @@ void main() {
           'a|web/main.dart': 'main() {}',
         }, (resolver) async {
           var lib = await resolver.libraryFor(entryPoint);
-          var currentLangVersion = ExperimentStatus.currentVersion;
-          expect(lib.languageVersionMajor, currentLangVersion.major);
-          expect(lib.languageVersionMinor, currentLangVersion.minor);
+          expect(lib.languageVersionMajor, sdkLanguageVersion.major);
+          expect(lib.languageVersionMinor, sdkLanguageVersion.minor);
         }, resolvers: AnalyzerResolvers(null, null, customPackageConfig));
       });
 
@@ -355,6 +355,25 @@ void main() {
             AssetId('a', 'lib/b.dart'));
       }, resolvers: AnalyzerResolvers());
     });
+
+    test('Respects withEnabledExperiments', () async {
+      Logger.root.level = Level.ALL;
+      Logger.root.onRecord.listen(print);
+      await withEnabledExperiments(
+          () => resolveSources({
+                'a|web/main.dart': '''
+// @dart=${sdkLanguageVersion.major}.${sdkLanguageVersion.minor}
+int? get x => 1;
+                ''',
+              }, (resolver) async {
+                var lib = await resolver.libraryFor(entryPoint);
+                expect(lib.languageVersionMajor, sdkLanguageVersion.major);
+                expect(lib.languageVersionMinor, sdkLanguageVersion.minor);
+                var errors = await lib.session.getErrors('/a/web/main.dart');
+                expect(errors.errors, isEmpty);
+              }, resolvers: AnalyzerResolvers()),
+          ['non-nullable']);
+    }, skip: 'Requires the next version of analyzer which isnt yet published.');
   });
 
   test('throws when reading a part-of file', () {

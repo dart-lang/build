@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:io';
+
 import 'package:analyzer/file_system/file_system.dart' show ResourceProvider;
 import 'package:analyzer/src/dart/analysis/byte_store.dart'
     show MemoryByteStore;
@@ -68,7 +70,7 @@ Packages _buildAnalyzerPackages(
         package.name: Package(
           name: package.name,
           languageVersion: package.languageVersion == null
-              ? null
+              ? sdkLanguageVersion
               : Version(package.languageVersion.major,
                   package.languageVersion.minor, 0),
           // Analyzer does not see the original file paths at all, we need to
@@ -80,3 +82,9 @@ Packages _buildAnalyzerPackages(
               p.url.normalize(assetPath(AssetId(package.name, 'lib')))),
         ),
     });
+
+/// The language version of the current sdk parsed from the [Platform.version].
+final sdkLanguageVersion = () {
+  var sdkVersion = Version.parse(Platform.version.split(' ').first);
+  return Version(sdkVersion.major, sdkVersion.minor, 0);
+}();

@@ -25,7 +25,6 @@ import 'package:build/experiments.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
-import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 
 import 'analysis_driver.dart';
@@ -333,8 +332,9 @@ List<int> _buildSdkSummary() {
     for (var library in sdk.sdkLibraries) sdk.mapDartUri(library.shortName),
   };
 
-  return SummaryBuilder(sdkSources, sdk.context)
-      .build(featureSet: _featureSet());
+  return SummaryBuilder(sdkSources, sdk.context).build(
+      // TODO: remove after https://github.com/dart-lang/sdk/issues/41820
+      featureSet: FeatureSet.fromEnableFlags(['non-nullable']));
 }
 
 /// Loads the flutter engine _embedder.yaml file and adds any new libraries to
@@ -361,7 +361,7 @@ void _addFlutterLibraries(
 /// Checks that the current analyzer version supports the current language
 /// version.
 void _warnOnLanguageVersionMismatch() {
-  if (_sdkLanguageVersion <= ExperimentStatus.currentVersion) return;
+  if (sdkLanguageVersion <= ExperimentStatus.currentVersion) return;
 
   var upgradeCommand = isFlutter ? 'flutter packages upgrade' : 'pub upgrade';
   log.warning('''
@@ -370,11 +370,11 @@ Your current `analyzer` version may not fully support your current SDK version.
 Please try upgrading to the latest `analyzer` by running `$upgradeCommand`.
 
 Analyzer language version: ${ExperimentStatus.currentVersion}
-SDK language version: $_sdkLanguageVersion
+SDK language version: $sdkLanguageVersion
 
 If you are getting this message and have the latest analyzer please file
 an issue at https://github.com/dart-lang/sdk/issues/new with the title
-"No published analyzer available for language version $_sdkLanguageVersion".
+"No published analyzer available for language version $sdkLanguageVersion".
 Please search the issue tracker first and thumbs up and/or subscribe to
 existing issues if present to avoid duplicates.
 ''');
@@ -385,19 +385,35 @@ existing issues if present to avoid duplicates.
 final _dartUiPath =
     p.normalize(p.join(_runningDartSdkPath, '..', 'pkg', 'sky_engine', 'lib'));
 
-/// The current feature set based on the current sdk version
-FeatureSet _featureSet({List<String> enableExperiments}) =>
-    FeatureSet.fromEnableFlags(enableExperiments ?? [])
-        .restrictToVersion(_sdkLanguageVersion);
+/// The current feature set based on the current sdk version and enabled
+/// experiments.
+FeatureSet _featureSet({List<String> enableExperiments}) {
+  enableExperiments ??= [];
+  if (enableExperiments.isEmpty) {
+    return FeatureSet.fromEnableFlags([]).restrictToVersion(sdkLanguageVersion);
+  } else if (sdkLanguageVersion == ExperimentStatus.currentVersion) {
+    return FeatureSet.fromEnableFlags(enableExperiments);
+  } else {
+    throw StateError('''
+Attempting to enable experiments `$enableExperiments`, but the current SDK
+language version does not match your `analyzer` package language version:
+
+Analyzer language version: ${ExperimentStatus.currentVersion}
+SDK language version: $sdkLanguageVersion
+
+In order to use experiments you will need to upgrade or downgrade your
+`analyzer` package dependency such that its language version matches that of
+your current SDK, see https://github.com/dart-lang/build/issues/2685.
+
+Note that you may or may not have a direct dependency on the `analyzer`
+package in your `pubspec.yaml`, so you may have to add that. You can see your
+current version by running `pub deps`.
+''');
+  }
+}
 
 /// Path to the running dart's SDK root.
 final _runningDartSdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
-
-/// The language version of the current sdk parsed from the [Platform.version].
-final _sdkLanguageVersion = () {
-  var sdkVersion = Version.parse(Platform.version.split(' ').first);
-  return Version(sdkVersion.major, sdkVersion.minor, 0);
-}();
 
 /// `true` if the currently running dart was provided by the Flutter SDK.
 final isFlutter =

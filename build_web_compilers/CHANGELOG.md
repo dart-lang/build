@@ -1,3 +1,9 @@
+## 2.11.0-dev
+
+- Deprecated support for the `experiments` configuration in favor of the
+  general mechanism exposed by the build package(exposed through the 
+  `--enable-experiment` flag to match other Dart tools).
+
 ## 2.10.0
 
 - Pass the package_config.json file when compiling with ddc/dart2js instead of
