@@ -1,6 +1,6 @@
 # Build.yaml format
 
-A `build.yaml` file is decribed by the [BuildConfig](#buildconfig) object.
+A `build.yaml` file is described by the [BuildConfig](#buildconfig) object.
 
 This is a more technical doc of the exact build.yaml format, if you would like
 to see examples or goal oriented docs you may want to look at the
