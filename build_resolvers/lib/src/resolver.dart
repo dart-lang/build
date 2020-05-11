@@ -332,8 +332,9 @@ List<int> _buildSdkSummary() {
     for (var library in sdk.sdkLibraries) sdk.mapDartUri(library.shortName),
   };
 
-  return SummaryBuilder(sdkSources, sdk.context)
-      .build(featureSet: _featureSet());
+  return SummaryBuilder(sdkSources, sdk.context).build(
+      // TODO: remove after https://github.com/dart-lang/sdk/issues/41820
+      featureSet: FeatureSet.fromEnableFlags(['non-nullable']));
 }
 
 /// Loads the flutter engine _embedder.yaml file and adds any new libraries to
@@ -386,9 +387,30 @@ final _dartUiPath =
 
 /// The current feature set based on the current sdk version and enabled
 /// experiments
-FeatureSet _featureSet({List<String> enableExperiments}) =>
-    FeatureSet.fromEnableFlags(enableExperiments ?? [])
-        .restrictToVersion(sdkLanguageVersion);
+FeatureSet _featureSet({List<String> enableExperiments}) {
+  enableExperiments ??= [];
+  if (enableExperiments.isEmpty) {
+    return FeatureSet.fromEnableFlags([]).restrictToVersion(sdkLanguageVersion);
+  } else if (sdkLanguageVersion == ExperimentStatus.currentVersion) {
+    return FeatureSet.fromEnableFlags(enableExperiments);
+  } else {
+    throw StateError('''
+Attempting to enable experiments `$enableExperiments`, but the current SDK
+language version does not match your `analyzer` package language version:
+
+Analyzer language version: ${ExperimentStatus.currentVersion}
+SDK language version: $sdkLanguageVersion
+
+In order to use experiments you will need to upgrade or downgrade your
+`analyzer` package dependency such that its language version matches that of
+your current SDK, see https://github.com/dart-lang/build/issues/2685.
+
+Note that you may or may not have a direct dependency on the `analyzer`
+package in your `pubspec.yaml`, so you may have to add that. You can see your
+current version by running `pub deps`.
+''');
+  }
+}
 
 /// Path to the running dart's SDK root.
 final _runningDartSdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
