@@ -1,4 +1,4 @@
-## 2.10.0-dev
+## 2.10.0
 
 - Deprecated the `experiments` argument to `KernelBuilder` and default it to
   use the value from the current zone.

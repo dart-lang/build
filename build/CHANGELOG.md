@@ -1,4 +1,4 @@
-## 1.3.0-dev
+## 1.3.0
 
 Added a new experiments library which exposes a list of language experiments
 through a Zone variable. This should only be used by builders which are

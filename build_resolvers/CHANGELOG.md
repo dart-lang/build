@@ -1,4 +1,4 @@
-## 1.3.8-dev
+## 1.3.8
 
 - Enables the `non-nullable` experiment when summarizing the SDK, see
   https://github.com/dart-lang/sdk/issues/41820.
