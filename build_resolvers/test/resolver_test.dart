@@ -425,7 +425,7 @@ int? get x => 1;
         }
       }, resolvers: AnalyzerResolvers());
     });
-  });
+  }, skip: 'Requires the latest analyzer which isnt published yet');
 
   test('generated part files are not considered libraries', () async {
     var writer = InMemoryAssetWriter();
