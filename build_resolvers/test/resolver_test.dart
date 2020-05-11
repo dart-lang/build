@@ -373,7 +373,7 @@ int? get x => 1;
                 expect(errors.errors, isEmpty);
               }, resolvers: AnalyzerResolvers()),
           ['non-nullable']);
-    });
+    }, skip: 'Requires the next version of analyzer which isnt yet published.');
   });
 
   test('throws when reading a part-of file', () {

@@ -386,7 +386,7 @@ final _dartUiPath =
     p.normalize(p.join(_runningDartSdkPath, '..', 'pkg', 'sky_engine', 'lib'));
 
 /// The current feature set based on the current sdk version and enabled
-/// experiments
+/// experiments.
 FeatureSet _featureSet({List<String> enableExperiments}) {
   enableExperiments ??= [];
   if (enableExperiments.isEmpty) {
