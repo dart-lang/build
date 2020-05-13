@@ -1,3 +1,5 @@
+# mockito
+
 Mock library for Dart inspired by [Mockito](https://github.com/mockito/mockito).
 
 [![Pub](https://img.shields.io/pub/v/mockito.svg)](https://pub.dartlang.org/packages/mockito)
@@ -76,8 +78,8 @@ expect(cat.sound(), "Meow");
 
 By default, any instance method of the mock instance returns `null`. The
 [`when`], [`thenReturn`], [`thenAnswer`], and [`thenThrow`] APIs provide a
-stubbing mechanism to override this behavior.  Once stubbed, the method will
-always return stubbed value regardless of how many times it is called.  If a
+stubbing mechanism to override this behavior. Once stubbed, the method will
+always return stubbed value regardless of how many times it is called. If a
 method invocation matches multiple stubs, the one which was declared last will
 be used.
 
@@ -95,7 +97,7 @@ example:
 
 Instead, use `thenAnswer` to stub methods that return a `Future` or `Stream`.
 
-```
+```dart
 // BAD
 when(mock.methodThatReturnsAFuture())
     .thenReturn(Future.value('Stub'));
@@ -113,7 +115,7 @@ when(mock.methodThatReturnsAStream())
 If, for some reason, you desire the behavior of `thenReturn`, you can return a
 pre-defined instance.
 
-```
+```dart
 // Use the above method unless you're sure you want to create the Future ahead
 // of time.
 final future = Future.value('Stub');
