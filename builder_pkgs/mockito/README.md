@@ -1,4 +1,4 @@
-Mock library for Dart inspired by [Mockito](https://github.com/mockito/mockito).
+# Mock library for Dart inspired by [Mockito](https://github.com/mockito/mockito)
 
 [![Pub](https://img.shields.io/pub/v/mockito.svg)](https://pub.dartlang.org/packages/mockito)
 [![Build Status](https://travis-ci.org/dart-lang/mockito.svg?branch=master)](https://travis-ci.org/dart-lang/mockito)
@@ -72,10 +72,10 @@ expect(cat.sound(), "Meow");
 
 By default, for all methods that return a value, `mock` returns `null`.
 Stubbing can be overridden: for example common stubbing can go to fixture setup
-but the test methods can override it.  Please note that overridding stubbing is
-a potential code smell that points out too much stubbing.  Once stubbed, the
+but the test methods can override it. Please note that overridding stubbing is
+a potential code smell that points out too much stubbing. Once stubbed, the
 method will always return stubbed value regardless of how many times it is
-called.  Last stubbing is more important, when you stubbed the same method with
+called. Last stubbing is more important, when you stubbed the same method with
 the same arguments many times. In other words: the order of stubbing matters,
 but it is meaningful rarely, e.g. when stubbing exactly the same method calls
 or sometimes when argument matchers are used, etc.
@@ -94,7 +94,7 @@ example:
 
 Instead, use `thenAnswer` to stub methods that return a `Future` or `Stream`.
 
-```
+```dart
 // BAD
 when(mock.methodThatReturnsAFuture())
     .thenReturn(Future.value('Stub'));
@@ -112,13 +112,12 @@ when(mock.methodThatReturnsAStream())
 If, for some reason, you desire the behavior of `thenReturn`, you can return a
 pre-defined instance.
 
-```
+```dart
 // Use the above method unless you're sure you want to create the Future ahead
 // of time.
 final future = Future.value('Stub');
 when(mock.methodThatReturnsAFuture()).thenAnswer((_) => future);
 ```
-
 
 ## Argument matchers
 
