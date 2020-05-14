@@ -457,4 +457,24 @@ int? get x => 1;
     await runBuilder(
         builder, [input.changeExtension('.a.dart')], reader, writer, resolvers);
   });
+
+  test('missing files are not considered libraries', () async {
+    var writer = InMemoryAssetWriter();
+    var reader = InMemoryAssetReader.shareAssetCache(writer.assets);
+    var input = AssetId('a', 'lib/input.dart');
+    writer.assets[input] = utf8.encode('void doStuff() {}');
+
+    var builder = TestBuilder(
+        buildExtensions: {
+          '.dart': ['.a.dart']
+        },
+        build: expectAsync2((buildStep, _) async {
+          expect(
+              await buildStep.resolver.isLibrary(
+                  buildStep.inputId.changeExtension('doesnotexist.dart')),
+              false);
+        }));
+    var resolvers = AnalyzerResolvers();
+    await runBuilder(builder, [input], reader, writer, resolvers);
+  });
 }
