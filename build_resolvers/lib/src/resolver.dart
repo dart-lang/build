@@ -84,6 +84,7 @@ class PerActionResolver implements ReleasableResolver {
 
   @override
   Future<bool> isLibrary(AssetId assetId) async {
+    if (!await _step.canRead(assetId)) return false;
     await _resolveIfNecesssary(assetId);
     return _delegate.isLibrary(assetId);
   }
