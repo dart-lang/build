@@ -1,5 +1,5 @@
 name: build_resolvers
-version: 1.3.8
+version: 1.3.9
 description: Resolve Dart code in a Builder
 homepage: https://github.com/dart-lang/build/tree/master/build_resolvers
 
@@ -19,7 +19,7 @@ dependencies:
 
 dev_dependencies:
   test: ^1.0.0
-  build_test: ^0.10.1
+  build_test: ^1.0.0
   build_runner: ^1.0.0
   build_vm_compilers: ">=0.1.0 <2.0.0"
   build_modules: any

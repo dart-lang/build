@@ -1,3 +1,9 @@
+## 1.3.9
+
+- Fix `isLibrary` for unreadable assets to return `false`.
+- Fix `libraryFor` to do an explicit `canRead` check and throw an
+  `AssetNotFound` exception if it cannot be read.
+
 ## 1.3.8
 
 - Enables the `non-nullable` experiment when summarizing the SDK, see

@@ -84,12 +84,14 @@ class PerActionResolver implements ReleasableResolver {
 
   @override
   Future<bool> isLibrary(AssetId assetId) async {
+    if (!await _step.canRead(assetId)) return false;
     await _resolveIfNecesssary(assetId);
     return _delegate.isLibrary(assetId);
   }
 
   @override
   Future<LibraryElement> libraryFor(AssetId assetId) async {
+    if (!await _step.canRead(assetId)) throw AssetNotFoundException(assetId);
     await _resolveIfNecesssary(assetId);
     return _delegate.libraryFor(assetId);
   }
@@ -126,6 +128,7 @@ class AnalyzerResolver implements ReleasableResolver {
   Future<bool> isLibrary(AssetId assetId) async {
     var source = _driver.sourceFactory.forUri2(assetId.uri);
     return source != null &&
+        source.exists() &&
         (await _driver.getSourceKind(assetPath(assetId))) == SourceKind.LIBRARY;
   }
 
@@ -134,7 +137,9 @@ class AnalyzerResolver implements ReleasableResolver {
     var path = assetPath(assetId);
     var uri = assetId.uri;
     var source = _driver.sourceFactory.forUri2(uri);
-    if (source == null) throw ArgumentError('missing source for $uri');
+    if (source == null || !source.exists()) {
+      throw AssetNotFoundException(assetId);
+    }
     var kind = await _driver.getSourceKind(path);
     if (kind != SourceKind.LIBRARY) throw NonLibraryAssetException(assetId);
     return _driver.getLibraryByUri(assetId.uri.toString());
