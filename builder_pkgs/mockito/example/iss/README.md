@@ -1,7 +1,7 @@
 # International Space Station (ISS) library
 
 This library accesses the International Space Station's APIs
-(using [package:http](https://pub.dartlang.org/packages/http))
+(using [package:http](https://pub.dev/packages/http))
 to fetch the space station's current location.
 
 The unit tests for this library use package:mockito to generate

@@ -118,7 +118,6 @@ class Mock {
   dynamic noSuchMethod(Invocation invocation, [Object /*?*/ returnValue]) {
     // noSuchMethod is that 'magic' that allows us to ignore implementing fields
     // and methods and instead define them later at compile-time per instance.
-    // See "Emulating Functions and Interactions" on dartlang.org: goo.gl/r3IQUH
     invocation = _useMatchedInvocationIfSet(invocation);
     if (_whenInProgress) {
       _whenCall = _WhenCall(this, invocation);

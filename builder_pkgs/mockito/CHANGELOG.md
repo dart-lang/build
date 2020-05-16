@@ -24,8 +24,8 @@
 ## 4.0.0
 
 * Replace the dependency on the
-  _[test](https://pub.dartlang.org/packages/test)_ package with a dependency on
-  the new _[test_api](https://pub.dartlang.org/packages/test_api)_ package.
+  _[test](https://pub.dev/packages/test)_ package with a dependency on
+  the new _[test_api](https://pub.dev/packages/test_api)_ package.
   This dramatically reduces mockito's transitive dependencies.
 
   This bump can result in runtime errors when coupled with a version of the
@@ -33,15 +33,15 @@
 
 ## 3.0.2
 
-* Rollback the _[test_api](https://pub.dartlang.org/packages/test_api)_ part of
+* Rollback the _[test_api](https://pub.dev/packages/test_api)_ part of
   the 3.0.1 release. This was breaking tests that use Flutter's current test
   tools, and will instead be released as part of Mockito 4.0.0.
 
 ## 3.0.1
 
 * Replace the dependency on the
-  _[test](https://pub.dartlang.org/packages/test)_ package with a dependency on
-  the new _[test_api](https://pub.dartlang.org/packages/test_api)_ package.
+  _[test](https://pub.dev/packages/test)_ package with a dependency on
+  the new _[test_api](https://pub.dev/packages/test_api)_ package.
   This dramatically reduces mockito's transitive dependencies.
 * Internal improvements to tests and examples.
 
