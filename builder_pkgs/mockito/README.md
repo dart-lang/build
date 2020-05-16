@@ -370,8 +370,6 @@ lead to confusion. It is OK to define _static_ utilities on a class which
 Read more information about this package in the
 [FAQ](https://github.com/dart-lang/mockito/blob/master/FAQ.md).
 
-**NOTE:** This is not an official Google product
-
 [`verify`]: https://pub.dev/documentation/mockito/latest/mockito/verify.html
 [`verifyInOrder`]: https://pub.dev/documentation/mockito/latest/mockito/verifyInOrder.html
 [`verifyNever`]: https://pub.dev/documentation/mockito/latest/mockito/verifyNever.html
