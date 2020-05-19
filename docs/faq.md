@@ -57,6 +57,7 @@ targets:
       - web/**
       # Note that it is important to include these in the default target.
       - pubspec.*
+      - $package$
 ```
 
 ## Why do Builders need unique outputs?
