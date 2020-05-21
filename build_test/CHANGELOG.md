@@ -1,3 +1,15 @@
+## 1.1.0
+
+- Add support for enabling experiments via `withEnabledExperiments` zones from
+  package:build, as well as forwarding the `packageConfig` argument from
+  `resolve*` apis through to the default `Resolver`.
+  - **Note**: If passing your own `Resolver` these things are still your
+    responsibility.
+- Added the ability to pass a `PackageConfig` to `testBuilder`, which is used
+  to set the language version of each package.
+  - The resolver created from `testBuilder` will also now respect the
+    `withEnabledExperiments` zone. 
+
 ## 1.0.0
 
 - Removed dependency on `package:package_resolver`, changed to 

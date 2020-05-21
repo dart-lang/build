@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
+import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
 import 'package:build_test/build_test.dart';
@@ -151,6 +152,36 @@ void main() {
         'a|foo.txt': 'foo',
         'a|bar.txt': 'foo',
       },
+    );
+  });
+
+  test('can resolve with specified language versions from a PackageConfig',
+      () async {
+    var packageConfig = PackageConfig([
+      Package('a', Uri.file('/a/'),
+          packageUriRoot: Uri.file('/a/lib/'),
+          languageVersion: LanguageVersion(2, 3))
+    ]);
+
+    await testBuilder(
+      TestBuilder(
+        buildExtensions: {
+          '.dart': ['.fake']
+        },
+        build: (step, _) async {
+          var lib = await step.inputLibrary;
+          var errors = await lib.session.getErrors(lib.source.fullName);
+          expect(
+              errors.errors.map((e) => e.message),
+              contains(contains(
+                  'This requires the \'extension-methods\' language feature to be '
+                  'enabled.')));
+        },
+      ),
+      {
+        'a|error.dart': '''extension _Foo on int {}''',
+      },
+      packageConfig: packageConfig,
     );
   });
 }

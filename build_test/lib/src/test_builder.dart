@@ -5,7 +5,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
+import 'package:build_resolvers/build_resolvers.dart';
 import 'package:logging/logging.dart';
+import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
 import 'assets.dart';
@@ -110,6 +113,13 @@ void checkOutputs(
 ///
 /// Callers may optionally provide an [onLog] callback to do validaiton on the
 /// logging output of the builder.
+///
+/// An optional [packageConfig] may be supplied to set the language versions of
+/// certain packages. It will only be used for this purpose and not for reading
+/// of files or converting uris.
+///
+/// Enabling of language experiments is supported through the
+/// `withEnabledExperiments` method from package:build.
 Future testBuilder(
     Builder builder, Map<String, /*String|List<int>*/ dynamic> sourceAssets,
     {Set<String> generateFor,
@@ -119,8 +129,8 @@ Future testBuilder(
     RecordingAssetWriter writer,
     Map<String, /*String|List<int>|Matcher<String|List<int>>*/ dynamic> outputs,
     void Function(LogRecord log) onLog,
-    void Function(AssetId, Iterable<AssetId>)
-        reportUnusedAssetsForInput}) async {
+    void Function(AssetId, Iterable<AssetId>) reportUnusedAssetsForInput,
+    PackageConfig packageConfig}) async {
   writer ??= InMemoryAssetWriter();
 
   var inputIds = {
@@ -155,6 +165,9 @@ Future testBuilder(
   var writerSpy = AssetWriterSpy(writer);
   var logger = Logger('testBuilder');
   var logSubscription = logger.onRecord.listen(onLog);
+  var resolvers = packageConfig == null && enabledExperiments.isEmpty
+      ? defaultResolvers
+      : AnalyzerResolvers(null, null, packageConfig);
 
   for (var input in inputIds) {
     // create another writer spy and reader for each input. This prevents writes
@@ -166,8 +179,7 @@ Future testBuilder(
       WrittenAssetReader(writer, spyForStep),
     ]);
 
-    await runBuilder(
-        builder, {input}, readerForStep, spyForStep, defaultResolvers,
+    await runBuilder(builder, {input}, readerForStep, spyForStep, resolvers,
         logger: logger, reportUnusedAssetsForInput: reportUnusedAssetsForInput);
   }
 

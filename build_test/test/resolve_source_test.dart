@@ -7,10 +7,11 @@ import 'dart:async';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
+import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('should resolveSource of', () {
+  group('resolveSource can resolve', () {
     test('a simple dart file', () async {
       var libExample = await resolveSource(r'''
         library example;
@@ -108,6 +109,27 @@ void main() {
         expect(classFoo.allSupertypes.map(_toStringId),
             contains(endsWith(':collection#Equality')));
       });
+    });
+
+    test('with specified language versions from a PackageConfig', () async {
+      var packageConfig = PackageConfig([
+        Package('a', Uri.file('/a/'),
+            packageUriRoot: Uri.file('/a/lib/'),
+            languageVersion: LanguageVersion(2, 3))
+      ]);
+      var libExample = await resolveSource(r'''
+        library example;
+
+        extension _Foo on int {}
+      ''', (resolver) => resolver.findLibraryByName('example'),
+          packageConfig: packageConfig, inputId: AssetId('a', 'invalid.dart'));
+      var errors =
+          await libExample.session.getErrors(libExample.source.fullName);
+      expect(
+          errors.errors.map((e) => e.message),
+          contains(contains(
+              'This requires the \'extension-methods\' language feature to be '
+              'enabled.')));
     });
   });
 
