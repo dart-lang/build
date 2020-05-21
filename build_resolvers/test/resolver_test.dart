@@ -5,6 +5,8 @@
 import 'dart:convert';
 import 'dart:isolate';
 
+import 'package:analyzer/dart/analysis/session.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_test/build_test.dart';
@@ -374,6 +376,22 @@ int? get x => 1;
               }, resolvers: AnalyzerResolvers()),
           ['non-nullable']);
     }, skip: 'Requires the next version of analyzer which isnt yet published.');
+
+    group('regressions', () {
+      test('can use analysis session after resolving additional assets',
+          () async {
+        var resolvers = AnalyzerResolvers();
+        await resolveSources({
+          'a|web/main.dart': '',
+          'a|web/other.dart': '',
+        }, (resolver) async {
+          var lib = await resolver.libraryFor(entryPoint);
+          expect(
+              await resolver.isLibrary(AssetId('a', 'web/other.dart')), true);
+          expect(lib.session.getResolvedLibraryByElement(lib), isEmpty);
+        }, resolvers: resolvers);
+      }, skip: 'https://github.com/dart-lang/build/issues/2689');
+    });
   });
 
   test('throws when reading a part-of file', () {
