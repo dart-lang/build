@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:isolate';
 
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
 import 'package:build_resolvers/build_resolvers.dart';
 import 'package:package_config/package_config.dart';
 import 'package:pedantic/pedantic.dart';
@@ -194,6 +195,13 @@ Future<T> _resolveAssets<T>(
     sourceAssets: inputAssets,
     rootPackage: rootPackage,
   );
+
+  // Use the default resolver if not provided a package config and no
+  // experiments are enabled. This is much faster.
+  resolvers ??= packageConfig == null && enabledExperiments.isEmpty
+      ? defaultResolvers
+      : AnalyzerResolvers(null, null, packageConfig);
+
   // We don't care about the results of this build, but we also can't await
   // it because that would block on the `tearDown` of the `resolveBuilder`.
   //
@@ -207,7 +215,7 @@ Future<T> _resolveAssets<T>(
     inputAssets.keys,
     MultiAssetReader([inMemory, assetReader]),
     InMemoryAssetWriter(),
-    resolvers ?? defaultResolvers,
+    resolvers,
   ).catchError((_) {}));
   return resolveBuilder.onDone.future;
 }
