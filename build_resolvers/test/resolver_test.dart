@@ -5,8 +5,6 @@
 import 'dart:convert';
 import 'dart:isolate';
 
-import 'package:analyzer/dart/analysis/session.dart';
-import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_test/build_test.dart';
