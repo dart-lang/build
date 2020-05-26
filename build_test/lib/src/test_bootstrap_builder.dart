@@ -8,6 +8,7 @@ import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 // ignore: deprecated_member_use
 import 'package:test_core/backend.dart';
+import 'package:test_core/src/runner/configuration/load.dart';
 
 /// A [Builder] that injects bootstrapping code used by the test runner to run
 /// tests in --precompiled mode.
@@ -32,10 +33,41 @@ class TestBootstrapBuilder extends Builder {
     var assetPath = id.pathSegments.first == 'lib'
         ? p.url.join('packages', id.package, id.path)
         : id.path;
-    var metadata = parseMetadata(
-        assetPath, contents, Runtime.builtIn.map((r) => r.name).toSet());
 
-    if (metadata.testOn.evaluate(SuitePlatform(Runtime.vm))) {
+    var vmRuntimes = [Runtime.vm];
+    var browserRuntimes =
+        Runtime.builtIn.where((r) => r.isBrowser == true).toList();
+    var nodeRuntimes = [Runtime.nodeJS];
+    if (await buildStep.canRead(AssetId(id.package, 'dart_test.yaml'))) {
+      var config = load('dart_test.yaml');
+      for (var customRuntime in config.defineRuntimes.values) {
+        var parent = customRuntime.parent;
+        if (vmRuntimes.any((r) => r.identifier == parent)) {
+          var runtime = vmRuntimes.firstWhere((r) => r.identifier == parent);
+          vmRuntimes.add(
+              runtime.extend(customRuntime.name, customRuntime.identifier));
+        } else if (browserRuntimes.any((r) => r.identifier == parent)) {
+          var runtime =
+              browserRuntimes.firstWhere((r) => r.identifier == parent);
+          browserRuntimes.add(
+              runtime.extend(customRuntime.name, customRuntime.identifier));
+        } else if (nodeRuntimes.any((r) => r.identifier == parent)) {
+          var runtime = nodeRuntimes.firstWhere((r) => r.identifier == parent);
+          nodeRuntimes.add(
+              runtime.extend(customRuntime.name, customRuntime.identifier));
+        }
+      }
+    }
+    var metadata = parseMetadata(
+        assetPath,
+        contents,
+        vmRuntimes
+            .followedBy(browserRuntimes)
+            .followedBy(nodeRuntimes)
+            .map((r) => r.name)
+            .toSet());
+
+    if (vmRuntimes.any((r) => metadata.testOn.evaluate(SuitePlatform(r)))) {
       await buildStep.writeAsString(id.addExtension('.vm_test.dart'), '''
           import "dart:isolate";
 
@@ -49,7 +81,6 @@ class TestBootstrapBuilder extends Builder {
         ''');
     }
 
-    var browserRuntimes = Runtime.builtIn.where((r) => r.isBrowser == true);
     if (browserRuntimes
         .any((r) => metadata.testOn.evaluate(SuitePlatform(r)))) {
       await buildStep.writeAsString(id.addExtension('.browser_test.dart'), '''
@@ -63,7 +94,7 @@ class TestBootstrapBuilder extends Builder {
         ''');
     }
 
-    if (metadata.testOn.evaluate(SuitePlatform(Runtime.nodeJS))) {
+    if (nodeRuntimes.any((r) => metadata.testOn.evaluate(SuitePlatform(r)))) {
       await buildStep.writeAsString(id.addExtension('.node_test.dart'), '''
           import "package:test/bootstrap/node.dart";
 
