@@ -188,10 +188,9 @@ class _SingleBuild {
     hungActionsHeartbeat = HungActionsHeartbeat(() {
       final message = StringBuffer();
       const actionsToLogMax = 5;
-      var descriptions = pendingActions.values.fold(
-          <String>[],
-          (combined, actions) =>
-              combined..addAll(actions)).take(actionsToLogMax);
+      final descriptions = pendingActions.values
+          .expand((actions) => actions)
+          .take(actionsToLogMax);
       for (final description in descriptions) {
         message.writeln('  - $description');
       }
