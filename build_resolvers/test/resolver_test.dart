@@ -386,7 +386,7 @@ int? get x => 1;
           var lib = await resolver.libraryFor(entryPoint);
           expect(
               await resolver.isLibrary(AssetId('a', 'web/other.dart')), true);
-          expect(lib.session.getResolvedLibraryByElement(lib), isEmpty);
+          expect(await lib.session.getResolvedLibraryByElement(lib), isNotNull);
         }, resolvers: resolvers);
       }, skip: 'https://github.com/dart-lang/build/issues/2689');
     });
