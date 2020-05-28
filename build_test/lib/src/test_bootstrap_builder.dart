@@ -1,14 +1,13 @@
 // Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 // ignore: deprecated_member_use
 import 'package:test_core/backend.dart';
-import 'package:test_core/src/runner/configuration/load.dart';
 
 /// A [Builder] that injects bootstrapping code used by the test runner to run
 /// tests in --precompiled mode.
@@ -38,8 +37,8 @@ class TestBootstrapBuilder extends Builder {
     var browserRuntimes =
         Runtime.builtIn.where((r) => r.isBrowser == true).toList();
     var nodeRuntimes = [Runtime.nodeJS];
-    if (await buildStep.canRead(AssetId(id.package, 'dart_test.yaml'))) {
-      var config = load('dart_test.yaml');
+    var config = await _ConfigLoader.instance.load(id.package, buildStep);
+    if (config != null) {
       for (var customRuntime in config.defineRuntimes.values) {
         var parent = customRuntime.parent;
         if (vmRuntimes.any((r) => r.identifier == parent)) {
@@ -105,5 +104,36 @@ class TestBootstrapBuilder extends Builder {
           }
         ''');
     }
+  }
+}
+
+/// Manages a cache of [Configuration] per package, to avoid duplicating work
+/// across build steps.
+///
+/// Can safely be used across the build as configuration is invalidated by its
+/// digest.
+class _ConfigLoader {
+  _ConfigLoader._();
+
+  static final instance = _ConfigLoader._();
+
+  final _configByPackage = <String, Future<Configuration>>{};
+  final _configDigestByPackage = <String, Digest>{};
+
+  Future<Configuration> load(String package, AssetReader reader) async {
+    var customConfigId = AssetId(package, 'dart_test.yaml');
+    if (!await reader.canRead(customConfigId)) return null;
+
+    var digest = await reader.digest(customConfigId);
+    if (_configDigestByPackage[package] == digest) {
+      assert(_configByPackage[package] != null);
+      return _configByPackage[package];
+    }
+    _configDigestByPackage[package] = digest;
+    return _configByPackage[package] = () async {
+      var content = await reader.readAsString(customConfigId);
+      return Configuration.loadFromString(content,
+          sourceUrl: customConfigId.uri);
+    }();
   }
 }

@@ -24,6 +24,28 @@ void main() {
     });
   });
 
+  test('bootstraps custom platforms', () async {
+    await testBuilder(TestBootstrapBuilder(), {
+      'a|test/hello_test.dart': '''
+      @TestOn("no_headless")
+      import 'package:test/test.dart';
+      main() {}
+''',
+      'a|dart_test.yaml': '''
+define_platforms:
+  no_headless:
+    name: NoHeadless
+    extends: chrome
+    settings:
+      arguments: --no-headless
+'''
+    }, outputs: {
+      'a|test/hello_test.dart.browser_test.dart': decodedMatches(allOf(
+          contains('import "hello_test.dart" as test;'),
+          contains('import "package:test/bootstrap/browser.dart";'))),
+    });
+  });
+
   group('Browser tests', () {
     test('TestOn("browser")', () async {
       await testBuilder(TestBootstrapBuilder(), {

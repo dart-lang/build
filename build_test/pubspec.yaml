@@ -21,7 +21,7 @@ dependencies:
   pedantic: ^1.0.0
   stream_transform: ">=0.0.20 <2.0.0"
   test: '>=0.12.42 <2.0.0'
-  test_core: '>=0.2.4 <0.4.0'
+  test_core: '>=0.3.6 <0.4.0'
   watcher: ^0.9.7
 
 dev_dependencies:
