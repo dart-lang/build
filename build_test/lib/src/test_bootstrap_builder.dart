@@ -64,7 +64,7 @@ class TestBootstrapBuilder extends Builder {
         vmRuntimes
             .followedBy(browserRuntimes)
             .followedBy(nodeRuntimes)
-            .map((r) => r.name)
+            .map((r) => r.identifier)
             .toSet());
 
     if (vmRuntimes.any((r) => metadata.testOn.evaluate(SuitePlatform(r)))) {
