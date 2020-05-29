@@ -194,10 +194,14 @@ Future<Process> _runDaemon(var workspace, {int timeout = 30}) async {
     }
       ''').create();
 
-  var packageArg = '--packages=${(await Isolate.packageConfig).path}';
-
-  var process = await Process.start(
-      Platform.resolvedExecutable, [packageArg, 'test.dart'],
+  var args = [
+    ...Platform.executableArguments,
+    if (!Platform.executableArguments
+        .any((arg) => arg.startsWith('--packages')))
+      '--packages=${(await Isolate.packageConfig).path}',
+    'test.dart'
+  ];
+  var process = await Process.start(Platform.resolvedExecutable, args,
       workingDirectory: d.sandbox);
 
   return process;
