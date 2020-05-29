@@ -1,3 +1,8 @@
+## 1.2.0
+
+- Add support for recognizing custom platforms in TestOn annotations during
+  bootstrapping.
+
 ## 1.1.0
 
 - Add support for enabling experiments via `withEnabledExperiments` zones from
