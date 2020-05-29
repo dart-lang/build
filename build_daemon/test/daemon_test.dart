@@ -196,9 +196,8 @@ Future<Process> _runDaemon(var workspace, {int timeout = 30}) async {
 
   var args = [
     ...Platform.executableArguments,
-    if (Platform.executableArguments
-            .indexWhere((arg) => arg.startsWith('--packages=')) ==
-        -1)
+    if (!Platform.executableArguments
+        .any((arg) => arg.startsWith('--packages')))
       '--packages=${(await Isolate.packageConfig).path}',
     'test.dart'
   ];
