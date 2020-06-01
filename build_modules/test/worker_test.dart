@@ -18,7 +18,7 @@ void main() {
               await scratchSpace.ensureAssets([buildStep.inputId], buildStep);
               var result = await resource
                   .compile(['web/foo bar.dart', '-o', 'web/foo bar.dart.js']);
-              expect(result.succeeded, true);
+              expect(result.succeeded, true, reason: result.output);
               await scratchSpace.copyOutput(
                   buildStep.inputId.changeExtension('.dart.js'), buildStep);
               expect(result.output, contains('web/foo%20bar.dart.js'));
