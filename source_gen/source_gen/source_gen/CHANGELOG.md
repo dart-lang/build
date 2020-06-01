@@ -1,7 +1,8 @@
-## 0.9.6
+## 0.9.6-dev
 
 * Streamlined error handling in all builders. There should be no user-visible
   behavior change.
+* Update minimum Dart SDK to `2.7.0`.
 
 ## 0.9.5
 
