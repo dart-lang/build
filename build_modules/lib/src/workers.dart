@@ -328,9 +328,9 @@ class _Dart2JsWorker {
   }
 }
 
-/// Wraps [argument] in single quotes and escapes any single quotes in contains
+/// Wraps [argument] in double quotes and escapes any double quotes it contains
 /// with `\`.
-String _prepareArg(String argument) => "'${argument.replaceAll("'", r"\'")}'";
+String _prepareArg(String argument) => '"${argument.replaceAll('"', r'\"')}"';
 
 /// A single dart2js job, consisting of [args] and a [result].
 class _Dart2JsJob {
