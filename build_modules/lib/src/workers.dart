@@ -289,7 +289,7 @@ class _Dart2JsWorker {
       });
 
       log.info('Running dart2js with ${job.args.join(' ')}\n');
-      worker.stdin.writeln(job.args.join(' '));
+      worker.stdin.writeln(job.args.map(_prepareArg).join(' '));
 
       Dart2JsResult result;
       try {
@@ -327,6 +327,10 @@ class _Dart2JsWorker {
     await oldStdout?.drain();
   }
 }
+
+/// Wraps [argument] in single quotes and escapes any single quotes in contains
+/// with `\`.
+String _prepareArg(String argument) => "'${argument.replaceAll("'", r"\'")}'";
 
 /// A single dart2js job, consisting of [args] and a [result].
 class _Dart2JsJob {

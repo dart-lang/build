@@ -1,3 +1,8 @@
+## 2.10.1
+
+- Fix a bug where file names with spaces were not escaped before being passed
+  to dart2js.
+
 ## 2.10.0
 
 - Deprecated the `experiments` argument to `KernelBuilder` and default it to
