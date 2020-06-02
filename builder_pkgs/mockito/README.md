@@ -139,6 +139,7 @@ when(cat.walk(["roof","tree"])).thenReturn(2);
 
 // ... or matchers
 when(cat.eatFood(argThat(startsWith("dry")))).thenReturn(false);
+when(cat.eatFood(any)).thenReturn(false);
 
 // ... or mix aguments with matchers
 when(cat.eatFood(argThat(startsWith("dry")), hungry: true)).thenReturn(true);
