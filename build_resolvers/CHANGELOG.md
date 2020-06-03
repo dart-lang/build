@@ -1,3 +1,5 @@
+## 1.3.10-dev
+
 ## 1.3.9
 
 - Fix `isLibrary` for unreadable assets to return `false`.

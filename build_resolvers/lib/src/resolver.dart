@@ -337,8 +337,10 @@ List<int> _buildSdkSummary() {
     for (var library in sdk.sdkLibraries) sdk.mapDartUri(library.shortName),
   };
 
+  // ignore: deprecated_member_use
   return SummaryBuilder(sdkSources, sdk.context).build(
       // TODO: remove after https://github.com/dart-lang/sdk/issues/41820
+      // ignore: deprecated_member_use
       featureSet: FeatureSet.fromEnableFlags(['non-nullable']));
 }
 
