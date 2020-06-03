@@ -14,7 +14,9 @@
 
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart' as analyzer;
+import 'package:analyzer/dart/element/type_system.dart';
 import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
@@ -37,6 +39,7 @@ class MockBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
     final entryLib = await buildStep.inputLibrary;
+    final sourceLibIsNonNullable = entryLib.isNonNullableByDefault;
     final mockLibraryAsset = buildStep.inputId.changeExtension('.mocks.dart');
     final classesToMock = <DartObject>[];
 
@@ -58,7 +61,9 @@ class MockBuilder implements Builder {
     }
 
     final mockLibrary = Library((b) {
-      var mockLibraryInfo = _MockLibraryInfo(classesToMock);
+      var mockLibraryInfo = _MockLibraryInfo(classesToMock,
+          sourceLibIsNonNullable: sourceLibIsNonNullable,
+          typeSystem: entryLib.typeSystem);
       b.body.addAll(mockLibraryInfo.fakeClasses);
       b.body.addAll(mockLibraryInfo.mockClasses);
     });
@@ -68,7 +73,8 @@ class MockBuilder implements Builder {
       return;
     }
 
-    final emitter = DartEmitter.scoped();
+    final emitter =
+        DartEmitter.scoped(useNullSafetySyntax: sourceLibIsNonNullable);
     final mockLibraryContent =
         DartFormatter().format(mockLibrary.accept(emitter).toString());
 
@@ -82,6 +88,11 @@ class MockBuilder implements Builder {
 }
 
 class _MockLibraryInfo {
+  final bool sourceLibIsNonNullable;
+
+  /// The type system which applies to the source library.
+  final TypeSystem typeSystem;
+
   /// Mock classes to be added to the generated library.
   final mockClasses = <Class>[];
 
@@ -97,7 +108,8 @@ class _MockLibraryInfo {
 
   /// Build mock classes for [classesToMock], a list of classes obtained from a
   /// `@GenerateMocks` annotation.
-  _MockLibraryInfo(List<DartObject> classesToMock) {
+  _MockLibraryInfo(List<DartObject> classesToMock,
+      {this.sourceLibIsNonNullable, this.typeSystem}) {
     for (final classToMock in classesToMock) {
       final dartTypeToMock = classToMock.toTypeValue();
       if (dartTypeToMock == null) {
@@ -196,10 +208,20 @@ class _MockLibraryInfo {
     return true;
   }
 
-  // TODO(srawlins): Update this logic to correctly handle non-nullable return
-  // types. Right now this logic does not seem to be available on DartType.
+  // Returns whether [method] has at least one parameter whose type is
+  // potentially non-nullable.
+  //
+  // A parameter whose type uses a type variable may be non-nullable on certain
+  // instances. For example:
+  //
+  //     class C<T> {
+  //       void m(T a) {}
+  //     }
+  //     final c1 = C<int?>(); // m's parameter's type is nullable.
+  //     final c2 = C<int>(); // m's parameter's type is non-nullable.
   bool _hasNonNullableParameter(MethodElement method) =>
-      method.parameters.isNotEmpty;
+      sourceLibIsNonNullable &&
+      method.parameters.any((p) => typeSystem.isPotentiallyNonNullable(p.type));
 
   /// Build a method which overrides [method], with all non-nullable
   /// parameter types widened to be nullable.
@@ -207,7 +229,9 @@ class _MockLibraryInfo {
   /// This new method just calls `super.noSuchMethod`, optionally passing a
   /// return value for methods with a non-nullable return type.
   // TODO(srawlins): This method does no widening yet. Widen parameters. Include
-  // tests for typedefs, old-style function parameters, and function types.
+  // tests for typedefs, old-style function parameters, function types, type
+  // variables, non-nullable type variables (bounded to Object, I think),
+  // dynamic.
   // TODO(srawlins): This method declares no specific non-null return values
   // yet.
   void _buildOverridingMethod(MethodBuilder builder, MethodElement method) {
@@ -437,6 +461,9 @@ class _MockLibraryInfo {
       return TypeReference((TypeReferenceBuilder b) {
         b
           ..symbol = type.name
+          // Using the `nullabilitySuffix` rather than `TypeSystem.isNullable`
+          // is more correct for types like `dynamic`.
+          ..isNullable = type.nullabilitySuffix == NullabilitySuffix.question
           ..url = _typeImport(type)
           ..types.addAll(type.typeArguments.map(_typeReference));
       });

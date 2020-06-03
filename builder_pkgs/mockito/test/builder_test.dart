@@ -14,9 +14,11 @@
 
 @TestOn('vm')
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
 import 'package:build_test/build_test.dart';
 import 'package:meta/meta.dart';
 import 'package:mockito/src/builder.dart';
+import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
 Builder buildMocks(BuilderOptions options) => MockBuilder();
@@ -44,8 +46,7 @@ void main() {
   test(
       'generates mock for an imported class but does not override private '
       'or static methods or methods w/ zero parameters', () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -74,8 +75,7 @@ void main() {
   test(
       'generates mock for an imported class but does not override private '
       'or static fields', () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -103,8 +103,7 @@ void main() {
   test(
       'generates mock for an imported class but does not override any '
       'extension methods', () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -135,8 +134,7 @@ void main() {
   });
 
   test('generates a mock class and overrides methods parameters', () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -181,8 +179,7 @@ void main() {
   });
 
   test('generates multiple mock classes', () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         'foo|lib/foo.dart': dedent(r'''
@@ -226,8 +223,7 @@ void main() {
   });
 
   test('generates generic mock classes', () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         'foo|lib/foo.dart': dedent(r'''
@@ -259,8 +255,7 @@ void main() {
   });
 
   test('generates generic mock classes with type bounds', () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         'foo|lib/foo.dart': dedent(r'''
@@ -302,17 +297,15 @@ void main() {
   });
 
   test('writes non-interface types w/o imports', () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         ...simpleTestAsset,
         'foo|lib/foo.dart': dedent(r'''
-        import 'dart:async';
         class Foo<T> {
-          void f(dynamic a) {}
-          void g(T b) {}
-          void h<U>(U c) {}
+          void f(dynamic a, int b) {}
+          void g(T c) {}
+          void h<U>(U d) {}
         }
         '''),
       },
@@ -325,9 +318,9 @@ void main() {
         ///
         /// See the documentation for Mockito's code generation for more information.
         class MockFoo<T> extends _i1.Mock implements _i2.Foo<T> {
-          void f(dynamic a) => super.noSuchMethod(Invocation.method(#f, [a]));
-          void g(T b) => super.noSuchMethod(Invocation.method(#g, [b]));
-          void h<U>(U c) => super.noSuchMethod(Invocation.method(#h, [c]));
+          void f(dynamic a, int b) => super.noSuchMethod(Invocation.method(#f, [a, b]));
+          void g(T c) => super.noSuchMethod(Invocation.method(#g, [c]));
+          void h<U>(U d) => super.noSuchMethod(Invocation.method(#h, [d]));
         }
         '''),
       },
@@ -335,8 +328,7 @@ void main() {
   });
 
   test('imports libraries for external class types', () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -365,8 +357,7 @@ void main() {
   });
 
   test('imports libraries for type aliases with external types', () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -402,8 +393,7 @@ void main() {
   });
 
   test('imports libraries for function types with external types', () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -446,9 +436,86 @@ void main() {
     );
   });
 
+  test('correctly matches nullability of parameters', () async {
+    await _testWithNonNullable(
+      {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        abstract class Foo {
+          void f(int? a, int b);
+          void g(List<int?> a, List<int> b);
+          void h(int? Function() a, int Function() b);
+          void i(void Function(int?) a, void Function(int) b);
+          void j(int? a(), int b());
+          void k(void a(int? x), void b(int x));
+          void l<T>(T? a, T b);
+        }
+        '''),
+      },
+      outputs: {
+        // TODO(srawlins): The type of l's first parameter should be `T?`.
+        'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+        import 'package:foo/foo.dart' as _i2;
+
+        /// A class which mocks [Foo].
+        ///
+        /// See the documentation for Mockito's code generation for more information.
+        class MockFoo extends _i1.Mock implements _i2.Foo {
+          void f(int? a, int b) => super.noSuchMethod(Invocation.method(#f, [a, b]));
+          void g(List<int?> a, List<int> b) =>
+              super.noSuchMethod(Invocation.method(#g, [a, b]));
+          void h(int? Function() a, int Function() b) =>
+              super.noSuchMethod(Invocation.method(#h, [a, b]));
+          void i(void Function(int?) a, void Function(int) b) =>
+              super.noSuchMethod(Invocation.method(#i, [a, b]));
+          void j(int? Function() a, int Function() b) =>
+              super.noSuchMethod(Invocation.method(#j, [a, b]));
+          void k(void Function(int?) a, void Function(int) b) =>
+              super.noSuchMethod(Invocation.method(#k, [a, b]));
+          void l<T>(T a, T b) => super.noSuchMethod(Invocation.method(#l, [a, b]));
+        }
+        '''),
+      },
+    );
+  });
+
+  test('correctly matches nullability of return types', () async {
+    await _testWithNonNullable(
+      {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        abstract class Foo {
+          int f();
+          int? g();
+          List<int?> h();
+          List<int> i();
+        }
+        '''),
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+        import 'package:foo/foo.dart' as _i2;
+
+        /// A class which mocks [Foo].
+        ///
+        /// See the documentation for Mockito's code generation for more information.
+        class MockFoo extends _i1.Mock implements _i2.Foo {
+          int f() => super.noSuchMethod(Invocation.method(#f, []), 0);
+          int? g() => super.noSuchMethod(Invocation.method(#g, []), 0);
+          List<int?> h() => super.noSuchMethod(Invocation.method(#h, []), []);
+          List<int> i() => super.noSuchMethod(Invocation.method(#i, []), []);
+        }
+        '''),
+      },
+    );
+  });
+
   test('overrides abstract methods', () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -475,9 +542,62 @@ void main() {
     );
   });
 
+  test('does not override methods with all nullable parameters', () async {
+    await _testWithNonNullable(
+      {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+          class Foo {
+            void a(int? m) {}
+            void b(dynamic n) {}
+            void c(int Function()? o) {}
+          }
+          '''),
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': dedent(r'''
+          import 'package:mockito/mockito.dart' as _i1;
+          import 'package:foo/foo.dart' as _i2;
+
+          /// A class which mocks [Foo].
+          ///
+          /// See the documentation for Mockito's code generation for more information.
+          class MockFoo extends _i1.Mock implements _i2.Foo {}
+          '''),
+      },
+    );
+  });
+
+  test('overrides methods with a potentially non-nullable parameter', () async {
+    await _testWithNonNullable(
+      {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo<T> {
+          void a(T m) {}
+        }
+        '''),
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+        import 'package:foo/foo.dart' as _i2;
+
+        /// A class which mocks [Foo].
+        ///
+        /// See the documentation for Mockito's code generation for more information.
+        class MockFoo<T> extends _i1.Mock implements _i2.Foo<T> {
+          void a(T m) => super.noSuchMethod(Invocation.method(#a, [m]));
+        }
+        '''),
+      },
+    );
+  });
+
   test('overrides generic methods', () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -509,8 +629,7 @@ void main() {
   });
 
   test('overrides getters and setters', () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -541,8 +660,7 @@ void main() {
   });
 
   test('overrides operators', () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -574,8 +692,7 @@ void main() {
   });
 
   test('creates dummy non-null return values for known core classes', () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -615,8 +732,7 @@ void main() {
 
   test('creates dummy non-null return values for Futures of known core classes',
       () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -645,8 +761,7 @@ void main() {
   });
 
   test('creates dummy non-null return values for unknown classes', () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -679,8 +794,7 @@ void main() {
   });
 
   test('deduplicates fake classes', () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -715,8 +829,7 @@ void main() {
   });
 
   test('creates dummy non-null return values for enums', () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -747,8 +860,7 @@ void main() {
   });
 
   test('creates dummy non-null return values for functions', () async {
-    await testBuilder(
-      buildMocks(BuilderOptions({})),
+    await _testWithNonNullable(
       {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -844,6 +956,65 @@ void main() {
       message: 'The "classes" argument includes an enum: Foo',
     );
   });
+
+  test('given a pre-non-nullable library, does not override any members',
+      () async {
+    await _testPreNonNullable(
+      {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        abstract class Foo {
+          dynamic f(int a) {}
+        }
+        '''),
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+        import 'package:foo/foo.dart' as _i2;
+
+        /// A class which mocks [Foo].
+        ///
+        /// See the documentation for Mockito's code generation for more information.
+        class MockFoo extends _i1.Mock implements _i2.Foo {}
+        '''),
+      },
+    );
+  });
+}
+
+/// Test [MockBuilder] in a package which has not opted into the non-nullable
+/// type system.
+///
+/// Whether the non-nullable experiment is enabled depends on the SDK executing
+/// this test, but that does not affect the opt-in state of the package under
+/// test.
+Future<void> _testPreNonNullable(Map<String, String> sourceAssets,
+    {Map<String, /*String|Matcher<String>*/ dynamic> outputs}) async {
+  var packageConfig = PackageConfig([
+    Package('foo', Uri.file('/foo/'),
+        packageUriRoot: Uri.file('/foo/lib/'),
+        languageVersion: LanguageVersion(2, 7))
+  ]);
+  await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
+      outputs: outputs, packageConfig: packageConfig);
+}
+
+/// Test [MockBuilder] in a package which has opted into the non-nullable type
+/// system, and with the non-nullable experiment enabled.
+Future<void> _testWithNonNullable(Map<String, String> sourceAssets,
+    {Map<String, /*String|Matcher<String>*/ dynamic> outputs}) async {
+  var packageConfig = PackageConfig([
+    Package('foo', Uri.file('/foo/'),
+        packageUriRoot: Uri.file('/foo/lib/'),
+        languageVersion: LanguageVersion(2, 9))
+  ]);
+  await withEnabledExperiments(
+    () async => await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
+        outputs: outputs, packageConfig: packageConfig),
+    ['non-nullable'],
+  );
 }
 
 /// Expect that [testBuilder], given [assets], throws an
