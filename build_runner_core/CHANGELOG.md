@@ -1,4 +1,9 @@
-## 5.2.1-dev
+## 6.0.0
+
+-   Remove some constants and utilities which are implementation details:
+    `defaultRootPackageWhitelist`, `errorCachePath`, `generatedOutputDirectory`,
+    `lockGeneratedOutputDirectory`, `overrideGeneratedOutputDirectory`,
+    `sdkPath`, `buildPhasePoolSize`.
 
 ## 5.2.0
 

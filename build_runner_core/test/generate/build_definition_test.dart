@@ -730,7 +730,7 @@ targets:
             isNotEmpty);
       });
 
-      test('a missing sources/include results in the default whitelist',
+      test('a missing sources/include results in the default sources',
           () async {
         var rootPkg = options.packageGraph.root.name;
         options = await BuildOptions.create(LogSubscription(environment),
@@ -752,11 +752,11 @@ targets:
         expect(
             options.targetGraph.allModules['$rootPkg:another'].sourceIncludes
                 .map((glob) => glob.pattern),
-            defaultRootPackageWhitelist);
+            defaultRootPackageSources);
         expect(
             options.targetGraph.allModules['$rootPkg:$rootPkg'].sourceIncludes
                 .map((glob) => glob.pattern),
-            defaultRootPackageWhitelist);
+            defaultRootPackageSources);
       });
 
       test('allows a target config with empty sources list', () async {
