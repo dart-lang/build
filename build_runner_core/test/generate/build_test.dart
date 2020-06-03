@@ -646,7 +646,7 @@ void main() {
           });
     });
 
-    test('can build on files outside the hardcoded whitelist', () async {
+    test('can build on files outside the hardcoded sources', () async {
       await testBuilders(
           [applyToRoot(TestBuilder())], {'a|test_files/a.txt': 'a'},
           overrideBuildConfig: parseBuildConfigs({
