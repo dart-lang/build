@@ -14,7 +14,6 @@
 
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart' as analyzer;
 import 'package:analyzer/dart/element/type_system.dart';
 import 'package:build/build.dart';
@@ -167,6 +166,12 @@ class _MockLibraryInfo {
           ..url = _typeImport(dartType)
           ..types.addAll(typeArguments);
       }));
+
+      // Only override members of a class declared in a library which uses the
+      // non-nullable type system.
+      if (!sourceLibIsNonNullable) {
+        return;
+      }
       for (final field in classToMock.fields) {
         if (field.isPrivate || field.isStatic) {
           continue;
@@ -191,22 +196,8 @@ class _MockLibraryInfo {
     });
   }
 
-  // TODO(srawlins): Update this logic to correctly handle non-nullable return
-  // types. Right now this logic does not seem to be available on DartType.
-  bool _returnTypeIsNonNullable(MethodElement method) {
-    var type = method.returnType;
-    if (type.isDynamic || type.isVoid) return false;
-    if (method.isAsynchronous && type.isDartAsyncFuture ||
-        type.isDartAsyncFutureOr) {
-      var typeArgument = (type as analyzer.InterfaceType).typeArguments.first;
-      if (typeArgument.isDynamic || typeArgument.isVoid) {
-        // An asynchronous method which returns `Future<void>`, for example,
-        // does not need a dummy return value.
-        return false;
-      }
-    }
-    return true;
-  }
+  bool _returnTypeIsNonNullable(MethodElement method) =>
+      typeSystem.isPotentiallyNonNullable(method.returnType);
 
   // Returns whether [method] has at least one parameter whose type is
   // potentially non-nullable.
@@ -220,7 +211,6 @@ class _MockLibraryInfo {
   //     final c1 = C<int?>(); // m's parameter's type is nullable.
   //     final c2 = C<int>(); // m's parameter's type is non-nullable.
   bool _hasNonNullableParameter(MethodElement method) =>
-      sourceLibIsNonNullable &&
       method.parameters.any((p) => typeSystem.isPotentiallyNonNullable(p.type));
 
   /// Build a method which overrides [method], with all non-nullable
@@ -274,8 +264,7 @@ class _MockLibraryInfo {
     // TODO(srawlins): Optionally pass a non-null return value to `noSuchMethod`
     // which `Mock.noSuchMethod` will simply return, in order to satisfy runtime
     // type checks.
-    // TODO(srawlins): Handle getter invocations with `Invocation.getter`,
-    // and operators???
+    // TODO(srawlins): Handle getter invocations with `Invocation.getter`.
     final invocation = refer('Invocation').property('method').call([
       refer('#${method.displayName}'),
       literalList(invocationPositionalArgs),
@@ -453,17 +442,16 @@ class _MockLibraryInfo {
   /// * InterfaceTypes (classes, generic classes),
   /// * FunctionType parameters (like `void callback(int i)`),
   /// * type aliases (typedefs), both new- and old-style,
-  /// * enums.
+  /// * enums,
+  /// * type variables.
   // TODO(srawlins): Contribute this back to a common location, like
   // package:source_gen?
   Reference _typeReference(analyzer.DartType type) {
     if (type is analyzer.InterfaceType) {
-      return TypeReference((TypeReferenceBuilder b) {
+      return TypeReference((b) {
         b
           ..symbol = type.name
-          // Using the `nullabilitySuffix` rather than `TypeSystem.isNullable`
-          // is more correct for types like `dynamic`.
-          ..isNullable = type.nullabilitySuffix == NullabilitySuffix.question
+          ..isNullable = typeSystem.isPotentiallyNullable(type)
           ..url = _typeImport(type)
           ..types.addAll(type.typeArguments.map(_typeReference));
       });
@@ -483,14 +471,20 @@ class _MockLibraryInfo {
           }
         });
       }
-      return TypeReference((TypeReferenceBuilder trBuilder) {
+      return TypeReference((b) {
         var typedef = element.enclosingElement;
-        trBuilder
+        b
           ..symbol = typedef.name
           ..url = _typeImport(type);
         for (var typeArgument in type.typeArguments) {
-          trBuilder.types.add(_typeReference(typeArgument));
+          b.types.add(_typeReference(typeArgument));
         }
+      });
+    } else if (type is analyzer.TypeParameterType) {
+      return TypeReference((b) {
+        b
+          ..symbol = type.name
+          ..isNullable = typeSystem.isNullable(type);
       });
     } else {
       return refer(type.displayName, _typeImport(type));

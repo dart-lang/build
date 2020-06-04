@@ -133,7 +133,7 @@ void main() {
     );
   });
 
-  test('generates a mock class and overrides methods parameters', () async {
+  test('generates a mock class and overrides method parameters', () async {
     await _testWithNonNullable(
       {
         ...annotationsAsset,
@@ -171,7 +171,7 @@ void main() {
           void d(String one, {String two, String three = ""}) => super
               .noSuchMethod(Invocation.method(#d, [one], {#two: two, #three: three}));
           _i3.Future<void> e(String s) async =>
-              super.noSuchMethod(Invocation.method(#e, [s]));
+              super.noSuchMethod(Invocation.method(#e, [s]), Future.value(null));
         }
         '''),
       },
@@ -450,11 +450,11 @@ void main() {
           void j(int? a(), int b());
           void k(void a(int? x), void b(int x));
           void l<T>(T? a, T b);
+          void m(dynamic a, int b);
         }
         '''),
       },
       outputs: {
-        // TODO(srawlins): The type of l's first parameter should be `T?`.
         'foo|test/foo_test.mocks.dart': dedent(r'''
         import 'package:mockito/mockito.dart' as _i1;
         import 'package:foo/foo.dart' as _i2;
@@ -474,7 +474,8 @@ void main() {
               super.noSuchMethod(Invocation.method(#j, [a, b]));
           void k(void Function(int?) a, void Function(int) b) =>
               super.noSuchMethod(Invocation.method(#k, [a, b]));
-          void l<T>(T a, T b) => super.noSuchMethod(Invocation.method(#l, [a, b]));
+          void l<T>(T? a, T b) => super.noSuchMethod(Invocation.method(#l, [a, b]));
+          void m(dynamic a, int b) => super.noSuchMethod(Invocation.method(#m, [a, b]));
         }
         '''),
       },
@@ -488,10 +489,12 @@ void main() {
         ...simpleTestAsset,
         'foo|lib/foo.dart': dedent(r'''
         abstract class Foo {
-          int f();
-          int? g();
-          List<int?> h();
-          List<int> i();
+          int f(int a);
+          int? g(int a);
+          List<int?> h(int a);
+          List<int> i(int a);
+          j(int a);
+          T? k<T extends int>(int a);
         }
         '''),
       },
@@ -504,10 +507,12 @@ void main() {
         ///
         /// See the documentation for Mockito's code generation for more information.
         class MockFoo extends _i1.Mock implements _i2.Foo {
-          int f() => super.noSuchMethod(Invocation.method(#f, []), 0);
-          int? g() => super.noSuchMethod(Invocation.method(#g, []), 0);
-          List<int?> h() => super.noSuchMethod(Invocation.method(#h, []), []);
-          List<int> i() => super.noSuchMethod(Invocation.method(#i, []), []);
+          int f(int a) => super.noSuchMethod(Invocation.method(#f, [a]), 0);
+          int? g(int a) => super.noSuchMethod(Invocation.method(#g, [a]));
+          List<int?> h(int a) => super.noSuchMethod(Invocation.method(#h, [a]), []);
+          List<int> i(int a) => super.noSuchMethod(Invocation.method(#i, [a]), []);
+          dynamic j(int a) => super.noSuchMethod(Invocation.method(#j, [a]));
+          T? k<T extends int>(int a) => super.noSuchMethod(Invocation.method(#k, [a]));
         }
         '''),
       },
@@ -549,9 +554,40 @@ void main() {
         ...simpleTestAsset,
         'foo|lib/foo.dart': dedent(r'''
           class Foo {
-            void a(int? m) {}
-            void b(dynamic n) {}
-            void c(int Function()? o) {}
+            void a(int? p) {}
+            void b(dynamic p) {}
+            void c(var p) {}
+            void d(final p) {}
+            void e(int Function()? p) {}
+          }
+          '''),
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': dedent(r'''
+          import 'package:mockito/mockito.dart' as _i1;
+          import 'package:foo/foo.dart' as _i2;
+
+          /// A class which mocks [Foo].
+          ///
+          /// See the documentation for Mockito's code generation for more information.
+          class MockFoo extends _i1.Mock implements _i2.Foo {}
+          '''),
+      },
+    );
+  });
+
+  test('does not override methods with a nullable return type', () async {
+    await _testWithNonNullable(
+      {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+          abstract class Foo {
+            void a();
+            b();
+            dynamic c();
+            void d();
+            int? f();
           }
           '''),
       },
@@ -965,7 +1001,7 @@ void main() {
         ...simpleTestAsset,
         'foo|lib/foo.dart': dedent(r'''
         abstract class Foo {
-          dynamic f(int a) {}
+          int f(int a);
         }
         '''),
       },
