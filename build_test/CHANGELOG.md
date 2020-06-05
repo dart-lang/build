@@ -1,3 +1,7 @@
+## 1.2.1-dev
+
+- Improve/fix `testBuilder` documentation.
+
 ## 1.2.0
 
 - Add support for recognizing custom platforms in TestOn annotations during
