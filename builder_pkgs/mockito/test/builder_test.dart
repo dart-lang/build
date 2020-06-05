@@ -73,34 +73,6 @@ void main() {
   });
 
   test(
-      'generates mock for an imported class but does not override private '
-      'or static fields', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        class Foo {
-          int _a;
-          static int b;
-        }
-        '''),
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': dedent(r'''
-        import 'package:mockito/mockito.dart' as _i1;
-        import 'package:foo/foo.dart' as _i2;
-
-        /// A class which mocks [Foo].
-        ///
-        /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends _i1.Mock implements _i2.Foo {}
-        '''),
-      },
-    );
-  });
-
-  test(
       'generates mock for an imported class but does not override any '
       'extension methods', () async {
     await _testWithNonNullable(
@@ -664,34 +636,108 @@ void main() {
     );
   });
 
-  test('overrides getters and setters', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        class Foo {
-          int get a => n + 1;
-          int _b;
-          set b(int value) => _b = value;
-        }
-        '''),
-      },
-      outputs: {
-        // TODO(srawlins): The getter will appear when it has a non-nullable
-        // return type.
-        'foo|test/foo_test.mocks.dart': dedent(r'''
-        import 'package:mockito/mockito.dart' as _i1;
-        import 'package:foo/foo.dart' as _i2;
+  test('overrides non-nullable instance getters', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        int get m => 7;
+      }
+      '''),
+      _containsAllOf(
+          'int get m => super.noSuchMethod(Invocation.getter(#m), 0);'),
+    );
+  });
 
-        /// A class which mocks [Foo].
-        ///
-        /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends _i1.Mock implements _i2.Foo {
-          set b(int value) => super.noSuchMethod(Invocation.setter(#b, [value]));
-        }
-        '''),
-      },
+  test('does not override nullable instance getters', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        int? get m => 7;
+      }
+      '''),
+      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+    );
+  });
+
+  test('overrides non-nullable instance setters', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void set m(int a) {}
+      }
+      '''),
+      _containsAllOf(
+          'set m(int a) => super.noSuchMethod(Invocation.setter(#m, [a]));'),
+    );
+  });
+
+  test('does not override nullable instance setters', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void set m(int? a) {}
+      }
+      '''),
+      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+    );
+  });
+
+  test('overrides non-nullable fields', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        int m;
+      }
+      '''),
+      _containsAllOf(
+          'int get m => super.noSuchMethod(Invocation.getter(#m), 0);',
+          'set m(int _m) => super.noSuchMethod(Invocation.setter(#m, [_m]));'),
+    );
+  });
+
+  test('overrides final non-nullable fields', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        final int m;
+        Foo(this.m);
+      }
+      '''),
+      _containsAllOf(
+          'int get m => super.noSuchMethod(Invocation.getter(#m), 0);'),
+    );
+  });
+
+  test('does not override nullable fields', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        int? m;
+      }
+      '''),
+      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+    );
+  });
+
+  test('does not override private fields', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        int _a;
+      }
+      '''),
+      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+    );
+  });
+
+  test('does not override static fields', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        static int b;
+      }
+      '''),
+      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
     );
   });
 

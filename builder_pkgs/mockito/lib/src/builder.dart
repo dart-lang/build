@@ -176,9 +176,13 @@ class _MockLibraryInfo {
         if (field.isPrivate || field.isStatic) {
           continue;
         }
-        // Handle getters when we handle non-nullable return types.
+        final getter = field.getter;
+        if (getter != null && _returnTypeIsNonNullable(getter)) {
+          cBuilder.methods.add(
+              Method((mBuilder) => _buildOverridingGetter(mBuilder, getter)));
+        }
         final setter = field.setter;
-        if (setter != null) {
+        if (setter != null && _hasNonNullableParameter(setter)) {
           cBuilder.methods.add(
               Method((mBuilder) => _buildOverridingSetter(mBuilder, setter)));
         }
@@ -196,7 +200,7 @@ class _MockLibraryInfo {
     });
   }
 
-  bool _returnTypeIsNonNullable(MethodElement method) =>
+  bool _returnTypeIsNonNullable(ExecutableElement method) =>
       typeSystem.isPotentiallyNonNullable(method.returnType);
 
   // Returns whether [method] has at least one parameter whose type is
@@ -210,7 +214,7 @@ class _MockLibraryInfo {
   //     }
   //     final c1 = C<int?>(); // m's parameter's type is nullable.
   //     final c2 = C<int>(); // m's parameter's type is non-nullable.
-  bool _hasNonNullableParameter(MethodElement method) =>
+  bool _hasNonNullableParameter(ExecutableElement method) =>
       method.parameters.any((p) => typeSystem.isPotentiallyNonNullable(p.type));
 
   /// Build a method which overrides [method], with all non-nullable
@@ -222,8 +226,6 @@ class _MockLibraryInfo {
   // tests for typedefs, old-style function parameters, function types, type
   // variables, non-nullable type variables (bounded to Object, I think),
   // dynamic.
-  // TODO(srawlins): This method declares no specific non-null return values
-  // yet.
   void _buildOverridingMethod(MethodBuilder builder, MethodElement method) {
     // TODO(srawlins): generator methods like async*, sync*.
     var name = method.displayName;
@@ -261,10 +263,7 @@ class _MockLibraryInfo {
             refer(parameter.displayName);
       }
     }
-    // TODO(srawlins): Optionally pass a non-null return value to `noSuchMethod`
-    // which `Mock.noSuchMethod` will simply return, in order to satisfy runtime
-    // type checks.
-    // TODO(srawlins): Handle getter invocations with `Invocation.getter`.
+
     final invocation = refer('Invocation').property('method').call([
       refer('#${method.displayName}'),
       literalList(invocationPositionalArgs),
@@ -390,6 +389,27 @@ class _MockLibraryInfo {
         pBuilder.defaultTo = Code(parameter.defaultValueCode);
       }
     });
+  }
+
+  /// Build a getter which overrides [getter].
+  ///
+  /// This new method just calls `super.noSuchMethod`, optionally passing a
+  /// return value for non-nullable getters.
+  void _buildOverridingGetter(
+      MethodBuilder builder, PropertyAccessorElement getter) {
+    builder
+      ..name = getter.displayName
+      ..type = MethodType.getter
+      ..returns = _typeReference(getter.returnType);
+
+    final invocation = refer('Invocation').property('getter').call([
+      refer('#${getter.displayName}'),
+    ]);
+    final noSuchMethodArgs = [invocation, _dummyValue(getter.returnType)];
+    final returnNoSuchMethod =
+        refer('super').property('noSuchMethod').call(noSuchMethodArgs);
+
+    builder.body = returnNoSuchMethod.code;
   }
 
   /// Build a setter which overrides [setter], widening the single parameter
