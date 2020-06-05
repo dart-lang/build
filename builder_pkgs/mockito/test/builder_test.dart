@@ -727,207 +727,203 @@ void main() {
     );
   });
 
-  test('creates dummy non-null return values for known core classes', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        class Foo {
-          bool m1() => false;
-          double m2() => 3.14;
-          int m3() => 7;
-          String m4() => "Hello";
-          List<Foo> m5() => [Foo()];
-          Set<Foo> m6() => {Foo()};
-          Map<int, Foo> m7() => {7: Foo()};
-        }
-        '''),
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': dedent(r'''
-        import 'package:mockito/mockito.dart' as _i1;
-        import 'package:foo/foo.dart' as _i2;
+  test('creates dummy non-null bool return value', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        bool m() => false;
+      }
+      '''),
+      _containsAllOf(
+          'bool m() => super.noSuchMethod(Invocation.method(#m, []), false);'),
+    );
+  });
 
-        /// A class which mocks [Foo].
-        ///
-        /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends _i1.Mock implements _i2.Foo {
-          bool m1() => super.noSuchMethod(Invocation.method(#m1, []), false);
-          double m2() => super.noSuchMethod(Invocation.method(#m2, []), 0.0);
-          int m3() => super.noSuchMethod(Invocation.method(#m3, []), 0);
-          String m4() => super.noSuchMethod(Invocation.method(#m4, []), '');
-          List<_i2.Foo> m5() => super.noSuchMethod(Invocation.method(#m5, []), []);
-          Set<_i2.Foo> m6() => super.noSuchMethod(Invocation.method(#m6, []), {});
-          Map<int, _i2.Foo> m7() => super.noSuchMethod(Invocation.method(#m7, []), {});
-        }
-        '''),
-      },
+  test('creates dummy non-null double return value', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        double m() => 3.14;
+      }
+      '''),
+      _containsAllOf(
+          'double m() => super.noSuchMethod(Invocation.method(#m, []), 0.0);'),
+    );
+  });
+
+  test('creates dummy non-null int return value', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        int m() => 7;
+      }
+      '''),
+      _containsAllOf(
+          'int m() => super.noSuchMethod(Invocation.method(#m, []), 0);'),
+    );
+  });
+
+  test('creates dummy non-null String return value', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        String m() => "Hello";
+      }
+      '''),
+      _containsAllOf(
+          "String m() => super.noSuchMethod(Invocation.method(#m, []), '');"),
+    );
+  });
+
+  test('creates dummy non-null List return value', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        List<Foo> m() => [Foo()];
+      }
+      '''),
+      _containsAllOf(
+          'List<_i2.Foo> m() => super.noSuchMethod(Invocation.method(#m, []), []);'),
+    );
+  });
+
+  test('creates dummy non-null Set return value', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Set<Foo> m() => {Foo()};
+      }
+      '''),
+      _containsAllOf(
+          'Set<_i2.Foo> m() => super.noSuchMethod(Invocation.method(#m, []), {});'),
+    );
+  });
+
+  test('creates dummy non-null Map return value', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Map<int, Foo> m() => {7: Foo()};
+      }
+      '''),
+      _containsAllOf(
+          'Map<int, _i2.Foo> m() => super.noSuchMethod(Invocation.method(#m, []), {});'),
     );
   });
 
   test('creates dummy non-null return values for Futures of known core classes',
       () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        class Foo {
-          Future<bool> m1() async => false;
-        }
-        '''),
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': dedent(r'''
-        import 'package:mockito/mockito.dart' as _i1;
-        import 'package:foo/foo.dart' as _i2;
-        import 'dart:async' as _i3;
-
-        /// A class which mocks [Foo].
-        ///
-        /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends _i1.Mock implements _i2.Foo {
-          _i3.Future<bool> m1() async =>
-              super.noSuchMethod(Invocation.method(#m1, []), Future.value(false));
-        }
-        '''),
-      },
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Future<bool> m1() async => false;
+      }
+      '''),
+      _containsAllOf('_i3.Future<bool> m1() async =>',
+          'super.noSuchMethod(Invocation.method(#m1, []), Future.value(false));'),
     );
   });
 
   test('creates dummy non-null return values for unknown classes', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        class Foo {
-          Bar m1() => Bar('name');
-        }
-        class Bar {
-          final String name;
-          Bar(this.name);
-        }
-        '''),
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': dedent(r'''
-        import 'package:mockito/mockito.dart' as _i1;
-        import 'package:foo/foo.dart' as _i2;
-
-        class _FakeBar extends _i1.Fake implements _i2.Bar {}
-
-        /// A class which mocks [Foo].
-        ///
-        /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends _i1.Mock implements _i2.Foo {
-          _i2.Bar m1() => super.noSuchMethod(Invocation.method(#m1, []), _FakeBar());
-        }
-        '''),
-      },
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m() => Bar('name');
+      }
+      class Bar {
+        final String name;
+        Bar(this.name);
+      }
+      '''),
+      _containsAllOf(
+          '_i2.Bar m() => super.noSuchMethod(Invocation.method(#m, []), _FakeBar());'),
     );
   });
 
   test('deduplicates fake classes', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        class Foo {
-          Bar m1() => Bar('name1');
-          Bar m2() => Bar('name2');
-        }
-        class Bar {
-          final String name;
-          Bar(this.name);
-        }
-        '''),
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': dedent(r'''
-        import 'package:mockito/mockito.dart' as _i1;
-        import 'package:foo/foo.dart' as _i2;
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => Bar('name1');
+        Bar m2() => Bar('name2');
+      }
+      class Bar {
+        final String name;
+        Bar(this.name);
+      }
+      '''),
+      dedent(r'''
+      import 'package:mockito/mockito.dart' as _i1;
+      import 'package:foo/foo.dart' as _i2;
 
-        class _FakeBar extends _i1.Fake implements _i2.Bar {}
+      class _FakeBar extends _i1.Fake implements _i2.Bar {}
 
-        /// A class which mocks [Foo].
-        ///
-        /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends _i1.Mock implements _i2.Foo {
-          _i2.Bar m1() => super.noSuchMethod(Invocation.method(#m1, []), _FakeBar());
-          _i2.Bar m2() => super.noSuchMethod(Invocation.method(#m2, []), _FakeBar());
-        }
-        '''),
-      },
+      /// A class which mocks [Foo].
+      ///
+      /// See the documentation for Mockito's code generation for more information.
+      class MockFoo extends _i1.Mock implements _i2.Foo {
+        _i2.Bar m1() => super.noSuchMethod(Invocation.method(#m1, []), _FakeBar());
+        _i2.Bar m2() => super.noSuchMethod(Invocation.method(#m2, []), _FakeBar());
+      }
+      '''),
     );
   });
 
   test('creates dummy non-null return values for enums', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        class Foo {
-          Bar m1() => Bar('name');
-        }
-        enum Bar {
-          one,
-          two,
-        }
-        '''),
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': dedent(r'''
-        import 'package:mockito/mockito.dart' as _i1;
-        import 'package:foo/foo.dart' as _i2;
-
-        /// A class which mocks [Foo].
-        ///
-        /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends _i1.Mock implements _i2.Foo {
-          _i2.Bar m1() => super.noSuchMethod(Invocation.method(#m1, []), _i2.Bar.one);
-        }
-        '''),
-      },
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => Bar('name');
+      }
+      enum Bar {
+        one,
+        two,
+      }
+      '''),
+      _containsAllOf(
+          '_i2.Bar m1() => super.noSuchMethod(Invocation.method(#m1, []), _i2.Bar.one);'),
     );
   });
 
-  test('creates dummy non-null return values for functions', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        class Foo {
-          void Function(int, [String]) m1() => (int i, [String s]) {};
-          void Function(Foo, {bool b}) m2() => (Foo f, {bool b}) {};
-          Foo Function() m3() => () => Foo();
-        }
-        '''),
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': dedent(r'''
-        import 'package:mockito/mockito.dart' as _i1;
-        import 'package:foo/foo.dart' as _i2;
+  test(
+      'creates a dummy non-null return function-typed value, with optional '
+      'parameters', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void Function(int, [String]) m() => (int i, [String s]) {};
+      }
+      '''),
+      _containsAllOf('void Function(int, [String]) m() => super',
+          '.noSuchMethod(Invocation.method(#m, []), (int __p0, [String __p1]) {});'),
+    );
+  });
 
-        class _FakeFoo extends _i1.Fake implements _i2.Foo {}
+  test(
+      'creates a dummy non-null return function-typed value, with named '
+      'parameters', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void Function(Foo, {bool b}) m() => (Foo f, {bool b}) {};
+      }
+      '''),
+      _containsAllOf('void Function(_i2.Foo, {bool b}) m() => super',
+          '.noSuchMethod(Invocation.method(#m, []), (_i2.Foo __p0, {bool b}) {});'),
+    );
+  });
 
-        /// A class which mocks [Foo].
-        ///
-        /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends _i1.Mock implements _i2.Foo {
-          void Function(int, [String]) m1() => super
-              .noSuchMethod(Invocation.method(#m1, []), (int __p0, [String __p1]) {});
-          void Function(_i2.Foo, {bool b}) m2() => super
-              .noSuchMethod(Invocation.method(#m2, []), (_i2.Foo __p0, {bool b}) {});
-          _i2.Foo Function() m3() =>
-              super.noSuchMethod(Invocation.method(#m3, []), () => _FakeFoo());
-        }
-        '''),
-      },
+  test(
+      'creates a dummy non-null return function-typed value, with non-core '
+      'return type', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Foo Function() m() => () => Foo();
+      }
+      '''),
+      _containsAllOf('_i2.Foo Function() m() =>',
+          'super.noSuchMethod(Invocation.method(#m, []), () => _FakeFoo());'),
     );
   });
 
@@ -1006,15 +1002,8 @@ void main() {
         '''),
       },
       outputs: {
-        'foo|test/foo_test.mocks.dart': dedent(r'''
-        import 'package:mockito/mockito.dart' as _i1;
-        import 'package:foo/foo.dart' as _i2;
-
-        /// A class which mocks [Foo].
-        ///
-        /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends _i1.Mock implements _i2.Foo {}
-        '''),
+        'foo|test/foo_test.mocks.dart': _containsAllOf(
+            'class MockFoo extends _i1.Mock implements _i2.Foo {}'),
       },
     );
   });
@@ -1052,6 +1041,35 @@ Future<void> _testWithNonNullable(Map<String, String> sourceAssets,
     ['non-nullable'],
   );
 }
+
+/// Test [MockBuilder] on a single source file, in a package which has opted
+/// into the non-nullable type system, and with the non-nullable experiment
+/// enabled.
+Future<void> _expectSingleNonNullableOutput(
+    String sourceAssetText,
+    /*String|Matcher<String>*/ dynamic output) async {
+  var packageConfig = PackageConfig([
+    Package('foo', Uri.file('/foo/'),
+        packageUriRoot: Uri.file('/foo/lib/'),
+        languageVersion: LanguageVersion(2, 9))
+  ]);
+
+  await withEnabledExperiments(
+    () async => await testBuilder(
+        buildMocks(BuilderOptions({})),
+        {
+          ...annotationsAsset,
+          ...simpleTestAsset,
+          'foo|lib/foo.dart': sourceAssetText,
+        },
+        outputs: {'foo|test/foo_test.mocks.dart': output},
+        packageConfig: packageConfig),
+    ['non-nullable'],
+  );
+}
+
+TypeMatcher<List<int>> _containsAllOf(a, [b]) => decodedMatches(
+    b == null ? allOf(contains(a)) : allOf(contains(a), contains(b)));
 
 /// Expect that [testBuilder], given [assets], throws an
 /// [InvalidMockitoAnnotationException] with a message containing [message].
