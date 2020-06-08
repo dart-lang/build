@@ -100,48 +100,63 @@ void main() {
     );
   });
 
-  test('generates a mock class and overrides method parameters', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        class Foo {
-          dynamic a(int m, String n) => n + 1;
-          dynamic b(List<int> list) => list.length;
-          void c(String one, [String two, String three = ""]) => print('$one$two$three');
-          void d(String one, {String two, String three = ""}) => print('$one$two$three');
-          Future<void> e(String s) async => print(s);
-          // TODO(srawlins): Figure out async*; doesn't work yet. `isGenerator`
-          // does not appear to be working.
-          // Stream<void> f(String s) async* => print(s);
-          // Iterable<void> g(String s) sync* => print(s);
-        }
-        '''),
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': dedent(r'''
-        import 'package:mockito/mockito.dart' as _i1;
-        import 'package:foo/foo.dart' as _i2;
-        import 'dart:async' as _i3;
+  test('overrides methods, matching optional positional parameters', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+          void m(int a, [int b, int c = 0]) {}
+      }
+      '''),
+      _containsAllOf('void m(int? a, [int? b, int? c = 0]) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a, b, c]));'),
+    );
+  });
 
-        /// A class which mocks [Foo].
-        ///
-        /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends _i1.Mock implements _i2.Foo {
-          dynamic a(int? m, String? n) =>
-              super.noSuchMethod(Invocation.method(#a, [m, n]));
-          dynamic b(List<int>? list) =>
-              super.noSuchMethod(Invocation.method(#b, [list]));
-          void c(String? one, [String? two, String? three = ""]) =>
-              super.noSuchMethod(Invocation.method(#c, [one, two, three]));
-          void d(String? one, {String? two, String? three = ""}) => super
-              .noSuchMethod(Invocation.method(#d, [one], {#two: two, #three: three}));
-          _i3.Future<void> e(String? s) async =>
-              super.noSuchMethod(Invocation.method(#e, [s]), Future.value(null));
-        }
-        '''),
-      },
+  test('overrides methods, matching named parameters', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+          void m(int a, {int b, int c = 0}) {}
+      }
+      '''),
+      _containsAllOf('void m(int? a, {int? b, int? c = 0}) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a], {#b: b, #c: c}));'),
+    );
+  });
+
+  test('overrides async methods legally', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Future<void> m() async => print(s);
+      }
+      '''),
+      _containsAllOf('_i3.Future<void> m() =>',
+          'super.noSuchMethod(Invocation.method(#m, []), Future.value(null));'),
+    );
+  });
+
+  test('overrides async* methods legally', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Stream<int> m() async* { yield 7; }
+      }
+      '''),
+      _containsAllOf('_i3.Stream<int> m() =>',
+          'super.noSuchMethod(Invocation.method(#m, []), Stream.empty());'),
+    );
+  });
+
+  test('overrides sync* methods legally', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Iterable<int> m() sync* { yield 7; }
+      }
+      '''),
+      _containsAllOf('Iterable<int> m() =>',
+          'super.noSuchMethod(Invocation.method(#m, []), []);'),
     );
   });
 
@@ -558,32 +573,61 @@ void main() {
     );
   });
 
-  test('does not override methods with a nullable return type', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
-          abstract class Foo {
-            void a();
-            b();
-            dynamic c();
-            void d();
-            int? f();
-          }
-          '''),
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': dedent(r'''
-          import 'package:mockito/mockito.dart' as _i1;
-          import 'package:foo/foo.dart' as _i2;
+  test('does not override methods with a void return type', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+        abstract class Foo {
+          void m();
+        }
+        '''),
+      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+    );
+  });
 
-          /// A class which mocks [Foo].
-          ///
-          /// See the documentation for Mockito's code generation for more information.
-          class MockFoo extends _i1.Mock implements _i2.Foo {}
-          '''),
-      },
+  test('does not override methods with an implicit dynamic return type',
+      () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+        abstract class Foo {
+          m();
+        }
+        '''),
+      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+    );
+  });
+
+  test('does not override methods with an explicit dynamic return type',
+      () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+        abstract class Foo {
+          dynamic m();
+        }
+        '''),
+      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+    );
+  });
+
+  test('does not override methods with a nullable return type', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+        abstract class Foo {
+          int? m();
+        }
+        '''),
+      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+    );
+  });
+
+  test('overrides methods with a non-nullable return type', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+        abstract class Foo {
+          int m();
+        }
+        '''),
+      _containsAllOf(
+          'int m() => super.noSuchMethod(Invocation.method(#m, []), 0);'),
     );
   });
 
@@ -876,11 +920,11 @@ void main() {
     await _expectSingleNonNullableOutput(
       dedent(r'''
       class Foo {
-        Future<bool> m1() async => false;
+        Future<bool> m() async => false;
       }
       '''),
-      _containsAllOf('_i3.Future<bool> m1() async =>',
-          'super.noSuchMethod(Invocation.method(#m1, []), Future.value(false));'),
+      _containsAllOf('_i3.Future<bool> m() =>',
+          'super.noSuchMethod(Invocation.method(#m, []), Future.value(false));'),
     );
   });
 

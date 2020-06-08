@@ -15,6 +15,7 @@
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart' as analyzer;
+import 'package:analyzer/dart/element/type_provider.dart';
 import 'package:analyzer/dart/element/type_system.dart';
 import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart';
@@ -62,6 +63,7 @@ class MockBuilder implements Builder {
     final mockLibrary = Library((b) {
       var mockLibraryInfo = _MockLibraryInfo(classesToMock,
           sourceLibIsNonNullable: sourceLibIsNonNullable,
+          typeProvider: entryLib.typeProvider,
           typeSystem: entryLib.typeSystem);
       b.body.addAll(mockLibraryInfo.fakeClasses);
       b.body.addAll(mockLibraryInfo.mockClasses);
@@ -89,6 +91,9 @@ class MockBuilder implements Builder {
 class _MockLibraryInfo {
   final bool sourceLibIsNonNullable;
 
+  /// The type provider which applies to the source library.
+  final TypeProvider typeProvider;
+
   /// The type system which applies to the source library.
   final TypeSystem typeSystem;
 
@@ -108,7 +113,7 @@ class _MockLibraryInfo {
   /// Build mock classes for [classesToMock], a list of classes obtained from a
   /// `@GenerateMocks` annotation.
   _MockLibraryInfo(List<DartObject> classesToMock,
-      {this.sourceLibIsNonNullable, this.typeSystem}) {
+      {this.sourceLibIsNonNullable, this.typeProvider, this.typeSystem}) {
     for (final classToMock in classesToMock) {
       final dartTypeToMock = classToMock.toTypeValue();
       if (dartTypeToMock == null) {
@@ -225,7 +230,6 @@ class _MockLibraryInfo {
   // TODO(srawlins): Include widening tests for typedefs, old-style function
   // parameters, function types.
   void _buildOverridingMethod(MethodBuilder builder, MethodElement method) {
-    // TODO(srawlins): generator methods like async*, sync*.
     var name = method.displayName;
     if (method.isOperator) name = 'operator$name';
     builder
@@ -234,13 +238,6 @@ class _MockLibraryInfo {
 
     if (method.typeParameters != null) {
       builder.types.addAll(method.typeParameters.map(_typeParameterReference));
-    }
-
-    if (method.isAsynchronous) {
-      builder.modifier =
-          method.isGenerator ? MethodModifier.asyncStar : MethodModifier.async;
-    } else if (method.isGenerator) {
-      builder.modifier = MethodModifier.syncStar;
     }
 
     // These two variables store the arguments that will be passed to the
@@ -293,6 +290,8 @@ class _MockLibraryInfo {
           .call([_dummyValue(typeArgument)]);
     } else if (type.isDartCoreInt) {
       return literalNum(0);
+    } else if (type.isDartCoreIterable) {
+      return literalList([]);
     } else if (type.isDartCoreList) {
       return literalList([]);
     } else if (type.isDartCoreMap) {
@@ -303,6 +302,8 @@ class _MockLibraryInfo {
       // This is perhaps a dangerous hack. The code, `{}`, is parsed as a Set
       // literal if it is used in a context which explicitly expects a Set.
       return literalMap({});
+    } else if (type.element?.declaration == typeProvider.streamElement) {
+      return refer('Stream').property('empty').call([]);
     } else if (type.isDartCoreString) {
       return literalString('');
     } else {
