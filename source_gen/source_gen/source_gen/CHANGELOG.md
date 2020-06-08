@@ -3,6 +3,7 @@
 * Streamlined error handling in all builders. There should be no user-visible
   behavior change.
 * Update minimum Dart SDK to `2.7.0`.
+* Changed the behavior of `LibraryReader.allElements` to include **extensions**
 
 ## 0.9.5
 

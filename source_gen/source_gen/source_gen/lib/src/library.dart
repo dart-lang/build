@@ -43,6 +43,7 @@ class LibraryReader {
       yield* cu.mixins;
       yield* cu.topLevelVariables;
       yield* cu.types;
+      yield* cu.extensions;
     }
   }
 
