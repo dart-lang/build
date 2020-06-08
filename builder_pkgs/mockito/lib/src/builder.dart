@@ -222,10 +222,8 @@ class _MockLibraryInfo {
   ///
   /// This new method just calls `super.noSuchMethod`, optionally passing a
   /// return value for methods with a non-nullable return type.
-  // TODO(srawlins): This method does no widening yet. Widen parameters. Include
-  // tests for typedefs, old-style function parameters, function types, type
-  // variables, non-nullable type variables (bounded to Object, I think),
-  // dynamic.
+  // TODO(srawlins): Include widening tests for typedefs, old-style function
+  // parameters, function types.
   void _buildOverridingMethod(MethodBuilder builder, MethodElement method) {
     // TODO(srawlins): generator methods like async*, sync*.
     var name = method.displayName;
@@ -252,13 +250,16 @@ class _MockLibraryInfo {
 
     for (final parameter in method.parameters) {
       if (parameter.isRequiredPositional) {
-        builder.requiredParameters.add(_matchingParameter(parameter));
+        builder.requiredParameters
+            .add(_matchingParameter(parameter, forceNullable: true));
         invocationPositionalArgs.add(refer(parameter.displayName));
       } else if (parameter.isOptionalPositional) {
-        builder.optionalParameters.add(_matchingParameter(parameter));
+        builder.optionalParameters
+            .add(_matchingParameter(parameter, forceNullable: true));
         invocationPositionalArgs.add(refer(parameter.displayName));
       } else if (parameter.isNamed) {
-        builder.optionalParameters.add(_matchingParameter(parameter));
+        builder.optionalParameters
+            .add(_matchingParameter(parameter, forceNullable: true));
         invocationNamedArgs[refer('#${parameter.displayName}')] =
             refer(parameter.displayName);
       }
@@ -377,13 +378,19 @@ class _MockLibraryInfo {
   }
 
   /// Returns a [Parameter] which matches [parameter].
+  ///
+  /// If [parameter] is unnamed (like a positional parameter in a function
+  /// type), a [defaultName] can be passed as the name.
+  ///
+  /// If the type needs to be nullable, rather than matching the nullability of
+  /// [parameter], use [forceNullable].
   Parameter _matchingParameter(ParameterElement parameter,
-      {String defaultName}) {
+      {String defaultName, bool forceNullable = false}) {
     var name = parameter.name?.isEmpty ?? false ? defaultName : parameter.name;
     return Parameter((pBuilder) {
       pBuilder
         ..name = name
-        ..type = _typeReference(parameter.type);
+        ..type = _typeReference(parameter.type, forceNullable: forceNullable);
       if (parameter.isNamed) pBuilder.named = true;
       if (parameter.defaultValueCode != null) {
         pBuilder.defaultTo = Code(parameter.defaultValueCode);
@@ -416,7 +423,6 @@ class _MockLibraryInfo {
   /// type to be nullable if it is non-nullable.
   ///
   /// This new setter just calls `super.noSuchMethod`.
-  // TODO(srawlins): This method does no widening yet.
   void _buildOverridingSetter(
       MethodBuilder builder, PropertyAccessorElement setter) {
     builder
@@ -430,7 +436,7 @@ class _MockLibraryInfo {
       if (parameter.isRequiredPositional) {
         builder.requiredParameters.add(Parameter((pBuilder) => pBuilder
           ..name = parameter.displayName
-          ..type = _typeReference(parameter.type)));
+          ..type = _typeReference(parameter.type, forceNullable: true)));
         invocationPositionalArgs.add(refer(parameter.displayName));
       }
     }
@@ -458,6 +464,9 @@ class _MockLibraryInfo {
 
   /// Create a reference for [type], properly referencing all attached types.
   ///
+  /// If the type needs to be nullable, rather than matching the nullability of
+  /// [type], use [forceNullable].
+  ///
   /// This creates proper references for:
   /// * InterfaceTypes (classes, generic classes),
   /// * FunctionType parameters (like `void callback(int i)`),
@@ -466,12 +475,13 @@ class _MockLibraryInfo {
   /// * type variables.
   // TODO(srawlins): Contribute this back to a common location, like
   // package:source_gen?
-  Reference _typeReference(analyzer.DartType type) {
+  Reference _typeReference(analyzer.DartType type,
+      {bool forceNullable = false}) {
     if (type is analyzer.InterfaceType) {
       return TypeReference((b) {
         b
           ..symbol = type.name
-          ..isNullable = typeSystem.isPotentiallyNullable(type)
+          ..isNullable = forceNullable || typeSystem.isPotentiallyNullable(type)
           ..url = _typeImport(type)
           ..types.addAll(type.typeArguments.map(_typeReference));
       });
@@ -481,6 +491,7 @@ class _MockLibraryInfo {
         // [type] represents a FunctionTypedFormalParameter.
         return FunctionType((b) {
           b
+            // TODO(srawlins): Fix FunctionType to take an `isNullable` value.
             ..returnType = _typeReference(type.returnType)
             ..requiredParameters
                 .addAll(type.normalParameterTypes.map(_typeReference))
@@ -495,7 +506,8 @@ class _MockLibraryInfo {
         var typedef = element.enclosingElement;
         b
           ..symbol = typedef.name
-          ..url = _typeImport(type);
+          ..url = _typeImport(type)
+          ..isNullable = forceNullable || typeSystem.isNullable(type);
         for (var typeArgument in type.typeArguments) {
           b.types.add(_typeReference(typeArgument));
         }
@@ -504,7 +516,7 @@ class _MockLibraryInfo {
       return TypeReference((b) {
         b
           ..symbol = type.name
-          ..isNullable = typeSystem.isNullable(type);
+          ..isNullable = forceNullable || typeSystem.isNullable(type);
       });
     } else {
       return refer(type.displayName, _typeImport(type));
