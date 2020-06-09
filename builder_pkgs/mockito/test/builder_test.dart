@@ -920,35 +920,6 @@ void main() {
     );
   });
 
-  test('deduplicates fake classes', () async {
-    await _expectSingleNonNullableOutput(
-      dedent(r'''
-      class Foo {
-        Bar m1() => Bar('name1');
-        Bar m2() => Bar('name2');
-      }
-      class Bar {
-        final String name;
-        Bar(this.name);
-      }
-      '''),
-      dedent(r'''
-      import 'package:mockito/mockito.dart' as _i1;
-      import 'package:foo/foo.dart' as _i2;
-
-      class _FakeBar extends _i1.Fake implements _i2.Bar {}
-
-      /// A class which mocks [Foo].
-      ///
-      /// See the documentation for Mockito's code generation for more information.
-      class MockFoo extends _i1.Mock implements _i2.Foo {
-        _i2.Bar m1() => super.noSuchMethod(Invocation.method(#m1, []), _FakeBar());
-        _i2.Bar m2() => super.noSuchMethod(Invocation.method(#m2, []), _FakeBar());
-      }
-      '''),
-    );
-  });
-
   test('creates dummy non-null return values for enums', () async {
     await _expectSingleNonNullableOutput(
       dedent(r'''
@@ -1007,13 +978,39 @@ void main() {
     );
   });
 
+  test('deduplicates fake classes', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => Bar('name1');
+        Bar m2() => Bar('name2');
+      }
+      class Bar {
+        final String name;
+        Bar(this.name);
+      }
+      '''),
+      dedent(r'''
+      import 'package:mockito/mockito.dart' as _i1;
+      import 'package:foo/foo.dart' as _i2;
+
+      class _FakeBar extends _i1.Fake implements _i2.Bar {}
+
+      /// A class which mocks [Foo].
+      ///
+      /// See the documentation for Mockito's code generation for more information.
+      class MockFoo extends _i1.Mock implements _i2.Foo {
+        _i2.Bar m1() => super.noSuchMethod(Invocation.method(#m1, []), _FakeBar());
+        _i2.Bar m2() => super.noSuchMethod(Invocation.method(#m2, []), _FakeBar());
+      }
+      '''),
+    );
+  });
+
   test('throws when GenerateMocks is missing an argument', () async {
     _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        class Foo {}
-        '''),
         'foo|test/foo_test.dart': dedent('''
         import 'package:mockito/annotations.dart';
         // Missing required argument to GenerateMocks.
@@ -1047,9 +1044,6 @@ void main() {
     _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        class Foo {}
-        '''),
         'foo|test/foo_test.dart': dedent('''
         import 'package:mockito/annotations.dart';
         @GenerateMocks([7])
@@ -1096,6 +1090,21 @@ void main() {
         '''),
       },
       message: contains('includes an extension'),
+    );
+  });
+
+  test('throws when GenerateMocks references a non-subtypeable type', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        'foo|test/foo_test.dart': dedent('''
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([int])
+        void main() {}
+        '''),
+      },
+      message: contains(
+          'The "classes" argument includes a non-subtypable type: int'),
     );
   });
 

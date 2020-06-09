@@ -130,8 +130,12 @@ class _MockLibraryInfo {
               'The "classes" argument includes an enum: '
               '${elementToMock.displayName}');
         }
-        // TODO(srawlins): Catch when someone tries to generate mocks for an
-        // un-subtypable class, like bool, String, FutureOr, etc.
+        if (typeProvider.nonSubtypableClasses.contains(elementToMock)) {
+          throw InvalidMockitoAnnotationException(
+              'The "classes" argument includes a non-subtypable type: '
+              '${elementToMock.displayName}. It is illegal to subtype this '
+              'type.');
+        }
         mockClasses.add(_buildMockClass(dartTypeToMock, elementToMock));
       } else if (elementToMock is GenericFunctionTypeElement &&
           elementToMock.enclosingElement is FunctionTypeAliasElement) {
