@@ -44,59 +44,51 @@ void main() {}
 
 void main() {
   test(
-      'generates mock for an imported class but does not override private '
-      'or static methods or methods w/ zero parameters', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        class Foo {
-          dynamic a() => 7;
-          int _b(int x) => 8;
-          static int c(int y) => 9;
-        }
-        '''),
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': dedent(r'''
-        import 'package:mockito/mockito.dart' as _i1;
-        import 'package:foo/foo.dart' as _i2;
-
-        /// A class which mocks [Foo].
-        ///
-        /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends _i1.Mock implements _i2.Foo {}
-        '''),
-      },
+      'generates a mock class but does not override methods w/ zero parameters',
+      () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        dynamic a() => 7;
+      }
+      '''),
+      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
     );
   });
 
-  test(
-      'generates mock for an imported class but does not override any '
-      'extension methods', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        extension X on Foo {
-          dynamic x(int m, String n) => n + 1;
-        }
-        class Foo {}
-        '''),
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': dedent(r'''
-        import 'package:mockito/mockito.dart' as _i1;
-        import 'package:foo/foo.dart' as _i2;
+  test('generates a mock class but does not override private methods',
+      () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        int _b(int x) => 8;
+      }
+      '''),
+      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+    );
+  });
 
-        /// A class which mocks [Foo].
-        ///
-        /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends _i1.Mock implements _i2.Foo {}
-        '''),
-      },
+  test('generates a mock class but does not override static methods', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        static int c(int y) => 9;
+      }
+      '''),
+      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+    );
+  });
+
+  test('generates a mock class but does not override any extension methods',
+      () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      extension X on Foo {
+        dynamic x(int m, String n) => n + 1;
+      }
+      class Foo {}
+      '''),
+      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
     );
   });
 
@@ -185,23 +177,12 @@ void main() {
   });
 
   test('generates generic mock classes', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        class Foo<T, U> {}
-        '''),
-        'foo|test/foo_test.dart': '''
-        import 'package:foo/foo.dart';
-        import 'package:mockito/annotations.dart';
-        @GenerateMocks([Foo])
-        void main() {}
-        '''
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': _containsAllOf(
-            'class MockFoo<T, U> extends _i1.Mock implements _i2.Foo<T, U> {}'),
-      },
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo<T, U> {}
+      '''),
+      _containsAllOf(
+          'class MockFoo<T, U> extends _i1.Mock implements _i2.Foo<T, U> {}'),
     );
   });
 
@@ -229,35 +210,30 @@ void main() {
     );
   });
 
-  test('writes non-interface types w/o imports', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        class Foo<T> {
-          void f(dynamic a, int b) {}
-          void g(T c) {}
-          void h<U>(U d) {}
-        }
-        '''),
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': dedent(r'''
-        import 'package:mockito/mockito.dart' as _i1;
-        import 'package:foo/foo.dart' as _i2;
+  test('writes dynamic, void w/o import prefix', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void m(dynamic a, int b) {}
+      }
+      '''),
+      _containsAllOf(
+        'void m(dynamic a, int? b) =>',
+        'super.noSuchMethod(Invocation.method(#m, [a, b]));',
+      ),
+    );
+  });
 
-        /// A class which mocks [Foo].
-        ///
-        /// See the documentation for Mockito's code generation for more information.
-        class MockFoo<T> extends _i1.Mock implements _i2.Foo<T> {
-          void f(dynamic a, int? b) =>
-              super.noSuchMethod(Invocation.method(#f, [a, b]));
-          void g(T? c) => super.noSuchMethod(Invocation.method(#g, [c]));
-          void h<U>(U? d) => super.noSuchMethod(Invocation.method(#h, [d]));
+  test('writes type variables types w/o import prefixes', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+        class Foo {
+          void m<T>(T a) {}
         }
         '''),
-      },
+      _containsAllOf(
+        'void m<T>(T? a) => super.noSuchMethod(Invocation.method(#m, [a]));',
+      ),
     );
   });
 
@@ -1031,8 +1007,26 @@ void main() {
     );
   });
 
+  test('throws when GenerateMocks is missing an argument', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {}
+        '''),
+        'foo|test/foo_test.dart': dedent('''
+        import 'package:mockito/annotations.dart';
+        // Missing required argument to GenerateMocks.
+        @GenerateMocks()
+        void main() {}
+        '''),
+      },
+      message: contains('The GenerateMocks "classes" argument is missing'),
+    );
+  });
+
   test('throws when GenerateMocks references an unresolved type', () async {
-    expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|lib/foo.dart': dedent(r'''
@@ -1045,19 +1039,18 @@ void main() {
         void main() {}
         '''),
       },
-      message: 'The "classes" argument has unknown types',
+      message: contains('includes an unknown type'),
     );
   });
 
   test('throws when GenerateMocks references a non-type', () async {
-    expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|lib/foo.dart': dedent(r'''
         class Foo {}
         '''),
         'foo|test/foo_test.dart': dedent('''
-        // missing foo.dart import.
         import 'package:mockito/annotations.dart';
         @GenerateMocks([7])
         void main() {}
@@ -1068,7 +1061,7 @@ void main() {
   });
 
   test('throws when GenerateMocks references a typedef', () async {
-    expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -1081,7 +1074,7 @@ void main() {
   });
 
   test('throws when GenerateMocks references an enum', () async {
-    expectBuilderThrows(
+    _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -1090,6 +1083,19 @@ void main() {
         '''),
       },
       message: 'The "classes" argument includes an enum: Foo',
+    );
+  });
+
+  test('throws when GenerateMocks references an extension', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        extension Foo on String {}
+        '''),
+      },
+      message: contains('includes an extension'),
     );
   });
 
@@ -1133,7 +1139,7 @@ Future<void> _testPreNonNullable(Map<String, String> sourceAssets,
 /// Test [MockBuilder] in a package which has opted into the non-nullable type
 /// system, and with the non-nullable experiment enabled.
 Future<void> _testWithNonNullable(Map<String, String> sourceAssets,
-    {Map<String, /*String|Matcher<String>*/ dynamic> outputs}) async {
+    {Map<String, /*String|Matcher<List<int>>*/ dynamic> outputs}) async {
   var packageConfig = PackageConfig([
     Package('foo', Uri.file('/foo/'),
         packageUriRoot: Uri.file('/foo/lib/'),
@@ -1151,7 +1157,7 @@ Future<void> _testWithNonNullable(Map<String, String> sourceAssets,
 /// enabled.
 Future<void> _expectSingleNonNullableOutput(
     String sourceAssetText,
-    /*String|Matcher<String>*/ dynamic output) async {
+    /*String|Matcher<List<int>>*/ dynamic output) async {
   var packageConfig = PackageConfig([
     Package('foo', Uri.file('/foo/'),
         packageUriRoot: Uri.file('/foo/lib/'),
@@ -1177,12 +1183,13 @@ TypeMatcher<List<int>> _containsAllOf(a, [b]) => decodedMatches(
 
 /// Expect that [testBuilder], given [assets], throws an
 /// [InvalidMockitoAnnotationException] with a message containing [message].
-void expectBuilderThrows(
-    {@required Map<String, String> assets, @required String message}) {
+void _expectBuilderThrows(
+    {@required Map<String, String> assets,
+    @required dynamic /*String|Matcher<List<int>>*/ message}) {
   expect(
       () async => await testBuilder(buildMocks(BuilderOptions({})), assets),
       throwsA(TypeMatcher<InvalidMockitoAnnotationException>()
-          .having((e) => e.message, 'message', contains(message))));
+          .having((e) => e.message, 'message', message)));
 }
 
 /// Dedent [input], so that each line is shifted to the left, so that the first

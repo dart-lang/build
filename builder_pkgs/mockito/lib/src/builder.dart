@@ -52,10 +52,12 @@ class MockBuilder implements Builder {
       if (annotation == null) continue;
       final generateMocksValue = annotation.computeConstantValue();
       // TODO(srawlins): handle `generateMocksValue == null`?
+      // I am unable to think of a case which results in this situation.
       final classesField = generateMocksValue.getField('classes');
       if (classesField.isNull) {
         throw InvalidMockitoAnnotationException(
-            'The "classes" argument has unknown types');
+            'The GenerateMocks "classes" argument is missing, includes an '
+            'unknown type, or includes an extension');
       }
       classesToMock.addAll(classesField.toListValue());
     }
