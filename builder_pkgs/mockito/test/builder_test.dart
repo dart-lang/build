@@ -33,6 +33,15 @@ class GenerateMocks {
 '''
 };
 
+const mockitoAssets = {
+  'mockito|lib/mockito.dart': '''
+export 'src/mock.dart';
+''',
+  'mockito|lib/src/mock.dart': '''
+class Mock {}
+'''
+};
+
 const simpleTestAsset = {
   'foo|test/foo_test.dart': '''
 import 'package:foo/foo.dart';
@@ -165,6 +174,60 @@ void main() {
         import 'package:mockito/annotations.dart';
         @GenerateMocks([Foo, Bar])
         void main() {}
+        '''
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': _containsAllOf(
+          'class MockFoo extends _i1.Mock implements _i2.Foo {}',
+          'class MockBar extends _i1.Mock implements _i2.Bar {}',
+        ),
+      },
+    );
+  });
+
+  test('deduplicates classes listed multiply in GenerateMocks', () async {
+    await _testWithNonNullable(
+      {
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {}
+        '''),
+        'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([Foo, Foo])
+        void main() {}
+        '''
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+        import 'package:foo/foo.dart' as _i2;
+
+        /// A class which mocks [Foo].
+        ///
+        /// See the documentation for Mockito's code generation for more information.
+        class MockFoo extends _i1.Mock implements _i2.Foo {}
+        '''),
+      },
+    );
+  });
+
+  test('generates mock classes from multiple annotations', () async {
+    await _testWithNonNullable(
+      {
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {}
+        class Bar {}
+        '''),
+        'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([Foo])
+        void fooTests() {}
+        @GenerateMocks([Bar])
+        void barTests() {}
         '''
       },
       outputs: {
@@ -1037,6 +1100,74 @@ void main() {
         '''),
       },
       message: contains('includes an unknown type'),
+    );
+  });
+
+  test('throws when two distinct classes with the same name are mocked',
+      () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        'foo|lib/a.dart': dedent(r'''
+        class Foo {}
+        '''),
+        'foo|lib/b.dart': dedent(r'''
+        class Foo {}
+        '''),
+        'foo|test/foo_test.dart': dedent('''
+        import 'package:foo/a.dart' as a;
+        import 'package:foo/b.dart' as b;
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([a.Foo, b.Foo])
+        void main() {}
+        '''),
+      },
+      message: contains(
+          'contains two classes with the same name: Foo. One declared in '
+          '/foo/lib/a.dart, the other in /foo/lib/b.dart'),
+    );
+  });
+
+  test('throws when a mock class of the same name already exists', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {}
+        '''),
+        'foo|test/foo_test.dart': dedent('''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([Foo])
+        void main() {}
+        class MockFoo {}
+        '''),
+      },
+      message: contains(
+          'contains a class which conflicts with another class declared in '
+          'this library: MockFoo'),
+    );
+  });
+
+  test('throws when a mock class of class-to-mock already exists', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...mockitoAssets,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {}
+        '''),
+        'foo|test/foo_test.dart': dedent('''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        import 'package:mockito/mockito.dart';
+        @GenerateMocks([Foo])
+        void main() {}
+        class FakeFoo extends Mock implements Foo {}
+        '''),
+      },
+      message: contains(
+          'contains a class which appears to already be mocked inline: FakeFoo'),
     );
   });
 

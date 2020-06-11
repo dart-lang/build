@@ -39,9 +39,10 @@ class MockBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
     final entryLib = await buildStep.inputLibrary;
+    if (entryLib == null) return;
     final sourceLibIsNonNullable = entryLib.isNonNullableByDefault;
     final mockLibraryAsset = buildStep.inputId.changeExtension('.mocks.dart');
-    final classesToMock = <DartObject>[];
+    final objectsToMock = <DartObject>{};
 
     for (final element in entryLib.topLevelElements) {
       final annotation = element.metadata.firstWhere(
@@ -59,8 +60,13 @@ class MockBuilder implements Builder {
             'The GenerateMocks "classes" argument is missing, includes an '
             'unknown type, or includes an extension');
       }
-      classesToMock.addAll(classesField.toListValue());
+      objectsToMock.addAll(classesField.toListValue());
     }
+
+    var classesToMock =
+        _mapAnnotationValuesToClasses(objectsToMock, entryLib.typeProvider);
+
+    _checkClassesToMockAreValid(classesToMock, entryLib);
 
     final mockLibrary = Library((b) {
       var mockLibraryInfo = _MockLibraryInfo(classesToMock,
@@ -83,6 +89,99 @@ class MockBuilder implements Builder {
 
     await buildStep.writeAsString(mockLibraryAsset, mockLibraryContent);
   }
+
+  /// Map the values passed to the GenerateMocks annotation to the classes which
+  /// they represent.
+  ///
+  /// This function is responsible for ensuring that each value is an
+  /// appropriate target for mocking. It will throw an
+  /// [InvalidMockitoAnnotationException] under various conditions.
+  List<analyzer.DartType> _mapAnnotationValuesToClasses(
+      Iterable<DartObject> objectsToMock, TypeProvider typeProvider) {
+    var classesToMock = <analyzer.DartType>[];
+
+    for (final objectToMock in objectsToMock) {
+      final typeToMock = objectToMock.toTypeValue();
+      if (typeToMock == null) {
+        throw InvalidMockitoAnnotationException(
+            'The "classes" argument includes a non-type: $objectToMock');
+      }
+
+      final elementToMock = typeToMock.element;
+      if (elementToMock is ClassElement) {
+        if (elementToMock.isEnum) {
+          throw InvalidMockitoAnnotationException(
+              'The "classes" argument includes an enum: '
+              '${elementToMock.displayName}');
+        }
+        if (typeProvider.nonSubtypableClasses.contains(elementToMock)) {
+          throw InvalidMockitoAnnotationException(
+              'The "classes" argument includes a non-subtypable type: '
+              '${elementToMock.displayName}. It is illegal to subtype this '
+              'type.');
+        }
+        classesToMock.add(typeToMock);
+      } else if (elementToMock is GenericFunctionTypeElement &&
+          elementToMock.enclosingElement is FunctionTypeAliasElement) {
+        throw InvalidMockitoAnnotationException(
+            'The "classes" argument includes a typedef: '
+            '${elementToMock.enclosingElement.displayName}');
+      } else {
+        throw InvalidMockitoAnnotationException(
+            'The "classes" argument includes a non-class: '
+            '${elementToMock.displayName}');
+      }
+    }
+    return classesToMock;
+  }
+
+  void _checkClassesToMockAreValid(
+      List<analyzer.DartType> classesToMock, LibraryElement entryLib) {
+    var classesInEntryLib = entryLib.topLevelElements.whereType<ClassElement>();
+    var classNamesToMock = <String, ClassElement>{};
+    for (var class_ in classesToMock) {
+      var name = class_.element.name;
+      if (classNamesToMock.containsKey(name)) {
+        var firstSource = classNamesToMock[name].source.fullName;
+        var secondSource = class_.element.source.fullName;
+        // TODO(srawlins): Support an optional @GenerateMocks API that allows
+        // users to choose names. One class might be named MockFoo and the other
+        // named MockPbFoo, for example.
+        throw InvalidMockitoAnnotationException(
+            'The GenerateMocks "classes" argument contains two classes with '
+            'the same name: $name. One declared in $firstSource, the other in '
+            '$secondSource.');
+      }
+      classNamesToMock[name] = class_.element as ClassElement;
+    }
+    var classNamesToGenerate = classNamesToMock.keys.map((name) => 'Mock$name');
+    classNamesToMock.forEach((name, element) {
+      var conflictingClass = classesInEntryLib.firstWhere(
+          (c) => c.name == 'Mock${element.name}',
+          orElse: () => null);
+      if (conflictingClass != null) {
+        throw InvalidMockitoAnnotationException(
+            'The GenerateMocks "classes" argument contains a class which '
+            'conflicts with another class declared in this library: '
+            '${conflictingClass.name}');
+      }
+      var preexistingMock = classesInEntryLib.firstWhere(
+          (c) =>
+              c.interfaces.map((type) => type.element).contains(element) &&
+              _isMockClass(c.supertype),
+          orElse: () => null);
+      if (preexistingMock != null) {
+        throw InvalidMockitoAnnotationException(
+            'The GenerateMocks "classes" argument contains a class which '
+            'appears to already be mocked inline: ${preexistingMock.name}');
+      }
+    });
+  }
+
+  /// Return whether [type] is the Mock class declared by mockito.
+  bool _isMockClass(analyzer.InterfaceType type) =>
+      type.element.name == 'Mock' &&
+      type.element.source.fullName.endsWith('lib/src/mock.dart');
 
   @override
   final buildExtensions = const {
@@ -114,44 +213,16 @@ class _MockLibraryInfo {
 
   /// Build mock classes for [classesToMock], a list of classes obtained from a
   /// `@GenerateMocks` annotation.
-  _MockLibraryInfo(List<DartObject> classesToMock,
+  _MockLibraryInfo(List<analyzer.DartType> classesToMock,
       {this.sourceLibIsNonNullable, this.typeProvider, this.typeSystem}) {
     for (final classToMock in classesToMock) {
-      final dartTypeToMock = classToMock.toTypeValue();
-      if (dartTypeToMock == null) {
-        throw InvalidMockitoAnnotationException(
-            'The "classes" argument includes a non-type: $classToMock');
-      }
-
-      final elementToMock = dartTypeToMock.element;
-      if (elementToMock is ClassElement) {
-        if (elementToMock.isEnum) {
-          throw InvalidMockitoAnnotationException(
-              'The "classes" argument includes an enum: '
-              '${elementToMock.displayName}');
-        }
-        if (typeProvider.nonSubtypableClasses.contains(elementToMock)) {
-          throw InvalidMockitoAnnotationException(
-              'The "classes" argument includes a non-subtypable type: '
-              '${elementToMock.displayName}. It is illegal to subtype this '
-              'type.');
-        }
-        mockClasses.add(_buildMockClass(dartTypeToMock, elementToMock));
-      } else if (elementToMock is GenericFunctionTypeElement &&
-          elementToMock.enclosingElement is FunctionTypeAliasElement) {
-        throw InvalidMockitoAnnotationException(
-            'The "classes" argument includes a typedef: '
-            '${elementToMock.enclosingElement.displayName}');
-      } else {
-        throw InvalidMockitoAnnotationException(
-            'The "classes" argument includes a non-class: '
-            '${elementToMock.displayName}');
-      }
+      mockClasses.add(_buildMockClass(classToMock));
     }
   }
 
-  Class _buildMockClass(analyzer.DartType dartType, ClassElement classToMock) {
-    final className = dartType.displayName;
+  Class _buildMockClass(analyzer.DartType dartType) {
+    final classToMock = dartType.element as ClassElement;
+    final className = dartType.name;
 
     return Class((cBuilder) {
       cBuilder
@@ -330,6 +401,9 @@ class _MockLibraryInfo {
         return _typeReference(dartType).property(
             elementToFake.fields.firstWhere((f) => f.isEnumConstant).name);
       } else {
+        // There is a potential for these names to collide. If one mock class
+        // requires a fake for a certain Foo, and another mock class requires a
+        // fake for a different Foo, they will collide.
         var fakeName = '_Fake${dartType.name}';
         // Only make one fake class for each class that needs to be faked.
         if (!fakedClassElements.contains(elementToFake)) {
