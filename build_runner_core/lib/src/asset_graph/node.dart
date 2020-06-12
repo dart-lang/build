@@ -245,14 +245,10 @@ class PostProcessAnchorNode extends AssetNode with _SyntheticAssetNode {
       {this.previousInputsDigest})
       : super._forMixins(id);
 
-  factory PostProcessAnchorNode.forInputAndAction(
-      AssetId primaryInput, int actionNumber, AssetId builderOptionsId) {
-    return PostProcessAnchorNode(
-        primaryInput.addExtension('.post_anchor.$actionNumber'),
-        primaryInput,
-        actionNumber,
-        builderOptionsId);
-  }
+  PostProcessAnchorNode.forInputAndAction(
+      AssetId primaryInput, int actionNumber, AssetId builderOptionsId)
+      : this(primaryInput.addExtension('.post_anchor.$actionNumber'),
+            primaryInput, actionNumber, builderOptionsId);
 }
 
 /// A node representing a glob ran from a builder.
