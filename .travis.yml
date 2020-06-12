@@ -85,13 +85,13 @@ jobs:
       env: PKGS="build_daemon"
       script: ./tool/travis.sh test_12
     - stage: unit_test
-      name: "SDK: dev; PKG: build_modules; TASKS: `dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs -- -P presubmit --test-randomize-ordering-seed=random`"
+      name: "SDK: dev; PKG: build_modules; TASKS: `dart $(pub run build_runner help >/dev/null; pub run build_runner generate-build-script) test --delete-conflicting-outputs -- -P presubmit --test-randomize-ordering-seed=random`"
       dart: dev
       os: linux
       env: PKGS="build_modules"
       script: ./tool/travis.sh command_4
     - stage: unit_test
-      name: "SDK: dev; PKG: build_modules; TASKS: `dart $(pub run build_runner generate-build-script) test --delete-conflicting-outputs -- -P presubmit --test-randomize-ordering-seed=random`"
+      name: "SDK: dev; PKG: build_modules; TASKS: `dart $(pub run build_runner help >/dev/null; pub run build_runner generate-build-script) test --delete-conflicting-outputs -- -P presubmit --test-randomize-ordering-seed=random`"
       dart: dev
       os: windows
       env: PKGS="build_modules"
