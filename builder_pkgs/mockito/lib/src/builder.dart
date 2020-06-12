@@ -572,7 +572,8 @@ class _MockLibraryInfo {
         // [type] represents a FunctionTypedFormalParameter.
         return FunctionType((b) {
           b
-            // TODO(srawlins): Fix FunctionType to take an `isNullable` value.
+            ..isNullable =
+                forceNullable || typeSystem.isPotentiallyNullable(type)
             ..returnType = _typeReference(type.returnType)
             ..requiredParameters
                 .addAll(type.normalParameterTypes.map(_typeReference))

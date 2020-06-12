@@ -365,47 +365,55 @@ void main() {
     );
   });
 
-  test('imports libraries for function types with external types', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        import 'dart:async';
-        class Foo {
-          dynamic f(Foo c()) {}
-          dynamic g(void c(Foo f)) {}
-          dynamic h(void c(Foo f, [Foo g])) {}
-          dynamic i(void c(Foo f, {Foo g})) {}
-          dynamic j(Foo Function() c) {}
-          dynamic k(void Function(Foo f) c) {}
-        }
-        '''),
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': dedent(r'''
-        import 'package:mockito/mockito.dart' as _i1;
-        import 'package:foo/foo.dart' as _i2;
+  test('prefixes parameter type on generic function-typed parameter', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      import 'dart:async';
+      class Foo {
+        dynamic m(void Function(Foo f) a) {}
+      }
+      '''),
+      _containsAllOf('dynamic m(void Function(_i2.Foo)? a) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a]));'),
+    );
+  });
 
-        /// A class which mocks [Foo].
-        ///
-        /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends _i1.Mock implements _i2.Foo {
-          dynamic f(_i2.Foo Function() c) =>
-              super.noSuchMethod(Invocation.method(#f, [c]));
-          dynamic g(void Function(_i2.Foo) c) =>
-              super.noSuchMethod(Invocation.method(#g, [c]));
-          dynamic h(void Function(_i2.Foo, [_i2.Foo]) c) =>
-              super.noSuchMethod(Invocation.method(#h, [c]));
-          dynamic i(void Function(_i2.Foo, {_i2.Foo g}) c) =>
-              super.noSuchMethod(Invocation.method(#i, [c]));
-          dynamic j(_i2.Foo Function() c) =>
-              super.noSuchMethod(Invocation.method(#j, [c]));
-          dynamic k(void Function(_i2.Foo) c) =>
-              super.noSuchMethod(Invocation.method(#k, [c]));
-        }
-        '''),
-      },
+  test('prefixes return type on generic function-typed parameter', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      import 'dart:async';
+      class Foo {
+        void m(Foo Function() a) {}
+      }
+      '''),
+      _containsAllOf('void m(_i2.Foo Function()? a) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a]));'),
+    );
+  });
+
+  test('prefixes parameter type on function-typed parameter', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      import 'dart:async';
+      class Foo {
+        void m(void a(Foo f)) {}
+      }
+      '''),
+      _containsAllOf('void m(void Function(_i2.Foo)? a) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a]));'),
+    );
+  });
+
+  test('prefixes return type on function-typed parameter', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      import 'dart:async';
+      class Foo {
+        void m(Foo a()) {}
+      }
+      '''),
+      _containsAllOf('void m(_i2.Foo Function()? a) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a]));'),
     );
   });
 
@@ -456,9 +464,7 @@ void main() {
           void m(int? Function() a, int Function() b);
         }
         '''),
-      // `a` and `b` should be nullable. code_builder needs a fix, allowing a
-      // FunctionTypeBuilder to take an `isNullable` value.
-      _containsAllOf('void m(int? Function() a, int Function() b) =>',
+      _containsAllOf('void m(int? Function()? a, int Function()? b) =>',
           'super.noSuchMethod(Invocation.method(#m, [a, b]));'),
     );
   });
@@ -472,9 +478,7 @@ void main() {
           void m(void Function(int?) a, void Function(int) b);
         }
         '''),
-      // `a` and `b` should be nullable. code_builder needs a fix, allowing a
-      // FunctionTypeBuilder to take an `isNullable` value.
-      _containsAllOf('void m(void Function(int?) a, void Function(int) b) =>',
+      _containsAllOf('void m(void Function(int?)? a, void Function(int)? b) =>',
           'super.noSuchMethod(Invocation.method(#m, [a, b]));'),
     );
   });
@@ -487,9 +491,7 @@ void main() {
           void m(int? a(), int b());
         }
         '''),
-      // `a` and `b` should be nullable. code_builder needs a fix, allowing a
-      // FunctionTypeBuilder to take an `isNullable` value.
-      _containsAllOf('void m(int? Function() a, int Function() b) =>',
+      _containsAllOf('void m(int? Function()? a, int Function()? b) =>',
           'super.noSuchMethod(Invocation.method(#m, [a, b]));'),
     );
   });
@@ -503,9 +505,7 @@ void main() {
           void m(void a(int? x), void b(int x));
         }
         '''),
-      // `a` and `b` should be nullable. code_builder needs a fix, allowing a
-      // FunctionTypeBuilder to take an `isNullable` value.
-      _containsAllOf('void m(void Function(int?) a, void Function(int) b) =>',
+      _containsAllOf('void m(void Function(int?)? a, void Function(int)? b) =>',
           'super.noSuchMethod(Invocation.method(#m, [a, b]));'),
     );
   });
@@ -710,8 +710,6 @@ void main() {
         '''),
       },
       outputs: {
-        // TODO(srawlins): The getter will appear when it has a non-nullable
-        // return type.
         'foo|test/foo_test.mocks.dart': dedent(r'''
         import 'package:mockito/mockito.dart' as _i1;
         import 'package:foo/foo.dart' as _i2;
