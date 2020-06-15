@@ -31,6 +31,11 @@ var cat = MockCat();
 By declaring a class which extends Mockito's Mock class and implements the Cat
 class under test, we have a class which supports stubbing and verifying.
 
+**Using Dart's new null safety feature?** Read the [NULL_SAFETY_README][] for
+help on creating mocks of classes featuring non-nullable types.
+
+[NULL_SAFETY_README]: https://github.com/dart-lang/mockito/blob/master/NULL_SAFETY_README.md
+
 ## Let's verify some behaviour!
 
 ```dart
