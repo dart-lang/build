@@ -145,7 +145,7 @@ void main() {
       }
       '''),
       _containsAllOf('_i3.Stream<int> m() =>',
-          'super.noSuchMethod(Invocation.method(#m, []), Stream.empty());'),
+          'super.noSuchMethod(Invocation.method(#m, []), Stream<int>.empty());'),
     );
   });
 
@@ -534,40 +534,63 @@ void main() {
     );
   });
 
-  test('matches nullability of return types', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
+  test('matches nullability of non-nullable return type', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
         abstract class Foo {
-          int f(int a);
-          int? g(int a);
-          List<int?> h(int a);
-          List<int> i(int a);
-          j(int a);
-          T? k<T extends int>(int a);
+          int m(int a);
         }
         '''),
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': dedent(r'''
-        import 'package:mockito/mockito.dart' as _i1;
-        import 'package:foo/foo.dart' as _i2;
+      _containsAllOf(
+          'int m(int? a) => super.noSuchMethod(Invocation.method(#m, [a]), 0);'),
+    );
+  });
 
-        /// A class which mocks [Foo].
-        ///
-        /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends _i1.Mock implements _i2.Foo {
-          int f(int? a) => super.noSuchMethod(Invocation.method(#f, [a]), 0);
-          int? g(int? a) => super.noSuchMethod(Invocation.method(#g, [a]));
-          List<int?> h(int? a) => super.noSuchMethod(Invocation.method(#h, [a]), []);
-          List<int> i(int? a) => super.noSuchMethod(Invocation.method(#i, [a]), []);
-          dynamic j(int? a) => super.noSuchMethod(Invocation.method(#j, [a]));
-          T? k<T extends int>(int? a) => super.noSuchMethod(Invocation.method(#k, [a]));
+  test('matches nullability of nullable return type', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+        abstract class Foo {
+          int? m(int a);
         }
         '''),
-      },
+      _containsAllOf(
+          'int? m(int? a) => super.noSuchMethod(Invocation.method(#m, [a]));'),
+    );
+  });
+
+  test('matches nullability of return type type arguments', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+        abstract class Foo {
+          List<int?> m(int a);
+        }
+        '''),
+      _containsAllOf('List<int?> m(int? a) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a]), <int?>[]);'),
+    );
+  });
+
+  test('matches nullability of nullable type variable return type', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+        abstract class Foo {
+          T? m<T>(int a);
+        }
+        '''),
+      _containsAllOf(
+          'T? m<T>(int? a) => super.noSuchMethod(Invocation.method(#m, [a]));'),
+    );
+  });
+
+  test('overrides implicit return type with dynamic', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+        abstract class Foo {
+          m(int a);
+        }
+        '''),
+      _containsAllOf(
+          'dynamic m(int? a) => super.noSuchMethod(Invocation.method(#m, [a]));'),
     );
   });
 
@@ -923,8 +946,8 @@ void main() {
         List<Foo> m() => [Foo()];
       }
       '''),
-      _containsAllOf(
-          'List<_i2.Foo> m() => super.noSuchMethod(Invocation.method(#m, []), []);'),
+      _containsAllOf('List<_i2.Foo> m() =>',
+          'super.noSuchMethod(Invocation.method(#m, []), <_i2.Foo>[]);'),
     );
   });
 
@@ -935,8 +958,8 @@ void main() {
         Set<Foo> m() => {Foo()};
       }
       '''),
-      _containsAllOf(
-          'Set<_i2.Foo> m() => super.noSuchMethod(Invocation.method(#m, []), {});'),
+      _containsAllOf('Set<_i2.Foo> m() =>',
+          'super.noSuchMethod(Invocation.method(#m, []), <_i2.Foo>{});'),
     );
   });
 
@@ -947,8 +970,20 @@ void main() {
         Map<int, Foo> m() => {7: Foo()};
       }
       '''),
-      _containsAllOf(
-          'Map<int, _i2.Foo> m() => super.noSuchMethod(Invocation.method(#m, []), {});'),
+      _containsAllOf('Map<int, _i2.Foo> m() =>',
+          'super.noSuchMethod(Invocation.method(#m, []), <int, _i2.Foo>{});'),
+    );
+  });
+
+  test('creates dummy non-null raw-typed return value', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      abstract class Foo {
+        Map m();
+      }
+      '''),
+      _containsAllOf('Map<dynamic, dynamic> m() =>',
+          'super.noSuchMethod(Invocation.method(#m, []), <dynamic, dynamic>{});'),
     );
   });
 
@@ -965,6 +1000,18 @@ void main() {
     );
   });
 
+  test('creates dummy non-null Stream return value', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      abstract class Foo {
+        Stream<int> m();
+      }
+      '''),
+      _containsAllOf('Stream<int> m() =>',
+          'super.noSuchMethod(Invocation.method(#m, []), Stream<int>.empty());'),
+    );
+  });
+
   test('creates dummy non-null return values for unknown classes', () async {
     await _expectSingleNonNullableOutput(
       dedent(r'''
@@ -978,6 +1025,19 @@ void main() {
       '''),
       _containsAllOf(
           '_i2.Bar m() => super.noSuchMethod(Invocation.method(#m, []), _FakeBar());'),
+    );
+  });
+
+  test('creates dummy non-null return values for generic type', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      abstract class Foo {
+        Bar<int> m();
+      }
+      class Bar<T> {}
+      '''),
+      _containsAllOf('Bar<int> m() =>',
+          'super.noSuchMethod(Invocation.method(#m, []), _FakeBar<int>());'),
     );
   });
 
@@ -998,7 +1058,7 @@ void main() {
   });
 
   test(
-      'creates a dummy non-null return function-typed value, with optional '
+      'creates a dummy non-null function-typed return value, with optional '
       'parameters', () async {
     await _expectSingleNonNullableOutput(
       dedent(r'''
@@ -1012,7 +1072,7 @@ void main() {
   });
 
   test(
-      'creates a dummy non-null return function-typed value, with named '
+      'creates a dummy non-null function-typed return value, with named '
       'parameters', () async {
     await _expectSingleNonNullableOutput(
       dedent(r'''
@@ -1026,7 +1086,7 @@ void main() {
   });
 
   test(
-      'creates a dummy non-null return function-typed value, with non-core '
+      'creates a dummy non-null function-typed return value, with non-core '
       'return type', () async {
     await _expectSingleNonNullableOutput(
       dedent(r'''
@@ -1036,6 +1096,44 @@ void main() {
       '''),
       _containsAllOf('_i2.Foo Function() m() =>',
           'super.noSuchMethod(Invocation.method(#m, []), () => _FakeFoo());'),
+    );
+  });
+
+  test('creates a dummy non-null generic function-typed return value',
+      () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        T Function<T>(T) m() => (int i, [String s]) {};
+      }
+      '''),
+      _containsAllOf('T Function<T>(T) m() =>',
+          'super.noSuchMethod(Invocation.method(#m, []), (T __p0) => null);'),
+    );
+  });
+
+  test('generates a fake class used in return values', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => Bar('name1');
+      }
+      class Bar {}
+      '''),
+      _containsAllOf('class _FakeBar extends _i1.Fake implements _i2.Bar {}'),
+    );
+  });
+
+  test('generates a fake generic class used in return values', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        Bar m1() => Bar('name1');
+      }
+      class Bar<T, U> {}
+      '''),
+      _containsAllOf(
+          'class _FakeBar<T, U> extends _i1.Fake implements _i2.Bar<T, U> {}'),
     );
   });
 

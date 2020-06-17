@@ -356,106 +356,132 @@ class _MockLibraryInfo {
   }
 
   Expression _dummyValue(analyzer.DartType type) {
-    if (type.isDartCoreBool) {
+    if (type is analyzer.FunctionType) {
+      return _dummyFunctionValue(type);
+    }
+
+    if (type is! analyzer.InterfaceType) {
+      // TODO(srawlins): This case is not known.
+      return literalNull;
+    }
+
+    var interfaceType = type as analyzer.InterfaceType;
+    var typeArguments = interfaceType.typeArguments;
+    if (interfaceType.isDartCoreBool) {
       return literalFalse;
-    } else if (type.isDartCoreDouble) {
+    } else if (interfaceType.isDartCoreDouble) {
       return literalNum(0.0);
-    } else if (type.isDartAsyncFuture || type.isDartAsyncFutureOr) {
-      var typeArgument = (type as analyzer.InterfaceType).typeArguments.first;
+    } else if (interfaceType.isDartAsyncFuture ||
+        interfaceType.isDartAsyncFutureOr) {
+      var typeArgument = typeArguments.first;
       return refer('Future')
           .property('value')
           .call([_dummyValue(typeArgument)]);
-    } else if (type.isDartCoreInt) {
+    } else if (interfaceType.isDartCoreInt) {
       return literalNum(0);
-    } else if (type.isDartCoreIterable) {
+    } else if (interfaceType.isDartCoreIterable) {
       return literalList([]);
-    } else if (type.isDartCoreList) {
-      return literalList([]);
-    } else if (type.isDartCoreMap) {
-      return literalMap({});
-    } else if (type.isDartCoreNum) {
+    } else if (interfaceType.isDartCoreList) {
+      assert(typeArguments.length == 1);
+      var elementType = _typeReference(typeArguments[0]);
+      return literalList([], elementType);
+    } else if (interfaceType.isDartCoreMap) {
+      assert(typeArguments.length == 2);
+      var keyType = _typeReference(typeArguments[0]);
+      var valueType = _typeReference(typeArguments[1]);
+      return literalMap({}, keyType, valueType);
+    } else if (interfaceType.isDartCoreNum) {
       return literalNum(0);
-    } else if (type.isDartCoreSet) {
-      // This is perhaps a dangerous hack. The code, `{}`, is parsed as a Set
-      // literal if it is used in a context which explicitly expects a Set.
-      return literalMap({});
-    } else if (type.element?.declaration == typeProvider.streamElement) {
-      return refer('Stream').property('empty').call([]);
-    } else if (type.isDartCoreString) {
+    } else if (interfaceType.isDartCoreSet) {
+      assert(typeArguments.length == 1);
+      var elementType = _typeReference(typeArguments[0]);
+      return literalSet({}, elementType);
+    } else if (interfaceType.element?.declaration ==
+        typeProvider.streamElement) {
+      assert(typeArguments.length == 1);
+      var elementType = _typeReference(typeArguments[0]);
+      return TypeReference((b) {
+        b
+          ..symbol = 'Stream'
+          ..types.add(elementType);
+      }).property('empty').call([]);
+    } else if (interfaceType.isDartCoreString) {
       return literalString('');
-    } else {
-      // This class is unknown; we must likely generate a fake class, and return
-      // an instance here.
-      return _dummyValueImplementing(type);
     }
+
+    // This class is unknown; we must likely generate a fake class, and return
+    // an instance here.
+    return _dummyValueImplementing(type);
   }
 
-  Expression _dummyValueImplementing(analyzer.DartType dartType) {
-    // For each type parameter on [classToMock], the Mock class needs a type
-    // parameter with same type variables, and a mirrored type argument for
-    // the "implements" clause.
-    var typeArguments = <Reference>[];
-    var elementToFake = dartType.element;
-    if (elementToFake is ClassElement) {
-      if (elementToFake.isEnum) {
-        return _typeReference(dartType).property(
-            elementToFake.fields.firstWhere((f) => f.isEnumConstant).name);
-      } else {
-        // There is a potential for these names to collide. If one mock class
-        // requires a fake for a certain Foo, and another mock class requires a
-        // fake for a different Foo, they will collide.
-        var fakeName = '_Fake${dartType.name}';
-        // Only make one fake class for each class that needs to be faked.
-        if (!fakedClassElements.contains(elementToFake)) {
-          fakeClasses.add(Class((cBuilder) {
-            cBuilder
-              ..name = fakeName
-              ..extend = refer('Fake', 'package:mockito/mockito.dart');
-            if (elementToFake.typeParameters != null) {
-              for (var typeParameter in elementToFake.typeParameters) {
-                cBuilder.types.add(_typeParameterReference(typeParameter));
-                typeArguments.add(refer(typeParameter.name));
-              }
-            }
-            cBuilder.implements.add(TypeReference((b) {
-              b
-                ..symbol = dartType.name
-                ..url = _typeImport(dartType)
-                ..types.addAll(typeArguments);
-            }));
-          }));
-          fakedClassElements.add(elementToFake);
+  Expression _dummyFunctionValue(analyzer.FunctionType type) {
+    return Method((b) {
+      // The positional parameters in a FunctionType have no names. This
+      // counter lets us create unique dummy names.
+      var counter = 0;
+      for (final parameter in type.parameters) {
+        if (parameter.isRequiredPositional) {
+          b.requiredParameters
+              .add(_matchingParameter(parameter, defaultName: '__p$counter'));
+          counter++;
+        } else if (parameter.isOptionalPositional) {
+          b.optionalParameters
+              .add(_matchingParameter(parameter, defaultName: '__p$counter'));
+          counter++;
+        } else if (parameter.isNamed) {
+          b.optionalParameters.add(_matchingParameter(parameter));
         }
-        return refer(fakeName).newInstance([]);
       }
-    } else if (dartType is analyzer.FunctionType) {
-      return Method((b) {
-        // The positional parameters in a FunctionType have no names. This
-        // counter lets us create unique dummy names.
-        var counter = 0;
-        for (final parameter in dartType.parameters) {
-          if (parameter.isRequiredPositional) {
-            b.requiredParameters
-                .add(_matchingParameter(parameter, defaultName: '__p$counter'));
-            counter++;
-          } else if (parameter.isOptionalPositional) {
-            b.optionalParameters
-                .add(_matchingParameter(parameter, defaultName: '__p$counter'));
-            counter++;
-          } else if (parameter.isNamed) {
-            b.optionalParameters.add(_matchingParameter(parameter));
-          }
-        }
-        if (dartType.returnType.isVoid) {
-          b.body = Code('');
-        } else {
-          b.body = _dummyValue(dartType.returnType).code;
-        }
-      }).closure;
-    }
+      if (type.returnType.isVoid) {
+        b.body = Code('');
+      } else {
+        b.body = _dummyValue(type.returnType).code;
+      }
+    }).closure;
+  }
 
-    // We shouldn't get here.
-    return literalNull;
+  Expression _dummyValueImplementing(analyzer.InterfaceType dartType) {
+    // For each type parameter on [dartType], the Mock class needs a type
+    // parameter with same type variables, and a mirrored type argument for the
+    // "implements" clause.
+    var typeParameters = <Reference>[];
+    var elementToFake = dartType.element;
+    if (elementToFake.isEnum) {
+      return _typeReference(dartType).property(
+          elementToFake.fields.firstWhere((f) => f.isEnumConstant).name);
+    } else {
+      // There is a potential for these names to collide. If one mock class
+      // requires a fake for a certain Foo, and another mock class requires a
+      // fake for a different Foo, they will collide.
+      var fakeName = '_Fake${dartType.name}';
+      // Only make one fake class for each class that needs to be faked.
+      if (!fakedClassElements.contains(elementToFake)) {
+        fakeClasses.add(Class((cBuilder) {
+          cBuilder
+            ..name = fakeName
+            ..extend = refer('Fake', 'package:mockito/mockito.dart');
+          if (elementToFake.typeParameters != null) {
+            for (var typeParameter in elementToFake.typeParameters) {
+              cBuilder.types.add(_typeParameterReference(typeParameter));
+              typeParameters.add(refer(typeParameter.name));
+            }
+          }
+          cBuilder.implements.add(TypeReference((b) {
+            b
+              ..symbol = dartType.name
+              ..url = _typeImport(dartType)
+              ..types.addAll(typeParameters);
+          }));
+        }));
+        fakedClassElements.add(elementToFake);
+      }
+      var typeArguments = dartType.typeArguments;
+      return TypeReference((b) {
+        b
+          ..symbol = fakeName
+          ..types.addAll(typeArguments.map(_typeReference));
+      }).newInstance([]);
+    }
   }
 
   /// Returns a [Parameter] which matches [parameter].
@@ -581,6 +607,9 @@ class _MockLibraryInfo {
                 .addAll(type.optionalParameterTypes.map(_typeReference));
           for (var parameter in type.namedParameterTypes.entries) {
             b.namedParameters[parameter.key] = _typeReference(parameter.value);
+          }
+          if (type.typeFormals != null) {
+            b.types.addAll(type.typeFormals.map(_typeParameterReference));
           }
         });
       }
