@@ -297,7 +297,6 @@ main() {
               'generated', 'a', 'web', 'main.ddc.js'))
           .readAsString();
       expect(ddcContent, contains('hello world'));
-      await Future.delayed(Duration(seconds: 10));
     });
 
     test('can build to outputs', () async {
