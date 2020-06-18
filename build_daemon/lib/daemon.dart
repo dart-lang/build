@@ -73,11 +73,13 @@ class Daemon {
 
     _createVersionFile();
     _createOptionsFile(options);
+    var buildMode = _buildModeFor(options);
 
     _server = Server(
       builder,
       timeout,
       changeProvider,
+      buildMode,
       serializersOverride: serializersOverride,
       shouldBuild: shouldBuild,
     );
@@ -87,6 +89,24 @@ class Daemon {
     unawaited(_server.onDone.then((_) async {
       await _cleanUp();
     }));
+  }
+
+  BuildMode _buildModeFor(Set<String> options) {
+    for (var option in options) {
+      if (option.startsWith('--$buildModeFlag')) {
+        var modeValue = option.split('=').last;
+        if (modeValue == '${BuildMode.Auto}') {
+          return BuildMode.Auto;
+        } else if (modeValue == '${BuildMode.Manual}') {
+          return BuildMode.Manual;
+        } else if (modeValue == '${BuildMode.Step}') {
+          return BuildMode.Step;
+        } else {
+          throw StateError('Unexpected build mode: $modeValue');
+        }
+      }
+    }
+    return BuildMode.Auto;
   }
 
   Future<void> _cleanUp() async {

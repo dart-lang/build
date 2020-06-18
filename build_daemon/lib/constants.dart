@@ -13,6 +13,7 @@ const optionsSkew = 'DIFFERENT OPTIONS';
 const buildModeFlag = 'build-mode';
 enum BuildMode {
   Manual,
+  Step,
   Auto,
 }
 

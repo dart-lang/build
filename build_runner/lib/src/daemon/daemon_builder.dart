@@ -224,7 +224,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         .map((data) => WatchEvent(data.type, '${data.id}'))
         .debounceBuffer(buildOptions.debounceDelay);
 
-    var changeProvider = daemonOptions.buildMode == BuildMode.Auto
+    var changeProvider = (daemonOptions.buildMode == BuildMode.Auto ||
+            daemonOptions.buildMode == BuildMode.Step)
         ? AutoChangeProvider(graphEvents())
         : ManualChangeProvider(AssetTracker(builder.assetGraph,
             daemonEnvironment.reader, buildOptions.targetGraph));

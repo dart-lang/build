@@ -9,6 +9,7 @@ import 'build_request.dart';
 import 'build_status.dart';
 import 'build_target.dart';
 import 'build_target_request.dart';
+import 'continue_request.dart';
 import 'server_log.dart';
 import 'shutdown_notification.dart';
 
@@ -20,6 +21,7 @@ part 'serializers.g.dart';
   BuildStatus,
   BuildResults,
   BuildTargetRequest,
+  ContinueRequest,
   DefaultBuildResult,
   DefaultBuildTarget,
   ServerLog,

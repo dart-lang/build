@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build_daemon/data/build_target.dart';
+import 'package:build_daemon/data/continue_request.dart';
 import 'package:built_value/serializer.dart';
 import 'package:web_socket_channel/io.dart';
 
@@ -145,6 +146,15 @@ class BuildDaemonClient {
   /// one.
   void startBuild() {
     var request = BuildRequest();
+    _channel.sink.add(jsonEncode(_serializers.serialize(request)));
+  }
+
+  /// Allows for the next build to start while the daemon is in `step` build
+  /// mode.
+  ///
+  /// This is a no-op otherwise.
+  void continueBuilding() {
+    var request = ContinueRequest();
     _channel.sink.add(jsonEncode(_serializers.serialize(request)));
   }
 

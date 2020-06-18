@@ -1,4 +1,6 @@
-## 1.10.1-dev
+## 1.11.0-dev
+
+- Depend on the latest `package:build_daemon` and support the `Step` build mode.
 
 ## 1.10.0
 

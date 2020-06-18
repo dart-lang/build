@@ -32,7 +32,8 @@ class DaemonCommand extends WatchCommand {
 
   DaemonCommand() {
     argParser.addOption(buildModeFlag,
-        help: 'Specify the build mode of the daemon, e.g. auto or manual.',
+        help:
+            'Specify the build mode of the daemon, i.e. auto, manual or step.',
         defaultsTo: 'BuildMode.Auto');
   }
 

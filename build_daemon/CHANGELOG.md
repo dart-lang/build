@@ -1,3 +1,8 @@
+# 2.2.0
+
+- Support new `step` build mode which requires a client to continue the
+  build_daemon after each build.
+
 # 2.1.4
 
 - Remove dependency on `package:package_resolver`.

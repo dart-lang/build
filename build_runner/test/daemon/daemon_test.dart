@@ -185,6 +185,18 @@ main() {
               b.results.first.status == BuildStatus.succeeded));
     });
 
+    test('can build in step mode', () async {
+      await _startDaemon(buildMode: BuildMode.Step);
+      var client = await _startClient(buildMode: BuildMode.Step)
+        ..registerBuildTarget(webTarget)
+        ..startBuild();
+      clients.add(client);
+      expect(
+          client.buildResults,
+          emitsThrough((BuildResults b) =>
+              b.results.first.status == BuildStatus.succeeded));
+    });
+
     test('auto build mode automatically builds on file change', () async {
       await _startDaemon();
       var client = await _startClient()
@@ -238,6 +250,54 @@ main() {
               'generated', 'a', 'web', 'main.ddc.js'))
           .readAsString();
       expect(ddcContent, contains('goodbye world'));
+    });
+
+    test('step build mode does not automatically build without continuing',
+        () async {
+      await _startDaemon(buildMode: BuildMode.Step);
+      var client = await _startClient(buildMode: BuildMode.Step)
+        ..registerBuildTarget(webTarget);
+      clients.add(client);
+      // Let the target request propagate.
+      await Future<void>.delayed(Duration(seconds: 2));
+      // Trigger the first build.
+      await d.dir('a', [
+        d.dir('web', [
+          d.file('main.dart', '''
+            main() {
+              print('goodbye world');
+            }'''),
+        ])
+      ]).create();
+      // Wait until the build finishes
+      await expectLater(
+          client.buildResults,
+          emitsThrough((BuildResults b) =>
+              b.results.first.status == BuildStatus.succeeded));
+      // Try to trigger another build
+      await d.dir('a', [
+        d.dir('web', [
+          d.file('main.dart', '''
+            main() {
+              print('hello world');
+            }'''),
+        ])
+      ]).create();
+      // There shouldn't be any build results.
+      var buildResults = await client.buildResults.first
+          .timeout(Duration(seconds: 2), onTimeout: () => null);
+      expect(buildResults, isNull);
+      client.continueBuilding();
+      var startedResult = await client.buildResults.first;
+      expect(startedResult.results.first.status, BuildStatus.started,
+          reason: 'Should do a build once requested');
+      var succeededResult = await client.buildResults.first;
+      expect(succeededResult.results.first.status, BuildStatus.succeeded);
+      var ddcContent = await File(p.join(d.sandbox, 'a', '.dart_tool', 'build',
+              'generated', 'a', 'web', 'main.ddc.js'))
+          .readAsString();
+      expect(ddcContent, contains('hello world'));
+      await Future.delayed(Duration(seconds: 10));
     });
 
     test('can build to outputs', () async {

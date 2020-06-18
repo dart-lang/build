@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:build_daemon/data/continue_request.dart';
 import 'package:built_value/serializer.dart';
 import 'package:http_multi_server/http_multi_server.dart';
 import 'package:pool/pool.dart';
@@ -16,6 +17,7 @@ import 'package:watcher/watcher.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../change_provider.dart';
+import '../constants.dart';
 import '../daemon_builder.dart';
 import '../data/build_request.dart';
 import '../data/build_target.dart';
@@ -34,7 +36,10 @@ class Server {
   final _pool = Pool(1);
   final Serializers _serializers;
   final ChangeProvider _changeProvider;
+  final BuildMode _buildMode;
+
   Timer _timeout;
+  Completer _stepCompleter = Completer();
 
   HttpServer _server;
   final DaemonBuilder _builder;
@@ -44,6 +49,7 @@ class Server {
   final _subs = <StreamSubscription>[];
 
   Server(this._builder, Duration timeout, ChangeProvider changeProvider,
+      this._buildMode,
       {Serializers serializersOverride,
       bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuild})
       : _changeProvider = changeProvider,
@@ -83,6 +89,10 @@ class Server {
               ? _buildTargetManager.targets
               : _buildTargetManager.targetsForChanges(changes);
           await _build(targets, changes);
+        } else if (request is ContinueRequest) {
+          if (!_stepCompleter.isCompleted) {
+            _stepCompleter.complete();
+          }
         }
       }, onDone: () {
         _removeChannel(channel);
@@ -146,6 +156,10 @@ class Server {
       var buildTargets = _buildTargetManager.targetsForChanges(changes);
       if (buildTargets.isEmpty) return;
       await _build(buildTargets, changes);
+      if (_buildMode == BuildMode.Step) {
+        await _stepCompleter.future;
+        _stepCompleter = Completer();
+      }
     }).listen((_) {}));
   }
 

@@ -62,7 +62,7 @@ class _$DefaultBuildTargetSerializer
           result.blackListPatterns.replace(serializers.deserialize(value,
                   specifiedType:
                       const FullType(BuiltSet, const [const FullType(RegExp)]))
-              as BuiltSet<dynamic>);
+              as BuiltSet<Object>);
           break;
         case 'outputLocation':
           result.outputLocation.replace(serializers.deserialize(value,
@@ -72,7 +72,7 @@ class _$DefaultBuildTargetSerializer
           result.buildFilters.replace(serializers.deserialize(value,
                   specifiedType:
                       const FullType(BuiltSet, const [const FullType(String)]))
-              as BuiltSet<dynamic>);
+              as BuiltSet<Object>);
           break;
         case 'target':
           result.target = serializers.deserialize(value,

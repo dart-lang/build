@@ -182,6 +182,8 @@ class DaemonOptions extends WatchOptions {
       buildMode = BuildMode.Auto;
     } else if (buildModeValue == BuildMode.Manual.toString()) {
       buildMode = BuildMode.Manual;
+    } else if (buildModeValue == BuildMode.Step.toString()) {
+      buildMode = BuildMode.Step;
     } else {
       throw UsageException(
           'Unexpected value for $buildModeFlag: $buildModeValue',

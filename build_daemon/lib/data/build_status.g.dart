@@ -165,7 +165,7 @@ class _$BuildResultsSerializer implements StructuredSerializer<BuildResults> {
           result.results.replace(serializers.deserialize(value,
                   specifiedType: const FullType(
                       BuiltList, const [const FullType(BuildResult)]))
-              as BuiltList<dynamic>);
+              as BuiltList<Object>);
           break;
       }
     }
