@@ -22,7 +22,7 @@ import 'package:http/http.dart';
 class IssLocator {
   final Client client;
 
-  Point<double> _position;
+  /*late*/ Point<double> _position;
   Future _ongoingRequest;
 
   IssLocator(this.client);

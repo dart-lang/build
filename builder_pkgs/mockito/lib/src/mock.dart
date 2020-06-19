@@ -658,9 +658,8 @@ class _VerifyCall {
   }
 
   RealCall _findAfter(DateTime dt) {
-    return matchingInvocations.firstWhere(
-        (inv) => !inv.verified && inv.timeStamp.isAfter(dt),
-        orElse: () => null);
+    return matchingInvocations
+        .firstWhere((inv) => !inv.verified && inv.timeStamp.isAfter(dt));
   }
 
   void _checkWith(bool never) {
@@ -1001,11 +1000,11 @@ _InOrderVerification get verifyInOrder {
     _verifyCalls.clear();
     var matchedCalls = <RealCall>[];
     for (var verifyCall in tmpVerifyCalls) {
-      var matched = verifyCall._findAfter(dt);
-      if (matched != null) {
+      try {
+        var matched = verifyCall._findAfter(dt);
         matchedCalls.add(matched);
         dt = matched.timeStamp;
-      } else {
+      } on StateError {
         var mocks = tmpVerifyCalls.map((vc) => vc.mock).toSet();
         var allInvocations =
             mocks.expand((m) => m._realCalls).toList(growable: false);

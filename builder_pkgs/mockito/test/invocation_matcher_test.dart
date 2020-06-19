@@ -153,7 +153,7 @@ abstract class Interface {
 ///
 /// Any call always returns an [Invocation].
 class Stub implements Interface {
-  static Invocation lastInvocation;
+  static /*late*/ Invocation lastInvocation;
 
   const Stub();
 
