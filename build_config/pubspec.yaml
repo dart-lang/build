@@ -29,3 +29,5 @@ dependency_overrides:
     path: ../build_runner_core
   build_resolvers:
     path: ../build_resolvers
+  build_daemon:
+    path: ../build_daemon
