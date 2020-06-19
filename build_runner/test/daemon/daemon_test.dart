@@ -256,19 +256,9 @@ main() {
         () async {
       await _startDaemon(buildMode: BuildMode.Step);
       var client = await _startClient(buildMode: BuildMode.Step)
-        ..registerBuildTarget(webTarget);
+        ..registerBuildTarget(webTarget)
+        ..startBuild();
       clients.add(client);
-      // Let the target request propagate.
-      await Future<void>.delayed(Duration(seconds: 2));
-      // Trigger the first build.
-      await d.dir('a', [
-        d.dir('web', [
-          d.file('main.dart', '''
-            main() {
-              print('goodbye world');
-            }'''),
-        ])
-      ]).create();
       // Wait until the build finishes
       await expectLater(
           client.buildResults,
@@ -279,7 +269,7 @@ main() {
         d.dir('web', [
           d.file('main.dart', '''
             main() {
-              print('hello world');
+              print('goodbye world');
             }'''),
         ])
       ]).create();
@@ -296,7 +286,7 @@ main() {
       var ddcContent = await File(p.join(d.sandbox, 'a', '.dart_tool', 'build',
               'generated', 'a', 'web', 'main.ddc.js'))
           .readAsString();
-      expect(ddcContent, contains('hello world'));
+      expect(ddcContent, contains('goodbye world'));
     });
 
     test('can build to outputs', () async {

@@ -9,7 +9,6 @@ import 'dart:io';
 import 'package:build_daemon/data/continue_request.dart';
 import 'package:built_value/serializer.dart';
 import 'package:http_multi_server/http_multi_server.dart';
-import 'package:pool/pool.dart';
 import 'package:shelf/shelf_io.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:stream_transform/stream_transform.dart';
@@ -33,13 +32,13 @@ import 'managers/build_target_manager.dart';
 class Server {
   final _isDoneCompleter = Completer();
   final BuildTargetManager _buildTargetManager;
-  final _pool = Pool(1);
   final Serializers _serializers;
   final ChangeProvider _changeProvider;
   final BuildMode _buildMode;
+  final _manualChanges = StreamController<List<WatchEvent>>();
+  final _continueController = StreamController<void>();
 
   Timer _timeout;
-  Completer _stepCompleter = Completer();
 
   HttpServer _server;
   final DaemonBuilder _builder;
@@ -58,7 +57,7 @@ class Server {
             BuildTargetManager(shouldBuildOverride: shouldBuild) {
     _forwardData();
 
-    _handleChanges(changeProvider.changes);
+    _handleChanges(changeProvider.changes, _manualChanges.stream);
 
     // Stop the server if nobody connects.
     _timeout = Timer(timeout, () async {
@@ -85,14 +84,9 @@ class Server {
           _buildTargetManager.addBuildTarget(request.target, channel);
         } else if (request is BuildRequest) {
           var changes = await _changeProvider.collectChanges();
-          var targets = changes.isEmpty
-              ? _buildTargetManager.targets
-              : _buildTargetManager.targetsForChanges(changes);
-          await _build(targets, changes);
+          _manualChanges.add(changes);
         } else if (request is ContinueRequest) {
-          if (!_stepCompleter.isCompleted) {
-            _stepCompleter.complete();
-          }
+          _continueController.add(null);
         }
       }, onDone: () {
         _removeChannel(channel);
@@ -124,14 +118,6 @@ class Server {
     if (!_isDoneCompleter.isCompleted) _isDoneCompleter.complete();
   }
 
-  Future<void> _build(
-          Set<BuildTarget> buildTargets, Iterable<WatchEvent> changes) =>
-      _pool.withResource(() {
-        _interestedChannels =
-            buildTargets.expand(_buildTargetManager.channels).toSet();
-        return _builder.build(buildTargets, changes);
-      });
-
   void _forwardData() {
     _subs
       ..add(_builder.logs.listen((log) {
@@ -148,18 +134,25 @@ class Server {
       }));
   }
 
-  void _handleChanges(Stream<List<WatchEvent>> changes) {
-    _subs.add(changes.asyncMapBuffer((changesLists) async {
+  void _handleChanges(
+    Stream<List<WatchEvent>> autoChanges,
+    Stream<List<WatchEvent>> manualChanges,
+  ) {
+    if (_buildMode == BuildMode.Step) {
+      autoChanges = autoChanges
+          .buffer(_continueController.stream)
+          .map((changesList) => changesList.expand((x) => x).toList());
+    }
+    _subs.add(
+        autoChanges.merge(manualChanges).asyncMapBuffer((changesLists) async {
       var changes = changesLists.expand((x) => x).toList();
-      if (changes.isEmpty) return;
-      if (_buildTargetManager.targets.isEmpty) return;
-      var buildTargets = _buildTargetManager.targetsForChanges(changes);
+      var buildTargets = changes.isEmpty
+          ? _buildTargetManager.targets
+          : _buildTargetManager.targetsForChanges(changes);
       if (buildTargets.isEmpty) return;
-      await _build(buildTargets, changes);
-      if (_buildMode == BuildMode.Step) {
-        await _stepCompleter.future;
-        _stepCompleter = Completer();
-      }
+      _interestedChannels =
+          buildTargets.expand(_buildTargetManager.channels).toSet();
+      await _builder.build(buildTargets, changes);
     }).listen((_) {}));
   }
 
