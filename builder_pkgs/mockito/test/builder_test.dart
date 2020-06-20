@@ -1166,6 +1166,67 @@ void main() {
     );
   });
 
+  test(
+      'throws when GenerateMocks is given a class with a method with a '
+      'non-nullable class-declared type variable return type', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent('''
+        abstract class Foo<T> {
+          T m(int a);
+        }
+        '''),
+      },
+      message: contains(
+          "Mockito cannot generate a valid mock class which implements 'Foo'. "
+          "The method(s) 'Foo.m', which each return a non-nullable value of "
+          'unknown type, cannot be stubbed.'),
+    );
+  });
+
+  test(
+      'throws when GenerateMocks is given a class with a method with a '
+      'non-nullable method-declared type variable return type', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent('''
+        abstract class Foo {
+          T m<T>(int a);
+        }
+        '''),
+      },
+      message: contains(
+          "Mockito cannot generate a valid mock class which implements 'Foo'. "
+          "The method(s) 'Foo.m', which each return a non-nullable value of "
+          'unknown type, cannot be stubbed.'),
+    );
+  });
+
+  test(
+      'throws when GenerateMocks is given a class with a method with a '
+      'non-nullable method-declared bounded type variable return type',
+      () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent('''
+        abstract class Foo {
+          T m<T extends num>(int a);
+        }
+        '''),
+      },
+      message: contains(
+          "Mockito cannot generate a valid mock class which implements 'Foo'. "
+          "The method(s) 'Foo.m', which each return a non-nullable value of "
+          'unknown type, cannot be stubbed.'),
+    );
+  });
+
   test('throws when GenerateMocks is missing an argument', () async {
     _expectBuilderThrows(
       assets: {

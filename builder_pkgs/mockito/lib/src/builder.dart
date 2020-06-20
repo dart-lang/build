@@ -20,6 +20,7 @@ import 'package:analyzer/dart/element/type_system.dart';
 import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
+import 'package:meta/meta.dart';
 
 /// For a source Dart library, generate the mocks referenced therein.
 ///
@@ -154,7 +155,7 @@ class MockBuilder implements Builder {
       }
       classNamesToMock[name] = class_.element as ClassElement;
     }
-    var classNamesToGenerate = classNamesToMock.keys.map((name) => 'Mock$name');
+
     classNamesToMock.forEach((name, element) {
       var conflictingClass = classesInEntryLib.firstWhere(
           (c) => c.name == 'Mock${element.name}',
@@ -165,6 +166,7 @@ class MockBuilder implements Builder {
             'conflicts with another class declared in this library: '
             '${conflictingClass.name}');
       }
+
       var preexistingMock = classesInEntryLib.firstWhere(
           (c) =>
               c.interfaces.map((type) => type.element).contains(element) &&
@@ -174,6 +176,18 @@ class MockBuilder implements Builder {
         throw InvalidMockitoAnnotationException(
             'The GenerateMocks "classes" argument contains a class which '
             'appears to already be mocked inline: ${preexistingMock.name}');
+      }
+
+      var unstubbableMethods = element.methods.where((m) =>
+          m.returnType is analyzer.TypeParameterType &&
+          entryLib.typeSystem.isPotentiallyNonNullable(m.returnType));
+      if (unstubbableMethods.isNotEmpty) {
+        var unstubbableMethodNames =
+            unstubbableMethods.map((m) => "'$name.${m.name}'").join(', ');
+        throw InvalidMockitoAnnotationException(
+            'Mockito cannot generate a valid mock class which implements '
+            "'$name'. The method(s) $unstubbableMethodNames, which each return a "
+            'non-nullable value of unknown type, cannot be stubbed.');
       }
     });
   }
@@ -223,10 +237,11 @@ class _MockLibraryInfo {
   Class _buildMockClass(analyzer.DartType dartType) {
     final classToMock = dartType.element as ClassElement;
     final className = dartType.name;
+    final mockClassName = 'Mock$className';
 
     return Class((cBuilder) {
       cBuilder
-        ..name = 'Mock$className'
+        ..name = mockClassName
         ..extend = refer('Mock', 'package:mockito/mockito.dart')
         ..docs.add('/// A class which mocks [$className].')
         ..docs.add('///')
@@ -275,8 +290,8 @@ class _MockLibraryInfo {
         }
         if (_returnTypeIsNonNullable(method) ||
             _hasNonNullableParameter(method)) {
-          cBuilder.methods.add(
-              Method((mBuilder) => _buildOverridingMethod(mBuilder, method)));
+          cBuilder.methods.add(Method((mBuilder) =>
+              _buildOverridingMethod(mBuilder, method, className: className)));
         }
       }
     });
@@ -304,9 +319,8 @@ class _MockLibraryInfo {
   ///
   /// This new method just calls `super.noSuchMethod`, optionally passing a
   /// return value for methods with a non-nullable return type.
-  // TODO(srawlins): Include widening tests for typedefs, old-style function
-  // parameters, function types.
-  void _buildOverridingMethod(MethodBuilder builder, MethodElement method) {
+  void _buildOverridingMethod(MethodBuilder builder, MethodElement method,
+      {@required String className}) {
     var name = method.displayName;
     if (method.isOperator) name = 'operator$name';
     builder
@@ -338,6 +352,9 @@ class _MockLibraryInfo {
             refer(parameter.displayName);
       }
     }
+
+    if (_returnTypeIsNonNullable(method) &&
+        method.returnType is analyzer.TypeParameterType) {}
 
     final invocation = refer('Invocation').property('method').call([
       refer('#${method.displayName}'),
