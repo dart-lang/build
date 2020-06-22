@@ -239,6 +239,32 @@ void main() {
     );
   });
 
+  test('generates mock classes from multiple annotations on a single element',
+      () async {
+    await _testWithNonNullable(
+      {
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {}
+        class Bar {}
+        '''),
+        'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([Foo])
+        @GenerateMocks([Bar])
+        void barTests() {}
+        '''
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': _containsAllOf(
+          'class MockFoo extends _i1.Mock implements _i2.Foo {}',
+          'class MockBar extends _i1.Mock implements _i2.Bar {}',
+        ),
+      },
+    );
+  });
+
   test('generates generic mock classes', () async {
     await _expectSingleNonNullableOutput(
       dedent(r'''
@@ -1239,6 +1265,23 @@ void main() {
         '''),
       },
       message: contains('The GenerateMocks "classes" argument is missing'),
+    );
+  });
+
+  test('throws when GenerateMocks is given a private class', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        'foo|test/foo_test.dart': dedent('''
+        import 'package:mockito/annotations.dart';
+        // Missing required argument to GenerateMocks.
+        @GenerateMocks([_Foo])
+        void main() {}
+        class _Foo {}
+        '''),
+      },
+      message:
+          contains('The "classes" argument includes a private type: _Foo.'),
     );
   });
 

@@ -46,22 +46,25 @@ class MockBuilder implements Builder {
     final objectsToMock = <DartObject>{};
 
     for (final element in entryLib.topLevelElements) {
-      final annotation = element.metadata.firstWhere(
-          (annotation) =>
-              annotation.element is ConstructorElement &&
-              annotation.element.enclosingElement.name == 'GenerateMocks',
-          orElse: () => null);
-      if (annotation == null) continue;
-      final generateMocksValue = annotation.computeConstantValue();
-      // TODO(srawlins): handle `generateMocksValue == null`?
-      // I am unable to think of a case which results in this situation.
-      final classesField = generateMocksValue.getField('classes');
-      if (classesField.isNull) {
-        throw InvalidMockitoAnnotationException(
-            'The GenerateMocks "classes" argument is missing, includes an '
-            'unknown type, or includes an extension');
+      // TODO(srawlins): Re-think the idea of multiple @GenerateMocks
+      // annotations, on one element or even on different elements in a library.
+      for (final annotation in element.metadata) {
+        if (annotation == null) continue;
+        if (annotation.element is! ConstructorElement ||
+            annotation.element.enclosingElement.name != 'GenerateMocks') {
+          continue;
+        }
+        final generateMocksValue = annotation.computeConstantValue();
+        // TODO(srawlins): handle `generateMocksValue == null`?
+        // I am unable to think of a case which results in this situation.
+        final classesField = generateMocksValue.getField('classes');
+        if (classesField.isNull) {
+          throw InvalidMockitoAnnotationException(
+              'The GenerateMocks "classes" argument is missing, includes an '
+              'unknown type, or includes an extension');
+        }
+        objectsToMock.addAll(classesField.toListValue());
       }
-      objectsToMock.addAll(classesField.toListValue());
     }
 
     var classesToMock =
@@ -120,6 +123,11 @@ class MockBuilder implements Builder {
               'The "classes" argument includes a non-subtypable type: '
               '${elementToMock.displayName}. It is illegal to subtype this '
               'type.');
+        }
+        if (elementToMock.isPrivate) {
+          throw InvalidMockitoAnnotationException(
+              'The "classes" argument includes a private type: '
+              '${elementToMock.displayName}.');
         }
         classesToMock.add(typeToMock);
       } else if (elementToMock is GenericFunctionTypeElement &&
