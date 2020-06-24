@@ -186,18 +186,82 @@ class MockBuilder implements Builder {
             'appears to already be mocked inline: ${preexistingMock.name}');
       }
 
-      var unstubbableMethods = element.methods.where((m) =>
-          m.returnType is analyzer.TypeParameterType &&
-          entryLib.typeSystem.isPotentiallyNonNullable(m.returnType));
-      if (unstubbableMethods.isNotEmpty) {
-        var unstubbableMethodNames =
-            unstubbableMethods.map((m) => "'$name.${m.name}'").join(', ');
-        throw InvalidMockitoAnnotationException(
-            'Mockito cannot generate a valid mock class which implements '
-            "'$name'. The method(s) $unstubbableMethodNames, which each return a "
-            'non-nullable value of unknown type, cannot be stubbed.');
-      }
+      _checkMethodsToStubAreValid(element, entryLib);
     });
+  }
+
+  /// Throws if any public instance methods of [classElement] are not valid
+  /// stubbing candidates.
+  ///
+  /// A method is not valid for stubbing if:
+  /// - It has a private parameter or return type; Mockito cannot write the
+  ///   signature of such a method.
+  /// - It has a non-nullable type variable return type, for example `T m<T>()`.
+  ///   Mockito cannot generate dummy return values for unknown types.
+  void _checkMethodsToStubAreValid(
+      ClassElement classElement, LibraryElement entryLib) {
+    var className = classElement.name;
+    //var unstubbableErrorMessages = <String>[];
+
+    /*for (var method in classElement.methods) {
+      if (method.isPrivate || method.isStatic) continue;
+      _checkFunction(method.type, method.name, entryLib);
+    }*/
+    var unstubbableErrorMessages = classElement.methods
+        .where((m) => !m.isPrivate && !m.isStatic)
+        .expand((m) => _checkFunction(m.type, m.name, className, entryLib))
+        .toList();
+
+    if (unstubbableErrorMessages.isNotEmpty) {
+      var joinedMessages =
+          unstubbableErrorMessages.map((m) => '    $m').join('\n');
+      throw InvalidMockitoAnnotationException(
+          'Mockito cannot generate a valid mock class which implements '
+          "'$className' for the following reasons:\n$joinedMessages");
+    }
+  }
+
+  List<String> _checkFunction(analyzer.FunctionType function, String name,
+      String className, LibraryElement entryLib) {
+    var errorMessages = <String>[];
+    var returnType = function.returnType;
+    if (returnType is analyzer.InterfaceType) {
+      if (returnType.element?.isPrivate ?? false) {
+        errorMessages
+            .add("The method '$className.$name' features a private return "
+                'type, and cannot be stubbed.');
+      }
+    } else if (returnType is analyzer.FunctionType) {
+      errorMessages
+          .addAll(_checkFunction(returnType, name, className, entryLib));
+    } else if (returnType is analyzer.TypeParameterType) {
+      if (function.returnType is analyzer.TypeParameterType &&
+          entryLib.typeSystem.isPotentiallyNonNullable(function.returnType)) {
+        errorMessages
+            .add("The method '$className.$name' features a non-nullable "
+                'unknown return type, and cannot be stubbed.');
+      }
+    }
+
+    for (var parameter in function.parameters) {
+      var parameterType = parameter.type;
+      var parameterTypeElement = parameterType.element;
+      if (parameterType is analyzer.InterfaceType) {
+        if (parameterTypeElement?.isPrivate ?? false) {
+          // Technically, we can expand the type in the mock to something like
+          // `Object?`. However, until there is a decent use case, we will not
+          // generate such a mock.
+          errorMessages.add(
+              "The method '$className.$name' features a private parameter "
+              "type, '${parameterTypeElement.name}', and cannot be stubbed.");
+        }
+      } else if (parameterType is analyzer.FunctionType) {
+        errorMessages
+            .addAll(_checkFunction(parameterType, name, className, entryLib));
+      }
+    }
+
+    return errorMessages;
   }
 
   /// Return whether [type] is the Mock class declared by mockito.

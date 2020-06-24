@@ -1130,10 +1130,12 @@ void main() {
     await _expectSingleNonNullableOutput(
       dedent(r'''
       class Foo {
-        T Function<T>(T) m() => (int i, [String s]) {};
+        T? Function<T>(T) m() => (int i, [String s]) {};
       }
       '''),
-      _containsAllOf('T Function<T>(T) m() =>',
+      // TODO(srawlins): This output is invalid: `T __p0` is out of the scope
+      // where T is defined.
+      _containsAllOf('T? Function<T>(T) m() =>',
           'super.noSuchMethod(Invocation.method(#m, []), (T __p0) => null);'),
     );
   });
@@ -1194,6 +1196,105 @@ void main() {
 
   test(
       'throws when GenerateMocks is given a class with a method with a '
+      'private return type', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent('''
+        abstract class Foo {
+          _Bar m(int a);
+        }
+        class _Bar {}
+        '''),
+      },
+      message: contains(
+          "The method 'Foo.m' features a private return type, and cannot be "
+          'stubbed.'),
+    );
+  });
+
+  test(
+      'throws when GenerateMocks is given a class with a method with a return '
+      'function type, with a private return type', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent('''
+        abstract class Foo {
+          _Bar Function() m();
+        }
+        class _Bar {}
+        '''),
+      },
+      message: contains("The method 'Foo.m' features a private return type, "
+          'and cannot be stubbed.'),
+    );
+  });
+
+  test(
+      'throws when GenerateMocks is given a class with a method with a '
+      'private parameter type', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {
+          void m(_Bar a) {}
+        }
+        class _Bar {}
+        '''),
+      },
+      message: contains(
+          "The method 'Foo.m' features a private parameter type, '_Bar', and "
+          'cannot be stubbed.'),
+    );
+  });
+
+  test(
+      'throws when GenerateMocks is given a class with a method with a '
+      'function parameter type, with a private return type', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {
+          void m(_Bar Function() a) {}
+        }
+        class _Bar {}
+        '''),
+      },
+      message: contains(
+          "The method 'Foo.m' features a private return type, and cannot be "
+          'stubbed.'),
+    );
+  });
+
+  test(
+      'throws when GenerateMocks is given a class with a method with a return '
+      'function type, with a private parameter type', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent('''
+        abstract class Foo {
+          Function(_Bar) m();
+        }
+        class _Bar {}
+        '''),
+      },
+      message: contains(
+          "The method 'Foo.m' features a private parameter type, '_Bar', and "
+          'cannot be stubbed.'),
+    );
+  });
+
+  test(
+      'throws when GenerateMocks is given a class with a method with a '
       'non-nullable class-declared type variable return type', () async {
     _expectBuilderThrows(
       assets: {
@@ -1206,9 +1307,8 @@ void main() {
         '''),
       },
       message: contains(
-          "Mockito cannot generate a valid mock class which implements 'Foo'. "
-          "The method(s) 'Foo.m', which each return a non-nullable value of "
-          'unknown type, cannot be stubbed.'),
+          "The method 'Foo.m' features a non-nullable unknown return type, and "
+          'cannot be stubbed.'),
     );
   });
 
@@ -1226,9 +1326,8 @@ void main() {
         '''),
       },
       message: contains(
-          "Mockito cannot generate a valid mock class which implements 'Foo'. "
-          "The method(s) 'Foo.m', which each return a non-nullable value of "
-          'unknown type, cannot be stubbed.'),
+          "The method 'Foo.m' features a non-nullable unknown return type, and "
+          'cannot be stubbed.'),
     );
   });
 
@@ -1247,9 +1346,8 @@ void main() {
         '''),
       },
       message: contains(
-          "Mockito cannot generate a valid mock class which implements 'Foo'. "
-          "The method(s) 'Foo.m', which each return a non-nullable value of "
-          'unknown type, cannot be stubbed.'),
+          "The method 'Foo.m' features a non-nullable unknown return type, and "
+          'cannot be stubbed.'),
     );
   });
 
