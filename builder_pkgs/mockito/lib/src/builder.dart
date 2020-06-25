@@ -38,11 +38,58 @@ import 'package:meta/meta.dart';
 /// 'foo.mocks.dart' will be created.
 class MockBuilder implements Builder {
   @override
-  Future build(BuildStep buildStep) async {
+  Future<void> build(BuildStep buildStep) async {
     final entryLib = await buildStep.inputLibrary;
     if (entryLib == null) return;
     final sourceLibIsNonNullable = entryLib.isNonNullableByDefault;
     final mockLibraryAsset = buildStep.inputId.changeExtension('.mocks.dart');
+    final mockTargetGatherer = _MockTargetGatherer(entryLib);
+
+    final mockLibrary = Library((b) {
+      var mockLibraryInfo = _MockLibraryInfo(mockTargetGatherer._classesToMock,
+          sourceLibIsNonNullable: sourceLibIsNonNullable,
+          typeProvider: entryLib.typeProvider,
+          typeSystem: entryLib.typeSystem);
+      b.body.addAll(mockLibraryInfo.fakeClasses);
+      b.body.addAll(mockLibraryInfo.mockClasses);
+    });
+
+    if (mockLibrary.body.isEmpty) {
+      // Nothing to mock here!
+      return;
+    }
+
+    final emitter =
+        DartEmitter.scoped(useNullSafetySyntax: sourceLibIsNonNullable);
+    final mockLibraryContent =
+        DartFormatter().format(mockLibrary.accept(emitter).toString());
+
+    await buildStep.writeAsString(mockLibraryAsset, mockLibraryContent);
+  }
+
+  @override
+  final buildExtensions = const {
+    '.dart': ['.mocks.dart']
+  };
+}
+
+/// This class gathers and verifies mock targets referenced in `GenerateMocks`
+/// annotations.
+// TODO(srawlins): This also needs to gather mock targets (with overridden
+// names, type arguments, etc.) found in `GenerateMock` annotations.
+class _MockTargetGatherer {
+  final LibraryElement _entryLib;
+
+  final List<analyzer.DartType> _classesToMock;
+
+  _MockTargetGatherer._(this._entryLib, this._classesToMock) {
+    _checkClassesToMockAreValid();
+  }
+
+  /// Searches the top-level elements of [entryLib] for `GenerateMocks`
+  /// annotations and creates a [_MockTargetGatherer] with all of the classes
+  /// identified as mocking targets.
+  factory _MockTargetGatherer(LibraryElement entryLib) {
     final objectsToMock = <DartObject>{};
 
     for (final element in entryLib.topLevelElements) {
@@ -70,28 +117,7 @@ class MockBuilder implements Builder {
     var classesToMock =
         _mapAnnotationValuesToClasses(objectsToMock, entryLib.typeProvider);
 
-    _checkClassesToMockAreValid(classesToMock, entryLib);
-
-    final mockLibrary = Library((b) {
-      var mockLibraryInfo = _MockLibraryInfo(classesToMock,
-          sourceLibIsNonNullable: sourceLibIsNonNullable,
-          typeProvider: entryLib.typeProvider,
-          typeSystem: entryLib.typeSystem);
-      b.body.addAll(mockLibraryInfo.fakeClasses);
-      b.body.addAll(mockLibraryInfo.mockClasses);
-    });
-
-    if (mockLibrary.body.isEmpty) {
-      // Nothing to mock here!
-      return;
-    }
-
-    final emitter =
-        DartEmitter.scoped(useNullSafetySyntax: sourceLibIsNonNullable);
-    final mockLibraryContent =
-        DartFormatter().format(mockLibrary.accept(emitter).toString());
-
-    await buildStep.writeAsString(mockLibraryAsset, mockLibraryContent);
+    return _MockTargetGatherer._(entryLib, classesToMock);
   }
 
   /// Map the values passed to the GenerateMocks annotation to the classes which
@@ -100,7 +126,7 @@ class MockBuilder implements Builder {
   /// This function is responsible for ensuring that each value is an
   /// appropriate target for mocking. It will throw an
   /// [InvalidMockitoAnnotationException] under various conditions.
-  List<analyzer.DartType> _mapAnnotationValuesToClasses(
+  static List<analyzer.DartType> _mapAnnotationValuesToClasses(
       Iterable<DartObject> objectsToMock, TypeProvider typeProvider) {
     var classesToMock = <analyzer.DartType>[];
 
@@ -144,11 +170,11 @@ class MockBuilder implements Builder {
     return classesToMock;
   }
 
-  void _checkClassesToMockAreValid(
-      List<analyzer.DartType> classesToMock, LibraryElement entryLib) {
-    var classesInEntryLib = entryLib.topLevelElements.whereType<ClassElement>();
+  void _checkClassesToMockAreValid() {
+    var classesInEntryLib =
+        _entryLib.topLevelElements.whereType<ClassElement>();
     var classNamesToMock = <String, ClassElement>{};
-    for (var class_ in classesToMock) {
+    for (var class_ in _classesToMock) {
       var name = class_.element.name;
       if (classNamesToMock.containsKey(name)) {
         var firstSource = classNamesToMock[name].source.fullName;
@@ -186,7 +212,7 @@ class MockBuilder implements Builder {
             'appears to already be mocked inline: ${preexistingMock.name}');
       }
 
-      _checkMethodsToStubAreValid(element, entryLib);
+      _checkMethodsToStubAreValid(element);
     });
   }
 
@@ -198,18 +224,11 @@ class MockBuilder implements Builder {
   ///   signature of such a method.
   /// - It has a non-nullable type variable return type, for example `T m<T>()`.
   ///   Mockito cannot generate dummy return values for unknown types.
-  void _checkMethodsToStubAreValid(
-      ClassElement classElement, LibraryElement entryLib) {
+  void _checkMethodsToStubAreValid(ClassElement classElement) {
     var className = classElement.name;
-    //var unstubbableErrorMessages = <String>[];
-
-    /*for (var method in classElement.methods) {
-      if (method.isPrivate || method.isStatic) continue;
-      _checkFunction(method.type, method.name, entryLib);
-    }*/
     var unstubbableErrorMessages = classElement.methods
         .where((m) => !m.isPrivate && !m.isStatic)
-        .expand((m) => _checkFunction(m.type, m.name, className, entryLib))
+        .expand((m) => _checkFunction(m.type, m.name, className))
         .toList();
 
     if (unstubbableErrorMessages.isNotEmpty) {
@@ -221,8 +240,8 @@ class MockBuilder implements Builder {
     }
   }
 
-  List<String> _checkFunction(analyzer.FunctionType function, String name,
-      String className, LibraryElement entryLib) {
+  List<String> _checkFunction(
+      analyzer.FunctionType function, String name, String className) {
     var errorMessages = <String>[];
     var returnType = function.returnType;
     if (returnType is analyzer.InterfaceType) {
@@ -232,11 +251,10 @@ class MockBuilder implements Builder {
                 'type, and cannot be stubbed.');
       }
     } else if (returnType is analyzer.FunctionType) {
-      errorMessages
-          .addAll(_checkFunction(returnType, name, className, entryLib));
+      errorMessages.addAll(_checkFunction(returnType, name, className));
     } else if (returnType is analyzer.TypeParameterType) {
       if (function.returnType is analyzer.TypeParameterType &&
-          entryLib.typeSystem.isPotentiallyNonNullable(function.returnType)) {
+          _entryLib.typeSystem.isPotentiallyNonNullable(function.returnType)) {
         errorMessages
             .add("The method '$className.$name' features a non-nullable "
                 'unknown return type, and cannot be stubbed.');
@@ -256,8 +274,7 @@ class MockBuilder implements Builder {
               "type, '${parameterTypeElement.name}', and cannot be stubbed.");
         }
       } else if (parameterType is analyzer.FunctionType) {
-        errorMessages
-            .addAll(_checkFunction(parameterType, name, className, entryLib));
+        errorMessages.addAll(_checkFunction(parameterType, name, className));
       }
     }
 
@@ -268,11 +285,6 @@ class MockBuilder implements Builder {
   bool _isMockClass(analyzer.InterfaceType type) =>
       type.element.name == 'Mock' &&
       type.element.source.fullName.endsWith('lib/src/mock.dart');
-
-  @override
-  final buildExtensions = const {
-    '.dart': ['.mocks.dart']
-  };
 }
 
 class _MockLibraryInfo {
@@ -500,7 +512,7 @@ class _MockLibraryInfo {
 
     // This class is unknown; we must likely generate a fake class, and return
     // an instance here.
-    return _dummyValueImplementing(type);
+    return _dummyValueImplementing(type as analyzer.InterfaceType);
   }
 
   Expression _dummyFunctionValue(analyzer.FunctionType type) {
