@@ -155,6 +155,16 @@ class _MockTargetGatherer {
               'The "classes" argument includes a private type: '
               '${elementToMock.displayName}.');
         }
+        var typeParameterErrors =
+            _checkTypeParameters(elementToMock.typeParameters, elementToMock);
+        if (typeParameterErrors.isNotEmpty) {
+          var joinedMessages =
+              typeParameterErrors.map((m) => '    $m').join('\n');
+          throw InvalidMockitoAnnotationException(
+              'Mockito cannot generate a valid mock class which implements '
+              "'${elementToMock.displayName}' for the following reasons:\n"
+              '$joinedMessages');
+        }
         classesToMock.add(typeToMock);
       } else if (elementToMock is GenericFunctionTypeElement &&
           elementToMock.enclosingElement is FunctionTypeAliasElement) {
@@ -220,15 +230,15 @@ class _MockTargetGatherer {
   /// stubbing candidates.
   ///
   /// A method is not valid for stubbing if:
-  /// - It has a private parameter or return type; Mockito cannot write the
-  ///   signature of such a method.
+  /// - It has a private type anywhere in its signature; Mockito cannot override
+  ///   such a method.
   /// - It has a non-nullable type variable return type, for example `T m<T>()`.
   ///   Mockito cannot generate dummy return values for unknown types.
   void _checkMethodsToStubAreValid(ClassElement classElement) {
     var className = classElement.name;
     var unstubbableErrorMessages = classElement.methods
         .where((m) => !m.isPrivate && !m.isStatic)
-        .expand((m) => _checkFunction(m.type, m.name, className))
+        .expand((m) => _checkFunction(m.type, m))
         .toList();
 
     if (unstubbableErrorMessages.isNotEmpty) {
@@ -240,24 +250,33 @@ class _MockTargetGatherer {
     }
   }
 
+  /// Checks [function] for properties that would make it un-stubbable.
+  ///
+  /// Types are checked in the following positions:
+  /// - return type
+  /// - parameter types
+  /// - bounds of type parameters
+  /// - type arguments
   List<String> _checkFunction(
-      analyzer.FunctionType function, String name, String className) {
+      analyzer.FunctionType function, Element enclosingElement) {
     var errorMessages = <String>[];
     var returnType = function.returnType;
     if (returnType is analyzer.InterfaceType) {
       if (returnType.element?.isPrivate ?? false) {
-        errorMessages
-            .add("The method '$className.$name' features a private return "
-                'type, and cannot be stubbed.');
+        errorMessages.add(
+            '${enclosingElement.fullName} features a private return type, and '
+            'cannot be stubbed.');
       }
+      errorMessages.addAll(
+          _checkTypeArguments(returnType.typeArguments, enclosingElement));
     } else if (returnType is analyzer.FunctionType) {
-      errorMessages.addAll(_checkFunction(returnType, name, className));
+      errorMessages.addAll(_checkFunction(returnType, enclosingElement));
     } else if (returnType is analyzer.TypeParameterType) {
       if (function.returnType is analyzer.TypeParameterType &&
           _entryLib.typeSystem.isPotentiallyNonNullable(function.returnType)) {
         errorMessages
-            .add("The method '$className.$name' features a non-nullable "
-                'unknown return type, and cannot be stubbed.');
+            .add('${enclosingElement.fullName} features a non-nullable unknown '
+                'return type, and cannot be stubbed.');
       }
     }
 
@@ -270,14 +289,62 @@ class _MockTargetGatherer {
           // `Object?`. However, until there is a decent use case, we will not
           // generate such a mock.
           errorMessages.add(
-              "The method '$className.$name' features a private parameter "
-              "type, '${parameterTypeElement.name}', and cannot be stubbed.");
+              '${enclosingElement.fullName} features a private parameter type, '
+              "'${parameterTypeElement.name}', and cannot be stubbed.");
         }
+        errorMessages.addAll(
+            _checkTypeArguments(parameterType.typeArguments, enclosingElement));
       } else if (parameterType is analyzer.FunctionType) {
-        errorMessages.addAll(_checkFunction(parameterType, name, className));
+        errorMessages.addAll(_checkFunction(parameterType, enclosingElement));
       }
     }
 
+    errorMessages
+        .addAll(_checkTypeParameters(function.typeFormals, enclosingElement));
+    errorMessages
+        .addAll(_checkTypeArguments(function.typeArguments, enclosingElement));
+
+    return errorMessages;
+  }
+
+  /// Checks the bounds of [typeParameters] for properties that would make the
+  /// enclosing method un-stubbable.
+  static List<String> _checkTypeParameters(
+      List<TypeParameterElement> typeParameters, Element enclosingElement) {
+    var errorMessages = <String>[];
+    for (var element in typeParameters) {
+      var typeParameter = element.bound;
+      if (typeParameter == null) continue;
+      if (typeParameter is analyzer.InterfaceType) {
+        if (typeParameter.element?.isPrivate ?? false) {
+          errorMessages.add(
+              '${enclosingElement.fullName} features a private type parameter '
+              'bound, and cannot be stubbed.');
+        }
+      }
+    }
+    return errorMessages;
+  }
+
+  /// Checks [typeArguments] for properties that would make the enclosing
+  /// method un-stubbable.
+  ///
+  /// See [_checkMethodsToStubAreValid] for what properties make a function
+  /// un-stubbable.
+  List<String> _checkTypeArguments(
+      List<analyzer.DartType> typeArguments, Element enclosingElement) {
+    var errorMessages = <String>[];
+    for (var typeArgument in typeArguments) {
+      if (typeArgument is analyzer.InterfaceType) {
+        if (typeArgument.element?.isPrivate ?? false) {
+          errorMessages.add(
+              '${enclosingElement.fullName} features a private type argument, '
+              'and cannot be stubbed.');
+        }
+      } else if (typeArgument is analyzer.FunctionType) {
+        errorMessages.addAll(_checkFunction(typeArgument, enclosingElement));
+      }
+    }
     return errorMessages;
   }
 
@@ -764,3 +831,17 @@ class InvalidMockitoAnnotationException implements Exception {
 
 /// A [MockBuilder] instance for use by `build.yaml`.
 Builder buildMocks(BuilderOptions options) => MockBuilder();
+
+extension on Element {
+  /// Returns the "full name" of a class or method element.
+  String get fullName {
+    if (this is ClassElement) {
+      return "The class '$name'";
+    } else if (this is MethodElement) {
+      var className = enclosingElement.name;
+      return "The method '$className.$name'";
+    } else {
+      return 'unknown element';
+    }
+  }
+}

@@ -1216,6 +1216,26 @@ void main() {
 
   test(
       'throws when GenerateMocks is given a class with a method with a return '
+      'type with private type arguments', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent('''
+        abstract class Foo {
+          List<_Bar> m(int a);
+        }
+        class _Bar {}
+        '''),
+      },
+      message: contains(
+          "The method 'Foo.m' features a private type argument, and cannot be "
+          'stubbed.'),
+    );
+  });
+
+  test(
+      'throws when GenerateMocks is given a class with a method with a return '
       'function type, with a private return type', () async {
     _expectBuilderThrows(
       assets: {
@@ -1255,6 +1275,26 @@ void main() {
 
   test(
       'throws when GenerateMocks is given a class with a method with a '
+      'parameter with private type arguments', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {
+          void m(List<_Bar> a) {}
+        }
+        class _Bar {}
+        '''),
+      },
+      message: contains(
+          "The method 'Foo.m' features a private type argument, and cannot be "
+          'stubbed.'),
+    );
+  });
+
+  test(
+      'throws when GenerateMocks is given a class with a method with a '
       'function parameter type, with a private return type', () async {
     _expectBuilderThrows(
       assets: {
@@ -1289,6 +1329,46 @@ void main() {
       },
       message: contains(
           "The method 'Foo.m' features a private parameter type, '_Bar', and "
+          'cannot be stubbed.'),
+    );
+  });
+
+  test(
+      'throws when GenerateMocks is given a class with a type parameter with a '
+      'private bound', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo<T extends _Bar> {
+          void m(int a) {}
+        }
+        class _Bar {}
+        '''),
+      },
+      message: contains(
+          "The class 'Foo' features a private type parameter bound, and cannot "
+          'be stubbed.'),
+    );
+  });
+
+  test(
+      'throws when GenerateMocks is given a class with a method with a '
+      'type parameter with a private bound', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {
+          void m<T extends _Bar>(int a) {}
+        }
+        class _Bar {}
+        '''),
+      },
+      message: contains(
+          "The method 'Foo.m' features a private type parameter bound, and "
           'cannot be stubbed.'),
     );
   });
