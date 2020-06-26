@@ -1,3 +1,8 @@
+## 2.12.0
+
+- Update `build_web_compilers|ddc` builder to produce a `.merged_metadata` file
+  which consists of new line separated `.metadata` content produced by DDC.
+
 ## 2.11.0
 
 - Deprecated support for the `experiments` configuration in favor of the

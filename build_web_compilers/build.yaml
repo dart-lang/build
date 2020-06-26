@@ -71,6 +71,7 @@ builders:
         - .ddc.js.errors
         - .ddc.js
         - .ddc.js.map
+        - .ddc.js.metadata
     is_optional: True
     auto_apply: all_packages
     required_inputs:
@@ -92,9 +93,11 @@ builders:
         - .dart.js.map
         - .dart.js.tar.gz
         - .digests
+        - .merged_metadata
     required_inputs:
       - .dart
       - .ddc.js
+      - .ddc.metadata
       - .ddc.module
       - .dart2js.module
     build_to: cache
