@@ -4,7 +4,7 @@
 
 import 'dart:async';
 
-import 'package:analyzer/analyzer.dart';
+import 'package:analyzer/analyzer.dart'; // ignore: deprecated_member_use
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
 
