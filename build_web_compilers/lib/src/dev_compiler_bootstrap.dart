@@ -76,6 +76,8 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
   var appModuleName = ddcModuleName(jsId);
   var appDigestsOutput =
       dartEntrypointId.changeExtension(digestsEntrypointExtension);
+  var mergedMetadataOutput =
+      dartEntrypointId.changeExtension(mergedMetadataExtension);
 
   // The name of the entrypoint dart library within the entrypoint JS module.
   //
@@ -140,13 +142,18 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
       dartEntrypointId.changeExtension(jsEntrypointExtension),
       entrypointJsContent);
 
-  // Output the digests for transitive modules.
-  // These can be consumed for hot reloads.
-  var moduleDigests = <String, String>{
-    for (var jsId in transitiveJsModules)
-      _moduleDigestKey(jsId): '${await buildStep.digest(jsId)}',
-  };
+  // Output the digests and merged_metadata for transitive modules.
+  // These can be consumed for hot reloads and debugging.
+  var mergedMetadataContent = StringBuffer();
+  var moduleDigests = <String, String>{};
+  for (var jsId in transitiveJsModules) {
+    mergedMetadataContent.writeln(
+        await buildStep.readAsString(jsId.changeExtension('.js.metadata')));
+    moduleDigests[_moduleDigestKey(jsId)] = '${await buildStep.digest(jsId)}';
+  }
   await buildStep.writeAsString(appDigestsOutput, jsonEncode(moduleDigests));
+  await buildStep.writeAsString(
+      mergedMetadataOutput, mergedMetadataContent.toString());
 }
 
 String _moduleDigestKey(AssetId jsId) =>

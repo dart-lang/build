@@ -20,6 +20,7 @@ import 'errors.dart';
 const jsModuleErrorsExtension = '.ddc.js.errors';
 const jsModuleExtension = '.ddc.js';
 const jsSourceMapExtension = '.ddc.js.map';
+const metadataExtension = '.ddc.js.metadata';
 
 /// A builder which can output ddc modules!
 class DevCompilerBuilder implements Builder {
@@ -70,7 +71,8 @@ class DevCompilerBuilder implements Builder {
           moduleExtension(platform): [
             jsModuleExtension,
             jsModuleErrorsExtension,
-            jsSourceMapExtension
+            jsSourceMapExtension,
+            metadataExtension,
           ],
         },
         environment = environment ?? {},
@@ -140,6 +142,7 @@ Future<void> _createDevCompilerModule(
   await buildStep.trackStage(
       'EnsureAssets', () => scratchSpace.ensureAssets(allAssetIds, buildStep));
   var jsId = module.primarySource.changeExtension(jsModuleExtension);
+  var metadataId = module.primarySource.changeExtension(metadataExtension);
   var jsOutputFile = scratchSpace.fileFor(jsId);
   var sdkSummary =
       p.url.join(dartSdk, sdkKernelPath ?? 'lib/_internal/ddc_sdk.dill');
@@ -175,6 +178,7 @@ Future<void> _createDevCompilerModule(
       '--track-widget-creation',
       '--inline-source-map',
       '--libraries-file=${p.toUri(librariesPath)}',
+      '--experimental-emit-debug-metadata',
       if (useIncrementalCompiler) ...[
         '--reuse-compiler-result',
         '--use-incremental-compiler',
@@ -223,6 +227,7 @@ Future<void> _createDevCompilerModule(
 
     // Copy the output back using the buildStep.
     await scratchSpace.copyOutput(jsId, buildStep);
+    await scratchSpace.copyOutput(metadataId, buildStep);
     if (debugMode) {
       // We need to modify the sources in the sourcemap to remove the custom
       // `multiRootScheme` that we use.
