@@ -39,7 +39,7 @@ void main() {
       var expectedOutputs = {
         'a|web/index.digests': decodedMatches(contains('packages/')),
         'a|web/index.dart.js': decodedMatches(contains('index.dart.bootstrap')),
-        'a|web/index.merged_metadata': isNotEmpty,
+        'a|web/index.ddc.merged_metadata': isNotEmpty,
         'a|web/index.dart.bootstrap.js': decodedMatches(allOf([
           // Maps non-lib modules to remove the top level dir.
           contains('"web/index": "index.ddc"'),
@@ -86,7 +86,7 @@ void main() {
           contains('if (childName === "b.dart")'),
         ])),
         'a|web/b.digests': isNotEmpty,
-        'a|web/b.merged_metadata': isNotEmpty,
+        'a|web/b.ddc.merged_metadata': isNotEmpty,
         'a|web/b.dart.js': isNotEmpty,
       };
       await testBuilder(WebEntrypointBuilder(WebCompiler.DartDevc), assets,
@@ -106,7 +106,7 @@ void main() {
           contains('if (childName === "package:a/app.dart")'),
         ])),
         'a|lib/app.digests': isNotEmpty,
-        'a|lib/app.merged_metadata': isNotEmpty,
+        'a|lib/app.ddc.merged_metadata': isNotEmpty,
         'a|lib/app.dart.js': isNotEmpty,
       };
       await testBuilder(WebEntrypointBuilder(WebCompiler.DartDevc), assets,
