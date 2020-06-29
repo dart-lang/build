@@ -70,9 +70,9 @@ PostProcessBuilder dart2jsArchiveExtractor(BuilderOptions options) =>
 PostProcessBuilder dartSourceCleanup(BuilderOptions options) =>
     (options.config['enabled'] as bool ?? false)
         ? const FileDeletingBuilder(
-            ['.dart', '.js.map', '.ddc.js.metadata', '.merged_metadata'])
+            ['.dart', '.js.map', '.ddc.js.metadata', '.ddc.merged_metadata'])
         : const FileDeletingBuilder(
-            ['.dart', '.js.map', '.ddc.js.metadata', '.merged_metadata'],
+            ['.dart', '.js.map', '.ddc.js.metadata', '.ddc.merged_metadata'],
             isEnabled: false);
 
 /// Throws if it is ever given different options.
