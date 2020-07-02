@@ -169,7 +169,7 @@ class _FakeLibraryElement implements LibraryElement {
   _FakeLibraryElement(this._sourceUri);
 
   @override
-  dynamic noSuchMethod(i) => super.noSuchMethod(i);
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 
   @override
   Source get source => _FakeSource(_sourceUri);
@@ -182,5 +182,5 @@ class _FakeSource implements Source {
   const _FakeSource(this.uri);
 
   @override
-  dynamic noSuchMethod(i) => super.noSuchMethod(i);
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
