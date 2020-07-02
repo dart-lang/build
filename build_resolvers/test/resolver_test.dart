@@ -71,8 +71,8 @@ void main() {
           'a|web/main.dart': '// @dart=2.1\n\nmain() {}',
         }, (resolver) async {
           var lib = await resolver.libraryFor(entryPoint);
-          expect(lib.languageVersionMajor, 2);
-          expect(lib.languageVersionMinor, 1);
+          expect(lib.languageVersion.effective.major, 2);
+          expect(lib.languageVersion.effective.minor, 1);
         }, resolvers: AnalyzerResolvers());
       });
 
@@ -87,8 +87,8 @@ void main() {
               await loadPackageConfigUri(await Isolate.packageConfig);
           var expectedVersion =
               currentPackageConfig['build_resolvers'].languageVersion;
-          expect(lib.languageVersionMajor, expectedVersion.major);
-          expect(lib.languageVersionMinor, expectedVersion.minor);
+          expect(lib.languageVersion.effective.major, expectedVersion.major);
+          expect(lib.languageVersion.effective.minor, expectedVersion.minor);
         }, resolvers: AnalyzerResolvers());
       });
 
@@ -105,8 +105,8 @@ void main() {
           'a|web/main.dart': 'main() {}',
         }, (resolver) async {
           var lib = await resolver.libraryFor(entryPoint);
-          expect(lib.languageVersionMajor, customVersion.major);
-          expect(lib.languageVersionMinor, customVersion.minor);
+          expect(lib.languageVersion.effective.major, customVersion.major);
+          expect(lib.languageVersion.effective.minor, customVersion.minor);
         }, resolvers: AnalyzerResolvers(null, null, customPackageConfig));
       });
 
@@ -119,8 +119,8 @@ void main() {
           'a|web/main.dart': 'main() {}',
         }, (resolver) async {
           var lib = await resolver.libraryFor(entryPoint);
-          expect(lib.languageVersionMajor, sdkLanguageVersion.major);
-          expect(lib.languageVersionMinor, sdkLanguageVersion.minor);
+          expect(lib.languageVersion.effective.major, sdkLanguageVersion.major);
+          expect(lib.languageVersion.effective.minor, sdkLanguageVersion.minor);
         }, resolvers: AnalyzerResolvers(null, null, customPackageConfig));
       });
 
@@ -367,8 +367,10 @@ int? get x => 1;
                 ''',
               }, (resolver) async {
                 var lib = await resolver.libraryFor(entryPoint);
-                expect(lib.languageVersionMajor, sdkLanguageVersion.major);
-                expect(lib.languageVersionMinor, sdkLanguageVersion.minor);
+                expect(lib.languageVersion.effective.major,
+                    sdkLanguageVersion.major);
+                expect(lib.languageVersion.effective.minor,
+                    sdkLanguageVersion.minor);
                 var errors = await lib.session.getErrors('/a/web/main.dart');
                 expect(errors.errors, isEmpty);
               }, resolvers: AnalyzerResolvers()),
