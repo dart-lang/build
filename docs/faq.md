@@ -38,7 +38,63 @@ targets:
           compiler: dart2js
 ```
 
-## How can I build with multiple configurations
+## How is the configuration for a builder resolved?
+
+Builders are constructed with a map of options which is resolved from the
+provided defaults and user overrides. The configuration is specific to a
+`target` and build mode (dev mode and release mode). The configuration is
+"merged" one by one, where the higher precedent configuration overrides values
+by String key. The order of precedence from lowest to highest is:
+
+- Builder defaults without a mode.
+- Builder defaults by mode.
+- Target configuration without a mode.
+- Target configuration by mode.
+- Global options without a mode.
+- Global options by mode.
+- Options specified on the command line.
+
+For example:
+
+```yaml
+builders:
+  some_builder:
+    # Some required fields omitted
+    defaults:
+      options:
+        some_option: 'Priority 0'
+      release_options:
+        some_option: 'Priority 1'
+      dev_options:
+        some_option: 'Priority 1'
+targets:
+  $default:
+    builders:
+      some_package:some_builder:
+        options:
+          some_option: 'Priority 2'
+        release_options:
+          some_option: 'Priority 3'
+        dev_options:
+          some_option: 'Priority 3'
+
+global_options:
+  some_package:some_builder:
+    options:
+      some_option: 'Priority 4'
+    release_options:
+      some_option: 'Priority 5'
+    dev_options:
+      some_option: 'Priority 5'
+```
+
+And when running the build:
+
+```
+pub run build_runner build "--define=some_package:some_builder=some_option=Priority 6"
+```
+
+## How can I build with multiple configurations?
 
 The build system supports two types of builds, "dev" and "release". By default
 with `build_runner` the "dev" version is built by default regardless of the
