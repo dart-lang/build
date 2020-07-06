@@ -62,36 +62,36 @@ builders:
     # Some required fields omitted
     defaults:
       options:
-        some_option: 'Priority 0'
+        some_option: "Priority 0"
       release_options:
-        some_option: 'Priority 1'
+        some_option: "Priority 1"
       dev_options:
-        some_option: 'Priority 1'
+        some_option: "Priority 1"
 targets:
   $default:
     builders:
       some_package:some_builder:
         options:
-          some_option: 'Priority 2'
+          some_option: "Priority 2"
         release_options:
-          some_option: 'Priority 3'
+          some_option: "Priority 3"
         dev_options:
-          some_option: 'Priority 3'
+          some_option: "Priority 3"
 
 global_options:
   some_package:some_builder:
     options:
-      some_option: 'Priority 4'
+      some_option: "Priority 4"
     release_options:
-      some_option: 'Priority 5'
+      some_option: "Priority 5"
     dev_options:
-      some_option: 'Priority 5'
+      some_option: "Priority 5"
 ```
 
 And when running the build:
 
 ```
-pub run build_runner build "--define=some_package:some_builder=some_option=Priority 6"
+pub run build_runner build --define=some_package:some_builder=some_option="Priority 6"
 ```
 
 ## How can I build with multiple configurations?
