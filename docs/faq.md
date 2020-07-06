@@ -43,7 +43,7 @@ targets:
 Builders are constructed with a map of options which is resolved from the
 provided defaults and user overrides. The configuration is specific to a
 `target` and build mode (dev mode and release mode). The configuration is
-"merged" one by one, where the higher precedent configuration overrides values
+"merged" one by one, where the higher precedence configuration overrides values
 by String key. The order of precedence from lowest to highest is:
 
 - Builder defaults without a mode.
