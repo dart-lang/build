@@ -1,4 +1,7 @@
-## 1.3.10-dev
+## 1.3.10
+
+- Migrate to new analyzer API for creating an SDK summary after the old approach
+  was broken.
 
 ## 1.3.9
 
