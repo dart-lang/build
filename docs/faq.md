@@ -88,11 +88,11 @@ configuration repeatedly.
 
 ## How can I include additional sources in my build?
 
-By default, the `build_runner` package only includes some specifically
-whitelisted directories, derived from the [package layout conventions](
-https://dart.dev/tools/pub/package-layout).
+The `build_runner` package defaults the included source files to directories
+derived from the
+[package layout conventions](https://dart.dev/tools/pub/package-layout).
 
-If you have some additional files which you would like to be included as part of
+If you have additional files which you would like to be included as part of
 the build, you will need a custom `build.yaml` file. You will want to modify the
 `sources` field on the `$default` target:
 

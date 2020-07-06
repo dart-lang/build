@@ -43,7 +43,7 @@ void main() {
       assetGraph.get(aId).lastKnownDigest = await reader.digest(aId);
 
       var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
-          defaultRootPackageWhitelist: ['web/**']);
+          defaultRootPackageSources: ['web/**']);
       assetTracker = AssetTracker(assetGraph, reader, targetGraph);
       var updates = await assetTracker.collectChanges();
       await assetGraph.updateAndInvalidate([], updates, 'a', null, reader);

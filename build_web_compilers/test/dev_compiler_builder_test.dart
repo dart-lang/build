@@ -3,13 +3,12 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:build_modules/build_modules.dart';
 import 'package:build_test/build_test.dart';
-import 'package:logging/logging.dart';
-import 'package:test/test.dart';
-
 import 'package:build_web_compilers/build_web_compilers.dart';
 import 'package:build_web_compilers/builders.dart';
-import 'package:build_modules/build_modules.dart';
+import 'package:logging/logging.dart';
+import 'package:test/test.dart';
 
 import 'util.dart';
 
@@ -51,11 +50,14 @@ void main() {
         var expectedOutputs = {
           'b|lib/b$jsModuleExtension': decodedMatches(contains('world')),
           'b|lib/b$jsSourceMapExtension': decodedMatches(contains('b.dart')),
+          'b|lib/b$metadataExtension': isNotEmpty,
           'a|lib/a$jsModuleExtension': decodedMatches(contains('hello')),
           'a|lib/a$jsSourceMapExtension': decodedMatches(contains('a.dart')),
+          'a|lib/a$metadataExtension': isNotEmpty,
           'a|web/index$jsModuleExtension': decodedMatches(contains('main')),
           'a|web/index$jsSourceMapExtension':
               decodedMatches(contains('index.dart')),
+          'a|web/index$metadataExtension': isNotEmpty,
         };
         var reportedUnused = <AssetId, Iterable<AssetId>>{};
         await testBuilder(
@@ -83,11 +85,14 @@ void main() {
       var expectedOutputs = {
         'b|lib/b$jsModuleExtension': isNotEmpty,
         'b|lib/b$jsSourceMapExtension': isNotEmpty,
+        'b|lib/b$metadataExtension': isNotEmpty,
         'a|lib/a$jsModuleExtension': isNotEmpty,
         'a|lib/a$jsSourceMapExtension': isNotEmpty,
+        'a|lib/a$metadataExtension': isNotEmpty,
         'a|web/index$jsModuleExtension':
             decodedMatches(contains('print("zap")')),
         'a|web/index$jsSourceMapExtension': isNotEmpty,
+        'a|web/index$metadataExtension': isNotEmpty,
       };
       await testBuilder(
           DevCompilerBuilder(
