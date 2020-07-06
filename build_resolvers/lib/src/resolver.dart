@@ -12,12 +12,9 @@ import 'package:analyzer/src/summary/summary_file_builder.dart';
 import 'package:analyzer/src/dart/analysis/experiments.dart';
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer/file_system/file_system.dart' hide File;
 import 'package:analyzer/file_system/physical_file_system.dart';
-import 'package:analyzer/src/generated/sdk.dart';
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
-import 'package:analyzer/src/dart/sdk/sdk.dart';
 import 'package:analyzer/src/generated/engine.dart'
     show AnalysisOptions, AnalysisOptionsImpl;
 import 'package:build/build.dart';
@@ -25,7 +22,6 @@ import 'package:build/experiments.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
-import 'package:yaml/yaml.dart';
 
 import 'analysis_driver.dart';
 import 'build_asset_uri_resolver.dart';
@@ -289,7 +285,12 @@ Future<String> _defaultSdkSummaryGenerator() async {
     var watch = Stopwatch()..start();
     _logger.info('Generating SDK summary...');
     await summaryFile.create(recursive: true);
-    await summaryFile.writeAsBytes(_buildSdkSummary());
+    final embedderYamlPath =
+        isFlutter ? p.join(_dartUiPath, '_embedder.yaml') : null;
+    await summaryFile.writeAsBytes(buildSdkSummary(
+        sdkPath: _runningDartSdkPath,
+        resourceProvider: PhysicalResourceProvider.INSTANCE,
+        embedderYamlPath: embedderYamlPath));
 
     await _createDepsFile(depsFile, currentDeps);
     watch.stop();
@@ -320,49 +321,6 @@ Future<void> _createDepsFile(
     File depsFile, Map<String, Object> currentDeps) async {
   await depsFile.create(recursive: true);
   await depsFile.writeAsString(jsonEncode(currentDeps));
-}
-
-List<int> _buildSdkSummary() {
-  var resourceProvider = PhysicalResourceProvider.INSTANCE;
-  var dartSdkFolder = resourceProvider.getFolder(_runningDartSdkPath);
-  var sdk = FolderBasedDartSdk(resourceProvider, dartSdkFolder)
-    ..useSummary = false
-    ..analysisOptions = AnalysisOptionsImpl();
-
-  if (isFlutter) {
-    _addFlutterLibraries(sdk, resourceProvider);
-  }
-
-  var sdkSources = {
-    for (var library in sdk.sdkLibraries) sdk.mapDartUri(library.shortName),
-  };
-
-  // ignore: deprecated_member_use
-  return SummaryBuilder(sdkSources, sdk.context).build(
-      // TODO: remove after https://github.com/dart-lang/sdk/issues/41820
-      // ignore: deprecated_member_use
-      featureSet: FeatureSet.fromEnableFlags(['non-nullable']));
-}
-
-/// Loads the flutter engine _embedder.yaml file and adds any new libraries to
-/// [sdk].
-void _addFlutterLibraries(
-    AbstractDartSdk sdk, ResourceProvider resourceProvider) {
-  var embedderYamlFile =
-      resourceProvider.getFile(p.join(_dartUiPath, '_embedder.yaml'));
-  if (!embedderYamlFile.exists) {
-    throw StateError('Unable to find flutter libraries, please run '
-        '`flutter precache` and try again.');
-  }
-
-  var embedderYaml = loadYaml(embedderYamlFile.readAsStringSync()) as YamlMap;
-  var flutterSdk = EmbedderSdk(resourceProvider,
-      {resourceProvider.getFolder(_dartUiPath): embedderYaml});
-
-  for (var library in flutterSdk.sdkLibraries) {
-    if (sdk.libraryMap.getLibrary(library.shortName) != null) continue;
-    sdk.libraryMap.setLibrary(library.shortName, library as SdkLibraryImpl);
-  }
 }
 
 /// Checks that the current analyzer version supports the current language
