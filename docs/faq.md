@@ -88,7 +88,7 @@ sources. Builds will overwrite generated files in the build cache, so flipping
 between build configurations may be less performant than building the same build
 configuration repeatedly.
 
-## How is the configuration for a builder resolved? {#configuration-resolve}
+## How is the configuration for a builder resolved?
 
 Builders are constructed with a map of options which is resolved from the
 builder specified defaults and user overrides. The configuration is specific to
