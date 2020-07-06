@@ -38,7 +38,7 @@ targets:
           compiler: dart2js
 ```
 
-## How can I build with multiple configurations? {#multiple-config}
+## How can I build with multiple configurations?
 
 The build system supports two types of builds, "dev" and "release". By default
 with `build_runner` the "dev" version is built by regardless of the command
@@ -48,12 +48,13 @@ default mode for the `serve` command is dev, and the default mode for the
 `--no-release` flag.
 
 Options can be configured per mode, and they are [merged by
-key](#configuration-resolve) with the defaults provided by the builder and
-global overrides. The `options` field defines configuration used in all modes,
-and the `dev` and `release` fields defines the overrides to those defaults for
-the specific mode chosen. Builders can define their own defaults by mode which
-is overridden by user config. For example `build_web_compilers` defines options
-that use `dartdevc` compiler in dev mode, and `dart2js` in release mode.
+key](#how-is-the-configuration-for-a-builder-resolved) with the defaults
+provided by the builder and global overrides. The `options` field defines
+configuration used in all modes, and the `dev` and `release` fields defines the
+overrides to those defaults for the specific mode chosen. Builders can define
+their own defaults by mode which is overridden by user config. For example
+`build_web_compilers` defines options that use `dartdevc` compiler in dev mode,
+and `dart2js` in release mode.
 
 The following configuration builds with `dart2js` always, passes `--no-minify`
 in dev mode, and passed `-O3` in release mode:
@@ -91,9 +92,10 @@ configuration repeatedly.
 
 Builders are constructed with a map of options which is resolved from the
 builder specified defaults and user overrides. The configuration is specific to
-a `target` and [build mode](#multiple-config). The configuration is "merged" one
-by one, where the higher precedence configuration overrides values by String
-key. The order of precedence from lowest to highest is:
+a `target` and [build mode](#how-can-i-build-with-multiple-configurations). The
+configuration is "merged" one by one, where the higher precedence configuration
+overrides values by String key. The order of precedence from lowest to highest
+is:
 
 - Builder defaults without a mode.
 - Builder defaults by mode.
