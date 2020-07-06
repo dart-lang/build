@@ -38,13 +38,62 @@ targets:
           compiler: dart2js
 ```
 
-## How is the configuration for a builder resolved?
+## How can I build with multiple configurations? {#multiple-config}
+
+The build system supports two types of builds, "dev" and "release". By default
+with `build_runner` the "dev" version is built by regardless of the command
+used, build in release mode by passing the `--release` flag. With `webdev` the
+default mode for the `serve` command is dev, and the default mode for the
+`build` command is release. The `build` command can use dev mode with the
+`--no-release` flag.
+
+Options can be configured per mode, and they are [merged by
+key](#configuration-resolve) with the defaults provided by the builder and
+global overrides. The `options` field defines configuration used in all modes,
+and the `dev` and `release` fields defines the overrides to those defaults for
+the specific mode chosen. Builders can define their own defaults by mode which
+is overridden by user config. For example `build_web_compilers` defines options
+that use `dartdevc` compiler in dev mode, and `dart2js` in release mode.
+
+The following configuration builds with `dart2js` always, passes `--no-minify`
+in dev mode, and passed `-O3` in release mode:
+
+```yaml
+targets:
+  $default:
+    builders:
+      build_web_compilers|entrypoint:
+        options:
+          compiler: dart2js
+        dev_options:
+          dart2js_args:
+          - --no-minify
+        release_options:
+          dart2js_args:
+          - -O3
+```
+
+If you need other configurations in addition to dev and release, you can define
+multiple `build.yaml` files. For instance if you have a `build.debug.yaml` file
+you can build with `--config debug` and this file will be used instead of the
+default `build.yaml`. The dev and release flavors still apply. `pub run
+build_runner serve --config debug` will use the `dev_options` in
+`build.debug.yaml`, while `pub run build_runner build --config debug --release`
+will use the `release_options` in `build.debug.yaml`.
+
+Only one build flavor can be built at a time. It is not possible to have
+multiple targets defined which set different builder options for the same set of
+sources. Builds will overwrite generated files in the build cache, so flipping
+between build configurations may be less performant than building the same build
+configuration repeatedly.
+
+## How is the configuration for a builder resolved? {#configuration-resolve}
 
 Builders are constructed with a map of options which is resolved from the
-provided defaults and user overrides. The configuration is specific to a
-`target` and build mode (dev mode and release mode). The configuration is
-"merged" one by one, where the higher precedence configuration overrides values
-by String key. The order of precedence from lowest to highest is:
+builder specified defaults and user overrides. The configuration is specific to
+a `target` and [build mode](#multiple-config). The configuration is "merged" one
+by one, where the higher precedence configuration overrides values by String
+key. The order of precedence from lowest to highest is:
 
 - Builder defaults without a mode.
 - Builder defaults by mode.
@@ -93,54 +142,6 @@ And when running the build:
 ```
 pub run build_runner build --define=some_package:some_builder=some_option="Priority 6"
 ```
-
-## How can I build with multiple configurations?
-
-The build system supports two types of builds, "dev" and "release". By default
-with `build_runner` the "dev" version is built by default regardless of the
-command used, build in release mode by passing the `--release` flag. With
-`webdev` the default mode for the `serve` command is dev, and the default mode
-for the `build` command is release. The `build` command can use dev mode with
-the `--no-release` flag.
-
-Options can be configured per mode, and they are merged by key. The `options`
-field defines configuration used in all modes, and the `dev` and `release`
-fields defines the overrides to those defaults for the specific mode chosen.
-Builders can define their own defaults by mode which is overridden by user
-config. For example `build_web_compilers` defines options that use `dartdevc`
-compiler in dev mode, and `dart2js` in release mode.
-
-The following configuration builds with `dart2js` always, passes `--no-minify`
-in dev mode, and passed `-O3` in release mode:
-
-```yaml
-targets:
-  $default:
-    builders:
-      build_web_compilers|entrypoint:
-        options:
-          compiler: dart2js
-        dev_options:
-          dart2js_args:
-          - --no-minify
-        release_options:
-          dart2js_args:
-          - -O3
-```
-
-If you need other configurations in addition to dev and release, you can define
-multiple `build.yaml` files. For instance if you have a `build.debug.yaml` file
-you can build with `--config debug` and this file will be used instead of the
-default `build.yaml`. The dev and release flavors still apply. `pub run
-build_runner serve --config debug` will use the `dev_options` in
-`build.debug.yaml`, while `pub run build_runner build --config debug --release`
-will use the `release_options` in `build.debug.yaml`.
-
-Only one build flavor can be built at a time. It is not possible to have
-multiple targets defined which set different builder options for the same set of
-sources. Builds will overwrite generated files in the build cache, so flipping
-between build configurations may be less performant than building the same build
-configuration repeatedly.
 
 ## How can I include additional sources in my build?
 
