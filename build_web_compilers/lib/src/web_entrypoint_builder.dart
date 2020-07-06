@@ -4,8 +4,7 @@
 
 import 'dart:async';
 
-// ignore: deprecated_member_use
-import 'package:analyzer/analyzer.dart';
+import 'package:analyzer/analyzer.dart'; // ignore: deprecated_member_use
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
 
@@ -18,6 +17,7 @@ const jsEntrypointExtension = '.dart.js';
 const jsEntrypointSourceMapExtension = '.dart.js.map';
 const jsEntrypointArchiveExtension = '.dart.js.tar.gz';
 const digestsEntrypointExtension = '.digests';
+const mergedMetadataExtension = '.ddc.merged_metadata';
 
 /// Which compiler to use when compiling web entrypoints.
 enum WebCompiler {
@@ -88,6 +88,7 @@ class WebEntrypointBuilder implements Builder {
       jsEntrypointSourceMapExtension,
       jsEntrypointArchiveExtension,
       digestsEntrypointExtension,
+      mergedMetadataExtension,
     ],
   };
 
