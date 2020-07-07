@@ -14,6 +14,10 @@ import 'src/comment_generator.dart';
 import 'src/unformatted_code_generator.dart';
 
 void main() {
+  tearDown(() {
+    // Increment this after each test so the next test has it's own package
+    _pkgCacheCount++;
+  });
   test('Simple Generator test', () async {
     await _generateTest(const CommentGenerator(), _testGenPartContent);
   });
@@ -308,6 +312,30 @@ void main() {
       });
     });
 
+    test('includes matching language version in all parts', () async {
+      await testBuilder(const CombiningBuilder(), {
+        '$_pkgName|lib/a.dart': '''
+// @dart=2.9
+library a;
+part "a.g.dart";
+''',
+        '$_pkgName|lib/a.foo.g.part': 'some generated content'
+      }, generateFor: {
+        '$_pkgName|lib/a.dart'
+      }, outputs: {
+        '$_pkgName|lib/a.g.dart': decodedMatches(
+          '''
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// @dart=2.9
+
+part of a;
+
+some generated content
+''',
+        ),
+      });
+    });
+
     test('outputs `.g.dart` files', () async {
       await testBuilder(const CombiningBuilder(), {
         '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
@@ -527,7 +555,9 @@ class _BadOutputGenerator extends Generator {
 
 const _customHeader = '// Copyright 1979';
 
-const _pkgName = 'pkg';
+// Ensure every test gets its own unique package name
+String get _pkgName => 'pkg$_pkgCacheCount';
+int _pkgCacheCount = 1;
 
 const _testLibContent = r'''
 library test_lib;

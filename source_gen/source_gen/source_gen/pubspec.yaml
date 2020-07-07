@@ -1,13 +1,14 @@
 name: source_gen
-version: 0.9.6-dev
-description: Automated source code generation for Dart.
+version: 0.9.6
+description: >-
+  Source code generation builders and utilities for the Dart build system
 homepage: https://github.com/dart-lang/source_gen
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
 
 dependencies:
-  analyzer: ">=0.39.0 <0.40.0"
+  analyzer: ^0.39.11
   async: ^2.0.7
   build: ^1.0.0
   dart_style: ^1.0.0

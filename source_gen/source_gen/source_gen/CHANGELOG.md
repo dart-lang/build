@@ -1,5 +1,7 @@
-## 0.9.6-dev
+## 0.9.6
 
+* Include matching Dart language version overrides in generated parts if the
+  source library has a language version override.  
 * Streamlined error handling in all builders. There should be no user-visible
   behavior change.
 * Update minimum Dart SDK to `2.7.0`.
