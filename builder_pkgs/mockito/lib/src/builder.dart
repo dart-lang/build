@@ -472,8 +472,11 @@ class _MockLibraryInfo {
 
   /// Returns the import URL for [type].
   ///
-  /// For some types, like `dynamic`, this may return null.
+  /// For some types, like `dynamic` and type variables, this may return null.
   String _typeImport(analyzer.DartType type) {
+    // For type variables, no import needed.
+    if (type is analyzer.TypeParameterType) return null;
+
     var library = type.element?.library;
 
     // For types like `dynamic`, return null; no import needed.

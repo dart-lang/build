@@ -301,6 +301,39 @@ void main() {
     );
   });
 
+  test('writes non-interface types w/o imports', () async {
+    await testBuilder(
+      buildMocks(BuilderOptions({})),
+      {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        import 'dart:async';
+        class Foo<T> {
+          void f(dynamic a) {}
+          void g(T b) {}
+          void h<U>(U c) {}
+        }
+        '''),
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': dedent(r'''
+        import 'package:mockito/mockito.dart' as _i1;
+        import 'package:foo/foo.dart' as _i2;
+
+        /// A class which mocks [Foo].
+        ///
+        /// See the documentation for Mockito's code generation for more information.
+        class MockFoo<T> extends _i1.Mock implements _i2.Foo<T> {
+          void f(dynamic a) => super.noSuchMethod(Invocation.method(#f, [a]));
+          void g(T b) => super.noSuchMethod(Invocation.method(#g, [b]));
+          void h<U>(U c) => super.noSuchMethod(Invocation.method(#h, [c]));
+        }
+        '''),
+      },
+    );
+  });
+
   test('imports libraries for external class types', () async {
     await testBuilder(
       buildMocks(BuilderOptions({})),
@@ -413,7 +446,7 @@ void main() {
     );
   });
 
-  test('overrides absrtact methods', () async {
+  test('overrides abstract methods', () async {
     await testBuilder(
       buildMocks(BuilderOptions({})),
       {
