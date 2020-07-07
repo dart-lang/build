@@ -11,30 +11,33 @@ stages:
 # 3. Then run tests compiled via dartdevc and dart2js.
 jobs:
     include:
-    - stage: presubmit
-      name: "2.4.0 analyzer"
-      script: ./tool/travis.sh dartanalyzer
-      dart: 2.4.0
-    - stage: presubmit
-      name: "2.4.0 vm test"
-      script: ./tool/travis.sh vm_test
-      dart: 2.4.0
-    - stage: build
-      name: "2.4.0 DDC build"
-      script: ./tool/travis.sh dartdevc_build
-      dart: 2.4.0
-    - stage: testing
-      name: "2.4.0 DDC test"
-      script: ./tool/travis.sh dartdevc_test
-      dart: 2.4.0
-    - stage: testing
-      name: "2.4.0 dart2js test"
-      script: ./tool/travis.sh dart2js_test
-      dart: 2.4.0
-    - stage: testing
-      name: "2.4.0 code coverage"
-      script: ./tool/travis.sh coverage
-      dart: 2.4.0
+    # mockito tests cannot run on stable until stable is >= 2.9.0, as "2.9.0"
+    # is the version required by analyzer. See
+    # https://github.com/dart-lang/build/issues/2685.
+    #- stage: presubmit
+    #  name: "2.7.0 analyzer"
+    #  script: ./tool/travis.sh dartanalyzer
+    #  dart: 2.7.0
+    #- stage: presubmit
+    #  name: "2.7.0 vm test"
+    #  script: ./tool/travis.sh vm_test
+    #  dart: 2.7.0
+    #- stage: build
+    #  name: "2.7.0 DDC build"
+    #  script: ./tool/travis.sh dartdevc_build
+    #  dart: 2.7.0
+    #- stage: testing
+    #  name: "2.7.0 DDC test"
+    #  script: ./tool/travis.sh dartdevc_test
+    #  dart: 2.7.0
+    #- stage: testing
+    #  name: "2.7.0 dart2js test"
+    #  script: ./tool/travis.sh dart2js_test
+    #  dart: 2.7.0
+    #- stage: testing
+    #  name: "2.7.0 code coverage"
+    #  script: ./tool/travis.sh coverage
+    #  dart: 2.7.0
 
     - stage: presubmit
       name: "dev dartfmt"
