@@ -17,7 +17,7 @@ const jsEntrypointExtension = '.dart.js';
 const jsEntrypointSourceMapExtension = '.dart.js.map';
 const jsEntrypointArchiveExtension = '.dart.js.tar.gz';
 const digestsEntrypointExtension = '.digests';
-const mergedMetadataExtension = '.ddc.merged_metadata';
+const mergedMetadataExtension = '.ddc_merged_metadata';
 
 /// Which compiler to use when compiling web entrypoints.
 enum WebCompiler {
