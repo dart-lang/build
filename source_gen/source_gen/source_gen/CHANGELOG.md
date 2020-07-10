@@ -1,4 +1,4 @@
-## 0.9.6-dev
+## 0.9.6
 
 * Add support for `Set` in `ConstantReader`.
   * Updated `isLiteral` and `literalValue` to handle `Set`.
