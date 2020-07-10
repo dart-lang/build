@@ -112,7 +112,7 @@ abstract class ConstantReader {
   /// Constant as a `List` value.
   List<DartObject> get listValue;
 
-  /// Whether this constant represents a `List` value.
+  /// Whether this constant represents a `Set` value.
   bool get isSet => false;
 
   /// Constant as a `Set` value.
