@@ -140,14 +140,16 @@ class _Builder extends Builder {
       genPartContent = formatOutput(genPartContent);
     } catch (e, stack) {
       log.severe(
-          'Error formatting generated source code for ${library.identifier} '
-          'which was output to ${outputId.path}.\n'
-          'This may indicate an issue in the generated code or in the '
-          'formatter.\n'
-          'Please check the generated code and file an issue on source_gen if '
-          'appropriate.',
-          e,
-          stack);
+        '''
+An error `${e.runtimeType}` occurred while formatting the generated source for
+  `${library.identifier}`
+which was output to
+  `${outputId.path}`.
+This may indicate an issue in the generator, the input source code, or in the
+source formatter.''',
+        e,
+        stack,
+      );
     }
 
     unawaited(buildStep.writeAsString(outputId, genPartContent));

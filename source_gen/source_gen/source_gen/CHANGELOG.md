@@ -1,11 +1,12 @@
-## 0.9.6
+## 0.9.6-dev
 
 * Include matching Dart language version overrides in generated parts if the
   source library has a language version override.
 * Streamlined error handling in all builders. There should be no user-visible
   behavior change.
+* Improve the error message when source code formatting fails.
 * Update minimum Dart SDK to `2.7.0`.
-* Changed the behavior of `LibraryReader.allElements` to include **extensions**
+* Changed the behavior of `LibraryReader.allElements` to include **extensions**.
 
 ## 0.9.5
 
