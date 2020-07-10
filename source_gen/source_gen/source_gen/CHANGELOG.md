@@ -1,5 +1,8 @@
 ## 0.9.6-dev
 
+* Add support for `Set` in `ConstantReader`.
+  * Updated `isLiteral` and `literalValue` to handle `Set`.
+  * Added `isSet` and `setValue` members.
 * Include matching Dart language version overrides in generated parts if the
   source library has a language version override.
 * Streamlined error handling in all builders. There should be no user-visible

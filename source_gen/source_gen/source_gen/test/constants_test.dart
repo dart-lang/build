@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:analyzer/dart/constant/value.dart';
 import 'package:build_test/build_test.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:test/test.dart';
@@ -18,11 +19,12 @@ void main() {
         const aInt = 1234;
         const aBool = true;
         const aNull = null;
-        const aList = const [1, 2, 3];
-        const aMap = const {1: 'A', 2: 'B'};
+        const aList = [1, 2, 3];
+        const aMap = {1: 'A', 2: 'B'};
         const aDouble = 1.23;
         const aSymbol = #shanna;
         const aType = DateTime;
+        const aSet = {1};
 
         @aString    // [0]
         @aInt       // [1]
@@ -42,6 +44,7 @@ void main() {
         @aDouble    // [9]
         @aSymbol    // [10]
         @aType      // [11]
+        @aSet       // [12]
         class Example {
           final String aString;
           final int aInt;
@@ -146,6 +149,20 @@ void main() {
       expect(constants[11].typeValue.element.name, 'DateTime');
       expect(constants[11].isLiteral, isFalse);
       expect(() => constants[11].literalValue, throwsFormatException);
+    });
+
+    test('should read a Set', () {
+      expect(constants[12].isSet, isTrue);
+      expect(
+        constants[12].setValue.map((c) => ConstantReader(c).intValue),
+        {1},
+      );
+      expect(constants[12].isLiteral, isTrue);
+      expect(
+        (constants[12].literalValue as Set<DartObject>)
+            .map((c) => ConstantReader(c).intValue),
+        {1},
+      );
     });
 
     test('should give back the underlying value', () {

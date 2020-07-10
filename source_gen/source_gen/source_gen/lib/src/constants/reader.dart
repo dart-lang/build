@@ -112,6 +112,12 @@ abstract class ConstantReader {
   /// Constant as a `List` value.
   List<DartObject> get listValue;
 
+  /// Whether this constant represents a `List` value.
+  bool get isSet => false;
+
+  /// Constant as a `List` value.
+  Set<DartObject> get setValue;
+
   /// Returns as a revived meta class.
   ///
   /// This is appropriate for cases where the underlying object is not a literal
@@ -142,6 +148,9 @@ class _NullConstant extends ConstantReader {
 
   @override
   List<DartObject> get listValue => _throw('List');
+
+  @override
+  Set<DartObject> get setValue => _throw('Set');
 
   @override
   Map<DartObject, DartObject> get mapValue => _throw('Map');
@@ -185,6 +194,7 @@ class _DartObjectConstant extends ConstantReader {
       objectValue.toIntValue() ??
       objectValue.toDoubleValue() ??
       objectValue.toListValue() ??
+      objectValue.toSetValue() ??
       objectValue.toMapValue() ??
       Symbol(_check(objectValue.toSymbolValue(), 'literal'));
 
@@ -197,6 +207,7 @@ class _DartObjectConstant extends ConstantReader {
       isList ||
       isMap ||
       isSymbol ||
+      isSet ||
       isNull;
 
   @override
@@ -229,6 +240,12 @@ class _DartObjectConstant extends ConstantReader {
 
   @override
   List<DartObject> get listValue => _check(objectValue.toListValue(), 'List');
+
+  @override
+  bool get isSet => objectValue.toSetValue() != null;
+
+  @override
+  Set<DartObject> get setValue => _check(objectValue.toSetValue(), 'Set');
 
   @override
   bool get isMap => objectValue.toMapValue() != null;
