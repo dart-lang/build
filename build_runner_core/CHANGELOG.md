@@ -1,3 +1,5 @@
+## 6.0.1-dev
+
 ## 6.0.0
 
 -   Remove some constants and utilities which are implementation details:

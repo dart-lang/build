@@ -58,17 +58,17 @@ class PackageAssetReader extends AssetReader
   }
 
   /// Returns a [PackageAssetReader] with a simple [packageToPath] mapping.
-  factory PackageAssetReader.forPackages(Map<String, String> packageToPath,
-          [String rootPackage]) =>
-      PackageAssetReader(
-          PackageConfig([
-            for (var entry in packageToPath.entries)
-              Package(entry.key, Uri.file(p.absolute(entry.value)),
-                  // TODO: use a relative uri when/if possible,
-                  // https://github.com/dart-lang/package_config/issues/81
-                  packageUriRoot: Uri.file(p.absolute(entry.value, 'lib/'))),
-          ]),
-          rootPackage);
+  PackageAssetReader.forPackages(Map<String, String> packageToPath,
+      [String rootPackage])
+      : this(
+            PackageConfig([
+              for (var entry in packageToPath.entries)
+                Package(entry.key, Uri.file(p.absolute(entry.value)),
+                    // TODO: use a relative uri when/if possible,
+                    // https://github.com/dart-lang/package_config/issues/81
+                    packageUriRoot: Uri.file(p.absolute(entry.value, 'lib/'))),
+            ]),
+            rootPackage);
 
   /// A reader that can resolve files known to the current isolate.
   ///

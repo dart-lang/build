@@ -36,12 +36,10 @@ class ScratchSpace {
   ScratchSpace._(this.tempDir)
       : packagesDir = Directory(p.join(tempDir.path, 'packages'));
 
-  factory ScratchSpace() {
-    var tempDir = Directory(Directory.systemTemp
-        .createTempSync('scratch_space')
-        .resolveSymbolicLinksSync());
-    return ScratchSpace._(tempDir);
-  }
+  ScratchSpace()
+      : this._(Directory(Directory.systemTemp
+            .createTempSync('scratch_space')
+            .resolveSymbolicLinksSync()));
 
   /// Copies [id] from the tmp dir and writes it back using the [writer].
   ///
