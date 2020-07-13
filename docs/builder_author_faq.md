@@ -77,8 +77,8 @@ observatory enabled. See the [observatory docs][] or [IntelliJ debugging docs][]
 for usage instructions. The build script takes the same arguments as `pub run
 build_runner`, for example:
 
-`dart --observe --pause-isolates-on-start .dart_tool/build/entrypoint/build.dart build`
-
+`dart --observe --pause-isolates-on-start .dart_tool/build/entrypoint/build.dart
+build`
 
 [observatory docs]:https://dart-lang.github.io/observatory/get-started.html
 [IntelliJ debugging docs]:https://www.jetbrains.com/help/idea/dart.html#dart_run_debug_command_line_application
