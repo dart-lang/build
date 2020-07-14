@@ -1,3 +1,8 @@
+## 1.3.11-dev
+
+- Use the public `buildSdkSummary` api from the analyzer instead of the 
+  private one.
+
 ## 1.3.10
 
 - Migrate to new analyzer API for creating an SDK summary after the old approach
