@@ -8,7 +8,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:analyzer/src/summary/summary_file_builder.dart';
+import 'package:analyzer/dart/sdk/build_sdk_summary.dart';
 import 'package:analyzer/src/dart/analysis/experiments.dart';
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/element/element.dart';
