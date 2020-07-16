@@ -1,5 +1,7 @@
 ## 2.10.2-dev
 
+- Stop using deprecated analyzer apis.
+
 ## 2.10.1
 
 - Fix a bug where file names with spaces were not escaped before being passed

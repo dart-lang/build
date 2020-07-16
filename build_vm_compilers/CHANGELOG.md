@@ -1,6 +1,7 @@
 ## 1.0.5-dev
 
 - Increase min sdk constraint to `>=2.7.0`.
+- Migrate off of deprecated analyzer apis.
 
 ## 1.0.4
 
