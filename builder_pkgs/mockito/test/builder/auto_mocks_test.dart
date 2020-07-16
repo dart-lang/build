@@ -27,8 +27,15 @@ const annotationsAsset = {
   'mockito|lib/annotations.dart': '''
 class GenerateMocks {
   final List<Type> classes;
+  final List<MockSpec> customMocks;
 
-  const GenerateMocks(this.classes);
+  const GenerateMocks(this.classes, {this.customMocks = []});
+}
+
+class MockSpec<T> {
+  final Symbol mockName;
+
+  const MockSpec({Symbol as}) : mockName = as;
 }
 '''
 };
@@ -181,34 +188,6 @@ void main() {
           'class MockFoo extends _i1.Mock implements _i2.Foo {}',
           'class MockBar extends _i1.Mock implements _i2.Bar {}',
         ),
-      },
-    );
-  });
-
-  test('deduplicates classes listed multiply in GenerateMocks', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        class Foo {}
-        '''),
-        'foo|test/foo_test.dart': '''
-        import 'package:foo/foo.dart';
-        import 'package:mockito/annotations.dart';
-        @GenerateMocks([Foo, Foo])
-        void main() {}
-        '''
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': dedent(r'''
-        import 'package:mockito/mockito.dart' as _i1;
-        import 'package:foo/foo.dart' as _i2;
-
-        /// A class which mocks [Foo].
-        ///
-        /// See the documentation for Mockito's code generation for more information.
-        class MockFoo extends _i1.Mock implements _i2.Foo {}
-        '''),
       },
     );
   });
@@ -1194,6 +1173,27 @@ void main() {
     );
   });
 
+  test('throws when GenerateMocks is given a class multiple times', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {}
+        '''),
+        'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([Foo, Foo])
+        void main() {}
+        '''
+      },
+      message: contains(
+          'Mockito cannot generate two mocks with the same name: MockFoo (for '
+          'Foo declared in /foo/lib/foo.dart, and for Foo declared in '
+          '/foo/lib/foo.dart)'),
+    );
+  });
+
   test(
       'throws when GenerateMocks is given a class with a method with a '
       'private return type', () async {
@@ -1452,14 +1452,12 @@ void main() {
         ...annotationsAsset,
         'foo|test/foo_test.dart': dedent('''
         import 'package:mockito/annotations.dart';
-        // Missing required argument to GenerateMocks.
         @GenerateMocks([_Foo])
         void main() {}
         class _Foo {}
         '''),
       },
-      message:
-          contains('The "classes" argument includes a private type: _Foo.'),
+      message: contains('Mockito cannot mock a private type: _Foo.'),
     );
   });
 
@@ -1501,8 +1499,9 @@ void main() {
         '''),
       },
       message: contains(
-          'contains two classes with the same name: Foo. One declared in '
-          '/foo/lib/a.dart, the other in /foo/lib/b.dart'),
+          'Mockito cannot generate two mocks with the same name: MockFoo (for '
+          'Foo declared in /foo/lib/a.dart, and for Foo declared in '
+          '/foo/lib/b.dart)'),
     );
   });
 
@@ -1522,8 +1521,8 @@ void main() {
         '''),
       },
       message: contains(
-          'contains a class which conflicts with another class declared in '
-          'this library: MockFoo'),
+          'Mockito cannot generate a mock with a name which conflicts with '
+          'another class declared in this library: MockFoo'),
     );
   });
 
@@ -1572,7 +1571,7 @@ void main() {
         typedef Foo = void Function();
         '''),
       },
-      message: 'The "classes" argument includes a typedef: Foo',
+      message: 'Mockito cannot mock a typedef: Foo',
     );
   });
 
@@ -1585,7 +1584,7 @@ void main() {
         enum Foo {}
         '''),
       },
-      message: 'The "classes" argument includes an enum: Foo',
+      message: 'Mockito cannot mock an enum: Foo',
     );
   });
 
@@ -1612,8 +1611,7 @@ void main() {
         void main() {}
         '''),
       },
-      message: contains(
-          'The "classes" argument includes a non-subtypable type: int'),
+      message: contains('Mockito cannot mock a non-subtypable type: int'),
     );
   });
 

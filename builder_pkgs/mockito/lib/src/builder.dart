@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart' as analyzer;
 import 'package:analyzer/dart/element/type_provider.dart';
@@ -46,7 +45,7 @@ class MockBuilder implements Builder {
     final mockTargetGatherer = _MockTargetGatherer(entryLib);
 
     final mockLibrary = Library((b) {
-      var mockLibraryInfo = _MockLibraryInfo(mockTargetGatherer._classesToMock,
+      var mockLibraryInfo = _MockLibraryInfo(mockTargetGatherer._mockTargets,
           sourceLibIsNonNullable: sourceLibIsNonNullable,
           typeProvider: entryLib.typeProvider,
           typeSystem: entryLib.typeSystem);
@@ -73,16 +72,26 @@ class MockBuilder implements Builder {
   };
 }
 
+class _MockTarget {
+  /// The class to be mocked.
+  final analyzer.InterfaceType classType;
+
+  /// The desired name of the mock class.
+  final String mockName;
+
+  _MockTarget(this.classType, this.mockName);
+
+  ClassElement get classElement => classType.element;
+}
+
 /// This class gathers and verifies mock targets referenced in `GenerateMocks`
 /// annotations.
-// TODO(srawlins): This also needs to gather mock targets (with overridden
-// names, type arguments, etc.) found in `GenerateMock` annotations.
 class _MockTargetGatherer {
   final LibraryElement _entryLib;
 
-  final List<analyzer.DartType> _classesToMock;
+  final List<_MockTarget> _mockTargets;
 
-  _MockTargetGatherer._(this._entryLib, this._classesToMock) {
+  _MockTargetGatherer._(this._entryLib, this._mockTargets) {
     _checkClassesToMockAreValid();
   }
 
@@ -90,34 +99,68 @@ class _MockTargetGatherer {
   /// annotations and creates a [_MockTargetGatherer] with all of the classes
   /// identified as mocking targets.
   factory _MockTargetGatherer(LibraryElement entryLib) {
-    final objectsToMock = <DartObject>{};
+    final mockTargets = <_MockTarget>{};
 
     for (final element in entryLib.topLevelElements) {
       // TODO(srawlins): Re-think the idea of multiple @GenerateMocks
       // annotations, on one element or even on different elements in a library.
       for (final annotation in element.metadata) {
         if (annotation == null) continue;
-        if (annotation.element is! ConstructorElement ||
-            annotation.element.enclosingElement.name != 'GenerateMocks') {
-          continue;
+        if (annotation.element is! ConstructorElement) continue;
+        final annotationClass = annotation.element.enclosingElement.name;
+        // TODO(srawlins): check library as well.
+        if (annotationClass == 'GenerateMocks') {
+          mockTargets
+              .addAll(_mockTargetsFromGenerateMocks(annotation, entryLib));
         }
-        final generateMocksValue = annotation.computeConstantValue();
-        // TODO(srawlins): handle `generateMocksValue == null`?
-        // I am unable to think of a case which results in this situation.
-        final classesField = generateMocksValue.getField('classes');
-        if (classesField.isNull) {
-          throw InvalidMockitoAnnotationException(
-              'The GenerateMocks "classes" argument is missing, includes an '
-              'unknown type, or includes an extension');
-        }
-        objectsToMock.addAll(classesField.toListValue());
       }
     }
 
-    var classesToMock =
-        _mapAnnotationValuesToClasses(objectsToMock, entryLib.typeProvider);
+    return _MockTargetGatherer._(entryLib, mockTargets.toList());
+  }
 
-    return _MockTargetGatherer._(entryLib, classesToMock);
+  static Iterable<_MockTarget> _mockTargetsFromGenerateMocks(
+      ElementAnnotation annotation, LibraryElement entryLib) {
+    final generateMocksValue = annotation.computeConstantValue();
+    final classesField = generateMocksValue.getField('classes');
+    if (classesField.isNull) {
+      throw InvalidMockitoAnnotationException(
+          'The GenerateMocks "classes" argument is missing, includes an '
+          'unknown type, or includes an extension');
+    }
+    final mockTargets = <_MockTarget>[];
+    for (var objectToMock in classesField.toListValue()) {
+      final typeToMock = objectToMock.toTypeValue();
+      if (typeToMock == null) {
+        throw InvalidMockitoAnnotationException(
+            'The "classes" argument includes a non-type: $objectToMock');
+      }
+      if (typeToMock.isDynamic) {
+        throw InvalidMockitoAnnotationException(
+            'Mockito cannot mock `dynamic`');
+      }
+      final type = _determineDartType(typeToMock, entryLib.typeProvider);
+      final mockName = 'Mock${type.element.name}';
+      mockTargets.add(_MockTarget(type, mockName));
+    }
+    final customMocksField = generateMocksValue.getField('customMocks');
+    if (customMocksField != null && !customMocksField.isNull) {
+      for (var mockSpec in customMocksField.toListValue()) {
+        final mockSpecType = mockSpec.type;
+        assert(mockSpecType.typeArguments.length == 1);
+        final typeToMock = mockSpecType.typeArguments.single;
+        if (typeToMock.isDynamic) {
+          throw InvalidMockitoAnnotationException(
+              'Mockito cannot mock `dynamic`; be sure to declare type '
+              'arguments on MockSpec(), in @GenerateMocks.');
+        }
+        var type = _determineDartType(typeToMock, entryLib.typeProvider);
+        final mockName = mockSpec.getField('mockName').toSymbolValue() ??
+            'Mock${type.element.name}';
+        mockTargets.add(_MockTarget(type, mockName));
+      }
+    }
+    return mockTargets;
   }
 
   /// Map the values passed to the GenerateMocks annotation to the classes which
@@ -126,89 +169,75 @@ class _MockTargetGatherer {
   /// This function is responsible for ensuring that each value is an
   /// appropriate target for mocking. It will throw an
   /// [InvalidMockitoAnnotationException] under various conditions.
-  static List<analyzer.DartType> _mapAnnotationValuesToClasses(
-      Iterable<DartObject> objectsToMock, TypeProvider typeProvider) {
-    var classesToMock = <analyzer.DartType>[];
-
-    for (final objectToMock in objectsToMock) {
-      final typeToMock = objectToMock.toTypeValue();
-      if (typeToMock == null) {
+  static analyzer.InterfaceType _determineDartType(
+      analyzer.DartType typeToMock, TypeProvider typeProvider) {
+    final elementToMock = typeToMock.element;
+    if (elementToMock is ClassElement) {
+      if (elementToMock.isEnum) {
         throw InvalidMockitoAnnotationException(
-            'The "classes" argument includes a non-type: $objectToMock');
+            'Mockito cannot mock an enum: ${elementToMock.displayName}');
       }
-
-      final elementToMock = typeToMock.element;
-      if (elementToMock is ClassElement) {
-        if (elementToMock.isEnum) {
-          throw InvalidMockitoAnnotationException(
-              'The "classes" argument includes an enum: '
-              '${elementToMock.displayName}');
-        }
-        if (typeProvider.nonSubtypableClasses.contains(elementToMock)) {
-          throw InvalidMockitoAnnotationException(
-              'The "classes" argument includes a non-subtypable type: '
-              '${elementToMock.displayName}. It is illegal to subtype this '
-              'type.');
-        }
-        if (elementToMock.isPrivate) {
-          throw InvalidMockitoAnnotationException(
-              'The "classes" argument includes a private type: '
-              '${elementToMock.displayName}.');
-        }
-        var typeParameterErrors =
-            _checkTypeParameters(elementToMock.typeParameters, elementToMock);
-        if (typeParameterErrors.isNotEmpty) {
-          var joinedMessages =
-              typeParameterErrors.map((m) => '    $m').join('\n');
-          throw InvalidMockitoAnnotationException(
-              'Mockito cannot generate a valid mock class which implements '
-              "'${elementToMock.displayName}' for the following reasons:\n"
-              '$joinedMessages');
-        }
-        classesToMock.add(typeToMock);
-      } else if (elementToMock is GenericFunctionTypeElement &&
-          elementToMock.enclosingElement is FunctionTypeAliasElement) {
+      if (typeProvider.nonSubtypableClasses.contains(elementToMock)) {
         throw InvalidMockitoAnnotationException(
-            'The "classes" argument includes a typedef: '
-            '${elementToMock.enclosingElement.displayName}');
-      } else {
-        throw InvalidMockitoAnnotationException(
-            'The "classes" argument includes a non-class: '
-            '${elementToMock.displayName}');
+            'Mockito cannot mock a non-subtypable type: '
+            '${elementToMock.displayName}. It is illegal to subtype this '
+            'type.');
       }
+      if (elementToMock.isPrivate) {
+        throw InvalidMockitoAnnotationException(
+            'Mockito cannot mock a private type: '
+            '${elementToMock.displayName}.');
+      }
+      var typeParameterErrors =
+          _checkTypeParameters(elementToMock.typeParameters, elementToMock);
+      if (typeParameterErrors.isNotEmpty) {
+        var joinedMessages =
+            typeParameterErrors.map((m) => '    $m').join('\n');
+        throw InvalidMockitoAnnotationException(
+            'Mockito cannot generate a valid mock class which implements '
+            "'${elementToMock.displayName}' for the following reasons:\n"
+            '$joinedMessages');
+      }
+      return typeToMock as analyzer.InterfaceType;
+    } else if (elementToMock is GenericFunctionTypeElement &&
+        elementToMock.enclosingElement is FunctionTypeAliasElement) {
+      throw InvalidMockitoAnnotationException('Mockito cannot mock a typedef: '
+          '${elementToMock.enclosingElement.displayName}');
+    } else {
+      throw InvalidMockitoAnnotationException(
+          'Mockito cannot mock a non-class: ${elementToMock.displayName}');
     }
-    return classesToMock;
   }
 
   void _checkClassesToMockAreValid() {
     var classesInEntryLib =
         _entryLib.topLevelElements.whereType<ClassElement>();
     var classNamesToMock = <String, ClassElement>{};
-    for (var class_ in _classesToMock) {
-      var name = class_.element.name;
+    var uniqueNameSuggestion =
+        "use the 'customMocks' argument in @GenerateMocks to specify a unique "
+        'name';
+    for (final mockTarget in _mockTargets) {
+      var name = mockTarget.mockName;
       if (classNamesToMock.containsKey(name)) {
         var firstSource = classNamesToMock[name].source.fullName;
-        var secondSource = class_.element.source.fullName;
-        // TODO(srawlins): Support an optional @GenerateMocks API that allows
-        // users to choose names. One class might be named MockFoo and the other
-        // named MockPbFoo, for example.
+        var secondSource = mockTarget.classElement.source.fullName;
         throw InvalidMockitoAnnotationException(
-            'The GenerateMocks "classes" argument contains two classes with '
-            'the same name: $name. One declared in $firstSource, the other in '
-            '$secondSource.');
+            'Mockito cannot generate two mocks with the same name: $name (for '
+            '${classNamesToMock[name].name} declared in $firstSource, and for '
+            '${mockTarget.classElement.name} declared in $secondSource); '
+            '$uniqueNameSuggestion.');
       }
-      classNamesToMock[name] = class_.element as ClassElement;
+      classNamesToMock[name] = mockTarget.classElement;
     }
 
     classNamesToMock.forEach((name, element) {
-      var conflictingClass = classesInEntryLib.firstWhere(
-          (c) => c.name == 'Mock${element.name}',
+      var conflictingClass = classesInEntryLib.firstWhere((c) => c.name == name,
           orElse: () => null);
       if (conflictingClass != null) {
         throw InvalidMockitoAnnotationException(
-            'The GenerateMocks "classes" argument contains a class which '
-            'conflicts with another class declared in this library: '
-            '${conflictingClass.name}');
+            'Mockito cannot generate a mock with a name which conflicts with '
+            'another class declared in this library: ${conflictingClass.name}; '
+            '$uniqueNameSuggestion.');
       }
 
       var preexistingMock = classesInEntryLib.firstWhere(
@@ -218,8 +247,9 @@ class _MockTargetGatherer {
           orElse: () => null);
       if (preexistingMock != null) {
         throw InvalidMockitoAnnotationException(
-            'The GenerateMocks "classes" argument contains a class which '
-            'appears to already be mocked inline: ${preexistingMock.name}');
+            'The GenerateMocks annotation contains a class which appears to '
+            'already be mocked inline: ${preexistingMock.name}; '
+            '$uniqueNameSuggestion.');
       }
 
       _checkMethodsToStubAreValid(element);
@@ -376,23 +406,48 @@ class _MockLibraryInfo {
   /// fake classes are added to the generated library.
   final fakedClassElements = <ClassElement>[];
 
-  /// Build mock classes for [classesToMock], a list of classes obtained from a
-  /// `@GenerateMocks` annotation.
-  _MockLibraryInfo(List<analyzer.DartType> classesToMock,
+  /// Build mock classes for [mockTargets].
+  _MockLibraryInfo(Iterable<_MockTarget> mockTargets,
       {this.sourceLibIsNonNullable, this.typeProvider, this.typeSystem}) {
-    for (final classToMock in classesToMock) {
-      mockClasses.add(_buildMockClass(classToMock));
+    for (final mockTarget in mockTargets) {
+      mockClasses.add(_buildMockClass(mockTarget));
     }
   }
 
-  Class _buildMockClass(analyzer.DartType dartType) {
-    final classToMock = dartType.element as ClassElement;
-    final className = dartType.name;
-    final mockClassName = 'Mock$className';
+  bool _hasExplicitTypeArguments(analyzer.InterfaceType type) {
+    if (type.typeArguments == null) return false;
+
+    // If it appears that one type argument was given, then they all were. This
+    // returns the wrong result when the type arguments given are all `dynamic`,
+    // or are each equal to the bound of the corresponding type parameter. There
+    // may not be a way to get around this.
+    for (var i = 0; i < type.typeArguments.length; i++) {
+      var typeArgument = type.typeArguments[i];
+      var bound =
+          type.element.typeParameters[i].bound ?? typeProvider.dynamicType;
+      // If [type] was given to @GenerateMocks as a Type, and no explicit type
+      // argument is given, [typeArgument] is `dynamic` (_not_ the bound, as one
+      // might think). We determine that an explicit type argument was given if
+      // it is not `dynamic`.
+      //
+      // If, on the other hand, [type] was given to @GenerateMock as a type
+      // argument to `Of()`, and no type argument is given, [typeArgument] is
+      // the bound of the corresponding type paramter (dynamic or otherwise). We
+      // determine that an explicit type argument was given if [typeArgument] is
+      // is not [bound].
+      if (!typeArgument.isDynamic && typeArgument != bound) return true;
+    }
+    return false;
+  }
+
+  Class _buildMockClass(_MockTarget mockTarget) {
+    final typeToMock = mockTarget.classType;
+    final classToMock = mockTarget.classElement;
+    final className = classToMock.name;
 
     return Class((cBuilder) {
       cBuilder
-        ..name = mockClassName
+        ..name = mockTarget.mockName
         ..extend = refer('Mock', 'package:mockito/mockito.dart')
         ..docs.add('/// A class which mocks [$className].')
         ..docs.add('///')
@@ -402,7 +457,19 @@ class _MockLibraryInfo {
       // parameter with same type variables, and a mirrored type argument for
       // the "implements" clause.
       var typeArguments = <Reference>[];
-      if (classToMock.typeParameters != null) {
+      if (_hasExplicitTypeArguments(typeToMock)) {
+        // [typeToMock] is a reference to a type with type arguments (for
+        // example: `Foo<int>`). Generate a non-generic mock class which
+        // implements the mock target with said type arguments. For example:
+        // `class MockFoo extends Mock implements Foo<int> {}`
+        for (var typeArgument in typeToMock.typeArguments) {
+          typeArguments.add(refer(typeArgument.element.name));
+        }
+      } else if (classToMock.typeParameters != null) {
+        // [typeToMock] is a simple reference to a generic type (for example:
+        // `Foo`, a reference to `class Foo<T> {}`). Generate a generic mock
+        // class which perfectly mirrors the type parameters on [typeToMock],
+        // forwarding them to the "implements" clause.
         for (var typeParameter in classToMock.typeParameters) {
           cBuilder.types.add(_typeParameterReference(typeParameter));
           typeArguments.add(refer(typeParameter.name));
@@ -410,8 +477,8 @@ class _MockLibraryInfo {
       }
       cBuilder.implements.add(TypeReference((b) {
         b
-          ..symbol = dartType.name
-          ..url = _typeImport(dartType)
+          ..symbol = classToMock.name
+          ..url = _typeImport(mockTarget.classType)
           ..types.addAll(typeArguments);
       }));
 
