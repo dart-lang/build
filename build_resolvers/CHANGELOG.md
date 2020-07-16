@@ -2,6 +2,7 @@
 
 - Use the public `buildSdkSummary` api from the analyzer instead of the 
   private one.
+- Migrate off of other deprecated analyzer apis.
 
 ## 1.3.10
 

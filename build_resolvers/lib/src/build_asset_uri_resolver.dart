@@ -5,8 +5,7 @@
 import 'dart:async';
 import 'dart:collection';
 
-// ignore: deprecated_member_use
-import 'package:analyzer/analyzer.dart' show parseDirectives;
+import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/file_system/memory_file_system.dart';
 import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
@@ -162,8 +161,8 @@ String assetPath(AssetId assetId) =>
 /// Returns all the directives from a Dart library that can be resolved to an
 /// [AssetId].
 Set<AssetId> _parseDirectives(String content, AssetId from) =>
-    // ignore: deprecated_member_use
-    HashSet.of(parseDirectives(content, suppressErrors: true)
+    HashSet.of(parseString(content: content, throwIfDiagnostics: false)
+        .unit
         .directives
         .whereType<UriBasedDirective>()
         .where((directive) {

@@ -4,8 +4,8 @@
 
 import 'dart:async';
 
-// ignore: deprecated_member_use
-import 'package:analyzer/analyzer.dart';
+import 'package:analyzer/dart/analysis/utilities.dart';
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
 
 import 'module_library.dart';
@@ -92,8 +92,7 @@ Please check the following imports:\n
 Future<String> _missingImportMessage(
     AssetId sourceId, AssetId missingId, AssetReader reader) async {
   var contents = await reader.readAsString(sourceId);
-  // ignore: deprecated_member_use
-  var parsed = parseDirectives(contents, suppressErrors: true);
+  var parsed = parseString(content: contents, throwIfDiagnostics: false).unit;
   var import =
       parsed.directives.whereType<UriBasedDirective>().firstWhere((directive) {
     var uriString = directive.uri.stringValue;
