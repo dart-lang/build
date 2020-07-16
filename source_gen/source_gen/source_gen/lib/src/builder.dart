@@ -107,7 +107,9 @@ class _Builder extends Builder {
 
       String part;
       if (this is PartBuilder) {
-        contentBuffer.writeln('part of $name;');
+        contentBuffer
+          ..write(languageOverrideForLibrary(library))
+          ..writeln('part of $name;');
         part = computePartUrl(buildStep.inputId, outputId);
       } else {
         assert(this is SharedPartBuilder);
@@ -322,3 +324,10 @@ final _headerLine = '// '.padRight(77, '*');
 const partIdRegExpLiteral = r'[A-Za-z_\d-]+';
 
 final _partIdRegExp = RegExp('^$partIdRegExpLiteral\$');
+
+String languageOverrideForLibrary(LibraryElement library) {
+  final override = library.languageVersion.override;
+  return override == null
+      ? ''
+      : '// @dart=${override.major}.${override.minor}\n';
+}

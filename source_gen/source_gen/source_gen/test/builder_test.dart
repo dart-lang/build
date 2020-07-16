@@ -227,6 +227,23 @@ void main() {
         });
   });
 
+  test('PartBuilder includes matching language version in all parts', () async {
+    await testBuilder(
+        PartBuilder([const UnformattedCodeGenerator()], '.foo.dart',
+            header: ''),
+        {
+          '$_pkgName|lib/a.dart': '''// @dart=2.9
+part "a.foo.dart";'''
+        },
+        generateFor: {
+          '$_pkgName|lib/a.dart'
+        },
+        outputs: {
+          '$_pkgName|lib/a.foo.dart':
+              decodedMatches(startsWith('// @dart=2.9\n')),
+        });
+  });
+
   group('SharedPartBuilder', () {
     test('warns about missing part', () async {
       final srcs = _createPackageStub(testLibContent: _testLibContentNoPart);

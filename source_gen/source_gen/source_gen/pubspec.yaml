@@ -1,5 +1,5 @@
 name: source_gen
-version: 0.9.6
+version: 0.9.7
 description: >-
   Source code generation builders and utilities for the Dart build system
 homepage: https://github.com/dart-lang/source_gen

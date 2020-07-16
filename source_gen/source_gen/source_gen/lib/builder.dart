@@ -14,7 +14,6 @@ library source_gen.builder;
 
 import 'dart:async';
 
-import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
@@ -118,8 +117,8 @@ class CombiningBuilder implements Builder {
         ? ''
         : '\n// ignore_for_file: ${_ignoreForFile.join(', ')}\n';
     final output = '''
-$defaultFileHeader${_languageOverrideForLibrary(inputLibrary)}
-$ignoreForFile
+$defaultFileHeader
+${languageOverrideForLibrary(inputLibrary)}$ignoreForFile
 part of $partOf;
 
 $assets
@@ -127,11 +126,4 @@ $assets
     await buildStep.writeAsString(
         buildStep.inputId.changeExtension(_outputExtensions), output);
   }
-}
-
-String _languageOverrideForLibrary(LibraryElement library) {
-  final override = library.languageVersion.override;
-  return override == null
-      ? ''
-      : '\n// @dart=${override.major}.${override.minor}';
 }
