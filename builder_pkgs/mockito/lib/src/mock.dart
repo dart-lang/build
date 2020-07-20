@@ -439,8 +439,8 @@ class PostExpectation<T> {
   void _completeWhen(Answering<T> answer) {
     if (_whenCall == null) {
       throw StateError(
-          'Mock method was not called within `when()`. Was a real method '
-          'called?');
+          'No method stub was called from within `when()`. Was a real method '
+          'called, or perhaps an extension method?');
     }
     _whenCall._setExpected<T>(answer);
     _whenCall = null;
