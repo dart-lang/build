@@ -35,7 +35,10 @@ class GenerateMocks {
 class MockSpec<T> {
   final Symbol mockName;
 
-  const MockSpec({Symbol as}) : mockName = as;
+  final bool returnNullOnMissingStub;
+
+  const MockSpec({Symbol as, this.returnNullOnMissingStub = false})
+      : mockName = as;
 }
 '''
 };
@@ -58,6 +61,11 @@ void main() {}
 '''
 };
 
+const _constructorWithThrowOnMissingStub = '''
+MockFoo() {
+    _i1.throwOnMissingStub(this);
+  }''';
+
 void main() {
   test(
       'generates a mock class but does not override methods w/ zero parameters',
@@ -68,7 +76,11 @@ void main() {
         dynamic a() => 7;
       }
       '''),
-      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+      _containsAllOf(dedent('''
+      class MockFoo extends _i1.Mock implements _i2.Foo {
+        $_constructorWithThrowOnMissingStub
+      }
+      ''')),
     );
   });
 
@@ -80,7 +92,11 @@ void main() {
         int _b(int x) => 8;
       }
       '''),
-      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+      _containsAllOf(dedent('''
+      class MockFoo extends _i1.Mock implements _i2.Foo {
+        $_constructorWithThrowOnMissingStub
+      }
+      ''')),
     );
   });
 
@@ -91,7 +107,11 @@ void main() {
         static int c(int y) => 9;
       }
       '''),
-      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+      _containsAllOf(dedent('''
+      class MockFoo extends _i1.Mock implements _i2.Foo {
+        $_constructorWithThrowOnMissingStub
+      }
+      ''')),
     );
   });
 
@@ -104,7 +124,11 @@ void main() {
       }
       class Foo {}
       '''),
-      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+      _containsAllOf(dedent('''
+      class MockFoo extends _i1.Mock implements _i2.Foo {
+        $_constructorWithThrowOnMissingStub
+      }
+      ''')),
     );
   });
 
@@ -185,8 +209,18 @@ void main() {
       },
       outputs: {
         'foo|test/foo_test.mocks.dart': _containsAllOf(
-          'class MockFoo extends _i1.Mock implements _i2.Foo {}',
-          'class MockBar extends _i1.Mock implements _i2.Bar {}',
+          dedent('''
+          class MockFoo extends _i1.Mock implements _i2.Foo {
+            $_constructorWithThrowOnMissingStub
+          }
+          '''),
+          dedent('''
+          class MockBar extends _i1.Mock implements _i2.Bar {
+            MockBar() {
+              _i1.throwOnMissingStub(this);
+            }
+          }
+          '''),
         ),
       },
     );
@@ -211,8 +245,18 @@ void main() {
       },
       outputs: {
         'foo|test/foo_test.mocks.dart': _containsAllOf(
-          'class MockFoo extends _i1.Mock implements _i2.Foo {}',
-          'class MockBar extends _i1.Mock implements _i2.Bar {}',
+          dedent('''
+          class MockFoo extends _i1.Mock implements _i2.Foo {
+            $_constructorWithThrowOnMissingStub
+          }
+          '''),
+          dedent('''
+          class MockBar extends _i1.Mock implements _i2.Bar {
+            MockBar() {
+              _i1.throwOnMissingStub(this);
+            }
+          }
+          '''),
         ),
       },
     );
@@ -237,8 +281,18 @@ void main() {
       },
       outputs: {
         'foo|test/foo_test.mocks.dart': _containsAllOf(
-          'class MockFoo extends _i1.Mock implements _i2.Foo {}',
-          'class MockBar extends _i1.Mock implements _i2.Bar {}',
+          dedent('''
+          class MockFoo extends _i1.Mock implements _i2.Foo {
+            $_constructorWithThrowOnMissingStub
+          }
+          '''),
+          dedent('''
+          class MockBar extends _i1.Mock implements _i2.Bar {
+            MockBar() {
+              _i1.throwOnMissingStub(this);
+            }
+          }
+          '''),
         ),
       },
     );
@@ -249,8 +303,11 @@ void main() {
       dedent(r'''
       class Foo<T, U> {}
       '''),
-      _containsAllOf(
-          'class MockFoo<T, U> extends _i1.Mock implements _i2.Foo<T, U> {}'),
+      _containsAllOf(dedent('''
+          class MockFoo<T, U> extends _i1.Mock implements _i2.Foo<T, U> {
+            $_constructorWithThrowOnMissingStub
+          }
+          ''')),
     );
   });
 
@@ -271,8 +328,18 @@ void main() {
       },
       outputs: {
         'foo|test/foo_test.mocks.dart': _containsAllOf(
-          'class MockFoo extends _i1.Mock implements _i2.Foo {}',
-          'class MockBar<T extends _i2.Foo> extends _i1.Mock implements _i2.Bar<T> {}',
+          dedent('''
+          class MockFoo extends _i1.Mock implements _i2.Foo {
+            $_constructorWithThrowOnMissingStub
+          }
+          '''),
+          dedent('''
+          class MockBar<T extends _i2.Foo> extends _i1.Mock implements _i2.Bar<T> {
+            MockBar() {
+              _i1.throwOnMissingStub(this);
+            }
+          }
+          '''),
         ),
       },
     );
@@ -326,6 +393,10 @@ void main() {
         ///
         /// See the documentation for Mockito's code generation for more information.
         class MockFoo extends _i1.Mock implements _i2.Foo {
+          MockFoo() {
+            _i1.throwOnMissingStub(this);
+          }
+
           dynamic f(List<_i2.Foo>? list) =>
               super.noSuchMethod(Invocation.method(#f, [list]));
         }
@@ -360,6 +431,10 @@ void main() {
         ///
         /// See the documentation for Mockito's code generation for more information.
         class MockFoo extends _i1.Mock implements _i2.Foo {
+          MockFoo() {
+            _i1.throwOnMissingStub(this);
+          }
+
           dynamic f(_i2.Callback? c) => super.noSuchMethod(Invocation.method(#f, [c]));
           dynamic g(_i2.Callback2? c) => super.noSuchMethod(Invocation.method(#g, [c]));
           dynamic h(_i2.Callback3<_i2.Foo>? c) =>
@@ -612,77 +687,83 @@ void main() {
   });
 
   test('does not override methods with all nullable parameters', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
-          class Foo {
-            void a(int? p) {}
-            void b(dynamic p) {}
-            void c(var p) {}
-            void d(final p) {}
-            void e(int Function()? p) {}
-          }
-          '''),
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': dedent(r'''
-          import 'package:mockito/mockito.dart' as _i1;
-          import 'package:foo/foo.dart' as _i2;
-
-          /// A class which mocks [Foo].
-          ///
-          /// See the documentation for Mockito's code generation for more information.
-          class MockFoo extends _i1.Mock implements _i2.Foo {}
-          '''),
-      },
+    await _expectSingleNonNullableOutput(
+      dedent('''
+      class Foo {
+        void a(int? p) {}
+        void b(dynamic p) {}
+        void c(var p) {}
+        void d(final p) {}
+        void e(int Function()? p) {}
+      }
+      '''),
+      _containsAllOf(dedent('''
+      class MockFoo extends _i1.Mock implements _i2.Foo {
+        $_constructorWithThrowOnMissingStub
+      }
+      ''')),
     );
   });
 
   test('does not override methods with a void return type', () async {
     await _expectSingleNonNullableOutput(
-      dedent(r'''
-        abstract class Foo {
-          void m();
-        }
-        '''),
-      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+      dedent('''
+      abstract class Foo {
+        void m();
+      }
+      '''),
+      _containsAllOf(dedent('''
+      class MockFoo extends _i1.Mock implements _i2.Foo {
+        $_constructorWithThrowOnMissingStub
+      }
+      ''')),
     );
   });
 
   test('does not override methods with an implicit dynamic return type',
       () async {
     await _expectSingleNonNullableOutput(
-      dedent(r'''
-        abstract class Foo {
-          m();
-        }
-        '''),
-      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+      dedent('''
+      abstract class Foo {
+        m();
+      }
+      '''),
+      _containsAllOf(dedent('''
+      class MockFoo extends _i1.Mock implements _i2.Foo {
+        $_constructorWithThrowOnMissingStub
+      }
+      ''')),
     );
   });
 
   test('does not override methods with an explicit dynamic return type',
       () async {
     await _expectSingleNonNullableOutput(
-      dedent(r'''
-        abstract class Foo {
-          dynamic m();
-        }
-        '''),
-      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+      dedent('''
+      abstract class Foo {
+        dynamic m();
+      }
+      '''),
+      _containsAllOf(dedent('''
+      class MockFoo extends _i1.Mock implements _i2.Foo {
+        $_constructorWithThrowOnMissingStub
+      }
+      ''')),
     );
   });
 
   test('does not override methods with a nullable return type', () async {
     await _expectSingleNonNullableOutput(
-      dedent(r'''
-        abstract class Foo {
-          int? m();
-        }
-        '''),
-      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+      dedent('''
+      abstract class Foo {
+        int? m();
+      }
+      '''),
+      _containsAllOf(dedent('''
+      class MockFoo extends _i1.Mock implements _i2.Foo {
+        $_constructorWithThrowOnMissingStub
+      }
+      ''')),
     );
   });
 
@@ -710,17 +791,8 @@ void main() {
         '''),
       },
       outputs: {
-        'foo|test/foo_test.mocks.dart': dedent(r'''
-        import 'package:mockito/mockito.dart' as _i1;
-        import 'package:foo/foo.dart' as _i2;
-
-        /// A class which mocks [Foo].
-        ///
-        /// See the documentation for Mockito's code generation for more information.
-        class MockFoo<T> extends _i1.Mock implements _i2.Foo<T> {
-          void a(T? m) => super.noSuchMethod(Invocation.method(#a, [m]));
-        }
-        '''),
+        'foo|test/foo_test.mocks.dart': _containsAllOf(
+            'void a(T? m) => super.noSuchMethod(Invocation.method(#a, [m]));'),
       },
     );
   });
@@ -746,6 +818,10 @@ void main() {
         ///
         /// See the documentation for Mockito's code generation for more information.
         class MockFoo extends _i1.Mock implements _i2.Foo {
+          MockFoo() {
+            _i1.throwOnMissingStub(this);
+          }
+
           dynamic f<T>(int? a) => super.noSuchMethod(Invocation.method(#f, [a]));
           dynamic g<T extends _i2.Foo>(int? a) =>
               super.noSuchMethod(Invocation.method(#g, [a]));
@@ -774,7 +850,11 @@ void main() {
         int? get m => 7;
       }
       '''),
-      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+      _containsAllOf(dedent('''
+      class MockFoo extends _i1.Mock implements _i2.Foo {
+        $_constructorWithThrowOnMissingStub
+      }
+      ''')),
     );
   });
 
@@ -797,7 +877,11 @@ void main() {
         void set m(int? a) {}
       }
       '''),
-      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+      _containsAllOf(dedent('''
+      class MockFoo extends _i1.Mock implements _i2.Foo {
+        $_constructorWithThrowOnMissingStub
+      }
+      ''')),
     );
   });
 
@@ -834,7 +918,11 @@ void main() {
         int? m;
       }
       '''),
-      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+      _containsAllOf(dedent('''
+      class MockFoo extends _i1.Mock implements _i2.Foo {
+        $_constructorWithThrowOnMissingStub
+      }
+      ''')),
     );
   });
 
@@ -845,7 +933,11 @@ void main() {
         int _a;
       }
       '''),
-      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+      _containsAllOf(dedent('''
+      class MockFoo extends _i1.Mock implements _i2.Foo {
+        $_constructorWithThrowOnMissingStub
+      }
+      ''')),
     );
   });
 
@@ -856,7 +948,11 @@ void main() {
         static int b;
       }
       '''),
-      _containsAllOf('class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+      _containsAllOf(dedent('''
+      class MockFoo extends _i1.Mock implements _i2.Foo {
+        $_constructorWithThrowOnMissingStub
+      }
+      ''')),
     );
   });
 
@@ -1166,6 +1262,10 @@ void main() {
       ///
       /// See the documentation for Mockito's code generation for more information.
       class MockFoo extends _i1.Mock implements _i2.Foo {
+        MockFoo() {
+          _i1.throwOnMissingStub(this);
+        }
+
         _i2.Bar m1() => super.noSuchMethod(Invocation.method(#m1, []), _FakeBar());
         _i2.Bar m2() => super.noSuchMethod(Invocation.method(#m2, []), _FakeBar());
       }
@@ -1628,8 +1728,13 @@ void main() {
         '''),
       },
       outputs: {
-        'foo|test/foo_test.mocks.dart': _containsAllOf(
-            'class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+        'foo|test/foo_test.mocks.dart': _containsAllOf(dedent('''
+        class MockFoo extends _i1.Mock implements _i2.Foo {
+          MockFoo() {
+            _i1.throwOnMissingStub(this);
+          }
+        }
+        '''))
       },
     );
   });

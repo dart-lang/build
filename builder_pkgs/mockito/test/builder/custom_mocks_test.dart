@@ -35,7 +35,10 @@ class GenerateMocks {
 class MockSpec<T> {
   final Symbol mockName;
 
-  const MockSpec({Symbol as}) : mockName = as;
+  final bool returnNullOnMissingStub;
+
+  const MockSpec({Symbol as, this.returnNullOnMissingStub = false})
+      : mockName = as;
 }
 '''
 };
@@ -58,6 +61,11 @@ void main() {}
 '''
 };
 
+const _constructorWithThrowOnMissingStub = '''
+MockFoo() {
+    _i1.throwOnMissingStub(this);
+  }''';
+
 void main() {
   test('generates a generic mock class without type arguments', () async {
     await _testWithNonNullable(
@@ -74,9 +82,11 @@ void main() {
         '''
       },
       outputs: {
-        'foo|test/foo_test.mocks.dart': _containsAllOf(
-          'class MockFoo<T> extends _i1.Mock implements _i2.Foo<T> {}',
-        ),
+        'foo|test/foo_test.mocks.dart': _containsAllOf(dedent('''
+        class MockFoo<T> extends _i1.Mock implements _i2.Foo<T> {
+          $_constructorWithThrowOnMissingStub
+        }
+        ''')),
       },
     );
   });
@@ -97,9 +107,13 @@ void main() {
         '''
       },
       outputs: {
-        'foo|test/foo_test.mocks.dart': _containsAllOf(
-          'class MockFooOfIntBool extends _i1.Mock implements _i2.Foo<int, bool> {}',
-        ),
+        'foo|test/foo_test.mocks.dart': _containsAllOf(dedent('''
+        class MockFooOfIntBool extends _i1.Mock implements _i2.Foo<int, bool> {
+          MockFooOfIntBool() {
+            _i1.throwOnMissingStub(this);
+          }
+        }
+        ''')),
       },
     );
   });
@@ -120,9 +134,11 @@ void main() {
         '''
       },
       outputs: {
-        'foo|test/foo_test.mocks.dart': _containsAllOf(
-          'class MockFoo extends _i1.Mock implements _i2.Foo<int> {}',
-        ),
+        'foo|test/foo_test.mocks.dart': _containsAllOf(dedent('''
+        class MockFoo extends _i1.Mock implements _i2.Foo<int> {
+          $_constructorWithThrowOnMissingStub
+        }
+        ''')),
       },
     );
   });
@@ -143,9 +159,11 @@ void main() {
         '''
       },
       outputs: {
-        'foo|test/foo_test.mocks.dart': _containsAllOf(
-          'class MockFoo<T extends Object> extends _i1.Mock implements _i2.Foo<T> {}',
-        ),
+        'foo|test/foo_test.mocks.dart': _containsAllOf(dedent('''
+        class MockFoo<T extends Object> extends _i1.Mock implements _i2.Foo<T> {
+          $_constructorWithThrowOnMissingStub
+        }
+        ''')),
       },
     );
   });
@@ -169,8 +187,18 @@ void main() {
       },
       outputs: {
         'foo|test/foo_test.mocks.dart': _containsAllOf(
-          'class MockFoo extends _i1.Mock implements _i2.Foo {}',
-          'class MockBar extends _i1.Mock implements _i2.Bar {}',
+          dedent('''
+          class MockFoo extends _i1.Mock implements _i2.Foo {
+            $_constructorWithThrowOnMissingStub
+          }
+          '''),
+          dedent('''
+          class MockBar extends _i1.Mock implements _i2.Bar {
+            MockBar() {
+              _i1.throwOnMissingStub(this);
+            }
+          }
+          '''),
         ),
       },
     );
@@ -198,9 +226,45 @@ void main() {
       },
       outputs: {
         'foo|test/foo_test.mocks.dart': _containsAllOf(
-          'class MockAFoo extends _i1.Mock implements _i2.Foo {}',
-          'class MockBFoo extends _i1.Mock implements _i3.Foo {}',
+          dedent('''
+          class MockAFoo extends _i1.Mock implements _i2.Foo {
+            MockAFoo() {
+              _i1.throwOnMissingStub(this);
+            }
+          }
+          '''),
+          dedent('''
+          class MockBFoo extends _i1.Mock implements _i3.Foo {
+            MockBFoo() {
+              _i1.throwOnMissingStub(this);
+            }
+          }
+          '''),
         ),
+      },
+    );
+  });
+
+  test(
+      'generates a mock class which uses the old behavior of returning null on '
+      'missing stubs', () async {
+    await _testWithNonNullable(
+      {
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo<T> {}
+        '''),
+        'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([], customMocks: [MockSpec<Foo>(as: #MockFoo, returnNullOnMissingStub: true)])
+        void main() {}
+        '''
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': _containsAllOf(dedent('''
+        class MockFoo<T> extends _i1.Mock implements _i2.Foo<T> {}
+        ''')),
       },
     );
   });
@@ -384,8 +448,11 @@ void main() {
         '''),
       },
       outputs: {
-        'foo|test/foo_test.mocks.dart': _containsAllOf(
-            'class MockFoo extends _i1.Mock implements _i2.Foo {}'),
+        'foo|test/foo_test.mocks.dart': _containsAllOf(dedent('''
+        class MockFoo extends _i1.Mock implements _i2.Foo {
+          $_constructorWithThrowOnMissingStub
+        }
+        '''))
       },
     );
   });

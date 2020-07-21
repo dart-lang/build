@@ -79,7 +79,9 @@ class _MockTarget {
   /// The desired name of the mock class.
   final String mockName;
 
-  _MockTarget(this.classType, this.mockName);
+  final bool returnNullOnMissingStub;
+
+  _MockTarget(this.classType, this.mockName, {this.returnNullOnMissingStub});
 
   ClassElement get classElement => classType.element;
 }
@@ -141,7 +143,8 @@ class _MockTargetGatherer {
       }
       final type = _determineDartType(typeToMock, entryLib.typeProvider);
       final mockName = 'Mock${type.element.name}';
-      mockTargets.add(_MockTarget(type, mockName));
+      mockTargets
+          .add(_MockTarget(type, mockName, returnNullOnMissingStub: false));
     }
     final customMocksField = generateMocksValue.getField('customMocks');
     if (customMocksField != null && !customMocksField.isNull) {
@@ -157,7 +160,10 @@ class _MockTargetGatherer {
         var type = _determineDartType(typeToMock, entryLib.typeProvider);
         final mockName = mockSpec.getField('mockName').toSymbolValue() ??
             'Mock${type.element.name}';
-        mockTargets.add(_MockTarget(type, mockName));
+        final returnNullOnMissingStub =
+            mockSpec.getField('returnNullOnMissingStub').toBoolValue();
+        mockTargets.add(_MockTarget(type, mockName,
+            returnNullOnMissingStub: returnNullOnMissingStub));
       }
     }
     return mockTargets;
@@ -481,6 +487,9 @@ class _MockLibraryInfo {
           ..url = _typeImport(mockTarget.classType)
           ..types.addAll(typeArguments);
       }));
+      if (!mockTarget.returnNullOnMissingStub) {
+        cBuilder.constructors.add(_constructorWithThrowOnMissingStub);
+      }
 
       // Only override members of a class declared in a library which uses the
       // non-nullable type system.
@@ -514,6 +523,14 @@ class _MockLibraryInfo {
       }
     });
   }
+
+  /// The default behavior of mocks is to return null for unstubbed methods. To
+  /// use the new behavior of throwing an error, we must explicitly call
+  /// `throwOnMissingStub`.
+  Constructor get _constructorWithThrowOnMissingStub =>
+      Constructor((cBuilder) => cBuilder.body =
+          refer('throwOnMissingStub', 'package:mockito/mockito.dart')
+              .call([refer('this').expression]).statement);
 
   bool _returnTypeIsNonNullable(ExecutableElement method) =>
       typeSystem.isPotentiallyNonNullable(method.returnType);

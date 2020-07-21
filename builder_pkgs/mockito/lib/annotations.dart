@@ -50,6 +50,9 @@ class GenerateMocks {
 /// The name of the mock class is either specified with the `as` named argument,
 /// or is the name of the class being mocked, prefixed with 'Mock'.
 ///
+/// To use the legacy behavior of returning null for unstubbed methods, use
+/// `returnNullOnMissingStub: true`.
+///
 /// For example, given the generic class, `class Foo<T>`, then this
 /// annotation:
 ///
@@ -64,10 +67,12 @@ class GenerateMocks {
 /// `class MockFoo<T> extends Mocks implements Foo<T>` and
 /// `class MockFooOfInt extends Mock implements Foo<int>`.
 // TODO(srawlins): Document this in NULL_SAFETY_README.md.
-// TODO(srawlins): Add 'returnNullOnMissingStub'.
 // TODO(srawlins): Add 'mixingIn'.
 class MockSpec<T> {
   final Symbol mockName;
 
-  const MockSpec({Symbol as}) : mockName = as;
+  final bool returnNullOnMissingStub;
+
+  const MockSpec({Symbol as, this.returnNullOnMissingStub = false})
+      : mockName = as;
 }
