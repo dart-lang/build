@@ -132,11 +132,23 @@ void main() {
     );
   });
 
+  test('overrides methods, matching required positional parameters', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void m(int a) {}
+      }
+      '''),
+      _containsAllOf('void m(int? a) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a]));'),
+    );
+  });
+
   test('overrides methods, matching optional positional parameters', () async {
     await _expectSingleNonNullableOutput(
       dedent(r'''
       class Foo {
-          void m(int a, [int b, int c = 0]) {}
+        void m(int a, [int b, int c = 0]) {}
       }
       '''),
       _containsAllOf('void m(int? a, [int? b, int? c = 0]) =>',
@@ -148,11 +160,280 @@ void main() {
     await _expectSingleNonNullableOutput(
       dedent(r'''
       class Foo {
-          void m(int a, {int b, int c = 0}) {}
+        void m(int a, {int b, int c = 0}) {}
       }
       '''),
       _containsAllOf('void m(int? a, {int? b, int? c = 0}) =>',
           'super.noSuchMethod(Invocation.method(#m, [a], {#b: b, #c: c}));'),
+    );
+  });
+
+  test('matches parameter default values', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void m([int a, int b = 0]) {}
+      }
+      '''),
+      _containsAllOf('void m([int? a, int? b = 0]) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a, b]));'),
+    );
+  });
+
+  test('matches boolean literal parameter default values', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void m([bool a = true, bool b = false]) {}
+      }
+      '''),
+      _containsAllOf('void m([bool? a = true, bool? b = false]) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a, b]));'),
+    );
+  });
+
+  test('matches number literal parameter default values', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void m([int a = 0, double b = 0.5]) {}
+      }
+      '''),
+      _containsAllOf('void m([int? a = 0, double? b = 0.5]) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a, b]));'),
+    );
+  });
+
+  test('matches string literal parameter default values', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void m([String a = 'Hello', String b = 'Hello ' r"World"]) {}
+      }
+      '''),
+      _containsAllOf(
+          "void m([String? a = r'Hello', String? b = r'Hello World']) =>",
+          'super.noSuchMethod(Invocation.method(#m, [a, b]));'),
+    );
+  });
+
+  test('matches empty collection literal parameter default values', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void m([List<int> a = const [], Map<int, int> b = const {}]) {}
+      }
+      '''),
+      _containsAllOf(
+          'void m([List<int>? a = const [], Map<int, int>? b = const {}]) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a, b]));'),
+    );
+  });
+
+  test('matches non-empty list literal parameter default values', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void m([List<int> a = const [1, 2, 3]]) {}
+      }
+      '''),
+      _containsAllOf('void m([List<int>? a = const [1, 2, 3]]) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a]));'),
+    );
+  });
+
+  test('matches non-empty map literal parameter default values', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void m([Map<int, String> a = const {1: 'a', 2: 'b'}]) {}
+      }
+      '''),
+      _containsAllOf(
+          "void m([Map<int, String>? a = const {1: r'a', 2: r'b'}]) =>",
+          'super.noSuchMethod(Invocation.method(#m, [a]));'),
+    );
+  });
+
+  test('matches non-empty map literal parameter default values', () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void m([Map<int, String> a = const {1: 'a', 2: 'b'}]) {}
+      }
+      '''),
+      _containsAllOf(
+          "void m([Map<int, String>? a = const {1: r'a', 2: r'b'}]) =>",
+          'super.noSuchMethod(Invocation.method(#m, [a]));'),
+    );
+  });
+
+  test('matches parameter default values constructed from a local class',
+      () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void m([Bar a = const Bar()]) {}
+      }
+      class Bar {
+        const Bar();
+      }
+      '''),
+      _containsAllOf('void m([_i2.Bar? a = const _i2.Bar()]) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a]));'),
+    );
+  });
+
+  test('matches parameter default values constructed from a Dart SDK class',
+      () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void m([Duration a = const Duration(days: 1)]) {}
+      }
+      '''),
+      _containsAllOf('void m([Duration? a = const Duration(days: 1)]) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a]));'),
+    );
+  });
+
+  test('matches parameter default values constructed from a named constructor',
+      () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void m([Bar a = const Bar.named()]) {}
+      }
+      class Bar {
+        const Bar.named();
+      }
+      '''),
+      _containsAllOf('void m([_i2.Bar? a = const _i2.Bar.named()]) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a]));'),
+    );
+  });
+
+  test('matches parameter default values constructed with positional arguments',
+      () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void m([Bar a = const Bar(7)]) {}
+      }
+      class Bar {
+        final int i;
+        const Bar(this.i);
+      }
+      '''),
+      _containsAllOf('void m([_i2.Bar? a = const _i2.Bar(7)]) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a]));'),
+    );
+  });
+
+  test('matches parameter default values constructed with named arguments',
+      () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void m([Bar a = const Bar(i: 7)]) {}
+      }
+      class Bar {
+        final int i;
+        const Bar({this.i});
+      }
+      '''),
+      _containsAllOf('void m([_i2.Bar? a = const _i2.Bar(i: 7)]) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a]));'),
+    );
+  });
+
+  test('matches parameter default values constructed with top-level variable',
+      () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void m([int a = x]) {}
+      }
+      const x = 1;
+      '''),
+      _containsAllOf('void m([int? a = 1]) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a]));'),
+    );
+  });
+
+  test('matches parameter default values constructed with static field',
+      () async {
+    await _expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        static const x = 1;
+        void m([int a = x]) {}
+      }
+      '''),
+      _containsAllOf('void m([int? a = 1]) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a]));'),
+    );
+  });
+
+  test('throws when given a parameter default value using a private type', () {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+      class Foo {
+        void m([Bar a = const _Bar()]) {}
+      }
+      class Bar {}
+      class _Bar implements Bar {
+        const _Bar();
+      }
+      '''),
+      },
+      message: contains(
+          "Mockito cannot generate a valid stub for method 'Foo.m'; parameter "
+          "'a' causes a problem: default value has a private type: "
+          'asset:foo/lib/foo.dart#_Bar'),
+    );
+  });
+
+  test(
+      'throws when given a parameter default value using a private constructor',
+      () {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {
+          void m([Bar a = const Bar._named()]) {}
+        }
+        class Bar {
+          const Bar._named();
+        }
+        '''),
+      },
+      message: contains(
+          "Mockito cannot generate a valid stub for method 'Foo.m'; parameter "
+          "'a' causes a problem: default value has a private type: "
+          'asset:foo/lib/foo.dart#Bar::_named'),
+    );
+  });
+
+  test('throws when given a parameter default value which is a type', () {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {
+          void m([Type a = int]) {}
+        }
+        '''),
+      },
+      message: contains(
+          "Mockito cannot generate a valid stub for method 'Foo.m'; parameter "
+          "'a' causes a problem: default value is a Type: int"),
     );
   });
 
@@ -1807,8 +2088,19 @@ TypeMatcher<List<int>> _containsAllOf(a, [b]) => decodedMatches(
 void _expectBuilderThrows(
     {@required Map<String, String> assets,
     @required dynamic /*String|Matcher<List<int>>*/ message}) {
+  var packageConfig = PackageConfig([
+    Package('foo', Uri.file('/foo/'),
+        packageUriRoot: Uri.file('/foo/lib/'),
+        languageVersion: LanguageVersion(2, 9))
+  ]);
+
   expect(
-      () async => await testBuilder(buildMocks(BuilderOptions({})), assets),
+      () async => await withEnabledExperiments(
+            () async => await testBuilder(
+                buildMocks(BuilderOptions({})), assets,
+                packageConfig: packageConfig),
+            ['non-nullable'],
+          ),
       throwsA(TypeMatcher<InvalidMockitoAnnotationException>()
           .having((e) => e.message, 'message', message)));
 }

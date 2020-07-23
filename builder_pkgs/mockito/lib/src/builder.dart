@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart' as analyzer;
 import 'package:analyzer/dart/element/type_provider.dart';
@@ -20,6 +21,7 @@ import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:meta/meta.dart';
+import 'package:source_gen/source_gen.dart';
 
 /// For a source Dart library, generate the mocks referenced therein.
 ///
@@ -752,9 +754,95 @@ class _MockLibraryInfo {
         ..type = _typeReference(parameter.type, forceNullable: forceNullable);
       if (parameter.isNamed) pBuilder.named = true;
       if (parameter.defaultValueCode != null) {
-        pBuilder.defaultTo = Code(parameter.defaultValueCode);
+        try {
+          pBuilder.defaultTo =
+              _expressionFromDartObject(parameter.computeConstantValue()).code;
+        } on _ReviveError catch (e) {
+          final method = parameter.enclosingElement;
+          final clazz = method.enclosingElement;
+          throw InvalidMockitoAnnotationException(
+              'Mockito cannot generate a valid stub for method '
+              "'${clazz.displayName}.${method.displayName}'; parameter "
+              "'${parameter.displayName}' causes a problem: ${e.message}");
+        }
       }
     });
+  }
+
+  /// Creates a code_builder [Expression] from [object], a constant object from
+  /// analyzer.
+  ///
+  /// This is very similar to Angular's revive code, in
+  /// angular_compiler/analyzer/di/injector.dart.
+  Expression _expressionFromDartObject(DartObject object) {
+    final constant = ConstantReader(object);
+    if (constant.isNull) {
+      return literalNull;
+    } else if (constant.isBool) {
+      return literalBool(constant.boolValue);
+    } else if (constant.isDouble) {
+      return literalNum(constant.doubleValue);
+    } else if (constant.isInt) {
+      return literalNum(constant.intValue);
+    } else if (constant.isString) {
+      return literalString(constant.stringValue, raw: true);
+    } else if (constant.isList) {
+      return literalConstList([
+        for (var element in constant.listValue)
+          _expressionFromDartObject(element)
+      ]);
+    } else if (constant.isMap) {
+      return literalConstMap({
+        for (var pair in constant.mapValue.entries)
+          _expressionFromDartObject(pair.key):
+              _expressionFromDartObject(pair.value)
+      });
+    } else if (constant.isSet) {
+      return literalConstSet({
+        for (var element in constant.setValue)
+          _expressionFromDartObject(element)
+      });
+    } else if (constant.isType) {
+      // TODO(srawlins): It seems like this might be revivable, but Angular
+      // does not revive Types; we should investigate this if users request it.
+      throw _ReviveError('default value is a Type: ${object.toTypeValue()}.');
+    } else {
+      // If [constant] is not null, a literal, or a type, then it must be an
+      // object constructed with `const`. Revive it.
+      var revivable = constant.revive();
+      if (revivable.isPrivate) {
+        final privateReference = revivable.accessor?.isNotEmpty == true
+            ? '${revivable.source}::${revivable.accessor}'
+            : '${revivable.source}';
+        throw _ReviveError(
+            'default value has a private type: $privateReference.');
+      }
+      if (revivable.source.fragment.isEmpty) {
+        // We can create this invocation by referring to a const field.
+        return refer(revivable.accessor, _typeImport(object.type));
+      }
+
+      final name = revivable.source.fragment;
+      final positionalArgs = [
+        for (var argument in revivable.positionalArguments)
+          _expressionFromDartObject(argument)
+      ];
+      final namedArgs = {
+        for (var pair in revivable.namedArguments.entries)
+          pair.key: _expressionFromDartObject(pair.value)
+      };
+      final type = refer(name, _typeImport(object.type));
+      if (revivable.accessor.isNotEmpty) {
+        return type.constInstanceNamed(
+          revivable.accessor,
+          positionalArgs,
+          namedArgs,
+          // No type arguments. See
+          // https://github.com/dart-lang/source_gen/issues/478.
+        );
+      }
+      return type.constInstance(positionalArgs, namedArgs);
+    }
   }
 
   /// Build a getter which overrides [getter].
@@ -901,6 +989,17 @@ class _MockLibraryInfo {
     // URIs.
     return library.source.uri.toString();
   }
+}
+
+/// An exception thrown when reviving a potentially deep value in a constant.
+///
+/// This exception should always be caught within this library. An
+/// [InvalidMockitoAnnotationException] can be presented to the user after
+/// catching this exception.
+class _ReviveError implements Exception {
+  final String message;
+
+  _ReviveError(this.message);
 }
 
 /// An exception which is thrown when Mockito encounters an invalid annotation.
