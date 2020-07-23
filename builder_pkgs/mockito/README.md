@@ -111,7 +111,7 @@ when(mock.methodThatReturnsAStream())
 
 // GOOD
 when(mock.methodThatReturnsAFuture())
-    .thenAnswer((_) => Future.value('Stub'));
+    .thenAnswer((_) async => 'Stub');
 when(mock.methodThatReturnsAStream())
     .thenAnswer((_) => Stream.fromIterable(['Stub']));
 
