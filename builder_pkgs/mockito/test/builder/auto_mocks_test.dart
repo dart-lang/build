@@ -2045,7 +2045,7 @@ Future<void> _testWithNonNullable(Map<String, String> sourceAssets,
   var packageConfig = PackageConfig([
     Package('foo', Uri.file('/foo/'),
         packageUriRoot: Uri.file('/foo/lib/'),
-        languageVersion: LanguageVersion(2, 9))
+        languageVersion: LanguageVersion(2, 10))
   ]);
   await withEnabledExperiments(
     () async => await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
@@ -2063,7 +2063,7 @@ Future<void> _expectSingleNonNullableOutput(
   var packageConfig = PackageConfig([
     Package('foo', Uri.file('/foo/'),
         packageUriRoot: Uri.file('/foo/lib/'),
-        languageVersion: LanguageVersion(2, 9))
+        languageVersion: LanguageVersion(2, 10))
   ]);
 
   await withEnabledExperiments(
@@ -2091,7 +2091,7 @@ void _expectBuilderThrows(
   var packageConfig = PackageConfig([
     Package('foo', Uri.file('/foo/'),
         packageUriRoot: Uri.file('/foo/lib/'),
-        languageVersion: LanguageVersion(2, 9))
+        languageVersion: LanguageVersion(2, 10))
   ]);
 
   expect(

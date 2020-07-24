@@ -15,7 +15,8 @@
 // This file explicitly does _not_ end in `_test.dart`, so that it is not picked
 // up by `pub run test`. It is here for coveralls.
 
-import 'builder_test.dart' as builder_test;
+import 'builder/auto_mocks_test.dart' as builder_auto_mocks_test;
+import 'builder/custom_mocks_test.dart' as builder_custom_mocks_test;
 import 'capture_test.dart' as capture_test;
 import 'invocation_matcher_test.dart' as invocation_matcher_test;
 import 'mockito_test.dart' as mockito_test;
@@ -23,7 +24,8 @@ import 'until_called_test.dart' as until_called_test;
 import 'verify_test.dart' as verify_test;
 
 void main() {
-  builder_test.main();
+  builder_auto_mocks_test.main();
+  builder_custom_mocks_test.main();
   capture_test.main();
   invocation_matcher_test.main();
   mockito_test.main();
