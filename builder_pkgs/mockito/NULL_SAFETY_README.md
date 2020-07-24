@@ -12,7 +12,7 @@ class HttpServer {
 ```
 
 The method, `start`, takes a _non_-nullable int argument, and returns a
-_non_-nullable Url. Under the null safety type system, it is illegal to pass
+_non_-nullable Uri. Under the null safety type system, it is illegal to pass
 `null` to `start`, and it is illegal for `start` (or any overriding methods in
 any sub-classes) to return `null`. This plays havoc with the mechanisms that
 Mockito uses to stub methods.
@@ -112,6 +112,48 @@ If we previously had a shared mocks file which declared mocks to be used by
 multiple tests, for example named `shared_mocks.dart`, we can edit that file to
 generate mocks, and then import `shared_mocks.mocks.dart` in the tests which
 previously imported `shared_mocks.dart`.
+
+### Custom generated mocks
+
+Mockito might need some additional input in order to generate the right mock for
+certain use cases. We can generate custom mock classes by passing MockSpec
+objects to the `customMocks` list argument in `@GenerateMocks`.
+
+#### Mock with a custom name
+
+Use MockSpec's constructor's `as` named parameter to use a non-standard name for
+the mock class. For example:
+
+```dart
+@GenerateMocks([], customMocks: [MockSpec<Foo>(as: #BaseMockFoo)])
+```
+
+Mockito will generate a mock class called `BaseMockFoo`, instead of the default,
+`MockFoo`. This can help to work around name collisions or to give a more
+specific name to a mock with type arguments (See below).
+
+#### Non-generic mock of a generic class
+
+To generate a mock class which extends a class with type arguments, specify
+them on MockSpec's type argument:
+
+```dart
+@GenerateMocks([], customMocks: [MockSpec<Foo<int>>(as: #MockFooOfInt)])
+```
+
+Mockito will generate `class MockFooOfInt extends Mock implements Foo<int>`.
+
+#### Old "missing stub" behavior
+
+When a method of a generated mock class is called, which does not match any
+method stub created with the `when` API, the call will throw an exception. To
+use the old default behavior of returning null (which doesn't make a lot of
+sense in the Null safety type system), for legacy code, use
+`returnNullOnMissingStub`:
+
+```dart
+@GenerateMocks([], customMocks: [MockSpec<Foo>(returnNullOnMissingStub: true)])
+```
 
 ### Manual mock implementaion
 
