@@ -270,7 +270,7 @@ void main() {
   });
 
   test(
-      'throws when GenerateMock is given a class with a type parameter with a '
+      'throws when GenerateMocks is given a class with a type parameter with a '
       'private bound', () async {
     _expectBuilderThrows(
       assets: {
@@ -294,14 +294,13 @@ void main() {
     );
   });
 
-  test("throws when GenerateMock's Of argument is missing a type argument",
-      () async {
+  test('throws when MockSpec() is missing a type argument', () async {
     _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
         'foo|test/foo_test.dart': dedent('''
         import 'package:mockito/annotations.dart';
-        // Missing required type argument to GenerateMock.
+        // Missing required type argument to MockSpec.
         @GenerateMocks([], customMocks: [MockSpec()])
         void main() {}
         '''),
@@ -310,7 +309,7 @@ void main() {
     );
   });
 
-  test('throws when GenerateMock is given a private class', () async {
+  test('throws when MockSpec uses a private class', () async {
     _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
@@ -395,7 +394,7 @@ void main() {
     );
   });
 
-  test('throws when GenerateMock references a typedef', () async {
+  test('throws when MockSpec references a typedef', () async {
     _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
@@ -408,7 +407,7 @@ void main() {
     );
   });
 
-  test('throws when GenerateMock references an enum', () async {
+  test('throws when MockSpec references an enum', () async {
     _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
@@ -421,7 +420,7 @@ void main() {
     );
   });
 
-  test('throws when GenerateMock references a non-subtypeable type', () async {
+  test('throws when MockSpec references a non-subtypeable type', () async {
     _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
@@ -500,7 +499,7 @@ Future<void> _expectSingleNonNullableOutput(
   var packageConfig = PackageConfig([
     Package('foo', Uri.file('/foo/'),
         packageUriRoot: Uri.file('/foo/lib/'),
-        languageVersion: LanguageVersion(2, 10))
+        languageVersion: LanguageVersion(2, 9))
   ]);
 
   await withEnabledExperiments(
