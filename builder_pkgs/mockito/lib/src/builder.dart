@@ -757,7 +757,7 @@ class _MockLibraryInfo {
         try {
           pBuilder.defaultTo =
               _expressionFromDartObject(parameter.computeConstantValue()).code;
-        } on _ReviveError catch (e) {
+        } on _ReviveException catch (e) {
           final method = parameter.enclosingElement;
           final clazz = method.enclosingElement;
           throw InvalidMockitoAnnotationException(
@@ -805,7 +805,8 @@ class _MockLibraryInfo {
     } else if (constant.isType) {
       // TODO(srawlins): It seems like this might be revivable, but Angular
       // does not revive Types; we should investigate this if users request it.
-      throw _ReviveError('default value is a Type: ${object.toTypeValue()}.');
+      throw _ReviveException(
+          'default value is a Type: ${object.toTypeValue()}.');
     } else {
       // If [constant] is not null, a literal, or a type, then it must be an
       // object constructed with `const`. Revive it.
@@ -814,7 +815,7 @@ class _MockLibraryInfo {
         final privateReference = revivable.accessor?.isNotEmpty == true
             ? '${revivable.source}::${revivable.accessor}'
             : '${revivable.source}';
-        throw _ReviveError(
+        throw _ReviveException(
             'default value has a private type: $privateReference.');
       }
       if (revivable.source.fragment.isEmpty) {
@@ -996,10 +997,10 @@ class _MockLibraryInfo {
 /// This exception should always be caught within this library. An
 /// [InvalidMockitoAnnotationException] can be presented to the user after
 /// catching this exception.
-class _ReviveError implements Exception {
+class _ReviveException implements Exception {
   final String message;
 
-  _ReviveError(this.message);
+  _ReviveException(this.message);
 }
 
 /// An exception which is thrown when Mockito encounters an invalid annotation.
