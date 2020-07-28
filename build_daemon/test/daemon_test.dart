@@ -88,7 +88,7 @@ void main() {
       var daemonTwo = await _runDaemon(workspace2);
       testDaemons.addAll([daemonOne, daemonTwo]);
       expect(await _statusOf(daemonTwo), 'RUNNING');
-    });
+    }, timeout: Timeout.factor(2));
 
     test('can start two daemons at the same time', () async {
       var workspace = uuid.v1();
@@ -98,7 +98,7 @@ void main() {
       expect([await _statusOf(daemonOne), await _statusOf(daemonTwo)],
           containsAll(['RUNNING', 'ALREADY RUNNING']));
       testDaemons.addAll([daemonOne, daemonTwo]);
-    });
+    }, timeout: Timeout.factor(2));
 
     test('logs the version when running', () async {
       var workspace = uuid.v1();
