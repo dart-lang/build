@@ -490,32 +490,6 @@ Future<void> _testWithNonNullable(Map<String, String> sourceAssets,
   );
 }
 
-/// Test [MockBuilder] on a single source file, in a package which has opted
-/// into the non-nullable type system, and with the non-nullable experiment
-/// enabled.
-Future<void> _expectSingleNonNullableOutput(
-    String sourceAssetText,
-    /*String|Matcher<List<int>>*/ dynamic output) async {
-  var packageConfig = PackageConfig([
-    Package('foo', Uri.file('/foo/'),
-        packageUriRoot: Uri.file('/foo/lib/'),
-        languageVersion: LanguageVersion(2, 9))
-  ]);
-
-  await withEnabledExperiments(
-    () async => await testBuilder(
-        buildMocks(BuilderOptions({})),
-        {
-          ...annotationsAsset,
-          ...simpleTestAsset,
-          'foo|lib/foo.dart': sourceAssetText,
-        },
-        outputs: {'foo|test/foo_test.mocks.dart': output},
-        packageConfig: packageConfig),
-    ['non-nullable'],
-  );
-}
-
 TypeMatcher<List<int>> _containsAllOf(a, [b]) => decodedMatches(
     b == null ? allOf(contains(a)) : allOf(contains(a), contains(b)));
 

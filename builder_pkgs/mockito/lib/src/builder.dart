@@ -707,7 +707,7 @@ class _MockLibraryInfo {
       // There is a potential for these names to collide. If one mock class
       // requires a fake for a certain Foo, and another mock class requires a
       // fake for a different Foo, they will collide.
-      var fakeName = '_Fake${dartType.name}';
+      var fakeName = '_Fake${elementToFake.name}';
       // Only make one fake class for each class that needs to be faked.
       if (!fakedClassElements.contains(elementToFake)) {
         fakeClasses.add(Class((cBuilder) {
@@ -722,7 +722,7 @@ class _MockLibraryInfo {
           }
           cBuilder.implements.add(TypeReference((b) {
             b
-              ..symbol = dartType.name
+              ..symbol = elementToFake.name
               ..url = _typeImport(dartType)
               ..types.addAll(typeParameters);
           }));
@@ -928,7 +928,7 @@ class _MockLibraryInfo {
     if (type is analyzer.InterfaceType) {
       return TypeReference((b) {
         b
-          ..symbol = type.name
+          ..symbol = type.element.name
           ..isNullable = forceNullable || typeSystem.isPotentiallyNullable(type)
           ..url = _typeImport(type)
           ..types.addAll(type.typeArguments.map(_typeReference));
@@ -967,11 +967,11 @@ class _MockLibraryInfo {
     } else if (type is analyzer.TypeParameterType) {
       return TypeReference((b) {
         b
-          ..symbol = type.name
+          ..symbol = type.element.name
           ..isNullable = forceNullable || typeSystem.isNullable(type);
       });
     } else {
-      return refer(type.displayName, _typeImport(type));
+      return refer(type.getDisplayString(), _typeImport(type));
     }
   }
 
