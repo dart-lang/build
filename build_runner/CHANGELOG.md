@@ -1,4 +1,4 @@
-## 1.10.1-dev
+## 1.10.1
 
 Pin `analyzer` to `0.39.14` to work around Issue #2763.
 
