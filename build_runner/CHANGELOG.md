@@ -1,5 +1,7 @@
 ## 1.10.1-dev
 
+Pin `analyzer` to `0.39.14` to work around Issue #2763.
+
 ## 1.10.0
 
 - Add an `--enable-experiment` flag which enables running builders on code that
