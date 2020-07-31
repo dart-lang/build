@@ -1,3 +1,8 @@
+## 1.10.2
+
+Unpin analyzer and set the min sdk to 2.10 to resolve the subsequent issue
+https://github.com/dart-lang/sdk/issues/42887.
+
 ## 1.10.1
 
 Pin `analyzer` to `0.39.14` to work around Issue #2763.
