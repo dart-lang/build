@@ -971,7 +971,10 @@ class _MockLibraryInfo {
           ..isNullable = forceNullable || typeSystem.isNullable(type);
       });
     } else {
-      return refer(type.getDisplayString(), _typeImport(type));
+      return refer(
+        type.getDisplayString(withNullability: false),
+        _typeImport(type),
+      );
     }
   }
 
