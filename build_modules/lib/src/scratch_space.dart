@@ -8,6 +8,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:build/build.dart';
+import 'package:build_modules/build_modules.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
@@ -30,8 +31,9 @@ final scratchSpaceResource = Resource<ScratchSpace>(() {
   var packageConfigFile = File(
       p.join(scratchSpace.tempDir.path, '.dart_tool', 'package_config.json'));
   if (!packageConfigFile.existsSync()) {
+    var originalConfigFile = File(p.join('.dart_tool', 'package_config.json'));
     var packageConfigContents = _scratchSpacePackageConfig(
-        File(p.join('.dart_tool', 'package_config.json')).readAsStringSync());
+        originalConfigFile.readAsStringSync(), originalConfigFile.absolute.uri);
     packageConfigFile
       ..createSync(recursive: true)
       ..writeAsStringSync(packageConfigContents);
@@ -81,7 +83,7 @@ final scratchSpaceResource = Resource<ScratchSpace>(() {
 /// directory.
 ///
 /// Returns the new file contents.
-String _scratchSpacePackageConfig(String rootConfig) {
+String _scratchSpacePackageConfig(String rootConfig, Uri packageConfigUri) {
   var parsedRootConfig = jsonDecode(rootConfig) as Map<String, dynamic>;
   var version = parsedRootConfig['configVersion'] as int;
   if (version != 2) {
@@ -92,8 +94,16 @@ String _scratchSpacePackageConfig(String rootConfig) {
   var packages =
       (parsedRootConfig['packages'] as List).cast<Map<String, dynamic>>();
   for (var package in packages) {
-    package['rootUri'] = '../packages/${package['name']}';
-    package['packageUri'] = '';
+    var rootUri = packageConfigUri.resolve(package['rootUri'] as String);
+    if (rootUri == _currentDirUri) {
+      package['rootUri'] = '$multiRootScheme:///';
+      package['packageUri'] = 'packages/${package['name']}/';
+    } else {
+      package['rootUri'] = '$multiRootScheme:///packages/${package['name']}/';
+      package.remove('packageUri');
+    }
   }
   return jsonEncode(parsedRootConfig);
 }
+
+final Uri _currentDirUri = Directory.current.uri;
