@@ -805,8 +805,9 @@ class _MockLibraryInfo {
     } else if (constant.isType) {
       // TODO(srawlins): It seems like this might be revivable, but Angular
       // does not revive Types; we should investigate this if users request it.
-      throw _ReviveException(
-          'default value is a Type: ${object.toTypeValue()}.');
+      var type = object.toTypeValue();
+      var typeStr = type.getDisplayString(withNullability: false);
+      throw _ReviveException('default value is a Type: $typeStr.');
     } else {
       // If [constant] is not null, a literal, or a type, then it must be an
       // object constructed with `const`. Revive it.
