@@ -46,5 +46,6 @@ export 'src/util/constants.dart'
         assetGraphPathFor,
         cacheDir,
         entryPointDir,
+        overrideGeneratedOutputDirectory,
         pubBinary,
         sdkBin;
