@@ -1,4 +1,6 @@
-## 6.0.1-dev
+## 6.0.1
+
+- Add back the `overrideGeneratedOutputDirectory` method.
 
 ## 6.0.0
 
