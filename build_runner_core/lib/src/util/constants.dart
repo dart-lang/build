@@ -13,7 +13,7 @@ final String assetGraphPath = assetGraphPathFor(_scriptPath);
 
 /// Relative path to the asset graph for a build script at [path]
 String assetGraphPathFor(String path) =>
-    '$cacheDir/${_scriptHashFor(path)}/asset_graph.json';
+    '$cacheDir/${_scriptHashFor(path)}/asset_graph.msgpack';
 
 /// Relative path to the directory which holds serialized versions of errors
 /// reported during previous builds.

@@ -842,7 +842,7 @@ void main() {
     });
   });
 
-  test('tracks dependency graph in a asset_graph.json file', () async {
+  test('tracks dependency graph in a asset_graph.msgpack file', () async {
     final writer = InMemoryRunnerAssetWriter();
     await testBuilders([
       requiresPostProcessBuilderApplication,
@@ -1019,7 +1019,7 @@ void main() {
         outputs: {}, writer: writer);
   });
 
-  test('can recover from a deleted asset_graph.json cache', () async {
+  test('can recover from a deleted asset_graph.msgpack cache', () async {
     final writer = InMemoryRunnerAssetWriter();
     var inputs = <String, String>{'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'};
     var outputs = <String, String>{
@@ -1030,7 +1030,7 @@ void main() {
     await testBuilders([copyABuilderApplication], inputs,
         outputs: outputs, writer: writer);
 
-    // Delete the `asset_graph.json` file!
+    // Delete the `asset_graph.msgpack` file!
     var outputId = makeAssetId('a|$assetGraphPath');
     await writer.delete(outputId);
 
