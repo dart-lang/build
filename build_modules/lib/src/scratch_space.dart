@@ -107,9 +107,8 @@ String _scratchSpacePackageConfig(String rootConfig, Uri packageConfigUri) {
     }
   }
   if (!foundRoot) {
-    _logger.warning(
-        'No root package found, this may cause problems for files not '
-        'referenced by a package: uri');
+    _logger.warning('No root package found, this may cause problems for files '
+        'not referenced by a package: uri');
   }
   return jsonEncode(parsedRootConfig);
 }
