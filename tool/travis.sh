@@ -63,14 +63,18 @@ for PKG in ${PKGS}; do
       pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
     command_2)
+      echo 'pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random'
+      pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random || EXIT_CODE=$?
+      ;;
+    command_3)
       echo 'pub run build_runner test -- --test-randomize-ordering-seed=random'
       pub run build_runner test -- --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
-    command_4)
+    command_5)
       echo 'dart $(pub run build_runner help >/dev/null; pub run build_runner generate-build-script) test --delete-conflicting-outputs -- -P presubmit --test-randomize-ordering-seed=random'
       dart $(pub run build_runner help >/dev/null; pub run build_runner generate-build-script) test --delete-conflicting-outputs -- -P presubmit --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
-    command_5)
+    command_6)
       echo 'test/flutter_test.sh'
       test/flutter_test.sh || EXIT_CODE=$?
       ;;
@@ -79,6 +83,10 @@ for PKG in ${PKGS}; do
       dartanalyzer --fatal-infos --fatal-warnings . || EXIT_CODE=$?
       ;;
     dartanalyzer_1)
+      echo 'dartanalyzer --enable-experiment=non-nullable --fatal-infos --fatal-warnings .'
+      dartanalyzer --enable-experiment=non-nullable --fatal-infos --fatal-warnings . || EXIT_CODE=$?
+      ;;
+    dartanalyzer_2)
       echo 'dartanalyzer --fatal-warnings .'
       dartanalyzer --fatal-warnings . || EXIT_CODE=$?
       ;;
