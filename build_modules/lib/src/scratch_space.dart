@@ -93,15 +93,23 @@ String _scratchSpacePackageConfig(String rootConfig, Uri packageConfigUri) {
   }
   var packages =
       (parsedRootConfig['packages'] as List).cast<Map<String, dynamic>>();
+  var foundRoot = false;
   for (var package in packages) {
     var rootUri = packageConfigUri.resolve(package['rootUri'] as String);
     if (rootUri == _currentDirUri) {
+      assert(!foundRoot);
+      foundRoot = true;
       package['rootUri'] = '$multiRootScheme:///';
       package['packageUri'] = 'packages/${package['name']}/';
     } else {
       package['rootUri'] = '$multiRootScheme:///packages/${package['name']}/';
       package.remove('packageUri');
     }
+  }
+  if (!foundRoot) {
+    _logger.warning(
+        'No root package found, this may cause problems for files not '
+        'referenced by a package: uri');
   }
   return jsonEncode(parsedRootConfig);
 }
