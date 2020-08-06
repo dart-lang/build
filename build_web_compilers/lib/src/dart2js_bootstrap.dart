@@ -8,6 +8,7 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
@@ -69,6 +70,8 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
         '--multi-root-scheme=$multiRootScheme',
         '--multi-root=${scratchSpace.tempDir.uri.toFilePath()}',
         '-o$jsOutputPath',
+        for (var experiment in enabledExperiments)
+          '--enable-experiment=$experiment',
         dartPath,
       ]);
   }
