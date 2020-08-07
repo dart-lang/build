@@ -1,6 +1,8 @@
-## 1.2.1-dev
+## 1.2.1
 
 - Improve/fix `testBuilder` documentation.
+- Update test bootstrap builder to copy language version comments from the test
+  file if present.
 
 ## 1.2.0
 
