@@ -140,7 +140,7 @@ void main() {
         }, (resolver) async {
           await resolver.libraryFor(entryPoint);
         }, resolvers: AnalyzerResolvers());
-      }, skip: 'https://github.com/dart-lang/sdk/issues/41607');
+      });
     });
 
     group('assets that aren\'t a transitive import of input', () {
@@ -375,22 +375,22 @@ int? get x => 1;
                 expect(errors.errors, isEmpty);
               }, resolvers: AnalyzerResolvers()),
           ['non-nullable']);
-    }, skip: 'Requires the next version of analyzer which isnt yet published.');
+    });
 
-    group('regressions', () {
-      test('can use analysis session after resolving additional assets',
-          () async {
-        var resolvers = AnalyzerResolvers();
-        await resolveSources({
-          'a|web/main.dart': '',
-          'a|web/other.dart': '',
-        }, (resolver) async {
-          var lib = await resolver.libraryFor(entryPoint);
-          expect(
-              await resolver.isLibrary(AssetId('a', 'web/other.dart')), true);
-          expect(await lib.session.getResolvedLibraryByElement(lib), isNotNull);
-        }, resolvers: resolvers);
-      }, skip: 'https://github.com/dart-lang/build/issues/2689');
+    test('can get a new analysis session after resolving additional assets',
+        () async {
+      var resolvers = AnalyzerResolvers();
+      await resolveSources({
+        'a|web/main.dart': '',
+        'a|web/other.dart': '',
+      }, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        expect(await resolver.isLibrary(AssetId('a', 'web/other.dart')), true);
+        var newLib =
+            await resolver.libraryFor(await resolver.assetIdForElement(lib));
+        expect(await newLib.session.getResolvedLibraryByElement(newLib),
+            isNotNull);
+      }, resolvers: resolvers);
     });
   });
 
