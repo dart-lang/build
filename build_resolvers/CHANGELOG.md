@@ -1,4 +1,4 @@
-## 1.3.11-dev
+## 1.3.11
 
 - Use the public `buildSdkSummary` api from the analyzer instead of the 
   private one.
