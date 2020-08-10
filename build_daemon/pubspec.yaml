@@ -27,7 +27,3 @@ dev_dependencies:
   test: ^1.3.3
   test_descriptor: ^1.1.1
   uuid: ^2.0.0
-
-dependency_overrides:
-  build_resolvers:
-    path: ../build_resolvers
