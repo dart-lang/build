@@ -8,7 +8,6 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:build/build.dart';
-import 'package:build_modules/build_modules.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
@@ -96,13 +95,15 @@ String _scratchSpacePackageConfig(String rootConfig, Uri packageConfigUri) {
   var foundRoot = false;
   for (var package in packages) {
     var rootUri = packageConfigUri.resolve(package['rootUri'] as String);
+    // We expect to see exactly one package where the root uri is equal to
+    // the current directory, and that is the current packge.
     if (rootUri == _currentDirUri) {
       assert(!foundRoot);
       foundRoot = true;
-      package['rootUri'] = '$multiRootScheme:///';
-      package['packageUri'] = 'packages/${package['name']}/';
+      package['rootUri'] = '../';
+      package['packageUri'] = '../packages/${package['name']}/';
     } else {
-      package['rootUri'] = '$multiRootScheme:///packages/${package['name']}/';
+      package['rootUri'] = '../packages/${package['name']}/';
       package.remove('packageUri');
     }
   }

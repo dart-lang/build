@@ -1,5 +1,7 @@
-## 2.10.2-dev
+## 2.10.2
 
+- Update the package_config used in the shared compiler tmp dir to cover the
+  non-lib dirs for the root package.
 - Stop using deprecated analyzer apis.
 
 ## 2.10.1

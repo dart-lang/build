@@ -60,13 +60,13 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
     var dartPath = dartEntrypointId.path.startsWith('lib/')
         ? 'package:${dartEntrypointId.package}/'
             '${dartEntrypointId.path.substring('lib/'.length)}'
-        : dartEntrypointId.path;
+        : '$multiRootScheme:///${dartEntrypointId.path}';
     var jsOutputPath =
         '${p.withoutExtension(dartPath.replaceFirst('package:', 'packages/'))}'
         '$jsEntrypointExtension';
     args = dart2JsArgs.toList()
       ..addAll([
-        '--packages=${p.join('.dart_tool', 'package_config.json')}',
+        '--packages=$multiRootScheme:///.dart_tool/package_config.json',
         '--multi-root-scheme=$multiRootScheme',
         '--multi-root=${scratchSpace.tempDir.uri.toFilePath()}',
         '-o$jsOutputPath',

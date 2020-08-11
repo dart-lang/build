@@ -1,5 +1,7 @@
-## 2.12.0-dev.1
+## 2.12.0
 
+- Update dart2js support to enable experiments if provided, and use a
+  multi-root scheme for non-package uris.
 - Update `build_web_compilers|ddc` builder to produce a `.metadata` file.
 - Update `build_web_compilers|entrypoint` builder to produce a `.ddc_merged_metadata` file
   which consists of new line separated `.metadata` content produced by DDC.

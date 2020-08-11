@@ -171,7 +171,7 @@ Future<void> _createDevCompilerModule(
       jsOutputFile.path,
       debugMode ? '--source-map' : '--no-source-map',
       for (var dep in transitiveDeps) _summaryArg(dep),
-      '--packages=${p.join('.dart_tool', 'package_config.json')}',
+      '--packages=$multiRootScheme:///.dart_tool/package_config.json',
       '--module-name=${ddcModuleName(jsId)}',
       '--multi-root-scheme=$multiRootScheme',
       '--multi-root=.',
