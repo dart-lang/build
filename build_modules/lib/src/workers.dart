@@ -297,7 +297,7 @@ class _Dart2JsWorker {
         job.resultCompleter.complete(result);
         succeeded = true;
       } catch (e) {
-        log.warning('Dart2Js failure: $e');
+        log.warning('Dart2Js failure: $e\n$output');
         succeeded = false;
         if (tryCount >= _retryCountMax) {
           job.resultCompleter.complete(_currentJobResult.future);

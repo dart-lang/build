@@ -60,7 +60,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
     var dartPath = dartEntrypointId.path.startsWith('lib/')
         ? 'package:${dartEntrypointId.package}/'
             '${dartEntrypointId.path.substring('lib/'.length)}'
-        : '$multiRootScheme:///${dartEntrypointId.path}';
+        : dartEntrypointId.path;
     var jsOutputPath =
         '${p.withoutExtension(dartPath.replaceFirst('package:', 'packages/'))}'
         '$jsEntrypointExtension';
@@ -72,7 +72,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
         '-o$jsOutputPath',
         for (var experiment in enabledExperiments)
           '--enable-experiment=$experiment',
-        dartPath,
+        '$multiRootScheme:///$dartPath',
       ]);
   }
 
