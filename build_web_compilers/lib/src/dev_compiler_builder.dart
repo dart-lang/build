@@ -130,6 +130,9 @@ Future<void> _createDevCompilerModule(
     Map<String, String> environment,
     Iterable<String> experiments,
     {bool debugMode = true}) async {
+
+  var currentKernelId = module.primarySource.changeExtension(ddcKernelExtension);
+  await buildStep.canRead(currentKernelId);
   var transitiveDeps = await buildStep.trackStage('CollectTransitiveDeps',
       () => module.computeTransitiveDependencies(buildStep));
   var transitiveKernelDeps = [
