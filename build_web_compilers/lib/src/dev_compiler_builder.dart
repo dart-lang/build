@@ -229,8 +229,9 @@ Future<void> _createDevCompilerModule(
     }
 
     // Copy the output back using the buildStep.
+    // await scratchSpace.copyOutput(currentKernelId, buildStep);
     await scratchSpace.copyOutput(jsId, buildStep);
-    await scratchSpace.copyOutput(metadataId, buildStep);
+    // await scratchSpace.copyOutput(metadataId, buildStep);
     if (debugMode) {
       // We need to modify the sources in the sourcemap to remove the custom
       // `multiRootScheme` that we use.
@@ -241,6 +242,16 @@ Future<void> _createDevCompilerModule(
       var json = jsonDecode(content);
       json['sources'] = fixSourceMapSources((json['sources'] as List).cast());
       await buildStep.writeAsString(sourceMapId, jsonEncode(json));
+    }
+
+    if (debugMode) {
+      var metadataId =
+          module.primarySource.changeExtension(metadataExtension);
+      var file = scratchSpace.fileFor(metadataId);
+      var content = await file.readAsString();
+      var json = jsonDecode(content);
+      fixupMetadata(json as Map<String, dynamic>, '${scratchSpace.tempDir.path}/', '');
+      await buildStep.writeAsString(metadataId, jsonEncode(json));
     }
 
     // Note that we only want to do this on success, we can't trust the unused
@@ -297,4 +308,12 @@ String ddcModuleName(AssetId jsId) {
       ? jsId.path.replaceFirst('lib/', 'packages/${jsId.package}/')
       : jsId.path;
   return jsPath.substring(0, jsPath.length - jsModuleExtension.length);
+}
+
+void fixupMetadata(Map<String, dynamic> json, String scratchPath, String path) {
+  var sourceMapUri = json['sourceMapUri'] as String;
+  var moduleUri = json['moduleUri'] as String;
+
+  json['sourceMapUri'] = Uri.parse(sourceMapUri).path.replaceAll(scratchPath, path);
+  json['moduleUri'] = Uri.parse(moduleUri).path.replaceAll(scratchPath, path);
 }
