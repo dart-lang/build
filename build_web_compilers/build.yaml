@@ -22,11 +22,9 @@ builders:
       - sdkJsCopyBuilder
     build_extensions:
       $lib$:
-        - src/dev_compiler/dart_sdk.js
         - src/dev_compiler/require.js
-    is_optional: False
+    is_optional: True
     auto_apply: none
-    applies_builders: ["build_web_compilers|sdk_js_cleanup"]
     runs_before: ["build_web_compilers|entrypoint"]
   dart2js_modules:
     import: "package:build_web_compilers/builders.dart"
@@ -141,12 +139,6 @@ post_process_builders:
   dart_source_cleanup:
     import: "package:build_web_compilers/builders.dart"
     builder_factory: dartSourceCleanup
-    defaults:
-      release_options:
-        enabled: true
-  sdk_js_cleanup:
-    import: "package:build_web_compilers/builders.dart"
-    builder_factory: sdkJsCleanupBuilder
     defaults:
       release_options:
         enabled: true

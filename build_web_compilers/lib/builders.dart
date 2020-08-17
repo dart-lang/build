@@ -51,11 +51,8 @@ Builder ddcKernelBuilder(BuilderOptions options) {
       experiments: _readExperimentOption(options));
 }
 
+// Copies the `require.js` file from the sdk into this package.
 Builder sdkJsCopyBuilder(_) => SdkJsCopyBuilder();
-PostProcessBuilder sdkJsCleanupBuilder(BuilderOptions options) =>
-    FileDeletingBuilder(
-        ['lib/src/dev_compiler/dart_sdk.js', 'lib/src/dev_compiler/require.js'],
-        isEnabled: options.config['enabled'] as bool ?? false);
 
 // Dart2js related builders
 Builder dart2jsMetaModuleBuilder(BuilderOptions options) =>
