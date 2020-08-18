@@ -11,18 +11,22 @@ targets:
           - web/stack_trace_mapper.dart
       build_web_compilers|_stack_trace_mapper_copy:
         enabled: true
-      build_web_compilers|sdk_js_copy:
-        enabled: true
-      build_web_compilers|sdk_js_cleanup:
+      build_web_compilers|sdk_js:
         enabled: true
 builders:
-  sdk_js_copy:
+  sdk_js:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
-      - sdkJsCopyBuilder
+      - sdkJsCompileUnsound
+      - sdkJsCompileSound
+      - sdkJsCopyRequirejs
     build_extensions:
-      $lib$:
-        - src/dev_compiler/require.js
+      $package$:
+        - lib/src/dev_compiler/dart_sdk.js
+        - lib/src/dev_compiler/dart_sdk.js.map
+        - lib/src/dev_compiler/dart_sdk.sound.js
+        - lib/src/dev_compiler/dart_sdk.sound.js.map
+        - lib/src/dev_compiler/require.js
     is_optional: True
     auto_apply: none
     runs_before: ["build_web_compilers|entrypoint"]

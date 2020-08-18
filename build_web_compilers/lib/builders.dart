@@ -11,6 +11,7 @@ import 'package:path/path.dart' as p;
 import 'build_web_compilers.dart';
 import 'src/common.dart';
 import 'src/platforms.dart';
+import 'src/sdk_js_compile_builder.dart';
 import 'src/sdk_js_copy_builder.dart';
 
 // Shared entrypoint builder
@@ -52,7 +53,13 @@ Builder ddcKernelBuilder(BuilderOptions options) {
 }
 
 // Copies the `require.js` file from the sdk into this package.
-Builder sdkJsCopyBuilder(_) => SdkJsCopyBuilder();
+Builder sdkJsCopyRequirejs(_) => SdkJsCopyBuilder();
+Builder sdkJsCompileSound(_) => SdkJsCompileBuilder(
+    sdkKernelPath: 'lib/_internal/ddc_platform_sound.dill',
+    outputPath: 'lib/src/dev_compiler/dart_sdk.sound.js');
+Builder sdkJsCompileUnsound(_) => SdkJsCompileBuilder(
+    sdkKernelPath: 'lib/_internal/ddc_platform.dill',
+    outputPath: 'lib/src/dev_compiler/dart_sdk.js');
 
 // Dart2js related builders
 Builder dart2jsMetaModuleBuilder(BuilderOptions options) =>
