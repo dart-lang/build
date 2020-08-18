@@ -95,9 +95,14 @@ Future<void> _createDevCompilerModule(
 
   var driverResource = dartdevkDriverResource;
   var driver = await buildStep.fetchResource(driverResource);
-  var response = await driver.doWork(request,
-      trackWork: (response) =>
-          buildStep.trackStage('Compile', () => response, isExternal: true));
+  WorkResponse response;
+  try {
+    response = await driver.doWork(request,
+        trackWork: (response) =>
+            buildStep.trackStage('Compile', () => response, isExternal: true));
+  } catch (e) {
+    throw DartDevcCompilationException(jsOutputId, e.toString());
+  }
 
   var message = response.output
       .replaceAll('${scratchSpace.tempDir.path}/', '')
