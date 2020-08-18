@@ -84,7 +84,6 @@ Future<void> _createDevCompilerModule(
   var request = WorkRequest()
     ..arguments.addAll([
       '--no-summarize',
-      '--module-name=dart-sdk',
       '--multi-root-scheme=org-dartlang-sdk',
       '--modules=amd',
       '--${soundNullSafety ? '' : 'no-'}sound-null-safety',
