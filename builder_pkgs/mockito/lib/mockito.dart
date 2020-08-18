@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+export 'package:test_api/fake.dart' show Fake;
+
 export 'src/mock.dart'
     show
-        Fake,
         Mock,
         named, // ignore: deprecated_member_use_from_same_package
 

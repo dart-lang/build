@@ -6,7 +6,8 @@
   clients who use the Mock class in unconventional ways, such as overriding
   `noSuchMethod` on a class which extends Mock. To fix, or prepare such code,
   add a second parameter to such overriding `noSuchMethod` declaration.
-* Increase minimum Dart SDK to `2.4.0`.
+* Increase minimum Dart SDK to `2.7.0`.
+* Remove Fake class; export identical Fake class from the test_api package.
 
 ## 4.1.1
 
