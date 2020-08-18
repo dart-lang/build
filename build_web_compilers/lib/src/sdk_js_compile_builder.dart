@@ -45,7 +45,7 @@ class SdkJsCompileBuilder implements Builder {
   SdkJsCompileBuilder({
     @required this.sdkKernelPath,
     @required String outputPath,
-    @required bool soundNullSafety,
+    @required this.soundNullSafety,
     String librariesPath,
     String platformSdk,
   })  : platformSdk = platformSdk ?? sdkDir,
