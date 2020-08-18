@@ -56,10 +56,12 @@ Builder ddcKernelBuilder(BuilderOptions options) {
 Builder sdkJsCopyRequirejs(_) => SdkJsCopyBuilder();
 Builder sdkJsCompileSound(_) => SdkJsCompileBuilder(
     sdkKernelPath: 'lib/_internal/ddc_platform_sound.dill',
-    outputPath: 'lib/src/dev_compiler/dart_sdk.sound.js');
+    outputPath: 'lib/src/dev_compiler/dart_sdk.sound.js',
+    soundNullSafety: true);
 Builder sdkJsCompileUnsound(_) => SdkJsCompileBuilder(
     sdkKernelPath: 'lib/_internal/ddc_platform.dill',
-    outputPath: 'lib/src/dev_compiler/dart_sdk.js');
+    outputPath: 'lib/src/dev_compiler/dart_sdk.js',
+    soundNullSafety: false);
 
 // Dart2js related builders
 Builder dart2jsMetaModuleBuilder(BuilderOptions options) =>

@@ -40,9 +40,12 @@ class SdkJsCompileBuilder implements Builder {
   /// The final destination for the compiled JS file.
   final AssetId jsOutputId;
 
+  final bool soundNullSafety;
+
   SdkJsCompileBuilder({
     @required this.sdkKernelPath,
     @required String outputPath,
+    @required bool soundNullSafety,
     String librariesPath,
     String platformSdk,
   })  : platformSdk = platformSdk ?? sdkDir,
@@ -61,8 +64,8 @@ class SdkJsCompileBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    await _createDevCompilerModule(
-        buildStep, platformSdk, sdkKernelPath, librariesPath, jsOutputId);
+    await _createDevCompilerModule(buildStep, platformSdk, sdkKernelPath,
+        librariesPath, jsOutputId, soundNullSafety);
   }
 }
 
@@ -73,6 +76,7 @@ Future<void> _createDevCompilerModule(
   String sdkKernelPath,
   String librariesPath,
   AssetId jsOutputId,
+  bool soundNullSafety,
 ) async {
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
   var jsOutputFile = scratchSpace.fileFor(jsOutputId);
@@ -83,6 +87,7 @@ Future<void> _createDevCompilerModule(
       '--module-name=dart-sdk',
       '--multi-root-scheme=org-dartlang-sdk',
       '--modules=amd',
+      '--${soundNullSafety ? '' : 'no-'}sound-null-safety',
       '-o',
       jsOutputFile.path,
       p.url.join(dartSdk, sdkKernelPath),
