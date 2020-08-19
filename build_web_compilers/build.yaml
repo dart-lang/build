@@ -65,8 +65,10 @@ builders:
   ddc:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
-      - ddcKernelBuilder
-      - ddcBuilder
+      - ddcKernelBuilderUnsound
+      - ddcBuilderUnsound
+      - ddcKernelBuilderSound
+      - ddcBuilderSound
     build_extensions:
       .ddc.module:
         - .ddc.dill
@@ -74,6 +76,11 @@ builders:
         - .ddc.js
         - .ddc.js.map
         - .ddc.js.metadata
+        - .ddc.sound.dill
+        - .ddc.sound.js.errors
+        - .ddc.sound.js
+        - .ddc.sound.js.map
+        - .ddc.sound.js.metadata
     is_optional: True
     auto_apply: all_packages
     required_inputs:
@@ -99,7 +106,7 @@ builders:
     required_inputs:
       - .dart
       - .ddc.js
-      - .ddc.js.metadata
+      - .ddc.sound.js
       - .ddc.module
       - .dart2js.module
     build_to: cache

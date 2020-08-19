@@ -37,20 +37,30 @@ Builder ddcBuilder(BuilderOptions options) {
   );
 }
 
-const ddcKernelExtension = '.ddc.dill';
-Builder ddcKernelBuilder(BuilderOptions options) {
+const ddcKernelExtensionUnsound = '.ddc.dill';
+Builder ddcKernelBuilderUnsound(BuilderOptions options) =>
+    _ddcKernelBuilder(options, false);
+
+const ddcKernelExtensionSound = '.ddc.sound.dill';
+Builder ddcKernelBuilderSound(BuilderOptions options) =>
+    _ddcKernelBuilder(options, false);
+
+Builder _ddcKernelBuilder(BuilderOptions options, bool soundNullSafety) {
   validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
   _ensureSameDdcOptions(options);
 
   return KernelBuilder(
       summaryOnly: true,
-      sdkKernelPath: p.url.join('lib', '_internal', 'ddc_sdk.dill'),
-      outputExtension: ddcKernelExtension,
+      sdkKernelPath: p.url.join('lib', '_internal',
+          soundNullSafety ? 'ddc_outline_sound.dill' : 'ddc_sdk.dill'),
+      outputExtension:
+          soundNullSafety ? ddcKernelExtensionSound : ddcKernelExtensionUnsound,
       platform: ddcPlatform,
       useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
       trackUnusedInputs: _readTrackInputsCompilerOption(options),
       // ignore: deprecated_member_use
-      experiments: _readExperimentOption(options));
+      experiments: _readExperimentOption(options),
+      soundNullSafety: soundNullSafety);
 }
 
 Builder sdkJsCopyRequirejs(_) => SdkJsCopyBuilder();

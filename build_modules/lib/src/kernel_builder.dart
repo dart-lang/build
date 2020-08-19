@@ -74,11 +74,15 @@ class KernelBuilder implements Builder {
   /// Experiments to pass to kernel (as --enable-experiment=<experiment> args).
   final Iterable<String> experiments;
 
+  /// Whether or not strong null safety should be enabled.
+  final bool soundNullSafety;
+
   KernelBuilder(
       {@required this.platform,
       @required this.summaryOnly,
       @required this.sdkKernelPath,
       @required this.outputExtension,
+      @required this.soundNullSafety,
       String librariesPath,
       bool useIncrementalCompiler,
       bool trackUnusedInputs,
@@ -120,7 +124,8 @@ class KernelBuilder implements Builder {
           librariesPath: librariesPath,
           useIncrementalCompiler: useIncrementalCompiler,
           trackUnusedInputs: trackUnusedInputs,
-          experiments: experiments);
+          experiments: experiments,
+          soundNullSafety: soundNullSafety);
     } on MissingModulesException catch (e) {
       log.severe(e.toString());
     } on KernelException catch (e, s) {
@@ -145,7 +150,8 @@ Future<void> _createKernel(
     @required String librariesPath,
     @required bool useIncrementalCompiler,
     @required bool trackUnusedInputs,
-    @required Iterable<String> experiments}) async {
+    @required Iterable<String> experiments,
+    @required bool soundNullSafety}) async {
   var request = WorkRequest();
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
   var outputId = module.primarySource.changeExtension(outputExtension);
@@ -193,6 +199,7 @@ Future<void> _createKernel(
         useIncrementalCompiler,
         buildStep,
         experiments,
+        soundNullSafety,
         usedInputsFile: usedInputsFile,
         kernelInputPathToId: kernelInputPathToId);
   });
@@ -365,7 +372,8 @@ Future<void> _addRequestArguments(
   bool summaryOnly,
   bool useIncrementalCompiler,
   AssetReader reader,
-  Iterable<String> experiments, {
+  Iterable<String> experiments,
+  bool soundNullSafety, {
   File usedInputsFile,
   Map<String, AssetId> kernelInputPathToId,
 }) async {
@@ -399,6 +407,7 @@ Future<void> _addRequestArguments(
     for (var input in inputs)
       '--input-${summaryOnly ? 'summary' : 'linked'}=${input.path}',
     for (var experiment in experiments) '--enable-experiment=$experiment',
+    '--${soundNullSafety ? '' : 'no-'}sound-null-safety',
     for (var source in module.sources) _sourceArg(source),
   ]);
 
