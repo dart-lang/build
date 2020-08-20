@@ -10,6 +10,7 @@ import 'package:archive/archive.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
+import 'package:build_modules/src/workers.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
@@ -77,12 +78,19 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
       ]);
   }
 
-  var dart2js = await buildStep.fetchResource(dart2JsWorkerResource);
-  var result = await dart2js.compile(args);
+  var librariesSpec = p.joinAll([sdkDir, 'lib', 'libraries.json']);
+  var result = await Process.run(
+      p.join(sdkDir, 'bin', 'dart'),
+      [
+        p.join(sdkDir, 'bin', 'snapshots', 'dart2js.dart.snapshot'),
+        '--libraries-spec=$librariesSpec',
+        ...args,
+      ],
+      workingDirectory: scratchSpace.tempDir.path);
   var jsOutputId = dartEntrypointId.changeExtension(jsEntrypointExtension);
   var jsOutputFile = scratchSpace.fileFor(jsOutputId);
-  if (result.succeeded && await jsOutputFile.exists()) {
-    log.info(result.output);
+  if (result.exitCode == 0 && await jsOutputFile.exists()) {
+    log.info('${result.stdout}\n${result.stderr}');
     var rootDir = p.dirname(jsOutputFile.path);
     var dartFile = p.basename(dartEntrypointId.path);
     var fileGlob = Glob('$dartFile.js*');
@@ -115,7 +123,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
         dartEntrypointId.changeExtension(jsEntrypointSourceMapExtension);
     await _copyIfExists(jsSourceMapId, scratchSpace, buildStep);
   } else {
-    log.severe(result.output);
+    log.severe('${result.stdout}\n${result.stderr}');
   }
 }
 
