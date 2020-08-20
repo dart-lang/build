@@ -22,6 +22,8 @@ const _jsSourceMapExtension = '.js.map';
 class SdkJsCompileBuilder implements Builder {
   /// The SDK kernel file for the current sdk and configuration (sound vs
   /// unsound, etc).
+  ///
+  /// This is exactly what will be compiled into the resulting JS file.
   final String sdkKernelPath;
 
   /// The root directory of the platform's dart SDK.
