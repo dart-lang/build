@@ -1,4 +1,4 @@
-// Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2020, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
@@ -20,7 +20,8 @@ const _jsSourceMapExtension = '.js.map';
 
 /// A builder which can compile the SDK to JS from kernel.
 class SdkJsCompileBuilder implements Builder {
-  /// The sdk kernel file for the current platform.
+  /// The SDK kernel file for the current sdk and configuration (sound vs
+  /// unsound, etc).
   final String sdkKernelPath;
 
   /// The root directory of the platform's dart SDK.

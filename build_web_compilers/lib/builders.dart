@@ -52,7 +52,6 @@ Builder ddcKernelBuilder(BuilderOptions options) {
       experiments: _readExperimentOption(options));
 }
 
-// Copies the `require.js` file from the sdk into this package.
 Builder sdkJsCopyRequirejs(_) => SdkJsCopyBuilder();
 Builder sdkJsCompileSound(_) => SdkJsCompileBuilder(
     sdkKernelPath: 'lib/_internal/ddc_platform_sound.dill',
