@@ -16,6 +16,7 @@ import 'util.dart';
 void main() {
   Map<String, dynamic> assets;
   final platform = dart2jsPlatform;
+  Logger.root.level = Level.ALL;
 
   setUp(() async {
     addTearDown(
