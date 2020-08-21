@@ -1,4 +1,4 @@
-## 4.1.2-dev
+## 4.1.2
 
 * Introduce experimental code-generated mocks. This is primarily to support
   the new "Non-nullable by default" (NNBD) type system coming soon to Dart.

@@ -1,5 +1,5 @@
 name: mockito
-version: 4.1.2-dev
+version: 4.1.2
 
 description: A mock framework inspired by Mockito.
 homepage: https://github.com/dart-lang/mockito
