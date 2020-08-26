@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/error/error.dart';
 
 import '../asset/id.dart';
 import '../builder/build_step.dart';
@@ -25,7 +26,10 @@ abstract class Resolver {
   /// Returns a resolved library representing the file defined in [assetId].
   ///
   /// * Throws [NonLibraryAssetException] if [assetId] is not a Dart library.
-  Future<LibraryElement> libraryFor(AssetId assetId);
+  /// * If the [assetId] has syntax errors, and [allowSyntaxErrors] is set to
+  ///   `false` (the default), throws a [SyntaxErrorInAssetException].
+  Future<LibraryElement> libraryFor(AssetId assetId,
+      {bool allowSyntaxErrors = false});
 
   /// Returns the first resolved library identified by [libraryName].
   ///
@@ -79,4 +83,48 @@ class NonLibraryAssetException implements Exception {
   @override
   String toString() => 'Asset [$assetId] is not a Dart library. '
       'It may be a part file or a file without Dart source code.';
+}
+
+/// Exception thrown by a resolver when attempting to resolve a Dart library
+/// with syntax errors.
+///
+/// Builders are not expected to catch this exception unless they have special
+/// behavior for inputs with syntax errors. This exception has a descriptive
+/// [toString] implementation that the build system will show to users.
+class SyntaxErrorInAssetException implements Exception {
+  static const _maxErrorsInToString = 3;
+
+  /// The syntactically invalid [AssetId] that couldn't be resolved.
+  final AssetId assetId;
+
+  /// The errors reported by the parser when trying to resolve the [assetId].
+  ///
+  /// This only contains syntax errors since most semantic errors are expected
+  /// during a builder (e.g. due to missing part files that are yet to be
+  /// generated).
+  final List<AnalysisError> syntaxErrors;
+
+  SyntaxErrorInAssetException(this.assetId, this.syntaxErrors)
+      : assert(syntaxErrors.isNotEmpty);
+
+  @override
+  String toString() {
+    final buffer = StringBuffer()
+      ..writeln('This builder requires Dart inputs without syntax errors.')
+      ..writeln('However, ${assetId.uri} contains the following errors:');
+
+    // Avoid generating too much output for syntax errors.
+    final additionalErrors = syntaxErrors.length - _maxErrorsInToString;
+    for (final error in syntaxErrors.take(_maxErrorsInToString)) {
+      buffer.writeln(error.toString());
+    }
+
+    if (additionalErrors > 0) {
+      buffer.writeln('And $additionalErrors more...');
+    }
+
+    buffer.writeln('\nTry fixing the errors and re-running the build.');
+
+    return buffer.toString();
+  }
 }

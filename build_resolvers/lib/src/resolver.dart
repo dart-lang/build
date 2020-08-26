@@ -15,6 +15,8 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
+import 'package:analyzer/src/dart/error/syntactic_errors.dart'
+    show ParserErrorCode;
 import 'package:analyzer/src/generated/engine.dart'
     show AnalysisOptions, AnalysisOptionsImpl;
 import 'package:build/build.dart';
@@ -86,10 +88,11 @@ class PerActionResolver implements ReleasableResolver {
   }
 
   @override
-  Future<LibraryElement> libraryFor(AssetId assetId) async {
+  Future<LibraryElement> libraryFor(AssetId assetId,
+      {bool allowSyntaxErrors = false}) async {
     if (!await _step.canRead(assetId)) throw AssetNotFoundException(assetId);
     await _resolveIfNecesssary(assetId);
-    return _delegate.libraryFor(assetId);
+    return _delegate.libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
   }
 
   Future<void> _resolveIfNecesssary(AssetId id) async {
@@ -129,7 +132,8 @@ class AnalyzerResolver implements ReleasableResolver {
   }
 
   @override
-  Future<LibraryElement> libraryFor(AssetId assetId) async {
+  Future<LibraryElement> libraryFor(AssetId assetId,
+      {bool allowSyntaxErrors = false}) async {
     var path = assetPath(assetId);
     var uri = assetId.uri;
     var source = _driver.sourceFactory.forUri2(uri);
@@ -138,7 +142,18 @@ class AnalyzerResolver implements ReleasableResolver {
     }
     var kind = await _driver.getSourceKind(path);
     if (kind != SourceKind.LIBRARY) throw NonLibraryAssetException(assetId);
-    return _driver.getLibraryByUri(assetId.uri.toString());
+
+    if (!allowSyntaxErrors) {
+      final result = await _driver.getErrors(path);
+
+      final parserErrors =
+          result.errors.where((e) => e.errorCode is ParserErrorCode).toList();
+      if (parserErrors.isNotEmpty) {
+        throw SyntaxErrorInAssetException(assetId, parserErrors);
+      }
+    }
+
+    return _driver.getLibraryByUri(uri.toString());
   }
 
   @override
