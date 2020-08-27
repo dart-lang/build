@@ -10,6 +10,9 @@ environment:
 dependencies:
   analyzer: ^0.39.15
   build: ^1.3.0
+  # We don't actually depend directly on build_resolvers, but this version
+  # constraint is important to avoid certain bugs.
+  build_resolvers: ^1.3.10
   code_builder: ^3.4.0
   collection: ^1.1.0
   dart_style: ^1.3.6
@@ -25,6 +28,3 @@ dev_dependencies:
   package_config: ^1.9.3
   pedantic: 1.10.0-nullsafety
   test: ^1.5.1
-
-dependency_overrides:
-  build_resolvers: ^1.3.10
