@@ -156,7 +156,7 @@ class AnalyzerResolver implements ReleasableResolver {
 
   /// Finds syntax errors in files related to the [element].
   ///
-  /// This includes the main library files and existing part files.
+  /// This includes the main library and existing part files.
   Future<List<ErrorsResult>> _syntacticErrorsFor(LibraryElement element) async {
     final existingElements = [
       element,

@@ -110,8 +110,8 @@ class SyntaxErrorInAssetException implements Exception {
   /// The errors reported by the parser when trying to resolve the [assetId].
   ///
   /// This only contains syntax errors since most semantic errors are expected
-  /// during a builder (e.g. due to missing part files that are yet to be
-  /// generated).
+  /// during a build (e.g. due to missing part files that haven't been generated
+  /// yet).
   Iterable<AnalysisError> get syntaxErrors {
     return filesWithErrors
         .expand((result) => result.errors)
