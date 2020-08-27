@@ -411,6 +411,31 @@ int? get x => 1;
         });
       });
 
+      test('are reported for part files with errors', () {
+        return resolveSources({
+          'a|lib.dart': '''
+            library a_library;
+            part 'errors.dart';
+            part 'does_not_exist.dart';
+          ''',
+          'a|errors.dart': '''
+             part of 'lib.dart';
+
+             void withSyntaxErrors() {
+               String x = ;
+             }
+          ''',
+        }, (resolver) {
+          return expectLater(
+            resolver.libraryFor(AssetId.parse('a|lib.dart')),
+            throwsA(
+              isA<SyntaxErrorInAssetException>()
+                  .having((e) => e.syntaxErrors, 'syntaxErrors', hasLength(1)),
+            ),
+          );
+        });
+      });
+
       test('are not reported when disabled', () {
         return resolveSources({
           'a|errors.dart': '''

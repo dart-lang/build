@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 
+import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/error/error.dart';
 
@@ -97,28 +98,65 @@ class SyntaxErrorInAssetException implements Exception {
   /// The syntactically invalid [AssetId] that couldn't be resolved.
   final AssetId assetId;
 
+  /// A list analysis error results for files related to the [assetId].
+  ///
+  /// In addition to the asset itself, the resolver also considers syntax errors
+  /// in part files.
+  final List<ErrorsResult> filesWithErrors;
+
+  SyntaxErrorInAssetException(this.assetId, this.filesWithErrors)
+      : assert(filesWithErrors.isNotEmpty);
+
   /// The errors reported by the parser when trying to resolve the [assetId].
   ///
   /// This only contains syntax errors since most semantic errors are expected
   /// during a builder (e.g. due to missing part files that are yet to be
   /// generated).
-  final List<AnalysisError> syntaxErrors;
+  Iterable<AnalysisError> get syntaxErrors {
+    return filesWithErrors
+        .expand((result) => result.errors)
+        .where(_isSyntaxError);
+  }
 
-  SyntaxErrorInAssetException(this.assetId, this.syntaxErrors)
-      : assert(syntaxErrors.isNotEmpty);
+  /// A map from [syntaxErrors] to per-file results
+  Map<AnalysisError, ErrorsResult> get errorToResult {
+    return {
+      for (final file in filesWithErrors)
+        for (final error in file.errors)
+          if (_isSyntaxError(error)) error: file,
+    };
+  }
+
+  bool _isSyntaxError(AnalysisError error) {
+    return error.errorCode.type == ErrorType.SYNTACTIC_ERROR;
+  }
 
   @override
   String toString() {
     final buffer = StringBuffer()
       ..writeln('This builder requires Dart inputs without syntax errors.')
-      ..writeln('However, ${assetId.uri} contains the following errors:');
+      ..writeln('However, ${assetId.uri} (or an existing part) contains the '
+          'following errors.');
 
-    // Avoid generating too much output for syntax errors.
-    final additionalErrors = syntaxErrors.length - _maxErrorsInToString;
-    for (final error in syntaxErrors.take(_maxErrorsInToString)) {
-      buffer.writeln(error.toString());
+    // Avoid generating too much output for syntax errors. The user likely has
+    // an editor that shows them anyway.
+    final entries = errorToResult.entries.toList();
+    for (final errorAndResult in entries.take(_maxErrorsInToString)) {
+      final error = errorAndResult.key;
+      // Use a short name: We present the full context by including the asset id
+      // and this is easier to skim through
+      final sourceName = error.source?.shortName ?? '<unknown>';
+
+      final lineInfo = errorAndResult.value.lineInfo;
+      final position = lineInfo.getLocation(error.offset);
+
+      // Output messages like "foo.dart:3:4: Expected a semicolon here."
+      buffer.writeln(
+          '$sourceName:${position.lineNumber}:${position.columnNumber}: ' +
+              error.message);
     }
 
+    final additionalErrors = entries.length - _maxErrorsInToString;
     if (additionalErrors > 0) {
       buffer.writeln('And $additionalErrors more...');
     }

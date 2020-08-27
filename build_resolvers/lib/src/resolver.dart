@@ -8,15 +8,15 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/sdk/build_sdk_summary.dart';
+import 'package:analyzer/error/error.dart';
 import 'package:analyzer/src/dart/analysis/experiments.dart';
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
-import 'package:analyzer/src/dart/error/syntactic_errors.dart'
-    show ParserErrorCode;
 import 'package:analyzer/src/generated/engine.dart'
     show AnalysisOptions, AnalysisOptionsImpl;
 import 'package:build/build.dart';
@@ -143,17 +143,46 @@ class AnalyzerResolver implements ReleasableResolver {
     var kind = await _driver.getSourceKind(path);
     if (kind != SourceKind.LIBRARY) throw NonLibraryAssetException(assetId);
 
+    final library = await _driver.getLibraryByUri(uri.toString());
     if (!allowSyntaxErrors) {
-      final result = await _driver.getErrors(path);
-
-      final parserErrors =
-          result.errors.where((e) => e.errorCode is ParserErrorCode).toList();
-      if (parserErrors.isNotEmpty) {
-        throw SyntaxErrorInAssetException(assetId, parserErrors);
+      final errors = await _syntacticErrorsFor(library);
+      if (errors.isNotEmpty) {
+        throw SyntaxErrorInAssetException(assetId, errors);
       }
     }
 
-    return _driver.getLibraryByUri(uri.toString());
+    return library;
+  }
+
+  /// Finds syntax errors in files related to the [element].
+  ///
+  /// This includes the main library files and existing part files.
+  Future<List<ErrorsResult>> _syntacticErrorsFor(LibraryElement element) async {
+    final existingElements = [
+      element,
+      for (final part in element.parts)
+        // The source may be null if the part doesn't exist. That's not
+        // important for us since we only care about syntax
+        if (part.source != null && part.source.exists()) part,
+    ];
+
+    // Map from elements to absolute paths
+    final paths = existingElements
+        .map((part) => _uriResolver.lookupCachedAsset(part.source.uri))
+        .where((asset) => asset != null)
+        .map(assetPath);
+
+    final relevantResults = <ErrorsResult>[];
+
+    for (final path in paths) {
+      final result = await _driver.getErrors(path);
+      if (result.errors
+          .any((error) => error.errorCode.type == ErrorType.SYNTACTIC_ERROR)) {
+        relevantResults.add(result);
+      }
+    }
+
+    return relevantResults;
   }
 
   @override
