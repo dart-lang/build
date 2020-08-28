@@ -21,6 +21,7 @@ const jsModuleErrorsExtension = '.ddc.js.errors';
 const jsModuleExtension = '.ddc.js';
 const jsSourceMapExtension = '.ddc.js.map';
 const metadataExtension = '.ddc.js.metadata';
+const fullKernelExtension = '.ddc.full.dill';
 
 /// A builder which can output ddc modules!
 class DevCompilerBuilder implements Builder {
@@ -73,6 +74,7 @@ class DevCompilerBuilder implements Builder {
             jsModuleErrorsExtension,
             jsSourceMapExtension,
             metadataExtension,
+            fullKernelExtension,
           ],
         },
         environment = environment ?? {},
@@ -130,9 +132,6 @@ Future<void> _createDevCompilerModule(
     Map<String, String> environment,
     Iterable<String> experiments,
     {bool debugMode = true}) async {
-
-  var currentKernelId = module.primarySource.changeExtension(ddcKernelExtension);
-  await buildStep.canRead(currentKernelId);
   var transitiveDeps = await buildStep.trackStage('CollectTransitiveDeps',
       () => module.computeTransitiveDependencies(buildStep));
   var transitiveKernelDeps = [
@@ -145,7 +144,6 @@ Future<void> _createDevCompilerModule(
   await buildStep.trackStage(
       'EnsureAssets', () => scratchSpace.ensureAssets(allAssetIds, buildStep));
   var jsId = module.primarySource.changeExtension(jsModuleExtension);
-  var metadataId = module.primarySource.changeExtension(metadataExtension);
   var jsOutputFile = scratchSpace.fileFor(jsId);
   var sdkSummary =
       p.url.join(dartSdk, sdkKernelPath ?? 'lib/_internal/ddc_sdk.dill');
@@ -169,7 +167,9 @@ Future<void> _createDevCompilerModule(
     ..arguments.addAll([
       '--dart-sdk-summary=$sdkSummary',
       '--modules=amd',
+      // output full dill
       '--no-summarize',
+      '--experimental-output-compiled-kernel',
       '-o',
       jsOutputFile.path,
       debugMode ? '--source-map' : '--no-source-map',
@@ -229,10 +229,14 @@ Future<void> _createDevCompilerModule(
     }
 
     // Copy the output back using the buildStep.
-    // await scratchSpace.copyOutput(currentKernelId, buildStep);
     await scratchSpace.copyOutput(jsId, buildStep);
-    // await scratchSpace.copyOutput(metadataId, buildStep);
+
     if (debugMode) {
+      // copy and current full kernel
+      var currentFullKernelId =
+          module.primarySource.changeExtension(fullKernelExtension);
+      await scratchSpace.copyOutput(currentFullKernelId, buildStep);
+
       // We need to modify the sources in the sourcemap to remove the custom
       // `multiRootScheme` that we use.
       var sourceMapId =
@@ -242,15 +246,14 @@ Future<void> _createDevCompilerModule(
       var json = jsonDecode(content);
       json['sources'] = fixSourceMapSources((json['sources'] as List).cast());
       await buildStep.writeAsString(sourceMapId, jsonEncode(json));
-    }
 
-    if (debugMode) {
-      var metadataId =
-          module.primarySource.changeExtension(metadataExtension);
-      var file = scratchSpace.fileFor(metadataId);
-      var content = await file.readAsString();
-      var json = jsonDecode(content);
-      fixupMetadata(json as Map<String, dynamic>, '${scratchSpace.tempDir.path}/', '');
+      // rename temp directories in metadata
+      var metadataId = module.primarySource.changeExtension(metadataExtension);
+      file = scratchSpace.fileFor(metadataId);
+      content = await file.readAsString();
+      json = jsonDecode(content);
+      fixupMetadata(
+          json as Map<String, dynamic>, '${scratchSpace.tempDir.path}/', '');
       await buildStep.writeAsString(metadataId, jsonEncode(json));
     }
 
@@ -314,6 +317,7 @@ void fixupMetadata(Map<String, dynamic> json, String scratchPath, String path) {
   var sourceMapUri = json['sourceMapUri'] as String;
   var moduleUri = json['moduleUri'] as String;
 
-  json['sourceMapUri'] = Uri.parse(sourceMapUri).path.replaceAll(scratchPath, path);
+  json['sourceMapUri'] =
+      Uri.parse(sourceMapUri).path.replaceAll(scratchPath, path);
   json['moduleUri'] = Uri.parse(moduleUri).path.replaceAll(scratchPath, path);
 }
