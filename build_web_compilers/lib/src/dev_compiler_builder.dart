@@ -232,7 +232,7 @@ Future<void> _createDevCompilerModule(
     await scratchSpace.copyOutput(jsId, buildStep);
 
     if (debugMode) {
-      // copy and current full kernel
+      // copy current full kernel
       var currentFullKernelId =
           module.primarySource.changeExtension(fullKernelExtension);
       await scratchSpace.copyOutput(currentFullKernelId, buildStep);
@@ -247,7 +247,7 @@ Future<void> _createDevCompilerModule(
       json['sources'] = fixSourceMapSources((json['sources'] as List).cast());
       await buildStep.writeAsString(sourceMapId, jsonEncode(json));
 
-      // rename temp directories in metadata
+      // remove temp directories from metadata
       var metadataId = module.primarySource.changeExtension(metadataExtension);
       file = scratchSpace.fileFor(metadataId);
       content = await file.readAsString();
