@@ -27,6 +27,16 @@ const fullKernelExtension = '.ddc.full.dill';
 class DevCompilerBuilder implements Builder {
   final bool useIncrementalCompiler;
 
+  /// Make ddc generate full dill for libraries it compiles.
+  /// 
+  /// Full dill is only generated in debug mode and does not include any
+  /// dependent libraries or SDK dill. 
+  /// 
+  /// Full dill is used by the expression compilation service run by the
+  /// debugger to compile expressions in debugging worklows that use modular
+  ///  build, such as webdev and google3.
+  final bool generateFullDill;
+
   final bool trackUnusedInputs;
 
   final DartPlatform platform;
@@ -56,6 +66,7 @@ class DevCompilerBuilder implements Builder {
 
   DevCompilerBuilder(
       {bool useIncrementalCompiler,
+      bool generateFullDill,
       bool trackUnusedInputs,
       @required this.platform,
       this.sdkKernelPath,
@@ -64,6 +75,7 @@ class DevCompilerBuilder implements Builder {
       Map<String, String> environment,
       Iterable<String> experiments})
       : useIncrementalCompiler = useIncrementalCompiler ?? true,
+        generateFullDill = generateFullDill ?? false,
         platformSdk = platformSdk ?? sdkDir,
         librariesPath = librariesPath ??
             p.join(platformSdk ?? sdkDir, 'lib', 'libraries.json'),
@@ -106,6 +118,7 @@ class DevCompilerBuilder implements Builder {
           module,
           buildStep,
           useIncrementalCompiler,
+          generateFullDill,
           trackUnusedInputs,
           platformSdk,
           sdkKernelPath,
@@ -125,6 +138,7 @@ Future<void> _createDevCompilerModule(
     Module module,
     BuildStep buildStep,
     bool useIncrementalCompiler,
+    bool createFullDill,
     bool trackUnusedInputs,
     String dartSdk,
     String sdkKernelPath,
@@ -231,12 +245,13 @@ Future<void> _createDevCompilerModule(
     // Copy the output back using the buildStep.
     await scratchSpace.copyOutput(jsId, buildStep);
 
-    if (debugMode) {
-      // copy current full kernel
-      var currentFullKernelId =
-          module.primarySource.changeExtension(fullKernelExtension);
-      await scratchSpace.copyOutput(currentFullKernelId, buildStep);
+    if (createFullDill) {
+        var currentFullKernelId =
+            module.primarySource.changeExtension(fullKernelExtension);
+        await scratchSpace.copyOutput(currentFullKernelId, buildStep);
+    }
 
+    if (debugMode) {
       // We need to modify the sources in the sourcemap to remove the custom
       // `multiRootScheme` that we use.
       var sourceMapId =
@@ -247,13 +262,14 @@ Future<void> _createDevCompilerModule(
       json['sources'] = fixSourceMapSources((json['sources'] as List).cast());
       await buildStep.writeAsString(sourceMapId, jsonEncode(json));
 
-      // remove temp directories from metadata
+      // Copy the metadata output, modifying its contents to remove the temp
+      // directory from paths
       var metadataId = module.primarySource.changeExtension(metadataExtension);
       file = scratchSpace.fileFor(metadataId);
       content = await file.readAsString();
       json = jsonDecode(content);
-      fixupMetadata(
-          json as Map<String, dynamic>, '${scratchSpace.tempDir.path}/', '');
+      _fixMetadataSources(
+          json as Map<String, dynamic>, '${scratchSpace.tempDir.path}/');
       await buildStep.writeAsString(metadataId, jsonEncode(json));
     }
 
@@ -293,7 +309,7 @@ String _sourceArg(AssetId id) {
 /// - Strips the scheme from the uri
 /// - Strips the top level directory if its not `packages`
 List<String> fixSourceMapSources(List<String> uris) {
-  return uris.map((source) {
+  return uris.map((String source) {
     var uri = Uri.parse(source);
     // We only want to rewrite multi-root scheme uris.
     if (uri.scheme.isEmpty) return source;
@@ -313,11 +329,10 @@ String ddcModuleName(AssetId jsId) {
   return jsPath.substring(0, jsPath.length - jsModuleExtension.length);
 }
 
-void fixupMetadata(Map<String, dynamic> json, String scratchPath, String path) {
+void _fixMetadataSources(Map<String, dynamic> json, String scratchPath) {
   var sourceMapUri = json['sourceMapUri'] as String;
   var moduleUri = json['moduleUri'] as String;
 
-  json['sourceMapUri'] =
-      Uri.parse(sourceMapUri).path.replaceAll(scratchPath, path);
-  json['moduleUri'] = Uri.parse(moduleUri).path.replaceAll(scratchPath, path);
+  json['sourceMapUri'] = Uri.parse(sourceMapUri).path.replaceAll(scratchPath, '');
+  json['moduleUri'] = Uri.parse(moduleUri).path.replaceAll(scratchPath, '');
 }
