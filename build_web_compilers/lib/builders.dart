@@ -97,7 +97,7 @@ bool _readUseIncrementalCompilerOption(BuilderOptions options) {
 }
 
 bool _readGenerateFullDillOption(BuilderOptions options) {
-  return options.config[_generateFullDillOption] as bool ?? true;
+  return options.config[_generateFullDillOption] as bool ?? false;
 }
 
 bool _readTrackInputsCompilerOption(BuilderOptions options) {
