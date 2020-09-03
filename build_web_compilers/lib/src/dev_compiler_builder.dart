@@ -138,7 +138,7 @@ Future<void> _createDevCompilerModule(
     Module module,
     BuildStep buildStep,
     bool useIncrementalCompiler,
-    bool createFullDill,
+    bool generateFullDill,
     bool trackUnusedInputs,
     String dartSdk,
     String sdkKernelPath,
@@ -245,10 +245,10 @@ Future<void> _createDevCompilerModule(
     // Copy the output back using the buildStep.
     await scratchSpace.copyOutput(jsId, buildStep);
 
-    if (createFullDill) {
-        var currentFullKernelId =
-            module.primarySource.changeExtension(fullKernelExtension);
-        await scratchSpace.copyOutput(currentFullKernelId, buildStep);
+    if (generateFullDill) {
+      var currentFullKernelId =
+          module.primarySource.changeExtension(fullKernelExtension);
+      await scratchSpace.copyOutput(currentFullKernelId, buildStep);
     }
 
     if (debugMode) {
