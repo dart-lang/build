@@ -181,9 +181,9 @@ Future<void> _createDevCompilerModule(
     ..arguments.addAll([
       '--dart-sdk-summary=$sdkSummary',
       '--modules=amd',
-      // output full dill
       '--no-summarize',
-      '--experimental-output-compiled-kernel',
+      if (generateFullDill)
+        '--experimental-output-compiled-kernel',
       '-o',
       jsOutputFile.path,
       debugMode ? '--source-map' : '--no-source-map',
