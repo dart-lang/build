@@ -27,14 +27,15 @@ const fullKernelExtension = '.ddc.full.dill';
 class DevCompilerBuilder implements Builder {
   final bool useIncrementalCompiler;
 
-  /// Make ddc generate full dill for libraries it compiles.
+  /// Whether to generate full dill file outputs for each module.
   ///
-  /// Full dill is only generated in debug mode and does not include any
-  /// dependent libraries or SDK dill.
-  ///
+  /// Full dill file is an additional file produced by DDC that stores full
+  /// kernel for code compiled for one module, not including dependencies.
+  /// Note that outlines are still produced and used by DDC as dependency
+  /// summaries, independent of this setting.
   /// Full dill is used by the expression compilation service run by the
   /// debugger to compile expressions in debugging worklows that use modular
-  ///  build, such as webdev and google3.
+  /// build, such as webdev.
   final bool generateFullDill;
 
   final bool trackUnusedInputs;
