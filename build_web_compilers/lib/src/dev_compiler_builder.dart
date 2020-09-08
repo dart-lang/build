@@ -28,10 +28,10 @@ class DevCompilerBuilder implements Builder {
   final bool useIncrementalCompiler;
 
   /// Make ddc generate full dill for libraries it compiles.
-  /// 
+  ///
   /// Full dill is only generated in debug mode and does not include any
-  /// dependent libraries or SDK dill. 
-  /// 
+  /// dependent libraries or SDK dill.
+  ///
   /// Full dill is used by the expression compilation service run by the
   /// debugger to compile expressions in debugging worklows that use modular
   ///  build, such as webdev and google3.
@@ -309,7 +309,7 @@ String _sourceArg(AssetId id) {
 /// - Strips the scheme from the uri
 /// - Strips the top level directory if its not `packages`
 List<String> fixSourceMapSources(List<String> uris) {
-  return uris.map((String source) {
+  return uris.map((source) {
     var uri = Uri.parse(source);
     // We only want to rewrite multi-root scheme uris.
     if (uri.scheme.isEmpty) return source;
@@ -333,6 +333,7 @@ void _fixMetadataSources(Map<String, dynamic> json, String scratchPath) {
   var sourceMapUri = json['sourceMapUri'] as String;
   var moduleUri = json['moduleUri'] as String;
 
-  json['sourceMapUri'] = Uri.parse(sourceMapUri).path.replaceAll(scratchPath, '');
+  json['sourceMapUri'] =
+      Uri.parse(sourceMapUri).path.replaceAll(scratchPath, '');
   json['moduleUri'] = Uri.parse(moduleUri).path.replaceAll(scratchPath, '');
 }
