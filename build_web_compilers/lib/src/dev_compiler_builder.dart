@@ -182,8 +182,7 @@ Future<void> _createDevCompilerModule(
       '--dart-sdk-summary=$sdkSummary',
       '--modules=amd',
       '--no-summarize',
-      if (generateFullDill)
-        '--experimental-output-compiled-kernel',
+      if (generateFullDill) '--experimental-output-compiled-kernel',
       '-o',
       jsOutputFile.path,
       debugMode ? '--source-map' : '--no-source-map',
