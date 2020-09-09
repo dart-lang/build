@@ -392,6 +392,113 @@ int? get x => 1;
             isNotNull);
       }, resolvers: resolvers);
     });
+
+    group('syntax errors', () {
+      test('are reported', () {
+        return resolveSources({
+          'a|errors.dart': '''
+             library a_library;
+
+             void withSyntaxErrors() {
+               String x = ;
+             }
+          ''',
+        }, (resolver) {
+          return expectLater(
+            resolver.libraryFor(AssetId.parse('a|errors.dart')),
+            throwsA(isA<SyntaxErrorInAssetException>()),
+          );
+        });
+      });
+
+      test('are reported for part files with errors', () {
+        return resolveSources({
+          'a|lib.dart': '''
+            library a_library;
+            part 'errors.dart';
+            part 'does_not_exist.dart';
+          ''',
+          'a|errors.dart': '''
+             part of 'lib.dart';
+
+             void withSyntaxErrors() {
+               String x = ;
+             }
+          ''',
+        }, (resolver) {
+          return expectLater(
+            resolver.libraryFor(AssetId.parse('a|lib.dart')),
+            throwsA(
+              isA<SyntaxErrorInAssetException>()
+                  .having((e) => e.syntaxErrors, 'syntaxErrors', hasLength(1)),
+            ),
+          );
+        });
+      });
+
+      test('are not reported when disabled', () {
+        return resolveSources({
+          'a|errors.dart': '''
+             library a_library;
+
+             void withSyntaxErrors() {
+               String x = ;
+             }
+          ''',
+        }, (resolver) {
+          return expectLater(
+            resolver.libraryFor(AssetId.parse('a|errors.dart'),
+                allowSyntaxErrors: true),
+            completion(isNotNull),
+          );
+        });
+      });
+
+      test('are truncated if necessary', () {
+        return resolveSources({
+          'a|errors.dart': '''
+             library a_library;
+
+             void withSyntaxErrors() {
+               String x = ;
+               String x = ;
+               String x = ;
+               String x = ;
+               String x = ;
+             }
+          ''',
+        }, (resolver) {
+          return expectLater(
+            resolver.libraryFor(AssetId.parse('a|errors.dart')),
+            throwsA(
+              isA<SyntaxErrorInAssetException>().having(
+                (e) => e.toString(),
+                'toString()',
+                contains(RegExp(r'And \d more')),
+              ),
+            ),
+          );
+        });
+      });
+
+      test('do not report semantic errors', () {
+        return resolveSources({
+          'a|errors.dart': '''
+             library a_library;
+
+             void withSemanticErrors() {
+               String x = withSemanticErrors();
+               String x = null;
+             }
+          ''',
+        }, (resolver) {
+          return expectLater(
+            resolver.libraryFor(AssetId.parse('a|errors.dart')),
+            completion(isNotNull),
+          );
+        });
+      });
+    });
   });
 
   test('throws when reading a part-of file', () {

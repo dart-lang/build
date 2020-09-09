@@ -1,3 +1,9 @@
+## 1.4.0
+
+The resolver will now throw an `SyntaxErrorInAssetException` when attempting to
+resolve an asset with syntax errors. You can opt-out of this new behavior by
+passing `allowSyntaxErrors: true` to `libraryFor`.
+
 ## 1.3.0
 
 Added a new experiments library which exposes a list of language experiments
