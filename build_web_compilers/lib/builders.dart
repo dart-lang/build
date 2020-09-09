@@ -29,6 +29,7 @@ Builder ddcBuilder(BuilderOptions options) {
 
   return DevCompilerBuilder(
     useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
+    generateFullDill: _readGenerateFullDillOption(options),
     trackUnusedInputs: _readTrackInputsCompilerOption(options),
     platform: ddcPlatform,
     environment: _readEnvironmentOption(options),
@@ -100,6 +101,10 @@ bool _readUseIncrementalCompilerOption(BuilderOptions options) {
   return options.config[_useIncrementalCompilerOption] as bool ?? true;
 }
 
+bool _readGenerateFullDillOption(BuilderOptions options) {
+  return options.config[_generateFullDillOption] as bool ?? false;
+}
+
 bool _readTrackInputsCompilerOption(BuilderOptions options) {
   return options.config[_trackUnusedInputsCompilerOption] as bool ?? true;
 }
@@ -128,6 +133,7 @@ List<String> _readExperimentOption(BuilderOptions options) {
 
 Map<String, dynamic> _previousDdcConfig;
 const _useIncrementalCompilerOption = 'use-incremental-compiler';
+const _generateFullDillOption = 'generate-full-dill';
 const _trackUnusedInputsCompilerOption = 'track-unused-inputs';
 const _environmentOption = 'environment';
 const _experimentOption = 'experiments';
@@ -135,5 +141,6 @@ const _supportedOptions = [
   _environmentOption,
   _experimentOption,
   _useIncrementalCompilerOption,
+  _generateFullDillOption,
   _trackUnusedInputsCompilerOption
 ];
