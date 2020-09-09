@@ -135,5 +135,6 @@ Future<bool> _isAppEntryPoint(AssetId dartId, AssetReader reader) async {
 /// application.
 final _ddcSdkResources = [
   AssetId('build_web_compilers', 'lib/src/dev_compiler/dart_sdk.js'),
+  AssetId('build_web_compilers', 'lib/src/dev_compiler/dart_sdk.sound.js'),
   AssetId('build_web_compilers', 'lib/src/dev_compiler/require.js'),
 ];

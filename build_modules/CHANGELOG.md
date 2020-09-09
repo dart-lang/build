@@ -1,6 +1,7 @@
 ## 2.10.2-dev
 
 - Stop using deprecated analyzer apis.
+- Stop passing the deprecated `--kernel` flag to the dev compiler.
 
 ## 2.10.1
 

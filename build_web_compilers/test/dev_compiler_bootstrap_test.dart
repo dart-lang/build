@@ -122,7 +122,9 @@ Future<void> runPrerequisites(Map<String, dynamic> assets) async {
   // It is necessary to add a fake asset so that the build_web_compilers
   // package exists.
   var sdkAssets = <String, dynamic>{'build_web_compilers|fake.txt': ''};
-  await testBuilderAndCollectAssets(sdkJsCopyBuilder(null), sdkAssets);
+  await testBuilderAndCollectAssets(sdkJsCopyRequirejs(null), sdkAssets);
+  await testBuilderAndCollectAssets(sdkJsCompileUnsound(null), sdkAssets);
+  await testBuilderAndCollectAssets(sdkJsCompileSound(null), sdkAssets);
   assets.addAll(sdkAssets);
 
   await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
