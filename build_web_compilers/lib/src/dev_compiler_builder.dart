@@ -21,10 +21,22 @@ const jsModuleErrorsExtension = '.ddc.js.errors';
 const jsModuleExtension = '.ddc.js';
 const jsSourceMapExtension = '.ddc.js.map';
 const metadataExtension = '.ddc.js.metadata';
+const fullKernelExtension = '.ddc.full.dill';
 
 /// A builder which can output ddc modules!
 class DevCompilerBuilder implements Builder {
   final bool useIncrementalCompiler;
+
+  /// Whether to generate full dill file outputs for each module.
+  ///
+  /// Full dill file is an additional file produced by DDC that stores full
+  /// kernel for code compiled for one module, not including dependencies.
+  /// Note that outlines are still produced and used by DDC as dependency
+  /// summaries, independent of this setting.
+  /// Full dill is used by the expression compilation service run by the
+  /// debugger to compile expressions in debugging worklows that use modular
+  /// build, such as webdev.
+  final bool generateFullDill;
 
   final bool trackUnusedInputs;
 
@@ -55,6 +67,7 @@ class DevCompilerBuilder implements Builder {
 
   DevCompilerBuilder(
       {bool useIncrementalCompiler,
+      bool generateFullDill,
       bool trackUnusedInputs,
       @required this.platform,
       this.sdkKernelPath,
@@ -63,6 +76,7 @@ class DevCompilerBuilder implements Builder {
       Map<String, String> environment,
       Iterable<String> experiments})
       : useIncrementalCompiler = useIncrementalCompiler ?? true,
+        generateFullDill = generateFullDill ?? false,
         platformSdk = platformSdk ?? sdkDir,
         librariesPath = librariesPath ??
             p.join(platformSdk ?? sdkDir, 'lib', 'libraries.json'),
@@ -73,6 +87,7 @@ class DevCompilerBuilder implements Builder {
             jsModuleErrorsExtension,
             jsSourceMapExtension,
             metadataExtension,
+            fullKernelExtension,
           ],
         },
         environment = environment ?? {},
@@ -104,6 +119,7 @@ class DevCompilerBuilder implements Builder {
           module,
           buildStep,
           useIncrementalCompiler,
+          generateFullDill,
           trackUnusedInputs,
           platformSdk,
           sdkKernelPath,
@@ -123,6 +139,7 @@ Future<void> _createDevCompilerModule(
     Module module,
     BuildStep buildStep,
     bool useIncrementalCompiler,
+    bool generateFullDill,
     bool trackUnusedInputs,
     String dartSdk,
     String sdkKernelPath,
@@ -142,7 +159,6 @@ Future<void> _createDevCompilerModule(
   await buildStep.trackStage(
       'EnsureAssets', () => scratchSpace.ensureAssets(allAssetIds, buildStep));
   var jsId = module.primarySource.changeExtension(jsModuleExtension);
-  var metadataId = module.primarySource.changeExtension(metadataExtension);
   var jsOutputFile = scratchSpace.fileFor(jsId);
   var sdkSummary =
       p.url.join(dartSdk, sdkKernelPath ?? 'lib/_internal/ddc_sdk.dill');
@@ -167,6 +183,7 @@ Future<void> _createDevCompilerModule(
       '--dart-sdk-summary=$sdkSummary',
       '--modules=amd',
       '--no-summarize',
+      if (generateFullDill) '--experimental-output-compiled-kernel',
       '-o',
       jsOutputFile.path,
       debugMode ? '--source-map' : '--no-source-map',
@@ -227,7 +244,13 @@ Future<void> _createDevCompilerModule(
 
     // Copy the output back using the buildStep.
     await scratchSpace.copyOutput(jsId, buildStep);
-    await scratchSpace.copyOutput(metadataId, buildStep);
+
+    if (generateFullDill) {
+      var currentFullKernelId =
+          module.primarySource.changeExtension(fullKernelExtension);
+      await scratchSpace.copyOutput(currentFullKernelId, buildStep);
+    }
+
     if (debugMode) {
       // We need to modify the sources in the sourcemap to remove the custom
       // `multiRootScheme` that we use.
@@ -238,6 +261,16 @@ Future<void> _createDevCompilerModule(
       var json = jsonDecode(content);
       json['sources'] = fixSourceMapSources((json['sources'] as List).cast());
       await buildStep.writeAsString(sourceMapId, jsonEncode(json));
+
+      // Copy the metadata output, modifying its contents to remove the temp
+      // directory from paths
+      var metadataId = module.primarySource.changeExtension(metadataExtension);
+      file = scratchSpace.fileFor(metadataId);
+      content = await file.readAsString();
+      json = jsonDecode(content);
+      _fixMetadataSources(
+          json as Map<String, dynamic>, '${scratchSpace.tempDir.path}/');
+      await buildStep.writeAsString(metadataId, jsonEncode(json));
     }
 
     // Note that we only want to do this on success, we can't trust the unused
@@ -294,4 +327,13 @@ String ddcModuleName(AssetId jsId) {
       ? jsId.path.replaceFirst('lib/', 'packages/${jsId.package}/')
       : jsId.path;
   return jsPath.substring(0, jsPath.length - jsModuleExtension.length);
+}
+
+void _fixMetadataSources(Map<String, dynamic> json, String scratchPath) {
+  var sourceMapUri = json['sourceMapUri'] as String;
+  var moduleUri = json['moduleUri'] as String;
+
+  json['sourceMapUri'] =
+      Uri.parse(sourceMapUri).path.replaceAll(scratchPath, '');
+  json['moduleUri'] = Uri.parse(moduleUri).path.replaceAll(scratchPath, '');
 }

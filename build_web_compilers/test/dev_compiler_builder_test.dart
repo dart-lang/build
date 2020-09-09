@@ -100,6 +100,43 @@ void main() {
           assets,
           outputs: expectedOutputs);
     });
+
+    test('generates full dill when enabled', () async {
+      var expectedOutputs = {
+        'b|lib/b$jsModuleExtension': isNotEmpty,
+        'b|lib/b$jsSourceMapExtension': isNotEmpty,
+        'b|lib/b$metadataExtension': isNotEmpty,
+        'b|lib/b$fullKernelExtension': isNotEmpty,
+        'a|lib/a$jsModuleExtension': isNotEmpty,
+        'a|lib/a$jsSourceMapExtension': isNotEmpty,
+        'a|lib/a$metadataExtension': isNotEmpty,
+        'a|lib/a$fullKernelExtension': isNotEmpty,
+        'a|web/index$jsModuleExtension': isNotEmpty,
+        'a|web/index$jsSourceMapExtension': isNotEmpty,
+        'a|web/index$metadataExtension': isNotEmpty,
+        'a|web/index$fullKernelExtension': isNotEmpty,
+      };
+      await testBuilder(
+          DevCompilerBuilder(platform: ddcPlatform, generateFullDill: true),
+          assets,
+          outputs: expectedOutputs);
+    });
+
+    test('does not generate full dill by default', () async {
+      var expectedOutputs = {
+        'b|lib/b$jsModuleExtension': isNotEmpty,
+        'b|lib/b$jsSourceMapExtension': isNotEmpty,
+        'b|lib/b$metadataExtension': isNotEmpty,
+        'a|lib/a$jsModuleExtension': isNotEmpty,
+        'a|lib/a$jsSourceMapExtension': isNotEmpty,
+        'a|lib/a$metadataExtension': isNotEmpty,
+        'a|web/index$jsModuleExtension': isNotEmpty,
+        'a|web/index$jsSourceMapExtension': isNotEmpty,
+        'a|web/index$metadataExtension': isNotEmpty,
+      };
+      await testBuilder(DevCompilerBuilder(platform: ddcPlatform), assets,
+          outputs: expectedOutputs);
+    });
   });
 
   group('projects with errors due to', () {
