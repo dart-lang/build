@@ -8,7 +8,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/sdk/build_sdk_summary.dart';
+import 'package:analyzer/error/error.dart';
 import 'package:analyzer/src/dart/analysis/experiments.dart';
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/element/element.dart';
@@ -86,10 +88,11 @@ class PerActionResolver implements ReleasableResolver {
   }
 
   @override
-  Future<LibraryElement> libraryFor(AssetId assetId) async {
+  Future<LibraryElement> libraryFor(AssetId assetId,
+      {bool allowSyntaxErrors = false}) async {
     if (!await _step.canRead(assetId)) throw AssetNotFoundException(assetId);
     await _resolveIfNecesssary(assetId);
-    return _delegate.libraryFor(assetId);
+    return _delegate.libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
   }
 
   Future<void> _resolveIfNecesssary(AssetId id) async {
@@ -129,7 +132,8 @@ class AnalyzerResolver implements ReleasableResolver {
   }
 
   @override
-  Future<LibraryElement> libraryFor(AssetId assetId) async {
+  Future<LibraryElement> libraryFor(AssetId assetId,
+      {bool allowSyntaxErrors = false}) async {
     var path = assetPath(assetId);
     var uri = assetId.uri;
     var source = _driver.sourceFactory.forUri2(uri);
@@ -138,7 +142,47 @@ class AnalyzerResolver implements ReleasableResolver {
     }
     var kind = await _driver.getSourceKind(path);
     if (kind != SourceKind.LIBRARY) throw NonLibraryAssetException(assetId);
-    return _driver.getLibraryByUri(assetId.uri.toString());
+
+    final library = await _driver.getLibraryByUri(uri.toString());
+    if (!allowSyntaxErrors) {
+      final errors = await _syntacticErrorsFor(library);
+      if (errors.isNotEmpty) {
+        throw SyntaxErrorInAssetException(assetId, errors);
+      }
+    }
+
+    return library;
+  }
+
+  /// Finds syntax errors in files related to the [element].
+  ///
+  /// This includes the main library and existing part files.
+  Future<List<ErrorsResult>> _syntacticErrorsFor(LibraryElement element) async {
+    final existingElements = [
+      element,
+      for (final part in element.parts)
+        // The source may be null if the part doesn't exist. That's not
+        // important for us since we only care about syntax
+        if (part.source != null && part.source.exists()) part,
+    ];
+
+    // Map from elements to absolute paths
+    final paths = existingElements
+        .map((part) => _uriResolver.lookupCachedAsset(part.source.uri))
+        .where((asset) => asset != null)
+        .map(assetPath);
+
+    final relevantResults = <ErrorsResult>[];
+
+    for (final path in paths) {
+      final result = await _driver.getErrors(path);
+      if (result.errors
+          .any((error) => error.errorCode.type == ErrorType.SYNTACTIC_ERROR)) {
+        relevantResults.add(result);
+      }
+    }
+
+    return relevantResults;
   }
 
   @override

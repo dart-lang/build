@@ -200,8 +200,11 @@ class _DelayedResolver implements Resolver {
   }
 
   @override
-  Future<LibraryElement> libraryFor(AssetId assetId) async =>
-      (await _delegate).libraryFor(assetId);
+  Future<LibraryElement> libraryFor(AssetId assetId,
+      {bool allowSyntaxErrors = false}) async {
+    return (await _delegate)
+        .libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
+  }
 
   @override
   Future<LibraryElement> findLibraryByName(String libraryName) async =>

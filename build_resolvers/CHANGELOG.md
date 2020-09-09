@@ -1,3 +1,7 @@
+## 1.3.12
+
+- Support versions `1.4.x` of the `build` package.
+
 ## 1.3.11
 
 - Use the public `buildSdkSummary` api from the analyzer instead of the 
