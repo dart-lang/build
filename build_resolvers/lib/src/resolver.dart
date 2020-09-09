@@ -399,9 +399,11 @@ final _dartUiPath =
 FeatureSet _featureSet({List<String> enableExperiments}) {
   enableExperiments ??= [];
   if (enableExperiments.isEmpty) {
-    return FeatureSet.fromEnableFlags([]).restrictToVersion(sdkLanguageVersion);
+    return FeatureSet.fromEnableFlags2(
+        sdkLanguageVersion: sdkLanguageVersion, flags: []);
   } else if (sdkLanguageVersion == ExperimentStatus.currentVersion) {
-    return FeatureSet.fromEnableFlags(enableExperiments);
+    return FeatureSet.fromEnableFlags2(
+        sdkLanguageVersion: sdkLanguageVersion, flags: enableExperiments);
   } else {
     throw StateError('''
 Attempting to enable experiments `$enableExperiments`, but the current SDK
