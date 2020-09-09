@@ -1,6 +1,7 @@
-## 2.10.2-dev
+## 2.10.2
 
 - Stop using deprecated analyzer apis.
+- Allow the latest analyzer version `0.40.x`.
 
 ## 2.10.1
 

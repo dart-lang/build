@@ -1,3 +1,7 @@
+## 1.4.1
+
+Allow the latest analyzer version `0.40.x`.
+
 ## 1.4.0
 
 The resolver will now throw an `SyntaxErrorInAssetException` when attempting to

@@ -1,9 +1,10 @@
-## 2.12.0-dev.1
+## 2.12.0
 
 - Update `build_web_compilers|ddc` builder to produce a `.metadata` file.
 - Update `build_web_compilers|entrypoint` builder to produce a `.ddc_merged_metadata` file
   which consists of new line separated `.metadata` content produced by DDC.
 - Migrate off of deprecated analyzer apis.
+- Allow the latest analyzer version `0.40.x`.
 
 ## 2.11.0
 

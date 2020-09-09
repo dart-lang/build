@@ -1,3 +1,7 @@
+## 6.0.2
+
+- Require the latest build version (1.4.x).
+
 ## 6.0.1
 
 - Add back the `overrideGeneratedOutputDirectory` method.
