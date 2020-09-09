@@ -4,7 +4,7 @@ description: Core tools to write binaries that run builders.
 homepage: https://github.com/dart-lang/build/tree/master/build_runner_core
 
 environment:
-  sdk: ">=2.7.0 <3.0.0"
+  sdk: ">=2.9.0 <3.0.0"
 
 dependencies:
   async: ">=1.13.3 <3.0.0"
