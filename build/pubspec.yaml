@@ -33,3 +33,5 @@ dependency_overrides:
     path: ../build_runner_core
   build_vm_compilers:
     path: ../build_vm_compilers
+  build_modules:
+    path: ../build_modules

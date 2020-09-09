@@ -32,3 +32,5 @@ dependency_overrides:
     path: ../build_vm_compilers
   build_modules:
     path: ../build_modules
+  build_test:
+    path: ../build_test
