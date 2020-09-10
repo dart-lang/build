@@ -57,7 +57,8 @@ class PerActionResolver implements ReleasableResolver {
     final entryPoints = _entryPoints.toList();
     for (final entryPoint in entryPoints) {
       if (!await _delegate.isLibrary(entryPoint)) continue;
-      final library = await _delegate.libraryFor(entryPoint);
+      final library =
+          await _delegate.libraryFor(entryPoint, allowSyntaxErrors: true);
       toVisit.add(library);
       seen.add(library);
     }
