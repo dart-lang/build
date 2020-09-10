@@ -5,7 +5,7 @@
   which consists of new line separated `.metadata` content produced by DDC.
 - Migrate off of deprecated analyzer apis.
 - Update `build_web_compilers|ddc` builder to produce a `.full.dill` file
-  with `--generate-full-dill` flag
+  with `--generate-full-dill` flag.
 
 ## 2.11.0
 
