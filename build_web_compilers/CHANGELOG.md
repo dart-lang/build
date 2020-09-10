@@ -14,7 +14,7 @@
 global_options:
   build_web_compilers:ddc:
     options:
-      generate-full-dill: false
+      generate-full-dill: true
 ```
 
 ## 2.11.0
