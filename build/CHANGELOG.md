@@ -1,8 +1,3 @@
-## 1.4.1-dev
-
-Allow syntax errors by default when resolving using the `libraries` stream,
-as well as `findLibraryByName` (which reads from that stream).
-
 ## 1.4.0
 
 The resolver will now throw an `SyntaxErrorInAssetException` when attempting to
