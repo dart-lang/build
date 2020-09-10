@@ -1,4 +1,4 @@
-## 1.3.12
+## 1.3.12-dev
 
 - Support versions `1.4.x` of the `build` package.
 
