@@ -1,11 +1,21 @@
 ## 2.12.0-dev.1
 
 - Update `build_web_compilers|ddc` builder to produce a `.metadata` file.
-- Update `build_web_compilers|entrypoint` builder to produce a `.ddc_merged_metadata` file
-  which consists of new line separated `.metadata` content produced by DDC.
+- Update `build_web_compilers|entrypoint` builder to produce a
+  `.ddc_merged_metadata` file which consists of new line separated
+  `.metadata` content produced by DDC.
 - Migrate off of deprecated analyzer apis.
-- Update `build_web_compilers|ddc` builder to produce a `.full.dill` file
-  with `--generate-full-dill` flag.
+- Add the `generate-full-dill` option for the `build_web_compilers:ddc`
+  builder. The full dill output is used by expression evaluation service
+  in webdev for expression evaluation feature. This setting is disabled by
+  default but can be enabled by setting it to `true` globally:
+
+```yaml
+global_options:
+  build_web_compilers:ddc:
+    options:
+      generate-full-dill: false
+```
 
 ## 2.11.0
 
