@@ -172,7 +172,9 @@ void shouldFail(value, Matcher matcher, expected) {
   } on TestFailure catch (e) {
     final matcher = expected is String
         ? equalsIgnoringWhitespace(expected)
-        : expected is RegExp ? contains(expected) : expected;
+        : expected is RegExp
+            ? contains(expected)
+            : expected;
     expect(collapseWhitespace(e.message), matcher, reason: reason);
   }
 }
