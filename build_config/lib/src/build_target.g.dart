@@ -6,7 +6,7 @@ part of 'build_target.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-BuildTarget _$BuildTargetFromJson(Map json) {
+BuildTarget _$BuildTargetFromJson(Map<dynamic, dynamic> json) {
   return $checkedNew('BuildTarget', json, () {
     $checkKeys(json, allowedKeys: const [
       'auto_apply_builders',
@@ -33,7 +33,7 @@ BuildTarget _$BuildTargetFromJson(Map json) {
   }, fieldKeyMap: const {'autoApplyBuilders': 'auto_apply_builders'});
 }
 
-TargetBuilderConfig _$TargetBuilderConfigFromJson(Map json) {
+TargetBuilderConfig _$TargetBuilderConfigFromJson(Map<dynamic, dynamic> json) {
   return $checkedNew('TargetBuilderConfig', json, () {
     $checkKeys(json, allowedKeys: const [
       'enabled',
@@ -74,7 +74,7 @@ TargetBuilderConfig _$TargetBuilderConfigFromJson(Map json) {
   });
 }
 
-GlobalBuilderConfig _$GlobalBuilderConfigFromJson(Map json) {
+GlobalBuilderConfig _$GlobalBuilderConfigFromJson(Map<dynamic, dynamic> json) {
   return $checkedNew('GlobalBuilderConfig', json, () {
     $checkKeys(json,
         allowedKeys: const ['options', 'dev_options', 'release_options']);

@@ -6,7 +6,7 @@ part of 'builder_definition.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-BuilderDefinition _$BuilderDefinitionFromJson(Map json) {
+BuilderDefinition _$BuilderDefinitionFromJson(Map<dynamic, dynamic> json) {
   return $checkedNew('BuilderDefinition', json, () {
     $checkKeys(json, allowedKeys: const [
       'builder_factories',
@@ -116,7 +116,8 @@ const _$BuildToEnumMap = {
   BuildTo.cache: 'cache',
 };
 
-PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(Map json) {
+PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(
+    Map<dynamic, dynamic> json) {
   return $checkedNew('PostProcessBuilderDefinition', json, () {
     $checkKeys(json, allowedKeys: const [
       'builder_factory',
@@ -152,7 +153,8 @@ PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(Map json) {
   });
 }
 
-TargetBuilderConfigDefaults _$TargetBuilderConfigDefaultsFromJson(Map json) {
+TargetBuilderConfigDefaults _$TargetBuilderConfigDefaultsFromJson(
+    Map<dynamic, dynamic> json) {
   return $checkedNew('TargetBuilderConfigDefaults', json, () {
     $checkKeys(json, allowedKeys: const [
       'generate_for',

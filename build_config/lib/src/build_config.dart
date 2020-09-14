@@ -114,8 +114,8 @@ class BuildConfig {
   }
 
   /// Create a [BuildConfig] read a map which was already parsed.
-  factory BuildConfig.fromMap(
-      String packageName, Iterable<String> dependencies, Map config) {
+  factory BuildConfig.fromMap(String packageName, Iterable<String> dependencies,
+      Map<dynamic, dynamic> config) {
     return runInBuildConfigZone(() => BuildConfig._fromJson(config),
         packageName, dependencies.toList());
   }
@@ -157,7 +157,8 @@ class BuildConfig {
     });
   }
 
-  factory BuildConfig._fromJson(Map json) => _$BuildConfigFromJson(json);
+  factory BuildConfig._fromJson(Map<dynamic, dynamic> json) =>
+      _$BuildConfigFromJson(json);
 }
 
 String _defaultTarget(String package) => '$package:$package';
@@ -167,7 +168,7 @@ Map<String, T> _normalizeBuilderDefinitions<T>(
     builderDefinitions.map((key, definition) =>
         MapEntry(normalizeBuilderKeyDefinition(key, packageName), definition));
 
-Map<String, BuildTarget> _buildTargetsFromJson(Map json) {
+Map<String, BuildTarget> _buildTargetsFromJson(Map<dynamic, dynamic> json) {
   if (json == null) {
     return null;
   }

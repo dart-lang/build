@@ -6,7 +6,7 @@ part of 'build_config.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-BuildConfig _$BuildConfigFromJson(Map json) {
+BuildConfig _$BuildConfigFromJson(Map<dynamic, dynamic> json) {
   return $checkedNew('BuildConfig', json, () {
     $checkKeys(json, allowedKeys: const [
       'builders',

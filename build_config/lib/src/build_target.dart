@@ -46,7 +46,8 @@ class BuildTarget {
             MapEntry(normalizeBuilderKeyUsage(key, currentPackage), config)),
         sources = sources ?? InputSet.anything;
 
-  factory BuildTarget.fromJson(Map json) => _$BuildTargetFromJson(json);
+  factory BuildTarget.fromJson(Map<dynamic, dynamic> json) =>
+      _$BuildTargetFromJson(json);
 
   @override
   String toString() => {
@@ -110,7 +111,7 @@ class TargetBuilderConfig {
         devOptions = devOptions ?? const {},
         releaseOptions = releaseOptions ?? const {};
 
-  factory TargetBuilderConfig.fromJson(Map json) =>
+  factory TargetBuilderConfig.fromJson(Map<dynamic, dynamic> json) =>
       _$TargetBuilderConfigFromJson(json);
 
   @override
@@ -151,7 +152,7 @@ class GlobalBuilderConfig {
         devOptions = devOptions ?? const {},
         releaseOptions = releaseOptions ?? const {};
 
-  factory GlobalBuilderConfig.fromJson(Map json) =>
+  factory GlobalBuilderConfig.fromJson(Map<dynamic, dynamic> json) =>
       _$GlobalBuilderConfigFromJson(json);
 
   @override

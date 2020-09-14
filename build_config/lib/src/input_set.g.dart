@@ -6,7 +6,7 @@ part of 'input_set.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-InputSet _$InputSetFromJson(Map json) {
+InputSet _$InputSetFromJson(Map<dynamic, dynamic> json) {
   return $checkedNew('InputSet', json, () {
     $checkKeys(json, allowedKeys: const ['include', 'exclude']);
     final val = InputSet(
