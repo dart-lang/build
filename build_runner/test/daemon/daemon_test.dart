@@ -15,6 +15,7 @@ import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart';
 import 'package:build_daemon/data/shutdown_notification.dart';
 import 'package:build_runner/src/daemon/constants.dart';
+import 'package:build_runner_core/src/util/constants.dart' show pubBinary;
 import 'package:path/path.dart' as p;
 import 'package:pedantic/pedantic.dart';
 import 'package:test/test.dart';
