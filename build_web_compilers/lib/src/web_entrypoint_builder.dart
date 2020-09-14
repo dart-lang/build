@@ -98,17 +98,27 @@ class WebEntrypointBuilder implements Builder {
     var dartEntrypointId = buildStep.inputId;
     var isAppEntrypoint = await _isAppEntryPoint(dartEntrypointId, buildStep);
     if (!isAppEntrypoint) return;
-    if (webCompiler == WebCompiler.DartDevc) {
-      try {
-        await bootstrapDdc(buildStep, requiredAssets: _ddcSdkResources);
-      } on MissingModulesException catch (e) {
-        log.severe('$e');
-      }
-    } else if (webCompiler == WebCompiler.Dart2Js) {
-      await bootstrapDart2Js(buildStep, dart2JsArgs);
+    var soundNullSafety =
+        await _supportsNullSafety(buildStep.inputId, buildStep);
+    switch (webCompiler) {
+      case WebCompiler.DartDevc:
+        try {
+          await bootstrapDdc(buildStep,
+              requiredAssets: _ddcSdkResources,
+              soundNullSafety: soundNullSafety);
+        } on MissingModulesException catch (e) {
+          log.severe('$e');
+        }
+        break;
+      case WebCompiler.Dart2Js:
+        await bootstrapDart2Js(buildStep, dart2JsArgs);
+        break;
     }
   }
 }
+
+Future<bool> _supportsNullSafety(AssetId dartId, AssetReader reader) async =>
+    throw UnimplementedError('Not yet implemented!');
 
 /// Returns whether or not [dartId] is an app entrypoint (basically, whether
 /// or not it has a `main` function).

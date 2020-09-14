@@ -6,7 +6,6 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:collection/collection.dart';
-import 'package:path/path.dart' as p;
 
 import 'build_web_compilers.dart';
 import 'src/common.dart';
@@ -23,7 +22,13 @@ Builder ddcMetaModuleBuilder(BuilderOptions options) =>
     MetaModuleBuilder.forOptions(ddcPlatform, options);
 Builder ddcMetaModuleCleanBuilder(_) => MetaModuleCleanBuilder(ddcPlatform);
 Builder ddcModuleBuilder([_]) => ModuleBuilder(ddcPlatform);
-Builder ddcBuilder(BuilderOptions options) {
+
+Builder ddcBuilderSound(BuilderOptions options) =>
+    ddcBuilder(options, soundNullSafety: true);
+Builder ddcBuilderUnsound(BuilderOptions options) =>
+    ddcBuilder(options, soundNullSafety: false);
+
+Builder ddcBuilder(BuilderOptions options, {bool soundNullSafety = false}) {
   validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
   _ensureSameDdcOptions(options);
 
@@ -34,27 +39,26 @@ Builder ddcBuilder(BuilderOptions options) {
     platform: ddcPlatform,
     environment: _readEnvironmentOption(options),
     experiments: _readExperimentOption(options),
+    soundNullSafety: soundNullSafety,
   );
 }
 
-const ddcKernelExtensionUnsound = '.ddc.dill';
+String ddcKernelExtension(bool soundNullSafety) =>
+    '${soundnessExt(soundNullSafety)}.ddc.dill';
 Builder ddcKernelBuilderUnsound(BuilderOptions options) =>
-    _ddcKernelBuilder(options, false);
-
-const ddcKernelExtensionSound = '.ddc.sound.dill';
+    ddcKernelBuilder(options, soundNullSafety: false);
 Builder ddcKernelBuilderSound(BuilderOptions options) =>
-    _ddcKernelBuilder(options, false);
+    ddcKernelBuilder(options, soundNullSafety: true);
 
-Builder _ddcKernelBuilder(BuilderOptions options, bool soundNullSafety) {
+Builder ddcKernelBuilder(BuilderOptions options,
+    {bool soundNullSafety = false}) {
   validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
   _ensureSameDdcOptions(options);
 
   return KernelBuilder(
       summaryOnly: true,
-      sdkKernelPath: p.url.join('lib', '_internal',
-          soundNullSafety ? 'ddc_outline_sound.dill' : 'ddc_sdk.dill'),
-      outputExtension:
-          soundNullSafety ? ddcKernelExtensionSound : ddcKernelExtensionUnsound,
+      sdkKernelPath: sdkDdcKernelPath(soundNullSafety),
+      outputExtension: ddcKernelExtension(soundNullSafety),
       platform: ddcPlatform,
       useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
       trackUnusedInputs: _readTrackInputsCompilerOption(options),

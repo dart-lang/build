@@ -82,7 +82,7 @@ class KernelBuilder implements Builder {
       @required this.summaryOnly,
       @required this.sdkKernelPath,
       @required this.outputExtension,
-      @required this.soundNullSafety,
+      this.soundNullSafety = false,
       String librariesPath,
       bool useIncrementalCompiler,
       bool trackUnusedInputs,
