@@ -22,7 +22,7 @@ import 'package:logging/logging.dart';
 ///   ]);
 /// });
 /// ```
-Stream<LogRecord> recordLogs(dynamic run(), {String name = ''}) {
+Stream<LogRecord> recordLogs(dynamic Function() run, {String name = ''}) {
   final logger = Logger(name);
   Timer.run(() async {
     await scopeLogAsync(() => Future.value(run()), logger);
@@ -56,9 +56,9 @@ class _LogRecordMatcher extends Matcher {
   final Matcher _level;
   final Matcher _message;
 
-  factory _LogRecordMatcher(dynamic levelOr, dynamic messageOr) =>
-      _LogRecordMatcher._(levelOr is Matcher ? levelOr : equals(levelOr),
-          messageOr is Matcher ? messageOr : equals(messageOr));
+  _LogRecordMatcher(dynamic levelOr, dynamic messageOr)
+      : this._(levelOr is Matcher ? levelOr : equals(levelOr),
+            messageOr is Matcher ? messageOr : equals(messageOr));
 
   _LogRecordMatcher._(this._level, this._message);
 

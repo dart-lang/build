@@ -17,7 +17,7 @@ class _$BuildTargetRequestSerializer
   final String wireName = 'BuildTargetRequest';
 
   @override
-  Iterable serialize(Serializers serializers, BuildTargetRequest object,
+  Iterable<Object> serialize(Serializers serializers, BuildTargetRequest object,
       {FullType specifiedType = FullType.unspecified}) {
     final result = <Object>[
       'target',
@@ -29,7 +29,8 @@ class _$BuildTargetRequestSerializer
   }
 
   @override
-  BuildTargetRequest deserialize(Serializers serializers, Iterable serialized,
+  BuildTargetRequest deserialize(
+      Serializers serializers, Iterable<Object> serialized,
       {FullType specifiedType = FullType.unspecified}) {
     final result = new BuildTargetRequestBuilder();
 
@@ -54,7 +55,8 @@ class _$BuildTargetRequest extends BuildTargetRequest {
   @override
   final BuildTarget target;
 
-  factory _$BuildTargetRequest([void updates(BuildTargetRequestBuilder b)]) =>
+  factory _$BuildTargetRequest(
+          [void Function(BuildTargetRequestBuilder) updates]) =>
       (new BuildTargetRequestBuilder()..update(updates)).build();
 
   _$BuildTargetRequest._({this.target}) : super._() {
@@ -64,7 +66,8 @@ class _$BuildTargetRequest extends BuildTargetRequest {
   }
 
   @override
-  BuildTargetRequest rebuild(void updates(BuildTargetRequestBuilder b)) =>
+  BuildTargetRequest rebuild(
+          void Function(BuildTargetRequestBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
@@ -117,7 +120,7 @@ class BuildTargetRequestBuilder
   }
 
   @override
-  void update(void updates(BuildTargetRequestBuilder b)) {
+  void update(void Function(BuildTargetRequestBuilder) updates) {
     if (updates != null) updates(this);
   }
 

@@ -14,6 +14,9 @@ part 'build_target.g.dart';
 
 @JsonSerializable(createToJson: false, disallowUnrecognizedKeys: true)
 class BuildTarget {
+  @JsonKey(name: 'auto_apply_builders')
+  final bool autoApplyBuilders;
+
   /// A map from builder key to the configuration used for this target.
   ///
   /// Builder keys are in the format `"$package|$builder"`. This does not
@@ -31,10 +34,12 @@ class BuildTarget {
   String get package => packageExpando[this];
 
   BuildTarget({
+    bool autoApplyBuilders,
     InputSet sources,
     Iterable<String> dependencies,
     Map<String, TargetBuilderConfig> builders,
-  })  : dependencies = (dependencies ?? currentPackageDefaultDependencies)
+  })  : autoApplyBuilders = autoApplyBuilders ?? true,
+        dependencies = (dependencies ?? currentPackageDefaultDependencies)
             .map((d) => normalizeTargetKeyUsage(d, currentPackage))
             .toList(),
         builders = (builders ?? const {}).map((key, config) =>
@@ -49,6 +54,7 @@ class BuildTarget {
         'sources': sources,
         'dependencies': dependencies,
         'builders': builders,
+        'autoApplyBuilders': autoApplyBuilders,
       }.toString();
 }
 

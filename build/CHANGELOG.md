@@ -1,3 +1,50 @@
+## 1.4.0
+
+The resolver will now throw an `SyntaxErrorInAssetException` when attempting to
+resolve an asset with syntax errors. You can opt-out of this new behavior by
+passing `allowSyntaxErrors: true` to `libraryFor`.
+
+## 1.3.0
+
+Added a new experiments library which exposes a list of language experiments
+through a Zone variable. This should only be used by builders which are
+invoking compilers or some other tool and need to pass on the language
+experiments.
+
+## 1.2.2
+
+### Updated docs for some minor behavior changes in build_resolvers 1.3.0
+
+- `Resolver.libraries` will now return any library that has been resolved with
+  this resolver. This means calls to `libraryFor` or `isLibrary` on files not
+  already resolved will make subsequent `libraries` streams return more
+  libraries than previous calls did.
+- The same holds for `findLibraryByName` since it searches through the
+  `libraries` stream. You may get a different result at different points in
+  your build method if you resolve additional libraries.
+
+## 1.2.1
+
+- Allow analyzer `0.39.x`.
+
+## 1.2.0
+
+- Add the `void reportUnusedAssets(Iterable<AssetId> ids)` method to the
+  `BuildStep` class.
+  - **WARNING**: Using this introduces serious risk of non-hermetic builds.
+  - Indicates to the build system that `ids` were read but their content has
+    no impact on the outputs of the build.
+  - Build system implementations can choose to support this feature or not,
+    and it should be assumed to be a no-op by default.
+
+## 1.1.6
+
+- Allow analyzer version 0.38.0.
+
+## 1.1.5
+
+- Allow analyzer version 0.37.0.
+
 ## 1.1.4
 
 - Internal cleanup: use "strict raw types".

@@ -4,4 +4,6 @@
 
 library example_lib;
 
+part 'example_part.dart';
+
 class Example {}

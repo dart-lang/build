@@ -5,8 +5,9 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:http_multi_server/http_multi_server.dart';
+import 'package:build/experiments.dart';
 import 'package:build_runner_core/build_runner_core.dart';
+import 'package:http_multi_server/http_multi_server.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf_io.dart';
@@ -55,26 +56,34 @@ class ServeCommand extends WatchCommand {
       argResults, argResults.rest, packageGraph.root.name, this);
 
   @override
-  Future<int> run() async {
+  Future<int> run() {
     final servers = <ServeTarget, HttpServer>{};
-    return _runServe(servers).whenComplete(() async {
-      await Future.wait(
-          servers.values.map((server) => server.close(force: true)));
-    });
+    var options = readOptions();
+    return withEnabledExperiments(
+        () => _runServe(servers, options).whenComplete(() async {
+              await Future.wait(
+                  servers.values.map((server) => server.close(force: true)));
+            }),
+        options.enableExperiments);
   }
 
-  Future<int> _runServe(Map<ServeTarget, HttpServer> servers) async {
-    var options = readOptions();
+  Future<int> _runServe(
+      Map<ServeTarget, HttpServer> servers, ServeOptions options) async {
     try {
       await Future.wait(options.serveTargets.map((target) async {
-        servers[target] = await _bindServer(options, target);
+        servers[target] =
+            await HttpMultiServer.bind(options.hostName, target.port);
       }));
     } on SocketException catch (e) {
       var listener = Logger.root.onRecord.listen(stdIOLogListener());
-      logger.severe(
-          'Error starting server at ${e.address.address}:${e.port}, address '
-          'is already in use. Please kill the server running on that port or '
-          'serve on a different port and restart this process.');
+      if (e.address != null && e.port != null) {
+        logger.severe(
+            'Error starting server at ${e.address.address}:${e.port}, address '
+            'is already in use. Please kill the server running on that port or '
+            'serve on a different port and restart this process.');
+      } else {
+        logger.severe('Error starting server on ${options.hostName}.');
+      }
       await listener.cancel();
       return ExitCode.osError.code;
     }
@@ -93,6 +102,8 @@ class ServeCommand extends WatchCommand {
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
       logPerformanceDir: options.logPerformanceDir,
+      directoryWatcherFactory: options.directoryWatcherFactory,
+      buildFilters: options.buildFilters,
     );
 
     if (handler == null) return ExitCode.config.code;
@@ -128,18 +139,6 @@ class ServeCommand extends WatchCommand {
             'http://${options.hostName}:${target.port}');
       }
     }
-  }
-}
-
-Future<HttpServer> _bindServer(ServeOptions options, ServeTarget target) {
-  switch (options.hostName) {
-    case 'any':
-      // Listens on both IPv6 and IPv4
-      return HttpServer.bind(InternetAddress.anyIPv6, target.port);
-    case 'localhost':
-      return HttpMultiServer.loopback(target.port);
-    default:
-      return HttpServer.bind(options.hostName, target.port);
   }
 }
 

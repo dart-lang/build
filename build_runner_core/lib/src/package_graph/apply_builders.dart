@@ -307,7 +307,7 @@ Future<List<BuildPhase>> createBuildPhases(
     }));
   }
 
-  return <BuildPhase>[]..addAll(inBuildPhases)..addAll(collapsedPostBuildPhase);
+  return <BuildPhase>[...inBuildPhases, ...collapsedPostBuildPhase];
 }
 
 Iterable<BuildPhase> _createBuildPhasesWithinCycle(
@@ -366,7 +366,9 @@ bool _shouldApply(
   if (builderConfig?.isEnabled != null) {
     return builderConfig.isEnabled;
   }
-  return builderApplication.filter(node.package) ||
+  final shouldAutoApply =
+      node.target.autoApplyBuilders && builderApplication.filter(node.package);
+  return shouldAutoApply ||
       (applyWith[builderApplication.builderKey] ?? const []).any(
           (anchorBuilder) =>
               _shouldApply(anchorBuilder, node, applyWith, allBuilders));
@@ -389,7 +391,7 @@ Map<String, List<BuilderApplication>> _applyWith(
 ///
 /// Any calls to [print] will be logged with `log.info`, and any errors will be
 /// logged with `log.severe`.
-T _scopeLogSync<T>(T fn(), Logger log) {
+T _scopeLogSync<T>(T Function() fn, Logger log) {
   return runZoned(fn,
       zoneSpecification:
           ZoneSpecification(print: (self, parent, zone, message) {

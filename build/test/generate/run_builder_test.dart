@@ -10,7 +10,7 @@ import 'package:test/test.dart';
 import 'package:build/build.dart';
 import 'package:build/src/generate/run_builder.dart';
 
-main() {
+void main() {
   InMemoryAssetWriter writer;
   InMemoryAssetReader reader;
   final primary = makeAssetId('a|web/primary.txt');
@@ -73,7 +73,7 @@ main() {
 
 class TrackingResourceManager extends ResourceManager {
   bool disposed = false;
-  final fetchedResources = Set<Resource>();
+  final fetchedResources = <Resource>{};
 
   @override
   Future<T> fetch<T>(Resource<T> resource) {

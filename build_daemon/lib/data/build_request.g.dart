@@ -16,26 +16,26 @@ class _$BuildRequestSerializer implements StructuredSerializer<BuildRequest> {
   final String wireName = 'BuildRequest';
 
   @override
-  Iterable serialize(Serializers serializers, BuildRequest object,
+  Iterable<Object> serialize(Serializers serializers, BuildRequest object,
       {FullType specifiedType = FullType.unspecified}) {
     return <Object>[];
   }
 
   @override
-  BuildRequest deserialize(Serializers serializers, Iterable serialized,
+  BuildRequest deserialize(Serializers serializers, Iterable<Object> serialized,
       {FullType specifiedType = FullType.unspecified}) {
     return new BuildRequestBuilder().build();
   }
 }
 
 class _$BuildRequest extends BuildRequest {
-  factory _$BuildRequest([void updates(BuildRequestBuilder b)]) =>
+  factory _$BuildRequest([void Function(BuildRequestBuilder) updates]) =>
       (new BuildRequestBuilder()..update(updates)).build();
 
   _$BuildRequest._() : super._();
 
   @override
-  BuildRequest rebuild(void updates(BuildRequestBuilder b)) =>
+  BuildRequest rebuild(void Function(BuildRequestBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
@@ -73,7 +73,7 @@ class BuildRequestBuilder
   }
 
   @override
-  void update(void updates(BuildRequestBuilder b)) {
+  void update(void Function(BuildRequestBuilder) updates) {
     if (updates != null) updates(this);
   }
 

@@ -22,11 +22,12 @@ builders:
       - sdkJsCopyBuilder
     build_extensions:
       $lib$:
-        - lib/src/dev_compiler/dart_sdk.js
-        - lib/src/dev_compiler/require.js
+        - src/dev_compiler/dart_sdk.js
+        - src/dev_compiler/require.js
     is_optional: False
     auto_apply: none
     applies_builders: ["build_web_compilers|sdk_js_cleanup"]
+    runs_before: ["build_web_compilers|entrypoint"]
   dart2js_modules:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
@@ -70,6 +71,7 @@ builders:
         - .ddc.js.errors
         - .ddc.js
         - .ddc.js.map
+        - .ddc.js.metadata
     is_optional: True
     auto_apply: all_packages
     required_inputs:
@@ -91,9 +93,11 @@ builders:
         - .dart.js.map
         - .dart.js.tar.gz
         - .digests
+        - .merged_metadata
     required_inputs:
       - .dart
       - .ddc.js
+      - .ddc.js.metadata
       - .ddc.module
       - .dart2js.module
     build_to: cache
@@ -111,6 +115,9 @@ builders:
       options:
         dart2js_args:
           - --minify
+      dev_options:
+        dart2js_args:
+          - --enable-asserts
       release_options:
         compiler: dart2js
     applies_builders:

@@ -18,10 +18,10 @@ same directory structure.
 ## How can I debug my release mode web app (dart2js)?
 
 By default, the `dart2js` compiler is only enabled in `--release` mode, which
-does not include source maps or the original `.dart` files. If you need to
-debug an error which only happens in `dart2js`, you will want to change your
-debug mode compiler to `dart2js`. You can either do this using the `--define`
-command line option:
+does not include source maps or the original `.dart` files. If you need to debug
+an error which only happens in `dart2js`, you will want to change your debug
+mode compiler to `dart2js`. You can either do this using the `--define` command
+line option:
 
 ```text
 --define "build_web_compilers|entrypoint=compiler=dart2js"
@@ -38,14 +38,121 @@ targets:
           compiler: dart2js
 ```
 
+## How can I build with multiple configurations?
+
+The build system supports two types of builds, "dev" and "release". By default
+with `build_runner` the "dev" version is built by regardless of the command
+used, build in release mode by passing the `--release` flag. With `webdev` the
+default mode for the `serve` command is dev, and the default mode for the
+`build` command is release. The `build` command can use dev mode with the
+`--no-release` flag.
+
+Options can be configured per mode, and they are
+[merged by key](#how-is-the-configuration-for-a-builder-resolved) with the
+defaults provided by the builder and global overrides. The `options` field
+defines configuration used in all modes, and the `dev` and `release` fields
+defines the overrides to those defaults for the specific mode chosen. Builders
+can define their own defaults by mode which is overridden by user config. For
+example `build_web_compilers` defines options that use `dartdevc` compiler in
+dev mode, and `dart2js` in release mode.
+
+The following configuration builds with `dart2js` always, passes `--no-minify`
+in dev mode, and passed `-O3` in release mode:
+
+```yaml
+targets:
+  $default:
+    builders:
+      build_web_compilers|entrypoint:
+        options:
+          compiler: dart2js
+        dev_options:
+          dart2js_args:
+          - --no-minify
+        release_options:
+          dart2js_args:
+          - -O3
+```
+
+If you need other configurations in addition to dev and release, you can define
+multiple `build.yaml` files. For instance if you have a `build.debug.yaml` file
+you can build with `--config debug` and this file will be used instead of the
+default `build.yaml`. The dev and release flavors still apply. `pub run
+build_runner serve --config debug` will use the `dev_options` in
+`build.debug.yaml`, while `pub run build_runner build --config debug --release`
+will use the `release_options` in `build.debug.yaml`.
+
+Only one build flavor can be built at a time. It is not possible to have
+multiple targets defined which set different builder options for the same set of
+sources. Builds will overwrite generated files in the build cache, so flipping
+between build configurations may be less performant than building the same build
+configuration repeatedly.
+
+## How is the configuration for a builder resolved?
+
+Builders are constructed with a map of options which is resolved from the
+builder specified defaults and user overrides. The configuration is specific to
+a `target` and [build mode](#how-can-i-build-with-multiple-configurations). The
+configuration is "merged" one by one, where the higher precedence configuration
+overrides values by String key. The order of precedence from lowest to highest
+is:
+
+-   Builder defaults without a mode.
+-   Builder defaults by mode.
+-   Target configuration without a mode.
+-   Target configuration by mode.
+-   Global options without a mode.
+-   Global options by mode.
+-   Options specified on the command line.
+
+For example:
+
+```yaml
+builders:
+  some_builder:
+    # Some required fields omitted
+    defaults:
+      options:
+        some_option: "Priority 0"
+      release_options:
+        some_option: "Priority 1"
+      dev_options:
+        some_option: "Priority 1"
+targets:
+  $default:
+    builders:
+      some_package:some_builder:
+        options:
+          some_option: "Priority 2"
+        release_options:
+          some_option: "Priority 3"
+        dev_options:
+          some_option: "Priority 3"
+
+global_options:
+  some_package:some_builder:
+    options:
+      some_option: "Priority 4"
+    release_options:
+      some_option: "Priority 5"
+    dev_options:
+      some_option: "Priority 5"
+```
+
+And when running the build:
+
+```
+pub run build_runner build --define=some_package:some_builder=some_option="Priority 6"
+```
+
 ## How can I include additional sources in my build?
 
-By default, the `build_runner` package only includes some specifically
-whitelisted directories, derived from the [package layout conventions](
-https://www.dartlang.org/tools/pub/package-layout).
+The `build_runner` package defaults the included source files to directories
+derived from the
+[package layout conventions](https://dart.dev/tools/pub/package-layout).
 
-If you have some additional files which you would like to be included as part of
-the build, you will need a custom `build.yaml` file. You will want to modify the
+If you have additional files which you would like to be included as part of the
+build, you will need a custom `build.yaml` file. You will want to modify the
 `sources` field on the `$default` target:
 
 ```yaml
@@ -57,6 +164,7 @@ targets:
       - web/**
       # Note that it is important to include these in the default target.
       - pubspec.*
+      - $package$
 ```
 
 ## Why do Builders need unique outputs?
@@ -66,26 +174,26 @@ build - it needs to know every file that may be written and which Builder would
 write it. If multiple Builders are configured to (possibly) output the same file
 you can:
 
-- Add a `generate_for` configuration for one or both Builders so they do not
-  both operate on the same primary input.
-- Disable one of the Builders if it is unneeded.
-- Contact the author of the Builder and ask that a more unique output extension
-  is chosen.
-- Contact the author of the Builder and ask that a more unique input extension
-  is chose, for example only generating for files that end in `_something.dart`
-  rather than all files that end in `.dart`.
+-   Add a `generate_for` configuration for one or both Builders so they do not
+    both operate on the same primary input.
+-   Disable one of the Builders if it is unneeded.
+-   Contact the author of the Builder and ask that a more unique output
+    extension is chosen.
+-   Contact the author of the Builder and ask that a more unique input extension
+    is chose, for example only generating for files that end in
+    `_something.dart` rather than all files that end in `.dart`.
 
 ## How can I use my own development server to serve generated files?
 
 There are 2 options for using a different server during development:
 
-1. Run `build_runner serve web:<port>` and proxy the requests to it from your
-other server. This has the benefit of delaying requests while a build is
-ongoing so you don't get an inconsistent set of assets.
+1.  Run `build_runner serve web:<port>` and proxy the requests to it from your
+    other server. This has the benefit of delaying requests while a build is
+    ongoing so you don't get an inconsistent set of assets.
 
-2. Run `build_runner watch --output web:build` and use the created `build/`
-directory to serve files from. This will include a `build/packages` directory
-that has these files in it.
+2.  Run `build_runner watch --output web:build` and use the created `build/`
+    directory to serve files from. This will include a `build/packages`
+    directory that has these files in it.
 
 ## How can I fix `AssetNotFoundException`s for swap files?
 
@@ -156,3 +264,18 @@ targets:
         - test/vm/**_test.dart
         - bin/**.dart
 ```
+
+## Why can't I see a file I know exists?
+
+A file may not be served or be present in the output of a build because:
+
+-   You may be looking for it in the wrong place. For example if a server for
+    the `web/` directory is running on port `8080` then the file at
+    `web/index.html` will be loaded from `localhost:8080/index.html`.
+-   It may have be excluded from the build entirely because it isn't present as
+    in the `sources` for any `target` in `build.yaml`. Only assets that are
+    present in the build (as either a source or a generated output from a
+    source) can be served.
+-   It may have been removed by a `PostProcessBuilder`. For example in release
+    modes, by default, the `build_web_compilers` package enables a
+    `dart_source_cleanup` builder that removes all `.dart` source files.

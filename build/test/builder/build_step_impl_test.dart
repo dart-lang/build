@@ -195,21 +195,31 @@ void main() {
       var writer = StubAssetWriter();
       primary = makeAssetId();
       output = makeAssetId();
-      buildStep = BuildStepImpl(
-          primary,
-          [output],
-          reader,
-          writer,
-          primary.package,
-          AnalyzerResolvers(),
-          resourceManager,
-          NoOpStageTracker.instance);
+      buildStep = BuildStepImpl(primary, [output], reader, writer,
+          primary.package, AnalyzerResolvers(), resourceManager,
+          stageTracker: NoOpStageTracker.instance);
     });
 
     test('Captures failed asynchronous writes', () {
       buildStep.writeAsString(output, Future.error('error'));
       expect(buildStep.complete(), throwsA('error'));
     });
+  });
+
+  test('reportUnusedAssets forwards calls if provided', () {
+    var reader = StubAssetReader();
+    var writer = StubAssetWriter();
+    var unused = <AssetId>{};
+    var buildStep = BuildStepImpl(makeAssetId(), [], reader, writer, 'a',
+        AnalyzerResolvers(), resourceManager,
+        reportUnusedAssets: unused.addAll);
+    var reported = [
+      makeAssetId(),
+      makeAssetId(),
+      makeAssetId(),
+    ];
+    buildStep.reportUnusedAssets(reported);
+    expect(unused, equals(reported));
   });
 }
 

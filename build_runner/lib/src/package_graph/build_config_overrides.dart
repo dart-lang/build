@@ -21,9 +21,20 @@ Future<Map<String, BuildConfig>> findBuildConfigOverrides(
     if (file is File) {
       final packageName = p.basename(file.path).split('.').first;
       final packageNode = packageGraph.allPackages[packageName];
+      if (packageNode == null) {
+        _log.warning('A build config override is provided for $packageName but '
+            'that package does not exist. '
+            'Remove the ${p.basename(file.path)} override or add a dependency '
+            'on $packageName.');
+        continue;
+      }
       final yaml = file.readAsStringSync();
       final config = BuildConfig.parse(
-          packageName, packageNode.dependencies.map((n) => n.name), yaml);
+        packageName,
+        packageNode.dependencies.map((n) => n.name),
+        yaml,
+        configYamlPath: file.path,
+      );
       configs[packageName] = config;
     }
   }
@@ -34,8 +45,12 @@ Future<Map<String, BuildConfig>> findBuildConfigOverrides(
       throw CannotBuildException();
     }
     final yaml = file.readAsStringSync();
-    final config = BuildConfig.parse(packageGraph.root.name,
-        packageGraph.root.dependencies.map((n) => n.name), yaml);
+    final config = BuildConfig.parse(
+      packageGraph.root.name,
+      packageGraph.root.dependencies.map((n) => n.name),
+      yaml,
+      configYamlPath: file.path,
+    );
     configs[packageGraph.root.name] = config;
   }
   return configs;

@@ -25,9 +25,25 @@ class TargetGraph {
 
   TargetGraph._(this.allModules, this.modulesByPackage, this.rootPackageConfig);
 
+  /// Builds a [TargetGraph] from [packageGraph].
+  ///
+  /// The [overrideBuildConfig] map overrides the config for packages by name.
+  ///
+  /// The [defaultRootPackageSources] is the default `sources` list to use
+  /// for targets in the root package.
+  ///
+  /// All [requiredSourcePaths] should appear in non-root packages. A warning
+  /// is logged if this condition is not met.
+  ///
+  /// All [requiredRootSourcePaths] should appear in the root package. A
+  /// warning is logged if this condition is not met.
   static Future<TargetGraph> forPackageGraph(PackageGraph packageGraph,
       {Map<String, BuildConfig> overrideBuildConfig,
-      List<String> defaultRootPackageWhitelist}) async {
+      List<String> defaultRootPackageSources,
+      List<String> requiredSourcePaths,
+      List<String> requiredRootSourcePaths}) async {
+    requiredSourcePaths ??= const [];
+    requiredRootSourcePaths ??= const [];
     overrideBuildConfig ??= const {};
     final modulesByKey = <String, TargetNode>{};
     final modulesByPackage = <String, List<TargetNode>>{};
@@ -37,7 +53,7 @@ class TargetGraph {
           await _packageBuildConfig(package);
       List<String> defaultInclude;
       if (package.isRoot) {
-        defaultInclude = defaultRootPackageWhitelist;
+        defaultInclude = defaultRootPackageSources;
         rootPackageConfig = config;
       } else if (package.name == r'$sdk') {
         defaultInclude = const [
@@ -49,6 +65,20 @@ class TargetGraph {
       }
       final nodes = config.buildTargets.values.map((target) =>
           TargetNode(target, package, defaultInclude: defaultInclude));
+      if (package.name != r'$sdk') {
+        var requiredPackagePaths =
+            package.isRoot ? requiredRootSourcePaths : requiredSourcePaths;
+        var requiredIds =
+            requiredPackagePaths.map((path) => AssetId(package.name, path));
+        var missing = _missingSources(nodes, requiredIds);
+        if (missing.isNotEmpty) {
+          log.warning(
+              'The package `${package.name}` does not include some required '
+              'sources in any of its targets (see their build.yaml file).\n'
+              'The missing sources are:\n'
+              '${missing.map((s) => '  - ${s.path}').join('\n')}');
+        }
+      }
       for (final node in nodes) {
         modulesByKey[node.target.key] = node;
         modulesByPackage.putIfAbsent(node.target.package, () => []).add(node);
@@ -100,3 +130,8 @@ class BuildConfigParseException implements Exception {
 
   BuildConfigParseException(this.packageName, this.exception);
 }
+
+/// Returns the [sources] are not included in any [targets].
+Iterable<AssetId> _missingSources(
+        Iterable<TargetNode> targets, Iterable<AssetId> sources) =>
+    sources.where((s) => !targets.any((t) => t.matchesSource(s)));

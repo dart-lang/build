@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
+import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
 import 'package:build_test/build_test.dart';
@@ -73,6 +74,115 @@ void main() {
         );
       });
     }
+  });
+
+  test('can pass a custom reader', () async {
+    var reader =
+        await PackageAssetReader.currentIsolate(rootPackage: 'build_test');
+    var builder = TestBuilder(
+        buildExtensions: {
+          '.txt': ['.txt.copy']
+        },
+        build: (buildStep, _) async {
+          await buildStep.writeAsString(
+              buildStep.inputId.addExtension('.copy'),
+              buildStep
+                  .readAsString(AssetId('build_test', 'test/data/hello.txt')));
+        });
+    await testBuilder(builder, {'build_test|data/1.txt': ''},
+        outputs: {'build_test|data/1.txt.copy': 'hello world'}, reader: reader);
+  });
+
+  test('can capture reportUnusedAssets calls', () async {
+    var unusedInput = AssetId('a', 'lib/unused.txt');
+    var recorded = <AssetId, Iterable<AssetId>>{};
+    await testBuilder(TestBuilder(build: (BuildStep buildStep, _) async {
+      buildStep.reportUnusedAssets([unusedInput]);
+    }), {
+      'a|lib/a.txt': 'a',
+    }, reportUnusedAssetsForInput: (input, unused) => recorded[input] = unused);
+    expect(
+        recorded,
+        equals({
+          AssetId('a', 'lib/a.txt'): [unusedInput]
+        }));
+  });
+
+  test('can read own outputs', () {
+    return testBuilder(
+      TestBuilder(
+        buildExtensions: {
+          '.txt': ['.temp']
+        },
+        build: (step, _) async {
+          final input = step.inputId;
+          final content = await step.readAsString(input);
+
+          final tempOut = input.changeExtension('.temp');
+          await step.writeAsString(tempOut, content.toUpperCase());
+
+          final readOutput = await step.readAsString(tempOut);
+          expect(readOutput, content.toUpperCase());
+        },
+      ),
+      {
+        'a|foo.txt': 'foo',
+      },
+    );
+  });
+
+  test("can't read outputs from other steps", () {
+    return testBuilder(
+      TestBuilder(
+        buildExtensions: {
+          '.txt': ['.temp']
+        },
+        build: (step, _) async {
+          final input = step.inputId;
+          await step.writeAsString(input.changeExtension('.temp'), 'out');
+
+          final outputFromOther = input.path.contains('foo')
+              ? AssetId('a', 'bar.temp')
+              : AssetId('a', 'foo.temp');
+
+          expect(await step.canRead(outputFromOther), isFalse);
+        },
+      ),
+      {
+        'a|foo.txt': 'foo',
+        'a|bar.txt': 'foo',
+      },
+    );
+  });
+
+  test('can resolve with specified language versions from a PackageConfig',
+      () async {
+    var packageConfig = PackageConfig([
+      Package('a', Uri.file('/a/'),
+          packageUriRoot: Uri.file('/a/lib/'),
+          languageVersion: LanguageVersion(2, 3))
+    ]);
+
+    await testBuilder(
+      TestBuilder(
+        buildExtensions: {
+          '.dart': ['.fake']
+        },
+        build: (step, _) async {
+          var lib = await step.inputLibrary;
+          var errors = await lib.session.getErrors(lib.source.fullName);
+          expect(
+              errors.errors.map((e) => e.message),
+              contains(contains(
+                  'This requires the \'extension-methods\' language feature to be '
+                  'enabled.')));
+        },
+      ),
+      {
+        'a|error.dart': '''extension _Foo on int {}''',
+      },
+      packageConfig: packageConfig,
+    );
   });
 }
 

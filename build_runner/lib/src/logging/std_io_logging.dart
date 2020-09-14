@@ -9,7 +9,7 @@ import 'package:io/ansi.dart';
 import 'package:logging/logging.dart';
 import 'package:stack_trace/stack_trace.dart';
 
-Function(LogRecord) stdIOLogListener({bool assumeTty, bool verbose}) =>
+void Function(LogRecord) stdIOLogListener({bool assumeTty, bool verbose}) =>
     (record) => overrideAnsiOutput(assumeTty == true || ansiOutputEnabled, () {
           _stdIOLogListener(record, verbose: verbose ?? false);
         });

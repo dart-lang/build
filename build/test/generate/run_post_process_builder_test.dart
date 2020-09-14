@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 
 import '../common/builders.dart';
 
-main() {
+void main() {
   group('runPostProcessBuilder', () {
     InMemoryAssetReader reader;
     InMemoryAssetWriter writer;

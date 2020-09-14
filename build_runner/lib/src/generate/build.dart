@@ -57,7 +57,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     RunnerAssetWriter writer,
     Resolvers resolvers,
     Level logLevel,
-    onLog(LogRecord record),
+    void Function(LogRecord) onLog,
     Stream terminateEventStream,
     bool enableLowResourcesMode,
     Set<BuildDirectory> buildDirs,
@@ -67,9 +67,10 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     bool verbose,
     bool isReleaseBuild,
     Map<String, Map<String, dynamic>> builderConfigOverrides,
-    String logPerformanceDir}) async {
+    String logPerformanceDir,
+    Set<BuildFilter> buildFilters}) async {
   builderConfigOverrides ??= const {};
-  packageGraph ??= PackageGraph.forThisPackage();
+  packageGraph ??= await PackageGraph.forThisPackage();
   var environment = OverrideableEnvironment(
       IOEnvironment(
         packageGraph,
@@ -102,7 +103,8 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       builderConfigOverrides,
       isReleaseBuild: isReleaseBuild ?? false,
     );
-    var result = await build.run({}, buildDirs: buildDirs);
+    var result =
+        await build.run({}, buildDirs: buildDirs, buildFilters: buildFilters);
     await build?.beforeExit();
     return result;
   } finally {
@@ -140,7 +142,7 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         RunnerAssetWriter writer,
         Resolvers resolvers,
         Level logLevel,
-        onLog(LogRecord record),
+        void Function(LogRecord) onLog,
         Duration debounceDelay,
         DirectoryWatcher Function(String) directoryWatcherFactory,
         Stream terminateEventStream,
@@ -152,7 +154,8 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         bool verbose,
         bool isReleaseBuild,
         Map<String, Map<String, dynamic>> builderConfigOverrides,
-        String logPerformanceDir}) =>
+        String logPerformanceDir,
+        Set<BuildFilter> buildFilters}) =>
     watch_impl.watch(
       builders,
       assumeTty: assumeTty,
@@ -176,4 +179,5 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
       builderConfigOverrides: builderConfigOverrides,
       isReleaseBuild: isReleaseBuild,
       logPerformanceDir: logPerformanceDir,
+      buildFilters: buildFilters,
     );

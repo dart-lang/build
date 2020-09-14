@@ -19,7 +19,8 @@ import 'runner.dart';
 /// Returns the exit code that should be set when the calling process exits. `0`
 /// implies success.
 Future<int> run(List<String> args, List<BuilderApplication> builders) async {
-  var runner = BuildCommandRunner(builders)..addCommand(CleanCommand());
+  var runner = BuildCommandRunner(builders, await PackageGraph.forThisPackage())
+    ..addCommand(CleanCommand());
   try {
     var result = await runner.run(args);
     return result ?? 0;

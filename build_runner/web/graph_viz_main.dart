@@ -10,7 +10,7 @@ import 'dart:js' as js;
 final _graphReference = js.context[r'$build'];
 final _details = document.getElementById('details');
 
-main() async {
+void main() async {
   var filterBox = document.getElementById('filter') as InputElement;
   var searchBox = document.getElementById('searchbox') as InputElement;
   var searchForm = document.getElementById('searchform');

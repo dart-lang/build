@@ -15,14 +15,28 @@ void main() {
     await expectTestsPass(usePrecompiled: true);
   });
 
+  test('Can build and run a single test with --precompiled and --build-filter',
+      () async {
+    var buildArgs = ['--build-filter', 'test/hello_world_test.*.dart.js'];
+    await expectTestsPass(
+        usePrecompiled: true,
+        testArgs: ['test/hello_world_test.dart'],
+        buildArgs: buildArgs);
+
+    // This wasn't built so it should fail
+    await expectTestsFail(
+        usePrecompiled: true,
+        testArgs: ['test/hello_world_custom_html_test.dart'],
+        buildArgs: buildArgs);
+  });
+
   test('Failing tests print mapped stack traces', () async {
     var result = await runTests(
         testArgs: ['--run-skipped', 'test/hello_world_test.dart']);
-    printOnFailure(result.stderr.toString());
-    expect(result.exitCode, isNot(ExitCode.success));
-    expect(
-        result.stdout, matches(RegExp(r'hello_world_test.dart [\d]+:[\d]+')));
-    expect(result.stdout, isNot(contains('.js')));
+    expect(result.stdout,
+        emitsThrough(matches(RegExp(r'hello_world_test.dart [\d]+:[\d]+'))));
+    expect(result.stdout, neverEmits(contains('.js')));
+    expect(await result.exitCode, isNot(ExitCode.success));
   });
 
   group('file edits', () {

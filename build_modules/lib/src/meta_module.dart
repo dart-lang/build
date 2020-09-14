@@ -46,7 +46,7 @@ Module _moduleForComponent(
   // Expand to include all the part files of each node, these aren't
   // included as individual `_AssetNodes`s in `connectedComponents`.
   sources.addAll(componentLibraries.expand((n) => n.parts));
-  var directDependencies = Set<AssetId>()
+  var directDependencies = <AssetId>{}
     ..addAll(componentLibraries.expand((n) => n.depsForPlatform(platform)))
     ..removeAll(sources);
   var isSupported = componentLibraries
@@ -59,13 +59,13 @@ Module _moduleForComponent(
 /// [module] using [assetsToModules].
 Set<AssetId> _localTransitiveDeps(
     Module module, Map<AssetId, Module> assetsToModules) {
-  var localTransitiveDeps = Set<AssetId>();
+  var localTransitiveDeps = <AssetId>{};
   var nextIds = module.directDependencies;
-  var seenIds = Set<AssetId>();
+  var seenIds = <AssetId>{};
   while (nextIds.isNotEmpty) {
     var ids = nextIds;
     seenIds.addAll(ids);
-    nextIds = Set<AssetId>();
+    nextIds = <AssetId>{};
     for (var id in ids) {
       var module = assetsToModules[id];
       if (module == null) continue; // Skip non-local modules
@@ -91,7 +91,7 @@ Map<AssetId, Set<AssetId>> _findReverseEntrypointDeps(
   for (var module in entrypointModules) {
     for (var moduleDep in _localTransitiveDeps(module, assetsToModules)) {
       reverseDeps
-          .putIfAbsent(moduleDep, () => Set<AssetId>())
+          .putIfAbsent(moduleDep, () => <AssetId>{})
           .add(module.primarySource);
     }
   }
@@ -112,8 +112,9 @@ List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
       modules.where((m) => m.sources.any(entrypoints.contains)).toList();
 
   // Groups of modules that can be merged into an existing entrypoint module.
-  var entrypointModuleGroups = Map.fromIterable(entrypointModules,
-      key: (m) => (m as Module).primarySource, value: (m) => [m as Module]);
+  var entrypointModuleGroups = {
+    for (var m in entrypointModules) m.primarySource: [m],
+  };
 
   // Maps modules to entrypoint modules that transitively depend on them.
   var modulesToEntryPoints =

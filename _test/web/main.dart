@@ -6,7 +6,7 @@ import 'package:_test/app.dart';
 
 import 'sub/message.dart' deferred as message;
 
-main() async {
+void main() async {
   await message.loadLibrary();
-  startApp(text: message.message);
+  startApp(text: const String.fromEnvironment('message') ?? message.message);
 }

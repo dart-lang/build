@@ -1,3 +1,25 @@
+## 1.0.5-dev
+
+- Increase min sdk constraint to `>=2.7.0`.
+- Migrate off of deprecated analyzer apis.
+
+## 1.0.4
+
+- Allow analyzer version `0.39.0`.
+
+## 1.0.3
+
+- Allow analyzer version `0.38.0`.
+
+## 1.0.2
+
+- Fix kernel concat ordering to be topological instead of reverse
+  topological.
+
+## 1.0.1
+
+- Allow analyzer version 0.37.0.
+
 ## 1.0.0
 
 - Support build_modules 2.0.0

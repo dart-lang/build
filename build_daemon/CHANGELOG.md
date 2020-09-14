@@ -1,6 +1,53 @@
+# 2.1.4
+
+- Remove dependency on `package:package_resolver`.
+
+# 2.1.3
+
+- Allow the latest `stream_transform`.
+
+# 2.1.2
+
+- Depend on the latest `built_value`.
+
+# 2.1.1
+
+- Require SDK version `2.6.0` to enable extension methods.
+
+## 2.1.0
+
+- Added optional `DefaultBuildTarget.buildFilters` field.
+
+## 2.0.0
+
+- Create a public entrypoint for backend implementations of the daemon protocol.
+  - Refer to `lib/daemon.dart`.
+- Update client `connect` method to now take an optional `buildMode`.
+  The default mode is auto in which builds will automatically occur on changes.
+  The alternative mode is manual in which builds will only occur when triggered
+  with the client `startBuild` method.
+- Add enum of build modes to `constants.dart`.
+
+## 1.1.0
+
+- Add `failureType` to `ShutdownNotification`.
+
+## 1.0.0
+
+- Changed the `ServerLog` class to have separate `level`, `message`,
+  `loggerName`, `error`, and `stackTrace` fields.
+- Accept file change notifications as `Stream<List<WatchEvent>>` instead of
+  `Stream<WatchEvent>`. This allows file change notifications to be sent as
+  batches of simultaneous changes, preventing over-triggering of builds.
+
+## 0.6.1
+
+- Use `HttpMultiServer` to better support IPv6 and IPv4 workflows.
+
 ## 0.6.0
 
-- Add retry logic to the state file helpers `runningVersion` and `currentOptions`.
+- Add retry logic to the state file helpers `runningVersion` and
+  `currentOptions`.
 - `DaemonBuilder` is now an abstract class.
 - Significantly increase doc comment coverage.
 

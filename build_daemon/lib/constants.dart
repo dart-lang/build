@@ -10,8 +10,24 @@ const readyToConnectLog = 'READY TO CONNECT';
 const versionSkew = 'DIFFERENT RUNNING VERSION';
 const optionsSkew = 'DIFFERENT OPTIONS';
 
+const buildModeFlag = 'build-mode';
+enum BuildMode {
+  Manual,
+  Auto,
+}
+
+/// These are used when serializing log messages over stdout.
+///
+/// Serialized logs must be preceded with the [logStartMarker] on its own line,
+/// and terminated with a [logEndMarker] also on its own line.
+///
+/// This allows multi-line logs to be sanely serialized via stdout, and mixed
+/// with other generic messages.
+const logStartMarker = 'BUILD DAEMON LOG START';
+const logEndMarker = 'BUILD DAEMON LOG END';
+
 // TODO(grouma) - use pubspec version when this is open sourced.
-const currentVersion = '6.0.0';
+const currentVersion = '8';
 
 var _username = Platform.environment['USER'] ?? '';
 String daemonWorkspace(String workingDirectory) {

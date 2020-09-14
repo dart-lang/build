@@ -7,8 +7,8 @@ import 'package:logging/logging.dart';
 
 import 'package:build_runner_core/src/environment/io_environment.dart';
 
-main() async {
-  var env = IOEnvironment(PackageGraph.forThisPackage(), assumeTty: true);
+void main() async {
+  var env = IOEnvironment(await PackageGraph.forThisPackage(), assumeTty: true);
   var result = await env.prompt('Select an option!', ['a', 'b', 'c']);
   Logger.root.onRecord.listen(env.onLog);
   Logger('Simple Logger').info(result);

@@ -2,13 +2,17 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+@OnPlatform({
+  'windows': Skip('Directories cant be deleted while processes are still open')
+})
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:build_daemon/constants.dart';
-import 'package:build_daemon/src/daemon.dart';
-import 'package:build_daemon/src/fake_builder.dart';
-import 'package:package_resolver/package_resolver.dart';
+import 'package:build_daemon/daemon.dart';
+import 'package:build_daemon/src/fakes/fake_builder.dart';
+import 'package:build_daemon/src/fakes/fake_change_provider.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 import 'package:uuid/uuid.dart';
@@ -39,9 +43,12 @@ void main() {
     test('can be stopped', () async {
       var workspace = uuid.v1();
       testWorkspaces.add(workspace);
-      var daemon = Daemon('$workspace');
-      expect(daemon.tryGetLock(), isTrue);
-      await daemon.start(Set<String>(), FakeDaemonBuilder(), Stream.empty());
+      var daemon = Daemon(workspace);
+      await daemon.start(
+        <String>{},
+        FakeDaemonBuilder(),
+        FakeChangeProvider(),
+      );
       expect(daemon.onDone, completes);
       await daemon.stop();
     });
@@ -81,7 +88,7 @@ void main() {
       var daemonTwo = await _runDaemon(workspace2);
       testDaemons.addAll([daemonOne, daemonTwo]);
       expect(await _statusOf(daemonTwo), 'RUNNING');
-    });
+    }, timeout: Timeout.factor(2));
 
     test('can start two daemons at the same time', () async {
       var workspace = uuid.v1();
@@ -91,7 +98,7 @@ void main() {
       expect([await _statusOf(daemonOne), await _statusOf(daemonTwo)],
           containsAll(['RUNNING', 'ALREADY RUNNING']));
       testDaemons.addAll([daemonOne, daemonTwo]);
-    });
+    }, timeout: Timeout.factor(2));
 
     test('logs the version when running', () async {
       var workspace = uuid.v1();
@@ -99,13 +106,13 @@ void main() {
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
       expect(await _statusOf(daemon), 'RUNNING');
-      expect(await runningVersion(workspace), currentVersion);
+      expect(await Daemon(workspace).runningVersion(), currentVersion);
     });
 
     test('does not set the current version if not running', () async {
       var workspace = uuid.v1();
       testWorkspaces.add(workspace);
-      expect(await runningVersion(workspace), null);
+      expect(await Daemon(workspace).runningVersion(), null);
     });
 
     test('logs the options when running', () async {
@@ -114,13 +121,14 @@ void main() {
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
       expect(await _statusOf(daemon), 'RUNNING');
-      expect((await currentOptions(workspace)).contains('foo'), isTrue);
+      expect(
+          (await Daemon(workspace).currentOptions()).contains('foo'), isTrue);
     });
 
     test('does not log the options if not running', () async {
       var workspace = uuid.v1();
       testWorkspaces.add(workspace);
-      expect((await currentOptions(workspace)).isEmpty, isTrue);
+      expect((await Daemon(workspace).currentOptions()).isEmpty, isTrue);
     });
 
     test('cleans up after itself', () async {
@@ -130,8 +138,8 @@ void main() {
       // Wait for the daemon to be running before checking the workspace exits.
       expect(await _statusOf(daemon), 'RUNNING');
       expect(Directory(daemonWorkspace(workspace)).existsSync(), isTrue);
-      // Daemon expects sigint twice before quitting.
-      daemon..kill(ProcessSignal.sigint)..kill(ProcessSignal.sigint);
+      // Sending an interrupt signal will let the daemon gracefully exit.
+      daemon.kill(ProcessSignal.sigint);
       await daemon.exitCode;
       expect(Directory(daemonWorkspace(workspace)).existsSync(), isFalse);
     });
@@ -157,35 +165,43 @@ Future<String> _statusOf(Process daemon) async {
 
 Future<Process> _runDaemon(var workspace, {int timeout = 30}) async {
   await d.file('test.dart', '''
-    import 'package:build_daemon/src/daemon.dart';
-    import 'package:build_daemon/src/fake_builder.dart';
+    import 'package:build_daemon/daemon.dart';
     import 'package:build_daemon/daemon_builder.dart';
     import 'package:build_daemon/client.dart';
+    import 'package:build_daemon/src/fakes/fake_builder.dart';
+    import 'package:build_daemon/src/fakes/fake_change_provider.dart';
 
     main() async {
+      var options = ['foo'].toSet();
+      var timeout = Duration(seconds: $timeout);
       var daemon = Daemon('$workspace');
-      if (daemon.tryGetLock()) {
-        var options = ['foo'].toSet();
-        var timeout = Duration(seconds: $timeout);
-        // Real implementations of the daemon usually non-trivial set up time
-        // before calling start.
+      if(daemon.hasLock) {
+        await daemon.start(
+          options,
+          FakeDaemonBuilder(),
+          FakeChangeProvider(),
+          timeout: timeout);
+        // Real implementations of the daemon usually have
+        // non-trivial set up time.
         await Future.delayed(Duration(seconds: 1));
-        await daemon.start(options, FakeDaemonBuilder(), Stream.empty(),
-        timeout: timeout);
         print('RUNNING');
-      } else {
+      }else{
         // Mimic the behavior of actual daemon implementations.
-        var version = await runningVersion('$workspace');
+        var version = await daemon.runningVersion();
         if(version != '$currentVersion') throw VersionSkew();
         print('ALREADY RUNNING');
       }
     }
       ''').create();
 
-  var packageArg = await PackageResolver.current.processArgument;
-
-  var process = await Process.start(
-      Platform.resolvedExecutable, [packageArg, 'test.dart'],
+  var args = [
+    ...Platform.executableArguments,
+    if (!Platform.executableArguments
+        .any((arg) => arg.startsWith('--packages')))
+      '--packages=${(await Isolate.packageConfig).path}',
+    'test.dart'
+  ];
+  var process = await Process.start(Platform.resolvedExecutable, args,
       workingDirectory: d.sandbox);
 
   return process;

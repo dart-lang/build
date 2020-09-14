@@ -13,10 +13,13 @@ abstract class ShutdownNotification
   static Serializer<ShutdownNotification> get serializer =>
       _$shutdownNotificationSerializer;
 
-  factory ShutdownNotification([updates(ShutdownNotificationBuilder b)]) =
+  factory ShutdownNotification(
+          [Function(ShutdownNotificationBuilder b) updates]) =
       _$ShutdownNotification;
 
   String get message;
+
+  int get failureType;
 
   ShutdownNotification._();
 }

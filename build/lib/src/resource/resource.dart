@@ -60,14 +60,14 @@ class Resource<T> {
 /// implementations and not general end users. Instead end users should use
 /// the `buildStep#fetchResource` method to get [Resource]s.
 class ResourceManager {
-  final _resources = Set<Resource<void>>();
+  final _resources = <Resource<void>>{};
 
   /// The [Resource]s that we need to call `beforeExit` on.
   ///
   /// We have to hang on to these forever, but they should be small in number,
   /// and we don't hold on to the actual created instances, just the [Resource]
   /// instances.
-  final _resourcesWithBeforeExit = Set<Resource<void>>();
+  final _resourcesWithBeforeExit = <Resource<void>>{};
 
   /// Fetches an instance of [resource].
   Future<T> fetch<T>(Resource<T> resource) async {

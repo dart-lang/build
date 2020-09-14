@@ -49,16 +49,14 @@ void main() {
     group('simple graph', () {
       setUp(() async {
         graph = await AssetGraph.build(
-            [], Set(), Set(), fooPackageGraph, digestReader);
+            [], <AssetId>{}, <AssetId>{}, fooPackageGraph, digestReader);
       });
 
       test('add, contains, get, allNodes', () {
-        var expectedNodes = [];
-        for (var i = 0; i < 5; i++) {
-          expectedNodes.add(testAddNode());
-        }
-        expectedNodes.addAll(
-            placeholderIdsFor(fooPackageGraph).map((id) => graph.get(id)));
+        var expectedNodes = [
+          for (var i = 0; i < 5; i++) testAddNode(),
+          for (var id in placeholderIdsFor(fooPackageGraph)) graph.get(id),
+        ];
         expect(graph.allNodes, unorderedEquals(expectedNodes));
       });
 
@@ -194,8 +192,8 @@ void main() {
       setUp(() async {
         graph = await AssetGraph.build(
             buildPhases,
-            Set.from([primaryInputId, excludedInputId]),
-            [internalId].toSet(),
+            {primaryInputId, excludedInputId},
+            {internalId},
             fooPackageGraph,
             digestReader);
       });
@@ -212,10 +210,11 @@ void main() {
               builderOptionsId,
               expectedAnchorNode.id,
               postBuilderOptionsId,
-            ]..addAll(placeholders)));
+              ...placeholders,
+            ]));
         var node = graph.get(primaryInputId);
         expect(node.primaryOutputs, [primaryOutputId]);
-        expect(node.outputs, []);
+        expect(node.outputs, isEmpty);
         expect(node.lastKnownDigest, isNotNull,
             reason: 'Nodes with outputs should get an eager digest.');
 
@@ -283,7 +282,7 @@ void main() {
           expect(graph.contains(primaryInputId), isTrue);
           expect(graph.contains(primaryOutputId), isTrue);
           // We don't pre-emptively delete the file in the case of modifications
-          expect(deletes, equals([]));
+          expect(deletes, isEmpty);
           var outputNode = graph.get(primaryOutputId) as GeneratedAssetNode;
           // But we should mark it as needing an update
           expect(outputNode.state, NodeState.mayNeedUpdate);
@@ -353,7 +352,7 @@ void main() {
             'glob node and its outputs', () async {
           var globNode = GlobAssetNode(primaryInputId.addExtension('.glob'),
               Glob('lib/*.cool'), 0, NodeState.upToDate,
-              inputs: HashSet());
+              inputs: HashSet(), results: []);
           var primaryOutputNode =
               graph.get(primaryOutputId) as GeneratedAssetNode
                 ..state = NodeState.upToDate
@@ -363,7 +362,7 @@ void main() {
 
           var coolAssetId = AssetId('foo', 'lib/really.cool');
 
-          checkChangeType(ChangeType changeType) async {
+          Future<void> checkChangeType(ChangeType changeType) async {
             var changes = {coolAssetId: changeType};
             await graph.updateAndInvalidate(buildPhases, changes, 'foo',
                 (_) => Future.value(null), digestReader);
@@ -376,19 +375,27 @@ void main() {
           }
 
           await checkChangeType(ChangeType.ADD);
+
           primaryOutputNode.state = NodeState.upToDate;
           globNode.state = NodeState.upToDate;
-
           await checkChangeType(ChangeType.REMOVE);
+
           primaryOutputNode.state = NodeState.upToDate;
           globNode.state = NodeState.upToDate;
-
           await checkChangeType(ChangeType.ADD);
+
           primaryOutputNode.state = NodeState.upToDate;
           globNode.state = NodeState.upToDate;
           globNode.inputs.add(coolAssetId);
+          globNode.results.add(coolAssetId);
           graph.get(coolAssetId).outputs.add(globNode.id);
           await checkChangeType(ChangeType.MODIFY);
+
+          expect(globNode.inputs, contains(coolAssetId));
+          expect(globNode.results, contains(coolAssetId));
+          await checkChangeType(ChangeType.REMOVE);
+          expect(globNode.inputs, isNot(contains(coolAssetId)));
+          expect(globNode.results, isNot(contains(coolAssetId)));
         });
       });
     });
@@ -397,8 +404,8 @@ void main() {
       expect(
           () => AssetGraph.build(
               List.filled(2, InBuildPhase(TestBuilder(), 'foo')),
-              [makeAssetId('foo|file')].toSet(),
-              Set(),
+              {makeAssetId('foo|file')},
+              <AssetId>{},
               fooPackageGraph,
               digestReader),
           throwsA(duplicateAssetNodeException));
@@ -406,38 +413,30 @@ void main() {
 
     group('regression tests', () {
       test('build can chains of pre-existing to-source outputs', () async {
-        final graph = await AssetGraph.build(
-            [
-              InBuildPhase(
-                  TestBuilder(
-                      buildExtensions: replaceExtension('.txt', '.a.txt')),
-                  'foo',
-                  hideOutput: false),
-              InBuildPhase(
-                  TestBuilder(
-                      buildExtensions: replaceExtension('.txt', '.b.txt')),
-                  'foo',
-                  hideOutput: false),
-              InBuildPhase(
-                  TestBuilder(
-                      buildExtensions:
-                          replaceExtension('.a.b.txt', '.a.b.c.txt')),
-                  'foo',
-                  hideOutput: false),
-            ],
-            [
-              makeAssetId('foo|lib/1.txt'),
-              makeAssetId('foo|lib/2.txt'),
-              // All the following are actually old outputs.
-              makeAssetId('foo|lib/1.a.txt'),
-              makeAssetId('foo|lib/1.a.b.txt'),
-              makeAssetId('foo|lib/2.a.txt'),
-              makeAssetId('foo|lib/2.a.b.txt'),
-              makeAssetId('foo|lib/2.a.b.c.txt'),
-            ].toSet(),
-            Set<AssetId>(),
-            fooPackageGraph,
-            digestReader);
+        final graph = await AssetGraph.build([
+          InBuildPhase(
+              TestBuilder(buildExtensions: replaceExtension('.txt', '.a.txt')),
+              'foo',
+              hideOutput: false),
+          InBuildPhase(
+              TestBuilder(buildExtensions: replaceExtension('.txt', '.b.txt')),
+              'foo',
+              hideOutput: false),
+          InBuildPhase(
+              TestBuilder(
+                  buildExtensions: replaceExtension('.a.b.txt', '.a.b.c.txt')),
+              'foo',
+              hideOutput: false),
+        ], {
+          makeAssetId('foo|lib/1.txt'),
+          makeAssetId('foo|lib/2.txt'),
+          // All the following are actually old outputs.
+          makeAssetId('foo|lib/1.a.txt'),
+          makeAssetId('foo|lib/1.a.b.txt'),
+          makeAssetId('foo|lib/2.a.txt'),
+          makeAssetId('foo|lib/2.a.b.txt'),
+          makeAssetId('foo|lib/2.a.b.c.txt'),
+        }, <AssetId>{}, fooPackageGraph, digestReader);
         expect(
             graph.outputs,
             unorderedEquals([
@@ -469,8 +468,9 @@ void main() {
               TestBuilder(buildExtensions: appendExtension('.2', from: '.1')),
               'foo',
               targetSources: InputSet(include: ['lib/*.txt'])),
-        ], [makeAssetId('foo|lib/1.txt')].toSet(), Set<AssetId>(),
-            fooPackageGraph, digestReader);
+        ], {
+          makeAssetId('foo|lib/1.txt')
+        }, <AssetId>{}, fooPackageGraph, digestReader);
         expect(
             graph.outputs,
             unorderedEquals([
@@ -498,8 +498,8 @@ void main() {
         ];
         final graph = await AssetGraph.build(
             buildPhases,
-            [makeAssetId('foo|lib/b.anchor')].toSet(),
-            Set<AssetId>(),
+            {makeAssetId('foo|lib/b.anchor')},
+            <AssetId>{},
             fooPackageGraph,
             digestReader);
 

@@ -91,9 +91,9 @@ Future<Set<Module>> _transitiveModules(
     Map<AssetId, Module> assetToModule,
     Map<AssetId, AssetId> assetToPrimary,
     DartPlatform platform) async {
-  var dependentModules = Set<Module>();
+  var dependentModules = <Module>{};
   // Ensures we only process a meta file once.
-  var seenMetas = Set<AssetId>()..add(metaAsset);
+  var seenMetas = <AssetId>{}..add(metaAsset);
   var metaModules = await buildStep.fetchResource(metaModuleCache);
   var meta = await metaModules.find(buildStep.inputId, buildStep);
   var nextModules = List.of(meta.modules);
@@ -135,8 +135,8 @@ Future<Set<Module>> _transitiveModules(
 /// The result will be that all dependencies are primary sources.
 Module _mergeComponent(List<Module> connectedComponent,
     Map<AssetId, AssetId> assetToPrimary, DartPlatform platform) {
-  var sources = Set<AssetId>();
-  var deps = Set<AssetId>();
+  var sources = <AssetId>{};
+  var deps = <AssetId>{};
   // Sort the modules to deterministicly select the primary source.
   var components =
       SplayTreeSet<Module>((a, b) => a.primarySource.compareTo(b.primarySource))

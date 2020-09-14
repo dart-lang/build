@@ -7,9 +7,9 @@ stages:
       - dartfmt: sdk
       - dartanalyzer: --fatal-infos --fatal-warnings .
     - dartanalyzer: --fatal-warnings .
-      dart:
-        - 2.3.0-dev.0.1
   - unit_test:
     - group:
-      - test: -x presubmit-only
-      - test: -t presubmit-only --run-skipped
+      - test: --test-randomize-ordering-seed=random
+      os:
+        - linux
+        - windows

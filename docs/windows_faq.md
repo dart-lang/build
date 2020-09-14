@@ -6,8 +6,8 @@ performance.
 You can exclude your package entirely from windows defender by following
 [these instructions](https://support.microsoft.com/en-us/help/4028485/windows-10-add-an-exclusion-to-windows-defender-antivirus).
 
-This gives significant speed improvements (~2x in some light testing), but
-also comes with some obvious security considerations.
+This gives significant speed improvements (~2x in some light testing), but also
+comes with some obvious security considerations.
 
 ### Security Considerations
 

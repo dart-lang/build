@@ -28,7 +28,7 @@ class FailureReporter {
   /// This should be called any time the build phases change since the naming
   /// scheme is dependent on the build phases.
   static Future<void> cleanErrorCache() async {
-    final errorCacheDirectory = Directory(p.fromUri(errorCachePath));
+    final errorCacheDirectory = Directory(errorCachePath);
     if (await errorCacheDirectory.exists()) {
       await errorCacheDirectory.delete(recursive: true);
     }
@@ -47,7 +47,7 @@ class FailureReporter {
 
   /// A set of Strings which uniquely identify a particular build action and
   /// it's primary input.
-  final _reportedActions = Set<String>();
+  final _reportedActions = <String>{};
 
   /// Indicate that a failure reason for the build step which would produce
   /// [output] and all other outputs from the same build step has been printed.
@@ -82,10 +82,10 @@ class FailureReporter {
     }
     return Future.wait(errorFiles.map((errorFile) async {
       if (await errorFile.exists()) {
-        final errorReports = jsonDecode(await errorFile.readAsString());
-        final actionDescription = '${(errorReports as List).first} (cached)';
+        final errorReports = jsonDecode(await errorFile.readAsString()) as List;
+        final actionDescription = '${errorReports.first} (cached)';
         final logger = Logger(actionDescription);
-        for (final List error in errorReports.skip(1)) {
+        for (final error in errorReports.skip(1).cast<List>()) {
           final stackTraceString = error[2] as String;
           final stackTrace = stackTraceString.isEmpty
               ? null
@@ -109,12 +109,17 @@ class ErrorReport {
 String _actionKey(GeneratedAssetNode node) =>
     '${node.builderOptionsId} on ${node.primaryInput}';
 
-String _errorPathForOutput(GeneratedAssetNode output) => p.join(
-    p.fromUri(errorCachePath),
-    output.id.package,
-    '${output.phaseNumber}',
-    p.fromUri(output.primaryInput.path));
+String _errorPathForOutput(GeneratedAssetNode output) => p.joinAll([
+      errorCachePath,
+      output.id.package,
+      '${output.phaseNumber}',
+      ...p.posix.split(output.primaryInput.path)
+    ]);
 
 String _errorPathForPrimaryInput(int phaseNumber, AssetId primaryInput) =>
-    p.join(p.fromUri(errorCachePath), primaryInput.package, '$phaseNumber',
-        p.fromUri(primaryInput.path));
+    p.joinAll([
+      errorCachePath,
+      primaryInput.package,
+      '$phaseNumber',
+      ...p.posix.split(primaryInput.path)
+    ]);

@@ -1,3 +1,22 @@
+## 0.4.3-dev
+
+## 0.4.2
+
+- Add support for an `auto_apply_builders` option to the `target` config.
+  - Defaults to `true` (the previous behavior), setting it to `false`
+    means all builders have to be explicitly enabled. 
+
+## 0.4.1+1
+
+- Support the latest release of `package:json_annotation`.
+- Increased the lower bound for the Dart SDK to `>=2.3.0`.
+
+## 0.4.1
+
+- Added optional `configYamlPath` parameter to `BuildConfig.parse`. When
+  provided, errors reported when parsing build configuration will include
+  the file path.
+
 ## 0.4.0
 
 - Breaking for build systems - change type of `BuilderOptions` fields to

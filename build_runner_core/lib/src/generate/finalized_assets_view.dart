@@ -61,5 +61,6 @@ bool _shouldSkipNode(AssetNode node, String rootDir,
     return !optionalOutputTracker.isRequired(node.id);
   }
   if (node.id.path == '.packages') return true;
+  if (node.id.path == '.dart_tool/package_config.json') return true;
   return false;
 }

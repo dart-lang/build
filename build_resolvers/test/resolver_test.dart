@@ -2,11 +2,18 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
+import 'dart:isolate';
+
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
 import 'package:build_test/build_test.dart';
+import 'package:logging/logging.dart';
+import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
 import 'package:build_resolvers/build_resolvers.dart';
+import 'package:build_resolvers/src/analysis_driver.dart';
 import 'package:build_resolvers/src/resolver.dart';
 
 void main() {
@@ -58,6 +65,126 @@ void main() {
       }, resolvers: AnalyzerResolvers());
     });
 
+    group('language versioning', () {
+      test('gives a correct languageVersion based on comments', () async {
+        await resolveSources({
+          'a|web/main.dart': '// @dart=2.1\n\nmain() {}',
+        }, (resolver) async {
+          var lib = await resolver.libraryFor(entryPoint);
+          expect(lib.languageVersion.effective.major, 2);
+          expect(lib.languageVersion.effective.minor, 1);
+        }, resolvers: AnalyzerResolvers());
+      });
+
+      test('defaults to the current isolate package config', () async {
+        await resolveSources({
+          'a|web/main.dart': 'main() {}',
+        }, (resolver) async {
+          var buildResolversId =
+              AssetId('build_resolvers', 'lib/build_resolvers.dart');
+          var lib = await resolver.libraryFor(buildResolversId);
+          var currentPackageConfig =
+              await loadPackageConfigUri(await Isolate.packageConfig);
+          var expectedVersion =
+              currentPackageConfig['build_resolvers'].languageVersion;
+          expect(lib.languageVersion.effective.major, expectedVersion.major);
+          expect(lib.languageVersion.effective.minor, expectedVersion.minor);
+        }, resolvers: AnalyzerResolvers());
+      });
+
+      test('uses the overridden package config if provided', () async {
+        // An arbitrary past version that could never be selected for this
+        // package.
+        var customVersion = LanguageVersion(2, 1);
+        var customPackageConfig = PackageConfig([
+          Package('a', Uri.file('/fake/a/'),
+              packageUriRoot: Uri.file('/fake/a/lib/'),
+              languageVersion: customVersion)
+        ]);
+        await resolveSources({
+          'a|web/main.dart': 'main() {}',
+        }, (resolver) async {
+          var lib = await resolver.libraryFor(entryPoint);
+          expect(lib.languageVersion.effective.major, customVersion.major);
+          expect(lib.languageVersion.effective.minor, customVersion.minor);
+        }, resolvers: AnalyzerResolvers(null, null, customPackageConfig));
+      });
+
+      test('gives the current language version if not provided', () async {
+        var customPackageConfig = PackageConfig([
+          Package('a', Uri.file('/fake/a/'),
+              packageUriRoot: Uri.file('/fake/a/lib/'), languageVersion: null),
+        ]);
+        await resolveSources({
+          'a|web/main.dart': 'main() {}',
+        }, (resolver) async {
+          var lib = await resolver.libraryFor(entryPoint);
+          expect(lib.languageVersion.effective.major, sdkLanguageVersion.major);
+          expect(lib.languageVersion.effective.minor, sdkLanguageVersion.minor);
+        }, resolvers: AnalyzerResolvers(null, null, customPackageConfig));
+      });
+
+      test('allows a version of analyzer compatibile with the current sdk',
+          () async {
+        var originalLevel = Logger.root.level;
+        Logger.root.level = Level.WARNING;
+        var listener = Logger.root.onRecord.listen((record) {
+          fail('Got an unexpected warning during analyzsis:\n\n$record');
+        });
+        addTearDown(() {
+          Logger.root.level = originalLevel;
+          listener.cancel();
+        });
+        await resolveSources({
+          'a|web/main.dart': 'main() {}',
+        }, (resolver) async {
+          await resolver.libraryFor(entryPoint);
+        }, resolvers: AnalyzerResolvers());
+      });
+    });
+
+    group('assets that aren\'t a transitive import of input', () {
+      Future _runWith(Future Function(Resolver) test) {
+        return resolveSources({
+          'a|web/main.dart': '''
+          main() {}
+        ''',
+          'a|lib/other.dart': '''
+          library other;
+        '''
+        }, test);
+      }
+
+      test('can be resolved', () {
+        return _runWith((resolver) async {
+          final main = await resolver.libraryFor(entryPoint);
+          expect(main, isNotNull);
+
+          final other =
+              await resolver.libraryFor(AssetId.parse('a|lib/other.dart'));
+          expect(other.name, 'other');
+        });
+      });
+
+      test('are included in library stream', () {
+        return _runWith((resolver) async {
+          expect(resolver.libraries.map((l) => l.name), neverEmits('other'));
+
+          await resolver.libraryFor(entryPoint);
+
+          expect(resolver.libraries.map((l) => l.name), emits('other'));
+        });
+      });
+
+      test('can be found by name', () {
+        return _runWith((resolver) async {
+          await resolver.libraryFor(entryPoint);
+
+          expect(resolver.findLibraryByName('other'), completion(isNotNull));
+        });
+      });
+    });
+
     test('handles missing files', () {
       return resolveSources({
         'a|web/main.dart': '''
@@ -72,6 +199,40 @@ void main() {
         expect(lib.imports.length, 2);
         expect(lib.parts.length, 1);
       }, resolvers: AnalyzerResolvers());
+    });
+
+    test('handles discovering previously missing parts', () async {
+      var resolvers = AnalyzerResolvers();
+      await resolveSources({
+        'a|web/main.dart': '''
+              part 'main.g.dart';
+
+              class A implements B {}
+              ''',
+      }, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        var clazz = lib.getType('A');
+        expect(clazz, isNotNull);
+        expect(clazz.interfaces, isEmpty);
+      }, resolvers: resolvers);
+
+      await resolveSources({
+        'a|web/main.dart': '''
+              part 'main.g.dart';
+
+              class A implements B {}
+              ''',
+        'a|web/main.g.dart': '''
+              part of 'main.dart';
+              class B {}
+              ''',
+      }, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        var clazz = lib.getType('A');
+        expect(clazz, isNotNull);
+        expect(clazz.interfaces, hasLength(1));
+        expect(clazz.interfaces.first.getDisplayString(), 'B');
+      }, resolvers: resolvers);
     });
 
     test('should list all libraries', () {
@@ -194,5 +355,251 @@ void main() {
             AssetId('a', 'lib/b.dart'));
       }, resolvers: AnalyzerResolvers());
     });
+
+    test('Respects withEnabledExperiments', () async {
+      Logger.root.level = Level.ALL;
+      Logger.root.onRecord.listen(print);
+      await withEnabledExperiments(
+          () => resolveSources({
+                'a|web/main.dart': '''
+// @dart=${sdkLanguageVersion.major}.${sdkLanguageVersion.minor}
+int? get x => 1;
+                ''',
+              }, (resolver) async {
+                var lib = await resolver.libraryFor(entryPoint);
+                expect(lib.languageVersion.effective.major,
+                    sdkLanguageVersion.major);
+                expect(lib.languageVersion.effective.minor,
+                    sdkLanguageVersion.minor);
+                var errors = await lib.session.getErrors('/a/web/main.dart');
+                expect(errors.errors, isEmpty);
+              }, resolvers: AnalyzerResolvers()),
+          ['non-nullable']);
+    });
+
+    test('can get a new analysis session after resolving additional assets',
+        () async {
+      var resolvers = AnalyzerResolvers();
+      await resolveSources({
+        'a|web/main.dart': '',
+        'a|web/other.dart': '',
+      }, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        expect(await resolver.isLibrary(AssetId('a', 'web/other.dart')), true);
+        var newLib =
+            await resolver.libraryFor(await resolver.assetIdForElement(lib));
+        expect(await newLib.session.getResolvedLibraryByElement(newLib),
+            isNotNull);
+      }, resolvers: resolvers);
+    });
+
+    group('syntax errors', () {
+      test('are reported', () {
+        return resolveSources({
+          'a|errors.dart': '''
+             library a_library;
+
+             void withSyntaxErrors() {
+               String x = ;
+             }
+          ''',
+        }, (resolver) {
+          return expectLater(
+            resolver.libraryFor(AssetId.parse('a|errors.dart')),
+            throwsA(isA<SyntaxErrorInAssetException>()),
+          );
+        });
+      });
+
+      test('are reported for part files with errors', () {
+        return resolveSources({
+          'a|lib.dart': '''
+            library a_library;
+            part 'errors.dart';
+            part 'does_not_exist.dart';
+          ''',
+          'a|errors.dart': '''
+             part of 'lib.dart';
+
+             void withSyntaxErrors() {
+               String x = ;
+             }
+          ''',
+        }, (resolver) {
+          return expectLater(
+            resolver.libraryFor(AssetId.parse('a|lib.dart')),
+            throwsA(
+              isA<SyntaxErrorInAssetException>()
+                  .having((e) => e.syntaxErrors, 'syntaxErrors', hasLength(1)),
+            ),
+          );
+        });
+      });
+
+      test('are not reported when disabled', () {
+        return resolveSources({
+          'a|errors.dart': '''
+             library a_library;
+
+             void withSyntaxErrors() {
+               String x = ;
+             }
+          ''',
+        }, (resolver) {
+          return expectLater(
+            resolver.libraryFor(AssetId.parse('a|errors.dart'),
+                allowSyntaxErrors: true),
+            completion(isNotNull),
+          );
+        });
+      });
+
+      test('are truncated if necessary', () {
+        return resolveSources({
+          'a|errors.dart': '''
+             library a_library;
+
+             void withSyntaxErrors() {
+               String x = ;
+               String x = ;
+               String x = ;
+               String x = ;
+               String x = ;
+             }
+          ''',
+        }, (resolver) {
+          return expectLater(
+            resolver.libraryFor(AssetId.parse('a|errors.dart')),
+            throwsA(
+              isA<SyntaxErrorInAssetException>().having(
+                (e) => e.toString(),
+                'toString()',
+                contains(RegExp(r'And \d more')),
+              ),
+            ),
+          );
+        });
+      });
+
+      test('do not report semantic errors', () {
+        return resolveSources({
+          'a|errors.dart': '''
+             library a_library;
+
+             void withSemanticErrors() {
+               String x = withSemanticErrors();
+               String x = null;
+             }
+          ''',
+        }, (resolver) {
+          return expectLater(
+            resolver.libraryFor(AssetId.parse('a|errors.dart')),
+            completion(isNotNull),
+          );
+        });
+      });
+    });
+  });
+
+  test('throws when reading a part-of file', () {
+    return resolveSources(
+      {
+        'a|lib/a.dart': '''
+          part 'b.dart';
+        ''',
+        'a|lib/b.dart': '''
+          part of 'a.dart';
+        '''
+      },
+      (resolver) async {
+        final assetId = AssetId.parse('a|lib/b.dart');
+        await expectLater(
+          () => resolver.libraryFor(assetId),
+          throwsA(const TypeMatcher<NonLibraryAssetException>()
+              .having((e) => e.assetId, 'assetId', equals(assetId))),
+        );
+      },
+    );
+  });
+
+  group('The ${isFlutter ? 'flutter' : 'dart'} sdk', () {
+    test('can${isFlutter ? '' : ' not'} resolve types from dart:ui', () async {
+      return resolveSources({
+        'a|lib/a.dart': '''
+              import 'dart:ui';
+
+              class MyClass {
+                final Color color;
+
+                MyClass(this.color);
+              } ''',
+      }, (resolver) async {
+        var entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
+        var classDefinition = entry.getType('MyClass');
+        var color = classDefinition.getField('color');
+
+        if (isFlutter) {
+          expect(color.type.element.name, equals('Color'));
+          expect(color.type.element.library.name, equals('dart.ui'));
+          expect(
+              color.type.element.library.definingCompilationUnit.source.uri
+                  .toString(),
+              equals('dart:ui'));
+        } else {
+          expect(color.type.element.name, equals('dynamic'));
+        }
+      }, resolvers: AnalyzerResolvers());
+    });
+  });
+
+  test('generated part files are not considered libraries', () async {
+    var writer = InMemoryAssetWriter();
+    var reader = InMemoryAssetReader.shareAssetCache(writer.assets);
+    var input = AssetId('a', 'lib/input.dart');
+    writer.assets[input] = utf8.encode("part 'input.a.dart';");
+
+    var builder = TestBuilder(
+        buildExtensions: {
+          '.dart': ['.a.dart']
+        },
+        build: (buildStep, buildExtensions) async {
+          var isLibrary = await buildStep.resolver.isLibrary(buildStep.inputId);
+          if (buildStep.inputId == input) {
+            await buildStep.writeAsString(
+                buildStep.inputId
+                    .changeExtension(buildExtensions['.dart'].first),
+                "part of 'input.dart';");
+            expect(isLibrary, true);
+          } else {
+            expect(isLibrary, false,
+                reason:
+                    '${buildStep.inputId} should not be considered a library');
+          }
+        });
+    var resolvers = AnalyzerResolvers();
+    await runBuilder(builder, [input], reader, writer, resolvers);
+
+    await runBuilder(
+        builder, [input.changeExtension('.a.dart')], reader, writer, resolvers);
+  });
+
+  test('missing files are not considered libraries', () async {
+    var writer = InMemoryAssetWriter();
+    var reader = InMemoryAssetReader.shareAssetCache(writer.assets);
+    var input = AssetId('a', 'lib/input.dart');
+    writer.assets[input] = utf8.encode('void doStuff() {}');
+
+    var builder = TestBuilder(
+        buildExtensions: {
+          '.dart': ['.a.dart']
+        },
+        build: expectAsync2((buildStep, _) async {
+          expect(
+              await buildStep.resolver.isLibrary(
+                  buildStep.inputId.changeExtension('doesnotexist.dart')),
+              false);
+        }));
+    var resolvers = AnalyzerResolvers();
+    await runBuilder(builder, [input], reader, writer, resolvers);
   });
 }

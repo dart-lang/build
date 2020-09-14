@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
@@ -34,6 +35,8 @@ void main() {
 # Fake packages file
 a:file://fake/pkg/path
 ''');
+    await writer.writeAsString(makeAssetId('a|.dart_tool/package_config.json'),
+        jsonEncode(_packageConfig));
   });
 
   group('watch', () {
@@ -61,7 +64,7 @@ a:file://fake/pkg/path
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
 
         // Wait for the `_debounceDelay` before terminating.
-        await Future.delayed(_debounceDelay);
+        await Future<void>.delayed(_debounceDelay);
 
         await terminateWatch();
         expect(await results.hasNext, isFalse);
@@ -84,7 +87,7 @@ a:file://fake/pkg/path
                 'Nothing can be built, yet a build was requested.'))));
       });
 
-      test('rebuilds on file updates outside hardcoded whitelist', () async {
+      test('rebuilds on file updates outside hardcoded sources', () async {
         var buildState = await startWatch(
             [copyABuildApplication], {'a|test_files/a.txt': 'a'}, writer,
             overrideBuildConfig: parseBuildConfigs({
@@ -126,7 +129,7 @@ a:file://fake/pkg/path
             decodedMatches('a'));
       });
 
-      test('rebuilds on new files outside hardcoded whitelist', () async {
+      test('rebuilds on new files outside hardcoded sources', () async {
         var buildState = await startWatch(
             [copyABuildApplication], {'a|test_files/a.txt': 'a'}, writer,
             overrideBuildConfig: parseBuildConfigs({
@@ -185,7 +188,7 @@ a:file://fake/pkg/path
             decodedMatches('b'));
       });
 
-      test('rebuilds on deleted files outside hardcoded whitelist', () async {
+      test('rebuilds on deleted files outside hardcoded sources', () async {
         var buildState = await startWatch([
           copyABuildApplication
         ], {
@@ -256,7 +259,11 @@ a:file://fake/pkg/path
             writer.assets[makeAssetId('a|$assetGraphPath')]);
 
         var expectedGraph = await AssetGraph.build(
-            [], Set(), Set(), buildPackageGraph({rootPackage('a'): []}), null);
+            [],
+            <AssetId>{},
+            {AssetId('a', '.dart_tool/package_config.json')},
+            buildPackageGraph({rootPackage('a'): []}),
+            InMemoryAssetReader(sourceAssets: writer.assets));
 
         var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
         var builderOptionsNode = BuilderOptionsAssetNode(builderOptionsId,
@@ -376,7 +383,33 @@ a:file://different/fake/pkg/path
 ''');
 
         expect(await results.hasNext, isFalse);
-        expect(logs.length, 1);
+        expect(logs, hasLength(1));
+        expect(
+            logs.first.message,
+            contains('Terminating builds due to package graph update, '
+                'please restart the build.'));
+      });
+
+      test(
+          'edits to .dart_tool/package_config.json prevent future builds '
+          'and ask you to restart', () async {
+        var logs = <LogRecord>[];
+        var buildState = await startWatch(
+            [copyABuildApplication], {'a|web/a.txt': 'a'}, writer,
+            logLevel: Level.SEVERE, onLog: logs.add);
+        var results = StreamQueue(buildState.buildResults);
+
+        var result = await results.next;
+        checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
+
+        var newConfig = Map.of(_packageConfig);
+        newConfig['extra'] = 'stuff';
+        await writer.writeAsString(
+            AssetId('a', '.dart_tool/package_config.json'),
+            jsonEncode(newConfig));
+
+        expect(await results.hasNext, isFalse);
+        expect(logs, hasLength(1));
         expect(
             logs.first.message,
             contains('Terminating builds due to package graph update, '
@@ -410,7 +443,7 @@ a:file://different/fake/pkg/path
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
-            expect(logs.length, 1);
+            expect(logs, hasLength(1));
             expect(logs.first.message,
                 contains('Terminating builds due to a:build.yaml update'));
           });
@@ -423,7 +456,7 @@ a:file://different/fake/pkg/path
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
-            expect(logs.length, 1);
+            expect(logs, hasLength(1));
             expect(logs.first.message,
                 contains('Terminating builds due to b:build.yaml update'));
           });
@@ -435,7 +468,7 @@ a:file://different/fake/pkg/path
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
-            expect(logs.length, 1);
+            expect(logs, hasLength(1));
             expect(logs.first.message,
                 contains('Terminating builds due to a:b.build.yaml update'));
           });
@@ -461,7 +494,7 @@ a:file://different/fake/pkg/path
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
-            expect(logs.length, 1);
+            expect(logs, hasLength(1));
             expect(logs.first.message,
                 contains('Terminating builds due to a:build.yaml update'));
           });
@@ -474,7 +507,7 @@ a:file://different/fake/pkg/path
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
-            expect(logs.length, 1);
+            expect(logs, hasLength(1));
             expect(logs.first.message,
                 contains('Terminating builds due to b:build.yaml update'));
           });
@@ -504,7 +537,7 @@ a:file://different/fake/pkg/path
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
-            expect(logs.length, 1);
+            expect(logs, hasLength(1));
             expect(logs.first.message,
                 contains('Terminating builds due to a:build.yaml update'));
           });
@@ -513,7 +546,7 @@ a:file://different/fake/pkg/path
             await writer.writeAsString(
                 AssetId('b', 'build.cool.yaml'), '# New build.yaml file');
 
-            await Future.delayed(_debounceDelay);
+            await Future<void>.delayed(_debounceDelay);
             expect(logs, isEmpty);
 
             await terminateWatch();
@@ -527,7 +560,7 @@ a:file://different/fake/pkg/path
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
-            expect(logs.length, 1);
+            expect(logs, hasLength(1));
             expect(logs.first.message,
                 contains('Terminating builds due to a:build.cool.yaml update'));
           });
@@ -536,7 +569,7 @@ a:file://different/fake/pkg/path
     });
 
     group('file updates to same contents', () {
-      test('keeps error state', () async {
+      test('does not rebuild', () async {
         var runCount = 0;
         var buildState = await startWatch([
           applyToRoot(TestBuilder(
@@ -558,14 +591,9 @@ a:file://different/fake/pkg/path
 
         await writer.writeAsString(makeAssetId('a|web/a.txt'), 'a');
 
-        result = await results.next;
-        expect(runCount, 1,
-            reason:
-                'Should not have reran since input digest should be identical');
-        checkBuild(result, status: BuildStatus.failure);
-
-        // Wait for the `_debounceDelay` before terminating.
-        await Future.delayed(_debounceDelay);
+        // Wait for the `_debounceDelay * 4` before terminating to
+        // give it a chance to pick up the change.
+        await Future<void>.delayed(_debounceDelay * 4);
 
         await terminateWatch();
         expect(await results.hasNext, isFalse);
@@ -762,7 +790,7 @@ Future<BuildState> startWatch(List<BuilderApplication> builders,
     Map<String, String> inputs, InMemoryRunnerAssetWriter writer,
     {PackageGraph packageGraph,
     Map<String, BuildConfig> overrideBuildConfig,
-    onLog(LogRecord record),
+    void Function(LogRecord) onLog,
     Level logLevel = Level.OFF,
     String configKey}) {
   onLog ??= (_) {};
@@ -799,3 +827,10 @@ Future terminateWatch() async {
   await _terminateWatchController.close();
   _terminateWatchController = null;
 }
+
+const _packageConfig = {
+  'configVersion': 2,
+  'packages': [
+    {'name': 'a', 'rootUri': 'file://fake/pkg/path', 'packageUri': 'lib/'},
+  ],
+};

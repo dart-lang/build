@@ -5,10 +5,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
-import 'package:package_resolver/package_resolver.dart';
+import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:stack_trace/stack_trace.dart';
 import 'package:test/test.dart'
@@ -89,18 +90,16 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
       .dir(
           'a',
           <d.Descriptor>[
-            await _pubspecWithDeps('a',
-                currentIsolateDependencies: [
-                  'build',
-                  'build_config',
-                  'build_daemon',
-                  'build_resolvers',
-                  'build_runner',
-                  'build_runner_core',
-                ],
-                pathDependencies: Map.fromIterable(otherPackages,
-                    key: (o) => (o as d.Descriptor).name,
-                    value: (o) => p.join(d.sandbox, (o as d.Descriptor).name))),
+            await _pubspecWithDeps('a', currentIsolateDependencies: [
+              'build',
+              'build_config',
+              'build_daemon',
+              'build_resolvers',
+              'build_runner',
+              'build_runner_core',
+            ], pathDependencies: {
+              for (var o in otherPackages) o.name: p.join(d.sandbox, o.name),
+            }),
           ].followedBy(packageContents))
       .create();
   await Future.wait(otherPackages.map((d) => d.create()));
@@ -209,9 +208,9 @@ Future<d.FileDescriptor> _pubspecWithDeps(String name,
     Map<String, String> versionDependencies}) async {
   currentIsolateDependencies ??= [];
   pathDependencies ??= {};
-  var resolver = PackageResolver.current;
+  var packageConfig = await loadPackageConfigUri(await Isolate.packageConfig);
   await Future.forEach(currentIsolateDependencies, (String package) async {
-    pathDependencies[package] = await resolver.packagePath(package);
+    pathDependencies[package] = packageConfig[package].root.path;
   });
   return _pubspec(name,
       pathDependencies: pathDependencies,
@@ -233,7 +232,7 @@ d.FileDescriptor _pubspec(String name,
 
   var buffer = StringBuffer()..writeln('name: $name');
 
-  writeDeps(String group) {
+  void writeDeps(String group) {
     buffer.writeln(group);
 
     pathDependencies.forEach((package, path) {
@@ -321,7 +320,7 @@ class BuildServer {
     final request = await _client.get('localhost', 8080, path);
     final response = await request.close();
     expect(response.statusCode, 200);
-    expect(await utf8.decodeStream(response), content);
+    expect(await utf8.decodeStream(response.cast<List<int>>()), content);
   }
 
   StreamQueue<String> get stdout => _process.stdout;

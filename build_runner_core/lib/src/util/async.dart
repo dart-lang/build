@@ -6,7 +6,8 @@ import 'dart:async';
 
 /// Invokes [callback] and returns the result as soon as possible. This will
 /// happen synchronously if [value] is available.
-FutureOr<S> doAfter<T, S>(FutureOr<T> value, FutureOr<S> callback(T value)) {
+FutureOr<S> doAfter<T, S>(
+    FutureOr<T> value, FutureOr<S> Function(T value) callback) {
   if (value is Future<T>) {
     return value.then(callback);
   } else {

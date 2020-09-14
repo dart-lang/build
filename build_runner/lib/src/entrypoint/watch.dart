@@ -4,6 +4,8 @@
 
 import 'dart:async';
 
+import 'package:build/experiments.dart';
+import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 
@@ -24,9 +26,26 @@ class WatchCommand extends BuildRunnerCommand {
       'Builds the specified targets, watching the file system for updates and '
       'rebuilding as appropriate.';
 
+  WatchCommand() {
+    argParser.addFlag(usePollingWatcherOption,
+        help: 'Use a polling watcher instead of the current platforms default '
+            'watcher implementation. This should generally only be used if '
+            'you are having problems with the default watcher, as it is '
+            'generally less efficient.');
+  }
+
   @override
-  Future<int> run() async {
+  WatchOptions readOptions() => WatchOptions.fromParsedArgs(
+      argResults, argResults.rest, packageGraph.root.name, this);
+
+  @override
+  Future<int> run() {
     var options = readOptions();
+    return withEnabledExperiments(
+        () => _run(options), options.enableExperiments);
+  }
+
+  Future<int> _run(WatchOptions options) async {
     var handler = await watch(
       builderApplications,
       deleteFilesByDefault: options.deleteFilesByDefault,
@@ -41,6 +60,8 @@ class WatchCommand extends BuildRunnerCommand {
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
       logPerformanceDir: options.logPerformanceDir,
+      directoryWatcherFactory: options.directoryWatcherFactory,
+      buildFilters: options.buildFilters,
     );
     if (handler == null) return ExitCode.config.code;
 

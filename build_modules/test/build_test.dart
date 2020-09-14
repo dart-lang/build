@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @Tags(['presubmit-only'])
+@OnPlatform({'windows': Skip('line endings are different')})
 
 import 'dart:convert';
 import 'dart:io';
@@ -32,7 +33,8 @@ void main() {
     expect(_changedGeneratedFiles(), isEmpty);
 
     // 2 - run build - should be no output, since nothing should change
-    var result = _runProc('pub', ['run', 'build_runner', 'build']);
+    var result = _runProc('pub${Platform.isWindows ? '.bat' : ''}',
+        ['run', 'build_runner', 'build']);
     expect(result,
         contains(RegExp(r'Succeeded after \S+( \S+)? with \d+ outputs')));
 

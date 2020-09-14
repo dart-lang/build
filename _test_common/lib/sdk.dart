@@ -26,13 +26,13 @@ Future<ProcessResult> pubGet(String package, {bool offline}) async {
 /// Runs the `pub` [command] on [package] with [args].
 Future<ProcessResult> runPub(String package, String command,
         {Iterable<String> args}) =>
-    Process.run(pubBinary, [command]..addAll(args ?? []),
+    Process.run(pubBinary, [command, ...?args],
         workingDirectory: p.join(d.sandbox, package));
 
 /// Starts the `pub` [command] on [package] with [args].
 Future<Process> startPub(String package, String command,
         {Iterable<String> args}) =>
-    Process.start(pubBinary, [command]..addAll(args ?? []),
+    Process.start(pubBinary, [command, ...args ?? []],
         workingDirectory: p.join(d.sandbox, package));
 
 /// Runs the `dart` script [script] in [package] with [args].
@@ -40,7 +40,7 @@ Future<Process> startPub(String package, String command,
 /// The [script] should be a relative path under [package].
 Future<ProcessResult> runDart(String package, String script,
         {Iterable<String> args}) =>
-    Process.run(_dartBinary, [script]..addAll(args ?? []),
+    Process.run(_dartBinary, [script, ...?args],
         workingDirectory: p.join(d.sandbox, package));
 
 /// Starts the `dart` script [script] in [package] with [args].
@@ -48,5 +48,5 @@ Future<ProcessResult> runDart(String package, String script,
 /// The [script] should be a relative path under [package].
 Future<Process> startDart(String package, String script,
         {Iterable<String> args}) =>
-    Process.start(_dartBinary, [script]..addAll(args ?? []),
+    Process.start(_dartBinary, [script, ...?args],
         workingDirectory: p.join(d.sandbox, package));

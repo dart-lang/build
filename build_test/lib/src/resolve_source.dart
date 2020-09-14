@@ -3,10 +3,12 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:isolate';
 
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
 import 'package:build_resolvers/build_resolvers.dart';
-import 'package:package_resolver/package_resolver.dart';
+import 'package:package_config/package_config.dart';
 import 'package:pedantic/pedantic.dart';
 
 import 'in_memory_reader.dart';
@@ -26,9 +28,9 @@ const useAssetReader = '__useAssetReader__';
 /// A convenience method for using [resolveSources] with a single source file.
 Future<T> resolveSource<T>(
   String inputSource,
-  FutureOr<T> action(Resolver resolver), {
+  FutureOr<T> Function(Resolver resolver) action, {
   AssetId inputId,
-  PackageResolver resolver,
+  PackageConfig packageConfig,
   Future<Null> tearDown,
   Resolvers resolvers,
 }) {
@@ -39,7 +41,7 @@ Future<T> resolveSource<T>(
     },
     inputId.package,
     action,
-    resolver: resolver,
+    packageConfig: packageConfig,
     resolverFor: inputId,
     tearDown: tearDown,
     resolvers: resolvers,
@@ -113,12 +115,12 @@ Future<T> resolveSource<T>(
 /// otherwise defaults to the first one in [inputs].
 ///
 /// **NOTE**: All `package` dependencies are resolved using [PackageAssetReader]
-/// - by default, [PackageAssetReader.currentIsolate]. A custom [resolver] may
-/// be provided to map files not visible to the current package's runtime.
+/// - by default, [PackageAssetReader.currentIsolate]. A custom [packageConfig]
+/// may be provided to map files not visible to the current package's runtime.
 Future<T> resolveSources<T>(
   Map<String, String> inputs,
-  FutureOr<T> action(Resolver resolver), {
-  PackageResolver resolver,
+  FutureOr<T> Function(Resolver resolver) action, {
+  PackageConfig packageConfig,
   String resolverFor,
   String rootPackage,
   Future<Null> tearDown,
@@ -131,7 +133,7 @@ Future<T> resolveSources<T>(
     inputs,
     rootPackage ?? AssetId.parse(inputs.keys.first).package,
     action,
-    resolver: resolver,
+    packageConfig: packageConfig,
     resolverFor: AssetId.parse(resolverFor ?? inputs.keys.first),
     tearDown: tearDown,
     resolvers: resolvers,
@@ -141,8 +143,8 @@ Future<T> resolveSources<T>(
 /// A convenience for using [resolveSources] with a single [inputId] from disk.
 Future<T> resolveAsset<T>(
   AssetId inputId,
-  FutureOr<T> action(Resolver resolver), {
-  PackageResolver resolver,
+  FutureOr<T> Function(Resolver resolver) action, {
+  PackageConfig packageConfig,
   Future<Null> tearDown,
   Resolvers resolvers,
 }) {
@@ -152,7 +154,7 @@ Future<T> resolveAsset<T>(
     },
     inputId.package,
     action,
-    resolver: resolver,
+    packageConfig: packageConfig,
     resolverFor: inputId,
     tearDown: tearDown,
     resolvers: resolvers,
@@ -167,14 +169,14 @@ Future<T> resolveAsset<T>(
 Future<T> _resolveAssets<T>(
   Map<String, String> inputs,
   String rootPackage,
-  FutureOr<T> action(Resolver resolver), {
-  PackageResolver resolver,
+  FutureOr<T> Function(Resolver resolver) action, {
+  PackageConfig packageConfig,
   AssetId resolverFor,
   Future<Null> tearDown,
   Resolvers resolvers,
 }) async {
-  final syncResolver = await (resolver ?? PackageResolver.current).asSync;
-  final assetReader = PackageAssetReader(syncResolver, rootPackage);
+  packageConfig ??= await loadPackageConfigUri(await Isolate.packageConfig);
+  final assetReader = PackageAssetReader(packageConfig, rootPackage);
   final resolveBuilder = _ResolveSourceBuilder(
     action,
     resolverFor,
@@ -193,14 +195,28 @@ Future<T> _resolveAssets<T>(
     sourceAssets: inputAssets,
     rootPackage: rootPackage,
   );
-  // We don't care about the results of this build.
+
+  // Use the default resolver if not provided a package config and no
+  // experiments are enabled. This is much faster.
+  resolvers ??= packageConfig == null && enabledExperiments.isEmpty
+      ? defaultResolvers
+      : AnalyzerResolvers(null, null, packageConfig);
+
+  // We don't care about the results of this build, but we also can't await
+  // it because that would block on the `tearDown` of the `resolveBuilder`.
+  //
+  // We also dont want to leak errors as unhandled async errors so we swallow
+  // them here.
+  //
+  // Errors will still be reported through the resolver itself as well as the
+  // `onDone` future that we return.
   unawaited(runBuilder(
     resolveBuilder,
     inputAssets.keys,
     MultiAssetReader([inMemory, assetReader]),
     InMemoryAssetWriter(),
-    resolvers ?? defaultResolvers,
-  ));
+    resolvers,
+  ).catchError((_) {}));
   return resolveBuilder.onDone.future;
 }
 
@@ -220,8 +236,11 @@ class _ResolveSourceBuilder<T> implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
     if (_resolverFor != buildStep.inputId) return;
-    var result = await _action(buildStep.resolver);
-    onDone.complete(result);
+    try {
+      onDone.complete(await _action(buildStep.resolver));
+    } catch (e, s) {
+      onDone.completeError(e, s);
+    }
     await _tearDown;
   }
 

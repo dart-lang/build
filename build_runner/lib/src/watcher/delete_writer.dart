@@ -10,8 +10,8 @@ import 'package:build_runner_core/build_runner_core.dart';
 
 /// A [RunnerAssetWriter] that forwards delete events to [_onDelete];
 class OnDeleteWriter implements RunnerAssetWriter {
-  RunnerAssetWriter _writer;
-  Function(AssetId id) _onDelete;
+  final RunnerAssetWriter _writer;
+  final void Function(AssetId id) _onDelete;
 
   OnDeleteWriter(this._writer, this._onDelete);
 

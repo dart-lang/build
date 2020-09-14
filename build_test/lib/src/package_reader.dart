@@ -5,14 +5,15 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
-import 'package:package_resolver/package_resolver.dart';
+import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:stream_transform/stream_transform.dart';
 
-/// Resolves using a [SyncPackageResolver] before reading from the file system.
+/// Resolves using a [PackageConfig] before reading from the file system.
 ///
 /// For a simple implementation that uses the current isolate's package
 /// resolution logic (i.e. whatever you have generated in `.packages` in most
@@ -22,18 +23,21 @@ import 'package:stream_transform/stream_transform.dart';
 /// ```
 class PackageAssetReader extends AssetReader
     implements MultiPackageAssetReader {
-  final SyncPackageResolver _packageResolver;
+  final PackageConfig _packageConfig;
 
   /// What package is the originating build occurring in.
   final String _rootPackage;
 
-  /// Wrap a [SyncPackageResolver] to identify where files are located.
+  /// Wrap a [PackageConfig] to identify where files are located.
   ///
-  /// To use a normal [PackageResolver] use `asSync`:
+  /// To use a normal [PackageConfig] use `Isolate.packageConfig` and
+  /// `loadPackageConfigUri`:
+  ///
   /// ```
-  /// new PackageAssetReader(await packageResolver.asSync);
+  /// new PackageAssetReader(
+  ///   await loadPackageConfigUri(await Isolate.packageConfig));
   /// ```
-  PackageAssetReader(this._packageResolver, [this._rootPackage]);
+  PackageAssetReader(this._packageConfig, [this._rootPackage]);
 
   /// A [PackageAssetReader] with a single [packageRoot] configured.
   ///
@@ -42,40 +46,42 @@ class PackageAssetReader extends AssetReader
   /// the older "packages" folder paradigm for resolution.
   factory PackageAssetReader.forPackageRoot(String packageRoot,
       [String rootPackage]) {
-    // This purposefully doesn't use SyncPackageResolver.root, because that is
-    // assuming a symlink collection and not directories, and this factory is
-    // more useful for a user-created collection of folders for testing.
     final directory = Directory(packageRoot);
     final packages = <String, String>{};
     for (final entity in directory.listSync()) {
       if (entity is Directory) {
         final name = p.basename(entity.path);
-        packages[name] = entity.uri.toString();
+        packages[name] = entity.uri.toFilePath(windows: false);
       }
     }
     return PackageAssetReader.forPackages(packages, rootPackage);
   }
 
   /// Returns a [PackageAssetReader] with a simple [packageToPath] mapping.
-  factory PackageAssetReader.forPackages(Map<String, String> packageToPath,
-          [String rootPackage]) =>
-      PackageAssetReader(
-          SyncPackageResolver.config(packageToPath.map((k, v) => MapEntry(
-              k, Uri.parse(p.absolute(v, 'lib')).replace(scheme: 'file')))),
-          rootPackage);
+  PackageAssetReader.forPackages(Map<String, String> packageToPath,
+      [String rootPackage])
+      : this(
+            PackageConfig([
+              for (var entry in packageToPath.entries)
+                Package(entry.key, Uri.file(p.absolute(entry.value)),
+                    // TODO: use a relative uri when/if possible,
+                    // https://github.com/dart-lang/package_config/issues/81
+                    packageUriRoot: Uri.file(p.absolute(entry.value, 'lib/'))),
+            ]),
+            rootPackage);
 
   /// A reader that can resolve files known to the current isolate.
   ///
   /// A [rootPackage] should be provided for full API compatibility.
   static Future<PackageAssetReader> currentIsolate({String rootPackage}) async {
-    var resolver = PackageResolver.current;
-    return PackageAssetReader(await resolver.asSync, rootPackage);
+    return PackageAssetReader(
+        await findPackageConfigUri(await Isolate.packageConfig), rootPackage);
   }
 
   File _resolve(AssetId id) {
     final uri = id.uri;
     if (uri.isScheme('package')) {
-      final uri = _packageResolver.resolveUri(id.uri);
+      final uri = _packageConfig.resolve(id.uri);
       if (uri != null) {
         return File.fromUri(uri);
       }
@@ -83,13 +89,13 @@ class PackageAssetReader extends AssetReader
     if (id.package == _rootPackage) {
       return File(p.canonicalize(p.join(_rootPackagePath, id.path)));
     }
-    throw UnsupportedError('Unable to resolve $id');
+    return null;
   }
 
   String get _rootPackagePath {
     // If the root package has a pub layout, use `packagePath`.
-    final root = _packageResolver.packagePath(_rootPackage);
-    if (Directory(p.join(root, 'lib')).existsSync()) {
+    final root = _packageConfig[_rootPackage]?.root?.toFilePath();
+    if (root != null && Directory(p.join(root, 'lib')).existsSync()) {
       return root;
     }
     // Assume the cwd is the package root.
@@ -104,50 +110,36 @@ class PackageAssetReader extends AssetReader
           'Root package must be provided to use `findAssets` without an '
           'explicit `package`.');
     }
-    var packageLibDir = _packageResolver.packageConfigMap[package];
+    var packageLibDir = _packageConfig[package]?.packageUriRoot;
     if (packageLibDir == null) {
       throw UnsupportedError('Unable to find package $package');
     }
 
     var packageFiles = Directory.fromUri(packageLibDir)
         .list(recursive: true)
-        .where((e) => e is File)
+        .whereType<File>()
         .map((f) =>
             p.join('lib', p.relative(f.path, from: p.fromUri(packageLibDir))));
     if (package == _rootPackage) {
-      packageFiles = packageFiles.transform(merge(Directory(_rootPackagePath)
+      packageFiles = packageFiles.merge(Directory(_rootPackagePath)
           .list(recursive: true)
-          .where((e) => e is File)
+          .whereType<File>()
           .map((f) => p.relative(f.path, from: _rootPackagePath))
-          .where((p) => !(p.startsWith('packages/') || p.startsWith('lib/')))));
+          .where((p) => !(p.startsWith('packages/') || p.startsWith('lib/'))));
     }
     return packageFiles.where(glob.matches).map((p) => AssetId(package, p));
   }
 
   @override
-  Future<bool> canRead(AssetId id) {
-    final file = _resolve(id);
-    if (file == null) {
-      return Future.value(false);
-    }
-    return file.exists();
-  }
+  Future<bool> canRead(AssetId id) =>
+      _resolve(id)?.exists() ?? Future.value(false);
 
   @override
-  Future<List<int>> readAsBytes(AssetId id) {
-    final file = _resolve(id);
-    if (file == null) {
-      throw ArgumentError('Could not read $id.');
-    }
-    return file.readAsBytes();
-  }
+  Future<List<int>> readAsBytes(AssetId id) =>
+      _resolve(id)?.readAsBytes() ?? (throw AssetNotFoundException(id));
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
-    final file = _resolve(id);
-    if (file == null) {
-      throw ArgumentError('Could not read $id.');
-    }
-    return file.readAsString(encoding: encoding);
-  }
+  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) =>
+      _resolve(id)?.readAsString(encoding: encoding) ??
+      (throw AssetNotFoundException(id));
 }

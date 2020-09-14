@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 22;
+const _version = 24;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -35,9 +35,20 @@ class _AssetGraphDeserializer {
 
   /// Perform the deserialization, should only be called once.
   AssetGraph deserialize() {
+    var packageLanguageVersions = {
+      for (var entry in (_serializedGraph['packageLanguageVersions']
+              as Map<String, dynamic>)
+          .entries)
+        entry.key: entry.value != null
+            ? LanguageVersion.parse(entry.value as String)
+            : null
+    };
     var graph = AssetGraph._(
-        _deserializeDigest(_serializedGraph['buildActionsDigest'] as String),
-        _serializedGraph['dart_version'] as String);
+      _deserializeDigest(_serializedGraph['buildActionsDigest'] as String),
+      _serializedGraph['dart_version'] as String,
+      packageLanguageVersions,
+      List.from(_serializedGraph['enabledExperiments'] as List),
+    );
 
     var packageNames = _serializedGraph['packages'] as List<dynamic>;
 
@@ -220,6 +231,9 @@ class _AssetGraphSerializer {
       'buildActionsDigest': _serializeDigest(_graph.buildPhasesDigest),
       'packages': packages,
       'assetPaths': assetPaths,
+      'packageLanguageVersions': _graph.packageLanguageVersions
+          .map((pkg, version) => MapEntry(pkg, version?.toString())),
+      'enabledExperiments': _graph.enabledExperiments,
     };
     return utf8.encode(json.encode(result));
   }
@@ -316,7 +330,7 @@ class _WrappedAssetNode extends Object
   int get length => _length;
 
   @override
-  set length(_) => throw UnsupportedError(
+  set length(void _) => throw UnsupportedError(
       'length setter not unsupported for WrappedAssetNode');
 
   @override
@@ -369,7 +383,7 @@ class _WrappedAssetNode extends Object
   }
 
   @override
-  operator []=(_, __) =>
+  operator []=(void _, void __) =>
       throw UnsupportedError('[]= not supported for WrappedAssetNode');
 }
 

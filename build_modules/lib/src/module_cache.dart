@@ -6,13 +6,22 @@ import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
+import 'package:crypto/crypto.dart';
 
 import 'meta_module.dart';
 import 'modules.dart';
 
-final metaModuleCache = DecodingCache.resource((m) => MetaModule.fromJson(m));
+Map<String, dynamic> _deserialize(List<int> bytes) =>
+    jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>;
 
-final moduleCache = DecodingCache.resource((m) => Module.fromJson(m));
+List<int> _serialize(Map<String, dynamic> data) =>
+    utf8.encode(jsonEncode(data));
+
+final metaModuleCache = DecodingCache.resource(
+    (m) => MetaModule.fromJson(_deserialize(m)), (m) => _serialize(m.toJson()));
+
+final moduleCache = DecodingCache.resource(
+    (m) => Module.fromJson(_deserialize(m)), (m) => _serialize(m.toJson()));
 
 /// A cache of objects decoded from written assets suitable for use as a
 /// [Resource].
@@ -25,17 +34,23 @@ class DecodingCache<T> {
   /// Create a [Resource] which can decoded instances of [T] serialized via json
   /// to assets.
   static Resource<DecodingCache<T>> resource<T>(
-          T Function(Map<String, dynamic>) _fromJson) =>
-      Resource<DecodingCache<T>>(() => DecodingCache._(_fromJson),
+          T Function(List<int>) fromBytes, List<int> Function(T) toBytes) =>
+      Resource<DecodingCache<T>>(() => DecodingCache._(fromBytes, toBytes),
           dispose: (c) => c._dispose());
 
-  final _cached = <AssetId, Future<Result<T>>>{};
+  final _cached = <AssetId, _Entry<T>>{};
 
-  final T Function(Map<String, dynamic>) _fromJson;
+  final T Function(List<int>) _fromBytes;
+  final List<int> Function(T) _toBytes;
 
-  DecodingCache._(this._fromJson);
+  DecodingCache._(this._fromBytes, this._toBytes);
 
-  void _dispose() => _cached.clear();
+  void _dispose() {
+    _cached.removeWhere((_, entry) => entry.digest == null);
+    for (var entry in _cached.values) {
+      entry.needsCheck = true;
+    }
+  }
 
   /// Find and deserialize a [T] stored in [id].
   ///
@@ -44,12 +59,46 @@ class DecodingCache<T> {
   /// content dependencies will be tracked through [reader].
   Future<T> find(AssetId id, AssetReader reader) async {
     if (!await reader.canRead(id)) return null;
-    var result = _cached.putIfAbsent(
-        id,
-        () => Result.capture(reader
-            .readAsString(id)
-            .then((c) => jsonDecode(c) as Map<String, dynamic>)
-            .then(_fromJson)));
-    return Result.release(result);
+    _Entry<T> entry;
+    if (!_cached.containsKey(id)) {
+      entry = _cached[id] = _Entry()
+        ..needsCheck = false
+        ..value = Result.capture(reader.readAsBytes(id).then(_fromBytes))
+        ..digest = Result.capture(reader.digest(id));
+    } else {
+      entry = _cached[id];
+      if (entry.needsCheck) {
+        await (entry.onGoingCheck ??= () async {
+          var previousDigest = await Result.release(entry.digest);
+          entry.digest = Result.capture(reader.digest(id));
+          if (await Result.release(entry.digest) != previousDigest) {
+            entry.value =
+                Result.capture(reader.readAsBytes(id).then(_fromBytes));
+          }
+          entry
+            ..needsCheck = false
+            ..onGoingCheck = null;
+        }());
+      }
+    }
+    return Result.release(entry.value);
   }
+
+  /// Serialized and write a [T] to [id].
+  ///
+  /// The instance will be cached so that later calls to [find] may return the
+  /// instances without deserializing it.
+  Future<void> write(AssetId id, AssetWriter writer, T instance) async {
+    await writer.writeAsBytes(id, _toBytes(instance));
+    _cached[id] = _Entry()
+      ..needsCheck = false
+      ..value = Result.capture(Future.value(instance));
+  }
+}
+
+class _Entry<T> {
+  bool needsCheck = false;
+  Future<Result<T>> value;
+  Future<Result<Digest>> digest;
+  Future<void> onGoingCheck;
 }

@@ -83,7 +83,7 @@ arguments.
   depending on the particular builder. The values in this map override all other
   values per-key when the build is done in release mode.
 
-## Defining `Builder`s to apply to dependents (similar to transformers)
+## Defining `Builder`s to apply to dependents
 
 If users of your package need to apply some code generation to their package,
 then you can define `Builder`s and have those applied to packages with a
@@ -227,7 +227,10 @@ these options should be used rarely.
   outputs which are intended to be inputs to other Builders they may be
   specified here. This guarantees that the specified Builders will be ordered
   later than this one. This will not cause Builders to be applied if they would
-  not otherwise run, it only affects ordering.
+  not otherwise run, it only affects ordering. If a builder emits files that
+  should always be the input to another specific builder, use both `runs_before`
+  and `applies_builder` to configure both ordering and ensure that steps are not
+  skipped.
 
 # Publishing `build.yaml` files
 

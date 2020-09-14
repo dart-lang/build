@@ -30,32 +30,35 @@ BuilderDefinition _$BuilderDefinitionFromJson(Map json) {
       'build_extensions'
     ]);
     final val = BuilderDefinition(
-        builderFactories: $checkedConvert(json, 'builder_factories',
-            (v) => (v as List).map((e) => e as String).toList()),
-        buildExtensions: $checkedConvert(
-            json,
-            'build_extensions',
-            (v) => (v as Map).map((k, e) => MapEntry(
-                k as String, (e as List).map((e) => e as String).toList()))),
-        import: $checkedConvert(json, 'import', (v) => v as String),
-        target: $checkedConvert(json, 'target', (v) => v as String),
-        autoApply: $checkedConvert(json, 'auto_apply',
-            (v) => _$enumDecodeNullable(_$AutoApplyEnumMap, v)),
-        requiredInputs: $checkedConvert(json, 'required_inputs',
-            (v) => (v as List)?.map((e) => e as String)),
-        runsBefore: $checkedConvert(
-            json, 'runs_before', (v) => (v as List)?.map((e) => e as String)),
-        appliesBuilders: $checkedConvert(json, 'applies_builders',
-            (v) => (v as List)?.map((e) => e as String)),
-        isOptional: $checkedConvert(json, 'is_optional', (v) => v as bool),
-        buildTo: $checkedConvert(
-            json, 'build_to', (v) => _$enumDecodeNullable(_$BuildToEnumMap, v)),
-        defaults: $checkedConvert(
-            json,
-            'defaults',
-            (v) => v == null
-                ? null
-                : TargetBuilderConfigDefaults.fromJson(v as Map)));
+      builderFactories: $checkedConvert(json, 'builder_factories',
+          (v) => (v as List).map((e) => e as String).toList()),
+      buildExtensions: $checkedConvert(
+          json,
+          'build_extensions',
+          (v) => (v as Map).map(
+                (k, e) => MapEntry(
+                    k as String, (e as List).map((e) => e as String).toList()),
+              )),
+      import: $checkedConvert(json, 'import', (v) => v as String),
+      target: $checkedConvert(json, 'target', (v) => v as String),
+      autoApply: $checkedConvert(json, 'auto_apply',
+          (v) => _$enumDecodeNullable(_$AutoApplyEnumMap, v)),
+      requiredInputs: $checkedConvert(
+          json, 'required_inputs', (v) => (v as List)?.map((e) => e as String)),
+      runsBefore: $checkedConvert(
+          json, 'runs_before', (v) => (v as List)?.map((e) => e as String)),
+      appliesBuilders: $checkedConvert(json, 'applies_builders',
+          (v) => (v as List)?.map((e) => e as String)),
+      isOptional: $checkedConvert(json, 'is_optional', (v) => v as bool),
+      buildTo: $checkedConvert(
+          json, 'build_to', (v) => _$enumDecodeNullable(_$BuildToEnumMap, v)),
+      defaults: $checkedConvert(
+          json,
+          'defaults',
+          (v) => v == null
+              ? null
+              : TargetBuilderConfigDefaults.fromJson(v as Map)),
+    );
     return val;
   }, fieldKeyMap: const {
     'builderFactories': 'builder_factories',
@@ -69,36 +72,48 @@ BuilderDefinition _$BuilderDefinitionFromJson(Map json) {
   });
 }
 
-T _$enumDecode<T>(Map<T, dynamic> enumValues, dynamic source) {
+T _$enumDecode<T>(
+  Map<T, dynamic> enumValues,
+  dynamic source, {
+  T unknownValue,
+}) {
   if (source == null) {
     throw ArgumentError('A value must be provided. Supported values: '
         '${enumValues.values.join(', ')}');
   }
-  return enumValues.entries
-      .singleWhere((e) => e.value == source,
-          orElse: () => throw ArgumentError(
-              '`$source` is not one of the supported values: '
-              '${enumValues.values.join(', ')}'))
-      .key;
+
+  final value = enumValues.entries
+      .singleWhere((e) => e.value == source, orElse: () => null)
+      ?.key;
+
+  if (value == null && unknownValue == null) {
+    throw ArgumentError('`$source` is not one of the supported values: '
+        '${enumValues.values.join(', ')}');
+  }
+  return value ?? unknownValue;
 }
 
-T _$enumDecodeNullable<T>(Map<T, dynamic> enumValues, dynamic source) {
+T _$enumDecodeNullable<T>(
+  Map<T, dynamic> enumValues,
+  dynamic source, {
+  T unknownValue,
+}) {
   if (source == null) {
     return null;
   }
-  return _$enumDecode<T>(enumValues, source);
+  return _$enumDecode<T>(enumValues, source, unknownValue: unknownValue);
 }
 
-const _$AutoApplyEnumMap = <AutoApply, dynamic>{
+const _$AutoApplyEnumMap = {
   AutoApply.none: 'none',
   AutoApply.dependents: 'dependents',
   AutoApply.allPackages: 'all_packages',
-  AutoApply.rootPackage: 'root_package'
+  AutoApply.rootPackage: 'root_package',
 };
 
-const _$BuildToEnumMap = <BuildTo, dynamic>{
+const _$BuildToEnumMap = {
   BuildTo.source: 'source',
-  BuildTo.cache: 'cache'
+  BuildTo.cache: 'cache',
 };
 
 PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(Map json) {
@@ -117,18 +132,19 @@ PostProcessBuilderDefinition _$PostProcessBuilderDefinitionFromJson(Map json) {
       'import'
     ]);
     final val = PostProcessBuilderDefinition(
-        builderFactory:
-            $checkedConvert(json, 'builder_factory', (v) => v as String),
-        import: $checkedConvert(json, 'import', (v) => v as String),
-        inputExtensions: $checkedConvert(json, 'input_extensions',
-            (v) => (v as List)?.map((e) => e as String)),
-        target: $checkedConvert(json, 'target', (v) => v as String),
-        defaults: $checkedConvert(
-            json,
-            'defaults',
-            (v) => v == null
-                ? null
-                : TargetBuilderConfigDefaults.fromJson(v as Map)));
+      builderFactory:
+          $checkedConvert(json, 'builder_factory', (v) => v as String),
+      import: $checkedConvert(json, 'import', (v) => v as String),
+      inputExtensions: $checkedConvert(json, 'input_extensions',
+          (v) => (v as List)?.map((e) => e as String)),
+      target: $checkedConvert(json, 'target', (v) => v as String),
+      defaults: $checkedConvert(
+          json,
+          'defaults',
+          (v) => v == null
+              ? null
+              : TargetBuilderConfigDefaults.fromJson(v as Map)),
+    );
     return val;
   }, fieldKeyMap: const {
     'builderFactory': 'builder_factory',
@@ -145,14 +161,27 @@ TargetBuilderConfigDefaults _$TargetBuilderConfigDefaultsFromJson(Map json) {
       'release_options'
     ]);
     final val = TargetBuilderConfigDefaults(
-        generateFor: $checkedConvert(json, 'generate_for',
-            (v) => v == null ? null : InputSet.fromJson(v)),
-        options: $checkedConvert(json, 'options',
-            (v) => (v as Map)?.map((k, e) => MapEntry(k as String, e))),
-        devOptions: $checkedConvert(json, 'dev_options',
-            (v) => (v as Map)?.map((k, e) => MapEntry(k as String, e))),
-        releaseOptions: $checkedConvert(json, 'release_options',
-            (v) => (v as Map)?.map((k, e) => MapEntry(k as String, e))));
+      generateFor: $checkedConvert(
+          json, 'generate_for', (v) => v == null ? null : InputSet.fromJson(v)),
+      options: $checkedConvert(
+          json,
+          'options',
+          (v) => (v as Map)?.map(
+                (k, e) => MapEntry(k as String, e),
+              )),
+      devOptions: $checkedConvert(
+          json,
+          'dev_options',
+          (v) => (v as Map)?.map(
+                (k, e) => MapEntry(k as String, e),
+              )),
+      releaseOptions: $checkedConvert(
+          json,
+          'release_options',
+          (v) => (v as Map)?.map(
+                (k, e) => MapEntry(k as String, e),
+              )),
+    );
     return val;
   }, fieldKeyMap: const {
     'generateFor': 'generate_for',

@@ -55,7 +55,7 @@ Future<String> _generateBuildScript() async {
 /// which has a `build.yaml`.
 Future<Iterable<Expression>> _findBuilderApplications() async {
   final builderApplications = <Expression>[];
-  final packageGraph = PackageGraph.forThisPackage();
+  final packageGraph = await PackageGraph.forThisPackage();
   final orderedPackages = stronglyConnectedComponents<PackageNode>(
     [packageGraph.root],
     (node) => node.dependencies,
@@ -106,6 +106,7 @@ Future<Iterable<Expression>> _findBuilderApplications() async {
 /// A method forwarding to `run`.
 Method _main() => Method((b) => b
   ..name = 'main'
+  ..returns = refer('void')
   ..modifier = MethodModifier.async
   ..requiredParameters.add(Parameter((b) => b
     ..name = 'args'
@@ -124,6 +125,7 @@ Method _main() => Method((b) => b
     refer('sendPort')
         .nullSafeProperty('send')
         .call([refer('result')]).statement,
+    refer('exitCode', 'dart:io').assign(refer('result')).statement,
   ]));
 
 /// An expression calling `apply` with appropriate setup for a Builder.

@@ -13,7 +13,7 @@ void main() {
   group('PackageGraph', () {
     group('forThisPackage ', () {
       setUp(() async {
-        graph = PackageGraph.forThisPackage();
+        graph = await PackageGraph.forThisPackage();
       });
 
       test('root', () {
@@ -25,7 +25,7 @@ void main() {
       var basicPkgPath = 'test/fixtures/basic_pkg';
 
       setUp(() async {
-        graph = PackageGraph.forPath(basicPkgPath);
+        graph = await PackageGraph.forPath(basicPkgPath);
       });
 
       test('allPackages', () {
@@ -56,7 +56,7 @@ void main() {
       var withDevDepsPkgPath = 'test/fixtures/with_dev_deps';
 
       setUp(() async {
-        graph = PackageGraph.forPath(withDevDepsPkgPath);
+        graph = await PackageGraph.forPath(withDevDepsPkgPath);
       });
 
       test('allPackages contains dev deps of root pkg, but not others', () {
@@ -90,7 +90,7 @@ void main() {
       var withFlutterDeps = 'test/fixtures/flutter_pkg';
 
       setUp(() async {
-        graph = PackageGraph.forPath(withFlutterDeps);
+        graph = await PackageGraph.forPath(withFlutterDeps);
       });
 
       test('allPackages resolved correctly with all packages', () {
@@ -111,10 +111,10 @@ void main() {
     });
 
     test('custom creation via fromRoot', () {
-      var a = PackageNode('a', null, DependencyType.path, isRoot: true);
-      var b = PackageNode('b', null, null);
-      var c = PackageNode('c', null, null);
-      var d = PackageNode('d', null, null);
+      var a = PackageNode('a', null, DependencyType.path, null, isRoot: true);
+      var b = PackageNode('b', null, null, null);
+      var c = PackageNode('c', null, null, null);
+      var d = PackageNode('d', null, null, null);
       a.dependencies.addAll([b, d]);
       b.dependencies.add(c);
       var graph = PackageGraph.fromRoot(a);
@@ -141,7 +141,7 @@ void main() {
 void expectPkg(PackageNode node, String name, String location,
     DependencyType dependencyType,
     [Iterable<PackageNode> dependencies]) {
-  location = p.absolute(location);
+  location = p.canonicalize(location);
   expect(node.name, name);
   expect(node.path, location);
   expect(node.dependencyType, dependencyType);

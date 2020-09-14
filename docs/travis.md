@@ -23,8 +23,8 @@ cache:
 ```
 
 Travis will archive this directory after each task is completed, and it will
-download those cached archives whenever a new task starts up and extract them
-to the same directory.
+download those cached archives whenever a new task starts up and extract them to
+the same directory.
 
 See the [docs](https://docs.travis-ci.com/user/caching) for more information
 about the specifics of caching on travis, but by default it will pretty much
@@ -33,8 +33,7 @@ if available, and otherwise use a cache from the branch that the current branch
 is based off of (usually master, if a pull request).
 
 **Note:** These caches are keyed based off of the environment variables set in
-the job, so jobs with different environment variables _will not_ share a
-cache.
+the job, so jobs with different environment variables _will not_ share a cache.
 
 ## Use a custom test job instead of the `test` job from `dart_task`
 

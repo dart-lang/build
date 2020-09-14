@@ -61,7 +61,7 @@ class _$DefaultBuildResultSerializer
   final String wireName = 'DefaultBuildResult';
 
   @override
-  Iterable serialize(Serializers serializers, DefaultBuildResult object,
+  Iterable<Object> serialize(Serializers serializers, DefaultBuildResult object,
       {FullType specifiedType = FullType.unspecified}) {
     final result = <Object>[
       'status',
@@ -89,12 +89,12 @@ class _$DefaultBuildResultSerializer
         ..add(serializers.serialize(object.isCached,
             specifiedType: const FullType(bool)));
     }
-
     return result;
   }
 
   @override
-  DefaultBuildResult deserialize(Serializers serializers, Iterable serialized,
+  DefaultBuildResult deserialize(
+      Serializers serializers, Iterable<Object> serialized,
       {FullType specifiedType = FullType.unspecified}) {
     final result = new DefaultBuildResultBuilder();
 
@@ -138,7 +138,7 @@ class _$BuildResultsSerializer implements StructuredSerializer<BuildResults> {
   final String wireName = 'BuildResults';
 
   @override
-  Iterable serialize(Serializers serializers, BuildResults object,
+  Iterable<Object> serialize(Serializers serializers, BuildResults object,
       {FullType specifiedType = FullType.unspecified}) {
     final result = <Object>[
       'results',
@@ -151,7 +151,7 @@ class _$BuildResultsSerializer implements StructuredSerializer<BuildResults> {
   }
 
   @override
-  BuildResults deserialize(Serializers serializers, Iterable serialized,
+  BuildResults deserialize(Serializers serializers, Iterable<Object> serialized,
       {FullType specifiedType = FullType.unspecified}) {
     final result = new BuildResultsBuilder();
 
@@ -165,7 +165,7 @@ class _$BuildResultsSerializer implements StructuredSerializer<BuildResults> {
           result.results.replace(serializers.deserialize(value,
                   specifiedType: const FullType(
                       BuiltList, const [const FullType(BuildResult)]))
-              as BuiltList);
+              as BuiltList<dynamic>);
           break;
       }
     }
@@ -186,7 +186,8 @@ class _$DefaultBuildResult extends DefaultBuildResult {
   @override
   final bool isCached;
 
-  factory _$DefaultBuildResult([void updates(DefaultBuildResultBuilder b)]) =>
+  factory _$DefaultBuildResult(
+          [void Function(DefaultBuildResultBuilder) updates]) =>
       (new DefaultBuildResultBuilder()..update(updates)).build();
 
   _$DefaultBuildResult._(
@@ -201,7 +202,8 @@ class _$DefaultBuildResult extends DefaultBuildResult {
   }
 
   @override
-  DefaultBuildResult rebuild(void updates(DefaultBuildResultBuilder b)) =>
+  DefaultBuildResult rebuild(
+          void Function(DefaultBuildResultBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
@@ -288,7 +290,7 @@ class DefaultBuildResultBuilder
   }
 
   @override
-  void update(void updates(DefaultBuildResultBuilder b)) {
+  void update(void Function(DefaultBuildResultBuilder) updates) {
     if (updates != null) updates(this);
   }
 
@@ -310,7 +312,7 @@ class _$BuildResults extends BuildResults {
   @override
   final BuiltList<BuildResult> results;
 
-  factory _$BuildResults([void updates(BuildResultsBuilder b)]) =>
+  factory _$BuildResults([void Function(BuildResultsBuilder) updates]) =>
       (new BuildResultsBuilder()..update(updates)).build();
 
   _$BuildResults._({this.results}) : super._() {
@@ -320,7 +322,7 @@ class _$BuildResults extends BuildResults {
   }
 
   @override
-  BuildResults rebuild(void updates(BuildResultsBuilder b)) =>
+  BuildResults rebuild(void Function(BuildResultsBuilder) updates) =>
       (toBuilder()..update(updates)).build();
 
   @override
@@ -373,7 +375,7 @@ class BuildResultsBuilder
   }
 
   @override
-  void update(void updates(BuildResultsBuilder b)) {
+  void update(void Function(BuildResultsBuilder) updates) {
     if (updates != null) updates(this);
   }
 

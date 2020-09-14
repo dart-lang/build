@@ -138,13 +138,16 @@ class Module {
   /// If [throwIfUnsupported] is `true`, then an [UnsupportedModules]
   /// will be thrown if there are any modules that are not supported.
   Future<List<Module>> computeTransitiveDependencies(BuildStep buildStep,
-      {bool throwIfUnsupported = false}) async {
+      {bool throwIfUnsupported = false,
+      @deprecated Set<String> skipPlatformCheckPackages = const {}}) async {
     throwIfUnsupported ??= false;
+    skipPlatformCheckPackages ??= const {};
     final modules = await buildStep.fetchResource(moduleCache);
     var transitiveDeps = <AssetId, Module>{};
-    var modulesToCrawl = directDependencies.toSet();
-    var missingModuleSources = Set<AssetId>();
-    var unsupportedModules = Set<Module>();
+    var modulesToCrawl = {primarySource};
+    var missingModuleSources = <AssetId>{};
+    var unsupportedModules = <Module>{};
+
     while (modulesToCrawl.isNotEmpty) {
       var next = modulesToCrawl.last;
       modulesToCrawl.remove(next);
@@ -155,12 +158,16 @@ class Module {
         missingModuleSources.add(next);
         continue;
       }
-      if (throwIfUnsupported && !module.isSupported) {
+      if (throwIfUnsupported &&
+          !module.isSupported &&
+          !skipPlatformCheckPackages.contains(module.primarySource.package)) {
         unsupportedModules.add(module);
       }
-      transitiveDeps[next] = module;
+      // Don't include the root module in the transitive deps.
+      if (next != primarySource) transitiveDeps[next] = module;
       modulesToCrawl.addAll(module.directDependencies);
     }
+
     if (missingModuleSources.isNotEmpty) {
       throw await MissingModulesException.create(missingModuleSources,
           transitiveDeps.values.toList()..add(this), buildStep);

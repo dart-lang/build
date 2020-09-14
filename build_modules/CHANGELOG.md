@@ -1,3 +1,112 @@
+## 2.10.2-dev
+
+- Stop using deprecated analyzer apis.
+
+## 2.10.1
+
+- Fix a bug where file names with spaces were not escaped before being passed
+  to dart2js.
+
+## 2.10.0
+
+- Deprecated the `experiments` argument to `KernelBuilder` and default it to
+  use the value from the current zone.
+
+## 2.9.0
+
+- Copy the `package_config.json` file to the scratch space directory, which
+  allows us to respect language versions properly during compilation.
+  - Also removes the custom `.packages` files that were previously created for
+    each action.
+
+## 2.8.1
+
+- Avoid waiting for `exitCode` from detached worker processes. In previous SDKs
+  this was `null` but it was changed to throw.
+
+## 2.8.0
+
+- Add the ability to pass a list of experiments to enable to the KernelBuilder.
+
+## 2.7.0
+
+- Add support for an environment variable `BUILD_DART2JS_VM_ARGS` which can
+  be used to supply Dart vm arguments for the dart2js processes.
+
+## 2.6.3
+
+- Keep cached deserialized module instances in more cases. This may improve
+  performance of incremental builds in watch mode.
+- **Deprecated**: The package specific unsupported module whitelist option
+  provided by `computeTransitiveDependencies`. The only known uses are being
+  removed.
+- Allow analyzer version `0.39.x`.
+
+## 2.6.2
+
+Republish of `2.6.0` with the proper min sdk contraint.
+
+## 2.6.1
+
+### Bug fix for issue #2464
+
+Ignore the `trackUnusedInputs` option that was added in `2.6.0`.
+
+This option will be respected again in the next release which will have the
+proper minimum sdk constraint.
+
+## 2.6.0
+
+Add support for dependency pruning to the `KernelBuilder`. This should greatly
+improve the invalidation semantics for builds, meaning that less code will be
+recompiled for each edit you make.
+
+This is not enabled by default but can be enabled by passing
+`trackUnusedInputs: true` to the `KernelBuilder` constructor.
+
+## 2.5.0
+
+- Add an option to skip the unsupported module check for modules in specified
+  packages.
+
+## 2.4.3
+
+- Allow analyzer version 0.38.0.
+
+## 2.4.2
+
+- Support the latest release of `package:json_annotation`.
+
+## 2.4.1
+
+- Require non-empty output from kernel build steps.
+
+## 2.4.0
+
+- Allow overriding the target name passed to the kernel worker.
+
+## 2.3.1
+
+- Allow analyzer version 0.37.0.
+
+## 2.3.0
+
+- Add a `hasMain` boolean to the `ModuleLibrary` class.
+  - This is now used instead of `isEntrypoint` for determining whether or not
+    to copy module files for application discovery.
+- Fix `computeTransitiveDeps` to do error checking for the root module as well
+  as transitive modules.
+
+## 2.2.0
+
+- Make the `librariesPath` in the `KernelBuilder` configurable.
+- Fixed bug where the configured dart SDK was ignored.
+
+## 2.1.3
+
+- Skip compiling modules with kernel when the primary source isn't the primary
+  input (only shows up in non-lazy builds - essentially just tests).
+
 ## 2.1.2
 
 - Output additional `.module` files for all entrypoints to ease discovery of
@@ -37,6 +146,10 @@
 - Update the kernel worker to pass input digests, along with
   `--reuse-compiler-result` and `--use-incremental-compiler`.
 - Increased the upper bound for `package:analyzer` to `<0.37.0`.
+
+## 1.0.11
+
+- Allow build_config 0.4.x.
 
 ## 1.0.10
 

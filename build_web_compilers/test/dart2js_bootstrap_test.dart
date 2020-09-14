@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
+
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
@@ -10,7 +12,7 @@ import 'package:build_modules/build_modules.dart';
 
 import 'util.dart';
 
-main() {
+void main() {
   Map<String, dynamic> assets;
   final platform = dart2jsPlatform;
 
@@ -27,6 +29,13 @@ main() {
           print(hello);
         }
       ''',
+      'a|.dart_tool/package_config.json': jsonEncode({
+        'configVersion': 2,
+        'packages': [
+          for (var pkg in ['a', 'b'])
+            {'name': pkg, 'rootUri': 'packages/a', 'packageUri': ''}
+        ]
+      }),
     };
 
     // Set up all the other required inputs for this test.

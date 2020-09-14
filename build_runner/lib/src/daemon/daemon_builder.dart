@@ -3,9 +3,10 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_daemon/change_provider.dart';
+import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/daemon_builder.dart';
 import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart' hide OutputLocation;
@@ -22,9 +23,12 @@ import 'package:build_runner_core/build_runner_core.dart'
     hide BuildResult, BuildStatus;
 import 'package:build_runner_core/build_runner_core.dart' as core
     show BuildStatus;
+import 'package:build_runner_core/src/generate/build_definition.dart';
 import 'package:build_runner_core/src/generate/build_impl.dart';
-import 'package:logging/logging.dart';
+import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
+
+import 'change_providers.dart';
 
 /// A Daemon Builder that uses build_runner_core for building.
 class BuildRunnerDaemonBuilder implements DaemonBuilder {
@@ -33,7 +37,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final BuildImpl _builder;
   final BuildOptions _buildOptions;
   final StreamController<ServerLog> _outputStreamController;
-  final Stream<WatchEvent> _changes;
+  final ChangeProvider changeProvider;
 
   Completer<Null> _buildingCompleter;
 
@@ -44,7 +48,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     this._builder,
     this._buildOptions,
     this._outputStreamController,
-    this._changes,
+    this.changeProvider,
   ) : logs = _outputStreamController.stream.asBroadcastStream();
 
   /// Waits for a running build to complete before returning.
@@ -55,9 +59,10 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   @override
   Stream<BuildResults> get builds => _buildResults.stream;
 
-  Stream<WatchEvent> get changes => _changes;
-
   FinalizedReader get reader => _builder.finalizedReader;
+
+  final _buildScriptUpdateCompleter = Completer();
+  Future<void> get buildScriptUpdated => _buildScriptUpdateCompleter.future;
 
   @override
   Future<void> build(
@@ -67,25 +72,45 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         .map<AssetChange>(
             (change) => AssetChange(AssetId.parse(change.path), change.type))
         .toList();
+
+    if (!_buildOptions.skipBuildScriptCheck &&
+        _builder.buildScriptUpdates.hasBeenUpdated(
+            changes.map<AssetId>((change) => change.id).toSet())) {
+      _buildScriptUpdateCompleter.complete();
+      return;
+    }
     var targetNames = targets.map((t) => t.target).toSet();
     _logMessage(Level.INFO, 'About to build ${targetNames.toList()}...');
     _signalStart(targetNames);
     var results = <BuildResult>[];
-    var buildDirs = defaultTargets.map((target) {
+    var buildDirs = <BuildDirectory>{};
+    var buildFilters = <BuildFilter>{};
+    for (var target in defaultTargets) {
       OutputLocation outputLocation;
       if (target.outputLocation != null) {
         outputLocation = OutputLocation(target.outputLocation.output,
             useSymlinks: target.outputLocation.useSymlinks,
             hoist: target.outputLocation.hoist);
       }
-      return BuildDirectory(
-        target.target,
-        outputLocation: outputLocation,
-      );
-    }).toSet();
+      buildDirs
+          .add(BuildDirectory(target.target, outputLocation: outputLocation));
+      if (target.buildFilters != null && target.buildFilters.isNotEmpty) {
+        buildFilters.addAll([
+          for (var pattern in target.buildFilters)
+            BuildFilter.fromArg(pattern, _buildOptions.packageGraph.root.name)
+        ]);
+      } else {
+        buildFilters
+          ..add(BuildFilter.fromArg(
+              'package:*/**', _buildOptions.packageGraph.root.name))
+          ..add(BuildFilter.fromArg(
+              '${target.target}/**', _buildOptions.packageGraph.root.name));
+      }
+    }
     try {
       var mergedChanges = collectChanges([changes]);
-      var result = await _builder.run(mergedChanges, buildDirs: buildDirs);
+      var result = await _builder.run(mergedChanges,
+          buildDirs: buildDirs, buildFilters: buildFilters);
       for (var target in targets) {
         if (result.status == core.BuildStatus.success) {
           // TODO(grouma) - Can we notify if a target was cached?
@@ -122,7 +147,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
   void _logMessage(Level level, String message) =>
       _outputStreamController.add(ServerLog(
-        (b) => b.log = '[$level] $message',
+        (b) => b
+          ..message = message
+          ..level = level,
       ));
 
   void _signalEnd(Iterable<BuildResult> results) {
@@ -144,61 +171,65 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   static Future<BuildRunnerDaemonBuilder> create(
     PackageGraph packageGraph,
     List<BuilderApplication> builders,
-    SharedOptions sharedOptions,
+    DaemonOptions daemonOptions,
   ) async {
-    var expectedDeletes = Set<AssetId>();
+    var expectedDeletes = <AssetId>{};
     var outputStreamController = StreamController<ServerLog>();
 
     var environment = OverrideableEnvironment(
         IOEnvironment(packageGraph,
-            outputSymlinksOnly: sharedOptions.outputSymlinksOnly),
+            outputSymlinksOnly: daemonOptions.outputSymlinksOnly),
         onLog: (record) {
-      outputStreamController.add(ServerLog((b) => b.log = record.toString()));
+      outputStreamController.add(ServerLog.fromLogRecord(record));
     });
 
     var daemonEnvironment = OverrideableEnvironment(environment,
         writer: OnDeleteWriter(environment.writer, expectedDeletes.add));
 
     var logSubscription =
-        LogSubscription(environment, verbose: sharedOptions.verbose);
+        LogSubscription(environment, verbose: daemonOptions.verbose);
 
     var overrideBuildConfig =
-        await findBuildConfigOverrides(packageGraph, sharedOptions.configKey);
+        await findBuildConfigOverrides(packageGraph, daemonOptions.configKey);
 
     var buildOptions = await BuildOptions.create(
       logSubscription,
       packageGraph: packageGraph,
-      deleteFilesByDefault: sharedOptions.deleteFilesByDefault,
+      deleteFilesByDefault: daemonOptions.deleteFilesByDefault,
       overrideBuildConfig: overrideBuildConfig,
-      skipBuildScriptCheck: sharedOptions.skipBuildScriptCheck,
-      enableLowResourcesMode: sharedOptions.enableLowResourcesMode,
-      trackPerformance: sharedOptions.trackPerformance,
-      logPerformanceDir: sharedOptions.logPerformanceDir,
+      skipBuildScriptCheck: daemonOptions.skipBuildScriptCheck,
+      enableLowResourcesMode: daemonOptions.enableLowResourcesMode,
+      trackPerformance: daemonOptions.trackPerformance,
+      logPerformanceDir: daemonOptions.logPerformanceDir,
     );
 
     var builder = await BuildImpl.create(buildOptions, daemonEnvironment,
-        builders, sharedOptions.builderConfigOverrides,
-        isReleaseBuild: sharedOptions.isReleaseBuild);
+        builders, daemonOptions.builderConfigOverrides,
+        isReleaseBuild: daemonOptions.isReleaseBuild);
 
-    var graphEvents = PackageGraphWatcher(packageGraph,
+    // Only actually used for the AutoChangeProvider.
+    Stream<List<WatchEvent>> graphEvents() => PackageGraphWatcher(packageGraph,
             watch: (node) => PackageNodeWatcher(node,
-                watch: (path) => Platform.isWindows
-                    ? PollingDirectoryWatcher(path)
-                    : DirectoryWatcher(path)))
+                watch: daemonOptions.directoryWatcherFactory))
         .watch()
-        .where((change) => shouldProcess(
+        .asyncWhere((change) => shouldProcess(
               change,
               builder.assetGraph,
               buildOptions,
               // Assume we will create an outputDir.
               true,
               expectedDeletes,
-            ));
+              environment.reader,
+            ))
+        .map((data) => WatchEvent(data.type, '${data.id}'))
+        .debounceBuffer(buildOptions.debounceDelay);
 
-    var changes =
-        graphEvents.map((data) => WatchEvent(data.type, '${data.id}'));
+    var changeProvider = daemonOptions.buildMode == BuildMode.Auto
+        ? AutoChangeProvider(graphEvents())
+        : ManualChangeProvider(AssetTracker(builder.assetGraph,
+            daemonEnvironment.reader, buildOptions.targetGraph));
 
     return BuildRunnerDaemonBuilder._(
-        builder, buildOptions, outputStreamController, changes);
+        builder, buildOptions, outputStreamController, changeProvider);
   }
 }

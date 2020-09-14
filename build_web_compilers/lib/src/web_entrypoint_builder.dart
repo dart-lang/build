@@ -4,8 +4,8 @@
 
 import 'dart:async';
 
-// ignore: deprecated_member_use
-import 'package:analyzer/analyzer.dart';
+import 'package:analyzer/dart/analysis/utilities.dart';
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
 
@@ -18,6 +18,7 @@ const jsEntrypointExtension = '.dart.js';
 const jsEntrypointSourceMapExtension = '.dart.js.map';
 const jsEntrypointArchiveExtension = '.dart.js.tar.gz';
 const digestsEntrypointExtension = '.digests';
+const mergedMetadataExtension = '.dart.ddc_merged_metadata';
 
 /// Which compiler to use when compiling web entrypoints.
 enum WebCompiler {
@@ -68,15 +69,16 @@ class WebEntrypointBuilder implements Builder {
             'Only `dartdevc` and `dart2js` are supported.');
     }
 
-    var dart2JsArgs =
-        options.config[_dart2jsArgs]?.cast<String>() ?? const <String>[];
-    if (dart2JsArgs is! List<String>) {
-      throw ArgumentError.value(dart2JsArgs, _dart2jsArgs,
-          'Expected a list of strings, but got a ${dart2JsArgs.runtimeType}:');
+    if (options.config[_dart2jsArgs] is! List) {
+      throw ArgumentError.value(options.config[_dart2jsArgs], _dart2jsArgs,
+          'Expected a list for $_dart2jsArgs.');
     }
+    var dart2JsArgs = (options.config[_dart2jsArgs] as List)
+            ?.map((arg) => '$arg')
+            ?.toList() ??
+        const <String>[];
 
-    return WebEntrypointBuilder(compiler,
-        dart2JsArgs: dart2JsArgs as List<String>);
+    return WebEntrypointBuilder(compiler, dart2JsArgs: dart2JsArgs);
   }
 
   @override
@@ -87,6 +89,7 @@ class WebEntrypointBuilder implements Builder {
       jsEntrypointSourceMapExtension,
       jsEntrypointArchiveExtension,
       digestsEntrypointExtension,
+      mergedMetadataExtension,
     ],
   };
 
@@ -97,7 +100,7 @@ class WebEntrypointBuilder implements Builder {
     if (!isAppEntrypoint) return;
     if (webCompiler == WebCompiler.DartDevc) {
       try {
-        await bootstrapDdc(buildStep);
+        await bootstrapDdc(buildStep, requiredAssets: _ddcSdkResources);
       } on MissingModulesException catch (e) {
         log.severe('$e');
       }
@@ -113,8 +116,9 @@ Future<bool> _isAppEntryPoint(AssetId dartId, AssetReader reader) async {
   assert(dartId.extension == '.dart');
   // Skip reporting errors here, dartdevc will report them later with nicer
   // formatting.
-  var parsed = parseCompilationUnit(await reader.readAsString(dartId),
-      suppressErrors: true);
+  var parsed = parseString(
+          content: await reader.readAsString(dartId), throwIfDiagnostics: false)
+      .unit;
   // Allow two or fewer arguments so that entrypoints intended for use with
   // [spawnUri] get counted.
   //
@@ -126,3 +130,10 @@ Future<bool> _isAppEntryPoint(AssetId dartId, AssetReader reader) async {
         node.functionExpression.parameters.parameters.length <= 2;
   });
 }
+
+/// Files copied from the SDK that are required at runtime to run a DDC
+/// application.
+final _ddcSdkResources = [
+  AssetId('build_web_compilers', 'lib/src/dev_compiler/dart_sdk.js'),
+  AssetId('build_web_compilers', 'lib/src/dev_compiler/require.js'),
+];

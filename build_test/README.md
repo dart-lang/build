@@ -1,7 +1,5 @@
-# build_test
-
 <p align="center">
-  Testing utilities for users of <a href="https://pub.dartlang.org/packages/build"><code>package:build</code></a>.
+  Testing utilities for users of <a href="https://pub.dev/packages/build"><code>package:build</code></a>.
   <br>
   <a href="https://travis-ci.org/dart-lang/build">
     <img src="https://travis-ci.org/dart-lang/build.svg?branch=master" alt="Build Status" />
@@ -9,10 +7,10 @@
   <a href="https://github.com/dart-lang/build/labels/package%3A%20build_test">
     <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3A%20build_test.svg" alt="Issues related to build_test" />
   </a>
-  <a href="https://pub.dartlang.org/packages/build_test">
+  <a href="https://pub.dev/packages/build_test">
     <img src="https://img.shields.io/pub/v/build_test.svg" alt="Pub Package Version" />
   </a>
-  <a href="https://pub.dartlang.org/documentation/build_test/latest">
+  <a href="https://pub.dev/documentation/build_test/latest">
     <img src="https://img.shields.io/badge/dartdocs-latest-blue.svg" alt="Latest Dartdocs" />
   </a>
   <a href="https://gitter.im/dart-lang/build">
@@ -52,6 +50,20 @@ This package will automatically create `*.debug.html` files next to all your
 `*_test.dart` files, which can be loaded in a browser from the normal
 development server (`pub run build_runner serve`).
 
+**Note:** In order to run the tests this way, you will need to configure them
+to be compiled (by default we only compile `*.browser_test.dart` files). You
+can do this in your build.yaml file, with something like the following:
+
+```yaml
+targets:
+  $default:
+    builders:
+      build_web_compilers|entrypoint:
+        generate_for:
+        - test/**_test.dart
+        - web/**.dart
+```
+
 You may also view an index of links to every `*.debug.html` file by navigating
 to `http://localhost:8081` (or wherever your `test` folder is being served).
 
@@ -67,6 +79,19 @@ _See the `test` folder in the `build` package for more examples_.
 Using [`testBuilder`][api:testBuilder], you can run a functional test of a
 `Builder`, including feeding specific assets, and more. It automatically
 creates an in-memory representation of various utility classes.
+
+### Exposing actual package sources to `testBuilder`
+
+You can expose real package sources to the builder in addition to your in
+memory sources, by passing a `PackageAssetReader` to the `reader` parameter:
+
+```dart
+testBuilder(yourBuilder, {}/* test assets here */,
+    reader: await PackageAssetReader.currentIsolate());
+```
+
+You can pass any custom AssetReader here, which will be used as a fallback
+for any source not defined in the source assets map.
 
 ### Resolve source code for testing
 
@@ -98,18 +123,18 @@ test('should resolve a simple dart file', () async {
 * [`StubAssetReader`][api:StubAssetReader]
 * [`StubAssetWriter`][api:StubAssetWriter]
 
-[development dependency]: https://www.dartlang.org/tools/pub/dependencies#dev-dependencies
-[`package:build`]: https://pub.dartlang.org/packages/build
+[development dependency]: https://dart.dev/tools/pub/dependencies#dev-dependencies
+[`package:build`]: https://pub.dev/packages/build
 
-[api:FakeWatcher]: https://www.dartdocs.org/documentation/build_test/latest/build_test/FakeWatcher-class.html
-[api:InMemoryAssetReader]: https://www.dartdocs.org/documentation/build_test/latest/build_test/InMemoryAssetReader-class.html
-[api:InMemoryAssetWriter]: https://www.dartdocs.org/documentation/build_test/latest/build_test/InMemoryAssetWriter-class.html
-[api:MultiAssetReader]: https://www.dartdocs.org/documentation/build_test/latest/build_test/MultiAssetReader-class.html
-[api:PackageAssetReader]: https://www.dartdocs.org/documentation/build_test/latest/build_test/PackageAssetReader-class.html
-[api:RecordingAssetWriter]: https://www.dartdocs.org/documentation/build_test/latest/build_test/RecordingAssetWriter-class.html
-[api:StubAssetReader]: https://www.dartdocs.org/documentation/build_test/latest/build_test/StubAssetReader-class.html
-[api:StubAssetWriter]: https://www.dartdocs.org/documentation/build_test/latest/build_test/StubAssetWriter-class.html
+[api:FakeWatcher]: https://pub.dev/documentation/build_test/latest/build_test/FakeWatcher-class.html
+[api:InMemoryAssetReader]: https://pub.dev/documentation/build_test/latest/build_test/InMemoryAssetReader-class.html
+[api:InMemoryAssetWriter]: https://pub.dev/documentation/build_test/latest/build_test/InMemoryAssetWriter-class.html
+[api:MultiAssetReader]: https://pub.dev/documentation/build_test/latest/build_test/MultiAssetReader-class.html
+[api:PackageAssetReader]: https://pub.dev/documentation/build_test/latest/build_test/PackageAssetReader-class.html
+[api:RecordingAssetWriter]: https://pub.dev/documentation/build_test/latest/build_test/RecordingAssetWriter-class.html
+[api:StubAssetReader]: https://pub.dev/documentation/build_test/latest/build_test/StubAssetReader-class.html
+[api:StubAssetWriter]: https://pub.dev/documentation/build_test/latest/build_test/StubAssetWriter-class.html
 
-[api:resolveAsset]: https://www.dartdocs.org/documentation/build_test/latest/build_test/resolveAsset.html
-[api:resolveSource]: https://www.dartdocs.org/documentation/build_test/latest/build_test/resolveSource.html
-[api:testBuilder]: https://www.dartdocs.org/documentation/build_test/latest/build_test/testBuilder.html
+[api:resolveAsset]: https://pub.dev/documentation/build_test/latest/build_test/resolveAsset.html
+[api:resolveSource]: https://pub.dev/documentation/build_test/latest/build_test/resolveSource.html
+[api:testBuilder]: https://pub.dev/documentation/build_test/latest/build_test/testBuilder.html

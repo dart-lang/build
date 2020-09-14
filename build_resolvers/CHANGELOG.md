@@ -1,3 +1,147 @@
+## 1.3.12-dev
+
+- Support versions `1.4.x` of the `build` package.
+
+## 1.3.11
+
+- Use the public `buildSdkSummary` api from the analyzer instead of the 
+  private one.
+- Migrate off of other deprecated analyzer apis.
+
+## 1.3.10
+
+- Migrate to new analyzer API for creating an SDK summary after the old approach
+  was broken.
+
+## 1.3.9
+
+- Fix `isLibrary` for unreadable assets to return `false`.
+- Fix `libraryFor` to do an explicit `canRead` check and throw an
+  `AssetNotFound` exception if it cannot be read.
+
+## 1.3.8
+
+- Enables the `non-nullable` experiment when summarizing the SDK, see
+  https://github.com/dart-lang/sdk/issues/41820.
+- Reverts the `enableExperiments` option on `AnalyzerResolvers`.
+  - To enable experiments you should instead run your code in an experiment
+    Zone using the `withEnabledExperiments` function from
+    `package:build/experiments.dart`.
+
+## 1.3.7
+
+- Pass an explicit `FeatureSet` to the analyzer based on the current sdk
+  version.
+- ~Add an extra option `enableExperiments` to `AnalyzerResolvers`.~
+  - This was reverted in `1.3.8` and replaced with a different mechanism.
+- Added a warning if the current analyzers language version does not support
+  the current SDK language version.
+
+## 1.3.6
+
+- Fix bug when a package has no language version (as a result of having no sdk
+  constraint).
+
+## 1.3.5
+
+- Create and pass a correct `Packages` argument to analysis driver, this
+  enables getting the proper language version for a given `LibraryElement`
+  using the `languageVersionMajor` and `languageVersionMinor` getters.
+
+## 1.3.4
+
+- Remove dependency on `package_resolver`.
+- Add new required `featureSet` argument to `SummaryBuilder.build` call.
+
+## 1.3.3
+
+- Fix an issue where non-existing Dart assets weren't visible to the analyzer, even
+  when they are created later.
+
+## 1.3.2
+
+- Improve detection of the flutter SDK for older flutter versions.
+
+## 1.3.1
+
+- Add an exception on trying to resolve an `AssetId` that is not a Dart
+  library with `libraryFor` to fit the contract expressed by the doc comment on
+  `Resolver`.
+
+## 1.3.0
+
+### New feature
+
+You can now resolve additional libraries other than those imported by the
+primary entrypoint.
+
+  - This is supported through the `isLibrary` and `libraryFor` methods on
+    `Resolver`, which will now resolve the provided asset if it is not already
+    resolved.
+  - **Note**: Doing this may affect the result of subsequent calls to
+    `resolver.libraries` and `resolver.findLibraryByName` if new libraries are
+    discovered.
+
+**Note**: If using `build_runner` then this will also require you to upgrade
+to version `4.2.0` of `build_runner_core` .
+
+### Other
+
+- Changed a `hide` declaration to a `show` declaration to support a
+`package:analyzer` change.
+
+## 1.2.2
+
+- Update to `package:analyzer` version `0.39.0`.
+
+## 1.2.1
+
+Check the build_resolvers version as a part of sdk summary invalidation.
+
+## 1.2.0
+
+Add flutters embedded sdk to the summary if available. This has the effect of
+making `dart:ui` and any future libraries available if using the flutter sdk
+instead of the dart sdk.
+
+## 1.1.1
+
+### Bug Fix
+
+Check the analyzer path before reading cached summaries in addition to the
+SDK version.
+
+## 1.1.0
+
+### Bug Fix: #38499
+
+Update the `AnalysisResolvers` class to no longer use the SDK summary that is
+shipped with the SDK by default. This is not guaranteed compatible with
+analyzer versions shipped on pub and should not be used by any non-sdk code.
+
+In order to fix this the `AnalysisResolvers` class now takes an optional method
+that returns the path to an arbitrary SDK summary. By default it will lazily
+generate a summary under `.dart_tool/build_resolvers` which is invalidated
+based on the `Platform.version` from `dart:io`.
+
+## 1.0.8
+
+- Allow `build` version 1.2.x.
+
+## 1.0.7
+
+- Allow analyzer version 0.38.0.
+
+## 1.0.6
+
+- Allow analyzer version 0.37.0.
+
+## 1.0.5
+
+- Fix a race condition where some assets may be resolved with missing
+  dependencies. This was likely to have only manifested in tests using
+  `resolveSource`.
+
 ## 1.0.4
 
 - Increase lower bound sdk constraint to 2.1.0.

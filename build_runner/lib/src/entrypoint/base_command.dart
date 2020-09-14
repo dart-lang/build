@@ -2,12 +2,17 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:io';
+
+import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:logging/logging.dart';
 import 'package:build_runner_core/build_runner_core.dart';
+import 'package:logging/logging.dart';
 
 import 'options.dart';
 import 'runner.dart';
+
+final lineLength = stdout.hasTerminal ? stdout.terminalColumns : 80;
 
 abstract class BuildRunnerCommand extends Command<int> {
   Logger get logger => Logger(name);
@@ -20,6 +25,9 @@ abstract class BuildRunnerCommand extends Command<int> {
   BuildRunnerCommand({bool symlinksDefault}) {
     _addBaseFlags(symlinksDefault ?? false);
   }
+
+  @override
+  final argParser = ArgParser(usageLineLength: lineLength);
 
   void _addBaseFlags(bool symlinksDefault) {
     argParser
@@ -80,7 +88,15 @@ abstract class BuildRunnerCommand extends Command<int> {
       ..addFlag(symlinkOption,
           defaultsTo: symlinksDefault,
           negatable: true,
-          help: 'Symlink files in the output directories, instead of copying.');
+          help: 'Symlink files in the output directories, instead of copying.')
+      ..addMultiOption(buildFilterOption,
+          help: 'An explicit filter of files to build. Relative paths and '
+              '`package:` uris are supported, including glob syntax for paths '
+              'portions (but not package names).\n\n'
+              'If multiple filters are applied then outputs matching any filter '
+              'will be built (they do not need to match all filters).')
+      ..addMultiOption(enableExperimentOption,
+          help: 'A list of dart language experiments to enable.');
   }
 
   /// Must be called inside [run] so that [argResults] is non-null.

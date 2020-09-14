@@ -20,7 +20,7 @@ final alwaysThrow = TestBuilder(
     });
 // test-package-end ###########################################################
 
-main() {
+void main() {
   final builders = [
     builder('alwaysThrow', alwaysThrow),
   ];

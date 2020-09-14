@@ -4,8 +4,8 @@
 
 import 'dart:convert';
 
-// ignore: deprecated_member_use
-import 'package:analyzer/analyzer.dart';
+import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:build/build.dart';
 import 'package:meta/meta.dart';
 
@@ -51,12 +51,16 @@ class ModuleLibrary {
   /// The `dart:` libraries that this library directly depends on.
   final Set<String> sdkDeps;
 
+  /// Whether this library has a `main` function.
+  final bool hasMain;
+
   ModuleLibrary._(this.id,
       {@required this.isEntryPoint,
       @required Set<AssetId> deps,
       @required this.parts,
       @required this.conditionalDeps,
-      @required this.sdkDeps})
+      @required this.sdkDeps,
+      @required this.hasMain})
       : _deps = deps,
         isImportable = true;
 
@@ -66,13 +70,14 @@ class ModuleLibrary {
         _deps = null,
         parts = null,
         conditionalDeps = null,
-        sdkDeps = null;
+        sdkDeps = null,
+        hasMain = false;
 
   factory ModuleLibrary._fromCompilationUnit(
       AssetId id, bool isEntryPoint, CompilationUnit parsed) {
-    var deps = Set<AssetId>();
-    var parts = Set<AssetId>();
-    var sdkDeps = Set<String>();
+    var deps = <AssetId>{};
+    var parts = <AssetId>{};
+    var sdkDeps = <String>{};
     var conditionalDeps = <Map<String, AssetId>>[];
     for (var directive in parsed.directives) {
       if (directive is! UriBasedDirective) continue;
@@ -121,16 +126,14 @@ class ModuleLibrary {
         deps: deps,
         parts: parts,
         sdkDeps: sdkDeps,
-        conditionalDeps: conditionalDeps);
+        conditionalDeps: conditionalDeps,
+        hasMain: _hasMainMethod(parsed));
   }
 
   /// Parse the directives from [source] and compute the library information.
   static ModuleLibrary fromSource(AssetId id, String source) {
     final isLibDir = id.path.startsWith('lib/');
-    final parsed = isLibDir
-        ? parseDirectives(source, name: id.path, suppressErrors: true)
-        : parseCompilationUnit(source,
-            name: id.path, suppressErrors: true, parseFunctionBodies: false);
+    final parsed = parseString(content: source, throwIfDiagnostics: false).unit;
     // Packages within the SDK but published might have libraries that can't be
     // used outside the SDK.
     if (parsed.directives.any((d) =>
@@ -164,7 +167,8 @@ class ModuleLibrary {
             (json['conditionalDeps'] as Iterable).map((conditions) {
           return Map.of((conditions as Map<String, dynamic>)
               .map((k, v) => MapEntry(k, AssetId.parse(v as String))));
-        }).toList());
+        }).toList(),
+        hasMain: json['hasMain'] as bool);
   }
 
   String serialize() => jsonEncode({
@@ -176,6 +180,7 @@ class ModuleLibrary {
                 conditions.map((k, v) => MapEntry(k, v.toString())))
             .toList(),
         'sdkDeps': sdkDeps.toList(),
+        'hasMain': hasMain,
       });
 
   List<AssetId> depsForPlatform(DartPlatform platform) {
@@ -206,6 +211,11 @@ Set<AssetId> _deserializeAssetIds(Iterable serlialized) =>
 bool _isPart(CompilationUnit dart) =>
     dart.directives.any((directive) => directive is PartOfDirective);
 
+/// Allows two or fewer arguments to `main` so that entrypoints intended for
+/// use with `spawnUri` get counted.
+//
+// TODO: This misses the case where a Dart file doesn't contain main(),
+// but has a part that does, or it exports a `main` from another library.
 bool _hasMainMethod(CompilationUnit dart) => dart.declarations.any((node) =>
     node is FunctionDeclaration &&
     node.name.name == 'main' &&

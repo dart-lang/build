@@ -5,8 +5,8 @@
 import 'dart:async';
 import 'dart:convert';
 
-// ignore: deprecated_member_use
-import 'package:analyzer/analyzer.dart';
+import 'package:analyzer/dart/analysis/utilities.dart';
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:pool/pool.dart';
@@ -64,7 +64,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
 
       var transitiveKernelModules = [
         module.primarySource.changeExtension(vmKernelModuleExtension)
-      ].followedBy(transitiveModules.map(
+      ].followedBy(transitiveModules.reversed.map(
           (m) => m.primarySource.changeExtension(vmKernelModuleExtension)));
       var appContents = <int>[];
       for (var dependencyId in transitiveKernelModules) {
@@ -83,8 +83,9 @@ Future<bool> _isAppEntryPoint(AssetId dartId, AssetReader reader) async {
   assert(dartId.extension == '.dart');
   // Skip reporting errors here, dartdevc will report them later with nicer
   // formatting.
-  var parsed = parseCompilationUnit(await reader.readAsString(dartId),
-      suppressErrors: true);
+  var parsed = parseString(
+          content: await reader.readAsString(dartId), throwIfDiagnostics: false)
+      .unit;
   // Allow two or fewer arguments so that entrypoints intended for use with
   // [spawnUri] get counted.
   //

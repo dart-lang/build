@@ -84,9 +84,12 @@ class ServeHandler implements BuildState {
       {bool logRequests, BuildUpdatesOption buildUpdates}) {
     buildUpdates ??= BuildUpdatesOption.none;
     logRequests ??= false;
-    if (p.url.split(rootDir).length != 1) {
+    if (p.url.split(rootDir).length != 1 || rootDir == '.') {
       throw ArgumentError.value(
-          rootDir, 'rootDir', 'Only top level directories are supported');
+        rootDir,
+        'directory',
+        'Only top level directories such as `web` or `test` can be served, got',
+      );
     }
     _state.currentBuild.then((_) {
       // If the first build fails with a handled exception, we might not have
@@ -131,7 +134,7 @@ class ServeHandler implements BuildState {
     return pipeline.addHandler(cascade.handler);
   }
 
-  Future<shelf.Response> _blockOnCurrentBuild(_) async {
+  Future<shelf.Response> _blockOnCurrentBuild(void _) async {
     await currentBuild;
     return shelf.Response.notFound('');
   }
@@ -347,8 +350,10 @@ class AssetHandler {
     }
 
     var etag = base64.encode((await _reader.digest(assetId)).bytes);
+    var contentType = _typeResolver.lookup(assetId.path);
+    if (contentType == 'text/x-dart') contentType += '; charset=utf-8';
     var headers = {
-      HttpHeaders.contentTypeHeader: _typeResolver.lookup(assetId.path),
+      HttpHeaders.contentTypeHeader: contentType,
       HttpHeaders.etagHeader: etag,
       // We always want this revalidated, which requires specifying both
       // max-age=0 and must-revalidate.
@@ -373,10 +378,19 @@ class AssetHandler {
     var glob = p.url.join(directoryPath, '*');
     var result =
         await _reader.findAssets(Glob(glob)).map((a) => a.path).toList();
-    return (result.isEmpty)
-        ? 'Could not find ${from.path} or any files in $directoryPath.'
-        : 'Could not find ${from.path}. $directoryPath contains:\n'
-            '${result.join('\n')}';
+    var message = StringBuffer('Could not find ${from.path}');
+    if (result.isEmpty) {
+      message.write(' or any files in $directoryPath. ');
+    } else {
+      message
+        ..write('. $directoryPath contains:')
+        ..writeAll(result, '\n')
+        ..writeln();
+    }
+    message
+        .write(' See https://github.com/dart-lang/build/blob/master/docs/faq.md'
+            '#why-cant-i-see-a-file-i-know-exists');
+    return '$message';
   }
 }
 
@@ -644,7 +658,7 @@ shelf.Handler _logRequests(shelf.Handler innerHandler) {
           request.requestedUri, request.method, watch.elapsed);
       logFn(msg);
       return response;
-    }, onError: (error, stackTrace) {
+    }, onError: (dynamic error, StackTrace stackTrace) {
       if (error is shelf.HijackException) throw error;
       var msg = _getMessage(
           startTime, 500, request.requestedUri, request.method, watch.elapsed);

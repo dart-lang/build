@@ -33,7 +33,7 @@ void main() {
       final pkgBar = p.join('/', 'foo', 'bar');
       final barFile =
           p.join(p.relative(pkgBar, from: p.current), 'lib', 'bar.dart');
-      final nodeBar = PackageNode('bar', pkgBar, null);
+      final nodeBar = PackageNode('bar', pkgBar, null, null);
 
       final event = WatchEvent(ChangeType.ADD, barFile);
       final change = AssetChange.fromEvent(nodeBar, event);
@@ -46,7 +46,7 @@ void main() {
       final pkgBar = p.join('/', 'foo', 'bar');
       final barFile = p.join('/', 'foo', 'bar', 'lib', 'bar.dart');
 
-      final nodeBar = PackageNode('bar', pkgBar, null);
+      final nodeBar = PackageNode('bar', pkgBar, null, null);
       final event = WatchEvent(ChangeType.ADD, barFile);
       final change = AssetChange.fromEvent(nodeBar, event);
 

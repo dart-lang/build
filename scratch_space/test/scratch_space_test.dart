@@ -66,7 +66,7 @@ void main() {
               p.join('packages', id.package, p.relative(id.path, from: 'lib'));
           expect(relativeFilePath, equals(expectedPackagesPath));
         } else {
-          expect(relativeFilePath, equals(id.path));
+          expect(relativeFilePath, equals(p.normalize(id.path)));
         }
       }
     });
@@ -139,7 +139,7 @@ class RecursiveScratchSpaceAssetReader implements AssetReader {
   RecursiveScratchSpaceAssetReader(this.scratchSpace);
 
   @override
-  canRead(_) async => true;
+  Future<bool> canRead(_) async => true;
 
   @override
   Future<List<int>> readAsBytes(AssetId id) async {
@@ -154,10 +154,10 @@ class RecursiveScratchSpaceAssetReader implements AssetReader {
   }
 
   @override
-  findAssets(_) => throw UnimplementedError();
+  Stream<AssetId> findAssets(_) => throw UnimplementedError();
 
   @override
-  readAsString(_, {encoding}) => throw UnimplementedError();
+  Future<String> readAsString(_, {encoding}) => throw UnimplementedError();
 
   @override
   Future<Digest> digest(AssetId id) async => Digest(await readAsBytes(id));

@@ -3,13 +3,13 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 
 import 'common.dart';
 import 'meta_module.dart';
+import 'module_cache.dart';
 import 'module_library_builder.dart';
 import 'platform.dart';
 
@@ -35,9 +35,8 @@ class MetaModuleBuilder implements Builder {
           r'$lib$': [metaModuleExtension(_platform)]
         };
 
-  factory MetaModuleBuilder.forOptions(
-          DartPlatform platform, BuilderOptions options) =>
-      MetaModuleBuilder(platform, strategy: moduleStrategy(options));
+  MetaModuleBuilder.forOptions(DartPlatform platform, BuilderOptions options)
+      : this(platform, strategy: moduleStrategy(options));
 
   @override
   Future build(BuildStep buildStep) async {
@@ -50,6 +49,7 @@ class MetaModuleBuilder implements Builder {
         buildStep, libraryAssets, strategy, _platform);
     var id = AssetId(
         buildStep.inputId.package, 'lib/${metaModuleExtension(_platform)}');
-    await buildStep.writeAsString(id, json.encode(metaModule.toJson()));
+    var metaModules = await buildStep.fetchResource(metaModuleCache);
+    await metaModules.write(id, buildStep, metaModule);
   }
 }

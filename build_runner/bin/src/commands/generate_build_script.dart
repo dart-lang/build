@@ -5,13 +5,18 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
+import 'package:build_runner/src/entrypoint/base_command.dart' show lineLength;
 
 class GenerateBuildScript extends Command<int> {
+  @override
+  final argParser = ArgParser(usageLineLength: lineLength);
+
   @override
   String get description =>
       'Generate a script to run builds and print the file path '

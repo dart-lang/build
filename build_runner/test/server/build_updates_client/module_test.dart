@@ -12,11 +12,8 @@ void main() {
   Module module;
 
   setUp(() {
-    var libs = <String, MockLibrary>{};
-    libs['1'] = named(MockLibrary(), name: '1');
-    libs['2'] = named(MockLibrary(), name: '2');
-    libs['3'] = named(MockLibrary(), name: '3');
-    module = Module(libs);
+    module =
+        Module({'1': MockLibrary(), '2': MockLibrary(), '3': MockLibrary()});
   });
 
   test('onDestroy should run on all and collect data', () {
@@ -72,10 +69,7 @@ void main() {
     Module child;
 
     setUp(() {
-      var libs = <String, MockLibrary>{};
-      libs['one'] = named(MockLibrary(), name: 'one');
-      libs['two'] = named(MockLibrary(), name: 'two');
-      child = Module(libs);
+      child = Module({'one': MockLibrary(), 'two': MockLibrary()});
     });
 
     test('onChildUpdate returns true if all are true', () {

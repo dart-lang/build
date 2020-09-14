@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:logging/logging.dart';
@@ -29,6 +30,18 @@ void main() {
 # Fake packages file
 a:file://fake/pkg/path
 ''');
+      await writer.writeAsString(
+          makeAssetId('a|.dart_tool/package_config.json'),
+          jsonEncode({
+            'configVersion': 2,
+            'packages': [
+              {
+                'name': 'a',
+                'rootUri': 'file://fake/pkg/path',
+                'packageUri': 'lib/'
+              },
+            ],
+          }));
     });
 
     tearDown(() async {
@@ -50,7 +63,7 @@ a:file://fake/pkg/path
     });
 
     test('blocks serving files until the build is done', () async {
-      var buildBlocker1 = Completer();
+      var buildBlocker1 = Completer<void>();
       var nextBuildBlocker = buildBlocker1.future;
 
       var handler = await createHandler(
@@ -74,7 +87,7 @@ a:file://fake/pkg/path
       checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
       /// Next request completes right away.
-      var buildBlocker2 = Completer();
+      var buildBlocker2 = Completer<void>();
       unawaited((webHandler(request) as Future<Response>)
           .then(expectAsync1((response) {
         expect(buildBlocker1.isCompleted, isTrue);
@@ -86,7 +99,7 @@ a:file://fake/pkg/path
       await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
       // Give the build enough time to get started.
       await wait(500);
-      var done = Completer();
+      var done = Completer<void>();
       unawaited((webHandler(request) as Future<Response>)
           .then(expectAsync1((response) {
         expect(buildBlocker1.isCompleted, isTrue);

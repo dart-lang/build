@@ -19,7 +19,7 @@ class InMemoryAssetReader extends AssetReader
   final String rootPackage;
 
   @override
-  final Set<AssetId> assetsRead = Set<AssetId>();
+  final Set<AssetId> assetsRead = <AssetId>{};
 
   /// Create a new asset reader that contains [sourceAssets].
   ///

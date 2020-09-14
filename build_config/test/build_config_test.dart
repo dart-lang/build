@@ -34,7 +34,16 @@ void main() {
         sources: InputSet(
             include: ['lib/e.dart', 'lib/src/e/**'],
             exclude: ['lib/src/e/g.dart']),
-      )
+      ),
+      'example:b': createBuildTarget(
+        'example',
+        sources: InputSet(include: ['lib/b.dart']),
+        dependencies: [],
+        autoApplyBuilders: false,
+        builders: {
+          'b:b': TargetBuilderConfig(isEnabled: true, options: {'zip': 'zorp'})
+        },
+      ),
     });
     expectBuilderDefinitions(buildConfig.builderDefinitions, {
       'example:h': createBuilderDefinition(
@@ -52,8 +61,8 @@ void main() {
           ]
         },
         requiredInputs: ['.dart'],
-        runsBefore: ['foo_builder:foo_builder'].toSet(),
-        appliesBuilders: ['foo_builder:foo_builder'].toSet(),
+        runsBefore: {'foo_builder:foo_builder'},
+        appliesBuilders: {'foo_builder:foo_builder'},
         defaults: TargetBuilderConfigDefaults(
           generateFor: const InputSet(include: ['lib/**']),
           options: const {'foo': 'bar'},
@@ -89,7 +98,7 @@ void main() {
     expectBuildTargets(buildConfig.buildTargets, {
       'example:example': createBuildTarget(
         'example',
-        dependencies: ['a:a', 'b:b'].toSet(),
+        dependencies: {'a:a', 'b:b'},
         sources: InputSet(),
       ),
     });
@@ -109,8 +118,8 @@ void main() {
           ]
         },
         requiredInputs: const [],
-        runsBefore: Set<String>(),
-        appliesBuilders: Set<String>(),
+        runsBefore: <String>{},
+        appliesBuilders: <String>{},
       ),
     });
   });
@@ -120,7 +129,7 @@ void main() {
     expectBuildTargets(buildConfig.buildTargets, {
       'example:example': createBuildTarget(
         'example',
-        dependencies: ['a:a', 'b:b'].toSet(),
+        dependencies: {'a:a', 'b:b'},
         sources: InputSet(),
       ),
     });
@@ -178,6 +187,16 @@ targets:
     sources:
       - "lib/a.dart"
       - "lib/src/a/**"
+  b:
+    auto_apply_builders: false
+    sources:
+      - "lib/b.dart"
+    dependencies: []
+    builders:
+      # Configuring a builder implicitly enables it
+      b:b:
+        options:
+          zip: zorp
   $default:
     dependencies:
       - f
@@ -312,8 +331,9 @@ Matcher _matchesBuildTarget(BuildTarget target) => TypeMatcher<BuildTarget>()
         (t) => t.builders, 'builders', _matchesBuilderConfigs(target.builders))
     .having((t) => t.dependencies, 'dependencies', target.dependencies)
     .having((t) => t.sources.include, 'sources.include', target.sources.include)
-    .having(
-        (t) => t.sources.exclude, 'sources.exclude', target.sources.exclude);
+    .having((t) => t.sources.exclude, 'sources.exclude', target.sources.exclude)
+    .having((t) => t.autoApplyBuilders, 'autoApplyBuilders',
+        target.autoApplyBuilders);
 
 Matcher _matchesBuilderConfigs(Map<String, TargetBuilderConfig> configs) =>
     equals(configs.map((k, v) => MapEntry(k, _matchesBuilderConfig(v))));
@@ -334,9 +354,11 @@ BuildTarget createBuildTarget(String package,
     {String key,
     Map<String, TargetBuilderConfig> builders,
     Iterable<String> dependencies,
-    InputSet sources}) {
+    InputSet sources,
+    bool autoApplyBuilders}) {
   return runInBuildConfigZone(() {
     var target = BuildTarget(
+      autoApplyBuilders: autoApplyBuilders,
       builders: builders,
       dependencies: dependencies,
       sources: sources,
