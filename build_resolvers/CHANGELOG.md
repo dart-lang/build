@@ -1,6 +1,7 @@
-## 1.3.12-dev
+## 1.4.0-dev
 
-- Support versions `1.4.x` of the `build` package.
+- Support versions `1.5.x` of the `build` package.
+  - Implements the `compilationUnitFor` method on `Resolver`.
 
 ## 1.3.11
 

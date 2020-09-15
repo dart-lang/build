@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'dart:isolate';
 
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_test/build_test.dart';
@@ -152,7 +153,7 @@ void main() {
           'a|lib/other.dart': '''
           library other;
         '''
-        }, test);
+        }, test, resolvers: AnalyzerResolvers());
       }
 
       test('can be resolved', () {
@@ -403,9 +404,13 @@ int? get x => 1;
                String x = ;
              }
           ''',
-        }, (resolver) {
-          return expectLater(
+        }, (resolver) async {
+          await expectLater(
             resolver.libraryFor(AssetId.parse('a|errors.dart')),
+            throwsA(isA<SyntaxErrorInAssetException>()),
+          );
+          await expectLater(
+            resolver.compilationUnitFor(AssetId.parse('a|errors.dart')),
             throwsA(isA<SyntaxErrorInAssetException>()),
           );
         });
@@ -425,9 +430,16 @@ int? get x => 1;
                String x = ;
              }
           ''',
-        }, (resolver) {
-          return expectLater(
+        }, (resolver) async {
+          await expectLater(
             resolver.libraryFor(AssetId.parse('a|lib.dart')),
+            throwsA(
+              isA<SyntaxErrorInAssetException>()
+                  .having((e) => e.syntaxErrors, 'syntaxErrors', hasLength(1)),
+            ),
+          );
+          await expectLater(
+            resolver.compilationUnitFor(AssetId.parse('a|errors.dart')),
             throwsA(
               isA<SyntaxErrorInAssetException>()
                   .having((e) => e.syntaxErrors, 'syntaxErrors', hasLength(1)),
@@ -445,9 +457,14 @@ int? get x => 1;
                String x = ;
              }
           ''',
-        }, (resolver) {
-          return expectLater(
+        }, (resolver) async {
+          await expectLater(
             resolver.libraryFor(AssetId.parse('a|errors.dart'),
+                allowSyntaxErrors: true),
+            completion(isNotNull),
+          );
+          await expectLater(
+            resolver.compilationUnitFor(AssetId.parse('a|errors.dart'),
                 allowSyntaxErrors: true),
             completion(isNotNull),
           );
@@ -467,16 +484,21 @@ int? get x => 1;
                String x = ;
              }
           ''',
-        }, (resolver) {
-          return expectLater(
-            resolver.libraryFor(AssetId.parse('a|errors.dart')),
-            throwsA(
-              isA<SyntaxErrorInAssetException>().having(
-                (e) => e.toString(),
-                'toString()',
-                contains(RegExp(r'And \d more')),
-              ),
+        }, (resolver) async {
+          var expectation = throwsA(
+            isA<SyntaxErrorInAssetException>().having(
+              (e) => e.toString(),
+              'toString()',
+              contains(RegExp(r'And \d more')),
             ),
+          );
+          await expectLater(
+            resolver.libraryFor(AssetId.parse('a|errors.dart')),
+            expectation,
+          );
+          await expectLater(
+            resolver.compilationUnitFor(AssetId.parse('a|errors.dart')),
+            expectation,
           );
         });
       });
@@ -491,9 +513,13 @@ int? get x => 1;
                String x = null;
              }
           ''',
-        }, (resolver) {
-          return expectLater(
+        }, (resolver) async {
+          await expectLater(
             resolver.libraryFor(AssetId.parse('a|errors.dart')),
+            completion(isNotNull),
+          );
+          await expectLater(
+            resolver.compilationUnitFor(AssetId.parse('a|errors.dart')),
             completion(isNotNull),
           );
         });
@@ -601,5 +627,21 @@ int? get x => 1;
         }));
     var resolvers = AnalyzerResolvers();
     await runBuilder(builder, [input], reader, writer, resolvers);
+  });
+
+  group('compilationUnitFor', () {
+    test('can parse a given input', () {
+      return resolveSources({
+        'a|web/main.dart': ' main() {}',
+      }, (resolver) async {
+        var unit = await resolver.compilationUnitFor(entryPoint);
+        expect(unit, isNotNull);
+        expect(unit.declarations.length, 1);
+        expect(
+            unit.declarations.first,
+            isA<FunctionDeclaration>()
+                .having((d) => d.name.name, 'main', 'main'));
+      }, resolvers: AnalyzerResolvers());
+    });
   });
 }

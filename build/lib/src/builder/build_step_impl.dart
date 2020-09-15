@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:async/async.dart';
 import 'package:build/src/builder/build_step.dart';
@@ -200,11 +201,16 @@ class _DelayedResolver implements Resolver {
   }
 
   @override
+  Future<CompilationUnit> compilationUnitFor(AssetId assetId,
+          {bool allowSyntaxErrors = false}) async =>
+      (await _delegate)
+          .compilationUnitFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
+
+  @override
   Future<LibraryElement> libraryFor(AssetId assetId,
-      {bool allowSyntaxErrors = false}) async {
-    return (await _delegate)
-        .libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
-  }
+          {bool allowSyntaxErrors = false}) async =>
+      (await _delegate)
+          .libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
 
   @override
   Future<LibraryElement> findLibraryByName(String libraryName) async =>
