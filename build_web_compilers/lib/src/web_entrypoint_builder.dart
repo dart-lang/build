@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
@@ -99,7 +100,7 @@ class WebEntrypointBuilder implements Builder {
     var isAppEntrypoint = await _isAppEntryPoint(dartEntrypointId, buildStep);
     if (!isAppEntrypoint) return;
     var soundNullSafety =
-        await _supportsNullSafety(buildStep.inputId, buildStep);
+        await _supportsNullSafety(buildStep, buildStep.inputId);
     switch (webCompiler) {
       case WebCompiler.DartDevc:
         try {
@@ -117,8 +118,11 @@ class WebEntrypointBuilder implements Builder {
   }
 }
 
-Future<bool> _supportsNullSafety(AssetId dartId, AssetReader reader) async =>
-    throw UnimplementedError('Not yet implemented!');
+/// Returns whether [assetId] supports the non-nullable language feature.
+Future<bool> _supportsNullSafety(BuildStep buildStep, AssetId assetId) async {
+  var unit = await buildStep.resolver.compilationUnitFor(assetId);
+  return unit.featureSet.isEnabled(Feature.non_nullable);
+}
 
 /// Returns whether or not [dartId] is an app entrypoint (basically, whether
 /// or not it has a `main` function).

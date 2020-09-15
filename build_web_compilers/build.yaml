@@ -71,16 +71,16 @@ builders:
       - ddcBuilderSound
     build_extensions:
       .ddc.module:
-        - .ddc.dill
-        - .ddc.js.errors
-        - .ddc.js
-        - .ddc.js.map
-        - .ddc.js.metadata
-        - .ddc.sound.dill
-        - .ddc.sound.js.errors
-        - .ddc.sound.js
-        - .ddc.sound.js.map
-        - .ddc.sound.js.metadata
+        - .unsound.ddc.dill
+        - .unsound.ddc.js.errors
+        - .unsound.ddc.js
+        - .unsound.ddc.js.map
+        - .unsound.ddc.js.metadata
+        - .sound.ddc.dill
+        - .sound.ddc.js.errors
+        - .sound.ddc.js
+        - .sound.ddc.js.map
+        - .sound.ddc.js.metadata
     is_optional: True
     auto_apply: all_packages
     required_inputs:
