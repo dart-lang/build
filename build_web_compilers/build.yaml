@@ -105,8 +105,8 @@ builders:
         - .merged_metadata
     required_inputs:
       - .dart
-      - .ddc.js
-      - .ddc.sound.js
+      - .unsound.ddc.js
+      - .sound.ddc.js
       - .ddc.module
       - .dart2js.module
     build_to: cache
