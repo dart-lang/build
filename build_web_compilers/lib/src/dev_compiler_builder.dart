@@ -83,7 +83,7 @@ class DevCompilerBuilder implements Builder {
       String platformSdk,
       Map<String, String> environment,
       Iterable<String> experiments,
-      bool soundNullSafety})
+      bool soundNullSafety = false})
       : useIncrementalCompiler = useIncrementalCompiler ?? true,
         generateFullDill = generateFullDill ?? false,
         platformSdk = platformSdk ?? sdkDir,
@@ -176,7 +176,7 @@ Future<void> _createDevCompilerModule(
       module.primarySource.changeExtension(jsModuleExtension(soundNullSafety));
   var jsOutputFile = scratchSpace.fileFor(jsId);
   var sdkSummary =
-      p.url.join(dartSdk, sdkKernelPath ?? 'lib/_internal/ddc_sdk.dill');
+      p.url.join(dartSdk, sdkKernelPath ?? sdkDdcKernelPath(soundNullSafety));
 
   // Maps the inputs paths we provide to the ddc worker to asset ids, if
   // `trackUnusedInputs` is `true`.
