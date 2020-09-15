@@ -404,9 +404,13 @@ int? get x => 1;
                String x = ;
              }
           ''',
-        }, (resolver) {
-          return expectLater(
+        }, (resolver) async {
+          await expectLater(
             resolver.libraryFor(AssetId.parse('a|errors.dart')),
+            throwsA(isA<SyntaxErrorInAssetException>()),
+          );
+          await expectLater(
+            resolver.compilationUnitFor(AssetId.parse('a|errors.dart')),
             throwsA(isA<SyntaxErrorInAssetException>()),
           );
         });
@@ -426,9 +430,16 @@ int? get x => 1;
                String x = ;
              }
           ''',
-        }, (resolver) {
-          return expectLater(
+        }, (resolver) async {
+          await expectLater(
             resolver.libraryFor(AssetId.parse('a|lib.dart')),
+            throwsA(
+              isA<SyntaxErrorInAssetException>()
+                  .having((e) => e.syntaxErrors, 'syntaxErrors', hasLength(1)),
+            ),
+          );
+          await expectLater(
+            resolver.compilationUnitFor(AssetId.parse('a|errors.dart')),
             throwsA(
               isA<SyntaxErrorInAssetException>()
                   .having((e) => e.syntaxErrors, 'syntaxErrors', hasLength(1)),
@@ -446,9 +457,14 @@ int? get x => 1;
                String x = ;
              }
           ''',
-        }, (resolver) {
-          return expectLater(
+        }, (resolver) async {
+          await expectLater(
             resolver.libraryFor(AssetId.parse('a|errors.dart'),
+                allowSyntaxErrors: true),
+            completion(isNotNull),
+          );
+          await expectLater(
+            resolver.compilationUnitFor(AssetId.parse('a|errors.dart'),
                 allowSyntaxErrors: true),
             completion(isNotNull),
           );
@@ -468,16 +484,21 @@ int? get x => 1;
                String x = ;
              }
           ''',
-        }, (resolver) {
-          return expectLater(
-            resolver.libraryFor(AssetId.parse('a|errors.dart')),
-            throwsA(
-              isA<SyntaxErrorInAssetException>().having(
-                (e) => e.toString(),
-                'toString()',
-                contains(RegExp(r'And \d more')),
-              ),
+        }, (resolver) async {
+          var expectation = throwsA(
+            isA<SyntaxErrorInAssetException>().having(
+              (e) => e.toString(),
+              'toString()',
+              contains(RegExp(r'And \d more')),
             ),
+          );
+          await expectLater(
+            resolver.libraryFor(AssetId.parse('a|errors.dart')),
+            expectation,
+          );
+          await expectLater(
+            resolver.compilationUnitFor(AssetId.parse('a|errors.dart')),
+            expectation,
           );
         });
       });
@@ -492,9 +513,13 @@ int? get x => 1;
                String x = null;
              }
           ''',
-        }, (resolver) {
-          return expectLater(
+        }, (resolver) async {
+          await expectLater(
             resolver.libraryFor(AssetId.parse('a|errors.dart')),
+            completion(isNotNull),
+          );
+          await expectLater(
+            resolver.compilationUnitFor(AssetId.parse('a|errors.dart')),
             completion(isNotNull),
           );
         });
