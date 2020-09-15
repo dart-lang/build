@@ -10,6 +10,7 @@ import 'dart:isolate';
 
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/sdk/build_sdk_summary.dart';
 import 'package:analyzer/error/error.dart';
@@ -84,26 +85,43 @@ class PerActionResolver implements ReleasableResolver {
   @override
   Future<bool> isLibrary(AssetId assetId) async {
     if (!await _step.canRead(assetId)) return false;
-    await _resolveIfNecesssary(assetId);
+    await _resolveIfNecessary(assetId);
     return _delegate.isLibrary(assetId);
+  }
+
+  @override
+  Future<CompilationUnit> compilationUnitFor(AssetId assetId,
+      {bool allowSyntaxErrors = false}) async {
+    if (!await _step.canRead(assetId)) throw AssetNotFoundException(assetId);
+    // If already in `entryPoints` then we don't need to resolve.
+    //
+    // Note that we don't add `assetId` to `entryPoints` because it isn't fully
+    // resolved.
+    if (!_entryPoints.contains(assetId)) {
+      await _delegate._uriResolver.performResolve(
+          _step, [assetId], _delegate._driver,
+          transitive: false);
+    }
+    return _delegate.compilationUnitFor(assetId,
+        allowSyntaxErrors: allowSyntaxErrors);
   }
 
   @override
   Future<LibraryElement> libraryFor(AssetId assetId,
       {bool allowSyntaxErrors = false}) async {
     if (!await _step.canRead(assetId)) throw AssetNotFoundException(assetId);
-    await _resolveIfNecesssary(assetId);
+    await _resolveIfNecessary(assetId);
     return _delegate.libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
   }
 
-  Future<void> _resolveIfNecesssary(AssetId id) async {
+  Future<void> _resolveIfNecessary(AssetId id) async {
     if (!_entryPoints.contains(id)) {
       _entryPoints.add(id);
 
       // the resolver will only visit assets that haven't been resolved in this
       // step yet
       await _delegate._uriResolver
-          .performResolve(_step, [id], _delegate._driver);
+          .performResolve(_step, [id], _delegate._driver, transitive: true);
     }
   }
 
@@ -130,6 +148,23 @@ class AnalyzerResolver implements ReleasableResolver {
     return source != null &&
         source.exists() &&
         (await _driver.getSourceKind(assetPath(assetId))) == SourceKind.LIBRARY;
+  }
+
+  @override
+  Future<CompilationUnit> compilationUnitFor(AssetId assetId,
+      {bool allowSyntaxErrors = false}) async {
+    var uri = assetId.uri;
+    var source = _driver.sourceFactory.forUri2(uri);
+    if (source == null || !source.exists()) {
+      throw AssetNotFoundException(assetId);
+    }
+
+    var path = assetPath(assetId);
+    var parsedResult = await _driver.parseFile(path);
+    if (!allowSyntaxErrors && parsedResult.errors.isNotEmpty) {
+      throw SyntaxErrorInAssetException(assetId, [parsedResult]);
+    }
+    return parsedResult.unit;
   }
 
   @override

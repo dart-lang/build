@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/error/error.dart';
 
@@ -23,6 +24,16 @@ abstract class Resolver {
   ///
   /// **NOTE**: This includes all Dart SDK libraries as well.
   Stream<LibraryElement> get libraries;
+
+  /// Returns a parsed AST structor representing the file defined in [assetId].
+  ///
+  /// * If the [assetId] has syntax errors, and [allowSyntaxErrors] is set to
+  ///   `false` (the default), throws a [SyntaxErrorInAssetException].
+  ///
+  /// This is a much cheaper api compared to [libraryFor], because it will only
+  /// parse a single file and does not give you a resolved element model.
+  Future<CompilationUnit> compilationUnitFor(AssetId assetId,
+      {bool allowSyntaxErrors = false});
 
   /// Returns a resolved library representing the file defined in [assetId].
   ///
@@ -102,7 +113,7 @@ class SyntaxErrorInAssetException implements Exception {
   ///
   /// In addition to the asset itself, the resolver also considers syntax errors
   /// in part files.
-  final List<ErrorsResult> filesWithErrors;
+  final List<AnalysisResultWithErrors> filesWithErrors;
 
   SyntaxErrorInAssetException(this.assetId, this.filesWithErrors)
       : assert(filesWithErrors.isNotEmpty);
@@ -119,7 +130,7 @@ class SyntaxErrorInAssetException implements Exception {
   }
 
   /// A map from [syntaxErrors] to per-file results
-  Map<AnalysisError, ErrorsResult> get errorToResult {
+  Map<AnalysisError, AnalysisResultWithErrors> get errorToResult {
     return {
       for (final file in filesWithErrors)
         for (final error in file.errors)
