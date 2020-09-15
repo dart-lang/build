@@ -110,7 +110,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
     var moduleName = ddcModuleName(jsId, soundNullSafety);
     modulePaths[moduleName] = _context.withoutExtension(
         jsId.path.startsWith('lib')
-            ? '$moduleName$jsModuleExtension'
+            ? '$moduleName${jsModuleExtension(soundNullSafety)}'
             : _context.joinAll(_context.split(jsId.path).skip(1)));
   }
 
@@ -135,7 +135,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
             _p.url.relative(appDigestsOutput.path,
                 from: _p.url.dirname(bootstrapId.path)),
             soundNullSafety))
-        ..write(_requireJsConfig)
+        ..write(_requireJsConfig(soundNullSafety))
         ..write(_appBootstrap(bootstrapModuleName, appModuleName,
             appModuleScope, entrypointLibraryName,
             oldModuleScope: oldAppModuleScope));
@@ -163,7 +163,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
 }
 
 String _moduleDigestKey(AssetId jsId, bool soundNullSafety) =>
-    '${ddcModuleName(jsId, soundNullSafety)}$jsModuleExtension';
+    '${ddcModuleName(jsId, soundNullSafety)}${jsModuleExtension(soundNullSafety)}';
 
 final _lazyBuildPool = Pool(16);
 
@@ -332,7 +332,7 @@ if(!window.\$dartLoader) {
      forceLoadModule: function (moduleName, callback, onError) {
        // dartdevc only strips the final extension when adding modules to source
        // maps, so we need to do the same.
-       if (moduleName.endsWith('$_modulePartialExtension')) {
+       if (moduleName.endsWith('${_modulePartialExtension(soundNullSafety)}')) {
          moduleName = moduleName.substring(0, moduleName.length - ${_modulePartialExtension(soundNullSafety).length});
        }
        if (typeof onError != 'undefined') {
@@ -406,7 +406,7 @@ $_baseUrlScript
 ///
 /// Adds error handler code for require.js which requests a `.errors` file for
 /// any failed module, and logs it to the console.
-final _requireJsConfig = '''
+String _requireJsConfig(bool soundNullSafety) => '''
 // Whenever we fail to load a JS module, try to request the corresponding
 // `.errors` file, and log it to the console.
 (function() {
@@ -462,8 +462,8 @@ require.config({
 
 const modulesGraph = new Map();
 function getRegisteredModuleName(moduleMap) {
-  if (\$dartLoader.moduleIdToUrl.has(moduleMap.name + '$_modulePartialExtension')) {
-    return moduleMap.name + '$_modulePartialExtension';
+  if (\$dartLoader.moduleIdToUrl.has(moduleMap.name + '${_modulePartialExtension(soundNullSafety)}')) {
+    return moduleMap.name + '${_modulePartialExtension(soundNullSafety)}';
   }
   return moduleMap.name;
 }
