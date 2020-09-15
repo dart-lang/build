@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'dart:isolate';
 
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_test/build_test.dart';
@@ -152,7 +153,7 @@ void main() {
           'a|lib/other.dart': '''
           library other;
         '''
-        }, test);
+        }, test, resolvers: AnalyzerResolvers());
       }
 
       test('can be resolved', () {
@@ -601,5 +602,21 @@ int? get x => 1;
         }));
     var resolvers = AnalyzerResolvers();
     await runBuilder(builder, [input], reader, writer, resolvers);
+  });
+
+  group('compilationUnitFor', () {
+    test('can parse a given input', () {
+      return resolveSources({
+        'a|web/main.dart': ' main() {}',
+      }, (resolver) async {
+        var unit = await resolver.compilationUnitFor(entryPoint);
+        expect(unit, isNotNull);
+        expect(unit.declarations.length, 1);
+        expect(
+            unit.declarations.first,
+            isA<FunctionDeclaration>()
+                .having((d) => d.name.name, 'main', 'main'));
+      }, resolvers: AnalyzerResolvers());
+    });
   });
 }

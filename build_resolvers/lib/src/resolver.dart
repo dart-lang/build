@@ -23,8 +23,10 @@ import 'package:analyzer/src/generated/source.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
+import 'package:pool/pool.dart';
 
 import 'analysis_driver.dart';
 import 'build_asset_uri_resolver.dart';
@@ -43,13 +45,14 @@ class PerActionResolver implements ReleasableResolver {
   final AnalyzerResolver _delegate;
   final BuildStep _step;
 
-  final Set<AssetId> _entryPoints;
+  final _entryPoints = <AssetId>{};
 
-  PerActionResolver(this._delegate, this._step, Iterable<AssetId> entryPoints)
-      : _entryPoints = entryPoints.toSet();
+  PerActionResolver(this._delegate, this._step);
 
   @override
   Stream<LibraryElement> get libraries async* {
+    await _resolveIfNecessary(_step.inputId, transitive: true);
+
     final seen = <LibraryElement>{};
     final toVisit = Queue<LibraryElement>();
 
@@ -85,7 +88,7 @@ class PerActionResolver implements ReleasableResolver {
   @override
   Future<bool> isLibrary(AssetId assetId) async {
     if (!await _step.canRead(assetId)) return false;
-    await _resolveIfNecessary(assetId);
+    await _resolveIfNecessary(assetId, transitive: false);
     return _delegate.isLibrary(assetId);
   }
 
@@ -93,15 +96,7 @@ class PerActionResolver implements ReleasableResolver {
   Future<CompilationUnit> compilationUnitFor(AssetId assetId,
       {bool allowSyntaxErrors = false}) async {
     if (!await _step.canRead(assetId)) throw AssetNotFoundException(assetId);
-    // If already in `entryPoints` then we don't need to resolve.
-    //
-    // Note that we don't add `assetId` to `entryPoints` because it isn't fully
-    // resolved.
-    if (!_entryPoints.contains(assetId)) {
-      await _delegate._uriResolver.performResolve(
-          _step, [assetId], _delegate._driver,
-          transitive: false);
-    }
+    await _resolveIfNecessary(assetId, transitive: false);
     return _delegate.compilationUnitFor(assetId,
         allowSyntaxErrors: allowSyntaxErrors);
   }
@@ -110,20 +105,27 @@ class PerActionResolver implements ReleasableResolver {
   Future<LibraryElement> libraryFor(AssetId assetId,
       {bool allowSyntaxErrors = false}) async {
     if (!await _step.canRead(assetId)) throw AssetNotFoundException(assetId);
-    await _resolveIfNecessary(assetId);
+    await _resolveIfNecessary(assetId, transitive: true);
     return _delegate.libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
   }
 
-  Future<void> _resolveIfNecessary(AssetId id) async {
-    if (!_entryPoints.contains(id)) {
-      _entryPoints.add(id);
+  // Ensures that we finish resolving one thing before attempting to resolve
+  // another, otherwise there are race conditions with `_entryPoints` being
+  // updated before it is actually ready, or resolved more than once.
+  final _resolvePool = Pool(1);
+  Future<void> _resolveIfNecessary(AssetId id, {@required bool transitive}) =>
+      _resolvePool.withResource(() async {
+        if (!_entryPoints.contains(id)) {
+          // We only want transitively resolved ids in `_entrypoints`.
+          if (transitive) _entryPoints.add(id);
 
-      // the resolver will only visit assets that haven't been resolved in this
-      // step yet
-      await _delegate._uriResolver
-          .performResolve(_step, [id], _delegate._driver, transitive: true);
-    }
-  }
+          // the resolver will only visit assets that haven't been resolved in this
+          // step yet
+          await _delegate._uriResolver.performResolve(
+              _step, [id], _delegate._driver,
+              transitive: transitive);
+        }
+      });
 
   @override
   void release() {
@@ -310,10 +312,7 @@ class AnalyzerResolvers implements Resolvers {
   @override
   Future<ReleasableResolver> get(BuildStep buildStep) async {
     await _ensureInitialized();
-
-    await _uriResolver.performResolve(
-        buildStep, [buildStep.inputId], _resolver._driver);
-    return PerActionResolver(_resolver, buildStep, [buildStep.inputId]);
+    return PerActionResolver(_resolver, buildStep);
   }
 
   /// Must be called between each build.
