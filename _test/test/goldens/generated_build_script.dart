@@ -75,7 +75,14 @@ final _builders = <_i1.BuilderApplication>[
       isOptional: true,
       hideOutput: true,
       appliesBuilders: ['build_modules:module_cleanup']),
-  _i1.apply('build_web_compilers:ddc', [_i7.ddcKernelBuilder, _i7.ddcBuilder],
+  _i1.apply(
+      'build_web_compilers:ddc',
+      [
+        _i7.ddcKernelBuilderUnsound,
+        _i7.ddcBuilderUnsound,
+        _i7.ddcKernelBuilderSound,
+        _i7.ddcBuilderSound
+      ],
       _i1.toAllPackages(),
       isOptional: true,
       hideOutput: true,
