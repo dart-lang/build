@@ -330,12 +330,27 @@ String ddcModuleName(AssetId jsId) {
 }
 
 void _fixMetadataSources(Map<String, dynamic> json, Uri scratchUri) {
-  var sourceMapUri = json['sourceMapUri'] as String;
-  var moduleUri = json['moduleUri'] as String;
+  String updatePath(String path) =>
+      Uri.parse(path).path.replaceAll(scratchUri.path, '');
 
-  json['sourceMapUri'] = Uri.parse(sourceMapUri)
-      .toFilePath()
-      .replaceAll(scratchUri.toFilePath(), '');
-  json['moduleUri'] =
-      Uri.parse(moduleUri).toFilePath().replaceAll(scratchUri.toFilePath(), '');
+  var sourceMapUri = json['sourceMapUri'] as String;
+  if (sourceMapUri != null) {
+    json['sourceMapUri'] = updatePath(sourceMapUri);
+  }
+
+  var moduleUri = json['moduleUri'] as String;
+  if (moduleUri != null) {
+    json['moduleUri'] = updatePath(moduleUri);
+  }
+
+  var libraries = json['libraries'] as List<dynamic>;
+  if (libraries != null) {
+    for (var lib in libraries) {
+      var libraryJson = lib as Map<String, dynamic>;
+      var fileUri = libraryJson['fileUri'] as String;
+      if (fileUri != null) {
+        libraryJson['fileUri'] = updatePath(fileUri);
+      }
+    }
+  }
 }
