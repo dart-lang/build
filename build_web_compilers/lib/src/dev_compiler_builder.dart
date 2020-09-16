@@ -269,7 +269,7 @@ Future<void> _createDevCompilerModule(
       content = await file.readAsString();
       json = jsonDecode(content);
       _fixMetadataSources(
-          json as Map<String, dynamic>, '${scratchSpace.tempDir.path}/');
+          json as Map<String, dynamic>, scratchSpace.tempDir.uri);
       await buildStep.writeAsString(metadataId, jsonEncode(json));
     }
 
@@ -329,11 +329,13 @@ String ddcModuleName(AssetId jsId) {
   return jsPath.substring(0, jsPath.length - jsModuleExtension.length);
 }
 
-void _fixMetadataSources(Map<String, dynamic> json, String scratchPath) {
+void _fixMetadataSources(Map<String, dynamic> json, Uri scratchUri) {
   var sourceMapUri = json['sourceMapUri'] as String;
   var moduleUri = json['moduleUri'] as String;
 
-  json['sourceMapUri'] =
-      Uri.parse(sourceMapUri).path.replaceAll(scratchPath, '');
-  json['moduleUri'] = Uri.parse(moduleUri).path.replaceAll(scratchPath, '');
+  json['sourceMapUri'] = Uri.parse(sourceMapUri)
+      .toFilePath()
+      .replaceAll(scratchUri.toFilePath(), '');
+  json['moduleUri'] =
+      Uri.parse(moduleUri).toFilePath().replaceAll(scratchUri.toFilePath(), '');
 }
