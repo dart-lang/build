@@ -1,5 +1,6 @@
-## 2.10.2-dev
+## 2.11.0-dev
 
+- Add support for building null safe kernel modules to `KernelBuilder`.
 - Stop using deprecated analyzer apis.
 - Stop passing the deprecated `--kernel` flag to the dev compiler.
 
