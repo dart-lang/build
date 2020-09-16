@@ -74,7 +74,10 @@ class KernelBuilder implements Builder {
   /// Experiments to pass to kernel (as --enable-experiment=<experiment> args).
   final Iterable<String> experiments;
 
-  /// Whether or not strong null safety should be enabled.
+  /// Whether or not sound null safety should be enabled.
+  ///
+  /// All dependencies of a given kernel output must be compiled in the
+  /// same mode as the kernel output itself.
   final bool soundNullSafety;
 
   KernelBuilder(
