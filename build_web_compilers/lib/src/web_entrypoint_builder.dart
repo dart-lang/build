@@ -112,7 +112,8 @@ class WebEntrypointBuilder implements Builder {
         }
         break;
       case WebCompiler.Dart2Js:
-        await bootstrapDart2Js(buildStep, dart2JsArgs);
+        await bootstrapDart2Js(buildStep, dart2JsArgs,
+            soundNullSafety: soundNullSafety);
         break;
     }
   }
