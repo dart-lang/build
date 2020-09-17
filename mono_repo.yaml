@@ -13,7 +13,6 @@ travis:
   branches:
     only:
       - master
-      - sound-null-safety-ddc
 
 merge_stages:
 - analyze_and_format

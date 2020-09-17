@@ -12,7 +12,6 @@ after_failure:
 branches:
   only:
     - master
-    - "sound-null-safety-ddc"
 
 jobs:
   include:
