@@ -14,6 +14,7 @@ targets               | Map<String, [BuildTarget](#buildtarget)>                
 builders              | Map<String, [BuilderDefinition](#builderdefinition)>                       | empty
 post_process_builders | Map<String, [PostProcessBuilderDefinition](#postprocessbuilderdefinition)> | empty
 global_options        | Map<String, [GlobalBuilderOptions](#globalBuilderOptions)>                 | empty
+public_assets         | [InputSet](#inputset)                                                      | `lib/**`, `LICENSE` and `pubspec.yaml`
 
 ## BuildTarget
 

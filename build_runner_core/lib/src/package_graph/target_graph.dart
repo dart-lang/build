@@ -14,16 +14,30 @@ import 'package_graph.dart';
 /// Like a [PackageGraph] but packages are further broken down into modules
 /// based on build config.
 class TargetGraph {
+  static final InputMatcher _defaultMatcherForNonRoot =
+      InputMatcher(defaultPublicAssets);
+
   /// All [TargetNode]s indexed by `"$packageName:$targetName"`.
   final Map<String, TargetNode> allModules;
 
   /// All [TargetNode]s by package name.
   final Map<String, List<TargetNode>> modulesByPackage;
 
+  /// All [InputMatcher]s matching public assets by package name.
+  ///
+  /// If the package is non-root, only assets matched by the [InputMatcher] are
+  /// included in the build.
+  final Map<String, InputMatcher> publicAssetsByPackage;
+
   /// The [BuildConfig] of the root package.
   final BuildConfig rootPackageConfig;
 
-  TargetGraph._(this.allModules, this.modulesByPackage, this.rootPackageConfig);
+  TargetGraph._(
+    this.allModules,
+    this.modulesByPackage,
+    this.publicAssetsByPackage,
+    this.rootPackageConfig,
+  );
 
   /// Builds a [TargetGraph] from [packageGraph].
   ///
@@ -46,11 +60,13 @@ class TargetGraph {
     requiredRootSourcePaths ??= const [];
     overrideBuildConfig ??= const {};
     final modulesByKey = <String, TargetNode>{};
+    final publicAssetsByPackage = <String, InputMatcher>{};
     final modulesByPackage = <String, List<TargetNode>>{};
     BuildConfig rootPackageConfig;
     for (final package in packageGraph.allPackages.values) {
       final config = overrideBuildConfig[package.name] ??
           await _packageBuildConfig(package);
+      publicAssetsByPackage[package.name] = InputMatcher(config.publicAssets);
       List<String> defaultInclude;
       if (package.isRoot) {
         defaultInclude = defaultRootPackageSources;
@@ -84,12 +100,32 @@ class TargetGraph {
         modulesByPackage.putIfAbsent(node.target.package, () => []).add(node);
       }
     }
-    return TargetGraph._(modulesByKey, modulesByPackage, rootPackageConfig);
+    return TargetGraph._(
+      modulesByKey,
+      modulesByPackage,
+      publicAssetsByPackage,
+      rootPackageConfig,
+    );
   }
 
   /// Whether or not [id] is included in the sources of any target in the graph.
   bool anyMatchesAsset(AssetId id) =>
       modulesByPackage[id.package]?.any((t) => t.matchesSource(id)) ?? false;
+
+  /// Whether the [id] is visible in a build.
+  ///
+  /// All assets in the root package are visible. For non-root packages, an
+  /// asset is visible if it's included in the [BuildConfig.publicAssets] of
+  /// that package.
+  bool isVisibleInBuild(AssetId id, PackageNode enclosingPackage) {
+    // All assets in the root package are included in the build
+    if (enclosingPackage.isRoot) return true;
+
+    // For other packages, the asset must be marked as public
+    final matcher = publicAssetsByPackage[enclosingPackage.name] ??
+        _defaultMatcherForNonRoot;
+    return matcher.matches(id);
+  }
 }
 
 class TargetNode {

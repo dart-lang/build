@@ -163,14 +163,15 @@ class AssetTracker {
     return updates;
   }
 
-  Stream<AssetId> _listAssetIds(TargetNode targetNode) => targetNode
-          .sourceIncludes.isEmpty
-      ? Stream<AssetId>.empty()
-      : StreamGroup.merge(targetNode.sourceIncludes.map((glob) =>
-          _listIdsSafe(glob, package: targetNode.package.name)
-              .where((id) =>
-                  targetNode.package.isRoot || id.pathSegments.first == 'lib')
-              .where((id) => !targetNode.excludesSource(id))));
+  Stream<AssetId> _listAssetIds(TargetNode targetNode) {
+    return targetNode.sourceIncludes.isEmpty
+        ? Stream<AssetId>.empty()
+        : StreamGroup.merge(targetNode.sourceIncludes.map((glob) =>
+            _listIdsSafe(glob, package: targetNode.package.name)
+                .where((id) =>
+                    _targetGraph.isVisibleInBuild(id, targetNode.package))
+                .where((id) => !targetNode.excludesSource(id))));
+  }
 
   Stream<AssetId> _listGeneratedAssetIds() {
     var glob = Glob('$generatedOutputDirectory/**');

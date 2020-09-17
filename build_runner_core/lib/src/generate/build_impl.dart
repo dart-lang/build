@@ -31,6 +31,7 @@ import '../logging/human_readable_duration.dart';
 import '../logging/logging.dart';
 import '../package_graph/apply_builders.dart';
 import '../package_graph/package_graph.dart';
+import '../package_graph/target_graph.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../util/async.dart';
 import '../util/build_dirs.dart';
@@ -52,6 +53,10 @@ Set<String> _buildPaths(Set<BuildDirectory> buildDirs) =>
         ? <String>{}
         : buildDirs.map((b) => b.directory).toSet();
 
+Readability _readabilityOf(bool canRead) {
+  return canRead ? Readability.readable : Readability.notReadable;
+}
+
 class BuildImpl {
   final FinalizedReader finalizedReader;
 
@@ -61,6 +66,7 @@ class BuildImpl {
 
   final List<BuildPhase> _buildPhases;
   final PackageGraph _packageGraph;
+  final TargetGraph _targetGraph;
   final AssetReader _reader;
   final Resolvers _resolvers;
   final ResourceManager _resourceManager;
@@ -75,6 +81,7 @@ class BuildImpl {
       this._buildPhases, this.finalizedReader)
       : buildScriptUpdates = buildDefinition.buildScriptUpdates,
         _packageGraph = buildDefinition.packageGraph,
+        _targetGraph = buildDefinition.targetGraph,
         _reader = options.enableLowResourcesMode
             ? buildDefinition.reader
             : CachingAssetReader(buildDefinition.reader),
@@ -131,11 +138,10 @@ class BuildImpl {
   static IsReadable _isReadableAfterBuildFactory(List<BuildPhase> buildPhases) {
     return (AssetNode node, int phaseNum, AssetWriterSpy writtenAssets) {
       if (node is GeneratedAssetNode) {
-        return Readability.fromPreviousPhase(node.wasOutput && !node.isFailure);
+        return _readabilityOf(node.wasOutput && !node.isFailure);
       }
 
-      return Readability.fromPreviousPhase(
-          node.isReadable && node.isValidInput);
+      return _readabilityOf(node.isReadable && node.isValidInput);
     };
   }
 }
@@ -151,6 +157,7 @@ class _SingleBuild {
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
   final _lazyGlobs = <AssetId, Future<void>>{};
   final PackageGraph _packageGraph;
+  final TargetGraph _targetGraph;
   final BuildPerformanceTracker _performanceTracker;
   final AssetReader _reader;
   final Resolvers _resolvers;
@@ -176,6 +183,7 @@ class _SingleBuild {
         _buildPhasePool = List(buildImpl._buildPhases.length),
         _environment = buildImpl._environment,
         _packageGraph = buildImpl._packageGraph,
+        _targetGraph = buildImpl._targetGraph,
         _performanceTracker = buildImpl._trackPerformance
             ? BuildPerformanceTracker()
             : BuildPerformanceTracker.noOp(),
@@ -403,6 +411,14 @@ class _SingleBuild {
   /// asset if necessary.
   FutureOr<Readability> _isReadableNode(
       AssetNode node, int phaseNum, AssetWriterSpy writtenAssets) {
+    // Check if the node is part of the build at all
+    final id = node.id;
+    final package = _packageGraph.allPackages[node.id.package];
+
+    if (!_targetGraph.isVisibleInBuild(id, package)) {
+      return Readability.invalidAsset;
+    }
+
     if (node is GeneratedAssetNode) {
       if (node.phaseNumber > phaseNum) {
         return Readability.notReadable;
@@ -411,16 +427,17 @@ class _SingleBuild {
         final isInBuild = _buildPhases[phaseNum] is InBuildPhase &&
             writtenAssets.assetsWritten.contains(node.id);
 
-        return isInBuild ? Readability.ownOutput : Readability.notReadable;
+        return isInBuild
+            ? Readability.readableInSamePhase
+            : Readability.notReadable;
       }
 
       return doAfter(
           // ignore: void_checks
           _ensureAssetIsBuilt(node),
-          (_) =>
-              Readability.fromPreviousPhase(node.wasOutput && !node.isFailure));
+          (_) => _readabilityOf(node.wasOutput && !node.isFailure));
     }
-    return Readability.fromPreviousPhase(node.isReadable && node.isValidInput);
+    return _readabilityOf(node.isReadable && node.isValidInput);
   }
 
   FutureOr<void> _ensureAssetIsBuilt(AssetNode node) {

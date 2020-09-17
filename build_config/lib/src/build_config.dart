@@ -71,6 +71,9 @@ class BuildConfig {
   @JsonKey(name: 'global_options')
   final Map<String, GlobalBuilderConfig> globalOptions;
 
+  @JsonKey(name: 'public_assets')
+  final InputSet publicAssets;
+
   /// The default config if you have no `build.yaml` file.
   factory BuildConfig.useDefault(
       String packageName, Iterable<String> dependencies) {
@@ -127,6 +130,7 @@ class BuildConfig {
     Map<String, BuilderDefinition> builderDefinitions,
     Map<String, PostProcessBuilderDefinition> postProcessBuilderDefinitions =
         const {},
+    this.publicAssets = defaultPublicAssets,
   })  : buildTargets = buildTargets ??
             {
               _defaultTarget(packageName ?? currentPackage): BuildTarget(
@@ -159,6 +163,12 @@ class BuildConfig {
 
   factory BuildConfig._fromJson(Map json) => _$BuildConfigFromJson(json);
 }
+
+const InputSet defaultPublicAssets = InputSet(include: [
+  'lib/**',
+  'LICENSE',
+  'pubspec.yaml',
+]);
 
 String _defaultTarget(String package) => '$package:$package';
 

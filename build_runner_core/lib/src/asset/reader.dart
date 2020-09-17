@@ -10,7 +10,6 @@ import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
-import 'package:meta/meta.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../util/async.dart';
@@ -24,23 +23,29 @@ abstract class PathProvidingAssetReader implements AssetReader {
 }
 
 /// Describes if and how a [SingleStepReader] should read an [AssetId].
-class Readability {
-  final bool canRead;
-  final bool inSamePhase;
+enum Readability {
+  /// The asset id is an invalid input.
+  ///
+  /// Inputs are invalid if they're outside of the public assets of a non-root
+  /// package in the build.
+  invalidAsset,
 
-  const Readability({@required this.canRead, @required this.inSamePhase});
+  /// The asset can't be read by the build step.
+  notReadable,
 
-  /// Determines readability for a node written in a previous build phase, which
-  /// means that [ownOutput] is impossible.
-  factory Readability.fromPreviousPhase(bool readable) =>
-      readable ? Readability.readable : Readability.notReadable;
+  /// The asset can be read by the build step.
+  readable,
 
-  static const Readability notReadable =
-      Readability(canRead: false, inSamePhase: false);
-  static const Readability readable =
-      Readability(canRead: true, inSamePhase: false);
-  static const Readability ownOutput =
-      Readability(canRead: true, inSamePhase: true);
+  /// The asset can be read, and it was generated in the same phase.
+  ///
+  /// The reader should not report this asset as being read in this case, since
+  /// otherwise we'd have a self-loop in the asset graph.
+  readableInSamePhase,
+}
+
+extension on Readability {
+  bool get canRead =>
+      this == Readability.readable || this == Readability.readableInSamePhase;
 }
 
 typedef IsReadable = FutureOr<Readability> Function(
@@ -86,7 +91,11 @@ class SingleStepReader implements AssetReader {
 
     return doAfter(_isReadableNode(node, _phaseNumber, _writtenAssets),
         (Readability readability) {
-      if (!readability.inSamePhase) {
+      if (readability == Readability.invalidAsset) {
+        throw InvalidInputException(node.id);
+      }
+
+      if (readability != Readability.readableInSamePhase) {
         assetsRead.add(id);
       }
 

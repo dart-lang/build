@@ -12,7 +12,8 @@ BuildConfig _$BuildConfigFromJson(Map json) {
       'builders',
       'post_process_builders',
       'targets',
-      'global_options'
+      'global_options',
+      'public_assets'
     ]);
     final val = BuildConfig(
       buildTargets: $checkedConvert(
@@ -41,12 +42,15 @@ BuildConfig _$BuildConfigFromJson(Map json) {
                         ? null
                         : PostProcessBuilderDefinition.fromJson(e as Map)),
               )),
+      publicAssets: $checkedConvert(json, 'public_assets',
+          (v) => v == null ? null : InputSet.fromJson(v)),
     );
     return val;
   }, fieldKeyMap: const {
     'buildTargets': 'targets',
     'globalOptions': 'global_options',
     'builderDefinitions': 'builders',
-    'postProcessBuilderDefinitions': 'post_process_builders'
+    'postProcessBuilderDefinitions': 'post_process_builders',
+    'publicAssets': 'public_assets'
   });
 }
