@@ -112,6 +112,8 @@ class WebEntrypointBuilder implements Builder {
         }
         break;
       case WebCompiler.Dart2Js:
+        // Dart2js already supports opting in/out of null safety by default so
+        // we don't have to inform it of what to do.
         await bootstrapDart2Js(buildStep, dart2JsArgs);
         break;
     }
