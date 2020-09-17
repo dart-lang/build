@@ -173,20 +173,23 @@ void main() {
 
       test('strips scratch paths from metadata', () async {
         var expectedOutputs = {
-          'b|lib/b$jsModuleExtension': isNotEmpty,
-          'b|lib/b$jsSourceMapExtension': isNotEmpty,
-          'b|lib/b$metadataExtension':
+          'b|lib/b${jsModuleExtension(soundNullSafety)}': isNotEmpty,
+          'b|lib/b${jsSourceMapExtension(soundNullSafety)}': isNotEmpty,
+          'b|lib/b${metadataExtension(soundNullSafety)}':
               decodedMatches(isNot(contains('scratch'))),
-          'a|lib/a$jsModuleExtension': isNotEmpty,
-          'a|lib/a$jsSourceMapExtension': isNotEmpty,
-          'a|lib/a$metadataExtension':
+          'a|lib/a${jsModuleExtension(soundNullSafety)}': isNotEmpty,
+          'a|lib/a${jsSourceMapExtension(soundNullSafety)}': isNotEmpty,
+          'a|lib/a${metadataExtension(soundNullSafety)}':
               decodedMatches(isNot(contains('scratch'))),
-          'a|web/index$jsModuleExtension': isNotEmpty,
-          'a|web/index$jsSourceMapExtension': isNotEmpty,
-          'a|web/index$metadataExtension':
+          'a|web/index${jsModuleExtension(soundNullSafety)}': isNotEmpty,
+          'a|web/index${jsSourceMapExtension(soundNullSafety)}': isNotEmpty,
+          'a|web/index${metadataExtension(soundNullSafety)}':
               decodedMatches(isNot(contains('scratch'))),
         };
-        await testBuilder(DevCompilerBuilder(platform: ddcPlatform), assets,
+        await testBuilder(
+            DevCompilerBuilder(
+                platform: ddcPlatform, soundNullSafety: soundNullSafety),
+            assets,
             outputs: expectedOutputs);
       });
     });
