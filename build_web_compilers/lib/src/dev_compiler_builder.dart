@@ -269,7 +269,7 @@ Future<void> _createDevCompilerModule(
       content = await file.readAsString();
       json = jsonDecode(content);
       _fixMetadataSources(
-          json as Map<String, dynamic>, '${scratchSpace.tempDir.path}/');
+          json as Map<String, dynamic>, scratchSpace.tempDir.uri);
       await buildStep.writeAsString(metadataId, jsonEncode(json));
     }
 
@@ -329,11 +329,28 @@ String ddcModuleName(AssetId jsId) {
   return jsPath.substring(0, jsPath.length - jsModuleExtension.length);
 }
 
-void _fixMetadataSources(Map<String, dynamic> json, String scratchPath) {
-  var sourceMapUri = json['sourceMapUri'] as String;
-  var moduleUri = json['moduleUri'] as String;
+void _fixMetadataSources(Map<String, dynamic> json, Uri scratchUri) {
+  String updatePath(String path) =>
+      Uri.parse(path).path.replaceAll(scratchUri.path, '');
 
-  json['sourceMapUri'] =
-      Uri.parse(sourceMapUri).path.replaceAll(scratchPath, '');
-  json['moduleUri'] = Uri.parse(moduleUri).path.replaceAll(scratchPath, '');
+  var sourceMapUri = json['sourceMapUri'] as String;
+  if (sourceMapUri != null) {
+    json['sourceMapUri'] = updatePath(sourceMapUri);
+  }
+
+  var moduleUri = json['moduleUri'] as String;
+  if (moduleUri != null) {
+    json['moduleUri'] = updatePath(moduleUri);
+  }
+
+  var libraries = json['libraries'] as List<dynamic>;
+  if (libraries != null) {
+    for (var lib in libraries) {
+      var libraryJson = lib as Map<String, dynamic>;
+      var fileUri = libraryJson['fileUri'] as String;
+      if (fileUri != null) {
+        libraryJson['fileUri'] = updatePath(fileUri);
+      }
+    }
+  }
 }
