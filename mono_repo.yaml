@@ -10,6 +10,9 @@ travis:
   stages:
     - name: e2e_test_cron
       if: type IN (api, cron)
+  branches:
+    only:
+      - master
 
 merge_stages:
 - analyze_and_format

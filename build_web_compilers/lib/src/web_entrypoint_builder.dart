@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
@@ -98,16 +99,31 @@ class WebEntrypointBuilder implements Builder {
     var dartEntrypointId = buildStep.inputId;
     var isAppEntrypoint = await _isAppEntryPoint(dartEntrypointId, buildStep);
     if (!isAppEntrypoint) return;
-    if (webCompiler == WebCompiler.DartDevc) {
-      try {
-        await bootstrapDdc(buildStep, requiredAssets: _ddcSdkResources);
-      } on MissingModulesException catch (e) {
-        log.severe('$e');
-      }
-    } else if (webCompiler == WebCompiler.Dart2Js) {
-      await bootstrapDart2Js(buildStep, dart2JsArgs);
+    var soundNullSafety =
+        await _supportsNullSafety(buildStep, buildStep.inputId);
+    switch (webCompiler) {
+      case WebCompiler.DartDevc:
+        try {
+          await bootstrapDdc(buildStep,
+              requiredAssets: _ddcSdkResources,
+              soundNullSafety: soundNullSafety);
+        } on MissingModulesException catch (e) {
+          log.severe('$e');
+        }
+        break;
+      case WebCompiler.Dart2Js:
+        // Dart2js already supports opting in/out of null safety by default so
+        // we don't have to inform it of what to do.
+        await bootstrapDart2Js(buildStep, dart2JsArgs);
+        break;
     }
   }
+}
+
+/// Returns whether [assetId] supports the non-nullable language feature.
+Future<bool> _supportsNullSafety(BuildStep buildStep, AssetId assetId) async {
+  var unit = await buildStep.resolver.compilationUnitFor(assetId);
+  return unit.featureSet.isEnabled(Feature.non_nullable);
 }
 
 /// Returns whether or not [dartId] is an app entrypoint (basically, whether
@@ -135,5 +151,6 @@ Future<bool> _isAppEntryPoint(AssetId dartId, AssetReader reader) async {
 /// application.
 final _ddcSdkResources = [
   AssetId('build_web_compilers', 'lib/src/dev_compiler/dart_sdk.js'),
+  AssetId('build_web_compilers', 'lib/src/dev_compiler/dart_sdk.sound.js'),
   AssetId('build_web_compilers', 'lib/src/dev_compiler/require.js'),
 ];

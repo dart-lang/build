@@ -62,7 +62,6 @@ BazelWorkerDriver get _dartdevkDriver {
           p.join(sdkDir, 'bin', 'dart'),
           [
             p.join(sdkDir, 'bin', 'snapshots', 'dartdevc.dart.snapshot'),
-            '--kernel',
             '--persistent_worker'
           ],
           mode: _processMode,
