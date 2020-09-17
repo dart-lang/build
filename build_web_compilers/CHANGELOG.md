@@ -3,6 +3,10 @@
 - Support sound null safety in ddc/dart2js, based on the standard entrypoint
   detection (enable null safety if the entrypoint opts in).
 
+## 2.12.0-dev.3
+
+- Fix stripping scratch paths in metadata.
+
 ## 2.12.0-dev.2
 
 - Add the `generate-full-dill` option for the `build_web_compilers:ddc`

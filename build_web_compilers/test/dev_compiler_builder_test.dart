@@ -170,6 +170,25 @@ void main() {
             assets,
             outputs: expectedOutputs);
       });
+
+      test('strips scratch paths from metadata', () async {
+        var expectedOutputs = {
+          'b|lib/b$jsModuleExtension': isNotEmpty,
+          'b|lib/b$jsSourceMapExtension': isNotEmpty,
+          'b|lib/b$metadataExtension':
+              decodedMatches(isNot(contains('scratch'))),
+          'a|lib/a$jsModuleExtension': isNotEmpty,
+          'a|lib/a$jsSourceMapExtension': isNotEmpty,
+          'a|lib/a$metadataExtension':
+              decodedMatches(isNot(contains('scratch'))),
+          'a|web/index$jsModuleExtension': isNotEmpty,
+          'a|web/index$jsSourceMapExtension': isNotEmpty,
+          'a|web/index$metadataExtension':
+              decodedMatches(isNot(contains('scratch'))),
+        };
+        await testBuilder(DevCompilerBuilder(platform: ddcPlatform), assets,
+            outputs: expectedOutputs);
+      });
     });
   }
 
