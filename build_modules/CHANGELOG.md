@@ -1,7 +1,9 @@
-## 2.10.2
+## 2.11.0-dev
 
-- Stop using deprecated analyzer apis.
+- Add support for building null safe kernel modules to `KernelBuilder`.
 - Allow the latest analyzer version `0.40.x`.
+- Stop using deprecated analyzer apis.
+- Stop passing the deprecated `--kernel` flag to the dev compiler.
 
 ## 2.10.1
 

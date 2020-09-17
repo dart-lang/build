@@ -12,6 +12,7 @@ import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
 import 'package:analyzer/src/generated/source.dart';
 import 'package:build/build.dart' show AssetId, BuildStep;
 import 'package:crypto/crypto.dart';
+import 'package:meta/meta.dart';
 import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 
@@ -45,55 +46,81 @@ class BuildAssetUriResolver extends UriResolver {
   /// input, subsequent calls to a resolver, or a transitive import thereof.
   final _buildStepAssets = <BuildStep, HashSet<AssetId>>{};
 
-  /// Crawl the transitive imports from [entryPoints] and ensure that the
-  /// content of each asset is updated in [resourceProvider] and [driver].
-  Future<void> performResolve(BuildStep buildStep, List<AssetId> entryPoints,
-      AnalysisDriver driver) async {
+  /// Updates [resourceProvider] and [driver] with updated versions of
+  /// [entryPoints].
+  ///
+  /// If [transitive], then all the transitive imports from [entryPoints] are
+  /// also updated.
+  Future<void> performResolve(
+      BuildStep buildStep, List<AssetId> entryPoints, AnalysisDriver driver,
+      {@required bool transitive}) async {
     final seenInBuildStep =
         _buildStepAssets.putIfAbsent(buildStep, () => HashSet());
     bool notCrawled(AssetId asset) => !seenInBuildStep.contains(asset);
 
-    final changedPaths = await crawlAsync<AssetId, _AssetState>(
-            entryPoints.where(notCrawled), (id) async {
-      final path = assetPath(id);
-      if (!await buildStep.canRead(id)) {
-        if (globallySeenAssets.contains(id)) {
-          // ignore from this graph, some later build step may still be using it
-          // so it shouldn't be removed from [resourceProvider], but we also
-          // don't care about it's transitive imports.
-          return null;
-        }
-        _cachedAssetDependencies.remove(id);
-        _cachedAssetDigests.remove(id);
-        if (resourceProvider.getFile(path).exists) {
-          resourceProvider.deleteFile(path);
-        }
-        return _AssetState.removed(path);
-      }
-      globallySeenAssets.add(id);
-      seenInBuildStep.add(id);
-      final digest = await buildStep.digest(id);
-      if (_cachedAssetDigests[id] == digest) {
-        return _AssetState.unchanged(path, _cachedAssetDependencies[id]);
-      } else {
-        final isChange = _cachedAssetDigests.containsKey(id);
-        final content = await buildStep.readAsString(id);
-        _cachedAssetDigests[id] = digest;
-        final dependencies =
-            _cachedAssetDependencies[id] = _parseDirectives(content, id);
-        if (isChange) {
-          resourceProvider.updateFile(path, content);
-          return _AssetState.changed(path, dependencies);
-        } else {
-          resourceProvider.newFile(path, content);
-          return _AssetState.newAsset(path, dependencies);
-        }
-      }
-    }, (id, state) => state.directives.where(notCrawled))
+    final uncrawledIds = entryPoints.where(notCrawled);
+    final assetStates = transitive
+        ? await crawlAsync<AssetId, _AssetState>(
+            uncrawledIds,
+            (id) => _updateCachedAssetState(id, buildStep, seenInBuildStep),
+            (id, state) => state.directives.where(notCrawled)).toList()
+        : [
+            for (var id in uncrawledIds)
+              await _updateCachedAssetState(id, buildStep, seenInBuildStep),
+          ];
+
+    assetStates
         .where((state) => state.isAssetUpdate)
         .map((state) => state.path)
-        .toList();
-    changedPaths.forEach(driver.changeFile);
+        .forEach(driver.changeFile);
+  }
+
+  /// Updates the internal state for [id], if it has changed.
+  ///
+  /// This calls `removeFile`, `updateFile` or `newFile` on the
+  /// `resourceProvider`, but it does NOT call `changeFile` on the
+  /// `AnalysisDriver`.
+  ///
+  /// After all assets have been updated, then `changeFile` should be called on
+  /// the `AnalysisDriver` for all changed assets.
+  ///
+  /// If [id] can be read, then it will be added to [seenInBuildStep].
+  Future<_AssetState> _updateCachedAssetState(
+      AssetId id, BuildStep buildStep, Set<AssetId> seenInBuildStep) async {
+    final path = assetPath(id);
+    if (!await buildStep.canRead(id)) {
+      if (globallySeenAssets.contains(id)) {
+        // ignore from this graph, some later build step may still be using it
+        // so it shouldn't be removed from [resourceProvider], but we also
+        // don't care about it's transitive imports.
+        return null;
+      }
+      _cachedAssetDependencies.remove(id);
+      _cachedAssetDigests.remove(id);
+      if (resourceProvider.getFile(path).exists) {
+        resourceProvider.deleteFile(path);
+      }
+      return _AssetState.removed(path);
+    }
+    globallySeenAssets.add(id);
+    seenInBuildStep.add(id);
+    final digest = await buildStep.digest(id);
+    if (_cachedAssetDigests[id] == digest) {
+      return _AssetState.unchanged(path, _cachedAssetDependencies[id]);
+    } else {
+      final isChange = _cachedAssetDigests.containsKey(id);
+      final content = await buildStep.readAsString(id);
+      _cachedAssetDigests[id] = digest;
+      final dependencies =
+          _cachedAssetDependencies[id] = _parseDirectives(content, id);
+      if (isChange) {
+        resourceProvider.updateFile(path, content);
+        return _AssetState.changed(path, dependencies);
+      } else {
+        resourceProvider.newFile(path, content);
+        return _AssetState.newAsset(path, dependencies);
+      }
+    }
   }
 
   /// Attempts to parse [uri] into an [AssetId].

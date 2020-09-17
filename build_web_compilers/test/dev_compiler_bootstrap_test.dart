@@ -42,10 +42,10 @@ void main() {
         'a|web/index.dart.ddc_merged_metadata': isNotEmpty,
         'a|web/index.dart.bootstrap.js': decodedMatches(allOf([
           // Maps non-lib modules to remove the top level dir.
-          contains('"web/index": "index.ddc"'),
+          contains('"web/index": "index.unsound.ddc"'),
           // Maps lib modules to packages path
-          contains('"packages/a/a": "packages/a/a.ddc"'),
-          contains('"packages/b/b": "packages/b/b.ddc"'),
+          contains('"packages/a/a": "packages/a/a.unsound.ddc"'),
+          contains('"packages/b/b": "packages/b/b.unsound.ddc"'),
           // Requires the top level module and dart sdk.
           contains('define("index.dart.bootstrap", ["web/index", "dart_sdk"]'),
           // Calls main on the top level module.
@@ -78,7 +78,7 @@ void main() {
       var expectedOutputs = {
         'a|web/b.dart.bootstrap.js': decodedMatches(allOf([
           // Confirm that `a.dart` is the actual primary source.
-          contains('"web/a": "a.ddc"'),
+          contains('"web/a": "a.unsound.ddc"'),
           // And `b.dart` is the application, but its module is `web/a`.
           contains('define("b.dart.bootstrap", ["web/a", "dart_sdk"]'),
           // Calls main on the `b.dart` library, not the `a.dart` library.
@@ -122,7 +122,9 @@ Future<void> runPrerequisites(Map<String, dynamic> assets) async {
   // It is necessary to add a fake asset so that the build_web_compilers
   // package exists.
   var sdkAssets = <String, dynamic>{'build_web_compilers|fake.txt': ''};
-  await testBuilderAndCollectAssets(sdkJsCopyBuilder(null), sdkAssets);
+  await testBuilderAndCollectAssets(sdkJsCopyRequirejs(null), sdkAssets);
+  await testBuilderAndCollectAssets(sdkJsCompileUnsound(null), sdkAssets);
+  await testBuilderAndCollectAssets(sdkJsCompileSound(null), sdkAssets);
   assets.addAll(sdkAssets);
 
   await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);

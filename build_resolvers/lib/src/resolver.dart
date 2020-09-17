@@ -8,22 +8,25 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/sdk/build_sdk_summary.dart';
 import 'package:analyzer/error/error.dart';
-import 'package:analyzer/src/dart/analysis/experiments.dart';
-import 'package:analyzer/dart/analysis/features.dart';
-import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
-import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
+import 'package:analyzer/src/dart/analysis/experiments.dart';
 import 'package:analyzer/src/generated/engine.dart'
     show AnalysisOptions, AnalysisOptionsImpl;
+import 'package:analyzer/src/generated/source.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
+import 'package:pool/pool.dart';
 
 import 'analysis_driver.dart';
 import 'build_asset_uri_resolver.dart';
@@ -42,13 +45,14 @@ class PerActionResolver implements ReleasableResolver {
   final AnalyzerResolver _delegate;
   final BuildStep _step;
 
-  final Set<AssetId> _entryPoints;
+  final _entryPoints = <AssetId>{};
 
-  PerActionResolver(this._delegate, this._step, Iterable<AssetId> entryPoints)
-      : _entryPoints = entryPoints.toSet();
+  PerActionResolver(this._delegate, this._step);
 
   @override
   Stream<LibraryElement> get libraries async* {
+    await _resolveIfNecessary(_step.inputId, transitive: true);
+
     final seen = <LibraryElement>{};
     final toVisit = Queue<LibraryElement>();
 
@@ -57,7 +61,8 @@ class PerActionResolver implements ReleasableResolver {
     final entryPoints = _entryPoints.toList();
     for (final entryPoint in entryPoints) {
       if (!await _delegate.isLibrary(entryPoint)) continue;
-      final library = await _delegate.libraryFor(entryPoint);
+      final library =
+          await _delegate.libraryFor(entryPoint, allowSyntaxErrors: true);
       toVisit.add(library);
       seen.add(library);
     }
@@ -83,28 +88,44 @@ class PerActionResolver implements ReleasableResolver {
   @override
   Future<bool> isLibrary(AssetId assetId) async {
     if (!await _step.canRead(assetId)) return false;
-    await _resolveIfNecesssary(assetId);
+    await _resolveIfNecessary(assetId, transitive: false);
     return _delegate.isLibrary(assetId);
+  }
+
+  @override
+  Future<CompilationUnit> compilationUnitFor(AssetId assetId,
+      {bool allowSyntaxErrors = false}) async {
+    if (!await _step.canRead(assetId)) throw AssetNotFoundException(assetId);
+    await _resolveIfNecessary(assetId, transitive: false);
+    return _delegate.compilationUnitFor(assetId,
+        allowSyntaxErrors: allowSyntaxErrors);
   }
 
   @override
   Future<LibraryElement> libraryFor(AssetId assetId,
       {bool allowSyntaxErrors = false}) async {
     if (!await _step.canRead(assetId)) throw AssetNotFoundException(assetId);
-    await _resolveIfNecesssary(assetId);
+    await _resolveIfNecessary(assetId, transitive: true);
     return _delegate.libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
   }
 
-  Future<void> _resolveIfNecesssary(AssetId id) async {
-    if (!_entryPoints.contains(id)) {
-      _entryPoints.add(id);
+  // Ensures that we finish resolving one thing before attempting to resolve
+  // another, otherwise there are race conditions with `_entryPoints` being
+  // updated before it is actually ready, or resolved more than once.
+  final _resolvePool = Pool(1);
+  Future<void> _resolveIfNecessary(AssetId id, {@required bool transitive}) =>
+      _resolvePool.withResource(() async {
+        if (!_entryPoints.contains(id)) {
+          // We only want transitively resolved ids in `_entrypoints`.
+          if (transitive) _entryPoints.add(id);
 
-      // the resolver will only visit assets that haven't been resolved in this
-      // step yet
-      await _delegate._uriResolver
-          .performResolve(_step, [id], _delegate._driver);
-    }
-  }
+          // the resolver will only visit assets that haven't been resolved in this
+          // step yet
+          await _delegate._uriResolver.performResolve(
+              _step, [id], _delegate._driver,
+              transitive: transitive);
+        }
+      });
 
   @override
   void release() {
@@ -129,6 +150,23 @@ class AnalyzerResolver implements ReleasableResolver {
     return source != null &&
         source.exists() &&
         (await _driver.getSourceKind(assetPath(assetId))) == SourceKind.LIBRARY;
+  }
+
+  @override
+  Future<CompilationUnit> compilationUnitFor(AssetId assetId,
+      {bool allowSyntaxErrors = false}) async {
+    var uri = assetId.uri;
+    var source = _driver.sourceFactory.forUri2(uri);
+    if (source == null || !source.exists()) {
+      throw AssetNotFoundException(assetId);
+    }
+
+    var path = assetPath(assetId);
+    var parsedResult = await _driver.parseFile(path);
+    if (!allowSyntaxErrors && parsedResult.errors.isNotEmpty) {
+      throw SyntaxErrorInAssetException(assetId, [parsedResult]);
+    }
+    return parsedResult.unit;
   }
 
   @override
@@ -274,10 +312,7 @@ class AnalyzerResolvers implements Resolvers {
   @override
   Future<ReleasableResolver> get(BuildStep buildStep) async {
     await _ensureInitialized();
-
-    await _uriResolver.performResolve(
-        buildStep, [buildStep.inputId], _resolver._driver);
-    return PerActionResolver(_resolver, buildStep, [buildStep.inputId]);
+    return PerActionResolver(_resolver, buildStep);
   }
 
   /// Must be called between each build.

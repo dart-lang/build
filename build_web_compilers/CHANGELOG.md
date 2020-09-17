@@ -1,8 +1,32 @@
-## 2.12.0
+## 2.13.0-dev
+
+- Support sound null safety in ddc/dart2js, based on the standard entrypoint
+  detection (enable null safety if the entrypoint opts in).
+
+## 2.12.0-dev.3
+
+- Fix stripping scratch paths in metadata.
+
+## 2.12.0-dev.2
+
+- Add the `generate-full-dill` option for the `build_web_compilers:ddc`
+  builder. The full dill output is used by expression evaluation service
+  in webdev for expression evaluation feature. This setting is disabled by
+  default but can be enabled by setting it to `true` globally:
+
+```yaml
+global_options:
+  build_web_compilers:ddc:
+    options:
+      generate-full-dill: true
+```
+
+## 2.12.0-dev.1
 
 - Update `build_web_compilers|ddc` builder to produce a `.metadata` file.
-- Update `build_web_compilers|entrypoint` builder to produce a `.ddc_merged_metadata` file
-  which consists of new line separated `.metadata` content produced by DDC.
+- Update `build_web_compilers|entrypoint` builder to produce a
+  `.ddc_merged_metadata` file which consists of new line separated
+  `.metadata` content produced by DDC.
 - Migrate off of deprecated analyzer apis.
 - Allow the latest analyzer version `0.40.x`.
 
