@@ -232,7 +232,8 @@ void main() {
         var clazz = lib.getType('A');
         expect(clazz, isNotNull);
         expect(clazz.interfaces, hasLength(1));
-        expect(clazz.interfaces.first.getDisplayString(), 'B');
+        expect(clazz.interfaces.first.getDisplayString(withNullability: false),
+            'B');
       }, resolvers: resolvers);
     });
 
@@ -294,7 +295,7 @@ void main() {
       }, resolvers: AnalyzerResolvers());
     });
 
-    test('does not resolve constants transitively', () {
+    test('resolves constants transitively', () {
       return resolveSources({
         'a|web/main.dart': '''
               library web.main;
@@ -314,7 +315,7 @@ void main() {
         var main = await resolver.findLibraryByName('web.main');
         var meta = main.getType('Foo').supertype.element.metadata[0];
         expect(meta, isNotNull);
-        expect(meta.constantValue, isNull);
+        expect(meta.computeConstantValue()?.toIntValue(), 0);
       }, resolvers: AnalyzerResolvers());
     });
 

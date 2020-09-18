@@ -28,16 +28,10 @@ jobs:
       env: PKGS="build build_config build_daemon build_modules build_resolvers build_runner build_runner_core build_test build_vm_compilers build_web_compilers example scratch_space"
       script: ./tool/travis.sh dartfmt dartanalyzer_0
     - stage: analyze_and_format
-      name: "SDK: 2.7.0; PKGS: build, build_config, build_daemon, build_resolvers, build_runner_core, build_test, build_vm_compilers, scratch_space; TASKS: `dartanalyzer --fatal-warnings .`"
-      dart: "2.7.0"
+      name: "SDK: 2.9.0; PKGS: build, build_config, build_daemon, build_modules, build_resolvers, build_runner_core, build_test, build_vm_compilers, scratch_space; TASKS: `dartanalyzer --fatal-warnings .`"
+      dart: "2.9.0"
       os: linux
-      env: PKGS="build build_config build_daemon build_resolvers build_runner_core build_test build_vm_compilers scratch_space"
-      script: ./tool/travis.sh dartanalyzer_1
-    - stage: analyze_and_format
-      name: "SDK: 2.8.1; PKG: build_modules; TASKS: `dartanalyzer --fatal-warnings .`"
-      dart: "2.8.1"
-      os: linux
-      env: PKGS="build_modules"
+      env: PKGS="build build_config build_daemon build_modules build_resolvers build_runner_core build_test build_vm_compilers scratch_space"
       script: ./tool/travis.sh dartanalyzer_1
     - stage: analyze_and_format
       name: "SDK: dev; PKG: build_web_compilers; TASKS: `dartanalyzer --fatal-warnings .`"
@@ -58,17 +52,17 @@ jobs:
       env: PKGS="_test"
       script: ./tool/travis.sh command_0 command_1
     - stage: unit_test
-      name: "SDK: dev; PKG: build; TASKS: `pub run build_runner test -- --test-randomize-ordering-seed=random`"
+      name: "SDK: dev; PKG: build; TASKS: `pub run test --test-randomize-ordering-seed=random`"
       dart: dev
       os: linux
       env: PKGS="build"
-      script: ./tool/travis.sh command_2
+      script: ./tool/travis.sh test_12
     - stage: unit_test
-      name: "SDK: dev; PKG: build; TASKS: `pub run build_runner test -- --test-randomize-ordering-seed=random`"
+      name: "SDK: dev; PKG: build; TASKS: `pub run test --test-randomize-ordering-seed=random`"
       dart: dev
       os: windows
       env: PKGS="build"
-      script: ./tool/travis.sh command_2
+      script: ./tool/travis.sh test_12
     - stage: unit_test
       name: "SDK: dev; PKG: build_config; TASKS: `pub run test --test-randomize-ordering-seed=random`"
       dart: dev
@@ -98,25 +92,25 @@ jobs:
       dart: dev
       os: linux
       env: PKGS="build_modules"
-      script: ./tool/travis.sh command_4
+      script: ./tool/travis.sh command_3
     - stage: unit_test
       name: "SDK: dev; PKG: build_modules; TASKS: `dart $(pub run build_runner help >/dev/null; pub run build_runner generate-build-script) test --delete-conflicting-outputs -- -P presubmit --test-randomize-ordering-seed=random`"
       dart: dev
       os: windows
       env: PKGS="build_modules"
-      script: ./tool/travis.sh command_4
+      script: ./tool/travis.sh command_3
     - stage: unit_test
       name: "SDK: dev; PKG: build_resolvers; TASKS: [`pub run build_runner test -- --test-randomize-ordering-seed=random`, `test/flutter_test.sh`]"
       dart: dev
       os: linux
       env: PKGS="build_resolvers"
-      script: ./tool/travis.sh command_2 command_5
+      script: ./tool/travis.sh command_4 command_5
     - stage: unit_test
       name: "SDK: dev; PKG: build_resolvers; TASKS: [`pub run build_runner test -- --test-randomize-ordering-seed=random`, `test/flutter_test.sh`]"
       dart: dev
       os: windows
       env: PKGS="build_resolvers"
-      script: ./tool/travis.sh command_2 command_5
+      script: ./tool/travis.sh command_4 command_5
     - stage: unit_test
       name: "SDK: dev; PKG: build_runner; TASKS: `pub run test -x integration --test-randomize-ordering-seed=random`"
       dart: dev
@@ -124,14 +118,14 @@ jobs:
       env: PKGS="build_runner"
       script: ./tool/travis.sh test_06
     - stage: unit_test
-      name: "SDK: 2.7.0; PKG: build_runner_core; TASKS: `pub run test --test-randomize-ordering-seed=random`"
-      dart: "2.7.0"
+      name: "SDK: 2.9.0; PKG: build_runner_core; TASKS: `pub run test --test-randomize-ordering-seed=random`"
+      dart: "2.9.0"
       os: linux
       env: PKGS="build_runner_core"
       script: ./tool/travis.sh test_12
     - stage: unit_test
-      name: "SDK: 2.7.0; PKG: build_runner_core; TASKS: `pub run test --test-randomize-ordering-seed=random`"
-      dart: "2.7.0"
+      name: "SDK: 2.9.0; PKG: build_runner_core; TASKS: `pub run test --test-randomize-ordering-seed=random`"
+      dart: "2.9.0"
       os: windows
       env: PKGS="build_runner_core"
       script: ./tool/travis.sh test_12
@@ -148,17 +142,17 @@ jobs:
       env: PKGS="build_runner_core"
       script: ./tool/travis.sh test_12
     - stage: unit_test
-      name: "SDK: dev; PKG: build_test; TASKS: `pub run build_runner test -- --test-randomize-ordering-seed=random`"
+      name: "SDK: dev; PKG: build_test; TASKS: `pub run test --test-randomize-ordering-seed=random`"
       dart: dev
       os: linux
       env: PKGS="build_test"
-      script: ./tool/travis.sh command_2
+      script: ./tool/travis.sh test_12
     - stage: unit_test
-      name: "SDK: dev; PKG: build_test; TASKS: `pub run build_runner test -- --test-randomize-ordering-seed=random`"
+      name: "SDK: dev; PKG: build_test; TASKS: `pub run test --test-randomize-ordering-seed=random`"
       dart: dev
       os: windows
       env: PKGS="build_test"
-      script: ./tool/travis.sh command_2
+      script: ./tool/travis.sh test_12
     - stage: unit_test
       name: "SDK: dev; PKG: build_vm_compilers; TASKS: `pub run test`"
       dart: dev
@@ -188,13 +182,13 @@ jobs:
       dart: dev
       os: linux
       env: PKGS="scratch_space"
-      script: ./tool/travis.sh command_2
+      script: ./tool/travis.sh command_4
     - stage: unit_test
       name: "SDK: dev; PKG: scratch_space; TASKS: `pub run build_runner test -- --test-randomize-ordering-seed=random`"
       dart: dev
       os: windows
       env: PKGS="scratch_space"
-      script: ./tool/travis.sh command_2
+      script: ./tool/travis.sh command_4
     - stage: e2e_test
       name: "SDK: dev; PKG: _test; TASKS: `pub run test --total-shards 2 --shard-index 0 --test-randomize-ordering-seed=random`"
       dart: dev
