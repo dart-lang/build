@@ -8,7 +8,7 @@ environment:
 
 dependencies:
   analyzer: ^0.40.1
-  build: ">=1.4.0 <1.5.0"
+  build: ">=1.5.0 <1.6.0"
   crypto: ^2.0.0
   graphs: ^0.2.0
   logging: ^0.11.2

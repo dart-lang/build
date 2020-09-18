@@ -2,7 +2,7 @@
 
 - Remove high sdk constraint, allow >=2.9.0.
 - Require latest build_resolvers (which requires the latest analyzer).
-- Require the latest build version (1.4.x).
+- Require the latest build version (1.5.x).
 
 ## 1.10.2
 
