@@ -2,5 +2,5 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-// Uses `late` to ensure null safety is enabled
+// Uses `?` to ensure null safety is enabled
 final String? message = 'hello';
