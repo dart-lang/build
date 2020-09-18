@@ -315,7 +315,7 @@ void main() {
         var main = await resolver.findLibraryByName('web.main');
         var meta = main.getType('Foo').supertype.element.metadata[0];
         expect(meta, isNotNull);
-        expect(meta.computeConstantValue(), isNull);
+        expect(meta.computeConstantValue()?.toIntValue(), 0);
       }, resolvers: AnalyzerResolvers());
     });
 

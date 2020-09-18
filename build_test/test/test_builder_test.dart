@@ -169,13 +169,15 @@ void main() {
           '.dart': ['.fake']
         },
         build: (step, _) async {
-          var lib = await step.inputLibrary;
-          var errors = await lib.session.getErrors(lib.source.fullName);
-          expect(
-              errors.errors.map((e) => e.message),
-              contains(contains(
-                  'This requires the \'extension-methods\' language feature to be '
-                  'enabled.')));
+          try {
+            await step.inputLibrary;
+          } on SyntaxErrorInAssetException catch (e) {
+            expect(
+                e.syntaxErrors.first.message,
+                contains(
+                    'This requires the \'extension-methods\' language feature to be '
+                    'enabled.'));
+          }
         },
       ),
       {
