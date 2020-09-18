@@ -4,7 +4,7 @@ description: A daemon for running Dart builds.
 homepage: https://github.com/dart-lang/build/tree/master/build_daemon
 
 environment:
-  sdk: ">=2.7.0 <3.0.0"
+  sdk: ">=2.9.0 <3.0.0"
 
 dependencies:
   built_collection: ^4.1.0

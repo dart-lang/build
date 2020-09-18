@@ -1,3 +1,7 @@
+## 1.2.2-dev
+
+- Allow package:build versions through `1.5.x`.
+
 ## 1.2.1
 
 - Improve/fix `testBuilder` documentation.

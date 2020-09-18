@@ -66,13 +66,13 @@ for PKG in ${PKGS}; do
       echo 'pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random'
       pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
-    command_3)
-      echo 'pub run build_runner test -- --test-randomize-ordering-seed=random'
-      pub run build_runner test -- --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    command_5)
+    command_4)
       echo 'dart $(pub run build_runner help >/dev/null; pub run build_runner generate-build-script) test --delete-conflicting-outputs -- -P presubmit --test-randomize-ordering-seed=random'
       dart $(pub run build_runner help >/dev/null; pub run build_runner generate-build-script) test --delete-conflicting-outputs -- -P presubmit --test-randomize-ordering-seed=random || EXIT_CODE=$?
+      ;;
+    command_5)
+      echo 'pub run build_runner test -- --test-randomize-ordering-seed=random'
+      pub run build_runner test -- --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
     command_6)
       echo 'test/flutter_test.sh'

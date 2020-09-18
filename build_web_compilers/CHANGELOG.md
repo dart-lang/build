@@ -30,6 +30,7 @@ global_options:
   `.ddc_merged_metadata` file which consists of new line separated
   `.metadata` content produced by DDC.
 - Migrate off of deprecated analyzer apis.
+- Allow the latest analyzer version `0.40.x`.
 
 ## 2.11.0
 
