@@ -1,8 +1,10 @@
-## 2.10.2
+## 2.11.0-dev
 
+- Add support for building null safe kernel modules to `KernelBuilder`.
+- Stop using deprecated analyzer apis.
+- Stop passing the deprecated `--kernel` flag to the dev compiler.
 - Update the package_config used in the shared compiler tmp dir to cover the
   non-lib dirs for the root package.
-- Stop using deprecated analyzer apis.
 
 ## 2.10.1
 

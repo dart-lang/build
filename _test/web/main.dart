@@ -8,5 +8,7 @@ import 'sub/message.dart' deferred as message;
 
 void main() async {
   await message.loadLibrary();
-  startApp(text: const String.fromEnvironment('message') ?? message.message);
+  var text = const String.fromEnvironment('message');
+  if (text.isEmpty) text = message.message;
+  startApp(text: text);
 }

@@ -18,10 +18,10 @@ same directory structure.
 ## How can I debug my release mode web app (dart2js)?
 
 By default, the `dart2js` compiler is only enabled in `--release` mode, which
-does not include source maps or the original `.dart` files. If you need to
-debug an error which only happens in `dart2js`, you will want to change your
-debug mode compiler to `dart2js`. You can either do this using the `--define`
-command line option:
+does not include source maps or the original `.dart` files. If you need to debug
+an error which only happens in `dart2js`, you will want to change your debug
+mode compiler to `dart2js`. You can either do this using the `--define` command
+line option:
 
 ```text
 --define "build_web_compilers|entrypoint=compiler=dart2js"
@@ -47,14 +47,14 @@ default mode for the `serve` command is dev, and the default mode for the
 `build` command is release. The `build` command can use dev mode with the
 `--no-release` flag.
 
-Options can be configured per mode, and they are [merged by
-key](#how-is-the-configuration-for-a-builder-resolved) with the defaults
-provided by the builder and global overrides. The `options` field defines
-configuration used in all modes, and the `dev` and `release` fields defines the
-overrides to those defaults for the specific mode chosen. Builders can define
-their own defaults by mode which is overridden by user config. For example
-`build_web_compilers` defines options that use `dartdevc` compiler in dev mode,
-and `dart2js` in release mode.
+Options can be configured per mode, and they are
+[merged by key](#how-is-the-configuration-for-a-builder-resolved) with the
+defaults provided by the builder and global overrides. The `options` field
+defines configuration used in all modes, and the `dev` and `release` fields
+defines the overrides to those defaults for the specific mode chosen. Builders
+can define their own defaults by mode which is overridden by user config. For
+example `build_web_compilers` defines options that use `dartdevc` compiler in
+dev mode, and `dart2js` in release mode.
 
 The following configuration builds with `dart2js` always, passes `--no-minify`
 in dev mode, and passed `-O3` in release mode:
@@ -97,13 +97,13 @@ configuration is "merged" one by one, where the higher precedence configuration
 overrides values by String key. The order of precedence from lowest to highest
 is:
 
-- Builder defaults without a mode.
-- Builder defaults by mode.
-- Target configuration without a mode.
-- Target configuration by mode.
-- Global options without a mode.
-- Global options by mode.
-- Options specified on the command line.
+-   Builder defaults without a mode.
+-   Builder defaults by mode.
+-   Target configuration without a mode.
+-   Target configuration by mode.
+-   Global options without a mode.
+-   Global options by mode.
+-   Options specified on the command line.
 
 For example:
 
@@ -151,8 +151,8 @@ The `build_runner` package defaults the included source files to directories
 derived from the
 [package layout conventions](https://dart.dev/tools/pub/package-layout).
 
-If you have additional files which you would like to be included as part of
-the build, you will need a custom `build.yaml` file. You will want to modify the
+If you have additional files which you would like to be included as part of the
+build, you will need a custom `build.yaml` file. You will want to modify the
 `sources` field on the `$default` target:
 
 ```yaml
@@ -174,26 +174,26 @@ build - it needs to know every file that may be written and which Builder would
 write it. If multiple Builders are configured to (possibly) output the same file
 you can:
 
-- Add a `generate_for` configuration for one or both Builders so they do not
-  both operate on the same primary input.
-- Disable one of the Builders if it is unneeded.
-- Contact the author of the Builder and ask that a more unique output extension
-  is chosen.
-- Contact the author of the Builder and ask that a more unique input extension
-  is chose, for example only generating for files that end in `_something.dart`
-  rather than all files that end in `.dart`.
+-   Add a `generate_for` configuration for one or both Builders so they do not
+    both operate on the same primary input.
+-   Disable one of the Builders if it is unneeded.
+-   Contact the author of the Builder and ask that a more unique output
+    extension is chosen.
+-   Contact the author of the Builder and ask that a more unique input extension
+    is chose, for example only generating for files that end in
+    `_something.dart` rather than all files that end in `.dart`.
 
 ## How can I use my own development server to serve generated files?
 
 There are 2 options for using a different server during development:
 
-1. Run `build_runner serve web:<port>` and proxy the requests to it from your
-other server. This has the benefit of delaying requests while a build is
-ongoing so you don't get an inconsistent set of assets.
+1.  Run `build_runner serve web:<port>` and proxy the requests to it from your
+    other server. This has the benefit of delaying requests while a build is
+    ongoing so you don't get an inconsistent set of assets.
 
-2. Run `build_runner watch --output web:build` and use the created `build/`
-directory to serve files from. This will include a `build/packages` directory
-that has these files in it.
+2.  Run `build_runner watch --output web:build` and use the created `build/`
+    directory to serve files from. This will include a `build/packages`
+    directory that has these files in it.
 
 ## How can I fix `AssetNotFoundException`s for swap files?
 

@@ -9,6 +9,9 @@ before_install:
   - tool/travis_setup.sh
 after_failure:
   - tool/report_failure.sh
+branches:
+  only:
+    - master
 
 jobs:
   include:
@@ -319,11 +322,6 @@ stages:
   - e2e_test
   - name: e2e_test_cron
     if: "type IN (api, cron)"
-
-# Only building master means that we don't run two builds for each pull request.
-branches:
-  only:
-    - master
 
 cache:
   directories:

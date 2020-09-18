@@ -8,19 +8,19 @@ which share a file base name with an input.
 
 Having a predictable set of outputs allows:
 
-- Ability to reason about builds. We've found that arbitrarily complex builds
-  tend to become difficult to debug.
-- Compatibility with a wide set of build systems. A Builder that follows these
-  restrictions can run within `build_runner`, or in a build system like
-  [bazel](https://bazel.build).
+-   Ability to reason about builds. We've found that arbitrarily complex builds
+    tend to become difficult to debug.
+-   Compatibility with a wide set of build systems. A Builder that follows these
+    restrictions can run within `build_runner`, or in a build system like
+    [bazel](https://bazel.build).
 
 ## Configuring outputs
 
-Each `Builder` implements a property `buildExtensions` which is a
-`Map<String, List<String>>` to configure what outputs are created for 1 or more
-input extensions. For example with the configuration `{'.dart': ['.foo.dart']}`
-all Dart files in the build will be passed as a primary input, and each build
-step may produce a single asset. For the primary input `some_library.dart` the
+Each `Builder` implements a property `buildExtensions` which is a `Map<String,
+List<String>>` to configure what outputs are created for 1 or more input
+extensions. For example with the configuration `{'.dart': ['.foo.dart']}` all
+Dart files in the build will be passed as a primary input, and each build step
+may produce a single asset. For the primary input `some_library.dart` the
 allowed output is `some_library.foo.dart`. Only assets which will produce at
 least one output will trigger a build step.
 
@@ -51,8 +51,7 @@ a `basename` with their input.
 In most cases the expected file is known statically, so the package can have a
 placeholder (with a different extension) where that file should be created. For
 example: if a Builder is meant to produce the file `lib/foo.dart` and use as
-inputs existing Dart files in `lib/`.
-- Write an empty file to `lib/foo.placeholder`
-- Use the extension config `{'.placeholder': ['.dart']}`
-- Ignore the `buildStep.inputId` and find the real inputs with
-  `buildStep.findAssets(new Glob('lib/*dart')`
+inputs existing Dart files in `lib/`. - Write an empty file to
+`lib/foo.placeholder` - Use the extension config `{'.placeholder': ['.dart']}` -
+Ignore the `buildStep.inputId` and find the real inputs with
+`buildStep.findAssets(new Glob('lib/*dart')`

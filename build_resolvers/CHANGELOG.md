@@ -1,4 +1,9 @@
-## 1.3.11-dev
+## 1.4.0-dev
+
+- Support versions `1.5.x` of the `build` package.
+  - Implements the `compilationUnitFor` method on `Resolver`.
+
+## 1.3.11
 
 - Use the public `buildSdkSummary` api from the analyzer instead of the 
   private one.

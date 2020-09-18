@@ -1,3 +1,18 @@
+## 1.5.0-dev
+
+Added the `Future<CompilationUnit> compilationUnitFor(AssetId id)` api to the
+`Resolver` class, which returns only the parsed AST for the given asset.
+- Much cheaper than `libraryFor`, because it only reads the given asset instead
+  of touching all transitive deps.
+- Still may be suitable for some builders which don't need the fully resolved
+  `Element` model.
+
+## 1.4.0
+
+The resolver will now throw an `SyntaxErrorInAssetException` when attempting to
+resolve an asset with syntax errors. You can opt-out of this new behavior by
+passing `allowSyntaxErrors: true` to `libraryFor`.
+
 ## 1.3.0
 
 Added a new experiments library which exposes a list of language experiments

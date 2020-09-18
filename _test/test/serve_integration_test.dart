@@ -33,7 +33,9 @@ void main() {
     });
 
     test('Doesn\'t compile submodules into the root module', () {
-      expect(readGeneratedFileAsString('_test/test/hello_world_test.ddc.js'),
+      expect(
+          readGeneratedFileAsString(
+              '_test/test/hello_world_test.unsound.ddc.js'),
           isNot(contains('Hello World!')));
     });
 
@@ -59,7 +61,7 @@ void main() {
       test('ddc errors can be fixed', () async {
         var path = p.join('test', 'common', 'message.dart');
         var error = nextStdOutLine('Error compiling dartdevc module:'
-            '_test|test/common/message.ddc.js');
+            '_test|test/common/message.unsound.ddc.js');
         var nextBuild = nextFailedBuild;
         await replaceAllInFile(path, "'Hello World!'", '1');
         await error;
@@ -152,7 +154,7 @@ void main() {
     expect(badResponse.statusCode, HttpStatus.notFound);
 
     var ddcFileResponse =
-        await (await httpClient.get('localhost', 8080, 'main.ddc.js')).close();
+        await (await httpClient.get('localhost', 8080, 'main.unsound.ddc.js')).close();
     expect(await utf8.decodeStream(ddcFileResponse), contains('"goodbye"'));
   });
 }

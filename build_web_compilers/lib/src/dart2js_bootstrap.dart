@@ -70,10 +70,9 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
         '--packages=$multiRootScheme:///.dart_tool/package_config.json',
         '--multi-root-scheme=$multiRootScheme',
         '--multi-root=${scratchSpace.tempDir.uri.toFilePath()}',
-        '--verbose',
-        '-o$jsOutputPath',
         for (var experiment in enabledExperiments)
           '--enable-experiment=$experiment',
+        '-o$jsOutputPath',
         '$multiRootScheme:///$dartPath',
       ]);
   }
