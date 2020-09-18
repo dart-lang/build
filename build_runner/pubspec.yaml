@@ -4,9 +4,7 @@ description: A build system for Dart code generation and modular compilation.
 homepage: https://github.com/dart-lang/build/tree/master/build_runner
 
 environment:
-  # The min sdk can be reduced once analyzer releases a fix for
-  # https://github.com/dart-lang/build/issues/2763
-  sdk: ">=2.9.0 <3.0.0"
+  sdk: ">=2.10.0-93.0.dev <3.0.0"
 
 dependencies:
   args: ">=1.4.0 <2.0.0"
