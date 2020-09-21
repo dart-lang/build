@@ -4,6 +4,9 @@
 - Allow the latest analyzer version `0.40.x`.
 - Stop using deprecated analyzer apis.
 - Stop passing the deprecated `--kernel` flag to the dev compiler.
+- Update the package_config used in the shared compiler tmp dir to cover the
+  non-lib dirs for the root package.
+- Expose `maxWorkersPerTask` variable.
 
 ## 2.10.1
 

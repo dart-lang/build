@@ -2,6 +2,8 @@
 
 - Support sound null safety in ddc/dart2js, based on the standard entrypoint
   detection (enable null safety if the entrypoint opts in).
+- Update dart2js support to enable experiments if provided, and use a
+  multi-root scheme for non-package uris.
 
 ## 2.12.0-dev.3
 

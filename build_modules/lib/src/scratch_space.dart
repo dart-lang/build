@@ -30,8 +30,9 @@ final scratchSpaceResource = Resource<ScratchSpace>(() {
   var packageConfigFile = File(
       p.join(scratchSpace.tempDir.path, '.dart_tool', 'package_config.json'));
   if (!packageConfigFile.existsSync()) {
+    var originalConfigFile = File(p.join('.dart_tool', 'package_config.json'));
     var packageConfigContents = _scratchSpacePackageConfig(
-        File(p.join('.dart_tool', 'package_config.json')).readAsStringSync());
+        originalConfigFile.readAsStringSync(), originalConfigFile.absolute.uri);
     packageConfigFile
       ..createSync(recursive: true)
       ..writeAsStringSync(packageConfigContents);
@@ -81,7 +82,7 @@ final scratchSpaceResource = Resource<ScratchSpace>(() {
 /// directory.
 ///
 /// Returns the new file contents.
-String _scratchSpacePackageConfig(String rootConfig) {
+String _scratchSpacePackageConfig(String rootConfig, Uri packageConfigUri) {
   var parsedRootConfig = jsonDecode(rootConfig) as Map<String, dynamic>;
   var version = parsedRootConfig['configVersion'] as int;
   if (version != 2) {
@@ -91,9 +92,26 @@ String _scratchSpacePackageConfig(String rootConfig) {
   }
   var packages =
       (parsedRootConfig['packages'] as List).cast<Map<String, dynamic>>();
+  var foundRoot = false;
   for (var package in packages) {
-    package['rootUri'] = '../packages/${package['name']}';
-    package['packageUri'] = '';
+    var rootUri = packageConfigUri.resolve(package['rootUri'] as String);
+    // We expect to see exactly one package where the root uri is equal to
+    // the current directory, and that is the current packge.
+    if (rootUri == _currentDirUri) {
+      assert(!foundRoot);
+      foundRoot = true;
+      package['rootUri'] = '../';
+      package['packageUri'] = '../packages/${package['name']}/';
+    } else {
+      package['rootUri'] = '../packages/${package['name']}/';
+      package.remove('packageUri');
+    }
+  }
+  if (!foundRoot) {
+    _logger.warning('No root package found, this may cause problems for files '
+        'not referenced by a package: uri');
   }
   return jsonEncode(parsedRootConfig);
 }
+
+final Uri _currentDirUri = Directory.current.uri;

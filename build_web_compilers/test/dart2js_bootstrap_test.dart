@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'package:build/experiments.dart';
 import 'package:build_test/build_test.dart';
+import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 import 'package:build_web_compilers/build_web_compilers.dart';
@@ -16,9 +17,12 @@ import 'util.dart';
 void main() {
   Map<String, dynamic> assets;
   final platform = dart2jsPlatform;
+  Logger.root.level = Level.ALL;
 
   group('dart2js', () {
     setUp(() async {
+      addTearDown(
+          Logger.root.onRecord.listen((r) => printOnFailure('$r')).cancel);
       assets = {
         'b|lib/b.dart': '''final world = 'world';''',
         'a|lib/a.dart': '''
@@ -35,7 +39,7 @@ void main() {
           'configVersion': 2,
           'packages': [
             for (var pkg in ['a', 'b'])
-              {'name': pkg, 'rootUri': 'packages/a', 'packageUri': ''}
+              {'name': pkg, 'rootUri': 'packages/$pkg', 'packageUri': ''}
           ]
         }),
       };
