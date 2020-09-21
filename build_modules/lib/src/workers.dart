@@ -41,7 +41,7 @@ final int _defaultMaxWorkers = min((Platform.numberOfProcessors / 2).ceil(), 4);
 
 const _maxWorkersEnvVar = 'BUILD_MAX_WORKERS_PER_TASK';
 
-final int _maxWorkersPerTask = () {
+final int maxWorkersPerTask = () {
   var toParse =
       Platform.environment[_maxWorkersEnvVar] ?? '$_defaultMaxWorkers';
   var parsed = int.tryParse(toParse);
@@ -66,7 +66,7 @@ BazelWorkerDriver get _dartdevkDriver {
           ],
           mode: _processMode,
           workingDirectory: scratchSpace.tempDir.path),
-      maxWorkers: _maxWorkersPerTask);
+      maxWorkers: maxWorkersPerTask);
 }
 
 BazelWorkerDriver __dartdevkDriver;
@@ -92,7 +92,7 @@ BazelWorkerDriver get _frontendDriver {
           ],
           mode: _processMode,
           workingDirectory: scratchSpace.tempDir.path),
-      maxWorkers: _maxWorkersPerTask);
+      maxWorkers: maxWorkersPerTask);
 }
 
 BazelWorkerDriver __frontendDriver;
@@ -131,6 +131,7 @@ Dart2JsBatchWorkerPool get _dart2jsWorkerPool {
 Dart2JsBatchWorkerPool __dart2jsWorkerPool;
 
 /// Resource for fetching the current [Dart2JsBatchWorkerPool] for dart2js.
+@Deprecated('Will be removed in build_modules version 3.x, no longer used')
 final dart2JsWorkerResource = Resource<Dart2JsBatchWorkerPool>(
     () => _dart2jsWorkerPool, beforeExit: () async {
   await _dart2jsWorkerPool.terminateWorkers();
@@ -167,7 +168,7 @@ class Dart2JsBatchWorkerPool {
       while (_workQueue.isNotEmpty) {
         _Dart2JsWorker worker;
         if (_availableWorkers.isEmpty &&
-            _allWorkers.length < _maxWorkersPerTask) {
+            _allWorkers.length < maxWorkersPerTask) {
           worker = _Dart2JsWorker(_spawnWorker);
           _allWorkers.add(worker);
         }

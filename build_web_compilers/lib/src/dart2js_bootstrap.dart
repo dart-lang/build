@@ -13,6 +13,7 @@ import 'package:build_modules/build_modules.dart';
 import 'package:build_modules/src/workers.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
+import 'package:pool/pool.dart';
 import 'package:scratch_space/scratch_space.dart';
 
 import 'platforms.dart';
@@ -23,6 +24,11 @@ import 'web_entrypoint_builder.dart';
 /// If [skipPlatformCheck] is `true` then all `dart:` imports will be
 /// allowed in all packages.
 Future<void> bootstrapDart2Js(BuildStep buildStep, List<String> dart2JsArgs,
+        {bool skipPlatformCheck}) =>
+    _resourcePool.withResource(() => _bootstrapDart2Js(buildStep, dart2JsArgs,
+        skipPlatformCheck: skipPlatformCheck));
+
+Future<void> _bootstrapDart2Js(BuildStep buildStep, List<String> dart2JsArgs,
     {bool skipPlatformCheck}) async {
   skipPlatformCheck ??= false;
   var dartEntrypointId = buildStep.inputId;
@@ -134,3 +140,5 @@ Future<void> _copyIfExists(
     await scratchSpace.copyOutput(id, writer);
   }
 }
+
+final _resourcePool = Pool(maxWorkersPerTask);
