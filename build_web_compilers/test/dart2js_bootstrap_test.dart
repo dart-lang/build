@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:convert';
+import 'dart:async';
 
 import 'package:build/experiments.dart';
 import 'package:build_test/build_test.dart';
@@ -17,12 +17,19 @@ import 'util.dart';
 void main() {
   Map<String, dynamic> assets;
   final platform = dart2jsPlatform;
-  Logger.root.level = Level.ALL;
+
+  StreamSubscription<LogRecord> logSubscription;
+  setUp(() {
+    Logger.root.level = Level.ALL;
+    logSubscription = Logger.root.onRecord.listen((r) => printOnFailure('$r'));
+  });
+
+  tearDown(() {
+    logSubscription.cancel();
+  });
 
   group('dart2js', () {
     setUp(() async {
-      addTearDown(
-          Logger.root.onRecord.listen((r) => printOnFailure('$r')).cancel);
       assets = {
         'b|lib/b.dart': '''final world = 'world';''',
         'a|lib/a.dart': '''
@@ -35,13 +42,6 @@ void main() {
           print(hello);
         }
       ''',
-        'a|.dart_tool/package_config.json': jsonEncode({
-          'configVersion': 2,
-          'packages': [
-            for (var pkg in ['a', 'b'])
-              {'name': pkg, 'rootUri': 'packages/$pkg', 'packageUri': ''}
-          ]
-        }),
       };
 
       // Set up all the other required inputs for this test.
@@ -75,6 +75,32 @@ void main() {
           assets,
           outputs: expectedOutputs);
     });
+  });
+
+  test('dart2js can bootstrap apps under lib', () async {
+    assets = {
+      'a|lib/index.dart': '''
+        main() {
+          print('hello world');
+        }
+      ''',
+    };
+
+    // Set up all the other required inputs for this test.
+    await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
+    await testBuilderAndCollectAssets(MetaModuleBuilder(platform), assets);
+    await testBuilderAndCollectAssets(MetaModuleCleanBuilder(platform), assets);
+    await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
+
+    // Just do some basic sanity checking, integration tests will validate
+    // things actually work.
+    var expectedOutputs = {
+      'a|lib/index.dart.js': decodedMatches(contains('world')),
+      'a|lib/index.dart.js.map': anything,
+      'a|lib/index.dart.js.tar.gz': anything,
+    };
+    await testBuilder(WebEntrypointBuilder(WebCompiler.Dart2Js), assets,
+        outputs: expectedOutputs);
   });
 
   group('null safety', () {
