@@ -64,13 +64,14 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
     var allSrcs = allDeps.expand((module) => module.sources);
     await scratchSpace.ensureAssets(allSrcs, buildStep);
 
-    var dartPath = dartEntrypointId.path.startsWith('lib/')
-        ? 'package:${dartEntrypointId.package}/'
-            '${dartEntrypointId.path.substring('lib/'.length)}'
-        : dartEntrypointId.path;
-    var jsOutputPath =
-        '${p.withoutExtension(dartPath.replaceFirst('package:', 'packages/'))}'
-        '$jsEntrypointExtension';
+    var dartUri = dartEntrypointId.path.startsWith('lib/')
+        ? Uri.parse('package:${dartEntrypointId.package}/'
+            '${dartEntrypointId.path.substring('lib/'.length)}')
+        : Uri.parse('$multiRootScheme:///${dartEntrypointId.path}');
+    var jsOutputPath = p.withoutExtension(dartUri.scheme == 'package'
+            ? 'packages/${dartUri.path}'
+            : dartUri.path.substring(1)) +
+        jsEntrypointExtension;
     args = dart2JsArgs.toList()
       ..addAll([
         '--packages=$multiRootScheme:///.dart_tool/package_config.json',
@@ -79,7 +80,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
         for (var experiment in enabledExperiments)
           '--enable-experiment=$experiment',
         '-o$jsOutputPath',
-        '$multiRootScheme:///$dartPath',
+        '$dartUri',
       ]);
   }
 
