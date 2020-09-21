@@ -123,7 +123,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
     await _copyIfExists(jsSourceMapId, scratchSpace, buildStep);
   } else {
     log.severe(
-        'ExitCode:${result.exitCode}\nStdOut:\n{result.stdout}\nStdErr:\n${result.stderr}');
+        'ExitCode:${result.exitCode}\nStdOut:\n${result.stdout}\nStdErr:\n${result.stderr}');
   }
 }
 
