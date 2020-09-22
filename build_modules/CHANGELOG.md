@@ -1,4 +1,4 @@
-## 2.11.0-dev
+## 2.11.0
 
 - Add support for building null safe kernel modules to `KernelBuilder`.
 - Allow the latest analyzer version `0.40.x`.
