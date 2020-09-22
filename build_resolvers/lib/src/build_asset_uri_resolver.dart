@@ -44,7 +44,7 @@ class BuildAssetUriResolver extends UriResolver {
 
   /// The assets which have been resolved from a [BuildStep], either as an
   /// input, subsequent calls to a resolver, or a transitive import thereof.
-  final _buildStepAssets = <BuildStep, HashSet<AssetId>>{};
+  final _buildStepTransitivelyResolvedAssets = <BuildStep, HashSet<AssetId>>{};
 
   /// Updates [resourceProvider] and [driver] with updated versions of
   /// [entryPoints].
@@ -54,19 +54,20 @@ class BuildAssetUriResolver extends UriResolver {
   Future<void> performResolve(
       BuildStep buildStep, List<AssetId> entryPoints, AnalysisDriver driver,
       {@required bool transitive}) async {
-    final seenInBuildStep =
-        _buildStepAssets.putIfAbsent(buildStep, () => HashSet());
-    bool notCrawled(AssetId asset) => !seenInBuildStep.contains(asset);
+    final transitivelyResolved = _buildStepTransitivelyResolvedAssets
+        .putIfAbsent(buildStep, () => HashSet());
+    bool notCrawled(AssetId asset) => !transitivelyResolved.contains(asset);
 
     final uncrawledIds = entryPoints.where(notCrawled);
     final assetStates = transitive
         ? await crawlAsync<AssetId, _AssetState>(
             uncrawledIds,
-            (id) => _updateCachedAssetState(id, buildStep, seenInBuildStep),
+            (id) => _updateCachedAssetState(id, buildStep,
+                transitivelyResolved: transitivelyResolved),
             (id, state) => state.directives.where(notCrawled)).toList()
         : [
             for (var id in uncrawledIds)
-              await _updateCachedAssetState(id, buildStep, seenInBuildStep),
+              await _updateCachedAssetState(id, buildStep),
           ];
 
     assetStates
@@ -84,9 +85,10 @@ class BuildAssetUriResolver extends UriResolver {
   /// After all assets have been updated, then `changeFile` should be called on
   /// the `AnalysisDriver` for all changed assets.
   ///
-  /// If [id] can be read, then it will be added to [seenInBuildStep].
-  Future<_AssetState> _updateCachedAssetState(
-      AssetId id, BuildStep buildStep, Set<AssetId> seenInBuildStep) async {
+  /// If [id] can be read, then it will be added to [transitivelyResolved] (if
+  /// non-null).
+  Future<_AssetState> _updateCachedAssetState(AssetId id, BuildStep buildStep,
+      {Set<AssetId> /*?*/ transitivelyResolved}) async {
     final path = assetPath(id);
     if (!await buildStep.canRead(id)) {
       if (globallySeenAssets.contains(id)) {
@@ -103,7 +105,7 @@ class BuildAssetUriResolver extends UriResolver {
       return _AssetState.removed(path);
     }
     globallySeenAssets.add(id);
-    seenInBuildStep.add(id);
+    transitivelyResolved?.add(id);
     final digest = await buildStep.digest(id);
     if (_cachedAssetDigests[id] == digest) {
       return _AssetState.unchanged(path, _cachedAssetDependencies[id]);
@@ -157,12 +159,12 @@ class BuildAssetUriResolver extends UriResolver {
   }
 
   void notifyComplete(BuildStep step) {
-    _buildStepAssets.remove(step);
+    _buildStepTransitivelyResolvedAssets.remove(step);
   }
 
   /// Clear cached information specific to an individual build.
   void reset() {
-    assert(_buildStepAssets.isEmpty,
+    assert(_buildStepTransitivelyResolvedAssets.isEmpty,
         'Reset was called before all build steps completed');
     globallySeenAssets.clear();
   }

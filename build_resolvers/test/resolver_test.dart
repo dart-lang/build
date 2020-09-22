@@ -66,6 +66,41 @@ void main() {
       }, resolvers: AnalyzerResolvers());
     });
 
+    test('should still crawl transitively after a call to isLibrary', () {
+      return resolveSources({
+        'a|web/main.dart': '''
+              import 'package:b/b.dart';
+
+              main() {
+              } ''',
+        'b|lib/b.dart': '''
+              library b;
+              ''',
+      }, (resolver) async {
+        await resolver.isLibrary(entryPoint);
+        var libs = await resolver.libraries.toList();
+        expect(libs, contains(predicate((l) => l.name == 'b')));
+      }, resolvers: AnalyzerResolvers());
+    });
+
+    test('should still crawl transitively after a call to compilationUnitFor',
+        () {
+      return resolveSources({
+        'a|web/main.dart': '''
+              import 'package:b/b.dart';
+
+              main() {
+              } ''',
+        'b|lib/b.dart': '''
+              library b;
+              ''',
+      }, (resolver) async {
+        await resolver.compilationUnitFor(entryPoint);
+        var libs = await resolver.libraries.toList();
+        expect(libs, contains(predicate((l) => l.name == 'b')));
+      }, resolvers: AnalyzerResolvers());
+    });
+
     group('language versioning', () {
       test('gives a correct languageVersion based on comments', () async {
         await resolveSources({
