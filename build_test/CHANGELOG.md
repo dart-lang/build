@@ -1,4 +1,4 @@
-## 1.2.2-dev
+## 1.2.2
 
 - Allow package:build versions through `1.5.x`.
 

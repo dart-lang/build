@@ -1,5 +1,4 @@
-## 1.5.0-dev
-
+## 1.5.0
 - Allow the latest analyzer version `0.40.x`.
 - Added the `Future<CompilationUnit> compilationUnitFor(AssetId id)` api to the
   `Resolver` class, which returns only the parsed AST for the given asset.

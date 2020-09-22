@@ -1,4 +1,4 @@
-## 1.4.0-dev
+## 1.4.0
 
 - Support versions `1.5.x` of the `build` package.
   - Implements the `compilationUnitFor` method on `Resolver`.
