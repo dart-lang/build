@@ -1,3 +1,7 @@
+## 2.11.1
+
+- Reverts 2.11.0 for older sdks than <2.10.0-93.0.dev.
+
 ## 2.10.1
 
 - Fix a bug where file names with spaces were not escaped before being passed
