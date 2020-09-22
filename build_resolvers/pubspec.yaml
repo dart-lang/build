@@ -20,3 +20,4 @@ dependencies:
 
 dev_dependencies:
   test: ^1.0.0
+  build_test: ^1.0.0
