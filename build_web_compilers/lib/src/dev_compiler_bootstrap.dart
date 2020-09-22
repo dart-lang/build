@@ -20,7 +20,8 @@ import 'web_entrypoint_builder.dart';
 /// Alias `_p.url` to `p`.
 _p.Context get _context => _p.url;
 
-var _modulePartialExtension = _context.withoutExtension(jsModuleExtension);
+String _modulePartialExtension(bool soundNullSafety) =>
+    _context.withoutExtension(jsModuleExtension(soundNullSafety));
 
 /// Bootstraps a ddc application, creating the main entrypoint as well as the
 /// bootstrap and digest entrypoints.
@@ -39,6 +40,7 @@ Future<void> bootstrapDdc(
   bool skipPlatformCheck = false,
   @deprecated Set<String> skipPlatformCheckPackages = const {},
   Iterable<AssetId> requiredAssets,
+  @required bool soundNullSafety,
 }) async {
   requiredAssets ??= [];
   skipPlatformCheck ??= false;
@@ -56,7 +58,8 @@ Future<void> bootstrapDdc(
   try {
     transitiveJsModules = await _ensureTransitiveJsModules(module, buildStep,
         skipPlatformCheck: skipPlatformCheck,
-        skipPlatformCheckPackages: skipPlatformCheckPackages);
+        skipPlatformCheckPackages: skipPlatformCheckPackages,
+        soundNullSafety: soundNullSafety);
   } on UnsupportedModules catch (e) {
     var librariesString = (await e.exactLibraries(buildStep).toList())
         .map((lib) => AssetId(lib.id.package,
@@ -72,10 +75,13 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
 ''');
     return;
   }
-  var jsId = module.primarySource.changeExtension(jsModuleExtension);
-  var appModuleName = ddcModuleName(jsId);
+  var jsId =
+      module.primarySource.changeExtension(jsModuleExtension(soundNullSafety));
+  var appModuleName = ddcModuleName(jsId, soundNullSafety);
   var appDigestsOutput =
       dartEntrypointId.changeExtension(digestsEntrypointExtension);
+  var mergedMetadataOutput =
+      dartEntrypointId.changeExtension(mergedMetadataExtension);
 
   // The name of the entrypoint dart library within the entrypoint JS module.
   //
@@ -101,10 +107,10 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
     // Strip out the top level dir from the path for any module, and set it to
     // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
     // and we only allow you to serve top level directories.
-    var moduleName = ddcModuleName(jsId);
+    var moduleName = ddcModuleName(jsId, soundNullSafety);
     modulePaths[moduleName] = _context.withoutExtension(
         jsId.path.startsWith('lib')
-            ? '$moduleName$jsModuleExtension'
+            ? '$moduleName${jsModuleExtension(soundNullSafety)}'
             : _context.joinAll(_context.split(jsId.path).skip(1)));
   }
 
@@ -127,8 +133,9 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
         ..write(_dartLoaderSetup(
             modulePaths,
             _p.url.relative(appDigestsOutput.path,
-                from: _p.url.dirname(bootstrapId.path))))
-        ..write(_requireJsConfig)
+                from: _p.url.dirname(bootstrapId.path)),
+            soundNullSafety))
+        ..write(_requireJsConfig(soundNullSafety))
         ..write(_appBootstrap(bootstrapModuleName, appModuleName,
             appModuleScope, entrypointLibraryName,
             oldModuleScope: oldAppModuleScope));
@@ -140,17 +147,23 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
       dartEntrypointId.changeExtension(jsEntrypointExtension),
       entrypointJsContent);
 
-  // Output the digests for transitive modules.
-  // These can be consumed for hot reloads.
-  var moduleDigests = <String, String>{
-    for (var jsId in transitiveJsModules)
-      _moduleDigestKey(jsId): '${await buildStep.digest(jsId)}',
-  };
+  // Output the digests and merged_metadata for transitive modules.
+  // These can be consumed for hot reloads and debugging.
+  var mergedMetadataContent = StringBuffer();
+  var moduleDigests = <String, String>{};
+  for (var jsId in transitiveJsModules) {
+    mergedMetadataContent.writeln(
+        await buildStep.readAsString(jsId.changeExtension('.js.metadata')));
+    moduleDigests[_moduleDigestKey(jsId, soundNullSafety)] =
+        '${await buildStep.digest(jsId)}';
+  }
   await buildStep.writeAsString(appDigestsOutput, jsonEncode(moduleDigests));
+  await buildStep.writeAsString(
+      mergedMetadataOutput, mergedMetadataContent.toString());
 }
 
-String _moduleDigestKey(AssetId jsId) =>
-    '${ddcModuleName(jsId)}$jsModuleExtension';
+String _moduleDigestKey(AssetId jsId, bool soundNullSafety) =>
+    '${ddcModuleName(jsId, soundNullSafety)}${jsModuleExtension(soundNullSafety)}';
 
 final _lazyBuildPool = Pool(16);
 
@@ -161,7 +174,8 @@ final _lazyBuildPool = Pool(16);
 Future<List<AssetId>> _ensureTransitiveJsModules(
     Module module, BuildStep buildStep,
     {@required bool skipPlatformCheck,
-    @required Set<String> skipPlatformCheckPackages}) async {
+    @required Set<String> skipPlatformCheckPackages,
+    @required bool soundNullSafety}) async {
   // Collect all the modules this module depends on, plus this module.
   var transitiveDeps = await module.computeTransitiveDependencies(buildStep,
       throwIfUnsupported: !skipPlatformCheck,
@@ -169,9 +183,9 @@ Future<List<AssetId>> _ensureTransitiveJsModules(
       skipPlatformCheckPackages: skipPlatformCheckPackages);
 
   var jsModules = [
-    module.primarySource.changeExtension(jsModuleExtension),
+    module.primarySource.changeExtension(jsModuleExtension(soundNullSafety)),
     for (var dep in transitiveDeps)
-      dep.primarySource.changeExtension(jsModuleExtension),
+      dep.primarySource.changeExtension(jsModuleExtension(soundNullSafety)),
   ];
   // Check that each module is readable, and warn otherwise.
   await Future.wait(jsModules.map((jsId) async {
@@ -300,7 +314,8 @@ var _currentDirectory = (function () {
 ''';
 
 /// Sets up `window.$dartLoader` based on [modulePaths].
-String _dartLoaderSetup(Map<String, String> modulePaths, String appDigests) =>
+String _dartLoaderSetup(Map<String, String> modulePaths, String appDigests,
+        bool soundNullSafety) =>
     '''
 $_currentDirectoryScript
 $_baseUrlScript
@@ -317,8 +332,8 @@ if(!window.\$dartLoader) {
      forceLoadModule: function (moduleName, callback, onError) {
        // dartdevc only strips the final extension when adding modules to source
        // maps, so we need to do the same.
-       if (moduleName.endsWith('$_modulePartialExtension')) {
-         moduleName = moduleName.substring(0, moduleName.length - ${_modulePartialExtension.length});
+       if (moduleName.endsWith('${_modulePartialExtension(soundNullSafety)}')) {
+         moduleName = moduleName.substring(0, moduleName.length - ${_modulePartialExtension(soundNullSafety).length});
        }
        if (typeof onError != 'undefined') {
          var errorCallbacks = \$dartLoader.moduleLoadingErrorCallbacks;
@@ -391,7 +406,7 @@ $_baseUrlScript
 ///
 /// Adds error handler code for require.js which requests a `.errors` file for
 /// any failed module, and logs it to the console.
-final _requireJsConfig = '''
+String _requireJsConfig(bool soundNullSafety) => '''
 // Whenever we fail to load a JS module, try to request the corresponding
 // `.errors` file, and log it to the console.
 (function() {
@@ -447,8 +462,8 @@ require.config({
 
 const modulesGraph = new Map();
 function getRegisteredModuleName(moduleMap) {
-  if (\$dartLoader.moduleIdToUrl.has(moduleMap.name + '$_modulePartialExtension')) {
-    return moduleMap.name + '$_modulePartialExtension';
+  if (\$dartLoader.moduleIdToUrl.has(moduleMap.name + '${_modulePartialExtension(soundNullSafety)}')) {
+    return moduleMap.name + '${_modulePartialExtension(soundNullSafety)}';
   }
   return moduleMap.name;
 }

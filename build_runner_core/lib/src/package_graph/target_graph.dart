@@ -29,7 +29,7 @@ class TargetGraph {
   ///
   /// The [overrideBuildConfig] map overrides the config for packages by name.
   ///
-  /// The [defaultRootPackageWhitelist] is the default `sources` list to use
+  /// The [defaultRootPackageSources] is the default `sources` list to use
   /// for targets in the root package.
   ///
   /// All [requiredSourcePaths] should appear in non-root packages. A warning
@@ -39,7 +39,7 @@ class TargetGraph {
   /// warning is logged if this condition is not met.
   static Future<TargetGraph> forPackageGraph(PackageGraph packageGraph,
       {Map<String, BuildConfig> overrideBuildConfig,
-      List<String> defaultRootPackageWhitelist,
+      List<String> defaultRootPackageSources,
       List<String> requiredSourcePaths,
       List<String> requiredRootSourcePaths}) async {
     requiredSourcePaths ??= const [];
@@ -53,7 +53,7 @@ class TargetGraph {
           await _packageBuildConfig(package);
       List<String> defaultInclude;
       if (package.isRoot) {
-        defaultInclude = defaultRootPackageWhitelist;
+        defaultInclude = defaultRootPackageSources;
         rootPackageConfig = config;
       } else if (package.name == r'$sdk') {
         defaultInclude = const [

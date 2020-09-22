@@ -1,0 +1,32 @@
+name: _test_null_safety
+publish_to: none
+
+environment:
+  sdk: ">=2.10.0-0.0 <3.0.0"
+
+dev_dependencies:
+  test: ^1.16.0-nullsafety
+
+dependency_overrides:
+  build:
+    path: ../build
+  build_config:
+    path: ../build_config
+  build_daemon:
+    path: ../build_daemon
+  build_modules:
+    path: ../build_modules
+  build_resolvers:
+    path: ../build_resolvers
+  build_runner:
+    path: ../build_runner
+  build_runner_core:
+    path: ../build_runner_core
+  build_test:
+    path: ../build_test
+  build_vm_compilers:
+    path: ../build_vm_compilers
+  build_web_compilers:
+    path: ../build_web_compilers
+  scratch_space:
+    path: ../scratch_space

@@ -119,6 +119,5 @@ $logEndMarker'''));
       // fast exit.
       exit(0);
     }
-    return 0;
   }
 }

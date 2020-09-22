@@ -46,6 +46,25 @@ define_platforms:
     });
   });
 
+  test('copies language version comments', () async {
+    await testBuilder(TestBootstrapBuilder(), {
+      'a|test/hello_test.dart': '// @dart=2.7\nmain() {}',
+    }, outputs: {
+      'a|test/hello_test.dart.browser_test.dart': decodedMatches(allOf(
+          contains('// @dart=2.7\n'),
+          contains('import "hello_test.dart" as test;'),
+          contains('import "package:test/bootstrap/browser.dart";'))),
+      'a|test/hello_test.dart.vm_test.dart': decodedMatches(allOf(
+          contains('// @dart=2.7\n'),
+          contains('import "hello_test.dart" as test;'),
+          contains('import "package:test/bootstrap/vm.dart";'))),
+      'a|test/hello_test.dart.node_test.dart': decodedMatches(allOf(
+          contains('// @dart=2.7\n'),
+          contains('import "hello_test.dart" as test;'),
+          contains('import "package:test/bootstrap/node.dart";'))),
+    });
+  });
+
   group('Browser tests', () {
     test('TestOn("browser")', () async {
       await testBuilder(TestBootstrapBuilder(), {

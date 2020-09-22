@@ -1,3 +1,13 @@
+## 1.2.2
+
+- Allow package:build versions through `1.5.x`.
+
+## 1.2.1
+
+- Improve/fix `testBuilder` documentation.
+- Update test bootstrap builder to copy language version comments from the test
+  file if present.
+
 ## 1.2.0
 
 - Add support for recognizing custom platforms in TestOn annotations during

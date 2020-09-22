@@ -24,8 +24,10 @@ AssetId _passThrough(AssetId id) => id;
 ///
 /// The keys in [outputs] should be serialized [AssetId]s in the form
 /// `'package|path'`. The values should match the expected content for the
-/// written asset and may be a String (for `writeAsString`), a `List<int>` (for
-/// `writeAsBytes`) or a [Matcher] for a String or bytes.
+/// written asset and may be a `String` which will match against the utf8
+/// decoded bytes, a `List<int>` matching the raw bytes, or a [Matcher] for a
+/// `List<int>` of  bytes. For writing a [Matcher] against the `String`
+/// contents, you can wrap your [Matcher] in a call to `decodedMatches`.
 ///
 /// [actualAssets] are the IDs that were recorded as written during the build.
 ///
@@ -37,7 +39,7 @@ AssetId _passThrough(AssetId id) => id;
 /// association to a package pass [mapAssetIds] to translate from the logical
 /// location to the actual written location.
 void checkOutputs(
-    Map<String, /*List<int>|String|Matcher<String|List<int>>*/ dynamic> outputs,
+    Map<String, /*List<int>|String|Matcher<List<int>>*/ dynamic> outputs,
     Iterable<AssetId> actualAssets,
     RecordingAssetWriter writer,
     {AssetId Function(AssetId id) mapAssetIds = _passThrough}) {
@@ -79,9 +81,12 @@ void checkOutputs(
 /// Runs [builder] in a test environment.
 ///
 /// The test environment supplies in-memory build [sourceAssets] to the builders
-/// under test. [outputs] may be optionally provided to verify that the builders
-/// produce the expected output. If [outputs] is omitted the only validation
-/// this method provides is that the build did not `throw`.
+/// under test.
+///
+/// [outputs] may be optionally provided to verify that the builders
+/// produce the expected output, see [checkOutputs] for a full description of
+/// the [outputs] map and how to use it. If [outputs] is omitted the only
+/// validation this method provides is that the build did not `throw`.
 ///
 /// Either [generateFor] or the [isInput] callback can specify which assets
 /// should be given as inputs to the builder. These can be omitted if every
@@ -127,7 +132,7 @@ Future testBuilder(
     String rootPackage,
     MultiPackageAssetReader reader,
     RecordingAssetWriter writer,
-    Map<String, /*String|List<int>|Matcher<String|List<int>>*/ dynamic> outputs,
+    Map<String, /*String|List<int>|Matcher<List<int>>*/ dynamic> outputs,
     void Function(LogRecord log) onLog,
     void Function(AssetId, Iterable<AssetId>) reportUnusedAssetsForInput,
     PackageConfig packageConfig}) async {

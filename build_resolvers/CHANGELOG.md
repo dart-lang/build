@@ -1,3 +1,19 @@
+## 1.4.0
+
+- Support versions `1.5.x` of the `build` package.
+  - Implements the `compilationUnitFor` method on `Resolver`.
+
+## 1.3.11
+
+- Use the public `buildSdkSummary` api from the analyzer instead of the 
+  private one.
+- Migrate off of other deprecated analyzer apis.
+
+## 1.3.10
+
+- Migrate to new analyzer API for creating an SDK summary after the old approach
+  was broken.
+
 ## 1.3.9
 
 - Fix `isLibrary` for unreadable assets to return `false`.

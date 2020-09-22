@@ -46,24 +46,24 @@ instead we will build on a _synthetic_ input - a file that does not actually
 exist on disk, but rather is used as an identifier for build extensions. We
 currently support the following synthetic files for this purpose:
 
-* `lib/$lib$`
-* `$package$`
-* `test/$test$` (deprecated)
-* `web/$web$` (deprecated)
+*   `lib/$lib$`
+*   `$package$`
+*   `test/$test$` (deprecated)
+*   `web/$web$` (deprecated)
 
 When choosing whether to use `$package$` or `lib/$lib$`, there are two primary
 considerations.
 
-- _where_ do you want to output your files (which directory should they be
-  written to).
-  - If you want to output to directories other than `lib`, you should use
-    `$package$`.
-  - If you want to output files only under `lib`, then use `lib/$lib$`.
-- _which_ packages will this builder run on (only the root package or any
-  package in the dependency tree).
-  - If want to run on any package other than the root, you _must_ use
-    `lib/$lib$` since only files under `lib` are accessible from dependencies -
-    even synthetic files.
+-   _where_ do you want to output your files (which directory should they be
+    written to).
+    -   If you want to output to directories other than `lib`, you should use
+        `$package$`.
+    -   If you want to output files only under `lib`, then use `lib/$lib$`.
+-   _which_ packages will this builder run on (only the root package or any
+    package in the dependency tree).
+    -   If want to run on any package other than the root, you _must_ use
+        `lib/$lib$` since only files under `lib` are accessible from
+        dependencies - even synthetic files.
 
 ## Writing the `Builder` using a synthetic input
 
@@ -77,8 +77,8 @@ and `all_files.txt` as the output extension, which will declare an output at
 `lib/all_files.txt`.
 
 **Note:** If using `$package$` as an input extension you need to declare the
-full output path from the root of the package, since it lives at the root of
-the package.
+full output path from the root of the package, since it lives at the root of the
+package.
 
 ```dart
 import 'package:build/build.dart';
@@ -150,12 +150,11 @@ class ListAllFilesBuilder implements Builder {
 
 ## Using a `Resolver`
 
-Since the input of aggregate builders isn't a real asset that could be read,
-we also can't use `buildStep.inputLibrary` to resolve it.
-However, recent versions of the build system allow us to resolve any asset our
-builder can read.
+Since the input of aggregate builders isn't a real asset that could be read, we
+also can't use `buildStep.inputLibrary` to resolve it. However, recent versions
+of the build system allow us to resolve any asset our builder can read.
 
-For instance, we could adapt the `ListAllFilesBuilder` from before to instead 
+For instance, we could adapt the `ListAllFilesBuilder` from before to instead
 list the names of all classes defined in `lib/`:
 
 ```dart
@@ -217,22 +216,22 @@ dependencies:
 If you want to support older versions of the build system as well, you can split
 your aggregate builder into two steps:
 
-1. A `Builder` with `buildExtensions` of `{'.dart': ['.some_name.info']}`. Use
-   the `Resolver` to find the information about the code that will be necessary
-   later. Serialize this to json or similar and write it as an intermediate
-   file. This should always be `build_to: cache`.
-2. A `Builder` with `buildExtensiosn` of `{r'$lib$': ['final_output_name']}`.
-   Use the glob APIs to read and deserialize the outputs from the previous step,
-   then generate the final content.
+1.  A `Builder` with `buildExtensions` of `{'.dart': ['.some_name.info']}`. Use
+    the `Resolver` to find the information about the code that will be necessary
+    later. Serialize this to json or similar and write it as an intermediate
+    file. This should always be `build_to: cache`.
+2.  A `Builder` with `buildExtensiosn` of `{r'$lib$': ['final_output_name']}`.
+    Use the glob APIs to read and deserialize the outputs from the previous
+    step, then generate the final content.
 
-Each of these steps  must be a separate `Builder` instance in Dart code. They
-can be in the same builder definition in `build.yaml` only if they are both
-output to cache. If the final result should be built to source they must be
-separate builder definitions. In the single builder definition case ordering is
-handled by the order of the `builder_factories` in the config. In the separate
-builder definition case ordering should be handled by configuring the second
-step to have a `required_inputs: ['.some_name.info']` based on the build
-extensions of the first step.
+Each of these steps must be a separate `Builder` instance in Dart code. They can
+be in the same builder definition in `build.yaml` only if they are both output
+to cache. If the final result should be built to source they must be separate
+builder definitions. In the single builder definition case ordering is handled
+by the order of the `builder_factories` in the config. In the separate builder
+definition case ordering should be handled by configuring the second step to
+have a `required_inputs: ['.some_name.info']` based on the build extensions of
+the first step.
 
 This strategy has the benefit of improved invalidation - only the files that
 _need_ to be re-read with the `Resolver` will be invalidated, the rest of the

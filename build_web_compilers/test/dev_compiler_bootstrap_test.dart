@@ -3,12 +3,11 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_test/build_test.dart';
-import 'package:test/test.dart';
-
-import 'package:build_web_compilers/builders.dart';
-import 'package:build_web_compilers/build_web_compilers.dart';
 import 'package:build_modules/build_modules.dart';
+import 'package:build_test/build_test.dart';
+import 'package:build_web_compilers/build_web_compilers.dart';
+import 'package:build_web_compilers/builders.dart';
+import 'package:test/test.dart';
 
 import 'util.dart';
 
@@ -40,12 +39,13 @@ void main() {
       var expectedOutputs = {
         'a|web/index.digests': decodedMatches(contains('packages/')),
         'a|web/index.dart.js': decodedMatches(contains('index.dart.bootstrap')),
+        'a|web/index.dart.ddc_merged_metadata': isNotEmpty,
         'a|web/index.dart.bootstrap.js': decodedMatches(allOf([
           // Maps non-lib modules to remove the top level dir.
-          contains('"web/index": "index.ddc"'),
+          contains('"web/index": "index.unsound.ddc"'),
           // Maps lib modules to packages path
-          contains('"packages/a/a": "packages/a/a.ddc"'),
-          contains('"packages/b/b": "packages/b/b.ddc"'),
+          contains('"packages/a/a": "packages/a/a.unsound.ddc"'),
+          contains('"packages/b/b": "packages/b/b.unsound.ddc"'),
           // Requires the top level module and dart sdk.
           contains('define("index.dart.bootstrap", ["web/index", "dart_sdk"]'),
           // Calls main on the top level module.
@@ -78,7 +78,7 @@ void main() {
       var expectedOutputs = {
         'a|web/b.dart.bootstrap.js': decodedMatches(allOf([
           // Confirm that `a.dart` is the actual primary source.
-          contains('"web/a": "a.ddc"'),
+          contains('"web/a": "a.unsound.ddc"'),
           // And `b.dart` is the application, but its module is `web/a`.
           contains('define("b.dart.bootstrap", ["web/a", "dart_sdk"]'),
           // Calls main on the `b.dart` library, not the `a.dart` library.
@@ -86,6 +86,7 @@ void main() {
           contains('if (childName === "b.dart")'),
         ])),
         'a|web/b.digests': isNotEmpty,
+        'a|web/b.dart.ddc_merged_metadata': isNotEmpty,
         'a|web/b.dart.js': isNotEmpty,
       };
       await testBuilder(WebEntrypointBuilder(WebCompiler.DartDevc), assets,
@@ -105,6 +106,7 @@ void main() {
           contains('if (childName === "package:a/app.dart")'),
         ])),
         'a|lib/app.digests': isNotEmpty,
+        'a|lib/app.dart.ddc_merged_metadata': isNotEmpty,
         'a|lib/app.dart.js': isNotEmpty,
       };
       await testBuilder(WebEntrypointBuilder(WebCompiler.DartDevc), assets,
@@ -120,7 +122,9 @@ Future<void> runPrerequisites(Map<String, dynamic> assets) async {
   // It is necessary to add a fake asset so that the build_web_compilers
   // package exists.
   var sdkAssets = <String, dynamic>{'build_web_compilers|fake.txt': ''};
-  await testBuilderAndCollectAssets(sdkJsCopyBuilder(null), sdkAssets);
+  await testBuilderAndCollectAssets(sdkJsCopyRequirejs(null), sdkAssets);
+  await testBuilderAndCollectAssets(sdkJsCompileUnsound(null), sdkAssets);
+  await testBuilderAndCollectAssets(sdkJsCompileSound(null), sdkAssets);
   assets.addAll(sdkAssets);
 
   await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);

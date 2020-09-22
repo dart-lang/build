@@ -88,7 +88,7 @@ class InBuildPhase extends BuildPhase implements BuildAction {
   ///
   /// [hideOutput] specifies that the generated asses should be placed in the
   /// build cache rather than the source tree.
-  factory InBuildPhase(
+  InBuildPhase(
     Builder builder,
     String package, {
     String builderKey,
@@ -97,19 +97,14 @@ class InBuildPhase extends BuildPhase implements BuildAction {
     BuilderOptions builderOptions,
     bool isOptional,
     bool hideOutput,
-  }) {
-    var targetSourceMatcher = InputMatcher(targetSources ?? const InputSet());
-    var generateForMatcher = InputMatcher(generateFor ?? const InputSet());
-    builderOptions ??= const BuilderOptions({});
-    return InBuildPhase._(package, builder, builderOptions,
-        targetSources: targetSourceMatcher,
-        generateFor: generateForMatcher,
-        builderLabel: builderKey == null || builderKey.isEmpty
-            ? _builderLabel(builder)
-            : _simpleBuilderKey(builderKey),
-        isOptional: isOptional,
-        hideOutput: hideOutput);
-  }
+  }) : this._(package, builder, builderOptions ?? const BuilderOptions({}),
+            targetSources: InputMatcher(targetSources ?? const InputSet()),
+            generateFor: InputMatcher(generateFor ?? const InputSet()),
+            builderLabel: builderKey == null || builderKey.isEmpty
+                ? _builderLabel(builder)
+                : _simpleBuilderKey(builderKey),
+            isOptional: isOptional,
+            hideOutput: hideOutput);
 
   @override
   String toString() {

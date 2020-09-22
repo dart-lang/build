@@ -19,15 +19,9 @@ class AssetChange {
   const AssetChange(this.id, this.type);
 
   /// Creates a new change record in [package] from an existing watcher [event].
-  factory AssetChange.fromEvent(PackageNode package, WatchEvent event) {
-    return AssetChange(
-      AssetId(
-        package.name,
-        _normalizeRelativePath(package, event),
-      ),
-      event.type,
-    );
-  }
+  AssetChange.fromEvent(PackageNode package, WatchEvent event)
+      : this(AssetId(package.name, _normalizeRelativePath(package, event)),
+            event.type);
 
   static String _normalizeRelativePath(PackageNode package, WatchEvent event) {
     final pkgPath = package.path;

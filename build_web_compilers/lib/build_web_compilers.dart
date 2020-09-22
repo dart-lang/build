@@ -8,7 +8,9 @@ export 'src/dev_compiler_builder.dart'
         DevCompilerBuilder,
         jsModuleErrorsExtension,
         jsModuleExtension,
-        jsSourceMapExtension;
+        jsSourceMapExtension,
+        metadataExtension,
+        fullKernelExtension;
 export 'src/platforms.dart' show dart2jsPlatform, ddcPlatform;
 export 'src/web_entrypoint_builder.dart'
     show WebCompiler, WebEntrypointBuilder, ddcBootstrapExtension;

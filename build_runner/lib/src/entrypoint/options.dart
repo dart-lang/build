@@ -104,31 +104,27 @@ class SharedOptions {
     @required this.enableExperiments,
   });
 
-  factory SharedOptions.fromParsedArgs(ArgResults argResults,
-      Iterable<String> positionalArgs, String rootPackage, Command command) {
-    var buildDirs = {
-      ..._parseBuildDirs(argResults),
-      ..._parsePositionalBuildDirs(positionalArgs, command),
-    };
-    var buildFilters = _parseBuildFilters(argResults, rootPackage);
-
-    return SharedOptions._(
-      buildFilters: buildFilters,
-      deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
-      enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
-      configKey: argResults[configOption] as String,
-      buildDirs: buildDirs,
-      outputSymlinksOnly: argResults[symlinkOption] as bool,
-      trackPerformance: argResults[trackPerformanceOption] as bool,
-      skipBuildScriptCheck: argResults[skipBuildScriptCheckOption] as bool,
-      verbose: argResults[verboseOption] as bool,
-      builderConfigOverrides:
-          _parseBuilderConfigOverrides(argResults[defineOption], rootPackage),
-      isReleaseBuild: argResults[releaseOption] as bool,
-      logPerformanceDir: argResults[logPerformanceOption] as String,
-      enableExperiments: argResults[enableExperimentOption] as List<String>,
-    );
-  }
+  SharedOptions.fromParsedArgs(ArgResults argResults,
+      Iterable<String> positionalArgs, String rootPackage, Command command)
+      : this._(
+          buildFilters: _parseBuildFilters(argResults, rootPackage),
+          deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
+          enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
+          configKey: argResults[configOption] as String,
+          buildDirs: {
+            ..._parseBuildDirs(argResults),
+            ..._parsePositionalBuildDirs(positionalArgs, command),
+          },
+          outputSymlinksOnly: argResults[symlinkOption] as bool,
+          trackPerformance: argResults[trackPerformanceOption] as bool,
+          skipBuildScriptCheck: argResults[skipBuildScriptCheckOption] as bool,
+          verbose: argResults[verboseOption] as bool,
+          builderConfigOverrides: _parseBuilderConfigOverrides(
+              argResults[defineOption], rootPackage),
+          isReleaseBuild: argResults[releaseOption] as bool,
+          logPerformanceDir: argResults[logPerformanceOption] as String,
+          enableExperiments: argResults[enableExperimentOption] as List<String>,
+        );
 }
 
 /// Options specific to the `daemon` command.
@@ -248,32 +244,28 @@ class WatchOptions extends SharedOptions {
           enableExperiments: enableExperiments,
         );
 
-  factory WatchOptions.fromParsedArgs(ArgResults argResults,
-      Iterable<String> positionalArgs, String rootPackage, Command command) {
-    var buildDirs = {
-      ..._parseBuildDirs(argResults),
-      ..._parsePositionalBuildDirs(positionalArgs, command),
-    };
-    var buildFilters = _parseBuildFilters(argResults, rootPackage);
-
-    return WatchOptions._(
-      buildFilters: buildFilters,
-      deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
-      enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
-      configKey: argResults[configOption] as String,
-      buildDirs: buildDirs,
-      outputSymlinksOnly: argResults[symlinkOption] as bool,
-      trackPerformance: argResults[trackPerformanceOption] as bool,
-      skipBuildScriptCheck: argResults[skipBuildScriptCheckOption] as bool,
-      verbose: argResults[verboseOption] as bool,
-      builderConfigOverrides:
-          _parseBuilderConfigOverrides(argResults[defineOption], rootPackage),
-      isReleaseBuild: argResults[releaseOption] as bool,
-      logPerformanceDir: argResults[logPerformanceOption] as String,
-      usePollingWatcher: argResults[usePollingWatcherOption] as bool,
-      enableExperiments: argResults[enableExperimentOption] as List<String>,
-    );
-  }
+  WatchOptions.fromParsedArgs(ArgResults argResults,
+      Iterable<String> positionalArgs, String rootPackage, Command command)
+      : this._(
+          buildFilters: _parseBuildFilters(argResults, rootPackage),
+          deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
+          enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
+          configKey: argResults[configOption] as String,
+          buildDirs: {
+            ..._parseBuildDirs(argResults),
+            ..._parsePositionalBuildDirs(positionalArgs, command),
+          },
+          outputSymlinksOnly: argResults[symlinkOption] as bool,
+          trackPerformance: argResults[trackPerformanceOption] as bool,
+          skipBuildScriptCheck: argResults[skipBuildScriptCheckOption] as bool,
+          verbose: argResults[verboseOption] as bool,
+          builderConfigOverrides: _parseBuilderConfigOverrides(
+              argResults[defineOption], rootPackage),
+          isReleaseBuild: argResults[releaseOption] as bool,
+          logPerformanceDir: argResults[logPerformanceOption] as String,
+          usePollingWatcher: argResults[usePollingWatcherOption] as bool,
+          enableExperiments: argResults[enableExperimentOption] as List<String>,
+        );
 }
 
 /// Options specific to the `serve` command.

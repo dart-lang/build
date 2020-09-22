@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'dart:isolate';
 
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_test/build_test.dart';
@@ -65,14 +66,49 @@ void main() {
       }, resolvers: AnalyzerResolvers());
     });
 
+    test('should still crawl transitively after a call to isLibrary', () {
+      return resolveSources({
+        'a|web/main.dart': '''
+              import 'package:b/b.dart';
+
+              main() {
+              } ''',
+        'b|lib/b.dart': '''
+              library b;
+              ''',
+      }, (resolver) async {
+        await resolver.isLibrary(entryPoint);
+        var libs = await resolver.libraries.toList();
+        expect(libs, contains(predicate((l) => l.name == 'b')));
+      }, resolvers: AnalyzerResolvers());
+    });
+
+    test('should still crawl transitively after a call to compilationUnitFor',
+        () {
+      return resolveSources({
+        'a|web/main.dart': '''
+              import 'package:b/b.dart';
+
+              main() {
+              } ''',
+        'b|lib/b.dart': '''
+              library b;
+              ''',
+      }, (resolver) async {
+        await resolver.compilationUnitFor(entryPoint);
+        var libs = await resolver.libraries.toList();
+        expect(libs, contains(predicate((l) => l.name == 'b')));
+      }, resolvers: AnalyzerResolvers());
+    });
+
     group('language versioning', () {
       test('gives a correct languageVersion based on comments', () async {
         await resolveSources({
           'a|web/main.dart': '// @dart=2.1\n\nmain() {}',
         }, (resolver) async {
           var lib = await resolver.libraryFor(entryPoint);
-          expect(lib.languageVersionMajor, 2);
-          expect(lib.languageVersionMinor, 1);
+          expect(lib.languageVersion.effective.major, 2);
+          expect(lib.languageVersion.effective.minor, 1);
         }, resolvers: AnalyzerResolvers());
       });
 
@@ -87,8 +123,8 @@ void main() {
               await loadPackageConfigUri(await Isolate.packageConfig);
           var expectedVersion =
               currentPackageConfig['build_resolvers'].languageVersion;
-          expect(lib.languageVersionMajor, expectedVersion.major);
-          expect(lib.languageVersionMinor, expectedVersion.minor);
+          expect(lib.languageVersion.effective.major, expectedVersion.major);
+          expect(lib.languageVersion.effective.minor, expectedVersion.minor);
         }, resolvers: AnalyzerResolvers());
       });
 
@@ -105,8 +141,8 @@ void main() {
           'a|web/main.dart': 'main() {}',
         }, (resolver) async {
           var lib = await resolver.libraryFor(entryPoint);
-          expect(lib.languageVersionMajor, customVersion.major);
-          expect(lib.languageVersionMinor, customVersion.minor);
+          expect(lib.languageVersion.effective.major, customVersion.major);
+          expect(lib.languageVersion.effective.minor, customVersion.minor);
         }, resolvers: AnalyzerResolvers(null, null, customPackageConfig));
       });
 
@@ -119,8 +155,8 @@ void main() {
           'a|web/main.dart': 'main() {}',
         }, (resolver) async {
           var lib = await resolver.libraryFor(entryPoint);
-          expect(lib.languageVersionMajor, sdkLanguageVersion.major);
-          expect(lib.languageVersionMinor, sdkLanguageVersion.minor);
+          expect(lib.languageVersion.effective.major, sdkLanguageVersion.major);
+          expect(lib.languageVersion.effective.minor, sdkLanguageVersion.minor);
         }, resolvers: AnalyzerResolvers(null, null, customPackageConfig));
       });
 
@@ -140,7 +176,7 @@ void main() {
         }, (resolver) async {
           await resolver.libraryFor(entryPoint);
         }, resolvers: AnalyzerResolvers());
-      }, skip: 'https://github.com/dart-lang/sdk/issues/41607');
+      });
     });
 
     group('assets that aren\'t a transitive import of input', () {
@@ -152,7 +188,7 @@ void main() {
           'a|lib/other.dart': '''
           library other;
         '''
-        }, test);
+        }, test, resolvers: AnalyzerResolvers());
       }
 
       test('can be resolved', () {
@@ -231,7 +267,8 @@ void main() {
         var clazz = lib.getType('A');
         expect(clazz, isNotNull);
         expect(clazz.interfaces, hasLength(1));
-        expect(clazz.interfaces.first.getDisplayString(), 'B');
+        expect(clazz.interfaces.first.getDisplayString(withNullability: false),
+            'B');
       }, resolvers: resolvers);
     });
 
@@ -293,7 +330,7 @@ void main() {
       }, resolvers: AnalyzerResolvers());
     });
 
-    test('does not resolve constants transitively', () {
+    test('resolves constants transitively', () {
       return resolveSources({
         'a|web/main.dart': '''
               library web.main;
@@ -313,7 +350,7 @@ void main() {
         var main = await resolver.findLibraryByName('web.main');
         var meta = main.getType('Foo').supertype.element.metadata[0];
         expect(meta, isNotNull);
-        expect(meta.constantValue, isNull);
+        expect(meta.computeConstantValue()?.toIntValue(), 0);
       }, resolvers: AnalyzerResolvers());
     });
 
@@ -367,28 +404,162 @@ int? get x => 1;
                 ''',
               }, (resolver) async {
                 var lib = await resolver.libraryFor(entryPoint);
-                expect(lib.languageVersionMajor, sdkLanguageVersion.major);
-                expect(lib.languageVersionMinor, sdkLanguageVersion.minor);
+                expect(lib.languageVersion.effective.major,
+                    sdkLanguageVersion.major);
+                expect(lib.languageVersion.effective.minor,
+                    sdkLanguageVersion.minor);
                 var errors = await lib.session.getErrors('/a/web/main.dart');
                 expect(errors.errors, isEmpty);
               }, resolvers: AnalyzerResolvers()),
           ['non-nullable']);
-    }, skip: 'Requires the next version of analyzer which isnt yet published.');
+    });
 
-    group('regressions', () {
-      test('can use analysis session after resolving additional assets',
-          () async {
-        var resolvers = AnalyzerResolvers();
-        await resolveSources({
-          'a|web/main.dart': '',
-          'a|web/other.dart': '',
+    test('can get a new analysis session after resolving additional assets',
+        () async {
+      var resolvers = AnalyzerResolvers();
+      await resolveSources({
+        'a|web/main.dart': '',
+        'a|web/other.dart': '',
+      }, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        expect(await resolver.isLibrary(AssetId('a', 'web/other.dart')), true);
+        var newLib =
+            await resolver.libraryFor(await resolver.assetIdForElement(lib));
+        expect(await newLib.session.getResolvedLibraryByElement(newLib),
+            isNotNull);
+      }, resolvers: resolvers);
+    });
+
+    group('syntax errors', () {
+      test('are reported', () {
+        return resolveSources({
+          'a|errors.dart': '''
+             library a_library;
+
+             void withSyntaxErrors() {
+               String x = ;
+             }
+          ''',
         }, (resolver) async {
-          var lib = await resolver.libraryFor(entryPoint);
-          expect(
-              await resolver.isLibrary(AssetId('a', 'web/other.dart')), true);
-          expect(await lib.session.getResolvedLibraryByElement(lib), isNotNull);
-        }, resolvers: resolvers);
-      }, skip: 'https://github.com/dart-lang/build/issues/2689');
+          await expectLater(
+            resolver.libraryFor(AssetId.parse('a|errors.dart')),
+            throwsA(isA<SyntaxErrorInAssetException>()),
+          );
+          await expectLater(
+            resolver.compilationUnitFor(AssetId.parse('a|errors.dart')),
+            throwsA(isA<SyntaxErrorInAssetException>()),
+          );
+        });
+      });
+
+      test('are reported for part files with errors', () {
+        return resolveSources({
+          'a|lib.dart': '''
+            library a_library;
+            part 'errors.dart';
+            part 'does_not_exist.dart';
+          ''',
+          'a|errors.dart': '''
+             part of 'lib.dart';
+
+             void withSyntaxErrors() {
+               String x = ;
+             }
+          ''',
+        }, (resolver) async {
+          await expectLater(
+            resolver.libraryFor(AssetId.parse('a|lib.dart')),
+            throwsA(
+              isA<SyntaxErrorInAssetException>()
+                  .having((e) => e.syntaxErrors, 'syntaxErrors', hasLength(1)),
+            ),
+          );
+          await expectLater(
+            resolver.compilationUnitFor(AssetId.parse('a|errors.dart')),
+            throwsA(
+              isA<SyntaxErrorInAssetException>()
+                  .having((e) => e.syntaxErrors, 'syntaxErrors', hasLength(1)),
+            ),
+          );
+        });
+      });
+
+      test('are not reported when disabled', () {
+        return resolveSources({
+          'a|errors.dart': '''
+             library a_library;
+
+             void withSyntaxErrors() {
+               String x = ;
+             }
+          ''',
+        }, (resolver) async {
+          await expectLater(
+            resolver.libraryFor(AssetId.parse('a|errors.dart'),
+                allowSyntaxErrors: true),
+            completion(isNotNull),
+          );
+          await expectLater(
+            resolver.compilationUnitFor(AssetId.parse('a|errors.dart'),
+                allowSyntaxErrors: true),
+            completion(isNotNull),
+          );
+        });
+      });
+
+      test('are truncated if necessary', () {
+        return resolveSources({
+          'a|errors.dart': '''
+             library a_library;
+
+             void withSyntaxErrors() {
+               String x = ;
+               String x = ;
+               String x = ;
+               String x = ;
+               String x = ;
+             }
+          ''',
+        }, (resolver) async {
+          var expectation = throwsA(
+            isA<SyntaxErrorInAssetException>().having(
+              (e) => e.toString(),
+              'toString()',
+              contains(RegExp(r'And \d more')),
+            ),
+          );
+          await expectLater(
+            resolver.libraryFor(AssetId.parse('a|errors.dart')),
+            expectation,
+          );
+          await expectLater(
+            resolver.compilationUnitFor(AssetId.parse('a|errors.dart')),
+            expectation,
+          );
+        });
+      });
+
+      test('do not report semantic errors', () {
+        return resolveSources({
+          'a|errors.dart': '''
+             library a_library;
+
+             void withSemanticErrors() {
+               String x = withSemanticErrors();
+               String x = null;
+             }
+          ''',
+        }, (resolver) async {
+          await expectLater(
+            resolver.libraryFor(AssetId.parse('a|errors.dart')),
+            completion(isNotNull),
+          );
+          await expectLater(
+            resolver.compilationUnitFor(AssetId.parse('a|errors.dart')),
+            completion(isNotNull),
+          );
+        });
+      });
     });
   });
 
@@ -492,5 +663,21 @@ int? get x => 1;
         }));
     var resolvers = AnalyzerResolvers();
     await runBuilder(builder, [input], reader, writer, resolvers);
+  });
+
+  group('compilationUnitFor', () {
+    test('can parse a given input', () {
+      return resolveSources({
+        'a|web/main.dart': ' main() {}',
+      }, (resolver) async {
+        var unit = await resolver.compilationUnitFor(entryPoint);
+        expect(unit, isNotNull);
+        expect(unit.declarations.length, 1);
+        expect(
+            unit.declarations.first,
+            isA<FunctionDeclaration>()
+                .having((d) => d.name.name, 'main', 'main'));
+      }, resolvers: AnalyzerResolvers());
+    });
   });
 }

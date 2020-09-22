@@ -18,6 +18,12 @@ final sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
 String defaultAnalysisOptionsArg(ScratchSpace scratchSpace) =>
     '--options=${scratchSpace.fileFor(defaultAnalysisOptionsId).path}';
 
+String sdkDdcKernelPath(bool soundNullSafety) => p.url.join('lib', '_internal',
+    soundNullSafety ? 'ddc_outline_sound.dill' : 'ddc_sdk.dill');
+
+String soundnessExt(bool soundNullSafety) =>
+    soundNullSafety ? '.sound' : '.unsound';
+
 // TODO: better solution for a .packages file, today we just create a new one
 // for every kernel build action.
 Future<File> createPackagesFile(Iterable<AssetId> allAssets) async {

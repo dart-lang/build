@@ -1,0 +1,19 @@
+dart:
+  - dev
+
+os:
+  - linux
+  - windows
+
+stages:
+  - analyze_and_format:
+    - dartanalyzer: --enable-experiment=non-nullable --fatal-infos --fatal-warnings .
+      os: linux
+  - e2e_test:
+    - command: pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random
+      os: linux
+  - e2e_test_cron:
+    - command: pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random
+      dart:
+        - be/raw/latest
+        - dev

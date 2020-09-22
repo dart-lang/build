@@ -1,3 +1,18 @@
+## 1.10.3
+
+- Remove high sdk constraint, allow >=2.9.0.
+- Require latest build_resolvers (which requires the latest analyzer).
+- Require the latest build version (1.5.x).
+
+## 1.10.2
+
+Unpin analyzer and set the min sdk to 2.10 to resolve the subsequent issue
+https://github.com/dart-lang/sdk/issues/42887.
+
+## 1.10.1
+
+Pin `analyzer` to `0.39.14` to work around Issue #2763.
+
 ## 1.10.0
 
 - Add an `--enable-experiment` flag which enables running builders on code that

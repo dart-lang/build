@@ -21,7 +21,7 @@ import 'exceptions.dart';
 
 /// The default list of files to include when an explicit include is not
 /// provided.
-const List<String> defaultRootPackageWhitelist = [
+const List<String> defaultRootPackageSources = [
   'assets/**',
   'benchmark/**',
   'bin/**',
@@ -171,7 +171,7 @@ class BuildOptions {
     try {
       targetGraph = await TargetGraph.forPackageGraph(packageGraph,
           overrideBuildConfig: overrideBuildConfig,
-          defaultRootPackageWhitelist: defaultRootPackageWhitelist,
+          defaultRootPackageSources: defaultRootPackageSources,
           requiredSourcePaths: [r'lib/$lib$'],
           requiredRootSourcePaths: [r'$package$', r'lib/$lib$']);
     } on BuildConfigParseException catch (e, s) {

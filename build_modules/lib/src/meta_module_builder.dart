@@ -35,9 +35,8 @@ class MetaModuleBuilder implements Builder {
           r'$lib$': [metaModuleExtension(_platform)]
         };
 
-  factory MetaModuleBuilder.forOptions(
-          DartPlatform platform, BuilderOptions options) =>
-      MetaModuleBuilder(platform, strategy: moduleStrategy(options));
+  MetaModuleBuilder.forOptions(DartPlatform platform, BuilderOptions options)
+      : this(platform, strategy: moduleStrategy(options));
 
   @override
   Future build(BuildStep buildStep) async {

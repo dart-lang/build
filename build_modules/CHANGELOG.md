@@ -2,6 +2,16 @@
 
 - Reverts 2.11.0 for older sdks than <2.10.0-93.0.dev.
 
+## 2.11.0
+
+- Add support for building null safe kernel modules to `KernelBuilder`.
+- Allow the latest analyzer version `0.40.x`.
+- Stop using deprecated analyzer apis.
+- Stop passing the deprecated `--kernel` flag to the dev compiler.
+- Update the package_config used in the shared compiler tmp dir to cover the
+  non-lib dirs for the root package.
+- Expose `maxWorkersPerTask` variable.
+
 ## 2.10.1
 
 - Fix a bug where file names with spaces were not escaped before being passed
