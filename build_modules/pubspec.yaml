@@ -1,10 +1,10 @@
 name: build_modules
-version: 2.11.1
+version: 2.11.2
 description: Builders for Dart modules
 homepage: https://github.com/dart-lang/build/tree/master/build_modules
 
 environment:
-  sdk: ">=2.9.0 <2.10.0-93.0.dev"
+  sdk: ">=2.10.0-93.0.dev <3.0.0"
 
 dependencies:
   analyzer: ">0.36.4 <0.41.0"

@@ -1,3 +1,7 @@
+## 2.11.2
+
+- Re-release 2.11.0 with a min sdk constraint of `2.10.0-93.0.dev`
+
 ## 2.11.1
 
 - Reverts 2.11.0 for older sdks than <2.10.0-93.0.dev.
