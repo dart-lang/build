@@ -1,3 +1,7 @@
+## 2.12.1
+
+- Require `build_modules` version `^3.0.0`.
+
 ## 2.12.0
 
 - Support sound null safety in ddc/dart2js, based on the standard entrypoint
