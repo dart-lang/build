@@ -15,6 +15,7 @@ import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart';
 import 'package:build_daemon/data/shutdown_notification.dart';
 import 'package:build_runner/src/daemon/constants.dart';
+import 'package:build_runner_core/src/util/constants.dart' show pubBinary;
 import 'package:path/path.dart' as p;
 import 'package:pedantic/pedantic.dart';
 import 'package:test/test.dart';
@@ -235,7 +236,7 @@ main() {
       var succeededResult = await client.buildResults.first;
       expect(succeededResult.results.first.status, BuildStatus.succeeded);
       var ddcContent = await File(p.join(d.sandbox, 'a', '.dart_tool', 'build',
-              'generated', 'a', 'web', 'main.ddc.js'))
+              'generated', 'a', 'web', 'main.unsound.ddc.js'))
           .readAsString();
       expect(ddcContent, contains('goodbye world'));
     });

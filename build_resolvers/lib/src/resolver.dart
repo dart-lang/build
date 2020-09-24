@@ -8,24 +8,25 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:analyzer/src/summary/summary_file_builder.dart';
-import 'package:analyzer/src/dart/analysis/experiments.dart';
 import 'package:analyzer/dart/analysis/features.dart';
+import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer/file_system/file_system.dart' hide File;
+import 'package:analyzer/dart/sdk/build_sdk_summary.dart';
+import 'package:analyzer/error/error.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
-import 'package:analyzer/src/generated/sdk.dart';
-import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
-import 'package:analyzer/src/dart/sdk/sdk.dart';
+import 'package:analyzer/src/dart/analysis/experiments.dart';
 import 'package:analyzer/src/generated/engine.dart'
     show AnalysisOptions, AnalysisOptionsImpl;
+import 'package:analyzer/src/generated/source.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
-import 'package:yaml/yaml.dart';
+import 'package:pool/pool.dart';
 
 import 'analysis_driver.dart';
 import 'build_asset_uri_resolver.dart';
@@ -44,13 +45,14 @@ class PerActionResolver implements ReleasableResolver {
   final AnalyzerResolver _delegate;
   final BuildStep _step;
 
-  final Set<AssetId> _entryPoints;
+  final _entryPoints = <AssetId>{};
 
-  PerActionResolver(this._delegate, this._step, Iterable<AssetId> entryPoints)
-      : _entryPoints = entryPoints.toSet();
+  PerActionResolver(this._delegate, this._step);
 
   @override
   Stream<LibraryElement> get libraries async* {
+    await _resolveIfNecessary(_step.inputId, transitive: true);
+
     final seen = <LibraryElement>{};
     final toVisit = Queue<LibraryElement>();
 
@@ -59,7 +61,8 @@ class PerActionResolver implements ReleasableResolver {
     final entryPoints = _entryPoints.toList();
     for (final entryPoint in entryPoints) {
       if (!await _delegate.isLibrary(entryPoint)) continue;
-      final library = await _delegate.libraryFor(entryPoint);
+      final library =
+          await _delegate.libraryFor(entryPoint, allowSyntaxErrors: true);
       toVisit.add(library);
       seen.add(library);
     }
@@ -85,27 +88,44 @@ class PerActionResolver implements ReleasableResolver {
   @override
   Future<bool> isLibrary(AssetId assetId) async {
     if (!await _step.canRead(assetId)) return false;
-    await _resolveIfNecesssary(assetId);
+    await _resolveIfNecessary(assetId, transitive: false);
     return _delegate.isLibrary(assetId);
   }
 
   @override
-  Future<LibraryElement> libraryFor(AssetId assetId) async {
+  Future<CompilationUnit> compilationUnitFor(AssetId assetId,
+      {bool allowSyntaxErrors = false}) async {
     if (!await _step.canRead(assetId)) throw AssetNotFoundException(assetId);
-    await _resolveIfNecesssary(assetId);
-    return _delegate.libraryFor(assetId);
+    await _resolveIfNecessary(assetId, transitive: false);
+    return _delegate.compilationUnitFor(assetId,
+        allowSyntaxErrors: allowSyntaxErrors);
   }
 
-  Future<void> _resolveIfNecesssary(AssetId id) async {
-    if (!_entryPoints.contains(id)) {
-      _entryPoints.add(id);
-
-      // the resolver will only visit assets that haven't been resolved in this
-      // step yet
-      await _delegate._uriResolver
-          .performResolve(_step, [id], _delegate._driver);
-    }
+  @override
+  Future<LibraryElement> libraryFor(AssetId assetId,
+      {bool allowSyntaxErrors = false}) async {
+    if (!await _step.canRead(assetId)) throw AssetNotFoundException(assetId);
+    await _resolveIfNecessary(assetId, transitive: true);
+    return _delegate.libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
   }
+
+  // Ensures that we finish resolving one thing before attempting to resolve
+  // another, otherwise there are race conditions with `_entryPoints` being
+  // updated before it is actually ready, or resolved more than once.
+  final _resolvePool = Pool(1);
+  Future<void> _resolveIfNecessary(AssetId id, {@required bool transitive}) =>
+      _resolvePool.withResource(() async {
+        if (!_entryPoints.contains(id)) {
+          // We only want transitively resolved ids in `_entrypoints`.
+          if (transitive) _entryPoints.add(id);
+
+          // the resolver will only visit assets that haven't been resolved in this
+          // step yet
+          await _delegate._uriResolver.performResolve(
+              _step, [id], _delegate._driver,
+              transitive: transitive);
+        }
+      });
 
   @override
   void release() {
@@ -133,7 +153,25 @@ class AnalyzerResolver implements ReleasableResolver {
   }
 
   @override
-  Future<LibraryElement> libraryFor(AssetId assetId) async {
+  Future<CompilationUnit> compilationUnitFor(AssetId assetId,
+      {bool allowSyntaxErrors = false}) async {
+    var uri = assetId.uri;
+    var source = _driver.sourceFactory.forUri2(uri);
+    if (source == null || !source.exists()) {
+      throw AssetNotFoundException(assetId);
+    }
+
+    var path = assetPath(assetId);
+    var parsedResult = await _driver.parseFile(path);
+    if (!allowSyntaxErrors && parsedResult.errors.isNotEmpty) {
+      throw SyntaxErrorInAssetException(assetId, [parsedResult]);
+    }
+    return parsedResult.unit;
+  }
+
+  @override
+  Future<LibraryElement> libraryFor(AssetId assetId,
+      {bool allowSyntaxErrors = false}) async {
     var path = assetPath(assetId);
     var uri = assetId.uri;
     var source = _driver.sourceFactory.forUri2(uri);
@@ -142,7 +180,47 @@ class AnalyzerResolver implements ReleasableResolver {
     }
     var kind = await _driver.getSourceKind(path);
     if (kind != SourceKind.LIBRARY) throw NonLibraryAssetException(assetId);
-    return _driver.getLibraryByUri(assetId.uri.toString());
+
+    final library = await _driver.getLibraryByUri(uri.toString());
+    if (!allowSyntaxErrors) {
+      final errors = await _syntacticErrorsFor(library);
+      if (errors.isNotEmpty) {
+        throw SyntaxErrorInAssetException(assetId, errors);
+      }
+    }
+
+    return library;
+  }
+
+  /// Finds syntax errors in files related to the [element].
+  ///
+  /// This includes the main library and existing part files.
+  Future<List<ErrorsResult>> _syntacticErrorsFor(LibraryElement element) async {
+    final existingElements = [
+      element,
+      for (final part in element.parts)
+        // The source may be null if the part doesn't exist. That's not
+        // important for us since we only care about syntax
+        if (part.source != null && part.source.exists()) part,
+    ];
+
+    // Map from elements to absolute paths
+    final paths = existingElements
+        .map((part) => _uriResolver.lookupCachedAsset(part.source.uri))
+        .where((asset) => asset != null)
+        .map(assetPath);
+
+    final relevantResults = <ErrorsResult>[];
+
+    for (final path in paths) {
+      final result = await _driver.getErrors(path);
+      if (result.errors
+          .any((error) => error.errorCode.type == ErrorType.SYNTACTIC_ERROR)) {
+        relevantResults.add(result);
+      }
+    }
+
+    return relevantResults;
   }
 
   @override
@@ -234,10 +312,7 @@ class AnalyzerResolvers implements Resolvers {
   @override
   Future<ReleasableResolver> get(BuildStep buildStep) async {
     await _ensureInitialized();
-
-    await _uriResolver.performResolve(
-        buildStep, [buildStep.inputId], _resolver._driver);
-    return PerActionResolver(_resolver, buildStep, [buildStep.inputId]);
+    return PerActionResolver(_resolver, buildStep);
   }
 
   /// Must be called between each build.
@@ -289,7 +364,12 @@ Future<String> _defaultSdkSummaryGenerator() async {
     var watch = Stopwatch()..start();
     _logger.info('Generating SDK summary...');
     await summaryFile.create(recursive: true);
-    await summaryFile.writeAsBytes(_buildSdkSummary());
+    final embedderYamlPath =
+        isFlutter ? p.join(_dartUiPath, '_embedder.yaml') : null;
+    await summaryFile.writeAsBytes(buildSdkSummary(
+        sdkPath: _runningDartSdkPath,
+        resourceProvider: PhysicalResourceProvider.INSTANCE,
+        embedderYamlPath: embedderYamlPath));
 
     await _createDepsFile(depsFile, currentDeps);
     watch.stop();
@@ -320,47 +400,6 @@ Future<void> _createDepsFile(
     File depsFile, Map<String, Object> currentDeps) async {
   await depsFile.create(recursive: true);
   await depsFile.writeAsString(jsonEncode(currentDeps));
-}
-
-List<int> _buildSdkSummary() {
-  var resourceProvider = PhysicalResourceProvider.INSTANCE;
-  var dartSdkFolder = resourceProvider.getFolder(_runningDartSdkPath);
-  var sdk = FolderBasedDartSdk(resourceProvider, dartSdkFolder)
-    ..useSummary = false
-    ..analysisOptions = AnalysisOptionsImpl();
-
-  if (isFlutter) {
-    _addFlutterLibraries(sdk, resourceProvider);
-  }
-
-  var sdkSources = {
-    for (var library in sdk.sdkLibraries) sdk.mapDartUri(library.shortName),
-  };
-
-  return SummaryBuilder(sdkSources, sdk.context).build(
-      // TODO: remove after https://github.com/dart-lang/sdk/issues/41820
-      featureSet: FeatureSet.fromEnableFlags(['non-nullable']));
-}
-
-/// Loads the flutter engine _embedder.yaml file and adds any new libraries to
-/// [sdk].
-void _addFlutterLibraries(
-    AbstractDartSdk sdk, ResourceProvider resourceProvider) {
-  var embedderYamlFile =
-      resourceProvider.getFile(p.join(_dartUiPath, '_embedder.yaml'));
-  if (!embedderYamlFile.exists) {
-    throw StateError('Unable to find flutter libraries, please run '
-        '`flutter precache` and try again.');
-  }
-
-  var embedderYaml = loadYaml(embedderYamlFile.readAsStringSync()) as YamlMap;
-  var flutterSdk = EmbedderSdk(resourceProvider,
-      {resourceProvider.getFolder(_dartUiPath): embedderYaml});
-
-  for (var library in flutterSdk.sdkLibraries) {
-    if (sdk.libraryMap.getLibrary(library.shortName) != null) continue;
-    sdk.libraryMap.setLibrary(library.shortName, library as SdkLibraryImpl);
-  }
 }
 
 /// Checks that the current analyzer version supports the current language
@@ -395,9 +434,11 @@ final _dartUiPath =
 FeatureSet _featureSet({List<String> enableExperiments}) {
   enableExperiments ??= [];
   if (enableExperiments.isEmpty) {
-    return FeatureSet.fromEnableFlags([]).restrictToVersion(sdkLanguageVersion);
+    return FeatureSet.fromEnableFlags2(
+        sdkLanguageVersion: sdkLanguageVersion, flags: []);
   } else if (sdkLanguageVersion == ExperimentStatus.currentVersion) {
-    return FeatureSet.fromEnableFlags(enableExperiments);
+    return FeatureSet.fromEnableFlags2(
+        sdkLanguageVersion: sdkLanguageVersion, flags: enableExperiments);
   } else {
     throw StateError('''
 Attempting to enable experiments `$enableExperiments`, but the current SDK

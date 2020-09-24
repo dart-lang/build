@@ -36,7 +36,7 @@ void main() {
         '--define',
         'build_web_compilers|entrypoint=compiler=dart2js',
         '--define',
-        'build_web_compilers|entrypoint=dart2js_args=["--minify","--checked"]',
+        'build_web_compilers|entrypoint=dart2js_args=["--minify"]',
         '--output=$_outputDir',
       ]);
       await _expectWasCompiledWithDart2JS(minified: true);
@@ -57,7 +57,7 @@ void main() {
         '--define',
         'build_web_compilers|entrypoint=compiler=dart2js',
         '--define',
-        'build_web_compilers|entrypoint=dart2js_args=["--minify","--checked"]',
+        'build_web_compilers|entrypoint=dart2js_args=["--minify"]',
         '--output=$_outputDir',
       ]);
       await _expectWasCompiledWithDart2JS(minified: true);

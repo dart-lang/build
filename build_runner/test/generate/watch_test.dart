@@ -87,7 +87,7 @@ a:file://fake/pkg/path
                 'Nothing can be built, yet a build was requested.'))));
       });
 
-      test('rebuilds on file updates outside hardcoded whitelist', () async {
+      test('rebuilds on file updates outside hardcoded sources', () async {
         var buildState = await startWatch(
             [copyABuildApplication], {'a|test_files/a.txt': 'a'}, writer,
             overrideBuildConfig: parseBuildConfigs({
@@ -129,7 +129,7 @@ a:file://fake/pkg/path
             decodedMatches('a'));
       });
 
-      test('rebuilds on new files outside hardcoded whitelist', () async {
+      test('rebuilds on new files outside hardcoded sources', () async {
         var buildState = await startWatch(
             [copyABuildApplication], {'a|test_files/a.txt': 'a'}, writer,
             overrideBuildConfig: parseBuildConfigs({
@@ -188,7 +188,7 @@ a:file://fake/pkg/path
             decodedMatches('b'));
       });
 
-      test('rebuilds on deleted files outside hardcoded whitelist', () async {
+      test('rebuilds on deleted files outside hardcoded sources', () async {
         var buildState = await startWatch([
           copyABuildApplication
         ], {

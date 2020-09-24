@@ -6,11 +6,11 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:collection/collection.dart';
-import 'package:path/path.dart' as p;
 
 import 'build_web_compilers.dart';
 import 'src/common.dart';
 import 'src/platforms.dart';
+import 'src/sdk_js_compile_builder.dart';
 import 'src/sdk_js_copy_builder.dart';
 
 // Shared entrypoint builder
@@ -22,40 +22,60 @@ Builder ddcMetaModuleBuilder(BuilderOptions options) =>
     MetaModuleBuilder.forOptions(ddcPlatform, options);
 Builder ddcMetaModuleCleanBuilder(_) => MetaModuleCleanBuilder(ddcPlatform);
 Builder ddcModuleBuilder([_]) => ModuleBuilder(ddcPlatform);
-Builder ddcBuilder(BuilderOptions options) {
+
+Builder ddcBuilderSound(BuilderOptions options) =>
+    ddcBuilder(options, soundNullSafety: true);
+Builder ddcBuilderUnsound(BuilderOptions options) =>
+    ddcBuilder(options, soundNullSafety: false);
+
+Builder ddcBuilder(BuilderOptions options, {bool soundNullSafety = false}) {
   validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
   _ensureSameDdcOptions(options);
 
   return DevCompilerBuilder(
     useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
+    generateFullDill: _readGenerateFullDillOption(options),
     trackUnusedInputs: _readTrackInputsCompilerOption(options),
     platform: ddcPlatform,
     environment: _readEnvironmentOption(options),
     experiments: _readExperimentOption(options),
+    soundNullSafety: soundNullSafety,
   );
 }
 
-const ddcKernelExtension = '.ddc.dill';
-Builder ddcKernelBuilder(BuilderOptions options) {
+String ddcKernelExtension(bool soundNullSafety) =>
+    '${soundnessExt(soundNullSafety)}.ddc.dill';
+Builder ddcKernelBuilderUnsound(BuilderOptions options) =>
+    ddcKernelBuilder(options, soundNullSafety: false);
+Builder ddcKernelBuilderSound(BuilderOptions options) =>
+    ddcKernelBuilder(options, soundNullSafety: true);
+
+Builder ddcKernelBuilder(BuilderOptions options,
+    {bool soundNullSafety = false}) {
   validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
   _ensureSameDdcOptions(options);
 
   return KernelBuilder(
       summaryOnly: true,
-      sdkKernelPath: p.url.join('lib', '_internal', 'ddc_sdk.dill'),
-      outputExtension: ddcKernelExtension,
+      sdkKernelPath: sdkDdcKernelPath(soundNullSafety),
+      outputExtension: ddcKernelExtension(soundNullSafety),
       platform: ddcPlatform,
       useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
       trackUnusedInputs: _readTrackInputsCompilerOption(options),
       // ignore: deprecated_member_use
-      experiments: _readExperimentOption(options));
+      experiments: _readExperimentOption(options),
+      soundNullSafety: soundNullSafety);
 }
 
-Builder sdkJsCopyBuilder(_) => SdkJsCopyBuilder();
-PostProcessBuilder sdkJsCleanupBuilder(BuilderOptions options) =>
-    FileDeletingBuilder(
-        ['lib/src/dev_compiler/dart_sdk.js', 'lib/src/dev_compiler/require.js'],
-        isEnabled: options.config['enabled'] as bool ?? false);
+Builder sdkJsCopyRequirejs(_) => SdkJsCopyBuilder();
+Builder sdkJsCompileSound(_) => SdkJsCompileBuilder(
+    sdkKernelPath: 'lib/_internal/ddc_platform_sound.dill',
+    outputPath: 'lib/src/dev_compiler/dart_sdk.sound.js',
+    soundNullSafety: true);
+Builder sdkJsCompileUnsound(_) => SdkJsCompileBuilder(
+    sdkKernelPath: 'lib/_internal/ddc_platform.dill',
+    outputPath: 'lib/src/dev_compiler/dart_sdk.js',
+    soundNullSafety: false);
 
 // Dart2js related builders
 Builder dart2jsMetaModuleBuilder(BuilderOptions options) =>
@@ -69,8 +89,11 @@ PostProcessBuilder dart2jsArchiveExtractor(BuilderOptions options) =>
 // General purpose builders
 PostProcessBuilder dartSourceCleanup(BuilderOptions options) =>
     (options.config['enabled'] as bool ?? false)
-        ? const FileDeletingBuilder(['.dart', '.js.map'])
-        : const FileDeletingBuilder(['.dart', '.js.map'], isEnabled: false);
+        ? const FileDeletingBuilder(
+            ['.dart', '.js.map', '.ddc.js.metadata', '.ddc_merged_metadata'])
+        : const FileDeletingBuilder(
+            ['.dart', '.js.map', '.ddc.js.metadata', '.ddc_merged_metadata'],
+            isEnabled: false);
 
 /// Throws if it is ever given different options.
 void _ensureSameDdcOptions(BuilderOptions options) {
@@ -90,6 +113,10 @@ void _ensureSameDdcOptions(BuilderOptions options) {
 
 bool _readUseIncrementalCompilerOption(BuilderOptions options) {
   return options.config[_useIncrementalCompilerOption] as bool ?? true;
+}
+
+bool _readGenerateFullDillOption(BuilderOptions options) {
+  return options.config[_generateFullDillOption] as bool ?? false;
 }
 
 bool _readTrackInputsCompilerOption(BuilderOptions options) {
@@ -120,6 +147,7 @@ List<String> _readExperimentOption(BuilderOptions options) {
 
 Map<String, dynamic> _previousDdcConfig;
 const _useIncrementalCompilerOption = 'use-incremental-compiler';
+const _generateFullDillOption = 'generate-full-dill';
 const _trackUnusedInputsCompilerOption = 'track-unused-inputs';
 const _environmentOption = 'environment';
 const _experimentOption = 'experiments';
@@ -127,5 +155,6 @@ const _supportedOptions = [
   _environmentOption,
   _experimentOption,
   _useIncrementalCompilerOption,
+  _generateFullDillOption,
   _trackUnusedInputsCompilerOption
 ];

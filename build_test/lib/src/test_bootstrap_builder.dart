@@ -69,6 +69,7 @@ class TestBootstrapBuilder extends Builder {
 
     if (vmRuntimes.any((r) => metadata.testOn.evaluate(SuitePlatform(r)))) {
       await buildStep.writeAsString(id.addExtension('.vm_test.dart'), '''
+          ${metadata.languageVersionComment ?? ''}
           import "dart:isolate";
 
           import "package:test/bootstrap/vm.dart";
@@ -84,6 +85,7 @@ class TestBootstrapBuilder extends Builder {
     if (browserRuntimes
         .any((r) => metadata.testOn.evaluate(SuitePlatform(r)))) {
       await buildStep.writeAsString(id.addExtension('.browser_test.dart'), '''
+          ${metadata.languageVersionComment ?? ''}
           import "package:test/bootstrap/browser.dart";
 
           import "${p.url.basename(id.path)}" as test;
@@ -96,6 +98,7 @@ class TestBootstrapBuilder extends Builder {
 
     if (nodeRuntimes.any((r) => metadata.testOn.evaluate(SuitePlatform(r)))) {
       await buildStep.writeAsString(id.addExtension('.node_test.dart'), '''
+          ${metadata.languageVersionComment ?? ''}
           import "package:test/bootstrap/node.dart";
 
           import "${p.url.basename(id.path)}" as test;

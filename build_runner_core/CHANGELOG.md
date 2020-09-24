@@ -1,4 +1,17 @@
-## 5.2.1-dev
+## 6.0.2
+
+- Require the latest build version (1.5.x).
+
+## 6.0.1
+
+- Add back the `overrideGeneratedOutputDirectory` method.
+
+## 6.0.0
+
+-   Remove some constants and utilities which are implementation details:
+    `defaultRootPackageWhitelist`, `errorCachePath`, `generatedOutputDirectory`,
+    `lockGeneratedOutputDirectory`, `overrideGeneratedOutputDirectory`,
+    `sdkPath`, `buildPhasePoolSize`.
 
 ## 5.2.0
 

@@ -8,10 +8,10 @@ stages:
         - dartanalyzer: --fatal-infos --fatal-warnings .
     - dartanalyzer: --fatal-warnings .
       dart:
-        - 2.7.0
+        - 2.9.0
   - unit_test:
     - group:
-      - command: pub run build_runner test -- --test-randomize-ordering-seed=random
+      - command: pub run test --test-randomize-ordering-seed=random
       - command: test/flutter_test.sh
       os:
         - linux

@@ -124,25 +124,23 @@ void main() {
   });
 
   group(r'/$graph', () {
-    FutureOr<Response> getResponse(String path) =>
+    FutureOr<Response> requestGraphPath(String path) =>
         handler(Request('GET', Uri.parse('http://localhost/\$graph$path')));
 
     for (var slashOrNot in ['', '/']) {
       test('/\$graph$slashOrNot should (try to) send the HTML page', () async {
-        try {
-          await getResponse(slashOrNot);
-          fail('Assets are not wired up. Expecting this to throw.');
-        } catch (e) {
-          expect(e, TypeMatcher<AssetNotFoundException>());
-          expect((e as AssetNotFoundException).assetId,
-              AssetId.parse('build_runner|lib/src/server/graph_viz.html'));
-        }
+        expect(
+            requestGraphPath(slashOrNot),
+            throwsA(isA<AssetNotFoundException>().having(
+                (e) => e.assetId,
+                'assetId',
+                AssetId.parse('build_runner|lib/src/server/graph_viz.html'))));
       });
     }
 
     void test404(String testName, String path, String expected) {
       test(testName, () async {
-        var response = await getResponse(path);
+        var response = await requestGraphPath(path);
 
         expect(response.statusCode, 404);
         expect(await response.readAsString(), expected);
@@ -170,7 +168,7 @@ void main() {
 
     void testSuccess(String testName, String path, String expectedId) {
       test(testName, () async {
-        var response = await getResponse(path);
+        var response = await requestGraphPath(path);
 
         var output = await response.readAsString();
         expect(response.statusCode, 200, reason: output);
