@@ -1,3 +1,7 @@
+## 3.0.0
+
+- Re-release of 2.11.2 but as a breaking change.
+
 ## 2.11.2
 
 - Re-release 2.11.0 with a min sdk constraint of `2.10.0-93.0.dev`
