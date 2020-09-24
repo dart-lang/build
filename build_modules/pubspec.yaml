@@ -24,6 +24,8 @@ dependencies:
   scratch_space: ^0.0.4
 
 dev_dependencies:
+  # Used inside tests
+  build_runner: ^1.0.0
   build_test: ^1.0.0
   test: ^1.6.0
   a:
