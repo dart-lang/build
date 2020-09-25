@@ -1,4 +1,8 @@
-## 1.4.1-dev
+## 1.4.1
+
+- Update the exception thrown when using experiments without an exactly
+  matching analyzer version to instead ensure that the sdk version is not
+  ahead of the analyzer version.
 
 ## 1.4.0
 

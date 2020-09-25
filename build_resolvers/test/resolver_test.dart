@@ -165,7 +165,7 @@ void main() {
         var originalLevel = Logger.root.level;
         Logger.root.level = Level.WARNING;
         var listener = Logger.root.onRecord.listen((record) {
-          fail('Got an unexpected warning during analyzsis:\n\n$record');
+          fail('Got an unexpected warning during analysis:\n\n$record');
         });
         addTearDown(() {
           Logger.root.level = originalLevel;
@@ -176,7 +176,7 @@ void main() {
         }, (resolver) async {
           await resolver.libraryFor(entryPoint);
         }, resolvers: AnalyzerResolvers());
-      });
+      }, skip: 'https://github.com/dart-lang/sdk/issues/43550');
     });
 
     group('assets that aren\'t a transitive import of input', () {
@@ -412,7 +412,7 @@ int? get x => 1;
                 expect(errors.errors, isEmpty);
               }, resolvers: AnalyzerResolvers()),
           ['non-nullable']);
-    });
+    }, skip: 'https://github.com/dart-lang/sdk/issues/43550');
 
     test('can get a new analysis session after resolving additional assets',
         () async {
