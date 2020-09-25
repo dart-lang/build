@@ -1,4 +1,5 @@
 dart:
+  # TODO: Update to `dev` https://github.com/dart-lang/build/issues/2841
   - 2.10.0-110.0.dev
 
 stages:
@@ -12,7 +13,8 @@ stages:
   - unit_test:
     - group:
       - command: pub run test --test-randomize-ordering-seed=random
-      - command: test/flutter_test.sh
+      # TODO: Restore this https://github.com/dart-lang/build/issues/2841
+      # - command: test/flutter_test.sh
       os:
         - linux
         - windows
