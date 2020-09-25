@@ -176,7 +176,7 @@ void main() {
         }, (resolver) async {
           await resolver.libraryFor(entryPoint);
         }, resolvers: AnalyzerResolvers());
-      }, skip: 'https://github.com/dart-lang/sdk/issues/43550');
+      });
     });
 
     group('assets that aren\'t a transitive import of input', () {
@@ -412,7 +412,7 @@ int? get x => 1;
                 expect(errors.errors, isEmpty);
               }, resolvers: AnalyzerResolvers()),
           ['non-nullable']);
-    }, skip: 'https://github.com/dart-lang/sdk/issues/43550');
+    });
 
     test('can get a new analysis session after resolving additional assets',
         () async {
