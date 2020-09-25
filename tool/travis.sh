@@ -74,10 +74,6 @@ for PKG in ${PKGS}; do
       echo 'test/flutter_test.sh'
       test/flutter_test.sh || EXIT_CODE=$?
       ;;
-    command_6)
-      echo 'pub run build_runner test -- --test-randomize-ordering-seed=random'
-      pub run build_runner test -- --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
     dartanalyzer_0)
       echo 'dartanalyzer --fatal-infos --fatal-warnings .'
       dartanalyzer --fatal-infos --fatal-warnings . || EXIT_CODE=$?
