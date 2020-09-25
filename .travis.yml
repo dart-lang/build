@@ -22,16 +22,16 @@ jobs:
       env: PKGS="_test _test_common"
       script: ./tool/travis.sh dartanalyzer_0
     - stage: analyze_and_format
-      name: "SDK: dev; PKG: _test_null_safety; TASKS: `dartanalyzer --enable-experiment=non-nullable --fatal-infos --fatal-warnings .`"
-      dart: dev
+      name: "SDK: 2.10.0-110.0.dev; PKG: _test_null_safety; TASKS: `dartanalyzer --enable-experiment=non-nullable --fatal-infos --fatal-warnings .`"
+      dart: "2.10.0-110.0.dev"
       os: linux
       env: PKGS="_test_null_safety"
       script: ./tool/travis.sh dartanalyzer_1
     - stage: analyze_and_format
-      name: "SDK: dev; PKGS: build, build_config, build_daemon, build_modules, build_resolvers, build_runner, build_runner_core, build_test, build_vm_compilers, build_web_compilers, example, scratch_space; TASKS: [`dartfmt -n --set-exit-if-changed .`, `dartanalyzer --fatal-infos --fatal-warnings .`]"
+      name: "SDK: dev; PKGS: build, build_config, build_daemon, build_modules, build_runner, build_runner_core, build_test, build_vm_compilers, example, scratch_space; TASKS: [`dartfmt -n --set-exit-if-changed .`, `dartanalyzer --fatal-infos --fatal-warnings .`]"
       dart: dev
       os: linux
-      env: PKGS="build build_config build_daemon build_modules build_resolvers build_runner build_runner_core build_test build_vm_compilers build_web_compilers example scratch_space"
+      env: PKGS="build build_config build_daemon build_modules build_runner build_runner_core build_test build_vm_compilers example scratch_space"
       script: ./tool/travis.sh dartfmt dartanalyzer_0
     - stage: analyze_and_format
       name: "SDK: 2.9.0; PKGS: build, build_config, build_daemon, build_resolvers, build_runner_core, build_test, build_vm_compilers, scratch_space; TASKS: `dartanalyzer --fatal-warnings .`"
@@ -40,8 +40,14 @@ jobs:
       env: PKGS="build build_config build_daemon build_resolvers build_runner_core build_test build_vm_compilers scratch_space"
       script: ./tool/travis.sh dartanalyzer_2
     - stage: analyze_and_format
-      name: "SDK: dev; PKG: build_web_compilers; TASKS: `dartanalyzer --fatal-warnings .`"
-      dart: dev
+      name: "SDK: 2.10.0-110.0.dev; PKGS: build_resolvers, build_web_compilers; TASKS: [`dartfmt -n --set-exit-if-changed .`, `dartanalyzer --fatal-infos --fatal-warnings .`]"
+      dart: "2.10.0-110.0.dev"
+      os: linux
+      env: PKGS="build_resolvers build_web_compilers"
+      script: ./tool/travis.sh dartfmt dartanalyzer_0
+    - stage: analyze_and_format
+      name: "SDK: 2.10.0-110.0.dev; PKG: build_web_compilers; TASKS: `dartanalyzer --fatal-warnings .`"
+      dart: "2.10.0-110.0.dev"
       os: linux
       env: PKGS="build_web_compilers"
       script: ./tool/travis.sh dartanalyzer_2
@@ -106,17 +112,17 @@ jobs:
       env: PKGS="build_modules"
       script: ./tool/travis.sh test_07
     - stage: unit_test
-      name: "SDK: dev; PKG: build_resolvers; TASKS: [`pub run test --test-randomize-ordering-seed=random`, `test/flutter_test.sh`]"
-      dart: dev
+      name: "SDK: 2.10.0-110.0.dev; PKG: build_resolvers; TASKS: `pub run test --test-randomize-ordering-seed=random`"
+      dart: "2.10.0-110.0.dev"
       os: linux
       env: PKGS="build_resolvers"
-      script: ./tool/travis.sh test_06 command_3
+      script: ./tool/travis.sh test_06
     - stage: unit_test
-      name: "SDK: dev; PKG: build_resolvers; TASKS: [`pub run test --test-randomize-ordering-seed=random`, `test/flutter_test.sh`]"
-      dart: dev
+      name: "SDK: 2.10.0-110.0.dev; PKG: build_resolvers; TASKS: `pub run test --test-randomize-ordering-seed=random`"
+      dart: "2.10.0-110.0.dev"
       os: windows
       env: PKGS="build_resolvers"
-      script: ./tool/travis.sh test_06 command_3
+      script: ./tool/travis.sh test_06
     - stage: unit_test
       name: "SDK: dev; PKG: build_runner; TASKS: `pub run test -x integration --test-randomize-ordering-seed=random`"
       dart: dev
@@ -172,14 +178,14 @@ jobs:
       env: PKGS="build_vm_compilers"
       script: ./tool/travis.sh test_05
     - stage: unit_test
-      name: "SDK: dev; PKG: build_web_compilers; TASKS: `pub run test --test-randomize-ordering-seed=random`"
-      dart: dev
+      name: "SDK: 2.10.0-110.0.dev; PKG: build_web_compilers; TASKS: `pub run test --test-randomize-ordering-seed=random`"
+      dart: "2.10.0-110.0.dev"
       os: linux
       env: PKGS="build_web_compilers"
       script: ./tool/travis.sh test_06
     - stage: unit_test
-      name: "SDK: dev; PKG: build_web_compilers; TASKS: `pub run test --test-randomize-ordering-seed=random`"
-      dart: dev
+      name: "SDK: 2.10.0-110.0.dev; PKG: build_web_compilers; TASKS: `pub run test --test-randomize-ordering-seed=random`"
+      dart: "2.10.0-110.0.dev"
       os: windows
       env: PKGS="build_web_compilers"
       script: ./tool/travis.sh test_06
@@ -226,8 +232,8 @@ jobs:
       env: PKGS="_test"
       script: ./tool/travis.sh test_04
     - stage: e2e_test
-      name: "SDK: dev; PKG: _test_null_safety; TASKS: `pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random`"
-      dart: dev
+      name: "SDK: 2.10.0-110.0.dev; PKG: _test_null_safety; TASKS: `pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random`"
+      dart: "2.10.0-110.0.dev"
       os: linux
       env: PKGS="_test_null_safety"
       script: ./tool/travis.sh command_2

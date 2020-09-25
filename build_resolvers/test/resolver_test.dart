@@ -165,7 +165,7 @@ void main() {
         var originalLevel = Logger.root.level;
         Logger.root.level = Level.WARNING;
         var listener = Logger.root.onRecord.listen((record) {
-          fail('Got an unexpected warning during analyzsis:\n\n$record');
+          fail('Got an unexpected warning during analysis:\n\n$record');
         });
         addTearDown(() {
           Logger.root.level = originalLevel;
