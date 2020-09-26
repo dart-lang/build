@@ -47,9 +47,13 @@ void setDefaultResponse(
 /// Opt-into [Mock] throwing [NoSuchMethodError] for unimplemented methods.
 ///
 /// The default behavior when not using this is to always return `null`.
-void throwOnMissingStub(Mock mock) {
+void throwOnMissingStub(
+  Mock mock, {
+  void Function(Invocation) exceptionBuilder,
+}) {
+  exceptionBuilder ??= mock._noSuchMethod;
   mock._defaultResponse =
-      () => CallPair<dynamic>.allInvocations(mock._noSuchMethod);
+      () => CallPair<dynamic>.allInvocations(exceptionBuilder);
 }
 
 /// Extend or mixin this class to mark the implementation as a [Mock].

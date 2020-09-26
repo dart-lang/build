@@ -292,6 +292,16 @@ void main() {
       when(mock.methodWithoutArgs()).thenReturn('A');
       expect(() => mock.methodWithoutArgs(), returnsNormally);
     });
+
+    test(
+        'should throw the exception when a mock was called without a matching'
+        'stub and an exception builder is set.', () {
+      throwOnMissingStub(mock, exceptionBuilder: (_) {
+        throw Exception('test message');
+      });
+      when(mock.methodWithNormalArgs(42)).thenReturn('Ultimate Answer');
+      expect(() => mock.methodWithoutArgs(), throwsException);
+    });
   });
 
   test(
