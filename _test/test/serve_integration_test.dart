@@ -154,7 +154,8 @@ void main() {
     expect(badResponse.statusCode, HttpStatus.notFound);
 
     var ddcFileResponse =
-        await (await httpClient.get('localhost', 8080, 'main.unsound.ddc.js')).close();
+        await (await httpClient.get('localhost', 8080, 'main.unsound.ddc.js'))
+            .close();
     expect(await utf8.decodeStream(ddcFileResponse), contains('"goodbye"'));
   });
 }
