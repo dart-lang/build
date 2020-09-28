@@ -1,3 +1,7 @@
+## 6.0.2+1
+
+- Fix https://github.com/dart-lang/build/issues/1804.
+
 ## 6.0.2
 
 - Require the latest build version (1.5.x).
