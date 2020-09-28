@@ -524,6 +524,11 @@ class AssetGraph {
           isHidden: isHidden);
       if (existing != null) {
         newNode.outputs.addAll(existing.outputs);
+        // Ensure we set up the reverse link for NodeWithInput nodes.
+        existing.outputs
+            .map(get)
+            .whereType<NodeWithInputs>()
+            .forEach((node) => node.inputs.add(output));
       }
       builderOptionsNode.outputs.add(output);
       _add(newNode);
