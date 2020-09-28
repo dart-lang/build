@@ -541,9 +541,9 @@ void main() {
                   buildExtensions: replaceExtension('.g.part', '.g.dart')),
               'a'),
         ];
-        final fooPackageGraph = buildPackageGraph({rootPackage('a'): []});
+        final packageGraph = buildPackageGraph({rootPackage('a'): []});
         final graph = await AssetGraph.build(
-            buildPhases, {source}, <AssetId>{}, fooPackageGraph, digestReader);
+            buildPhases, {source}, <AssetId>{}, packageGraph, digestReader);
 
         // Pretend a build happened
         graph.add(SyntheticSourceAssetNode(toBeGeneratedDart)
@@ -566,7 +566,7 @@ void main() {
         // The generated part file should not exist in outputs of the new
         // generated dart file
         expect(graph.get(toBeGeneratedDart).outputs,
-            isNot(contains(predicate((id) => id == generatedPart))));
+            isNot(contains(generatedPart)));
       });
     });
   });
