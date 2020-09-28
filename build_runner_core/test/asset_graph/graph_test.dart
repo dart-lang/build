@@ -524,6 +524,50 @@ void main() {
         expect(invalidatedNodes, contains(outputReadingNode));
         expect(invalidatedNodes, contains(lastPrimaryOutputNode));
       });
+
+      test('https://github.com/dart-lang/build/issues/1804', () async {
+        final source = AssetId('a', 'lib/a.dart');
+        final renamedSource = AssetId('a', 'lib/A.dart');
+        final generatedDart = AssetId('a', 'lib/a.g.dart');
+        final generatedPart = AssetId('a', 'lib/a.g.part');
+        final toBeGeneratedDart = AssetId('a', 'lib/A.g.dart');
+        final buildPhases = [
+          InBuildPhase(
+              TestBuilder(
+                  buildExtensions: replaceExtension('.dart', '.g.part')),
+              'a'),
+          InBuildPhase(
+              TestBuilder(
+                  buildExtensions: replaceExtension('.g.part', '.g.dart')),
+              'a'),
+        ];
+        final fooPackageGraph = buildPackageGraph({rootPackage('a'): []});
+        final graph = await AssetGraph.build(
+            buildPhases, {source}, <AssetId>{}, fooPackageGraph, digestReader);
+
+        // Pretend a build happened
+        graph.add(SyntheticSourceAssetNode(toBeGeneratedDart)
+          ..outputs.add(generatedPart));
+        (graph.get(generatedDart) as GeneratedAssetNode)
+          ..state = NodeState.upToDate
+          ..inputs.addAll([generatedPart, toBeGeneratedDart]);
+        (graph.get(source) as SourceAssetNode).outputs.add(generatedPart);
+
+        await graph.updateAndInvalidate(
+            buildPhases,
+            {renamedSource: ChangeType.ADD, source: ChangeType.REMOVE},
+            'a',
+            (_) async {},
+            digestReader);
+
+        // The old generated part file should no longer exist
+        expect(graph.get(generatedPart), isNull);
+
+        // The generated part file should not exist in outputs of the new
+        // generated dart file
+        expect(graph.get(toBeGeneratedDart).outputs,
+            isNot(contains(predicate((id) => id == generatedPart))));
+      });
     });
   });
 }
