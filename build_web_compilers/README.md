@@ -92,6 +92,12 @@ targets:
           - -DSOME_VAR=some value
 ```
 
+These may also be specified on the command line with a `--define` argument.
+
+```sh
+webdev serve -- '--define=build_web_compilers:ddc=environment={"SOME_VAR":"changed"}'
+```
+
 ## Manual Usage
 
 If you are using a custom build script, you will need to add the following
