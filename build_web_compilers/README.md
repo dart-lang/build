@@ -52,7 +52,7 @@ file, which should look roughly like the following:
 targets:
   $default:
     builders:
-      build_web_compilers|entrypoint:
+      build_web_compilers:entrypoint:
         # These are globs for the entrypoints you want to compile.
         generate_for:
         - test/**.browser_test.dart
@@ -64,6 +64,34 @@ targets:
           - -O2
 ```
 
+### Configuring -D environment variables
+
+DDC is a modular compiler, so in order to ensure consistent builds in every
+module environment variables must be configured globally. Configure with a Map
+in yaml. Environment defined variables can be read with `const
+String.fromEnvironment` and `const bool.fromEnvironment`. For example:
+
+```yaml
+global_options:
+  build_web_compilers:ddc:
+    options:
+      environment:
+        SOME_VAR: some value
+```
+
+For dart2js, use the `dart2js_args` option. This may be configured globally, or
+per-target.
+
+```
+targets:
+  $default:
+    builders:
+      build_web_compilers:entrypoint:
+        options:
+          dart2js_args:
+          - -DSOME_VAR=some value
+```
+
 ## Manual Usage
 
 If you are using a custom build script, you will need to add the following
@@ -73,7 +101,7 @@ the list (unless you need to post-process the js files).
 ```dart
 [
     apply(
-        'build_web_compilers|ddc',
+        'build_web_compilers:ddc',
         [
         (_) => new ModuleBuilder(),
         (_) => new UnlinkedSummaryBuilder(),
@@ -85,7 +113,7 @@ the list (unless you need to post-process the js files).
         // imported by entrypoints get compiled.
         isOptional: true,
         hideOutput: true),
-    apply('build_web_compilers|entrypoint',
+    apply('build_web_compilers:entrypoint',
         // You can also use `WebCompiler.Dart2Js`. If you don't care about
         // dartdevc at all you may also omit the previous builder application
         // entirely.
