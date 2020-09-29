@@ -524,6 +524,8 @@ class AssetGraph {
           isHidden: isHidden);
       if (existing != null) {
         newNode.outputs.addAll(existing.outputs);
+        // Ensure we set up the reverse link for NodeWithInput nodes.
+        _addInput(existing.outputs, output);
       }
       builderOptionsNode.outputs.add(output);
       _add(newNode);
@@ -537,6 +539,14 @@ class AssetGraph {
   // TODO remove once tests are updated
   void add(AssetNode node) => _add(node);
   Set<AssetId> remove(AssetId id) => _removeRecursive(id);
+
+  /// Adds [input] to all [outputs] if they represent [NodeWithInputs] nodes.
+  void _addInput(Iterable<AssetId> outputs, AssetId input) {
+    for (var output in outputs) {
+      var node = get(output);
+      if (node is NodeWithInputs) node.inputs.add(input);
+    }
+  }
 }
 
 /// Computes a [Digest] for [buildPhases] which can be used to compare one set

@@ -1,5 +1,5 @@
 name: build_runner_core
-version: 6.0.2
+version: 6.0.3
 description: Core tools to write binaries that run builders.
 homepage: https://github.com/dart-lang/build/tree/master/build_runner_core
 
