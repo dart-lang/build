@@ -83,7 +83,7 @@ global_options:
 For dart2js, use the `dart2js_args` option. This may be configured globally, or
 per-target.
 
-```
+```yaml
 targets:
   $default:
     builders:
@@ -92,6 +92,12 @@ targets:
           dart2js_args:
           - -DSOME_VAR=some value
           - -DANOTHER_VAR=true
+```
+
+These may also be specified on the command line with a `--define` argument.
+
+```sh
+webdev serve -- '--define=build_web_compilers:ddc=environment={"SOME_VAR":"changed"}'
 ```
 
 ## Manual Usage
