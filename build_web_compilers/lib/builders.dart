@@ -124,7 +124,8 @@ bool _readTrackInputsCompilerOption(BuilderOptions options) {
 }
 
 Map<String, String> _readEnvironmentOption(BuilderOptions options) {
-  return Map.from((options.config[_environmentOption] as Map) ?? {});
+  final environment = options.config[_environmentOption] as Map ?? const {};
+  return environment.map((key, value) => MapEntry('$key', '$value'));
 }
 
 List<String> _readExperimentOption(BuilderOptions options) {

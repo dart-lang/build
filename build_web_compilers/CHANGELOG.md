@@ -1,5 +1,8 @@
 ## 2.12.2-dev
 
+- Fix parsing of `environment` config for DDC when using a bool or numeric
+  value.
+
 ## 2.12.1
 
 - Require `build_modules` version `^3.0.0`.

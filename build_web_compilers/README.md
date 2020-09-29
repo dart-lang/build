@@ -77,6 +77,7 @@ global_options:
     options:
       environment:
         SOME_VAR: some value
+        ANOTHER_VAR: false
 ```
 
 For dart2js, use the `dart2js_args` option. This may be configured globally, or
@@ -90,6 +91,7 @@ targets:
         options:
           dart2js_args:
           - -DSOME_VAR=some value
+          - -DANOTHER_VAR=true
 ```
 
 ## Manual Usage
