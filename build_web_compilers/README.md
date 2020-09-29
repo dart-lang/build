@@ -82,7 +82,7 @@ global_options:
 For dart2js, use the `dart2js_args` option. This may be configured globally, or
 per-target.
 
-```
+```yaml
 targets:
   $default:
     builders:
