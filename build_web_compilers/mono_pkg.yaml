@@ -1,16 +1,13 @@
 dart:
-  # TODO: Update to `dev` https://github.com/dart-lang/build/issues/2841
-  - 2.10.0-110.0.dev
+- dev
 
 stages:
-  - analyze_and_format:
-    - group:
-      - dartfmt: sdk
-      - dartanalyzer: --fatal-infos --fatal-warnings .
-    - dartanalyzer: --fatal-warnings .
-  - unit_test:
-    - group:
-      - test: --test-randomize-ordering-seed=random
-      os:
-        - linux
-        - windows
+- analyze_and_format:
+  - group:
+    - dartfmt: sdk
+    - dartanalyzer: --fatal-infos --fatal-warnings .
+- unit_test:
+  - test: --test-randomize-ordering-seed=random
+    os:
+    - linux
+    - windows
