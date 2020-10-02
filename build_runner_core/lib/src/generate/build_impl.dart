@@ -474,15 +474,14 @@ class _SingleBuild {
         var wrappedWriter = AssetWriterSpy(_writer);
 
         var wrappedReader = SingleStepReader(
-          _reader,
-          _assetGraph,
-          phaseNumber,
-          input.package,
-          _isReadableNode,
-          _isInvalidInput,
-          _getUpdatedGlobNode,
-          wrappedWriter,
-        );
+            _reader,
+            _assetGraph,
+            phaseNumber,
+            input.package,
+            _isReadableNode,
+            _isInvalidInput,
+            _getUpdatedGlobNode,
+            wrappedWriter);
 
         if (!await tracker.trackStage(
             'Setup', () => _buildShouldRun(builderOutputs, wrappedReader))) {

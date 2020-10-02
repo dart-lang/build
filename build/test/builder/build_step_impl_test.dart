@@ -45,28 +45,6 @@ void main() {
           throwsA(TypeMatcher<UnexpectedOutputException>()));
     });
 
-    test('canRead throws invalidInputExceptions', () async {
-      expect(() => buildStep.canRead(makeAssetId('b|web/a.txt')),
-          throwsA(invalidInputException));
-      expect(() => buildStep.canRead(makeAssetId('b|a.txt')),
-          throwsA(invalidInputException));
-      expect(() => buildStep.canRead(makeAssetId('foo|bar.txt')),
-          throwsA(invalidInputException));
-    });
-
-    test('readAs* throws InvalidInputExceptions', () async {
-      var invalidInputs = [
-        makeAssetId('b|web/a.txt'),
-        makeAssetId('b|a.txt'),
-        makeAssetId('foo|bar.txt')
-      ];
-      for (var id in invalidInputs) {
-        expect(
-            () => buildStep.readAsString(id), throwsA(invalidInputException));
-        expect(() => buildStep.readAsBytes(id), throwsA(invalidInputException));
-      }
-    });
-
     test('fetchResource can fetch resources', () async {
       var expected = 1;
       var intResource = Resource(() => expected);

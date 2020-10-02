@@ -120,8 +120,9 @@ class TargetGraph {
   /// Whether the [id] is visible in a build.
   ///
   /// All assets in the root package are visible. For non-root packages, an
-  /// asset is visible if it's included in the [BuildConfig.publicAssets] of
-  /// that package.
+  /// asset is visible if it's in a conceptually public folders of a Dart
+  /// package (like `lib/` or `bin/`), or if the enclosing package made that
+  /// asset public by including it in [BuildConfig.additionalPublicAssets].
   bool isVisibleInBuild(AssetId id, PackageNode enclosingPackage) {
     assert(id.package == enclosingPackage.name);
 
@@ -171,7 +172,7 @@ const _defaultPublicAssetsForNonRoot = [
   'lib/**',
   'bin/**',
   'LICENSE',
-  'README',
+  'README*',
   'pubspec.yaml',
 ];
 

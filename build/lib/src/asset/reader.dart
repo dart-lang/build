@@ -27,10 +27,12 @@ abstract class AssetReader {
   ///
   /// * Throws a `PackageNotFoundException` if `id.package` is not found.
   /// * Throws a `AssetNotFoundException` if `id.path` is not found.
-  /// * Throws an `InvalidInputException` if `id.path` is an invalid input.
+  /// * Throws an `InvalidInputException` if [id] is an invalid input.
   Future<String> readAsString(AssetId id, {Encoding encoding});
 
   /// Indicates whether asset at [id] is readable.
+  ///
+  /// Throws an `InvalidInputException` if [id] is an invalid input.
   Future<bool> canRead(AssetId id);
 
   /// Returns all readable assets matching [glob] under the current package.

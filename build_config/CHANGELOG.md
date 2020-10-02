@@ -1,7 +1,7 @@
 ## 0.4.3-dev
 
-- Added the `public_assets` option, which describes the assets readable when
-  the configured package is not the root of the build.
+- Added the `additional_public_assets` option, which describes the assets
+  readable when the configured package is not the root of the build.
 
 ## 0.4.2
 
