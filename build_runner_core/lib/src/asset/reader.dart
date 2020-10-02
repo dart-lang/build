@@ -10,6 +10,7 @@ import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
+import 'package:meta/meta.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../util/async.dart';
@@ -23,33 +24,29 @@ abstract class PathProvidingAssetReader implements AssetReader {
 }
 
 /// Describes if and how a [SingleStepReader] should read an [AssetId].
-enum Readability {
-  /// The asset id is an invalid input.
-  ///
-  /// Inputs are invalid if they're outside of the public assets of a non-root
-  /// package in the build.
-  invalidAsset,
+class Readability {
+  final bool canRead;
+  final bool inSamePhase;
 
-  /// The asset can't be read by the build step.
-  notReadable,
+  const Readability({@required this.canRead, @required this.inSamePhase});
 
-  /// The asset can be read by the build step.
-  readable,
+  /// Determines readability for a node written in a previous build phase, which
+  /// means that [ownOutput] is impossible.
+  factory Readability.fromPreviousPhase(bool readable) =>
+      readable ? Readability.readable : Readability.notReadable;
 
-  /// The asset can be read, and it was generated in the same phase.
-  ///
-  /// The reader should not report this asset as being read in this case, since
-  /// otherwise we'd have a self-loop in the asset graph.
-  readableInSamePhase,
-}
-
-extension on Readability {
-  bool get canRead =>
-      this == Readability.readable || this == Readability.readableInSamePhase;
+  static const Readability notReadable =
+      Readability(canRead: false, inSamePhase: false);
+  static const Readability readable =
+      Readability(canRead: true, inSamePhase: false);
+  static const Readability ownOutput =
+      Readability(canRead: true, inSamePhase: true);
 }
 
 typedef IsReadable = FutureOr<Readability> Function(
     AssetNode node, int phaseNum, AssetWriterSpy writtenAssets);
+
+typedef IsInvalidInput = bool Function(AssetId id);
 
 /// An [AssetReader] with a lifetime equivalent to that of a single step in a
 /// build.
@@ -69,6 +66,7 @@ class SingleStepReader implements AssetReader {
   final String _primaryPackage;
   final AssetWriterSpy _writtenAssets;
   final IsReadable _isReadableNode;
+  final IsInvalidInput _isInvalidInput;
   final FutureOr<GlobAssetNode> Function(
       Glob glob, String package, int phaseNum) _getGlobNode;
 
@@ -76,12 +74,16 @@ class SingleStepReader implements AssetReader {
   final assetsRead = HashSet<AssetId>();
 
   SingleStepReader(this._delegate, this._assetGraph, this._phaseNumber,
-      this._primaryPackage, this._isReadableNode,
+      this._primaryPackage, this._isReadableNode, this._isInvalidInput,
       [this._getGlobNode, this._writtenAssets]);
 
   /// Checks whether [id] can be read by this step - attempting to build the
   /// asset if necessary.
   FutureOr<bool> _isReadable(AssetId id) {
+    if (_isInvalidInput(id)) {
+      throw InvalidInputException(id);
+    }
+
     final node = _assetGraph.get(id);
     if (node == null) {
       assetsRead.add(id);
@@ -91,11 +93,7 @@ class SingleStepReader implements AssetReader {
 
     return doAfter(_isReadableNode(node, _phaseNumber, _writtenAssets),
         (Readability readability) {
-      if (readability == Readability.invalidAsset) {
-        throw InvalidInputException(node.id);
-      }
-
-      if (readability != Readability.readableInSamePhase) {
+      if (!readability.inSamePhase) {
         assetsRead.add(id);
       }
 

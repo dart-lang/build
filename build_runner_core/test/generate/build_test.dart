@@ -454,39 +454,71 @@ void main() {
       });
     });
 
-    test('can read public non-lib assets', () async {
-      final packageGraph = buildPackageGraph({
-        rootPackage('a', path: 'a/'): ['b'],
-        package('b', path: 'a/b'): []
+    group('reading assets outside of the root package', () {
+      test('can read public non-lib assets', () async {
+        final packageGraph = buildPackageGraph({
+          rootPackage('a', path: 'a/'): ['b'],
+          package('b', path: 'a/b'): []
+        });
+
+        final builder = TestBuilder(
+          buildExtensions: const {
+            '.foo': ['.bar']
+          },
+          build: (step, _) {
+            final input = step.inputId;
+            final fromB = step.readAsString(AssetId.parse('b|test/foo.bar'));
+
+            return step.writeAsString(input.changeExtension('.bar'), fromB);
+          },
+        );
+
+        await testBuilders(
+          [
+            apply('', [(_) => builder], toPackage('a'))
+          ],
+          {
+            'a|lib/a.foo': '',
+            'b|test/foo.bar': 'content',
+          },
+          overrideBuildConfig: {
+            'b': BuildConfig.parse(
+                'b', [], 'additional_public_assets: ["test/**"]')
+          },
+          packageGraph: packageGraph,
+          outputs: {r'$$a|lib/a.bar': 'content'},
+        );
       });
 
-      final builder = TestBuilder(
-        buildExtensions: {
-          '.foo': ['.bar']
-        },
-        build: (step, _) {
-          final input = step.inputId;
-          final fromB = step.readAsString(AssetId.parse('b|test/foo.bar'));
+      test('reading private assets throws InvalidInputException', () {
+        final packageGraph = buildPackageGraph({
+          rootPackage('a', path: 'a/'): ['b'],
+          package('b', path: 'a/b'): []
+        });
 
-          return step.writeAsString(input.changeExtension('.bar'), fromB);
-        },
-      );
+        final builder = TestBuilder(
+          buildExtensions: const {
+            '.txt': ['.copy']
+          },
+          build: (step, _) {
+            return expectLater(
+              () => step.readAsBytes(AssetId.parse('b|test/my_test.dart')),
+              throwsA(isA<InvalidInputException>()),
+            );
+          },
+        );
 
-      await testBuilders(
-        [
-          apply('', [(_) => builder], toPackage('a'))
-        ],
-        {
-          'a|lib/a.foo': '',
-          'b|test/foo.bar': 'content',
-        },
-        overrideBuildConfig: {
-          'b': BuildConfig.parse(
-              'b', [], 'additional_public_assets: ["test/**"]')
-        },
-        packageGraph: packageGraph,
-        outputs: {r'$$a|lib/a.bar': 'content'},
-      );
+        return testBuilders(
+          [
+            apply('', [(_) => builder], toPackage('a'))
+          ],
+          {
+            'a|lib/foo.txt': "doesn't matter",
+          },
+          packageGraph: packageGraph,
+          outputs: {},
+        );
+      });
     });
 
     test('skips builders which would output files in non-root packages',

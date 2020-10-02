@@ -53,10 +53,6 @@ Set<String> _buildPaths(Set<BuildDirectory> buildDirs) =>
         ? <String>{}
         : buildDirs.map((b) => b.directory).toSet();
 
-Readability _readabilityOf(bool canRead) {
-  return canRead ? Readability.readable : Readability.notReadable;
-}
-
 class BuildImpl {
   final FinalizedReader finalizedReader;
 
@@ -124,7 +120,9 @@ class BuildImpl {
         buildDefinition.assetGraph,
         buildPhases.length,
         options.packageGraph.root.name,
-        _isReadableAfterBuildFactory(buildDefinition, buildPhases));
+        _isReadableAfterBuildFactory(buildPhases),
+        _isInvalidInputFactory(
+            buildDefinition.targetGraph, buildDefinition.packageGraph));
     var finalizedReader = FinalizedReader(
         singleStepReader,
         buildDefinition.assetGraph,
@@ -135,21 +133,26 @@ class BuildImpl {
     return build;
   }
 
-  static IsReadable _isReadableAfterBuildFactory(
-      BuildDefinition definition, List<BuildPhase> buildPhases) {
+  static IsReadable _isReadableAfterBuildFactory(List<BuildPhase> buildPhases) {
     return (AssetNode node, int phaseNum, AssetWriterSpy writtenAssets) {
-      final package = definition.packageGraph[node.id.package];
-      if (!definition.targetGraph.isVisibleInBuild(node.id, package)) {
-        return Readability.invalidAsset;
-      }
-
       if (node is GeneratedAssetNode) {
-        return _readabilityOf(node.wasOutput && !node.isFailure);
+        return Readability.fromPreviousPhase(node.wasOutput && !node.isFailure);
       }
 
-      return _readabilityOf(node.isReadable && node.isValidInput);
+      return Readability.fromPreviousPhase(
+          node.isReadable && node.isValidInput);
     };
   }
+}
+
+IsInvalidInput _isInvalidInputFactory(
+    TargetGraph targetGraph, PackageGraph packageGraph) {
+  return (AssetId id) {
+    final packageNode = packageGraph[id.package];
+
+    // The id is an invalid input if it's not part of the build.
+    return !targetGraph.isVisibleInBuild(id, packageNode);
+  };
 }
 
 /// Performs a single build and manages state that only lives for a single
@@ -163,7 +166,7 @@ class _SingleBuild {
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
   final _lazyGlobs = <AssetId, Future<void>>{};
   final PackageGraph _packageGraph;
-  final TargetGraph _targetGraph;
+  final IsInvalidInput _isInvalidInput;
   final BuildPerformanceTracker _performanceTracker;
   final AssetReader _reader;
   final Resolvers _resolvers;
@@ -189,7 +192,8 @@ class _SingleBuild {
         _buildPhasePool = List(buildImpl._buildPhases.length),
         _environment = buildImpl._environment,
         _packageGraph = buildImpl._packageGraph,
-        _targetGraph = buildImpl._targetGraph,
+        _isInvalidInput = _isInvalidInputFactory(
+            buildImpl._targetGraph, buildImpl._packageGraph),
         _performanceTracker = buildImpl._trackPerformance
             ? BuildPerformanceTracker()
             : BuildPerformanceTracker.noOp(),
@@ -417,14 +421,6 @@ class _SingleBuild {
   /// asset if necessary.
   FutureOr<Readability> _isReadableNode(
       AssetNode node, int phaseNum, AssetWriterSpy writtenAssets) {
-    // Check if the node is part of the build at all
-    final id = node.id;
-    final package = _packageGraph.allPackages[node.id.package];
-
-    if (!_targetGraph.isVisibleInBuild(id, package)) {
-      return Readability.invalidAsset;
-    }
-
     if (node is GeneratedAssetNode) {
       if (node.phaseNumber > phaseNum) {
         return Readability.notReadable;
@@ -433,17 +429,16 @@ class _SingleBuild {
         final isInBuild = _buildPhases[phaseNum] is InBuildPhase &&
             writtenAssets.assetsWritten.contains(node.id);
 
-        return isInBuild
-            ? Readability.readableInSamePhase
-            : Readability.notReadable;
+        return isInBuild ? Readability.ownOutput : Readability.notReadable;
       }
 
       return doAfter(
           // ignore: void_checks
           _ensureAssetIsBuilt(node),
-          (_) => _readabilityOf(node.wasOutput && !node.isFailure));
+          (_) =>
+              Readability.fromPreviousPhase(node.wasOutput && !node.isFailure));
     }
-    return _readabilityOf(node.isReadable && node.isValidInput);
+    return Readability.fromPreviousPhase(node.isReadable && node.isValidInput);
   }
 
   FutureOr<void> _ensureAssetIsBuilt(AssetNode node) {
@@ -478,8 +473,16 @@ class _SingleBuild {
 
         var wrappedWriter = AssetWriterSpy(_writer);
 
-        var wrappedReader = SingleStepReader(_reader, _assetGraph, phaseNumber,
-            input.package, _isReadableNode, _getUpdatedGlobNode, wrappedWriter);
+        var wrappedReader = SingleStepReader(
+          _reader,
+          _assetGraph,
+          phaseNumber,
+          input.package,
+          _isReadableNode,
+          _isInvalidInput,
+          _getUpdatedGlobNode,
+          wrappedWriter,
+        );
 
         if (!await tracker.trackStage(
             'Setup', () => _buildShouldRun(builderOutputs, wrappedReader))) {
@@ -584,7 +587,7 @@ class _SingleBuild {
 
     var wrappedWriter = AssetWriterSpy(_writer);
     var wrappedReader = SingleStepReader(_reader, _assetGraph, phaseNum,
-        input.package, _isReadableNode, null, wrappedWriter);
+        input.package, _isReadableNode, _isInvalidInput, null, wrappedWriter);
 
     if (!await _postProcessBuildShouldRun(anchorNode, wrappedReader)) {
       return <AssetId>[];
