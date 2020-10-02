@@ -1,3 +1,24 @@
+## 2.12.2-dev
+
+- Fix parsing of `environment` config for DDC when using a bool or numeric
+  value.
+
+## 2.12.1
+
+- Require `build_modules` version `^3.0.0`.
+
+## 2.12.0
+
+- Support sound null safety in ddc/dart2js, based on the standard entrypoint
+  detection (enable null safety if the entrypoint opts in).
+- Update dart2js support to enable experiments if provided, and use a
+  multi-root scheme for non-package uris.
+- Require `build` version `>=1.5.0`.
+
+## 2.12.0-dev.3
+
+- Fix stripping scratch paths in metadata.
+
 ## 2.12.0-dev.2
 
 - Add the `generate-full-dill` option for the `build_web_compilers:ddc`
@@ -19,11 +40,12 @@ global_options:
   `.ddc_merged_metadata` file which consists of new line separated
   `.metadata` content produced by DDC.
 - Migrate off of deprecated analyzer apis.
+- Allow the latest analyzer version `0.40.x`.
 
 ## 2.11.0
 
 - Deprecated support for the `experiments` configuration in favor of the
-  general mechanism exposed by the build package(exposed through the 
+  general mechanism exposed by the build package(exposed through the
   `--enable-experiment` flag to match other Dart tools).
 
 ## 2.10.0

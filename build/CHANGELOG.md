@@ -1,11 +1,11 @@
-## 1.5.0-dev
-
-Added the `Future<CompilationUnit> compilationUnitFor(AssetId id)` api to the
-`Resolver` class, which returns only the parsed AST for the given asset.
-- Much cheaper than `libraryFor`, because it only reads the given asset instead
-  of touching all transitive deps.
-- Still may be suitable for some builders which don't need the fully resolved
-  `Element` model.
+## 1.5.0
+- Allow the latest analyzer version `0.40.x`.
+- Added the `Future<CompilationUnit> compilationUnitFor(AssetId id)` api to the
+  `Resolver` class, which returns only the parsed AST for the given asset.
+  - Much cheaper than `libraryFor`, because it only reads the given asset instead
+    of touching all transitive deps.
+  - Still may be suitable for some builders which don't need the fully resolved
+    `Element` model.
 
 ## 1.4.0
 

@@ -433,11 +433,8 @@ final _dartUiPath =
 /// experiments.
 FeatureSet _featureSet({List<String> enableExperiments}) {
   enableExperiments ??= [];
-  if (enableExperiments.isEmpty) {
-    return FeatureSet.fromEnableFlags([]).restrictToVersion(sdkLanguageVersion);
-  } else if (sdkLanguageVersion == ExperimentStatus.currentVersion) {
-    return FeatureSet.fromEnableFlags(enableExperiments);
-  } else {
+  if (enableExperiments.isNotEmpty &&
+      sdkLanguageVersion > ExperimentStatus.currentVersion) {
     throw StateError('''
 Attempting to enable experiments `$enableExperiments`, but the current SDK
 language version does not match your `analyzer` package language version:
@@ -454,6 +451,8 @@ package in your `pubspec.yaml`, so you may have to add that. You can see your
 current version by running `pub deps`.
 ''');
   }
+  return FeatureSet.fromEnableFlags2(
+      sdkLanguageVersion: sdkLanguageVersion, flags: enableExperiments);
 }
 
 /// Path to the running dart's SDK root.

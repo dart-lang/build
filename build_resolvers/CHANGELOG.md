@@ -1,4 +1,10 @@
-## 1.4.0-dev
+## 1.4.1
+
+- Update the exception thrown when using experiments without an exactly
+  matching analyzer version to instead ensure that the sdk version is not
+  ahead of the analyzer version.
+
+## 1.4.0
 
 - Support versions `1.5.x` of the `build` package.
   - Implements the `compilationUnitFor` method on `Resolver`.

@@ -83,9 +83,6 @@ The available commands are `build`, `watch`, `serve`, and `test`.
 All the above commands support the following arguments:
 
 - `--help`: Print usage information for the command.
-- `--assume-tty`: Enables colors and interactive input when the script does not
-  appear to be running directly in a terminal, for instance when it is a
-  subprocess.
 - `--delete-conflicting-outputs`: Assume conflicting outputs in the users
   package are from previous builds, and skip the user prompt that would usually
   be provided.

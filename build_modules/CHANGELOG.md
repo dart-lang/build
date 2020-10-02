@@ -1,6 +1,29 @@
-## 2.10.2-dev
+## 3.0.0
 
+- Re-release of 2.11.2 but as a breaking change.
+
+## 2.11.3
+
+- Reverts back to the 2.10.1 release. The updates from 2.11 will be republished
+  as a breaking change, in version 3.0.0.
+
+## 2.11.2
+
+- Re-release 2.11.0 with a min sdk constraint of `2.10.0-93.0.dev`
+
+## 2.11.1
+
+- Reverts 2.11.0 for older sdks than <2.10.0-93.0.dev.
+
+## 2.11.0
+
+- Add support for building null safe kernel modules to `KernelBuilder`.
+- Allow the latest analyzer version `0.40.x`.
 - Stop using deprecated analyzer apis.
+- Stop passing the deprecated `--kernel` flag to the dev compiler.
+- Update the package_config used in the shared compiler tmp dir to cover the
+  non-lib dirs for the root package.
+- Expose `maxWorkersPerTask` variable.
 
 ## 2.10.1
 

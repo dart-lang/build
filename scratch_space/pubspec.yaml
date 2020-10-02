@@ -4,7 +4,7 @@ description: A tool to manage running external executables within package:build
 homepage: https://github.com/dart-lang/build/tree/master/scratch_space
 
 environment:
-  sdk: ">=2.7.0 <3.0.0"
+  sdk: ">=2.9.0 <3.0.0"
 
 dependencies:
   build: ">=0.10.0 <2.0.0"
@@ -16,5 +16,4 @@ dependencies:
 dev_dependencies:
   build_runner: ^1.0.0
   build_test: ^1.0.0
-  build_vm_compilers: ">=0.1.0 <2.0.0"
   test: ^1.0.0

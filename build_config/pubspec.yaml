@@ -4,7 +4,7 @@ description: Support for parsing `build.yaml` configuration.
 homepage: https://github.com/dart-lang/build/tree/master/build_config
 
 environment:
-  sdk: '>=2.7.0 <3.0.0'
+  sdk: '>=2.9.0 <3.0.0'
 
 dependencies:
   checked_yaml: ^1.0.0
@@ -26,3 +26,4 @@ dependency_overrides:
     path: ../build_runner
   build_runner_core:
     path: ../build_runner_core
+  analyzer: ^0.40.0

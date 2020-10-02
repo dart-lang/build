@@ -1,3 +1,11 @@
+## 6.0.3
+
+- Fix https://github.com/dart-lang/build/issues/1804.
+
+## 6.0.2
+
+- Require the latest build version (1.5.x).
+
 ## 6.0.1
 
 - Add back the `overrideGeneratedOutputDirectory` method.

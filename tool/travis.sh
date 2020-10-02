@@ -63,22 +63,18 @@ for PKG in ${PKGS}; do
       pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
     command_2)
-      echo 'pub run build_runner test -- --test-randomize-ordering-seed=random'
-      pub run build_runner test -- --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    command_4)
-      echo 'dart $(pub run build_runner help >/dev/null; pub run build_runner generate-build-script) test --delete-conflicting-outputs -- -P presubmit --test-randomize-ordering-seed=random'
-      dart $(pub run build_runner help >/dev/null; pub run build_runner generate-build-script) test --delete-conflicting-outputs -- -P presubmit --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    command_5)
-      echo 'test/flutter_test.sh'
-      test/flutter_test.sh || EXIT_CODE=$?
+      echo 'pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random'
+      pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
     dartanalyzer_0)
       echo 'dartanalyzer --fatal-infos --fatal-warnings .'
       dartanalyzer --fatal-infos --fatal-warnings . || EXIT_CODE=$?
       ;;
     dartanalyzer_1)
+      echo 'dartanalyzer --enable-experiment=non-nullable --fatal-infos --fatal-warnings .'
+      dartanalyzer --enable-experiment=non-nullable --fatal-infos --fatal-warnings . || EXIT_CODE=$?
+      ;;
+    dartanalyzer_2)
       echo 'dartanalyzer --fatal-warnings .'
       dartanalyzer --fatal-warnings . || EXIT_CODE=$?
       ;;
@@ -111,32 +107,36 @@ for PKG in ${PKGS}; do
       pub run test || EXIT_CODE=$?
       ;;
     test_06)
+      echo 'pub run test --test-randomize-ordering-seed=random'
+      pub run test --test-randomize-ordering-seed=random || EXIT_CODE=$?
+      ;;
+    test_07)
+      echo 'pub run test -P presubmit --test-randomize-ordering-seed=random'
+      pub run test -P presubmit --test-randomize-ordering-seed=random || EXIT_CODE=$?
+      ;;
+    test_08)
       echo 'pub run test -x integration --test-randomize-ordering-seed=random'
       pub run test -x integration --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
-    test_07)
+    test_09)
       echo 'pub run test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random'
       pub run test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
-    test_08)
+    test_10)
       echo 'pub run test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random'
       pub run test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
-    test_09)
+    test_11)
       echo 'pub run test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random'
       pub run test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
-    test_10)
+    test_12)
       echo 'pub run test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random'
       pub run test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
-    test_11)
+    test_13)
       echo 'pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random'
       pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    test_12)
-      echo 'pub run test --test-randomize-ordering-seed=random'
-      pub run test --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
     *)
       echo -e "\033[31mNot expecting TASK '${TASK}'. Error!\033[0m"

@@ -66,6 +66,41 @@ void main() {
       }, resolvers: AnalyzerResolvers());
     });
 
+    test('should still crawl transitively after a call to isLibrary', () {
+      return resolveSources({
+        'a|web/main.dart': '''
+              import 'package:b/b.dart';
+
+              main() {
+              } ''',
+        'b|lib/b.dart': '''
+              library b;
+              ''',
+      }, (resolver) async {
+        await resolver.isLibrary(entryPoint);
+        var libs = await resolver.libraries.toList();
+        expect(libs, contains(predicate((l) => l.name == 'b')));
+      }, resolvers: AnalyzerResolvers());
+    });
+
+    test('should still crawl transitively after a call to compilationUnitFor',
+        () {
+      return resolveSources({
+        'a|web/main.dart': '''
+              import 'package:b/b.dart';
+
+              main() {
+              } ''',
+        'b|lib/b.dart': '''
+              library b;
+              ''',
+      }, (resolver) async {
+        await resolver.compilationUnitFor(entryPoint);
+        var libs = await resolver.libraries.toList();
+        expect(libs, contains(predicate((l) => l.name == 'b')));
+      }, resolvers: AnalyzerResolvers());
+    });
+
     group('language versioning', () {
       test('gives a correct languageVersion based on comments', () async {
         await resolveSources({
@@ -130,7 +165,7 @@ void main() {
         var originalLevel = Logger.root.level;
         Logger.root.level = Level.WARNING;
         var listener = Logger.root.onRecord.listen((record) {
-          fail('Got an unexpected warning during analyzsis:\n\n$record');
+          fail('Got an unexpected warning during analysis:\n\n$record');
         });
         addTearDown(() {
           Logger.root.level = originalLevel;
@@ -232,7 +267,8 @@ void main() {
         var clazz = lib.getType('A');
         expect(clazz, isNotNull);
         expect(clazz.interfaces, hasLength(1));
-        expect(clazz.interfaces.first.getDisplayString(), 'B');
+        expect(clazz.interfaces.first.getDisplayString(withNullability: false),
+            'B');
       }, resolvers: resolvers);
     });
 
@@ -294,7 +330,7 @@ void main() {
       }, resolvers: AnalyzerResolvers());
     });
 
-    test('does not resolve constants transitively', () {
+    test('resolves constants transitively', () {
       return resolveSources({
         'a|web/main.dart': '''
               library web.main;
@@ -314,7 +350,7 @@ void main() {
         var main = await resolver.findLibraryByName('web.main');
         var meta = main.getType('Foo').supertype.element.metadata[0];
         expect(meta, isNotNull);
-        expect(meta.constantValue, isNull);
+        expect(meta.computeConstantValue()?.toIntValue(), 0);
       }, resolvers: AnalyzerResolvers());
     });
 
