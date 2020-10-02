@@ -18,7 +18,7 @@ abstract class AssetReader {
   ///
   /// * Throws a `PackageNotFoundException` if `id.package` is not found.
   /// * Throws a `AssetNotFoundException` if `id.path` is not found.
-  /// * Throws an `InvalidInputException` if `id.path` is an invalid input.
+  /// * Throws an `InvalidInputException` if [id] is an invalid input.
   Future<List<int>> readAsBytes(AssetId id);
 
   /// Returns a [Future] that completes with the contents of a text asset.

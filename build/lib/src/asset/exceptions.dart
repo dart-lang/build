@@ -40,7 +40,7 @@ class InvalidInputException implements Exception {
   String toString() => 'InvalidInputException: $assetId\n'
       'For package dependencies, only public files like `lib/**` may be used '
       'as inputs.\n'
-      'A package can mark a file as public by including it in its'
+      'A package can mark a file as public by including it in its '
       '`additional_public_assets` in a build.yaml file.';
 }
 
