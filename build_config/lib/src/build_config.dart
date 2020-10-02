@@ -130,7 +130,7 @@ class BuildConfig {
     Map<String, BuilderDefinition> builderDefinitions,
     Map<String, PostProcessBuilderDefinition> postProcessBuilderDefinitions =
         const {},
-    this.publicAssets = defaultPublicAssets,
+    this.publicAssets = const InputSet(),
   })  : buildTargets = buildTargets ??
             {
               _defaultTarget(packageName ?? currentPackage): BuildTarget(
@@ -163,12 +163,6 @@ class BuildConfig {
 
   factory BuildConfig._fromJson(Map json) => _$BuildConfigFromJson(json);
 }
-
-const InputSet defaultPublicAssets = InputSet(include: [
-  'lib/**',
-  'LICENSE',
-  'pubspec.yaml',
-]);
 
 String _defaultTarget(String package) => '$package:$package';
 

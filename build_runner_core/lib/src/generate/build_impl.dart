@@ -124,7 +124,7 @@ class BuildImpl {
         buildDefinition.assetGraph,
         buildPhases.length,
         options.packageGraph.root.name,
-        _isReadableAfterBuildFactory(buildPhases));
+        _isReadableAfterBuildFactory(buildDefinition, buildPhases));
     var finalizedReader = FinalizedReader(
         singleStepReader,
         buildDefinition.assetGraph,
@@ -135,8 +135,14 @@ class BuildImpl {
     return build;
   }
 
-  static IsReadable _isReadableAfterBuildFactory(List<BuildPhase> buildPhases) {
+  static IsReadable _isReadableAfterBuildFactory(
+      BuildDefinition definition, List<BuildPhase> buildPhases) {
     return (AssetNode node, int phaseNum, AssetWriterSpy writtenAssets) {
+      final package = definition.packageGraph[node.id.package];
+      if (!definition.targetGraph.isVisibleInBuild(node.id, package)) {
+        return Readability.invalidAsset;
+      }
+
       if (node is GeneratedAssetNode) {
         return _readabilityOf(node.wasOutput && !node.isFailure);
       }

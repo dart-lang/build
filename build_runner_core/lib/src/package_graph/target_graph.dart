@@ -15,7 +15,7 @@ import 'package_graph.dart';
 /// based on build config.
 class TargetGraph {
   static final InputMatcher _defaultMatcherForNonRoot =
-      InputMatcher(defaultPublicAssets);
+      InputMatcher(const InputSet(), defaultInclude: _defaultPublicAssets);
 
   /// All [TargetNode]s indexed by `"$packageName:$targetName"`.
   final Map<String, TargetNode> allModules;
@@ -66,7 +66,8 @@ class TargetGraph {
     for (final package in packageGraph.allPackages.values) {
       final config = overrideBuildConfig[package.name] ??
           await _packageBuildConfig(package);
-      publicAssetsByPackage[package.name] = InputMatcher(config.publicAssets);
+      publicAssetsByPackage[package.name] = InputMatcher(config.publicAssets,
+          defaultInclude: _defaultPublicAssets);
       List<String> defaultInclude;
       if (package.isRoot) {
         defaultInclude = defaultRootPackageSources;
@@ -159,6 +160,14 @@ Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
     throw BuildConfigParseException(package.name, e);
   }
 }
+
+const _defaultPublicAssets = [
+  'lib/**',
+  'bin/**',
+  'LICENSE',
+  'README',
+  'pubspec.yaml',
+];
 
 class BuildConfigParseException implements Exception {
   final String packageName;

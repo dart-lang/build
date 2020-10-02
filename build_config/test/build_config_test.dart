@@ -90,6 +90,13 @@ void main() {
           devOptions: const {'foo': 'global_dev'},
           releaseOptions: const {'foo': 'global_release'})
     });
+
+    expect(
+      buildConfig.publicAssets,
+      isA<InputSet>()
+          .having((e) => e.include, 'publicAssets.include', ['test/**']).having(
+              (e) => e.exclude, 'publicAssets.exclude', anyOf(isNull, isEmpty)),
+    );
   });
 
   test('build.yaml can omit a targets section', () {
@@ -233,6 +240,8 @@ post_process_builders:
         foo: bar
       release_options:
         baz: bop
+public_assets:
+  - "test/**"
 ''';
 
 var buildYamlNoTargets = '''

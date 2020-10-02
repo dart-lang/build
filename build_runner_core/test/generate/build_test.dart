@@ -454,6 +454,43 @@ void main() {
       });
     });
 
+    test('can read public non-lib assets', () async {
+      final packageGraph = buildPackageGraph({
+        rootPackage('a', path: 'a/'): ['b'],
+        package('b', path: 'a/b'): []
+      });
+      final writer = InMemoryRunnerAssetWriter();
+      final reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
+          rootPackage: 'a')
+        ..cacheStringAsset(
+            AssetId.parse('b|build.yaml'), 'public_assets: ["test/**"]');
+
+      final builder = TestBuilder(
+        buildExtensions: {
+          '.foo': ['.bar']
+        },
+        build: (step, _) async {
+          final input = step.inputId;
+          final fromB = step.readAsString(AssetId.parse('b|test/foo.bar'));
+
+          await step.writeAsString(input.changeExtension('.bar'), fromB);
+        },
+      );
+
+      await testBuilders(
+        [
+          apply('', [(_) => builder], toPackage('a'))
+        ],
+        {
+          'a|lib/a.foo': '',
+          'b|test/foo.bar': 'content',
+        },
+        packageGraph: packageGraph,
+        reader: reader,
+        writer: writer,
+      );
+    });
+
     test('skips builders which would output files in non-root packages',
         () async {
       final packageGraph = buildPackageGraph({
