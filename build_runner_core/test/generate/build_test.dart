@@ -459,21 +459,16 @@ void main() {
         rootPackage('a', path: 'a/'): ['b'],
         package('b', path: 'a/b'): []
       });
-      final writer = InMemoryRunnerAssetWriter();
-      final reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
-          rootPackage: 'a')
-        ..cacheStringAsset(
-            AssetId.parse('b|build.yaml'), 'public_assets: ["test/**"]');
 
       final builder = TestBuilder(
         buildExtensions: {
           '.foo': ['.bar']
         },
-        build: (step, _) async {
+        build: (step, _) {
           final input = step.inputId;
           final fromB = step.readAsString(AssetId.parse('b|test/foo.bar'));
 
-          await step.writeAsString(input.changeExtension('.bar'), fromB);
+          return step.writeAsString(input.changeExtension('.bar'), fromB);
         },
       );
 
@@ -485,9 +480,12 @@ void main() {
           'a|lib/a.foo': '',
           'b|test/foo.bar': 'content',
         },
+        overrideBuildConfig: {
+          'b': BuildConfig.parse(
+              'b', [], 'additional_public_assets: ["test/**"]')
+        },
         packageGraph: packageGraph,
-        reader: reader,
-        writer: writer,
+        outputs: {r'$$a|lib/a.bar': 'content'},
       );
     });
 

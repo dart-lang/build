@@ -71,8 +71,8 @@ class BuildConfig {
   @JsonKey(name: 'global_options')
   final Map<String, GlobalBuilderConfig> globalOptions;
 
-  @JsonKey(name: 'public_assets')
-  final InputSet publicAssets;
+  @JsonKey(name: 'additional_public_assets')
+  final List<String> additionalPublicAssets;
 
   /// The default config if you have no `build.yaml` file.
   factory BuildConfig.useDefault(
@@ -130,7 +130,7 @@ class BuildConfig {
     Map<String, BuilderDefinition> builderDefinitions,
     Map<String, PostProcessBuilderDefinition> postProcessBuilderDefinitions =
         const {},
-    this.publicAssets = const InputSet(),
+    this.additionalPublicAssets = const [],
   })  : buildTargets = buildTargets ??
             {
               _defaultTarget(packageName ?? currentPackage): BuildTarget(

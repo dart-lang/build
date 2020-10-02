@@ -14,8 +14,9 @@ import 'package_graph.dart';
 /// Like a [PackageGraph] but packages are further broken down into modules
 /// based on build config.
 class TargetGraph {
-  static final InputMatcher _defaultMatcherForNonRoot =
-      InputMatcher(const InputSet(), defaultInclude: _defaultPublicAssets);
+  static final InputMatcher _defaultMatcherForNonRoot = InputMatcher(
+      const InputSet(),
+      defaultInclude: _defaultPublicAssetsForNonRoot);
 
   /// All [TargetNode]s indexed by `"$packageName:$targetName"`.
   final Map<String, TargetNode> allModules;
@@ -66,8 +67,6 @@ class TargetGraph {
     for (final package in packageGraph.allPackages.values) {
       final config = overrideBuildConfig[package.name] ??
           await _packageBuildConfig(package);
-      publicAssetsByPackage[package.name] = InputMatcher(config.publicAssets,
-          defaultInclude: _defaultPublicAssets);
       List<String> defaultInclude;
       if (package.isRoot) {
         defaultInclude = defaultRootPackageSources;
@@ -78,7 +77,12 @@ class TargetGraph {
           'lib/_internal/**.sum',
         ];
       } else {
-        defaultInclude = const ['lib/**'];
+        defaultInclude = [
+          ..._defaultPublicAssetsForNonRoot,
+          ...?config.additionalPublicAssets
+        ];
+        publicAssetsByPackage[package.name] =
+            InputMatcher(const InputSet(), defaultInclude: defaultInclude);
       }
       final nodes = config.buildTargets.values.map((target) =>
           TargetNode(target, package, defaultInclude: defaultInclude));
@@ -119,6 +123,8 @@ class TargetGraph {
   /// asset is visible if it's included in the [BuildConfig.publicAssets] of
   /// that package.
   bool isVisibleInBuild(AssetId id, PackageNode enclosingPackage) {
+    assert(id.package == enclosingPackage.name);
+
     // All assets in the root package are included in the build
     if (enclosingPackage.isRoot) return true;
 
@@ -161,7 +167,7 @@ Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
   }
 }
 
-const _defaultPublicAssets = [
+const _defaultPublicAssetsForNonRoot = [
   'lib/**',
   'bin/**',
   'LICENSE',
