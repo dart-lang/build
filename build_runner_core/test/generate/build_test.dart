@@ -12,6 +12,8 @@ import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/package_graph/target_graph.dart'
+    show defaultPublicAssetsForNonRoot;
 import 'package:build_runner_core/src/util/constants.dart';
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
@@ -462,15 +464,7 @@ void main() {
         });
 
         final builder = TestBuilder(
-          buildExtensions: const {
-            '.foo': ['.bar']
-          },
-          build: (step, _) {
-            final input = step.inputId;
-            final fromB = step.readAsString(AssetId.parse('b|test/foo.bar'));
-
-            return step.writeAsString(input.changeExtension('.bar'), fromB);
-          },
+          build: copyFrom(makeAssetId('b|test/foo.bar')),
         );
 
         await testBuilders(
@@ -486,7 +480,7 @@ void main() {
                 'b', [], 'additional_public_assets: ["test/**"]')
           },
           packageGraph: packageGraph,
-          outputs: {r'$$a|lib/a.bar': 'content'},
+          outputs: {r'$$a|lib/a.foo.copy': 'content'},
         );
       });
 
@@ -503,7 +497,8 @@ void main() {
           build: (step, _) {
             return expectLater(
               () => step.readAsBytes(AssetId.parse('b|test/my_test.dart')),
-              throwsA(isA<InvalidInputException>()),
+              throwsA(isA<InvalidInputException>().having((e) => e.allowedGlobs,
+                  'allowedGlobs', defaultPublicAssetsForNonRoot)),
             );
           },
         );

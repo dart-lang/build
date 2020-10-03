@@ -121,7 +121,7 @@ class BuildImpl {
         buildPhases.length,
         options.packageGraph.root.name,
         _isReadableAfterBuildFactory(buildPhases),
-        _isInvalidInputFactory(
+        _checkInvalidInputFactory(
             buildDefinition.targetGraph, buildDefinition.packageGraph));
     var finalizedReader = FinalizedReader(
         singleStepReader,
@@ -145,13 +145,21 @@ class BuildImpl {
   }
 }
 
-IsInvalidInput _isInvalidInputFactory(
+CheckInvalidInput _checkInvalidInputFactory(
     TargetGraph targetGraph, PackageGraph packageGraph) {
   return (AssetId id) {
     final packageNode = packageGraph[id.package];
 
+    if (packageNode == null) {
+      throw PackageNotFoundException(id.package);
+    }
+
     // The id is an invalid input if it's not part of the build.
-    return !targetGraph.isVisibleInBuild(id, packageNode);
+    if (!targetGraph.isVisibleInBuild(id, packageNode)) {
+      final allowed = targetGraph.getValidInputs(packageNode);
+
+      throw InvalidInputException(id, allowed);
+    }
   };
 }
 
@@ -166,7 +174,7 @@ class _SingleBuild {
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
   final _lazyGlobs = <AssetId, Future<void>>{};
   final PackageGraph _packageGraph;
-  final IsInvalidInput _isInvalidInput;
+  final CheckInvalidInput _checkInvalidInput;
   final BuildPerformanceTracker _performanceTracker;
   final AssetReader _reader;
   final Resolvers _resolvers;
@@ -192,7 +200,7 @@ class _SingleBuild {
         _buildPhasePool = List(buildImpl._buildPhases.length),
         _environment = buildImpl._environment,
         _packageGraph = buildImpl._packageGraph,
-        _isInvalidInput = _isInvalidInputFactory(
+        _checkInvalidInput = _checkInvalidInputFactory(
             buildImpl._targetGraph, buildImpl._packageGraph),
         _performanceTracker = buildImpl._trackPerformance
             ? BuildPerformanceTracker()
@@ -479,7 +487,7 @@ class _SingleBuild {
             phaseNumber,
             input.package,
             _isReadableNode,
-            _isInvalidInput,
+            _checkInvalidInput,
             _getUpdatedGlobNode,
             wrappedWriter);
 
@@ -585,8 +593,15 @@ class _SingleBuild {
         'Inputs should be known in the static graph. Missing $input');
 
     var wrappedWriter = AssetWriterSpy(_writer);
-    var wrappedReader = SingleStepReader(_reader, _assetGraph, phaseNum,
-        input.package, _isReadableNode, _isInvalidInput, null, wrappedWriter);
+    var wrappedReader = SingleStepReader(
+        _reader,
+        _assetGraph,
+        phaseNum,
+        input.package,
+        _isReadableNode,
+        _checkInvalidInput,
+        null,
+        wrappedWriter);
 
     if (!await _postProcessBuildShouldRun(anchorNode, wrappedReader)) {
       return <AssetId>[];

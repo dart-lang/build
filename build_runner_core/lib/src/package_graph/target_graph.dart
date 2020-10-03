@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:glob/glob.dart';
+import 'package:meta/meta.dart';
 
 import '../generate/input_matcher.dart';
 import 'package_graph.dart';
@@ -16,7 +17,7 @@ import 'package_graph.dart';
 class TargetGraph {
   static final InputMatcher _defaultMatcherForNonRoot = InputMatcher(
       const InputSet(),
-      defaultInclude: _defaultPublicAssetsForNonRoot);
+      defaultInclude: defaultPublicAssetsForNonRoot);
 
   /// All [TargetNode]s indexed by `"$packageName:$targetName"`.
   final Map<String, TargetNode> allModules;
@@ -28,7 +29,7 @@ class TargetGraph {
   ///
   /// If the package is non-root, only assets matched by the [InputMatcher] are
   /// included in the build.
-  final Map<String, InputMatcher> publicAssetsByPackage;
+  final Map<String, InputMatcher> _publicAssetsByPackage;
 
   /// The [BuildConfig] of the root package.
   final BuildConfig rootPackageConfig;
@@ -36,7 +37,7 @@ class TargetGraph {
   TargetGraph._(
     this.allModules,
     this.modulesByPackage,
-    this.publicAssetsByPackage,
+    this._publicAssetsByPackage,
     this.rootPackageConfig,
   );
 
@@ -78,7 +79,7 @@ class TargetGraph {
         ];
       } else {
         defaultInclude = [
-          ..._defaultPublicAssetsForNonRoot,
+          ...defaultPublicAssetsForNonRoot,
           ...?config.additionalPublicAssets
         ];
         publicAssetsByPackage[package.name] =
@@ -117,6 +118,23 @@ class TargetGraph {
   bool anyMatchesAsset(AssetId id) =>
       modulesByPackage[id.package]?.any((t) => t.matchesSource(id)) ?? false;
 
+  /// Obtains a list of glob patterns describing all valid input assets defined
+  /// in the [package].
+  List<String> getValidInputs(PackageNode package) {
+    if (package.isRoot) {
+      // There are no restrictions for the root package
+      return ['**/*'];
+    } else {
+      // For a non-root package, valid inputs must be exposed explicitly. Note
+      // that we don't allow users to exclude inputs, so we can just return the
+      // including globs.
+      return [
+        for (final glob in _matcherForNonRoot(package).includeGlobs)
+          glob.pattern
+      ];
+    }
+  }
+
   /// Whether the [id] is visible in a build.
   ///
   /// All assets in the root package are visible. For non-root packages, an
@@ -130,9 +148,12 @@ class TargetGraph {
     if (enclosingPackage.isRoot) return true;
 
     // For other packages, the asset must be marked as public
-    final matcher = publicAssetsByPackage[enclosingPackage.name] ??
-        _defaultMatcherForNonRoot;
-    return matcher.matches(id);
+    return _matcherForNonRoot(enclosingPackage).matches(id);
+  }
+
+  InputMatcher _matcherForNonRoot(PackageNode node) {
+    assert(!node.isRoot);
+    return _publicAssetsByPackage[node.name] ?? _defaultMatcherForNonRoot;
   }
 }
 
@@ -168,10 +189,11 @@ Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
   }
 }
 
-const _defaultPublicAssetsForNonRoot = [
+@visibleForTesting
+const defaultPublicAssetsForNonRoot = [
   'lib/**',
   'bin/**',
-  'LICENSE',
+  'LICENSE*',
   'README*',
   'pubspec.yaml',
 ];

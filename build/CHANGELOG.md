@@ -1,3 +1,9 @@
+## 1.6.0-dev
+
+- Expose a set of valid inputs in `InvalidInputException`.
+- Build implementations are now expected to throw `InvalidInputException`s, the
+  check has been removed from this package.
+
 ## 1.5.0
 - Allow the latest analyzer version `0.40.x`.
 - Added the `Future<CompilationUnit> compilationUnitFor(AssetId id)` api to the

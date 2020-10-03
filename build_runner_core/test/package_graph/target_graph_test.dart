@@ -2,8 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:_test_common/package_graphs.dart';
+import 'package:build/build.dart';
 @TestOn('vm')
 import 'package:build_config/build_config.dart';
+import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
@@ -76,6 +79,61 @@ void main() {
                         contains(r'lib/$lib$'),
                         isNot(contains(r'$package$')))),
           ]));
+    });
+  });
+
+  group('target graph reports visible assets', () {
+    final a = rootPackage('a');
+    final b = package('b');
+    final packages = buildPackageGraph({
+      a: ['b'],
+      b: []
+    });
+
+    test('for root package', () async {
+      final targetGraph = await TargetGraph.forPackageGraph(packages);
+
+      expect(targetGraph.isVisibleInBuild(AssetId('a', 'web/index.html'), a),
+          isTrue);
+      expect(
+          targetGraph.isVisibleInBuild(AssetId('a', 'lib/a.dart'), a), isTrue);
+      expect(targetGraph.isVisibleInBuild(AssetId('a', 'test/my_test.dart'), a),
+          isTrue);
+      expect(targetGraph.getValidInputs(a), ['**/*']);
+    });
+
+    test('for non-root package with default configuration', () async {
+      final targetGraph = await TargetGraph.forPackageGraph(packages);
+
+      expect(targetGraph.isVisibleInBuild(AssetId('b', 'web/index.html'), b),
+          isFalse);
+      expect(
+          targetGraph.isVisibleInBuild(AssetId('b', 'lib/b.dart'), b), isTrue);
+      expect(
+          targetGraph.isVisibleInBuild(AssetId('b', 'LICENSE.txt'), b), isTrue);
+      expect(targetGraph.isVisibleInBuild(AssetId('b', 'README'), b), isTrue);
+      expect(targetGraph.isVisibleInBuild(AssetId('b', 'test/my_test.dart'), b),
+          isFalse);
+
+      expect(targetGraph.getValidInputs(b), contains('lib/**'));
+    });
+
+    test('for non-root package exposing additional assets', () async {
+      final targetGraph =
+          await TargetGraph.forPackageGraph(packages, overrideBuildConfig: {
+        'b':
+            BuildConfig.parse('b', [], 'additional_public_assets: ["test/**"]'),
+      });
+
+      expect(
+          targetGraph.isVisibleInBuild(AssetId('b', 'lib/b.dart'), b), isTrue);
+      expect(targetGraph.isVisibleInBuild(AssetId('b', 'test/my_test.dart'), b),
+          isTrue);
+
+      expect(targetGraph.getValidInputs(b), contains('test/**'));
+      // The additional input should also be included in the default target
+      expect(targetGraph.allModules['b:b'].sourceIncludes,
+          contains(isA<Glob>().having((e) => e.pattern, 'pattern', 'test/**')));
     });
   });
 }

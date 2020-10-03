@@ -1,5 +1,5 @@
 name: build
-version: 1.5.0
+version: 1.6.0-dev
 description: A build system for Dart.
 homepage: https://github.com/dart-lang/build/tree/master/build
 
