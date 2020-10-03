@@ -48,10 +48,12 @@ class InvalidInputException implements Exception {
     final allowedBuffer = StringBuffer();
 
     for (var i = 0; i < allowedGlobs.length; i++) {
-      if (i == allowedGlobs.length - 1) {
-        allowedBuffer.write(' and ');
-      } else if (i != 0) {
-        allowedBuffer.write(', ');
+      if (i > 0) {
+        if (i == allowedGlobs.length - 1) {
+          allowedBuffer.write(' or ');
+        } else {
+          allowedBuffer.write(', ');
+        }
       }
 
       allowedBuffer.write(allowedGlobs[i]);
