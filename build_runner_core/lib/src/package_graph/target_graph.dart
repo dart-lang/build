@@ -7,9 +7,9 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:glob/glob.dart';
-import 'package:meta/meta.dart';
 
 import '../generate/input_matcher.dart';
+import '../generate/options.dart' show defaultNonRootVisibleAssets;
 import 'package_graph.dart';
 
 /// Like a [PackageGraph] but packages are further broken down into modules
@@ -17,7 +17,7 @@ import 'package_graph.dart';
 class TargetGraph {
   static final InputMatcher _defaultMatcherForNonRoot = InputMatcher(
       const InputSet(),
-      defaultInclude: defaultPublicAssetsForNonRoot);
+      defaultInclude: defaultNonRootVisibleAssets);
 
   /// All [TargetNode]s indexed by `"$packageName:$targetName"`.
   final Map<String, TargetNode> allModules;
@@ -79,7 +79,7 @@ class TargetGraph {
         ];
       } else {
         defaultInclude = [
-          ...defaultPublicAssetsForNonRoot,
+          ...defaultNonRootVisibleAssets,
           ...?config.additionalPublicAssets
         ];
         publicAssetsByPackage[package.name] =
@@ -188,15 +188,6 @@ Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
     throw BuildConfigParseException(package.name, e);
   }
 }
-
-@visibleForTesting
-const defaultPublicAssetsForNonRoot = [
-  'lib/**',
-  'bin/**',
-  'LICENSE*',
-  'README*',
-  'pubspec.yaml',
-];
 
 class BuildConfigParseException implements Exception {
   final String packageName;
