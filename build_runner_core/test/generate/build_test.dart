@@ -12,8 +12,8 @@ import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
-import 'package:build_runner_core/src/package_graph/target_graph.dart'
-    show defaultPublicAssetsForNonRoot;
+import 'package:build_runner_core/src/generate/options.dart'
+    show defaultNonRootVisibleAssets;
 import 'package:build_runner_core/src/util/constants.dart';
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
@@ -498,7 +498,7 @@ void main() {
             return expectLater(
               () => step.readAsBytes(AssetId.parse('b|test/my_test.dart')),
               throwsA(isA<InvalidInputException>().having((e) => e.allowedGlobs,
-                  'allowedGlobs', defaultPublicAssetsForNonRoot)),
+                  'allowedGlobs', defaultNonRootVisibleAssets)),
             );
           },
         );

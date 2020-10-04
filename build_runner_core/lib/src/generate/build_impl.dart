@@ -174,6 +174,7 @@ class _SingleBuild {
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
   final _lazyGlobs = <AssetId, Future<void>>{};
   final PackageGraph _packageGraph;
+  final TargetGraph _targetGraph;
   final CheckInvalidInput _checkInvalidInput;
   final BuildPerformanceTracker _performanceTracker;
   final AssetReader _reader;
@@ -200,6 +201,7 @@ class _SingleBuild {
         _buildPhasePool = List(buildImpl._buildPhases.length),
         _environment = buildImpl._environment,
         _packageGraph = buildImpl._packageGraph,
+        _targetGraph = buildImpl._targetGraph,
         _checkInvalidInput = _checkInvalidInputFactory(
             buildImpl._targetGraph, buildImpl._packageGraph),
         _performanceTracker = buildImpl._trackPerformance
@@ -369,12 +371,19 @@ class _SingleBuild {
       String package, int phaseNumber) async {
     var ids = <AssetId>{};
     var phase = _buildPhases[phaseNumber];
+    var packageNode = _packageGraph[package];
+
     await Future.wait(
         _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
       if (!shouldBuildForDirs(
           node.id, _buildPaths(_buildDirs), _buildFilters, phase)) {
         return;
       }
+
+      // Don't build for inputs that aren't visible. This can happen for
+      // placeholder nodes like `test/$test$` that are added to each package,
+      // since the test dir is not part of the build for non-root packages.
+      if (!_targetGraph.isVisibleInBuild(node.id, packageNode)) return;
 
       var input = _assetGraph.get(node.primaryInput);
       if (input is GeneratedAssetNode) {
@@ -526,6 +535,7 @@ class _SingleBuild {
                   stageTracker: tracker,
                   reportUnusedAssetsForInput: (_, assets) =>
                       unusedAssets.addAll(assets),
+                  rootPackage: _packageGraph.root.name,
                 ).catchError((void _) {
                   // Errors tracked through the logger
                 }));
