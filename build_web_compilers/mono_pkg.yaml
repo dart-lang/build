@@ -1,6 +1,6 @@
 dart:
 # TODO: Update to `dev` https://github.com/dart-lang/build/issues/2841
-- 2.10.0-110.0.dev
+- 2.10.0
 
 stages:
 - analyze_and_format:
