@@ -157,5 +157,5 @@ const _supportedOptions = [
   _experimentOption,
   _useIncrementalCompilerOption,
   _generateFullDillOption,
-  _trackUnusedInputsCompilerOption
+  _trackUnusedInputsCompilerOption,
 ];
