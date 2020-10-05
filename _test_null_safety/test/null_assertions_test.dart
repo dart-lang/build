@@ -13,6 +13,6 @@ import 'common/message.dart';
 
 void main() {
   test('null assertions work in weak mode', () {
-    expect(() => printString(null), throwsA(isA<AssertionError>()));
+    expect(() => printNonNullable(null), throwsA(isA<AssertionError>()));
   });
 }
