@@ -22,8 +22,8 @@ jobs:
       env: PKGS="_test _test_common"
       script: ./tool/travis.sh dartanalyzer_0
     - stage: analyze_and_format
-      name: "SDK: 2.10.0-110.0.dev; PKG: _test_null_safety; TASKS: `dartanalyzer --enable-experiment=non-nullable --fatal-infos --fatal-warnings .`"
-      dart: "2.10.0-110.0.dev"
+      name: "SDK: dev; PKG: _test_null_safety; TASKS: `dartanalyzer --enable-experiment=non-nullable --fatal-infos --fatal-warnings .`"
+      dart: dev
       os: linux
       env: PKGS="_test_null_safety"
       script: ./tool/travis.sh dartanalyzer_1
@@ -226,11 +226,29 @@ jobs:
       env: PKGS="_test"
       script: ./tool/travis.sh test_04
     - stage: e2e_test
-      name: "SDK: 2.10.0-110.0.dev; PKG: _test_null_safety; TASKS: `pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random`"
-      dart: "2.10.0-110.0.dev"
+      name: "SDK: dev; PKG: _test_null_safety; TASKS: `pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random`"
+      dart: dev
       os: linux
       env: PKGS="_test_null_safety"
       script: ./tool/travis.sh command_2
+    - stage: e2e_test
+      name: "SDK: dev; PKG: _test_null_safety; TASKS: `pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random`"
+      dart: dev
+      os: windows
+      env: PKGS="_test_null_safety"
+      script: ./tool/travis.sh command_2
+    - stage: e2e_test
+      name: "SDK: dev; PKG: _test_null_safety; TASKS: `pub run build_runner test --enable-experiment=non-nullable --define=\"build_web_compilers|entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
+      dart: dev
+      os: linux
+      env: PKGS="_test_null_safety"
+      script: ./tool/travis.sh command_3
+    - stage: e2e_test
+      name: "SDK: dev; PKG: _test_null_safety; TASKS: `pub run build_runner test --enable-experiment=non-nullable --define=\"build_web_compilers|entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
+      dart: dev
+      os: windows
+      env: PKGS="_test_null_safety"
+      script: ./tool/travis.sh command_3
     - stage: e2e_test
       name: "SDK: dev; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random`"
       dart: dev
@@ -286,18 +304,6 @@ jobs:
       env: PKGS="_test"
       script: ./tool/travis.sh test_05
     - stage: e2e_test_cron
-      name: "SDK: be/raw/latest; PKG: _test_null_safety; TASKS: `pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random`"
-      dart: be/raw/latest
-      os: linux
-      env: PKGS="_test_null_safety"
-      script: ./tool/travis.sh command_2
-    - stage: e2e_test_cron
-      name: "SDK: be/raw/latest; PKG: _test_null_safety; TASKS: `pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random`"
-      dart: be/raw/latest
-      os: windows
-      env: PKGS="_test_null_safety"
-      script: ./tool/travis.sh command_2
-    - stage: e2e_test_cron
       name: "SDK: dev; PKG: _test_null_safety; TASKS: `pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random`"
       dart: dev
       os: linux
@@ -309,6 +315,30 @@ jobs:
       os: windows
       env: PKGS="_test_null_safety"
       script: ./tool/travis.sh command_2
+    - stage: e2e_test_cron
+      name: "SDK: be/raw/latest; PKG: _test_null_safety; TASKS: `pub run build_runner test --enable-experiment=non-nullable --define=\"build_web_compilers|entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
+      dart: be/raw/latest
+      os: linux
+      env: PKGS="_test_null_safety"
+      script: ./tool/travis.sh command_3
+    - stage: e2e_test_cron
+      name: "SDK: be/raw/latest; PKG: _test_null_safety; TASKS: `pub run build_runner test --enable-experiment=non-nullable --define=\"build_web_compilers|entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
+      dart: be/raw/latest
+      os: windows
+      env: PKGS="_test_null_safety"
+      script: ./tool/travis.sh command_3
+    - stage: e2e_test_cron
+      name: "SDK: dev; PKG: _test_null_safety; TASKS: `pub run build_runner test --enable-experiment=non-nullable --define=\"build_web_compilers|entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
+      dart: dev
+      os: linux
+      env: PKGS="_test_null_safety"
+      script: ./tool/travis.sh command_3
+    - stage: e2e_test_cron
+      name: "SDK: dev; PKG: _test_null_safety; TASKS: `pub run build_runner test --enable-experiment=non-nullable --define=\"build_web_compilers|entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
+      dart: dev
+      os: windows
+      env: PKGS="_test_null_safety"
+      script: ./tool/travis.sh command_3
 
 stages:
   - analyze_and_format

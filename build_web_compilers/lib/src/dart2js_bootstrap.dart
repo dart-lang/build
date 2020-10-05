@@ -12,6 +12,7 @@ import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:build_modules/src/workers.dart';
 import 'package:glob/glob.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 import 'package:scratch_space/scratch_space.dart';
@@ -24,12 +25,12 @@ import 'web_entrypoint_builder.dart';
 /// If [skipPlatformCheck] is `true` then all `dart:` imports will be
 /// allowed in all packages.
 Future<void> bootstrapDart2Js(BuildStep buildStep, List<String> dart2JsArgs,
-        {bool skipPlatformCheck}) =>
+        {@required bool nullAssertions, bool skipPlatformCheck}) =>
     _resourcePool.withResource(() => _bootstrapDart2Js(buildStep, dart2JsArgs,
-        skipPlatformCheck: skipPlatformCheck));
+        nullAssertions: nullAssertions, skipPlatformCheck: skipPlatformCheck));
 
 Future<void> _bootstrapDart2Js(BuildStep buildStep, List<String> dart2JsArgs,
-    {bool skipPlatformCheck}) async {
+    {@required bool nullAssertions, bool skipPlatformCheck}) async {
   skipPlatformCheck ??= false;
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
@@ -79,6 +80,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
         '--multi-root=${scratchSpace.tempDir.uri.toFilePath()}',
         for (var experiment in enabledExperiments)
           '--enable-experiment=$experiment',
+        if (nullAssertions) '--null-assertions',
         '-o$jsOutputPath',
         '$dartUri',
       ]);
