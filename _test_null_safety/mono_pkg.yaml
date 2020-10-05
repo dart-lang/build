@@ -1,20 +1,23 @@
 dart:
-  # TODO: Update to `dev` https://github.com/dart-lang/build/issues/2841
-  - 2.10.0-110.0.dev
+- dev
 
 os:
-  - linux
-  - windows
+- linux
+- windows
 
 stages:
-  - analyze_and_format:
-    - dartanalyzer: --enable-experiment=non-nullable --fatal-infos --fatal-warnings .
-      os: linux
-  - e2e_test:
+- analyze_and_format:
+  - dartanalyzer: --enable-experiment=non-nullable --fatal-infos --fatal-warnings .
+    os: linux
+- e2e_test:
+  - group:
     - command: pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random
-      os: linux
-  - e2e_test_cron:
+    - command: pub run build_runner test --enable-experiment=non-nullable --define="build_web_compilers|entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random
+    os: linux 
+- e2e_test_cron:
+  - group:
     - command: pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random
-      dart:
-        - be/raw/latest
-        - dev
+    - command: pub run build_runner test --enable-experiment=non-nullable --define="build_web_compilers|entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random
+    dart:
+      - be/raw/latest
+      - dev

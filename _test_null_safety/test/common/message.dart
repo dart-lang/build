@@ -4,3 +4,6 @@
 
 // Uses `?` to ensure null safety is enabled
 final String? message = 'hello';
+
+// Used in null assertion tests.
+void printNonNullable(String message) => print(message);

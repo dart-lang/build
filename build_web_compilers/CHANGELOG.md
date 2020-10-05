@@ -2,6 +2,8 @@
 
 - Fix parsing of `environment` config for DDC when using a bool or numeric
   value.
+- Add `sound_null_safety` and `null_assertions` boolean options to the
+  `build_web_compilers|entrypoint` builder.
 
 ## 2.12.1
 
