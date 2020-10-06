@@ -25,12 +25,18 @@ import 'web_entrypoint_builder.dart';
 /// If [skipPlatformCheck] is `true` then all `dart:` imports will be
 /// allowed in all packages.
 Future<void> bootstrapDart2Js(BuildStep buildStep, List<String> dart2JsArgs,
-        {@required bool nullAssertions, bool skipPlatformCheck}) =>
+        {@required bool nullAssertions,
+        @required bool soundNullSafety,
+        bool skipPlatformCheck}) =>
     _resourcePool.withResource(() => _bootstrapDart2Js(buildStep, dart2JsArgs,
-        nullAssertions: nullAssertions, skipPlatformCheck: skipPlatformCheck));
+        nullAssertions: nullAssertions,
+        soundNullSafety: soundNullSafety,
+        skipPlatformCheck: skipPlatformCheck));
 
 Future<void> _bootstrapDart2Js(BuildStep buildStep, List<String> dart2JsArgs,
-    {@required bool nullAssertions, bool skipPlatformCheck}) async {
+    {@required bool nullAssertions,
+    @required bool soundNullSafety,
+    bool skipPlatformCheck}) async {
   skipPlatformCheck ??= false;
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
@@ -81,6 +87,10 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
         for (var experiment in enabledExperiments)
           '--enable-experiment=$experiment',
         if (nullAssertions) '--null-assertions',
+        if (soundNullSafety)
+          '--sound-null-safety'
+        else
+          '--no-sound-null-safety',
         '-o$jsOutputPath',
         '$dartUri',
       ]);
