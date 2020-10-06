@@ -1,3 +1,5 @@
+## 1.4.2-dev
+
 ## 1.4.1
 
 - Update the exception thrown when using experiments without an exactly
@@ -11,7 +13,7 @@
 
 ## 1.3.11
 
-- Use the public `buildSdkSummary` api from the analyzer instead of the 
+- Use the public `buildSdkSummary` api from the analyzer instead of the
   private one.
 - Migrate off of other deprecated analyzer apis.
 
