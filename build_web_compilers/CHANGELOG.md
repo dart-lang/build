@@ -1,4 +1,6 @@
-## 2.12.3-dev
+## 2.12.3
+
+- Fix handling of explicit `sound_null_safety` option for `dart2js` compiles.
 
 ## 2.12.2
 
