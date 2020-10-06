@@ -87,10 +87,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
         for (var experiment in enabledExperiments)
           '--enable-experiment=$experiment',
         if (nullAssertions) '--null-assertions',
-        if (soundNullSafety)
-          '--sound-null-safety'
-        else
-          '--no-sound-null-safety',
+        '--${soundNullSafety ? '' : 'no-'}sound-null-safety',
         '-o$jsOutputPath',
         '$dartUri',
       ]);
