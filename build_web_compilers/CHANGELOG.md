@@ -1,3 +1,7 @@
+## 2.12.3
+
+- Fix handling of explicit `sound_null_safety` option for `dart2js` compiles.
+
 ## 2.12.2
 
 - Fix parsing of `environment` config for DDC when using a bool or numeric
