@@ -2,9 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+@TestOn('vm')
 import 'package:_test_common/package_graphs.dart';
 import 'package:build/build.dart';
-@TestOn('vm')
 import 'package:build_config/build_config.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
@@ -99,7 +99,7 @@ void main() {
           targetGraph.isVisibleInBuild(AssetId('a', 'lib/a.dart'), a), isTrue);
       expect(targetGraph.isVisibleInBuild(AssetId('a', 'test/my_test.dart'), a),
           isTrue);
-      expect(targetGraph.getValidInputs(a), ['**/*']);
+      expect(targetGraph.validInputsFor(a), ['**/*']);
     });
 
     test('for non-root package with default configuration', () async {
@@ -115,7 +115,7 @@ void main() {
       expect(targetGraph.isVisibleInBuild(AssetId('b', 'test/my_test.dart'), b),
           isFalse);
 
-      expect(targetGraph.getValidInputs(b), contains('lib/**'));
+      expect(targetGraph.validInputsFor(b), contains('lib/**'));
     });
 
     test('for non-root package exposing additional assets', () async {
@@ -130,7 +130,7 @@ void main() {
       expect(targetGraph.isVisibleInBuild(AssetId('b', 'test/my_test.dart'), b),
           isTrue);
 
-      expect(targetGraph.getValidInputs(b), contains('test/**'));
+      expect(targetGraph.validInputsFor(b), contains('test/**'));
       // The additional input should also be included in the default target
       expect(targetGraph.allModules['b:b'].sourceIncludes,
           contains(isA<Glob>().having((e) => e.pattern, 'pattern', 'test/**')));

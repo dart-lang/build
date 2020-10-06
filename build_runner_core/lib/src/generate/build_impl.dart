@@ -156,7 +156,7 @@ CheckInvalidInput _checkInvalidInputFactory(
 
     // The id is an invalid input if it's not part of the build.
     if (!targetGraph.isVisibleInBuild(id, packageNode)) {
-      final allowed = targetGraph.getValidInputs(packageNode);
+      final allowed = targetGraph.validInputsFor(packageNode);
 
       throw InvalidInputException(id, allowed);
     }

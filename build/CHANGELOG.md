@@ -1,4 +1,4 @@
-## 1.6.0-dev
+## 1.5.1-dev
 
 - Expose a set of valid inputs in `InvalidInputException`.
 - Build implementations are now expected to throw `InvalidInputException`s, the

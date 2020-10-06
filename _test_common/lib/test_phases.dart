@@ -96,7 +96,7 @@ Future<BuildResult> testBuilders(
   String logPerformanceDir,
   String expectedGeneratedDir,
 }) async {
-  packageGraph ??= _packageGraphFromInputs(inputs.keys);
+  packageGraph ??= buildPackageGraph({rootPackage('a'): []});
   writer ??= InMemoryRunnerAssetWriter();
   reader ??= InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
       rootPackage: packageGraph?.root?.name);
@@ -162,27 +162,6 @@ Future<BuildResult> testBuilders(
         expectedGeneratedDir: expectedGeneratedDir);
   }
   return result;
-}
-
-/// Builds the default package graph from input names.
-///
-/// The package graph will contain a root package named `a` depending on every
-/// other package present in [inputIds].
-PackageGraph _packageGraphFromInputs(Iterable<String> inputIds) {
-  final root = rootPackage('a');
-  final additionalPackageNames = <String>{};
-
-  for (final id in inputIds) {
-    final assetId = makeAssetId(id);
-    if (assetId.package != root.name) {
-      additionalPackageNames.add(assetId.package);
-    }
-  }
-
-  return buildPackageGraph({
-    root: additionalPackageNames.toList(),
-    for (final name in additionalPackageNames) package(name): [],
-  });
 }
 
 /// Translates expected outptus which start with `$$` to the build cache and

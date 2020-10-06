@@ -634,6 +634,11 @@ void main() {
     });
 
     test('can read files from external packages', () async {
+      var packageGraph = buildPackageGraph({
+        rootPackage('a'): ['b'],
+        package('b'): []
+      });
+
       var builders = [
         apply(
             '',
@@ -645,12 +650,14 @@ void main() {
             toRoot(),
             hideOutput: false)
       ];
-      await testBuilders(builders, {
-        'a|lib/a.txt': 'a',
-        'b|lib/b.txt': 'b'
-      }, outputs: {
-        'a|lib/a.txt.copy': 'a',
-      });
+      await testBuilders(
+        builders,
+        {'a|lib/a.txt': 'a', 'b|lib/b.txt': 'b'},
+        outputs: {
+          'a|lib/a.txt.copy': 'a',
+        },
+        packageGraph: packageGraph,
+      );
     });
 
     test('can glob files from packages', () async {

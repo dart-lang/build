@@ -120,7 +120,7 @@ class TargetGraph {
 
   /// Obtains a list of glob patterns describing all valid input assets defined
   /// in the [package].
-  List<String> getValidInputs(PackageNode package) {
+  List<String> validInputsFor(PackageNode package) {
     if (package.isRoot) {
       // There are no restrictions for the root package
       return ['**/*'];
@@ -141,6 +141,11 @@ class TargetGraph {
   /// asset is visible if it's in a conceptually public folders of a Dart
   /// package (like `lib/` or `bin/`), or if the enclosing package made that
   /// asset public by including it in [BuildConfig.additionalPublicAssets].
+  ///
+  /// Note that an asset being visible does not imply that it's readable too.
+  /// For instance, an asset id can be visible in the build even if the
+  /// referenced asset doesn't exist. Assets that aren't part of any target
+  /// would also be visible without being readable.
   bool isVisibleInBuild(AssetId id, PackageNode enclosingPackage) {
     assert(id.package == enclosingPackage.name);
 
