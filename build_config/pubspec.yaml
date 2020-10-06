@@ -27,3 +27,6 @@ dependency_overrides:
   build_runner_core:
     path: ../build_runner_core
   analyzer: ^0.40.0
+  # Temporarily required until build version 1.5.1 is released
+  build:
+    path: ../build
