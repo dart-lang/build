@@ -58,7 +58,7 @@ can do this in your build.yaml file, with something like the following:
 targets:
   $default:
     builders:
-      build_web_compilers|entrypoint:
+      build_web_compilers:entrypoint:
         generate_for:
         - test/**_test.dart
         - web/**.dart
