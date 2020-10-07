@@ -85,7 +85,7 @@ by creating a `build.yaml` file.
 targets:
   $default:
     builders:
-      build_web_compilers|entrypoint:
+      build_web_compilers:entrypoint:
         options:
           dart2js_args:
           - --minify

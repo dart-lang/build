@@ -131,14 +131,14 @@ Map<String, String> _readEnvironmentOption(BuilderOptions options) {
 List<String> _readExperimentOption(BuilderOptions options) {
   var deprecatedConfig = options.config[_experimentOption] as List;
   if (deprecatedConfig != null) {
-    log.warning('The `experiments` option to build_web_compilers|entrypoint '
+    log.warning('The `experiments` option to build_web_compilers:entrypoint '
         'has been deprecated in favor of the new `--enable-experiment` '
         'command line argument which matches other dart tooling and is shared '
         'across all builders.');
     if (enabledExperiments.isNotEmpty &&
         !const ListEquality().equals(deprecatedConfig, enabledExperiments)) {
       throw ArgumentError('The (deprecated) `experiments` option to the '
-          'build_web_compilers|entrypoint builder cannot be used in '
+          'build_web_compilers:entrypoint builder cannot be used in '
           'conjunction with the `--enable-experiment` command line option.');
     }
     return List.from(deprecatedConfig);

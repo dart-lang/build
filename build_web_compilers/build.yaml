@@ -1,7 +1,7 @@
 targets:
   $default:
     builders:
-      build_web_compilers|entrypoint:
+      build_web_compilers:entrypoint:
         options:
           compiler: dart2js
           dart2js_args:
@@ -29,7 +29,7 @@ builders:
         - lib/src/dev_compiler/require.js
     is_optional: True
     auto_apply: none
-    runs_before: ["build_web_compilers|entrypoint"]
+    runs_before: ["build_web_compilers:entrypoint"]
   dart2js_modules:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:

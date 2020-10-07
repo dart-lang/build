@@ -73,7 +73,7 @@ class WebEntrypointBuilder implements Builder {
 
   factory WebEntrypointBuilder.fromOptions(BuilderOptions options) {
     validateOptions(
-        options.config, _supportedOptions, 'build_web_compilers|entrypoint',
+        options.config, _supportedOptions, 'build_web_compilers:entrypoint',
         deprecatedOptions: _deprecatedOptions);
     var compilerOption =
         options.config[_compilerOption] as String ?? 'dartdevc';
