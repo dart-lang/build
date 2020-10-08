@@ -8,7 +8,7 @@ stages:
     - dartanalyzer: --fatal-infos --fatal-warnings .
     # Until we have global mono_repo tasks this lives in this package, even
     # though it is a repo-wide thing.
-    - command: "cd ../ && pub global run mono_repo travis --validate"
+    - command: "cd ../ && pub global activate mono_repo && pub global run mono_repo travis --validate"
   - dartanalyzer: --fatal-warnings .
     dart: 2.9.0
 - unit_test:

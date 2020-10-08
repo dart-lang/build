@@ -71,8 +71,8 @@ for PKG in ${PKGS}; do
       pub run build_runner test --enable-experiment=non-nullable --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
     command_4)
-      echo 'cd ../ && pub global run mono_repo travis --validate'
-      cd ../ && pub global run mono_repo travis --validate || EXIT_CODE=$?
+      echo 'cd ../ && pub global activate mono_repo && pub global run mono_repo travis --validate'
+      cd ../ && pub global activate mono_repo && pub global run mono_repo travis --validate || EXIT_CODE=$?
       ;;
     dartanalyzer_0)
       echo 'dartanalyzer --fatal-infos --fatal-warnings .'
