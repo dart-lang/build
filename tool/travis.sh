@@ -67,8 +67,8 @@ for PKG in ${PKGS}; do
       pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
     command_3)
-      echo 'pub run build_runner test --enable-experiment=non-nullable --define="build_web_compilers|entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random'
-      pub run build_runner test --enable-experiment=non-nullable --define="build_web_compilers|entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random || EXIT_CODE=$?
+      echo 'pub run build_runner test --enable-experiment=non-nullable --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random'
+      pub run build_runner test --enable-experiment=non-nullable --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random || EXIT_CODE=$?
       ;;
     dartanalyzer_0)
       echo 'dartanalyzer --fatal-infos --fatal-warnings .'
