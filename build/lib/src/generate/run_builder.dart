@@ -34,7 +34,7 @@ Future<void> runBuilder(Builder builder, Iterable<AssetId> inputs,
     AssetReader reader, AssetWriter writer, Resolvers resolvers,
     {Logger logger,
     ResourceManager resourceManager,
-    String rootPackage,
+    @Deprecated('The rootPackage argument is unused') String rootPackage,
     StageTracker stageTracker = NoOpStageTracker.instance,
     void Function(AssetId input, Iterable<AssetId> assets)
         reportUnusedAssetsForInput}) async {
@@ -45,8 +45,8 @@ Future<void> runBuilder(Builder builder, Iterable<AssetId> inputs,
   Future<void> buildForInput(AssetId input) async {
     var outputs = expectedOutputs(builder, input);
     if (outputs.isEmpty) return;
-    var buildStep = BuildStepImpl(input, outputs, reader, writer,
-        rootPackage ?? input.package, resolvers, resourceManager,
+    var buildStep = BuildStepImpl(
+        input, outputs, reader, writer, resolvers, resourceManager,
         stageTracker: stageTracker,
         reportUnusedAssets: reportUnusedAssetsForInput == null
             ? null

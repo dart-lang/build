@@ -51,9 +51,6 @@ class BuildStepImpl implements BuildStep {
   /// Used internally for writing files.
   final AssetWriter _writer;
 
-  /// The current root package, used for input/output validation.
-  final String _rootPackage;
-
   final ResourceManager _resourceManager;
 
   bool _isComplete = false;
@@ -61,7 +58,7 @@ class BuildStepImpl implements BuildStep {
   final void Function(Iterable<AssetId>) _reportUnusedAssets;
 
   BuildStepImpl(this.inputId, Iterable<AssetId> expectedOutputs, this._reader,
-      this._writer, this._rootPackage, this._resolvers, this._resourceManager,
+      this._writer, this._resolvers, this._resourceManager,
       {StageTracker stageTracker,
       void Function(Iterable<AssetId>) reportUnusedAssets})
       : _expectedOutputs = expectedOutputs.toSet(),
@@ -105,7 +102,7 @@ class BuildStepImpl implements BuildStep {
     if (_isComplete) throw BuildStepCompletedException();
     if (_reader is MultiPackageAssetReader) {
       return (_reader as MultiPackageAssetReader)
-          .findAssets(glob, package: inputId?.package ?? _rootPackage);
+          .findAssets(glob, package: inputId.package);
     } else {
       return _reader.findAssets(glob);
     }
