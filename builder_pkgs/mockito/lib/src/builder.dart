@@ -207,6 +207,9 @@ class _MockTargetGatherer {
             '$joinedMessages');
       }
       return typeToMock as analyzer.InterfaceType;
+    } else if (elementToMock is FunctionTypeAliasElement) {
+      throw InvalidMockitoAnnotationException('Mockito cannot mock a typedef: '
+          '${elementToMock.displayName}');
     } else if (elementToMock is GenericFunctionTypeElement &&
         elementToMock.enclosingElement is FunctionTypeAliasElement) {
       throw InvalidMockitoAnnotationException('Mockito cannot mock a typedef: '
@@ -956,7 +959,13 @@ class _MockLibraryInfo {
         });
       }
       return TypeReference((b) {
-        var typedef = element.enclosingElement;
+        Element typedef;
+        if (element is FunctionTypeAliasElement) {
+          typedef = element;
+        } else {
+          typedef = element.enclosingElement;
+        }
+
         b
           ..symbol = typedef.name
           ..url = _typeImport(type)
