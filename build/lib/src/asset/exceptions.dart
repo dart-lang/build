@@ -41,7 +41,7 @@ class InvalidInputException implements Exception {
   /// choose to allow additional assets via a `build.yaml` file.
   final List<String> allowedGlobs;
 
-  InvalidInputException(this.assetId, [this.allowedGlobs = const ['lib/**']]);
+  InvalidInputException(this.assetId, {this.allowedGlobs = const ['lib/**']});
 
   @override
   String toString() {

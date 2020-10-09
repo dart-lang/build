@@ -158,7 +158,7 @@ CheckInvalidInput _checkInvalidInputFactory(
     if (!targetGraph.isVisibleInBuild(id, packageNode)) {
       final allowed = targetGraph.validInputsFor(packageNode);
 
-      throw InvalidInputException(id, allowed);
+      throw InvalidInputException(id, allowedGlobs: allowed);
     }
   };
 }

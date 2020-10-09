@@ -24,6 +24,7 @@ import 'exceptions.dart';
 /// This is also the default list of files for targets in non-root packages when
 /// an explicit include is not provided.
 const List<String> defaultNonRootVisibleAssets = [
+  'CHANGELOG*',
   'lib/**',
   'bin/**',
   'LICENSE*',
@@ -39,6 +40,7 @@ const List<String> defaultRootPackageSources = [
   'assets/**',
   'benchmark/**',
   'bin/**',
+  'CHANGELOG*',
   'example/**',
   'lib/**',
   'test/**',
