@@ -33,8 +33,8 @@ void main() {
       var reader = StubAssetReader();
       var writer = StubAssetWriter();
       primary = makeAssetId();
-      buildStep = BuildStepImpl(primary, [], reader, writer, primary.package,
-          AnalyzerResolvers(), resourceManager);
+      buildStep = BuildStepImpl(
+          primary, [], reader, writer, AnalyzerResolvers(), resourceManager);
     });
 
     test('doesnt allow non-expected outputs', () {
@@ -70,7 +70,7 @@ void main() {
       };
       addAssets(inputs, writer);
       var outputId = AssetId.parse('$primary.copy');
-      var buildStep = BuildStepImpl(primary, [outputId], reader, writer, 'a',
+      var buildStep = BuildStepImpl(primary, [outputId], reader, writer,
           AnalyzerResolvers(), resourceManager);
 
       await builder.build(buildStep);
@@ -95,8 +95,8 @@ void main() {
         addAssets(inputs, writer);
 
         var primary = makeAssetId('a|web/a.dart');
-        var buildStep = BuildStepImpl(primary, [], reader, writer,
-            primary.package, AnalyzerResolvers(), resourceManager);
+        var buildStep = BuildStepImpl(
+            primary, [], reader, writer, AnalyzerResolvers(), resourceManager);
         var resolver = buildStep.resolver;
 
         var aLib = await resolver.libraryFor(primary);
@@ -126,7 +126,7 @@ void main() {
       outputId = makeAssetId('a|test.txt');
       outputContent = '$outputId';
       buildStep = BuildStepImpl(primary, [outputId], StubAssetReader(),
-          assetWriter, primary.package, AnalyzerResolvers(), resourceManager);
+          assetWriter, AnalyzerResolvers(), resourceManager);
     });
 
     test('Completes only after writes finish', () async {
@@ -174,7 +174,7 @@ void main() {
       primary = makeAssetId();
       output = makeAssetId();
       buildStep = BuildStepImpl(primary, [output], reader, writer,
-          primary.package, AnalyzerResolvers(), resourceManager,
+          AnalyzerResolvers(), resourceManager,
           stageTracker: NoOpStageTracker.instance);
     });
 
@@ -188,8 +188,8 @@ void main() {
     var reader = StubAssetReader();
     var writer = StubAssetWriter();
     var unused = <AssetId>{};
-    var buildStep = BuildStepImpl(makeAssetId(), [], reader, writer, 'a',
-        AnalyzerResolvers(), resourceManager,
+    var buildStep = BuildStepImpl(
+        makeAssetId(), [], reader, writer, AnalyzerResolvers(), resourceManager,
         reportUnusedAssets: unused.addAll);
     var reported = [
       makeAssetId(),
