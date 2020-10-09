@@ -248,7 +248,7 @@ class _SingleBuild {
     await _resourceManager.disposeAll();
     result = await _environment.finalizeBuild(
         result,
-        FinalizedAssetsView(_assetGraph, optionalOutputTracker),
+        FinalizedAssetsView(_assetGraph, _packageGraph, optionalOutputTracker),
         _reader,
         _buildDirs);
     if (result.status == BuildStatus.success) {

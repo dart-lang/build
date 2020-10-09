@@ -35,6 +35,7 @@ void main() {
       makeAssetId('a|lib/a.txt'): 'a',
       makeAssetId('a|web/b.txt'): 'b',
       makeAssetId('b|lib/c.txt'): 'c',
+      makeAssetId('b|test/outside.txt'): 'not in lib',
       makeAssetId('a|foo/d.txt'): 'd',
       makeAssetId('a|.dart_tool/package_config.json'): '''
 {
@@ -70,7 +71,8 @@ void main() {
       graph = await AssetGraph.build(
           phases, sources.keys.toSet(), <AssetId>{}, packageGraph, assetReader);
       optionalOutputTracker = OptionalOutputTracker(graph, {}, {}, phases);
-      finalizedAssetsView = FinalizedAssetsView(graph, optionalOutputTracker);
+      finalizedAssetsView =
+          FinalizedAssetsView(graph, packageGraph, optionalOutputTracker);
       for (var id in graph.outputs) {
         var node = graph.get(id) as GeneratedAssetNode
           ..state = NodeState.upToDate
@@ -115,6 +117,11 @@ void main() {
 
       var file = File(p.join(tmpDir.path, 'packages/b/c.txt.copy'));
       expect(file.existsSync(), isFalse);
+    });
+
+    test('does not include non-lib files from non-root packages', () {
+      expect(finalizedAssetsView.allAssets(),
+          isNot(contains(makeAssetId('b|test/outside.txt'))));
     });
 
     test('can create multiple merged directories', () async {
@@ -268,7 +275,8 @@ void main() {
 
     test('doesnt always write files not matching outputDirs', () async {
       optionalOutputTracker = OptionalOutputTracker(graph, {'foo'}, {}, phases);
-      finalizedAssetsView = FinalizedAssetsView(graph, optionalOutputTracker);
+      finalizedAssetsView =
+          FinalizedAssetsView(graph, packageGraph, optionalOutputTracker);
       var success = await createMergedOutputDirectories(
           {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
           packageGraph,
