@@ -4,3 +4,4 @@ builders:
     builder_factories: ["buildMocks"]
     build_extensions: {".dart": [".mocks.dart"]}
     build_to: source
+    auto_apply: dependents
