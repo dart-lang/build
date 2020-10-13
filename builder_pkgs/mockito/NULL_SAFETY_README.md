@@ -97,9 +97,10 @@ void main() {
 }
 ```
 
-We need to then run build_runner to generate the new library:
+We need to depend on build_runner. Add a dependency in the `pubspec.yaml` file,
+under `dev_dependencies`: something like `build_runner: ^1.10.0`.
 
-<!-- TODO(srawlins): Note about depending on build_runner. Test workflow. -->
+The final step is to run build_runner in order to generate the new library:
 
 ```shell
 pub run build_runner build
