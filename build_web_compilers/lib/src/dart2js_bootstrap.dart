@@ -95,7 +95,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
         '--multi-root=${scratchSpace.tempDir.uri.toFilePath()}',
         for (var experiment in enabledExperiments)
           '--enable-experiment=$experiment',
-        '--${nativeNullAssertions ? '' : 'no-'}native-null-assertions',
+        if (nativeNullAssertions) '--native-null-assertions',
         if (nullAssertions) '--null-assertions',
         '--${soundNullSafety ? '' : 'no-'}sound-null-safety',
         '-o$jsOutputPath',
