@@ -1,3 +1,9 @@
+## 2.13.0
+
+- Add `native_null_asserts` boolean option to the
+  `build_web_compilers:entrypoint` builder. This is disabled by default but
+  will be enabled by default in a later release. 
+
 ## 2.12.3
 
 - Fix handling of explicit `sound_null_safety` option for `dart2js` compiles.

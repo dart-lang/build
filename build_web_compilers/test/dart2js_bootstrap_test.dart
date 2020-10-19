@@ -62,7 +62,9 @@ void main() {
       };
       await testBuilder(
           WebEntrypointBuilder(WebCompiler.Dart2Js,
-              soundNullSafetyOverride: null, nullAssertions: false),
+              soundNullSafetyOverride: null,
+              nullAssertions: false,
+              nativeNullAssertions: false),
           assets,
           outputs: expectedOutputs);
     });
@@ -76,7 +78,8 @@ void main() {
           WebEntrypointBuilder(WebCompiler.Dart2Js,
               dart2JsArgs: ['--no-source-maps'],
               soundNullSafetyOverride: null,
-              nullAssertions: false),
+              nullAssertions: false,
+              nativeNullAssertions: false),
           assets,
           outputs: expectedOutputs);
     });
@@ -106,7 +109,9 @@ void main() {
     };
     await testBuilder(
         WebEntrypointBuilder(WebCompiler.Dart2Js,
-            soundNullSafetyOverride: null, nullAssertions: false),
+            soundNullSafetyOverride: null,
+            nullAssertions: false,
+            nativeNullAssertions: false),
         assets,
         outputs: expectedOutputs);
   });
@@ -156,7 +161,9 @@ void main() {
         };
         await testBuilder(
             WebEntrypointBuilder(WebCompiler.Dart2Js,
-                soundNullSafetyOverride: null, nullAssertions: false),
+                soundNullSafetyOverride: null,
+                nullAssertions: false,
+                nativeNullAssertions: false),
             assets,
             outputs: expectedOutputs);
       }, ['non-nullable']);

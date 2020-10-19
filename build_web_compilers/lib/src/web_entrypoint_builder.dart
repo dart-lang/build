@@ -33,12 +33,14 @@ enum WebCompiler {
 const _supportedOptions = [
   _compilerOption,
   _dart2jsArgsOption,
+  _nativeNullAssertionsOption,
   _nullAssertionsOption,
   _soundNullSafetyOption,
 ];
 
 const _compilerOption = 'compiler';
 const _dart2jsArgsOption = 'dart2js_args';
+const _nativeNullAssertionsOption = 'native_null_assertions';
 const _nullAssertionsOption = 'null_assertions';
 const _soundNullSafetyOption = 'sound_null_safety';
 
@@ -64,11 +66,16 @@ class WebEntrypointBuilder implements Builder {
   /// This options can only be enabled in weak mode.
   final bool nullAssertions;
 
+  /// Whether or not to enable runtime non-null assertions for values returned
+  /// from browser apis.
+  final bool nativeNullAssertions;
+
   const WebEntrypointBuilder(
     this.webCompiler, {
     this.dart2JsArgs = const [],
     @required this.nullAssertions,
     @required this.soundNullSafetyOverride,
+    @required this.nativeNullAssertions,
   });
 
   factory WebEntrypointBuilder.fromOptions(BuilderOptions options) {
@@ -101,10 +108,13 @@ class WebEntrypointBuilder implements Builder {
 
     return WebEntrypointBuilder(compiler,
         dart2JsArgs: dart2JsArgs,
+        nativeNullAssertions:
+            options.config[_nativeNullAssertionsOption] as bool /*?*/ ?? false,
         nullAssertions:
             options.config[_nullAssertionsOption] as bool /*?*/ ?? false,
         soundNullSafetyOverride:
-            options.config[_soundNullSafetyOption] as bool /*?*/);
+            options.config[_soundNullSafetyOption] as bool /*?*/
+        );
   }
 
   @override
@@ -131,6 +141,7 @@ class WebEntrypointBuilder implements Builder {
       case WebCompiler.DartDevc:
         try {
           await bootstrapDdc(buildStep,
+              nativeNullAssertions: nativeNullAssertions,
               nullAssertions: nullAssertions,
               requiredAssets: _ddcSdkResources,
               soundNullSafety: soundNullSafety);
@@ -140,7 +151,9 @@ class WebEntrypointBuilder implements Builder {
         break;
       case WebCompiler.Dart2Js:
         await bootstrapDart2Js(buildStep, dart2JsArgs,
-            nullAssertions: nullAssertions, soundNullSafety: soundNullSafety);
+            nativeNullAssertions: nativeNullAssertions,
+            nullAssertions: nullAssertions,
+            soundNullSafety: soundNullSafety);
         break;
     }
   }
