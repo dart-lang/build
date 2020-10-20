@@ -34,7 +34,7 @@ class BuildAssetUriResolver extends UriResolver {
 
   /// Asset paths which have been updated in [resourceProvider] but not yet
   /// updated in the analysis driver.
-  final _needsChangeFile = HashSet<AssetId>();
+  final _needsChangeFile = HashSet<String>();
 
   final resourceProvider = MemoryResourceProvider(context: p.posix);
 
