@@ -55,7 +55,9 @@ void main() {
       };
       await testBuilder(
           WebEntrypointBuilder(WebCompiler.DartDevc,
-              soundNullSafetyOverride: null, nullAssertions: false),
+              soundNullSafetyOverride: null,
+              nullAssertions: false,
+              nativeNullAssertions: false),
           assets,
           outputs: expectedOutputs);
     });
@@ -94,7 +96,9 @@ void main() {
       };
       await testBuilder(
           WebEntrypointBuilder(WebCompiler.DartDevc,
-              soundNullSafetyOverride: null, nullAssertions: false),
+              soundNullSafetyOverride: null,
+              nullAssertions: false,
+              nativeNullAssertions: false),
           assets,
           outputs: expectedOutputs);
     });
@@ -117,7 +121,9 @@ void main() {
       };
       await testBuilder(
           WebEntrypointBuilder(WebCompiler.DartDevc,
-              soundNullSafetyOverride: null, nullAssertions: false),
+              soundNullSafetyOverride: null,
+              nullAssertions: false,
+              nativeNullAssertions: false),
           assets,
           outputs: expectedOutputs);
     });

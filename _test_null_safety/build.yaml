@@ -33,3 +33,21 @@ targets:
         enabled: true
         options:
           sound_null_safety: false
+  native_null_assertions_test:
+    auto_apply_builders: false
+    sources:
+    - test/native_null_assertions_test.dart
+    builders:
+      build_web_compilers:entrypoint:
+        enabled: true
+        options:
+          native_null_assertions: true
+  no_native_null_assertions_test:
+    auto_apply_builders: false
+    sources:
+    - test/no_native_null_assertions_test.dart
+    builders:
+      build_web_compilers:entrypoint:
+        enabled: true
+        options:
+          native_null_assertions: false

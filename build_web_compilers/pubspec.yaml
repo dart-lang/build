@@ -1,10 +1,10 @@
 name: build_web_compilers
-version: 2.12.3
+version: 2.13.0
 description: Builder implementations wrapping Dart compilers.
 homepage: https://github.com/dart-lang/build/tree/master/build_web_compilers
 
 environment:
-  sdk: ">=2.10.0 <3.0.0"
+  sdk: ">=2.11.0-162.0 <3.0.0"
 
 dependencies:
   analyzer: ">=0.36.4 <0.41.0"
