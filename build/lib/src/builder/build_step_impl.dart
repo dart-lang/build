@@ -77,7 +77,7 @@ class BuildStepImpl implements BuildStep {
   Future<ReleasableResolver> _resolver;
 
   @override
-  Future<bool> canRead(AssetId id) {
+  FutureOr<bool> canRead(AssetId id) {
     if (_isComplete) throw BuildStepCompletedException();
     _checkInput(id);
     return _reader.canRead(id);
@@ -90,14 +90,14 @@ class BuildStepImpl implements BuildStep {
   }
 
   @override
-  Future<List<int>> readAsBytes(AssetId id) {
+  FutureOr<List<int>> readAsBytes(AssetId id) {
     if (_isComplete) throw BuildStepCompletedException();
     _checkInput(id);
     return _reader.readAsBytes(id);
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
+  FutureOr<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
     if (_isComplete) throw BuildStepCompletedException();
     _checkInput(id);
     return _reader.readAsString(id, encoding: encoding);
@@ -136,7 +136,7 @@ class BuildStepImpl implements BuildStep {
   }
 
   @override
-  Future<Digest> digest(AssetId id) {
+  FutureOr<Digest> digest(AssetId id) {
     if (_isComplete) throw BuildStepCompletedException();
     _checkInput(id);
     return _reader.digest(id);

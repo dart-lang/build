@@ -268,8 +268,8 @@ class WatchImpl implements BuildState {
                 ? originalRootPackagesDigest
                 : originalRootPackageConfigDigest;
             assert(digest != null);
-            // Kill future builds if the root packages file changes.
-            return watcherEnvironment.reader.readAsBytes(id).then((bytes) {
+
+            AssetChange checkDigest(List<int> bytes) {
               if (md5.convert(bytes) != digest) {
                 _terminateCompleter.complete();
                 _logger
@@ -277,7 +277,16 @@ class WatchImpl implements BuildState {
                         'please restart the build.');
               }
               return change;
-            });
+            }
+
+            // Kill future builds if the root packages file changes.
+            var bytes = watcherEnvironment.reader.readAsBytes(id);
+
+            if (bytes is Future<List<int>>) {
+              return bytes.then(checkDigest);
+            } else {
+              checkDigest(bytes as List<int>);
+            }
           } else if (_isBuildYaml(id) ||
               _isConfiguredBuildYaml(id) ||
               _isPackageBuildYamlOverride(id)) {

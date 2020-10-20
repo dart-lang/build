@@ -31,7 +31,7 @@ class CachingAssetReader implements AssetReader {
   /// Cached results of [canRead].
   ///
   /// Don't bother using an LRU cache for this since it's just booleans.
-  final _canReadCache = <AssetId, Future<bool>>{};
+  final _canReadCache = <AssetId, FutureOr<bool>>{};
 
   /// Cached results of [readAsString].
   ///
@@ -54,51 +54,80 @@ class CachingAssetReader implements AssetReader {
           : CachingAssetReader._(delegate);
 
   @override
-  Future<bool> canRead(AssetId id) =>
-      _canReadCache.putIfAbsent(id, () => _delegate.canRead(id));
+  FutureOr<bool> canRead(AssetId id) => _canReadCache.putIfAbsent(id, () {
+        var canRead = _delegate.canRead(id);
+        if (canRead is Future<bool>) {
+          canRead.then((result) {
+            if (_canReadCache[id] == canRead) _canReadCache[id] = result;
+          });
+        }
+        return canRead;
+      });
 
   @override
-  Future<Digest> digest(AssetId id) => _delegate.digest(id);
+  FutureOr<Digest> digest(AssetId id) => _delegate.digest(id);
 
   @override
   Stream<AssetId> findAssets(Glob glob) =>
       throw UnimplementedError('unimplemented!');
 
   @override
-  Future<List<int>> readAsBytes(AssetId id, {bool cache = true}) {
+  FutureOr<List<int>> readAsBytes(AssetId id, {bool cache = true}) {
     var cached = _bytesContentCache[id];
-    if (cached != null) return Future.value(cached);
+    if (cached != null) return cached;
 
-    return _pendingBytesContentCache.putIfAbsent(
-        id,
-        () => _delegate.readAsBytes(id).then((result) {
-              if (cache) _bytesContentCache[id] = result;
-              _pendingBytesContentCache.remove(id);
-              return result;
-            }));
+    if (_pendingBytesContentCache.containsKey(id)) {
+      return _pendingBytesContentCache[id];
+    }
+    var bytes = _delegate.readAsBytes(id);
+    if (bytes is List<int>) {
+      if (cache) _bytesContentCache[id] = bytes;
+      return bytes;
+    } else {
+      var futureBytes = bytes as Future<List<int>>;
+      return _pendingBytesContentCache[id] = futureBytes.then((result) {
+        if (cache) _bytesContentCache[id] = result;
+        _pendingBytesContentCache.remove(id);
+        return result;
+      });
+    }
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding}) {
+  FutureOr<String> readAsString(AssetId id, {Encoding encoding}) {
     encoding ??= utf8;
 
     if (encoding != utf8) {
       // Fallback case, we never cache the String value for the non-default,
       // encoding but we do allow it to cache the bytes.
-      return readAsBytes(id).then(encoding.decode);
+      var result = readAsBytes(id);
+      if (result is List<int>) {
+        return encoding.decode(result);
+      } else {
+        return (result as Future<List<int>>).then(encoding.decode);
+      }
     }
 
     var cached = _stringContentCache[id];
-    if (cached != null) return Future.value(cached);
+    if (cached != null) return cached;
 
-    return _pendingStringContentCache.putIfAbsent(
-        id,
-        () => readAsBytes(id, cache: false).then((bytes) {
-              var decoded = encoding.decode(bytes);
-              _stringContentCache[id] = decoded;
-              _pendingStringContentCache.remove(id);
-              return decoded;
-            }));
+    if (_pendingStringContentCache.containsKey(id)) {
+      return _pendingStringContentCache[id];
+    }
+    var bytes = readAsBytes(id, cache: false);
+    if (bytes is List<int>) {
+      var decoded = encoding.decode(bytes);
+      _stringContentCache[id] = decoded;
+      return decoded;
+    } else {
+      var futureBytes = bytes as Future<List<int>>;
+      return _pendingStringContentCache[id] = futureBytes.then((result) {
+        var decoded = encoding.decode(result);
+        _stringContentCache[id] = decoded;
+        _pendingStringContentCache.remove(id);
+        return decoded;
+      });
+    }
   }
 
   /// Clears all [ids] from all caches.

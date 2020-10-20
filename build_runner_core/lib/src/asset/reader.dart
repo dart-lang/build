@@ -95,8 +95,8 @@ class SingleStepReader implements AssetReader {
   }
 
   @override
-  Future<bool> canRead(AssetId id) {
-    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
+  FutureOr<bool> canRead(AssetId id) {
+    return doAfter(_isReadable(id), (bool isReadable) {
       if (!isReadable) return false;
       var node = _assetGraph.get(id);
       FutureOr<bool> _canRead() {
@@ -113,38 +113,38 @@ class SingleStepReader implements AssetReader {
         if (!canRead) return false;
         return doAfter(_ensureDigest(id), (_) => true);
       });
-    }));
+    });
   }
 
   @override
-  Future<Digest> digest(AssetId id) {
-    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
+  FutureOr<Digest> digest(AssetId id) {
+    return doAfter(_isReadable(id), (bool isReadable) {
       if (!isReadable) {
         return Future.error(AssetNotFoundException(id));
       }
       return _ensureDigest(id);
-    }));
+    });
   }
 
   @override
-  Future<List<int>> readAsBytes(AssetId id) {
-    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
+  FutureOr<List<int>> readAsBytes(AssetId id) {
+    return doAfter(_isReadable(id), (bool isReadable) {
       if (!isReadable) {
         return Future.error(AssetNotFoundException(id));
       }
       return doAfter(_ensureDigest(id), (_) => _delegate.readAsBytes(id));
-    }));
+    });
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
-    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
+  FutureOr<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
+    return doAfter(_isReadable(id), (bool isReadable) {
       if (!isReadable) {
         return Future.error(AssetNotFoundException(id));
       }
       return doAfter(_ensureDigest(id),
           (_) => _delegate.readAsString(id, encoding: encoding));
-    }));
+    });
   }
 
   @override
@@ -162,6 +162,11 @@ class SingleStepReader implements AssetReader {
   FutureOr<Digest> _ensureDigest(AssetId id) {
     var node = _assetGraph.get(id);
     if (node?.lastKnownDigest != null) return node.lastKnownDigest;
-    return _delegate.digest(id).then((digest) => node.lastKnownDigest = digest);
+    var digest = _delegate.digest(id);
+    if (digest is Future<Digest>) {
+      return digest.then((digest) => node.lastKnownDigest = digest);
+    } else {
+      return node.lastKnownDigest = digest as Digest;
+    }
   }
 }

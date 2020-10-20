@@ -27,19 +27,19 @@ class BuildCacheReader implements AssetReader {
           : BuildCacheReader._(delegate, assetGraph, rootPackage);
 
   @override
-  Future<bool> canRead(AssetId id) =>
+  FutureOr<bool> canRead(AssetId id) =>
       _delegate.canRead(_cacheLocation(id, _assetGraph, _rootPackage));
 
   @override
-  Future<Digest> digest(AssetId id) =>
+  FutureOr<Digest> digest(AssetId id) =>
       _delegate.digest(_cacheLocation(id, _assetGraph, _rootPackage));
 
   @override
-  Future<List<int>> readAsBytes(AssetId id) =>
+  FutureOr<List<int>> readAsBytes(AssetId id) =>
       _delegate.readAsBytes(_cacheLocation(id, _assetGraph, _rootPackage));
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) =>
+  FutureOr<String> readAsString(AssetId id, {Encoding encoding = utf8}) =>
       _delegate.readAsString(_cacheLocation(id, _assetGraph, _rootPackage),
           encoding: encoding);
 

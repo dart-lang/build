@@ -34,13 +34,12 @@ class PostProcessBuildStep {
   PostProcessBuildStep._(this.inputId, this._reader, this._writer,
       this._addAsset, this._deleteAsset);
 
-  Future<Digest> digest(AssetId id) => inputId == id
-      ? _reader.digest(id)
-      : Future.error(InvalidInputException(id));
+  FutureOr<Digest> digest(AssetId id) =>
+      inputId == id ? _reader.digest(id) : throw InvalidInputException(id);
 
-  Future<List<int>> readInputAsBytes() => _reader.readAsBytes(inputId);
+  FutureOr<List<int>> readInputAsBytes() => _reader.readAsBytes(inputId);
 
-  Future<String> readInputAsString({Encoding encoding = utf8}) =>
+  FutureOr<String> readInputAsString({Encoding encoding = utf8}) =>
       _reader.readAsString(inputId, encoding: encoding);
 
   Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {

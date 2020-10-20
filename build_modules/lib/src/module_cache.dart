@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:async/async.dart';
@@ -63,17 +64,18 @@ class DecodingCache<T> {
     if (!_cached.containsKey(id)) {
       entry = _cached[id] = _Entry()
         ..needsCheck = false
-        ..value = Result.capture(reader.readAsBytes(id).then(_fromBytes))
-        ..digest = Result.capture(reader.digest(id));
+        ..value =
+            Result.capture(toFuture(reader.readAsBytes(id)).then(_fromBytes))
+        ..digest = Result.capture(toFuture(reader.digest(id)));
     } else {
       entry = _cached[id];
       if (entry.needsCheck) {
         await (entry.onGoingCheck ??= () async {
           var previousDigest = await Result.release(entry.digest);
-          entry.digest = Result.capture(reader.digest(id));
+          entry.digest = Result.capture(toFuture(reader.digest(id)));
           if (await Result.release(entry.digest) != previousDigest) {
-            entry.value =
-                Result.capture(reader.readAsBytes(id).then(_fromBytes));
+            entry.value = Result.capture(
+                toFuture(reader.readAsBytes(id)).then(_fromBytes));
           }
           entry
             ..needsCheck = false
@@ -102,3 +104,6 @@ class _Entry<T> {
   Future<Result<Digest>> digest;
   Future<void> onGoingCheck;
 }
+
+Future<T> toFuture<T>(FutureOr<T> futureOr) =>
+    futureOr is Future<T> ? futureOr : Future.value(futureOr as T);

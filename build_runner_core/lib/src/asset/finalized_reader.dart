@@ -32,7 +32,7 @@ class FinalizedReader implements AssetReader {
       this._delegate, this._assetGraph, this._buildPhases, this._rootPackage);
 
   /// Returns a reason why [id] is not readable, or null if it is readable.
-  Future<UnreadableReason> unreadableReason(AssetId id) async {
+  FutureOr<UnreadableReason> unreadableReason(AssetId id) async {
     if (!_assetGraph.contains(id)) return UnreadableReason.notFound;
     var node = _assetGraph.get(id);
     if (node.isDeleted) return UnreadableReason.deleted;
@@ -48,17 +48,23 @@ class FinalizedReader implements AssetReader {
   }
 
   @override
-  Future<bool> canRead(AssetId id) async =>
-      (await unreadableReason(id)) == null;
+  FutureOr<bool> canRead(AssetId id) {
+    var reason = unreadableReason(id);
+    if (reason is Future<UnreadableReason>) {
+      return reason.then((result) => result == null);
+    } else {
+      return reason == null;
+    }
+  }
 
   @override
-  Future<Digest> digest(AssetId id) => _delegate.digest(id);
+  FutureOr<Digest> digest(AssetId id) => _delegate.digest(id);
 
   @override
-  Future<List<int>> readAsBytes(AssetId id) => _delegate.readAsBytes(id);
+  FutureOr<List<int>> readAsBytes(AssetId id) => _delegate.readAsBytes(id);
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
+  FutureOr<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
     if (_assetGraph.get(id)?.isDeleted ?? true) {
       throw AssetNotFoundException(id);
     }

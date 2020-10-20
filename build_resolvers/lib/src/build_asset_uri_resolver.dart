@@ -87,42 +87,47 @@ class BuildAssetUriResolver extends UriResolver {
   ///
   /// If [id] can be read, then it will be added to [transitivelyResolved] (if
   /// non-null).
-  Future<_AssetState> _updateCachedAssetState(AssetId id, BuildStep buildStep,
-      {Set<AssetId> /*?*/ transitivelyResolved}) async {
+  FutureOr<_AssetState> _updateCachedAssetState(AssetId id, BuildStep buildStep,
+      {Set<AssetId> /*?*/ transitivelyResolved}) {
     final path = assetPath(id);
-    if (!await buildStep.canRead(id)) {
-      if (globallySeenAssets.contains(id)) {
-        // ignore from this graph, some later build step may still be using it
-        // so it shouldn't be removed from [resourceProvider], but we also
-        // don't care about it's transitive imports.
-        return null;
+    return doAfter<bool, _AssetState>(buildStep.canRead(id), (canRead) {
+      if (!canRead) {
+        if (globallySeenAssets.contains(id)) {
+          // ignore from this graph, some later build step may still be using it
+          // so it shouldn't be removed from [resourceProvider], but we also
+          // don't care about it's transitive imports.
+          return null;
+        }
+        _cachedAssetDependencies.remove(id);
+        _cachedAssetDigests.remove(id);
+        if (resourceProvider.getFile(path).exists) {
+          resourceProvider.deleteFile(path);
+        }
+        return _AssetState.removed(path);
       }
-      _cachedAssetDependencies.remove(id);
-      _cachedAssetDigests.remove(id);
-      if (resourceProvider.getFile(path).exists) {
-        resourceProvider.deleteFile(path);
-      }
-      return _AssetState.removed(path);
-    }
-    globallySeenAssets.add(id);
-    transitivelyResolved?.add(id);
-    final digest = await buildStep.digest(id);
-    if (_cachedAssetDigests[id] == digest) {
-      return _AssetState.unchanged(path, _cachedAssetDependencies[id]);
-    } else {
-      final isChange = _cachedAssetDigests.containsKey(id);
-      final content = await buildStep.readAsString(id);
-      _cachedAssetDigests[id] = digest;
-      final dependencies =
-          _cachedAssetDependencies[id] = _parseDirectives(content, id);
-      if (isChange) {
-        resourceProvider.updateFile(path, content);
-        return _AssetState.changed(path, dependencies);
-      } else {
-        resourceProvider.newFile(path, content);
-        return _AssetState.newAsset(path, dependencies);
-      }
-    }
+      globallySeenAssets.add(id);
+      transitivelyResolved?.add(id);
+      return doAfter<Digest, _AssetState>(buildStep.digest(id), (digest) {
+        if (_cachedAssetDigests[id] == digest) {
+          return _AssetState.unchanged(path, _cachedAssetDependencies[id]);
+        } else {
+          final isChange = _cachedAssetDigests.containsKey(id);
+          return doAfter<String, _AssetState>(buildStep.readAsString(id),
+              (content) {
+            _cachedAssetDigests[id] = digest;
+            final dependencies =
+                _cachedAssetDependencies[id] = _parseDirectives(content, id);
+            if (isChange) {
+              resourceProvider.updateFile(path, content);
+              return _AssetState.changed(path, dependencies);
+            } else {
+              resourceProvider.newFile(path, content);
+              return _AssetState.newAsset(path, dependencies);
+            }
+          });
+        }
+      });
+    });
   }
 
   /// Attempts to parse [uri] into an [AssetId].
@@ -212,4 +217,15 @@ class _AssetState {
   _AssetState.changed(this.path, this.directives) : isAssetUpdate = true;
   _AssetState.unchanged(this.path, this.directives) : isAssetUpdate = false;
   _AssetState.newAsset(this.path, this.directives) : isAssetUpdate = true;
+}
+
+/// Invokes [callback] and returns the result as soon as possible. This will
+/// happen synchronously if [value] is available.
+FutureOr<S> doAfter<T, S>(
+    FutureOr<T> value, FutureOr<S> Function(T value) callback) {
+  if (value is Future<T>) {
+    return value.then(callback);
+  } else {
+    return callback(value as T);
+  }
 }

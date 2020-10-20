@@ -8,6 +8,7 @@ import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:crypto/crypto.dart';
 import 'package:watcher/watcher.dart';
 
 /// Returns if a given asset change should be considered for building.
@@ -26,9 +27,12 @@ FutureOr<bool> shouldProcess(
     if (_isAddOrEditOnGeneratedFile(node, change.type)) return false;
     if (change.type == ChangeType.MODIFY) {
       // Was it really modified or just touched?
-      return reader
-          .digest(change.id)
-          .then((newDigest) => node.lastKnownDigest != newDigest);
+      var digest = reader.digest(change.id);
+      if (digest is Future<Digest>) {
+        return digest.then((result) => node.lastKnownDigest != result);
+      } else {
+        return node.lastKnownDigest != digest;
+      }
     }
   } else {
     if (change.type != ChangeType.ADD) return false;
