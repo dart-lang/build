@@ -1,4 +1,7 @@
-## 1.4.2-dev
+## 1.4.2
+
+- Fix a bug around assets that appear missing to the analyzer even when they
+  should be visible to the build step using the resolver.
 
 ## 1.4.1
 

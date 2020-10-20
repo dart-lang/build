@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:build_config/build_config.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
@@ -61,6 +63,73 @@ void main() {
         'a|lib/file.dart.bar': '[SomeClass]',
         'a|lib/file.dart.foo': 'anything',
         'a|lib/file.imported.dart': 'class SomeClass {}',
+      });
+    });
+
+    test('A hidden generated file does not poison resolving', () async {
+      final slowBuilderCompleter = Completer<void>();
+      final builders = [
+        applyToRoot(
+            TestBuilder(
+                buildExtensions: replaceExtension('.dart', '.g1.dart'),
+                build: (buildStep, _) async {
+                  // Put the analysis driver into the bad state.
+                  await buildStep.inputLibrary;
+                  await buildStep.writeAsString(
+                      buildStep.inputId.changeExtension('.g1.dart'),
+                      'class Annotation {const Annotation();}');
+                }),
+            generateFor: InputSet(include: ['lib/a.dart'])),
+        applyToRoot(
+            TestBuilder(
+                buildExtensions: replaceExtension('.dart', '.g2.dart'),
+                build: (buildStep, _) async {
+                  var library = await buildStep.inputLibrary;
+                  var annotation = library
+                      .topLevelElements.single.metadata.single
+                      .computeConstantValue();
+                  await buildStep.writeAsString(
+                      buildStep.inputId.changeExtension('.g2.dart'),
+                      '//$annotation');
+                  slowBuilderCompleter.complete();
+                }),
+            isOptional: true,
+            generateFor: InputSet(include: ['lib/a.dart'])),
+        applyToRoot(
+            TestBuilder(
+                buildExtensions: replaceExtension('.dart', '.slow.dart'),
+                build: (buildStep, _) async {
+                  await slowBuilderCompleter.future;
+                  await buildStep.writeAsString(
+                      buildStep.inputId.changeExtension('.slow.dart'), '');
+                }),
+            isOptional: true,
+            generateFor: InputSet(include: ['lib/b.dart'])),
+        applyToRoot(
+            TestBuilder(
+                buildExtensions: replaceExtension('.dart', '.root'),
+                build: (buildStep, _) async {
+                  await buildStep.inputLibrary;
+                }),
+            generateFor: InputSet(include: ['lib/b.dart'])),
+      ];
+      await testBuilders(builders, {
+        'a|lib/a.dart': '''
+import 'a.g1.dart';
+import 'a.g2.dart';
+
+@Annotation()
+int x() => 1;
+''',
+        'a|lib/b.dart': r'''
+import 'a.g1.dart';
+import 'a.g2.dart';
+import 'b.slow.dart';
+'''
+      }, outputs: {
+        'a|lib/a.g1.dart': 'class Annotation {const Annotation();}',
+        'a|lib/a.g2.dart': '//Annotation ()',
+        'a|lib/b.slow.dart': '',
       });
     });
   });
