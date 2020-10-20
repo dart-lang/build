@@ -32,6 +32,10 @@ class BuildAssetUriResolver extends UriResolver {
   /// changed.
   final _cachedAssetDigests = <AssetId, Digest>{};
 
+  /// Asset paths which have been updated in [resourceProvider] but not yet
+  /// updated in the analysis driver.
+  final _needsChangeFile = <String>{};
+
   final resourceProvider = MemoryResourceProvider(context: p.posix);
 
   /// The assets which are known to be readable at some point during the current
@@ -64,16 +68,17 @@ class BuildAssetUriResolver extends UriResolver {
             uncrawledIds,
             (id) => _updateCachedAssetState(id, buildStep,
                 transitivelyResolved: transitivelyResolved),
-            (id, state) => state.directives.where(notCrawled)).toList()
+            (id, state) => state.dependencies.where(notCrawled)).toList()
         : [
             for (var id in uncrawledIds)
               await _updateCachedAssetState(id, buildStep),
           ];
 
-    assetStates
-        .where((state) => state.isAssetUpdate)
-        .map((state) => state.path)
-        .forEach(driver.changeFile);
+    for (final state in assetStates) {
+      if (_needsChangeFile.remove(state.path)) {
+        driver.changeFile(state.path);
+      }
+    }
   }
 
   /// Updates the internal state for [id], if it has changed.
@@ -102,26 +107,31 @@ class BuildAssetUriResolver extends UriResolver {
       if (resourceProvider.getFile(path).exists) {
         resourceProvider.deleteFile(path);
       }
-      return _AssetState.removed(path);
+      return _AssetState(path, const []);
     }
     globallySeenAssets.add(id);
     transitivelyResolved?.add(id);
     final digest = await buildStep.digest(id);
     if (_cachedAssetDigests[id] == digest) {
-      return _AssetState.unchanged(path, _cachedAssetDependencies[id]);
+      print('Cached for $id, ${_needsChangeFile.contains(path)}');
+      return _AssetState(path, _cachedAssetDependencies[id]);
     } else {
       final isChange = _cachedAssetDigests.containsKey(id);
       final content = await buildStep.readAsString(id);
-      _cachedAssetDigests[id] = digest;
-      final dependencies =
-          _cachedAssetDependencies[id] = _parseDirectives(content, id);
+      // ignore: invariant_booleans
+      if (_cachedAssetDigests[id] == digest) {
+        return _AssetState(path, _cachedAssetDependencies[id]);
+      }
       if (isChange) {
         resourceProvider.updateFile(path, content);
-        return _AssetState.changed(path, dependencies);
       } else {
         resourceProvider.newFile(path, content);
-        return _AssetState.newAsset(path, dependencies);
       }
+      _cachedAssetDigests[id] = digest;
+      _needsChangeFile.add(path);
+      final dependencies =
+          _cachedAssetDependencies[id] = _parseDirectives(content, id);
+      return _AssetState(path, dependencies);
     }
   }
 
@@ -203,13 +213,7 @@ Set<AssetId> _parseDirectives(String content, AssetId from) =>
 
 class _AssetState {
   final String path;
-  final bool isAssetUpdate;
-  final Iterable<AssetId> directives;
+  final Iterable<AssetId> dependencies;
 
-  _AssetState.removed(this.path)
-      : isAssetUpdate = false,
-        directives = const [];
-  _AssetState.changed(this.path, this.directives) : isAssetUpdate = true;
-  _AssetState.unchanged(this.path, this.directives) : isAssetUpdate = false;
-  _AssetState.newAsset(this.path, this.directives) : isAssetUpdate = true;
+  _AssetState(this.path, this.dependencies);
 }

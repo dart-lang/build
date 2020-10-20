@@ -131,6 +131,6 @@ import 'b.slow.dart';
         'a|lib/a.g2.dart': '//Annotation ()',
         'a|lib/b.slow.dart': '',
       });
-    }, skip: 'Currently failing');
+    });
   });
 }
