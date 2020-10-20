@@ -113,7 +113,6 @@ class BuildAssetUriResolver extends UriResolver {
     transitivelyResolved?.add(id);
     final digest = await buildStep.digest(id);
     if (_cachedAssetDigests[id] == digest) {
-      print('Cached for $id, ${_needsChangeFile.contains(path)}');
       return _AssetState(path, _cachedAssetDependencies[id]);
     } else {
       final isChange = _cachedAssetDigests.containsKey(id);
