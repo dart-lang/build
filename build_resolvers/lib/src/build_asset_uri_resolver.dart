@@ -117,8 +117,8 @@ class BuildAssetUriResolver extends UriResolver {
     } else {
       final isChange = _cachedAssetDigests.containsKey(id);
       final content = await buildStep.readAsString(id);
-      // ignore: invariant_booleans
       if (_cachedAssetDigests[id] == digest) {
+        // Cache may have been updated while reading asset content
         return _AssetState(path, _cachedAssetDependencies[id]);
       }
       if (isChange) {

@@ -47,7 +47,6 @@ linter:
     - empty_statements
     - file_names
     - hash_and_equals
-    - invariant_booleans
     - iterable_contains_unrelated_type
     - library_names
     - library_prefixes

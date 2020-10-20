@@ -1,3 +1,5 @@
+## 6.0.4-dev
+
 ## 6.0.3
 
 - Fix https://github.com/dart-lang/build/issues/1804.
