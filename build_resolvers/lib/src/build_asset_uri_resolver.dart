@@ -34,7 +34,7 @@ class BuildAssetUriResolver extends UriResolver {
 
   /// Asset paths which have been updated in [resourceProvider] but not yet
   /// updated in the analysis driver.
-  final _needsChangeFile = <String>{};
+  final _needsChangeFile = HashSet<AssetId>();
 
   final resourceProvider = MemoryResourceProvider(context: p.posix);
 
@@ -176,6 +176,7 @@ class BuildAssetUriResolver extends UriResolver {
     assert(_buildStepTransitivelyResolvedAssets.isEmpty,
         'Reset was called before all build steps completed');
     globallySeenAssets.clear();
+    _needsChangeFile.clear();
   }
 
   @override
