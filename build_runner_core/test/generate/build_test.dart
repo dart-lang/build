@@ -495,8 +495,11 @@ void main() {
             '.txt': ['.copy']
           },
           build: (step, _) {
+            final invalidInput = AssetId.parse('b|test/my_test.dart');
+
+            expect(step.canRead(invalidInput), completion(isFalse));
             return expectLater(
-              () => step.readAsBytes(AssetId.parse('b|test/my_test.dart')),
+              () => step.readAsBytes(invalidInput),
               throwsA(isA<InvalidInputException>().having((e) => e.allowedGlobs,
                   'allowedGlobs', defaultNonRootVisibleAssets)),
             );

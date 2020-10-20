@@ -81,8 +81,20 @@ class SingleStepReader implements AssetReader {
 
   /// Checks whether [id] can be read by this step - attempting to build the
   /// asset if necessary.
-  FutureOr<bool> _isReadable(AssetId id) {
-    _checkInvalidInput(id);
+  ///
+  /// If [catchInvalidInputs] is set to true and [_checkInvalidInput] throws an
+  /// [InvalidInputException], this method will return `false` instead of
+  /// throwing.
+  FutureOr<bool> _isReadable(AssetId id, {bool catchInvalidInputs = false}) {
+    try {
+      _checkInvalidInput(id);
+    } on InvalidInputException {
+      if (catchInvalidInputs) {
+        return false;
+      } else {
+        rethrow;
+      }
+    }
 
     final node = _assetGraph.get(id);
     if (node == null) {
@@ -103,7 +115,8 @@ class SingleStepReader implements AssetReader {
 
   @override
   Future<bool> canRead(AssetId id) {
-    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
+    return toFuture(
+        doAfter(_isReadable(id, catchInvalidInputs: true), (bool isReadable) {
       if (!isReadable) return false;
       var node = _assetGraph.get(id);
       FutureOr<bool> _canRead() {

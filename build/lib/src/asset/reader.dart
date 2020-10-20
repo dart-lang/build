@@ -31,8 +31,6 @@ abstract class AssetReader {
   Future<String> readAsString(AssetId id, {Encoding encoding});
 
   /// Indicates whether asset at [id] is readable.
-  ///
-  /// Throws an `InvalidInputException` if [id] is an invalid input.
   Future<bool> canRead(AssetId id);
 
   /// Returns all readable assets matching [glob] under the current package.
