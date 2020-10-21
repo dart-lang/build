@@ -473,6 +473,47 @@ void main() {
     );
   });
 
+  test('generates mock classes from part files', () async {
+    await _testWithNonNullable(
+      {
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        class Foo {}
+        '''),
+        'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        part 'part.dart';
+        ''',
+        'foo|test/part.dart': '''
+        @GenerateMocks([Foo])
+        void fooTests() {}
+        '''
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': _containsAllOf(
+          dedent('''
+          class MockFoo extends _i1.Mock implements _i2.Foo {
+            $_constructorWithThrowOnMissingStub
+          }
+          '''),
+        ),
+      },
+    );
+  });
+
+  test('does not crash upon finding non-library files', () async {
+    await _testWithNonNullable(
+      {
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent('class Foo {}'),
+        'foo|test/foo_test.dart': "part 'part.dart';",
+        'foo|test/part.dart': "part of 'foo_test.dart';",
+      },
+      outputs: {},
+    );
+  });
+
   test('generates multiple mock classes', () async {
     await _testWithNonNullable(
       {

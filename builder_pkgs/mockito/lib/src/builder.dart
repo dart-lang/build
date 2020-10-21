@@ -40,6 +40,7 @@ import 'package:source_gen/source_gen.dart';
 class MockBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
+    if (!await buildStep.resolver.isLibrary(buildStep.inputId)) return;
     final entryLib = await buildStep.inputLibrary;
     if (entryLib == null) return;
     final sourceLibIsNonNullable = entryLib.isNonNullableByDefault;
