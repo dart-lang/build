@@ -1,3 +1,10 @@
+## 4.1.3
+
+* Allow using analyzer 0.40.
+* `throwOnMissingStub` accepts an optional argument, `exceptionBuilder`, which
+  will be called to build and throw a custom exception when a missing stub is
+  called.
+
 ## 4.1.2
 
 * Introduce experimental code-generated mocks. This is primarily to support
