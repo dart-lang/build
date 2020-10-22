@@ -1,8 +1,7 @@
-# See with https://github.com/dart-lang/mono_repo for details on this file
-self_validate: true
+# See https://github.com/google/mono_repo.dart for details on this file
+self_validate: analyze_and_format
 
 travis:
-  sudo: required
   addons:
     chrome: stable
   before_install:

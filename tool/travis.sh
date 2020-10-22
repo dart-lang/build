@@ -1,22 +1,22 @@
 #!/bin/bash
-# Created with package:mono_repo v2.5.0
+# Created with package:mono_repo v3.0.0
 
 # Support built in commands on windows out of the box.
-function pub {
+function pub() {
   if [[ $TRAVIS_OS_NAME == "windows" ]]; then
     command pub.bat "$@"
   else
     command pub "$@"
   fi
 }
-function dartfmt {
+function dartfmt() {
   if [[ $TRAVIS_OS_NAME == "windows" ]]; then
     command dartfmt.bat "$@"
   else
     command dartfmt "$@"
   fi
 }
-function dartanalyzer {
+function dartanalyzer() {
   if [[ $TRAVIS_OS_NAME == "windows" ]]; then
     command dartanalyzer.bat "$@"
   else
@@ -25,131 +25,158 @@ function dartanalyzer {
 }
 
 if [[ -z ${PKGS} ]]; then
-  echo -e '\033[31mPKGS environment variable must be set!\033[0m'
-  exit 1
+  echo -e '\033[31mPKGS environment variable must be set! - TERMINATING JOB\033[0m'
+  exit 64
 fi
 
 if [[ "$#" == "0" ]]; then
-  echo -e '\033[31mAt least one task argument must be provided!\033[0m'
-  exit 1
+  echo -e '\033[31mAt least one task argument must be provided! - TERMINATING JOB\033[0m'
+  exit 64
 fi
 
-EXIT_CODE=0
+SUCCESS_COUNT=0
+declare -a FAILURES
 
 for PKG in ${PKGS}; do
   echo -e "\033[1mPKG: ${PKG}\033[22m"
-  pushd "${PKG}" || exit $?
+  EXIT_CODE=0
+  pushd "${PKG}" >/dev/null || EXIT_CODE=$?
 
-  PUB_EXIT_CODE=0
-  pub upgrade --no-precompile || PUB_EXIT_CODE=$?
-
-  if [[ ${PUB_EXIT_CODE} -ne 0 ]]; then
-    EXIT_CODE=1
-    echo -e '\033[31mpub upgrade failed\033[0m'
-    popd
-    continue
+  if [[ ${EXIT_CODE} -ne 0 ]]; then
+    echo -e "\033[31mPKG: '${PKG}' does not exist - TERMINATING JOB\033[0m"
+    exit 64
   fi
 
-  for TASK in "$@"; do
-    echo
-    echo -e "\033[1mPKG: ${PKG}; TASK: ${TASK}\033[22m"
-    case ${TASK} in
-    command_0)
-      echo 'pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random'
-      pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    command_1)
-      echo 'pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random'
-      pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    command_2)
-      echo 'pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random'
-      pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    command_3)
-      echo 'pub run build_runner test --enable-experiment=non-nullable --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random'
-      pub run build_runner test --enable-experiment=non-nullable --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    dartanalyzer_0)
-      echo 'dartanalyzer --fatal-infos --fatal-warnings .'
-      dartanalyzer --fatal-infos --fatal-warnings . || EXIT_CODE=$?
-      ;;
-    dartanalyzer_1)
-      echo 'dartanalyzer --enable-experiment=non-nullable --fatal-infos --fatal-warnings .'
-      dartanalyzer --enable-experiment=non-nullable --fatal-infos --fatal-warnings . || EXIT_CODE=$?
-      ;;
-    dartanalyzer_2)
-      echo 'dartanalyzer --fatal-warnings .'
-      dartanalyzer --fatal-warnings . || EXIT_CODE=$?
-      ;;
-    dartfmt)
-      echo 'dartfmt -n --set-exit-if-changed .'
-      dartfmt -n --set-exit-if-changed . || EXIT_CODE=$?
-      ;;
-    test_00)
-      echo 'pub run test --total-shards 2 --shard-index 0 --test-randomize-ordering-seed=random'
-      pub run test --total-shards 2 --shard-index 0 --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    test_01)
-      echo 'pub run test --total-shards 2 --shard-index 1 --test-randomize-ordering-seed=random'
-      pub run test --total-shards 2 --shard-index 1 --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    test_02)
-      echo 'pub run test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random'
-      pub run test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    test_03)
-      echo 'pub run test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random'
-      pub run test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    test_04)
-      echo 'pub run test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random'
-      pub run test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    test_05)
-      echo 'pub run test'
-      pub run test || EXIT_CODE=$?
-      ;;
-    test_06)
-      echo 'pub run test --test-randomize-ordering-seed=random'
-      pub run test --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    test_07)
-      echo 'pub run test -P presubmit --test-randomize-ordering-seed=random'
-      pub run test -P presubmit --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    test_08)
-      echo 'pub run test -x integration --test-randomize-ordering-seed=random'
-      pub run test -x integration --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    test_09)
-      echo 'pub run test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random'
-      pub run test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    test_10)
-      echo 'pub run test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random'
-      pub run test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    test_11)
-      echo 'pub run test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random'
-      pub run test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    test_12)
-      echo 'pub run test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random'
-      pub run test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    test_13)
-      echo 'pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random'
-      pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random || EXIT_CODE=$?
-      ;;
-    *)
-      echo -e "\033[31mNot expecting TASK '${TASK}'. Error!\033[0m"
-      EXIT_CODE=1
-      ;;
-    esac
-  done
+  pub upgrade --no-precompile || EXIT_CODE=$?
 
-  popd
+  if [[ ${EXIT_CODE} -ne 0 ]]; then
+    echo -e "\033[31mPKG: ${PKG}; 'pub upgrade' - FAILED  (${EXIT_CODE})\033[0m"
+    FAILURES+=("${PKG}; 'pub upgrade'")
+  else
+    for TASK in "$@"; do
+      EXIT_CODE=0
+      echo
+      echo -e "\033[1mPKG: ${PKG}; TASK: ${TASK}\033[22m"
+      case ${TASK} in
+      command_0)
+        echo 'pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random'
+        pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      command_1)
+        echo 'pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random'
+        pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      command_2)
+        echo 'pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random'
+        pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      command_3)
+        echo 'pub run build_runner test --enable-experiment=non-nullable --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random'
+        pub run build_runner test --enable-experiment=non-nullable --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      dartanalyzer_0)
+        echo 'dartanalyzer --fatal-infos --fatal-warnings .'
+        dartanalyzer --fatal-infos --fatal-warnings . || EXIT_CODE=$?
+        ;;
+      dartanalyzer_1)
+        echo 'dartanalyzer --enable-experiment=non-nullable --fatal-infos --fatal-warnings .'
+        dartanalyzer --enable-experiment=non-nullable --fatal-infos --fatal-warnings . || EXIT_CODE=$?
+        ;;
+      dartanalyzer_2)
+        echo 'dartanalyzer --fatal-warnings .'
+        dartanalyzer --fatal-warnings . || EXIT_CODE=$?
+        ;;
+      dartfmt)
+        echo 'dartfmt -n --set-exit-if-changed .'
+        dartfmt -n --set-exit-if-changed . || EXIT_CODE=$?
+        ;;
+      test_00)
+        echo 'pub run test --total-shards 2 --shard-index 0 --test-randomize-ordering-seed=random'
+        pub run test --total-shards 2 --shard-index 0 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      test_01)
+        echo 'pub run test --total-shards 2 --shard-index 1 --test-randomize-ordering-seed=random'
+        pub run test --total-shards 2 --shard-index 1 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      test_02)
+        echo 'pub run test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random'
+        pub run test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      test_03)
+        echo 'pub run test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random'
+        pub run test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      test_04)
+        echo 'pub run test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random'
+        pub run test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      test_05)
+        echo 'pub run test'
+        pub run test || EXIT_CODE=$?
+        ;;
+      test_06)
+        echo 'pub run test --test-randomize-ordering-seed=random'
+        pub run test --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      test_07)
+        echo 'pub run test -P presubmit --test-randomize-ordering-seed=random'
+        pub run test -P presubmit --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      test_08)
+        echo 'pub run test -x integration --test-randomize-ordering-seed=random'
+        pub run test -x integration --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      test_09)
+        echo 'pub run test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random'
+        pub run test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      test_10)
+        echo 'pub run test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random'
+        pub run test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      test_11)
+        echo 'pub run test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random'
+        pub run test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      test_12)
+        echo 'pub run test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random'
+        pub run test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      test_13)
+        echo 'pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random'
+        pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      *)
+        echo -e "\033[31mUnknown TASK '${TASK}' - TERMINATING JOB\033[0m"
+        exit 64
+        ;;
+      esac
+
+      if [[ ${EXIT_CODE} -ne 0 ]]; then
+        echo -e "\033[31mPKG: ${PKG}; TASK: ${TASK} - FAILED (${EXIT_CODE})\033[0m"
+        FAILURES+=("${PKG}; TASK: ${TASK}")
+      else
+        echo -e "\033[32mPKG: ${PKG}; TASK: ${TASK} - SUCCEEDED\033[0m"
+        SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+      fi
+
+    done
+  fi
+
+  echo
+  echo -e "\033[32mSUCCESS COUNT: ${SUCCESS_COUNT}\033[0m"
+
+  if [ ${#FAILURES[@]} -ne 0 ]; then
+    echo -e "\033[31mFAILURES: ${#FAILURES[@]}\033[0m"
+    for i in "${FAILURES[@]}"; do
+      echo -e "\033[31m  $i\033[0m"
+    done
+  fi
+
+  popd >/dev/null || exit 70
+  echo
 done
 
-exit ${EXIT_CODE}
+if [ ${#FAILURES[@]} -ne 0 ]; then
+  exit 1
+fi
