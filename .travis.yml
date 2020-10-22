@@ -1,8 +1,7 @@
-# Created with package:mono_repo v2.5.0
+# Created with package:mono_repo v3.0.0
 language: dart
 
 # Custom configuration
-sudo: required
 addons:
   chrome: stable
 before_install:
@@ -15,10 +14,10 @@ branches:
 
 jobs:
   include:
-    - stage: mono_repo_self_validate
+    - stage: analyze_and_format
       name: mono_repo self validate
       os: linux
-      script: tool/mono_repo_self_validate.sh
+      script: "pub global activate mono_repo 3.0.0 && pub global run mono_repo travis --validate"
     - stage: analyze_and_format
       name: "SDK: dev; PKGS: _test, _test_common; TASKS: `dartanalyzer --fatal-infos --fatal-warnings .`"
       dart: dev
@@ -309,7 +308,6 @@ jobs:
       script: tool/travis.sh command_2 command_3
 
 stages:
-  - mono_repo_self_validate
   - analyze_and_format
   - unit_test
   - e2e_test
