@@ -78,6 +78,15 @@ String noMatchingCallsFooter = '(If you called `verify(...).called(0);`, '
 void main() {
   _MockedClass mock;
 
+  // google3-specific: dart2js writes minified method names differently.
+  var isDart2js = true;
+  // asserts are not run in dart2js.
+  assert(() {
+    isDart2js = false;
+    return true;
+  }());
+  // END google3-specific.
+
   setUp(() {
     mock = _MockedClass();
   });
@@ -131,6 +140,6 @@ void main() {
         verify(mock.methodWithObjArgs(_MockedClass()));
       });
       verify(mock.methodWithObjArgs(m1));
-    });
+    }, skip: isDart2js); // google3-specific skip.
   });
 }

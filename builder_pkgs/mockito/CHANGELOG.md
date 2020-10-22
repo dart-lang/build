@@ -1,3 +1,7 @@
+## 4.1.4-dev
+
+* Add `http` back to `dev_dependencies`. It's used by the example.
+
 ## 4.1.3
 
 * Allow using analyzer 0.40.
