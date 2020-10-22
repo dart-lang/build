@@ -17,8 +17,6 @@
 @deprecated
 library mockito.test.deprecated_apis.mockito_test;
 
-import 'dart:async';
-
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
