@@ -1,0 +1,490 @@
+# Created with package:mono_repo v3.0.0
+name: Dart CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  "OS_linux_SDK_dev_PKGS__test__test_common_TASKS_dartanalyzer_--fatal-infos_--fatal-warnings_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: _test _test_common
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh dartanalyzer_0
+  "OS_linux_SDK_dev_PKG__test_TASKS_pub_run_build_runner_test_--_-p_chrome_--test-randomize-ordering-seed_random_pub_run_build_runner_test_--_-p_vm_test_configurable_uri_test_dart_--test-randomize-ordering-seed_random_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: _test
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh command_0 command_1
+  "OS_windows_SDK_dev_PKG__test_TASKS_pub_run_build_runner_test_--_-p_chrome_--test-randomize-ordering-seed_random_pub_run_build_runner_test_--_-p_vm_test_configurable_uri_test_dart_--test-randomize-ordering-seed_random_":
+    "runs-on": "windows-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: _test
+          TRAVIS_OS_NAME: windows
+        run: tool/travis.sh command_0 command_1
+  "OS_linux_SDK_dev_PKG__test_TASKS_pub_run_test_--total-shards_2_--shard-index_0_--test-randomize-ordering-seed_random_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: _test
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh test_00
+  "OS_linux_SDK_dev_PKG__test_TASKS_pub_run_test_--total-shards_2_--shard-index_1_--test-randomize-ordering-seed_random_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: _test
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh test_01
+  "OS_windows_SDK_dev_PKG__test_TASKS_pub_run_test_--total-shards_3_--shard-index_0_--test-randomize-ordering-seed_random_":
+    "runs-on": "windows-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: _test
+          TRAVIS_OS_NAME: windows
+        run: tool/travis.sh test_02
+  "OS_windows_SDK_dev_PKG__test_TASKS_pub_run_test_--total-shards_3_--shard-index_1_--test-randomize-ordering-seed_random_":
+    "runs-on": "windows-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: _test
+          TRAVIS_OS_NAME: windows
+        run: tool/travis.sh test_03
+  "OS_windows_SDK_dev_PKG__test_TASKS_pub_run_test_--total-shards_3_--shard-index_2_--test-randomize-ordering-seed_random_":
+    "runs-on": "windows-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: _test
+          TRAVIS_OS_NAME: windows
+        run: tool/travis.sh test_04
+  OS_linux_SDK_dev_PKG__test_TASKS_pub_run_test_:
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: _test
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh test_05
+  OS_windows_SDK_dev_PKG__test_TASKS_pub_run_test_:
+    "runs-on": "windows-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: _test
+          TRAVIS_OS_NAME: windows
+        run: tool/travis.sh test_05
+  "OS_linux_SDK_dev_PKG__test_null_safety_TASKS_dartanalyzer_--enable-experiment_non-nullable_--fatal-infos_--fatal-warnings_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: _test_null_safety
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh dartanalyzer_1
+  "OS_linux_SDK_dev_PKG__test_null_safety_TASKS_pub_run_build_runner_test_--enable-experiment_non-nullable_--_-p_chrome_vm_--test-randomize-ordering-seed_random_pub_run_build_runner_test_--enable-experiment_non-nullable_--define_build_web_compilers_entrypoint_compiler_dart2js_--_-p_chrome_--test-randomize-ordering-seed_random_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: _test_null_safety
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh command_2 command_3
+  "OS_windows_SDK_dev_PKG__test_null_safety_TASKS_pub_run_build_runner_test_--enable-experiment_non-nullable_--_-p_chrome_vm_--test-randomize-ordering-seed_random_pub_run_build_runner_test_--enable-experiment_non-nullable_--define_build_web_compilers_entrypoint_compiler_dart2js_--_-p_chrome_--test-randomize-ordering-seed_random_":
+    "runs-on": "windows-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: _test_null_safety
+          TRAVIS_OS_NAME: windows
+        run: tool/travis.sh command_2 command_3
+  "OS_linux_SDK_dev_PKGS_build_build_config_build_daemon_build_modules_build_resolvers_build_runner_build_runner_core_build_test_build_vm_compilers_build_web_compilers_example_scratch_space_TASKS_dartfmt_-n_--set-exit-if-changed_dartanalyzer_--fatal-infos_--fatal-warnings_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build build_config build_daemon build_modules build_resolvers build_runner build_runner_core build_test build_vm_compilers build_web_compilers example scratch_space
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh dartfmt dartanalyzer_0
+  "OS_linux_SDK_2_9_0_PKGS_build_build_config_build_daemon_build_resolvers_build_runner_core_build_test_build_vm_compilers_scratch_space_TASKS_dartanalyzer_--fatal-warnings_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": stable
+          version: "2.9.0"
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build build_config build_daemon build_resolvers build_runner_core build_test build_vm_compilers scratch_space
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh dartanalyzer_2
+  "OS_linux_SDK_dev_PKG_build_TASKS_pub_run_test_--test-randomize-ordering-seed_random_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh test_06
+  "OS_linux_SDK_dev_PKG_build_config_TASKS_pub_run_test_--test-randomize-ordering-seed_random_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_config
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh test_06
+  "OS_linux_SDK_dev_PKG_build_daemon_TASKS_pub_run_test_--test-randomize-ordering-seed_random_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_daemon
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh test_06
+  "OS_linux_SDK_dev_PKG_build_resolvers_TASKS_pub_run_test_--test-randomize-ordering-seed_random_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_resolvers
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh test_06
+  "OS_linux_SDK_dev_PKG_build_runner_core_TASKS_pub_run_test_--test-randomize-ordering-seed_random_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_runner_core
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh test_06
+  "OS_linux_SDK_dev_PKG_build_test_TASKS_pub_run_test_--test-randomize-ordering-seed_random_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_test
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh test_06
+  "OS_linux_SDK_dev_PKG_build_web_compilers_TASKS_pub_run_test_--test-randomize-ordering-seed_random_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_web_compilers
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh test_06
+  "OS_linux_SDK_dev_PKG_scratch_space_TASKS_pub_run_test_--test-randomize-ordering-seed_random_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: scratch_space
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh test_06
+  "OS_windows_SDK_dev_PKG_build_TASKS_pub_run_test_--test-randomize-ordering-seed_random_":
+    "runs-on": "windows-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build
+          TRAVIS_OS_NAME: windows
+        run: tool/travis.sh test_06
+  "OS_windows_SDK_dev_PKG_build_config_TASKS_pub_run_test_--test-randomize-ordering-seed_random_":
+    "runs-on": "windows-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_config
+          TRAVIS_OS_NAME: windows
+        run: tool/travis.sh test_06
+  "OS_windows_SDK_dev_PKG_build_daemon_TASKS_pub_run_test_--test-randomize-ordering-seed_random_":
+    "runs-on": "windows-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_daemon
+          TRAVIS_OS_NAME: windows
+        run: tool/travis.sh test_06
+  "OS_windows_SDK_dev_PKG_build_resolvers_TASKS_pub_run_test_--test-randomize-ordering-seed_random_":
+    "runs-on": "windows-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_resolvers
+          TRAVIS_OS_NAME: windows
+        run: tool/travis.sh test_06
+  "OS_windows_SDK_dev_PKG_build_runner_core_TASKS_pub_run_test_--test-randomize-ordering-seed_random_":
+    "runs-on": "windows-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_runner_core
+          TRAVIS_OS_NAME: windows
+        run: tool/travis.sh test_06
+  "OS_windows_SDK_dev_PKG_build_test_TASKS_pub_run_test_--test-randomize-ordering-seed_random_":
+    "runs-on": "windows-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_test
+          TRAVIS_OS_NAME: windows
+        run: tool/travis.sh test_06
+  "OS_windows_SDK_dev_PKG_build_web_compilers_TASKS_pub_run_test_--test-randomize-ordering-seed_random_":
+    "runs-on": "windows-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_web_compilers
+          TRAVIS_OS_NAME: windows
+        run: tool/travis.sh test_06
+  "OS_windows_SDK_dev_PKG_scratch_space_TASKS_pub_run_test_--test-randomize-ordering-seed_random_":
+    "runs-on": "windows-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: scratch_space
+          TRAVIS_OS_NAME: windows
+        run: tool/travis.sh test_06
+  "OS_linux_SDK_dev_PKG_build_modules_TASKS_pub_run_test_-P_presubmit_--test-randomize-ordering-seed_random_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_modules
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh test_07
+  "OS_windows_SDK_dev_PKG_build_modules_TASKS_pub_run_test_-P_presubmit_--test-randomize-ordering-seed_random_":
+    "runs-on": "windows-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_modules
+          TRAVIS_OS_NAME: windows
+        run: tool/travis.sh test_07
+  "OS_linux_SDK_dev_PKG_build_runner_TASKS_pub_run_test_-x_integration_--test-randomize-ordering-seed_random_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_runner
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh test_08
+  "OS_linux_SDK_dev_PKG_build_runner_TASKS_pub_run_test_-t_integration_--total-shards_5_--shard-index_0_--test-randomize-ordering-seed_random_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_runner
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh test_09
+  "OS_linux_SDK_dev_PKG_build_runner_TASKS_pub_run_test_-t_integration_--total-shards_5_--shard-index_1_--test-randomize-ordering-seed_random_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_runner
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh test_10
+  "OS_linux_SDK_dev_PKG_build_runner_TASKS_pub_run_test_-t_integration_--total-shards_5_--shard-index_2_--test-randomize-ordering-seed_random_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_runner
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh test_11
+  "OS_linux_SDK_dev_PKG_build_runner_TASKS_pub_run_test_-t_integration_--total-shards_5_--shard-index_3_--test-randomize-ordering-seed_random_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_runner
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh test_12
+  "OS_linux_SDK_dev_PKG_build_runner_TASKS_pub_run_test_-t_integration_--total-shards_5_--shard-index_4_--test-randomize-ordering-seed_random_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_runner
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh test_13
+  "OS_linux_SDK_2_9_0_PKG_build_runner_core_TASKS_pub_run_test_--test-randomize-ordering-seed_random_":
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": stable
+          version: "2.9.0"
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_runner_core
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh test_06
+  "OS_windows_SDK_2_9_0_PKG_build_runner_core_TASKS_pub_run_test_--test-randomize-ordering-seed_random_":
+    "runs-on": "windows-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": stable
+          version: "2.9.0"
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_runner_core
+          TRAVIS_OS_NAME: windows
+        run: tool/travis.sh test_06
+  OS_linux_SDK_dev_PKG_build_vm_compilers_TASKS_pub_run_test_:
+    "runs-on": "ubuntu-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_vm_compilers
+          TRAVIS_OS_NAME: linux
+        run: tool/travis.sh test_05
+  OS_windows_SDK_dev_PKG_build_vm_compilers_TASKS_pub_run_test_:
+    "runs-on": "windows-latest"
+    steps:
+      - uses: "cedx/setup-dart@v2"
+        with:
+          "release-channel": dev
+      - uses: "actions/checkout@v2"
+      - env:
+          PKGS: build_vm_compilers
+          TRAVIS_OS_NAME: windows
+        run: tool/travis.sh test_05
