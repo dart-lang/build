@@ -363,6 +363,11 @@ void _fixMetadataSources(Map<String, dynamic> json, Uri scratchUri) {
     json['moduleUri'] = updatePath(moduleUri);
   }
 
+  var fullKernelUri = json['fullKernelUri'] as String;
+  if (fullKernelUri != null) {
+    json['fullKernelUri'] = updatePath(fullKernelUri);
+  }
+
   var libraries = json['libraries'] as List<dynamic>;
   if (libraries != null) {
     for (var lib in libraries) {
