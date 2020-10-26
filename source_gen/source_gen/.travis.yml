@@ -1,4 +1,4 @@
-# Created with package:mono_repo v2.5.0
+# Created with package:mono_repo v3.0.0
 language: dart
 
 jobs:
@@ -6,10 +6,10 @@ jobs:
     - stage: mono_repo_self_validate
       name: mono_repo self validate
       os: linux
-      script: tool/mono_repo_self_validate.sh
+      script: "pub global activate mono_repo 3.0.0 && pub global run mono_repo travis --validate"
     - stage: analyze_format
-      name: "SDK: 2.7.0; PKGS: _test_annotations, example, example_usage, source_gen; TASKS: `dartanalyzer --fatal-warnings .`"
-      dart: "2.7.0"
+      name: "SDK: 2.10.0; PKGS: _test_annotations, example, example_usage, source_gen; TASKS: `dartanalyzer --fatal-warnings .`"
+      dart: "2.10.0"
       os: linux
       env: PKGS="_test_annotations example example_usage source_gen"
       script: tool/travis.sh dartanalyzer_1
@@ -20,8 +20,8 @@ jobs:
       env: PKGS="_test_annotations example example_usage source_gen"
       script: tool/travis.sh dartfmt dartanalyzer_0
     - stage: unit_test
-      name: "SDK: 2.7.0; PKG: example_usage; TASKS: `pub run test --run-skipped`"
-      dart: "2.7.0"
+      name: "SDK: 2.10.0; PKG: example_usage; TASKS: `pub run test --run-skipped`"
+      dart: "2.10.0"
       os: linux
       env: PKGS="example_usage"
       script: tool/travis.sh test
@@ -32,8 +32,8 @@ jobs:
       env: PKGS="example_usage"
       script: tool/travis.sh test
     - stage: unit_test
-      name: "SDK: 2.7.0; PKG: source_gen; TASKS: `pub run build_runner test -- -j 1`"
-      dart: "2.7.0"
+      name: "SDK: 2.10.0; PKG: source_gen; TASKS: `pub run build_runner test -- -j 1`"
+      dart: "2.10.0"
       os: linux
       env: PKGS="source_gen"
       script: tool/travis.sh command

@@ -5,6 +5,7 @@
 @TestOn('vm')
 import 'dart:async';
 
+import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:source_gen/builder.dart';
 import 'package:source_gen/source_gen.dart';
@@ -133,6 +134,32 @@ void main() {
         ),
       ),
     );
+  });
+
+  test(
+      'throws when input library has syntax errors and allowSyntaxErrors '
+      'flag is not set', () async {
+    final srcs = _createPackageStub(testLibContent: _testLibContentSyntaxError);
+    final builder = LibraryBuilder(const CommentGenerator());
+
+    await expectLater(
+      () => testBuilder(
+        builder,
+        srcs,
+        generateFor: {'$_pkgName|lib/test_lib.dart'},
+      ),
+      throwsA(isA<SyntaxErrorInAssetException>()),
+    );
+  });
+
+  test(
+      'does not throw when input library has syntax errors and '
+      'allowSyntaxErrors flag is set', () async {
+    final srcs = _createPackageStub(testLibContent: _testLibContentSyntaxError);
+    final builder =
+        LibraryBuilder(const CommentGenerator(), allowSyntaxErrors: true);
+    await testBuilder(builder, srcs,
+        generateFor: {'$_pkgName|lib/test_lib.dart'});
   });
 
   test('warns when a non-standalone builder does not see "part"', () async {
@@ -606,6 +633,10 @@ const _testLibPartContent = r'''
 part of test_lib;
 final int bar = 42;
 class Customer { }
+''';
+
+const _testLibContentSyntaxError = r'''
+final int foo = 42
 ''';
 
 const _testGenPartContent = r'''// GENERATED CODE - DO NOT MODIFY BY HAND

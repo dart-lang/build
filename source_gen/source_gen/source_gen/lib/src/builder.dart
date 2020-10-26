@@ -31,6 +31,9 @@ class _Builder extends Builder {
 
   final String _header;
 
+  /// Whether to allow syntax errors in input libraries.
+  final bool allowSyntaxErrors;
+
   @override
   final Map<String, List<String>> buildExtensions;
 
@@ -41,6 +44,7 @@ class _Builder extends Builder {
     String generatedExtension = '.g.dart',
     List<String> additionalOutputExtensions = const [],
     String header,
+    this.allowSyntaxErrors = false,
   })  : _generatedExtension = generatedExtension,
         buildExtensions = {
           '.dart': [
@@ -67,7 +71,8 @@ class _Builder extends Builder {
   Future build(BuildStep buildStep) async {
     final resolver = buildStep.resolver;
     if (!await resolver.isLibrary(buildStep.inputId)) return;
-    final lib = await buildStep.inputLibrary;
+    final lib = await buildStep.resolver
+        .libraryFor(buildStep.inputId, allowSyntaxErrors: allowSyntaxErrors);
     await _generateForLibrary(lib, buildStep);
   }
 
@@ -186,17 +191,22 @@ class SharedPartBuilder extends _Builder {
   ///
   /// [formatOutput] is called to format the generated code. Defaults to
   /// [DartFormatter.format].
+  ///
+  /// [allowSyntaxErrors] indicates whether to allow syntax errors in input
+  /// libraries.
   SharedPartBuilder(
     List<Generator> generators,
     String partId, {
     String Function(String code) formatOutput,
     List<String> additionalOutputExtensions = const [],
+    bool allowSyntaxErrors = false,
   }) : super(
           generators,
           formatOutput: formatOutput,
           generatedExtension: '.$partId.g.part',
           additionalOutputExtensions: additionalOutputExtensions,
           header: '',
+          allowSyntaxErrors: allowSyntaxErrors,
         ) {
     if (!_partIdRegExp.hasMatch(partId)) {
       throw ArgumentError.value(
@@ -236,18 +246,23 @@ class PartBuilder extends _Builder {
   /// [header] is used to specify the content at the top of each generated file.
   /// If `null`, the content of [defaultFileHeader] is used.
   /// If [header] is an empty `String` no header is added.
+  ///
+  /// [allowSyntaxErrors] indicates whether to allow syntax errors in input
+  /// libraries.
   PartBuilder(
     List<Generator> generators,
     String generatedExtension, {
     String Function(String code) formatOutput,
     List<String> additionalOutputExtensions = const [],
     String header,
+    bool allowSyntaxErrors = false,
   }) : super(
           generators,
           formatOutput: formatOutput,
           generatedExtension: generatedExtension,
           additionalOutputExtensions: additionalOutputExtensions,
           header: header,
+          allowSyntaxErrors: allowSyntaxErrors,
         );
 }
 
@@ -272,18 +287,23 @@ class LibraryBuilder extends _Builder {
   /// [header] is used to specify the content at the top of each generated file.
   /// If `null`, the content of [defaultFileHeader] is used.
   /// If [header] is an empty `String` no header is added.
+  ///
+  /// [allowSyntaxErrors] indicates whether to allow syntax errors in input
+  /// libraries.
   LibraryBuilder(
     Generator generator, {
     String Function(String code) formatOutput,
     String generatedExtension = '.g.dart',
     List<String> additionalOutputExtensions = const [],
     String header,
+    bool allowSyntaxErrors = false,
   }) : super(
           [generator],
           formatOutput: formatOutput,
           generatedExtension: generatedExtension,
           additionalOutputExtensions: additionalOutputExtensions,
           header: header,
+          allowSyntaxErrors: allowSyntaxErrors,
         );
 }
 
