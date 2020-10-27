@@ -12,6 +12,7 @@ import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:build_modules/src/workers.dart';
 import 'package:glob/glob.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 import 'package:scratch_space/scratch_space.dart';
@@ -23,13 +24,28 @@ import 'web_entrypoint_builder.dart';
 ///
 /// If [skipPlatformCheck] is `true` then all `dart:` imports will be
 /// allowed in all packages.
-Future<void> bootstrapDart2Js(BuildStep buildStep, List<String> dart2JsArgs,
-        {bool skipPlatformCheck}) =>
+Future<void> bootstrapDart2Js(
+  BuildStep buildStep,
+  List<String> dart2JsArgs, {
+  @required bool nativeNullAssertions,
+  @required bool nullAssertions,
+  @required bool soundNullSafety,
+  bool skipPlatformCheck,
+}) =>
     _resourcePool.withResource(() => _bootstrapDart2Js(buildStep, dart2JsArgs,
+        nativeNullAssertions: nativeNullAssertions,
+        nullAssertions: nullAssertions,
+        soundNullSafety: soundNullSafety,
         skipPlatformCheck: skipPlatformCheck));
 
-Future<void> _bootstrapDart2Js(BuildStep buildStep, List<String> dart2JsArgs,
-    {bool skipPlatformCheck}) async {
+Future<void> _bootstrapDart2Js(
+  BuildStep buildStep,
+  List<String> dart2JsArgs, {
+  @required bool nativeNullAssertions,
+  @required bool nullAssertions,
+  @required bool soundNullSafety,
+  bool skipPlatformCheck,
+}) async {
   skipPlatformCheck ??= false;
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
@@ -79,6 +95,9 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
         '--multi-root=${scratchSpace.tempDir.uri.toFilePath()}',
         for (var experiment in enabledExperiments)
           '--enable-experiment=$experiment',
+        if (nativeNullAssertions) '--native-null-assertions',
+        if (nullAssertions) '--null-assertions',
+        '--${soundNullSafety ? '' : 'no-'}sound-null-safety',
         '-o$jsOutputPath',
         '$dartUri',
       ]);

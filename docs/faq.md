@@ -24,7 +24,7 @@ mode compiler to `dart2js`. You can either do this using the `--define` command
 line option:
 
 ```text
---define "build_web_compilers|entrypoint=compiler=dart2js"
+--define "build_web_compilers:entrypoint=compiler=dart2js"
 ```
 
 Or by editing your `build.yaml` file:
@@ -33,7 +33,7 @@ Or by editing your `build.yaml` file:
 targets:
   $default:
     builders:
-      build_web_compilers|entrypoint:
+      build_web_compilers:entrypoint:
         options:
           compiler: dart2js
 ```
@@ -63,7 +63,7 @@ in dev mode, and passed `-O3` in release mode:
 targets:
   $default:
     builders:
-      build_web_compilers|entrypoint:
+      build_web_compilers:entrypoint:
         options:
           compiler: dart2js
         dev_options:
@@ -230,7 +230,7 @@ These generally come up in the context of a multi-platform package (generally
 due to a mixture of vm and web tests), and look something like this:
 
 ```text
-[WARNING] build_vm_compilers|entrypoint on example|test/my_test.dart:
+[WARNING] build_vm_compilers:entrypoint on example|test/my_test.dart:
 
 Skipping compiling example|test/my_test.dart for the vm because some of its
 transitive libraries have sdk dependencies that not supported on this platform:
@@ -253,12 +253,12 @@ For example, your `build.yaml` might look like this:
 targets:
   $default:
     builders:
-      build_web_compilers|entrypoint:
+      build_web_compilers:entrypoint:
         generate_for:
         - test/multiplatform/**_test.dart
         - test/web/**_test.dart
         - web/**.dart
-      build_vm_compilers|entrypoint:
+      build_vm_compilers:entrypoint:
         generate_for:
         - test/multiplatform/**_test.dart
         - test/vm/**_test.dart

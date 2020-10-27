@@ -41,6 +41,8 @@ Future<void> bootstrapDdc(
   @deprecated Set<String> skipPlatformCheckPackages = const {},
   Iterable<AssetId> requiredAssets,
   @required bool soundNullSafety,
+  @required bool nativeNullAssertions,
+  @required bool nullAssertions,
 }) async {
   requiredAssets ??= [];
   skipPlatformCheck ??= false;
@@ -136,8 +138,13 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
                 from: _p.url.dirname(bootstrapId.path)),
             soundNullSafety))
         ..write(_requireJsConfig(soundNullSafety))
-        ..write(_appBootstrap(bootstrapModuleName, appModuleName,
-            appModuleScope, entrypointLibraryName,
+        ..write(_appBootstrap(
+            bootstrapModuleName: bootstrapModuleName,
+            entrypointLibraryName: entrypointLibraryName,
+            moduleName: appModuleName,
+            moduleScope: appModuleScope,
+            nativeNullAssertions: nativeNullAssertions,
+            nullAssertions: nullAssertions,
             oldModuleScope: oldAppModuleScope));
 
   await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
@@ -205,12 +212,20 @@ Future<List<AssetId>> _ensureTransitiveJsModules(
 /// `[moduleScope].main()` function on it.
 ///
 /// Also performs other necessary initialization.
-String _appBootstrap(String bootstrapModuleName, String moduleName,
-        String moduleScope, String entrypointLibraryName,
-        {String oldModuleScope}) =>
+String _appBootstrap({
+  @required String bootstrapModuleName,
+  @required String moduleName,
+  @required String moduleScope,
+  @required String entrypointLibraryName,
+  @required String oldModuleScope,
+  @required bool nullAssertions,
+  @required bool nativeNullAssertions,
+}) =>
     '''
 define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_sdk) {
   dart_sdk.dart.setStartAsyncSynchronously(true);
+  dart_sdk.dart.nonNullAsserts($nullAssertions);
+  dart_sdk.dart.nativeNonNullAsserts($nativeNullAssertions);
   dart_sdk._isolate_helper.startRootIsolate(() => {}, []);
   $_initializeTools
   $_mainExtensionMarker

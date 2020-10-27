@@ -53,7 +53,12 @@ void main() {
           isNot(contains('lib/a')),
         ])),
       };
-      await testBuilder(WebEntrypointBuilder(WebCompiler.DartDevc), assets,
+      await testBuilder(
+          WebEntrypointBuilder(WebCompiler.DartDevc,
+              soundNullSafetyOverride: null,
+              nullAssertions: false,
+              nativeNullAssertions: false),
+          assets,
           outputs: expectedOutputs);
     });
   });
@@ -89,7 +94,12 @@ void main() {
         'a|web/b.dart.ddc_merged_metadata': isNotEmpty,
         'a|web/b.dart.js': isNotEmpty,
       };
-      await testBuilder(WebEntrypointBuilder(WebCompiler.DartDevc), assets,
+      await testBuilder(
+          WebEntrypointBuilder(WebCompiler.DartDevc,
+              soundNullSafetyOverride: null,
+              nullAssertions: false,
+              nativeNullAssertions: false),
+          assets,
           outputs: expectedOutputs);
     });
 
@@ -109,7 +119,12 @@ void main() {
         'a|lib/app.dart.ddc_merged_metadata': isNotEmpty,
         'a|lib/app.dart.js': isNotEmpty,
       };
-      await testBuilder(WebEntrypointBuilder(WebCompiler.DartDevc), assets,
+      await testBuilder(
+          WebEntrypointBuilder(WebCompiler.DartDevc,
+              soundNullSafetyOverride: null,
+              nullAssertions: false,
+              nativeNullAssertions: false),
+          assets,
           outputs: expectedOutputs);
     });
   });

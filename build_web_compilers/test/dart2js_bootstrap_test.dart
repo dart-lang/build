@@ -60,7 +60,12 @@ void main() {
         'a|web/index.dart.js.map': anything,
         'a|web/index.dart.js.tar.gz': anything,
       };
-      await testBuilder(WebEntrypointBuilder(WebCompiler.Dart2Js), assets,
+      await testBuilder(
+          WebEntrypointBuilder(WebCompiler.Dart2Js,
+              soundNullSafetyOverride: null,
+              nullAssertions: false,
+              nativeNullAssertions: false),
+          assets,
           outputs: expectedOutputs);
     });
 
@@ -71,7 +76,10 @@ void main() {
       };
       await testBuilder(
           WebEntrypointBuilder(WebCompiler.Dart2Js,
-              dart2JsArgs: ['--no-source-maps']),
+              dart2JsArgs: ['--no-source-maps'],
+              soundNullSafetyOverride: null,
+              nullAssertions: false,
+              nativeNullAssertions: false),
           assets,
           outputs: expectedOutputs);
     });
@@ -99,7 +107,12 @@ void main() {
       'a|lib/index.dart.js.map': anything,
       'a|lib/index.dart.js.tar.gz': anything,
     };
-    await testBuilder(WebEntrypointBuilder(WebCompiler.Dart2Js), assets,
+    await testBuilder(
+        WebEntrypointBuilder(WebCompiler.Dart2Js,
+            soundNullSafetyOverride: null,
+            nullAssertions: false,
+            nativeNullAssertions: false),
+        assets,
         outputs: expectedOutputs);
   });
 
@@ -146,7 +159,12 @@ void main() {
           'a|web/unsound.dart.js.map': anything,
           'a|web/unsound.dart.js.tar.gz': anything,
         };
-        await testBuilder(WebEntrypointBuilder(WebCompiler.Dart2Js), assets,
+        await testBuilder(
+            WebEntrypointBuilder(WebCompiler.Dart2Js,
+                soundNullSafetyOverride: null,
+                nullAssertions: false,
+                nativeNullAssertions: false),
+            assets,
             outputs: expectedOutputs);
       }, ['non-nullable']);
     });

@@ -1,7 +1,23 @@
-## 2.12.2-dev
+## 2.14.0
+
+- Strip stratch directory paths from a new metadata field `fullKernelUri`
+
+## 2.13.0
+
+- Add `native_null_asserts` boolean option to the
+  `build_web_compilers:entrypoint` builder. This is disabled by default but
+  will be enabled by default in a later release. 
+
+## 2.12.3
+
+- Fix handling of explicit `sound_null_safety` option for `dart2js` compiles.
+
+## 2.12.2
 
 - Fix parsing of `environment` config for DDC when using a bool or numeric
   value.
+- Add `sound_null_safety` and `null_assertions` boolean options to the
+  `build_web_compilers|entrypoint` builder.
 
 ## 2.12.1
 

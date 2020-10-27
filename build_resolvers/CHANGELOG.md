@@ -1,3 +1,8 @@
+## 1.4.2
+
+- Fix a bug around assets that appear missing to the analyzer even when they
+  should be visible to the build step using the resolver.
+
 ## 1.4.1
 
 - Update the exception thrown when using experiments without an exactly
@@ -11,7 +16,7 @@
 
 ## 1.3.11
 
-- Use the public `buildSdkSummary` api from the analyzer instead of the 
+- Use the public `buildSdkSummary` api from the analyzer instead of the
   private one.
 - Migrate off of other deprecated analyzer apis.
 
