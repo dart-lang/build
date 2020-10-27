@@ -27,6 +27,7 @@ void main() {
   final copyABuildApplication = applyToRoot(
       TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')));
   final defaultBuilderOptions = const BuilderOptions({});
+  final packageConfigId = makeAssetId('a|.dart_tool/package_config.json');
   InMemoryRunnerAssetWriter writer;
 
   setUp(() async {
@@ -35,8 +36,7 @@ void main() {
 # Fake packages file
 a:file://fake/pkg/path
 ''');
-    await writer.writeAsString(makeAssetId('a|.dart_tool/package_config.json'),
-        jsonEncode(_packageConfig));
+    await writer.writeAsString(packageConfigId, jsonEncode(_packageConfig));
   });
 
   group('watch', () {
@@ -261,7 +261,7 @@ a:file://fake/pkg/path
         var expectedGraph = await AssetGraph.build(
             [],
             <AssetId>{},
-            {AssetId('a', '.dart_tool/package_config.json')},
+            {packageConfigId},
             buildPackageGraph({rootPackage('a'): []}),
             InMemoryAssetReader(sourceAssets: writer.assets));
 
@@ -404,9 +404,41 @@ a:file://different/fake/pkg/path
 
         var newConfig = Map.of(_packageConfig);
         newConfig['extra'] = 'stuff';
-        await writer.writeAsString(
-            AssetId('a', '.dart_tool/package_config.json'),
-            jsonEncode(newConfig));
+        await writer.writeAsString(packageConfigId, jsonEncode(newConfig));
+
+        expect(await results.hasNext, isFalse);
+        expect(logs, hasLength(1));
+        expect(
+            logs.first.message,
+            contains('Terminating builds due to package graph update, '
+                'please restart the build.'));
+      });
+
+      test('Gives the package config a chance to be re-written before failing',
+          () async {
+        var logs = <LogRecord>[];
+        var buildState = await startWatch(
+            [copyABuildApplication], {'a|web/a.txt': 'a'}, writer,
+            logLevel: Level.SEVERE, onLog: logs.add);
+        buildState.buildResults.handleError((e, s) => print('$e\n$s'));
+        buildState.buildResults.listen(print);
+        var results = StreamQueue(buildState.buildResults);
+
+        var result = await results.next;
+        checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
+
+        await writer.delete(packageConfigId);
+
+        // Wait for it to try reading the file twice to ensure it will retry.
+        await _readerForState[buildState]
+            .onCanRead
+            .where((id) => id == packageConfigId)
+            .take(2)
+            .toList();
+
+        var newConfig = Map.of(_packageConfig);
+        newConfig['extra'] = 'stuff';
+        await writer.writeAsString(packageConfigId, jsonEncode(newConfig));
 
         expect(await results.hasNext, isFalse);
         expect(logs, hasLength(1));
@@ -792,7 +824,7 @@ Future<BuildState> startWatch(List<BuilderApplication> builders,
     Map<String, BuildConfig> overrideBuildConfig,
     void Function(LogRecord) onLog,
     Level logLevel = Level.OFF,
-    String configKey}) {
+    String configKey}) async {
   onLog ??= (_) {};
   inputs.forEach((serializedId, contents) {
     writer.writeAsString(makeAssetId(serializedId), contents);
@@ -803,7 +835,7 @@ Future<BuildState> startWatch(List<BuilderApplication> builders,
       rootPackage: packageGraph.root.name);
   final watcherFactory = (String path) => FakeWatcher(path);
 
-  return watch_impl.watch(builders,
+  var state = await watch_impl.watch(builders,
       configKey: configKey,
       deleteFilesByDefault: true,
       debounceDelay: _debounceDelay,
@@ -816,6 +848,9 @@ Future<BuildState> startWatch(List<BuilderApplication> builders,
       logLevel: logLevel,
       onLog: onLog,
       skipBuildScriptCheck: true);
+  // Some tests need access to `reader` so we expose it through an expando.
+  _readerForState[state] = reader;
+  return state;
 }
 
 /// Tells the program to stop watching files and terminate.
@@ -834,3 +869,7 @@ const _packageConfig = {
     {'name': 'a', 'rootUri': 'file://fake/pkg/path', 'packageUri': 'lib/'},
   ],
 };
+
+/// Store the private in memory asset reader for a given [BuildState] object
+/// here so we can get access to it.
+final _readerForState = Expando<InMemoryRunnerAssetReader>();
