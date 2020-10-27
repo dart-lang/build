@@ -86,13 +86,11 @@ class SingleStepReader implements AssetReader {
   /// [InvalidInputException], this method will return `false` instead of
   /// throwing.
   FutureOr<bool> _isReadable(AssetId id, {bool catchInvalidInputs = false}) {
-    try {
-      _checkInvalidInput(id);
-    } on InvalidInputException {
-      if (catchInvalidInputs) {
+    if (catchInvalidInputs) {
+      try {
+        _checkInvalidInput(id);
+      } on InvalidInputException {
         return false;
-      } else {
-        rethrow;
       }
     }
 
