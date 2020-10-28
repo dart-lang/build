@@ -434,7 +434,7 @@ a:file://different/fake/pkg/path
             .onCanRead
             .where((id) => id == packageConfigId)
             .take(2)
-            .toList();
+            .drain();
 
         var newConfig = Map.of(_packageConfig);
         newConfig['extra'] = 'stuff';
