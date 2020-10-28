@@ -18,7 +18,7 @@ void main() {
         'a|test/hello_test.debug.html': _equalsTextWithoutWhitespace('''
           <html>
             <head>
-              <script src="hello_test.dart.js"></script>
+              <script src="hello_test.dart.browser_test.dart.js"></script>
             </head>
           </html>
         ''')
@@ -43,7 +43,7 @@ void main() {
         'a|test/hello_test.debug.html': _equalsTextWithoutWhitespace('''
           <html>
             <head>
-              <script src="hello_test.dart.js"></script>
+              <script src="hello_test.dart.browser_test.dart.js"></script>
             </head>
             <body>
               <cool-element>I am awesome</cool-element>
@@ -65,15 +65,17 @@ void main() {
         'a|test/sub/4_test.dart': '',
       }, outputs: {
         'a|test/index.html': _equalsTextWithoutWhitespace('''
-          <html>
-            <body>
-              <ul>
-                <li><a href="/1_test.debug.html">test/1_test.dart</a></li>
-                <li><a href="/2_test.debug.html">test/2_test.dart</a></li>
-                <li><a href="/sub/4_test.debug.html">test/sub/4_test.dart</a></li>
-              </ul>
-            </body>
-          </html>
+<html>
+  <body>
+    <ul>
+      <li><a href="/1_test.debug.html?directRun=true">test/1_test.dart</a></li>
+      <li><a href="/2_test.debug.html?directRun=true">test/2_test.dart</a></li>
+      <li>
+        <a href="/sub/4_test.debug.html?directRun=true">test/sub/4_test.dart</a>
+      </li>
+    </ul>
+  </body>
+</html>
         '''),
       });
     });
