@@ -86,12 +86,13 @@ class SingleStepReader implements AssetReader {
   /// [InvalidInputException], this method will return `false` instead of
   /// throwing.
   FutureOr<bool> _isReadable(AssetId id, {bool catchInvalidInputs = false}) {
-    if (catchInvalidInputs) {
-      try {
-        _checkInvalidInput(id);
-      } on InvalidInputException {
+    try {
+      _checkInvalidInput(id);
+    } on InvalidInputException {
+      if (catchInvalidInputs) {
         return false;
       }
+      rethrow;
     }
 
     final node = _assetGraph.get(id);
