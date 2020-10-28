@@ -22,7 +22,8 @@ AssetId _customHtmlId(AssetId test) => test.changeExtension('.html');
 AssetId _debugHtmlId(AssetId test) => test.changeExtension('.debug.html');
 
 /// Returns the JS script path for the browser for [dartTest].
-String _jsScriptPath(AssetId dartTest) => '${p.url.basename(dartTest.path)}.js';
+String _jsScriptPath(AssetId dartTest) =>
+    '${p.url.basename(dartTest.path)}.browser_test.dart.js';
 
 /// Generates a `*.debug.html` for every file in `test/**/*_test.dart`.
 ///
@@ -98,9 +99,10 @@ class DebugIndexBuilder implements Builder {
     }
     final buffer = StringBuffer('    <ul>');
     for (final test in tests) {
-      final path =
-          p.url.joinAll(p.url.split(_debugHtmlId(test).path)..removeAt(0));
-      buffer.writeln('      <li><a href="/$path">${test.path}</a></li>');
+      final pathSegments = p.url.split(_debugHtmlId(test).path).skip(1);
+      final uri = Uri(
+          pathSegments: pathSegments, queryParameters: {'directRun': 'true'});
+      buffer.writeln('      <li><a href="/$uri">${test.path}</a></li>');
     }
     buffer.writeln('    </ul>');
     return buffer.toString();

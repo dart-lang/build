@@ -1,3 +1,11 @@
+## 1.3.0
+
+- Add support for running generated `.browser_test.dart` directly instead of
+  expecting the test runner with the query string `directRun=true`. It is no
+  longer necessary to create a build config which generates for `*_test.dart`
+  files in `build_web_compilers`, the default config generates for
+  `.browser_test.dart` files which are used by `debug.html`.
+
 ## 1.2.2
 
 - Allow package:build versions through `1.5.x`.
