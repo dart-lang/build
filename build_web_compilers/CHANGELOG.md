@@ -1,6 +1,6 @@
 ## 2.14.0
 
-- Strip stratch directory paths from a new metadata field `fullKernelUri`
+- Strip scratch directory paths from a new metadata field `fullKernelUri`.
 
 ## 2.13.0
 
