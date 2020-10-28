@@ -1,3 +1,8 @@
+## 1.10.4
+
+- Ensure that the generated build script is opted out of null safety, even if
+  the current package supports it.
+
 ## 1.10.3
 
 - Remove high sdk constraint, allow >=2.9.0.

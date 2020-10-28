@@ -1,3 +1,8 @@
+// Ensure that the build script itself is not opted in to null safety,
+// instead of taking the language version from the current package.
+//
+// @dart=2.9
+//
 // ignore_for_file: directives_ordering
 
 import 'package:build_runner_core/build_runner_core.dart' as _i1;

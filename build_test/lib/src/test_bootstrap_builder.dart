@@ -91,7 +91,11 @@ class TestBootstrapBuilder extends Builder {
           import "${p.url.basename(id.path)}" as test;
 
           void main() {
-            internalBootstrapBrowserTest(() => test.main);
+            if (Uri.base.queryParameters['directRun'] == 'true') {
+              test.main();
+            } else {
+              internalBootstrapBrowserTest(() => test.main);
+            }
           }
         ''');
     }
