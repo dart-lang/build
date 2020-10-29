@@ -8,12 +8,13 @@ to see examples or goal oriented docs you may want to look at the
 
 ## BuildConfig
 
-key                   | value                                                                      | default
---------------------- | -------------------------------------------------------------------------- | -------
-targets               | Map<String, [BuildTarget](#buildtarget)>                                   | a single target with the same name as the package
-builders              | Map<String, [BuilderDefinition](#builderdefinition)>                       | empty
-post_process_builders | Map<String, [PostProcessBuilderDefinition](#postprocessbuilderdefinition)> | empty
-global_options        | Map<String, [GlobalBuilderOptions](#globalBuilderOptions)>                 | empty
+key                      | value                                                                      | default
+------------------------ | -------------------------------------------------------------------------- | -------
+targets                  | Map<String, [BuildTarget](#buildtarget)>                                   | a single target with the same name as the package
+builders                 | Map<String, [BuilderDefinition](#builderdefinition)>                       | empty
+post_process_builders    | Map<String, [PostProcessBuilderDefinition](#postprocessbuilderdefinition)> | empty
+global_options           | Map<String, [GlobalBuilderOptions](#globalBuilderOptions)>                 | empty
+additional_public_assets | List<String>                                                               | empty
 
 ## BuildTarget
 

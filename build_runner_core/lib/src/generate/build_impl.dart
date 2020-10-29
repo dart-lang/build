@@ -31,6 +31,7 @@ import '../logging/human_readable_duration.dart';
 import '../logging/logging.dart';
 import '../package_graph/apply_builders.dart';
 import '../package_graph/package_graph.dart';
+import '../package_graph/target_graph.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../util/async.dart';
 import '../util/build_dirs.dart';
@@ -61,6 +62,7 @@ class BuildImpl {
 
   final List<BuildPhase> _buildPhases;
   final PackageGraph _packageGraph;
+  final TargetGraph _targetGraph;
   final AssetReader _reader;
   final Resolvers _resolvers;
   final ResourceManager _resourceManager;
@@ -75,6 +77,7 @@ class BuildImpl {
       this._buildPhases, this.finalizedReader)
       : buildScriptUpdates = buildDefinition.buildScriptUpdates,
         _packageGraph = buildDefinition.packageGraph,
+        _targetGraph = buildDefinition.targetGraph,
         _reader = options.enableLowResourcesMode
             ? buildDefinition.reader
             : CachingAssetReader(buildDefinition.reader),
@@ -117,7 +120,9 @@ class BuildImpl {
         buildDefinition.assetGraph,
         buildPhases.length,
         options.packageGraph.root.name,
-        _isReadableAfterBuildFactory(buildPhases));
+        _isReadableAfterBuildFactory(buildPhases),
+        _checkInvalidInputFactory(
+            buildDefinition.targetGraph, buildDefinition.packageGraph));
     var finalizedReader = FinalizedReader(
         singleStepReader,
         buildDefinition.assetGraph,
@@ -140,6 +145,24 @@ class BuildImpl {
   }
 }
 
+CheckInvalidInput _checkInvalidInputFactory(
+    TargetGraph targetGraph, PackageGraph packageGraph) {
+  return (AssetId id) {
+    final packageNode = packageGraph[id.package];
+
+    if (packageNode == null) {
+      throw PackageNotFoundException(id.package);
+    }
+
+    // The id is an invalid input if it's not part of the build.
+    if (!targetGraph.isVisibleInBuild(id, packageNode)) {
+      final allowed = targetGraph.validInputsFor(packageNode);
+
+      throw InvalidInputException(id, allowedGlobs: allowed);
+    }
+  };
+}
+
 /// Performs a single build and manages state that only lives for a single
 /// build.
 class _SingleBuild {
@@ -151,6 +174,8 @@ class _SingleBuild {
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
   final _lazyGlobs = <AssetId, Future<void>>{};
   final PackageGraph _packageGraph;
+  final TargetGraph _targetGraph;
+  final CheckInvalidInput _checkInvalidInput;
   final BuildPerformanceTracker _performanceTracker;
   final AssetReader _reader;
   final Resolvers _resolvers;
@@ -176,6 +201,9 @@ class _SingleBuild {
         _buildPhasePool = List(buildImpl._buildPhases.length),
         _environment = buildImpl._environment,
         _packageGraph = buildImpl._packageGraph,
+        _targetGraph = buildImpl._targetGraph,
+        _checkInvalidInput = _checkInvalidInputFactory(
+            buildImpl._targetGraph, buildImpl._packageGraph),
         _performanceTracker = buildImpl._trackPerformance
             ? BuildPerformanceTracker()
             : BuildPerformanceTracker.noOp(),
@@ -220,7 +248,7 @@ class _SingleBuild {
     await _resourceManager.disposeAll();
     result = await _environment.finalizeBuild(
         result,
-        FinalizedAssetsView(_assetGraph, optionalOutputTracker),
+        FinalizedAssetsView(_assetGraph, _packageGraph, optionalOutputTracker),
         _reader,
         _buildDirs);
     if (result.status == BuildStatus.success) {
@@ -343,12 +371,19 @@ class _SingleBuild {
       String package, int phaseNumber) async {
     var ids = <AssetId>{};
     var phase = _buildPhases[phaseNumber];
+    var packageNode = _packageGraph[package];
+
     await Future.wait(
         _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
       if (!shouldBuildForDirs(
           node.id, _buildPaths(_buildDirs), _buildFilters, phase)) {
         return;
       }
+
+      // Don't build for inputs that aren't visible. This can happen for
+      // placeholder nodes like `test/$test$` that are added to each package,
+      // since the test dir is not part of the build for non-root packages.
+      if (!_targetGraph.isVisibleInBuild(node.id, packageNode)) return;
 
       var input = _assetGraph.get(node.primaryInput);
       if (input is GeneratedAssetNode) {
@@ -455,8 +490,15 @@ class _SingleBuild {
 
         var wrappedWriter = AssetWriterSpy(_writer);
 
-        var wrappedReader = SingleStepReader(_reader, _assetGraph, phaseNumber,
-            input.package, _isReadableNode, _getUpdatedGlobNode, wrappedWriter);
+        var wrappedReader = SingleStepReader(
+            _reader,
+            _assetGraph,
+            phaseNumber,
+            input.package,
+            _isReadableNode,
+            _checkInvalidInput,
+            _getUpdatedGlobNode,
+            wrappedWriter);
 
         if (!await tracker.trackStage(
             'Setup', () => _buildShouldRun(builderOutputs, wrappedReader))) {
@@ -560,8 +602,15 @@ class _SingleBuild {
         'Inputs should be known in the static graph. Missing $input');
 
     var wrappedWriter = AssetWriterSpy(_writer);
-    var wrappedReader = SingleStepReader(_reader, _assetGraph, phaseNum,
-        input.package, _isReadableNode, null, wrappedWriter);
+    var wrappedReader = SingleStepReader(
+        _reader,
+        _assetGraph,
+        phaseNum,
+        input.package,
+        _isReadableNode,
+        _checkInvalidInput,
+        null,
+        wrappedWriter);
 
     if (!await _postProcessBuildShouldRun(anchorNode, wrappedReader)) {
       return <AssetId>[];

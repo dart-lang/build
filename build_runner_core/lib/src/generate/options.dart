@@ -19,20 +19,38 @@ import '../package_graph/target_graph.dart';
 import '../util/hash.dart';
 import 'exceptions.dart';
 
+/// The default list of files visible for non-root packages.
+///
+/// This is also the default list of files for targets in non-root packages when
+/// an explicit include is not provided.
+const List<String> defaultNonRootVisibleAssets = [
+  'CHANGELOG*',
+  'lib/**',
+  'bin/**',
+  'LICENSE*',
+  'pubspec.yaml',
+  'README*',
+];
+
 /// The default list of files to include when an explicit include is not
 /// provided.
+///
+/// This should be a superset of [defaultNonRootVisibleAssets].
 const List<String> defaultRootPackageSources = [
   'assets/**',
   'benchmark/**',
   'bin/**',
+  'CHANGELOG*',
   'example/**',
   'lib/**',
   'test/**',
   'tool/**',
   'web/**',
   'node/**',
+  'LICENSE*',
   'pubspec.yaml',
   'pubspec.lock',
+  'README*',
   r'$package$',
 ];
 

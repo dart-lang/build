@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../asset_graph/optional_output_tracker.dart';
+import '../package_graph/package_graph.dart';
 
 /// A lazily computed view of all the assets available after a build.
 ///
@@ -16,11 +17,13 @@ import '../asset_graph/optional_output_tracker.dart';
 /// throw a [StateError] if you attempt to use it once it has expired.
 class FinalizedAssetsView {
   final AssetGraph _assetGraph;
+  final PackageGraph _packageGraph;
   final OptionalOutputTracker _optionalOutputTracker;
 
   bool _expired = false;
 
-  FinalizedAssetsView(this._assetGraph, this._optionalOutputTracker);
+  FinalizedAssetsView(
+      this._assetGraph, this._packageGraph, this._optionalOutputTracker);
 
   List<AssetId> allAssets({String rootDir}) {
     if (_expired) {
@@ -29,7 +32,8 @@ class FinalizedAssetsView {
     }
     return _assetGraph.allNodes
         .map((node) {
-          if (_shouldSkipNode(node, rootDir, _optionalOutputTracker)) {
+          if (_shouldSkipNode(
+              node, rootDir, _packageGraph, _optionalOutputTracker)) {
             return null;
           }
           return node.id;
@@ -44,15 +48,18 @@ class FinalizedAssetsView {
   }
 }
 
-bool _shouldSkipNode(AssetNode node, String rootDir,
+bool _shouldSkipNode(AssetNode node, String rootDir, PackageGraph packageGraph,
     OptionalOutputTracker optionalOutputTracker) {
   if (!node.isReadable) return true;
   if (node.isDeleted) return true;
-  if (rootDir != null &&
-      !node.id.path.startsWith('lib/') &&
-      !p.isWithin(rootDir, node.id.path)) {
-    return true;
+
+  // Exclude non-lib assets if they're outside of the root directory or not from
+  // root package.
+  if (!node.id.path.startsWith('lib/')) {
+    if (rootDir != null && !p.isWithin(rootDir, node.id.path)) return true;
+    if (node.id.package != packageGraph.root.name) return true;
   }
+
   if (node is InternalAssetNode) return true;
   if (node is GeneratedAssetNode) {
     if (!node.wasOutput || node.isFailure || node.state != NodeState.upToDate) {

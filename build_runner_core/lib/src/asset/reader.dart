@@ -46,6 +46,10 @@ class Readability {
 typedef IsReadable = FutureOr<Readability> Function(
     AssetNode node, int phaseNum, AssetWriterSpy writtenAssets);
 
+/// Signature of a function throwing an [InvalidInputException] if the given
+/// asset [id] is an invalid input in a build.
+typedef CheckInvalidInput = void Function(AssetId id);
+
 /// An [AssetReader] with a lifetime equivalent to that of a single step in a
 /// build.
 ///
@@ -64,6 +68,7 @@ class SingleStepReader implements AssetReader {
   final String _primaryPackage;
   final AssetWriterSpy _writtenAssets;
   final IsReadable _isReadableNode;
+  final CheckInvalidInput _checkInvalidInput;
   final FutureOr<GlobAssetNode> Function(
       Glob glob, String package, int phaseNum) _getGlobNode;
 
@@ -71,12 +76,25 @@ class SingleStepReader implements AssetReader {
   final assetsRead = HashSet<AssetId>();
 
   SingleStepReader(this._delegate, this._assetGraph, this._phaseNumber,
-      this._primaryPackage, this._isReadableNode,
+      this._primaryPackage, this._isReadableNode, this._checkInvalidInput,
       [this._getGlobNode, this._writtenAssets]);
 
   /// Checks whether [id] can be read by this step - attempting to build the
   /// asset if necessary.
-  FutureOr<bool> _isReadable(AssetId id) {
+  ///
+  /// If [catchInvalidInputs] is set to true and [_checkInvalidInput] throws an
+  /// [InvalidInputException], this method will return `false` instead of
+  /// throwing.
+  FutureOr<bool> _isReadable(AssetId id, {bool catchInvalidInputs = false}) {
+    try {
+      _checkInvalidInput(id);
+    } on InvalidInputException {
+      if (catchInvalidInputs) {
+        return false;
+      }
+      rethrow;
+    }
+
     final node = _assetGraph.get(id);
     if (node == null) {
       assetsRead.add(id);
@@ -96,7 +114,8 @@ class SingleStepReader implements AssetReader {
 
   @override
   Future<bool> canRead(AssetId id) {
-    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
+    return toFuture(
+        doAfter(_isReadable(id, catchInvalidInputs: true), (bool isReadable) {
       if (!isReadable) return false;
       var node = _assetGraph.get(id);
       FutureOr<bool> _canRead() {

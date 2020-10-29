@@ -32,13 +32,39 @@ class InvalidOutputException implements Exception {
 }
 
 class InvalidInputException implements Exception {
+  /// The invalid asset that couldn't be read.
   final AssetId assetId;
 
-  InvalidInputException(this.assetId);
+  /// The list of readable globs in the package dependency.
+  ///
+  /// This includes public files like `lib/` by default, but a package can
+  /// choose to allow additional assets via a `build.yaml` file.
+  final List<String> allowedGlobs;
+
+  InvalidInputException(this.assetId, {this.allowedGlobs = const ['lib/**']});
 
   @override
-  String toString() => 'InvalidInputException: $assetId\n'
-      'For package dependencies, only files under `lib` may be used as inputs.';
+  String toString() {
+    final allowedBuffer = StringBuffer();
+
+    for (var i = 0; i < allowedGlobs.length; i++) {
+      if (i > 0) {
+        if (i == allowedGlobs.length - 1) {
+          allowedBuffer.write(' or ');
+        } else {
+          allowedBuffer.write(', ');
+        }
+      }
+
+      allowedBuffer.write(allowedGlobs[i]);
+    }
+
+    return 'InvalidInputException: $assetId\n'
+        'For this package, only assets matching $allowedBuffer can be used as '
+        'inputs. \n'
+        'A package can mark a file as public by including it in its '
+        '`additional_public_assets` in a build.yaml file.';
+  }
 }
 
 class BuildStepCompletedException implements Exception {

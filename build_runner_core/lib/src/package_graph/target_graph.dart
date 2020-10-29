@@ -9,21 +9,37 @@ import 'package:build_config/build_config.dart';
 import 'package:glob/glob.dart';
 
 import '../generate/input_matcher.dart';
+import '../generate/options.dart' show defaultNonRootVisibleAssets;
 import 'package_graph.dart';
 
 /// Like a [PackageGraph] but packages are further broken down into modules
 /// based on build config.
 class TargetGraph {
+  static final InputMatcher _defaultMatcherForNonRoot = InputMatcher(
+      const InputSet(),
+      defaultInclude: defaultNonRootVisibleAssets);
+
   /// All [TargetNode]s indexed by `"$packageName:$targetName"`.
   final Map<String, TargetNode> allModules;
 
   /// All [TargetNode]s by package name.
   final Map<String, List<TargetNode>> modulesByPackage;
 
+  /// All [InputMatcher]s matching public assets by package name.
+  ///
+  /// If the package is non-root, only assets matched by the [InputMatcher] are
+  /// included in the build.
+  final Map<String, InputMatcher> _publicAssetsByPackage;
+
   /// The [BuildConfig] of the root package.
   final BuildConfig rootPackageConfig;
 
-  TargetGraph._(this.allModules, this.modulesByPackage, this.rootPackageConfig);
+  TargetGraph._(
+    this.allModules,
+    this.modulesByPackage,
+    this._publicAssetsByPackage,
+    this.rootPackageConfig,
+  );
 
   /// Builds a [TargetGraph] from [packageGraph].
   ///
@@ -46,6 +62,7 @@ class TargetGraph {
     requiredRootSourcePaths ??= const [];
     overrideBuildConfig ??= const {};
     final modulesByKey = <String, TargetNode>{};
+    final publicAssetsByPackage = <String, InputMatcher>{};
     final modulesByPackage = <String, List<TargetNode>>{};
     BuildConfig rootPackageConfig;
     for (final package in packageGraph.allPackages.values) {
@@ -61,7 +78,12 @@ class TargetGraph {
           'lib/_internal/**.sum',
         ];
       } else {
-        defaultInclude = const ['lib/**'];
+        defaultInclude = [
+          ...defaultNonRootVisibleAssets,
+          ...?config.additionalPublicAssets
+        ];
+        publicAssetsByPackage[package.name] =
+            InputMatcher(const InputSet(), defaultInclude: defaultInclude);
       }
       final nodes = config.buildTargets.values.map((target) =>
           TargetNode(target, package, defaultInclude: defaultInclude));
@@ -84,12 +106,60 @@ class TargetGraph {
         modulesByPackage.putIfAbsent(node.target.package, () => []).add(node);
       }
     }
-    return TargetGraph._(modulesByKey, modulesByPackage, rootPackageConfig);
+    return TargetGraph._(
+      modulesByKey,
+      modulesByPackage,
+      publicAssetsByPackage,
+      rootPackageConfig,
+    );
   }
 
   /// Whether or not [id] is included in the sources of any target in the graph.
   bool anyMatchesAsset(AssetId id) =>
       modulesByPackage[id.package]?.any((t) => t.matchesSource(id)) ?? false;
+
+  /// Obtains a list of glob patterns describing all valid input assets defined
+  /// in the [package].
+  List<String> validInputsFor(PackageNode package) {
+    if (package.isRoot) {
+      // There are no restrictions for the root package
+      return ['**/*'];
+    } else {
+      // For a non-root package, valid inputs must be exposed explicitly. Note
+      // that we don't allow users to exclude inputs, so we can just return the
+      // including globs.
+      return [
+        for (final glob in _matcherForNonRoot(package).includeGlobs)
+          glob.pattern
+      ];
+    }
+  }
+
+  /// Whether the [id] is visible in a build.
+  ///
+  /// All assets in the root package are visible. For non-root packages, an
+  /// asset is visible if it's in a conceptually public folders of a Dart
+  /// package (like `lib/` or `bin/`), or if the enclosing package made that
+  /// asset public by including it in [BuildConfig.additionalPublicAssets].
+  ///
+  /// Note that an asset being visible does not imply that it's readable too.
+  /// For instance, an asset id can be visible in the build even if the
+  /// referenced asset doesn't exist. Assets that aren't part of any target
+  /// would also be visible without being readable.
+  bool isVisibleInBuild(AssetId id, PackageNode enclosingPackage) {
+    assert(id.package == enclosingPackage.name);
+
+    // All assets in the root package are included in the build
+    if (enclosingPackage.isRoot) return true;
+
+    // For other packages, the asset must be marked as public
+    return _matcherForNonRoot(enclosingPackage).matches(id);
+  }
+
+  InputMatcher _matcherForNonRoot(PackageNode node) {
+    assert(!node.isRoot);
+    return _publicAssetsByPackage[node.name] ?? _defaultMatcherForNonRoot;
+  }
 }
 
 class TargetNode {

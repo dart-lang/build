@@ -1,3 +1,10 @@
+## 1.5.1-dev
+
+- Expose a set of valid inputs in `InvalidInputException`.
+- `AssetReader` implementations are now expected to throw 
+  `InvalidInputException`s when reading invalid inputs.
+  The check has been removed from the build step implementation.
+
 ## 1.5.0
 - Allow the latest analyzer version `0.40.x`.
 - Added the `Future<CompilationUnit> compilationUnitFor(AssetId id)` api to the

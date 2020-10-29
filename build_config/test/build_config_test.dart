@@ -90,6 +90,8 @@ void main() {
           devOptions: const {'foo': 'global_dev'},
           releaseOptions: const {'foo': 'global_release'})
     });
+
+    expect(buildConfig.additionalPublicAssets, ['test/**']);
   });
 
   test('build.yaml can omit a targets section', () {
@@ -233,6 +235,8 @@ post_process_builders:
         foo: bar
       release_options:
         baz: bop
+additional_public_assets:
+  - "test/**"
 ''';
 
 var buildYamlNoTargets = '''

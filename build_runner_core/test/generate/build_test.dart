@@ -12,6 +12,8 @@ import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/generate/options.dart'
+    show defaultNonRootVisibleAssets;
 import 'package:build_runner_core/src/util/constants.dart';
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
@@ -454,6 +456,69 @@ void main() {
       });
     });
 
+    group('reading assets outside of the root package', () {
+      test('can read public non-lib assets', () async {
+        final packageGraph = buildPackageGraph({
+          rootPackage('a', path: 'a/'): ['b'],
+          package('b', path: 'a/b'): []
+        });
+
+        final builder = TestBuilder(
+          build: copyFrom(makeAssetId('b|test/foo.bar')),
+        );
+
+        await testBuilders(
+          [
+            apply('', [(_) => builder], toPackage('a'))
+          ],
+          {
+            'a|lib/a.foo': '',
+            'b|test/foo.bar': 'content',
+          },
+          overrideBuildConfig: {
+            'b': BuildConfig.parse(
+                'b', [], 'additional_public_assets: ["test/**"]')
+          },
+          packageGraph: packageGraph,
+          outputs: {r'$$a|lib/a.foo.copy': 'content'},
+        );
+      });
+
+      test('reading private assets throws InvalidInputException', () {
+        final packageGraph = buildPackageGraph({
+          rootPackage('a', path: 'a/'): ['b'],
+          package('b', path: 'a/b'): []
+        });
+
+        final builder = TestBuilder(
+          buildExtensions: const {
+            '.txt': ['.copy']
+          },
+          build: (step, _) {
+            final invalidInput = AssetId.parse('b|test/my_test.dart');
+
+            expect(step.canRead(invalidInput), completion(isFalse));
+            return expectLater(
+              () => step.readAsBytes(invalidInput),
+              throwsA(isA<InvalidInputException>().having((e) => e.allowedGlobs,
+                  'allowedGlobs', defaultNonRootVisibleAssets)),
+            );
+          },
+        );
+
+        return testBuilders(
+          [
+            apply('', [(_) => builder], toPackage('a'))
+          ],
+          {
+            'a|lib/foo.txt': "doesn't matter",
+          },
+          packageGraph: packageGraph,
+          outputs: {},
+        );
+      });
+    });
+
     test('skips builders which would output files in non-root packages',
         () async {
       final packageGraph = buildPackageGraph({
@@ -572,6 +637,11 @@ void main() {
     });
 
     test('can read files from external packages', () async {
+      var packageGraph = buildPackageGraph({
+        rootPackage('a'): ['b'],
+        package('b'): []
+      });
+
       var builders = [
         apply(
             '',
@@ -583,12 +653,14 @@ void main() {
             toRoot(),
             hideOutput: false)
       ];
-      await testBuilders(builders, {
-        'a|lib/a.txt': 'a',
-        'b|lib/b.txt': 'b'
-      }, outputs: {
-        'a|lib/a.txt.copy': 'a',
-      });
+      await testBuilders(
+        builders,
+        {'a|lib/a.txt': 'a', 'b|lib/b.txt': 'b'},
+        outputs: {
+          'a|lib/a.txt.copy': 'a',
+        },
+        packageGraph: packageGraph,
+      );
     });
 
     test('can glob files from packages', () async {
