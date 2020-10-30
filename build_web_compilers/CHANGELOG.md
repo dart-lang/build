@@ -1,3 +1,9 @@
+## 2.15.0
+
+- Add some warnings for manual dart2js args that should be configured using
+  explicit options, and add back dart2js argument logging which was
+  accidentally removed.
+
 ## 2.14.0
 
 - Strip scratch directory paths from a new metadata field `fullKernelUri`.
