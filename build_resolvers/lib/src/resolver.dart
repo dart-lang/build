@@ -435,14 +435,14 @@ FeatureSet _featureSet({List<String> enableExperiments}) {
   enableExperiments ??= [];
   if (enableExperiments.isNotEmpty &&
       sdkLanguageVersion > ExperimentStatus.currentVersion) {
-    throw StateError('''
+    log.warning('''
 Attempting to enable experiments `$enableExperiments`, but the current SDK
 language version does not match your `analyzer` package language version:
 
 Analyzer language version: ${ExperimentStatus.currentVersion}
 SDK language version: $sdkLanguageVersion
 
-In order to use experiments you will need to upgrade or downgrade your
+In order to use experiments you may need to upgrade or downgrade your
 `analyzer` package dependency such that its language version matches that of
 your current SDK, see https://github.com/dart-lang/build/issues/2685.
 
