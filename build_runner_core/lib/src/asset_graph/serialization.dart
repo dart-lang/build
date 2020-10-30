@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 24;
+const _version = 1;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -18,10 +18,10 @@ class _AssetGraphDeserializer {
 
   _AssetGraphDeserializer._(this._serializedGraph);
 
-  factory _AssetGraphDeserializer(List<int> bytes) {
+  factory _AssetGraphDeserializer(Uint8List bytes) {
     dynamic decoded;
     try {
-      decoded = jsonDecode(utf8.decode(bytes));
+      decoded = msgpack.deserialize(bytes);
     } on FormatException {
       throw AssetGraphCorruptedException();
     }
@@ -211,7 +211,7 @@ class _AssetGraphSerializer {
   _AssetGraphSerializer(this._graph);
 
   /// Perform the serialization, should only be called once.
-  List<int> serialize() {
+  Uint8List serialize() {
     var pathId = 0;
     // [path0, packageId0, path1, packageId1, ...]
     var assetPaths = <dynamic>[];
@@ -233,7 +233,7 @@ class _AssetGraphSerializer {
           .map((pkg, version) => MapEntry(pkg, version?.toString())),
       'enabledExperiments': _graph.enabledExperiments,
     };
-    return utf8.encode(json.encode(result));
+    return msgpack.serialize(result);
   }
 
   List _serializeNode(AssetNode node) {

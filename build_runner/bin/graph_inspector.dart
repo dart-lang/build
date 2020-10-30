@@ -30,7 +30,7 @@ Future<void> main(List<String> args) async {
 
   final argParser = ArgParser()
     ..addOption('graph-file',
-        abbr: 'g', help: 'Specify the asset_graph.json file to inspect.')
+        abbr: 'g', help: 'Specify the asset_graph.msgpack file to inspect.')
     ..addOption('build-script',
         abbr: 'b',
         help: 'Specify the build script to find the asset graph for.',

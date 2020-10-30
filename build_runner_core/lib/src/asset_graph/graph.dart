@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:build/build.dart';
 import 'package:build/experiments.dart' as experiments_zone;
@@ -13,6 +14,7 @@ import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
+import 'package:msgpack_dart/msgpack_dart.dart' as msgpack;
 import 'package:package_config/package_config.dart';
 import 'package:watcher/watcher.dart';
 
@@ -48,7 +50,8 @@ class AssetGraph {
 
   /// Deserializes this graph.
   factory AssetGraph.deserialize(List<int> serializedGraph) =>
-      _AssetGraphDeserializer(serializedGraph).deserialize();
+      _AssetGraphDeserializer(Uint8List.fromList(serializedGraph))
+          .deserialize();
 
   static Future<AssetGraph> build(
       List<BuildPhase> buildPhases,

@@ -231,7 +231,7 @@ a:file://fake/pkg/path
             decodedMatches('b'));
       });
 
-      test('rebuilds properly update asset_graph.json', () async {
+      test('rebuilds properly update asset_graph.msgpack', () async {
         var buildState = await startWatch([copyABuildApplication],
             {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'}, writer);
         var results = StreamQueue(buildState.buildResults);
