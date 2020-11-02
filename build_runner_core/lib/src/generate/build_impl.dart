@@ -286,7 +286,7 @@ class _SingleBuild {
       hungActionsHeartbeat.stop();
     });
 
-    runZoned(() async {
+    runZonedGuarded(() async {
       if (updates.isNotEmpty) {
         await _updateAssetGraph(updates);
       }
@@ -318,7 +318,7 @@ class _SingleBuild {
       }
 
       if (!done.isCompleted) done.complete(result);
-    }, onError: (Object e, StackTrace st) {
+    }, (e, st) {
       if (!done.isCompleted) {
         _logger.severe('Unhandled build failure!', e, st);
         done.complete(BuildResult(BuildStatus.failure, []));
