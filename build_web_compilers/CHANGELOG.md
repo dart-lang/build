@@ -1,3 +1,8 @@
+## 2.15.1
+
+- Fix DDC sound mode apps to load the sound mode sdk, and only require the
+  compiled sdk dependency that it will actually use.
+
 ## 2.15.0
 
 - Add some warnings for manual dart2js args that should be configured using
