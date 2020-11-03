@@ -460,9 +460,9 @@ class _SingleBuild {
 
   FutureOr<void> _ensureAssetIsBuilt(AssetNode node) {
     if (node is GeneratedAssetNode && node.state != NodeState.upToDate) {
-      return _runLazyPhaseForInput(node.phaseNumber, node.primaryInput);
+      return _runLazyPhaseForInput(node.phaseNumber, node.primaryInput)
+          .then((_) {});
     }
-    return null;
   }
 
   Future<Iterable<AssetId>> _runForInput(
