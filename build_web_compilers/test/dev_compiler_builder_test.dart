@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:build_test/build_test.dart';
 import 'package:build_web_compilers/build_web_compilers.dart';
@@ -24,15 +23,15 @@ void main() {
         addTearDown(listener.cancel);
         assets = {
           'b|lib/b.dart': '''
-        // @dart=2.10
+        // @dart=2.12
         final world = 'world';''',
           'a|lib/a.dart': r'''
-        // @dart=2.10
+        // @dart=2.12
         import 'package:b/b.dart';
         final hello = 'hello $world';
       ''',
           'a|web/index.dart': '''
-        // @dart=2.10
+        // @dart=2.12
         import "package:a/a.dart";
         void main() {
           print(hello);
@@ -41,20 +40,17 @@ void main() {
       ''',
         };
 
-        await withEnabledExperiments(() async {
-          // Set up all the other required inputs for this test.
-          await testBuilderAndCollectAssets(
-              const ModuleLibraryBuilder(), assets);
-          await testBuilderAndCollectAssets(
-              MetaModuleBuilder(ddcPlatform), assets);
-          await testBuilderAndCollectAssets(
-              MetaModuleCleanBuilder(ddcPlatform), assets);
-          await testBuilderAndCollectAssets(ModuleBuilder(ddcPlatform), assets);
-          await testBuilderAndCollectAssets(
-              ddcKernelBuilder(BuilderOptions({}),
-                  soundNullSafety: soundNullSafety),
-              assets);
-        }, ['non-nullable']);
+        // Set up all the other required inputs for this test.
+        await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
+        await testBuilderAndCollectAssets(
+            MetaModuleBuilder(ddcPlatform), assets);
+        await testBuilderAndCollectAssets(
+            MetaModuleCleanBuilder(ddcPlatform), assets);
+        await testBuilderAndCollectAssets(ModuleBuilder(ddcPlatform), assets);
+        await testBuilderAndCollectAssets(
+            ddcKernelBuilder(BuilderOptions({}),
+                soundNullSafety: soundNullSafety),
+            assets);
       });
 
       for (var trackUnusedInputs in [true, false]) {
@@ -79,18 +75,17 @@ void main() {
             'a|web/index${metadataExtension(soundNullSafety)}': isNotEmpty,
           };
           var reportedUnused = <AssetId, Iterable<AssetId>>{};
-          await withEnabledExperiments(() async {
-            await testBuilder(
-                DevCompilerBuilder(
-                    platform: ddcPlatform,
-                    useIncrementalCompiler: trackUnusedInputs,
-                    trackUnusedInputs: trackUnusedInputs,
-                    soundNullSafety: soundNullSafety),
-                assets,
-                outputs: expectedOutputs,
-                reportUnusedAssetsForInput: (input, unused) =>
-                    reportedUnused[input] = unused);
-          }, ['non-nullable']);
+
+          await testBuilder(
+              DevCompilerBuilder(
+                  platform: ddcPlatform,
+                  useIncrementalCompiler: trackUnusedInputs,
+                  trackUnusedInputs: trackUnusedInputs,
+                  soundNullSafety: soundNullSafety),
+              assets,
+              outputs: expectedOutputs,
+              reportUnusedAssetsForInput: (input, unused) =>
+                  reportedUnused[input] = unused);
 
           expect(
               reportedUnused[
