@@ -1,3 +1,5 @@
+## 0.9.9-dev
+
 ## 0.9.8
 
 * Add support for `allowSyntaxErrors` flag introduced in `package:build` version `1.4.0`.

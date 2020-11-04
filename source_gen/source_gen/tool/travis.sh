@@ -58,10 +58,6 @@ for PKG in ${PKGS}; do
       echo
       echo -e "\033[1mPKG: ${PKG}; TASK: ${TASK}\033[22m"
       case ${TASK} in
-      command)
-        echo 'pub run build_runner test -- -j 1'
-        pub run build_runner test -- -j 1 || EXIT_CODE=$?
-        ;;
       dartanalyzer_0)
         echo 'dartanalyzer --fatal-infos --fatal-warnings .'
         dartanalyzer --fatal-infos --fatal-warnings . || EXIT_CODE=$?
@@ -74,9 +70,13 @@ for PKG in ${PKGS}; do
         echo 'dartfmt -n --set-exit-if-changed .'
         dartfmt -n --set-exit-if-changed . || EXIT_CODE=$?
         ;;
-      test)
+      test_0)
         echo 'pub run test --run-skipped'
         pub run test --run-skipped || EXIT_CODE=$?
+        ;;
+      test_1)
+        echo 'pub run test'
+        pub run test || EXIT_CODE=$?
         ;;
       *)
         echo -e "\033[31mUnknown TASK '${TASK}' - TERMINATING JOB\033[0m"
