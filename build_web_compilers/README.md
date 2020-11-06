@@ -100,17 +100,6 @@ These may also be specified on the command line with a `--define` argument.
 webdev serve -- '--define=build_web_compilers:ddc=environment={"SOME_VAR":"changed"}'
 ```
 
-### Configuring the number of compiler processes used
-
-This package runs multiple compiler processes in order to speed up compilation.
-
-The amount of parallelism per task can be configured using the environment
-variable `BUILD_MAX_WORKERS_PER_TASK`.
-
-The "tasks" in this case refer to different types of compilation (ie: different
-compilers). There are least 3 different compilers which may be a part of any
-given build - `kernel`, `dartdevc`, and `dart2js`.
-
 ## Manual Usage
 
 If you are using a custom build script, you will need to add the following

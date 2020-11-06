@@ -279,3 +279,27 @@ A file may not be served or be present in the output of a build because:
 -   It may have been removed by a `PostProcessBuilder`. For example in release
     modes, by default, the `build_web_compilers` package enables a
     `dart_source_cleanup` builder that removes all `.dart` source files.
+
+## Configuring the number of compiler processes
+
+Some builders run multiple compiler processes in order to speed up compilation.
+
+The amount of parallelism per task can be configured using the environment
+variable `BUILD_MAX_WORKERS_PER_TASK`.
+
+The "tasks" in this case refer to different types of compilation (ie: different
+compilers). There are least 3 different compilers which may be a part of any
+given build - `kernel`, `dartdevc`, and `dart2js`.
+
+## How can I reduce the amount of memory used by the build process?
+
+By default most files in a typical build are cached in memory, but this can
+cause problems in memory constrained environments (such as CI systems).
+
+You can pass the `--low-resources-mode` to disable this file caching.
+
+We may add future optimizations for this mode as well, with the general
+principle being making the tradeoff of worse build times for less resource
+usage on the machine.
+
+See also [Configuring the number of compiler processes](#configuring-the-number-of-compiler-processes).
