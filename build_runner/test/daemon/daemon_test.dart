@@ -47,10 +47,10 @@ void main() {
         ],
       ),
       d.dir('test', [
-        d.file('hello_test.dart', '''
-import 'package:test/test.dart';
+        d.file('hello.dart', '''
 main() {
-  test('hello', () {});
+  // Don't actually use test package to speed up tests
+  print('hello');
 }'''),
       ]),
       d.dir('web', [
@@ -236,7 +236,7 @@ main() {
       var succeededResult = await client.buildResults.first;
       expect(succeededResult.results.first.status, BuildStatus.succeeded);
       var ddcContent = await File(p.join(d.sandbox, 'a', '.dart_tool', 'build',
-              'generated', 'a', 'web', 'main.unsound.ddc.js'))
+              'generated', 'a', 'web', 'main.sound.ddc.js'))
           .readAsString();
       expect(ddcContent, contains('goodbye world'));
     });
