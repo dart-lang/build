@@ -12,8 +12,6 @@
 /// details, and `build.yaml` for how these builders are configured by default.
 library source_gen.builder;
 
-import 'dart:async';
-
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;

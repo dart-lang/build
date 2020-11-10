@@ -3,8 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @TestOn('vm')
-import 'dart:async';
-
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:source_gen/builder.dart';
