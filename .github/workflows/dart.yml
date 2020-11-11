@@ -61,7 +61,7 @@ jobs:
           TRAVIS_OS_NAME: linux
         run: tool/travis.sh test_00
   job_005:
-    name: "OS: linux; SDK: dev; PKG: _test; TASKS: `pub run test --total-shards 2 --shard-index 1 --test-randomize-ordering-seed=random`"
+    name: "OS: linux; SDK: dev; PKG: _test; TASKS: `pub run test --total-shards 2 --shard-index 1 --test-randomize-ordering-seed=random -j 1`"
     runs-on: ubuntu-latest
     steps:
       - uses: cedx/setup-dart@v2
@@ -73,7 +73,7 @@ jobs:
           TRAVIS_OS_NAME: linux
         run: tool/travis.sh test_01
   job_006:
-    name: "OS: windows; SDK: dev; PKG: _test; TASKS: `pub run test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random`"
+    name: "OS: windows; SDK: dev; PKG: _test; TASKS: `pub run test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random -j 1`"
     runs-on: windows-latest
     steps:
       - uses: cedx/setup-dart@v2
