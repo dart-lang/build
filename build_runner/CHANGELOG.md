@@ -1,3 +1,9 @@
+## 1.10.5
+
+- Better handle the case where the package config file is deleted while
+  the watcher is running, by waiting for up to 1 second for it to be written
+  again before failing.
+
 ## 1.10.4
 
 - Ensure that the generated build script is opted out of null safety, even if

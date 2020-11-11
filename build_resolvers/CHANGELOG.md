@@ -1,3 +1,9 @@
+## 1.4.3
+
+- Change the error to a warning when enabling experiments with mismatched
+  analyzer/sdk versions since this will still work for experiments with release
+  versions (such as null safety).
+
 ## 1.4.2
 
 - Fix a bug around assets that appear missing to the analyzer even when they

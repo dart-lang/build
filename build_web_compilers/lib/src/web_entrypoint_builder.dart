@@ -143,7 +143,8 @@ class WebEntrypointBuilder implements Builder {
           await bootstrapDdc(buildStep,
               nativeNullAssertions: nativeNullAssertions,
               nullAssertions: nullAssertions,
-              requiredAssets: _ddcSdkResources,
+              requiredAssets:
+                  _ddcSdkResources(soundNullSafety: soundNullSafety),
               soundNullSafety: soundNullSafety);
         } on MissingModulesException catch (e) {
           log.severe('$e');
@@ -188,8 +189,8 @@ Future<bool> _isAppEntryPoint(AssetId dartId, AssetReader reader) async {
 
 /// Files copied from the SDK that are required at runtime to run a DDC
 /// application.
-final _ddcSdkResources = [
-  AssetId('build_web_compilers', 'lib/src/dev_compiler/dart_sdk.js'),
-  AssetId('build_web_compilers', 'lib/src/dev_compiler/dart_sdk.sound.js'),
-  AssetId('build_web_compilers', 'lib/src/dev_compiler/require.js'),
-];
+List<AssetId> _ddcSdkResources({@required bool soundNullSafety}) => [
+      AssetId('build_web_compilers',
+          'lib/src/dev_compiler/dart_sdk${soundNullSafety ? '.sound' : ''}.js'),
+      AssetId('build_web_compilers', 'lib/src/dev_compiler/require.js')
+    ];

@@ -1,8 +1,6 @@
 // Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-import 'dart:async';
-
 import 'package:logging/logging.dart';
 
 import '../analyzer/resolver.dart';
@@ -34,7 +32,7 @@ Future<void> runBuilder(Builder builder, Iterable<AssetId> inputs,
     AssetReader reader, AssetWriter writer, Resolvers resolvers,
     {Logger logger,
     ResourceManager resourceManager,
-    String rootPackage,
+    @Deprecated('The rootPackage argument is unused') String rootPackage,
     StageTracker stageTracker = NoOpStageTracker.instance,
     void Function(AssetId input, Iterable<AssetId> assets)
         reportUnusedAssetsForInput}) async {
@@ -45,8 +43,8 @@ Future<void> runBuilder(Builder builder, Iterable<AssetId> inputs,
   Future<void> buildForInput(AssetId input) async {
     var outputs = expectedOutputs(builder, input);
     if (outputs.isEmpty) return;
-    var buildStep = BuildStepImpl(input, outputs, reader, writer,
-        rootPackage ?? input.package, resolvers, resourceManager,
+    var buildStep = BuildStepImpl(
+        input, outputs, reader, writer, resolvers, resourceManager,
         stageTracker: stageTracker,
         reportUnusedAssets: reportUnusedAssetsForInput == null
             ? null

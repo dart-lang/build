@@ -229,31 +229,31 @@ jobs:
       env: PKGS="_test_null_safety"
       script: tool/travis.sh command_2 command_3
     - stage: e2e_test
-      name: "SDK: dev; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random`"
+      name: "SDK: dev; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
       dart: dev
       os: linux
       env: PKGS="build_runner"
       script: tool/travis.sh test_09
     - stage: e2e_test
-      name: "SDK: dev; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random`"
+      name: "SDK: dev; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
       dart: dev
       os: linux
       env: PKGS="build_runner"
       script: tool/travis.sh test_10
     - stage: e2e_test
-      name: "SDK: dev; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random`"
+      name: "SDK: dev; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
       dart: dev
       os: linux
       env: PKGS="build_runner"
       script: tool/travis.sh test_11
     - stage: e2e_test
-      name: "SDK: dev; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random`"
+      name: "SDK: dev; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
       dart: dev
       os: linux
       env: PKGS="build_runner"
       script: tool/travis.sh test_12
     - stage: e2e_test
-      name: "SDK: dev; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random`"
+      name: "SDK: dev; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
       dart: dev
       os: linux
       env: PKGS="build_runner"

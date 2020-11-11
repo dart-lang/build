@@ -165,6 +165,7 @@ Future<String> _statusOf(Process daemon) async {
 
 Future<Process> _runDaemon(var workspace, {int timeout = 30}) async {
   await d.file('test.dart', '''
+    // @dart=2.9
     import 'package:build_daemon/daemon.dart';
     import 'package:build_daemon/daemon_builder.dart';
     import 'package:build_daemon/client.dart';

@@ -1,4 +1,7 @@
-## 6.0.4-dev
+## 6.1.0-dev
+
+- Require the latest build version (1.5.1).
+- Support the `additional_public_assets` option in build configurations.
 
 ## 6.0.3
 

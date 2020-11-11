@@ -51,9 +51,6 @@ class BuildStepImpl implements BuildStep {
   /// Used internally for writing files.
   final AssetWriter _writer;
 
-  /// The current root package, used for input/output validation.
-  final String _rootPackage;
-
   final ResourceManager _resourceManager;
 
   bool _isComplete = false;
@@ -61,7 +58,7 @@ class BuildStepImpl implements BuildStep {
   final void Function(Iterable<AssetId>) _reportUnusedAssets;
 
   BuildStepImpl(this.inputId, Iterable<AssetId> expectedOutputs, this._reader,
-      this._writer, this._rootPackage, this._resolvers, this._resourceManager,
+      this._writer, this._resolvers, this._resourceManager,
       {StageTracker stageTracker,
       void Function(Iterable<AssetId>) reportUnusedAssets})
       : _expectedOutputs = expectedOutputs.toSet(),
@@ -79,7 +76,6 @@ class BuildStepImpl implements BuildStep {
   @override
   Future<bool> canRead(AssetId id) {
     if (_isComplete) throw BuildStepCompletedException();
-    _checkInput(id);
     return _reader.canRead(id);
   }
 
@@ -92,14 +88,12 @@ class BuildStepImpl implements BuildStep {
   @override
   Future<List<int>> readAsBytes(AssetId id) {
     if (_isComplete) throw BuildStepCompletedException();
-    _checkInput(id);
     return _reader.readAsBytes(id);
   }
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
     if (_isComplete) throw BuildStepCompletedException();
-    _checkInput(id);
     return _reader.readAsString(id, encoding: encoding);
   }
 
@@ -108,7 +102,7 @@ class BuildStepImpl implements BuildStep {
     if (_isComplete) throw BuildStepCompletedException();
     if (_reader is MultiPackageAssetReader) {
       return (_reader as MultiPackageAssetReader)
-          .findAssets(glob, package: inputId?.package ?? _rootPackage);
+          .findAssets(glob, package: inputId.package);
     } else {
       return _reader.findAssets(glob);
     }
@@ -138,7 +132,6 @@ class BuildStepImpl implements BuildStep {
   @override
   Future<Digest> digest(AssetId id) {
     if (_isComplete) throw BuildStepCompletedException();
-    _checkInput(id);
     return _reader.digest(id);
   }
 
@@ -160,14 +153,6 @@ class BuildStepImpl implements BuildStep {
     _isComplete = true;
     await Future.wait(_writeResults.map(Result.release));
     (await _resolver)?.release();
-  }
-
-  /// Checks that [id] is a valid input, and throws an [InvalidInputException]
-  /// if its not.
-  void _checkInput(AssetId id) {
-    if (id.package != _rootPackage && !id.path.startsWith('lib/')) {
-      throw InvalidInputException(id);
-    }
   }
 
   /// Checks that [id] is an expected output, and throws an

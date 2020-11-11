@@ -269,7 +269,10 @@ class WatchImpl implements BuildState {
                 : originalRootPackageConfigDigest;
             assert(digest != null);
             // Kill future builds if the root packages file changes.
-            return watcherEnvironment.reader.readAsBytes(id).then((bytes) {
+            //
+            // We retry the reads for a little bit to handle the case where a
+            // user runs `pub get` and it hasn't been re-written yet.
+            return _readOnceExists(id, watcherEnvironment.reader).then((bytes) {
               if (md5.convert(bytes) != digest) {
                 _terminateCompleter.complete();
                 _logger
@@ -365,4 +368,21 @@ class WatchImpl implements BuildState {
       id.package == packageGraph.root.name &&
       id.path.contains(_packageBuildYamlRegexp);
   final _packageBuildYamlRegexp = RegExp(r'^[a-z0-9_]+\.build\.yaml$');
+}
+
+/// Reads [id] using [reader], waiting for it to exist for up to 1 second.
+///
+/// If it still doesn't exist after 1 second then throws an
+/// [AssetNotFoundException].
+Future<List<int>> _readOnceExists(AssetId id, AssetReader reader) async {
+  var watch = Stopwatch()..start();
+  var tryAgain = true;
+  while (tryAgain) {
+    if (await reader.canRead(id)) {
+      return reader.readAsBytes(id);
+    }
+    tryAgain = watch.elapsedMilliseconds < 1000;
+    await Future.delayed(Duration(milliseconds: 100));
+  }
+  throw AssetNotFoundException(id);
 }

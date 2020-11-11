@@ -67,7 +67,7 @@ Future<void> _bootstrapDart2Js(
           .join('\n');
       log.warning('''
 Skipping compiling ${buildStep.inputId} with dart2js because some of its
-transitive libraries have sdk dependencies that not supported on this platform:
+transitive libraries have sdk dependencies that are not supported on this platform:
 
 $librariesString
 
@@ -88,8 +88,11 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
             ? 'packages/${dartUri.path}'
             : dartUri.path.substring(1)) +
         jsEntrypointExtension;
+    var librariesSpec = p.joinAll([sdkDir, 'lib', 'libraries.json']);
+    _validateUserArgs(dart2JsArgs);
     args = dart2JsArgs.toList()
       ..addAll([
+        '--libraries-spec=$librariesSpec',
         '--packages=$multiRootScheme:///.dart_tool/package_config.json',
         '--multi-root-scheme=$multiRootScheme',
         '--multi-root=${scratchSpace.tempDir.uri.toFilePath()}',
@@ -103,12 +106,12 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
       ]);
   }
 
-  var librariesSpec = p.joinAll([sdkDir, 'lib', 'libraries.json']);
+  log.info('Running dart2js with ${args.join(' ')}\n');
   var result = await Process.run(
       p.join(sdkDir, 'bin', 'dart'),
       [
+        ..._dart2jsVmArgs,
         p.join(sdkDir, 'bin', 'snapshots', 'dart2js.dart.snapshot'),
-        '--libraries-spec=$librariesSpec',
         ...args,
       ],
       workingDirectory: scratchSpace.tempDir.path);
@@ -162,3 +165,37 @@ Future<void> _copyIfExists(
 }
 
 final _resourcePool = Pool(maxWorkersPerTask);
+
+const _dart2jsVmArgsEnvVar = 'BUILD_DART2JS_VM_ARGS';
+final _dart2jsVmArgs = () {
+  var env = Platform.environment[_dart2jsVmArgsEnvVar];
+  return env?.split(' ') ?? <String>[];
+}();
+
+/// Validates that user supplied dart2js args don't overlap with ones that we
+/// want you to configure in a different way.
+void _validateUserArgs(List<String> args) {
+  for (var arg in args) {
+    if (arg.endsWith('sound-null-safety')) {
+      log.warning(
+          'Detected a manual sound null safety dart2js argument `$arg`, '
+          'this should be configured using the `sound_null_safety` option on '
+          'the build_web_compilers:entrypoint builder instead.');
+    } else if (arg.endsWith('native-null-assertions')) {
+      log.warning(
+          'Detected a manual native null assertions dart2js argument `$arg`, '
+          'this should be configured using the `native_null_assertions` '
+          'option on the build_web_compilers:entrypoint builder instead.');
+    } else if (arg.endsWith('null-assertions')) {
+      log.warning(
+          'Detected a manual null assertions dart2js argument `$arg`, this '
+          'should be configured using the `null_assertions` option on the '
+          'build_web_compilers:entrypoint builder instead.');
+    } else if (arg.startsWith('--enable-experiment')) {
+      log.warning(
+          'Detected a manual enable experiment dart2js argument `$arg`, '
+          'this should be enabled on the command line instead, for example: '
+          '`pub run build_runner --enable-experiment=<experiment> <command>`.');
+    }
+  }
+}
