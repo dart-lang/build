@@ -138,7 +138,7 @@ void main() {
       'web/sub/main.dart.js',
       '--define',
       'build_web_compilers|ddc=environment={"message": "goodbye"}',
-    ]);
+    ], ensureCleanBuild: true);
 
     addTearDown(() async {
       await stopServer();
