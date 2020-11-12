@@ -35,7 +35,8 @@ class FinalizedReader implements AssetReader {
   Future<UnreadableReason> unreadableReason(AssetId id) async {
     if (!_assetGraph.contains(id)) return UnreadableReason.notFound;
     var node = _assetGraph.get(id);
-    if (!_optionalOutputTracker.isRequired(node.id)) {
+    if (_optionalOutputTracker != null &&
+        !_optionalOutputTracker.isRequired(node.id)) {
       return UnreadableReason.notOutput;
     }
     if (node.isDeleted) return UnreadableReason.deleted;
