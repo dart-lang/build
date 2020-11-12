@@ -220,6 +220,7 @@ main() {
       await d.dir('a', [
         d.dir('web', [
           d.file('main.dart', '''
+// @dart=2.12
 main() {
   print('goodbye world');
 }'''),
