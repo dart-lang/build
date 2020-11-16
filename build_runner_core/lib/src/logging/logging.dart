@@ -17,7 +17,7 @@ final _logSuffix = '\n';
 Future<T> logTimedAsync<T>(
   Logger logger,
   String description,
-  Future<T> action(), {
+  Future<T> Function() action, {
   Level level = Level.INFO,
 }) async {
   final watch = Stopwatch()..start();
@@ -35,7 +35,7 @@ Future<T> logTimedAsync<T>(
 T logTimedSync<T>(
   Logger logger,
   String description,
-  T action(), {
+  T Function() action, {
   Level level = Level.INFO,
 }) {
   final watch = Stopwatch()..start();

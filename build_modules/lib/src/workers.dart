@@ -41,7 +41,7 @@ final int _defaultMaxWorkers = min((Platform.numberOfProcessors / 2).ceil(), 4);
 
 const _maxWorkersEnvVar = 'BUILD_MAX_WORKERS_PER_TASK';
 
-final int _maxWorkersPerTask = () {
+final int maxWorkersPerTask = () {
   var toParse =
       Platform.environment[_maxWorkersEnvVar] ?? '$_defaultMaxWorkers';
   var parsed = int.tryParse(toParse);
@@ -62,12 +62,11 @@ BazelWorkerDriver get _dartdevkDriver {
           p.join(sdkDir, 'bin', 'dart'),
           [
             p.join(sdkDir, 'bin', 'snapshots', 'dartdevc.dart.snapshot'),
-            '--kernel',
             '--persistent_worker'
           ],
           mode: _processMode,
           workingDirectory: scratchSpace.tempDir.path),
-      maxWorkers: _maxWorkersPerTask);
+      maxWorkers: maxWorkersPerTask);
 }
 
 BazelWorkerDriver __dartdevkDriver;
@@ -93,7 +92,7 @@ BazelWorkerDriver get _frontendDriver {
           ],
           mode: _processMode,
           workingDirectory: scratchSpace.tempDir.path),
-      maxWorkers: _maxWorkersPerTask);
+      maxWorkers: maxWorkersPerTask);
 }
 
 BazelWorkerDriver __frontendDriver;
@@ -107,6 +106,12 @@ final frontendDriverResource =
   __frontendDriver = null;
 });
 
+const _dart2jsVmArgsEnvVar = 'BUILD_DART2JS_VM_ARGS';
+final _dart2jsVmArgs = () {
+  var env = Platform.environment[_dart2jsVmArgsEnvVar];
+  return env?.split(' ') ?? <String>[];
+}();
+
 /// Manages a shared set of persistent dart2js workers.
 Dart2JsBatchWorkerPool get _dart2jsWorkerPool {
   _dart2jsWorkersAreDoneCompleter ??= Completer<void>();
@@ -114,6 +119,7 @@ Dart2JsBatchWorkerPool get _dart2jsWorkerPool {
   return __dart2jsWorkerPool ??= Dart2JsBatchWorkerPool(() => Process.start(
       p.join(sdkDir, 'bin', 'dart'),
       [
+        ..._dart2jsVmArgs,
         p.join(sdkDir, 'bin', 'snapshots', 'dart2js.dart.snapshot'),
         '--libraries-spec=$librariesSpec',
         '--batch',
@@ -125,6 +131,7 @@ Dart2JsBatchWorkerPool get _dart2jsWorkerPool {
 Dart2JsBatchWorkerPool __dart2jsWorkerPool;
 
 /// Resource for fetching the current [Dart2JsBatchWorkerPool] for dart2js.
+@Deprecated('Will be removed in build_modules version 3.x, no longer used')
 final dart2JsWorkerResource = Resource<Dart2JsBatchWorkerPool>(
     () => _dart2jsWorkerPool, beforeExit: () async {
   await _dart2jsWorkerPool.terminateWorkers();
@@ -161,7 +168,7 @@ class Dart2JsBatchWorkerPool {
       while (_workQueue.isNotEmpty) {
         _Dart2JsWorker worker;
         if (_availableWorkers.isEmpty &&
-            _allWorkers.length < _maxWorkersPerTask) {
+            _allWorkers.length < maxWorkersPerTask) {
           worker = _Dart2JsWorker(_spawnWorker);
           _allWorkers.add(worker);
         }
@@ -231,8 +238,7 @@ class _Dart2JsWorker {
         _jobsSinceLastRestartCount = 0;
         __worker ??= await _spawnWorker();
         _spawningWorker = null;
-        // exitCode can be null: https://github.com/dart-lang/sdk/issues/35874
-        unawaited(__worker.exitCode?.then((_) {
+        unawaited(_workerStdoutLines.drain().whenComplete(() {
           __worker = null;
           __workerStdoutLines = null;
           __workerStderrLines = null;
@@ -283,7 +289,7 @@ class _Dart2JsWorker {
       });
 
       log.info('Running dart2js with ${job.args.join(' ')}\n');
-      worker.stdin.writeln(job.args.join(' '));
+      worker.stdin.writeln(job.args.map(_prepareArg).join(' '));
 
       Dart2JsResult result;
       try {
@@ -291,7 +297,7 @@ class _Dart2JsWorker {
         job.resultCompleter.complete(result);
         succeeded = true;
       } catch (e) {
-        log.warning('Dart2Js failure: $e');
+        log.warning('Dart2Js failure: $e\n$output');
         succeeded = false;
         if (tryCount >= _retryCountMax) {
           job.resultCompleter.complete(_currentJobResult.future);
@@ -310,6 +316,7 @@ class _Dart2JsWorker {
 
   Future<void> terminate() async {
     var worker = __worker ?? await _spawningWorker;
+    var oldStdout = __workerStdoutLines;
     __worker = null;
     __workerStdoutLines = null;
     __workerStderrLines = null;
@@ -317,9 +324,13 @@ class _Dart2JsWorker {
       worker.kill();
       await worker.stdin.close();
     }
-    await worker?.exitCode;
+    await oldStdout?.drain();
   }
 }
+
+/// Wraps [argument] in double quotes and escapes any double quotes it contains
+/// with `\`.
+String _prepareArg(String argument) => '"${argument.replaceAll('"', r'\"')}"';
 
 /// A single dart2js job, consisting of [args] and a [result].
 class _Dart2JsJob {

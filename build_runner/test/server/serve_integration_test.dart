@@ -39,7 +39,20 @@ void main() {
       ..cacheStringAsset(
           AssetId('example', '.packages'),
           '# Fake packages file\n'
-          'example:file://fake/pkg/path');
+          'example:file://fake/pkg/path')
+      ..cacheStringAsset(
+          makeAssetId('example|.dart_tool/package_config.json'),
+          jsonEncode({
+            'configVersion': 2,
+            'packages': [
+              {
+                'name': 'example',
+                'rootUri': 'file://fake/pkg/path',
+                'packageUri': 'lib/'
+              },
+            ],
+          }));
+
     terminateController = StreamController();
     final server = await watch_impl.watch(
       [applyToRoot(const UppercaseBuilder())],
@@ -89,7 +102,7 @@ void main() {
   test('should serve newly added files', () async {
     final getNew = Uri.parse('http://localhost/new.txt');
     reader.cacheStringAsset(AssetId('example', 'web/new.txt'), 'New');
-    await Future.value();
+    await Future<void>.value();
     FakeWatcher.notifyWatchers(
       WatchEvent(ChangeType.ADD, '$path/web/new.txt'),
     );
@@ -101,7 +114,7 @@ void main() {
   test('should serve built newly added files', () async {
     final getNew = Uri.parse('http://localhost/new.g.txt');
     reader.cacheStringAsset(AssetId('example', 'web/new.txt'), 'New');
-    await Future.value();
+    await Future<void>.value();
     FakeWatcher.notifyWatchers(
       WatchEvent(ChangeType.ADD, '$path/web/new.txt'),
     );
@@ -111,25 +124,23 @@ void main() {
   });
 
   group(r'/$graph', () {
-    FutureOr<Response> getResponse(String path) =>
+    FutureOr<Response> requestGraphPath(String path) =>
         handler(Request('GET', Uri.parse('http://localhost/\$graph$path')));
 
     for (var slashOrNot in ['', '/']) {
       test('/\$graph$slashOrNot should (try to) send the HTML page', () async {
-        try {
-          await getResponse(slashOrNot);
-          fail('Assets are not wired up. Expecting this to throw.');
-        } catch (e) {
-          expect(e, TypeMatcher<AssetNotFoundException>());
-          expect((e as AssetNotFoundException).assetId,
-              AssetId.parse('build_runner|lib/src/server/graph_viz.html'));
-        }
+        expect(
+            requestGraphPath(slashOrNot),
+            throwsA(isA<AssetNotFoundException>().having(
+                (e) => e.assetId,
+                'assetId',
+                AssetId.parse('build_runner|lib/src/server/graph_viz.html'))));
       });
     }
 
     void test404(String testName, String path, String expected) {
       test(testName, () async {
-        var response = await getResponse(path);
+        var response = await requestGraphPath(path);
 
         expect(response.statusCode, 404);
         expect(await response.readAsString(), expected);
@@ -157,7 +168,7 @@ void main() {
 
     void testSuccess(String testName, String path, String expectedId) {
       test(testName, () async {
-        var response = await getResponse(path);
+        var response = await requestGraphPath(path);
 
         var output = await response.readAsString();
         expect(response.statusCode, 200, reason: output);

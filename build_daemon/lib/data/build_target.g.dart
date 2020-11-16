@@ -19,7 +19,7 @@ class _$DefaultBuildTargetSerializer
   final String wireName = 'DefaultBuildTarget';
 
   @override
-  Iterable serialize(Serializers serializers, DefaultBuildTarget object,
+  Iterable<Object> serialize(Serializers serializers, DefaultBuildTarget object,
       {FullType specifiedType = FullType.unspecified}) {
     final result = <Object>[
       'blackListPatterns',
@@ -36,12 +36,19 @@ class _$DefaultBuildTargetSerializer
         ..add(serializers.serialize(object.outputLocation,
             specifiedType: const FullType(OutputLocation)));
     }
-
+    if (object.buildFilters != null) {
+      result
+        ..add('buildFilters')
+        ..add(serializers.serialize(object.buildFilters,
+            specifiedType:
+                const FullType(BuiltSet, const [const FullType(String)])));
+    }
     return result;
   }
 
   @override
-  DefaultBuildTarget deserialize(Serializers serializers, Iterable serialized,
+  DefaultBuildTarget deserialize(
+      Serializers serializers, Iterable<Object> serialized,
       {FullType specifiedType = FullType.unspecified}) {
     final result = new DefaultBuildTargetBuilder();
 
@@ -55,11 +62,17 @@ class _$DefaultBuildTargetSerializer
           result.blackListPatterns.replace(serializers.deserialize(value,
                   specifiedType:
                       const FullType(BuiltSet, const [const FullType(RegExp)]))
-              as BuiltSet);
+              as BuiltSet<dynamic>);
           break;
         case 'outputLocation':
           result.outputLocation.replace(serializers.deserialize(value,
               specifiedType: const FullType(OutputLocation)) as OutputLocation);
+          break;
+        case 'buildFilters':
+          result.buildFilters.replace(serializers.deserialize(value,
+                  specifiedType:
+                      const FullType(BuiltSet, const [const FullType(String)]))
+              as BuiltSet<dynamic>);
           break;
         case 'target':
           result.target = serializers.deserialize(value,
@@ -80,7 +93,7 @@ class _$OutputLocationSerializer
   final String wireName = 'OutputLocation';
 
   @override
-  Iterable serialize(Serializers serializers, OutputLocation object,
+  Iterable<Object> serialize(Serializers serializers, OutputLocation object,
       {FullType specifiedType = FullType.unspecified}) {
     final result = <Object>[
       'output',
@@ -97,7 +110,8 @@ class _$OutputLocationSerializer
   }
 
   @override
-  OutputLocation deserialize(Serializers serializers, Iterable serialized,
+  OutputLocation deserialize(
+      Serializers serializers, Iterable<Object> serialized,
       {FullType specifiedType = FullType.unspecified}) {
     final result = new OutputLocationBuilder();
 
@@ -132,6 +146,8 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
   @override
   final OutputLocation outputLocation;
   @override
+  final BuiltSet<String> buildFilters;
+  @override
   final String target;
 
   factory _$DefaultBuildTarget(
@@ -139,7 +155,10 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
       (new DefaultBuildTargetBuilder()..update(updates)).build();
 
   _$DefaultBuildTarget._(
-      {this.blackListPatterns, this.outputLocation, this.target})
+      {this.blackListPatterns,
+      this.outputLocation,
+      this.buildFilters,
+      this.target})
       : super._() {
     if (blackListPatterns == null) {
       throw new BuiltValueNullFieldError(
@@ -165,13 +184,15 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
     return other is DefaultBuildTarget &&
         blackListPatterns == other.blackListPatterns &&
         outputLocation == other.outputLocation &&
+        buildFilters == other.buildFilters &&
         target == other.target;
   }
 
   @override
   int get hashCode {
     return $jf($jc(
-        $jc($jc(0, blackListPatterns.hashCode), outputLocation.hashCode),
+        $jc($jc($jc(0, blackListPatterns.hashCode), outputLocation.hashCode),
+            buildFilters.hashCode),
         target.hashCode));
   }
 
@@ -180,6 +201,7 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
     return (newBuiltValueToStringHelper('DefaultBuildTarget')
           ..add('blackListPatterns', blackListPatterns)
           ..add('outputLocation', outputLocation)
+          ..add('buildFilters', buildFilters)
           ..add('target', target))
         .toString();
   }
@@ -201,6 +223,12 @@ class DefaultBuildTargetBuilder
   set outputLocation(OutputLocationBuilder outputLocation) =>
       _$this._outputLocation = outputLocation;
 
+  SetBuilder<String> _buildFilters;
+  SetBuilder<String> get buildFilters =>
+      _$this._buildFilters ??= new SetBuilder<String>();
+  set buildFilters(SetBuilder<String> buildFilters) =>
+      _$this._buildFilters = buildFilters;
+
   String _target;
   String get target => _$this._target;
   set target(String target) => _$this._target = target;
@@ -211,6 +239,7 @@ class DefaultBuildTargetBuilder
     if (_$v != null) {
       _blackListPatterns = _$v.blackListPatterns?.toBuilder();
       _outputLocation = _$v.outputLocation?.toBuilder();
+      _buildFilters = _$v.buildFilters?.toBuilder();
       _target = _$v.target;
       _$v = null;
     }
@@ -238,6 +267,7 @@ class DefaultBuildTargetBuilder
           new _$DefaultBuildTarget._(
               blackListPatterns: blackListPatterns.build(),
               outputLocation: _outputLocation?.build(),
+              buildFilters: _buildFilters?.build(),
               target: target);
     } catch (_) {
       String _$failedField;
@@ -246,6 +276,8 @@ class DefaultBuildTargetBuilder
         blackListPatterns.build();
         _$failedField = 'outputLocation';
         _outputLocation?.build();
+        _$failedField = 'buildFilters';
+        _buildFilters?.build();
       } catch (e) {
         throw new BuiltValueNestedFieldError(
             'DefaultBuildTarget', _$failedField, e.toString());

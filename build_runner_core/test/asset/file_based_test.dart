@@ -12,11 +12,11 @@ import 'package:build_runner_core/build_runner_core.dart';
 
 import 'package:_test_common/common.dart';
 
-final PackageGraph packageGraph =
-    PackageGraph.forPath('test/fixtures/basic_pkg');
-final String newLine = Platform.isWindows ? '\r\n' : '\n';
+final newLine = Platform.isWindows ? '\r\n' : '\n';
 
-void main() {
+void main() async {
+  final packageGraph = await PackageGraph.forPath('test/fixtures/basic_pkg');
+
   group('FileBasedAssetReader', () {
     final reader = FileBasedAssetReader(packageGraph);
 
@@ -102,8 +102,8 @@ void main() {
 
     test('can read from the SDK', () async {
       expect(
-          await reader
-              .canRead(makeAssetId(r'$sdk|lib/dev_compiler/amd/dart_sdk.js')),
+          await reader.canRead(
+              makeAssetId(r'$sdk|lib/dev_compiler/kernel/amd/dart_sdk.js')),
           true);
     });
   });

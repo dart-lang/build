@@ -24,9 +24,10 @@ class BuildCommandRunner extends CommandRunner<int> {
 
   final List<BuilderApplication> builderApplications;
 
-  final packageGraph = PackageGraph.forThisPackage();
+  final PackageGraph packageGraph;
 
-  BuildCommandRunner(List<BuilderApplication> builderApplications)
+  BuildCommandRunner(
+      List<BuilderApplication> builderApplications, this.packageGraph)
       : builderApplications = List.unmodifiable(builderApplications),
         super('build_runner', 'Unified interface for running Dart builds.') {
     addCommand(BuildCommand());

@@ -6,7 +6,7 @@ import 'package:test/test.dart';
 
 import 'package:scratch_space/src/util.dart';
 
-main() {
+void main() {
   group('topLevelDir', () {
     test('returns the top level dir in a path', () {
       expect(topLevelDir('foo/bar/baz.dart'), 'foo');

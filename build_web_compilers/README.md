@@ -1,5 +1,5 @@
 <p align="center">
-  Web compilers for users of <a href="https://pub.dartlang.org/packages/build"><code>package:build</code></a>.
+  Web compilers for users of <a href="https://pub.dev/packages/build"><code>package:build</code></a>.
   <br>
   <a href="https://travis-ci.org/dart-lang/build">
     <img src="https://travis-ci.org/dart-lang/build.svg?branch=master" alt="Build Status" />
@@ -7,10 +7,10 @@
   <a href="https://github.com/dart-lang/build/labels/package%3A%20build_web_compilers">
     <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3A%20build_web_compilers.svg" alt="Issues related to build_web_compilers" />
   </a>
-  <a href="https://pub.dartlang.org/packages/build_web_compilers">
+  <a href="https://pub.dev/packages/build_web_compilers">
     <img src="https://img.shields.io/pub/v/build_web_compilers.svg" alt="Pub Package Version" />
   </a>
-  <a href="https://pub.dartlang.org/documentation/build_web_compilers/latest">
+  <a href="https://pub.dev/documentation/build_web_compilers/latest">
     <img src="https://img.shields.io/badge/dartdocs-latest-blue.svg" alt="Latest Dartdocs" />
   </a>
   <a href="https://gitter.im/dart-lang/build">
@@ -52,7 +52,7 @@ file, which should look roughly like the following:
 targets:
   $default:
     builders:
-      build_web_compilers|entrypoint:
+      build_web_compilers:entrypoint:
         # These are globs for the entrypoints you want to compile.
         generate_for:
         - test/**.browser_test.dart
@@ -64,6 +64,42 @@ targets:
           - -O2
 ```
 
+### Configuring -D environment variables
+
+DDC is a modular compiler, so in order to ensure consistent builds in every
+module environment variables must be configured globally. Configure with a Map
+in yaml. Environment defined variables can be read with `const
+String.fromEnvironment` and `const bool.fromEnvironment`. For example:
+
+```yaml
+global_options:
+  build_web_compilers:ddc:
+    options:
+      environment:
+        SOME_VAR: some value
+        ANOTHER_VAR: false
+```
+
+For dart2js, use the `dart2js_args` option. This may be configured globally, or
+per-target.
+
+```yaml
+targets:
+  $default:
+    builders:
+      build_web_compilers:entrypoint:
+        options:
+          dart2js_args:
+          - -DSOME_VAR=some value
+          - -DANOTHER_VAR=true
+```
+
+These may also be specified on the command line with a `--define` argument.
+
+```sh
+webdev serve -- '--define=build_web_compilers:ddc=environment={"SOME_VAR":"changed"}'
+```
+
 ## Manual Usage
 
 If you are using a custom build script, you will need to add the following
@@ -73,7 +109,7 @@ the list (unless you need to post-process the js files).
 ```dart
 [
     apply(
-        'build_web_compilers|ddc',
+        'build_web_compilers:ddc',
         [
         (_) => new ModuleBuilder(),
         (_) => new UnlinkedSummaryBuilder(),
@@ -85,7 +121,7 @@ the list (unless you need to post-process the js files).
         // imported by entrypoints get compiled.
         isOptional: true,
         hideOutput: true),
-    apply('build_web_compilers|entrypoint',
+    apply('build_web_compilers:entrypoint',
         // You can also use `WebCompiler.Dart2Js`. If you don't care about
         // dartdevc at all you may also omit the previous builder application
         // entirely.
@@ -97,5 +133,5 @@ the list (unless you need to post-process the js files).
 ]
 ```
 
-[development dependency]: https://www.dartlang.org/tools/pub/dependencies#dev-dependencies
-[`package:build`]: https://pub.dartlang.org/packages/build
+[development dependency]: https://dart.dev/tools/pub/dependencies#dev-dependencies
+[`package:build`]: https://pub.dev/packages/build

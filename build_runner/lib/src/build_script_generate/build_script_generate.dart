@@ -38,6 +38,11 @@ Future<String> _generateBuildScript() async {
   final emitter = DartEmitter(Allocator.simplePrefixing());
   try {
     return DartFormatter().format('''
+      // Ensure that the build script itself is not opted in to null safety,
+      // instead of taking the language version from the current package.
+      //
+      // @dart=2.9
+      //
       // ignore_for_file: directives_ordering
 
       ${library.accept(emitter)}''');
@@ -55,7 +60,7 @@ Future<String> _generateBuildScript() async {
 /// which has a `build.yaml`.
 Future<Iterable<Expression>> _findBuilderApplications() async {
   final builderApplications = <Expression>[];
-  final packageGraph = PackageGraph.forThisPackage();
+  final packageGraph = await PackageGraph.forThisPackage();
   final orderedPackages = stronglyConnectedComponents<PackageNode>(
     [packageGraph.root],
     (node) => node.dependencies,
@@ -106,6 +111,7 @@ Future<Iterable<Expression>> _findBuilderApplications() async {
 /// A method forwarding to `run`.
 Method _main() => Method((b) => b
   ..name = 'main'
+  ..returns = refer('void')
   ..modifier = MethodModifier.async
   ..requiredParameters.add(Parameter((b) => b
     ..name = 'args'

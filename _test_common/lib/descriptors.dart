@@ -3,8 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:isolate';
 
-import 'package:package_resolver/package_resolver.dart';
+import 'package:package_config/package_config.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
 /// Creates a `pubspec.yaml` file for package [name].
@@ -28,13 +29,15 @@ Future<d.FileDescriptor> pubspec(String name,
 
   var buffer = StringBuffer()
     ..writeln('name: $name')
+    ..writeln('environment:')
+    ..writeln('  sdk: ">=2.9.0 <3.0.0"')
     // Using dependency_overrides forces the path dependency and silences
     // warnings about hosted vs path dependency conflicts.
     ..writeln('dependency_overrides:');
 
-  var resolver = PackageResolver.current;
+  var packageConfig = await loadPackageConfigUri(await Isolate.packageConfig);
   await Future.forEach(currentIsolateDependencies, (String package) async {
-    pathDependencies[package] = await resolver.packagePath(package);
+    pathDependencies[package] = packageConfig[package].root.toFilePath();
   });
 
   pathDependencies.forEach((package, path) {

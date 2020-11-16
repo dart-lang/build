@@ -2,10 +2,29 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-/// Escape [name] to make it into a valid identifier.
+import 'package:path/path.dart' as p;
+
+/// Transforms a path to a valid JS identifier.
 ///
-/// This is copied from
-/// https://github.com/dart-lang/sdk/blob/300fd66f5c5e7497674ea4dd9fd21be91ee3c71e/pkg/dev_compiler/lib/src/analyzer/code_generator.dart#L6390
+/// This logic must be synchronized with [pathToJSIdentifier] in DDC at:
+/// pkg/dev_compiler/lib/src/compiler/module_builder.dart
+///
+/// For backwards compatibility, if this pattern is changed,
+/// dev_compiler_bootstrap.dart must be updated to accept both old and new
+/// patterns.
+String pathToJSIdentifier(String path) {
+  path = p.normalize(path);
+  if (path.startsWith('/') || path.startsWith('\\')) {
+    path = path.substring(1, path.length);
+  }
+  return toJSIdentifier(path
+      .replaceAll('\\', '__')
+      .replaceAll('/', '__')
+      .replaceAll('..', '__')
+      .replaceAll('-', '_'));
+}
+
+/// Escape [name] to make it into a valid identifier.
 String toJSIdentifier(String name) {
   if (name.isEmpty) return r'$';
 

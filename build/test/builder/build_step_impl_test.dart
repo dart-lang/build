@@ -33,8 +33,8 @@ void main() {
       var reader = StubAssetReader();
       var writer = StubAssetWriter();
       primary = makeAssetId();
-      buildStep = BuildStepImpl(primary, [], reader, writer, primary.package,
-          AnalyzerResolvers(), resourceManager);
+      buildStep = BuildStepImpl(
+          primary, [], reader, writer, AnalyzerResolvers(), resourceManager);
     });
 
     test('doesnt allow non-expected outputs', () {
@@ -43,28 +43,6 @@ void main() {
           throwsA(TypeMatcher<UnexpectedOutputException>()));
       expect(() => buildStep.writeAsBytes(id, [0]),
           throwsA(TypeMatcher<UnexpectedOutputException>()));
-    });
-
-    test('canRead throws invalidInputExceptions', () async {
-      expect(() => buildStep.canRead(makeAssetId('b|web/a.txt')),
-          throwsA(invalidInputException));
-      expect(() => buildStep.canRead(makeAssetId('b|a.txt')),
-          throwsA(invalidInputException));
-      expect(() => buildStep.canRead(makeAssetId('foo|bar.txt')),
-          throwsA(invalidInputException));
-    });
-
-    test('readAs* throws InvalidInputExceptions', () async {
-      var invalidInputs = [
-        makeAssetId('b|web/a.txt'),
-        makeAssetId('b|a.txt'),
-        makeAssetId('foo|bar.txt')
-      ];
-      for (var id in invalidInputs) {
-        expect(
-            () => buildStep.readAsString(id), throwsA(invalidInputException));
-        expect(() => buildStep.readAsBytes(id), throwsA(invalidInputException));
-      }
     });
 
     test('fetchResource can fetch resources', () async {
@@ -92,7 +70,7 @@ void main() {
       };
       addAssets(inputs, writer);
       var outputId = AssetId.parse('$primary.copy');
-      var buildStep = BuildStepImpl(primary, [outputId], reader, writer, 'a',
+      var buildStep = BuildStepImpl(primary, [outputId], reader, writer,
           AnalyzerResolvers(), resourceManager);
 
       await builder.build(buildStep);
@@ -117,8 +95,8 @@ void main() {
         addAssets(inputs, writer);
 
         var primary = makeAssetId('a|web/a.dart');
-        var buildStep = BuildStepImpl(primary, [], reader, writer,
-            primary.package, AnalyzerResolvers(), resourceManager);
+        var buildStep = BuildStepImpl(
+            primary, [], reader, writer, AnalyzerResolvers(), resourceManager);
         var resolver = buildStep.resolver;
 
         var aLib = await resolver.libraryFor(primary);
@@ -148,7 +126,7 @@ void main() {
       outputId = makeAssetId('a|test.txt');
       outputContent = '$outputId';
       buildStep = BuildStepImpl(primary, [outputId], StubAssetReader(),
-          assetWriter, primary.package, AnalyzerResolvers(), resourceManager);
+          assetWriter, AnalyzerResolvers(), resourceManager);
     });
 
     test('Completes only after writes finish', () async {
@@ -195,21 +173,31 @@ void main() {
       var writer = StubAssetWriter();
       primary = makeAssetId();
       output = makeAssetId();
-      buildStep = BuildStepImpl(
-          primary,
-          [output],
-          reader,
-          writer,
-          primary.package,
-          AnalyzerResolvers(),
-          resourceManager,
-          NoOpStageTracker.instance);
+      buildStep = BuildStepImpl(primary, [output], reader, writer,
+          AnalyzerResolvers(), resourceManager,
+          stageTracker: NoOpStageTracker.instance);
     });
 
     test('Captures failed asynchronous writes', () {
       buildStep.writeAsString(output, Future.error('error'));
       expect(buildStep.complete(), throwsA('error'));
     });
+  });
+
+  test('reportUnusedAssets forwards calls if provided', () {
+    var reader = StubAssetReader();
+    var writer = StubAssetWriter();
+    var unused = <AssetId>{};
+    var buildStep = BuildStepImpl(
+        makeAssetId(), [], reader, writer, AnalyzerResolvers(), resourceManager,
+        reportUnusedAssets: unused.addAll);
+    var reported = [
+      makeAssetId(),
+      makeAssetId(),
+      makeAssetId(),
+    ];
+    buildStep.reportUnusedAssets(reported);
+    expect(unused, equals(reported));
   });
 }
 

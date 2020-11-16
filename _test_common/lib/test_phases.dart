@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
@@ -84,13 +85,14 @@ Future<BuildResult> testBuilders(
   InMemoryRunnerAssetWriter writer,
   Level logLevel,
   // A better way to "silence" logging than setting logLevel to OFF.
-  onLog(LogRecord record) = _printOnFailure,
+  Function(LogRecord record) onLog = _printOnFailure,
   bool checkBuildStatus = true,
   bool deleteFilesByDefault = true,
   bool enableLowResourcesMode = false,
   Map<String, Map<String, dynamic>> builderConfigOverrides,
   bool verbose = false,
   Set<BuildDirectory> buildDirs,
+  Set<BuildFilter> buildFilters,
   String logPerformanceDir,
   String expectedGeneratedDir,
 }) async {
@@ -98,6 +100,23 @@ Future<BuildResult> testBuilders(
   writer ??= InMemoryRunnerAssetWriter();
   reader ??= InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
       rootPackage: packageGraph?.root?.name);
+  var pkgConfigId =
+      AssetId(packageGraph.root.name, '.dart_tool/package_config.json');
+  if (!await reader.canRead(pkgConfigId)) {
+    var packageConfig = {
+      'configVersion': 2,
+      'packages': [
+        for (var pkgNode in packageGraph.allPackages.values)
+          {
+            'name': pkgNode.name,
+            'rootUri': pkgNode.path,
+            'packageUri': 'lib/',
+            'languageVersion': pkgNode.languageVersion.toString()
+          },
+      ],
+    };
+    await writer.writeAsString(pkgConfigId, jsonEncode(packageConfig));
+  }
 
   inputs.forEach((serializedId, contents) {
     var id = makeAssetId(serializedId);
@@ -129,7 +148,8 @@ Future<BuildResult> testBuilders(
     builderConfigOverrides,
     isReleaseBuild: false,
   );
-  result = await build.run({}, buildDirs: buildDirs);
+  result =
+      await build.run({}, buildDirs: buildDirs, buildFilters: buildFilters);
   await build.beforeExit();
   await options.logListener.cancel();
 
@@ -156,7 +176,7 @@ void checkBuild(BuildResult result,
   expect(result.status, status, reason: '$result');
 
   final unhiddenOutputs = <String, dynamic>{};
-  final unhiddenAssets = Set<AssetId>();
+  final unhiddenAssets = <AssetId>{};
   for (final id in outputs?.keys ?? const <String>[]) {
     if (id.startsWith(r'$$')) {
       final unhidden = id.substring(2);

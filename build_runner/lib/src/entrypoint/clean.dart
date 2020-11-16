@@ -61,7 +61,7 @@ Future<void> cleanFor(String assetGraphPath, Logger logger) async {
           'Skipping cleanup of generated files in source directories.');
       return;
     }
-    var packageGraph = PackageGraph.forThisPackage();
+    var packageGraph = await PackageGraph.forThisPackage();
     await _cleanUpSourceOutputs(assetGraph, packageGraph);
   });
 

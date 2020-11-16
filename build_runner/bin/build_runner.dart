@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/ansi.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';
@@ -22,7 +23,8 @@ Future<void> main(List<String> args) async {
   // Use the actual command runner to parse the args and immediately print the
   // usage information if there is no command provided or the help command was
   // explicitly invoked.
-  var commandRunner = BuildCommandRunner([]);
+  var commandRunner =
+      BuildCommandRunner([], await PackageGraph.forThisPackage());
   var localCommands = [CleanCommand(), GenerateBuildScript()];
   var localCommandNames = localCommands.map((c) => c.name).toSet();
   localCommands.forEach(commandRunner.addCommand);
@@ -49,8 +51,16 @@ Future<void> main(List<String> args) async {
     return;
   }
 
-  if (commandName == null || commandName == 'help') {
+  if (commandName == 'help' ||
+      parsedArgs.wasParsed('help') ||
+      (parsedArgs.command?.wasParsed('help') ?? false)) {
+    await commandRunner.runCommand(parsedArgs);
+    return;
+  }
+
+  if (commandName == null) {
     commandRunner.printUsage();
+    exitCode = ExitCode.usage.code;
     return;
   }
 
@@ -59,7 +69,7 @@ Future<void> main(List<String> args) async {
     // Simple logs only in daemon mode. These get converted into info or
     // severe logs by the client.
     logListener = Logger.root.onRecord.listen((record) {
-      if (record.level > Level.INFO) {
+      if (record.level >= Level.SEVERE) {
         var buffer = StringBuffer(record.message);
         if (record.error != null) buffer.writeln(record.error);
         if (record.stackTrace != null) buffer.writeln(record.stackTrace);

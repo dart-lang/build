@@ -9,7 +9,7 @@ import 'package:checked_yaml/checked_yaml.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
-import 'package:pubspec_parse/pubspec_parse.dart' hide ParsedYamlException;
+import 'package:pubspec_parse/pubspec_parse.dart';
 
 import 'build_target.dart';
 import 'builder_definition.dart';
@@ -71,6 +71,9 @@ class BuildConfig {
   @JsonKey(name: 'global_options')
   final Map<String, GlobalBuilderConfig> globalOptions;
 
+  @JsonKey(name: 'additional_public_assets')
+  final List<String> additionalPublicAssets;
+
   /// The default config if you have no `build.yaml` file.
   factory BuildConfig.useDefault(
       String packageName, Iterable<String> dependencies) {
@@ -127,6 +130,7 @@ class BuildConfig {
     Map<String, BuilderDefinition> builderDefinitions,
     Map<String, PostProcessBuilderDefinition> postProcessBuilderDefinitions =
         const {},
+    this.additionalPublicAssets = const [],
   })  : buildTargets = buildTargets ??
             {
               _defaultTarget(packageName ?? currentPackage): BuildTarget(

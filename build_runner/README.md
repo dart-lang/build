@@ -1,5 +1,5 @@
 <p align="center">
-  Standalone generator and watcher for Dart using <a href="https://pub.dartlang.org/packages/build"><code>package:build</code></a>.
+  Standalone generator and watcher for Dart using <a href="https://pub.dev/packages/build"><code>package:build</code></a>.
   <br>
   <a href="https://travis-ci.org/dart-lang/build">
     <img src="https://travis-ci.org/dart-lang/build.svg?branch=master" alt="Build Status" />
@@ -7,10 +7,10 @@
   <a href="https://github.com/dart-lang/build/labels/package%3A%20build_runner">
     <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3A%20build_runner.svg" alt="Issues related to build_runner" />
   </a>
-  <a href="https://pub.dartlang.org/packages/build_runner">
+  <a href="https://pub.dev/packages/build_runner">
     <img src="https://img.shields.io/pub/v/build_runner.svg" alt="Pub Package Version" />
   </a>
-  <a href="https://pub.dartlang.org/documentation/build_runner/latest">
+  <a href="https://pub.dev/documentation/build_runner/latest">
     <img src="https://img.shields.io/badge/dartdocs-latest-blue.svg" alt="Latest Dartdocs" />
   </a>
   <a href="https://gitter.im/dart-lang/build">
@@ -83,9 +83,6 @@ The available commands are `build`, `watch`, `serve`, and `test`.
 All the above commands support the following arguments:
 
 - `--help`: Print usage information for the command.
-- `--assume-tty`: Enables colors and interactive input when the script does not
-  appear to be running directly in a terminal, for instance when it is a
-  subprocess.
 - `--delete-conflicting-outputs`: Assume conflicting outputs in the users
   package are from previous builds, and skip the user prompt that would usually
   be provided.
@@ -238,19 +235,19 @@ $ pub run test
 ```
 
 [Bazel]: https://bazel.build/
-[`package:build`]: https://pub.dartlang.org/packages/build
+[`package:build`]: https://pub.dev/packages/build
 [analysis_options]: https://github.com/dart-lang/build/blob/master/analysis_options.yaml
 
-[builder]: https://www.dartdocs.org/documentation/build/latest/build/Builder-class.html
-[run_fn]: https://www.dartdocs.org/documentation/build_runner/latest/build_runner/run.html
-[build_fn]: https://www.dartdocs.org/documentation/build_runner/latest/build_runner/build.html
-[watch_fn]: https://www.dartdocs.org/documentation/build_runner/latest/build_runner/watch.html
-[builder_application]: https://www.dartdocs.org/documentation/build_runner/latest/build_runner/BuilderApplication-class.html
-[build_extensions]: https://www.dartdocs.org/documentation/build/latest/build/Builder/buildExtensions.html
+[builder]: https://pub.dev/documentation/build/latest/build/Builder-class.html
+[run_fn]: https://pub.dev/documentation/build_runner/latest/build_runner/run.html
+[build_fn]: https://pub.dev/documentation/build_runner/latest/build_runner/build.html
+[watch_fn]: https://pub.dev/documentation/build_runner/latest/build_runner/watch.html
+[builder_application]: https://pub.dev/documentation/build_runner/latest/build_runner/BuilderApplication-class.html
+[build_extensions]: https://pub.dev/documentation/build/latest/build/Builder/buildExtensions.html
 
 [travis]: https://travis-ci.org/
-[dev_sdk]: https://www.dartlang.org/install
-[dev_dependencies]: https://www.dartlang.org/tools/pub/dependencies#dev-dependencies
-[pubspec]: https://www.dartlang.org/tools/pub/pubspec
+[dev_sdk]: https://dart.dev/get-dart
+[dev_dependencies]: https://dart.dev/tools/pub/dependencies#dev-dependencies
+[pubspec]: https://dart.dev/tools/pub/pubspec
 [file_an_issue]: https://github.com/dart-lang/build/issues/new
 [pull_request]: https://github.com/dart-lang/build/pulls

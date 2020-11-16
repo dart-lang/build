@@ -2,14 +2,17 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+@OnPlatform({
+  'windows': Skip('Directories cant be deleted while processes are still open')
+})
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/daemon.dart';
 import 'package:build_daemon/src/fakes/fake_builder.dart';
 import 'package:build_daemon/src/fakes/fake_change_provider.dart';
-import 'package:package_resolver/package_resolver.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 import 'package:uuid/uuid.dart';
@@ -42,7 +45,7 @@ void main() {
       testWorkspaces.add(workspace);
       var daemon = Daemon(workspace);
       await daemon.start(
-        Set<String>(),
+        <String>{},
         FakeDaemonBuilder(),
         FakeChangeProvider(),
       );
@@ -85,7 +88,7 @@ void main() {
       var daemonTwo = await _runDaemon(workspace2);
       testDaemons.addAll([daemonOne, daemonTwo]);
       expect(await _statusOf(daemonTwo), 'RUNNING');
-    });
+    }, timeout: Timeout.factor(2));
 
     test('can start two daemons at the same time', () async {
       var workspace = uuid.v1();
@@ -95,7 +98,7 @@ void main() {
       expect([await _statusOf(daemonOne), await _statusOf(daemonTwo)],
           containsAll(['RUNNING', 'ALREADY RUNNING']));
       testDaemons.addAll([daemonOne, daemonTwo]);
-    });
+    }, timeout: Timeout.factor(2));
 
     test('logs the version when running', () async {
       var workspace = uuid.v1();
@@ -162,6 +165,7 @@ Future<String> _statusOf(Process daemon) async {
 
 Future<Process> _runDaemon(var workspace, {int timeout = 30}) async {
   await d.file('test.dart', '''
+    // @dart=2.9
     import 'package:build_daemon/daemon.dart';
     import 'package:build_daemon/daemon_builder.dart';
     import 'package:build_daemon/client.dart';
@@ -191,10 +195,14 @@ Future<Process> _runDaemon(var workspace, {int timeout = 30}) async {
     }
       ''').create();
 
-  var packageArg = await PackageResolver.current.processArgument;
-
-  var process = await Process.start(
-      Platform.resolvedExecutable, [packageArg, 'test.dart'],
+  var args = [
+    ...Platform.executableArguments,
+    if (!Platform.executableArguments
+        .any((arg) => arg.startsWith('--packages')))
+      '--packages=${(await Isolate.packageConfig).path}',
+    'test.dart'
+  ];
+  var process = await Process.start(Platform.resolvedExecutable, args,
       workingDirectory: d.sandbox);
 
   return process;

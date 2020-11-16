@@ -8,6 +8,7 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
+import 'package:test_process/test_process.dart';
 
 Directory _generatedDir = Directory(p.join(_toolDir.path, 'generated'));
 Directory _toolDir = Directory(p.join('.dart_tool', 'build'));
@@ -21,12 +22,11 @@ final String _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
 /// Runs a single build using `pub run build_runner build`, and returns the
 /// [ProcessResult].
 Future<ProcessResult> runBuild({List<String> trailingArgs = const []}) =>
-    _runBuild(
-        _pubBinary, ['run', 'build_runner', 'build']..addAll(trailingArgs));
+    _runBuild(_pubBinary, ['run', 'build_runner', 'build', ...trailingArgs]);
 
 /// Runs `pub run build_runner <args>`, and returns the [ProcessResult].
 Future<ProcessResult> runCommand(List<String> args) =>
-    _runBuild(_pubBinary, ['run', 'build_runner']..addAll(args));
+    _runBuild(_pubBinary, ['run', 'build_runner', ...args]);
 
 /// Runs `pub run build_runner serve` in this package, and waits for the first
 /// build to complete.
@@ -45,7 +45,8 @@ Future<void> startServer(
         [
           '--packages=.packages',
           p.join('..', 'build_runner', 'bin', 'build_runner.dart'),
-          'serve'
+          'serve',
+          if (buildArgs != null) ...buildArgs,
         ],
         ensureCleanBuild: ensureCleanBuild,
         extraExpects: extraExpects);
@@ -156,13 +157,15 @@ Future<String> nextStdOutLine(String message) =>
     _stdOutLines.firstWhere((line) => line.contains(message));
 
 /// Runs tests using the auto build script.
-Future<ProcessResult> runTests(
-    {bool usePrecompiled, List<String> buildArgs, List<String> testArgs}) {
+Future<TestProcess> runTests(
+    {bool usePrecompiled,
+    List<String> buildArgs,
+    List<String> testArgs}) async {
   return _runTests(_pubBinary, ['run', 'build_runner'],
       usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
 }
 
-Future<ProcessResult> _runTests(String executable, List<String> scriptArgs,
+Future<TestProcess> _runTests(String executable, List<String> scriptArgs,
     {bool usePrecompiled,
     List<String> buildArgs,
     List<String> testArgs}) async {
@@ -176,29 +179,37 @@ Future<ProcessResult> _runTests(String executable, List<String> scriptArgs,
       ..addAll(buildArgs ?? [])
       ..add('--')
       ..addAll(testArgs);
-    return Process.run(executable, args);
+    return TestProcess.start(executable, args);
   } else {
-    var args = ['run', 'test', '--pub-serve', '8081']..addAll(testArgs);
-    return Process.run(_pubBinary, args);
+    var args = ['run', 'test', '--pub-serve', '8081', ...testArgs];
+    return TestProcess.start(_pubBinary, args);
   }
 }
 
-Future<void> expectTestsFail() async {
-  var result = await runTests();
-  printOnFailure('${result.stderr}');
-  expect(result.stdout, contains('Some tests failed'));
-  expect(result.exitCode, isNot(0));
+Future<void> expectTestsFail(
+    {bool usePrecompiled,
+    List<String> buildArgs,
+    List<String> testArgs}) async {
+  var result = await runTests(
+      usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
+  expect(result.stdout, emitsThrough(contains('Some tests failed')));
+  expect(await result.exitCode, isNot(0));
 }
 
 Future<void> expectTestsPass(
-    {int expectedNumRan, bool usePrecompiled, List<String> args}) async {
-  var result = await runTests(usePrecompiled: usePrecompiled, buildArgs: args);
-  printOnFailure('${result.stderr}');
-  expect(result.stdout, contains('All tests passed!'));
+    {int expectedNumRan,
+    bool usePrecompiled,
+    List<String> buildArgs,
+    List<String> testArgs}) async {
+  var result = await runTests(
+      usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
+  var allLines = await result.stdout.rest.toList();
+  expect(allLines, contains(contains('All tests passed!')));
   if (expectedNumRan != null) {
-    expect(result.stdout, contains('+$expectedNumRan'));
-    expect(result.stdout, isNot(contains('+${expectedNumRan + 1}')));
+    expect(allLines, contains(contains('+$expectedNumRan')));
+    expect(allLines, isNot(contains(contains('+${expectedNumRan + 1}'))));
   }
+  expect(await result.exitCode, 0);
 }
 
 Future<void> createFile(String path, String contents) async {

@@ -1,8 +1,6 @@
 // Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-import 'dart:async';
-
 import 'package:logging/logging.dart';
 
 import '../analyzer/resolver.dart';
@@ -26,12 +24,18 @@ import 'expected_outputs.dart';
 /// automatically disposed of (its up to the caller to dispose of it later). If
 /// one is not provided then one will be created and disposed at the end of
 /// this function call.
+///
+/// If [reportUnusedAssetsForInput] is provided then all calls to
+/// `BuildStep.reportUnusedAssets` in [builder] will be forwarded to this
+/// function with the associated primary input.
 Future<void> runBuilder(Builder builder, Iterable<AssetId> inputs,
     AssetReader reader, AssetWriter writer, Resolvers resolvers,
     {Logger logger,
     ResourceManager resourceManager,
-    String rootPackage,
-    StageTracker stageTracker = NoOpStageTracker.instance}) async {
+    @Deprecated('The rootPackage argument is unused') String rootPackage,
+    StageTracker stageTracker = NoOpStageTracker.instance,
+    void Function(AssetId input, Iterable<AssetId> assets)
+        reportUnusedAssetsForInput}) async {
   var shouldDisposeResourceManager = resourceManager == null;
   resourceManager ??= ResourceManager();
   logger ??= Logger('runBuilder');
@@ -39,8 +43,12 @@ Future<void> runBuilder(Builder builder, Iterable<AssetId> inputs,
   Future<void> buildForInput(AssetId input) async {
     var outputs = expectedOutputs(builder, input);
     if (outputs.isEmpty) return;
-    var buildStep = BuildStepImpl(input, outputs, reader, writer,
-        rootPackage ?? input.package, resolvers, resourceManager, stageTracker);
+    var buildStep = BuildStepImpl(
+        input, outputs, reader, writer, resolvers, resourceManager,
+        stageTracker: stageTracker,
+        reportUnusedAssets: reportUnusedAssetsForInput == null
+            ? null
+            : (assets) => reportUnusedAssetsForInput(input, assets));
     try {
       await builder.build(buildStep);
     } finally {

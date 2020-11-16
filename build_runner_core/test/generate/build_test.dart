@@ -7,12 +7,15 @@ import 'dart:math' as math;
 
 import 'package:_test_common/build_configs.dart';
 import 'package:_test_common/common.dart';
-import 'package:_test_common/package_graphs.dart';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/generate/options.dart'
+    show defaultNonRootVisibleAssets;
+import 'package:build_runner_core/src/util/constants.dart';
+import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
 import 'package:pedantic/pedantic.dart';
 import 'package:test/test.dart';
@@ -105,6 +108,7 @@ void main() {
       }
       var concurrentCount = 0;
       var maxConcurrentCount = 0;
+      var reachedMax = Completer<Null>();
       await testBuilders(
           [
             apply(
@@ -115,7 +119,12 @@ void main() {
                       concurrentCount += 1;
                       maxConcurrentCount =
                           math.max(concurrentCount, maxConcurrentCount);
-                      await Future.delayed(Duration(milliseconds: 100));
+                      if (concurrentCount >= buildPhasePoolSize &&
+                          !reachedMax.isCompleted) {
+                        await Future<void>.delayed(Duration(milliseconds: 100));
+                        if (!reachedMax.isCompleted) reachedMax.complete(null);
+                      }
+                      await reachedMax.future;
                       concurrentCount -= 1;
                     });
                   }
@@ -153,9 +162,13 @@ void main() {
 
       test('with placeholder as input', () async {
         await testBuilders([
-          applyToRoot(PlaceholderBuilder({'placeholder.txt': 'sometext'}))
+          applyToRoot(PlaceholderBuilder({'lib.txt': 'libText'},
+              inputExtension: r'$lib$')),
+          applyToRoot(PlaceholderBuilder({'root.txt': 'rootText'},
+              inputExtension: r'$package$')),
         ], {}, outputs: {
-          'a|lib/placeholder.txt': 'sometext'
+          'a|lib/lib.txt': 'libText',
+          'a|root.txt': 'rootText',
         });
       });
 
@@ -253,7 +266,6 @@ void main() {
           'a': {
             'targets': {
               'a': {
-                'sources': ['**'],
                 'builders': {
                   'a:clone_txt': {
                     'generate_for': ['**/*.txt']
@@ -335,7 +347,7 @@ void main() {
 
       test('asset is deleted mid-build, use cached canRead result', () async {
         var aTxtId = AssetId('a', 'lib/file.a');
-        var ready = Completer();
+        var ready = Completer<void>();
         var firstBuilder = TestBuilder(
             buildExtensions: appendExtension('.exists', from: '.a'),
             build: writeCanRead(aTxtId));
@@ -397,7 +409,9 @@ void main() {
               makeAssetId('a|web/a.txt.copy.clone'),
               makeAssetId('a|Phase0.builderOptions'),
               makeAssetId('a|Phase1.builderOptions'),
-            ]..addAll(placeholders)));
+              ...placeholders,
+              makeAssetId('a|.dart_tool/package_config.json'),
+            ]));
         expect(cachedGraph.sources, [makeAssetId('a|web/a.txt')]);
         expect(
             cachedGraph.outputs,
@@ -439,6 +453,69 @@ void main() {
         // Now let the build finish.
         blockingCompleter.complete();
         await done;
+      });
+    });
+
+    group('reading assets outside of the root package', () {
+      test('can read public non-lib assets', () async {
+        final packageGraph = buildPackageGraph({
+          rootPackage('a', path: 'a/'): ['b'],
+          package('b', path: 'a/b'): []
+        });
+
+        final builder = TestBuilder(
+          build: copyFrom(makeAssetId('b|test/foo.bar')),
+        );
+
+        await testBuilders(
+          [
+            apply('', [(_) => builder], toPackage('a'))
+          ],
+          {
+            'a|lib/a.foo': '',
+            'b|test/foo.bar': 'content',
+          },
+          overrideBuildConfig: {
+            'b': BuildConfig.parse(
+                'b', [], 'additional_public_assets: ["test/**"]')
+          },
+          packageGraph: packageGraph,
+          outputs: {r'$$a|lib/a.foo.copy': 'content'},
+        );
+      });
+
+      test('reading private assets throws InvalidInputException', () {
+        final packageGraph = buildPackageGraph({
+          rootPackage('a', path: 'a/'): ['b'],
+          package('b', path: 'a/b'): []
+        });
+
+        final builder = TestBuilder(
+          buildExtensions: const {
+            '.txt': ['.copy']
+          },
+          build: (step, _) {
+            final invalidInput = AssetId.parse('b|test/my_test.dart');
+
+            expect(step.canRead(invalidInput), completion(isFalse));
+            return expectLater(
+              () => step.readAsBytes(invalidInput),
+              throwsA(isA<InvalidInputException>().having((e) => e.allowedGlobs,
+                  'allowedGlobs', defaultNonRootVisibleAssets)),
+            );
+          },
+        );
+
+        return testBuilders(
+          [
+            apply('', [(_) => builder], toPackage('a'))
+          ],
+          {
+            'a|lib/foo.txt': "doesn't matter",
+          },
+          packageGraph: packageGraph,
+          outputs: {},
+        );
       });
     });
 
@@ -560,6 +637,11 @@ void main() {
     });
 
     test('can read files from external packages', () async {
+      var packageGraph = buildPackageGraph({
+        rootPackage('a'): ['b'],
+        package('b'): []
+      });
+
       var builders = [
         apply(
             '',
@@ -571,12 +653,14 @@ void main() {
             toRoot(),
             hideOutput: false)
       ];
-      await testBuilders(builders, {
-        'a|lib/a.txt': 'a',
-        'b|lib/b.txt': 'b'
-      }, outputs: {
-        'a|lib/a.txt.copy': 'a',
-      });
+      await testBuilders(
+        builders,
+        {'a|lib/a.txt': 'a', 'b|lib/b.txt': 'b'},
+        outputs: {
+          'a|lib/a.txt.copy': 'a',
+        },
+        packageGraph: packageGraph,
+      );
     });
 
     test('can glob files from packages', () async {
@@ -635,7 +719,7 @@ void main() {
           });
     });
 
-    test('can build on files outside the hardcoded whitelist', () async {
+    test('can build on files outside the hardcoded sources', () async {
       await testBuilders(
           [applyToRoot(TestBuilder())], {'a|test_files/a.txt': 'a'},
           overrideBuildConfig: parseBuildConfigs({
@@ -705,7 +789,9 @@ void main() {
       }, outputs: {
         r'$$a|web/a.txt.copy': 'a',
         r'$$a|test/b.txt.copy': 'b',
-      }, buildDirs: Set.of([BuildDirectory('web')]), verbose: true);
+      }, buildDirs: {
+        BuildDirectory('web')
+      }, verbose: true);
     });
 
     test('build to source builders are always ran regardless of buildDirs',
@@ -719,7 +805,9 @@ void main() {
       }, outputs: {
         r'a|test/a.txt.copy': 'a',
         r'a|web/a.txt.copy': 'a',
-      }, buildDirs: Set.of([BuildDirectory('web')]), verbose: true);
+      }, buildDirs: {
+        BuildDirectory('web')
+      }, verbose: true);
     });
 
     test('can output performance logs', () async {
@@ -745,6 +833,86 @@ void main() {
       expect(perf.phases.length, 1);
       expect(perf.phases.first.builderKeys, equals(['test_builder']));
     });
+
+    group('buildFilters', () {
+      var packageGraphWithDep = buildPackageGraph({
+        package('b'): [],
+        rootPackage('a'): ['b'],
+      });
+
+      test('explicit files by uri and path', () async {
+        await testBuilders([
+          apply('', [(_) => TestBuilder()], toAllPackages(),
+              defaultGenerateFor: InputSet(include: ['**/*.txt'])),
+        ], {
+          'a|lib/a.txt': '',
+          'a|web/a.txt': '',
+          'a|web/a0.txt': '',
+          'b|lib/b.txt': '',
+          'b|lib/b0.txt': '',
+        }, outputs: {
+          r'$$a|lib/a.txt.copy': '',
+          r'$$a|web/a.txt.copy': '',
+          r'$$b|lib/b.txt.copy': '',
+        }, buildFilters: {
+          BuildFilter.fromArg('web/a.txt.copy', 'a'),
+          BuildFilter.fromArg('package:a/a.txt.copy', 'a'),
+          BuildFilter.fromArg('package:b/b.txt.copy', 'a'),
+        }, verbose: true, packageGraph: packageGraphWithDep);
+      });
+
+      test('with package globs', () async {
+        await testBuilders([
+          apply('', [(_) => TestBuilder()], toAllPackages(),
+              defaultGenerateFor: InputSet(include: ['**/*.txt'])),
+        ], {
+          'a|lib/a.txt': '',
+          'b|lib/a.txt': '',
+        }, outputs: {
+          r'$$a|lib/a.txt.copy': '',
+          r'$$b|lib/a.txt.copy': '',
+        }, buildFilters: {
+          BuildFilter.fromArg('package:*/a.txt.copy', 'a'),
+        }, verbose: true, packageGraph: packageGraphWithDep);
+      });
+
+      test('with path globs', () async {
+        await testBuilders([
+          apply('', [(_) => TestBuilder()], toAllPackages(),
+              defaultGenerateFor: InputSet(include: ['**/*.txt'])),
+        ], {
+          'a|lib/a.txt': '',
+          'a|lib/a0.txt': '',
+          'a|web/a.txt': '',
+          'a|web/a1.txt': '',
+          'b|lib/b.txt': '',
+          'b|lib/b2.txt': '',
+        }, outputs: {
+          r'$$a|lib/a0.txt.copy': '',
+          r'$$a|web/a1.txt.copy': '',
+          r'$$b|lib/b2.txt.copy': '',
+        }, buildFilters: {
+          BuildFilter.fromArg('package:a/*0.txt.copy', 'a'),
+          BuildFilter.fromArg('web/*1.txt.copy', 'a'),
+          BuildFilter.fromArg('package:b/*2.txt.copy', 'a'),
+        }, verbose: true, packageGraph: packageGraphWithDep);
+      });
+
+      test('with package and path globs', () async {
+        await testBuilders([
+          apply('', [(_) => TestBuilder()], toAllPackages(),
+              defaultGenerateFor: InputSet(include: ['**/*.txt'])),
+        ], {
+          'a|lib/a.txt': '',
+          'b|lib/b.txt': '',
+        }, outputs: {
+          r'$$a|lib/a.txt.copy': '',
+          r'$$b|lib/b.txt.copy': '',
+        }, buildFilters: {
+          BuildFilter.fromArg('package:*/*.txt.copy', 'a'),
+        }, verbose: true, packageGraph: packageGraphWithDep);
+      });
+    });
   });
 
   test('tracks dependency graph in a asset_graph.json file', () async {
@@ -767,7 +935,11 @@ void main() {
     var cachedGraph = AssetGraph.deserialize(writer.assets[graphId]);
 
     var expectedGraph = await AssetGraph.build(
-        [], Set(), Set(), buildPackageGraph({rootPackage('a'): []}), null);
+        [],
+        <AssetId>{},
+        {makeAssetId('a|.dart_tool/package_config.json')},
+        buildPackageGraph({rootPackage('a'): []}),
+        InMemoryAssetReader(sourceAssets: writer.assets));
 
     // Source nodes
     var aSourceNode = makeAssetNode(
@@ -868,6 +1040,42 @@ void main() {
         equalsAssetGraph(expectedGraph, checkPreviousInputsDigest: false));
   });
 
+  test("builders reading their output don't cause self-referential nodes",
+      () async {
+    final writer = InMemoryRunnerAssetWriter();
+
+    await testBuilders([
+      apply(
+          '',
+          [
+            (_) {
+              return TestBuilder(
+                build: (step, __) async {
+                  final output = step.inputId.addExtension('.out');
+                  await step.writeAsString(output, 'a');
+                  await step.readAsString(output);
+                },
+                buildExtensions: appendExtension('.out', from: '.txt'),
+              );
+            }
+          ],
+          toRoot(),
+          isOptional: false,
+          hideOutput: false),
+    ], {
+      'a|lib/a.txt': 'a',
+    }, outputs: {
+      'a|lib/a.txt.out': 'a'
+    }, writer: writer);
+
+    final graphId = makeAssetId('a|$assetGraphPath');
+    final cachedGraph = AssetGraph.deserialize(writer.assets[graphId]);
+    final outputId = AssetId('a', 'lib/a.txt.out');
+
+    final outputNode = cachedGraph.get(outputId) as GeneratedAssetNode;
+    expect(outputNode.inputs, isNot(contains(outputId)));
+  });
+
   test('outputs from previous full builds shouldn\'t be inputs to later ones',
       () async {
     final writer = InMemoryRunnerAssetWriter();
@@ -903,7 +1111,7 @@ void main() {
     var done = testBuilders([copyABuilderApplication], inputs,
         outputs: outputs, writer: writer);
     // Should block on user input.
-    await Future.delayed(Duration(seconds: 1));
+    await Future<void>.delayed(Duration(seconds: 1));
     // Now it should complete!
     await done;
   });
@@ -944,6 +1152,184 @@ void main() {
             'a|lib/c.txt.copy': 'c',
           },
           writer: writer);
+    });
+
+    group('reportUnusedAssets', () {
+      test('removes input dependencies', () async {
+        final builder = TestBuilder(
+            buildExtensions: appendExtension('.copy', from: '.txt'),
+            // Add two extra deps, but remove one since we decided not to use it.
+            build: (BuildStep buildStep, _) async {
+              var usedId = buildStep.inputId.addExtension('.used');
+
+              var content = await buildStep.readAsString(buildStep.inputId) +
+                  await buildStep.readAsString(usedId);
+              await buildStep.writeAsString(
+                  buildStep.inputId.addExtension('.copy'), content);
+
+              var unusedId = buildStep.inputId.addExtension('.unused');
+              await buildStep.canRead(unusedId);
+              buildStep.reportUnusedAssets([unusedId]);
+            });
+        var builders = [applyToRoot(builder)];
+
+        // Initial build.
+        var writer = InMemoryRunnerAssetWriter();
+        await testBuilders(
+            builders,
+            {
+              'a|lib/a.txt': 'a',
+              'a|lib/a.txt.used': 'b',
+              'a|lib/a.txt.unused': 'c',
+            },
+            outputs: {
+              'a|lib/a.txt.copy': 'ab',
+            },
+            writer: writer);
+
+        // Followup build with modified unused inputs should have no outputs.
+        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        writer.assets.clear();
+        await testBuilders(
+            builders,
+            {
+              'a|lib/a.txt': 'a',
+              'a|lib/a.txt.used': 'b',
+              'a|lib/a.txt.unused': 'd', // changed the content of this one
+              'a|lib/a.txt.copy': 'ab',
+              'a|$assetGraphPath': serializedGraph,
+            },
+            outputs: {},
+            writer: writer);
+
+        // And now modify a real input.
+        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        writer.assets.clear();
+        await testBuilders(
+            builders,
+            {
+              'a|lib/a.txt': 'a',
+              'a|lib/a.txt.used': 'e',
+              'a|lib/a.txt.unused': 'd',
+              'a|lib/a.txt.copy': 'ab',
+              'a|$assetGraphPath': serializedGraph,
+            },
+            outputs: {
+              'a|lib/a.txt.copy': 'ae',
+            },
+            writer: writer);
+
+        // Finally modify the primary input.
+        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        writer.assets.clear();
+        await testBuilders(
+            builders,
+            {
+              'a|lib/a.txt': 'f',
+              'a|lib/a.txt.used': 'e',
+              'a|lib/a.txt.unused': 'd',
+              'a|lib/a.txt.copy': 'ae',
+              'a|$assetGraphPath': serializedGraph,
+            },
+            outputs: {
+              'a|lib/a.txt.copy': 'fe',
+            },
+            writer: writer);
+      });
+
+      test('allows marking the primary input as unused', () async {
+        final builder = TestBuilder(
+            buildExtensions: appendExtension('.copy', from: '.txt'),
+            // Add two extra deps, but remove one since we decided not to use it.
+            extraWork: (BuildStep buildStep, _) async {
+              buildStep.reportUnusedAssets([buildStep.inputId]);
+              var usedId = buildStep.inputId.addExtension('.used');
+              await buildStep.canRead(usedId);
+            });
+        var builders = [applyToRoot(builder)];
+
+        // Initial build.
+        var writer = InMemoryRunnerAssetWriter();
+        await testBuilders(
+            builders,
+            {
+              'a|lib/a.txt': 'a',
+              'a|lib/a.txt.used': '',
+            },
+            outputs: {
+              'a|lib/a.txt.copy': 'a',
+            },
+            writer: writer);
+
+        // Followup build with modified primary input should have no outputs.
+        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        writer.assets.clear();
+        await testBuilders(
+            builders,
+            {
+              'a|lib/a.txt': 'b',
+              'a|lib/a.txt.used': '',
+              'a|lib/a.txt.copy': 'a',
+              'a|$assetGraphPath': serializedGraph,
+            },
+            outputs: {},
+            writer: writer);
+
+        // But modifying other inputs still causes a rebuild.
+        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        writer.assets.clear();
+        await testBuilders(
+            builders,
+            {
+              'a|lib/a.txt': 'b',
+              'a|lib/a.txt.used': 'b',
+              'a|lib/a.txt.copy': 'a',
+              'a|$assetGraphPath': serializedGraph,
+            },
+            outputs: {
+              'a|lib/a.txt.copy': 'b',
+            },
+            writer: writer);
+      });
+
+      test('marking the primary input as unused still tracks if it is deleted',
+          () async {
+        final builder = TestBuilder(
+            buildExtensions: appendExtension('.copy', from: '.txt'),
+            // Add two extra deps, but remove one since we decided not to use it.
+            extraWork: (BuildStep buildStep, _) async {
+              buildStep.reportUnusedAssets([buildStep.inputId]);
+            });
+        var builders = [applyToRoot(builder)];
+
+        // Initial build.
+        var writer = InMemoryRunnerAssetWriter();
+        await testBuilders(
+            builders,
+            {
+              'a|lib/a.txt': 'a',
+            },
+            outputs: {
+              'a|lib/a.txt.copy': 'a',
+            },
+            writer: writer);
+
+        // Delete the primary input, the output shoud still be deleted
+        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        writer.assets.clear();
+        await testBuilders(
+            builders,
+            {
+              'a|lib/a.txt.copy': 'a',
+              'a|$assetGraphPath': serializedGraph,
+            },
+            outputs: {},
+            writer: writer);
+
+        var graph = AssetGraph.deserialize(
+            writer.assets[makeAssetId('a|$assetGraphPath')]);
+        expect(graph.get(makeAssetId('a|lib/a.txt.copy')), isNull);
+      });
     });
 
     test('graph/file system get cleaned up for deleted inputs', () async {

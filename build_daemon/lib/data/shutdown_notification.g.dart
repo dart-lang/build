@@ -20,7 +20,8 @@ class _$ShutdownNotificationSerializer
   final String wireName = 'ShutdownNotification';
 
   @override
-  Iterable serialize(Serializers serializers, ShutdownNotification object,
+  Iterable<Object> serialize(
+      Serializers serializers, ShutdownNotification object,
       {FullType specifiedType = FullType.unspecified}) {
     final result = <Object>[
       'message',
@@ -35,7 +36,8 @@ class _$ShutdownNotificationSerializer
   }
 
   @override
-  ShutdownNotification deserialize(Serializers serializers, Iterable serialized,
+  ShutdownNotification deserialize(
+      Serializers serializers, Iterable<Object> serialized,
       {FullType specifiedType = FullType.unspecified}) {
     final result = new ShutdownNotificationBuilder();
 

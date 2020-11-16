@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
@@ -22,9 +23,9 @@ class FinalizedReader implements AssetReader {
   final String _rootPackage;
   final List<BuildPhase> _buildPhases;
 
-  void reset(List<String> buildDirs) {
-    _optionalOutputTracker =
-        OptionalOutputTracker(_assetGraph, buildDirs, _buildPhases);
+  void reset(Set<String> buildDirs, Set<BuildFilter> buildFilters) {
+    _optionalOutputTracker = OptionalOutputTracker(
+        _assetGraph, buildDirs, buildFilters, _buildPhases);
   }
 
   FinalizedReader(
@@ -34,13 +35,15 @@ class FinalizedReader implements AssetReader {
   Future<UnreadableReason> unreadableReason(AssetId id) async {
     if (!_assetGraph.contains(id)) return UnreadableReason.notFound;
     var node = _assetGraph.get(id);
+    if (_optionalOutputTracker != null &&
+        !_optionalOutputTracker.isRequired(node.id)) {
+      return UnreadableReason.notOutput;
+    }
     if (node.isDeleted) return UnreadableReason.deleted;
     if (!node.isReadable) return UnreadableReason.assetType;
     if (node is GeneratedAssetNode) {
       if (node.isFailure) return UnreadableReason.failed;
-      if (!(node.wasOutput && (_optionalOutputTracker.isRequired(node.id)))) {
-        return UnreadableReason.notOutput;
-      }
+      if (!node.wasOutput) return UnreadableReason.notOutput;
     }
     if (await _delegate.canRead(id)) return null;
     return UnreadableReason.unknown;

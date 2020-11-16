@@ -1,10 +1,10 @@
 targets:
   $default:
     builders:
-      provides_builder|some_builder:
+      provides_builder:some_builder:
         options:
           throw_in_constructor: true
-      build_web_compilers|entrypoint:
+      build_web_compilers:entrypoint:
         generate_for:
           - web/main.dart
           - web/sub/main.dart
@@ -17,6 +17,6 @@ targets:
           - test/other_test.dart.browser_test.dart
           - test/sub-dir/subdir_test.dart
           - test/sub-dir/subdir_test.dart.browser_test.dart
-      build_vm_compilers|entrypoint:
+      build_vm_compilers:entrypoint:
         generate_for:
           - test/help_test.dart.vm_test.dart

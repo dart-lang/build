@@ -21,7 +21,7 @@ export 'src/generate/exceptions.dart'
         CannotBuildException;
 export 'src/generate/finalized_assets_view.dart' show FinalizedAssetsView;
 export 'src/generate/options.dart'
-    show defaultRootPackageWhitelist, LogSubscription, BuildOptions;
+    show BuildFilter, BuildOptions, LogSubscription;
 export 'src/generate/performance_tracker.dart'
     show BuildPerformance, BuilderActionPerformance, BuildPhasePerformance;
 export 'src/logging/human_readable_duration.dart';
@@ -40,4 +40,12 @@ export 'src/package_graph/apply_builders.dart'
         toPackages,
         toRoot;
 export 'src/package_graph/package_graph.dart';
-export 'src/util/constants.dart';
+export 'src/util/constants.dart'
+    show
+        assetGraphPath,
+        assetGraphPathFor,
+        cacheDir,
+        entryPointDir,
+        overrideGeneratedOutputDirectory,
+        pubBinary,
+        sdkBin;

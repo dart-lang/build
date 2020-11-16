@@ -29,7 +29,7 @@ final maybeReadCopy = TestBuilder(
     });
 // test-package-end ###########################################################
 
-main() {
+void main() {
   final builders = [
     builder('copyTwice', copyTwice, isOptional: true),
     builder('maybeReadCopy', maybeReadCopy, requiredInputs: ['.txt.copy'])

@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
@@ -69,8 +70,8 @@ Future<bool> createMergedOutputDirectories(
 }
 
 Set<String> _conflicts(Set<BuildDirectory> buildDirs) {
-  final seen = Set<String>();
-  final conflicts = Set<String>();
+  final seen = <String>{};
+  final conflicts = <String>{};
   var outputLocations =
       buildDirs.map((d) => d.outputLocation?.path).where((p) => p != null);
   for (var location in outputLocations) {
@@ -112,15 +113,15 @@ Future<bool> _createMergedOutputDir(
         await outputDir.create(recursive: true);
       }
 
-      outputAssets.addAll(await Future.wait(builtAssets.map((id) => _writeAsset(
-          id, outputDir, root, packageGraph, reader, symlinkOnly, hoist))));
-
-      var packagesFileContent = packageGraph.allPackages.keys
-          .map((p) => '$p:packages/$p/')
-          .join('\r\n');
-      var packagesAsset = AssetId(packageGraph.root.name, '.packages');
-      await _writeAsString(outputDir, packagesAsset, packagesFileContent);
-      outputAssets.add(packagesAsset);
+      outputAssets.addAll(await Future.wait([
+        for (var id in builtAssets)
+          _writeAsset(
+              id, outputDir, root, packageGraph, reader, symlinkOnly, hoist),
+        _writeCustomPackagesFile(packageGraph, outputDir),
+        if (await reader.canRead(_packageConfigId(packageGraph.root.name)))
+          _writeModifiedPackageConfig(
+              packageGraph.root.name, reader, outputDir),
+      ]));
 
       if (!hoist) {
         for (var dir in _findRootDirs(builtAssets, outputPath)) {
@@ -152,8 +153,56 @@ Future<bool> _createMergedOutputDir(
   }
 }
 
+/// Creates a custom `.packages` file in [outputDir] containing all the
+/// packages in [packageGraph].
+///
+/// All package root uris are of the form `packages/<package>/`.
+Future<AssetId> _writeCustomPackagesFile(
+    PackageGraph packageGraph, Directory outputDir) async {
+  var packagesFileContent =
+      packageGraph.allPackages.keys.map((p) => '$p:packages/$p/').join('\r\n');
+  var packagesAsset = AssetId(packageGraph.root.name, '.packages');
+  await _writeAsString(outputDir, packagesAsset, packagesFileContent);
+  return packagesAsset;
+}
+
+AssetId _packageConfigId(String rootPackage) =>
+    AssetId(rootPackage, '.dart_tool/package_config.json');
+
+/// Creates a modified `.dart_tool/package_config.json` file in [outputDir]
+/// based on the current one but with modified root and package uris.
+///
+/// All `rootUri`s are of the form `packages/<package>` and the `packageUri`
+/// is always the empty string. This is because only the lib directory is
+/// exposed when using a `packages` directory layout so the root uri and
+/// package uri are equivalent.
+///
+/// All other fields are left as is.
+Future<AssetId> _writeModifiedPackageConfig(
+    String rootPackage, AssetReader reader, Directory outputDir) async {
+  var packageConfigAsset = _packageConfigId(rootPackage);
+  var packageConfig = jsonDecode(await reader.readAsString(packageConfigAsset))
+      as Map<String, dynamic>;
+
+  var version = packageConfig['configVersion'] as int;
+  if (version != 2) {
+    throw UnsupportedError(
+        'Unsupported package_config.json version, got $version but only '
+        'version 2 is supported.');
+  }
+  var packages =
+      (packageConfig['packages'] as List).cast<Map<String, dynamic>>();
+  for (var package in packages) {
+    package['rootUri'] = '../packages/${package['name']}';
+    package['packageUri'] = '';
+  }
+  await _writeAsString(
+      outputDir, packageConfigAsset, jsonEncode(packageConfig));
+  return packageConfigAsset;
+}
+
 Set<String> _findRootDirs(Iterable<AssetId> allAssets, String outputPath) {
-  var rootDirs = Set<String>();
+  var rootDirs = <String>{};
   for (var id in allAssets) {
     var parts = p.url.split(id.path);
     if (parts.length == 1) continue;

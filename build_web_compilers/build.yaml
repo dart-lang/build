@@ -1,7 +1,7 @@
 targets:
   $default:
     builders:
-      build_web_compilers|entrypoint:
+      build_web_compilers:entrypoint:
         options:
           compiler: dart2js
           dart2js_args:
@@ -11,22 +11,25 @@ targets:
           - web/stack_trace_mapper.dart
       build_web_compilers|_stack_trace_mapper_copy:
         enabled: true
-      build_web_compilers|sdk_js_copy:
-        enabled: true
-      build_web_compilers|sdk_js_cleanup:
+      build_web_compilers|sdk_js:
         enabled: true
 builders:
-  sdk_js_copy:
+  sdk_js:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
-      - sdkJsCopyBuilder
+      - sdkJsCompileUnsound
+      - sdkJsCompileSound
+      - sdkJsCopyRequirejs
     build_extensions:
-      $lib$:
+      $package$:
         - lib/src/dev_compiler/dart_sdk.js
+        - lib/src/dev_compiler/dart_sdk.js.map
+        - lib/src/dev_compiler/dart_sdk.sound.js
+        - lib/src/dev_compiler/dart_sdk.sound.js.map
         - lib/src/dev_compiler/require.js
-    is_optional: False
+    is_optional: True
     auto_apply: none
-    applies_builders: ["build_web_compilers|sdk_js_cleanup"]
+    runs_before: ["build_web_compilers:entrypoint"]
   dart2js_modules:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
@@ -62,14 +65,22 @@ builders:
   ddc:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
-      - ddcKernelBuilder
-      - ddcBuilder
+      - ddcKernelBuilderUnsound
+      - ddcBuilderUnsound
+      - ddcKernelBuilderSound
+      - ddcBuilderSound
     build_extensions:
       .ddc.module:
-        - .ddc.dill
-        - .ddc.js.errors
-        - .ddc.js
-        - .ddc.js.map
+        - .unsound.ddc.dill
+        - .unsound.ddc.js.errors
+        - .unsound.ddc.js
+        - .unsound.ddc.js.map
+        - .unsound.ddc.js.metadata
+        - .sound.ddc.dill
+        - .sound.ddc.js.errors
+        - .sound.ddc.js
+        - .sound.ddc.js.map
+        - .sound.ddc.js.metadata
     is_optional: True
     auto_apply: all_packages
     required_inputs:
@@ -91,9 +102,11 @@ builders:
         - .dart.js.map
         - .dart.js.tar.gz
         - .digests
+        - .merged_metadata
     required_inputs:
       - .dart
-      - .ddc.js
+      - .unsound.ddc.js
+      - .sound.ddc.js
       - .ddc.module
       - .dart2js.module
     build_to: cache
@@ -111,6 +124,9 @@ builders:
       options:
         dart2js_args:
           - --minify
+      dev_options:
+        dart2js_args:
+          - --enable-asserts
       release_options:
         compiler: dart2js
     applies_builders:
@@ -134,12 +150,6 @@ post_process_builders:
   dart_source_cleanup:
     import: "package:build_web_compilers/builders.dart"
     builder_factory: dartSourceCleanup
-    defaults:
-      release_options:
-        enabled: true
-  sdk_js_cleanup:
-    import: "package:build_web_compilers/builders.dart"
-    builder_factory: sdkJsCleanupBuilder
     defaults:
       release_options:
         enabled: true

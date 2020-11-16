@@ -1,3 +1,155 @@
+## 6.1.0-dev
+
+- Require the latest build version (1.5.1).
+- Support the `additional_public_assets` option in build configurations.
+- Fix a bug where the server would respond with a 500 instead of a 404 for
+  files that don't match any build filters but had previously failed.
+
+## 6.0.3
+
+- Fix https://github.com/dart-lang/build/issues/1804.
+
+## 6.0.2
+
+- Require the latest build version (1.5.x).
+
+## 6.0.1
+
+- Add back the `overrideGeneratedOutputDirectory` method.
+
+## 6.0.0
+
+-   Remove some constants and utilities which are implementation details:
+    `defaultRootPackageWhitelist`, `errorCachePath`, `generatedOutputDirectory`,
+    `lockGeneratedOutputDirectory`, `overrideGeneratedOutputDirectory`,
+    `sdkPath`, `buildPhasePoolSize`.
+
+## 5.2.0
+
+- Dart language experiments are now tracked on the asset graph and will
+  invalidate the build if they change.
+  - Experiments are enabled for a zone by using the `withEnabledExperiments`
+    function from `package:build/experiments.dart`.
+
+## 5.1.0
+
+- Add a warning if a package is missing some required placholder files,
+  including `$package$` and `lib/$lib$`.
+- Reduce chances for changing apparent build phases across machines with a
+  different order of packages from `package_config.json`.
+
+## 5.0.0
+
+### Breaking changes
+
+- `PackageGraph.forPath` and `PackageGraph.forThisPackage` are now static
+  methods which return a `Future<PackageGraph>` instead of constructors.
+- `PackageNode` now requires a `LanguageVersion`.
+
+### Other changes
+
+- Builds no longer depend on the contents of the package_config.json file,
+  instead they depend only on the language versions inside of it.
+  - This should help CI builds that want to share a cache across runs.
+- Improve the error message for build.yaml parsing errors, suggesting a clean
+  build if you believe the parse error is incorrect.
+- Remove unused dev dependency on `package_resolver`.
+
+## 4.5.3
+
+- Don't throw a `BuildScriptInvalidated` exception on package_config.json
+  updates unless running from snapshot.
+
+## 4.5.2
+
+- Don't assume the existence of a .dart_tool/package_config.json file when
+  creating output directories.
+
+## 4.5.1
+
+- Don't fail if there is no .dart_tool/package_config.json file.
+
+## 4.5.0
+
+- Add the `package_config.json` file as an internal source, and invalidate
+  builds when it changes.
+- Avoid treating `AssetId` paths as URIs.
+
+## 4.4.0
+
+- Support the `auto_apply_builders` target configuration added in
+  `build_config` version `0.4.2`.
+
+## 4.3.0
+
+- Add the `$package$` synthetic placeholder file and update the docs to prefer
+  using only that or `lib/$lib$`.
+- Add the `assets` directory and `$package$` placeholders to the default
+  sources whitelist.
+
+## 4.2.1
+
+- Bug fix: Changing the root package name will no longer cause subsequent
+  builds to fail (Issue #2566).
+
+## 4.2.0
+
+### New Feature
+
+- Allow reading assets created previously by the same `BuildStep`.
+
+## 4.1.0
+
+- Add support for trimming builds based on `BuildStep.reportUnusedAssets`
+  calls. See the `build` package for more details.
+- Include `node/**` in the default set of sources (when there is no target
+  defined) for the root package.
+
+## 4.0.0
+
+### New Feature: Build Filters
+
+- Added a new `BuildFilter` class which matches a set of assets with glob
+  syntax support for both package and file names.
+- Added `buildFilters` to `BuildOptions` which is a `Set<BuildFilter>` and
+  is used to filter exactly which outputs will be generated.
+  - Note that any inputs to the specified files will also necessarily be built.
+- `BuildRunner.run` also now accepts an optional `Set<BuildFilter>` argument.
+- `FinalizedReader` also  now accepts a `Set<BuildFilter>` optional parameter
+  and will only allow reading matched files.
+  - This means you can create output directories or servers that respect build
+    filters.
+
+### Breaking Changes
+
+- `FinalizedReader.reset` now requires an additional `Set<BuildFilter>`
+  argument.
+
+## 3.1.1
+
+- When skipping build script updates, don't check if the build script is a
+  part of the asset graph either.
+
+## 3.1.0
+
+- Factor out the logic to do a manual file system scan for changes into a
+  new `AssetTracker` class.
+  - This is not exposed publicly and is only intended to be used from the
+    `build_runner` package.
+
+## 3.0.9
+
+- Support the latest release of `package:json_annotation`.
+
+## 3.0.8
+
+- Fix --log-performance crash on windows by ensuring we use valid
+  windows directory names.
+
+## 3.0.7
+
+- Support the latest `package:build_config`.
+
 ## 3.0.6
 
 - Handle symlink creation failures and link to dev mode docs for windows.

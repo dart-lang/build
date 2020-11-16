@@ -6,3 +6,4 @@ flutter_gallery_assets:sdk/flutter/flutter_gallery_assets/lib/
 flutter_test:sdk/flutter/flutter_test/lib/
 intl:pkg/intl/lib/
 string_scanner:pkg/string_scanner/lib/
+flutter_gallery:./lib/

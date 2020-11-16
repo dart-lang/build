@@ -5,7 +5,6 @@ analyzer:
     unused_import: error
     unused_local_variable: error
     dead_code: error
-    override_on_non_overriding_method: error
     todo: ignore
     deprecated_member_use_from_same_package: ignore
   exclude:
@@ -14,8 +13,11 @@ analyzer:
     # Common top level directories containing generated files in any package.
     - "*/build/**"
     - "*/.dart_tool/**"
+
 linter:
   rules:
+    - always_declare_return_types
+    - always_require_non_null_named_parameters
     - annotate_overrides
     - avoid_bool_literals_in_conditional_expressions
     - avoid_classes_with_only_static_members
@@ -26,7 +28,6 @@ linter:
     - avoid_relative_lib_imports
     - avoid_renaming_method_parameters
     - avoid_return_types_on_setters
-    #- avoid_returning_null
     - avoid_returning_null_for_void
     - avoid_returning_this
     - avoid_shadowing_type_parameters
@@ -34,11 +35,10 @@ linter:
     - avoid_types_as_parameter_names
     - avoid_unused_constructor_parameters
     - await_only_futures
+    - camel_case_extensions
     - camel_case_types
-    #- cancel_subscriptions
     - cascade_invocations
     - comment_references
-    #- constant_identifier_names
     - control_flow_in_finally
     - curly_braces_in_flow_control_structures
     - directives_ordering
@@ -47,10 +47,7 @@ linter:
     - empty_statements
     - file_names
     - hash_and_equals
-    #- implementation_imports
-    - invariant_booleans
     - iterable_contains_unrelated_type
-    #- join_return_with_assignment
     - library_names
     - library_prefixes
     - list_remove_unrelated_type
@@ -61,24 +58,24 @@ linter:
     - omit_local_variable_types
     - only_throw_errors
     - overridden_fields
-    #- package_api_docs
     - package_names
     - package_prefixed_library_names
     - prefer_adjacent_string_concatenation
-    # TODO: reenable this once we want to pin the SDK to >=2.2.0
-    # - prefer_collection_literals
+    - prefer_collection_literals
     - prefer_conditional_assignment
-    #- prefer_const_constructors
     - prefer_contains
     - prefer_equal_for_default_values
     - prefer_final_fields
+    - prefer_for_elements_to_map_fromIterable
     - prefer_generic_function_type_aliases
+    - prefer_if_null_operators
     - prefer_initializing_formals
-    #- prefer_interpolation_to_compose_strings
     - prefer_is_empty
     - prefer_is_not_empty
+    - prefer_iterable_whereType
     - prefer_null_aware_operators
     - prefer_single_quotes
+    - prefer_spread_collections
     - prefer_typing_uninitialized_variables
     - recursive_getters
     - slash_for_doc_comments
@@ -93,11 +90,12 @@ linter:
     - unnecessary_new
     - unnecessary_null_aware_assignments
     - unnecessary_null_in_if_null_operators
+    - unnecessary_overrides
     - unnecessary_parenthesis
     - unnecessary_statements
     - unnecessary_this
-    - unnecessary_overrides
     - unrelated_type_equality_checks
+    - use_function_type_syntax_for_parameters
     - use_rethrow_when_possible
     - valid_regexps
     - void_checks

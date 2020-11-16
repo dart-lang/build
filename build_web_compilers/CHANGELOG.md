@@ -1,3 +1,227 @@
+## 2.15.1
+
+- Fix DDC sound mode apps to load the sound mode sdk, and only require the
+  compiled sdk dependency that it will actually use.
+
+## 2.15.0
+
+- Add some warnings for manual dart2js args that should be configured using
+  explicit options, and add back dart2js argument logging which was
+  accidentally removed.
+
+## 2.14.0
+
+- Strip scratch directory paths from a new metadata field `fullKernelUri`.
+
+## 2.13.0
+
+- Add `native_null_asserts` boolean option to the
+  `build_web_compilers:entrypoint` builder. This is disabled by default but
+  will be enabled by default in a later release. 
+
+## 2.12.3
+
+- Fix handling of explicit `sound_null_safety` option for `dart2js` compiles.
+
+## 2.12.2
+
+- Fix parsing of `environment` config for DDC when using a bool or numeric
+  value.
+- Add `sound_null_safety` and `null_assertions` boolean options to the
+  `build_web_compilers|entrypoint` builder.
+
+## 2.12.1
+
+- Require `build_modules` version `^3.0.0`.
+
+## 2.12.0
+
+- Support sound null safety in ddc/dart2js, based on the standard entrypoint
+  detection (enable null safety if the entrypoint opts in).
+- Update dart2js support to enable experiments if provided, and use a
+  multi-root scheme for non-package uris.
+- Require `build` version `>=1.5.0`.
+
+## 2.12.0-dev.3
+
+- Fix stripping scratch paths in metadata.
+
+## 2.12.0-dev.2
+
+- Add the `generate-full-dill` option for the `build_web_compilers:ddc`
+  builder. The full dill output is used by expression evaluation service
+  in webdev for expression evaluation feature. This setting is disabled by
+  default but can be enabled by setting it to `true` globally:
+
+```yaml
+global_options:
+  build_web_compilers:ddc:
+    options:
+      generate-full-dill: true
+```
+
+## 2.12.0-dev.1
+
+- Update `build_web_compilers|ddc` builder to produce a `.metadata` file.
+- Update `build_web_compilers|entrypoint` builder to produce a
+  `.ddc_merged_metadata` file which consists of new line separated
+  `.metadata` content produced by DDC.
+- Migrate off of deprecated analyzer apis.
+- Allow the latest analyzer version `0.40.x`.
+
+## 2.11.0
+
+- Deprecated support for the `experiments` configuration in favor of the
+  general mechanism exposed by the build package(exposed through the
+  `--enable-experiment` flag to match other Dart tools).
+
+## 2.10.0
+
+- Pass the package_config.json file when compiling with ddc/dart2js instead of
+  the .packages file.
+
+## 2.9.0
+
+- Add support for enabling experiments through the `experiments` option on the
+  `build_web_compilers|ddc` builder. This must be configured globally.
+  - This is a list of experiment names, which translates into
+    `--enable-experiment=<name>` arguments.
+
+## 2.8.0
+
+- Enable asserts in dev mode with dart2js by default.
+
+## 2.7.2
+
+- Fix a bug with hot restart,
+  [#2586](https://github.com/dart-lang/build/issues/2586).
+
+## 2.7.1
+
+- Allow analyzer version `0.39.x`.
+
+## 2.7.0
+
+- Added an `environment` option to the `DevCompilerBuilder`.
+  - This can be configured using the `environment` option of the
+    `build_web_compilers|ddc` builder.
+  - The expected value is a `Map<String, String>` and is equivalent to
+    providing `-D<key>=<value>` command line arguments.
+  - This option should only be set globally, and will throw if it ever recieves
+    two different values. This is to ensure all modules are compiled with the
+    same environment.
+
+## 2.6.4
+
+- Deobfuscate DDC extension method stack traces.
+
+## 2.6.3
+
+- Enforce builder application ordering between the SDK JS copy builder and the
+  DDC entrypoint builder.
+
+## 2.6.2
+
+Fix the skipPlatformCheck option which was accidentally doing the opposite
+of what it claimed.
+
+## 2.6.1
+
+- Use the kernel version of `dart_sdk.js` rather than the analyzer version.
+
+## 2.6.0
+
+Add an option to globally skip the platform checks instead of only skipping
+them for a set of whitelisted packages.
+
+## 2.5.2
+
+Republish of `2.5.0` with the proper min sdk contraint.
+
+## 2.5.1
+
+### Bug fix for issue #2464
+
+Ignore the `trackUnusedInputs` option that was added in `2.5.0`.
+
+This option will be respected again in the next release which will have the
+proper minimum sdk constraint.
+
+## 2.5.0
+
+Add support for dependency pruning to the `DevCompilerBuilder`. This should
+greatly improve the invalidation semantics for builds, meaning that less code
+will be recompiled for each edit you make.
+
+This is enabled by default when using build_runner, and can be disabled using
+the `track-unused-inputs: false` option if you run into issues, so in your
+`build.yaml` it would look like this:
+
+```yaml
+targets:
+  $default:
+    build_web_compilers:ddc:
+      options:
+        track-unused-inputs: false
+```
+
+When using the builder programatically it is disabled by default and can be
+enabled by passing `trackUnusedInputs: true` to the `DevCompilerBuilder`
+constructor.
+
+## 2.4.1
+
+Make the required assets for DDC applications configurable in the
+`bootstrapDdc` method instead of hard coded. This allows custom integrations
+like flutter web to not require the same assets, or require additional custom
+assets.
+
+## 2.4.0
+
+### New Feature: Better --build-filter support for building a single test.
+
+You can now build a basic app or test in isolation by only requesting the
+`*.dart.js` file using a build filter, for example adding this argument to any
+build_runner command would build the `web/main.dart` app only:
+`--build-filter=web/main.dart.js`.
+
+For tests you will need to specify the bootstrapped test file, so:
+`--build-filter=test/hello_world.dart.browser_test.dart.js`.
+
+Previously you also had to explicitly require the SDK resources like:
+`--build-filter="package:build_web_compilers/**.js"` or similar.
+
+**Note**: If your app relies on any non-Dart generated files you will likely
+have to ask for those explicitly as well with additinal filters.
+
+## 2.3.0
+
+- Add an option to the DDC bootstrap to skip the checks around modules that have
+  imports to unsupported SDK libraries like `dart:io` when the module is from a
+  specified package. This is not used in the default build, but is available for
+  custom DDC integrations.
+
+## 2.2.3
+
+- Allow analyzer version 0.38.0.
+
+## 2.2.2
+
+- Re-publish 2.2.0 with proper minimum sdk constraint of >=2.4.0.
+
+## 2.2.1
+
+- Revert of bad 2.2.0 release (had a bad min sdk).
+
+## 2.2.0
+
+- Make `librariesPath` configurable in `DevCompilerBuilder`.
+
+## 2.1.5
+
+- Add pre-emptive support for an upcoming breaking change in ddc
+  around entrypoint naming.
+
 ## 2.1.4
 
 - Allow analyzer version 0.37.0.
@@ -124,10 +348,10 @@ global_options:
       enabled: false
 ```
 
-[analyzer]: https://pub.dartlang.org/packages/analyzer
-[front_end]: https://pub.dartlang.org/packages/front_end
+[analyzer]: https://pub.dev/packages/analyzer
+[front_end]: https://pub.dev/packages/front_end
 [issue tracker]: https://github.com/dart-lang/build/issues/new
-[TestOn]: https://pub.dartlang.org/documentation/test/latest/#restricting-tests-to-certain-platforms
+[TestOn]: https://pub.dev/documentation/test/latest/#restricting-tests-to-certain-platforms
 
 ## 1.2.2
 

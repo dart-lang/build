@@ -33,7 +33,7 @@ class PackageGraphWatcher {
   PackageGraphWatcher(
     this._graph, {
     Logger logger,
-    PackageNodeWatcher watch(PackageNode node),
+    PackageNodeWatcher Function(PackageNode node) watch,
   })  : _logger = logger ?? Logger('build_runner'),
         _strategy = watch ?? _default;
 
@@ -51,7 +51,17 @@ class PackageGraphWatcher {
         .map(_strategy)
         .toList();
     final filteredEvents = allWatchers
-        .map((w) => w.watch().where(_nestedPathFilter(w.node)))
+        .map((w) => w
+                .watch()
+                .where(_nestedPathFilter(w.node))
+                .handleError((dynamic e, StackTrace s) {
+              _logger.severe(
+                  'Error from directory watcher for package:${w.node.name}\n\n'
+                  'If you see this consistently then it is recommended that '
+                  'you enable the polling file watcher with '
+                  '--use-polling-watcher.');
+              throw e;
+            }))
         .toList();
     // Asynchronously complete the `_readyCompleter` once all the watchers
     // are done.

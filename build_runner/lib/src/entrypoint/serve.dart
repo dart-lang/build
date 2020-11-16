@@ -5,9 +5,9 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:build_runner/src/generate/directory_watcher_factory.dart';
-import 'package:http_multi_server/http_multi_server.dart';
+import 'package:build/experiments.dart';
 import 'package:build_runner_core/build_runner_core.dart';
+import 'package:http_multi_server/http_multi_server.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf_io.dart';
@@ -56,16 +56,19 @@ class ServeCommand extends WatchCommand {
       argResults, argResults.rest, packageGraph.root.name, this);
 
   @override
-  Future<int> run() async {
+  Future<int> run() {
     final servers = <ServeTarget, HttpServer>{};
-    return _runServe(servers).whenComplete(() async {
-      await Future.wait(
-          servers.values.map((server) => server.close(force: true)));
-    });
+    var options = readOptions();
+    return withEnabledExperiments(
+        () => _runServe(servers, options).whenComplete(() async {
+              await Future.wait(
+                  servers.values.map((server) => server.close(force: true)));
+            }),
+        options.enableExperiments);
   }
 
-  Future<int> _runServe(Map<ServeTarget, HttpServer> servers) async {
-    var options = readOptions();
+  Future<int> _runServe(
+      Map<ServeTarget, HttpServer> servers, ServeOptions options) async {
     try {
       await Future.wait(options.serveTargets.map((target) async {
         servers[target] =
@@ -73,10 +76,14 @@ class ServeCommand extends WatchCommand {
       }));
     } on SocketException catch (e) {
       var listener = Logger.root.onRecord.listen(stdIOLogListener());
-      logger.severe(
-          'Error starting server at ${e.address.address}:${e.port}, address '
-          'is already in use. Please kill the server running on that port or '
-          'serve on a different port and restart this process.');
+      if (e.address != null && e.port != null) {
+        logger.severe(
+            'Error starting server at ${e.address.address}:${e.port}, address '
+            'is already in use. Please kill the server running on that port or '
+            'serve on a different port and restart this process.');
+      } else {
+        logger.severe('Error starting server on ${options.hostName}.');
+      }
       await listener.cancel();
       return ExitCode.osError.code;
     }
@@ -95,7 +102,8 @@ class ServeCommand extends WatchCommand {
       builderConfigOverrides: options.builderConfigOverrides,
       isReleaseBuild: options.isReleaseBuild,
       logPerformanceDir: options.logPerformanceDir,
-      directoryWatcherFactory: defaultDirectoryWatcherFactory,
+      directoryWatcherFactory: options.directoryWatcherFactory,
+      buildFilters: options.buildFilters,
     );
 
     if (handler == null) return ExitCode.config.code;

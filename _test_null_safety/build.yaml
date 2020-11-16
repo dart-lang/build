@@ -1,0 +1,53 @@
+targets:
+  $default:
+    builders:
+      build_vm_compilers:entrypoint:
+        enabled: false
+      build_web_compilers:entrypoint:
+        enabled: false
+  regular_tests:
+    auto_apply_builders: false
+    sources:
+    - test/opted_in_test.dart
+    - test/opted_out_test.dart
+    builders:
+      build_web_compilers:entrypoint:
+        enabled: true
+      build_vm_compilers:entrypoint:
+        enabled: true
+  null_assertion_test:
+    auto_apply_builders: false
+    sources:
+    - test/null_assertions_test.dart
+    builders:
+      build_web_compilers:entrypoint:
+        enabled: true
+        options:
+          null_assertions: true
+  disable_sound_null_safety_test:
+    auto_apply_builders: false
+    sources:
+    - test/disable_sound_null_safety_test.dart
+    builders:
+      build_web_compilers:entrypoint:
+        enabled: true
+        options:
+          sound_null_safety: false
+  native_null_assertions_test:
+    auto_apply_builders: false
+    sources:
+    - test/native_null_assertions_test.dart
+    builders:
+      build_web_compilers:entrypoint:
+        enabled: true
+        options:
+          native_null_assertions: true
+  no_native_null_assertions_test:
+    auto_apply_builders: false
+    sources:
+    - test/no_native_null_assertions_test.dart
+    builders:
+      build_web_compilers:entrypoint:
+        enabled: true
+        options:
+          native_null_assertions: false

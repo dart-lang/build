@@ -1,7 +1,7 @@
 name: example
 
 environment:
-  sdk: ">=2.0.0 <3.0.0"
+  sdk: ">=2.10.0-93.0.dev <3.0.0"
 
 dependencies:
   build: ^1.0.0
@@ -29,3 +29,6 @@ dependency_overrides:
     path: ../build_web_compilers
   build_config:
     path: ../build_config
+  scratch_space:
+    path: ../scratch_space
+  analyzer: ^0.39.0

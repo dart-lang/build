@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
@@ -19,6 +18,7 @@ abstract class AssetReader {
   ///
   /// * Throws a `PackageNotFoundException` if `id.package` is not found.
   /// * Throws a `AssetNotFoundException` if `id.path` is not found.
+  /// * Throws an `InvalidInputException` if [id] is an invalid input.
   Future<List<int>> readAsBytes(AssetId id);
 
   /// Returns a [Future] that completes with the contents of a text asset.
@@ -27,6 +27,7 @@ abstract class AssetReader {
   ///
   /// * Throws a `PackageNotFoundException` if `id.package` is not found.
   /// * Throws a `AssetNotFoundException` if `id.path` is not found.
+  /// * Throws an `InvalidInputException` if [id] is an invalid input.
   Future<String> readAsString(AssetId id, {Encoding encoding});
 
   /// Indicates whether asset at [id] is readable.
@@ -43,6 +44,9 @@ abstract class AssetReader {
   ///
   /// This should be treated as a transparent [Digest] and the implementation
   /// may differ based on the current build system being used.
+  ///
+  /// Similar to [readAsBytes], `digest` throws an exception if the asset can't
+  /// be found or if it's an invalid input.
   Future<Digest> digest(AssetId id) async {
     var digestSink = AccumulatorSink<Digest>();
     md5.startChunkedConversion(digestSink)

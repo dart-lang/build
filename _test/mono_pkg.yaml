@@ -1,22 +1,31 @@
 dart:
-  - dev
+- dev
+
+os:
+- linux
+- windows
 
 stages:
-  - analyze_and_format:
-    - dartanalyzer: --fatal-infos --fatal-warnings .
-  - unit_test:
-    - group:
-      - command: pub run build_runner test -- -p chrome
-      - command: pub run build_runner test -- -p vm test/configurable_uri_test.dart
-  - e2e_test:
-    - test: --total-shards 6 --shard-index 0
-    - test: --total-shards 6 --shard-index 1
-    - test: --total-shards 6 --shard-index 2
-    - test: --total-shards 6 --shard-index 3
-    - test: --total-shards 6 --shard-index 4
-    - test: --total-shards 6 --shard-index 5
-  - e2e_test_cron:
-    - test:
-      dart:
-        - be/raw/latest
-        - dev
+- analyze_and_format:
+  - dartanalyzer: --fatal-infos --fatal-warnings .
+    os: linux
+- unit_test:
+  - group:
+    - command: pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random
+    - command: pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random
+- e2e_test:
+  - test: --total-shards 2 --shard-index 0 --test-randomize-ordering-seed=random
+    os: linux
+  - test: --total-shards 2 --shard-index 1 --test-randomize-ordering-seed=random
+    os: linux
+  - test: --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random
+    os: windows
+  - test: --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random
+    os: windows
+  - test: --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random
+    os: windows
+- e2e_test_cron:
+  - test:
+    dart:
+    - be/raw/latest
+    - dev

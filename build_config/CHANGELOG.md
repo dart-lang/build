@@ -1,3 +1,19 @@
+## 0.4.3-dev
+
+- Added the `additional_public_assets` option, which describes the assets
+  readable when the configured package is not the root of the build.
+
+## 0.4.2
+
+- Add support for an `auto_apply_builders` option to the `target` config.
+  - Defaults to `true` (the previous behavior), setting it to `false`
+    means all builders have to be explicitly enabled. 
+
+## 0.4.1+1
+
+- Support the latest release of `package:json_annotation`.
+- Increased the lower bound for the Dart SDK to `>=2.3.0`.
+
 ## 0.4.1
 
 - Added optional `configYamlPath` parameter to `BuildConfig.parse`. When

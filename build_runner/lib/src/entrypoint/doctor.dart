@@ -50,7 +50,7 @@ class DoctorCommand extends BuildRunnerCommand {
   }
 
   Future<Map<String, BuilderDefinition>> _loadBuilderDefinitions() async {
-    final packageGraph = PackageGraph.forThisPackage();
+    final packageGraph = await PackageGraph.forThisPackage();
     final buildConfigOverrides =
         await findBuildConfigOverrides(packageGraph, null);
     Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
@@ -84,7 +84,7 @@ class DoctorCommand extends BuildRunnerCommand {
   bool _checkBuildExtensions(BuilderApplication builderApplication,
       Map<String, BuilderDefinition> config) {
     var phases = builderApplication.buildPhaseFactories
-        .map((f) => f(PackageNode(null, null, null, isRoot: true),
+        .map((f) => f(PackageNode(null, null, null, null, isRoot: true),
             BuilderOptions.empty, InputSet.anything, InputSet.anything, true))
         .whereType<InBuildPhase>()
         .toList();

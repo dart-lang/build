@@ -10,7 +10,7 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:_test_common/common.dart';
 import 'package:_test_common/package_graphs.dart';
 
-main() {
+void main() {
   final customGeneratedDir = 'my-custom-dir';
   overrideGeneratedOutputDirectory(customGeneratedDir);
 

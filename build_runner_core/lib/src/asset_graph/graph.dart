@@ -8,10 +8,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build/experiments.dart' as experiments_zone;
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
+import 'package:package_config/package_config.dart';
 import 'package:watcher/watcher.dart';
 
 import '../generate/phase.dart';
@@ -35,7 +37,14 @@ class AssetGraph {
   /// The [Platform.version] this graph was created with.
   final String dartVersion;
 
-  AssetGraph._(this.buildPhasesDigest, this.dartVersion);
+  /// The Dart language experiments that were enabled when this graph was
+  /// originally created from the [build] constructor.
+  final List<String> enabledExperiments;
+
+  final Map<String, LanguageVersion> packageLanguageVersions;
+
+  AssetGraph._(this.buildPhasesDigest, this.dartVersion,
+      this.packageLanguageVersions, this.enabledExperiments);
 
   /// Deserializes this graph.
   factory AssetGraph.deserialize(List<int> serializedGraph) =>
@@ -47,8 +56,15 @@ class AssetGraph {
       Set<AssetId> internalSources,
       PackageGraph packageGraph,
       AssetReader digestReader) async {
-    var graph =
-        AssetGraph._(computeBuildPhasesDigest(buildPhases), Platform.version);
+    var packageLanguageVersions = {
+      for (var pkg in packageGraph.allPackages.values)
+        pkg.name: pkg.languageVersion
+    };
+    var graph = AssetGraph._(
+        computeBuildPhasesDigest(buildPhases),
+        Platform.version,
+        packageLanguageVersions,
+        experiments_zone.enabledExperiments);
     var placeholders = graph._addPlaceHolderNodes(packageGraph);
     var sourceNodes = graph._addSources(sources);
     graph
@@ -164,7 +180,7 @@ class AssetGraph {
   ///
   /// Returns a [Set<AssetId>] of all removed nodes.
   Set<AssetId> _removeRecursive(AssetId id, {Set<AssetId> removedIds}) {
-    removedIds ??= Set<AssetId>();
+    removedIds ??= <AssetId>{};
     var node = get(id);
     if (node == null) return removedIds;
     removedIds.add(id);
@@ -241,11 +257,11 @@ class AssetGraph {
       List<BuildPhase> buildPhases,
       Map<AssetId, ChangeType> updates,
       String rootPackage,
-      Future delete(AssetId id),
+      Future Function(AssetId id) delete,
       AssetReader digestReader) async {
-    var newIds = Set<AssetId>();
-    var modifyIds = Set<AssetId>();
-    var removeIds = Set<AssetId>();
+    var newIds = <AssetId>{};
+    var modifyIds = <AssetId>{};
+    var removeIds = <AssetId>{};
     updates.forEach((id, changeType) {
       if (changeType != ChangeType.ADD && get(id) == null) return;
       switch (changeType) {
@@ -276,8 +292,8 @@ class AssetGraph {
     // Collects the set of all transitive ids to be removed from the graph,
     // based on the removed `SourceAssetNode`s by following the
     // `primaryOutputs`.
-    var transitiveRemovedIds = Set<AssetId>();
-    addTransitivePrimaryOutputs(AssetId id) {
+    var transitiveRemovedIds = <AssetId>{};
+    void addTransitivePrimaryOutputs(AssetId id) {
       transitiveRemovedIds.add(id);
       get(id).primaryOutputs.forEach(addTransitivePrimaryOutputs);
     }
@@ -298,7 +314,7 @@ class AssetGraph {
 
     // Transitively invalidates all assets. This needs to happen after the
     // structure of the graph has been updated.
-    var invalidatedIds = Set<AssetId>();
+    var invalidatedIds = <AssetId>{};
 
     var newGeneratedOutputs =
         _addOutputsForSources(buildPhases, newIds, rootPackage);
@@ -419,7 +435,7 @@ class AssetGraph {
       Set<AssetId> allInputs,
       List<BuildPhase> buildPhases,
       String rootPackage) {
-    var phaseOutputs = Set<AssetId>();
+    var phaseOutputs = <AssetId>{};
     var buildOptionsNodeId = builderOptionsIdForAction(phase, phaseNum);
     var builderOptionsNode = get(buildOptionsNodeId) as BuilderOptionsAssetNode;
     var inputs =
@@ -480,7 +496,7 @@ class AssetGraph {
       String rootPackage,
       {AssetId primaryInput,
       @required bool isHidden}) {
-    var removed = Set<AssetId>();
+    var removed = <AssetId>{};
     for (var output in outputs) {
       AssetNode existing;
       // When any outputs aren't hidden we can pick up old generated outputs as
@@ -508,6 +524,8 @@ class AssetGraph {
           isHidden: isHidden);
       if (existing != null) {
         newNode.outputs.addAll(existing.outputs);
+        // Ensure we set up the reverse link for NodeWithInput nodes.
+        _addInput(existing.outputs, output);
       }
       builderOptionsNode.outputs.add(output);
       _add(newNode);
@@ -521,6 +539,14 @@ class AssetGraph {
   // TODO remove once tests are updated
   void add(AssetNode node) => _add(node);
   Set<AssetId> remove(AssetId id) => _removeRecursive(id);
+
+  /// Adds [input] to all [outputs] if they represent [NodeWithInputs] nodes.
+  void _addInput(Iterable<AssetId> outputs, AssetId input) {
+    for (var output in outputs) {
+      var node = get(output);
+      if (node is NodeWithInputs) node.inputs.add(input);
+    }
+  }
 }
 
 /// Computes a [Digest] for [buildPhases] which can be used to compare one set
@@ -552,4 +578,5 @@ Set<AssetId> placeholderIdsFor(PackageGraph packageGraph) =>
           AssetId(package, r'lib/$lib$'),
           AssetId(package, r'test/$test$'),
           AssetId(package, r'web/$web$'),
+          AssetId(package, r'$package$'),
         ]));

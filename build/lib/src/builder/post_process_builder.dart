@@ -7,7 +7,7 @@ import 'dart:async';
 import 'builder.dart';
 import 'post_process_build_step.dart';
 
-/// A builder which runes in a special phase at the end of the build.
+/// A builder which runs in a special phase at the end of the build.
 ///
 /// They are different from a normal [Builder] in several ways:
 ///

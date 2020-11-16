@@ -1,9 +1,9 @@
 [![Build Status](https://travis-ci.org/dart-lang/build.svg?branch=master)](https://travis-ci.org/dart-lang/build)
-[![Pub Package](https://img.shields.io/pub/v/scratch_space.svg)](https://pub.dartlang.org/packages/scratch_space)
+[![Pub Package](https://img.shields.io/pub/v/scratch_space.svg)](https://pub.dev/packages/scratch_space)
 
 A [`ScratchSpace`][dartdoc:ScratchSpace] is a thin wrapper around a temporary
 directory. The constructor takes zero arguments, so making one is as simple as
-doing `new ScratchSpace()`.
+doing `ScratchSpace()`.
 
 In general, you should wrap a `ScratchSpace` in a `Resource`, so that you can
 re-use the scratch space across build steps in an individual build. This is
@@ -13,14 +13,14 @@ This should look something like the following:
 
 ```
 final myScratchSpaceResource =
-    new Resource(() => new ScratchSpace(), dispose: (old) => old.delete());
+    Resource(() => ScratchSpace(), dispose: (old) => old.delete());
 ```
 
 And then you can get access to it through the `BuildStep#fetchResource` api:
 
 ```
 class MyBuilder extends Builder {
-  Future build(BuildStep buildStep) async {
+  Future<void> build(BuildStep buildStep) async {
     var scratchSpace = await buildStep.fetchResource(myScratchSpaceResource);
   }
 }
@@ -75,4 +75,4 @@ back to your actual output directory.
 Please file feature requests and bugs at the [issue tracker][tracker].
 
 [tracker]: https://github.com/dart-lang/build/issues
-[dartdoc:ScratchSpace]: https://www.dartdocs.org/documentation/scratch_space/latest/scratch_space/ScratchSpace-class.html
+[dartdoc:ScratchSpace]: https://pub.dev/documentation/scratch_space/latest/scratch_space/ScratchSpace-class.html

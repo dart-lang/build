@@ -11,7 +11,7 @@ import 'package:http_multi_server/http_multi_server.dart';
 import 'package:pool/pool.dart';
 import 'package:shelf/shelf_io.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
-import 'package:stream_transform/stream_transform.dart' hide concat;
+import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -39,7 +39,7 @@ class Server {
   HttpServer _server;
   final DaemonBuilder _builder;
   // Channels that are interested in the current build.
-  var _interestedChannels = Set<WebSocketChannel>();
+  var _interestedChannels = <WebSocketChannel>{};
 
   final _subs = <StreamSubscription>[];
 
@@ -139,14 +139,14 @@ class Server {
   }
 
   void _handleChanges(Stream<List<WatchEvent>> changes) {
-    _subs.add(changes.transform(asyncMapBuffer((changesLists) async {
+    _subs.add(changes.asyncMapBuffer((changesLists) async {
       var changes = changesLists.expand((x) => x).toList();
       if (changes.isEmpty) return;
       if (_buildTargetManager.targets.isEmpty) return;
       var buildTargets = _buildTargetManager.targetsForChanges(changes);
       if (buildTargets.isEmpty) return;
       await _build(buildTargets, changes);
-    })).listen((_) {}));
+    }).listen((_) {}));
   }
 
   void _removeChannel(WebSocketChannel channel) async {

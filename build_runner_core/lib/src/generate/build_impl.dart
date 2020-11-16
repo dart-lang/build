@@ -31,6 +31,7 @@ import '../logging/human_readable_duration.dart';
 import '../logging/logging.dart';
 import '../package_graph/apply_builders.dart';
 import '../package_graph/package_graph.dart';
+import '../package_graph/target_graph.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
 import '../util/async.dart';
 import '../util/build_dirs.dart';
@@ -46,38 +47,37 @@ import 'phase.dart';
 
 final _logger = Logger('Build');
 
-List<String> _buildPaths(Set<BuildDirectory> buildDirs) =>
+Set<String> _buildPaths(Set<BuildDirectory> buildDirs) =>
     // The empty string means build everything.
     buildDirs.any((b) => b.directory == '')
-        ? []
-        : buildDirs.map((b) => b.directory).toList();
+        ? <String>{}
+        : buildDirs.map((b) => b.directory).toSet();
 
 class BuildImpl {
-  final FinalizedReader _finalizedReader;
-  FinalizedReader get finalizedReader => _finalizedReader;
+  final FinalizedReader finalizedReader;
 
   final AssetGraph assetGraph;
 
-  final BuildScriptUpdates _buildScriptUpdates;
-  BuildScriptUpdates get buildScriptUpdates => _buildScriptUpdates;
+  final BuildScriptUpdates buildScriptUpdates;
 
   final List<BuildPhase> _buildPhases;
   final PackageGraph _packageGraph;
+  final TargetGraph _targetGraph;
   final AssetReader _reader;
   final Resolvers _resolvers;
   final ResourceManager _resourceManager;
   final RunnerAssetWriter _writer;
   final bool _trackPerformance;
-  final bool _verbose;
   final BuildEnvironment _environment;
   final String _logPerformanceDir;
 
   Future<void> beforeExit() => _resourceManager.beforeExit();
 
   BuildImpl._(BuildDefinition buildDefinition, BuildOptions options,
-      this._buildPhases, this._finalizedReader)
-      : _buildScriptUpdates = buildDefinition.buildScriptUpdates,
+      this._buildPhases, this.finalizedReader)
+      : buildScriptUpdates = buildDefinition.buildScriptUpdates,
         _packageGraph = buildDefinition.packageGraph,
+        _targetGraph = buildDefinition.targetGraph,
         _reader = options.enableLowResourcesMode
             ? buildDefinition.reader
             : CachingAssetReader(buildDefinition.reader),
@@ -85,16 +85,16 @@ class BuildImpl {
         _writer = buildDefinition.writer,
         assetGraph = buildDefinition.assetGraph,
         _resourceManager = buildDefinition.resourceManager,
-        _verbose = options.verbose,
         _environment = buildDefinition.environment,
         _trackPerformance = options.trackPerformance,
         _logPerformanceDir = options.logPerformanceDir;
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates,
-      {Set<BuildDirectory> buildDirs}) {
-    buildDirs ??= Set<BuildDirectory>();
-    finalizedReader.reset(_buildPaths(buildDirs));
-    return _SingleBuild(this, buildDirs).run(updates)
+      {Set<BuildDirectory> buildDirs, Set<BuildFilter> buildFilters}) {
+    buildDirs ??= <BuildDirectory>{};
+    buildFilters ??= {};
+    finalizedReader.reset(_buildPaths(buildDirs), buildFilters);
+    return _SingleBuild(this, buildDirs, buildFilters).run(updates)
       ..whenComplete(_resolvers.reset);
   }
 
@@ -120,7 +120,9 @@ class BuildImpl {
         buildDefinition.assetGraph,
         buildPhases.length,
         options.packageGraph.root.name,
-        _isReadableAfterBuildFactory(buildPhases));
+        _isReadableAfterBuildFactory(buildPhases),
+        _checkInvalidInputFactory(
+            buildDefinition.targetGraph, buildDefinition.packageGraph));
     var finalizedReader = FinalizedReader(
         singleStepReader,
         buildDefinition.assetGraph,
@@ -131,31 +133,53 @@ class BuildImpl {
     return build;
   }
 
-  static bool Function(AssetNode, int, String) _isReadableAfterBuildFactory(
-          List<BuildPhase> buildPhases) =>
-      (AssetNode node, int phaseNum, String package) {
-        if (node is GeneratedAssetNode) {
-          return node.wasOutput && !node.isFailure;
-        }
-        return node.isReadable && node.isValidInput;
-      };
+  static IsReadable _isReadableAfterBuildFactory(List<BuildPhase> buildPhases) {
+    return (AssetNode node, int phaseNum, AssetWriterSpy writtenAssets) {
+      if (node is GeneratedAssetNode) {
+        return Readability.fromPreviousPhase(node.wasOutput && !node.isFailure);
+      }
+
+      return Readability.fromPreviousPhase(
+          node.isReadable && node.isValidInput);
+    };
+  }
+}
+
+CheckInvalidInput _checkInvalidInputFactory(
+    TargetGraph targetGraph, PackageGraph packageGraph) {
+  return (AssetId id) {
+    final packageNode = packageGraph[id.package];
+
+    if (packageNode == null) {
+      throw PackageNotFoundException(id.package);
+    }
+
+    // The id is an invalid input if it's not part of the build.
+    if (!targetGraph.isVisibleInBuild(id, packageNode)) {
+      final allowed = targetGraph.validInputsFor(packageNode);
+
+      throw InvalidInputException(id, allowedGlobs: allowed);
+    }
+  };
 }
 
 /// Performs a single build and manages state that only lives for a single
 /// build.
 class _SingleBuild {
   final AssetGraph _assetGraph;
+  final Set<BuildFilter> _buildFilters;
   final List<BuildPhase> _buildPhases;
   final List<Pool> _buildPhasePool;
   final BuildEnvironment _environment;
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
   final _lazyGlobs = <AssetId, Future<void>>{};
   final PackageGraph _packageGraph;
+  final TargetGraph _targetGraph;
+  final CheckInvalidInput _checkInvalidInput;
   final BuildPerformanceTracker _performanceTracker;
   final AssetReader _reader;
   final Resolvers _resolvers;
   final ResourceManager _resourceManager;
-  final bool _verbose;
   final RunnerAssetWriter _writer;
   final Set<BuildDirectory> _buildDirs;
   final String _logPerformanceDir;
@@ -169,29 +193,32 @@ class _SingleBuild {
   /// Can't be final since it needs access to [pendingActions].
   HungActionsHeartbeat hungActionsHeartbeat;
 
-  _SingleBuild(BuildImpl buildImpl, Set<BuildDirectory> buildDirs)
+  _SingleBuild(BuildImpl buildImpl, Set<BuildDirectory> buildDirs,
+      Set<BuildFilter> buildFilters)
       : _assetGraph = buildImpl.assetGraph,
+        _buildFilters = buildFilters,
         _buildPhases = buildImpl._buildPhases,
         _buildPhasePool = List(buildImpl._buildPhases.length),
         _environment = buildImpl._environment,
         _packageGraph = buildImpl._packageGraph,
+        _targetGraph = buildImpl._targetGraph,
+        _checkInvalidInput = _checkInvalidInputFactory(
+            buildImpl._targetGraph, buildImpl._packageGraph),
         _performanceTracker = buildImpl._trackPerformance
             ? BuildPerformanceTracker()
             : BuildPerformanceTracker.noOp(),
         _reader = buildImpl._reader,
         _resolvers = buildImpl._resolvers,
         _resourceManager = buildImpl._resourceManager,
-        _verbose = buildImpl._verbose,
         _writer = buildImpl._writer,
         _buildDirs = buildDirs,
         _logPerformanceDir = buildImpl._logPerformanceDir {
     hungActionsHeartbeat = HungActionsHeartbeat(() {
       final message = StringBuffer();
       const actionsToLogMax = 5;
-      var descriptions = pendingActions.values.fold(
-          <String>[],
-          (combined, actions) =>
-              combined..addAll(actions)).take(actionsToLogMax);
+      final descriptions = pendingActions.values
+          .expand((actions) => actions)
+          .take(actionsToLogMax);
       for (final description in descriptions) {
         message.writeln('  - $description');
       }
@@ -208,7 +235,7 @@ class _SingleBuild {
     var watch = Stopwatch()..start();
     var result = await _safeBuild(updates);
     var optionalOutputTracker = OptionalOutputTracker(
-        _assetGraph, _buildPaths(_buildDirs), _buildPhases);
+        _assetGraph, _buildPaths(_buildDirs), _buildFilters, _buildPhases);
     if (result.status == BuildStatus.success) {
       final failures = _assetGraph.failedOutputs
           .where((n) => optionalOutputTracker.isRequired(n.id));
@@ -221,7 +248,7 @@ class _SingleBuild {
     await _resourceManager.disposeAll();
     result = await _environment.finalizeBuild(
         result,
-        FinalizedAssetsView(_assetGraph, optionalOutputTracker),
+        FinalizedAssetsView(_assetGraph, _packageGraph, optionalOutputTracker),
         _reader,
         _buildDirs);
     if (result.status == BuildStatus.success) {
@@ -259,7 +286,7 @@ class _SingleBuild {
       hungActionsHeartbeat.stop();
     });
 
-    runZoned(() async {
+    runZonedGuarded(() async {
       if (updates.isNotEmpty) {
         await _updateAssetGraph(updates);
       }
@@ -277,8 +304,12 @@ class _SingleBuild {
       // Log performance information if requested
       if (_logPerformanceDir != null) {
         assert(result.performance != null);
-        var logPath =
-            p.join(_logPerformanceDir, DateTime.now().toIso8601String());
+        var now = DateTime.now();
+        var logPath = p.join(
+            _logPerformanceDir,
+            '${now.year}-${_twoDigits(now.month)}-${_twoDigits(now.day)}'
+            '_${_twoDigits(now.hour)}-${_twoDigits(now.minute)}-'
+            '${_twoDigits(now.second)}');
         await logTimedAsync(_logger, 'Writing performance log to $logPath', () {
           var performanceLogId = AssetId(_packageGraph.root.name, logPath);
           var serialized = jsonEncode(result.performance);
@@ -287,7 +318,7 @@ class _SingleBuild {
       }
 
       if (!done.isCompleted) done.complete(result);
-    }, onError: (e, StackTrace st) {
+    }, (e, st) {
       if (!done.isCompleted) {
         _logger.severe('Unhandled build failure!', e, st);
         done.complete(BuildResult(BuildStatus.failure, []));
@@ -338,13 +369,21 @@ class _SingleBuild {
   /// a primary input to this phase.
   Future<Set<AssetId>> _matchingPrimaryInputs(
       String package, int phaseNumber) async {
-    var ids = Set<AssetId>();
+    var ids = <AssetId>{};
     var phase = _buildPhases[phaseNumber];
+    var packageNode = _packageGraph[package];
+
     await Future.wait(
         _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
-      if (!shouldBuildForDirs(node.id, _buildPaths(_buildDirs), phase)) {
+      if (!shouldBuildForDirs(
+          node.id, _buildPaths(_buildDirs), _buildFilters, phase)) {
         return;
       }
+
+      // Don't build for inputs that aren't visible. This can happen for
+      // placeholder nodes like `test/$test$` that are added to each package,
+      // since the test dir is not part of the build for non-root packages.
+      if (!_targetGraph.isVisibleInBuild(node.id, packageNode)) return;
 
       var input = _assetGraph.get(node.primaryInput);
       if (input is GeneratedAssetNode) {
@@ -397,21 +436,33 @@ class _SingleBuild {
 
   /// Checks whether [node] can be read by this step - attempting to build the
   /// asset if necessary.
-  FutureOr<bool> _isReadableNode(
-      AssetNode node, int phaseNum, String fromPackage) {
+  FutureOr<Readability> _isReadableNode(
+      AssetNode node, int phaseNum, AssetWriterSpy writtenAssets) {
     if (node is GeneratedAssetNode) {
-      if (node.phaseNumber >= phaseNum) return false;
+      if (node.phaseNumber > phaseNum) {
+        return Readability.notReadable;
+      } else if (node.phaseNumber == phaseNum) {
+        // allow a build step to read its outputs (contained in writtenAssets)
+        final isInBuild = _buildPhases[phaseNum] is InBuildPhase &&
+            writtenAssets.assetsWritten.contains(node.id);
+
+        return isInBuild ? Readability.ownOutput : Readability.notReadable;
+      }
+
       return doAfter(
-          _ensureAssetIsBuilt(node), (_) => node.wasOutput && !node.isFailure);
+          // ignore: void_checks
+          _ensureAssetIsBuilt(node),
+          (_) =>
+              Readability.fromPreviousPhase(node.wasOutput && !node.isFailure));
     }
-    return node.isReadable && node.isValidInput;
+    return Readability.fromPreviousPhase(node.isReadable && node.isValidInput);
   }
 
   FutureOr<void> _ensureAssetIsBuilt(AssetNode node) {
     if (node is GeneratedAssetNode && node.state != NodeState.upToDate) {
-      return _runLazyPhaseForInput(node.phaseNumber, node.primaryInput);
+      return _runLazyPhaseForInput(node.phaseNumber, node.primaryInput)
+          .then((_) {});
     }
-    return null;
   }
 
   Future<Iterable<AssetId>> _runForInput(
@@ -437,8 +488,17 @@ class _SingleBuild {
                     .where((id) => !inputNode.primaryOutputs.contains(id))
                     .join(', '));
 
-        var wrappedReader = SingleStepReader(_reader, _assetGraph, phaseNumber,
-            input.package, _isReadableNode, _getUpdatedGlobNode);
+        var wrappedWriter = AssetWriterSpy(_writer);
+
+        var wrappedReader = SingleStepReader(
+            _reader,
+            _assetGraph,
+            phaseNumber,
+            input.package,
+            _isReadableNode,
+            _checkInvalidInput,
+            _getUpdatedGlobNode,
+            wrappedWriter);
 
         if (!await tracker.trackStage(
             'Setup', () => _buildShouldRun(builderOutputs, wrappedReader))) {
@@ -452,24 +512,30 @@ class _SingleBuild {
         // to remove those.
         wrappedReader.assetsRead.clear();
 
-        var wrappedWriter = AssetWriterSpy(_writer);
         var actionDescription =
             _actionLoggerName(phase, input, _packageGraph.root.name);
         var logger = BuildForInputLogger(Logger(actionDescription));
 
         actionsStartedCount++;
         pendingActions
-            .putIfAbsent(phaseNumber, () => Set<String>())
+            .putIfAbsent(phaseNumber, () => <String>{})
             .add(actionDescription);
 
+        var unusedAssets = <AssetId>{};
         await tracker.trackStage(
             'Build',
-            () => runBuilder(builder, [input], wrappedReader, wrappedWriter,
-                        PerformanceTrackingResolvers(_resolvers, tracker),
-                        logger: logger,
-                        resourceManager: _resourceManager,
-                        stageTracker: tracker)
-                    .catchError((_) {
+            () => runBuilder(
+                  builder,
+                  [input],
+                  wrappedReader,
+                  wrappedWriter,
+                  PerformanceTrackingResolvers(_resolvers, tracker),
+                  logger: logger,
+                  resourceManager: _resourceManager,
+                  stageTracker: tracker,
+                  reportUnusedAssetsForInput: (_, assets) =>
+                      unusedAssets.addAll(assets),
+                ).catchError((void _) {
                   // Errors tracked through the logger
                 }));
         actionsCompletedCount++;
@@ -480,8 +546,14 @@ class _SingleBuild {
         // read and written.
         await tracker.trackStage(
             'Finalize',
-            () => _setOutputsState(builderOutputs, wrappedReader, wrappedWriter,
-                actionDescription, logger.errorsSeen));
+            () => _setOutputsState(
+                  builderOutputs,
+                  wrappedReader,
+                  wrappedWriter,
+                  actionDescription,
+                  logger.errorsSeen,
+                  unusedAssets: unusedAssets,
+                ));
 
         return wrappedWriter.assetsWritten;
       });
@@ -529,8 +601,16 @@ class _SingleBuild {
     assert(inputNode != null,
         'Inputs should be known in the static graph. Missing $input');
 
+    var wrappedWriter = AssetWriterSpy(_writer);
     var wrappedReader = SingleStepReader(
-        _reader, _assetGraph, phaseNum, input.package, _isReadableNode);
+        _reader,
+        _assetGraph,
+        phaseNum,
+        input.package,
+        _isReadableNode,
+        _checkInvalidInput,
+        null,
+        wrappedWriter);
 
     if (!await _postProcessBuildShouldRun(anchorNode, wrappedReader)) {
       return <AssetId>[];
@@ -547,13 +627,12 @@ class _SingleBuild {
       ..clear();
     inputNode.deletedBy.remove(anchorNode.id);
 
-    var wrappedWriter = AssetWriterSpy(_writer);
     var actionDescription = '$builder on $input';
     var logger = BuildForInputLogger(Logger(actionDescription));
 
     actionsStartedCount++;
     pendingActions
-        .putIfAbsent(phaseNum, () => Set<String>())
+        .putIfAbsent(phaseNum, () => <String>{})
         .add(actionDescription);
 
     await runPostProcessBuilder(
@@ -580,7 +659,7 @@ class _SingleBuild {
         throw InvalidOutputException(assetId, 'Can only delete primary input');
       }
       _assetGraph.get(assetId).deletedBy.add(anchorNode.id);
-    }).catchError((_) {
+    }).catchError((void _) {
       // Errors tracked through the logger
     });
     actionsCompletedCount++;
@@ -675,8 +754,10 @@ class _SingleBuild {
       _assetGraph.add(globNode);
     }
 
-    return toFuture(
-        doAfter(_updateGlobNodeIfNecessary(globNode), (_) => globNode));
+    return toFuture(doAfter(
+        // ignore: void_checks
+        _updateGlobNodeIfNecessary(globNode),
+        (_) => globNode));
   }
 
   FutureOr<void> _updateGlobNodeIfNecessary(GlobAssetNode globNode) {
@@ -769,11 +850,15 @@ class _SingleBuild {
       SingleStepReader reader,
       AssetWriterSpy writer,
       String actionDescription,
-      Iterable<ErrorReport> errors) async {
+      Iterable<ErrorReport> errors,
+      {Set<AssetId> unusedAssets}) async {
     if (outputs.isEmpty) return;
+    var usedInputs = unusedAssets != null
+        ? reader.assetsRead.difference(unusedAssets)
+        : reader.assetsRead;
 
     final inputsDigest = await _computeCombinedDigest(
-        reader.assetsRead,
+        usedInputs,
         (_assetGraph.get(outputs.first) as GeneratedAssetNode).builderOptionsId,
         reader);
 
@@ -787,8 +872,8 @@ class _SingleBuild {
       // **IMPORTANT**: All updates to `node` must be synchronous. With lazy
       // builders we can run arbitrary code between updates otherwise, at which
       // time a node might not be in a valid state.
-      _removeOldInputs(node, reader.assetsRead);
-      _addNewInputs(node, reader.assetsRead);
+      _removeOldInputs(node, usedInputs);
+      _addNewInputs(node, usedInputs);
       node
         ..state = NodeState.upToDate
         ..wasOutput = wasOutput
@@ -855,3 +940,5 @@ String _actionLoggerName(
       : primaryInput.uri;
   return '${phase.builderLabel} on $asset';
 }
+
+String _twoDigits(int n) => '$n'.padLeft(2, '0');

@@ -24,7 +24,7 @@ final readThroughLink = TestBuilder(
     });
 // test-package-end ###########################################################
 
-main() {
+void main() {
   final builders = [builder('readThroughLink', readThroughLink)];
 
   BuildTool buildTool;

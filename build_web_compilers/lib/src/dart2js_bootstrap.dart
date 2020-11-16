@@ -8,17 +8,45 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
-import 'package:crypto/crypto.dart';
+import 'package:build_modules/src/workers.dart';
 import 'package:glob/glob.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
+import 'package:pool/pool.dart';
 import 'package:scratch_space/scratch_space.dart';
 
 import 'platforms.dart';
 import 'web_entrypoint_builder.dart';
 
+/// Compiles an the primary input of [buildStep] with dart2js.
+///
+/// If [skipPlatformCheck] is `true` then all `dart:` imports will be
+/// allowed in all packages.
 Future<void> bootstrapDart2Js(
-    BuildStep buildStep, List<String> dart2JsArgs) async {
+  BuildStep buildStep,
+  List<String> dart2JsArgs, {
+  @required bool nativeNullAssertions,
+  @required bool nullAssertions,
+  @required bool soundNullSafety,
+  bool skipPlatformCheck,
+}) =>
+    _resourcePool.withResource(() => _bootstrapDart2Js(buildStep, dart2JsArgs,
+        nativeNullAssertions: nativeNullAssertions,
+        nullAssertions: nullAssertions,
+        soundNullSafety: soundNullSafety,
+        skipPlatformCheck: skipPlatformCheck));
+
+Future<void> _bootstrapDart2Js(
+  BuildStep buildStep,
+  List<String> dart2JsArgs, {
+  @required bool nativeNullAssertions,
+  @required bool nullAssertions,
+  @required bool soundNullSafety,
+  bool skipPlatformCheck,
+}) async {
+  skipPlatformCheck ??= false;
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
       dartEntrypointId.changeExtension(moduleExtension(dart2jsPlatform));
@@ -30,7 +58,7 @@ Future<void> bootstrapDart2Js(
     List<Module> allDeps;
     try {
       allDeps = (await module.computeTransitiveDependencies(buildStep,
-          throwIfUnsupported: true))
+          throwIfUnsupported: !skipPlatformCheck))
         ..add(module);
     } on UnsupportedModules catch (e) {
       var librariesString = (await e.exactLibraries(buildStep).toList())
@@ -39,7 +67,7 @@ Future<void> bootstrapDart2Js(
           .join('\n');
       log.warning('''
 Skipping compiling ${buildStep.inputId} with dart2js because some of its
-transitive libraries have sdk dependencies that not supported on this platform:
+transitive libraries have sdk dependencies that are not supported on this platform:
 
 $librariesString
 
@@ -51,30 +79,46 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
     var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
     var allSrcs = allDeps.expand((module) => module.sources);
     await scratchSpace.ensureAssets(allSrcs, buildStep);
-    var packageFile =
-        await _createPackageFile(allSrcs, buildStep, scratchSpace);
 
-    var dartPath = dartEntrypointId.path.startsWith('lib/')
-        ? 'package:${dartEntrypointId.package}/'
-            '${dartEntrypointId.path.substring('lib/'.length)}'
-        : dartEntrypointId.path;
-    var jsOutputPath =
-        '${p.withoutExtension(dartPath.replaceFirst('package:', 'packages/'))}'
-        '$jsEntrypointExtension';
+    var dartUri = dartEntrypointId.path.startsWith('lib/')
+        ? Uri.parse('package:${dartEntrypointId.package}/'
+            '${dartEntrypointId.path.substring('lib/'.length)}')
+        : Uri.parse('$multiRootScheme:///${dartEntrypointId.path}');
+    var jsOutputPath = p.withoutExtension(dartUri.scheme == 'package'
+            ? 'packages/${dartUri.path}'
+            : dartUri.path.substring(1)) +
+        jsEntrypointExtension;
+    var librariesSpec = p.joinAll([sdkDir, 'lib', 'libraries.json']);
+    _validateUserArgs(dart2JsArgs);
     args = dart2JsArgs.toList()
       ..addAll([
-        '--packages=$packageFile',
+        '--libraries-spec=$librariesSpec',
+        '--packages=$multiRootScheme:///.dart_tool/package_config.json',
+        '--multi-root-scheme=$multiRootScheme',
+        '--multi-root=${scratchSpace.tempDir.uri.toFilePath()}',
+        for (var experiment in enabledExperiments)
+          '--enable-experiment=$experiment',
+        if (nativeNullAssertions) '--native-null-assertions',
+        if (nullAssertions) '--null-assertions',
+        '--${soundNullSafety ? '' : 'no-'}sound-null-safety',
         '-o$jsOutputPath',
-        dartPath,
+        '$dartUri',
       ]);
   }
 
-  var dart2js = await buildStep.fetchResource(dart2JsWorkerResource);
-  var result = await dart2js.compile(args);
+  log.info('Running dart2js with ${args.join(' ')}\n');
+  var result = await Process.run(
+      p.join(sdkDir, 'bin', 'dart'),
+      [
+        ..._dart2jsVmArgs,
+        p.join(sdkDir, 'bin', 'snapshots', 'dart2js.dart.snapshot'),
+        ...args,
+      ],
+      workingDirectory: scratchSpace.tempDir.path);
   var jsOutputId = dartEntrypointId.changeExtension(jsEntrypointExtension);
   var jsOutputFile = scratchSpace.fileFor(jsOutputId);
-  if (result.succeeded && await jsOutputFile.exists()) {
-    log.info(result.output);
+  if (result.exitCode == 0 && await jsOutputFile.exists()) {
+    log.info('${result.stdout}\n${result.stderr}');
     var rootDir = p.dirname(jsOutputFile.path);
     var dartFile = p.basename(dartEntrypointId.path);
     var fileGlob = Glob('$dartFile.js*');
@@ -107,7 +151,8 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
         dartEntrypointId.changeExtension(jsEntrypointSourceMapExtension);
     await _copyIfExists(jsSourceMapId, scratchSpace, buildStep);
   } else {
-    log.severe(result.output);
+    log.severe(
+        'ExitCode:${result.exitCode}\nStdOut:\n${result.stdout}\nStdErr:\n${result.stderr}');
   }
 }
 
@@ -119,28 +164,38 @@ Future<void> _copyIfExists(
   }
 }
 
-/// Creates a `.packages` file unique to this entrypoint at the root of the
-/// scratch space and returns it's filename.
-///
-/// Since mulitple invocations of Dart2Js will share a scratch space and we only
-/// know the set of packages involved the current entrypoint we can't construct
-/// a `.packages` file that will work for all invocations of Dart2Js so a unique
-/// file is created for every entrypoint that is run.
-///
-/// The filename is based off the MD5 hash of the asset path so that files are
-/// unique regarless of situations like `web/foo/bar.dart` vs
-/// `web/foo-bar.dart`.
-Future<String> _createPackageFile(Iterable<AssetId> inputSources,
-    BuildStep buildStep, ScratchSpace scratchSpace) async {
-  var inputUri = buildStep.inputId.uri;
-  var packageFileName =
-      '.package-${md5.convert(inputUri.toString().codeUnits)}';
-  var packagesFile =
-      scratchSpace.fileFor(AssetId(buildStep.inputId.package, packageFileName));
-  var packageNames = inputSources.map((s) => s.package).toSet();
-  var packagesFileContent =
-      packageNames.map((n) => '$n:packages/$n/').join('\n');
-  await packagesFile
-      .writeAsString('# Generated for $inputUri\n$packagesFileContent');
-  return packageFileName;
+final _resourcePool = Pool(maxWorkersPerTask);
+
+const _dart2jsVmArgsEnvVar = 'BUILD_DART2JS_VM_ARGS';
+final _dart2jsVmArgs = () {
+  var env = Platform.environment[_dart2jsVmArgsEnvVar];
+  return env?.split(' ') ?? <String>[];
+}();
+
+/// Validates that user supplied dart2js args don't overlap with ones that we
+/// want you to configure in a different way.
+void _validateUserArgs(List<String> args) {
+  for (var arg in args) {
+    if (arg.endsWith('sound-null-safety')) {
+      log.warning(
+          'Detected a manual sound null safety dart2js argument `$arg`, '
+          'this should be configured using the `sound_null_safety` option on '
+          'the build_web_compilers:entrypoint builder instead.');
+    } else if (arg.endsWith('native-null-assertions')) {
+      log.warning(
+          'Detected a manual native null assertions dart2js argument `$arg`, '
+          'this should be configured using the `native_null_assertions` '
+          'option on the build_web_compilers:entrypoint builder instead.');
+    } else if (arg.endsWith('null-assertions')) {
+      log.warning(
+          'Detected a manual null assertions dart2js argument `$arg`, this '
+          'should be configured using the `null_assertions` option on the '
+          'build_web_compilers:entrypoint builder instead.');
+    } else if (arg.startsWith('--enable-experiment')) {
+      log.warning(
+          'Detected a manual enable experiment dart2js argument `$arg`, '
+          'this should be enabled on the command line instead, for example: '
+          '`pub run build_runner --enable-experiment=<experiment> <command>`.');
+    }
+  }
 }

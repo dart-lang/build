@@ -1,14 +1,17 @@
 dart:
-  - 2.2.0
-  - dev
+- 2.9.0
+- dev
 
 stages:
-  - analyze_and_format:
-    - group:
-      - dartfmt: sdk
-      - dartanalyzer: --fatal-infos --fatal-warnings .
-      dart: dev
-    - dartanalyzer: --fatal-warnings .
-      dart: 2.2.0
-  - unit_test:
-    - test
+- analyze_and_format:
+  - group:
+    - dartfmt: sdk
+    - dartanalyzer: --fatal-infos --fatal-warnings .
+    dart: dev
+  - dartanalyzer: --fatal-warnings .
+    dart: 2.9.0
+- unit_test:
+  - test: --test-randomize-ordering-seed=random
+    os:
+    - linux
+    - windows

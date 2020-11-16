@@ -62,7 +62,7 @@ logging.Level toLoggingLevel(Level level) =>
 abstract class ServerLog implements Built<ServerLog, ServerLogBuilder> {
   static Serializer<ServerLog> get serializer => _$serverLogSerializer;
 
-  factory ServerLog([updates(ServerLogBuilder b)]) = _$ServerLog;
+  factory ServerLog([Function(ServerLogBuilder b) updates]) = _$ServerLog;
 
   factory ServerLog.fromLogRecord(logging.LogRecord record) =>
       ServerLog((b) => b

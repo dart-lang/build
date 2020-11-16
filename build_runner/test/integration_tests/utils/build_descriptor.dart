@@ -5,10 +5,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
-import 'package:package_resolver/package_resolver.dart';
+import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:stack_trace/stack_trace.dart';
 import 'package:test/test.dart'
@@ -89,18 +90,16 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
       .dir(
           'a',
           <d.Descriptor>[
-            await _pubspecWithDeps('a',
-                currentIsolateDependencies: [
-                  'build',
-                  'build_config',
-                  'build_daemon',
-                  'build_resolvers',
-                  'build_runner',
-                  'build_runner_core',
-                ],
-                pathDependencies: Map.fromIterable(otherPackages,
-                    key: (o) => (o as d.Descriptor).name,
-                    value: (o) => p.join(d.sandbox, (o as d.Descriptor).name))),
+            await _pubspecWithDeps('a', currentIsolateDependencies: [
+              'build',
+              'build_config',
+              'build_daemon',
+              'build_resolvers',
+              'build_runner',
+              'build_runner_core',
+            ], pathDependencies: {
+              for (var o in otherPackages) o.name: p.join(d.sandbox, o.name),
+            }),
           ].followedBy(packageContents))
       .create();
   await Future.wait(otherPackages.map((d) => d.create()));
@@ -148,6 +147,7 @@ Future<BuildTool> packageWithBuildScript(
 String _buildersFile(
         Iterable<TestBuilderDefinition> builders, Uri callingScript) =>
     '''
+// @dart=2.9
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 
@@ -162,6 +162,7 @@ String _builderFactory(TestBuilderDefinition builder) =>
 String _buildToolFile(
         Iterable<TestBuilderDefinition> builders, Uri callingScript) =>
     '''
+// @dart=2.9
 import 'dart:io';
 
 import 'package:build/build.dart';
@@ -209,9 +210,9 @@ Future<d.FileDescriptor> _pubspecWithDeps(String name,
     Map<String, String> versionDependencies}) async {
   currentIsolateDependencies ??= [];
   pathDependencies ??= {};
-  var resolver = PackageResolver.current;
+  var packageConfig = await loadPackageConfigUri(await Isolate.packageConfig);
   await Future.forEach(currentIsolateDependencies, (String package) async {
-    pathDependencies[package] = await resolver.packagePath(package);
+    pathDependencies[package] = packageConfig[package].root.path;
   });
   return _pubspec(name,
       pathDependencies: pathDependencies,
@@ -231,9 +232,12 @@ d.FileDescriptor _pubspec(String name,
   pathDependencies ??= {};
   versionDependencies ??= {};
 
-  var buffer = StringBuffer()..writeln('name: $name');
+  var buffer = StringBuffer()
+    ..writeln('name: $name')
+    ..writeln('environment:')
+    ..writeln('  sdk: ">=2.9.0 <3.0.0"');
 
-  writeDeps(String group) {
+  void writeDeps(String group) {
     buffer.writeln(group);
 
     pathDependencies.forEach((package, path) {

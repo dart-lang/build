@@ -7,6 +7,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:args/command_runner.dart';
+import 'package:build/experiments.dart';
 import 'package:build_runner/src/logging/std_io_logging.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
@@ -67,8 +68,13 @@ class RunCommand extends BuildRunnerCommand {
   }
 
   @override
-  FutureOr<int> run() async {
+  FutureOr<int> run() {
     var options = readOptions();
+    return withEnabledExperiments(
+        () => _run(options), options.enableExperiments);
+  }
+
+  FutureOr<int> _run(SharedOptions options) async {
     var logSubscription =
         Logger.root.onRecord.listen(stdIOLogListener(verbose: options.verbose));
 
@@ -106,7 +112,7 @@ class RunCommand extends BuildRunnerCommand {
       var exitCodeCompleter = Completer<int>();
 
       try {
-        var buildDirs = (options.buildDirs ?? Set<BuildDirectory>())
+        var buildDirs = (options.buildDirs ?? <BuildDirectory>{})
           ..add(BuildDirectory('',
               outputLocation: OutputLocation(tempPath,
                   useSymlinks: options.outputSymlinksOnly, hoist: false)));
@@ -123,6 +129,7 @@ class RunCommand extends BuildRunnerCommand {
           trackPerformance: options.trackPerformance,
           skipBuildScriptCheck: options.skipBuildScriptCheck,
           logPerformanceDir: options.logPerformanceDir,
+          buildFilters: options.buildFilters,
         );
 
         if (result.status == BuildStatus.failure) {

@@ -1,3 +1,83 @@
+## 1.3.0
+
+- Add support for running generated `.browser_test.dart` directly instead of
+  expecting the test runner with the query string `directRun=true`. It is no
+  longer necessary to create a build config which generates for `*_test.dart`
+  files in `build_web_compilers`, the default config generates for
+  `.browser_test.dart` files which are used by `debug.html`.
+
+## 1.2.2
+
+- Allow package:build versions through `1.5.x`.
+
+## 1.2.1
+
+- Improve/fix `testBuilder` documentation.
+- Update test bootstrap builder to copy language version comments from the test
+  file if present.
+
+## 1.2.0
+
+- Add support for recognizing custom platforms in TestOn annotations during
+  bootstrapping.
+
+## 1.1.0
+
+- Add support for enabling experiments via `withEnabledExperiments` zones from
+  package:build, as well as forwarding the `packageConfig` argument from
+  `resolve*` apis through to the default `Resolver`.
+  - **Note**: If passing your own `Resolver` these things are still your
+    responsibility.
+- Added the ability to pass a `PackageConfig` to `testBuilder`, which is used
+  to set the language version of each package.
+  - The resolver created from `testBuilder` will also now respect the
+    `withEnabledExperiments` zone. 
+
+## 1.0.0
+
+- Removed dependency on `package:package_resolver`, changed to 
+  `package:package_config`.
+  - All apis which used to take a `PackageResolver` now take a `PackageConfig`.
+- Require SDK version `2.7.0`.
+
+## 0.10.12+1
+
+- Allow the latest test_core package (`0.3.x`).
+
+## 0.10.12
+
+- Fix a bug with the `resolve*` apis where they would leak unhandled async
+  errors to client code if the provided action callback threw an error.
+
+## 0.10.11
+
+- Add support for the new `$package$` placeholder.
+
+### Potentially Breaking Change
+
+- Only add the non-lib placeholders when a root package is specified
+  - Infer the root package when there is only one package in the sources
+  - This is being released as a non-breaking change because the only expected
+    use cases already would have been broken - `findAssets` calls already
+    required a root package.
+
+## 0.10.10
+
+- Allow reading of assets written from the same build step.
+  - This mirrors the latest behavior in build_runner_core.
+- Require SDK version `2.6.0` to enable extension methods.
+
+## 0.10.9+1
+
+- Fix the `DebugTestBuilder` on windows.
+- Fix `PackageAssetReader` on windows.
+
+## 0.10.9
+
+- Allow tracking of reported unused assets in `testBuilder` calls with the
+  `reportUnusedAssetsForInput(AssetId input, Iterable<AssetId> unused)`
+  callback.
+
 ## 0.10.8
 
 - Allow a custom AssetReader to be passed to `testBuilder`. This will be used

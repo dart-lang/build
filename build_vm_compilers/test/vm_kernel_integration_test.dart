@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:io';
+
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
@@ -12,6 +14,7 @@ void main() {
     setUpAll(() async {
       await d.dir('a', [
         await pubspec('a', currentIsolateDependencies: [
+          'analyzer',
           'build',
           'build_config',
           'build_daemon',
@@ -26,6 +29,7 @@ void main() {
         }),
         d.dir('bin', [
           d.file('hello.dart', '''
+// @dart=2.9
 import 'package:path/path.dart' as p;
 
 void main() {
@@ -33,6 +37,7 @@ void main() {
 }
 '''),
           d.file('goodbye.dart', '''
+// @dart=2.9
 import 'package:path/path.dart' as p;
 
 import 'hello.dart';
@@ -42,6 +47,7 @@ void main() {
 }
 '''),
           d.file('sync_async.dart', '''
+// @dart=2.9
 void main() async {
   print('before');
   printAsync();
@@ -67,21 +73,25 @@ void printAsync() async {
       var runResult = await runDart('a', 'out/bin/hello.vm.app.dill');
 
       expect(runResult.exitCode, 0, reason: runResult.stderr as String);
-      expect(runResult.stdout, 'hello/world\n');
+      expect(runResult.stdout, 'hello/world$_newLine');
     });
 
     test(' and run root libraries main', () async {
       var runResult = await runDart('a', 'out/bin/goodbye.vm.app.dill');
 
       expect(runResult.exitCode, 0, reason: runResult.stderr as String);
-      expect(runResult.stdout, 'goodbye/world\n');
+      expect(runResult.stdout, 'goodbye/world$_newLine');
     });
 
     test(' and enables sync-async', () async {
       var runResult = await runDart('a', 'out/bin/sync_async.vm.app.dill');
 
       expect(runResult.exitCode, 0, reason: runResult.stderr as String);
-      expect(runResult.stdout, 'before\nrunning\nafter\n');
-    }, skip: 'https://github.com/dart-lang/sdk/issues/34852');
+
+      expect(runResult.stdout,
+          'before${_newLine}running${_newLine}after$_newLine');
+    });
   });
 }
+
+final _newLine = Platform.isWindows ? '\r\n' : '\n';

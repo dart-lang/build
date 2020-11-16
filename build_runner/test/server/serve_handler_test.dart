@@ -33,7 +33,8 @@ void main() {
   setUp(() async {
     reader = InMemoryRunnerAssetReader();
     final packageGraph = buildPackageGraph({rootPackage('a'): []});
-    assetGraph = await AssetGraph.build([], Set(), Set(), packageGraph, reader);
+    assetGraph = await AssetGraph.build(
+        [], <AssetId>{}, <AssetId>{}, packageGraph, reader);
     watchImpl = MockWatchImpl(
         FinalizedReader(reader, assetGraph, [], 'a'), packageGraph, assetGraph);
     serveHandler = createServeHandler(watchImpl);
@@ -199,7 +200,7 @@ void main() {
   });
 
   group('build updates', () {
-    createBuildUpdatesGroup(String groupName, String injectionMarker,
+    void createBuildUpdatesGroup(String groupName, String injectionMarker,
             BuildUpdatesOption buildUpdates) =>
         group(groupName, () {
           test('injects client code if enabled', () async {
@@ -291,8 +292,10 @@ void main() {
       WebSocketChannel serverChannel2;
 
       setUp(() {
-        var mockHandlerFactory = (Function onConnect, {protocols}) =>
-            (request) => Response(200, context: {'onConnect': onConnect});
+        var mockHandlerFactory = (Function onConnect,
+                {Iterable<String> protocols}) =>
+            (Request request) =>
+                Response(200, context: {'onConnect': onConnect});
 
         createMockConnection =
             (WebSocketChannel serverChannel, String rootDir) async {
@@ -445,15 +448,17 @@ class MockWatchImpl implements WatchImpl {
   @override
   Future<BuildResult> get currentBuild => _currentBuild;
   @override
-  set currentBuild(newValue) => throw UnsupportedError('unsupported!');
+  set currentBuild(Future<BuildResult> _) =>
+      throw UnsupportedError('unsupported!');
 
   final _futureBuildResultsController = StreamController<Future<BuildResult>>();
   final _buildResultsController = StreamController<BuildResult>();
 
   @override
-  get buildResults => _buildResultsController.stream;
+  Stream<BuildResult> get buildResults => _buildResultsController.stream;
   @override
-  set buildResults(_) => throw UnsupportedError('unsupported!');
+  set buildResults(Stream<BuildResult> _) =>
+      throw UnsupportedError('unsupported!');
 
   @override
   final PackageGraph packageGraph;

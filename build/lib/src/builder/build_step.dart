@@ -24,6 +24,16 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// Resolved library defined by [inputId].
   ///
   /// Throws [NonLibraryAssetException] if [inputId] is not a Dart library file.
+  /// Throws [SyntaxErrorInAssetException] if [inputId] contains syntax errors.
+  /// If you want to support libraries with syntax errors, resolve the library
+  /// manually instead of using [inputLibrary]:
+  /// ```dart
+  /// Future<void> build(BuildStep step) async {
+  ///   // Resolve the input library, allowing syntax errors
+  ///   final inputLibrary =
+  ///     await step.resolver.libraryFor(step.inputId, allowSyntaxErrors: true);
+  /// }
+  /// ```
   Future<LibraryElement> get inputLibrary;
 
   /// Gets an instance provided by [resource] which is guaranteed to be unique
@@ -80,6 +90,19 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// Returns value returned by [action].
   /// [action] can be async function returning [Future].
   T trackStage<T>(String label, T Function() action, {bool isExternal = false});
+
+  /// Indicates that [ids] were read but their content has no impact on the
+  /// outputs of this step.
+  ///
+  /// **WARNING**: Using this introduces serious risk of non-hermetic builds.
+  ///
+  /// If these files change or become unreadable on the next build this build
+  /// step may not run.
+  ///
+  /// **Note**: This is not guaranteed to have any effect and it should be
+  /// assumed to be a no-op by default. Implementations must explicitly
+  /// choose to support this feature.
+  void reportUnusedAssets(Iterable<AssetId> ids);
 }
 
 abstract class StageTracker {

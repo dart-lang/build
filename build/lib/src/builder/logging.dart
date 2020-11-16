@@ -1,3 +1,7 @@
+// Copyright (c) 2020, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
 import 'dart:async';
 
 import 'package:logging/logging.dart';
@@ -17,19 +21,15 @@ Logger get log => Zone.current[logKey] as Logger ?? _default;
 /// be logged with `log.severe`.
 ///
 /// Completes with the first error or result of `fn`, whichever comes first.
-Future<T> scopeLogAsync<T>(Future<T> fn(), Logger log) {
+Future<T> scopeLogAsync<T>(Future<T> Function() fn, Logger log) {
   var done = Completer<T>();
-  runZoned(fn,
-      zoneSpecification:
-          ZoneSpecification(print: (self, parent, zone, message) {
-        log.warning(message);
-      }),
-      zoneValues: {logKey: log},
-      onError: (Object e, StackTrace s) {
-        log.severe('', e, s);
-        if (done.isCompleted) return;
-        done.completeError(e, s);
-      }).then((result) {
+  runZonedGuarded(fn, (e, st) {
+    log.severe('', e, st);
+    if (done.isCompleted) return;
+    done.completeError(e, st);
+  }, zoneSpecification: ZoneSpecification(print: (self, parent, zone, message) {
+    log.warning(message);
+  }), zoneValues: {logKey: log}).then((result) {
     if (done.isCompleted) return;
     done.complete(result);
   });

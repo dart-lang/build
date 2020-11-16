@@ -3,11 +3,13 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 
 import 'workers.dart';
@@ -24,6 +26,16 @@ final scratchSpaceResource = Resource<ScratchSpace>(() {
   if (!scratchSpace.exists) {
     scratchSpace.tempDir.createSync(recursive: true);
     scratchSpace.exists = true;
+  }
+  var packageConfigFile = File(
+      p.join(scratchSpace.tempDir.path, '.dart_tool', 'package_config.json'));
+  if (!packageConfigFile.existsSync()) {
+    var originalConfigFile = File(p.join('.dart_tool', 'package_config.json'));
+    var packageConfigContents = _scratchSpacePackageConfig(
+        originalConfigFile.readAsStringSync(), originalConfigFile.absolute.uri);
+    packageConfigFile
+      ..createSync(recursive: true)
+      ..writeAsStringSync(packageConfigContents);
   }
   return scratchSpace;
 }, beforeExit: () async {
@@ -61,3 +73,45 @@ final scratchSpaceResource = Resource<ScratchSpace>(() {
     }
   }
 });
+
+/// Modifies all package uris in [rootConfig] to work with the sctrach_space
+/// layout. These are uris of the form `../packages/<package-name>`.
+///
+/// Also modifies the `packageUri` for each package to be empty since the
+/// `lib/` directory is hoisted directly into the `packages/<package>`
+/// directory.
+///
+/// Returns the new file contents.
+String _scratchSpacePackageConfig(String rootConfig, Uri packageConfigUri) {
+  var parsedRootConfig = jsonDecode(rootConfig) as Map<String, dynamic>;
+  var version = parsedRootConfig['configVersion'] as int;
+  if (version != 2) {
+    throw UnsupportedError(
+        'Unsupported package_config.json version, got $version but only '
+        'version 2 is supported.');
+  }
+  var packages =
+      (parsedRootConfig['packages'] as List).cast<Map<String, dynamic>>();
+  var foundRoot = false;
+  for (var package in packages) {
+    var rootUri = packageConfigUri.resolve(package['rootUri'] as String);
+    // We expect to see exactly one package where the root uri is equal to
+    // the current directory, and that is the current packge.
+    if (rootUri == _currentDirUri) {
+      assert(!foundRoot);
+      foundRoot = true;
+      package['rootUri'] = '../';
+      package['packageUri'] = '../packages/${package['name']}/';
+    } else {
+      package['rootUri'] = '../packages/${package['name']}/';
+      package.remove('packageUri');
+    }
+  }
+  if (!foundRoot) {
+    _logger.warning('No root package found, this may cause problems for files '
+        'not referenced by a package: uri');
+  }
+  return jsonEncode(parsedRootConfig);
+}
+
+final Uri _currentDirUri = Directory.current.uri;

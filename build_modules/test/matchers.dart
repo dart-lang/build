@@ -4,20 +4,19 @@
 
 import 'dart:convert';
 
+import 'package:build_modules/src/meta_module.dart';
+import 'package:build_modules/src/modules.dart';
 import 'package:test/test.dart';
 
-import 'package:build_modules/src/modules.dart';
-import 'package:build_modules/src/meta_module.dart';
-
 /// Matches an encoded [Module] against an [expected] Module instance.
-encodedMatchesModule(Module expected) => EncodedModuleMatcher(expected);
+Matcher encodedMatchesModule(Module expected) => EncodedModuleMatcher(expected);
 
 /// Matches an encoded [MetaModule] against an [expected] Module instance.
-encodedMatchesMetaModule(MetaModule expected) =>
+Matcher encodedMatchesMetaModule(MetaModule expected) =>
     EncodedMetaModuleMatcher(expected);
 
 /// Matches a [Module] against an [expected] Module instance.
-matchesModule(Module expected) => ModuleMatcher(expected);
+Matcher matchesModule(Module expected) => ModuleMatcher(expected);
 
 /// A [Matcher] for an encoded [MetaModule] against an [expected] instance.
 class EncodedMetaModuleMatcher extends Matcher {

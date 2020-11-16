@@ -1,17 +1,22 @@
 dart:
-  - dev
+- dev
 
 stages:
-  - analyze_and_format:
-    - group:
-        - dartfmt: sdk
-        - dartanalyzer: --fatal-infos --fatal-warnings .
-    - dartanalyzer: --fatal-warnings .
-      dart:
-        - 2.1.0
-  - unit_test:
-    - command: pub run build_runner test
+- analyze_and_format:
+  - group:
+    - dartfmt: sdk
+    - dartanalyzer: --fatal-infos --fatal-warnings .
+  - dartanalyzer: --fatal-warnings .
+    dart: 2.9.0
+- unit_test:
+  - group:
+    - test: --test-randomize-ordering-seed=random
+    # TODO: Restore this https://github.com/dart-lang/build/issues/2841
+    # - command: test/flutter_test.sh
+    os:
+    - linux
+    - windows
 
 cache:
   directories:
-    - .dart_tool/build
+  - .dart_tool/build

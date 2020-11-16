@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:async/async.dart';
 import 'package:build/src/builder/build_step.dart';
@@ -50,17 +51,19 @@ class BuildStepImpl implements BuildStep {
   /// Used internally for writing files.
   final AssetWriter _writer;
 
-  /// The current root package, used for input/output validation.
-  final String _rootPackage;
-
   final ResourceManager _resourceManager;
 
   bool _isComplete = false;
 
+  final void Function(Iterable<AssetId>) _reportUnusedAssets;
+
   BuildStepImpl(this.inputId, Iterable<AssetId> expectedOutputs, this._reader,
-      this._writer, this._rootPackage, this._resolvers, this._resourceManager,
-      [this._stageTracker = NoOpStageTracker.instance])
-      : _expectedOutputs = expectedOutputs.toSet();
+      this._writer, this._resolvers, this._resourceManager,
+      {StageTracker stageTracker,
+      void Function(Iterable<AssetId>) reportUnusedAssets})
+      : _expectedOutputs = expectedOutputs.toSet(),
+        _stageTracker = stageTracker ?? NoOpStageTracker.instance,
+        _reportUnusedAssets = reportUnusedAssets;
 
   @override
   Resolver get resolver {
@@ -73,7 +76,6 @@ class BuildStepImpl implements BuildStep {
   @override
   Future<bool> canRead(AssetId id) {
     if (_isComplete) throw BuildStepCompletedException();
-    _checkInput(id);
     return _reader.canRead(id);
   }
 
@@ -86,14 +88,12 @@ class BuildStepImpl implements BuildStep {
   @override
   Future<List<int>> readAsBytes(AssetId id) {
     if (_isComplete) throw BuildStepCompletedException();
-    _checkInput(id);
     return _reader.readAsBytes(id);
   }
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
     if (_isComplete) throw BuildStepCompletedException();
-    _checkInput(id);
     return _reader.readAsString(id, encoding: encoding);
   }
 
@@ -102,7 +102,7 @@ class BuildStepImpl implements BuildStep {
     if (_isComplete) throw BuildStepCompletedException();
     if (_reader is MultiPackageAssetReader) {
       return (_reader as MultiPackageAssetReader)
-          .findAssets(glob, package: inputId?.package ?? _rootPackage);
+          .findAssets(glob, package: inputId.package);
     } else {
       return _reader.findAssets(glob);
     }
@@ -132,16 +132,16 @@ class BuildStepImpl implements BuildStep {
   @override
   Future<Digest> digest(AssetId id) {
     if (_isComplete) throw BuildStepCompletedException();
-    _checkInput(id);
     return _reader.digest(id);
   }
 
   @override
-  T trackStage<T>(String label, action, {bool isExternal = false}) =>
+  T trackStage<T>(String label, T Function() action,
+          {bool isExternal = false}) =>
       _stageTracker.trackStage(label, action, isExternal: isExternal);
 
   Future<void> _futureOrWrite<T>(
-          FutureOr<T> content, Future<void> write(T content)) =>
+          FutureOr<T> content, Future<void> Function(T content) write) =>
       (content is Future<T>) ? content.then(write) : write(content as T);
 
   /// Waits for work to finish and cleans up resources.
@@ -155,20 +155,17 @@ class BuildStepImpl implements BuildStep {
     (await _resolver)?.release();
   }
 
-  /// Checks that [id] is a valid input, and throws an [InvalidInputException]
-  /// if its not.
-  void _checkInput(AssetId id) {
-    if (id.package != _rootPackage && !id.path.startsWith('lib/')) {
-      throw InvalidInputException(id);
-    }
-  }
-
   /// Checks that [id] is an expected output, and throws an
   /// [InvalidOutputException] or [UnexpectedOutputException] if it's not.
   void _checkOutput(AssetId id) {
     if (!_expectedOutputs.contains(id)) {
       throw UnexpectedOutputException(id, expected: _expectedOutputs);
     }
+  }
+
+  @override
+  void reportUnusedAssets(Iterable<AssetId> assets) {
+    if (_reportUnusedAssets != null) _reportUnusedAssets(assets);
   }
 }
 
@@ -189,8 +186,16 @@ class _DelayedResolver implements Resolver {
   }
 
   @override
-  Future<LibraryElement> libraryFor(AssetId assetId) async =>
-      (await _delegate).libraryFor(assetId);
+  Future<CompilationUnit> compilationUnitFor(AssetId assetId,
+          {bool allowSyntaxErrors = false}) async =>
+      (await _delegate)
+          .compilationUnitFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
+
+  @override
+  Future<LibraryElement> libraryFor(AssetId assetId,
+          {bool allowSyntaxErrors = false}) async =>
+      (await _delegate)
+          .libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
 
   @override
   Future<LibraryElement> findLibraryByName(String libraryName) async =>

@@ -16,7 +16,7 @@ import 'package:build_modules/src/platform.dart';
 
 import 'matchers.dart';
 
-main() {
+void main() {
   final assetA = AssetId('a', 'lib/a.dart');
   final assetB = AssetId('b', 'lib/b.dart');
   final platform = DartPlatform.register('test', ['dart:async']);

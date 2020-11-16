@@ -14,7 +14,7 @@ abstract class Methods {
 
   Module getModuleLibraries(String moduleId);
 
-  reloadPage();
+  void reloadPage();
 }
 
 class MockMethods extends Mock implements Methods {}
@@ -34,8 +34,8 @@ void main() {
           () => moduleParentsGraph.keys)
         ..updateGraph();
 
-  MockModule mockModule(String prefix, String name) => modules.putIfAbsent(
-      '$prefix-$name', () => named(MockModule(), name: '$prefix-$name'));
+  MockModule mockModule(String prefix, String name) =>
+      modules.putIfAbsent('$prefix-$name', () => MockModule());
   MockModule mockModuleNew(String name) => mockModule('new', name);
   MockModule mockModuleOld(String name) => mockModule('old', name);
 

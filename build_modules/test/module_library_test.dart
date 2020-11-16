@@ -37,12 +37,8 @@ void main() {
         makeAssetId('myapp|lib/a.dart'),
         "import 'b.dart';\n"
         "import 'package:dep/dep.dart';\n");
-    expect(
-        library.depsForPlatform(platform),
-        Set.of([
-          makeAssetId('myapp|lib/b.dart'),
-          makeAssetId('dep|lib/dep.dart')
-        ]));
+    expect(library.depsForPlatform(platform),
+        {makeAssetId('myapp|lib/b.dart'), makeAssetId('dep|lib/dep.dart')});
   });
 
   test('Parses exports', () async {
@@ -50,12 +46,8 @@ void main() {
         makeAssetId('myapp|lib/a.dart'),
         "export 'b.dart';\n"
         "export 'package:dep/dep.dart';\n");
-    expect(
-        library.depsForPlatform(platform),
-        Set.of([
-          makeAssetId('myapp|lib/b.dart'),
-          makeAssetId('dep|lib/dep.dart')
-        ]));
+    expect(library.depsForPlatform(platform),
+        {makeAssetId('myapp|lib/b.dart'), makeAssetId('dep|lib/dep.dart')});
   });
 
   test('treats lib/ as entrypoint', () async {
@@ -87,12 +79,8 @@ void main() {
         makeAssetId('myapp|lib/a.dart'),
         "part 'b.dart';\n"
         "part 'package:dep/dep.dart';\n");
-    expect(
-        library.parts,
-        Set.of([
-          makeAssetId('myapp|lib/b.dart'),
-          makeAssetId('dep|lib/dep.dart')
-        ]));
+    expect(library.parts,
+        {makeAssetId('myapp|lib/b.dart'), makeAssetId('dep|lib/dep.dart')});
   });
 
   test('Parses platform specific imports', () async {
@@ -102,26 +90,20 @@ void main() {
         "    if (dart.library.ui) 'for_flutter.dart'\n"
         "    if (dart.library.io) 'for_vm.dart'\n"
         "    if (dart.library.html) 'for_web.dart'\n");
+    expect(library.depsForPlatform(DartPlatform.register('flutter', ['ui'])), {
+      makeAssetId('myapp|lib/for_flutter.dart'),
+    });
+    expect(library.depsForPlatform(DartPlatform.register('vm', ['io'])), {
+      makeAssetId('myapp|lib/for_vm.dart'),
+    });
     expect(
-        library.depsForPlatform(DartPlatform.register('flutter', ['ui'])),
-        Set.of([
-          makeAssetId('myapp|lib/for_flutter.dart'),
-        ]));
+        library.depsForPlatform(DartPlatform.register('dart2js', ['html'])), {
+      makeAssetId('myapp|lib/for_web.dart'),
+    });
     expect(
-        library.depsForPlatform(DartPlatform.register('vm', ['io'])),
-        Set.of([
-          makeAssetId('myapp|lib/for_vm.dart'),
-        ]));
-    expect(
-        library.depsForPlatform(DartPlatform.register('dart2js', ['html'])),
-        Set.of([
-          makeAssetId('myapp|lib/for_web.dart'),
-        ]));
-    expect(
-        library.depsForPlatform(DartPlatform.register('dartdevc', ['html'])),
-        Set.of([
-          makeAssetId('myapp|lib/for_web.dart'),
-        ]));
+        library.depsForPlatform(DartPlatform.register('dartdevc', ['html'])), {
+      makeAssetId('myapp|lib/for_web.dart'),
+    });
   });
 
   test('can detect a main method', () async {

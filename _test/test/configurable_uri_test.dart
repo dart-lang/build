@@ -10,7 +10,7 @@ import 'common/message.dart'
 
 import 'common/message_export.dart' as exported;
 
-main() {
+void main() {
   group('browser', () {
     test('imports', () {
       expect(message, contains('Javascript'));

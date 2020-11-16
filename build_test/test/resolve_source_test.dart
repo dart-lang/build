@@ -7,10 +7,11 @@ import 'dart:async';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
+import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('should resolveSource of', () {
+  group('resolveSource can resolve', () {
     test('a simple dart file', () async {
       var libExample = await resolveSource(r'''
         library example;
@@ -71,7 +72,7 @@ void main() {
       );
       final type = library.getType('ExamplePrime');
       expect(type, isNotNull);
-      expect(type.supertype.name, 'Example');
+      expect(type.supertype.element.name, 'Example');
     });
 
     test('waits for tearDown', () async {
@@ -109,6 +110,27 @@ void main() {
             contains(endsWith(':collection#Equality')));
       });
     });
+
+    test('with specified language versions from a PackageConfig', () async {
+      var packageConfig = PackageConfig([
+        Package('a', Uri.file('/a/'),
+            packageUriRoot: Uri.file('/a/lib/'),
+            languageVersion: LanguageVersion(2, 3))
+      ]);
+      var libExample = await resolveSource(r'''
+        library example;
+
+        extension _Foo on int {}
+      ''', (resolver) => resolver.findLibraryByName('example'),
+          packageConfig: packageConfig, inputId: AssetId('a', 'invalid.dart'));
+      var errors =
+          await libExample.session.getErrors(libExample.source.fullName);
+      expect(
+          errors.errors.map((e) => e.message),
+          contains(contains(
+              'This requires the \'extension-methods\' language feature to be '
+              'enabled.')));
+    });
   });
 
   group('should resolveAsset', () {
@@ -119,7 +141,19 @@ void main() {
       expect(libExample.getType('Example'), isNotNull);
     });
   });
+
+  group('error handling', () {
+    test('getting the library for a part file', () async {
+      var partAsset = AssetId('build_test', 'test/_files/example_part.dart');
+      await resolveAsset(partAsset, (resolver) async {
+        expect(
+            () => resolver.libraryFor(partAsset),
+            throwsA(isA<NonLibraryAssetException>()
+                .having((e) => e.assetId, 'assetId', partAsset)));
+      });
+    });
+  });
 }
 
 String _toStringId(InterfaceType t) =>
-    '${t.element.source.uri.toString().split('/').first}#${t.name}';
+    '${t.element.source.uri.toString().split('/').first}#${t.element.name}';

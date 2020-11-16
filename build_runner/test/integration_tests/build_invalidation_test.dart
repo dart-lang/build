@@ -20,7 +20,7 @@ import 'utils/build_descriptor.dart';
 final copyBuilder = TestBuilder();
 // test-package-end ###########################################################
 
-main() {
+void main() {
   final builders = [
     builder('copyBuilder', copyBuilder),
   ];
@@ -143,5 +143,32 @@ main() {
 
       await server.shutDown();
     });
+  });
+
+  test('Recreates snapshot for changed core dependency path', () async {
+    // Run a first build before invalidation.
+    await buildTool.build();
+
+    final locationsFile = File(p.join(d.sandbox, 'a', '.dart_tool', 'build',
+        'entrypoint', '.packageLocations'));
+    // Modify the contents in some way
+    await locationsFile.writeAsString('${await locationsFile.readAsString()}'
+        '\nmodified!');
+
+    final secondBuild = await buildTool.build();
+
+    await expectOutput(secondBuild, [
+      'Deleted previous snapshot due to core package update',
+      'Creating build script snapshot',
+    ]);
+  });
+
+  test('Does not recreate snapshot if nothing changes', () async {
+    // Run a first build before invalidation.
+    await buildTool.build();
+
+    final secondBuild = await buildTool.build();
+    await expectLater(secondBuild, neverEmits('Creating build script snapshot'),
+        reason: 'should not invalidate the previous snapshot');
   });
 }

@@ -10,21 +10,17 @@ import 'package:path/path.dart' as p;
 
 import 'common.dart';
 
-/// Copies the dart_sdk.js and require.js files from the sdk itself, into the
-/// build_web_compilers package at `lib/dart_sdk.js` and `lib/require.js`.
+/// Copies the require.js file from the sdk itself, into the
+/// build_web_compilers package at `lib/require.js`.
 class SdkJsCopyBuilder implements Builder {
   @override
   final buildExtensions = {
-    r'$lib$': ['src/dev_compiler/dart_sdk.js', 'src/dev_compiler/require.js']
+    r'$lib$': ['src/dev_compiler/require.js']
   };
-
-  /// Path to the dart_sdk.js file that should be used for all ddc web apps.
-  final _sdkJsLocation =
-      p.join(sdkDir, 'lib', 'dev_compiler', 'amd', 'dart_sdk.js');
 
   /// Path to the require.js file that should be used for all ddc web apps.
   final _sdkRequireJsLocation =
-      p.join(sdkDir, 'lib', 'dev_compiler', 'amd', 'require.js');
+      p.join(sdkDir, 'lib', 'dev_compiler', 'kernel', 'amd', 'require.js');
 
   @override
   FutureOr<void> build(BuildStep buildStep) async {
@@ -32,9 +28,6 @@ class SdkJsCopyBuilder implements Builder {
       throw StateError('This builder should only be applied to the '
           'build_web_compilers package');
     }
-    await buildStep.writeAsBytes(
-        AssetId('build_web_compilers', 'lib/src/dev_compiler/dart_sdk.js'),
-        await File(_sdkJsLocation).readAsBytes());
     await buildStep.writeAsBytes(
         AssetId('build_web_compilers', 'lib/src/dev_compiler/require.js'),
         await File(_sdkRequireJsLocation).readAsBytes());

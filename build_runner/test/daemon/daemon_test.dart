@@ -15,18 +15,21 @@ import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart';
 import 'package:build_daemon/data/shutdown_notification.dart';
 import 'package:build_runner/src/daemon/constants.dart';
+import 'package:build_runner_core/src/util/constants.dart' show pubBinary;
 import 'package:path/path.dart' as p;
 import 'package:pedantic/pedantic.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
-main() {
+void main() {
   Process daemonProcess;
   Stream<String> stdoutLines;
   String workspace() => p.join(d.sandbox, 'a');
   final webTarget = DefaultBuildTarget((b) => b..target = 'web');
   final testTarget = DefaultBuildTarget((b) => b..target = 'test');
-  setUpAll(() async {
+  var clients = <BuildDaemonClient>[];
+
+  setUp(() async {
     await d.dir('a', [
       await pubspec(
         'a',
@@ -44,10 +47,10 @@ main() {
         ],
       ),
       d.dir('test', [
-        d.file('hello_test.dart', '''
-import 'package:test/test.dart';
+        d.file('hello.dart', '''
 main() {
-  test('hello', () {});
+  // Don't actually use test package to speed up tests
+  print('hello');
 }'''),
       ]),
       d.dir('web', [
@@ -59,12 +62,18 @@ main() {
     ]).create();
 
     await pubGet('a', offline: false);
-  });
 
-  tearDown(() async {
-    stdoutLines = null;
-    daemonProcess?.kill(ProcessSignal.sigkill);
-    await runPub('a', 'run', args: ['build_runner', 'clean']);
+    // We use `addTearDown` to ensure this runs before the temp dir gets
+    // cleaned up, otherwise there is a race condition that causes flaky tests.
+    addTearDown(() async {
+      for (var client in clients) {
+        await client.close();
+      }
+      clients.clear();
+      stdoutLines = null;
+      daemonProcess?.kill(ProcessSignal.sigkill);
+      await daemonProcess?.exitCode;
+    });
   });
 
   Future<BuildDaemonClient> _startClient(
@@ -72,11 +81,14 @@ main() {
     options ??= [];
     buildMode ??= BuildMode.Auto;
     var args = ['run', 'build_runner', 'daemon', ...options];
+    printOnFailure('Starting client in: ${workspace()}');
     return BuildDaemonClient.connect(
         workspace(),
         [
           pubBinary.toString(),
-        ]..addAll(args),
+          ...args,
+        ],
+        logHandler: (log) => printOnFailure('Client: ${log.message}'),
         buildMode: buildMode);
   }
 
@@ -89,14 +101,24 @@ main() {
       '--$buildModeFlag=$buildMode',
       ...options
     ];
+    printOnFailure('Starting daemon in: ${workspace()}');
     daemonProcess = await startPub('a', 'run', args: args);
     stdoutLines = daemonProcess.stdout
         .transform(Utf8Decoder())
         .transform(LineSplitter())
-        .map((line) {
-      printOnFailure(line);
-      return line;
-    }).asBroadcastStream();
+        .asBroadcastStream()
+          ..listen((line) {
+            printOnFailure('Daemon: $line');
+          });
+    daemonProcess.stderr
+        .transform(Utf8Decoder())
+        .transform(LineSplitter())
+        .listen((line) {
+      printOnFailure('Daemon Error: $line');
+    });
+    unawaited(daemonProcess.exitCode.then((exitCode) {
+      printOnFailure('GOT EXIT CODE: $exitCode');
+    }));
     expect(await stdoutLines.contains(readyToConnectLog), isTrue);
   }
 
@@ -128,6 +150,7 @@ main() {
       var client = await _startClient(options: ['--skip-build-script-check'])
         ..registerBuildTarget(webTarget)
         ..startBuild();
+      clients.add(client);
       ShutdownNotification notification;
       // We need to add a listener otherwise we won't get the event.
       unawaited(client.shutdownNotifications.first
@@ -141,7 +164,7 @@ main() {
         ])
       ]).create();
       // Give time for the notification to propogate if there was one.
-      await Future.delayed(Duration(seconds: 4));
+      await Future<void>.delayed(Duration(seconds: 4));
       expect(notification, isNull);
     });
 
@@ -156,27 +179,33 @@ main() {
       var client = await _startClient(buildMode: BuildMode.Manual)
         ..registerBuildTarget(webTarget)
         ..startBuild();
-      var buildResults = await client.buildResults.first;
-      expect(buildResults.results.first.status, BuildStatus.started);
+      clients.add(client);
+      expect(
+          client.buildResults,
+          emitsThrough((BuildResults b) =>
+              b.results.first.status == BuildStatus.succeeded));
     });
 
     test('auto build mode automatically builds on file change', () async {
       await _startDaemon();
       var client = await _startClient()
         ..registerBuildTarget(webTarget);
+      clients.add(client);
       // Let the target request propagate.
-      await Future.delayed(Duration(seconds: 2));
+      await Future<void>.delayed(Duration(seconds: 2));
       // Trigger a file change.
       await d.dir('a', [
         d.dir('web', [
           d.file('main.dart', '''
-                main() {
-                  print('hello world');
-                }'''),
+main() {
+  print('goodbye world');
+}'''),
         ])
       ]).create();
-      var buildResults = await client.buildResults.first;
-      expect(buildResults.results.first.status, BuildStatus.started);
+      expect(
+          client.buildResults,
+          emitsThrough((BuildResults b) =>
+              b.results.first.status == BuildStatus.succeeded));
     });
 
     test('manual build mode does not automatically build on file change',
@@ -184,21 +213,33 @@ main() {
       await _startDaemon(buildMode: BuildMode.Manual);
       var client = await _startClient(buildMode: BuildMode.Manual)
         ..registerBuildTarget(webTarget);
+      clients.add(client);
       // Let the target request propagate.
-      await Future.delayed(Duration(seconds: 2));
+      await Future<void>.delayed(Duration(seconds: 2));
       // Trigger a file change.
       await d.dir('a', [
         d.dir('web', [
           d.file('main.dart', '''
-                main() {
-                  print('hello world');
-                }'''),
+// @dart=2.12
+main() {
+  print('goodbye world');
+}'''),
         ])
       ]).create();
       // There shouldn't be any build results.
       var buildResults = await client.buildResults.first
           .timeout(Duration(seconds: 2), onTimeout: () => null);
       expect(buildResults, isNull);
+      client.startBuild();
+      var startedResult = await client.buildResults.first;
+      expect(startedResult.results.first.status, BuildStatus.started,
+          reason: 'Should do a build once requested');
+      var succeededResult = await client.buildResults.first;
+      expect(succeededResult.results.first.status, BuildStatus.succeeded);
+      var ddcContent = await File(p.join(d.sandbox, 'a', '.dart_tool', 'build',
+              'generated', 'a', 'web', 'main.sound.ddc.js'))
+          .readAsString();
+      expect(ddcContent, contains('goodbye world'));
     });
 
     test('can build to outputs', () async {
@@ -215,8 +256,9 @@ main() {
             ..hoist = true
             ..useSymlinks = false).toBuilder()))
         ..startBuild();
+      clients.add(client);
       await client.buildResults
-          .firstWhere((b) => b.results.first.status != BuildStatus.started);
+          .firstWhere((b) => b.results.first.status == BuildStatus.succeeded);
       expect(outputDir.existsSync(), isTrue);
     });
 
@@ -230,8 +272,16 @@ main() {
       var client = await _startClient()
         ..registerBuildTarget(webTarget)
         ..startBuild();
-      var buildResults = await client.buildResults.first;
-      expect(buildResults.results.first.status, BuildStatus.started);
+      clients.add(client);
+      expect(
+          client.buildResults,
+          emitsThrough((BuildResults b) =>
+              b.results.first.status == BuildStatus.started));
+      // Wait for the build to finish before exiting to prevent flakiness.
+      expect(
+          client.buildResults,
+          emitsThrough((BuildResults b) =>
+              b.results.first.status == BuildStatus.succeeded));
     });
 
     test('can complete builds', () async {
@@ -239,9 +289,11 @@ main() {
       var client = await _startClient()
         ..registerBuildTarget(webTarget)
         ..startBuild();
-      var buildResults = await client.buildResults
-          .firstWhere((b) => b.results.first.status != BuildStatus.started);
-      expect(buildResults.results.first.status, BuildStatus.succeeded);
+      clients.add(client);
+      expect(
+          client.buildResults,
+          emitsThrough((BuildResults b) =>
+              b.results.first.status == BuildStatus.succeeded));
     });
 
     test('allows multiple clients to connect and build', () async {
@@ -249,10 +301,12 @@ main() {
 
       var clientA = await _startClient();
       clientA.registerBuildTarget(webTarget);
+      clients.add(clientA);
 
       var clientB = await _startClient()
         ..registerBuildTarget(testTarget)
         ..startBuild();
+      clients.add(clientB);
 
       // Both clients should be notified.
       await clientA.buildResults.first;
@@ -261,6 +315,47 @@ main() {
 
       expect(buildResultsB.results.first.status, BuildStatus.succeeded);
       expect(buildResultsB.results.length, equals(2));
+    });
+
+    group('build filters', () {
+      setUp(() async {
+        // Adds an additional entrypoint.
+        await d.dir('a', [
+          d.dir('web', [
+            d.file('other.dart', '''
+main() {
+  print('goodbye world');
+}'''),
+          ])
+        ]).create();
+      });
+
+      test('can build specific outputs', () async {
+        await _startDaemon(buildMode: BuildMode.Manual);
+        var client = await _startClient(buildMode: BuildMode.Manual)
+          ..registerBuildTarget(DefaultBuildTarget((b) => b
+            ..target = 'web'
+            ..buildFilters.add('web/other.dart.js')))
+          ..startBuild();
+        clients.add(client);
+        await client.buildResults
+            .firstWhere((b) => b.results.first.status == BuildStatus.succeeded);
+
+        await d.dir('a', [
+          d.dir('.dart_tool', [
+            d.dir('build', [
+              d.dir('generated', [
+                d.dir('a', [
+                  d.dir('web', [
+                    d.file('other.dart.js', isNotEmpty),
+                    d.nothing('main.dart.js'),
+                  ]),
+                ])
+              ])
+            ])
+          ])
+        ]).validate();
+      });
     });
   });
 }

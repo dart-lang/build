@@ -1,7 +1,6 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-import 'dart:async';
 import 'dart:convert';
 
 import 'id.dart';
@@ -29,7 +28,7 @@ abstract class AssetWriter {
 /// An [AssetWriter] which tracks all [assetsWritten] during its lifetime.
 class AssetWriterSpy implements AssetWriter {
   final AssetWriter _delegate;
-  final _assetsWritten = Set<AssetId>();
+  final _assetsWritten = <AssetId>{};
 
   AssetWriterSpy(this._delegate);
 
