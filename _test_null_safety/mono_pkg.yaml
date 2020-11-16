@@ -13,7 +13,7 @@ stages:
   - group:
     - command: pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random
     - command: pub run build_runner test --enable-experiment=non-nullable --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random
-    os: linux 
+    os: linux
 - e2e_test_cron:
   - group:
     - command: pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random
