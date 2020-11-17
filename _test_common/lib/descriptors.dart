@@ -29,6 +29,8 @@ Future<d.FileDescriptor> pubspec(String name,
 
   var buffer = StringBuffer()
     ..writeln('name: $name')
+    ..writeln('environment:')
+    ..writeln('  sdk: ">=2.9.0 <3.0.0"')
     // Using dependency_overrides forces the path dependency and silences
     // warnings about hosted vs path dependency conflicts.
     ..writeln('dependency_overrides:');

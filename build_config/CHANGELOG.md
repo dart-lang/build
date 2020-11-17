@@ -7,7 +7,7 @@
 
 - Add support for an `auto_apply_builders` option to the `target` config.
   - Defaults to `true` (the previous behavior), setting it to `false`
-    means all builders have to be explicitly enabled. 
+    means all builders have to be explicitly enabled.
 
 ## 0.4.1+1
 

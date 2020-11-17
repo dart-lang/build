@@ -63,13 +63,14 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
       }
 
       var transitiveKernelModules = [
-        module.primarySource.changeExtension(vmKernelModuleExtension)
-      ].followedBy(transitiveModules.reversed.map(
-          (m) => m.primarySource.changeExtension(vmKernelModuleExtension)));
-      var appContents = <int>[];
-      for (var dependencyId in transitiveKernelModules) {
-        appContents.addAll(await buildStep.readAsBytes(dependencyId));
-      }
+        module.primarySource.changeExtension(vmKernelModuleExtension),
+        for (var module in transitiveModules.reversed)
+          module.primarySource.changeExtension(vmKernelModuleExtension),
+      ];
+      var appContents = [
+        for (var dependencyId in transitiveKernelModules)
+          ...await buildStep.readAsBytes(dependencyId)
+      ];
       await buildStep.writeAsBytes(
           buildStep.inputId.changeExtension(vmKernelEntrypointExtension),
           appContents);

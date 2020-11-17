@@ -160,7 +160,7 @@ See [this test][withEnabledExperiments test] as an example of how to use it.
 **Note**: For language experiments the language version required to enable it
 is typically the **current** language version, so you may need to update your
 tests for new sdk versions to increase their language version and opt them
-back in.  
+back in.
 
 [PackageConfig test]: https://github.com/dart-lang/build/blob/4c76bbfbdbf7e905ab155ad95299b4b306f8b529/build_test/test/test_builder_test.dart#L160
 [withEnabledExperiments test]: https://github.com/dart-lang/build/blob/4c76bbfbdbf7e905ab155ad95299b4b306f8b529/build_resolvers/test/resolver_test.dart#L362

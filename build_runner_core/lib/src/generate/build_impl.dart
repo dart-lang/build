@@ -286,7 +286,7 @@ class _SingleBuild {
       hungActionsHeartbeat.stop();
     });
 
-    runZoned(() async {
+    runZonedGuarded(() async {
       if (updates.isNotEmpty) {
         await _updateAssetGraph(updates);
       }
@@ -318,7 +318,7 @@ class _SingleBuild {
       }
 
       if (!done.isCompleted) done.complete(result);
-    }, onError: (Object e, StackTrace st) {
+    }, (e, st) {
       if (!done.isCompleted) {
         _logger.severe('Unhandled build failure!', e, st);
         done.complete(BuildResult(BuildStatus.failure, []));
@@ -460,9 +460,9 @@ class _SingleBuild {
 
   FutureOr<void> _ensureAssetIsBuilt(AssetNode node) {
     if (node is GeneratedAssetNode && node.state != NodeState.upToDate) {
-      return _runLazyPhaseForInput(node.phaseNumber, node.primaryInput);
+      return _runLazyPhaseForInput(node.phaseNumber, node.primaryInput)
+          .then((_) {});
     }
-    return null;
   }
 
   Future<Iterable<AssetId>> _runForInput(

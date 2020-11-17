@@ -392,15 +392,11 @@ Map<String, List<BuilderApplication>> _applyWith(
 /// Any calls to [print] will be logged with `log.info`, and any errors will be
 /// logged with `log.severe`.
 T _scopeLogSync<T>(T Function() fn, Logger log) {
-  return runZoned(fn,
-      zoneSpecification:
-          ZoneSpecification(print: (self, parent, zone, message) {
-        log.info(message);
-      }),
-      zoneValues: {logKey: log},
-      onError: (Object e, StackTrace s) {
-        log.severe('', e, s);
-      });
+  return runZonedGuarded(fn, (e, st) {
+    log.severe('', e, st);
+  }, zoneSpecification: ZoneSpecification(print: (self, parent, zone, message) {
+    log.info(message);
+  }), zoneValues: {logKey: log});
 }
 
 String _factoryFailure(String packageName, BuilderOptions options) =>
