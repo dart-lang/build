@@ -193,8 +193,14 @@ Future<AssetId> _writeModifiedPackageConfig(
   var packages =
       (packageConfig['packages'] as List).cast<Map<String, dynamic>>();
   for (var package in packages) {
-    package['rootUri'] = '../packages/${package['name']}';
-    package['packageUri'] = '';
+    final name = package['name'] as String;
+    if (name == rootPackage) {
+      package['rootUri'] = '../';
+      package['packageUri'] = 'packages/${package['name']}';
+    } else {
+      package['rootUri'] = '../packages/${package['name']}';
+      package['packageUri'] = '';
+    }
   }
   await _writeAsString(
       outputDir, packageConfigAsset, jsonEncode(packageConfig));
