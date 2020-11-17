@@ -1,7 +1,7 @@
 name: build_config
-version: 0.4.4-dev
+version: 0.4.4
 description: Support for parsing `build.yaml` configuration.
-homepage: https://github.com/dart-lang/build/tree/master/build_config
+repository: https://github.com/dart-lang/build/tree/master/build_config
 
 environment:
   sdk: '>=2.9.0 <3.0.0'
@@ -12,7 +12,7 @@ dependencies:
   meta: ^1.1.0
   path: ^1.4.0
   pubspec_parse: ^0.1.5
-  yaml: ^2.1.11
+  yaml: '>=2.1.11 <4.0.0'
 
 dev_dependencies:
   build_runner: ^1.0.0
@@ -21,6 +21,8 @@ dev_dependencies:
   test: ^1.6.0
 
 dependency_overrides:
+  # just for testing...
+  yaml: 3.0.0-nullsafety.0
   # Required due to the tight dependency on this package from these packages
   build_runner:
     path: ../build_runner

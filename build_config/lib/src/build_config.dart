@@ -109,7 +109,7 @@ class BuildConfig {
         (map) =>
             BuildConfig.fromMap(packageName, dependencies, map ?? const {}),
         allowNull: true,
-        sourceUrl: configYamlPath,
+        sourceUrl: configYamlPath == null ? null : Uri.file(configYamlPath),
       );
     } on ParsedYamlException catch (e) {
       throw ArgumentError(e.formattedMessage);
