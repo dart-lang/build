@@ -36,6 +36,7 @@ void main() {
       ),
       d.dir('test', [
         d.file('hello_test.dart', '''
+// @dart=2.9
 import 'package:test/test.dart';
 main() {
   test('hello', () {});

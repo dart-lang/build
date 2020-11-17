@@ -10,13 +10,13 @@ import 'package:archive/archive.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
-import 'package:build_modules/src/workers.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 import 'package:scratch_space/scratch_space.dart';
 
+import 'common.dart';
 import 'platforms.dart';
 import 'web_entrypoint_builder.dart';
 
@@ -149,18 +149,23 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
     await scratchSpace.copyOutput(jsOutputId, buildStep);
     var jsSourceMapId =
         dartEntrypointId.changeExtension(jsEntrypointSourceMapExtension);
-    await _copyIfExists(jsSourceMapId, scratchSpace, buildStep);
+    await _copyModifiedSourceMap(jsSourceMapId, scratchSpace, buildStep);
   } else {
-    log.severe(
-        'ExitCode:${result.exitCode}\nStdOut:\n${result.stdout}\nStdErr:\n${result.stderr}');
+    log.severe('ExitCode:${result.exitCode}\nStdOut:\n${result.stdout}\n'
+        'StdErr:\n${result.stderr}');
   }
 }
 
-Future<void> _copyIfExists(
+/// If [id] exists, modifies it to something the browser can understand and
+/// writes it using [writer].
+Future<void> _copyModifiedSourceMap(
     AssetId id, ScratchSpace scratchSpace, AssetWriter writer) async {
   var file = scratchSpace.fileFor(id);
   if (await file.exists()) {
-    await scratchSpace.copyOutput(id, writer);
+    var content = await file.readAsString();
+    var json = jsonDecode(content);
+    json['sources'] = fixSourceMapSources((json['sources'] as List).cast());
+    await writer.writeAsString(id, jsonEncode(json));
   }
 }
 

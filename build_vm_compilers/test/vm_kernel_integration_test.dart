@@ -29,6 +29,7 @@ void main() {
         }),
         d.dir('bin', [
           d.file('hello.dart', '''
+// @dart=2.9
 import 'package:path/path.dart' as p;
 
 void main() {
@@ -36,6 +37,7 @@ void main() {
 }
 '''),
           d.file('goodbye.dart', '''
+// @dart=2.9
 import 'package:path/path.dart' as p;
 
 import 'hello.dart';
@@ -45,6 +47,7 @@ void main() {
 }
 '''),
           d.file('sync_async.dart', '''
+// @dart=2.9
 void main() async {
   print('before');
   printAsync();

@@ -82,3 +82,16 @@ build`
 
 [observatory docs]:https://dart-lang.github.io/observatory/get-started.html
 [IntelliJ debugging docs]:https://www.jetbrains.com/help/idea/dart.html#dart_run_debug_command_line_application
+
+## Why can't my builder resolve code output by another builder?
+
+A builder may only read a generated output if it is ordered _after_ the builder
+that emitted it. Ordering can be adjusted using the `runs_before` or
+`required_inputs` configuration options for builders. In particular this can be
+tricky for the `SharedPartBuilder` from `package:source_gen`. When using this
+utility it is the `source_gen:combining_builder` which emits the Dart code in a
+`.g.dart` file, and this always runs after all builders emitting `.g.part`
+files. No `SharedPartBuilder` will be able to resolve the Dart code emitted by
+another `SharedPartBuilder`. In order for emitted code to be used with the
+`Resolver` by later build steps, it must write to a `.dart` file directly, and
+should be a different file extension than `.g.dart`.

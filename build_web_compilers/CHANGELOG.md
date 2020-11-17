@@ -1,3 +1,13 @@
+## 2.15.2
+
+- Fix stack trace mapping for sound mode DDC tests and dart2js apps.
+
+
+## 2.15.1
+
+- Fix DDC sound mode apps to load the sound mode sdk, and only require the
+  compiled sdk dependency that it will actually use.
+
 ## 2.15.0
 
 - Add some warnings for manual dart2js args that should be configured using
@@ -12,7 +22,7 @@
 
 - Add `native_null_asserts` boolean option to the
   `build_web_compilers:entrypoint` builder. This is disabled by default but
-  will be enabled by default in a later release. 
+  will be enabled by default in a later release.
 
 ## 2.12.3
 

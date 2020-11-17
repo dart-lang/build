@@ -23,17 +23,13 @@ Logger get log => Zone.current[logKey] as Logger ?? _default;
 /// Completes with the first error or result of `fn`, whichever comes first.
 Future<T> scopeLogAsync<T>(Future<T> Function() fn, Logger log) {
   var done = Completer<T>();
-  runZoned(fn,
-      zoneSpecification:
-          ZoneSpecification(print: (self, parent, zone, message) {
-        log.warning(message);
-      }),
-      zoneValues: {logKey: log},
-      onError: (Object e, StackTrace s) {
-        log.severe('', e, s);
-        if (done.isCompleted) return;
-        done.completeError(e, s);
-      }).then((result) {
+  runZonedGuarded(fn, (e, st) {
+    log.severe('', e, st);
+    if (done.isCompleted) return;
+    done.completeError(e, st);
+  }, zoneSpecification: ZoneSpecification(print: (self, parent, zone, message) {
+    log.warning(message);
+  }), zoneValues: {logKey: log}).then((result) {
     if (done.isCompleted) return;
     done.complete(result);
   });

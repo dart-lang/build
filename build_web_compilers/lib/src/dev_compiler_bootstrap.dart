@@ -103,8 +103,10 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
       pathToJSIdentifier(_context.withoutExtension(buildStep.inputId.path));
 
   // Map from module name to module path for custom modules.
-  var modulePaths = SplayTreeMap.of(
-      {'dart_sdk': r'packages/build_web_compilers/src/dev_compiler/dart_sdk'});
+  var modulePaths = SplayTreeMap.of({
+    'dart_sdk': r'packages/build_web_compilers/src/dev_compiler/dart_sdk'
+        '${soundNullSafety ? '.sound' : ''}'
+  });
   for (var jsId in transitiveJsModules) {
     // Strip out the top level dir from the path for any module, and set it to
     // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
