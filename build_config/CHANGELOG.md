@@ -1,4 +1,4 @@
-## 0.4.3-dev
+## 0.4.3
 
 - Added the `additional_public_assets` option, which describes the assets
   readable when the configured package is not the root of the build.
