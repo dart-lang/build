@@ -23,10 +23,9 @@ import 'package:test/test.dart';
 import '../utils.dart';
 
 class _RealClass {
-  _RealClass innerObj;
-  String methodWithNormalArgs(int x) => 'Real';
-  String methodWithListArgs(List<int> x) => 'Real';
-  String methodWithPositionalArgs(int x, [int y]) => 'Real';
+  String methodWithNormalArgs(int? x) => 'Real';
+  String methodWithListArgs(List<int>? x) => 'Real';
+  String methodWithPositionalArgs(int? x, [int? y]) => 'Real';
   set setter(String arg) {
     throw StateError('I must be mocked');
   }
@@ -35,7 +34,7 @@ class _RealClass {
 class MockedClass extends Mock implements _RealClass {}
 
 void main() {
-  MockedClass mock;
+  late MockedClass mock;
 
   var isNsmForwarding = assessNsmForwarding();
 

@@ -1,4 +1,4 @@
-## 4.1.4-dev
+## 5.0.0-dev
 
 * Add `http` back to `dev_dependencies`. It's used by the example.
 

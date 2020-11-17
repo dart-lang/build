@@ -16,23 +16,23 @@ import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
 class Foo {
-  String /*?*/ returnsNullableString() => 'Hello';
+  String? returnsNullableString() => 'Hello';
 
   // TODO(srawlins): When it becomes available, opt this test library into NNBD,
   // and make this method really return a non-nullable String.
-  String /*!*/ returnsNonNullableString() => 'Hello';
+  String returnsNonNullableString() => 'Hello';
 }
 
 class MockFoo extends Mock implements Foo {
   @override
-  String /*!*/ returnsNonNullableString() {
+  String returnsNonNullableString() {
     return super.noSuchMethod(
         Invocation.method(#returnsNonNullableString, []), 'Dummy') as String;
   }
 }
 
 void main() {
-  MockFoo mock;
+  late MockFoo mock;
 
   setUp(() {
     mock = MockFoo();

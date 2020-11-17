@@ -15,8 +15,6 @@
 import 'package:mockito/src/invocation_matcher.dart';
 import 'package:test/test.dart';
 
-Invocation lastInvocation;
-
 void main() {
   const stub = Stub();
 
@@ -144,16 +142,16 @@ abstract class Interface {
   bool get value;
   set value(value);
   void say(String text);
-  void eat(String food, {bool alsoDrink});
-  void lie([bool facingDown]);
-  void fly({int miles});
+  void eat(String food, {bool? alsoDrink});
+  void lie([bool? facingDown]);
+  void fly({int? miles});
 }
 
 /// An example of a class that captures Invocation objects.
 ///
 /// Any call always returns an [Invocation].
 class Stub implements Interface {
-  static /*late*/ Invocation lastInvocation;
+  static late Invocation lastInvocation;
 
   const Stub();
 
@@ -172,7 +170,9 @@ void shouldFail(value, Matcher matcher, expected) {
   } on TestFailure catch (e) {
     final matcher = expected is String
         ? equalsIgnoringWhitespace(expected)
-        : expected is RegExp ? contains(expected) : expected;
+        : expected is RegExp
+            ? contains(expected)
+            : expected;
     expect(collapseWhitespace(e.message), matcher, reason: reason);
   }
 }

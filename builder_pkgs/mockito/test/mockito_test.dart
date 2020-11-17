@@ -18,13 +18,13 @@ import 'package:test/test.dart';
 import 'utils.dart';
 
 class _RealClass {
-  _RealClass innerObj;
+  _RealClass? innerObj;
   String methodWithoutArgs() => 'Real';
-  String methodWithNormalArgs(int x) => 'Real';
-  String methodWithListArgs(List<int> x) => 'Real';
-  String methodWithPositionalArgs(int x, [int y]) => 'Real';
-  String methodWithNamedArgs(int x, {int y}) => 'Real';
-  String methodWithTwoNamedArgs(int x, {int y, int z}) => 'Real';
+  String methodWithNormalArgs(int? x) => 'Real';
+  String methodWithListArgs(List<int?>? x) => 'Real';
+  String methodWithPositionalArgs(int? x, [int? y]) => 'Real';
+  String methodWithNamedArgs(int? x, {int? y}) => 'Real';
+  String methodWithTwoNamedArgs(int? x, {int? y, int? z}) => 'Real';
   String methodWithObjArgs(_RealClass x) => 'Real';
   Future<String> methodReturningFuture() => Future.value('Real');
   Stream<String> methodReturningStream() => Stream.fromIterable(['Real']);
@@ -64,7 +64,7 @@ void expectFail(String expectedMessage, void Function() expectedToFail) {
 }
 
 void main() {
-  _MockedClass mock;
+  late _MockedClass mock;
 
   var isNsmForwarding = assessNsmForwarding();
 

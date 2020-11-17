@@ -28,8 +28,8 @@ import 'package:test_api/src/backend/invoker.dart';
 bool _whenInProgress = false;
 bool _untilCalledInProgress = false;
 bool _verificationInProgress = false;
-_WhenCall _whenCall;
-_UntilCall _untilCall;
+_WhenCall? _whenCall;
+_UntilCall? _untilCall;
 final List<_VerifyCall> _verifyCalls = <_VerifyCall>[];
 final _TimeStampProvider _timer = _TimeStampProvider();
 final List<dynamic> _capturedArgs = [];
@@ -49,11 +49,11 @@ void setDefaultResponse(
 /// The default behavior when not using this is to always return `null`.
 void throwOnMissingStub(
   Mock mock, {
-  void Function(Invocation) exceptionBuilder,
+  void Function(Invocation)? exceptionBuilder,
 }) {
   exceptionBuilder ??= mock._noSuchMethod;
   mock._defaultResponse =
-      () => CallPair<dynamic>.allInvocations(exceptionBuilder);
+      () => CallPair<dynamic>.allInvocations(exceptionBuilder!);
 }
 
 /// Extend or mixin this class to mark the implementation as a [Mock].
@@ -103,8 +103,8 @@ class Mock {
   final _realCalls = <RealCall>[];
   final _responses = <CallPair<dynamic>>[];
 
-  String _givenName;
-  int _givenHashCode;
+  String? _givenName;
+  int? _givenHashCode;
 
   _ReturnsCannedResponse _defaultResponse = () => _nullResponse;
 
@@ -120,7 +120,7 @@ class Mock {
   /// return type.
   @override
   @visibleForTesting
-  dynamic noSuchMethod(Invocation invocation, [Object /*?*/ returnValue]) {
+  dynamic noSuchMethod(Invocation invocation, [Object? returnValue]) {
     // noSuchMethod is that 'magic' that allows us to ignore implementing fields
     // and methods and instead define them later at compile-time per instance.
     invocation = _useMatchedInvocationIfSet(invocation);
@@ -158,7 +158,7 @@ class Mock {
   @override
   String toString() => _givenName ?? runtimeType.toString();
 
-  String _realCallsToString([Iterable<RealCall> realCalls]) {
+  String _realCallsToString([Iterable<RealCall>? realCalls]) {
     var stringRepresentations =
         (realCalls ?? _realCalls).map((call) => call.toString());
     if (stringRepresentations.any((s) => s.contains('\n'))) {
@@ -347,7 +347,7 @@ class _InvocationForMatchedArguments extends Invocation {
     'This function does not provide value; hashCode and toString() can be '
     'stubbed individually. This function may be deleted as early as Mockito '
     '5.0.0')
-T named<T extends Mock>(T mock, {String name, int hashCode}) => mock
+T named<T extends Mock>(T mock, {String? name, int? hashCode}) => mock
   .._givenName = name
   .._givenHashCode = hashCode;
 
@@ -381,7 +381,7 @@ class PostExpectation<T> {
 
   /// Store an exception to throw when this method stub is called.
   void thenThrow(throwable) {
-    return _completeWhen((_) {
+    return _completeWhen((Invocation _) {
       throw throwable;
     });
   }
@@ -399,7 +399,7 @@ class PostExpectation<T> {
           'No method stub was called from within `when()`. Was a real method '
           'called, or perhaps an extension method?');
     }
-    _whenCall._setExpected<T>(answer);
+    _whenCall!._setExpected<T>(answer);
     _whenCall = null;
     _whenInProgress = false;
   }
@@ -604,7 +604,7 @@ class _UntilCall {
 class _VerifyCall {
   final Mock mock;
   final Invocation verifyInvocation;
-  List<RealCall> matchingInvocations;
+  late List<RealCall> matchingInvocations;
 
   _VerifyCall(this.mock, this.verifyInvocation) {
     var expectedMatcher = InvocationMatcher(verifyInvocation);
@@ -682,24 +682,24 @@ Null captureAnyNamed(String named) => _registerMatcher(anything, true,
     named: named, argumentMatcher: 'captureAnyNamed');
 
 /// An argument matcher that matches an argument that matches [matcher].
-Null argThat(Matcher matcher, {String named}) =>
+Null argThat(Matcher matcher, {String? named}) =>
     _registerMatcher(matcher, false, named: named, argumentMatcher: 'argThat');
 
 /// An argument matcher that matches an argument that matches [matcher], and
 /// captures the argument for later access with `captured`.
-Null captureThat(Matcher matcher, {String named}) =>
+Null captureThat(Matcher matcher, {String? named}) =>
     _registerMatcher(matcher, true,
         named: named, argumentMatcher: 'captureThat');
 
 @Deprecated('ArgMatchers no longer need to be wrapped in Mockito 3.0')
-Null typed<T>(ArgMatcher matcher, {String named}) => null;
+Null typed<T>(ArgMatcher? matcher, {String? named}) => null;
 
 @Deprecated('Replace with `argThat`')
-Null typedArgThat(Matcher matcher, {String named}) =>
+Null typedArgThat(Matcher matcher, {String? named}) =>
     argThat(matcher, named: named);
 
 @Deprecated('Replace with `captureThat`')
-Null typedCaptureThat(Matcher matcher, {String named}) =>
+Null typedCaptureThat(Matcher matcher, {String? named}) =>
     captureThat(matcher, named: named);
 
 /// Registers [matcher] into the stored arguments collections.
@@ -710,7 +710,7 @@ Null typedCaptureThat(Matcher matcher, {String named}) =>
 /// [argumentMatcher] is the name of the public API used to register [matcher],
 /// for error messages.
 Null _registerMatcher(Matcher matcher, bool capture,
-    {String named, String argumentMatcher}) {
+    {String? named, String? argumentMatcher}) {
   if (!_whenInProgress && !_untilCalledInProgress && !_verificationInProgress) {
     // It is not meaningful to store argument matchers outside of stubbing
     // (`when`), or verification (`verify` and `untilCalled`). Such argument
@@ -1059,7 +1059,7 @@ InvocationLoader get untilCalled {
   _untilCalledInProgress = true;
   return <T>(T _) {
     _untilCalledInProgress = false;
-    return _untilCall.invocationFuture;
+    return _untilCall!.invocationFuture;
   };
 }
 

@@ -1,7 +1,7 @@
 import 'package:mockito/mockito.dart';
 
 abstract class NsmForwardingSignal {
-  void fn([int a]);
+  void fn([int? a]);
 }
 
 class MockNsmForwardingSignal extends Mock implements NsmForwardingSignal {}

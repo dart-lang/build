@@ -21,14 +21,13 @@ import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
 class _RealClass {
-  _RealClass innerObj;
   String methodWithoutArgs() => 'Real';
-  String methodWithNormalArgs(int x) => 'Real';
+  String methodWithNormalArgs(int? x) => 'Real';
   String methodWithListArgs(List<int> x) => 'Real';
-  String methodWithOptionalArg([int x]) => 'Real';
-  String methodWithPositionalArgs(int x, [int y]) => 'Real';
-  String methodWithNamedArgs(int x, {int y}) => 'Real';
-  String methodWithOnlyNamedArgs({int y, int z}) => 'Real';
+  String methodWithOptionalArg([int? x]) => 'Real';
+  String methodWithPositionalArgs(int? x, [int? y]) => 'Real';
+  String methodWithNamedArgs(int x, {int? y}) => 'Real';
+  String methodWithOnlyNamedArgs({int? y, int? z}) => 'Real';
   String methodWithObjArgs(_RealClass x) => 'Real';
   String get getter => 'Real';
   set setter(String arg) {
@@ -36,7 +35,7 @@ class _RealClass {
   }
 
   String methodWithLongArgs(LongToString a, LongToString b,
-          {LongToString c, LongToString d}) =>
+          {LongToString? c, LongToString? d}) =>
       'Real';
 }
 
@@ -76,7 +75,7 @@ String noMatchingCallsFooter = '(If you called `verify(...).called(0);`, '
     'please instead use `verifyNever(...);`.)';
 
 void main() {
-  _MockedClass mock;
+  late _MockedClass mock;
 
   // google3-specific: dart2js writes minified method names differently.
   var isDart2js = true;

@@ -14,7 +14,6 @@
 
 import 'package:collection/collection.dart';
 import 'package:matcher/matcher.dart';
-import 'package:meta/meta.dart';
 import 'package:mockito/src/mock.dart';
 
 /// Returns a matcher that expects an invocation that matches arguments given.
@@ -78,7 +77,7 @@ class _InvocationSignature extends Invocation {
   final bool isSetter;
 
   _InvocationSignature({
-    @required this.memberName,
+    required this.memberName,
     this.positionalArguments = const [],
     this.namedArguments = const {},
     this.isGetter = false,

@@ -18,22 +18,21 @@ import 'package:test/test.dart';
 import 'utils.dart';
 
 class _RealClass {
-  _RealClass innerObj;
   String methodWithoutArgs() => 'Real';
-  String methodWithNormalArgs(int x) => 'Real';
+  String methodWithNormalArgs(int? x) => 'Real';
   String methodWithListArgs(List<int> x) => 'Real';
-  String methodWithOptionalArg([int x]) => 'Real';
-  String methodWithPositionalArgs(int x, [int y]) => 'Real';
-  String methodWithNamedArgs(int x, {int y}) => 'Real';
-  String methodWithOnlyNamedArgs({int y, int z}) => 'Real';
+  String methodWithOptionalArg([int? x]) => 'Real';
+  String methodWithPositionalArgs(int? x, [int? y]) => 'Real';
+  String methodWithNamedArgs(int x, {int? y}) => 'Real';
+  String methodWithOnlyNamedArgs({int? y, int? z}) => 'Real';
   String methodWithObjArgs(_RealClass x) => 'Real';
   String get getter => 'Real';
   set setter(String arg) {
     throw StateError('I must be mocked');
   }
 
-  String methodWithLongArgs(LongToString a, LongToString b,
-          {LongToString c, LongToString d}) =>
+  String methodWithLongArgs(LongToString? a, LongToString? b,
+          {LongToString? c, LongToString? d}) =>
       'Real';
 }
 
@@ -69,7 +68,7 @@ const noMatchingCallsFooter = '(If you called `verify(...).called(0);`, '
     'please instead use `verifyNever(...);`.)';
 
 void main() {
-  _MockedClass mock;
+  late _MockedClass mock;
 
   var isNsmForwarding = assessNsmForwarding();
 
@@ -190,7 +189,6 @@ void main() {
       var badHelper = () => throw 'boo';
       try {
         verify(mock.methodWithNamedArgs(42, y: badHelper()));
-        fail('verify call was expected to throw!');
       } catch (_) {}
       // At this point, verification was interrupted, so
       // `_verificationInProgress` is still `true`. Calling mock methods below
@@ -200,12 +198,14 @@ void main() {
       try {
         verify(mock.methodWithNamedArgs(42, y: 17));
         fail('verify call was expected to throw!');
-      } catch (e) {
-        expect(e, TypeMatcher<StateError>());
+      } catch (exception) {
         expect(
-            e.message,
-            contains('Verification appears to be in progress. '
-                '2 verify calls have been stored.'));
+            exception,
+            isA<StateError>().having(
+                (exception) => exception.message,
+                'message',
+                contains('Verification appears to be in progress. '
+                    '2 verify calls have been stored.')));
       }
     });
   });
