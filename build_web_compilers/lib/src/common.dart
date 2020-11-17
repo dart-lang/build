@@ -57,3 +57,22 @@ void validateOptions(Map<String, dynamic> config, List<String> supportedOptions,
         'longer have any effect and should be removed.');
   }
 }
+
+/// Copied to `web/stack_trace_mapper.dart`, these need to be kept in sync.
+///
+/// Given a list of [uris] as [String]s from a sourcemap, fixes them up so that
+/// they make sense in a browser context.
+///
+/// - Strips the scheme from the uri
+/// - Strips the top level directory if its not `packages`
+List<String> fixSourceMapSources(List<String> uris) {
+  return uris.map((source) {
+    var uri = Uri.parse(source);
+    // We only want to rewrite multi-root scheme uris.
+    if (uri.scheme.isEmpty) return source;
+    var newSegments = uri.pathSegments.first == 'packages'
+        ? uri.pathSegments
+        : uri.pathSegments.skip(1);
+    return Uri(path: p.url.joinAll(['/'].followedBy(newSegments))).toString();
+  }).toList();
+}

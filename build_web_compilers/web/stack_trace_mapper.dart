@@ -32,8 +32,7 @@ import 'package:stack_trace/stack_trace.dart';
 
 import 'source_map_stack_trace.dart';
 
-/// Copied from `lib/src/dev_compiler_builder.dart`, these need to be kept in
-/// sync.
+/// Copied from `lib/src/common.dart`, these need to be kept in sync.
 ///
 /// Given a list of [uris] as [String]s from a sourcemap, fixes them up so that
 /// they make sense in a browser context.
