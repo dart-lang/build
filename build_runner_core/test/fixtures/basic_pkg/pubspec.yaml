@@ -1,5 +1,6 @@
 name: basic_pkg
 version: 1.0.0
+publish_to: none
 dependencies:
   a: 2.0.0
   b:
