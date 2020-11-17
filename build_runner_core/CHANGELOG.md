@@ -1,9 +1,11 @@
-## 6.1.0-dev
+## 6.1.0
 
 - Require the latest build version (1.5.1).
 - Support the `additional_public_assets` option in build configurations.
 - Fix a bug where the server would respond with a 500 instead of a 404 for
   files that don't match any build filters but had previously failed.
+- Fix the generated package config to include the full output directory
+  for the root package.
 
 ## 6.0.3
 

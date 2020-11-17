@@ -209,7 +209,8 @@ void main() {
         'packages/b/c.txt': 'c',
         'packages/b/c.txt.copy': 'c',
         '.packages': 'a:packages/a/\r\nb:packages/b/\r\n\$sdk:packages/\$sdk/',
-        '.dart_tool/package_config.json': _expectedPackageConfig(['a', 'b']),
+        '.dart_tool/package_config.json':
+            _expectedPackageConfig('a', ['a', 'b']),
       };
 
       _expectFiles(webFiles, tmpDir);
@@ -293,7 +294,8 @@ void main() {
         'packages/b/c.txt': 'c',
         'web/b.txt': 'b',
         '.packages': 'a:packages/a/\r\nb:packages/b/\r\n\$sdk:packages/\$sdk/',
-        '.dart_tool/package_config.json': _expectedPackageConfig(['a', 'b'])
+        '.dart_tool/package_config.json':
+            _expectedPackageConfig('a', ['a', 'b'])
       };
       _expectFiles(expectedFiles, tmpDir);
     });
@@ -434,15 +436,23 @@ void main() {
   });
 }
 
-String _expectedPackageConfig(List<String> packages) => jsonEncode({
+String _expectedPackageConfig(String rootPackage, List<String> packages) =>
+    jsonEncode({
       'configVersion': 2,
       'packages': [
         for (var package in packages)
-          {
-            'name': '$package',
-            'rootUri': '../packages/$package',
-            'packageUri': '',
-          },
+          if (package == rootPackage)
+            {
+              'name': '$package',
+              'rootUri': '../',
+              'packageUri': 'packages/$package',
+            }
+          else
+            {
+              'name': '$package',
+              'rootUri': '../packages/$package',
+              'packageUri': '',
+            },
       ]
     });
 
@@ -475,7 +485,7 @@ void _expectAllFiles(Directory dir) {
     'web/b.txt': 'b',
     'web/b.txt.copy': 'b',
     '.packages': 'a:packages/a/\r\nb:packages/b/\r\n\$sdk:packages/\$sdk/',
-    '.dart_tool/package_config.json': _expectedPackageConfig(['a', 'b'])
+    '.dart_tool/package_config.json': _expectedPackageConfig('a', ['a', 'b'])
   };
   _expectFiles(expectedFiles, dir);
 }
