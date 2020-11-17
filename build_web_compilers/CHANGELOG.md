@@ -1,3 +1,8 @@
+## 2.15.2
+
+- Fix stack trace mapping for sound mode DDC tests and dart2js apps.
+
+
 ## 2.15.1
 
 - Fix DDC sound mode apps to load the sound mode sdk, and only require the
