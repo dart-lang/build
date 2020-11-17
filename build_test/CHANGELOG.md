@@ -31,11 +31,11 @@
 - Added the ability to pass a `PackageConfig` to `testBuilder`, which is used
   to set the language version of each package.
   - The resolver created from `testBuilder` will also now respect the
-    `withEnabledExperiments` zone. 
+    `withEnabledExperiments` zone.
 
 ## 1.0.0
 
-- Removed dependency on `package:package_resolver`, changed to 
+- Removed dependency on `package:package_resolver`, changed to
   `package:package_config`.
   - All apis which used to take a `PackageResolver` now take a `PackageConfig`.
 - Require SDK version `2.7.0`.
