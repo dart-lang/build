@@ -13,7 +13,6 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 import 'common.dart';
-import 'dev_compiler_builder.dart' show fixSourceMapSources;
 import 'errors.dart';
 
 const _jsSourceMapExtension = '.js.map';
