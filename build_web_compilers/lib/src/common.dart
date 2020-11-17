@@ -58,13 +58,13 @@ void validateOptions(Map<String, dynamic> config, List<String> supportedOptions,
   }
 }
 
-/// Copied to `web/stack_trace_mapper.dart`, these need to be kept in sync.
-///
-/// Given a list of [uris] as [String]s from a sourcemap, fixes them up so that
-/// they make sense in a browser context.
+/// Fixes up the [uris] from a source map so they make sense in a browser
+/// context.
 ///
 /// - Strips the scheme from the uri
 /// - Strips the top level directory if its not `packages`
+///
+/// Copied to `web/stack_trace_mapper.dart`, these need to be kept in sync.
 List<String> fixSourceMapSources(List<String> uris) {
   return uris.map((source) {
     var uri = Uri.parse(source);
