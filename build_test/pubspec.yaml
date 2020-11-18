@@ -25,5 +25,8 @@ dependencies:
   watcher: ^0.9.7
 
 dev_dependencies:
-  analyzer: ">=0.35.4 <0.41.0"
+  analyzer: ">=0.35.4 <0.42.0"
   collection: ^1.14.0
+
+dependency_overrides:
+  analyzer: 0.41.0
