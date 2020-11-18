@@ -1,5 +1,5 @@
 name: build_config
-version: 0.4.3
+version: 0.4.4-dev
 description: Support for parsing `build.yaml` configuration.
 homepage: https://github.com/dart-lang/build/tree/master/build_config
 
