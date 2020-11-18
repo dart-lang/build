@@ -57,6 +57,8 @@ main(List<String> args) async {
       // and the actual executable file.
       await d.dir('a', [
         await pubspec('a', currentIsolateDependencies: [
+          'analyzer',
+          'test',
           'build',
           'build_daemon',
           'build_resolvers',
