@@ -1,4 +1,4 @@
-## 1.5.1-dev
+## 1.5.1
 
 - Expose a set of valid inputs in `InvalidInputException`.
 - `AssetReader` implementations are now expected to throw 
