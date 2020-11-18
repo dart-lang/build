@@ -7,7 +7,7 @@ stages:
     - dartfmt: sdk
     - dartanalyzer: --fatal-infos --fatal-warnings .
   - dartanalyzer: --fatal-warnings .
-    dart: 2.9.0
+    dart: 2.10.0
 - unit_test:
   - group:
     - test: --test-randomize-ordering-seed=random
