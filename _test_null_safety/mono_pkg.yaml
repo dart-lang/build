@@ -8,16 +8,13 @@ os:
 stages:
 - analyze_and_format:
   - dartanalyzer: --fatal-infos --fatal-warnings .
-    os: linux
 - e2e_test:
   - group:
     - command: pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random
     - command: pub run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random
-    os: linux
 - e2e_test_cron:
   - group:
     - command: pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random
     - command: pub run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random
     dart:
       - be/raw/latest
-      - dev

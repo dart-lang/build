@@ -14,9 +14,11 @@ stages:
     - command: pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random
     - command: pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random
 - e2e_test:
-  - test: --total-shards 2 --shard-index 0 --test-randomize-ordering-seed=random
+  - test: --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random
     os: linux
-  - test: --total-shards 2 --shard-index 1 --test-randomize-ordering-seed=random
+  - test: --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random
+    os: linux
+  - test: --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random
     os: linux
   - test: --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random
     os: windows
@@ -24,8 +26,8 @@ stages:
     os: windows
   - test: --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random
     os: windows
+# This only runs on travis, github actions currently doesn't support be/raw/latest
 - e2e_test_cron:
   - test:
     dart:
     - be/raw/latest
-    - dev

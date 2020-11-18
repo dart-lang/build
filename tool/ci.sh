@@ -1,5 +1,5 @@
 #!/bin/bash
-# Created with package:mono_repo v3.1.0-beta.1
+# Created with package:mono_repo v3.1.0-beta.2
 
 # Support built in commands on windows out of the box.
 function pub() {
@@ -67,22 +67,18 @@ for PKG in ${PKGS}; do
         pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       command_2)
-        echo 'pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random'
-        pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        echo 'pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random'
+        pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       command_3)
-        echo 'pub run build_runner test --enable-experiment=non-nullable --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random'
-        pub run build_runner test --enable-experiment=non-nullable --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        echo 'pub run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random'
+        pub run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       dartanalyzer_0)
         echo 'dartanalyzer --fatal-infos --fatal-warnings .'
         dartanalyzer --fatal-infos --fatal-warnings . || EXIT_CODE=$?
         ;;
       dartanalyzer_1)
-        echo 'dartanalyzer --enable-experiment=non-nullable --fatal-infos --fatal-warnings .'
-        dartanalyzer --enable-experiment=non-nullable --fatal-infos --fatal-warnings . || EXIT_CODE=$?
-        ;;
-      dartanalyzer_2)
         echo 'dartanalyzer --fatal-warnings .'
         dartanalyzer --fatal-warnings . || EXIT_CODE=$?
         ;;
@@ -91,58 +87,50 @@ for PKG in ${PKGS}; do
         dartfmt -n --set-exit-if-changed . || EXIT_CODE=$?
         ;;
       test_00)
-        echo 'pub run test --total-shards 2 --shard-index 0 --test-randomize-ordering-seed=random'
-        pub run test --total-shards 2 --shard-index 0 --test-randomize-ordering-seed=random || EXIT_CODE=$?
-        ;;
-      test_01)
-        echo 'pub run test --total-shards 2 --shard-index 1 --test-randomize-ordering-seed=random'
-        pub run test --total-shards 2 --shard-index 1 --test-randomize-ordering-seed=random || EXIT_CODE=$?
-        ;;
-      test_02)
         echo 'pub run test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random'
         pub run test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
-      test_03)
+      test_01)
         echo 'pub run test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random'
         pub run test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
-      test_04)
+      test_02)
         echo 'pub run test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random'
         pub run test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
-      test_05)
+      test_03)
         echo 'pub run test'
         pub run test || EXIT_CODE=$?
         ;;
-      test_06)
+      test_04)
         echo 'pub run test --test-randomize-ordering-seed=random'
         pub run test --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
-      test_07)
+      test_05)
         echo 'pub run test -P presubmit --test-randomize-ordering-seed=random'
         pub run test -P presubmit --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
-      test_08)
+      test_06)
         echo 'pub run test -x integration --test-randomize-ordering-seed=random'
         pub run test -x integration --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
-      test_09)
+      test_07)
         echo 'pub run test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces'
         pub run test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces || EXIT_CODE=$?
         ;;
-      test_10)
+      test_08)
         echo 'pub run test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces'
         pub run test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces || EXIT_CODE=$?
         ;;
-      test_11)
+      test_09)
         echo 'pub run test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces'
         pub run test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces || EXIT_CODE=$?
         ;;
-      test_12)
+      test_10)
         echo 'pub run test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces'
         pub run test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces || EXIT_CODE=$?
         ;;
-      test_13)
+      test_11)
         echo 'pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces'
         pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces || EXIT_CODE=$?
         ;;
