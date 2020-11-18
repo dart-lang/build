@@ -1,4 +1,4 @@
-# Created with package:mono_repo v3.1.0-beta.2
+# Created with package:mono_repo v3.1.0-beta.3
 language: dart
 
 # Custom configuration
@@ -17,7 +17,7 @@ jobs:
     - stage: analyze_and_format
       name: mono_repo self validate
       os: linux
-      script: "pub global activate mono_repo 3.1.0-beta.2 && pub global run mono_repo generate --validate"
+      script: "pub global activate mono_repo 3.1.0-beta.3 && pub global run mono_repo generate --validate"
     - stage: analyze_and_format
       name: "SDK: dev; PKGS: _test, _test_common, _test_null_safety; TASKS: `dartanalyzer --fatal-infos --fatal-warnings .`"
       dart: dev
