@@ -55,3 +55,4 @@ dev_dependencies:
 
 dependency_overrides:
   analyzer: 0.41.0
+  test: ^1.16.0-nullsafety

@@ -36,3 +36,4 @@ dependency_overrides:
   scratch_space:
     path: ../scratch_space
   analyzer: 0.41.0
+  test: ^1.16.0-nullsafety
