@@ -1,3 +1,5 @@
+## 0.4.4-dev
+
 ## 0.4.3
 
 - Added the `additional_public_assets` option, which describes the assets

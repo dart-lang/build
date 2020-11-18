@@ -7,14 +7,14 @@ os:
 
 stages:
 - analyze_and_format:
-  - dartanalyzer: --enable-experiment=non-nullable --fatal-infos --fatal-warnings .
+  - dartanalyzer: --fatal-infos --fatal-warnings .
 - e2e_test:
   - group:
-    - command: pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random
-    - command: pub run build_runner test --enable-experiment=non-nullable --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random
+    - command: pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random
+    - command: pub run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random
 - e2e_test_cron:
   - group:
-    - command: pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random
-    - command: pub run build_runner test --enable-experiment=non-nullable --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random
+    - command: pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random
+    - command: pub run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random
     dart:
       - be/raw/latest

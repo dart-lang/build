@@ -1,3 +1,7 @@
+## 1.10.6
+
+- Allow build_config version 0.4.3.
+
 ## 1.10.5
 
 - Better handle the case where the package config file is deleted while
