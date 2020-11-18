@@ -25,7 +25,7 @@ jobs:
       - run: pub global activate mono_repo 3.1.0-beta.2
       - run: pub global run mono_repo generate --validate
   job_002:
-    name: "OS: linux; SDK: dev; PKGS: _test, _test_common; TASKS: `dartanalyzer --fatal-infos --fatal-warnings .`"
+    name: "OS: linux; SDK: dev; PKGS: _test, _test_common, _test_null_safety; TASKS: `dartanalyzer --fatal-infos --fatal-warnings .`"
     runs-on: ubuntu-latest
     steps:
       - uses: cedx/setup-dart@v2
@@ -34,7 +34,7 @@ jobs:
       - run: dart --version
       - uses: actions/checkout@v2
       - env:
-          PKGS: _test _test_common
+          PKGS: _test _test_common _test_null_safety
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh dartanalyzer_0
   job_003:
@@ -142,20 +142,7 @@ jobs:
           TRAVIS_OS_NAME: windows
         run: tool/ci.sh test_02
   job_011:
-    name: "OS: linux; SDK: dev; PKG: _test_null_safety; TASKS: `dartanalyzer --enable-experiment=non-nullable --fatal-infos --fatal-warnings .`"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: cedx/setup-dart@v2
-        with:
-          release-channel: dev
-      - run: dart --version
-      - uses: actions/checkout@v2
-      - env:
-          PKGS: _test_null_safety
-          TRAVIS_OS_NAME: linux
-        run: tool/ci.sh dartanalyzer_1
-  job_012:
-    name: "OS: windows; SDK: dev; PKG: _test_null_safety; TASKS: `dartanalyzer --enable-experiment=non-nullable --fatal-infos --fatal-warnings .`"
+    name: "OS: windows; SDK: dev; PKG: _test_null_safety; TASKS: `dartanalyzer --fatal-infos --fatal-warnings .`"
     runs-on: windows-latest
     steps:
       - uses: cedx/setup-dart@v2
@@ -166,9 +153,9 @@ jobs:
       - env:
           PKGS: _test_null_safety
           TRAVIS_OS_NAME: windows
-        run: tool/ci.sh dartanalyzer_1
-  job_013:
-    name: "OS: linux; SDK: dev; PKG: _test_null_safety; TASKS: [`pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --enable-experiment=non-nullable --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`]"
+        run: tool/ci.sh dartanalyzer_0
+  job_012:
+    name: "OS: linux; SDK: dev; PKG: _test_null_safety; TASKS: [`pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`]"
     runs-on: ubuntu-latest
     steps:
       - uses: cedx/setup-dart@v2
@@ -179,21 +166,21 @@ jobs:
       - env:
           PKGS: _test_null_safety
           TRAVIS_OS_NAME: linux
+        run: tool/ci.sh command_2 command_3
+  job_013:
+    name: "OS: windows; SDK: dev; PKG: _test_null_safety; TASKS: [`pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`]"
+    runs-on: windows-latest
+    steps:
+      - uses: cedx/setup-dart@v2
+        with:
+          release-channel: dev
+      - run: dart --version
+      - uses: actions/checkout@v2
+      - env:
+          PKGS: _test_null_safety
+          TRAVIS_OS_NAME: windows
         run: tool/ci.sh command_2 command_3
   job_014:
-    name: "OS: windows; SDK: dev; PKG: _test_null_safety; TASKS: [`pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --enable-experiment=non-nullable --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`]"
-    runs-on: windows-latest
-    steps:
-      - uses: cedx/setup-dart@v2
-        with:
-          release-channel: dev
-      - run: dart --version
-      - uses: actions/checkout@v2
-      - env:
-          PKGS: _test_null_safety
-          TRAVIS_OS_NAME: windows
-        run: tool/ci.sh command_2 command_3
-  job_015:
     name: "OS: linux; SDK: dev; PKGS: build, build_config, build_daemon, build_modules, build_resolvers, build_runner, build_runner_core, build_test, build_vm_compilers, build_web_compilers, example, scratch_space; TASKS: [`dartfmt -n --set-exit-if-changed .`, `dartanalyzer --fatal-infos --fatal-warnings .`]"
     runs-on: ubuntu-latest
     steps:
@@ -206,7 +193,7 @@ jobs:
           PKGS: build build_config build_daemon build_modules build_resolvers build_runner build_runner_core build_test build_vm_compilers build_web_compilers example scratch_space
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh dartfmt dartanalyzer_0
-  job_016:
+  job_015:
     name: "OS: linux; SDK: 2.9.0; PKGS: build, build_config, build_daemon, build_resolvers, build_runner_core, build_test, build_vm_compilers, scratch_space; TASKS: `dartanalyzer --fatal-warnings .`"
     runs-on: ubuntu-latest
     steps:
@@ -219,8 +206,8 @@ jobs:
       - env:
           PKGS: build build_config build_daemon build_resolvers build_runner_core build_test build_vm_compilers scratch_space
           TRAVIS_OS_NAME: linux
-        run: tool/ci.sh dartanalyzer_2
-  job_017:
+        run: tool/ci.sh dartanalyzer_1
+  job_016:
     name: "OS: linux; SDK: dev; PKG: build; TASKS: `pub run test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -233,7 +220,7 @@ jobs:
           PKGS: build
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_04
-  job_018:
+  job_017:
     name: "OS: linux; SDK: dev; PKG: build_config; TASKS: `pub run test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -246,7 +233,7 @@ jobs:
           PKGS: build_config
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_04
-  job_019:
+  job_018:
     name: "OS: linux; SDK: dev; PKG: build_daemon; TASKS: `pub run test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -259,7 +246,7 @@ jobs:
           PKGS: build_daemon
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_04
-  job_020:
+  job_019:
     name: "OS: linux; SDK: dev; PKG: build_resolvers; TASKS: `pub run test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -272,7 +259,7 @@ jobs:
           PKGS: build_resolvers
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_04
-  job_021:
+  job_020:
     name: "OS: linux; SDK: dev; PKG: build_runner_core; TASKS: `pub run test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -285,7 +272,7 @@ jobs:
           PKGS: build_runner_core
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_04
-  job_022:
+  job_021:
     name: "OS: linux; SDK: dev; PKG: build_test; TASKS: `pub run test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -298,7 +285,7 @@ jobs:
           PKGS: build_test
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_04
-  job_023:
+  job_022:
     name: "OS: linux; SDK: dev; PKG: build_web_compilers; TASKS: `pub run test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -311,7 +298,7 @@ jobs:
           PKGS: build_web_compilers
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_04
-  job_024:
+  job_023:
     name: "OS: linux; SDK: dev; PKG: scratch_space; TASKS: `pub run test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -324,7 +311,7 @@ jobs:
           PKGS: scratch_space
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_04
-  job_025:
+  job_024:
     name: "OS: windows; SDK: dev; PKG: build; TASKS: `pub run test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -337,7 +324,7 @@ jobs:
           PKGS: build
           TRAVIS_OS_NAME: windows
         run: tool/ci.sh test_04
-  job_026:
+  job_025:
     name: "OS: windows; SDK: dev; PKG: build_config; TASKS: `pub run test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -350,7 +337,7 @@ jobs:
           PKGS: build_config
           TRAVIS_OS_NAME: windows
         run: tool/ci.sh test_04
-  job_027:
+  job_026:
     name: "OS: windows; SDK: dev; PKG: build_daemon; TASKS: `pub run test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -363,7 +350,7 @@ jobs:
           PKGS: build_daemon
           TRAVIS_OS_NAME: windows
         run: tool/ci.sh test_04
-  job_028:
+  job_027:
     name: "OS: windows; SDK: dev; PKG: build_resolvers; TASKS: `pub run test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -376,7 +363,7 @@ jobs:
           PKGS: build_resolvers
           TRAVIS_OS_NAME: windows
         run: tool/ci.sh test_04
-  job_029:
+  job_028:
     name: "OS: windows; SDK: dev; PKG: build_runner_core; TASKS: `pub run test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -389,7 +376,7 @@ jobs:
           PKGS: build_runner_core
           TRAVIS_OS_NAME: windows
         run: tool/ci.sh test_04
-  job_030:
+  job_029:
     name: "OS: windows; SDK: dev; PKG: build_test; TASKS: `pub run test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -402,7 +389,7 @@ jobs:
           PKGS: build_test
           TRAVIS_OS_NAME: windows
         run: tool/ci.sh test_04
-  job_031:
+  job_030:
     name: "OS: windows; SDK: dev; PKG: build_web_compilers; TASKS: `pub run test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -415,7 +402,7 @@ jobs:
           PKGS: build_web_compilers
           TRAVIS_OS_NAME: windows
         run: tool/ci.sh test_04
-  job_032:
+  job_031:
     name: "OS: windows; SDK: dev; PKG: scratch_space; TASKS: `pub run test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -428,7 +415,7 @@ jobs:
           PKGS: scratch_space
           TRAVIS_OS_NAME: windows
         run: tool/ci.sh test_04
-  job_033:
+  job_032:
     name: "OS: linux; SDK: dev; PKG: build_modules; TASKS: `pub run test -P presubmit --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -441,7 +428,7 @@ jobs:
           PKGS: build_modules
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_05
-  job_034:
+  job_033:
     name: "OS: windows; SDK: dev; PKG: build_modules; TASKS: `pub run test -P presubmit --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -454,7 +441,7 @@ jobs:
           PKGS: build_modules
           TRAVIS_OS_NAME: windows
         run: tool/ci.sh test_05
-  job_035:
+  job_034:
     name: "OS: linux; SDK: dev; PKG: build_runner; TASKS: `pub run test -x integration --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -467,7 +454,7 @@ jobs:
           PKGS: build_runner
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_06
-  job_036:
+  job_035:
     name: "OS: linux; SDK: dev; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
     runs-on: ubuntu-latest
     steps:
@@ -480,7 +467,7 @@ jobs:
           PKGS: build_runner
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_07
-  job_037:
+  job_036:
     name: "OS: linux; SDK: dev; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
     runs-on: ubuntu-latest
     steps:
@@ -493,7 +480,7 @@ jobs:
           PKGS: build_runner
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_08
-  job_038:
+  job_037:
     name: "OS: linux; SDK: dev; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
     runs-on: ubuntu-latest
     steps:
@@ -506,7 +493,7 @@ jobs:
           PKGS: build_runner
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_09
-  job_039:
+  job_038:
     name: "OS: linux; SDK: dev; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
     runs-on: ubuntu-latest
     steps:
@@ -519,7 +506,7 @@ jobs:
           PKGS: build_runner
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_10
-  job_040:
+  job_039:
     name: "OS: linux; SDK: dev; PKG: build_runner; TASKS: `pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
     runs-on: ubuntu-latest
     steps:
@@ -532,7 +519,7 @@ jobs:
           PKGS: build_runner
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_11
-  job_041:
+  job_040:
     name: "OS: linux; SDK: 2.9.0; PKG: build_runner_core; TASKS: `pub run test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -546,7 +533,7 @@ jobs:
           PKGS: build_runner_core
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_04
-  job_042:
+  job_041:
     name: "OS: windows; SDK: 2.9.0; PKG: build_runner_core; TASKS: `pub run test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -560,7 +547,7 @@ jobs:
           PKGS: build_runner_core
           TRAVIS_OS_NAME: windows
         run: tool/ci.sh test_04
-  job_043:
+  job_042:
     name: "OS: linux; SDK: dev; PKG: build_vm_compilers; TASKS: `pub run test`"
     runs-on: ubuntu-latest
     steps:
@@ -573,7 +560,7 @@ jobs:
           PKGS: build_vm_compilers
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_03
-  job_044:
+  job_043:
     name: "OS: windows; SDK: dev; PKG: build_vm_compilers; TASKS: `pub run test`"
     runs-on: windows-latest
     steps:

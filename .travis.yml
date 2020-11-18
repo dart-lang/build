@@ -19,23 +19,17 @@ jobs:
       os: linux
       script: "pub global activate mono_repo 3.1.0-beta.2 && pub global run mono_repo generate --validate"
     - stage: analyze_and_format
-      name: "SDK: dev; PKGS: _test, _test_common; TASKS: `dartanalyzer --fatal-infos --fatal-warnings .`"
+      name: "SDK: dev; PKGS: _test, _test_common, _test_null_safety; TASKS: `dartanalyzer --fatal-infos --fatal-warnings .`"
       dart: dev
       os: linux
-      env: PKGS="_test _test_common"
+      env: PKGS="_test _test_common _test_null_safety"
       script: tool/ci.sh dartanalyzer_0
     - stage: analyze_and_format
-      name: "SDK: dev; PKG: _test_null_safety; TASKS: `dartanalyzer --enable-experiment=non-nullable --fatal-infos --fatal-warnings .`"
-      dart: dev
-      os: linux
-      env: PKGS="_test_null_safety"
-      script: tool/ci.sh dartanalyzer_1
-    - stage: analyze_and_format
-      name: "SDK: dev; PKG: _test_null_safety; TASKS: `dartanalyzer --enable-experiment=non-nullable --fatal-infos --fatal-warnings .`"
+      name: "SDK: dev; PKG: _test_null_safety; TASKS: `dartanalyzer --fatal-infos --fatal-warnings .`"
       dart: dev
       os: windows
       env: PKGS="_test_null_safety"
-      script: tool/ci.sh dartanalyzer_1
+      script: tool/ci.sh dartanalyzer_0
     - stage: analyze_and_format
       name: "SDK: dev; PKGS: build, build_config, build_daemon, build_modules, build_resolvers, build_runner, build_runner_core, build_test, build_vm_compilers, build_web_compilers, example, scratch_space; TASKS: [`dartfmt -n --set-exit-if-changed .`, `dartanalyzer --fatal-infos --fatal-warnings .`]"
       dart: dev
@@ -47,7 +41,7 @@ jobs:
       dart: "2.9.0"
       os: linux
       env: PKGS="build build_config build_daemon build_resolvers build_runner_core build_test build_vm_compilers scratch_space"
-      script: tool/ci.sh dartanalyzer_2
+      script: tool/ci.sh dartanalyzer_1
     - stage: unit_test
       name: "SDK: dev; PKG: _test; TASKS: [`pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random`, `pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random`]"
       dart: dev
@@ -235,13 +229,13 @@ jobs:
       env: PKGS="_test"
       script: tool/ci.sh test_02
     - stage: e2e_test
-      name: "SDK: dev; PKG: _test_null_safety; TASKS: [`pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --enable-experiment=non-nullable --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`]"
+      name: "SDK: dev; PKG: _test_null_safety; TASKS: [`pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`]"
       dart: dev
       os: linux
       env: PKGS="_test_null_safety"
       script: tool/ci.sh command_2 command_3
     - stage: e2e_test
-      name: "SDK: dev; PKG: _test_null_safety; TASKS: [`pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --enable-experiment=non-nullable --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`]"
+      name: "SDK: dev; PKG: _test_null_safety; TASKS: [`pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`]"
       dart: dev
       os: windows
       env: PKGS="_test_null_safety"
@@ -289,13 +283,13 @@ jobs:
       env: PKGS="_test"
       script: tool/ci.sh test_03
     - stage: e2e_test_cron
-      name: "SDK: be/raw/latest; PKG: _test_null_safety; TASKS: [`pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --enable-experiment=non-nullable --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`]"
+      name: "SDK: be/raw/latest; PKG: _test_null_safety; TASKS: [`pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`]"
       dart: be/raw/latest
       os: linux
       env: PKGS="_test_null_safety"
       script: tool/ci.sh command_2 command_3
     - stage: e2e_test_cron
-      name: "SDK: be/raw/latest; PKG: _test_null_safety; TASKS: [`pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --enable-experiment=non-nullable --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`]"
+      name: "SDK: be/raw/latest; PKG: _test_null_safety; TASKS: [`pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`]"
       dart: be/raw/latest
       os: windows
       env: PKGS="_test_null_safety"

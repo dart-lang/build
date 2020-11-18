@@ -67,22 +67,18 @@ for PKG in ${PKGS}; do
         pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       command_2)
-        echo 'pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random'
-        pub run build_runner test --enable-experiment=non-nullable -- -p chrome,vm --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        echo 'pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random'
+        pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       command_3)
-        echo 'pub run build_runner test --enable-experiment=non-nullable --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random'
-        pub run build_runner test --enable-experiment=non-nullable --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        echo 'pub run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random'
+        pub run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       dartanalyzer_0)
         echo 'dartanalyzer --fatal-infos --fatal-warnings .'
         dartanalyzer --fatal-infos --fatal-warnings . || EXIT_CODE=$?
         ;;
       dartanalyzer_1)
-        echo 'dartanalyzer --enable-experiment=non-nullable --fatal-infos --fatal-warnings .'
-        dartanalyzer --enable-experiment=non-nullable --fatal-infos --fatal-warnings . || EXIT_CODE=$?
-        ;;
-      dartanalyzer_2)
         echo 'dartanalyzer --fatal-warnings .'
         dartanalyzer --fatal-warnings . || EXIT_CODE=$?
         ;;
