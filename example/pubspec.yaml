@@ -31,4 +31,3 @@ dependency_overrides:
     path: ../build_config
   scratch_space:
     path: ../scratch_space
-  analyzer: ^0.39.0

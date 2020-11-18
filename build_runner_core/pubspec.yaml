@@ -34,11 +34,3 @@ dev_dependencies:
   test_process: ^1.0.0
   _test_common:
     path: ../_test_common
-
-dependency_overrides:
-  build:
-    path: ../build
-  build_config:
-    path: ../build_config
-  build_resolvers:
-    path: ../build_resolvers
