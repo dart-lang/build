@@ -529,9 +529,8 @@ void main() {
             '.txt': ['.copy']
           },
           build: (step, _) {
-            final invalidInput = AssetId.parse('b|test/my_test.dart');
-
-            expect(step.canRead(invalidInput), completion(isFalse));
+            expect(step.canRead(AssetId('b', 'test/my_test.dart')),
+                completion(isFalse));
             expect(step.canRead(AssetId('invalid', 'foo.dart')),
                 completion(isFalse));
           },
