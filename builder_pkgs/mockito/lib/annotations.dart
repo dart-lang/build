@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 /// An annotation to direct Mockito to generate mock classes.
 ///
 /// During [code generation][NULL_SAFETY_README], Mockito will generate a
@@ -71,10 +69,10 @@ class GenerateMocks {
 // TODO(srawlins): Document this in NULL_SAFETY_README.md.
 // TODO(srawlins): Add 'mixingIn'.
 class MockSpec<T> {
-  final Symbol mockName;
+  final Symbol? mockName;
 
   final bool returnNullOnMissingStub;
 
-  const MockSpec({Symbol as, this.returnNullOnMissingStub = false})
+  const MockSpec({Symbol? as, this.returnNullOnMissingStub = false})
       : mockName = as;
 }
