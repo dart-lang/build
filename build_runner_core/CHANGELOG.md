@@ -1,3 +1,8 @@
+## 6.1.1
+
+- Fix a bug where `canRead` would throw if the `package` was unknown, instead
+  of returning `false`.
+
 ## 6.1.0
 
 - Require the latest build version (1.5.1).

@@ -517,6 +517,36 @@ void main() {
           outputs: {},
         );
       });
+
+      test('canRead doesn\'t throw for invalid inputs or missing packages', () {
+        final packageGraph = buildPackageGraph({
+          rootPackage('a', path: 'a/'): ['b'],
+          package('b', path: 'a/b'): []
+        });
+
+        final builder = TestBuilder(
+          buildExtensions: const {
+            '.txt': ['.copy']
+          },
+          build: (step, _) {
+            expect(step.canRead(AssetId('b', 'test/my_test.dart')),
+                completion(isFalse));
+            expect(step.canRead(AssetId('invalid', 'foo.dart')),
+                completion(isFalse));
+          },
+        );
+
+        return testBuilders(
+          [
+            apply('', [(_) => builder], toPackage('a'))
+          ],
+          {
+            'a|lib/foo.txt': "doesn't matter",
+          },
+          packageGraph: packageGraph,
+          outputs: {},
+        );
+      });
     });
 
     test('skips builders which would output files in non-root packages',
