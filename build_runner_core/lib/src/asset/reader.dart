@@ -89,9 +89,10 @@ class SingleStepReader implements AssetReader {
     try {
       _checkInvalidInput(id);
     } on InvalidInputException {
-      if (catchInvalidInputs) {
-        return false;
-      }
+      if (catchInvalidInputs) return false;
+      rethrow;
+    } on PackageNotFoundException {
+      if (catchInvalidInputs) return false;
       rethrow;
     }
 
