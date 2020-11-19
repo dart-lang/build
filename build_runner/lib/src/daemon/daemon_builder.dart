@@ -76,7 +76,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     if (!_buildOptions.skipBuildScriptCheck &&
         _builder.buildScriptUpdates.hasBeenUpdated(
             changes.map<AssetId>((change) => change.id).toSet())) {
-      _buildScriptUpdateCompleter.complete();
+      if (!_buildScriptUpdateCompleter.isCompleted) {
+        _buildScriptUpdateCompleter.complete();
+      }
       return;
     }
     var targetNames = targets.map((t) => t.target).toSet();
