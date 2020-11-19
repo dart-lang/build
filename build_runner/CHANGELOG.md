@@ -1,3 +1,8 @@
+## 1.10.7-dev
+
+- Fix a daemon mode issue where we might try to complete a completer twice
+  during build script updates.
+
 ## 1.10.6
 
 - Allow build_config version 0.4.3.
