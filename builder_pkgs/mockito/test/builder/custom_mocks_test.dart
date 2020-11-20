@@ -15,6 +15,8 @@
 // @dart=2.9
 
 @TestOn('vm')
+import 'dart:convert' show utf8;
+
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_test/build_test.dart';
@@ -69,116 +71,127 @@ MockFoo() {
   }''';
 
 void main() {
+  InMemoryAssetWriter writer;
+
+  /// Test [MockBuilder] in a package which has not opted into the non-nullable
+  /// type system.
+  Future<void> testPreNonNullable(Map<String, String> sourceAssets,
+      {Map<String, /*String|Matcher<String>*/ dynamic> outputs}) async {
+    var packageConfig = PackageConfig([
+      Package('foo', Uri.file('/foo/'),
+          packageUriRoot: Uri.file('/foo/lib/'),
+          languageVersion: LanguageVersion(2, 7))
+    ]);
+    await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
+        outputs: outputs, packageConfig: packageConfig);
+  }
+
+  /// Builds with [MockBuilder] in a package which has opted into the
+  /// non-nullable type system, and with the non-nullable experiment enabled,
+  /// returning the content of the generated mocks library.
+  Future<String> buildWithNonNullable(Map<String, String> sourceAssets) async {
+    var packageConfig = PackageConfig([
+      Package('foo', Uri.file('/foo/'),
+          packageUriRoot: Uri.file('/foo/lib/'),
+          languageVersion: LanguageVersion(2, 10))
+    ]);
+    await withEnabledExperiments(
+      () async => await testBuilder(
+          buildMocks(BuilderOptions({})), sourceAssets,
+          writer: writer, packageConfig: packageConfig),
+      ['non-nullable'],
+    );
+    var mocksAsset = AssetId.parse('foo|test/foo_test.mocks.dart');
+    return utf8.decode(writer.assets[mocksAsset]);
+  }
+
+  setUp(() {
+    writer = InMemoryAssetWriter();
+  });
+
   test('generates a generic mock class without type arguments', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        'foo|lib/foo.dart': dedent(r'''
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
         class Foo<T> {}
         '''),
-        'foo|test/foo_test.dart': '''
+      'foo|test/foo_test.dart': '''
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
         @GenerateMocks([], customMocks: [MockSpec<Foo>(as: #MockFoo)])
         void main() {}
         '''
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': _containsAllOf(dedent('''
-        class MockFoo<T> extends _i1.Mock implements _i2.Foo<T> {
-          $_constructorWithThrowOnMissingStub
-        }
-        ''')),
-      },
-    );
+    });
+    expect(mocksContent,
+        contains('class MockFoo<T> extends _i1.Mock implements _i2.Foo<T>'));
   });
 
   test('generates a generic mock class with type arguments', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        'foo|lib/foo.dart': dedent(r'''
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
         class Foo<T, U> {}
         '''),
-        'foo|test/foo_test.dart': '''
+      'foo|test/foo_test.dart': '''
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
         @GenerateMocks(
             [], customMocks: [MockSpec<Foo<int, bool>>(as: #MockFooOfIntBool)])
         void main() {}
         '''
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': _containsAllOf(dedent('''
-        class MockFooOfIntBool extends _i1.Mock implements _i2.Foo<int, bool> {
-          MockFooOfIntBool() {
-            _i1.throwOnMissingStub(this);
-          }
-        }
-        ''')),
-      },
-    );
+    });
+    expect(
+        mocksContent,
+        contains(
+            'class MockFooOfIntBool extends _i1.Mock implements _i2.Foo<int, bool>'));
   });
 
   test('generates a generic mock class with type arguments but no name',
       () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        'foo|lib/foo.dart': dedent(r'''
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
         class Foo<T> {}
         '''),
-        'foo|test/foo_test.dart': '''
+      'foo|test/foo_test.dart': '''
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
         @GenerateMocks([], customMocks: [MockSpec<Foo<int>>()])
         void main() {}
         '''
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': _containsAllOf(dedent('''
-        class MockFoo extends _i1.Mock implements _i2.Foo<int> {
-          $_constructorWithThrowOnMissingStub
-        }
-        ''')),
-      },
-    );
+    });
+    expect(mocksContent,
+        contains('class MockFoo extends _i1.Mock implements _i2.Foo<int>'));
   });
 
   test('generates a generic, bounded mock class without type arguments',
       () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        'foo|lib/foo.dart': dedent(r'''
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
         class Foo<T extends Object> {}
         '''),
-        'foo|test/foo_test.dart': '''
+      'foo|test/foo_test.dart': '''
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
         @GenerateMocks([], customMocks: [MockSpec<Foo>(as: #MockFoo)])
         void main() {}
         '''
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': _containsAllOf(dedent('''
-        class MockFoo<T extends Object> extends _i1.Mock implements _i2.Foo<T> {
-          $_constructorWithThrowOnMissingStub
-        }
-        ''')),
-      },
-    );
+    });
+    expect(
+        mocksContent,
+        contains(
+            'class MockFoo<T extends Object> extends _i1.Mock implements _i2.Foo<T>'));
   });
 
   test('generates mock classes from multiple annotations', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        'foo|lib/foo.dart': dedent(r'''
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
         class Foo {}
         class Bar {}
         '''),
-        'foo|test/foo_test.dart': '''
+      'foo|test/foo_test.dart': '''
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
         @GenerateMocks([], customMocks: [MockSpec<Foo>()])
@@ -186,38 +199,24 @@ void main() {
         @GenerateMocks([], customMocks: [MockSpec<Bar>()])
         void barTests() {}
         '''
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': _containsAllOf(
-          dedent('''
-          class MockFoo extends _i1.Mock implements _i2.Foo {
-            $_constructorWithThrowOnMissingStub
-          }
-          '''),
-          dedent('''
-          class MockBar extends _i1.Mock implements _i2.Bar {
-            MockBar() {
-              _i1.throwOnMissingStub(this);
-            }
-          }
-          '''),
-        ),
-      },
-    );
+    });
+    expect(mocksContent,
+        contains('class MockFoo extends _i1.Mock implements _i2.Foo'));
+    expect(mocksContent,
+        contains('class MockBar extends _i1.Mock implements _i2.Bar'));
   });
 
   test('generates mock classes from multiple annotations on a single element',
       () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        'foo|lib/a.dart': dedent(r'''
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/a.dart': dedent(r'''
         class Foo {}
         '''),
-        'foo|lib/b.dart': dedent(r'''
+      'foo|lib/b.dart': dedent(r'''
         class Foo {}
         '''),
-        'foo|test/foo_test.dart': '''
+      'foo|test/foo_test.dart': '''
         import 'package:foo/a.dart' as a;
         import 'package:foo/b.dart' as b;
         import 'package:mockito/annotations.dart';
@@ -225,50 +224,29 @@ void main() {
         @GenerateMocks([], customMocks: [MockSpec<b.Foo>(as: #MockBFoo)])
         void main() {}
         '''
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': _containsAllOf(
-          dedent('''
-          class MockAFoo extends _i1.Mock implements _i2.Foo {
-            MockAFoo() {
-              _i1.throwOnMissingStub(this);
-            }
-          }
-          '''),
-          dedent('''
-          class MockBFoo extends _i1.Mock implements _i3.Foo {
-            MockBFoo() {
-              _i1.throwOnMissingStub(this);
-            }
-          }
-          '''),
-        ),
-      },
-    );
+    });
+    expect(mocksContent,
+        contains('class MockAFoo extends _i1.Mock implements _i2.Foo'));
+    expect(mocksContent,
+        contains('class MockBFoo extends _i1.Mock implements _i3.Foo'));
   });
 
   test(
       'generates a mock class which uses the old behavior of returning null on '
       'missing stubs', () async {
-    await _testWithNonNullable(
-      {
-        ...annotationsAsset,
-        'foo|lib/foo.dart': dedent(r'''
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
         class Foo<T> {}
         '''),
-        'foo|test/foo_test.dart': '''
+      'foo|test/foo_test.dart': '''
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
         @GenerateMocks([], customMocks: [MockSpec<Foo>(as: #MockFoo, returnNullOnMissingStub: true)])
         void main() {}
         '''
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': _containsAllOf(dedent('''
-        class MockFoo<T> extends _i1.Mock implements _i2.Foo<T> {}
-        ''')),
-      },
-    );
+    });
+    expect(mocksContent, isNot(contains('throwOnMissingStub')));
   });
 
   test(
@@ -438,7 +416,7 @@ void main() {
 
   test('given a pre-non-nullable library, does not override any members',
       () async {
-    await _testPreNonNullable(
+    await testPreNonNullable(
       {
         ...annotationsAsset,
         ...simpleTestAsset,
@@ -457,39 +435,6 @@ void main() {
       },
     );
   });
-}
-
-/// Test [MockBuilder] in a package which has not opted into the non-nullable
-/// type system.
-///
-/// Whether the non-nullable experiment is enabled depends on the SDK executing
-/// this test, but that does not affect the opt-in state of the package under
-/// test.
-Future<void> _testPreNonNullable(Map<String, String> sourceAssets,
-    {Map<String, /*String|Matcher<String>*/ dynamic> outputs}) async {
-  var packageConfig = PackageConfig([
-    Package('foo', Uri.file('/foo/'),
-        packageUriRoot: Uri.file('/foo/lib/'),
-        languageVersion: LanguageVersion(2, 7))
-  ]);
-  await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
-      outputs: outputs, packageConfig: packageConfig);
-}
-
-/// Test [MockBuilder] in a package which has opted into the non-nullable type
-/// system, and with the non-nullable experiment enabled.
-Future<void> _testWithNonNullable(Map<String, String> sourceAssets,
-    {Map<String, /*String|Matcher<List<int>>*/ dynamic> outputs}) async {
-  var packageConfig = PackageConfig([
-    Package('foo', Uri.file('/foo/'),
-        packageUriRoot: Uri.file('/foo/lib/'),
-        languageVersion: LanguageVersion(2, 10))
-  ]);
-  await withEnabledExperiments(
-    () async => await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
-        outputs: outputs, packageConfig: packageConfig),
-    ['non-nullable'],
-  );
 }
 
 TypeMatcher<List<int>> _containsAllOf(a, [b]) => decodedMatches(
