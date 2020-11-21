@@ -147,9 +147,13 @@ class _MockTargetGatherer {
             'Mockito cannot mock `dynamic`');
       }
       final type = _determineDartType(typeToMock, entryLib.typeProvider);
-      final mockName = 'Mock${type.element.name}';
-      mockTargets
-          .add(_MockTarget(type, mockName, returnNullOnMissingStub: false));
+      // [type] is `Foo<dynamic>` for generic classes. Switch to declaration,
+      // which will yield `Foo<T>`.
+      final declarationType =
+          (type.element.declaration as ClassElement).thisType;
+      final mockName = 'Mock${declarationType.element.name}';
+      mockTargets.add(_MockTarget(declarationType, mockName,
+          returnNullOnMissingStub: false));
     }
     final customMocksField = generateMocksValue.getField('customMocks');
     if (customMocksField != null && !customMocksField.isNull) {
@@ -437,18 +441,25 @@ class _MockLibraryInfo {
     // may not be a way to get around this.
     for (var i = 0; i < type.typeArguments.length; i++) {
       var typeArgument = type.typeArguments[i];
-      var bound =
-          type.element.typeParameters[i].bound ?? typeProvider.dynamicType;
+      // If [typeArgument] is a type parameter, this indicates that no type
+      // arguments were passed. This likely came from the 'classes' argument of
+      // GenerateMocks, and [type] is the declaration type (`Foo<T>` vs
+      // `Foo<dynamic>`).
+      if (typeArgument is analyzer.TypeParameterType) return false;
+
       // If [type] was given to @GenerateMocks as a Type, and no explicit type
       // argument is given, [typeArgument] is `dynamic` (_not_ the bound, as one
       // might think). We determine that an explicit type argument was given if
       // it is not `dynamic`.
-      //
+      if (typeArgument.isDynamic) continue;
+
       // If, on the other hand, [type] was given to @GenerateMock as a type
       // argument to `Of()`, and no type argument is given, [typeArgument] is
       // the bound of the corresponding type paramter (dynamic or otherwise). We
       // determine that an explicit type argument was given if [typeArgument] is
-      // is not [bound].
+      // not [bound].
+      var bound =
+          type.element.typeParameters[i].bound ?? typeProvider.dynamicType;
       if (!typeArgument.isDynamic && typeArgument != bound) return true;
     }
     return false;
@@ -504,32 +515,82 @@ class _MockLibraryInfo {
       if (!sourceLibIsNonNullable) {
         return;
       }
-      for (final field in classToMock.fields) {
-        if (field.isPrivate || field.isStatic) {
-          continue;
-        }
-        final getter = field.getter;
-        if (getter != null && _returnTypeIsNonNullable(getter)) {
-          cBuilder.methods.add(
-              Method((mBuilder) => _buildOverridingGetter(mBuilder, getter)));
-        }
-        final setter = field.setter;
-        if (setter != null && _hasNonNullableParameter(setter)) {
-          cBuilder.methods.add(
-              Method((mBuilder) => _buildOverridingSetter(mBuilder, setter)));
-        }
-      }
-      for (final method in classToMock.methods) {
-        if (method.isPrivate || method.isStatic) {
-          continue;
-        }
-        if (_returnTypeIsNonNullable(method) ||
-            _hasNonNullableParameter(method)) {
-          cBuilder.methods.add(Method((mBuilder) =>
-              _buildOverridingMethod(mBuilder, method, className: className)));
-        }
-      }
+      cBuilder.methods.addAll(fieldOverrides(typeToMock, {}));
+      cBuilder.methods.addAll(methodOverrides(typeToMock, {}));
     });
+  }
+
+  /// Yields all of the field overrides required for [type].
+  ///
+  /// This includes fields of supertypes and mixed in types. [overriddenMethods]
+  /// is used to track which fields have already been yielded.
+  ///
+  /// Only public instance fields which have either a potentially non-nullable
+  /// return type (for getters) or a parameter with a potentially non-nullable
+  /// type (for setters) are yielded.
+  Iterable<Method> fieldOverrides(
+      analyzer.InterfaceType type, Set<String> overriddenFields) sync* {
+    for (final accessor in type.accessors) {
+      if (accessor.isPrivate || accessor.isStatic) {
+        continue;
+      }
+      if (overriddenFields.contains(accessor)) {
+        continue;
+      }
+      if (accessor.isGetter != null && _returnTypeIsNonNullable(accessor)) {
+        yield Method((mBuilder) => _buildOverridingGetter(mBuilder, accessor));
+      }
+      if (accessor.isSetter != null && _hasNonNullableParameter(accessor)) {
+        yield Method((mBuilder) => _buildOverridingSetter(mBuilder, accessor));
+      }
+    }
+    if (type.mixins != null) {
+      for (var mixin in type.mixins) {
+        yield* fieldOverrides(mixin, overriddenFields);
+      }
+    }
+    if (type.superclass != null) {
+      yield* fieldOverrides(type.superclass, overriddenFields);
+    }
+  }
+
+  /// Yields all of the method overrides required for [type].
+  ///
+  /// This includes methods of supertypes and mixed in types.
+  /// [overriddenMethods] is used to track which methods have already been
+  /// yielded.
+  ///
+  /// Only public instance methods which have either a potentially non-nullable
+  /// return type or a parameter with a potentially non-nullable type are
+  /// yielded.
+  Iterable<Method> methodOverrides(
+      analyzer.InterfaceType type, Set<String> overriddenMethods) sync* {
+    for (final method in type.methods) {
+      if (method.isPrivate || method.isStatic) {
+        continue;
+      }
+      if (overriddenMethods.contains(method)) {
+        continue;
+      }
+      var methodName = method.name;
+      overriddenMethods.add(methodName);
+      if (methodName == 'noSuchMethod') {
+        continue;
+      }
+      if (_returnTypeIsNonNullable(method) ||
+          _hasNonNullableParameter(method)) {
+        yield Method((mBuilder) => _buildOverridingMethod(mBuilder, method,
+            className: type.getDisplayString(withNullability: true)));
+      }
+    }
+    if (type.mixins != null) {
+      for (var mixin in type.mixins) {
+        yield* methodOverrides(mixin, overriddenMethods);
+      }
+    }
+    if (type.superclass != null) {
+      yield* methodOverrides(type.superclass, overriddenMethods);
+    }
   }
 
   /// The default behavior of mocks is to return null for unstubbed methods. To
