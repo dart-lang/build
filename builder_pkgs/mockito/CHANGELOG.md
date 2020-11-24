@@ -1,5 +1,7 @@
-## 5.0.0-dev
+## 5.0.0-nullsafety.0
 
+* Migrate the core libraries and tests to null safety. The builder at
+  `lib/src/builder.dart` opts out of null safety.
 * Add `http` back to `dev_dependencies`. It's used by the example.
 
 ## 4.1.3

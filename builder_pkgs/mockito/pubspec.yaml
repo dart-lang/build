@@ -1,11 +1,11 @@
 name: mockito
-version: 5.0.0-nullsafety.0-dev
+version: 5.0.0-nullsafety.0
 
 description: A mock framework inspired by Mockito.
 homepage: https://github.com/dart-lang/mockito
 
 environment:
-  sdk: '>=2.12.0 <3.0.0'
+  sdk: '>=2.12.0-0 <3.0.0'
 
 dependencies:
   analyzer: '>=0.39.15 <0.41.0'
