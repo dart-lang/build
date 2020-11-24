@@ -18,7 +18,6 @@
 import 'dart:convert' show utf8;
 
 import 'package:build/build.dart';
-import 'package:build/experiments.dart';
 import 'package:build_test/build_test.dart';
 import 'package:meta/meta.dart';
 import 'package:mockito/src/builder.dart';
@@ -68,8 +67,7 @@ void main() {}
 void main() {
   InMemoryAssetWriter writer;
 
-  /// Test [MockBuilder] in a package which has not opted into the non-nullable
-  /// type system.
+  /// Test [MockBuilder] in a package which has not opted into null safety.
   Future<void> testPreNonNullable(Map<String, String> sourceAssets,
       {Map<String, /*String|Matcher<String>*/ dynamic> outputs}) async {
     var packageConfig = PackageConfig([
@@ -81,8 +79,7 @@ void main() {
         writer: writer, outputs: outputs, packageConfig: packageConfig);
   }
 
-  /// Test [MockBuilder] in a package which has opted into the non-nullable type
-  /// system.
+  /// Test [MockBuilder] in a package which has opted into null safety.
   Future<void> testWithNonNullable(Map<String, String> sourceAssets,
       {Map<String, /*String|Matcher<List<int>>*/ dynamic> outputs}) async {
     var packageConfig = PackageConfig([
@@ -90,38 +87,27 @@ void main() {
           packageUriRoot: Uri.file('/foo/lib/'),
           languageVersion: LanguageVersion(2, 12))
     ]);
-    // TODO(srawlins): Remove enabled-experiments wrapper.
-    await withEnabledExperiments(
-      () async => await testBuilder(
-          buildMocks(BuilderOptions({})), sourceAssets,
-          writer: writer, outputs: outputs, packageConfig: packageConfig),
-      ['non-nullable'],
-    );
+    await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
+        writer: writer, outputs: outputs, packageConfig: packageConfig);
   }
 
-  /// Builds with [MockBuilder] in a package which has opted into the
-  /// non-nullable type system, returning the content of the generated mocks
-  /// library.
+  /// Builds with [MockBuilder] in a package which has opted into null safety,
+  /// returning the content of the generated mocks library.
   Future<String> buildWithNonNullable(Map<String, String> sourceAssets) async {
     var packageConfig = PackageConfig([
       Package('foo', Uri.file('/foo/'),
           packageUriRoot: Uri.file('/foo/lib/'),
           languageVersion: LanguageVersion(2, 12))
     ]);
-    // TODO(srawlins): Remove enabled-experiments wrapper.
-    await withEnabledExperiments(
-      () async => await testBuilder(
-          buildMocks(BuilderOptions({})), sourceAssets,
-          writer: writer, packageConfig: packageConfig),
-      ['non-nullable'],
-    );
+
+    await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
+        writer: writer, packageConfig: packageConfig);
     var mocksAsset = AssetId.parse('foo|test/foo_test.mocks.dart');
     return utf8.decode(writer.assets[mocksAsset]);
   }
 
   /// Test [MockBuilder] on a single source file, in a package which has opted
-  /// into the non-nullable type system, and with the non-nullable experiment
-  /// enabled.
+  /// into null safety, and with the non-nullable experiment enabled.
   Future<void> expectSingleNonNullableOutput(
       String sourceAssetText,
       /*String|Matcher<List<int>>*/ dynamic output) async {
@@ -2101,24 +2087,21 @@ void main() {
 TypeMatcher<List<int>> _containsAllOf(a, [b]) => decodedMatches(
     b == null ? allOf(contains(a)) : allOf(contains(a), contains(b)));
 
-/// Expect that [testBuilder], given [assets], throws an
-/// [InvalidMockitoAnnotationException] with a message containing [message].
+/// Expect that [testBuilder], given [assets], in a package which has opted into
+/// null safety, throws an [InvalidMockitoAnnotationException] with a message
+/// containing [message].
 void _expectBuilderThrows(
     {@required Map<String, String> assets,
     @required dynamic /*String|Matcher<List<int>>*/ message}) {
   var packageConfig = PackageConfig([
     Package('foo', Uri.file('/foo/'),
         packageUriRoot: Uri.file('/foo/lib/'),
-        languageVersion: LanguageVersion(2, 10))
+        languageVersion: LanguageVersion(2, 12))
   ]);
 
   expect(
-      () async => await withEnabledExperiments(
-            () async => await testBuilder(
-                buildMocks(BuilderOptions({})), assets,
-                packageConfig: packageConfig),
-            ['non-nullable'],
-          ),
+      () async => await testBuilder(buildMocks(BuilderOptions({})), assets,
+          packageConfig: packageConfig),
       throwsA(TypeMatcher<InvalidMockitoAnnotationException>()
           .having((e) => e.message, 'message', message)));
 }

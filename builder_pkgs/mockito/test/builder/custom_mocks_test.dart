@@ -18,7 +18,6 @@
 import 'dart:convert' show utf8;
 
 import 'package:build/build.dart';
-import 'package:build/experiments.dart';
 import 'package:build_test/build_test.dart';
 import 'package:meta/meta.dart';
 import 'package:mockito/src/builder.dart';
@@ -73,8 +72,7 @@ MockFoo() {
 void main() {
   InMemoryAssetWriter writer;
 
-  /// Test [MockBuilder] in a package which has not opted into the non-nullable
-  /// type system.
+  /// Test [MockBuilder] in a package which has not opted into null safety.
   Future<void> testPreNonNullable(Map<String, String> sourceAssets,
       {Map<String, /*String|Matcher<String>*/ dynamic> outputs}) async {
     var packageConfig = PackageConfig([
@@ -86,21 +84,16 @@ void main() {
         outputs: outputs, packageConfig: packageConfig);
   }
 
-  /// Builds with [MockBuilder] in a package which has opted into the
-  /// non-nullable type system, and with the non-nullable experiment enabled,
+  /// Builds with [MockBuilder] in a package which has opted into null safety,
   /// returning the content of the generated mocks library.
   Future<String> buildWithNonNullable(Map<String, String> sourceAssets) async {
     var packageConfig = PackageConfig([
       Package('foo', Uri.file('/foo/'),
           packageUriRoot: Uri.file('/foo/lib/'),
-          languageVersion: LanguageVersion(2, 10))
+          languageVersion: LanguageVersion(2, 12))
     ]);
-    await withEnabledExperiments(
-      () async => await testBuilder(
-          buildMocks(BuilderOptions({})), sourceAssets,
-          writer: writer, packageConfig: packageConfig),
-      ['non-nullable'],
-    );
+    await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
+        writer: writer, packageConfig: packageConfig);
     var mocksAsset = AssetId.parse('foo|test/foo_test.mocks.dart');
     return utf8.decode(writer.assets[mocksAsset]);
   }
