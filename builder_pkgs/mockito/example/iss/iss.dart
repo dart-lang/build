@@ -22,21 +22,21 @@ import 'package:http/http.dart';
 class IssLocator {
   final Client client;
 
-  /*late*/ Point<double> _position;
-  Future _ongoingRequest;
+  late Point<double> _position;
+  Future<void>? _ongoingRequest;
 
   IssLocator(this.client);
 
   Point<double> get currentPosition => _position;
 
   /// Returns the current GPS position in [latitude, longitude] format.
-  Future update() async {
+  Future<void> update() async {
     _ongoingRequest ??= _doUpdate();
     await _ongoingRequest;
     _ongoingRequest = null;
   }
 
-  Future _doUpdate() async {
+  Future<void> _doUpdate() async {
     // Returns the point on the earth directly under the space station
     // at this moment.
     var rs = await client.get('http://api.open-notify.org/iss-now.json');
@@ -51,9 +51,8 @@ class IssLocator {
 class IssSpotter {
   final IssLocator locator;
   final Point<double> observer;
-  final String label;
 
-  IssSpotter(this.locator, this.observer, {this.label});
+  IssSpotter(this.locator, this.observer);
 
   // The ISS is defined to be visible if the distance from the observer to
   // the point on the earth directly under the space station is less than 80km.

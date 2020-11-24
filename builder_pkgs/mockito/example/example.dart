@@ -5,12 +5,12 @@ import 'package:test/test.dart';
 
 // Real class
 class Cat {
-  String sound() => 'Meow';
-  bool eatFood(String food, {bool hungry}) => true;
+  String? sound() => 'Meow';
+  bool? eatFood(String? food, {bool? hungry}) => true;
   Future<void> chew() async => print('Chewing...');
-  int walk(List<String> places) => 7;
+  int? walk(List<String>? places) => 7;
   void sleep() {}
-  void hunt(String place, String prey) {}
+  void hunt(String? place, String? prey) {}
   int lives = 9;
 }
 
@@ -20,14 +20,14 @@ class MockCat extends Mock implements Cat {}
 // Fake class
 class FakeCat extends Fake implements Cat {
   @override
-  bool eatFood(String food, {bool hungry}) {
+  bool? eatFood(String? food, {bool? hungry}) {
     print('Fake eat $food');
     return true;
   }
 }
 
 void main() {
-  Cat cat;
+  late Cat cat;
 
   setUp(() {
     // Create mock object.
