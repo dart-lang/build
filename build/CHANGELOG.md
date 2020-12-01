@@ -1,3 +1,7 @@
+## 1.5.2
+
+- Allow the latest analyzer verion `0.41.x`.
+
 ## 1.5.1
 
 - Expose a set of valid inputs in `InvalidInputException`.

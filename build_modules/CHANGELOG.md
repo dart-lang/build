@@ -1,3 +1,7 @@
+## 3.0.1
+
+- Allow the latest analyzer verion `0.41.x`.
+
 ## 3.0.0
 
 - Re-release of 2.11.2 but as a breaking change.
