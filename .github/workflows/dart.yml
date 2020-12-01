@@ -41,7 +41,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test-_test_common-_test_null_safety;commands:dartanalyzer_0"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test-_test_common-_test_null_safety;commands:dartanalyzer"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test-_test_common-_test_null_safety
             os:ubuntu-latest;pub-cache-hosted;dart:dev
@@ -257,7 +257,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build-build_config-build_daemon-build_modules-build_resolvers-build_runner-build_runner_core-build_test-build_vm_compilers-build_web_compilers-example-scratch_space;commands:dartfmt-dartanalyzer_0"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build-build_config-build_daemon-build_modules-build_resolvers-build_runner-build_runner_core-build_test-build_vm_compilers-build_web_compilers-example-scratch_space;commands:dartfmt-dartanalyzer"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build-build_config-build_daemon-build_modules-build_resolvers-build_runner-build_runner_core-build_test-build_vm_compilers-build_web_compilers-example-scratch_space
             os:ubuntu-latest;pub-cache-hosted;dart:dev
