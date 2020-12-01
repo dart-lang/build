@@ -34,7 +34,6 @@ void main() {
       await pubspec(
         'a',
         currentIsolateDependencies: [
-          'analyzer',
           'build',
           'build_config',
           'build_daemon',

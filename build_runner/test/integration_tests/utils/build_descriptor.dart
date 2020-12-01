@@ -54,12 +54,8 @@ Future<d.Descriptor> packageWithBuilders(
         Iterable<TestBuilderDefinition> builders,
         {String name = 'provides_builders'}) async =>
     d.dir(name, [
-      await _pubspecWithDeps(name, currentIsolateDependencies: [
-        'analyzer',
-        'test',
-        'build',
-        'build_test'
-      ]),
+      await _pubspecWithDeps(name,
+          currentIsolateDependencies: ['build', 'build_test']),
       d.file('build.yaml', jsonEncode(_buildConfig(builders))),
       d.dir('lib', [
         d.file('builders.dart', _buildersFile(builders, Frame.caller().uri))

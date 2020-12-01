@@ -31,8 +31,6 @@ main(List<String> args) async {
       setUp(() async {
         await d.dir('a', [
           await pubspec('a', currentIsolateDependencies: [
-            'analyzer',
-            'test',
             'build',
             'build_config',
             'build_daemon',
@@ -155,8 +153,6 @@ main(List<String> args) async {
       setUp(() async {
         await d.dir('a', [
           await pubspec('a', currentIsolateDependencies: [
-            'analyzer',
-            'test',
             'build',
             'build_config',
             'build_daemon',
@@ -233,8 +229,6 @@ main(List<String> args) async {
       setUp(() async {
         await d.dir('a', [
           await pubspec('a', currentIsolateDependencies: [
-            'analyzer',
-            'test',
             'build',
             'build_config',
             'build_daemon',
@@ -345,8 +339,6 @@ main() async {
       setUp(() async {
         await d.dir('a', [
           await pubspec('a', currentIsolateDependencies: [
-            'analyzer',
-            'test',
             'build',
             'build_config',
             'build_daemon',
@@ -462,8 +454,6 @@ main(List<String> args) async {
       test('--define overrides build.yaml', () async {
         await d.dir('a', [
           await pubspec('a', currentIsolateDependencies: [
-            'analyzer',
-            'test',
             'build',
             'build_config',
             'build_daemon',
@@ -520,8 +510,6 @@ main(List<String> args) async {
     test('warns on invalid builder key in target options', () async {
       await d.dir('a', [
         await pubspec('a', currentIsolateDependencies: [
-          'analyzer',
-          'test',
           'build',
           'build_config',
           'build_daemon',
@@ -552,8 +540,6 @@ targets:
     test('warns on invalid builder key in global options', () async {
       await d.dir('a', [
         await pubspec('a', currentIsolateDependencies: [
-          'analyzer',
-          'test',
           'build',
           'build_config',
           'build_daemon',
@@ -582,8 +568,6 @@ global_options:
     test('warns on invalid builder key --define', () async {
       await d.dir('a', [
         await pubspec('a', currentIsolateDependencies: [
-          'analyzer',
-          'test',
           'build',
           'build_config',
           'build_daemon',
@@ -612,8 +596,6 @@ global_options:
         'intermediate outputs', () async {
       await d.dir('a', [
         await pubspec('a', currentIsolateDependencies: [
-          'analyzer',
-          'test',
           'build',
           'build_config',
           'build_daemon',
@@ -663,8 +645,6 @@ main() async {
     test('Missing build_test dependency reports the right error', () async {
       await d.dir('a', [
         await pubspec('a', currentIsolateDependencies: [
-          'analyzer',
-          'test',
           'build',
           'build_config',
           'build_daemon',
@@ -689,8 +669,6 @@ main() async {
     test('Missing build_web_compilers dependency warns the user', () async {
       await d.dir('a', [
         await pubspec('a', currentIsolateDependencies: [
-          'analyzer',
-          'test',
           'build',
           'build_config',
           'build_daemon',
