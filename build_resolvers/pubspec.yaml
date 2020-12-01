@@ -23,5 +23,5 @@ dev_dependencies:
   build_test: ^1.0.0
 
 dependency_overrides:
-  analyzer: 0.41.0
-  test: ^1.16.0-nullsafety
+  build:
+    path: ../build
