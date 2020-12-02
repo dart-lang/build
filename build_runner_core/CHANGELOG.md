@@ -1,3 +1,7 @@
+## 6.1.2
+
+- Support the latest `package:build_config`.
+
 ## 6.1.1
 
 - Fix a bug where `canRead` would throw if the `package` was unknown, instead
