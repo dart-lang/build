@@ -1,4 +1,4 @@
-# Created with package:mono_repo v3.1.0-beta.3
+# Created with package:mono_repo v3.3.0
 name: Dart CI
 on:
   push:
@@ -19,18 +19,36 @@ jobs:
     name: mono_repo self validate
     runs-on: ubuntu-latest
     steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:stable"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
       - uses: cedx/setup-dart@v2
         with:
           release-channel: stable
           version: latest
       - run: dart --version
       - uses: actions/checkout@v2
-      - run: pub global activate mono_repo 3.1.0-beta.3
+      - run: pub global activate mono_repo 3.3.0
       - run: pub global run mono_repo generate --validate
   job_002:
     name: "OS: linux; SDK: dev; PKGS: _test_annotations, example, example_usage, source_gen; TASKS: [`dartfmt -n --set-exit-if-changed .`, `dartanalyzer --fatal-infos --fatal-warnings .`]"
     runs-on: ubuntu-latest
     steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_annotations-example-example_usage-source_gen;commands:dartfmt-dartanalyzer_0"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_annotations-example-example_usage-source_gen
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
       - uses: cedx/setup-dart@v2
         with:
           release-channel: dev
@@ -44,6 +62,16 @@ jobs:
     name: "OS: linux; SDK: 2.10.0; PKGS: _test_annotations, example, example_usage, source_gen; TASKS: `dartanalyzer --fatal-warnings .`"
     runs-on: ubuntu-latest
     steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:2.10.0;packages:_test_annotations-example-example_usage-source_gen;commands:dartanalyzer_1"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:2.10.0;packages:_test_annotations-example-example_usage-source_gen
+            os:ubuntu-latest;pub-cache-hosted;dart:2.10.0
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
       - uses: cedx/setup-dart@v2
         with:
           release-channel: stable
@@ -58,6 +86,16 @@ jobs:
     name: "OS: linux; SDK: dev; PKG: example_usage; TASKS: `pub run test --run-skipped`"
     runs-on: ubuntu-latest
     steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:example_usage;commands:test_0"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:example_usage
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
       - uses: cedx/setup-dart@v2
         with:
           release-channel: dev
@@ -67,10 +105,24 @@ jobs:
           PKGS: example_usage
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_0
+    needs:
+      - job_001
+      - job_002
+      - job_003
   job_005:
     name: "OS: linux; SDK: 2.10.0; PKG: example_usage; TASKS: `pub run test --run-skipped`"
     runs-on: ubuntu-latest
     steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:2.10.0;packages:example_usage;commands:test_0"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:2.10.0;packages:example_usage
+            os:ubuntu-latest;pub-cache-hosted;dart:2.10.0
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
       - uses: cedx/setup-dart@v2
         with:
           release-channel: stable
@@ -81,10 +133,24 @@ jobs:
           PKGS: example_usage
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_0
+    needs:
+      - job_001
+      - job_002
+      - job_003
   job_006:
     name: "OS: linux; SDK: 2.10.0; PKG: source_gen; TASKS: `pub run test`"
     runs-on: ubuntu-latest
     steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:2.10.0;packages:source_gen;commands:test_1"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:2.10.0;packages:source_gen
+            os:ubuntu-latest;pub-cache-hosted;dart:2.10.0
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
       - uses: cedx/setup-dart@v2
         with:
           release-channel: stable
@@ -95,10 +161,24 @@ jobs:
           PKGS: source_gen
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_1
+    needs:
+      - job_001
+      - job_002
+      - job_003
   job_007:
     name: "OS: linux; SDK: dev; PKG: source_gen; TASKS: `pub run test`"
     runs-on: ubuntu-latest
     steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:source_gen;commands:test_1"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:source_gen
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
       - uses: cedx/setup-dart@v2
         with:
           release-channel: dev
@@ -108,3 +188,7 @@ jobs:
           PKGS: source_gen
           TRAVIS_OS_NAME: linux
         run: tool/ci.sh test_1
+    needs:
+      - job_001
+      - job_002
+      - job_003

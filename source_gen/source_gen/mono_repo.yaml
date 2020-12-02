@@ -1,5 +1,5 @@
 # See with https://github.com/google/mono_repo.dart for details on this file
-self_validate: true
+self_validate: analyze_format
 
 github:
   # Setting just `cron` keeps the defaults for `push` and `pull_request`

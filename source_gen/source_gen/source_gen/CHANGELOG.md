@@ -1,4 +1,6 @@
-## 0.9.9-dev
+## 0.9.9
+
+* Allow `package:analyzer` version `0.41.x`.
 
 ## 0.9.8
 
