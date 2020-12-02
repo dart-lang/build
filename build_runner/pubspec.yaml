@@ -10,7 +10,7 @@ dependencies:
   args: ">=1.4.0 <2.0.0"
   async: ">=1.13.3 <3.0.0"
   build: ">=1.5.0 <1.6.0"
-  build_config: ">=0.4.1 <0.4.4"
+  build_config: ">=0.4.1 <0.4.5"
   build_daemon: ^2.1.0
   build_resolvers: ^1.4.0
   build_runner_core: ">=5.2.0 <7.0.0"
