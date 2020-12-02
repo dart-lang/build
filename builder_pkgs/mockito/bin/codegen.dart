@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// @dart=2.9
+
 import 'package:build/build.dart';
 import 'package:mockito/src/builder.dart' as b;
 

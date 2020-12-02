@@ -17,6 +17,7 @@ import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:mockito/src/call_pair.dart';
 import 'package:mockito/src/invocation_matcher.dart';
+// ignore: deprecated_member_use
 import 'package:test_api/fake.dart';
 // ignore: deprecated_member_use
 import 'package:test_api/test_api.dart';
@@ -380,7 +381,7 @@ class PostExpectation<T> {
   }
 
   /// Store an exception to throw when this method stub is called.
-  void thenThrow(throwable) {
+  void thenThrow(Object throwable) {
     return _completeWhen((Invocation _) {
       throw throwable;
     });
