@@ -1,4 +1,6 @@
-## 0.4.4-dev
+## 0.4.4
+
+- Support the latest `pkg:yaml`.
 
 ## 0.4.3
 
