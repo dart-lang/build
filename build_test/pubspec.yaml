@@ -25,12 +25,4 @@ dependencies:
   watcher: ^0.9.7
 
 dev_dependencies:
-  analyzer: ^0.41.0
   collection: ^1.14.0
-
-dependency_overrides:
-  build:
-    path: ../build
-  build_resolvers:
-    path: ../build_resolvers
-
