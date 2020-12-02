@@ -1,4 +1,6 @@
-## 1.4.3-dev
+## 1.4.4
+
+- Allow the latest analyzer verion `0.41.x`.
 
 ## 1.4.3
 

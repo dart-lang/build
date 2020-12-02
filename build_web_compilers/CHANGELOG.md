@@ -1,3 +1,7 @@
+## 2.15.3
+
+- Allow the latest analyzer verion `0.41.x`.
+
 ## 2.15.2
 
 - Fix stack trace mapping for sound mode DDC tests and dart2js apps.
