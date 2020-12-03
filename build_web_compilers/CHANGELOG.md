@@ -1,3 +1,7 @@
+## 2.16.0
+
+- Enable native null assertions by default.
+
 ## 2.15.3
 
 - Allow the latest analyzer verion `0.41.x`.

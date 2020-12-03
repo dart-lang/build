@@ -109,7 +109,7 @@ class WebEntrypointBuilder implements Builder {
     return WebEntrypointBuilder(compiler,
         dart2JsArgs: dart2JsArgs,
         nativeNullAssertions:
-            options.config[_nativeNullAssertionsOption] as bool /*?*/ ?? false,
+            options.config[_nativeNullAssertionsOption] as bool /*?*/ ?? true,
         nullAssertions:
             options.config[_nullAssertionsOption] as bool /*?*/ ?? false,
         soundNullSafetyOverride:
