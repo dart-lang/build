@@ -20,8 +20,6 @@ library mockito.test.deprecated_apis.capture_test;
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
-import '../utils.dart';
-
 class _RealClass {
   String methodWithNormalArgs(int? x) => 'Real';
   String methodWithListArgs(List<int>? x) => 'Real';
@@ -35,8 +33,6 @@ class MockedClass extends Mock implements _RealClass {}
 
 void main() {
   late MockedClass mock;
-
-  var isNsmForwarding = assessNsmForwarding();
 
   setUp(() {
     mock = MockedClass();
@@ -85,12 +81,11 @@ void main() {
     test('should capture with matching arguments', () {
       mock.methodWithPositionalArgs(1);
       mock.methodWithPositionalArgs(2, 3);
-      var expectedCaptures = isNsmForwarding ? [1, null, 2, 3] : [2, 3];
       expect(
           verify(mock.methodWithPositionalArgs(
                   typed(captureAny), typed(captureAny)))
               .captured,
-          equals(expectedCaptures));
+          equals([1, null, 2, 3]));
     });
 
     test('should capture multiple invocations', () {

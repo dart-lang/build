@@ -15,8 +15,6 @@
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
-import 'utils.dart';
-
 class _RealClass {
   _RealClass? innerObj;
   String methodWithoutArgs() => 'Real';
@@ -65,8 +63,6 @@ void expectFail(String expectedMessage, void Function() expectedToFail) {
 
 void main() {
   late _MockedClass mock;
-
-  var isNsmForwarding = assessNsmForwarding();
 
   setUp(() {
     mock = _MockedClass();
@@ -149,11 +145,7 @@ void main() {
           .thenReturn('x y');
       when(mock.methodWithTwoNamedArgs(any, z: anyNamed('z')))
           .thenReturn('x z');
-      if (isNsmForwarding) {
         expect(mock.methodWithTwoNamedArgs(42), 'x z');
-      } else {
-        expect(mock.methodWithTwoNamedArgs(42), isNull);
-      }
       expect(mock.methodWithTwoNamedArgs(42, y: 18), equals('x y'));
       expect(mock.methodWithTwoNamedArgs(42, z: 17), equals('x z'));
       expect(mock.methodWithTwoNamedArgs(42, y: 18, z: 17), isNull);
