@@ -692,17 +692,6 @@ Null captureThat(Matcher matcher, {String? named}) =>
     _registerMatcher(matcher, true,
         named: named, argumentMatcher: 'captureThat');
 
-@Deprecated('ArgMatchers no longer need to be wrapped in Mockito 3.0')
-Null typed<T>(ArgMatcher? matcher, {String? named}) => null;
-
-@Deprecated('Replace with `argThat`')
-Null typedArgThat(Matcher matcher, {String? named}) =>
-    argThat(matcher, named: named);
-
-@Deprecated('Replace with `captureThat`')
-Null typedCaptureThat(Matcher matcher, {String? named}) =>
-    captureThat(matcher, named: named);
-
 /// Registers [matcher] into the stored arguments collections.
 ///
 /// Creates an [ArgMatcher] with [matcher] and [capture], then if [named] is

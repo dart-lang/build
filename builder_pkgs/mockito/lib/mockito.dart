@@ -41,11 +41,6 @@ export 'src/mock.dart'
         VerificationResult,
         Verification,
 
-        // -- deprecated
-        typed, // ignore: deprecated_member_use_from_same_package
-        typedArgThat, // ignore: deprecated_member_use_from_same_package
-        typedCaptureThat, // ignore: deprecated_member_use_from_same_package
-
         // -- misc
         throwOnMissingStub,
         clearInteractions,

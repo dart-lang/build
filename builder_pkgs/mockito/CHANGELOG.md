@@ -3,6 +3,7 @@
 * Migrate the core libraries and tests to null safety. The builder at
   `lib/src/builder.dart` opts out of null safety.
 * Add `http` back to `dev_dependencies`. It's used by the example.
+* Remove deprecated `typed`, `typedArgThat`, and `typedCaptureThat` APIs.
 
 ## 4.1.3
 
