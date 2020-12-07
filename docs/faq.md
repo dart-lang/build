@@ -1,3 +1,24 @@
+## How do I avoid running builders on unnecessary inputs?
+
+Slow builds are often the result of builders that run on all Dart files in your
+package, and analyze them. In this case you can speed up your builds by telling
+those builders exactly which files they should run on.
+
+You can do this in your `build.yaml` file, by configuring the `generate_for`
+option of the builder:
+
+```
+targets:
+  $default:
+    builders:
+      # Typically the builder key is just the package name, run
+      # `pub run build_runner doctor` to check your config.
+      <builder-key>:
+        generate_for:
+          # Example glob for only the Dart files under `lib/models`
+          - lib/models/*.dart
+```
+
 ## Where are the generated files?
 
 There are 3 places you might see files getting generated. On _every_ build files
