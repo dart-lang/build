@@ -1,8 +1,8 @@
-## How can I speed up my build?
+## How do I avoid running builders on unnecessary inputs?
 
 Slow builds are often the result of builders that run on all Dart files in your
-package, and analyze them. In this case you can greatly speed up your builds by
-telling those builders exactly which files they should run on.
+package, and analyze them. In this case you can speed up your builds by telling
+those builders exactly which files they should run on.
 
 You can do this in your `build.yaml` file, by configuring the `generate_for`
 option of the builder:
