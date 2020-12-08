@@ -11,6 +11,7 @@ import 'package:pedantic/pedantic.dart';
 
 import 'generated_output.dart';
 import 'generator.dart';
+import 'generator_for_annotation.dart';
 import 'library.dart';
 import 'utils.dart';
 
@@ -69,7 +70,14 @@ class _Builder extends Builder {
   @override
   Future build(BuildStep buildStep) async {
     final resolver = buildStep.resolver;
+
     if (!await resolver.isLibrary(buildStep.inputId)) return;
+
+    if (_generators.every((g) => g is GeneratorForAnnotation) &&
+        !(await _hasAnyTopLevelAnnotations(buildStep.inputId, resolver))) {
+      return;
+    }
+
     final lib = await buildStep.resolver
         .libraryFor(buildStep.inputId, allowSyntaxErrors: allowSyntaxErrors);
     await _generateForLibrary(lib, buildStep);
@@ -332,6 +340,18 @@ Stream<GeneratedOutput> _generate(
 
     yield GeneratedOutput(gen, createdUnit);
   }
+}
+
+Future<bool> _hasAnyTopLevelAnnotations(
+    AssetId input, Resolver resolver) async {
+  final parsed = await resolver.compilationUnitFor(input);
+  for (var directive in parsed.directives) {
+    if (directive.metadata.isNotEmpty) return true;
+  }
+  for (var declaration in parsed.declarations) {
+    if (declaration.metadata.isNotEmpty) return true;
+  }
+  return false;
 }
 
 final _formatter = DartFormatter();

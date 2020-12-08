@@ -3,6 +3,11 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @TestOn('vm')
+import 'dart:convert';
+
+import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:source_gen/builder.dart';
@@ -540,6 +545,18 @@ foo generated content
     expect(builders.toString(),
         'Generating .foo.dart: _LiteralGenerator, _LiteralGenerator');
   });
+
+  test('Does not resolve the library if there are no top level annotations',
+      () async {
+    final builder = LibraryBuilder(const _DeprecatedGenerator());
+    final input = AssetId('a', 'lib/a.dart');
+    final buildStep = _TestingBuildStep(input, {
+      input: 'main() {}',
+    });
+    await builder.build(buildStep);
+    expect(buildStep.resolver.parsedUnits, {input});
+    expect(buildStep.resolver.resolvedLibs, isEmpty);
+  });
 }
 
 Future _generateTest(CommentGenerator gen, String expectedContent) async {
@@ -593,6 +610,69 @@ class _BadOutputGenerator extends Generator {
 
   @override
   String generate(_, __) => 'not valid code!';
+}
+
+class _DeprecatedGenerator extends GeneratorForAnnotation<Deprecated> {
+  const _DeprecatedGenerator();
+
+  @override
+  void generateForAnnotatedElement(
+          Element element, ConstantReader annotation, BuildStep buildStep) =>
+      throw UnimplementedError();
+}
+
+class _TestingBuildStep implements BuildStep {
+  @override
+  final AssetId inputId;
+
+  @override
+  final _TestingResolver resolver;
+
+  final Map<AssetId, String> assets;
+
+  _TestingBuildStep(this.inputId, this.assets)
+      : resolver = _TestingResolver(assets);
+
+  @override
+  Future<bool> canRead(AssetId id) async => assets.containsKey(id);
+
+  @override
+  Future<String> readAsString(AssetId id, {Encoding encoding}) async =>
+      assets[id];
+
+  @override
+  void noSuchMethod(_) => throw UnimplementedError();
+}
+
+class _TestingResolver implements Resolver {
+  final Map<AssetId, String> assets;
+  final parsedUnits = <AssetId>{};
+  final resolvedLibs = <AssetId>{};
+
+  _TestingResolver(this.assets);
+
+  @override
+  Future<CompilationUnit> compilationUnitFor(AssetId assetId,
+      {bool allowSyntaxErrors = false}) async {
+    parsedUnits.add(assetId);
+    return parseString(content: assets[assetId]).unit;
+  }
+
+  @override
+  Future<bool> isLibrary(AssetId assetId) async {
+    final unit = await compilationUnitFor(assetId);
+    return unit.directives.every((d) => d is! PartOfDirective);
+  }
+
+  @override
+  Future<LibraryElement> libraryFor(AssetId assetId,
+      {bool allowSyntaxErrors = false}) async {
+    resolvedLibs.add(assetId);
+    return null;
+  }
+
+  @override
+  void noSuchMethod(_) => throw UnimplementedError();
 }
 
 const _customHeader = '// Copyright 1979';

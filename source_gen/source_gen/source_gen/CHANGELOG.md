@@ -1,3 +1,8 @@
+## 0.9.10
+
+* Optimize for the case where we have only GeneratorForAnnotation generators,
+  and we know there are no annotations present in the file at all.
+
 ## 0.9.9
 
 * Allow `package:analyzer` version `0.41.x`.
