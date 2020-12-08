@@ -15,10 +15,6 @@ github:
               "${CHAT_WEBHOOK_URL}"
           env:
             CHAT_WEBHOOK_URL: ${{ secrets.BUILD_AND_TEST_TEAM_CHAT_WEBHOOK_URL }}
-  # You can customize stage ordering as well as make certain stages be
-  # conditional here, this is supported for all CI providers. The `if`
-  # condition should use the appropriate syntax for the provider it is being
-  # configured for.
   stages:
     - name: e2e_test_cron
       # Only run this stage for scheduled cron jobs
