@@ -1,3 +1,7 @@
+## 0.4.5
+
+- Allow `package:json_annotation` `v4.x`.
+
 ## 0.4.4
 
 - Support the latest `pkg:yaml`.
