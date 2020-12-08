@@ -1,6 +1,10 @@
+## 3.0.2
+
+- Allow `package:json_annotation` `v4.x`.
+
 ## 3.0.1
 
-- Allow the latest analyzer verion `0.41.x`.
+- Allow the latest analyzer version `0.41.x`.
 
 ## 3.0.0
 

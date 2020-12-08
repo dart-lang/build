@@ -1,3 +1,7 @@
+## 6.1.3
+
+- Allow `package:json_annotation` `v4.x`.
+
 ## 6.1.2
 
 - Support the latest `package:build_config`.
