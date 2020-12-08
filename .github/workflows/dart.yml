@@ -1,4 +1,4 @@
-# Created with package:mono_repo v3.4.0
+# Created with package:mono_repo v3.4.1
 name: Dart CI
 on:
   push:
@@ -6,6 +6,8 @@ on:
       - main
       - master
   pull_request:
+  schedule:
+    - cron: "0 0 * * 0"
 defaults:
   run:
     shell: bash
@@ -31,7 +33,7 @@ jobs:
       - run: dart --version
       - uses: actions/checkout@v2
       - name: mono_repo self validate
-        run: pub global activate mono_repo 3.4.0
+        run: pub global activate mono_repo 3.4.1
       - name: mono_repo self validate
         run: pub global run mono_repo generate --validate
   job_002:
@@ -1604,3 +1606,175 @@ jobs:
       - job_027
       - job_028
       - job_029
+  job_043:
+    name: "e2e_test_cron; windows; Dart edge; PKG: _test_null_safety; `pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
+    steps:
+      - uses: cedx/setup-dart@v2
+        with:
+          release-channel: edge
+      - run: dart --version
+      - uses: actions/checkout@v2
+      - id: _test_null_safety_pub_upgrade
+        name: "_test_null_safety; pub.bat upgrade --no-precompile"
+        working-directory: _test_null_safety
+        run: pub.bat upgrade --no-precompile
+      - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+        if: "steps._test_null_safety_pub_upgrade.conclusion == 'success'"
+        working-directory: _test_null_safety
+        run: "pub.bat run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+      - name: "_test_null_safety; pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+        if: "steps._test_null_safety_pub_upgrade.conclusion == 'success'"
+        working-directory: _test_null_safety
+        run: "pub.bat run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+    if: "github.event_name == 'schedule'"
+    needs:
+      - job_030
+      - job_031
+      - job_032
+      - job_033
+      - job_034
+      - job_035
+      - job_036
+      - job_037
+      - job_038
+      - job_039
+      - job_040
+      - job_041
+      - job_042
+  job_044:
+    name: "e2e_test_cron; linux; Dart edge; PKG: _test_null_safety; `pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:edge;packages:_test_null_safety;commands:command_2-command_3"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:edge;packages:_test_null_safety
+            os:ubuntu-latest;pub-cache-hosted;dart:edge
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - uses: cedx/setup-dart@v2
+        with:
+          release-channel: edge
+      - run: dart --version
+      - uses: actions/checkout@v2
+      - id: _test_null_safety_pub_upgrade
+        name: "_test_null_safety; pub upgrade --no-precompile"
+        working-directory: _test_null_safety
+        run: pub upgrade --no-precompile
+      - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+        if: "steps._test_null_safety_pub_upgrade.conclusion == 'success'"
+        working-directory: _test_null_safety
+        run: "pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+      - name: "_test_null_safety; pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+        if: "steps._test_null_safety_pub_upgrade.conclusion == 'success'"
+        working-directory: _test_null_safety
+        run: "pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+    if: "github.event_name == 'schedule'"
+    needs:
+      - job_030
+      - job_031
+      - job_032
+      - job_033
+      - job_034
+      - job_035
+      - job_036
+      - job_037
+      - job_038
+      - job_039
+      - job_040
+      - job_041
+      - job_042
+  job_045:
+    name: "e2e_test_cron; windows; Dart edge; PKG: _test; `pub run test`"
+    runs-on: windows-latest
+    steps:
+      - uses: cedx/setup-dart@v2
+        with:
+          release-channel: edge
+      - run: dart --version
+      - uses: actions/checkout@v2
+      - id: _test_pub_upgrade
+        name: "_test; pub.bat upgrade --no-precompile"
+        working-directory: _test
+        run: pub.bat upgrade --no-precompile
+      - name: _test; pub run test
+        if: "steps._test_pub_upgrade.conclusion == 'success'"
+        working-directory: _test
+        run: pub.bat run test
+    if: "github.event_name == 'schedule'"
+    needs:
+      - job_030
+      - job_031
+      - job_032
+      - job_033
+      - job_034
+      - job_035
+      - job_036
+      - job_037
+      - job_038
+      - job_039
+      - job_040
+      - job_041
+      - job_042
+  job_046:
+    name: "e2e_test_cron; linux; Dart edge; PKG: _test; `pub run test`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:edge;packages:_test;commands:test_03"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:edge;packages:_test
+            os:ubuntu-latest;pub-cache-hosted;dart:edge
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - uses: cedx/setup-dart@v2
+        with:
+          release-channel: edge
+      - run: dart --version
+      - uses: actions/checkout@v2
+      - id: _test_pub_upgrade
+        name: "_test; pub upgrade --no-precompile"
+        working-directory: _test
+        run: pub upgrade --no-precompile
+      - name: _test; pub run test
+        if: "steps._test_pub_upgrade.conclusion == 'success'"
+        working-directory: _test
+        run: pub run test
+    if: "github.event_name == 'schedule'"
+    needs:
+      - job_030
+      - job_031
+      - job_032
+      - job_033
+      - job_034
+      - job_035
+      - job_036
+      - job_037
+      - job_038
+      - job_039
+      - job_040
+      - job_041
+      - job_042
+  job_047:
+    name: Notify failure
+    runs-on: ubuntu-latest
+    if: "(github.event_name == 'push' || github.event_name == 'schedule') && failure()"
+    steps:
+      - run: |
+          curl -H "Content-Type: application/json" -X POST -d \
+            "{'text':'Build failed! ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}'}" \
+            "${CHAT_WEBHOOK_URL}"
+        env:
+          CHAT_WEBHOOK_URL: "${{ secrets.BUILD_AND_TEST_TEAM_CHAT_WEBHOOK_URL }}"
+    needs:
+      - job_043
+      - job_044
+      - job_045
+      - job_046

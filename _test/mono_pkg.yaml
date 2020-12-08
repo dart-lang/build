@@ -26,7 +26,7 @@ stages:
     os: windows
   - test: --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random
     os: windows
-# This only runs on travis, github actions currently doesn't support be/raw/latest
+# This stage is configured to only run for scheduled builds (see mono_repo.yaml)
 - e2e_test_cron:
   - test:
     dart:
