@@ -17,27 +17,27 @@ import 'package:test/test.dart';
 
 class _RealClass {
   _RealClass? innerObj;
-  String methodWithoutArgs() => 'Real';
-  String methodWithNormalArgs(int? x) => 'Real';
-  String methodWithListArgs(List<int?>? x) => 'Real';
-  String methodWithPositionalArgs(int? x, [int? y]) => 'Real';
-  String methodWithNamedArgs(int? x, {int? y}) => 'Real';
-  String methodWithTwoNamedArgs(int? x, {int? y, int? z}) => 'Real';
-  String methodWithObjArgs(_RealClass x) => 'Real';
-  Future<String> methodReturningFuture() => Future.value('Real');
-  Stream<String> methodReturningStream() => Stream.fromIterable(['Real']);
-  String get getter => 'Real';
+  String? methodWithoutArgs() => 'Real';
+  String? methodWithNormalArgs(int? x) => 'Real';
+  String? methodWithListArgs(List<int?>? x) => 'Real';
+  String? methodWithPositionalArgs(int? x, [int? y]) => 'Real';
+  String? methodWithNamedArgs(int? x, {int? y}) => 'Real';
+  String? methodWithTwoNamedArgs(int? x, {int? y, int? z}) => 'Real';
+  String? methodWithObjArgs(_RealClass x) => 'Real';
+  Future<String>? methodReturningFuture() => Future.value('Real');
+  Stream<String>? methodReturningStream() => Stream.fromIterable(['Real']);
+  String? get getter => 'Real';
 }
 
 abstract class _Foo {
-  String bar();
+  String? bar();
 }
 
 abstract class _AbstractFoo implements _Foo {
   @override
-  String bar() => baz();
+  String? bar() => baz();
 
-  String baz();
+  String? baz();
 
   String quux() => 'Real';
 }
@@ -145,7 +145,7 @@ void main() {
           .thenReturn('x y');
       when(mock.methodWithTwoNamedArgs(any, z: anyNamed('z')))
           .thenReturn('x z');
-        expect(mock.methodWithTwoNamedArgs(42), 'x z');
+      expect(mock.methodWithTwoNamedArgs(42), 'x z');
       expect(mock.methodWithTwoNamedArgs(42, y: 18), equals('x y'));
       expect(mock.methodWithTwoNamedArgs(42, z: 17), equals('x z'));
       expect(mock.methodWithTwoNamedArgs(42, y: 18, z: 17), isNull);
@@ -249,7 +249,7 @@ void main() {
       when(mock.methodReturningStream())
           .thenAnswer((_) => Stream.fromIterable(['stub']));
 
-      expect(await mock.methodReturningStream().toList(), ['stub']);
+      expect(await mock.methodReturningStream()?.toList(), ['stub']);
     });
 
     test('should throw if named matcher is passed as the wrong name', () {

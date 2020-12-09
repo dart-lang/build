@@ -18,20 +18,20 @@ import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
 class _RealClass {
-  String methodWithoutArgs() => 'Real';
-  String methodWithNormalArgs(int? x) => 'Real';
-  String methodWithListArgs(List<int>? x) => 'Real';
-  String methodWithPositionalArgs(int? x, [int? y]) => 'Real';
-  String methodWithNamedArgs(int? x, {int? y}) => 'Real';
-  String methodWithTwoNamedArgs(int? x, {int? y, int? z}) => 'Real';
-  String methodWithObjArgs(_RealClass? x) => 'Real';
-  String typeParameterizedFn(List<int>? w, List<int>? x,
+  String? methodWithoutArgs() => 'Real';
+  String? methodWithNormalArgs(int? x) => 'Real';
+  String? methodWithListArgs(List<int>? x) => 'Real';
+  String? methodWithPositionalArgs(int? x, [int? y]) => 'Real';
+  String? methodWithNamedArgs(int? x, {int? y}) => 'Real';
+  String? methodWithTwoNamedArgs(int? x, {int? y, int? z}) => 'Real';
+  String? methodWithObjArgs(_RealClass? x) => 'Real';
+  String? typeParameterizedFn(List<int>? w, List<int>? x,
           [List<int>? y, List<int>? z]) =>
       'Real';
-  String typeParameterizedNamedFn(List<int>? w, List<int>? x,
+  String? typeParameterizedNamedFn(List<int>? w, List<int>? x,
           {List<int>? y, List<int>? z}) =>
       'Real';
-  String get getter => 'Real';
+  String? get getter => 'Real';
   set setter(String arg) {
     throw StateError('I must be mocked');
   }

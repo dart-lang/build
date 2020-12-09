@@ -139,7 +139,7 @@ void main() {
 }
 
 abstract class Interface {
-  bool get value;
+  bool? get value;
   set value(value);
   void say(String text);
   void eat(String food, {bool? alsoDrink});

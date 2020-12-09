@@ -15,21 +15,23 @@
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
+/// Every method on this class has a nullable return type and nullable parameter
+/// types. This allows each method to be verified without manual overriding or
+/// code-generation.
 class _RealClass {
-  String methodWithoutArgs() => 'Real';
-  String methodWithNormalArgs(int? x) => 'Real';
-  String methodWithListArgs(List<int> x) => 'Real';
-  String methodWithOptionalArg([int? x]) => 'Real';
-  String methodWithPositionalArgs(int? x, [int? y]) => 'Real';
-  String methodWithNamedArgs(int x, {int? y}) => 'Real';
-  String methodWithOnlyNamedArgs({int? y, int? z}) => 'Real';
-  String methodWithObjArgs(_RealClass x) => 'Real';
-  String get getter => 'Real';
+  String? methodWithoutArgs() => 'Real';
+  String? methodWithNormalArgs(int? x) => 'Real';
+  String? methodWithListArgs(List<int>? x) => 'Real';
+  String? methodWithOptionalArg([int? x]) => 'Real';
+  String? methodWithPositionalArgs(int? x, [int? y]) => 'Real';
+  String? methodWithNamedArgs(int x, {int? y}) => 'Real';
+  String? methodWithOnlyNamedArgs({int? y = 0, int? z}) => 'Real';
+  String? get getter => 'Real';
   set setter(String arg) {
     throw StateError('I must be mocked');
   }
 
-  String methodWithLongArgs(LongToString? a, LongToString? b,
+  String? methodWithLongArgs(LongToString? a, LongToString? b,
           {LongToString? c, LongToString? d}) =>
       'Real';
 }
