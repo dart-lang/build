@@ -1,3 +1,8 @@
+## 6.1.4
+
+- Allow build_config version `'>=0.4.1 <0.4.6'`.
+- Allow yaml version `'>=2.1.11 <4.0.0'`.
+
 ## 6.1.3
 
 - Allow `package:json_annotation` `v4.x`.
