@@ -1,3 +1,8 @@
+## 1.10.9
+
+- Allow build_config version `'>=0.4.1 <0.4.6'`.
+- Allow yaml version `'>=2.1.11 <4.0.0'`.
+
 ## 1.10.7
 
 - Allow build_config version 0.4.4.
