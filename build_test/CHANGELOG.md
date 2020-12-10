@@ -1,4 +1,6 @@
-## 1.3.1-dev
+## 1.3.1
+
+- Allow build version `1.6.x`.
 
 ## 1.3.0
 
