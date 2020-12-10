@@ -161,12 +161,12 @@ class AnalyzerResolver implements ReleasableResolver {
     var library = element.library;
 
     if (resolve) {
-      return (await session.getResolvedLibraryByElement(library))
+      return (await session.getResolvedLibrary(library.source.fullName))
           .getElementDeclaration(element)
           .node;
     } else {
       return session
-          .getParsedLibraryByElement(library)
+          .getParsedLibrary(library.source.fullName)
           .getElementDeclaration(element)
           .node;
     }
