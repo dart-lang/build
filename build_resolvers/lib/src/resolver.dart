@@ -158,17 +158,14 @@ class AnalyzerResolver implements ReleasableResolver {
   @override
   Future<AstNode> astNodeFor(Element element, {bool resolve = false}) async {
     var session = _driver.currentSession;
-    var library = element.library;
+    var path = element.library.source.fullName;
 
     if (resolve) {
-      return (await session.getResolvedLibrary(library.source.fullName))
+      return (await session.getResolvedLibrary(path))
           .getElementDeclaration(element)
           .node;
     } else {
-      return session
-          .getParsedLibrary(library.source.fullName)
-          .getElementDeclaration(element)
-          .node;
+      return session.getParsedLibrary(path).getElementDeclaration(element).node;
     }
   }
 
