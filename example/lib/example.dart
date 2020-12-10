@@ -39,7 +39,7 @@ class CssBuilder implements Builder {
 
   @override
   final buildExtensions = const {
-    r'package': ['web/generated.css']
+    r'$package$': ['web/generated.css']
   };
 
   static String _cssContent() => '''
