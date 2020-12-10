@@ -112,7 +112,7 @@ class DebugIndexBuilder implements Builder {
 
   @override
   final buildExtensions = const {
-    r'$test$': ['index.html'],
+    r'$package$': ['test/index.html'],
   };
 
   @override

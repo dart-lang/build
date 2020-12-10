@@ -1,5 +1,7 @@
 ## 1.3.1-dev
 
+- Use `$package$` placeholder instead of `$test$`.
+
 ## 1.3.0
 
 - Add support for running generated `.browser_test.dart` directly instead of

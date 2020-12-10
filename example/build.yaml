@@ -23,5 +23,5 @@ builders:
   cssBuilder:
     import: "package:example/builder.dart"
     builder_factories: ["cssBuilder"]
-    build_extensions: {"$web$": ["generated.css"]}
+    build_extensions: {"$package$": ["web/generated.css"]}
     auto_apply: root_package

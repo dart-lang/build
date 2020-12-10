@@ -34,19 +34,17 @@ class CssBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
     await buildStep.writeAsString(
-        AssetId(buildStep.inputId.package, 'web/generated.css'),
-        _cssContent(buildStep.inputId));
+        AssetId(buildStep.inputId.package, 'web/generated.css'), _cssContent());
   }
 
   @override
   final buildExtensions = const {
-    r'$web$': ['generated.css']
+    r'$package$': ['web/generated.css']
   };
 
-  static String _cssContent(AssetId inputId) => '''
+  static String _cssContent() => '''
 /*
 Generated at: ${DateTime.now()}
-     AssetId: $inputId
 */
 pre {
   font-size: 200%;
