@@ -7,8 +7,8 @@ builders:
         - "debugTestBuilder"
         - "testBootstrapBuilder"
     build_extensions:
-      $test$:
-        - index.html
+      $package$:
+        - test/index.html
       _test.dart:
         - _test.dart.vm_test.dart
         - _test.dart.browser_test.dart
