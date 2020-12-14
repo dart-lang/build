@@ -35,3 +35,11 @@ class CommentGenerator extends Generator {
     return output.join('\n');
   }
 }
+
+// Runs for anything annotated as deprecated
+class DeprecatedGeneratorForAnnotation
+    extends GeneratorForAnnotation<Deprecated> {
+  @override
+  String generateForAnnotatedElement(Element element, _, __) =>
+      '// "$element" is deprecated!';
+}

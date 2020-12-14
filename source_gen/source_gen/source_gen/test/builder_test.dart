@@ -557,6 +557,38 @@ foo generated content
     expect(buildStep.resolver.parsedUnits, {input});
     expect(buildStep.resolver.resolvedLibs, isEmpty);
   });
+
+  test('Searches in part files for annotations', () async {
+    final srcs = _createPackageStub(testLibContent: '''
+    part 'test_lib.foo.dart';
+    part 'test_lib.g.dart';
+    ''', testLibPartContent: '''
+    @deprecated
+    int x;
+    ''');
+    final builder =
+        PartBuilder([DeprecatedGeneratorForAnnotation()], '.g.dart');
+
+    await testBuilder(
+      builder,
+      srcs,
+      generateFor: {'$_pkgName|lib/test_lib.dart'},
+      outputs: {
+        '$_pkgName|lib/test_lib.g.dart':
+            decodedMatches(contains('// "int x" is deprecated!')),
+      },
+      onLog: (log) {
+        if (log.message.contains(
+          'Your current `analyzer` version may not fully support your current '
+          'SDK version.',
+        )) {
+          // This may happen with pre-release SDKs. Not an error.
+          return;
+        }
+        fail('Unexpected log message: ${log.message}');
+      },
+    );
+  });
 }
 
 Future _generateTest(CommentGenerator gen, String expectedContent) async {

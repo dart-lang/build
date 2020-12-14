@@ -4,6 +4,7 @@
 
 import 'dart:convert';
 
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:dart_style/dart_style.dart';
@@ -74,7 +75,8 @@ class _Builder extends Builder {
     if (!await resolver.isLibrary(buildStep.inputId)) return;
 
     if (_generators.every((g) => g is GeneratorForAnnotation) &&
-        !(await _hasAnyTopLevelAnnotations(buildStep.inputId, resolver))) {
+        !(await _hasAnyTopLevelAnnotations(
+            buildStep.inputId, resolver, buildStep))) {
       return;
     }
 
@@ -343,13 +345,23 @@ Stream<GeneratedOutput> _generate(
 }
 
 Future<bool> _hasAnyTopLevelAnnotations(
-    AssetId input, Resolver resolver) async {
+    AssetId input, Resolver resolver, BuildStep buildStep) async {
+  if (!await buildStep.canRead(input)) return false;
   final parsed = await resolver.compilationUnitFor(input);
+  final partIds = <AssetId>[];
   for (var directive in parsed.directives) {
     if (directive.metadata.isNotEmpty) return true;
+    if (directive is PartDirective) {
+      partIds.add(AssetId.resolve(directive.uri.stringValue, from: input));
+    }
   }
   for (var declaration in parsed.declarations) {
     if (declaration.metadata.isNotEmpty) return true;
+  }
+  for (var partId in partIds) {
+    if (await _hasAnyTopLevelAnnotations(partId, resolver, buildStep)) {
+      return true;
+    }
   }
   return false;
 }

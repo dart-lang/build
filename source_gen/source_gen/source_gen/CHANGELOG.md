@@ -1,3 +1,8 @@
+## 0.9.10+1
+
+* Fix a bug in the early bailout optimization where it wouldn't check for
+  annotations in part files.
+
 ## 0.9.10
 
 * Optimize for the case where we have only GeneratorForAnnotation generators,
