@@ -1,3 +1,7 @@
+## 1.10.10
+
+- Allow build version `1.6.x`.
+
 ## 1.10.9
 
 - Allow build_config version `'>=0.4.1 <0.4.6'`.

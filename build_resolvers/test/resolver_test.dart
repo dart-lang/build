@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'dart:isolate';
 
+import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
@@ -678,6 +679,106 @@ int? get x => 1;
             isA<FunctionDeclaration>()
                 .having((d) => d.name.name, 'main', 'main'));
       }, resolvers: AnalyzerResolvers());
+    });
+  });
+
+  group('astNodeFor', () {
+    test('can return an unresolved ast', () {
+      return resolveSources({
+        'a|web/main.dart': ' main() {}',
+      }, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        var unit = await resolver.astNodeFor(lib.topLevelElements.first);
+        expect(unit, isA<FunctionDeclaration>());
+        expect(unit.toSource(), 'main() {}');
+        expect((unit as FunctionDeclaration).declaredElement, isNull);
+      }, resolvers: AnalyzerResolvers());
+    });
+
+    test('can return an resolved ast', () {
+      return resolveSources({
+        'a|web/main.dart': 'main() {}',
+      }, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        var unit = await resolver.astNodeFor(lib.topLevelElements.first,
+            resolve: true);
+        expect(unit, isA<FunctionDeclaration>());
+        expect(unit.toSource(), 'main() {}');
+        expect((unit as FunctionDeclaration).declaredElement, isNotNull);
+      }, resolvers: AnalyzerResolvers());
+    });
+
+    test(
+        'can get an unresolved AstNode for an old Element after resolving '
+        'additional assets', () async {
+      var resolvers = AnalyzerResolvers();
+      await resolveSources({
+        'a|web/main.dart': 'int x;',
+        'a|web/other.dart': '',
+      }, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        var x = lib.topLevelElements.firstWhere((x) => !x.isSynthetic);
+        expect(x.name, 'x');
+        expect(await resolver.isLibrary(AssetId('a', 'web/other.dart')), true);
+
+        // Validate that direct session usage would throw
+        expect(() => lib.session.getParsedLibraryByElement(x.library),
+            throwsA(isA<InconsistentAnalysisException>()));
+
+        var astNode = await resolver.astNodeFor(x);
+        expect(astNode, isA<VariableDeclaration>());
+        expect((astNode as VariableDeclaration).name.name, 'x');
+        expect((astNode as VariableDeclaration).declaredElement, isNull);
+      }, resolvers: resolvers);
+    });
+
+    test(
+        'can get a resolved AstNode for an old Element after resolving '
+        'additional assets', () async {
+      var resolvers = AnalyzerResolvers();
+      await resolveSources({
+        'a|web/main.dart': 'int x;',
+        'a|web/other.dart': '',
+      }, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        var x = lib.topLevelElements.firstWhere((x) => !x.isSynthetic);
+        expect(x.name, 'x');
+        expect(await resolver.isLibrary(AssetId('a', 'web/other.dart')), true);
+
+        // Validate that direct session usage would throw
+        expect(() => lib.session.getParsedLibraryByElement(x.library),
+            throwsA(isA<InconsistentAnalysisException>()));
+
+        var astNode = await resolver.astNodeFor(x, resolve: true);
+        expect(astNode, isA<VariableDeclaration>());
+        expect((astNode as VariableDeclaration).name.name, 'x');
+        expect((astNode as VariableDeclaration).declaredElement, isNotNull);
+      }, resolvers: resolvers);
+    });
+
+    test('library results can be used even if the session is invalidated',
+        () async {
+      var resolvers = AnalyzerResolvers();
+      await resolveSources({
+        'a|web/main.dart': 'int x;',
+        'a|web/other.dart': '',
+      }, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        var x = lib.topLevelElements.firstWhere((x) => !x.isSynthetic);
+        expect(x.name, 'x');
+        var originalResult =
+            await lib.session.getResolvedLibrary(lib.source.fullName);
+        expect(await resolver.isLibrary(AssetId('a', 'web/other.dart')), true);
+
+        // Validate that direct session usage would throw
+        expect(() => lib.session.getResolvedLibrary(lib.source.fullName),
+            throwsA(isA<InconsistentAnalysisException>()));
+
+        var astNode = originalResult.getElementDeclaration(x).node;
+        expect(astNode, isA<VariableDeclaration>());
+        expect((astNode as VariableDeclaration).name.name, 'x');
+        expect((astNode as VariableDeclaration).declaredElement, isNotNull);
+      }, resolvers: resolvers);
     });
   });
 }

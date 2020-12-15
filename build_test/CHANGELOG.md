@@ -1,4 +1,6 @@
-## 1.3.1-dev
+## 1.3.1
+
+- Allow build version `1.6.x`.
 
 - Use `$package$` placeholder instead of `$test$`.
 

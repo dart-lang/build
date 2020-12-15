@@ -92,6 +92,10 @@ class PerActionResolver implements ReleasableResolver {
   }
 
   @override
+  Future<AstNode> astNodeFor(Element element, {bool resolve = false}) =>
+      _delegate.astNodeFor(element, resolve: resolve);
+
+  @override
   Future<CompilationUnit> compilationUnitFor(AssetId assetId,
       {bool allowSyntaxErrors = false}) async {
     if (!await _step.canRead(assetId)) throw AssetNotFoundException(assetId);
@@ -149,6 +153,20 @@ class AnalyzerResolver implements ReleasableResolver {
     return source != null &&
         source.exists() &&
         (await _driver.getSourceKind(assetPath(assetId))) == SourceKind.LIBRARY;
+  }
+
+  @override
+  Future<AstNode> astNodeFor(Element element, {bool resolve = false}) async {
+    var session = _driver.currentSession;
+    var path = element.library.source.fullName;
+
+    if (resolve) {
+      return (await session.getResolvedLibrary(path))
+          .getElementDeclaration(element)
+          .node;
+    } else {
+      return session.getParsedLibrary(path).getElementDeclaration(element).node;
+    }
   }
 
   @override

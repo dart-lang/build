@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/error/error.dart';
@@ -22,6 +23,19 @@ abstract class Resolver {
   ///
   /// **NOTE**: This includes all Dart SDK libraries as well.
   Stream<LibraryElement> get libraries;
+
+  /// Returns the parsed [AstNode] for [Element].
+  ///
+  /// This should always be preferred over using the [AnalysisSession]
+  /// directly, because it avoids [InconsistentAnalysisException] issues.
+  ///
+  /// If [resolve] is `true` then you will get a resolved ast node, otherwise
+  /// it will only be a parsed ast node.
+  ///
+  /// Returns `null` if the ast node can not be found. This can happen if an
+  /// element is coming from a summary, or is unavailable for some other
+  /// reason.
+  Future<AstNode> astNodeFor(Element element, {bool resolve = false});
 
   /// Returns a parsed AST structor representing the file defined in [assetId].
   ///

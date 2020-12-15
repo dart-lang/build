@@ -1,3 +1,9 @@
+## 1.5.0
+
+- Support the latest `build` package (`1.6.x`).
+  - Implements the new `Future<AstNode> astNodeFor(Element, {bool resolve})`
+    method.
+
 ## 1.4.4
 
 - Allow the latest analyzer verion `0.41.x`.
