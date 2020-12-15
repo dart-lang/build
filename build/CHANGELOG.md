@@ -1,6 +1,6 @@
 ## 1.6.0
 
-- Adds the `Future<AstNode> astNodeFor(Element element)` api to
+- Adds the `Future<AstNode> astNodeFor(Element, {bool resolve})` api to
   `Resolver` which provides a safe way of getting ast nodes (avoiding
   `InconsistentAnalysisException`s).
 

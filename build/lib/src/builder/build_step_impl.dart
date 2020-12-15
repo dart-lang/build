@@ -186,8 +186,8 @@ class _DelayedResolver implements Resolver {
   }
 
   @override
-  Future<AstNode> astNodeFor(Element element) async =>
-      (await _delegate).astNodeFor(element);
+  Future<AstNode> astNodeFor(Element element, {bool resolve = false}) async =>
+      (await _delegate).astNodeFor(element, resolve: resolve);
 
   @override
   Future<CompilationUnit> compilationUnitFor(AssetId assetId,

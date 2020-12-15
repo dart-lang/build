@@ -29,10 +29,13 @@ abstract class Resolver {
   /// This should always be preferred over using the [AnalysisSession]
   /// directly, because it avoids [InconsistentAnalysisException] issues.
   ///
+  /// If [resolve] is `true` then you will get a resolved ast node, otherwise
+  /// it will only be a parsed ast node.
+  ///
   /// Returns `null` if the ast node can not be found. This can happen if an
   /// element is coming from a summary, or is unavailable for some other
   /// reason.
-  Future<AstNode> astNodeFor(Element element);
+  Future<AstNode> astNodeFor(Element element, {bool resolve = false});
 
   /// Returns a parsed AST structor representing the file defined in [assetId].
   ///
