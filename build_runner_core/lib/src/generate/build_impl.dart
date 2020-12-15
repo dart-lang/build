@@ -198,7 +198,9 @@ class _SingleBuild {
       : _assetGraph = buildImpl.assetGraph,
         _buildFilters = buildFilters,
         _buildPhases = buildImpl._buildPhases,
-        _buildPhasePool = List(buildImpl._buildPhases.length),
+        _buildPhasePool = List.generate(
+            buildImpl._buildPhases.length, (_) => Pool(buildPhasePoolSize),
+            growable: false),
         _environment = buildImpl._environment,
         _packageGraph = buildImpl._packageGraph,
         _targetGraph = buildImpl._targetGraph,
@@ -467,8 +469,7 @@ class _SingleBuild {
 
   Future<Iterable<AssetId>> _runForInput(
       int phaseNumber, InBuildPhase phase, AssetId input) {
-    var pool = _buildPhasePool[phaseNumber] ??= Pool(buildPhasePoolSize);
-    return pool.withResource(() {
+    return _buildPhasePool[phaseNumber].withResource(() {
       final builder = phase.builder;
       var tracker =
           _performanceTracker.addBuilderAction(input, phase.builderLabel);
