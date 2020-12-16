@@ -1,3 +1,7 @@
+## 1.5.1
+
+- Fix a potential nullability issue in the `astNodeFor` api.
+
 ## 1.5.0
 
 - Support the latest `build` package (`1.6.x`).

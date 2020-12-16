@@ -163,9 +163,12 @@ class AnalyzerResolver implements ReleasableResolver {
     if (resolve) {
       return (await session.getResolvedLibrary(path))
           .getElementDeclaration(element)
-          .node;
+          ?.node;
     } else {
-      return session.getParsedLibrary(path).getElementDeclaration(element).node;
+      return session
+          .getParsedLibrary(path)
+          .getElementDeclaration(element)
+          ?.node;
     }
   }
 
