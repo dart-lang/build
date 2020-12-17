@@ -23,7 +23,8 @@ final _builders = <_i1.BuilderApplication>[
       [_i2.debugIndexBuilder, _i2.debugTestBuilder, _i2.testBootstrapBuilder],
       _i1.toRoot(),
       hideOutput: true,
-      defaultGenerateFor: const _i3.InputSet(include: [r'test/**'])),
+      defaultGenerateFor:
+          const _i3.InputSet(include: [r'$package$', r'test/**'])),
   _i1.apply(r'provides_builder:some_builder', [_i4.someBuilder],
       _i1.toDependentsOf(r'provides_builder'),
       hideOutput: true,

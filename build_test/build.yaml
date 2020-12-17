@@ -19,4 +19,4 @@ builders:
     build_to: cache
     auto_apply: root_package
     defaults:
-      generate_for: ["test/**"]
+      generate_for: ["$package$", "test/**"]
