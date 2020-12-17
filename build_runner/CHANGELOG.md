@@ -1,3 +1,8 @@
+## 1.10.11
+
+- Fix handling of `build.yaml` `generateFor` default config for values including
+  a `$` such as `$package$`. Use raw strings in the generated build script.
+
 ## 1.10.10
 
 - Allow build version `1.6.x`.

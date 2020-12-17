@@ -59,7 +59,6 @@ Future<String> _generateBuildScript() async {
 /// Adds `apply` expressions based on the BuildefDefinitions from any package
 /// which has a `build.yaml`.
 Future<Iterable<Expression>> _findBuilderApplications() async {
-  final builderApplications = <Expression>[];
   final packageGraph = await PackageGraph.forThisPackage();
   final orderedPackages = stronglyConnectedComponents<PackageNode>(
     [packageGraph.root],
@@ -97,15 +96,16 @@ Future<Iterable<Expression>> _findBuilderApplications() async {
       .where(_isValidDefinition);
 
   final orderedBuilders = findBuilderOrder(builderDefinitions).toList();
-  builderApplications.addAll(orderedBuilders.map(_applyBuilder));
 
   final postProcessBuilderDefinitions = orderedConfigs
       .expand((c) => c.postProcessBuilderDefinitions.values)
       .where(_isValidDefinition);
-  builderApplications
-      .addAll(postProcessBuilderDefinitions.map(_applyPostProcessBuilder));
 
-  return builderApplications;
+  return [
+    for (var builder in orderedBuilders) _applyBuilder(builder),
+    for (var builder in postProcessBuilderDefinitions)
+      _applyPostProcessBuilder(builder)
+  ];
 }
 
 /// A method forwarding to `run`.
@@ -135,50 +135,37 @@ Method _main() => Method((b) => b
 
 /// An expression calling `apply` with appropriate setup for a Builder.
 Expression _applyBuilder(BuilderDefinition definition) {
-  final namedArgs = <String, Expression>{};
-  if (definition.isOptional) {
-    namedArgs['isOptional'] = literalTrue;
-  }
-  if (definition.buildTo == BuildTo.cache) {
-    namedArgs['hideOutput'] = literalTrue;
-  } else {
-    namedArgs['hideOutput'] = literalFalse;
-  }
-  if (!identical(definition.defaults?.generateFor, InputSet.anything)) {
-    final inputSetArgs = <String, Expression>{};
-    if (definition.defaults.generateFor.include != null) {
-      inputSetArgs['include'] =
-          literalConstList(definition.defaults.generateFor.include);
-    }
-    if (definition.defaults.generateFor.exclude != null) {
-      inputSetArgs['exclude'] =
-          literalConstList(definition.defaults.generateFor.exclude);
-    }
-    namedArgs['defaultGenerateFor'] =
-        refer('InputSet', 'package:build_config/build_config.dart')
-            .constInstance([], inputSetArgs);
-  }
-  if (definition.defaults?.options?.isNotEmpty ?? false) {
-    namedArgs['defaultOptions'] =
-        _constructBuilderOptions(definition.defaults.options);
-  }
-  if (definition.defaults?.devOptions?.isNotEmpty ?? false) {
-    namedArgs['defaultDevOptions'] =
-        _constructBuilderOptions(definition.defaults.devOptions);
-  }
-  if (definition.defaults?.releaseOptions?.isNotEmpty ?? false) {
-    namedArgs['defaultReleaseOptions'] =
-        _constructBuilderOptions(definition.defaults.releaseOptions);
-  }
-  if (definition.appliesBuilders.isNotEmpty) {
-    namedArgs['appliesBuilders'] = literalList(definition.appliesBuilders);
-  }
+  final namedArgs = {
+    if (definition.isOptional) 'isOptional': literalTrue,
+    if (definition.buildTo == BuildTo.cache)
+      'hideOutput': literalTrue
+    else
+      'hideOutput': literalFalse,
+    if (!identical(definition.defaults?.generateFor, InputSet.anything))
+      'defaultGenerateFor':
+          refer('InputSet', 'package:build_config/build_config.dart')
+              .constInstance([], {
+        if (definition.defaults.generateFor.include != null)
+          'include': _rawStringList(definition.defaults.generateFor.include),
+        if (definition.defaults.generateFor.exclude != null)
+          'exclude': _rawStringList(definition.defaults.generateFor.exclude),
+      }),
+    if (definition.defaults?.options?.isNotEmpty ?? false)
+      'defaultOptions': _constructBuilderOptions(definition.defaults.options),
+    if (definition.defaults?.devOptions?.isNotEmpty ?? false)
+      'defaultDevOptions':
+          _constructBuilderOptions(definition.defaults.devOptions),
+    if (definition.defaults?.releaseOptions?.isNotEmpty ?? false)
+      'defaultReleaseOptions':
+          _constructBuilderOptions(definition.defaults.releaseOptions),
+    if (definition.appliesBuilders.isNotEmpty)
+      'appliesBuilders': _rawStringList(definition.appliesBuilders),
+  };
   var import = _buildScriptImport(definition.import);
   return refer('apply', 'package:build_runner_core/build_runner_core.dart')
       .call([
-    literalString(definition.key),
-    literalList(
-        definition.builderFactories.map((f) => refer(f, import)).toList()),
+    literalString(definition.key, raw: true),
+    literalList([for (var f in definition.builderFactories) refer(f, import)]),
     _findToExpression(definition),
   ], namedArgs);
 }
@@ -186,41 +173,36 @@ Expression _applyBuilder(BuilderDefinition definition) {
 /// An expression calling `applyPostProcess` with appropriate setup for a
 /// PostProcessBuilder.
 Expression _applyPostProcessBuilder(PostProcessBuilderDefinition definition) {
-  final namedArgs = <String, Expression>{};
-  if (definition.defaults?.generateFor != null) {
-    final inputSetArgs = <String, Expression>{};
-    if (definition.defaults.generateFor.include != null) {
-      inputSetArgs['include'] =
-          literalConstList(definition.defaults.generateFor.include);
-    }
-    if (definition.defaults.generateFor.exclude != null) {
-      inputSetArgs['exclude'] =
-          literalConstList(definition.defaults.generateFor.exclude);
-    }
-    if (definition.defaults?.options?.isNotEmpty ?? false) {
-      namedArgs['defaultOptions'] =
-          _constructBuilderOptions(definition.defaults.options);
-    }
-    if (definition.defaults?.devOptions?.isNotEmpty ?? false) {
-      namedArgs['defaultDevOptions'] =
-          _constructBuilderOptions(definition.defaults.devOptions);
-    }
-    if (definition.defaults?.releaseOptions?.isNotEmpty ?? false) {
-      namedArgs['defaultReleaseOptions'] =
-          _constructBuilderOptions(definition.defaults.releaseOptions);
-    }
-    namedArgs['defaultGenerateFor'] =
-        refer('InputSet', 'package:build_config/build_config.dart')
-            .constInstance([], inputSetArgs);
-  }
+  final namedArgs = {
+    if (!identical(definition.defaults?.generateFor, InputSet.anything))
+      'defaultGenerateFor':
+          refer('InputSet', 'package:build_config/build_config.dart')
+              .constInstance([], {
+        if (definition.defaults.generateFor.include != null)
+          'include': _rawStringList(definition.defaults.generateFor.include),
+        if (definition.defaults.generateFor.exclude != null)
+          'exclude': _rawStringList(definition.defaults.generateFor.exclude),
+      }),
+    if (definition.defaults?.options?.isNotEmpty ?? false)
+      'defaultOptions': _constructBuilderOptions(definition.defaults.options),
+    if (definition.defaults?.devOptions?.isNotEmpty ?? false)
+      'defaultDevOptions':
+          _constructBuilderOptions(definition.defaults.devOptions),
+    if (definition.defaults?.releaseOptions?.isNotEmpty ?? false)
+      'defaultReleaseOptions':
+          _constructBuilderOptions(definition.defaults.releaseOptions),
+  };
   var import = _buildScriptImport(definition.import);
   return refer('applyPostProcess',
           'package:build_runner_core/build_runner_core.dart')
       .call([
-    literalString(definition.key),
+    literalString(definition.key, raw: true),
     refer(definition.builderFactory, import),
   ], namedArgs);
 }
+
+Expression _rawStringList(List<String> strings) => literalConstList(
+    [for (var string in strings) literalString(string, raw: true)]);
 
 /// Returns the actual import to put in the generated script based on an import
 /// found in the build.yaml.
@@ -246,7 +228,7 @@ Expression _findToExpression(BuilderDefinition definition) {
     case AutoApply.dependents:
       return refer('toDependentsOf',
               'package:build_runner_core/build_runner_core.dart')
-          .call([literalString(definition.package)]);
+          .call([literalString(definition.package, raw: true)]);
     case AutoApply.allPackages:
       return refer('toAllPackages',
               'package:build_runner_core/build_runner_core.dart')
