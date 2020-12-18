@@ -54,7 +54,7 @@
 ## 1.3.8
 
 - Enables the `non-nullable` experiment when summarizing the SDK, see
-  https://github.com/dart-lang/sdk/issues/41820.
+  <https://github.com/dart-lang/sdk/issues/41820>.
 - Reverts the `enableExperiments` option on `AnalyzerResolvers`.
   - To enable experiments you should instead run your code in an experiment
     Zone using the `withEnabledExperiments` function from
@@ -107,10 +107,10 @@
 You can now resolve additional libraries other than those imported by the
 primary entrypoint.
 
-  - This is supported through the `isLibrary` and `libraryFor` methods on
+- This is supported through the `isLibrary` and `libraryFor` methods on
     `Resolver`, which will now resolve the provided asset if it is not already
     resolved.
-  - **Note**: Doing this may affect the result of subsequent calls to
+- **Note**: Doing this may affect the result of subsequent calls to
     `resolver.libraries` and `resolver.findLibraryByName` if new libraries are
     discovered.
 

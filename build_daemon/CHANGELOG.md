@@ -1,16 +1,16 @@
-# 2.1.4
+## 2.1.4
 
 - Remove dependency on `package:package_resolver`.
 
-# 2.1.3
+## 2.1.3
 
 - Allow the latest `stream_transform`.
 
-# 2.1.2
+## 2.1.2
 
 - Depend on the latest `built_value`.
 
-# 2.1.1
+## 2.1.1
 
 - Require SDK version `2.6.0` to enable extension methods.
 
@@ -22,10 +22,10 @@
 
 - Create a public entrypoint for backend implementations of the daemon protocol.
   - Refer to `lib/daemon.dart`.
-- Update client `connect` method to now take an optional `buildMode`.
-  The default mode is auto in which builds will automatically occur on changes.
-  The alternative mode is manual in which builds will only occur when triggered
-  with the client `startBuild` method.
+- Update client `connect` method to now take an optional `buildMode`. The
+  default mode is auto in which builds will automatically occur on changes. The
+  alternative mode is manual in which builds will only occur when triggered with
+  the client `startBuild` method.
 - Add enum of build modes to `constants.dart`.
 
 ## 1.1.0

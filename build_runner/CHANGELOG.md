@@ -24,9 +24,9 @@
 
 ## 1.10.5
 
-- Better handle the case where the package config file is deleted while
-  the watcher is running, by waiting for up to 1 second for it to be written
-  again before failing.
+- Better handle the case where the package config file is deleted while the
+  watcher is running, by waiting for up to 1 second for it to be written again
+  before failing.
 
 ## 1.10.4
 
@@ -42,7 +42,7 @@
 ## 1.10.2
 
 Unpin analyzer and set the min sdk to 2.10 to resolve the subsequent issue
-https://github.com/dart-lang/sdk/issues/42887.
+<https://github.com/dart-lang/sdk/issues/42887>.
 
 ## 1.10.1
 
@@ -120,7 +120,7 @@ Glob syntax is allowed in both package names and paths.
 **Example**: The following would build and serve the JS output for an
 application, as well as copy over the required SDK resources for that app:
 
-```
+```shell
 pub run build_runner serve \
   --build-filter="web/main.dart.js" \
   --build-filter="package:build_web_compilers/**/*.js"
@@ -135,10 +135,10 @@ match the previous behavior as closely as possible:
 - `<target-dir>/**`
 - `package:*/**`
 
-**Note**: There is one small difference compared to the previous behavior,
-which is that build to source outputs from other top level directories in the
-root package will no longer be built when they would have before. This should
-have no meaningful impact other than being more efficient.
+**Note**: There is one small difference compared to the previous behavior, which
+is that build to source outputs from other top level directories in the root
+package will no longer be built when they would have before. This should have no
+meaningful impact other than being more efficient.
 
 ### Common Use Cases
 
@@ -155,7 +155,7 @@ This can greatly speed up iteration times in packages with lots of tests.
 
 **Example**: This will build a single web test and run it:
 
-```
+```shell
 pub run build_runner test \
   --build-filter="test/my_test.dart.browser_test.dart.js" \
   --build-filter="package:build_web_compilers/**/*.js" \
@@ -168,18 +168,17 @@ need to add additional filters.
 #### Applications
 
 This feature works as expected with the `--output <dir>` and the `serve`
-command.  This means you can create an output directory for a single
-application in your package instead of all applications under the same
-directory.
+command. This means you can create an output directory for a single application
+in your package instead of all applications under the same directory.
 
 The serve command also uses the build filters to restrict what files are
-available, which means it ensures if something works in serve mode it will
-also work when you create an output directory.
+available, which means it ensures if something works in serve mode it will also
+work when you create an output directory.
 
 ## 1.6.9
 
-- Fix bugs in snapshot invalidation logic that prevented invalidation when
-  core packages changed and always created a new snapshot on the second build.
+- Fix bugs in snapshot invalidation logic that prevented invalidation when core
+  packages changed and always created a new snapshot on the second build.
 
 ## 1.6.8
 
@@ -193,8 +192,8 @@ also work when you create an output directory.
 ## 1.6.6
 
 - Added watch event debouncing to the `daemon` command to line up with the
-  `watch` command. This makes things work more nicely with swap files as well
-  as "save all" type scenarios (you will only get a single build most times).
+  `watch` command. This makes things work more nicely with swap files as well as
+  "save all" type scenarios (you will only get a single build most times).
 
 ## 1.6.5
 
@@ -258,8 +257,8 @@ also work when you create an output directory.
 
 - Fix an error where daemon mode would claim support for prompts when it can't
   actually support them and would hang instead.
-- Improve logging when the daemon fails to start up, previously no logs would
-  be shown.
+- Improve logging when the daemon fails to start up, previously no logs would be
+  shown.
 
 ## 1.3.1
 
@@ -374,8 +373,8 @@ also work when you create an output directory.
 
 ## 0.10.2
 
-- Added `--hot-reload` cli option and appropriate functionality.
-  See [hot-module-reloading](../docs/hot_module_reloading.md) for more info.
+- Added `--hot-reload` cli option and appropriate functionality. See
+  [hot-module-reloading](../docs/hot_module_reloading.md) for more info.
 - Removed dependency on cli_util.
 
 ## 0.10.1+1
@@ -468,7 +467,7 @@ also work when you create an output directory.
 
 - All builders with `build_to: source` will now be ran regardless of which
   directory is currently being built, see
-  https://github.com/dart-lang/build/issues/1454 for context.
+  <https://github.com/dart-lang/build/issues/1454> for context.
 - `build` will now throw instead of returning a failed build result if nothing
   was built.
 - Improve error message when a dependency has a bad `build.yaml` with a missing
@@ -498,8 +497,8 @@ also work when you create an output directory.
 
 ## 0.8.8
 
-- Improve search behavior on the `/$graph` page. Users can now query for
-  paths and `AssetID` values – `pkg_name|lib/pkg_name.dart`.
+- Improve search behavior on the `/$graph` page. Users can now query for paths
+  and `AssetID` values – `pkg_name|lib/pkg_name.dart`.
 - Commands that don't support trailing args will now appropriately fail with a
   usage exception.
 - Fix a bug where some rebuilds would not happen after adding a new file that
@@ -528,8 +527,8 @@ also work when you create an output directory.
 ## 0.8.4
 
 - Log the number of completed actions on successful builds.
-- Support the new `isRoot` field for `BuilderOptions` so that builders can
-  do different things for the root package.
+- Support the new `isRoot` field for `BuilderOptions` so that builders can do
+  different things for the root package.
 - Deprecated `PostProcessBuilder` and `PostProcessBuildStep`. These should be
   imported from `package:build` instead.
 
@@ -554,13 +553,13 @@ also work when you create an output directory.
 
 ## 0.8.2
 
-- Allow passing multiple `--output` options. Each option will be split on
-  `:`. The first value will be the root input directory, the second value will
-  be the output directory. If no delimeter is provided, all resources
-  will be copied to the output directory.
+- Allow passing multiple `--output` options. Each option will be split on `:`.
+  The first value will be the root input directory, the second value will be the
+  output directory. If no delimeter is provided, all resources will be copied to
+  the output directory.
 - Allow deleting files in the post process build step.
-- Bug Fix: Correctly include the default whitelist when multiple targets
-  without include are provided.
+- Bug Fix: Correctly include the default whitelist when multiple targets without
+  include are provided.
 - Allow logging from within a build factory.
 - Allow serving assets from successful build steps if the overall build fails.
 - Add a `--release` flag to choose the options from `release_options` in
@@ -574,8 +573,8 @@ also work when you create an output directory.
   command.
 - Bug Fix: Update outputs in merged directory for sources which are not used
   during the build. For example if `web/index.html` is not read to produce any
-  generated outputs changes to this file will now get picked up during `pub run
-  build_runner watch --output build`.
+  generated outputs changes to this file will now get picked up during
+  `pub run build_runner watch --output build`.
 - Don't allow a thrown exception from a Builder to take down the entire build
   process - instead record it as a failed action. The overall build will still
   be marked as a failure, but it won't crash the process.
@@ -634,7 +633,7 @@ also work when you create an output directory.
 - The `--output` option now only outputs files that were required for the latest
   build. Previously when switching js compilers you could end up with ddc
   modules in your dart2js output, even though they weren't required. See
-  https://github.com/dart-lang/build/issues/1033.
+  <https://github.com/dart-lang/build/issues/1033>.
 - The experimental `create_merged_dir` binary is now removed, it can't be easily
   supported any more and has been replaced by the `--output` option.
 - Builders which write to `source` are no longer guaranteed to run before
@@ -646,7 +645,7 @@ also work when you create an output directory.
 
 - Switch to use a `PollingDirectoryWatcher` on windows, which should fix file
   watching with the `--output` option. Follow along at
-  https://github.com/dart-lang/watcher/issues/52 for more details.
+  <https://github.com/dart-lang/watcher/issues/52> for more details.
 
 ## 0.7.11
 
@@ -661,17 +660,17 @@ also work when you create an output directory.
 
 ## 0.7.10+1
 
-- Fix bug where relative imports in a dependencies build.yaml would break
-  all downstream users, https://github.com/dart-lang/build/issues/995.
+- Fix bug where relative imports in a dependencies build.yaml would break all
+  downstream users, <https://github.com/dart-lang/build/issues/995>.
 
 ## 0.7.10
 
 ### New Features
 
-- Added a basic performance visualization. When running with `serve` you can
-  now navigate to `/$perf` and get a timeline of all actions. If you are
-  experiencing slow builds (especially incremental ones), you can save the
-  html of that page and attach it to bug reports!
+- Added a basic performance visualization. When running with `serve` you can now
+  navigate to `/$perf` and get a timeline of all actions. If you are
+  experiencing slow builds (especially incremental ones), you can save the html
+  of that page and attach it to bug reports!
 
 ### Bug Fixes
 
@@ -701,18 +700,18 @@ also work when you create an output directory.
 ### Bug Fixes
 
 - Fixed an issue with mixed mode builds, see
-  https://github.com/dart-lang/build/issues/924.
+  <https://github.com/dart-lang/build/issues/924>.
 - Fixed some issues with exit codes and --fail-on-severe, although there are
   still some outstanding problems. See
-  https://github.com/dart-lang/build/issues/910 for status updates.
+  <https://github.com/dart-lang/build/issues/910> for status updates.
 - Fixed an issue where the process would hang on exceptions, see
-  https://github.com/dart-lang/build/issues/883.
+  <https://github.com/dart-lang/build/issues/883>.
 - Fixed an issue with etags not getting updated for source files that weren't
-  inputs to any build actions, https://github.com/dart-lang/build/issues/894.
+  inputs to any build actions, <https://github.com/dart-lang/build/issues/894>.
 - Fixed an issue with hidden .DS_Store files on mac in the generated directory,
-  https://github.com/dart-lang/build/issues/902.
+  <https://github.com/dart-lang/build/issues/902>.
 - Fixed test output so it will use the compact reporter,
-  https://github.com/dart-lang/build/issues/821.
+  <https://github.com/dart-lang/build/issues/821>.
 
 ## 0.7.8
 
@@ -817,8 +816,8 @@ also work when you create an output directory.
 - Remove `PackageGraph.orderedPackages` and `PackageGraph.dependentsOf`.
 - Remove `writeToCache` argument of `build` and `watch`. Each `apply` call
   should specify `hideOutput` to keep this behavior.
-- Removed `PackageBuilder` and `PackageBuildActions` classes. Use the new
-  magic placeholder files instead (see new features section for this release).
+- Removed `PackageBuilder` and `PackageBuildActions` classes. Use the new magic
+  placeholder files instead (see new features section for this release).
 
 The following changes are technically breaking but should not impact most
 clients:
@@ -839,9 +838,9 @@ clients:
 - Add an `enableLowResourcesMode` option to `build` and `watch`, which will
   consume less memory at the cost of slower builds. This is intended for use in
   resource constrained environments such as Travis.
-- Add `createBuildActions`. After finding a list of Builders to run, and defining
-  which packages need them applied, use this tool to apply them in the correct
-  order across the package graph.
+- Add `createBuildActions`. After finding a list of Builders to run, and
+  defining which packages need them applied, use this tool to apply them in the
+  correct order across the package graph.
 
 ### Deprecations
 
@@ -893,8 +892,8 @@ clients:
 - Added the `isOptional` field to `BuildAction`. Setting this to `true` means
   that the action will not run unless some other non-optional action tries to
   read one of the outputs of the action.
-- **Breaking**: `PackageNode.location` has become `PackageNode.path`, and is
-  now a `String` (absolute path) instead of a `Uri`; this prevents needing
+- **Breaking**: `PackageNode.location` has become `PackageNode.path`, and is now
+  a `String` (absolute path) instead of a `Uri`; this prevents needing
   conversions to/from `Uri` across the package.
 - **Breaking**: `RunnerAssetReader` interface requires you to implement
   `MultiPackageAssetReader` and `DigestAssetReader`. This means the
@@ -962,10 +961,10 @@ clients:
 
 - **Breaking**: The `PhaseGroup` class has been replaced with a
   `List<BuildAction>` in `build`, `watch`, and `serve`. The `PhaseGroup` and
-  `Phase` classes are removed.
-  If your current build has multiple actions in a single phase which are
-  depending on *not* seeing the outputs from other actions in the phase you will
-  need to instead set up the `InputSet`s so that the outputs are filtered out.
+  `Phase` classes are removed. If your current build has multiple actions in a
+  single phase which are depending on _not_ seeing the outputs from other
+  actions in the phase you will need to instead set up the `InputSet`s so that
+  the outputs are filtered out.
 - **Breaking**: The `resolvers` argument has been removed from `build`, `watch`,
   and `serve`.
 - Allow `package:build` v0.10.x
@@ -1001,8 +1000,9 @@ clients:
 
 ### Bug Fixes
 
-- Fixed a race condition bug [175](https://github.com/dart-lang/build/issues/175)
-  that could cause invalid output errors.
+- Fixed a race condition bug
+  [175](https://github.com/dart-lang/build/issues/175) that could cause invalid
+  output errors.
 
 ### Breaking Changes
 
@@ -1025,8 +1025,8 @@ Add support for the new bytes apis in `build`.
   complicate things unnecessarily without proven benefits.
 - `BuildResult#outputs` now has a type of `List<AssetId>` instead of
   `List<Asset>`, since the `Asset` class no longer exists. Additionally this was
-  wasting memory by keeping all output contents around when it's not generally
-  a very useful thing outside of tests (which retain this information in other
+  wasting memory by keeping all output contents around when it's not generally a
+  very useful thing outside of tests (which retain this information in other
   ways).
 
 ## 0.0.1

@@ -1,7 +1,7 @@
 # NOTICE: THESE HOOKS WILL SOON BE DEPRECATED/DELETED
 
 If this breaks your use case please comment on this issue
-https://github.com/dart-lang/webdev/issues/434
+<https://github.com/dart-lang/webdev/issues/434>
 
 ## What is Hot Module Reloading?
 
@@ -172,7 +172,10 @@ bool hot$onChildUpdate(String id, Object child) {
 ```
 
 Another implementation of `hot$onChildUpdate` using `dart:js_util` may be the
-following: ```dart import 'dart:js_util';
+following:
+
+```dart
+import 'dart:js_util';
 
 bool hot$onChildUpdate(String id, Object child) { if (id ==
 'package:your_package/src/css_file.css.shim.dart') { removeCss(_css_style);
@@ -181,20 +184,20 @@ _css_style = getProperty(child, 'styles'); addCss(_css_style); return true; } }
 
 ## Known issues
 
--   Creating new modules, removing them or otherwise changing dependency grapth
-    results in full page reload.
-    [#1761](https://github.com/dart-lang/build/issues/1761)
--   Libraries are often bundled together in one module. In most cases
-    `hot$onChildUpdate` hook for such bundled modules won't work - code will be
-    executed, but parent module will still be reloaded. That happens because
-    current requirement is for all libraries in module to know how to handle
-    child updates. If you actively use this hook, you may consider turning on
-    `fine` build strategy in your `build.yaml` either globally or only for your
-    root package, to work around this issue. But this will also slow down your
-    builds. [#1767](https://github.com/dart-lang/build/issues/1767)
+- Creating new modules, removing them or otherwise changing dependency grapth
+  results in full page reload.
+  [#1761](https://github.com/dart-lang/build/issues/1761)
+- Libraries are often bundled together in one module. In most cases
+  `hot$onChildUpdate` hook for such bundled modules won't work - code will be
+  executed, but parent module will still be reloaded. That happens because
+  current requirement is for all libraries in module to know how to handle child
+  updates. If you actively use this hook, you may consider turning on `fine`
+  build strategy in your `build.yaml` either globally or only for your root
+  package, to work around this issue. But this will also slow down your builds.
+  [#1767](https://github.com/dart-lang/build/issues/1767)
 
-    -   Globally `yaml global_options: build_modules|modules: options: strategy:
-        fine`
+  - Globally
+    `yaml global_options: build_modules|modules: options: strategy: fine`
 
-    -   For root package `yaml targets: $default: builders:
-        build_modules|modules: options: strategy: fine`
+  - For root package
+    `yaml targets: $default: builders: build_modules|modules: options: strategy: fine`

@@ -38,8 +38,8 @@
   `resolve*` apis through to the default `Resolver`.
   - **Note**: If passing your own `Resolver` these things are still your
     responsibility.
-- Added the ability to pass a `PackageConfig` to `testBuilder`, which is used
-  to set the language version of each package.
+- Added the ability to pass a `PackageConfig` to `testBuilder`, which is used to
+  set the language version of each package.
   - The resolver created from `testBuilder` will also now respect the
     `withEnabledExperiments` zone.
 
@@ -90,8 +90,8 @@
 
 ## 0.10.8
 
-- Allow a custom AssetReader to be passed to `testBuilder`. This will be used
-  as a fallback for any sources that don't exist in the `sourceAssets` map.
+- Allow a custom AssetReader to be passed to `testBuilder`. This will be used as
+  a fallback for any sources that don't exist in the `sourceAssets` map.
 
 ## 0.10.7+3
 
@@ -187,28 +187,27 @@
 
 ## 0.10.0
 
-- Added automatic generation of `.debug.html` files for all tests, which can
-  be loaded in the browser to directly run tests and debug them without going
+- Added automatic generation of `.debug.html` files for all tests, which can be
+  loaded in the browser to directly run tests and debug them without going
   through the package:test runner.
 - Update to package:build version `0.12.0`.
-- Removed `CopyBuilder` in favor of `TestBuilder` which takes closures to
-  change behavior rather than adding configuration for every possible
-  modification.
-- Added support for the special placeholder `{$lib/$test/$web}` assets
-  supported by the `build_runner` and `bazel_codegen` implementations of
-  `package:build`. For an example see `test/test_builder_test.dart`. Note that
-  this is technically a **BREAKING CHANGE**, as additional inputs will be
-  matched for overzealous builders (like `TestBuilder`).
-- Added `resolverFor` as an optional parameter to `resolveSources`. By default
-  a `Resolver` is returned for the _first_ asset provided; to modify that the
-  name of another asset may be provided. This is a **BREAKING CHANGE**, as
-  previously the last asset was used.
+- Removed `CopyBuilder` in favor of `TestBuilder` which takes closures to change
+  behavior rather than adding configuration for every possible modification.
+- Added support for the special placeholder `{$lib/$test/$web}` assets supported
+  by the `build_runner` and `bazel_codegen` implementations of `package:build`.
+  For an example see `test/test_builder_test.dart`. Note that this is
+  technically a **BREAKING CHANGE**, as additional inputs will be matched for
+  overzealous builders (like `TestBuilder`).
+- Added `resolverFor` as an optional parameter to `resolveSources`. By default a
+  `Resolver` is returned for the _first_ asset provided; to modify that the name
+  of another asset may be provided. This is a **BREAKING CHANGE**, as previously
+  the last asset was used.
 
 ## 0.9.4
 
-- Added `InMemoryAssetReader.shareAssetCache` constructor. This is useful for the
-  case where the reader should be kept up to date as assets are written through
-  a writer.
+- Added `InMemoryAssetReader.shareAssetCache` constructor. This is useful for
+  the case where the reader should be kept up to date as assets are written
+  through a writer.
 - Added `buildInputs` stream to `CopyBuilder` which emits an event for each
   `BuildStep.inputId` at the top of the `build` method.
 - `CopyBuilder` automatically skips the placeholder files (any file ending in
@@ -259,22 +258,22 @@ test('multiple assets, some mock, some on disk', () async {
 
 ## 0.9.0
 
-- Added the `TestBootstrapBuilder` under the `builder.dart` library. This can
-  be used to bootstrap tests similar to the `test/pub_serve` Transformer.
+- Added the `TestBootstrapBuilder` under the `builder.dart` library. This can be
+  used to bootstrap tests similar to the `test/pub_serve` Transformer.
   - **Known Issue**: Custom html files are not supported.
 - **Breaking**: All `AssetReader#findAssets` implementations now return a
   `Stream<AssetId>` to match the latest `build` package.
 - **Breaking**: The `DatedValue`, `DatedString`, and `DatedBytes` apis are now
   gone, since timestamps are no longer used by package:build. Instead the
   `InMemoryAssetReader` and other apis take a `Map<AssetId, dynamic>`, and will
-  automatically convert any `String` values into  `List<int>` values.
+  automatically convert any `String` values into `List<int>` values.
 - **Breaking**: The `outputs` map of `testBuilder` works a little bit
   differently due to the removal of `DatedValue` and `DatedString`.
-  * If a value provided is a `String`, then the asset is by default decoded
+  - If a value provided is a `String`, then the asset is by default decoded
     using UTF8, and matched against the string.
-  * If the value is a `matcher`, it will match againt the actual bytes of the
+  - If the value is a `matcher`, it will match againt the actual bytes of the
     asset (in `List<int>` form).
-  * A new matcher was added, `decodedMatches`, which can be combined with other
+  - A new matcher was added, `decodedMatches`, which can be combined with other
     matchers to match against the string contents. For example, to match a
     string containing a substring, you would do
     `decodedMatches(contains('some substring'))`.
@@ -350,9 +349,9 @@ test('should resolve multiple libraries', () async {
 
 ## 0.6.3
 
-- Added `resolveAsset`, which is similar to `resolveSource` but specifies a
-  real asset that lives on the file system. For example, to resolve the main
-  library of `package:collection`:
+- Added `resolveAsset`, which is similar to `resolveSource` but specifies a real
+  asset that lives on the file system. For example, to resolve the main library
+  of `package:collection`:
 
 ```dart
 var pkgCollection = new AssetId('collection', 'lib/collection.dart');
@@ -375,8 +374,8 @@ var resolver = await resolveAsset(pkgCollection);
 - Support build 0.9.0
   - Rename `hasInput` to `canRead` in `AssetReader` implementations
   - Replace `declareOutputs` with `buildExtensions` in `Builder` implementations
-- **Breaking** `CopyBuilder` no longer has an `outputPackage` field since outputs
-  can only ever be in the same package as inputs.
+- **Breaking** `CopyBuilder` no longer has an `outputPackage` field since
+  outputs can only ever be in the same package as inputs.
 
 ## 0.5.2
 
@@ -409,13 +408,15 @@ var resolver = await resolveAsset(pkgCollection);
 Updates to work with `build` version 0.7.0.
 
 ### New Features
+
 - The `testBuilder` method now accepts `List<int>` values for both
   `sourceAssets` and `outputs`.
 - The `checkOutputs` method is now public.
 
 ### Breaking Changes
-- The `testBuilder` method now requires a `RecordingAssetWriter` instead of
-  just an `AssetWriter` for the `writer` parameter.
+
+- The `testBuilder` method now requires a `RecordingAssetWriter` instead of just
+  an `AssetWriter` for the `writer` parameter.
 - If a `Matcher` is provided as a value in `outputs`, then it will match against
   the same value that was written. For example if your builder uses
   `writeAsString` then it will match against that string. If you use
@@ -465,8 +466,8 @@ Updates to work with `build` version 0.7.0.
 
 ## 0.1.2
 
-- Add `logLevel` and `onLog` named args to `testPhases`. These can be used
-  to test your log messages, see `test/utils_test.dart` for an example.
+- Add `logLevel` and `onLog` named args to `testPhases`. These can be used to
+  test your log messages, see `test/utils_test.dart` for an example.
 
 ## 0.1.1
 

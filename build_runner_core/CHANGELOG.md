@@ -31,7 +31,7 @@
 
 ## 6.0.3
 
-- Fix https://github.com/dart-lang/build/issues/1804.
+- Fix <https://github.com/dart-lang/build/issues/1804>.
 
 ## 6.0.2
 
@@ -43,7 +43,7 @@
 
 ## 6.0.0
 
--   Remove some constants and utilities which are implementation details:
+- Remove some constants and utilities which are implementation details:
     `defaultRootPackageWhitelist`, `errorCachePath`, `generatedOutputDirectory`,
     `lockGeneratedOutputDirectory`, `overrideGeneratedOutputDirectory`,
     `sdkPath`, `buildPhasePoolSize`.
@@ -186,7 +186,7 @@
 ## 3.0.4
 
 - Add additional error details and a fallback for
-  https://github.com/dart-lang/build/issues/1804
+  <https://github.com/dart-lang/build/issues/1804>
 
 ## 3.0.3
 

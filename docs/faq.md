@@ -7,7 +7,7 @@ those builders exactly which files they should run on.
 You can do this in your `build.yaml` file, by configuring the `generate_for`
 option of the builder:
 
-```
+```yaml
 targets:
   $default:
     builders:
@@ -89,17 +89,17 @@ targets:
           compiler: dart2js
         dev_options:
           dart2js_args:
-          - --no-minify
+            - --no-minify
         release_options:
           dart2js_args:
-          - -O3
+            - -O3
 ```
 
 If you need other configurations in addition to dev and release, you can define
 multiple `build.yaml` files. For instance if you have a `build.debug.yaml` file
 you can build with `--config debug` and this file will be used instead of the
-default `build.yaml`. The dev and release flavors still apply. `pub run
-build_runner serve --config debug` will use the `dev_options` in
+default `build.yaml`. The dev and release flavors still apply.
+`pub run build_runner serve --config debug` will use the `dev_options` in
 `build.debug.yaml`, while `pub run build_runner build --config debug --release`
 will use the `release_options` in `build.debug.yaml`.
 
@@ -118,13 +118,13 @@ configuration is "merged" one by one, where the higher precedence configuration
 overrides values by String key. The order of precedence from lowest to highest
 is:
 
--   Builder defaults without a mode.
--   Builder defaults by mode.
--   Target configuration without a mode.
--   Target configuration by mode.
--   Global options without a mode.
--   Global options by mode.
--   Options specified on the command line.
+- Builder defaults without a mode.
+- Builder defaults by mode.
+- Target configuration without a mode.
+- Target configuration by mode.
+- Global options without a mode.
+- Global options by mode.
+- Options specified on the command line.
 
 For example:
 
@@ -162,7 +162,7 @@ global_options:
 
 And when running the build:
 
-```
+```shell
 pub run build_runner build --define=some_package:some_builder=some_option="Priority 6"
 ```
 
@@ -195,26 +195,26 @@ build - it needs to know every file that may be written and which Builder would
 write it. If multiple Builders are configured to (possibly) output the same file
 you can:
 
--   Add a `generate_for` configuration for one or both Builders so they do not
-    both operate on the same primary input.
--   Disable one of the Builders if it is unneeded.
--   Contact the author of the Builder and ask that a more unique output
-    extension is chosen.
--   Contact the author of the Builder and ask that a more unique input extension
-    is chose, for example only generating for files that end in
-    `_something.dart` rather than all files that end in `.dart`.
+- Add a `generate_for` configuration for one or both Builders so they do not
+  both operate on the same primary input.
+- Disable one of the Builders if it is unneeded.
+- Contact the author of the Builder and ask that a more unique output extension
+  is chosen.
+- Contact the author of the Builder and ask that a more unique input extension
+  is chose, for example only generating for files that end in `_something.dart`
+  rather than all files that end in `.dart`.
 
 ## How can I use my own development server to serve generated files?
 
 There are 2 options for using a different server during development:
 
-1.  Run `build_runner serve web:<port>` and proxy the requests to it from your
-    other server. This has the benefit of delaying requests while a build is
-    ongoing so you don't get an inconsistent set of assets.
+1. Run `build_runner serve web:<port>` and proxy the requests to it from your
+   other server. This has the benefit of delaying requests while a build is
+   ongoing so you don't get an inconsistent set of assets.
 
-2.  Run `build_runner watch --output web:build` and use the created `build/`
-    directory to serve files from. This will include a `build/packages`
-    directory that has these files in it.
+2. Run `build_runner watch --output web:build` and use the created `build/`
+   directory to serve files from. This will include a `build/packages` directory
+   that has these files in it.
 
 ## How can I fix `AssetNotFoundException`s for swap files?
 
@@ -276,30 +276,30 @@ targets:
     builders:
       build_web_compilers:entrypoint:
         generate_for:
-        - test/multiplatform/**_test.dart
-        - test/web/**_test.dart
-        - web/**.dart
+          - test/multiplatform/**_test.dart
+          - test/web/**_test.dart
+          - web/**.dart
       build_vm_compilers:entrypoint:
         generate_for:
-        - test/multiplatform/**_test.dart
-        - test/vm/**_test.dart
-        - bin/**.dart
+          - test/multiplatform/**_test.dart
+          - test/vm/**_test.dart
+          - bin/**.dart
 ```
 
 ## Why can't I see a file I know exists?
 
 A file may not be served or be present in the output of a build because:
 
--   You may be looking for it in the wrong place. For example if a server for
-    the `web/` directory is running on port `8080` then the file at
-    `web/index.html` will be loaded from `localhost:8080/index.html`.
--   It may have be excluded from the build entirely because it isn't present as
-    in the `sources` for any `target` in `build.yaml`. Only assets that are
-    present in the build (as either a source or a generated output from a
-    source) can be served.
--   It may have been removed by a `PostProcessBuilder`. For example in release
-    modes, by default, the `build_web_compilers` package enables a
-    `dart_source_cleanup` builder that removes all `.dart` source files.
+- You may be looking for it in the wrong place. For example if a server for the
+  `web/` directory is running on port `8080` then the file at `web/index.html`
+  will be loaded from `localhost:8080/index.html`.
+- It may have be excluded from the build entirely because it isn't present as in
+  the `sources` for any `target` in `build.yaml`. Only assets that are present
+  in the build (as either a source or a generated output from a source) can be
+  served.
+- It may have been removed by a `PostProcessBuilder`. For example in release
+  modes, by default, the `build_web_compilers` package enables a
+  `dart_source_cleanup` builder that removes all `.dart` source files.
 
 ## Configuring the number of compiler processes
 
@@ -320,7 +320,8 @@ cause problems in memory constrained environments (such as CI systems).
 You can pass the `--low-resources-mode` to disable this file caching.
 
 We may add future optimizations for this mode as well, with the general
-principle being making the tradeoff of worse build times for less resource
-usage on the machine.
+principle being making the tradeoff of worse build times for less resource usage
+on the machine.
 
-See also [Configuring the number of compiler processes](#configuring-the-number-of-compiler-processes).
+See also
+[Configuring the number of compiler processes](#configuring-the-number-of-compiler-processes).

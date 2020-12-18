@@ -8,9 +8,9 @@ which share a file base name with an input.
 
 Having a predictable set of outputs allows:
 
--   Ability to reason about builds. We've found that arbitrarily complex builds
+- Ability to reason about builds. We've found that arbitrarily complex builds
     tend to become difficult to debug.
--   Compatibility with a wide set of build systems. A Builder that follows these
+- Compatibility with a wide set of build systems. A Builder that follows these
     restrictions can run within `build_runner`, or in a build system like
     [bazel](https://bazel.build).
 

@@ -1,24 +1,24 @@
 [![Build Status](https://travis-ci.org/dart-lang/build.svg?branch=master)](https://travis-ci.org/dart-lang/build)
 [![Pub Package](https://img.shields.io/pub/v/scratch_space.svg)](https://pub.dev/packages/scratch_space)
 
-A [`ScratchSpace`][dartdoc:ScratchSpace] is a thin wrapper around a temporary
+A [`ScratchSpace`][dartdoc:scratchspace] is a thin wrapper around a temporary
 directory. The constructor takes zero arguments, so making one is as simple as
 doing `ScratchSpace()`.
 
 In general, you should wrap a `ScratchSpace` in a `Resource`, so that you can
-re-use the scratch space across build steps in an individual build. This is
-safe to do since you are not allowed to overwrite files within a build.
+re-use the scratch space across build steps in an individual build. This is safe
+to do since you are not allowed to overwrite files within a build.
 
 This should look something like the following:
 
-```
+```dart
 final myScratchSpaceResource =
     Resource(() => ScratchSpace(), dispose: (old) => old.delete());
 ```
 
 And then you can get access to it through the `BuildStep#fetchResource` api:
 
-```
+```dart
 class MyBuilder extends Builder {
   Future<void> build(BuildStep buildStep) async {
     var scratchSpace = await buildStep.fetchResource(myScratchSpaceResource);
@@ -37,9 +37,9 @@ might need in order to set up the proper dependencies and ensure hermetic
 builds.
 
 **Note:** It is important to note that the `ScratchSpace` does not guarantee
-that the version of a file within it is the most updated version, only that
-some version of it exists. For this reason you should create a new
-`ScratchSpace` for each build using the `Resource` class as recommended above.
+that the version of a file within it is the most updated version, only that some
+version of it exists. For this reason you should create a new `ScratchSpace` for
+each build using the `Resource` class as recommended above.
 
 ### Deleting a `ScratchSpace`
 
@@ -48,22 +48,22 @@ sure it gets cleaned up, otherwise you can end up filling up the users tmp
 directory.
 
 **Note:** You cannot delete individual assets from a `ScratchSpace` today, you
-can only delete the entire thing. If you have a use case for deleting
-individual files you can [file an issue][tracker].
+can only delete the entire thing. If you have a use case for deleting individual
+files you can [file an issue][tracker].
 
 ### Getting the actual File objects for a `ScratchSpace`
 
-When invoking an external binary, you probably need to tell it where to look
-for files. There are a few fields/methods to help you do this:
+When invoking an external binary, you probably need to tell it where to look for
+files. There are a few fields/methods to help you do this:
 
-  * `String get packagesDir`: The `packages` directory in the `ScratchSpace`.
-  * `String get tmpDir`: The root temp directory for the `ScratchSpace`.
-  * `File fileFor(AssetId id)`: The File object for `id`.
+- `String get packagesDir`: The `packages` directory in the `ScratchSpace`.
+- `String get tmpDir`: The root temp directory for the `ScratchSpace`.
+- `File fileFor(AssetId id)`: The File object for `id`.
 
 ### Copying back outputs from the temp directory
 
-After running your executable, you most likely have some outputs that you
-need to notify the build system about. To do this you can use the `copyOutput`
+After running your executable, you most likely have some outputs that you need
+to notify the build system about. To do this you can use the `copyOutput`
 method, which takes an `AssetId` and `AssetWriter` (for which you should
 generally pass your `BuildStep` which implements that interface).
 

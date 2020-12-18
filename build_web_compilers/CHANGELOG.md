@@ -10,7 +10,6 @@
 
 - Fix stack trace mapping for sound mode DDC tests and dart2js apps.
 
-
 ## 2.15.1
 
 - Fix DDC sound mode apps to load the sound mode sdk, and only require the
@@ -191,7 +190,7 @@ assets.
 
 ## 2.4.0
 
-### New Feature: Better --build-filter support for building a single test.
+### New Feature: Better --build-filter support for building a single test
 
 You can now build a basic app or test in isolation by only requesting the
 `*.dart.js` file using a build filter, for example adding this argument to any
@@ -272,7 +271,7 @@ have to ask for those explicitly as well with additinal filters.
 
 ## 2.0.0
 
-### Major Update - Switch to use the common front end.
+### Major Update - Switch to use the common front end
 
 In this release, the Dart front end for the `dev_compiler` is changing from the
 [analyzer] to the common [front end][front_end]. This should unify error

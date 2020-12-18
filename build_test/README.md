@@ -20,9 +20,9 @@
 
 ## Installation
 
-This package is intended to only be as a [development dependency][] for users
-of [`package:build`][], and should not be used in any production code. Simply
-add to your `pubspec.yaml`:
+This package is intended to only be as a [development dependency][] for users of
+[`package:build`][], and should not be used in any production code. Simply add
+to your `pubspec.yaml`:
 
 ```yaml
 dev_dependencies:
@@ -38,8 +38,8 @@ This will compile all your tests to a temp directory and run them using
 
 ### Forwarding additional args to `pub run test`
 
-It is very common to need to pass some arguments through to the eventual call
-to `pub run test`. To do this, add all those args after an empty `--` arg.
+It is very common to need to pass some arguments through to the eventual call to
+`pub run test`. To do this, add all those args after an empty `--` arg.
 
 For example, to run all chrome platform tests you would do
 `pub run build_runner test -- -p chrome`.
@@ -50,9 +50,9 @@ This package will automatically create `*.debug.html` files next to all your
 `*_test.dart` files, which can be loaded in a browser from the normal
 development server (`pub run build_runner serve`).
 
-**Note:** In order to run the tests this way, you will need to configure them
-to be compiled (by default we only compile `*.browser_test.dart` files). You
-can do this in your build.yaml file, with something like the following:
+**Note:** In order to run the tests this way, you will need to configure them to
+be compiled (by default we only compile `*.browser_test.dart` files). You can do
+this in your build.yaml file, with something like the following:
 
 ```yaml
 targets:
@@ -60,8 +60,8 @@ targets:
     builders:
       build_web_compilers:entrypoint:
         generate_for:
-        - test/**_test.dart
-        - web/**.dart
+          - test/**_test.dart
+          - web/**.dart
 ```
 
 You may also view an index of links to every `*.debug.html` file by navigating
@@ -76,27 +76,27 @@ _See the `test` folder in the `build` package for more examples_.
 
 ### Run a `Builder` within a test environment
 
-Using [`testBuilder`][api:testBuilder], you can run a functional test of a
-`Builder`, including feeding specific assets, and more. It automatically
-creates an in-memory representation of various utility classes.
+Using [`testBuilder`][api:testbuilder], you can run a functional test of a
+`Builder`, including feeding specific assets, and more. It automatically creates
+an in-memory representation of various utility classes.
 
 ### Exposing actual package sources to `testBuilder`
 
-You can expose real package sources to the builder in addition to your in
-memory sources, by passing a `PackageAssetReader` to the `reader` parameter:
+You can expose real package sources to the builder in addition to your in memory
+sources, by passing a `PackageAssetReader` to the `reader` parameter:
 
 ```dart
 testBuilder(yourBuilder, {}/* test assets here */,
     reader: await PackageAssetReader.currentIsolate());
 ```
 
-You can pass any custom AssetReader here, which will be used as a fallback
-for any source not defined in the source assets map.
+You can pass any custom AssetReader here, which will be used as a fallback for
+any source not defined in the source assets map.
 
 ### Resolve source code for testing
 
-Using [`resolveAsset`][api:resolveAsset] and
-[`resolveSource`][api:resolveSource], you can resolve Dart source code into a
+Using [`resolveAsset`][api:resolveasset] and
+[`resolveSource`][api:resolvesource], you can resolve Dart source code into a
 static element model, suitable for probing and using within tests of code you
 might have written for a `Builder`:
 
@@ -114,14 +114,14 @@ test('should resolve a simple dart file', () async {
 
 ### Various test implementations of classes
 
-* [`FakeWatcher`][api:FakeWatcher]
-* [`InMemoryAssetReader`][api:InMemoryAssetReader]
-* [`InMemoryAssetWriter`][api:InMemoryAssetWriter]
-* [`MultiAssetReader`][api:MultiAssetReader]
-* [`PackageAssetReader`][api:PackageAssetReader]
-* [`RecordingAssetWriter`][api:RecordingAssetWriter]
-* [`StubAssetReader`][api:StubAssetReader]
-* [`StubAssetWriter`][api:StubAssetWriter]
+- [`FakeWatcher`][api:fakewatcher]
+- [`InMemoryAssetReader`][api:inmemoryassetreader]
+- [`InMemoryAssetWriter`][api:inmemoryassetwriter]
+- [`MultiAssetReader`][api:multiassetreader]
+- [`PackageAssetReader`][api:packageassetreader]
+- [`RecordingAssetWriter`][api:recordingassetwriter]
+- [`StubAssetReader`][api:stubassetreader]
+- [`StubAssetWriter`][api:stubassetwriter]
 
 [development dependency]: https://dart.dev/tools/pub/dependencies#dev-dependencies
 [`package:build`]: https://pub.dev/packages/build

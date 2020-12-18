@@ -18,18 +18,18 @@
   </a>
 </p>
 
-* [Installation](#installation)
-* [Usage](#usage)
-* [Configuration](#configuration)
-* [Manual Usage](#manual-usage)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Manual Usage](#manual-usage)
 
 ## Installation
 
-This package is intended to be used as a [development dependency][] for users
-of [`package:build`][] who want to run code in the Dart vm with precompiled
-kernel files. This allows you to share compilation of dependencies between
-multiple entrypoints, instead of doing a monolithic compile of each entrypoint
-like the Dart VM would normally do on each run.
+This package is intended to be used as a [development dependency][] for users of
+[`package:build`][] who want to run code in the Dart vm with precompiled kernel
+files. This allows you to share compilation of dependencies between multiple
+entrypoints, instead of doing a monolithic compile of each entrypoint like the
+Dart VM would normally do on each run.
 
 **Note**: If you want to use this package for running tests with
 `pub run build_runner test` you will also need a `build_test` dev dependency.

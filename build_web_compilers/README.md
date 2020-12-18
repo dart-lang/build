@@ -18,16 +18,16 @@
   </a>
 </p>
 
-* [Installation](#installation)
-* [Usage](#usage)
-* [Configuration](#configuration)
-* [Manual Usage](#manual-usage)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Manual Usage](#manual-usage)
 
 ## Installation
 
-This package is intended to be used as a [development dependency][] for users
-of [`package:build`][] who want to run code in a browser. Simply add the
-following to your `pubspec.yaml`:
+This package is intended to be used as a [development dependency][] for users of
+[`package:build`][] who want to run code in a browser. Simply add the following
+to your `pubspec.yaml`:
 
 ```yaml
 dev_dependencies:
@@ -55,21 +55,21 @@ targets:
       build_web_compilers:entrypoint:
         # These are globs for the entrypoints you want to compile.
         generate_for:
-        - test/**.browser_test.dart
-        - web/**.dart
+          - test/**.browser_test.dart
+          - web/**.dart
         options:
           compiler: dart2js
           # List any dart2js specific args here, or omit it.
           dart2js_args:
-          - -O2
+            - -O2
 ```
 
 ### Configuring -D environment variables
 
 DDC is a modular compiler, so in order to ensure consistent builds in every
 module environment variables must be configured globally. Configure with a Map
-in yaml. Environment defined variables can be read with `const
-String.fromEnvironment` and `const bool.fromEnvironment`. For example:
+in yaml. Environment defined variables can be read with
+`const String.fromEnvironment` and `const bool.fromEnvironment`. For example:
 
 ```yaml
 global_options:
@@ -90,8 +90,8 @@ targets:
       build_web_compilers:entrypoint:
         options:
           dart2js_args:
-          - -DSOME_VAR=some value
-          - -DANOTHER_VAR=true
+            - -DSOME_VAR=some value
+            - -DANOTHER_VAR=true
 ```
 
 These may also be specified on the command line with a `--define` argument.

@@ -1,25 +1,25 @@
 # Migrating a Builder to support null safety
 
-The null safety feature in Dart presents several challenges for Builder
-authors, this is a living document which will address some of the core issues,
-as well as potential solutions.
+The null safety feature in Dart presents several challenges for Builder authors,
+this is a living document which will address some of the core issues, as well as
+potential solutions.
 
 ## Language versioning
 
 Language versioning is a new feature introduced to allow an incremental
-migration to null safety. It allows an individual package or even library
-to set its "language version". This determines what features the library is
-able to use.
+migration to null safety. It allows an individual package or even library to set
+its "language version". This determines what features the library is able to
+use.
 
 How this affects your Builder depends on what type of builder you have
-implemented, you may choose to only generate null safe code or you may want
-to support generating code that is both null safe and not.
+implemented, you may choose to only generate null safe code or you may want to
+support generating code that is both null safe and not.
 
 ## Choosing what type of code to generate
 
 There are a lot of potential factors that determine what options are available
-to you, depending on whether you generate part files or new libraries, and
-also whether you generate to source or cache.
+to you, depending on whether you generate part files or new libraries, and also
+whether you generate to source or cache.
 
 ### Part file builders
 
@@ -42,12 +42,12 @@ essentially choose one of the two following solutions:
 
 #### Only support generating null safe code in your new releases
 
-In general, this is the easiest path. You can update your code generator to
-only generate null safe code, and throw an `UnsupportedError` if you are asked
-to generate code into a library that does not enable null safety.
+In general, this is the easiest path. You can update your code generator to only
+generate null safe code, and throw an `UnsupportedError` if you are asked to
+generate code into a library that does not enable null safety.
 
 **Hint**: You can check if null safety is enabled using the
-  `isNonNullableByDefault` getter on a `LibraryElement` (in package:analyzer).
+`isNonNullableByDefault` getter on a `LibraryElement` (in package:analyzer).
 
 If you choose to go this route, you should most likely release this as a
 breaking change in your builder package. When people migrate their package to
@@ -56,26 +56,26 @@ will not be broken.
 
 ##### Pros
 
-* Easy to implement, you don't have to support generating multiple versions of
+- Easy to implement, you don't have to support generating multiple versions of
   your code generator that generate null safe or non null safe code.
-* Easy to maintain, you don't accumulate tech debt in your Builder just to
+- Easy to maintain, you don't accumulate tech debt in your Builder just to
   support old language versions, and future changes are easier.
 
 ##### Cons
 
-* This requires users to migrate all their libraries with generated parts in
+- This requires users to migrate all their libraries with generated parts in
   them to null safety at exactly the same time.
-* Users that try to update to the latest version will be broken and have to
+- Users that try to update to the latest version will be broken and have to
   revert back to an old version, if they do not migrate to null safety at the
   same time.
 
 #### Support generating both null safe and non-null safe code
 
 This requires some extra work but is the least friction for your users. You can
-get clever about exactly how this is done, without having to fork two
-completely separate versions of your Builder code, and as more people do this
-we expect some common patterns to emerge (please send prs here to add your
-creative solutions!).
+get clever about exactly how this is done, without having to fork two completely
+separate versions of your Builder code, and as more people do this we expect
+some common patterns to emerge (please send prs here to add your creative
+solutions!).
 
 ##### Use variables for null syntax strings that are empty if disabled
 
@@ -86,11 +86,11 @@ enabled.
 
 ##### Pros
 
-* Works for all users regardless of their language version.
+- Works for all users regardless of their language version.
 
 ##### Cons
 
-* More work to implement and maintain.
+- More work to implement and maintain.
 
 ### Library builders
 
@@ -105,21 +105,20 @@ library builders.
 
 **Note**: This option is only generally available to builders that build to
 _cache_. This is because the pub package manager does not allow the publishing
-of code that specifies a language version greater than the min sdk constraint
-of the package (and the min sdk constraint is what determines the default
-language version). So, your users would not be able to publish your generated
-code.
+of code that specifies a language version greater than the min sdk constraint of
+the package (and the min sdk constraint is what determines the default language
+version). So, your users would not be able to publish your generated code.
 
-You can opt your generated library into null safety by adding a language
-version override comment to comment block at the top of the file (it can appear
-after the license):
+You can opt your generated library into null safety by adding a language version
+override comment to comment block at the top of the file (it can appear after
+the license):
 
 ```dart
 // @dart=<version>
 ```
 
-(At the time of this writing, the final language version for null safety has
-not yet been determined, so one is not listed in the example)
+(At the time of this writing, the final language version for null safety has not
+yet been determined, so one is not listed in the example)
 
 This allows you to only generate null safe code that works for all users.
 
@@ -130,11 +129,11 @@ that version of the language.
 
 ##### Pros
 
-* Easier to implement, you only have to generate null safe code.
+- Easier to implement, you only have to generate null safe code.
 
 ##### Cons
 
-* You can only safely do this for builders that build to cache, not source.
+- You can only safely do this for builders that build to cache, not source.
 
 ## Testing
 
@@ -145,7 +144,7 @@ which can be used to set a specific language version for packages. This can be
 used to test generating code for packages that are opted in or out to null
 safety.
 
-You can see an example of using this in [this test][PackageConfig test]. Note
+You can see an example of using this in [this test][packageconfig test]. Note
 that the `rootUri` and `packageUriRoot` arguments for packages are largely
 irrelevant during testing, although they do need to be unique.
 
@@ -155,12 +154,11 @@ Null safety at the time of this writing is still an experiment, but you can
 still write tests today, using the `withEnabledExperiments` api from the
 `package:build/experiments.dart` library.
 
-See [this test][withEnabledExperiments test] as an example of how to use it.
+See [this test][withenabledexperiments test] as an example of how to use it.
 
-**Note**: For language experiments the language version required to enable it
-is typically the **current** language version, so you may need to update your
-tests for new sdk versions to increase their language version and opt them
-back in.
+**Note**: For language experiments the language version required to enable it is
+typically the **current** language version, so you may need to update your tests
+for new sdk versions to increase their language version and opt them back in.
 
 [PackageConfig test]: https://github.com/dart-lang/build/blob/4c76bbfbdbf7e905ab155ad95299b4b306f8b529/build_test/test/test_builder_test.dart#L160
 [withEnabledExperiments test]: https://github.com/dart-lang/build/blob/4c76bbfbdbf7e905ab155ad95299b4b306f8b529/build_resolvers/test/resolver_test.dart#L362

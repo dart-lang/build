@@ -11,16 +11,17 @@
 ## 1.5.1
 
 - Expose a set of valid inputs in `InvalidInputException`.
-- `AssetReader` implementations are now expected to throw 
-  `InvalidInputException`s when reading invalid inputs.
-  The check has been removed from the build step implementation.
+- `AssetReader` implementations are now expected to throw
+  `InvalidInputException`s when reading invalid inputs. The check has been
+  removed from the build step implementation.
 
 ## 1.5.0
+
 - Allow the latest analyzer version `0.40.x`.
 - Added the `Future<CompilationUnit> compilationUnitFor(AssetId id)` api to the
   `Resolver` class, which returns only the parsed AST for the given asset.
-  - Much cheaper than `libraryFor`, because it only reads the given asset instead
-    of touching all transitive deps.
+  - Much cheaper than `libraryFor`, because it only reads the given asset
+    instead of touching all transitive deps.
   - Still may be suitable for some builders which don't need the fully resolved
     `Element` model.
 
@@ -33,9 +34,8 @@ passing `allowSyntaxErrors: true` to `libraryFor`.
 ## 1.3.0
 
 Added a new experiments library which exposes a list of language experiments
-through a Zone variable. This should only be used by builders which are
-invoking compilers or some other tool and need to pass on the language
-experiments.
+through a Zone variable. This should only be used by builders which are invoking
+compilers or some other tool and need to pass on the language experiments.
 
 ## 1.2.2
 
@@ -46,8 +46,8 @@ experiments.
   already resolved will make subsequent `libraries` streams return more
   libraries than previous calls did.
 - The same holds for `findLibraryByName` since it searches through the
-  `libraries` stream. You may get a different result at different points in
-  your build method if you resolve additional libraries.
+  `libraries` stream. You may get a different result at different points in your
+  build method if you resolve additional libraries.
 
 ## 1.2.1
 
@@ -58,10 +58,10 @@ experiments.
 - Add the `void reportUnusedAssets(Iterable<AssetId> ids)` method to the
   `BuildStep` class.
   - **WARNING**: Using this introduces serious risk of non-hermetic builds.
-  - Indicates to the build system that `ids` were read but their content has
-    no impact on the outputs of the build.
-  - Build system implementations can choose to support this feature or not,
-    and it should be assumed to be a no-op by default.
+  - Indicates to the build system that `ids` were read but their content has no
+    impact on the outputs of the build.
+  - Build system implementations can choose to support this feature or not, and
+    it should be assumed to be a no-op by default.
 
 ## 1.1.6
 
@@ -207,9 +207,9 @@ experiments.
 
 ## 0.11.0
 
-- **Breaking**: `AssetReader.findAssets` now returns a `Stream<AssetId>`
-  instead of an `Iterable<AssetId>`. This also impacts `BuildStep` since that
-  implements `AssetReader`.
+- **Breaking**: `AssetReader.findAssets` now returns a `Stream<AssetId>` instead
+  of an `Iterable<AssetId>`. This also impacts `BuildStep` since that implements
+  `AssetReader`.
 
 ## 0.10.2+1
 
@@ -218,15 +218,15 @@ experiments.
 
 ## 0.10.2
 
-- Added the `MultiPackageAssetReader` interface which allows globbing within
-  any package.
-  - This is not exposed to typical users, only build system implementations
-    need it. The `BuildStep` class does not implement this interface.
+- Added the `MultiPackageAssetReader` interface which allows globbing within any
+  package.
+  - This is not exposed to typical users, only build system implementations need
+    it. The `BuildStep` class does not implement this interface.
 - The docs for `AssetReader#findAssets` have changed such that it globs within
   the current package instead of the root package (typically defined as
   `buildStep.inputId.package`).
-  - Before you could run builders only on the root package, but now that you
-    can run them on any package the old functionality no longer makes sense.
+  - Before you could run builders only on the root package, but now that you can
+    run them on any package the old functionality no longer makes sense.
 
 ## 0.10.1
 
@@ -245,7 +245,7 @@ experiments.
   be going through `BuildStep.canRead`.
 - **Breaking**: `Resolver` has asynchronous APIs for resolution and is retrieved
   synchronously from the `BuildStep`.
-- **Breaking**:  Replaced `Resolver.getLibrary` with `libraryFor` and
+- **Breaking**: Replaced `Resolver.getLibrary` with `libraryFor` and
   `getLibraryByName` with `findLibraryByName`.
 - Change `AssetReader.canRead` to always return a Future.
 
@@ -269,9 +269,9 @@ experiments.
 - `BuildStep.writeAs*` methods now take a `FutureOr` for content. Builders which
   produce content asynchronously can now set up the write without waiting for it
   to resolve.
-- **Breaking** `declareOutputs` is replaced with `buildExtensions`. All `Builder`
-  implementations must now have outputs that vary only based on the extensions
-  of inputs, rather than based on any part of the `AssetId`.
+- **Breaking** `declareOutputs` is replaced with `buildExtensions`. All
+  `Builder` implementations must now have outputs that vary only based on the
+  extensions of inputs, rather than based on any part of the `AssetId`.
 
 ## 0.8.0
 
@@ -315,8 +315,8 @@ last breaking change before the `1.0` release, but it is a fairly large one.
   `Future writeAsBytes(AssetId id, List<int> bytes)` method.
 - The `AssetReader` class now has a `Future<List<int>> readAsBytes(AssetId id)`
   method.
-- You no longer need to call `Resolver#release` on any resolvers you get from
-  a `BuildStep` (in fact, the `Resolver` interface no longer has this method).
+- You no longer need to call `Resolver#release` on any resolvers you get from a
+  `BuildStep` (in fact, the `Resolver` interface no longer has this method).
 - There is now a `BuildStep#resolver` getter, which resolves the primary input,
   and returns a `Future<Resolver>`. This replaces the `BuildStep#resolve`
   method.
@@ -425,8 +425,8 @@ and other classes that implement those interfaces.
 
 ## 0.3.0+2
 
-- Enable serving files outside the server root by default (enables serving
-  files from other packages).
+- Enable serving files outside the server root by default (enables serving files
+  from other packages).
 
 ## 0.3.0+1
 
@@ -435,8 +435,8 @@ and other classes that implement those interfaces.
 
 ## 0.3.0
 
-- **BREAKING** Renamed values of three enums to be lower-case:
-  `BuildType`, `BuildStatus`, and `PackageDependencyType`.
+- **BREAKING** Renamed values of three enums to be lower-case: `BuildType`,
+  `BuildStatus`, and `PackageDependencyType`.
 - Updated to crypto ^1.0.0.
 - Added option to resolve additional entry points in `buildStep.resolve`.
 - Added option to pass in a custom `Resolvers` instance.

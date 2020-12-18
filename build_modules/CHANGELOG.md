@@ -376,12 +376,12 @@ targets:
 ## 0.2.0+2
 
 - Fix use of `whereType` in `MissingModulesException`,
-  https://github.com/dart-lang/build/issues/1123.
+  <https://github.com/dart-lang/build/issues/1123>.
 
 ## 0.2.0+1
 
 - Fix null pointer error in `MissingModulesException`,
-  https://github.com/dart-lang/build/issues/1092.
+  <https://github.com/dart-lang/build/issues/1092>.
 
 ## 0.2.0
 

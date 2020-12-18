@@ -46,24 +46,24 @@ instead we will build on a _synthetic_ input - a file that does not actually
 exist on disk, but rather is used as an identifier for build extensions. We
 currently support the following synthetic files for this purpose:
 
-*   `lib/$lib$`
-*   `$package$`
-*   `test/$test$` (deprecated)
-*   `web/$web$` (deprecated)
+- `lib/$lib$`
+- `$package$`
+- `test/$test$` (deprecated)
+- `web/$web$` (deprecated)
 
 When choosing whether to use `$package$` or `lib/$lib$`, there are two primary
 considerations.
 
--   _where_ do you want to output your files (which directory should they be
-    written to).
-    -   If you want to output to directories other than `lib`, you should use
-        `$package$`.
-    -   If you want to output files only under `lib`, then use `lib/$lib$`.
--   _which_ packages will this builder run on (only the root package or any
-    package in the dependency tree).
-    -   If want to run on any package other than the root, you _must_ use
-        `lib/$lib$` since only files under `lib` are accessible from
-        dependencies - even synthetic files.
+- _where_ do you want to output your files (which directory should they be
+  written to).
+  - If you want to output to directories other than `lib`, you should use
+    `$package$`.
+  - If you want to output files only under `lib`, then use `lib/$lib$`.
+- _which_ packages will this builder run on (only the root package or any
+  package in the dependency tree).
+  - If want to run on any package other than the root, you _must_ use
+    `lib/$lib$` since only files under `lib` are accessible from dependencies -
+    even synthetic files.
 
 ## Writing the `Builder` using a synthetic input
 
@@ -194,7 +194,7 @@ class ListAllClassesBuilder implements Builder {
 ```
 
 As the resolver has no single entry point in aggregate builders, be aware that
-[`findLibraryByName`][findLibraryByName] and [`libraries`][libraries] can only
+[`findLibraryByName`][findlibrarybyname] and [`libraries`][libraries] can only
 find libraries that have been discovered through `libraryFor` or `isLibrary`.
 
 Note that older versions of the build `Resolver` only picked up libraries based
@@ -216,13 +216,13 @@ dependencies:
 If you want to support older versions of the build system as well, you can split
 your aggregate builder into two steps:
 
-1.  A `Builder` with `buildExtensions` of `{'.dart': ['.some_name.info']}`. Use
-    the `Resolver` to find the information about the code that will be necessary
-    later. Serialize this to json or similar and write it as an intermediate
-    file. This should always be `build_to: cache`.
-2.  A `Builder` with `buildExtensiosn` of `{r'$lib$': ['final_output_name']}`.
-    Use the glob APIs to read and deserialize the outputs from the previous
-    step, then generate the final content.
+1. A `Builder` with `buildExtensions` of `{'.dart': ['.some_name.info']}`. Use
+   the `Resolver` to find the information about the code that will be necessary
+   later. Serialize this to json or similar and write it as an intermediate
+   file. This should always be `build_to: cache`.
+2. A `Builder` with `buildExtensiosn` of `{r'$lib$': ['final_output_name']}`.
+   Use the glob APIs to read and deserialize the outputs from the previous step,
+   then generate the final content.
 
 Each of these steps must be a separate `Builder` instance in Dart code. They can
 be in the same builder definition in `build.yaml` only if they are both output

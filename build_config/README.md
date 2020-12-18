@@ -36,6 +36,7 @@ Each target may also contain the following keys:
 - **builders**: Map, Optional. See "configuring builders" below.
 
 ## Configuring `Builder`s applied to your package
+
 Each target can specify a `builders` key which configures the builders which are
 applied to that target. The value is a Map from builder to configuration for
 that builder. The key is in the format `'$packageName:$builderName'`. The
@@ -64,6 +65,7 @@ configuration may have the following keys:
   defaults or non mode-specific options when the build is done in release mode.
 
 ## Configuring `Builder`s globally
+
 Target level builder options can be overridden globally across all packages with
 the `global_options` section. These options are applied _after_ all Builder
 defaults and target level configuration, and _before_ `--define` command line
