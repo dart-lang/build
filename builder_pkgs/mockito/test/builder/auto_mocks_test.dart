@@ -55,6 +55,15 @@ class Mock {}
 '''
 };
 
+const metaAssets = {
+  'meta|lib/meta.dart': '''
+library meta;
+class _Immutable {
+  const _Immutable();
+}
+const immutable = _Immutable();
+'''};
+
 const simpleTestAsset = {
   'foo|test/foo_test.dart': '''
 import 'package:foo/foo.dart';
@@ -112,6 +121,7 @@ void main() {
       String sourceAssetText,
       /*String|Matcher<List<int>>*/ dynamic output) async {
     await testWithNonNullable({
+      ...metaAssets,
       ...annotationsAsset,
       ...simpleTestAsset,
       'foo|lib/foo.dart': sourceAssetText,
@@ -2080,6 +2090,20 @@ void main() {
         }
         '''))
       },
+    );
+  });
+
+  test('adds ignore: must_be_immutable analyzer comment if mocked class is '
+      'immutable', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      import 'package:meta/meta.dart';
+      @immutable
+      class Foo {
+        void foo();
+      }
+      '''),
+      _containsAllOf('// ignore: must_be_immutable\nclass MockFoo'),
     );
   });
 }

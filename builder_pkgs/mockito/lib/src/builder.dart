@@ -468,6 +468,7 @@ class _MockLibraryInfo {
   Class _buildMockClass(_MockTarget mockTarget) {
     final typeToMock = mockTarget.classType;
     final classToMock = mockTarget.classElement;
+    final classIsImmutable = classToMock.metadata.any((it) => it.isImmutable);
     final className = classToMock.name;
 
     return Class((cBuilder) {
@@ -478,6 +479,9 @@ class _MockLibraryInfo {
         ..docs.add('///')
         ..docs.add('/// See the documentation for Mockito\'s code generation '
             'for more information.');
+      if (classIsImmutable) {
+        cBuilder..docs.add('// ignore: must_be_immutable');
+      }
       // For each type parameter on [classToMock], the Mock class needs a type
       // parameter with same type variables, and a mirrored type argument for
       // the "implements" clause.
