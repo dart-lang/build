@@ -175,23 +175,20 @@ can reference, but a unique script must be written for the consuming packages as
 well. You can reference the generated script at
 `.dart_tool/build/entrypoint/build.dart` for an example.
 
-Your script should use one of the following functions defined by this library:
+Your script should the following functions defined by this library:
 
 - [**`run`**][run_fn]: Use the same argument parsing as the generated approach.
-- [**`build`**][build_fn]: Run a single build and exit.
-- [**`watch`**][watch_fn]: Continuously run builds as you edit files.
 
 ### Configuring
 
-[`run`][run_fn], [`build`][build_fn], and [`watch`][watch_fn] have a required
-argument which is a `List<BuilderApplication>`. These correspond to the
-`BuilderDefinition` class from `package:build_config`. See `apply` and
-`applyToRoot` to create instances of this class. These will be translated into
-actions by crawling through dependencies. The order of this list is important.
-Each Builder may read the generated outputs of any Builder that ran on a package
-earlier in the dependency graph, but for the package it is running on it may
-only read the generated outputs from Builders earlier in the list of
-`BuilderApplication`s.
+[`run`][run_fn] has a required argument which is a `List<BuilderApplication>`.
+These correspond to the `BuilderDefinition` class from `package:build_config`.
+See `apply` and `applyToRoot` to create instances of this class. These will be
+translated into actions by crawling through dependencies. The order of this list
+is important. Each Builder may read the generated outputs of any Builder that
+ran on a package earlier in the dependency graph, but for the package it is
+running on it may only read the generated outputs from Builders earlier in the
+list of `BuilderApplication`s.
 
 **NOTE**: Any time you change your build script (or any of its dependencies),
 the next build will be a full rebuild. This is because the system has no way of
@@ -239,8 +236,6 @@ pub run test
 
 [builder]: https://pub.dev/documentation/build/latest/build/Builder-class.html
 [run_fn]: https://pub.dev/documentation/build_runner/latest/build_runner/run.html
-[build_fn]: https://pub.dev/documentation/build_runner/latest/build_runner/build.html
-[watch_fn]: https://pub.dev/documentation/build_runner/latest/build_runner/watch.html
 [builder_application]: https://pub.dev/documentation/build_runner/latest/build_runner/BuilderApplication-class.html
 [build_extensions]: https://pub.dev/documentation/build/latest/build/Builder/buildExtensions.html
 
