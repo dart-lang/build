@@ -11,7 +11,7 @@ and automatically reloads the minimum amount of js modules on the page for
 changes to take effect.
 
 If something depends on changed module A, it may have some instances of A's
-types, functions and objects closured, so reloading A itself doesnt invalidate
+types, functions and objects closured, so reloading A itself doesn't invalidate
 closure. In a basic configuration, hot-reloading reloads all the modules from a
 changed module up to the root module of the application and reruns `main()`
 function for changes to take effect. This means that without special measures
@@ -84,7 +84,7 @@ reloading will be propagated to current module itself.
 
 ### Implement `hot$onDestroy` for root module
 
-Lets's assume you do some DOM modifications in your `main()` function. DOM is
+Let's assume you do some DOM modifications in your `main()` function. DOM is
 preserved between module reloadings, but state of your code is not. This may end
 in a situation where after reloading DOM is not in the same state you
 application will assume it is.
@@ -150,7 +150,7 @@ var _css_style = css_file.styles;
 void main() {
   addCss(_css_style);
 
-  // Some stateful code you don't want to reinitialise
+  // Some stateful code you don't want to reinitialize
   // ...
 }
 
@@ -184,7 +184,7 @@ _css_style = getProperty(child, 'styles'); addCss(_css_style); return true; } }
 
 ## Known issues
 
-- Creating new modules, removing them or otherwise changing dependency grapth
+- Creating new modules, removing them or otherwise changing dependency graph
   results in full page reload.
   [#1761](https://github.com/dart-lang/build/issues/1761)
 - Libraries are often bundled together in one module. In most cases
