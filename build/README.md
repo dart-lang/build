@@ -50,7 +50,7 @@ class CopyBuilder implements Builder {
   };
 
   @override
-  Future<void> build(BuildStep buildStep) async {
+  FutureOr<void> build(BuildStep buildStep) async {
     // Each `buildStep` has a single input.
     var inputId = buildStep.inputId;
 
@@ -90,7 +90,7 @@ class ResolvingCopyBuilder implements Builder {
   };
 
   @override
-  Future<void> build(BuildStep buildStep) async {
+  FutureOr<void> build(BuildStep buildStep) async {
     // Get the `LibraryElement` for the primary input.
     var entryLib = await buildStep.inputLibrary;
     // Resolves all libraries reachable from the primary input.
