@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// @dart=2.9
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
@@ -22,8 +24,8 @@ import 'package:http/http.dart';
 class IssLocator {
   final Client client;
 
-  late Point<double> _position;
-  Future<void>? _ongoingRequest;
+  /*late*/ Point<double> _position;
+  Future<void> /*?*/ _ongoingRequest;
 
   IssLocator(this.client);
 
