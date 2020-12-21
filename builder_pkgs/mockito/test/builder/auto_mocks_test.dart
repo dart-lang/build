@@ -62,7 +62,8 @@ class _Immutable {
   const _Immutable();
 }
 const immutable = _Immutable();
-'''};
+'''
+};
 
 const simpleTestAsset = {
   'foo|test/foo_test.dart': '''
@@ -2093,7 +2094,8 @@ void main() {
     );
   });
 
-  test('adds ignore: must_be_immutable analyzer comment if mocked class is '
+  test(
+      'adds ignore: must_be_immutable analyzer comment if mocked class is '
       'immutable', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
