@@ -130,7 +130,13 @@ class _Builder extends Builder {
         final finalPartId = buildStep.inputId.changeExtension('.g.dart');
         part = computePartUrl(buildStep.inputId, finalPartId);
       }
-      if (!library.parts.map((c) => c.uri).contains(part)) {
+
+      final libraryUnit =
+          await buildStep.resolver.compilationUnitFor(buildStep.inputId);
+      final hasLibraryPartDirectiveWithOutputUri = libraryUnit.directives
+          .whereType<PartDirective>()
+          .any((e) => e.uri.stringValue == part);
+      if (!hasLibraryPartDirectiveWithOutputUri) {
         // TODO: Upgrade to error in a future breaking change?
         log.warning('Missing "part \'$part\';".');
         return;
