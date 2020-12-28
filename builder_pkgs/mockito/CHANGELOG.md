@@ -1,3 +1,9 @@
+## 5.0.0-nullsafety.1
+
+* Fix an issue with generated mocks overriding methods from Object, such as
+  `operator ==` ([#306](https://github.com/dart-lang/mockito/issues/306)).
+* Fix an issue with relative imports in generated mocks.
+
 ## 5.0.0-nullsafety.0
 
 * Migrate the core libraries and tests to null safety. The builder at

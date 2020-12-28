@@ -783,6 +783,168 @@ void main() {
     expect(mocksContent, contains('List<_i2.Foo>? list'));
   });
 
+  test(
+      'imports libraries for external class types found in a method return '
+      'type', () async {
+    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+      import 'dart:async';
+      class Foo {
+        Future<void> f() async {}
+      }
+      '''));
+    expect(mocksContent, contains("import 'dart:async' as _i3;"));
+    expect(mocksContent, contains('_i3.Future<void> f()'));
+  });
+
+  test('imports libraries for external class types found in a type argument',
+      () async {
+    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+      import 'dart:async';
+      class Foo {
+        List<Future> f() => [];
+      }
+      '''));
+    expect(mocksContent, contains("import 'dart:async' as _i3;"));
+    expect(mocksContent, contains('List<_i3.Future<dynamic>> f()'));
+  });
+
+  test(
+      'imports libraries for external class types found in the return type of '
+      'a function-typed parameter', () async {
+    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+      import 'dart:async';
+      class Foo {
+        void f(Future<void> a()) {}
+      }
+      '''));
+    expect(mocksContent, contains("import 'dart:async' as _i3;"));
+    expect(mocksContent, contains('f(_i3.Future<void> Function()? a)'));
+  });
+
+  test(
+      'imports libraries for external class types found in a parameter type of '
+      'a function-typed parameter', () async {
+    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+      import 'dart:async';
+      class Foo {
+        void f(void a(Future<int> b)) {}
+      }
+      '''));
+    expect(mocksContent, contains("import 'dart:async' as _i3;"));
+    expect(mocksContent, contains('f(void Function(_i3.Future<int>)? a)'));
+  });
+
+  test(
+      'imports libraries for external class types found in a function-typed '
+      'parameter', () async {
+    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+        import 'dart:async';
+        class Foo {
+          void f(Future<void> a()) {}
+        }
+        '''));
+    expect(mocksContent, contains("import 'dart:async' as _i3;"));
+    expect(mocksContent, contains('f(_i3.Future<void> Function()? a)'));
+  });
+
+  test(
+      'imports libraries for external class types found in a FunctionType '
+      'parameter', () async {
+    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+        import 'dart:async';
+        class Foo {
+          void f(Future<void> Function() a) {}
+        }
+        '''));
+    expect(mocksContent, contains("import 'dart:async' as _i3;"));
+    expect(mocksContent, contains('f(_i3.Future<void> Function()? a)'));
+  });
+
+  test(
+      'imports libraries for external class types found nested in a '
+      'function-typed parameter', () async {
+    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+        import 'dart:async';
+        class Foo {
+          void f(void a(Future<void> b)) {}
+        }
+        '''));
+    expect(mocksContent, contains("import 'dart:async' as _i3;"));
+    expect(mocksContent, contains('f(void Function(_i3.Future<void>)? a)'));
+  });
+
+  test(
+      'imports libraries for external class types found in the bound of a '
+      'type parameter of a method', () async {
+    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+        import 'dart:async';
+        class Foo {
+          void f<T extends Future>(T a) {}
+        }
+        '''));
+    expect(mocksContent, contains("import 'dart:async' as _i3;"));
+    expect(mocksContent, contains('f<T extends _i3.Future<dynamic>>(T? a)'));
+  });
+
+  test(
+      'imports libraries for external class types found in the default value '
+      'of a parameter', () async {
+    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+      import 'dart:convert';
+      class Foo {
+        void f([Object a = utf8]) {}
+      }
+      '''));
+    expect(mocksContent, contains("import 'dart:convert' as _i3;"));
+    expect(mocksContent, contains('f([Object? a = const _i3.Utf8Codec()])'));
+  });
+
+  test(
+      'imports libraries for external class types found in an inherited method',
+      () async {
+    await testWithNonNullable({
+      ...annotationsAsset,
+      ...simpleTestAsset,
+      'foo|lib/foo.dart': '''
+        import 'bar.dart';
+        class Foo extends Bar {}
+        ''',
+      'foo|lib/bar.dart': '''
+        import 'dart:async';
+        class Bar {
+          m(Future<void> a) {}
+        }
+        ''',
+    });
+    var mocksAsset = AssetId.parse('foo|test/foo_test.mocks.dart');
+    var mocksContent = utf8.decode(writer.assets[mocksAsset]);
+    expect(mocksContent, contains("import 'dart:async' as _i3;"));
+    expect(mocksContent, contains('m(_i3.Future<void>? a)'));
+  });
+
+  test(
+      'imports libraries for external class types found in an inherited method'
+      'via a generic instantiation', () async {
+    await testWithNonNullable({
+      ...annotationsAsset,
+      ...simpleTestAsset,
+      'foo|lib/foo.dart': '''
+        import 'dart:async';
+        import 'bar.dart';
+        class Foo extends Bar<Future<void>> {}
+        ''',
+      'foo|lib/bar.dart': '''
+        class Bar<T> {
+          m(T a) {}
+        }
+        ''',
+    });
+    var mocksAsset = AssetId.parse('foo|test/foo_test.mocks.dart');
+    var mocksContent = utf8.decode(writer.assets[mocksAsset]);
+    expect(mocksContent, contains("import 'dart:async' as _i3;"));
+    expect(mocksContent, contains('m(_i3.Future<void>? a)'));
+  });
+
   test('imports libraries for type aliases with external types', () async {
     var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
         import 'dart:async';

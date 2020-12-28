@@ -1,3 +1,10 @@
+targets:
+  $default:
+    builders:
+      mockito|mockBuilder:
+        generate_for:
+          - test/testing/*.dart
+
 builders:
   mockBuilder:
     import: "package:mockito/src/builder.dart"

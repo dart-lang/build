@@ -19,10 +19,12 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart' as analyzer;
 import 'package:analyzer/dart/element/type_provider.dart';
 import 'package:analyzer/dart/element/type_system.dart';
+import 'package:analyzer/dart/element/visitor.dart';
 import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:meta/meta.dart';
+import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
 
 /// For a source Dart library, generate the mocks referenced therein.
@@ -49,11 +51,13 @@ class MockBuilder implements Builder {
     final mockLibraryAsset = buildStep.inputId.changeExtension('.mocks.dart');
     final mockTargetGatherer = _MockTargetGatherer(entryLib);
 
+    var entryAssetId = await buildStep.resolver.assetIdForElement(entryLib);
+    final assetUris = await _resolveAssetUris(
+        buildStep.resolver, mockTargetGatherer._mockTargets, entryAssetId.path);
+
     final mockLibrary = Library((b) {
       var mockLibraryInfo = _MockLibraryInfo(mockTargetGatherer._mockTargets,
-          sourceLibIsNonNullable: sourceLibIsNonNullable,
-          typeProvider: entryLib.typeProvider,
-          typeSystem: entryLib.typeSystem);
+          assetUris: assetUris, entryLib: entryLib);
       b.body.addAll(mockLibraryInfo.fakeClasses);
       b.body.addAll(mockLibraryInfo.mockClasses);
     });
@@ -71,10 +75,158 @@ class MockBuilder implements Builder {
     await buildStep.writeAsString(mockLibraryAsset, mockLibraryContent);
   }
 
+  Future<Map<Element, String>> _resolveAssetUris(Resolver resolver,
+      List<_MockTarget> mockTargets, String entryAssetPath) async {
+    final typeVisitor = _TypeVisitor();
+    final seenTypes = <analyzer.InterfaceType>{};
+
+    void addTypesFrom(analyzer.InterfaceType type) {
+      // Prevent infinite recursion.
+      if (seenTypes.contains(type)) {
+        return;
+      }
+      seenTypes.add(type);
+      type.element.accept(typeVisitor);
+      // For a type like `Foo<Bar>`, add the `Bar`.
+      (type.typeArguments ?? [])
+          .whereType<analyzer.InterfaceType>()
+          .forEach(addTypesFrom);
+      // For a type like `Foo extends Bar<Baz>`, add the `Baz`.
+      for (var supertype in type.allSupertypes) {
+        addTypesFrom(supertype);
+      }
+    }
+
+    for (var mockTarget in mockTargets) {
+      addTypesFrom(mockTarget.classType);
+    }
+
+    final typeUris = <TypeDefiningElement, String>{};
+
+    for (var element in typeVisitor._elements) {
+      if (element.library.isInSdk) {
+        typeUris[element] = element.library.source.uri.toString();
+        continue;
+      }
+
+      try {
+        var typeAssetId = await resolver.assetIdForElement(element);
+
+        if (typeAssetId.path.startsWith('lib/')) {
+          typeUris[element] = typeAssetId.uri.toString();
+        } else {
+          typeUris[element] =
+              p.relative(typeAssetId.path, from: p.dirname(entryAssetPath));
+        }
+      } on UnresolvableAssetException {
+        // Asset may be in a summary.
+        typeUris[element] = element.library.source.uri.toString();
+        continue;
+      }
+    }
+
+    return typeUris;
+  }
+
   @override
   final buildExtensions = const {
     '.dart': ['.mocks.dart']
   };
+}
+
+/// An [Element] visitor which collects the elements of all of the
+/// [analyzer.InterfaceType]s which it encounters.
+class _TypeVisitor extends RecursiveElementVisitor<void> {
+  final _elements = <TypeDefiningElement>{};
+
+  @override
+  void visitClassElement(ClassElement element) {
+    _elements.add(element);
+    super.visitClassElement(element);
+  }
+
+  @override
+  void visitFieldElement(FieldElement element) {
+    _addType(element.type);
+    super.visitFieldElement(element);
+  }
+
+  @override
+  void visitMethodElement(MethodElement element) {
+    _addType(element.returnType);
+    super.visitMethodElement(element);
+  }
+
+  @override
+  void visitParameterElement(ParameterElement element) {
+    _addType(element.type);
+    if (element.hasDefaultValue) {
+      _addTypesFromConstant(element.computeConstantValue());
+    }
+    super.visitParameterElement(element);
+  }
+
+  @override
+  void visitTypeParameterElement(TypeParameterElement element) {
+    _addType(element.bound);
+    super.visitTypeParameterElement(element);
+  }
+
+  void _addType(analyzer.DartType type) {
+    if (type == null) return;
+
+    if (type is analyzer.InterfaceType) {
+      _elements.add(type.element);
+      (type.typeArguments ?? []).forEach(_addType);
+    } else if (type is analyzer.FunctionType) {
+      _addType(type.returnType);
+      var element = type.element;
+      if (element != null) {
+        if (element is FunctionTypeAliasElement) {
+          _elements.add(element);
+        } else {
+          _elements.add(element.enclosingElement as FunctionTypeAliasElement);
+        }
+      }
+    }
+  }
+
+  void _addTypesFromConstant(DartObject object) {
+    final constant = ConstantReader(object);
+    if (constant.isNull ||
+        constant.isBool ||
+        constant.isInt ||
+        constant.isDouble ||
+        constant.isString ||
+        constant.isType) {
+      // No types to add from a literal.
+      return;
+    } else if (constant.isList) {
+      for (var element in constant.listValue) {
+        _addTypesFromConstant(element);
+      }
+    } else if (constant.isSet) {
+      for (var element in constant.setValue) {
+        _addTypesFromConstant(element);
+      }
+    } else if (constant.isMap) {
+      for (var pair in constant.mapValue.entries) {
+        _addTypesFromConstant(pair.key);
+        _addTypesFromConstant(pair.value);
+      }
+    } else {
+      // If [constant] is not null, a literal, or a type, then it must be an
+      // object constructed with `const`. Revive it.
+      var revivable = constant.revive();
+      for (var argument in revivable.positionalArguments) {
+        _addTypesFromConstant(argument);
+      }
+      for (var pair in revivable.namedArguments.entries) {
+        _addTypesFromConstant(pair.value);
+      }
+      _addType(object.type);
+    }
+  }
 }
 
 class _MockTarget {
@@ -424,9 +576,19 @@ class _MockLibraryInfo {
   /// fake classes are added to the generated library.
   final fakedClassElements = <ClassElement>[];
 
+  /// A mapping of each necessary [Element] to a URI from which it can be
+  /// imported.
+  ///
+  /// This mapping is generated eagerly so as to avoid any asynchronous
+  /// Asset-resolving while building the mock library.
+  final Map<Element, String> assetUris;
+
   /// Build mock classes for [mockTargets].
   _MockLibraryInfo(Iterable<_MockTarget> mockTargets,
-      {this.sourceLibIsNonNullable, this.typeProvider, this.typeSystem}) {
+      {this.assetUris, LibraryElement entryLib})
+      : sourceLibIsNonNullable = entryLib.isNonNullableByDefault,
+        typeProvider = entryLib.typeProvider,
+        typeSystem = entryLib.typeSystem {
     for (final mockTarget in mockTargets) {
       mockClasses.add(_buildMockClass(mockTarget));
     }
@@ -507,7 +669,7 @@ class _MockLibraryInfo {
       cBuilder.implements.add(TypeReference((b) {
         b
           ..symbol = classToMock.name
-          ..url = _typeImport(mockTarget.classType)
+          ..url = _typeImport(mockTarget.classElement)
           ..types.addAll(typeArguments);
       }));
       if (!mockTarget.returnNullOnMissingStub) {
@@ -526,7 +688,7 @@ class _MockLibraryInfo {
 
   /// Yields all of the field overrides required for [type].
   ///
-  /// This includes fields of supertypes and mixed in types. [overriddenMethods]
+  /// This includes fields of supertypes and mixed in types. [overriddenFields]
   /// is used to track which fields have already been yielded.
   ///
   /// Only public instance fields which have either a potentially non-nullable
@@ -553,7 +715,7 @@ class _MockLibraryInfo {
         yield* fieldOverrides(mixin, overriddenFields);
       }
     }
-    if (type.superclass != null) {
+    if (!type.superclass.isDartCoreObject) {
       yield* fieldOverrides(type.superclass, overriddenFields);
     }
   }
@@ -592,7 +754,7 @@ class _MockLibraryInfo {
         yield* methodOverrides(mixin, overriddenMethods);
       }
     }
-    if (type.superclass != null) {
+    if (!type.superclass.isDartCoreObject) {
       yield* methodOverrides(type.superclass, overriddenMethods);
     }
   }
@@ -794,7 +956,7 @@ class _MockLibraryInfo {
           cBuilder.implements.add(TypeReference((b) {
             b
               ..symbol = elementToFake.name
-              ..url = _typeImport(dartType)
+              ..url = _typeImport(elementToFake)
               ..types.addAll(typeParameters);
           }));
         }));
@@ -892,7 +1054,8 @@ class _MockLibraryInfo {
       }
       if (revivable.source.fragment.isEmpty) {
         // We can create this invocation by referring to a const field.
-        return refer(revivable.accessor, _typeImport(object.type));
+        return refer(revivable.accessor,
+            _typeImport(object.type.element as TypeDefiningElement));
       }
 
       final name = revivable.source.fragment;
@@ -904,7 +1067,8 @@ class _MockLibraryInfo {
         for (var pair in revivable.namedArguments.entries)
           pair.key: _expressionFromDartObject(pair.value)
       };
-      final type = refer(name, _typeImport(object.type));
+      final type =
+          refer(name, _typeImport(object.type.element as TypeDefiningElement));
       if (revivable.accessor.isNotEmpty) {
         return type.constInstanceNamed(
           revivable.accessor,
@@ -1002,7 +1166,7 @@ class _MockLibraryInfo {
         b
           ..symbol = type.element.name
           ..isNullable = forceNullable || typeSystem.isPotentiallyNullable(type)
-          ..url = _typeImport(type)
+          ..url = _typeImport(type.element)
           ..types.addAll(type.typeArguments.map(_typeReference));
       });
     } else if (type is analyzer.FunctionType) {
@@ -1027,16 +1191,16 @@ class _MockLibraryInfo {
         });
       }
       return TypeReference((b) {
-        Element typedef;
+        TypeDefiningElement typedef;
         if (element is FunctionTypeAliasElement) {
           typedef = element;
         } else {
-          typedef = element.enclosingElement;
+          typedef = element.enclosingElement as FunctionTypeAliasElement;
         }
 
         b
           ..symbol = typedef.name
-          ..url = _typeImport(type)
+          ..url = _typeImport(typedef)
           ..isNullable = forceNullable || typeSystem.isNullable(type);
         for (var typeArgument in type.typeArguments) {
           b.types.add(_typeReference(typeArgument));
@@ -1051,25 +1215,27 @@ class _MockLibraryInfo {
     } else {
       return refer(
         type.getDisplayString(withNullability: false),
-        _typeImport(type),
+        _typeImport(type.element as TypeDefiningElement),
       );
     }
   }
 
-  /// Returns the import URL for [type].
+  /// Returns the import URL for [element].
   ///
   /// For some types, like `dynamic` and type variables, this may return null.
-  String _typeImport(analyzer.DartType type) {
+  String _typeImport(TypeDefiningElement element) {
     // For type variables, no import needed.
-    if (type is analyzer.TypeParameterType) return null;
-
-    var library = type.element?.library;
+    if (element is TypeParameterElement) return null;
 
     // For types like `dynamic`, return null; no import needed.
-    if (library == null) return null;
-    // TODO(srawlins): See what other code generators do here to guarantee sane
-    // URIs.
-    return library.source.uri.toString();
+    if (element?.library == null) return null;
+
+    assert(
+        assetUris.containsKey(element),
+        () =>
+            'An element, "${element}", is missing from the asset URI mapping');
+
+    return assetUris[element];
   }
 }
 
