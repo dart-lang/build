@@ -508,7 +508,7 @@ void main() {
       }
       '''),
       _containsAllOf('_i3.Future<void> m() =>',
-          'super.noSuchMethod(Invocation.method(#m, []), Future.value(null));'),
+          '(super.noSuchMethod(Invocation.method(#m, []), Future.value(null))'),
     );
   });
 
@@ -520,7 +520,7 @@ void main() {
       }
       '''),
       _containsAllOf('_i3.Stream<int> m() =>',
-          'super.noSuchMethod(Invocation.method(#m, []), Stream<int>.empty());'),
+          '(super.noSuchMethod(Invocation.method(#m, []), Stream<int>.empty())'),
     );
   });
 
@@ -532,7 +532,7 @@ void main() {
       }
       '''),
       _containsAllOf('Iterable<int> m() =>',
-          'super.noSuchMethod(Invocation.method(#m, []), []);'),
+          '(super.noSuchMethod(Invocation.method(#m, []), [])'),
     );
   });
 
@@ -1141,7 +1141,7 @@ void main() {
         }
         '''),
       _containsAllOf(
-          'int m(int? a) => super.noSuchMethod(Invocation.method(#m, [a]), 0);'),
+          'int m(int? a) => (super.noSuchMethod(Invocation.method(#m, [a]), 0)'),
     );
   });
 
@@ -1153,7 +1153,7 @@ void main() {
         }
         '''),
       _containsAllOf(
-          'int? m(int? a) => super.noSuchMethod(Invocation.method(#m, [a]));'),
+          'int? m(int? a) => (super.noSuchMethod(Invocation.method(#m, [a]))'),
     );
   });
 
@@ -1165,7 +1165,7 @@ void main() {
         }
         '''),
       _containsAllOf('List<int?> m(int? a) =>',
-          'super.noSuchMethod(Invocation.method(#m, [a]), <int?>[]);'),
+          '(super.noSuchMethod(Invocation.method(#m, [a]), <int?>[])'),
     );
   });
 
@@ -1177,7 +1177,7 @@ void main() {
         }
         '''),
       _containsAllOf(
-          'T? m<T>(int? a) => super.noSuchMethod(Invocation.method(#m, [a]));'),
+          'T? m<T>(int? a) => (super.noSuchMethod(Invocation.method(#m, [a]))'),
     );
   });
 
@@ -1188,8 +1188,8 @@ void main() {
           m(int a);
         }
         '''),
-      _containsAllOf(
-          'dynamic m(int? a) => super.noSuchMethod(Invocation.method(#m, [a]));'),
+      _containsAllOf('dynamic m(int? a) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a]));'),
     );
   });
 
@@ -1321,7 +1321,7 @@ void main() {
         }
         '''),
       _containsAllOf(
-          'int m() => super.noSuchMethod(Invocation.method(#m, []), 0);'),
+          'int m() => (super.noSuchMethod(Invocation.method(#m, []), 0)'),
     );
   });
 
@@ -1497,7 +1497,7 @@ void main() {
       }
       '''),
       _containsAllOf('int operator +(_i2.Foo? other) =>',
-          'super.noSuchMethod(Invocation.method(#+, [other]), 0);'),
+          '(super.noSuchMethod(Invocation.method(#+, [other]), 0)'),
     );
   });
 
@@ -1508,8 +1508,8 @@ void main() {
         int operator [](int x) => 7;
       }
       '''),
-      _containsAllOf(
-          'int operator [](int? x) => super.noSuchMethod(Invocation.method(#[], [x]), 0);'),
+      _containsAllOf('int operator [](int? x) =>',
+          '(super.noSuchMethod(Invocation.method(#[], [x]), 0)'),
     );
   });
 
@@ -1521,7 +1521,7 @@ void main() {
       }
       '''),
       _containsAllOf(
-          'int operator ~() => super.noSuchMethod(Invocation.method(#~, []), 0);'),
+          'int operator ~() => (super.noSuchMethod(Invocation.method(#~, []), 0)'),
     );
   });
 
@@ -1533,7 +1533,7 @@ void main() {
       }
       '''),
       _containsAllOf(
-          'bool m() => super.noSuchMethod(Invocation.method(#m, []), false);'),
+          'bool m() => (super.noSuchMethod(Invocation.method(#m, []), false)'),
     );
   });
 
@@ -1545,7 +1545,7 @@ void main() {
       }
       '''),
       _containsAllOf(
-          'double m() => super.noSuchMethod(Invocation.method(#m, []), 0.0);'),
+          'double m() => (super.noSuchMethod(Invocation.method(#m, []), 0.0)'),
     );
   });
 
@@ -1557,7 +1557,7 @@ void main() {
       }
       '''),
       _containsAllOf(
-          'int m() => super.noSuchMethod(Invocation.method(#m, []), 0);'),
+          'int m() => (super.noSuchMethod(Invocation.method(#m, []), 0)'),
     );
   });
 
@@ -1569,7 +1569,7 @@ void main() {
       }
       '''),
       _containsAllOf(
-          "String m() => super.noSuchMethod(Invocation.method(#m, []), '');"),
+          "String m() => (super.noSuchMethod(Invocation.method(#m, []), '')"),
     );
   });
 
@@ -1581,7 +1581,7 @@ void main() {
       }
       '''),
       _containsAllOf('List<_i2.Foo> m() =>',
-          'super.noSuchMethod(Invocation.method(#m, []), <_i2.Foo>[]);'),
+          '(super.noSuchMethod(Invocation.method(#m, []), <_i2.Foo>[])'),
     );
   });
 
@@ -1593,7 +1593,7 @@ void main() {
       }
       '''),
       _containsAllOf('Set<_i2.Foo> m() =>',
-          'super.noSuchMethod(Invocation.method(#m, []), <_i2.Foo>{});'),
+          '(super.noSuchMethod(Invocation.method(#m, []), <_i2.Foo>{})'),
     );
   });
 
@@ -1605,7 +1605,7 @@ void main() {
       }
       '''),
       _containsAllOf('Map<int, _i2.Foo> m() =>',
-          'super.noSuchMethod(Invocation.method(#m, []), <int, _i2.Foo>{});'),
+          '(super.noSuchMethod(Invocation.method(#m, []), <int, _i2.Foo>{})'),
     );
   });
 
@@ -1617,7 +1617,7 @@ void main() {
       }
       '''),
       _containsAllOf('Map<dynamic, dynamic> m() =>',
-          'super.noSuchMethod(Invocation.method(#m, []), <dynamic, dynamic>{});'),
+          '(super.noSuchMethod(Invocation.method(#m, []), <dynamic, dynamic>{})'),
     );
   });
 
@@ -1630,7 +1630,7 @@ void main() {
       }
       '''),
       _containsAllOf('_i3.Future<bool> m() =>',
-          'super.noSuchMethod(Invocation.method(#m, []), Future.value(false));'),
+          '(super.noSuchMethod(Invocation.method(#m, []), Future.value(false))'),
     );
   });
 
@@ -1642,7 +1642,7 @@ void main() {
       }
       '''),
       _containsAllOf('Stream<int> m() =>',
-          'super.noSuchMethod(Invocation.method(#m, []), Stream<int>.empty());'),
+          '(super.noSuchMethod(Invocation.method(#m, []), Stream<int>.empty())'),
     );
   });
 
@@ -1657,8 +1657,8 @@ void main() {
         Bar(this.name);
       }
       '''),
-      _containsAllOf(
-          '_i2.Bar m() => super.noSuchMethod(Invocation.method(#m, []), _FakeBar());'),
+      _containsAllOf('_i2.Bar m() =>',
+          '(super.noSuchMethod(Invocation.method(#m, []), _FakeBar())'),
     );
   });
 
@@ -1671,7 +1671,7 @@ void main() {
       class Bar<T> {}
       '''),
       _containsAllOf('Bar<int> m() =>',
-          'super.noSuchMethod(Invocation.method(#m, []), _FakeBar<int>());'),
+          'super.noSuchMethod(Invocation.method(#m, []), _FakeBar<int>())'),
     );
   });
 
@@ -1686,8 +1686,8 @@ void main() {
         two,
       }
       '''),
-      _containsAllOf(
-          '_i2.Bar m1() => super.noSuchMethod(Invocation.method(#m1, []), _i2.Bar.one);'),
+      _containsAllOf('_i2.Bar m1() =>',
+          '(super.noSuchMethod(Invocation.method(#m1, []), _i2.Bar.one)'),
     );
   });
 
@@ -1700,8 +1700,8 @@ void main() {
         void Function(int, [String]) m() => (int i, [String s]) {};
       }
       '''),
-      _containsAllOf('void Function(int, [String]) m() => super',
-          '.noSuchMethod(Invocation.method(#m, []), (int __p0, [String __p1]) {});'),
+      _containsAllOf('void Function(int, [String]) m() => (super',
+          '.noSuchMethod(Invocation.method(#m, []), (int __p0, [String __p1]) {})'),
     );
   });
 
@@ -1714,8 +1714,8 @@ void main() {
         void Function(Foo, {bool b}) m() => (Foo f, {bool b}) {};
       }
       '''),
-      _containsAllOf('void Function(_i2.Foo, {bool b}) m() => super',
-          '.noSuchMethod(Invocation.method(#m, []), (_i2.Foo __p0, {bool b}) {});'),
+      _containsAllOf('void Function(_i2.Foo, {bool b}) m() => (super',
+          '.noSuchMethod(Invocation.method(#m, []), (_i2.Foo __p0, {bool b}) {})'),
     );
   });
 
@@ -1729,7 +1729,7 @@ void main() {
       }
       '''),
       _containsAllOf('_i2.Foo Function() m() =>',
-          'super.noSuchMethod(Invocation.method(#m, []), () => _FakeFoo());'),
+          'super.noSuchMethod(Invocation.method(#m, []), () => _FakeFoo())'),
     );
   });
 
@@ -1744,7 +1744,7 @@ void main() {
       // TODO(srawlins): This output is invalid: `T __p0` is out of the scope
       // where T is defined.
       _containsAllOf('T? Function<T>(T) m() =>',
-          'super.noSuchMethod(Invocation.method(#m, []), (T __p0) => null);'),
+          'super.noSuchMethod(Invocation.method(#m, []), (T __p0) => null)'),
     );
   });
 

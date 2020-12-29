@@ -836,10 +836,16 @@ class _MockLibraryInfo {
       final dummyReturnValue = _dummyValue(method.returnType);
       noSuchMethodArgs.add(dummyReturnValue);
     }
-    final returnNoSuchMethod =
+    var superNoSuchMethod =
         refer('super').property('noSuchMethod').call(noSuchMethodArgs);
+    if (!method.returnType.isVoid && !method.returnType.isDynamic) {
+      superNoSuchMethod =
+          superNoSuchMethod.asA(_typeReference(method.returnType));
+    }
 
-    builder.body = returnNoSuchMethod.code;
+    builder
+      ..lambda = true
+      ..body = superNoSuchMethod.code;
   }
 
   Expression _dummyValue(analyzer.DartType type) {
