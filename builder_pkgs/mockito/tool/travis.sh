@@ -31,13 +31,13 @@ while (( "$#" )); do
     ;;
   dartanalyzer) echo
     echo -e '\033[1mTASK: dartanalyzer\033[22m'
-    echo -e 'dartanalyzer --fatal-warnings .'
-    dartanalyzer --fatal-warnings . || EXIT_CODE=$?
+    echo -e 'dartanalyzer --fatal-warnings lib'
+    dartanalyzer --fatal-warnings lib || EXIT_CODE=$?
     ;;
   vm_test) echo
     echo -e '\033[1mTASK: vm_test\033[22m'
-    echo -e 'pub run test -p vm'
-    pub run test -p vm || EXIT_CODE=$?
+    echo -e 'pub run build_runner test -p vm'
+    pub run build_runner test -p vm || EXIT_CODE=$?
     ;;
   dartdevc_build) echo
     echo -e '\033[1mTASK: build\033[22m'
