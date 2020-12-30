@@ -49,11 +49,6 @@ while (( "$#" )); do
     echo -e 'pub run build_runner test -- -p chrome'
     xvfb-run pub run build_runner test -- -p chrome || EXIT_CODE=$?
     ;;
-  dart2js_test) echo
-    echo -e '\033[1mTASK: dart2js_test\033[22m'
-    echo -e 'pub run test -p chrome'
-    xvfb-run pub run test -p chrome || EXIT_CODE=$?
-    ;;
   coverage) echo
     echo -e '\033[1mTASK: coverage\033[22m'
     if [ "$REPO_TOKEN" ]; then
