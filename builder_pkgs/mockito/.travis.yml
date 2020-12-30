@@ -31,10 +31,6 @@ jobs:
     #  script: ./tool/travis.sh dartdevc_test
     #  dart: 2.9.0
     #- stage: testing
-    #  name: "2.9.0 dart2js test"
-    #  script: ./tool/travis.sh dart2js_test
-    #  dart: 2.9.0
-    #- stage: testing
     #  name: "2.9.0 code coverage"
     #  script: ./tool/travis.sh coverage
     #  dart: 2.9.0
@@ -58,10 +54,6 @@ jobs:
     - stage: testing
       name: "dev DDC test"
       script: ./tool/travis.sh dartdevc_test
-      dart: dev
-    - stage: testing
-      name: "dev dart2js test"
-      script: ./tool/travis.sh dart2js_test
       dart: dev
     - stage: testing
       name: "dev code coverage"
