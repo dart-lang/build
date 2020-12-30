@@ -5,7 +5,7 @@ option (which will save logs to disk) or the `--track-performance` flag. Both of
 these options will allow you to view the result in `serve` mode by navigating to
 `/$perf`. On that page you will see a timeline something like this:
 
-![example build](/docs/images/example_build.png)
+![example build](images/example_build.png)
 
 If you are using the `--log-performance <dir>` option that will save the logs to
 disk so that you can attach them to bug reports.
