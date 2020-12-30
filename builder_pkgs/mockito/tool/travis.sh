@@ -36,8 +36,8 @@ while (( "$#" )); do
     ;;
   vm_test) echo
     echo -e '\033[1mTASK: vm_test\033[22m'
-    echo -e 'pub run build_runner test -p vm'
-    pub run build_runner test -p vm || EXIT_CODE=$?
+    echo -e 'pub run build_runner test -- -p vm'
+    pub run build_runner test -- -p vm || EXIT_CODE=$?
     ;;
   dartdevc_build) echo
     echo -e '\033[1mTASK: build\033[22m'
