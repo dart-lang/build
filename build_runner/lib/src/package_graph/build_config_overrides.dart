@@ -3,8 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:io';
 
+import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:glob/glob.dart';
@@ -14,43 +14,49 @@ import 'package:path/path.dart' as p;
 final _log = Logger('BuildConfigOverrides');
 
 Future<Map<String, BuildConfig>> findBuildConfigOverrides(
-    PackageGraph packageGraph, String configKey) async {
+    PackageGraph packageGraph,
+    String configKey,
+    RunnerAssetReader reader) async {
   final configs = <String, BuildConfig>{};
-  final configFiles = Glob('*.build.yaml').list();
-  await for (final file in configFiles) {
-    if (file is File) {
-      final packageName = p.basename(file.path).split('.').first;
-      final packageNode = packageGraph.allPackages[packageName];
-      if (packageNode == null) {
-        _log.warning('A build config override is provided for $packageName but '
-            'that package does not exist. '
-            'Remove the ${p.basename(file.path)} override or add a dependency '
-            'on $packageName.');
-        continue;
-      }
-      final yaml = file.readAsStringSync();
-      final config = BuildConfig.parse(
-        packageName,
-        packageNode.dependencies.map((n) => n.name),
-        yaml,
-        configYamlPath: file.path,
-      );
-      configs[packageName] = config;
+  final configFiles =
+      reader.findAssets(Glob('*.build.yaml'), package: packageGraph.root.name);
+  await for (final id in configFiles) {
+    final packageName = p.basename(id.path).split('.').first;
+    final packageNode = packageGraph.allPackages[packageName];
+    if (packageNode == null) {
+      _log.warning('A build config override is provided for $packageName but '
+          'that package does not exist. '
+          'Remove the ${p.basename(id.path)} override or add a dependency '
+          'on $packageName.');
+      continue;
     }
+    final yaml = await reader.readAsString(id);
+    final config = BuildConfig.parse(
+      packageName,
+      packageNode.dependencies.map((n) => n.name),
+      yaml,
+      configYamlPath: id.path,
+    );
+    configs[packageName] = config;
   }
   if (configKey != null) {
-    final file = File('build.$configKey.yaml');
-    if (!file.existsSync()) {
-      _log.warning('Cannot find build.$configKey.yaml for specified config.');
+    final id = AssetId(packageGraph.root.name, 'build.$configKey.yaml');
+    if (!await reader.canRead(id)) {
+      _log.warning('Cannot find ${id.path} for specified config.');
       throw CannotBuildException();
     }
-    final yaml = file.readAsStringSync();
+    final yaml = await reader.readAsString(id);
     final config = BuildConfig.parse(
       packageGraph.root.name,
       packageGraph.root.dependencies.map((n) => n.name),
       yaml,
-      configYamlPath: file.path,
+      configYamlPath: id.path,
     );
+    if (config.builderDefinitions.isNotEmpty) {
+      _log.warning(
+          'Ignoring `builders` configuration in `build.$configKey.yaml` - '
+          'overriding builder configuration is not supported.');
+    }
     configs[packageGraph.root.name] = config;
   }
   return configs;

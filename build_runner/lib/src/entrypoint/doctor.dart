@@ -51,8 +51,8 @@ class DoctorCommand extends BuildRunnerCommand {
 
   Future<Map<String, BuilderDefinition>> _loadBuilderDefinitions() async {
     final packageGraph = await PackageGraph.forThisPackage();
-    final buildConfigOverrides =
-        await findBuildConfigOverrides(packageGraph, null);
+    final buildConfigOverrides = await findBuildConfigOverrides(
+        packageGraph, null, FileBasedAssetReader(packageGraph));
     Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
       if (buildConfigOverrides.containsKey(package.name)) {
         return buildConfigOverrides[package.name];

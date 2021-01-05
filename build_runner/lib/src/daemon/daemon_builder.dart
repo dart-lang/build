@@ -191,8 +191,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     var logSubscription =
         LogSubscription(environment, verbose: daemonOptions.verbose);
 
-    var overrideBuildConfig =
-        await findBuildConfigOverrides(packageGraph, daemonOptions.configKey);
+    var overrideBuildConfig = await findBuildConfigOverrides(
+        packageGraph, daemonOptions.configKey, daemonEnvironment.reader);
 
     var buildOptions = await BuildOptions.create(
       logSubscription,

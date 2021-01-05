@@ -87,8 +87,8 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     deleteFilesByDefault: deleteFilesByDefault,
     packageGraph: packageGraph,
     skipBuildScriptCheck: skipBuildScriptCheck,
-    overrideBuildConfig:
-        await findBuildConfigOverrides(packageGraph, configKey),
+    overrideBuildConfig: await findBuildConfigOverrides(
+        packageGraph, configKey, environment.reader),
     enableLowResourcesMode: enableLowResourcesMode,
     trackPerformance: trackPerformance,
     logPerformanceDir: logPerformanceDir,
