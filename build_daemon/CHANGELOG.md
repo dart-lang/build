@@ -1,3 +1,8 @@
+# 2.1.5
+
+- Allow the null safe built_collection, built_value, and built_value_generator
+  packages, and regenerate serialization code with them. 
+
 # 2.1.4
 
 - Remove dependency on `package:package_resolver`.

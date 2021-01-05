@@ -30,16 +30,19 @@ class _$DefaultBuildTargetSerializer
       serializers.serialize(object.target,
           specifiedType: const FullType(String)),
     ];
-    if (object.outputLocation != null) {
+    Object value;
+    value = object.outputLocation;
+    if (value != null) {
       result
         ..add('outputLocation')
-        ..add(serializers.serialize(object.outputLocation,
+        ..add(serializers.serialize(value,
             specifiedType: const FullType(OutputLocation)));
     }
-    if (object.buildFilters != null) {
+    value = object.buildFilters;
+    if (value != null) {
       result
         ..add('buildFilters')
-        ..add(serializers.serialize(object.buildFilters,
+        ..add(serializers.serialize(value,
             specifiedType:
                 const FullType(BuiltSet, const [const FullType(String)])));
     }
@@ -56,13 +59,13 @@ class _$DefaultBuildTargetSerializer
     while (iterator.moveNext()) {
       final key = iterator.current as String;
       iterator.moveNext();
-      final dynamic value = iterator.current;
+      final Object value = iterator.current;
       switch (key) {
         case 'blackListPatterns':
           result.blackListPatterns.replace(serializers.deserialize(value,
                   specifiedType:
                       const FullType(BuiltSet, const [const FullType(RegExp)]))
-              as BuiltSet<dynamic>);
+              as BuiltSet<Object>);
           break;
         case 'outputLocation':
           result.outputLocation.replace(serializers.deserialize(value,
@@ -72,7 +75,7 @@ class _$DefaultBuildTargetSerializer
           result.buildFilters.replace(serializers.deserialize(value,
                   specifiedType:
                       const FullType(BuiltSet, const [const FullType(String)]))
-              as BuiltSet<dynamic>);
+              as BuiltSet<Object>);
           break;
         case 'target':
           result.target = serializers.deserialize(value,
@@ -119,7 +122,7 @@ class _$OutputLocationSerializer
     while (iterator.moveNext()) {
       final key = iterator.current as String;
       iterator.moveNext();
-      final dynamic value = iterator.current;
+      final Object value = iterator.current;
       switch (key) {
         case 'output':
           result.output = serializers.deserialize(value,
@@ -160,13 +163,10 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
       this.buildFilters,
       this.target})
       : super._() {
-    if (blackListPatterns == null) {
-      throw new BuiltValueNullFieldError(
-          'DefaultBuildTarget', 'blackListPatterns');
-    }
-    if (target == null) {
-      throw new BuiltValueNullFieldError('DefaultBuildTarget', 'target');
-    }
+    BuiltValueNullFieldError.checkNotNull(
+        blackListPatterns, 'DefaultBuildTarget', 'blackListPatterns');
+    BuiltValueNullFieldError.checkNotNull(
+        target, 'DefaultBuildTarget', 'target');
   }
 
   @override
@@ -236,11 +236,12 @@ class DefaultBuildTargetBuilder
   DefaultBuildTargetBuilder();
 
   DefaultBuildTargetBuilder get _$this {
-    if (_$v != null) {
-      _blackListPatterns = _$v.blackListPatterns?.toBuilder();
-      _outputLocation = _$v.outputLocation?.toBuilder();
-      _buildFilters = _$v.buildFilters?.toBuilder();
-      _target = _$v.target;
+    final $v = _$v;
+    if ($v != null) {
+      _blackListPatterns = $v.blackListPatterns.toBuilder();
+      _outputLocation = $v.outputLocation?.toBuilder();
+      _buildFilters = $v.buildFilters?.toBuilder();
+      _target = $v.target;
       _$v = null;
     }
     return this;
@@ -248,9 +249,7 @@ class DefaultBuildTargetBuilder
 
   @override
   void replace(DefaultBuildTarget other) {
-    if (other == null) {
-      throw new ArgumentError.notNull('other');
-    }
+    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$DefaultBuildTarget;
   }
 
@@ -268,7 +267,8 @@ class DefaultBuildTargetBuilder
               blackListPatterns: blackListPatterns.build(),
               outputLocation: _outputLocation?.build(),
               buildFilters: _buildFilters?.build(),
-              target: target);
+              target: BuiltValueNullFieldError.checkNotNull(
+                  target, 'DefaultBuildTarget', 'target'));
     } catch (_) {
       String _$failedField;
       try {
@@ -301,15 +301,10 @@ class _$OutputLocation extends OutputLocation {
       (new OutputLocationBuilder()..update(updates)).build();
 
   _$OutputLocation._({this.output, this.useSymlinks, this.hoist}) : super._() {
-    if (output == null) {
-      throw new BuiltValueNullFieldError('OutputLocation', 'output');
-    }
-    if (useSymlinks == null) {
-      throw new BuiltValueNullFieldError('OutputLocation', 'useSymlinks');
-    }
-    if (hoist == null) {
-      throw new BuiltValueNullFieldError('OutputLocation', 'hoist');
-    }
+    BuiltValueNullFieldError.checkNotNull(output, 'OutputLocation', 'output');
+    BuiltValueNullFieldError.checkNotNull(
+        useSymlinks, 'OutputLocation', 'useSymlinks');
+    BuiltValueNullFieldError.checkNotNull(hoist, 'OutputLocation', 'hoist');
   }
 
   @override
@@ -364,10 +359,11 @@ class OutputLocationBuilder
   OutputLocationBuilder();
 
   OutputLocationBuilder get _$this {
-    if (_$v != null) {
-      _output = _$v.output;
-      _useSymlinks = _$v.useSymlinks;
-      _hoist = _$v.hoist;
+    final $v = _$v;
+    if ($v != null) {
+      _output = $v.output;
+      _useSymlinks = $v.useSymlinks;
+      _hoist = $v.hoist;
       _$v = null;
     }
     return this;
@@ -375,9 +371,7 @@ class OutputLocationBuilder
 
   @override
   void replace(OutputLocation other) {
-    if (other == null) {
-      throw new ArgumentError.notNull('other');
-    }
+    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$OutputLocation;
   }
 
@@ -390,7 +384,12 @@ class OutputLocationBuilder
   _$OutputLocation build() {
     final _$result = _$v ??
         new _$OutputLocation._(
-            output: output, useSymlinks: useSymlinks, hoist: hoist);
+            output: BuiltValueNullFieldError.checkNotNull(
+                output, 'OutputLocation', 'output'),
+            useSymlinks: BuiltValueNullFieldError.checkNotNull(
+                useSymlinks, 'OutputLocation', 'useSymlinks'),
+            hoist: BuiltValueNullFieldError.checkNotNull(
+                hoist, 'OutputLocation', 'hoist'));
     replace(_$result);
     return _$result;
   }
