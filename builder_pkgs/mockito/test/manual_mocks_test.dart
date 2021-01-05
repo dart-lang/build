@@ -36,22 +36,25 @@ class RealClass {
 class MockedClass extends Mock implements RealClass {
   @override
   String? nonNullableParam(int? x) =>
-      super.noSuchMethod(Invocation.method(#nonNullableParam, [x]));
+      super.noSuchMethod(Invocation.method(#nonNullableParam, [x])) as String?;
 
   @override
-  String? nonNullableParam2<T>(int? x) => super
-      .noSuchMethod(Invocation.genericMethod(#nonNullableParam2, [T], [x]));
+  String? nonNullableParam2<T>(int? x) =>
+      super.noSuchMethod(Invocation.genericMethod(#nonNullableParam2, [T], [x]))
+          as String?;
 
   @override
-  String? nonNullableParam3<T extends Object>(T? x) => super
-      .noSuchMethod(Invocation.genericMethod(#nonNullableParam3, [T], [x]));
+  String? nonNullableParam3<T extends Object>(T? x) =>
+      super.noSuchMethod(Invocation.genericMethod(#nonNullableParam3, [T], [x]))
+          as String?;
 
   @override
-  String? operator +(int? x) => super.noSuchMethod(Invocation.method(#+, [x]));
+  String? operator +(int? x) =>
+      super.noSuchMethod(Invocation.method(#+, [x])) as String?;
 
   @override
   int nonNullableReturn(int? x) =>
-      super.noSuchMethod(Invocation.method(#nonNullableReturn, [x]), 1);
+      super.noSuchMethod(Invocation.method(#nonNullableReturn, [x]), 1) as int;
 
   // A generic return type is very tricky to work with in a manually mocked
   // method. What value can be passed as the second argument to
@@ -59,15 +62,17 @@ class MockedClass extends Mock implements RealClass {
   // "require" a named parameter, `sentinal` as this value. The named parameter
   // is optional, so that the override is still legal.
   @override
-  T nonNullableReturn2<T>(T? x, {T? sentinal}) => super
-      .noSuchMethod(Invocation.method(#nonNullableReturn2, [x]), sentinal!);
+  T nonNullableReturn2<T>(T? x, {T? sentinal}) =>
+      super.noSuchMethod(Invocation.method(#nonNullableReturn2, [x]), sentinal!)
+          as T;
 
   @override
   Future<int> nonNullableFutureReturn(int? x) => super.noSuchMethod(
-      Invocation.method(#nonNullableFutureReturn, [x]), Future.value(1));
+          Invocation.method(#nonNullableFutureReturn, [x]), Future.value(1))
+      as Future<int>;
 
   @override
-  int get getter => super.noSuchMethod(Invocation.getter(#getter), 1);
+  int get getter => super.noSuchMethod(Invocation.getter(#getter), 1) as int;
 }
 
 void main() {
@@ -88,9 +93,9 @@ void main() {
         'cannot operate on method with non-nullable params without a manual '
         'mock', () {
       // Normally this use of `any` would be a static error. To push forward to
-      // reveal the runtime error, we cast as dynamic.
+      // reveal the runtime error, we cast as int.
       expect(
-          () => when(mock.notMockedNonNullableParam(any as dynamic))
+          () => when(mock.notMockedNonNullableParam(any as int))
               .thenReturn('Mock'),
           throwsA(TypeMatcher<TypeError>()));
     });
