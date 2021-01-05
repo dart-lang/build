@@ -2,6 +2,8 @@
 
 - Return an empty stream instead of throwing from
   `PackageAssetReader.findAssets` when passed a non-existing package name.
+- Allow the null safe migration package versions for `crypto`, `glob`,
+  `logging`, and `package_config`.
 
 ## 1.3.2
 
