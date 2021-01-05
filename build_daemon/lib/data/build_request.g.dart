@@ -66,7 +66,9 @@ class BuildRequestBuilder
 
   @override
   void replace(BuildRequest other) {
-    ArgumentError.checkNotNull(other, 'other');
+    if (other == null) {
+      throw new ArgumentError.notNull('other');
+    }
     _$v = other as _$BuildRequest;
   }
 

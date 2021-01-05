@@ -71,27 +71,23 @@ class _$DefaultBuildResultSerializer
       serializers.serialize(object.target,
           specifiedType: const FullType(String)),
     ];
-    Object value;
-    value = object.buildId;
-    if (value != null) {
+    if (object.buildId != null) {
       result
         ..add('buildId')
-        ..add(serializers.serialize(value,
+        ..add(serializers.serialize(object.buildId,
             specifiedType: const FullType(String)));
     }
-    value = object.error;
-    if (value != null) {
+    if (object.error != null) {
       result
         ..add('error')
-        ..add(serializers.serialize(value,
+        ..add(serializers.serialize(object.error,
             specifiedType: const FullType(String)));
     }
-    value = object.isCached;
-    if (value != null) {
+    if (object.isCached != null) {
       result
         ..add('isCached')
-        ..add(
-            serializers.serialize(value, specifiedType: const FullType(bool)));
+        ..add(serializers.serialize(object.isCached,
+            specifiedType: const FullType(bool)));
     }
     return result;
   }
@@ -106,7 +102,7 @@ class _$DefaultBuildResultSerializer
     while (iterator.moveNext()) {
       final key = iterator.current as String;
       iterator.moveNext();
-      final Object value = iterator.current;
+      final dynamic value = iterator.current;
       switch (key) {
         case 'status':
           result.status = serializers.deserialize(value,
@@ -163,13 +159,13 @@ class _$BuildResultsSerializer implements StructuredSerializer<BuildResults> {
     while (iterator.moveNext()) {
       final key = iterator.current as String;
       iterator.moveNext();
-      final Object value = iterator.current;
+      final dynamic value = iterator.current;
       switch (key) {
         case 'results':
           result.results.replace(serializers.deserialize(value,
                   specifiedType: const FullType(
                       BuiltList, const [const FullType(BuildResult)]))
-              as BuiltList<Object>);
+              as BuiltList<dynamic>);
           break;
       }
     }
@@ -197,10 +193,12 @@ class _$DefaultBuildResult extends DefaultBuildResult {
   _$DefaultBuildResult._(
       {this.status, this.target, this.buildId, this.error, this.isCached})
       : super._() {
-    BuiltValueNullFieldError.checkNotNull(
-        status, 'DefaultBuildResult', 'status');
-    BuiltValueNullFieldError.checkNotNull(
-        target, 'DefaultBuildResult', 'target');
+    if (status == null) {
+      throw new BuiltValueNullFieldError('DefaultBuildResult', 'status');
+    }
+    if (target == null) {
+      throw new BuiltValueNullFieldError('DefaultBuildResult', 'target');
+    }
   }
 
   @override
@@ -272,13 +270,12 @@ class DefaultBuildResultBuilder
   DefaultBuildResultBuilder();
 
   DefaultBuildResultBuilder get _$this {
-    final $v = _$v;
-    if ($v != null) {
-      _status = $v.status;
-      _target = $v.target;
-      _buildId = $v.buildId;
-      _error = $v.error;
-      _isCached = $v.isCached;
+    if (_$v != null) {
+      _status = _$v.status;
+      _target = _$v.target;
+      _buildId = _$v.buildId;
+      _error = _$v.error;
+      _isCached = _$v.isCached;
       _$v = null;
     }
     return this;
@@ -286,7 +283,9 @@ class DefaultBuildResultBuilder
 
   @override
   void replace(DefaultBuildResult other) {
-    ArgumentError.checkNotNull(other, 'other');
+    if (other == null) {
+      throw new ArgumentError.notNull('other');
+    }
     _$v = other as _$DefaultBuildResult;
   }
 
@@ -299,10 +298,8 @@ class DefaultBuildResultBuilder
   _$DefaultBuildResult build() {
     final _$result = _$v ??
         new _$DefaultBuildResult._(
-            status: BuiltValueNullFieldError.checkNotNull(
-                status, 'DefaultBuildResult', 'status'),
-            target: BuiltValueNullFieldError.checkNotNull(
-                target, 'DefaultBuildResult', 'target'),
+            status: status,
+            target: target,
             buildId: buildId,
             error: error,
             isCached: isCached);
@@ -319,7 +316,9 @@ class _$BuildResults extends BuildResults {
       (new BuildResultsBuilder()..update(updates)).build();
 
   _$BuildResults._({this.results}) : super._() {
-    BuiltValueNullFieldError.checkNotNull(results, 'BuildResults', 'results');
+    if (results == null) {
+      throw new BuiltValueNullFieldError('BuildResults', 'results');
+    }
   }
 
   @override
@@ -360,9 +359,8 @@ class BuildResultsBuilder
   BuildResultsBuilder();
 
   BuildResultsBuilder get _$this {
-    final $v = _$v;
-    if ($v != null) {
-      _results = $v.results.toBuilder();
+    if (_$v != null) {
+      _results = _$v.results?.toBuilder();
       _$v = null;
     }
     return this;
@@ -370,7 +368,9 @@ class BuildResultsBuilder
 
   @override
   void replace(BuildResults other) {
-    ArgumentError.checkNotNull(other, 'other');
+    if (other == null) {
+      throw new ArgumentError.notNull('other');
+    }
     _$v = other as _$BuildResults;
   }
 

@@ -45,7 +45,7 @@ class _$ShutdownNotificationSerializer
     while (iterator.moveNext()) {
       final key = iterator.current as String;
       iterator.moveNext();
-      final Object value = iterator.current;
+      final dynamic value = iterator.current;
       switch (key) {
         case 'message':
           result.message = serializers.deserialize(value,
@@ -73,10 +73,12 @@ class _$ShutdownNotification extends ShutdownNotification {
       (new ShutdownNotificationBuilder()..update(updates)).build();
 
   _$ShutdownNotification._({this.message, this.failureType}) : super._() {
-    BuiltValueNullFieldError.checkNotNull(
-        message, 'ShutdownNotification', 'message');
-    BuiltValueNullFieldError.checkNotNull(
-        failureType, 'ShutdownNotification', 'failureType');
+    if (message == null) {
+      throw new BuiltValueNullFieldError('ShutdownNotification', 'message');
+    }
+    if (failureType == null) {
+      throw new BuiltValueNullFieldError('ShutdownNotification', 'failureType');
+    }
   }
 
   @override
@@ -125,10 +127,9 @@ class ShutdownNotificationBuilder
   ShutdownNotificationBuilder();
 
   ShutdownNotificationBuilder get _$this {
-    final $v = _$v;
-    if ($v != null) {
-      _message = $v.message;
-      _failureType = $v.failureType;
+    if (_$v != null) {
+      _message = _$v.message;
+      _failureType = _$v.failureType;
       _$v = null;
     }
     return this;
@@ -136,7 +137,9 @@ class ShutdownNotificationBuilder
 
   @override
   void replace(ShutdownNotification other) {
-    ArgumentError.checkNotNull(other, 'other');
+    if (other == null) {
+      throw new ArgumentError.notNull('other');
+    }
     _$v = other as _$ShutdownNotification;
   }
 
@@ -149,10 +152,7 @@ class ShutdownNotificationBuilder
   _$ShutdownNotification build() {
     final _$result = _$v ??
         new _$ShutdownNotification._(
-            message: BuiltValueNullFieldError.checkNotNull(
-                message, 'ShutdownNotification', 'message'),
-            failureType: BuiltValueNullFieldError.checkNotNull(
-                failureType, 'ShutdownNotification', 'failureType'));
+            message: message, failureType: failureType);
     replace(_$result);
     return _$result;
   }

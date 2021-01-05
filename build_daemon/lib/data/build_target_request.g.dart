@@ -38,7 +38,7 @@ class _$BuildTargetRequestSerializer
     while (iterator.moveNext()) {
       final key = iterator.current as String;
       iterator.moveNext();
-      final Object value = iterator.current;
+      final dynamic value = iterator.current;
       switch (key) {
         case 'target':
           result.target = serializers.deserialize(value,
@@ -60,8 +60,9 @@ class _$BuildTargetRequest extends BuildTargetRequest {
       (new BuildTargetRequestBuilder()..update(updates)).build();
 
   _$BuildTargetRequest._({this.target}) : super._() {
-    BuiltValueNullFieldError.checkNotNull(
-        target, 'BuildTargetRequest', 'target');
+    if (target == null) {
+      throw new BuiltValueNullFieldError('BuildTargetRequest', 'target');
+    }
   }
 
   @override
@@ -103,9 +104,8 @@ class BuildTargetRequestBuilder
   BuildTargetRequestBuilder();
 
   BuildTargetRequestBuilder get _$this {
-    final $v = _$v;
-    if ($v != null) {
-      _target = $v.target;
+    if (_$v != null) {
+      _target = _$v.target;
       _$v = null;
     }
     return this;
@@ -113,7 +113,9 @@ class BuildTargetRequestBuilder
 
   @override
   void replace(BuildTargetRequest other) {
-    ArgumentError.checkNotNull(other, 'other');
+    if (other == null) {
+      throw new ArgumentError.notNull('other');
+    }
     _$v = other as _$BuildTargetRequest;
   }
 
@@ -124,10 +126,7 @@ class BuildTargetRequestBuilder
 
   @override
   _$BuildTargetRequest build() {
-    final _$result = _$v ??
-        new _$BuildTargetRequest._(
-            target: BuiltValueNullFieldError.checkNotNull(
-                target, 'BuildTargetRequest', 'target'));
+    final _$result = _$v ?? new _$BuildTargetRequest._(target: target);
     replace(_$result);
     return _$result;
   }

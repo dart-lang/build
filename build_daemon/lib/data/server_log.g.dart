@@ -85,26 +85,22 @@ class _$ServerLogSerializer implements StructuredSerializer<ServerLog> {
       serializers.serialize(object.message,
           specifiedType: const FullType(String)),
     ];
-    Object value;
-    value = object.loggerName;
-    if (value != null) {
+    if (object.loggerName != null) {
       result
         ..add('loggerName')
-        ..add(serializers.serialize(value,
+        ..add(serializers.serialize(object.loggerName,
             specifiedType: const FullType(String)));
     }
-    value = object.error;
-    if (value != null) {
+    if (object.error != null) {
       result
         ..add('error')
-        ..add(serializers.serialize(value,
+        ..add(serializers.serialize(object.error,
             specifiedType: const FullType(String)));
     }
-    value = object.stackTrace;
-    if (value != null) {
+    if (object.stackTrace != null) {
       result
         ..add('stackTrace')
-        ..add(serializers.serialize(value,
+        ..add(serializers.serialize(object.stackTrace,
             specifiedType: const FullType(String)));
     }
     return result;
@@ -119,7 +115,7 @@ class _$ServerLogSerializer implements StructuredSerializer<ServerLog> {
     while (iterator.moveNext()) {
       final key = iterator.current as String;
       iterator.moveNext();
-      final Object value = iterator.current;
+      final dynamic value = iterator.current;
       switch (key) {
         case 'level':
           result.level = serializers.deserialize(value,
@@ -166,8 +162,12 @@ class _$ServerLog extends ServerLog {
   _$ServerLog._(
       {this.level, this.message, this.loggerName, this.error, this.stackTrace})
       : super._() {
-    BuiltValueNullFieldError.checkNotNull(level, 'ServerLog', 'level');
-    BuiltValueNullFieldError.checkNotNull(message, 'ServerLog', 'message');
+    if (level == null) {
+      throw new BuiltValueNullFieldError('ServerLog', 'level');
+    }
+    if (message == null) {
+      throw new BuiltValueNullFieldError('ServerLog', 'message');
+    }
   }
 
   @override
@@ -236,13 +236,12 @@ class ServerLogBuilder implements Builder<ServerLog, ServerLogBuilder> {
   ServerLogBuilder();
 
   ServerLogBuilder get _$this {
-    final $v = _$v;
-    if ($v != null) {
-      _level = $v.level;
-      _message = $v.message;
-      _loggerName = $v.loggerName;
-      _error = $v.error;
-      _stackTrace = $v.stackTrace;
+    if (_$v != null) {
+      _level = _$v.level;
+      _message = _$v.message;
+      _loggerName = _$v.loggerName;
+      _error = _$v.error;
+      _stackTrace = _$v.stackTrace;
       _$v = null;
     }
     return this;
@@ -250,7 +249,9 @@ class ServerLogBuilder implements Builder<ServerLog, ServerLogBuilder> {
 
   @override
   void replace(ServerLog other) {
-    ArgumentError.checkNotNull(other, 'other');
+    if (other == null) {
+      throw new ArgumentError.notNull('other');
+    }
     _$v = other as _$ServerLog;
   }
 
@@ -263,10 +264,8 @@ class ServerLogBuilder implements Builder<ServerLog, ServerLogBuilder> {
   _$ServerLog build() {
     final _$result = _$v ??
         new _$ServerLog._(
-            level: BuiltValueNullFieldError.checkNotNull(
-                level, 'ServerLog', 'level'),
-            message: BuiltValueNullFieldError.checkNotNull(
-                message, 'ServerLog', 'message'),
+            level: level,
+            message: message,
             loggerName: loggerName,
             error: error,
             stackTrace: stackTrace);
