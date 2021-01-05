@@ -110,9 +110,7 @@ class PackageAssetReader extends AssetReader
           'explicit `package`.');
     }
     var packageLibDir = _packageConfig[package]?.packageUriRoot;
-    if (packageLibDir == null) {
-      throw UnsupportedError('Unable to find package $package');
-    }
+    if (packageLibDir == null) return Stream.empty();
 
     var packageFiles = Directory.fromUri(packageLibDir)
         .list(recursive: true)

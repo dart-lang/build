@@ -1,3 +1,8 @@
+## 1.3.3
+
+- Return an empty stream instead of throwing from
+  `PackageAssetReader.findAssets` when passed a non-existing package name.
+
 ## 1.3.2
 
 - Fix the `test/index.html` not generating by default.
