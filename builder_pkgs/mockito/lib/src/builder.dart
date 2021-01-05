@@ -55,17 +55,21 @@ class MockBuilder implements Builder {
     final assetUris = await _resolveAssetUris(
         buildStep.resolver, mockTargetGatherer._mockTargets, entryAssetId.path);
 
-    final mockLibrary = Library((b) {
-      var mockLibraryInfo = _MockLibraryInfo(mockTargetGatherer._mockTargets,
-          assetUris: assetUris, entryLib: entryLib);
-      b.body.addAll(mockLibraryInfo.fakeClasses);
-      b.body.addAll(mockLibraryInfo.mockClasses);
-    });
+    final mockLibraryInfo = _MockLibraryInfo(mockTargetGatherer._mockTargets,
+        assetUris: assetUris, entryLib: entryLib);
 
-    if (mockLibrary.body.isEmpty) {
+    if (mockLibraryInfo.fakeClasses.isEmpty &&
+        mockLibraryInfo.mockClasses.isEmpty) {
       // Nothing to mock here!
       return;
     }
+
+    final mockLibrary = Library((b) {
+      // The code_builder `asA` API unconditionally adds defensive parentheses.
+      b.body.add(Code('\n\n// ignore_for_file: unnecessary_parenthesis\n\n'));
+      b.body.addAll(mockLibraryInfo.fakeClasses);
+      b.body.addAll(mockLibraryInfo.mockClasses);
+    });
 
     final emitter =
         DartEmitter.scoped(useNullSafetySyntax: sourceLibIsNonNullable);
@@ -795,6 +799,7 @@ class _MockLibraryInfo {
     if (method.isOperator) name = 'operator$name';
     builder
       ..name = name
+      ..annotations.addAll([refer('override')])
       ..returns = _typeReference(method.returnType);
 
     if (method.typeParameters != null) {
