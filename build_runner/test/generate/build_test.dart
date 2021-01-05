@@ -32,7 +32,7 @@ a:file://fake/pkg/path
   });
 
   group('--config', () {
-    test('warns if you atempt to configure builders', () async {
+    test('warns override config defines builders', () async {
       var logs = <LogRecord>[];
       final packageGraph = buildPackageGraph({
         rootPackage('a', path: path.absolute('a')): [],
