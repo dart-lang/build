@@ -16,7 +16,7 @@ import 'package:_test_common/common.dart';
 import 'package:_test_common/package_graphs.dart';
 
 void main() {
-  /// Basic phases/phase groups which get used in many tests
+  // Basic phases/phase groups which get used in many tests
   final copyABuildApplication = applyToRoot(
       TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')));
   final packageConfigId = makeAssetId('a|.dart_tool/package_config.json');
