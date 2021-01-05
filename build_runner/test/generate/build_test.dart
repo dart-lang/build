@@ -1,6 +1,7 @@
-// Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2021, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -37,7 +38,7 @@ a:file://fake/pkg/path
       final packageGraph = buildPackageGraph({
         rootPackage('a', path: path.absolute('a')): [],
       });
-      var result = await doBuild([
+      var result = await _doBuild([
         copyABuildApplication
       ], {
         'a|build.yaml': '',
@@ -62,7 +63,7 @@ builders:
   });
 }
 
-Future<BuildResult> doBuild(List<BuilderApplication> builders,
+Future<BuildResult> _doBuild(List<BuilderApplication> builders,
     Map<String, String> inputs, InMemoryRunnerAssetWriter writer,
     {PackageGraph packageGraph,
     void Function(LogRecord) onLog,
