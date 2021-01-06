@@ -66,8 +66,8 @@ Future<Iterable<Expression>> _findBuilderApplications() async {
     equals: (a, b) => a.name == b.name,
     hashCode: (n) => n.name.hashCode,
   ).expand((c) => c);
-  final buildConfigOverrides =
-      await findBuildConfigOverrides(packageGraph, null);
+  final buildConfigOverrides = await findBuildConfigOverrides(
+      packageGraph, null, FileBasedAssetReader(packageGraph));
   Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
     if (buildConfigOverrides.containsKey(package.name)) {
       return buildConfigOverrides[package.name];

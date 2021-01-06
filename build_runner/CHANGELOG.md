@@ -1,3 +1,8 @@
+## 1.10.12-dev
+
+- Add a warning if a `builders` section is found in when parsing an overriden
+  build.yaml file via the `--config` flag.
+
 ## 1.10.11
 
 - Fix handling of `build.yaml` `generateFor` default config for values including
