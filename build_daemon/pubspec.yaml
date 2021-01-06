@@ -1,5 +1,5 @@
 name: build_daemon
-version: 2.1.5
+version: 2.1.5-dev
 description: A daemon for running Dart builds.
 homepage: https://github.com/dart-lang/build/tree/master/build_daemon
 
@@ -30,8 +30,4 @@ dev_dependencies:
 
 dependency_overrides:
   built_collection: ^5.0.0-nullsafety
-  # Needed for testing the null safety release until these are published
-  built_value:
-    git:
-      url: https://github.com/google/built_value.dart.git
-      path: built_value
+  built_value: ^8.0.0-nullsafety

@@ -1,7 +1,8 @@
-# 2.1.5
+# 2.1.5-dev
 
-- Allow the null safe built_collection, built_value, and built_value_generator
-  packages, and regenerate serialization code with them. 
+- Allow the null safe built_collection, and built_value, but keep the old
+  built_value_generator and generated code which is compatible across both
+  versions of the core libs.
 
 # 2.1.4
 
