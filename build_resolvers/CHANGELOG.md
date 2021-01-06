@@ -1,3 +1,7 @@
+## 1.5.2
+
+- Allow the null safe pre-releases of all migrated deps.
+
 ## 1.5.1
 
 - Fix a potential nullability issue in the `astNodeFor` api.
