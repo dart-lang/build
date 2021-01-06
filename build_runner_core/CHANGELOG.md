@@ -1,3 +1,7 @@
+## 6.1.6
+
+- Allow the null safe pre-releases of all migrated deps.
+
 ## 6.1.5
 
 - Allow build version `1.6.x`.
