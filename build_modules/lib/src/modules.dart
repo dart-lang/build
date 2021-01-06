@@ -24,7 +24,6 @@ part 'modules.g.dart';
 /// modules they depend on.
 /// Modules can span pub package boundaries when there are import cycles across
 /// packages.
-@JsonSerializable()
 @_AssetIdConverter()
 @_DartPlatformConverter()
 class Module {
@@ -60,7 +59,6 @@ class Module {
   /// The assets which are built once per module, such as DDC compiled output or
   /// Analyzer summaries, will be named after the primary source and will
   /// encompass everything in [sources].
-  @JsonKey(name: 'p', nullable: false)
   final AssetId primarySource;
 
   /// The libraries in the strongly connected import cycle with [primarySource].
@@ -84,12 +82,10 @@ class Module {
   /// Libraries `foo` and `bar` form an import cycle so they would be grouped in
   /// the same module. Every Dart library will only be contained in a single
   /// [Module].
-  @JsonKey(name: 's', nullable: false, toJson: _toJsonAssetIds)
   final Set<AssetId> sources;
 
   /// The [primarySource]s of the [Module]s which contain any library imported
   /// from any of the [sources] in this module.
-  @JsonKey(name: 'd', nullable: false, toJson: _toJsonAssetIds)
   final Set<AssetId> directDependencies;
 
   /// Missing modules are created if a module depends on another non-existent
@@ -97,7 +93,6 @@ class Module {
   ///
   /// We want to report these errors lazily to allow for builds to succeed if it
   /// won't actually impact any apps negatively.
-  @JsonKey(name: 'm', nullable: true, defaultValue: false)
   final bool isMissing;
 
   /// Whether or not this module is supported for [platform].
@@ -110,10 +105,8 @@ class Module {
   ///
   /// Modules are allowed to exist even if they aren't supported, which can help
   /// with discovering root causes of incompatibility.
-  @JsonKey(name: 'is', nullable: false)
   final bool isSupported;
 
-  @JsonKey(name: 'pf', nullable: false)
   final DartPlatform platform;
 
   Module(this.primarySource, Iterable<AssetId> sources,
