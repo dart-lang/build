@@ -27,7 +27,3 @@ dev_dependencies:
   test: ^1.3.3
   test_descriptor: ^1.1.1
   uuid: ^2.0.0
-
-dependency_overrides:
-  built_collection: ^5.0.0-nullsafety
-  built_value: ^8.0.0-nullsafety
