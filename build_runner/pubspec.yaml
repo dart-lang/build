@@ -58,4 +58,3 @@ dependency_overrides:
   logging: ^1.0.0-nullsafety
   mime: ^1.0.0-nullsafety
   pub_semver: ^2.0.0-nullsafety
-  yaml: ^3.0.0-nullsafety

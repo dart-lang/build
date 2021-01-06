@@ -44,4 +44,3 @@ dependency_overrides:
   path: ^1.8.0-nullsafety
   pedantic: ^1.10.0-nullsafety
   pool: ^1.5.0-nullsafety
-  yaml: ^3.0.0-nullsafety
