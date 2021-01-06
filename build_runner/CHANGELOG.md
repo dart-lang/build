@@ -1,5 +1,6 @@
-## 1.10.12-dev
+## 1.10.12
 
+- Allow the null safe pre-releases of all migrated deps.
 - Add a warning if a `builders` section is found in when parsing an overriden
   build.yaml file via the `--config` flag.
 
