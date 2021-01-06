@@ -1,3 +1,7 @@
+# 2.1.5
+
+- Allow the null safe pre-release version of `logging`.
+
 # 2.1.4
 
 - Remove dependency on `package:package_resolver`.
