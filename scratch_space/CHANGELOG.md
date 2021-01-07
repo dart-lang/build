@@ -1,7 +1,8 @@
-## 0.0.4+3-dev
+## 0.0.4+3
 
 - Change returns from `Future<dynamic>` to `Future<void>`.
 - Increase min sdk constraint to `>=2.7.0`.
+- Allow the null safe pre-releases of all migrated deps.
 
 ## 0.0.4+2
 

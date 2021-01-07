@@ -7,7 +7,6 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
-import 'package:json_annotation/json_annotation.dart';
 
 import 'common.dart';
 import 'module_library.dart';
@@ -200,9 +199,7 @@ List<Module> _computeModules(
       entryIds);
 }
 
-@JsonSerializable()
 class MetaModule {
-  @JsonKey(name: 'm', nullable: false)
   final List<Module> modules;
 
   MetaModule(List<Module> modules) : modules = List.unmodifiable(modules);

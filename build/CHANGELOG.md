@@ -1,3 +1,7 @@
+## 1.6.1
+
+- Allow the null safe pre-releases of all migrated deps.
+
 ## 1.6.0
 
 - Adds the `Future<AstNode> astNodeFor(Element, {bool resolve})` api to

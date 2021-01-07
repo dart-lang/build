@@ -1,3 +1,7 @@
+## 3.0.3
+
+- Allow the null safe pre-releases of all migrated deps.
+
 ## 3.0.2
 
 - Allow `package:json_annotation` `v4.x`.
