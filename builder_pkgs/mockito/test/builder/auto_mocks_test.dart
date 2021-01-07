@@ -783,6 +783,29 @@ void main() {
     expect(mocksContent, contains('List<_i2.Foo>? list'));
   });
 
+  test('imports libraries for external class types declared in parts',
+      () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        part 'foo_part.dart';
+        '''),
+      'foo|lib/foo_part.dart': dedent(r'''
+        part of 'foo.dart';
+        class Foo {}
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([Foo])
+        void fooTests() {}
+        '''
+    });
+    expect(mocksContent, contains("import 'package:foo/foo.dart' as _i2;"));
+    expect(mocksContent,
+        contains('class MockFoo extends _i1.Mock implements _i2.Foo'));
+  });
+
   test(
       'imports libraries for external class types found in a method return '
       'type', () async {

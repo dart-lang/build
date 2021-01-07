@@ -114,7 +114,7 @@ class MockBuilder implements Builder {
       }
 
       try {
-        var typeAssetId = await resolver.assetIdForElement(element);
+        var typeAssetId = await resolver.assetIdForElement(element.library);
 
         if (typeAssetId.path.startsWith('lib/')) {
           typeUris[element] = typeAssetId.uri.toString();
