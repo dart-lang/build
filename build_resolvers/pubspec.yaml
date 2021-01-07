@@ -21,11 +21,3 @@ dependencies:
 dev_dependencies:
   test: ^1.0.0
   build_test: ^1.0.0
-
-dependency_overrides:
-  crypto: ^3.0.0-nullsafety
-  logging: ^1.0.0-nullsafety
-  meta: ^1.3.0-nullsafety
-  path: ^1.8.0-nullsafety
-  pool: ^1.5.0-nullsafety
-  pub_semver: ^2.0.0-nullsafety
