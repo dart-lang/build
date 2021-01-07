@@ -1,6 +1,9 @@
 # 2.1.5
 
-- Allow the null safe pre-release version of `logging`.
+- Allow the null safe pre-release version of `logging`, `built_value`, and
+  `built_collection`.
+  - Keeps the old `built_value_generator` and generated code which is
+    compatible across both versions of the core libs.
 
 # 2.1.4
 
