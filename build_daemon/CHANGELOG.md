@@ -1,3 +1,9 @@
+# 2.1.5-dev
+
+- Allow the null safe built_collection, and built_value, but keep the old
+  built_value_generator and generated code which is compatible across both
+  versions of the core libs.
+
 # 2.1.4
 
 - Remove dependency on `package:package_resolver`.
