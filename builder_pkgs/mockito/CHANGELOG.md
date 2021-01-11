@@ -1,3 +1,8 @@
+## 5.0.0-nullsafety.2
+
+* Fix issue with generated code which references a class declared in a part
+  ([#310](https://github.com/dart-lang/mockito/issues/310)).
+
 ## 5.0.0-nullsafety.1
 
 * Fix an issue with generated mocks overriding methods from Object, such as
