@@ -21,23 +21,79 @@ const scriptSnapshotLocation = '$scriptLocation.snapshot';
 
 final _log = Logger('Entrypoint');
 
-Future<String> generateBuildScript() =>
-    logTimedAsync(_log, 'Generating build script', _generateBuildScript);
+/// Options to generate custom build scripts.
+///
+/// The build script is a generated Dart file in [scriptLocation]. It contains
+/// all builder definitions part of the build and is used by the top-level
+/// `build_runner` commands to run a build with the correct builders.
+///
+/// By providing custom generation options, it's possible to tweak parts of a
+/// build script.
+class BuildScriptGenerationOptions {
+  const BuildScriptGenerationOptions();
 
-Future<String> _generateBuildScript() async {
-  final builders = await _findBuilderApplications();
-  final library = Library((b) => b.body.addAll([
-        literalList(
-                builders,
-                refer('BuilderApplication',
-                    'package:build_runner_core/build_runner_core.dart'))
-            .assignFinal('_builders')
-            .statement,
-        _main()
-      ]));
-  final emitter = DartEmitter(Allocator.simplePrefixing());
-  try {
-    return DartFormatter().format('''
+  /// Builds a Dart expression to invoke a build.
+  ///
+  /// [args] is an expression evaluating to the command-line arguments passed
+  /// to the build script.
+  /// [builders] is an expression evaluating to a list of `BuilderApplication`s
+  /// from `build_runner_core`.
+  /// The expression should evaluate to a `Future<int>`. Its result will be
+  /// posted to an optional `sendPort` of the generated entrypoint. Further,
+  /// the generated script will set its exit code to the returned value.
+  ///
+  /// For reference, the default implementation calls `run(args, builders)`
+  /// from `package:build_runner/build_runner.dart`.
+  Expression runBuild(Expression args, Expression builders) {
+    return refer('run', 'package:build_runner/build_runner.dart')
+        .call([args, builders]);
+  }
+
+  /// The package graph to consider for builder applications.
+  Future<PackageGraph> packageGraph() => PackageGraph.forThisPackage();
+
+  /// Finds overrides for `build.yaml` configurations.
+  ///
+  /// Keys in the returned map correspond to package names, the associated value
+  /// is the overriden build configuration.
+  ///
+  /// By default, the root package can override the build configuration of a
+  /// package `foo` by declaring a `foo.build.yaml` file.
+  Future<Map<String, BuildConfig>> findConfigOverrides(
+      PackageGraph graph, RunnerAssetReader reader) {
+    return findBuildConfigOverrides(graph, null, reader);
+  }
+}
+
+Future<String> generateBuildScript(
+    [BuildScriptGenerationOptions options =
+        const BuildScriptGenerationOptions()]) {
+  ArgumentError.checkNotNull(options, 'options');
+  return logTimedAsync(_log, 'Generating build script', () {
+    final generator = _BuildScriptGenerator(options);
+    return generator._generateBuildScript();
+  });
+}
+
+class _BuildScriptGenerator {
+  final BuildScriptGenerationOptions _options;
+
+  _BuildScriptGenerator(this._options);
+
+  Future<String> _generateBuildScript() async {
+    final builders = await _findBuilderApplications();
+    final library = Library((b) => b.body.addAll([
+          literalList(
+                  builders,
+                  refer('BuilderApplication',
+                      'package:build_runner_core/build_runner_core.dart'))
+              .assignFinal('_builders')
+              .statement,
+          _main()
+        ]));
+    final emitter = DartEmitter(Allocator.simplePrefixing());
+    try {
+      return DartFormatter().format('''
       // Ensure that the build script itself is not opted in to null safety,
       // instead of taking the language version from the current package.
       //
@@ -46,92 +102,96 @@ Future<String> _generateBuildScript() async {
       // ignore_for_file: directives_ordering
 
       ${library.accept(emitter)}''');
-  } on FormatterException {
-    _log.severe('Generated build script could not be parsed.\n'
-        'This is likely caused by a misconfigured builder definition.');
-    throw CannotBuildException();
-  }
-}
-
-/// Finds expressions to create all the `BuilderApplication` instances that
-/// should be applied packages in the build.
-///
-/// Adds `apply` expressions based on the BuildefDefinitions from any package
-/// which has a `build.yaml`.
-Future<Iterable<Expression>> _findBuilderApplications() async {
-  final packageGraph = await PackageGraph.forThisPackage();
-  final orderedPackages = stronglyConnectedComponents<PackageNode>(
-    [packageGraph.root],
-    (node) => node.dependencies,
-    equals: (a, b) => a.name == b.name,
-    hashCode: (n) => n.name.hashCode,
-  ).expand((c) => c);
-  final buildConfigOverrides = await findBuildConfigOverrides(
-      packageGraph, null, FileBasedAssetReader(packageGraph));
-  Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
-    if (buildConfigOverrides.containsKey(package.name)) {
-      return buildConfigOverrides[package.name];
-    }
-    try {
-      return await BuildConfig.fromBuildConfigDir(
-          package.name, package.dependencies.map((n) => n.name), package.path);
-    } on ArgumentError catch (_) {
-      // During the build an error will be logged.
-      return BuildConfig.useDefault(
-          package.name, package.dependencies.map((n) => n.name));
+    } on FormatterException {
+      _log.severe('Generated build script could not be parsed.\n'
+          'This is likely caused by a misconfigured builder definition.');
+      throw CannotBuildException();
     }
   }
 
-  bool _isValidDefinition(dynamic definition) {
-    // Filter out builderDefinitions with relative imports that aren't
-    // from the root package, because they will never work.
-    if (definition.import.startsWith('package:') as bool) return true;
-    return definition.package == packageGraph.root.name;
+  /// A method forwarding to `run`.
+  Method _main() => Method((b) => b
+    ..name = 'main'
+    ..returns = TypeReference((b) => b
+      ..symbol = 'Future'
+      ..url = 'dart:async'
+      ..types.add(refer('void')))
+    ..modifier = MethodModifier.async
+    ..requiredParameters.add(Parameter((b) => b
+      ..name = 'args'
+      ..type = TypeReference((b) => b
+        ..symbol = 'List'
+        ..types.add(refer('String')))))
+    ..optionalParameters.add(Parameter((b) => b
+      ..name = 'sendPort'
+      ..type = refer('SendPort', 'dart:isolate')))
+    ..body = Block.of([
+      _options
+          .runBuild(refer('args'), refer('_builders'))
+          .awaited
+          .assignVar('result')
+          .statement,
+      refer('sendPort')
+          .nullSafeProperty('send')
+          .call([refer('result')]).statement,
+      refer('exitCode', 'dart:io').assign(refer('result')).statement,
+    ]));
+
+  /// Finds expressions to create all the `BuilderApplication` instances that
+  /// should be applied packages in the build.
+  ///
+  /// Adds `apply` expressions based on the BuildefDefinitions from any package
+  /// which has a `build.yaml`.
+  Future<Iterable<Expression>> _findBuilderApplications() async {
+    final packageGraph = await _options.packageGraph();
+    final orderedPackages = stronglyConnectedComponents<PackageNode>(
+      [packageGraph.root],
+      (node) => node.dependencies,
+      equals: (a, b) => a.name == b.name,
+      hashCode: (n) => n.name.hashCode,
+    ).expand((c) => c);
+    final buildConfigOverrides = await _options.findConfigOverrides(
+        packageGraph, FileBasedAssetReader(packageGraph));
+    Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
+      if (buildConfigOverrides.containsKey(package.name)) {
+        return buildConfigOverrides[package.name];
+      }
+      try {
+        return await BuildConfig.fromBuildConfigDir(package.name,
+            package.dependencies.map((n) => n.name), package.path);
+      } on ArgumentError catch (_) {
+        // During the build an error will be logged.
+        return BuildConfig.useDefault(
+            package.name, package.dependencies.map((n) => n.name));
+      }
+    }
+
+    bool _isValidDefinition(dynamic definition) {
+      // Filter out builderDefinitions with relative imports that aren't
+      // from the root package, because they will never work.
+      if (definition.import.startsWith('package:') as bool) return true;
+      return definition.package == packageGraph.root.name;
+    }
+
+    final orderedConfigs =
+        await Future.wait(orderedPackages.map(_packageBuildConfig));
+    final builderDefinitions = orderedConfigs
+        .expand((c) => c.builderDefinitions.values)
+        .where(_isValidDefinition);
+
+    final orderedBuilders = findBuilderOrder(builderDefinitions).toList();
+
+    final postProcessBuilderDefinitions = orderedConfigs
+        .expand((c) => c.postProcessBuilderDefinitions.values)
+        .where(_isValidDefinition);
+
+    return [
+      for (var builder in orderedBuilders) _applyBuilder(builder),
+      for (var builder in postProcessBuilderDefinitions)
+        _applyPostProcessBuilder(builder)
+    ];
   }
-
-  final orderedConfigs =
-      await Future.wait(orderedPackages.map(_packageBuildConfig));
-  final builderDefinitions = orderedConfigs
-      .expand((c) => c.builderDefinitions.values)
-      .where(_isValidDefinition);
-
-  final orderedBuilders = findBuilderOrder(builderDefinitions).toList();
-
-  final postProcessBuilderDefinitions = orderedConfigs
-      .expand((c) => c.postProcessBuilderDefinitions.values)
-      .where(_isValidDefinition);
-
-  return [
-    for (var builder in orderedBuilders) _applyBuilder(builder),
-    for (var builder in postProcessBuilderDefinitions)
-      _applyPostProcessBuilder(builder)
-  ];
 }
-
-/// A method forwarding to `run`.
-Method _main() => Method((b) => b
-  ..name = 'main'
-  ..returns = refer('void')
-  ..modifier = MethodModifier.async
-  ..requiredParameters.add(Parameter((b) => b
-    ..name = 'args'
-    ..type = TypeReference((b) => b
-      ..symbol = 'List'
-      ..types.add(refer('String')))))
-  ..optionalParameters.add(Parameter((b) => b
-    ..name = 'sendPort'
-    ..type = refer('SendPort', 'dart:isolate')))
-  ..body = Block.of([
-    refer('run', 'package:build_runner/build_runner.dart')
-        .call([refer('args'), refer('_builders')])
-        .awaited
-        .assignVar('result')
-        .statement,
-    refer('sendPort')
-        .nullSafeProperty('send')
-        .call([refer('result')]).statement,
-    refer('exitCode', 'dart:io').assign(refer('result')).statement,
-  ]));
 
 /// An expression calling `apply` with appropriate setup for a Builder.
 Expression _applyBuilder(BuilderDefinition definition) {

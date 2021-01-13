@@ -18,13 +18,26 @@ final _logger = Logger('Bootstrap');
 
 /// Generates the build script, snapshots it if needed, and runs it.
 ///
+/// The optional [generationOptions] can be used to customize the generated
+/// build script.
+/// The optional [printUncaughtError] function will be invoked when the
+/// build script threw an uncaught error. The default behavior asks users to
+/// open an issue at `dart-lang/build`, this can be customized.
+///
 /// Will retry once on [IsolateSpawnException]s to handle SDK updates.
 ///
 /// Returns the exit code from running the build script.
 ///
 /// If an exit code of 75 is returned, this function should be re-ran.
-Future<int> generateAndRun(List<String> args, {Logger logger}) async {
+Future<int> generateAndRun(
+  List<String> args, {
+  Logger logger,
+  BuildScriptGenerationOptions generationOptions =
+      const BuildScriptGenerationOptions(),
+  void Function(Stdout output) printUncaughtError,
+}) async {
   logger ??= _logger;
+  printUncaughtError ??= _defaultErrorMessage;
   ReceivePort exitPort;
   ReceivePort errorPort;
   ReceivePort messagePort;
@@ -46,7 +59,7 @@ Future<int> generateAndRun(List<String> args, {Logger logger}) async {
       if (buildScript.existsSync()) {
         oldContents = buildScript.readAsStringSync();
       }
-      var newContents = await generateBuildScript();
+      var newContents = await generateBuildScript(generationOptions);
       // Only trigger a build script update if necessary.
       if (newContents != oldContents) {
         buildScript
@@ -66,12 +79,9 @@ Future<int> generateAndRun(List<String> args, {Logger logger}) async {
     errorListener = errorPort.listen((e) {
       final error = e[0];
       final trace = e[1] as String;
-      stderr
-        ..writeln('\n\nYou have hit a bug in build_runner')
-        ..writeln('Please file an issue with reproduction steps at '
-            'https://github.com/dart-lang/build/issues\n\n')
-        ..writeln(error)
-        ..writeln(Trace.parse(trace).terse);
+
+      printUncaughtError(stderr);
+      stderr..writeln(error)..writeln(Trace.parse(trace).terse);
       if (scriptExitCode == 0) scriptExitCode = 1;
     });
     try {
@@ -116,6 +126,13 @@ Future<int> generateAndRun(List<String> args, {Logger logger}) async {
   await exitCodeListener?.cancel();
 
   return scriptExitCode;
+}
+
+void _defaultErrorMessage(Stdout output) {
+  output
+    ..writeln('\n\nYou have hit a bug in build_runner')
+    ..writeln('Please file an issue with reproduction steps at '
+        'https://github.com/dart-lang/build/issues\n\n');
 }
 
 /// Creates a script snapshot for the build script in necessary.
