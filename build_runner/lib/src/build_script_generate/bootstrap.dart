@@ -133,13 +133,6 @@ Future<int> generateAndRun(
   return scriptExitCode;
 }
 
-void _defaultErrorMessage(Stdout output) {
-  output
-    ..writeln('\n\nYou have hit a bug in build_runner')
-    ..writeln('Please file an issue with reproduction steps at '
-        'https://github.com/dart-lang/build/issues\n\n');
-}
-
 /// Creates a script snapshot for the build script in necessary.
 ///
 /// A snapshot is generated if:

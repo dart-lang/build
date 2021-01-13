@@ -10,13 +10,16 @@ void main() {
     Object error;
     StackTrace stackTrace;
 
-    await generateAndRun(
-      [],
-      generationOptions: _FailingGenerationOptions(),
-      handleUncaughtError: (err, trace) {
-        error = err;
-        stackTrace = trace;
-      },
+    await expectLater(
+      generateAndRun(
+        [],
+        generationOptions: _FailingGenerationOptions(),
+        handleUncaughtError: (err, trace) {
+          error = err;
+          stackTrace = trace;
+        },
+      ),
+      completion(1),
     );
 
     expect(error, 'expected error');
