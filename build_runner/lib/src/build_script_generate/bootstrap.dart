@@ -20,9 +20,8 @@ final _logger = Logger('Bootstrap');
 ///
 /// The optional [generationOptions] can be used to customize the generated
 /// build script.
-/// The optional [printUncaughtError] function will be invoked when the
-/// build script threw an uncaught error. The default behavior asks users to
-/// open an issue at `dart-lang/build`, this can be customized.
+/// The [handleUncaughtError] function will be invoked when the build script
+/// terminates with an uncaught error.
 ///
 /// Will retry once on [IsolateSpawnException]s to handle SDK updates.
 ///
@@ -34,10 +33,17 @@ Future<int> generateAndRun(
   Logger logger,
   BuildScriptGenerationOptions generationOptions =
       const BuildScriptGenerationOptions(),
-  void Function(Stdout output) printUncaughtError,
+  void Function(Object error, StackTrace stackTrace) handleUncaughtError,
 }) async {
   logger ??= _logger;
-  printUncaughtError ??= _defaultErrorMessage;
+  handleUncaughtError ??= (error, stackTrace) {
+    stderr
+      ..writeln('\n\nYou have hit a bug in build_runner')
+      ..writeln('Please file an issue with reproduction steps at '
+          'https://github.com/dart-lang/build/issues\n\n')
+      ..writeln(error)
+      ..writeln(stackTrace);
+  };
   ReceivePort exitPort;
   ReceivePort errorPort;
   ReceivePort messagePort;
@@ -78,10 +84,9 @@ Future<int> generateAndRun(
     messagePort = ReceivePort();
     errorListener = errorPort.listen((e) {
       final error = e[0];
-      final trace = e[1] as String;
+      final trace = Trace.parse(e[1] as String).terse;
 
-      printUncaughtError(stderr);
-      stderr..writeln(error)..writeln(Trace.parse(trace).terse);
+      handleUncaughtError(error, trace);
       if (scriptExitCode == 0) scriptExitCode = 1;
     });
     try {

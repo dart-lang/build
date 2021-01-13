@@ -138,7 +138,7 @@ final _builders = <_i1.BuilderApplication>[
   _i1.applyPostProcess(
       r'provides_builder:some_post_process_builder', _i4.somePostProcessBuilder)
 ];
-void main(List<String> args, [_i9.SendPort sendPort]) async {
+Future<void> main(List<String> args, [_i9.SendPort sendPort]) async {
   var result = await _i10.run(args, _builders);
   sendPort?.send(result);
   _i11.exitCode = result;
