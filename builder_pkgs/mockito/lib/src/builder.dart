@@ -67,16 +67,14 @@ class MockBuilder implements Builder {
     final mockLibrary = Library((b) {
       // We don't properly prefix imported class names in doc comments.
       b.body.add(Code('\n\n// ignore_for_file: comment_references\n\n'));
-      // code_builder does not sort import directives.
-      b.body.add(Code('\n\n// ignore_for_file: directives_ordering\n\n'));
       // The code_builder `asA` API unconditionally adds defensive parentheses.
       b.body.add(Code('\n\n// ignore_for_file: unnecessary_parenthesis\n\n'));
       b.body.addAll(mockLibraryInfo.fakeClasses);
       b.body.addAll(mockLibraryInfo.mockClasses);
     });
 
-    final emitter =
-        DartEmitter.scoped(useNullSafetySyntax: sourceLibIsNonNullable);
+    final emitter = DartEmitter.scoped(
+        orderDirectives: true, useNullSafetySyntax: sourceLibIsNonNullable);
     final mockLibraryContent =
         DartFormatter().format(mockLibrary.accept(emitter).toString());
 
