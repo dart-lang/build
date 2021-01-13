@@ -65,6 +65,10 @@ class MockBuilder implements Builder {
     }
 
     final mockLibrary = Library((b) {
+      // We don't properly prefix imported class names in doc comments.
+      b.body.add(Code('\n\n// ignore_for_file: comment_references\n\n'));
+      // code_builder does not sort import directives.
+      b.body.add(Code('\n\n// ignore_for_file: directives_ordering\n\n'));
       // The code_builder `asA` API unconditionally adds defensive parentheses.
       b.body.add(Code('\n\n// ignore_for_file: unnecessary_parenthesis\n\n'));
       b.body.addAll(mockLibraryInfo.fakeClasses);
@@ -641,6 +645,8 @@ class _MockLibraryInfo {
       cBuilder
         ..name = mockTarget.mockName
         ..extend = refer('Mock', 'package:mockito/mockito.dart')
+        // TODO(srawlins): Refer to [classToMock] properly, which will yield the
+        // appropriate import prefix.
         ..docs.add('/// A class which mocks [$className].')
         ..docs.add('///')
         ..docs.add('/// See the documentation for Mockito\'s code generation '
