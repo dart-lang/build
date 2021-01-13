@@ -1,3 +1,7 @@
+# 2.1.6
+
+- Allow the null safe pre-release version of `stream_transform`.
+
 # 2.1.5
 
 - Allow the null safe pre-release version of `logging`, `built_value`, and

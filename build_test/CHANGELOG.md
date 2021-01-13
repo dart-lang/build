@@ -1,3 +1,7 @@
+## 1.3.4
+
+- Allow the null safe pre-release version of `stream_transform`.
+
 ## 1.3.3
 
 - Return an empty stream instead of throwing from
