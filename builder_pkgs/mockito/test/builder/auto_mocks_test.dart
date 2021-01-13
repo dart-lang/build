@@ -1385,7 +1385,7 @@ void main() {
       }
       '''),
       _containsAllOf(
-          'int get m => super.noSuchMethod(Invocation.getter(#m), 0);'),
+          'int get m => (super.noSuchMethod(Invocation.getter(#m), 0)'),
     );
   });
 
@@ -1407,7 +1407,7 @@ void main() {
       class Foo extends FooBase {}
       '''),
       _containsAllOf(
-          'int get m => super.noSuchMethod(Invocation.getter(#m), 0);'),
+          'int get m => (super.noSuchMethod(Invocation.getter(#m), 0)'),
     );
   });
 
@@ -1453,7 +1453,7 @@ void main() {
       }
       '''),
       _containsAllOf(
-          'int get m => super.noSuchMethod(Invocation.getter(#m), 0);',
+          'int get m => (super.noSuchMethod(Invocation.getter(#m), 0)',
           'set m(int? _m) => super.noSuchMethod(Invocation.setter(#m, [_m]));'),
     );
   });
@@ -1467,7 +1467,7 @@ void main() {
       class Foo extends FooBase {}
       '''),
       _containsAllOf(
-          'int get m => super.noSuchMethod(Invocation.getter(#m), 0);',
+          'int get m => (super.noSuchMethod(Invocation.getter(#m), 0)',
           'set m(int? _m) => super.noSuchMethod(Invocation.setter(#m, [_m]));'),
     );
   });
@@ -1481,7 +1481,7 @@ void main() {
       }
       '''),
       _containsAllOf(
-          'int get m => super.noSuchMethod(Invocation.getter(#m), 0);'),
+          'int get m => (super.noSuchMethod(Invocation.getter(#m), 0)'),
     );
   });
 

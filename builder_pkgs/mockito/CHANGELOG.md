@@ -1,3 +1,8 @@
+## 5.0.0-nullsafety.3
+
+* Improve static analysis of generated code.
+* Make implicit casts from dynamic in getters explicit.
+
 ## 5.0.0-nullsafety.2
 
 * Fix issue with generated code which references a class declared in a part

@@ -1114,10 +1114,16 @@ class _MockLibraryInfo {
       refer('#${getter.displayName}'),
     ]);
     final noSuchMethodArgs = [invocation, _dummyValue(getter.returnType)];
-    final returnNoSuchMethod =
+    var superNoSuchMethod =
         refer('super').property('noSuchMethod').call(noSuchMethodArgs);
+    if (!getter.returnType.isVoid && !getter.returnType.isDynamic) {
+      superNoSuchMethod =
+          superNoSuchMethod.asA(_typeReference(getter.returnType));
+    }
 
-    builder.body = returnNoSuchMethod.code;
+    builder
+      ..lambda = true
+      ..body = superNoSuchMethod.code;
   }
 
   /// Build a setter which overrides [setter], widening the single parameter
