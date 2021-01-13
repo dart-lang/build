@@ -1,3 +1,7 @@
+## 1.10.13
+
+- Allow the null safe pre-release version of `stream_transform`.
+
 ## 1.10.12
 
 - Allow the null safe pre-releases of all migrated deps.
