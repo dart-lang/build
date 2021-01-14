@@ -1,3 +1,11 @@
+## 1.11.0
+
+- Support generating custom build scripts through 
+ `package:build_runner/build_script_generate.dart`:
+  - Export `generateAndRun` to snapshot and run build scripts.
+  - Add `BuildScriptGenerationOptions`, which can be subclassed and passed to
+    `generateAndRun` and `generateBuildScript`.
+
 ## 1.10.13
 
 - Allow the null safe pre-release version of `stream_transform`.
