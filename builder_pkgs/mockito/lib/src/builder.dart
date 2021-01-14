@@ -1105,6 +1105,7 @@ class _MockLibraryInfo {
       MethodBuilder builder, PropertyAccessorElement getter) {
     builder
       ..name = getter.displayName
+      ..annotations.addAll([refer('override')])
       ..type = MethodType.getter
       ..returns = _typeReference(getter.returnType);
 
@@ -1132,6 +1133,7 @@ class _MockLibraryInfo {
       MethodBuilder builder, PropertyAccessorElement setter) {
     builder
       ..name = setter.displayName
+      ..annotations.addAll([refer('override')])
       ..type = MethodType.setter;
 
     final invocationPositionalArgs = <Expression>[];

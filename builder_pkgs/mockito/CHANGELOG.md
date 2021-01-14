@@ -1,3 +1,7 @@
+## 5.0.0-nullsafety.4
+
+* Annotate overridden getters and setters with `@override`.
+
 ## 5.0.0-nullsafety.3
 
 * Improve static analysis of generated code.
