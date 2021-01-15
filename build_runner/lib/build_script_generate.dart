@@ -4,4 +4,4 @@
 
 export 'src/build_script_generate/bootstrap.dart' show generateAndRun;
 export 'src/build_script_generate/build_script_generate.dart'
-    show BuildScriptGenerationOptions, generateBuildScript, scriptLocation;
+    show findBuilderApplications, generateBuildScript, scriptLocation;

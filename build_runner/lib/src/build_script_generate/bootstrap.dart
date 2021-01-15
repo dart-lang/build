@@ -18,8 +18,6 @@ final _logger = Logger('Bootstrap');
 
 /// Generates the build script, snapshots it if needed, and runs it.
 ///
-/// The optional [generationOptions] can be used to customize the generated
-/// build script.
 /// The [handleUncaughtError] function will be invoked when the build script
 /// terminates with an uncaught error.
 ///
@@ -31,8 +29,7 @@ final _logger = Logger('Bootstrap');
 Future<int> generateAndRun(
   List<String> args, {
   Logger logger,
-  BuildScriptGenerationOptions generationOptions =
-      const BuildScriptGenerationOptions(),
+  Future<String> Function() generateBuildScript = generateBuildScript,
   void Function(Object error, StackTrace stackTrace) handleUncaughtError,
 }) async {
   logger ??= _logger;
@@ -65,7 +62,7 @@ Future<int> generateAndRun(
       if (buildScript.existsSync()) {
         oldContents = buildScript.readAsStringSync();
       }
-      var newContents = await generateBuildScript(generationOptions);
+      var newContents = await generateBuildScript();
       // Only trigger a build script update if necessary.
       if (newContents != oldContents) {
         buildScript

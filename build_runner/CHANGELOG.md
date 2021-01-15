@@ -3,8 +3,8 @@
 - Support generating custom build scripts through 
  `package:build_runner/build_script_generate.dart`:
   - Export `generateAndRun` to snapshot and run build scripts.
-  - Add `BuildScriptGenerationOptions`, which can be subclassed and passed to
-    `generateAndRun` and `generateBuildScript`.
+  - Export `findBuilderApplications` to find builder applications from a
+    package grah.
 
 ## 1.10.13
 

@@ -2,15 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 @Timeout.factor(4)
-import 'package:build_config/build_config.dart';
-import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_runner/build_script_generate.dart';
-import 'package:code_builder/code_builder.dart';
+
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
 import 'package:_test_common/descriptors.dart';
-import 'package:_test_common/package_graphs.dart';
 import 'package:_test_common/sdk.dart';
 
 void main() {
@@ -88,49 +84,4 @@ builders:
       expect(result.stdout, contains('could not be parsed'));
     });
   });
-
-  test('generates build script with custom options', () async {
-    final script = await generateBuildScript(_TestGenerationOptions());
-
-    expect(script, contains("import 'package:foo/bar.dart'"));
-    expect(script, contains("import 'package:builders/builder.dart'"));
-    expect(script, contains('createCustomBuilder'));
-    expect(script, contains('runBuild(args, _builders)'));
-  });
-}
-
-class _TestGenerationOptions extends BuildScriptGenerationOptions {
-  @override
-  Expression runBuild(Expression args, Expression builders) {
-    return refer('runBuild', 'package:foo/bar.dart').call([args, builders]);
-  }
-
-  @override
-  Future<PackageGraph> packageGraph() {
-    return Future.value(buildPackageGraph(
-      {
-        rootPackage('root'): ['builders'],
-        package('builders'): []
-      },
-    ));
-  }
-
-  @override
-  Future<Map<String, BuildConfig>> findConfigOverrides(
-      PackageGraph graph, RunnerAssetReader reader) {
-    return Future.value({
-      'builders': BuildConfig.parse(
-        'builders',
-        [],
-        '''
-        builders:
-          builders|builder:
-            import: 'package:builders/builder.dart'
-            builder_factories: [createCustomBuilder]
-            build_extensions: {'.dart': ['.g.dart']}
-            auto_apply: dependents
-        ''',
-      )
-    });
-  }
 }

@@ -1,9 +1,10 @@
+// Copyright (c) 2021, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
 @Timeout.factor(2)
 import 'dart:io';
 
 import 'package:build_runner/build_script_generate.dart';
-import 'package:build_runner_core/build_runner_core.dart';
-import 'package:code_builder/code_builder.dart';
 import 'package:test/test.dart';
 
 import '../integration_tests/utils/build_descriptor.dart';
@@ -20,7 +21,13 @@ void main() {
         return expectLater(
           generateAndRun(
             [],
-            generationOptions: _FailingGenerationOptions(pkgDir),
+            generateBuildScript: () async {
+              return '''
+              void main() {
+                throw 'expected error';
+              }
+              ''';
+            },
             handleUncaughtError: (err, trace) {
               error = err;
               stackTrace = trace;
@@ -35,20 +42,4 @@ void main() {
     expect(error, 'expected error');
     expect(stackTrace, isNotNull);
   });
-}
-
-class _FailingGenerationOptions extends BuildScriptGenerationOptions {
-  final String pkgDir;
-
-  _FailingGenerationOptions(this.pkgDir);
-
-  @override
-  Future<PackageGraph> packageGraph() {
-    return PackageGraph.forPath(pkgDir);
-  }
-
-  @override
-  Expression runBuild(Expression args, Expression builders) {
-    return CodeExpression(Code('(throw "expected error")'));
-  }
 }
