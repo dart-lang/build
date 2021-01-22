@@ -1420,7 +1420,7 @@ void main() {
     expect(
         mocksContent,
         contains('set m(int? a) => '
-            'super.noSuchMethod(Invocation.setter(#m, [a]));'));
+            'super.noSuchMethod(Invocation.setter(#m, a));'));
   });
 
   test('does not override nullable instance setters', () async {
@@ -1442,7 +1442,7 @@ void main() {
     expect(
         mocksContent,
         contains('set m(int? a) => '
-            'super.noSuchMethod(Invocation.setter(#m, [a]));'));
+            'super.noSuchMethod(Invocation.setter(#m, a));'));
   });
 
   test('overrides non-nullable fields', () async {
@@ -1454,7 +1454,7 @@ void main() {
       '''),
       _containsAllOf(
           'int get m => (super.noSuchMethod(Invocation.getter(#m), 0)',
-          'set m(int? _m) => super.noSuchMethod(Invocation.setter(#m, [_m]));'),
+          'set m(int? _m) => super.noSuchMethod(Invocation.setter(#m, _m));'),
     );
   });
 
@@ -1468,7 +1468,7 @@ void main() {
       '''),
       _containsAllOf(
           'int get m => (super.noSuchMethod(Invocation.getter(#m), 0)',
-          'set m(int? _m) => super.noSuchMethod(Invocation.setter(#m, [_m]));'),
+          'set m(int? _m) => super.noSuchMethod(Invocation.setter(#m, _m));'),
     );
   });
 

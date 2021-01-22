@@ -1,3 +1,7 @@
+## 5.0.0-nullsafety.5
+
+* Fix `noSuchMethod` invocation of setters in generated mocks.
+
 ## 5.0.0-nullsafety.4
 
 * Annotate overridden getters and setters with `@override`.

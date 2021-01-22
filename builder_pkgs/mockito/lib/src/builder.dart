@@ -743,10 +743,10 @@ class _MockLibraryInfo {
       if (method.isPrivate || method.isStatic) {
         continue;
       }
-      if (overriddenMethods.contains(method)) {
+      var methodName = method.name;
+      if (overriddenMethods.contains(methodName)) {
         continue;
       }
-      var methodName = method.name;
       overriddenMethods.add(methodName);
       if (methodName == 'noSuchMethod') {
         continue;
@@ -1150,7 +1150,7 @@ class _MockLibraryInfo {
 
     final invocation = refer('Invocation').property('setter').call([
       refer('#${setter.displayName}'),
-      literalList(invocationPositionalArgs),
+      invocationPositionalArgs.single,
     ]);
     final returnNoSuchMethod =
         refer('super').property('noSuchMethod').call([invocation]);
