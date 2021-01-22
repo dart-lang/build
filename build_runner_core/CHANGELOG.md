@@ -47,10 +47,7 @@
 
 ## 6.0.0
 
--   Remove some constants and utilities which are implementation details:
-    `defaultRootPackageWhitelist`, `errorCachePath`, `generatedOutputDirectory`,
-    `lockGeneratedOutputDirectory`, `overrideGeneratedOutputDirectory`,
-    `sdkPath`, `buildPhasePoolSize`.
+-   Remove some constants and utilities which are implementation details.
 
 ## 5.2.0
 
@@ -113,7 +110,7 @@
 - Add the `$package$` synthetic placeholder file and update the docs to prefer
   using only that or `lib/$lib$`.
 - Add the `assets` directory and `$package$` placeholders to the default
-  sources whitelist.
+  sources allow list.
 
 ## 4.2.1
 
