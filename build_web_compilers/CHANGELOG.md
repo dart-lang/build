@@ -1,10 +1,14 @@
+## 2.16.1
+
+- Allow the latest archive version `3.x.x`.
+
 ## 2.16.0
 
 - Enable native null assertions by default.
 
 ## 2.15.3
 
-- Allow the latest analyzer verion `0.41.x`.
+- Allow the latest analyzer version `0.41.x`.
 
 ## 2.15.2
 
