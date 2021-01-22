@@ -577,7 +577,7 @@ also work when you create an output directory.
   be the output directory. If no delimeter is provided, all resources
   will be copied to the output directory.
 - Allow deleting files in the post process build step.
-- Bug Fix: Correctly include the default whitelist when multiple targets
+- Bug Fix: Correctly include the default allow list when multiple targets
   without include are provided.
 - Allow logging from within a build factory.
 - Allow serving assets from successful build steps if the overall build fails.
@@ -768,13 +768,13 @@ also work when you create an output directory.
   - Disables stack trace folding and terse stack traces.
   - Disables the overwriting of previous info logs.
   - Sets the default log level to `Level.ALL`.
-- Added `pubspec.yaml` and `pubspec.lock` to the whitelist for the root package
+- Added `pubspec.yaml` and `pubspec.lock` to the allow list for the root package
   sources.
 
 ## 0.7.4
 
 - Allows using files in any build targets in the root package as sources if they
-  fall outside the hardcoded whitelist.
+  fall outside the hardcoded allow list.
 - Changes to the root `.packages` file during watch mode will now cause the
   build script to exit and prompt the user to restart the build.
 
@@ -827,7 +827,7 @@ also work when you create an output directory.
   `package:build_config` rather than a separate package and builder name.
 - Changed the default value of `hideOutput` from `false` to `true` for `apply`.
   With `applyToRoot` the value remains `false`.
-- There is now a whitelist of top level directories that will be used as a part
+- There is now a allow list of top level directories that will be used as a part
   of the build, and other files will be ignored. For now those directories
   include 'benchmark', 'bin', 'example', 'lib', 'test', 'tool', and 'web'.
   - If this breaks your workflow please file an issue and we can look at either

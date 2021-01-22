@@ -145,7 +145,7 @@ of what it claimed.
 ## 2.6.0
 
 Add an option to globally skip the platform checks instead of only skipping
-them for a set of whitelisted packages.
+them for a set of allowed packages.
 
 ## 2.5.2
 

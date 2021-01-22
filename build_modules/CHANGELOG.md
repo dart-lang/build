@@ -72,7 +72,7 @@
 
 - Keep cached deserialized module instances in more cases. This may improve
   performance of incremental builds in watch mode.
-- **Deprecated**: The package specific unsupported module whitelist option
+- **Deprecated**: The package specific unsupported module allow list option
   provided by `computeTransitiveDependencies`. The only known uses are being
   removed.
 - Allow analyzer version `0.39.x`.
