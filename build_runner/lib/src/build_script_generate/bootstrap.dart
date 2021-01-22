@@ -18,13 +18,29 @@ final _logger = Logger('Bootstrap');
 
 /// Generates the build script, snapshots it if needed, and runs it.
 ///
+/// The [handleUncaughtError] function will be invoked when the build script
+/// terminates with an uncaught error.
+///
 /// Will retry once on [IsolateSpawnException]s to handle SDK updates.
 ///
 /// Returns the exit code from running the build script.
 ///
 /// If an exit code of 75 is returned, this function should be re-ran.
-Future<int> generateAndRun(List<String> args, {Logger logger}) async {
+Future<int> generateAndRun(
+  List<String> args, {
+  Logger logger,
+  Future<String> Function() generateBuildScript = generateBuildScript,
+  void Function(Object error, StackTrace stackTrace) handleUncaughtError,
+}) async {
   logger ??= _logger;
+  handleUncaughtError ??= (error, stackTrace) {
+    stderr
+      ..writeln('\n\nYou have hit a bug in build_runner')
+      ..writeln('Please file an issue with reproduction steps at '
+          'https://github.com/dart-lang/build/issues\n\n')
+      ..writeln(error)
+      ..writeln(stackTrace);
+  };
   ReceivePort exitPort;
   ReceivePort errorPort;
   ReceivePort messagePort;
@@ -65,13 +81,9 @@ Future<int> generateAndRun(List<String> args, {Logger logger}) async {
     messagePort = ReceivePort();
     errorListener = errorPort.listen((e) {
       final error = e[0];
-      final trace = e[1] as String;
-      stderr
-        ..writeln('\n\nYou have hit a bug in build_runner')
-        ..writeln('Please file an issue with reproduction steps at '
-            'https://github.com/dart-lang/build/issues\n\n')
-        ..writeln(error)
-        ..writeln(Trace.parse(trace).terse);
+      final trace = Trace.parse(e[1] as String).terse;
+
+      handleUncaughtError(error, trace);
       if (scriptExitCode == 0) scriptExitCode = 1;
     });
     try {

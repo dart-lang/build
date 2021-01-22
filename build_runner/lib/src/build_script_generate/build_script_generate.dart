@@ -25,7 +25,7 @@ Future<String> generateBuildScript() =>
     logTimedAsync(_log, 'Generating build script', _generateBuildScript);
 
 Future<String> _generateBuildScript() async {
-  final builders = await _findBuilderApplications();
+  final builders = await findBuilderApplications();
   final library = Library((b) => b.body.addAll([
         literalList(
                 builders,
@@ -58,15 +58,23 @@ Future<String> _generateBuildScript() async {
 ///
 /// Adds `apply` expressions based on the BuildefDefinitions from any package
 /// which has a `build.yaml`.
-Future<Iterable<Expression>> _findBuilderApplications() async {
-  final packageGraph = await PackageGraph.forThisPackage();
+///
+/// Optionally, a custom [packageGraph] and [buildConfigOverrides] can be used
+/// to change which packages and build configurations are considered.
+/// By default, the [PackageGraph.forThisPackage] will be used and configuration
+/// overrides will be loaded from the root package.
+Future<Iterable<Expression>> findBuilderApplications({
+  PackageGraph packageGraph,
+  Map<String, BuildConfig> buildConfigOverrides,
+}) async {
+  packageGraph ??= await PackageGraph.forThisPackage();
   final orderedPackages = stronglyConnectedComponents<PackageNode>(
     [packageGraph.root],
     (node) => node.dependencies,
     equals: (a, b) => a.name == b.name,
     hashCode: (n) => n.name.hashCode,
   ).expand((c) => c);
-  final buildConfigOverrides = await findBuildConfigOverrides(
+  buildConfigOverrides ??= await findBuildConfigOverrides(
       packageGraph, null, FileBasedAssetReader(packageGraph));
   Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
     if (buildConfigOverrides.containsKey(package.name)) {
