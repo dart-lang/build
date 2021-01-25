@@ -272,7 +272,7 @@ void main() {
       throwOnMissingStub(mock);
       when(mock.methodWithNormalArgs(42)).thenReturn('Ultimate Answer');
       expect(
-        () => (mock).methodWithoutArgs(),
+        () => mock.methodWithoutArgs(),
         throwsNoSuchMethodError,
       );
     });
