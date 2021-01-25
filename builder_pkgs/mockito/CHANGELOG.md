@@ -1,3 +1,8 @@
+## 5.0.0-nullsafety.6
+
+* Fix generation of method with a parameter with a default value which includes
+  a top-level function.
+
 ## 5.0.0-nullsafety.5
 
 * Fix `noSuchMethod` invocation of setters in generated mocks.

@@ -1,5 +1,5 @@
 name: mockito
-version: 5.0.0-nullsafety.5
+version: 5.0.0-nullsafety.6
 
 description: A mock framework inspired by Mockito.
 homepage: https://github.com/dart-lang/mockito
