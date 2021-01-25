@@ -107,7 +107,7 @@ class MockBuilder implements Builder {
       addTypesFrom(mockTarget.classType);
     }
 
-    final typeUris = <TypeDefiningElement, String>{};
+    final typeUris = <Element, String>{};
 
     for (var element in typeVisitor._elements) {
       if (element.library.isInSdk) {
@@ -143,7 +143,7 @@ class MockBuilder implements Builder {
 /// An [Element] visitor which collects the elements of all of the
 /// [analyzer.InterfaceType]s which it encounters.
 class _TypeVisitor extends RecursiveElementVisitor<void> {
-  final _elements = <TypeDefiningElement>{};
+  final _elements = <Element>{};
 
   @override
   void visitClassElement(ClassElement element) {
@@ -220,6 +220,8 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
         _addTypesFromConstant(pair.key);
         _addTypesFromConstant(pair.value);
       }
+    } else if (object.toFunctionValue() != null) {
+      _elements.add(object.toFunctionValue());
     } else {
       // If [constant] is not null, a literal, or a type, then it must be an
       // object constructed with `const`. Revive it.
@@ -1067,10 +1069,15 @@ class _MockLibraryInfo {
         throw _ReviveException(
             'default value has a private type: $privateReference.');
       }
-      if (revivable.source.fragment.isEmpty) {
-        // We can create this invocation by referring to a const field.
-        return refer(revivable.accessor,
-            _typeImport(object.type.element as TypeDefiningElement));
+      if (object.toFunctionValue() != null) {
+        // A top-level function, like `void f() {}` must be referenced by its
+        // identifier, rather than a revived value.
+        var element = object.toFunctionValue();
+        return refer(revivable.accessor, _typeImport(element));
+      } else if (revivable.source.fragment.isEmpty) {
+        // We can create this invocation by referring to a const field or
+        // top-level variable.
+        return refer(revivable.accessor, _typeImport(object.type.element));
       }
 
       final name = revivable.source.fragment;
@@ -1082,8 +1089,7 @@ class _MockLibraryInfo {
         for (var pair in revivable.namedArguments.entries)
           pair.key: _expressionFromDartObject(pair.value)
       };
-      final type =
-          refer(name, _typeImport(object.type.element as TypeDefiningElement));
+      final type = refer(name, _typeImport(object.type.element));
       if (revivable.accessor.isNotEmpty) {
         return type.constInstanceNamed(
           revivable.accessor,
@@ -1214,7 +1220,7 @@ class _MockLibraryInfo {
         });
       }
       return TypeReference((b) {
-        TypeDefiningElement typedef;
+        Element typedef;
         if (element is FunctionTypeAliasElement) {
           typedef = element;
         } else {
@@ -1238,7 +1244,7 @@ class _MockLibraryInfo {
     } else {
       return refer(
         type.getDisplayString(withNullability: false),
-        _typeImport(type.element as TypeDefiningElement),
+        _typeImport(type.element),
       );
     }
   }
@@ -1246,7 +1252,7 @@ class _MockLibraryInfo {
   /// Returns the import URL for [element].
   ///
   /// For some types, like `dynamic` and type variables, this may return null.
-  String _typeImport(TypeDefiningElement element) {
+  String _typeImport(Element element) {
     // For type variables, no import needed.
     if (element is TypeParameterElement) return null;
 

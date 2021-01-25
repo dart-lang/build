@@ -424,6 +424,21 @@ void main() {
     );
   });
 
+  test('matches parameter default values constructed with top-level function',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      typedef Callback = void Function();
+      void defaultCallback() {}
+      class Foo {
+        void m([Callback a = defaultCallback]) {}
+      }
+      '''),
+      _containsAllOf('void m([_i2.Callback? a = _i2.defaultCallback]) =>',
+          'super.noSuchMethod(Invocation.method(#m, [a]));'),
+    );
+  });
+
   test('matches parameter default values constructed with static field',
       () async {
     await expectSingleNonNullableOutput(

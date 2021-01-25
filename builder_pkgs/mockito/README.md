@@ -3,7 +3,7 @@
 Mock library for Dart inspired by [Mockito](https://github.com/mockito/mockito).
 
 [![Pub](https://img.shields.io/pub/v/mockito.svg)](https://pub.dev/packages/mockito)
-[![Build Status](https://github.com/dart-lang/mockito/workflows/Dart%20CI/badge.svg)](https://github.com/dart-lang/mockito/actions?query=workflow%3A"Dart+CI"+branch%3Amaster)
+[![Build Status](https://travis-ci.org/dart-lang/mockito.svg?branch=master)](https://travis-ci.org/dart-lang/mockito)
 
 ## Let's create mocks
 
