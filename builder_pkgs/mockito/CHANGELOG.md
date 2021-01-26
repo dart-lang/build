@@ -1,3 +1,7 @@
+## 4.1.4
+
+* Allow using analyzer 0.41.
+
 ## 4.1.3
 
 * Allow using analyzer 0.40.
