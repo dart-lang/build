@@ -2,6 +2,7 @@
 
 * Fix generation of method with a parameter with a default value which includes
   a top-level function.
+* Migrate example code to null safety.
 
 ## 5.0.0-nullsafety.5
 
