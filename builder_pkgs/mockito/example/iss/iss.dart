@@ -41,7 +41,8 @@ class IssLocator {
   Future<void> _doUpdate() async {
     // Returns the point on the earth directly under the space station
     // at this moment.
-    var rs = await client.get('http://api.open-notify.org/iss-now.json');
+    var uri = Uri.parse('http://api.open-notify.org/iss-now.json');
+    var rs = await client.get(uri);
     var data = jsonDecode(rs.body);
     var latitude = double.parse(data['iss_position']['latitude'] as String);
     var longitude = double.parse(data['iss_position']['longitude'] as String);
