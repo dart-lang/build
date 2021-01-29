@@ -1268,10 +1268,8 @@ class _MockLibraryInfo {
     // For types like `dynamic`, return null; no import needed.
     if (element?.library == null) return null;
 
-    assert(
-        assetUris.containsKey(element),
-        () =>
-            'An element, "${element}", is missing from the asset URI mapping');
+    assert(assetUris.containsKey(element),
+        () => 'An element, "$element", is missing from the asset URI mapping');
 
     return assetUris[element];
   }
