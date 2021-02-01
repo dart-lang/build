@@ -1,3 +1,7 @@
+# 2.1.7
+
+- Allow the null safe pre-release version of `shelf` and `watcher`.
+
 # 2.1.6
 
 - Allow the null safe pre-release version of `stream_transform`.

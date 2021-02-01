@@ -1,3 +1,7 @@
+## 1.5.3
+
+- Allow the null safe pre-release of `package_config`.
+
 ## 1.5.2
 
 - Allow the null safe pre-releases of all migrated deps.

@@ -1,3 +1,8 @@
+# 1.11.1
+
+- Allow the null safe pre-release version of `shelf`, `package_config`, and
+  `watcher`.
+
 ## 1.11.0
 
 - Support generating custom build scripts through 

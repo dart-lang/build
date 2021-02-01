@@ -1,3 +1,7 @@
+## 2.16.2
+
+- Allow the null safety pre-release of `logging`.
+
 ## 2.16.1
 
 - Allow the latest archive version `3.x.x`.

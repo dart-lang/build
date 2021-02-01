@@ -1,3 +1,7 @@
+## 1.3.5
+
+- Allow the null safe pre-release version of `package_config` and `watcher`.
+
 ## 1.3.4
 
 - Allow the null safe pre-release version of `stream_transform`.
