@@ -72,6 +72,12 @@ class AssetId implements Comparable<AssetId> {
       throw ArgumentError.value(from, 'from',
           'An AssetId "from" must be specified to resolve a relative URI');
     }
+
+    // Empty urls resolve to the base
+    if (uri.isEmpty) {
+      return from;
+    }
+
     return AssetId(p.url.normalize(from.package),
         p.url.join(p.url.dirname(from.path), uri));
   }
