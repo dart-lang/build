@@ -447,4 +447,21 @@ void main() {
           reason: meta.modules.map((m) => m.toJson()).toString());
     }
   });
+
+  test('libraries can import themselves via empty import', () async {
+    var assets = makeAssets({
+      'myapp|lib/a.dart': '''
+            import 'a.dart';
+          ''',
+    });
+
+    var a = AssetId('myapp', 'lib/a.dart');
+
+    var expectedModules = [
+      matchesModule(Module(a, [a], [], defaultPlatform, true)),
+    ];
+
+    var meta = await metaModuleFromSources(reader, assets);
+    expect(meta.modules, unorderedMatches(expectedModules));
+  });
 }

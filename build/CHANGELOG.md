@@ -1,3 +1,7 @@
+## 1.6.2
+
+- Fix `AssetId.resolve` for empty uris
+
 ## 1.6.1
 
 - Allow the null safe pre-releases of all migrated deps.

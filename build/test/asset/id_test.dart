@@ -96,6 +96,16 @@ void main() {
           from: AssetId('app', 'folder/folder.dart'));
       expect(id, AssetId('app', 'src/some/path.dart'));
     });
+
+    test('should parse an empty url in lib/', () {
+      var source = AssetId('foo', 'lib/src/bar.dart');
+      expect(AssetId.resolve('', from: source), source);
+    });
+
+    test('should parse an empty url in test/', () {
+      var source = AssetId('foo', 'test/bar.dart');
+      expect(AssetId.resolve('', from: source), source);
+    });
   });
 
   group('to URI', () {
