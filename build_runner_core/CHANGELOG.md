@@ -1,3 +1,7 @@
+## 6.1.7
+
+- Allow the null safe pre-release of `package_config` and `watcher`.
+
 ## 6.1.6
 
 - Allow the null safe pre-releases of all migrated deps.
