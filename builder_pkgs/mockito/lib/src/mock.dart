@@ -146,7 +146,7 @@ class Mock {
   }
 
   dynamic _noSuchMethod(Invocation invocation) =>
-      const Object().noSuchMethod(invocation);
+      throw MissingStubError(invocation, this);
 
   @override
   int get hashCode => _givenHashCode ?? 0;
@@ -174,6 +174,23 @@ class Mock {
 
   String _unverifiedCallsToString() =>
       _realCallsToString(_realCalls.where((call) => !call.verified));
+}
+
+/// An error which is thrown when no stub is found which matches the arguments
+/// of a real method call on a mock object.
+class MissingStubError extends Error {
+  final Invocation invocation;
+  final Object receiver;
+
+  MissingStubError(this.invocation, this.receiver);
+
+  @override
+  String toString() =>
+      "MissingStubError: '${_symbolToString(invocation.memberName)}'\n"
+      'No stub was found which matches the arguments of this method call:\n'
+      '${invocation.toPrettyString()}\n\n'
+      "Add a stub for this method using Mockito's 'when' API, or generate the "
+      "mock for ${receiver.runtimeType} with 'returnNullOnMissingStub: true'.";
 }
 
 typedef _ReturnsCannedResponse = CallPair<dynamic> Function();
@@ -517,58 +534,13 @@ class RealCall {
 
   @override
   String toString() {
-    var argString = '';
-    var args = invocation.positionalArguments.map((v) => '$v');
-    if (args.any((arg) => arg.contains('\n'))) {
-      // As one or more arg contains newlines, put each on its own line, and
-      // indent each, for better readability.
-      argString += '\n' +
-          args
-              .map((arg) => arg.splitMapJoin('\n', onNonMatch: (m) => '    $m'))
-              .join(',\n');
-    } else {
-      // A compact String should be perfect.
-      argString += args.join(', ');
-    }
-    if (invocation.namedArguments.isNotEmpty) {
-      if (argString.isNotEmpty) argString += ', ';
-      var namedArgs = invocation.namedArguments.keys.map((key) =>
-          '${_symbolToString(key)}: ${invocation.namedArguments[key]}');
-      if (namedArgs.any((arg) => arg.contains('\n'))) {
-        // As one or more arg contains newlines, put each on its own line, and
-        // indent each, for better readability.
-        namedArgs = namedArgs
-            .map((arg) => arg.splitMapJoin('\n', onNonMatch: (m) => '    $m'));
-        argString += '{\n${namedArgs.join(',\n')}}';
-      } else {
-        // A compact String should be perfect.
-        argString += '{${namedArgs.join(', ')}}';
-      }
-    }
-
-    var method = _symbolToString(invocation.memberName);
-    if (invocation.isMethod) {
-      method = '$method($argString)';
-    } else if (invocation.isGetter) {
-      method = '$method';
-    } else if (invocation.isSetter) {
-      method = '$method=$argString';
-    } else {
-      throw StateError('Invocation should be getter, setter or a method call.');
-    }
-
     var verifiedText = verified ? '[VERIFIED] ' : '';
-    return '$verifiedText$mock.$method';
+    return '$verifiedText$mock.${invocation.toPrettyString()}';
   }
-
-  // This used to use MirrorSystem, which cleans up the Symbol() wrapper.
-  // Since this toString method is just used in Mockito's own tests, it's not
-  // a big deal to massage the toString a bit.
-  //
-  // Input: Symbol("someMethodName")
-  static String _symbolToString(Symbol symbol) =>
-      symbol.toString().split('"')[1];
 }
+
+// Converts a [Symbol] to a meaningful [String].
+String _symbolToString(Symbol symbol) => symbol.toString().split('"')[1];
 
 class _WhenCall {
   final Mock mock;
@@ -1082,4 +1054,53 @@ void resetMockitoState() {
   _capturedArgs.clear();
   _storedArgs.clear();
   _storedNamedArgs.clear();
+}
+
+extension on Invocation {
+  /// Returns a pretty String representing a method (or getter or setter) call
+  /// including its arguments, separating elements with newlines when it should
+  /// improve readability.
+  String toPrettyString() {
+    String argString;
+    var args = positionalArguments.map((v) => '$v');
+    if (args.any((arg) => arg.contains('\n'))) {
+      // As one or more arg contains newlines, put each on its own line, and
+      // indent each, for better readability.
+      argString = '\n' +
+          args
+              .map((arg) => arg.splitMapJoin('\n', onNonMatch: (m) => '    $m'))
+              .join(',\n');
+    } else {
+      // A compact String should be perfect.
+      argString = args.join(', ');
+    }
+    if (namedArguments.isNotEmpty) {
+      if (argString.isNotEmpty) argString += ', ';
+      var namedArgs = namedArguments.keys
+          .map((key) => '${_symbolToString(key)}: ${namedArguments[key]}');
+      if (namedArgs.any((arg) => arg.contains('\n'))) {
+        // As one or more arg contains newlines, put each on its own line, and
+        // indent each, for better readability.
+        namedArgs = namedArgs
+            .map((arg) => arg.splitMapJoin('\n', onNonMatch: (m) => '    $m'));
+        argString += '{\n${namedArgs.join(',\n')}}';
+      } else {
+        // A compact String should be perfect.
+        argString += '{${namedArgs.join(', ')}}';
+      }
+    }
+
+    var method = _symbolToString(memberName);
+    if (isMethod) {
+      method = '$method($argString)';
+    } else if (isGetter) {
+      method = '$method';
+    } else if (isSetter) {
+      method = '$method=$argString';
+    } else {
+      throw StateError('Invocation should be getter, setter or a method call.');
+    }
+
+    return method;
+  }
 }

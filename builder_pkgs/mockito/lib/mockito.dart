@@ -47,4 +47,5 @@ export 'src/mock.dart'
         reset,
         resetMockitoState,
         logInvocations,
-        untilCalled;
+        untilCalled,
+        MissingStubError;

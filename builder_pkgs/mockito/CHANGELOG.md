@@ -3,6 +3,8 @@
 * Fix generation of method with a parameter with a default value which includes
   a top-level function.
 * Migrate example code to null safety.
+* **Breaking change:** Change the error which is thrown if a method is called
+  and no method stub was found, from NoSuchMethodError to MissingStubError.
 
 ## 5.0.0-nullsafety.5
 

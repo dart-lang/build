@@ -89,14 +89,16 @@ void main() {
       when(foo.namedParameter(x: 42)).thenReturn('Stubbed');
       expect(
         () => foo.namedParameter(x: 43),
-        throwsNoSuchMethodError,
+        throwsA(TypeMatcher<MissingStubError>().having((e) => e.toString(),
+            'toString()', contains('namedParameter({x: 43})'))),
       );
     });
 
     test('an unstubbed getter throws', () {
       expect(
         () => foo.getter,
-        throwsNoSuchMethodError,
+        throwsA(TypeMatcher<MissingStubError>()
+            .having((e) => e.toString(), 'toString()', contains('getter'))),
       );
     });
   });

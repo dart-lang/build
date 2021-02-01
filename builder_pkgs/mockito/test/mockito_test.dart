@@ -273,7 +273,7 @@ void main() {
       when(mock.methodWithNormalArgs(42)).thenReturn('Ultimate Answer');
       expect(
         () => mock.methodWithoutArgs(),
-        throwsNoSuchMethodError,
+        throwsA(TypeMatcher<MissingStubError>()),
       );
     });
 

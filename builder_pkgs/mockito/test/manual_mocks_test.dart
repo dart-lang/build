@@ -176,7 +176,7 @@ void main() {
         'using `throwOnMissingStub` behavior', () {
       throwOnMissingStub(mock);
       expect(() => mock.nonNullableReturn(43),
-          throwsA(TypeMatcher<NoSuchMethodError>()));
+          throwsA(TypeMatcher<MissingStubError>()));
     });
   });
 
