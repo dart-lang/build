@@ -661,7 +661,7 @@ class _MockLibraryInfo {
         ..docs.add('/// See the documentation for Mockito\'s code generation '
             'for more information.');
       if (classIsImmutable) {
-        cBuilder..docs.add('// ignore: must_be_immutable');
+        cBuilder.docs.add('// ignore: must_be_immutable');
       }
       // For each type parameter on [classToMock], the Mock class needs a type
       // parameter with same type variables, and a mirrored type argument for
