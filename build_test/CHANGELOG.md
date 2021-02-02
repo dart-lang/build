@@ -1,3 +1,7 @@
+## 1.3.6
+
+- Allow the null safe pre-release version of `html`.
+
 ## 1.3.5
 
 - Allow the null safe pre-release version of `package_config` and `watcher`.
