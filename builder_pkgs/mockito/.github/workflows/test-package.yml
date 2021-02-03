@@ -82,6 +82,4 @@ jobs:
           dart pub get
           dart pub global activate dartdoc
       - name: Verify dartdoc
-        run: dart pub global run dartdoc \
-          --no-generate-docs \
-          --errors=unresolved-doc-reference,ambiguous-doc-reference,ambiguous-reexport,broken-link,deprecated,no-library-level-docs,unknown-directive,unknown-macro
+        run: dart pub global run dartdoc --no-generate-docs --errors=unresolved-doc-reference,ambiguous-doc-reference,ambiguous-reexport,broken-link,deprecated,no-library-level-docs,unknown-directive,unknown-macro
