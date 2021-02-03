@@ -66,17 +66,16 @@ jobs:
         if: always() && steps.install.outcome == 'success'
   document:
     needs: analyze
-    runs-on: dev
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        sdk: [dev]
     steps:
       - uses: actions/checkout@v2
       - uses: dart-lang/setup-dart@v0.3
         with:
-          sdk: ${{ matrix.sdk }}
+          sdk: dev
       - id: install
         name: Install dependencies
         run: |
