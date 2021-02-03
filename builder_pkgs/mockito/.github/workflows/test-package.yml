@@ -80,7 +80,7 @@ jobs:
         name: Install dependencies
         run: |
           dart pub get
-          dart pub global install dartdoc
+          dart pub global activate dartdoc
       - name: Verify dartdoc
         run: dart pub global run dartdoc \
           --no-generate-docs \
