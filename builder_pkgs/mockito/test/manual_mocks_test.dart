@@ -54,7 +54,8 @@ class MockedClass extends Mock implements RealClass {
 
   @override
   int nonNullableReturn(int? x) =>
-      super.noSuchMethod(Invocation.method(#nonNullableReturn, [x]), 1) as int;
+      super.noSuchMethod(Invocation.method(#nonNullableReturn, [x]),
+          returnValue: 1) as int;
 
   // A generic return type is very tricky to work with in a manually mocked
   // method. What value can be passed as the second argument to
@@ -63,16 +64,17 @@ class MockedClass extends Mock implements RealClass {
   // is optional, so that the override is still legal.
   @override
   T nonNullableReturn2<T>(T? x, {T? sentinal}) =>
-      super.noSuchMethod(Invocation.method(#nonNullableReturn2, [x]), sentinal!)
-          as T;
+      super.noSuchMethod(Invocation.method(#nonNullableReturn2, [x]),
+          returnValue: sentinal!) as T;
 
   @override
-  Future<int> nonNullableFutureReturn(int? x) => super.noSuchMethod(
-          Invocation.method(#nonNullableFutureReturn, [x]), Future.value(1))
-      as Future<int>;
+  Future<int> nonNullableFutureReturn(int? x) =>
+      super.noSuchMethod(Invocation.method(#nonNullableFutureReturn, [x]),
+          returnValue: Future.value(1)) as Future<int>;
 
   @override
-  int get getter => super.noSuchMethod(Invocation.getter(#getter), 1) as int;
+  int get getter =>
+      super.noSuchMethod(Invocation.getter(#getter), returnValue: 1) as int;
 }
 
 void main() {

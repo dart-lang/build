@@ -56,6 +56,15 @@ void main() {
       expect(fooSub.positionalParameter(42), equals('Stubbed'));
     });
 
+    test('a setter can be called without stubbing', () {
+      expect(() => foo.setter = 7, returnsNormally);
+    });
+
+    test('a method which returns Future<void> can be called without stubbing',
+        () {
+      expect(() => foo.returnsFutureVoid(), returnsNormally);
+    });
+
     test(
         'a method with a non-nullable positional parameter accepts an argument '
         'matcher while stubbing', () {

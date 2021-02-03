@@ -851,13 +851,23 @@ class _MockLibraryInfo {
       literalList(invocationPositionalArgs),
       if (invocationNamedArgs.isNotEmpty) literalMap(invocationNamedArgs),
     ]);
-    final noSuchMethodArgs = <Expression>[invocation];
-    if (_returnTypeIsNonNullable(method)) {
-      final dummyReturnValue = _dummyValue(method.returnType);
-      noSuchMethodArgs.add(dummyReturnValue);
+
+    Expression returnValueForMissingStub;
+    if (method.returnType.isVoid) {
+      returnValueForMissingStub = refer('null');
+    } else if (method.returnType ==
+        typeProvider.futureType2(typeProvider.voidType)) {
+      returnValueForMissingStub = refer('Future').property('value').call([]);
     }
+    final namedArgs = {
+      if (_returnTypeIsNonNullable(method))
+        'returnValue': _dummyValue(method.returnType),
+      if (returnValueForMissingStub != null)
+        'returnValueForMissingStub': returnValueForMissingStub,
+    };
+
     var superNoSuchMethod =
-        refer('super').property('noSuchMethod').call(noSuchMethodArgs);
+        refer('super').property('noSuchMethod').call([invocation], namedArgs);
     if (!method.returnType.isVoid && !method.returnType.isDynamic) {
       superNoSuchMethod =
           superNoSuchMethod.asA(_typeReference(method.returnType));
@@ -1127,9 +1137,9 @@ class _MockLibraryInfo {
     final invocation = refer('Invocation').property('getter').call([
       refer('#${getter.displayName}'),
     ]);
-    final noSuchMethodArgs = [invocation, _dummyValue(getter.returnType)];
+    final namedArgs = {'returnValue': _dummyValue(getter.returnType)};
     var superNoSuchMethod =
-        refer('super').property('noSuchMethod').call(noSuchMethodArgs);
+        refer('super').property('noSuchMethod').call([invocation], namedArgs);
     if (!getter.returnType.isVoid && !getter.returnType.isDynamic) {
       superNoSuchMethod =
           superNoSuchMethod.asA(_typeReference(getter.returnType));
@@ -1167,8 +1177,9 @@ class _MockLibraryInfo {
       refer('#${setter.displayName}'),
       invocationPositionalArgs.single,
     ]);
-    final returnNoSuchMethod =
-        refer('super').property('noSuchMethod').call([invocation]);
+    final returnNoSuchMethod = refer('super')
+        .property('noSuchMethod')
+        .call([invocation], {'returnValueForMissingStub': refer('null')});
 
     builder.body = returnNoSuchMethod.code;
   }

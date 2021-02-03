@@ -5,6 +5,12 @@
 * Migrate example code to null safety.
 * **Breaking change:** Change the error which is thrown if a method is called
   and no method stub was found, from NoSuchMethodError to MissingStubError.
+* **Breaking change**: `Mock.noSuchMethod`'s optional positional parameter,
+  "returnValue" is changed to a named parameter, and a second named parameter is
+  added. Any manual mocks which call `Mock.noSuchMethod` with a second
+  positional argument will need to instead use the named parameter.
+* Allow real calls to mock methods which return `void` (like setters) or
+  `Future<void>`, even if unstubbed.
 
 ## 5.0.0-nullsafety.5
 

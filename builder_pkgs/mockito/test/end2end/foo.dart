@@ -7,6 +7,8 @@ class Foo<T> {
   String? nullableMethod(int x) => 'Real';
   String? get nullableGetter => 'Real';
   String methodWithBarArg(Bar bar) => 'result';
+  set setter(int value) {}
+  Future<void> returnsFutureVoid() => Future.value();
 }
 
 class FooSub extends Foo<int> {}

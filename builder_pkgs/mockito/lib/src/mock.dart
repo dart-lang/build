@@ -113,6 +113,11 @@ class Mock {
     _responses.add(cannedResponse);
   }
 
+  /// A sentinal value used as the default argument for noSuchMethod's
+  /// 'returnValueForMissingStub' parameter.
+  @protected
+  static const deferToDefaultResponse = Object();
+
   /// Handles method stubbing, method call verification, and real method calls.
   ///
   /// If passed, [returnValue] will be returned during method stubbing and
@@ -121,7 +126,9 @@ class Mock {
   /// return type.
   @override
   @visibleForTesting
-  dynamic noSuchMethod(Invocation invocation, [Object? returnValue]) {
+  dynamic noSuchMethod(Invocation invocation,
+      {Object? returnValue,
+      Object? returnValueForMissingStub = deferToDefaultResponse}) {
     // noSuchMethod is that 'magic' that allows us to ignore implementing fields
     // and methods and instead define them later at compile-time per instance.
     invocation = _useMatchedInvocationIfSet(invocation);
@@ -135,11 +142,18 @@ class Mock {
       _untilCall = _UntilCall(this, invocation);
       return returnValue;
     } else {
+      _ReturnsCannedResponse defaultResponse;
+      if (returnValueForMissingStub == deferToDefaultResponse) {
+        defaultResponse = _defaultResponse;
+      } else {
+        defaultResponse = () =>
+            CallPair<Object?>.allInvocations((_) => returnValueForMissingStub);
+      }
       _realCalls.add(RealCall(this, invocation));
       _invocationStreamController.add(invocation);
       var cannedResponse = _responses.lastWhere(
           (cr) => cr.call.matches(invocation, {}),
-          orElse: _defaultResponse);
+          orElse: defaultResponse);
       var response = cannedResponse.response(invocation);
       return response;
     }
