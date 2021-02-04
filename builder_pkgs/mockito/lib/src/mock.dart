@@ -914,7 +914,7 @@ Verification _makeVerify(bool never) {
 /// verifyInOrder([cat.eatFood("Milk"), cat.sound(), cat.eatFood(any)]);
 /// ```
 ///
-/// This verifies that `eatFood` was called with `"Milk"`, `sound` was called
+/// This verifies that `eatFood` was called with `"Milk"`, sound` was called
 /// with no arguments, and `eatFood` was then called with some argument.
 ///
 /// Note: [verifyInOrder] only verifies that each call was made in the order
