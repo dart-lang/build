@@ -1,5 +1,5 @@
 name: build_web_compilers
-version: 2.16.2
+version: 2.16.3
 description: Builder implementations wrapping Dart compilers.
 homepage: https://github.com/dart-lang/build/tree/master/build_web_compilers
 
@@ -9,7 +9,7 @@ environment:
 dependencies:
   analyzer: ">=0.36.4 <0.42.0"
   archive: '>=2.0.0 <4.0.0'
-  bazel_worker: ^0.1.18
+  bazel_worker: ">=0.1.18 <2.0.0"
   build: ">=1.5.0 <2.0.0"
   build_config: ">=0.3.0 <0.5.0"
   build_modules: ^3.0.0

@@ -1,3 +1,7 @@
+## 2.16.3
+
+- Allow the null safety pre-release of `bazel_worker`.
+
 ## 2.16.2
 
 - Allow the null safety pre-release of `logging`.
