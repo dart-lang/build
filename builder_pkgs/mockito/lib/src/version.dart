@@ -1,1 +1,1 @@
-const packageVersion = '5.0.0-nullsafety.6';
+const packageVersion = '5.0.0-nullsafety.7';

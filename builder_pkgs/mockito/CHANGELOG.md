@@ -1,3 +1,7 @@
+## 5.0.0-nullsafety.7
+
+* Fix generation of duplicate mock getters and setters from inherited classes.
+
 ## 5.0.0-nullsafety.6
 
 * Fix generation of method with a parameter with a default value which includes

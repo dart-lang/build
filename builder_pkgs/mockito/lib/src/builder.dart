@@ -719,9 +719,10 @@ class _MockLibraryInfo {
       if (accessor.isPrivate || accessor.isStatic) {
         continue;
       }
-      if (overriddenFields.contains(accessor)) {
+      if (overriddenFields.contains(accessor.name)) {
         continue;
       }
+      overriddenFields.add(accessor.name);
       if (accessor.isGetter != null && _returnTypeIsNonNullable(accessor)) {
         yield Method((mBuilder) => _buildOverridingGetter(mBuilder, accessor));
       }

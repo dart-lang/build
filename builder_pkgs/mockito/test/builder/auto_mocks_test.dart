@@ -1363,6 +1363,19 @@ void main() {
     );
   });
 
+  test('overrides inherited methods with a non-nullable return type', () async {
+    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+        class FooBase {
+          num m() => 7;
+        }
+        class Foo extends FooBase {
+          int m() => 7;
+        }
+        '''));
+    expect(mocksContent, contains('int m()'));
+    expect(mocksContent, isNot(contains('num m()')));
+  });
+
   test('overrides methods with a potentially non-nullable parameter', () async {
     await testWithNonNullable(
       {
@@ -1430,6 +1443,19 @@ void main() {
     );
   });
 
+  test('overrides inherited instance getters only once', () async {
+    var mocksContent = await buildWithSingleNonNullableSource(dedent('''
+      class FooBase {
+        num get m => 7;
+      }
+      class Foo extends FooBase {
+        int get m => 7;
+      }
+      '''));
+    expect(mocksContent, contains('int get m'));
+    expect(mocksContent, isNot(contains('num get m')));
+  });
+
   test('overrides non-nullable instance setters', () async {
     await expectSingleNonNullableOutput(
       dedent('''
@@ -1468,6 +1494,19 @@ void main() {
     );
   });
 
+  test('overrides inherited non-nullable instance setters only once', () async {
+    var mocksContent = await buildWithSingleNonNullableSource(dedent('''
+      class FooBase {
+        set m(int a) {}
+      }
+      class Foo extends FooBase {
+        set m(num a) {}
+      }
+      '''));
+    expect(mocksContent, contains('set m(num? a)'));
+    expect(mocksContent, isNot(contains('set m(int? a)')));
+  });
+
   test('overrides non-nullable fields', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
@@ -1501,6 +1540,22 @@ void main() {
           .noSuchMethod(Invocation.setter(#m, _m), returnValueForMissingStub: null);
       ''')),
     );
+  });
+
+  test('overrides inherited non-nullable fields only once', () async {
+    var mocksContent = await buildWithSingleNonNullableSource(dedent('''
+      class FooBase {
+        num m;
+      }
+      class Foo extends FooBase<int> {
+        int get m => 7;
+        void set m(covariant int value) {}
+      }
+      '''));
+    expect(mocksContent, contains('int get m'));
+    expect(mocksContent, contains('set m(int? value)'));
+    expect(mocksContent, isNot(contains('num get m')));
+    expect(mocksContent, isNot(contains('set m(num? value)')));
   });
 
   test('overrides final non-nullable fields', () async {
