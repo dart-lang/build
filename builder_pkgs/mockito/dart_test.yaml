@@ -1,5 +1,0 @@
-# TODO(https://github.com/dart-lang/test/issues/772): Headless chrome timeout.
-override_platforms:
-  chrome:
-    settings:
-      headless: false
