@@ -195,13 +195,9 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
       (type.typeArguments ?? []).forEach(_addType);
     } else if (type is analyzer.FunctionType) {
       _addType(type.returnType);
-      var element = type.element;
-      if (element != null) {
-        if (element is FunctionTypeAliasElement) {
-          _elements.add(element);
-        } else {
-          _elements.add(element.enclosingElement as FunctionTypeAliasElement);
-        }
+      var aliasElement = type.aliasElement;
+      if (aliasElement != null) {
+        _elements.add(aliasElement);
       }
     }
   }
@@ -355,8 +351,8 @@ class _MockTargetGatherer {
   /// [InvalidMockitoAnnotationException] under various conditions.
   static analyzer.InterfaceType _determineDartType(
       analyzer.DartType typeToMock, TypeProvider typeProvider) {
-    final elementToMock = typeToMock.element;
-    if (elementToMock is ClassElement) {
+    if (typeToMock is analyzer.InterfaceType) {
+      final elementToMock = typeToMock.element;
       if (elementToMock.isEnum) {
         throw InvalidMockitoAnnotationException(
             'Mockito cannot mock an enum: ${elementToMock.displayName}');
@@ -382,17 +378,16 @@ class _MockTargetGatherer {
             "'${elementToMock.displayName}' for the following reasons:\n"
             '$joinedMessages');
       }
-      return typeToMock as analyzer.InterfaceType;
-    } else if (elementToMock is FunctionTypeAliasElement) {
+      return typeToMock;
+    }
+
+    var aliasElement = typeToMock.aliasElement;
+    if (aliasElement != null) {
       throw InvalidMockitoAnnotationException('Mockito cannot mock a typedef: '
-          '${elementToMock.displayName}');
-    } else if (elementToMock is GenericFunctionTypeElement &&
-        elementToMock.enclosingElement is FunctionTypeAliasElement) {
-      throw InvalidMockitoAnnotationException('Mockito cannot mock a typedef: '
-          '${elementToMock.enclosingElement.displayName}');
+          '${aliasElement.displayName}');
     } else {
       throw InvalidMockitoAnnotationException(
-          'Mockito cannot mock a non-class: ${elementToMock.displayName}');
+          'Mockito cannot mock a non-class: $typeToMock');
     }
   }
 
@@ -499,8 +494,8 @@ class _MockTargetGatherer {
 
     for (var parameter in function.parameters) {
       var parameterType = parameter.type;
-      var parameterTypeElement = parameterType.element;
       if (parameterType is analyzer.InterfaceType) {
+        var parameterTypeElement = parameterType.element;
         if (parameterTypeElement?.isPrivate ?? false) {
           // Technically, we can expand the type in the mock to something like
           // `Object?`. However, until there is a decent use case, we will not
@@ -518,8 +513,12 @@ class _MockTargetGatherer {
 
     errorMessages
         .addAll(_checkTypeParameters(function.typeFormals, enclosingElement));
-    errorMessages
-        .addAll(_checkTypeArguments(function.typeArguments, enclosingElement));
+
+    var aliasArguments = function.aliasArguments;
+    if (aliasArguments != null) {
+      errorMessages
+          .addAll(_checkTypeArguments(aliasArguments, enclosingElement));
+    }
 
     return errorMessages;
   }
@@ -1220,7 +1219,7 @@ class _MockLibraryInfo {
           ..types.addAll(type.typeArguments.map(_typeReference));
       });
     } else if (type is analyzer.FunctionType) {
-      var element = type.element;
+      var element = type.aliasElement;
       if (element == null) {
         // [type] represents a FunctionTypedFormalParameter.
         return FunctionType((b) {
@@ -1241,18 +1240,11 @@ class _MockLibraryInfo {
         });
       }
       return TypeReference((b) {
-        Element typedef;
-        if (element is FunctionTypeAliasElement) {
-          typedef = element;
-        } else {
-          typedef = element.enclosingElement as FunctionTypeAliasElement;
-        }
-
         b
-          ..symbol = typedef.name
-          ..url = _typeImport(typedef)
+          ..symbol = element.name
+          ..url = _typeImport(element)
           ..isNullable = forceNullable || typeSystem.isNullable(type);
-        for (var typeArgument in type.typeArguments) {
+        for (var typeArgument in type.aliasArguments) {
           b.types.add(_typeReference(typeArgument));
         }
       });
