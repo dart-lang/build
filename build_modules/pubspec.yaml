@@ -32,8 +32,3 @@ dev_dependencies:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
-
-dependency_overrides:
-  # Only needed for a test, can be removed after build: 1.6.2 is released
-  build:
-    path: ../build
