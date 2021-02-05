@@ -1,3 +1,7 @@
+## 3.0.4
+
+- Allow the null safe pre-releases of `bazel_worker`.
+
 ## 3.0.3
 
 - Allow the null safe pre-releases of all migrated deps.
