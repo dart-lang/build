@@ -5,7 +5,7 @@ import '../asset/id.dart';
 
 class UnexpectedOutputException implements Exception {
   final AssetId assetId;
-  final Iterable<AssetId> expected;
+  final Iterable<AssetId>? expected;
 
   UnexpectedOutputException(this.assetId, {this.expected});
 

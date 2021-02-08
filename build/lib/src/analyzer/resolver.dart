@@ -64,7 +64,7 @@ abstract class Resolver {
   /// **NOTE**: In general, its recommended to use [libraryFor] with an absolute
   /// asset id instead of a named identifier that has the possibility of not
   /// being unique.
-  Future<LibraryElement> findLibraryByName(String libraryName);
+  Future<LibraryElement?> findLibraryByName(String libraryName);
 
   /// Returns the [AssetId] of the Dart library or part declaring [element].
   ///
@@ -168,7 +168,7 @@ class SyntaxErrorInAssetException implements Exception {
       final error = errorAndResult.key;
       // Use a short name: We present the full context by including the asset id
       // and this is easier to skim through
-      final sourceName = error.source?.shortName ?? '<unknown>';
+      final sourceName = error.source.shortName;
 
       final lineInfo = errorAndResult.value.lineInfo;
       final position = lineInfo.getLocation(error.offset);
