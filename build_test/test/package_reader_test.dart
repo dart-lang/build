@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('$PackageAssetReader', () {
-    PackageAssetReader reader;
+    late PackageAssetReader reader;
 
     final buildAsset = AssetId('build', 'lib/build.dart');
     final buildTest = AssetId('build_test', 'lib/build_test.dart');

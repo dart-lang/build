@@ -29,10 +29,10 @@ const useAssetReader = '__useAssetReader__';
 Future<T> resolveSource<T>(
   String inputSource,
   FutureOr<T> Function(Resolver resolver) action, {
-  AssetId inputId,
-  PackageConfig packageConfig,
-  Future<Null> tearDown,
-  Resolvers resolvers,
+  AssetId? inputId,
+  PackageConfig? packageConfig,
+  Future<Null>? tearDown,
+  Resolvers? resolvers,
 }) {
   inputId ??= AssetId('_resolve_source', 'lib/_resolve_source.dart');
   return _resolveAssets(
@@ -118,13 +118,13 @@ Future<T> resolveSource<T>(
 /// - by default, [PackageAssetReader.currentIsolate]. A custom [packageConfig]
 /// may be provided to map files not visible to the current package's runtime.
 Future<T> resolveSources<T>(
-  Map<String, String> inputs,
+  Map<String, String>? inputs,
   FutureOr<T> Function(Resolver resolver) action, {
-  PackageConfig packageConfig,
-  String resolverFor,
-  String rootPackage,
-  Future<Null> tearDown,
-  Resolvers resolvers,
+  PackageConfig? packageConfig,
+  String? resolverFor,
+  String? rootPackage,
+  Future<Null>? tearDown,
+  Resolvers? resolvers,
 }) {
   if (inputs == null || inputs.isEmpty) {
     throw ArgumentError.value(inputs, 'inputs', 'Must be a non-empty Map');
@@ -144,9 +144,9 @@ Future<T> resolveSources<T>(
 Future<T> resolveAsset<T>(
   AssetId inputId,
   FutureOr<T> Function(Resolver resolver) action, {
-  PackageConfig packageConfig,
-  Future<Null> tearDown,
-  Resolvers resolvers,
+  PackageConfig? packageConfig,
+  Future<Null>? tearDown,
+  Resolvers? resolvers,
 }) {
   return _resolveAssets(
     {
@@ -170,12 +170,13 @@ Future<T> _resolveAssets<T>(
   Map<String, String> inputs,
   String rootPackage,
   FutureOr<T> Function(Resolver resolver) action, {
-  PackageConfig packageConfig,
-  AssetId resolverFor,
-  Future<Null> tearDown,
-  Resolvers resolvers,
+  PackageConfig? packageConfig,
+  AssetId? resolverFor,
+  Future<Null>? tearDown,
+  Resolvers? resolvers,
 }) async {
-  packageConfig ??= await loadPackageConfigUri(await Isolate.packageConfig);
+  final hasCustomPackageConfig = packageConfig != null;
+  packageConfig ??= await loadPackageConfigUri((await Isolate.packageConfig)!);
   final assetReader = PackageAssetReader(packageConfig, rootPackage);
   final resolveBuilder = _ResolveSourceBuilder(
     action,
@@ -185,7 +186,7 @@ Future<T> _resolveAssets<T>(
   final inputAssets = <AssetId, String>{};
   await Future.wait(inputs.keys.map((String rawAssetId) async {
     final assetId = AssetId.parse(rawAssetId);
-    var assetValue = inputs[rawAssetId];
+    var assetValue = inputs[rawAssetId]!;
     if (assetValue == useAssetReader) {
       assetValue = await assetReader.readAsString(assetId);
     }
@@ -198,7 +199,7 @@ Future<T> _resolveAssets<T>(
 
   // Use the default resolver if not provided a package config and no
   // experiments are enabled. This is much faster.
-  resolvers ??= packageConfig == null && enabledExperiments.isEmpty
+  resolvers ??= !hasCustomPackageConfig && enabledExperiments.isEmpty
       ? defaultResolvers
       : AnalyzerResolvers(null, null, packageConfig);
 
@@ -226,8 +227,8 @@ Future<T> _resolveAssets<T>(
 /// input given a set of dependencies to also use. See `resolveSource`.
 class _ResolveSourceBuilder<T> implements Builder {
   final FutureOr<T> Function(Resolver) _action;
-  final Future _tearDown;
-  final AssetId _resolverFor;
+  final Future? _tearDown;
+  final AssetId? _resolverFor;
 
   final onDone = Completer<T>();
 

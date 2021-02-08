@@ -7,7 +7,7 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
-// ignore: deprecated_member_use
+// ignore: deprecated_member_use, import_of_legacy_library_into_null_safe
 import 'package:test_core/backend.dart';
 
 /// A [Builder] that injects bootstrapping code used by the test runner to run
@@ -128,7 +128,7 @@ class _ConfigLoader {
   final _configByPackage = <String, Future<Configuration>>{};
   final _configDigestByPackage = <String, Digest>{};
 
-  Future<Configuration> load(String package, AssetReader reader) async {
+  Future<Configuration?> load(String package, AssetReader reader) async {
     var customConfigId = AssetId(package, 'dart_test.yaml');
     if (!await reader.canRead(customConfigId)) return null;
 

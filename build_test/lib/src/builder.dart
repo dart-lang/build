@@ -31,7 +31,7 @@ void _copyToAll(BuildStep buildStep, Map<String, List<String>> buildExtensions,
   }
   for (final inputExtension in buildExtensions.keys) {
     if (!buildStep.inputId.path.endsWith(inputExtension)) continue;
-    for (final outputExtension in buildExtensions[inputExtension]) {
+    for (final outputExtension in buildExtensions[inputExtension]!) {
       final newPath = _replaceSuffix(
           buildStep.inputId.path, inputExtension, outputExtension);
       final id = AssetId(buildStep.inputId.package, newPath);
@@ -76,7 +76,7 @@ class TestBuilder implements Builder {
   final Map<String, List<String>> buildExtensions;
 
   final BuildBehavior _build;
-  final BuildBehavior _extraWork;
+  final BuildBehavior? _extraWork;
 
   /// A stream of all the [BuildStep.inputId]s that are seen.
   ///
@@ -91,9 +91,9 @@ class TestBuilder implements Builder {
   Stream<AssetId> get buildsCompleted => _buildsCompletedController.stream;
 
   TestBuilder({
-    Map<String, List<String>> buildExtensions,
-    BuildBehavior build,
-    BuildBehavior extraWork,
+    Map<String, List<String>>? buildExtensions,
+    BuildBehavior? build,
+    BuildBehavior? extraWork,
   })  : buildExtensions = buildExtensions ?? appendExtension('.copy'),
         _build = build ?? _defaultBehavior,
         _extraWork = extraWork;
@@ -103,7 +103,7 @@ class TestBuilder implements Builder {
     if (!await buildStep.canRead(buildStep.inputId)) return;
     _buildInputsController.add(buildStep.inputId);
     await _build(buildStep, buildExtensions);
-    if (_extraWork != null) await _extraWork(buildStep, buildExtensions);
+    await _extraWork?.call(buildStep, buildExtensions);
     _buildsCompletedController.add(buildStep.inputId);
   }
 }

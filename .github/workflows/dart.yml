@@ -489,30 +489,6 @@ jobs:
       - job_004
       - job_005
   job_013:
-    name: "unit_test; windows; Dart dev; PKG: build_test; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
-    steps:
-      - uses: dart-lang/setup-dart@v0.3
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2
-      - id: build_test_pub_upgrade
-        name: "build_test; pub.bat upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_test
-        run: pub.bat upgrade --no-precompile
-      - name: "build_test; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
-        working-directory: build_test
-        run: "pub.bat run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-  job_014:
     name: "unit_test; windows; Dart dev; PKG: build_vm_compilers; `pub run test`"
     runs-on: windows-latest
     steps:
@@ -536,7 +512,7 @@ jobs:
       - job_003
       - job_004
       - job_005
-  job_015:
+  job_014:
     name: "unit_test; linux; Dart dev; PKG: build_config; `pub run test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -570,7 +546,7 @@ jobs:
       - job_003
       - job_004
       - job_005
-  job_016:
+  job_015:
     name: "unit_test; linux; Dart dev; PKG: scratch_space; `pub run test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -604,7 +580,7 @@ jobs:
       - job_003
       - job_004
       - job_005
-  job_017:
+  job_016:
     name: "unit_test; linux; Dart dev; PKG: build_daemon; `pub run test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -638,7 +614,7 @@ jobs:
       - job_003
       - job_004
       - job_005
-  job_018:
+  job_017:
     name: "unit_test; linux; Dart dev; PKG: build_resolvers; `pub run test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -672,41 +648,7 @@ jobs:
       - job_003
       - job_004
       - job_005
-  job_019:
-    name: "unit_test; linux; Dart dev; PKG: build_test; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_test;commands:test_04"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_test
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - uses: dart-lang/setup-dart@v0.3
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2
-      - id: build_test_pub_upgrade
-        name: "build_test; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_test
-        run: pub upgrade --no-precompile
-      - name: "build_test; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
-        working-directory: build_test
-        run: "pub run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-  job_020:
+  job_018:
     name: "unit_test; linux; Dart dev; PKG: build_web_compilers; `pub run test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -740,7 +682,7 @@ jobs:
       - job_003
       - job_004
       - job_005
-  job_021:
+  job_019:
     name: "unit_test; linux; Dart dev; PKG: build_runner_core; `pub run test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -774,7 +716,7 @@ jobs:
       - job_003
       - job_004
       - job_005
-  job_022:
+  job_020:
     name: "unit_test; linux; Dart dev; PKG: build; `pub run test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -808,7 +750,7 @@ jobs:
       - job_003
       - job_004
       - job_005
-  job_023:
+  job_021:
     name: "unit_test; linux; Dart dev; PKG: _test; `pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random`, `pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -846,7 +788,7 @@ jobs:
       - job_003
       - job_004
       - job_005
-  job_024:
+  job_022:
     name: "unit_test; windows; Dart dev; PKG: _test; `pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random`, `pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -874,7 +816,7 @@ jobs:
       - job_003
       - job_004
       - job_005
-  job_025:
+  job_023:
     name: "unit_test; linux; Dart dev; PKG: build_vm_compilers; `pub run test`"
     runs-on: ubuntu-latest
     steps:
@@ -908,7 +850,7 @@ jobs:
       - job_003
       - job_004
       - job_005
-  job_026:
+  job_024:
     name: "unit_test; linux; Dart 2.10.0; PKG: build_modules; `pub run test -P presubmit --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -942,7 +884,7 @@ jobs:
       - job_003
       - job_004
       - job_005
-  job_027:
+  job_025:
     name: "unit_test; windows; Dart 2.10.0; PKG: build_modules; `pub run test -P presubmit --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -966,7 +908,7 @@ jobs:
       - job_003
       - job_004
       - job_005
-  job_028:
+  job_026:
     name: "unit_test; linux; Dart dev; PKG: build_modules; `pub run test -P presubmit --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -1000,7 +942,7 @@ jobs:
       - job_003
       - job_004
       - job_005
-  job_029:
+  job_027:
     name: "unit_test; windows; Dart dev; PKG: build_modules; `pub run test -P presubmit --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -1024,7 +966,41 @@ jobs:
       - job_003
       - job_004
       - job_005
-  job_030:
+  job_028:
+    name: "unit_test; linux; Dart dev; PKG: build_test; `pub run test --no-sound-null-safety --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_test;commands:test_12"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_test
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - uses: dart-lang/setup-dart@v0.3
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: build_test_pub_upgrade
+        name: "build_test; pub upgrade --no-precompile"
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_test
+        run: pub upgrade --no-precompile
+      - name: "build_test; pub run test --no-sound-null-safety --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
+        working-directory: build_test
+        run: "pub run test --no-sound-null-safety --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+  job_029:
     name: "unit_test; linux; Dart 2.10.0; PKG: build_runner; `pub run test -x integration --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -1058,7 +1034,7 @@ jobs:
       - job_003
       - job_004
       - job_005
-  job_031:
+  job_030:
     name: "unit_test; linux; Dart dev; PKG: build_runner; `pub run test -x integration --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -1092,7 +1068,7 @@ jobs:
       - job_003
       - job_004
       - job_005
-  job_032:
+  job_031:
     name: "unit_test; windows; Dart 2.9.0; PKG: build_runner_core; `pub run test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -1116,7 +1092,7 @@ jobs:
       - job_003
       - job_004
       - job_005
-  job_033:
+  job_032:
     name: "unit_test; linux; Dart 2.9.0; PKG: build_runner_core; `pub run test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -1144,6 +1120,30 @@ jobs:
         if: "always() && steps.build_runner_core_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner_core
         run: "pub run test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+  job_033:
+    name: "unit_test; windows; Dart dev; PKG: build_test; `pub run test --no-sound-null-safety --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
+    steps:
+      - uses: dart-lang/setup-dart@v0.3
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: build_test_pub_upgrade
+        name: "build_test; pub.bat upgrade --no-precompile"
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_test
+        run: pub.bat upgrade --no-precompile
+      - name: "build_test; pub run test --no-sound-null-safety --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
+        working-directory: build_test
+        run: "pub.bat run test --no-sound-null-safety --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002

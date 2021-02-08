@@ -191,11 +191,10 @@ void main() {
 class _ConcatBuilder implements Builder {
   final String _input;
 
-  _ConcatBuilder(this._input) {
-    buildExtensions = {
-      '\$$_input\$': ['concat.txt'],
-    };
-  }
+  _ConcatBuilder(this._input)
+      : buildExtensions = {
+          '\$$_input\$': ['concat.txt'],
+        };
 
   @override
   Future<void> build(BuildStep buildStep) async {

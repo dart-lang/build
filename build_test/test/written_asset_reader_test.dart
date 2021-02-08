@@ -4,8 +4,8 @@ import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
 void main() {
-  WrittenAssetReader reader;
-  InMemoryAssetWriter writer;
+  late WrittenAssetReader reader;
+  late InMemoryAssetWriter writer;
 
   setUp(() async {
     writer = InMemoryAssetWriter();

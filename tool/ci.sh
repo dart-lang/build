@@ -130,6 +130,10 @@ for PKG in ${PKGS}; do
         echo 'pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces'
         pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces || EXIT_CODE=$?
         ;;
+      test_12)
+        echo 'pub run test --no-sound-null-safety --test-randomize-ordering-seed=random'
+        pub run test --no-sound-null-safety --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
       *)
         echo -e "\033[31mUnknown TASK '${TASK}' - TERMINATING JOB\033[0m"
         exit 64

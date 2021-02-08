@@ -13,7 +13,7 @@ void main() {
     final libAsset = AssetId(packageName, 'lib/some_pkg.dart');
     final testAsset = AssetId(packageName, 'test/some_test.dart');
 
-    InMemoryAssetReader assetReader;
+    late InMemoryAssetReader assetReader;
 
     setUp(() {
       var allAssets = {

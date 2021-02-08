@@ -97,7 +97,7 @@ class _IgnoringNewlinesAndWhitespaceMatcher extends Matcher {
   @override
   bool matches(item, Map matchState) {
     if (item is! String) return false;
-    return _stripWhitespaceAndNewlines(item as String) == _expected;
+    return _stripWhitespaceAndNewlines(item) == _expected;
   }
 }
 
