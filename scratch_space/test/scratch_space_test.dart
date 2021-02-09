@@ -157,7 +157,8 @@ class RecursiveScratchSpaceAssetReader implements AssetReader {
   Stream<AssetId> findAssets(_) => throw UnimplementedError();
 
   @override
-  Future<String> readAsString(_, {encoding}) => throw UnimplementedError();
+  Future<String> readAsString(_, {encoding = utf8}) =>
+      throw UnimplementedError();
 
   @override
   Future<Digest> digest(AssetId id) async => Digest(await readAsBytes(id));
