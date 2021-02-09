@@ -79,7 +79,7 @@ class ScratchSpace {
         // of pending writes but don't care about the result.
       }
     }
-    return tempDir.delete(recursive: true);
+    await tempDir.delete(recursive: true);
   }
 
   /// Copies [assetIds] to [tempDir] if they don't exist, using [reader] to

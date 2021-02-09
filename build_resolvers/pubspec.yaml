@@ -7,7 +7,7 @@ environment:
   sdk: ">=2.9.0 <3.0.0"
 
 dependencies:
-  analyzer: ">=0.40.1 <0.42.0"
+  analyzer: ^0.42.0-nullsafety.0
   build: ">=1.6.0 <1.7.0"
   crypto: ">=2.0.0 <4.0.0"
   graphs: ^0.2.0
@@ -21,3 +21,10 @@ dependencies:
 dev_dependencies:
   test: ^1.0.0
   build_test: ^1.0.0
+
+dependency_overrides:
+  analyzer: ^0.42.0-nullsafety.0 # pkg:test doesn't support the latest analyzer yet
+  build:
+    path: ../build
+  build_test:
+    path: ../build_test
