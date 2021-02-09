@@ -11,6 +11,7 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:glob/glob.dart';
+import 'package:glob/list_local_fs.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
@@ -133,7 +134,8 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
         var fileName = p.relative(jsFile.path, from: rootDir);
         var fileStats = await jsFile.stat();
         archive.addFile(
-            ArchiveFile(fileName, fileStats.size, await jsFile.readAsBytes())
+            // TODO(jcollins-g): why doesn't inference work here?
+            ArchiveFile(fileName, fileStats.size, await (jsFile as File).readAsBytes())
               ..mode = fileStats.mode
               ..lastModTime = fileStats.modified.millisecondsSinceEpoch);
       }
