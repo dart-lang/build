@@ -22,6 +22,8 @@ void main() {
       await pubspec(
         'a',
         currentIsolateDependencies: [
+          // todo (simolus3): Remove once pkg:test supports analyzer 0.42.0
+          'analyzer',
           'build',
           'build_config',
           'build_daemon',
