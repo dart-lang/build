@@ -1,3 +1,8 @@
+## 0.9.10+2
+
+* Expand allowed versions for the glob package as source_gen is compatible
+  to break circular dependency issues in the ecosystem.
+
 ## 0.9.10+1
 
 * Fix a bug in the early bailout optimization where it wouldn't check for
