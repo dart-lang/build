@@ -74,6 +74,10 @@ for PKG in ${PKGS}; do
         echo 'pub run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random'
         pub run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
+      command_4)
+        echo 'dart --no-sound-null-safety test --test-randomize-ordering-seed=random'
+        dart --no-sound-null-safety test --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
       dartanalyzer)
         echo 'dartanalyzer --fatal-infos --fatal-warnings .'
         dartanalyzer --fatal-infos --fatal-warnings . || EXIT_CODE=$?
@@ -129,10 +133,6 @@ for PKG in ${PKGS}; do
       test_11)
         echo 'pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces'
         pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces || EXIT_CODE=$?
-        ;;
-      test_12)
-        echo 'pub run test --no-sound-null-safety --test-randomize-ordering-seed=random'
-        pub run test --no-sound-null-safety --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       *)
         echo -e "\033[31mUnknown TASK '${TASK}' - TERMINATING JOB\033[0m"

@@ -854,7 +854,7 @@ jobs:
       - job_003
       - job_004
   job_025:
-    name: "unit_test; windows; Dart dev; PKG: build_test; `pub run test --no-sound-null-safety --test-randomize-ordering-seed=random`"
+    name: "unit_test; windows; Dart dev; PKG: build_test; `dart --no-sound-null-safety test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
       - uses: dart-lang/setup-dart@v0.3
@@ -867,10 +867,10 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_test
         run: pub.bat upgrade --no-precompile
-      - name: "build_test; pub run test --no-sound-null-safety --test-randomize-ordering-seed=random"
+      - name: "build_test; dart --no-sound-null-safety test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
         working-directory: build_test
-        run: "pub.bat run test --no-sound-null-safety --test-randomize-ordering-seed=random"
+        run: "dart --no-sound-null-safety test --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002
@@ -900,14 +900,14 @@ jobs:
       - job_003
       - job_004
   job_027:
-    name: "unit_test; linux; Dart dev; PKG: build_test; `pub run test --no-sound-null-safety --test-randomize-ordering-seed=random`"
+    name: "unit_test; linux; Dart dev; PKG: build_test; `dart --no-sound-null-safety test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
         uses: actions/cache@v2
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_test;commands:test_12"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_test;commands:command_4"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_test
             os:ubuntu-latest;pub-cache-hosted;dart:dev
@@ -923,10 +923,10 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_test
         run: pub upgrade --no-precompile
-      - name: "build_test; pub run test --no-sound-null-safety --test-randomize-ordering-seed=random"
+      - name: "build_test; dart --no-sound-null-safety test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
         working-directory: build_test
-        run: "pub run test --no-sound-null-safety --test-randomize-ordering-seed=random"
+        run: "dart --no-sound-null-safety test --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002
