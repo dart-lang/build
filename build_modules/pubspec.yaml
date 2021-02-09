@@ -14,7 +14,7 @@ dependencies:
   build_config: ">=0.3.0 <0.5.0"
   collection: ^1.0.0
   crypto: ">=2.0.0 <4.0.0"
-  glob: ^1.0.0
+  glob: ">=2.0.0 <3.0.0"
   graphs: ^0.2.0
   json_annotation: ">=1.2.0 <5.0.0"
   logging: ">=0.11.2 <2.0.0"
