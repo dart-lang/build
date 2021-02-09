@@ -1,4 +1,4 @@
-## 2.0.0
+## 2.0.0-dev
 
 - Migrate to null-safety
 - __Breaking__: Remove the deprecated `rootPackage` argument to `runBuilder`

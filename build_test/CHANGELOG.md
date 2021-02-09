@@ -1,3 +1,7 @@
+## 1.4.0-dev
+
+- Migrate to null safety
+
 ## 1.3.6
 
 - Allow the null safe pre-release version of `html`.
