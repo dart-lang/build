@@ -24,7 +24,6 @@ dev_dependencies:
 
 dependency_overrides:
   analyzer: ^0.42.0-nullsafety # the test package doesn't support this analyzer yet.
-  pub_semver: ^2.0.0-nullsafety.0 # analyzer needs 2.0.0, build_test -> build config -> pubspec_parse -> wants 1.0.0
   build_resolvers: ^1.0.0
   build_test:
     path: ../build_test

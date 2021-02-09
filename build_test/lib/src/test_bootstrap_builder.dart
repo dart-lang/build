@@ -1,13 +1,15 @@
 // Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+//
+//@dart=2.9
 
 import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
-// ignore: deprecated_member_use, import_of_legacy_library_into_null_safe
+// ignore: deprecated_member_use
 import 'package:test_core/backend.dart';
 
 /// A [Builder] that injects bootstrapping code used by the test runner to run
@@ -128,7 +130,7 @@ class _ConfigLoader {
   final _configByPackage = <String, Future<Configuration>>{};
   final _configDigestByPackage = <String, Digest>{};
 
-  Future<Configuration?> load(String package, AssetReader reader) async {
+  Future<Configuration> load(String package, AssetReader reader) async {
     var customConfigId = AssetId(package, 'dart_test.yaml');
     if (!await reader.canRead(customConfigId)) return null;
 
