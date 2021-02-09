@@ -1,11 +1,13 @@
+// @dart=2.9
+
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
 void main() {
-  late WrittenAssetReader reader;
-  late InMemoryAssetWriter writer;
+  WrittenAssetReader reader;
+  InMemoryAssetWriter writer;
 
   setUp(() async {
     writer = InMemoryAssetWriter();

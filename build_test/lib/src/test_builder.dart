@@ -1,6 +1,7 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+// @dart=2.9
 import 'dart:convert';
 
 import 'package:build/build.dart';
@@ -38,7 +39,7 @@ AssetId _passThrough(AssetId id) => id;
 /// association to a package pass [mapAssetIds] to translate from the logical
 /// location to the actual written location.
 void checkOutputs(
-    Map<String, /*List<int>|String|Matcher<List<int>>*/ dynamic>? outputs,
+    Map<String, /*List<int>|String|Matcher<List<int>>*/ dynamic> outputs,
     Iterable<AssetId> actualAssets,
     RecordingAssetWriter writer,
     {AssetId Function(AssetId id) mapAssetIds = _passThrough}) {
@@ -55,7 +56,7 @@ void checkOutputs(
       expect(modifiableActualAssets, contains(assetId),
           reason: 'Builder failed to write asset $assetId');
       modifiableActualAssets.remove(assetId);
-      var actual = writer.assets[mapAssetIds(assetId)]!;
+      var actual = writer.assets[mapAssetIds(assetId)];
       Object expected;
       if (contentsMatcher is String) {
         expected = utf8.decode(actual);
@@ -126,15 +127,15 @@ void checkOutputs(
 /// `withEnabledExperiments` method from package:build.
 Future testBuilder(
     Builder builder, Map<String, /*String|List<int>*/ dynamic> sourceAssets,
-    {Set<String>? generateFor,
-    bool Function(String assetId)? isInput,
-    String? rootPackage,
-    MultiPackageAssetReader? reader,
-    RecordingAssetWriter? writer,
-    Map<String, /*String|List<int>|Matcher<List<int>>*/ dynamic>? outputs,
-    void Function(LogRecord log)? onLog,
-    void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput,
-    PackageConfig? packageConfig}) async {
+    {Set<String> generateFor,
+    bool Function(String assetId) isInput,
+    String rootPackage,
+    MultiPackageAssetReader reader,
+    RecordingAssetWriter writer,
+    Map<String, /*String|List<int>|Matcher<List<int>>*/ dynamic> outputs,
+    void Function(LogRecord log) onLog,
+    void Function(AssetId, Iterable<AssetId>) reportUnusedAssetsForInput,
+    PackageConfig packageConfig}) async {
   writer ??= InMemoryAssetWriter();
 
   var inputIds = {
@@ -164,7 +165,7 @@ Future testBuilder(
   });
 
   isInput ??= generateFor?.contains ?? (_) => true;
-  inputIds.retainWhere((id) => isInput!('$id'));
+  inputIds.retainWhere((id) => isInput('$id'));
 
   var writerSpy = AssetWriterSpy(writer);
   var logger = Logger('testBuilder');

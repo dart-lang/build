@@ -1,6 +1,7 @@
 // Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+// @dart=2.9
 
 import 'package:test/test.dart';
 
@@ -97,7 +98,7 @@ class _IgnoringNewlinesAndWhitespaceMatcher extends Matcher {
   @override
   bool matches(item, Map matchState) {
     if (item is! String) return false;
-    return _stripWhitespaceAndNewlines(item) == _expected;
+    return _stripWhitespaceAndNewlines(item as String) == _expected;
   }
 }
 
