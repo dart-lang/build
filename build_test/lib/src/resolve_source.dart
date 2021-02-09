@@ -118,7 +118,7 @@ Future<T> resolveSource<T>(
 /// - by default, [PackageAssetReader.currentIsolate]. A custom [packageConfig]
 /// may be provided to map files not visible to the current package's runtime.
 Future<T> resolveSources<T>(
-  Map<String, String>? inputs,
+  Map<String, String> inputs,
   FutureOr<T> Function(Resolver resolver) action, {
   PackageConfig? packageConfig,
   String? resolverFor,
@@ -126,7 +126,7 @@ Future<T> resolveSources<T>(
   Future<Null>? tearDown,
   Resolvers? resolvers,
 }) {
-  if (inputs == null || inputs.isEmpty) {
+  if (inputs.isEmpty) {
     throw ArgumentError.value(inputs, 'inputs', 'Must be a non-empty Map');
   }
   return _resolveAssets(

@@ -29,7 +29,7 @@ import 'expected_outputs.dart';
 /// `BuildStep.reportUnusedAssets` in [builder] will be forwarded to this
 /// function with the associated primary input.
 Future<void> runBuilder(Builder builder, Iterable<AssetId> inputs,
-    AssetReader reader, AssetWriter writer, Resolvers resolvers,
+    AssetReader reader, AssetWriter writer, Resolvers? resolvers,
     {Logger? logger,
     ResourceManager? resourceManager,
     StageTracker stageTracker = NoOpStageTracker.instance,

@@ -1,4 +1,3 @@
-//@dart=2.9
 // Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
@@ -12,8 +11,8 @@ import '../common/builders.dart';
 
 void main() {
   group('runPostProcessBuilder', () {
-    InMemoryAssetReader reader;
-    InMemoryAssetWriter writer;
+    late InMemoryAssetReader reader;
+    late InMemoryAssetWriter writer;
     final copyBuilder = CopyingPostProcessBuilder();
     final deleteBuilder = DeletePostProcessBuilder();
     final aTxt = makeAssetId('a|lib/a.txt');

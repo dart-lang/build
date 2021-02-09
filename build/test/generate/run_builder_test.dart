@@ -1,4 +1,3 @@
-//@dart=2.9
 // Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
@@ -12,15 +11,15 @@ import 'package:build/build.dart';
 import 'package:build/src/generate/run_builder.dart';
 
 void main() {
-  InMemoryAssetWriter writer;
-  InMemoryAssetReader reader;
+  late InMemoryAssetWriter writer;
+  late InMemoryAssetReader reader;
   final primary = makeAssetId('a|web/primary.txt');
   final inputs = {
     primary: 'foo',
   };
-  Resource resource;
-  bool resourceDisposed;
-  Builder builder;
+  late Resource resource;
+  late bool resourceDisposed;
+  late Builder builder;
 
   setUp(() async {
     resourceDisposed = false;
@@ -35,7 +34,7 @@ void main() {
   });
 
   group('Given a ResourceManager', () {
-    TrackingResourceManager resourceManager;
+    late TrackingResourceManager resourceManager;
 
     setUp(() async {
       resourceManager = TrackingResourceManager();

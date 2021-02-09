@@ -25,7 +25,7 @@ import 'exceptions.dart';
 /// This represents a single input and its expected and real outputs. It also
 /// handles tracking of dependencies.
 class BuildStepImpl implements BuildStep {
-  final Resolvers _resolvers;
+  final Resolvers? _resolvers;
   final StageTracker _stageTracker;
 
   /// The primary input id for this build step.
@@ -68,7 +68,12 @@ class BuildStepImpl implements BuildStep {
   @override
   Resolver get resolver {
     if (_isComplete) throw BuildStepCompletedException();
-    return _DelayedResolver(_resolver ??= _resolvers.get(this));
+    final resolvers = _resolvers;
+    if (resolvers == null) {
+      throw UnsupportedError('Resolvers are not available in this build.');
+    }
+
+    return _DelayedResolver(_resolver ??= resolvers.get(this));
   }
 
   Future<ReleasableResolver>? _resolver;
