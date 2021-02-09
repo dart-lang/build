@@ -91,6 +91,8 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
           'a',
           <d.Descriptor>[
             await _pubspecWithDeps('a', currentIsolateDependencies: [
+              // TODO (simolus3): Remove once pkg:test supports analyzer 0.42.0
+              'analyzer',
               'build',
               'build_config',
               'build_daemon',

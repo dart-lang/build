@@ -26,3 +26,8 @@ dependency_overrides:
     path: ../build_runner
   build_runner_core:
     path: ../build_runner_core
+  # Temporarily required until build: 2.0.0 is released
+  build:
+    path: ../build
+  analyzer: ^0.42.0-nullsafety.0 # temporarily required until pkg:test supports this version
+  glob: ^2.0.0 # temporarily required until source_gen supports glob: 2.0.0
