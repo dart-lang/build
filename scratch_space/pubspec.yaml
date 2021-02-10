@@ -19,6 +19,7 @@ dev_dependencies:
   test: ^1.0.0
 
 dependency_overrides:
+  ## Remove each of the below as they are published
   build:
     path: ../build
   build_config:
@@ -33,3 +34,4 @@ dependency_overrides:
     path: ../build_runner_core
   build_test:
     path: ../build_test
+  ## Remove each of the above as they are published

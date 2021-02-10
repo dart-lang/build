@@ -1,31 +1,35 @@
-# 2.1.7
+## 2.1.8
+
+- Begin conversion to use analyzer 1.0.0.
+
+## 2.1.7
 
 - Allow the null safe pre-release version of `shelf` and `watcher`.
 
-# 2.1.6
+## 2.1.6
 
 - Allow the null safe pre-release version of `stream_transform`.
 
-# 2.1.5
+## 2.1.5
 
 - Allow the null safe pre-release version of `logging`, `built_value`, and
   `built_collection`.
   - Keeps the old `built_value_generator` and generated code which is
     compatible across both versions of the core libs.
 
-# 2.1.4
+## 2.1.4
 
 - Remove dependency on `package:package_resolver`.
 
-# 2.1.3
+## 2.1.3
 
 - Allow the latest `stream_transform`.
 
-# 2.1.2
+## 2.1.2
 
 - Depend on the latest `built_value`.
 
-# 2.1.1
+## 2.1.1
 
 - Require SDK version `2.6.0` to enable extension methods.
 

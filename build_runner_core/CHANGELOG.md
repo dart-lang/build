@@ -1,3 +1,7 @@
+## 6.1.8-dev
+
+- Update glob to `2.x`.
+
 ## 6.1.7
 
 - Allow the null safe pre-release of `package_config` and `watcher`.

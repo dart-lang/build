@@ -1,3 +1,7 @@
+## 2.16.4
+
+- Update glob to `2.x`.
+
 ## 2.16.3
 
 - Allow the null safety pre-release of `bazel_worker`.

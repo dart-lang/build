@@ -1,4 +1,8 @@
-# 1.11.1
+## 1.11.2
+
+- Update to glob `2.x`.
+
+## 1.11.1
 
 - Allow the null safe pre-release version of `shelf`, `package_config`, and
   `watcher`.

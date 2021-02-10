@@ -1,3 +1,7 @@
+## 1.3.7
+
+- Update to glob `2.x`.
+
 ## 1.3.6
 
 - Allow the null safe pre-release version of `html`.
