@@ -43,7 +43,7 @@ TestBuilderDefinition builder(String key, Builder builder,
         {bool isOptional = false, List<String> requiredInputs = const []}) =>
     TestBuilderDefinition(key, isOptional, builder, requiredInputs);
 
-/// Create a package in [d.sandbox] with a `buid.yaml` file exporting [builders]
+/// Create a package in [d.sandbox] with a `build.yaml` file exporting [builders]
 /// and auto applying them to dependents.
 ///
 /// The content in between `test-package-start/end` comments of the script that
@@ -51,16 +51,19 @@ TestBuilderDefinition builder(String key, Builder builder,
 /// should contain top level fields with names matching they keys in [builders]
 /// and only rely on imports to `package:build_test/build_test.dart`.
 Future<d.Descriptor> packageWithBuilders(
-        Iterable<TestBuilderDefinition> builders,
-        {String name = 'provides_builders'}) async =>
-    d.dir(name, [
-      await _pubspecWithDeps(name,
-          currentIsolateDependencies: ['build', 'build_test']),
-      d.file('build.yaml', jsonEncode(_buildConfig(builders))),
-      d.dir('lib', [
-        d.file('builders.dart', _buildersFile(builders, Frame.caller().uri))
-      ])
-    ]);
+    Iterable<TestBuilderDefinition> builders,
+    {String name = 'provides_builders'}) async {
+  var frameCaller = Frame.caller().uri;
+  return d.dir(name, [
+    await _pubspecWithDeps(name,
+        currentIsolateDependencies: ['build', 'build_test']),
+    d.file('build.yaml', jsonEncode(_buildConfig(builders))),
+    d.dir('lib', [
+      d.file('builders.dart',
+          _buildersFile(builders, await Isolate.resolvePackageUri(frameCaller)))
+    ])
+  ]);
+}
 
 Map _buildConfig(Iterable<TestBuilderDefinition> builders) => {
       'builders':
@@ -122,6 +125,7 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
 Future<BuildTool> packageWithBuildScript(
     Iterable<TestBuilderDefinition> builders,
     {Iterable<d.Descriptor> contents = const []}) async {
+  var frameCaller = Frame.caller().uri;
   await d
       .dir(
           'a',
@@ -136,7 +140,10 @@ Future<BuildTool> packageWithBuildScript(
               'build_test'
             ]),
             d.dir('tool', [
-              d.file('build.dart', _buildToolFile(builders, Frame.caller().uri))
+              d.file(
+                  'build.dart',
+                  _buildToolFile(
+                      builders, await Isolate.resolvePackageUri(frameCaller)))
             ])
           ].followedBy(contents))
       .create();
