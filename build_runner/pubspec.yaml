@@ -51,3 +51,23 @@ dev_dependencies:
   test_process: ^1.0.0
   _test_common:
     path: ../_test_common
+
+dependency_overrides:
+  build:
+    path: ../build
+  build_config:
+    path: ../build_config
+  build_daemon:
+    path: ../build_daemon
+  build_modules:
+    path: ../build_modules
+  build_resolvers:
+    path: ../build_resolvers
+  build_runner_core:
+    path: ../build_runner_core
+  build_test:
+    path: ../build_test
+  build_web_compilers:
+    path: ../build_web_compilers
+  scratch_space:
+    path: ../scratch_space

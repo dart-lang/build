@@ -21,3 +21,11 @@ dependencies:
 dev_dependencies:
   test: ^1.0.0
   build_test: ^1.0.0
+
+dependency_overrides:
+  build:
+    path: ../build
+  build_config:
+    path: ../build_config
+  build_test:
+    path: ../build_test

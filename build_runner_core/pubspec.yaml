@@ -34,3 +34,12 @@ dev_dependencies:
   _test_common:
     path: ../_test_common
 
+dependency_overrides:
+  build:
+    path: ../build
+  build_config:
+    path: ../build_config
+  build_resolvers:
+    path: ../build_resolvers
+  build_test:
+    path: ../build_test
