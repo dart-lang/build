@@ -133,12 +133,10 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
       if (jsFile is File) {
         var fileName = p.relative(jsFile.path, from: rootDir);
         var fileStats = await jsFile.stat();
-        archive.addFile(
-            // TODO(jcollins-g): why doesn't inference work here?
-            ArchiveFile(
-                fileName, fileStats.size, await (jsFile as File).readAsBytes())
-              ..mode = fileStats.mode
-              ..lastModTime = fileStats.modified.millisecondsSinceEpoch);
+        archive.addFile(ArchiveFile(
+            fileName, fileStats.size, await (jsFile as File).readAsBytes())
+          ..mode = fileStats.mode
+          ..lastModTime = fileStats.modified.millisecondsSinceEpoch);
       }
     }
     if (archive.isNotEmpty) {
