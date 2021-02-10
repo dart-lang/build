@@ -5,9 +5,9 @@
 @TestOn('vm')
 import 'dart:convert';
 
+import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:source_gen/builder.dart';
@@ -604,9 +604,10 @@ Future _generateTest(CommentGenerator gen, String expectedContent) async {
     },
     onLog: (log) {
       if (log.message.contains(
-        'Your current `analyzer` version may not fully support your current '
-        'SDK version.',
-      )) {
+            'Your current `analyzer` version may not fully support your '
+            'current SDK version.',
+          ) ||
+          log.message.startsWith('Generating SDK summary')) {
         // This may happen with pre-release SDKs. Not an error.
         return;
       }
