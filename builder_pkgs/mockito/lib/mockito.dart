@@ -40,6 +40,7 @@ export 'src/mock.dart'
         verifyZeroInteractions,
         VerificationResult,
         Verification,
+        ListOfVerificationResult,
 
         // -- misc
         throwOnMissingStub,

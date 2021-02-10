@@ -474,6 +474,21 @@ void main() {
           [mock.methodWithoutArgs(), mock.getter, mock.methodWithoutArgs()]);
     });
 
+    test('can return captures from capturing argument matchers', () {
+      mock.methodWithNormalArgs(1);
+      mock.methodWithoutArgs();
+      mock.methodWithNormalArgs(2);
+      var captured = verifyInOrder([
+        mock.methodWithNormalArgs(captureAny),
+        mock.methodWithoutArgs(),
+        mock.methodWithNormalArgs(captureAny)
+      ]).captured;
+      expect(captured, hasLength(3));
+      expect(captured[0], equals([1]));
+      expect(captured[1], equals([]));
+      expect(captured[2], equals([2]));
+    });
+
     test('methods can be called again and again - fail case', () {
       mock.methodWithoutArgs();
       mock.methodWithoutArgs();

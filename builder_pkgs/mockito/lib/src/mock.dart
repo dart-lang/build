@@ -26,9 +26,35 @@ import 'package:test_api/test_api.dart';
 // https://github.com/dart-lang/mockito/issues/175
 import 'package:test_api/src/backend/invoker.dart';
 
+/// Whether a [when] call is "in progress."
+///
+/// Since [when] is a getter, this is `true` immediately after [when] returns,
+/// `false` immediately after the closure which [when] returns has returned, and
+/// `false` otherwise. For example:
+///
+/// ```none
+/// ,--- (1) Before [when] is called, [_whenInProgress] is `false`.
+/// |  ,--- (2) The [when] getter sets [_whenInProgress] to `true`, so that it
+/// |  |        is true immediately after [when] returns.
+/// |  | ,--- (3) The argument given to [when]'s return closure is computed
+/// |  | |        before entering the closure, so [_whenInProgress] is still
+/// |  | |        `true`.
+/// |  | |         ,--- (4) The closure resets [_whenInProgress] to `false`.
+/// v  v v         v
+/// when(foo.bar()).thenReturn(7);
+/// ```
 bool _whenInProgress = false;
+
+/// Whether an [untilCalled] call is "in progress."
+///
+/// This follows similar logic to [_whenInProgress]; see its comment.
 bool _untilCalledInProgress = false;
+
+/// Whether a [verify], [verifyNever], or [verifyInOrder] call is "in progress."
+///
+/// This follows similar logic to [_whenInProgress]; see its comment.
 bool _verificationInProgress = false;
+
 _WhenCall? _whenCall;
 _UntilCall? _untilCall;
 final List<_VerifyCall> _verifyCalls = <_VerifyCall>[];
@@ -588,22 +614,49 @@ class _UntilCall {
   }
 }
 
+/// A simple struct for storing a [RealCall] and any [capturedArgs] stored
+/// during [InvocationMatcher.match].
+class _RealCallWithCapturedArgs {
+  final RealCall realCall;
+  final List<Object?> capturedArgs;
+
+  _RealCallWithCapturedArgs(this.realCall, this.capturedArgs);
+}
+
 class _VerifyCall {
   final Mock mock;
   final Invocation verifyInvocation;
-  late List<RealCall> matchingInvocations;
+  final List<_RealCallWithCapturedArgs> matchingInvocations;
+  final List<Object?> matchingCapturedArgs;
 
-  _VerifyCall(this.mock, this.verifyInvocation) {
+  factory _VerifyCall(Mock mock, Invocation verifyInvocation) {
     var expectedMatcher = InvocationMatcher(verifyInvocation);
-    matchingInvocations = mock._realCalls.where((RealCall recordedInvocation) {
-      return !recordedInvocation.verified &&
-          expectedMatcher.matches(recordedInvocation.invocation);
-    }).toList();
+    var matchingInvocations = <_RealCallWithCapturedArgs>[];
+    for (var realCall in mock._realCalls) {
+      if (!realCall.verified && expectedMatcher.matches(realCall.invocation)) {
+        // [Invocation.matcher] collects captured arguments if
+        // [verifyInvocation] included capturing matchers.
+        matchingInvocations
+            .add(_RealCallWithCapturedArgs(realCall, [..._capturedArgs]));
+        _capturedArgs.clear();
+      }
+    }
+
+    var matchingCapturedArgs = [
+      for (var invocation in matchingInvocations) ...invocation.capturedArgs,
+    ];
+
+    return _VerifyCall._(
+        mock, verifyInvocation, matchingInvocations, matchingCapturedArgs);
   }
 
-  RealCall _findAfter(DateTime dt) {
-    return matchingInvocations
-        .firstWhere((inv) => !inv.verified && inv.timeStamp.isAfter(dt));
+  _VerifyCall._(this.mock, this.verifyInvocation, this.matchingInvocations,
+      this.matchingCapturedArgs);
+
+  _RealCallWithCapturedArgs _findAfter(DateTime time) {
+    return matchingInvocations.firstWhere((invocation) =>
+        !invocation.realCall.verified &&
+        invocation.realCall.timeStamp.isAfter(time));
   }
 
   void _checkWith(bool never) {
@@ -623,9 +676,9 @@ class _VerifyCall {
       var calls = mock._unverifiedCallsToString();
       fail('Unexpected calls: $calls');
     }
-    matchingInvocations.forEach((inv) {
-      inv.verified = true;
-    });
+    for (var invocation in matchingInvocations) {
+      invocation.realCall.verified = true;
+    }
   }
 
   @override
@@ -765,15 +818,7 @@ class VerificationResult {
 
   bool _testApiMismatchHasBeenChecked = false;
 
-  @Deprecated(
-      'User-constructed VerificationResult is deprecated; this constructor may '
-      'be deleted as early as Mockito 5.0.0')
-  VerificationResult(int callCount) : this._(callCount);
-
-  VerificationResult._(this.callCount)
-      : _captured = List<dynamic>.from(_capturedArgs, growable: false) {
-    _capturedArgs.clear();
-  }
+  VerificationResult._(this.callCount, this._captured);
 
   /// Check for a version incompatibility between mockito, test, and test_api.
   ///
@@ -835,7 +880,8 @@ typedef Answering<T> = T Function(Invocation realInvocation);
 
 typedef Verification = VerificationResult Function<T>(T matchingInvocations);
 
-typedef _InOrderVerification = void Function<T>(List<T> recordedInvocations);
+typedef _InOrderVerification = List<VerificationResult> Function<T>(
+    List<T> recordedInvocations);
 
 /// Verify that a method on a mock object was never called with the given
 /// arguments.
@@ -898,7 +944,8 @@ Verification _makeVerify(bool never) {
     _verificationInProgress = false;
     if (_verifyCalls.length == 1) {
       var verifyCall = _verifyCalls.removeLast();
-      var result = VerificationResult._(verifyCall.matchingInvocations.length);
+      var result = VerificationResult._(verifyCall.matchingInvocations.length,
+          verifyCall.matchingCapturedArgs);
       verifyCall._checkWith(never);
       return result;
     } else {
@@ -907,15 +954,34 @@ Verification _makeVerify(bool never) {
   };
 }
 
-/// Verify that a list of methods on a mock object have been called with the
+/// Verifies that a list of methods on a mock object have been called with the
 /// given arguments. For example:
 ///
 /// ```dart
 /// verifyInOrder([cat.eatFood("Milk"), cat.sound(), cat.eatFood(any)]);
 /// ```
 ///
-/// This verifies that `eatFood` was called with `"Milk"`, sound` was called
+/// This verifies that `eatFood` was called with `"Milk"`, `sound` was called
 /// with no arguments, and `eatFood` was then called with some argument.
+///
+/// Returns a list of verification results, one for each call which was
+/// verified.
+///
+/// For example, if [verifyInOrder] is given these calls to verify:
+///
+/// ```dart
+/// var verification = verifyInOrder(
+///     [cat.eatFood(captureAny), cat.chew(), cat.eatFood(captureAny)]);
+/// ```
+///
+/// then `verification` is a list which contains a `captured` getter which
+/// returns three lists:
+///
+/// 1. a list containing the argument passed to `eatFood` in the first
+///    verified `eatFood` call,
+/// 2. an empty list, as nothing was captured in the verified `chew` call,
+/// 3. a list containing the argument passed to `eatFood` in the second
+///    verified `eatFood` call.
 ///
 /// Note: [verifyInOrder] only verifies that each call was made in the order
 /// given, but not that those were the only calls. In the example above, if
@@ -928,15 +994,17 @@ _InOrderVerification get verifyInOrder {
   _verificationInProgress = true;
   return <T>(List<T> _) {
     _verificationInProgress = false;
-    var dt = DateTime.fromMillisecondsSinceEpoch(0);
+    var verificationResults = <VerificationResult>[];
+    var time = DateTime.fromMillisecondsSinceEpoch(0);
     var tmpVerifyCalls = List<_VerifyCall>.from(_verifyCalls);
     _verifyCalls.clear();
     var matchedCalls = <RealCall>[];
     for (var verifyCall in tmpVerifyCalls) {
       try {
-        var matched = verifyCall._findAfter(dt);
-        matchedCalls.add(matched);
-        dt = matched.timeStamp;
+        var matched = verifyCall._findAfter(time);
+        matchedCalls.add(matched.realCall);
+        verificationResults.add(VerificationResult._(1, matched.capturedArgs));
+        time = matched.realCall.timeStamp;
       } on StateError {
         var mocks = tmpVerifyCalls.map((vc) => vc.mock).toSet();
         var allInvocations =
@@ -954,6 +1022,7 @@ _InOrderVerification get verifyInOrder {
     for (var call in matchedCalls) {
       call.verified = true;
     }
+    return verificationResults;
   };
 }
 
@@ -1117,4 +1186,10 @@ extension on Invocation {
 
     return method;
   }
+}
+
+extension ListOfVerificationResult on List<VerificationResult> {
+  /// Returns the list of argument lists which were captured within
+  /// [verifyInOrder].
+  List<List<dynamic>> get captured => [...map((result) => result.captured)];
 }

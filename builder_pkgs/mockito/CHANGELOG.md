@@ -1,3 +1,9 @@
+## 5.0.0
+
+* `verifyInOrder` now returns a `List<VerificationResult>` which stores
+  arguments which were captured in a call to `verifiyInOrder`.
+* **Breaking change:** Remove the public constructor for `VerificationResult`.
+
 ## 5.0.0-nullsafety.7
 
 * Fix generation of duplicate mock getters and setters from inherited classes.
