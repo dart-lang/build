@@ -4,7 +4,7 @@ description: Builder implementations wrapping Dart compilers.
 homepage: https://github.com/dart-lang/build/tree/master/build_web_compilers
 
 environment:
-  sdk: ">2.11.0-dev <3.0.0"
+  sdk: ">=2.11.99 <3.0.0"
 
 dependencies:
   analyzer: ">=0.36.4 <0.42.0"

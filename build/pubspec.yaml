@@ -4,7 +4,7 @@ description: A build system for Dart.
 homepage: https://github.com/dart-lang/build/tree/master/build
 
 environment:
-  sdk: ">2.11.0-dev <3.0.0"
+  sdk: ">=2.11.99 <3.0.0"
 
 dependencies:
   analyzer: '>=0.35.0 <0.42.0'

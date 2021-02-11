@@ -3,7 +3,7 @@ publish_to: none
 description: Test infra for writing build tests. Is not published.
 
 environment:
-  sdk: ">2.11.0-dev <3.0.0"
+  sdk: ">=2.11.99 <3.0.0"
 
 dependencies:
   build: any
