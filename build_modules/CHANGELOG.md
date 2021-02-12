@@ -1,6 +1,7 @@
 ## 3.0.5
 
 - Update to glob `2.x`.
+- Update to analyzer `1.x`.
 
 ## 3.0.4
 

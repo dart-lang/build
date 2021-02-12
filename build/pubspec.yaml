@@ -7,7 +7,7 @@ environment:
   sdk: ">=2.11.99 <3.0.0"
 
 dependencies:
-  analyzer: '>=0.35.0 <0.42.0'
+  analyzer: ^1.0.0
   async: ">=1.13.3 <3.0.0"
   convert: ">=2.0.0 <4.0.0"
   crypto: ">=0.9.2 <4.0.0"
