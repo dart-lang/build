@@ -1,6 +1,5 @@
 dart:
-- 2.9.0
-- dev
+- beta
 
 stages:
 - analyze_and_format:

@@ -1,3 +1,7 @@
+## 1.6.3
+
+- Use latest glob version `2.x`.
+
 ## 1.6.2
 
 - Fix `AssetId.resolve` for empty uris

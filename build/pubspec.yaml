@@ -1,17 +1,17 @@
 name: build
-version: 1.6.2
+version: 1.6.3-dev
 description: A build system for Dart.
 homepage: https://github.com/dart-lang/build/tree/master/build
 
 environment:
-  sdk: ">=2.9.0 <3.0.0"
+  sdk: ">=2.11.99 <3.0.0"
 
 dependencies:
   analyzer: '>=0.35.0 <0.42.0'
   async: ">=1.13.3 <3.0.0"
   convert: ">=2.0.0 <4.0.0"
   crypto: ">=0.9.2 <4.0.0"
-  glob: ">=1.1.0 <3.0.0"
+  glob: ^2.0.0
   logging: ">=0.11.2 <2.0.0"
   meta: ^1.1.0
   path: ^1.1.0
@@ -21,3 +21,13 @@ dev_dependencies:
   build_test: ^1.0.0
   pedantic: ^1.0.0
   test: ^1.2.0
+
+dependency_overrides:
+  ## Remove each of the following as they are published
+  build_config:
+    path: ../build_config
+  build_resolvers:
+    path: ../build_resolvers
+  build_test:
+    path: ../build_test
+  ## Remove each of the above as they are published

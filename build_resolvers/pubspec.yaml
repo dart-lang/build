@@ -21,3 +21,13 @@ dependencies:
 dev_dependencies:
   test: ^1.0.0
   build_test: ^1.0.0
+
+dependency_overrides:
+  ## Remove each of the below as they are published
+  build:
+    path: ../build
+  build_config:
+    path: ../build_config
+  build_test:
+    path: ../build_test
+  ## Remove each of the above as they are published
