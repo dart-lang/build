@@ -1,4 +1,4 @@
-## 1.3.7
+## 1.3.7-dev
 
 - Update to glob `2.x`.
 
