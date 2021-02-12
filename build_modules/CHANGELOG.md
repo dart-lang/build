@@ -1,4 +1,4 @@
-## 3.0.5
+## 3.0.5-dev
 
 - Update to glob `2.x`.
 - Update to analyzer `1.x`.
