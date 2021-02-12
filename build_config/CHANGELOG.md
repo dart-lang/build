@@ -1,3 +1,8 @@
+## 0.4.6-dev
+
+- Comment out dev dependency temporarily to break source_gen/json_serializable
+  dependency loop.
+
 ## 0.4.5
 
 - Allow `package:json_annotation` `v4.x`.
