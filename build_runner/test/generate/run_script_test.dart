@@ -57,8 +57,6 @@ main(List<String> args) async {
       // and the actual executable file.
       await d.dir('a', [
         await pubspec('a', currentIsolateDependencies: [
-          // todo (simolus3): Remove once pkg:test supports analyzer 0.42.0
-          'analyzer',
           'build',
           'build_daemon',
           'build_resolvers',

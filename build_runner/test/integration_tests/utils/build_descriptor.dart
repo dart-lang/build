@@ -55,9 +55,7 @@ Future<d.Descriptor> packageWithBuilders(
         {String name = 'provides_builders'}) async =>
     d.dir(name, [
       await _pubspecWithDeps(name,
-          // todo (simolus3): Remove analyzer from this list once pkg:test
-          // supports version 0.42.0
-          currentIsolateDependencies: ['analyzer', 'build', 'build_test']),
+          currentIsolateDependencies: ['build', 'build_test']),
       d.file('build.yaml', jsonEncode(_buildConfig(builders))),
       d.dir('lib', [
         d.file('builders.dart', _buildersFile(builders, Frame.caller().uri))
@@ -93,8 +91,6 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
           'a',
           <d.Descriptor>[
             await _pubspecWithDeps('a', currentIsolateDependencies: [
-              // TODO (simolus3): Remove once pkg:test supports analyzer 0.42.0
-              'analyzer',
               'build',
               'build_config',
               'build_daemon',
@@ -131,8 +127,6 @@ Future<BuildTool> packageWithBuildScript(
           'a',
           [
             await _pubspecWithDeps('a', currentIsolateDependencies: [
-              // todo (simolus3): Remove once pkg:test supports analyzer 0.42.0
-              'analyzer',
               'build',
               'build_config',
               'build_daemon',

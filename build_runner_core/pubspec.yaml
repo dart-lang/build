@@ -35,8 +35,13 @@ dev_dependencies:
     path: ../_test_common
 
 dependency_overrides:
-  analyzer: ^0.42.0-nullsafety # pkg:test doesn't support the latest analyzer yet, required by pkg:build
   build:
     path: ../build
+  build_modules:
+    path: ../build_modules
+  build_resolvers:
+    path: ../build_resolvers
   build_test:
     path: ../build_test
+  build_web_compilers:
+    path: ../build_web_compilers

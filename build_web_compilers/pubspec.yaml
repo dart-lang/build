@@ -7,7 +7,7 @@ environment:
   sdk: ">=2.11.0-248.0 <3.0.0"
 
 dependencies:
-  analyzer: ^0.42.0-nullsafety.0
+  analyzer: ^1.0.0
   archive: '>=2.0.0 <4.0.0'
   bazel_worker: ">=0.1.18 <2.0.0"
   build: "^2.0.0"
@@ -35,13 +35,14 @@ dev_dependencies:
     path: test/fixtures/b
 
 dependency_overrides:
-  analyzer: ^0.42.0-nullsafety.0 # pkg:test doesn't support the latest analyzer yet
   build:
     path: ../build
   build_modules: 
     path: ../build_modules
   build_test:
     path: ../build_test
+  build_resolvers:
+    path: ../build_resolvers
   build_runner_core:
     path: ../build_runner_core
   build_runner:

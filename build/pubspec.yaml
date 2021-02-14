@@ -7,7 +7,7 @@ environment:
   sdk: ">=2.12.0-0 <3.0.0"
 
 dependencies:
-  analyzer: '^0.42.0-nullsafety'
+  analyzer: '^1.0.0'
   async: '^2.5.0'
   convert: "^3.0.0"
   crypto: "^3.0.0"
@@ -23,7 +23,7 @@ dev_dependencies:
   test: ^1.16.0
 
 dependency_overrides:
-  analyzer: ^0.42.0-nullsafety # the test package doesn't support this analyzer yet.
-  build_resolvers: ^1.0.0
+  build_resolvers:
+    path: ../build_resolvers
   build_test:
     path: ../build_test
