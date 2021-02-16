@@ -1,4 +1,4 @@
-## 1.5.4
+## 1.5.4-dev
 
 - Allow analyzer 1.0.0.
 
