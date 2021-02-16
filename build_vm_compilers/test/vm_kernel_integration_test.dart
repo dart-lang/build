@@ -24,6 +24,7 @@ void main() {
           'build_runner',
           'build_runner_core',
           'build_vm_compilers',
+          'scratch_space',
         ], versionDependencies: {
           'glob': 'any',
           'path': 'any',
