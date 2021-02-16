@@ -43,20 +43,18 @@ class BuilderDefinition {
   /// The names of the top-level methods in [import] from args -> Builder.
   @JsonKey(
       name: 'builder_factories',
-      nullable: false,
       required: true,
       disallowNullValue: true)
   final List<String> builderFactories;
 
   /// The import to be used to load `clazz`.
-  @JsonKey(nullable: false, required: true, disallowNullValue: true)
+  @JsonKey(required: true, disallowNullValue: true)
   final String import;
 
   /// A map from input extension to the output extensions created for matching
   /// inputs.
   @JsonKey(
       name: 'build_extensions',
-      nullable: false,
       required: true,
       disallowNullValue: true)
   final Map<String, List<String>> buildExtensions;
@@ -178,13 +176,12 @@ class PostProcessBuilderDefinition {
   /// Map<String, dynamic> -> Builder.
   @JsonKey(
       name: 'builder_factory',
-      nullable: false,
       required: true,
       disallowNullValue: true)
   final String builderFactory;
 
   /// The import to be used to load `clazz`.
-  @JsonKey(nullable: false, required: true, disallowNullValue: true)
+  @JsonKey(required: true, disallowNullValue: true)
   final String import;
 
   /// A list of input extensions for this builder.
