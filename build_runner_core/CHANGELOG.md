@@ -1,4 +1,4 @@
-## 6.1.8-dev
+## 6.1.8
 
 - Update glob to `2.x`.
 

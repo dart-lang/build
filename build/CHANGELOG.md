@@ -1,4 +1,4 @@
-## 1.6.3-dev
+## 1.6.3
 
 - Use latest analyzer version `1.x`.
 - Use latest glob version `2.x`.

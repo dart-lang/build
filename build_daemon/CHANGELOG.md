@@ -1,4 +1,4 @@
-## 2.1.8-dev
+## 2.1.8
 
 - Begin conversion to use analyzer 1.0.0.
 

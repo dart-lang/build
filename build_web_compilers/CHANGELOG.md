@@ -1,4 +1,4 @@
-## 2.16.4-dev
+## 2.16.4
 
 - Update analyzer to `1.x`.
 - Update glob to `2.x`.
