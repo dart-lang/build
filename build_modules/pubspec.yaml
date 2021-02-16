@@ -33,22 +33,3 @@ dev_dependencies:
   b:
     path: test/fixtures/b
 
-dependency_overrides:
-  ## Remove each of the below as they are published
-  build:
-    path: ../build
-  build_config:
-    path: ../build_config
-  build_daemon:
-    path: ../build_daemon
-  build_resolvers:
-    path: ../build_resolvers
-  build_runner:
-    path: ../build_runner
-  build_runner_core:
-    path: ../build_runner_core
-  build_test:
-    path: ../build_test
-  scratch_space:
-    path: ../scratch_space
-  ## Remove each of the above as they are published
