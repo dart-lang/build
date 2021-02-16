@@ -1,6 +1,7 @@
 ## 1.11.2-dev
 
 - Update to glob `2.x`.
+- Fix snapshot generation hanging on windows if there is anything on stdout.
 
 ## 1.11.1
 

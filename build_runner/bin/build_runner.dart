@@ -79,7 +79,10 @@ Future<void> main(List<String> args) async {
       }
     });
   } else {
-    logListener = Logger.root.onRecord.listen(stdIOLogListener());
+    var verbose = parsedArgs.command['verbose'] as bool ?? false;
+    if (verbose) Logger.root.level = Level.ALL;
+    logListener =
+        Logger.root.onRecord.listen(stdIOLogListener(verbose: verbose));
   }
   if (localCommandNames.contains(commandName)) {
     exitCode = await commandRunner.runCommand(parsedArgs);

@@ -156,27 +156,40 @@ Future<int> _createSnapshotIfNeeded(Logger logger) async {
     }
   }
 
-  String stderr;
   if (!await snapshotFile.exists()) {
     var mode = stdin.hasTerminal
         ? ProcessStartMode.normal
         : ProcessStartMode.detachedWithStdio;
+    var hadStdOut = false;
     await logTimedAsync(logger, 'Creating build script snapshot...', () async {
       var snapshot = await Process.start(Platform.executable,
           ['--snapshot=$scriptSnapshotLocation', scriptLocation],
           mode: mode);
-      stderr = (await snapshot.stderr
-              .transform(utf8.decoder)
-              .transform(LineSplitter())
-              .toList())
-          .join('');
+      await Future.wait([
+        snapshot.stderr
+            .transform(utf8.decoder)
+            .transform(LineSplitter())
+            .listen((l) {
+          logger.warning('stderr: $l');
+        }).asFuture(),
+        snapshot.stdout
+            .transform(utf8.decoder)
+            .transform(LineSplitter())
+            .listen((l) {
+          hadStdOut = true;
+          logger.fine('stdout: $l');
+        }).asFuture(),
+      ]);
     });
+    if (hadStdOut) {
+      logger.info('There was output on stdout while compiling the build script '
+          'snapshot, run with `--verbose` to see the it\n.');
+    }
     if (!await snapshotFile.exists()) {
-      logger.severe('Failed to snapshot build script $scriptLocation.\n'
-          'This is likely caused by a misconfigured builder definition.');
-      if (stderr.isNotEmpty) {
-        logger.severe(stderr);
-      }
+      logger.severe('''
+Failed to snapshot build script $scriptLocation.
+This is likely caused by a misconfigured builder definition.
+''');
       return ExitCode.config.code;
     }
     // Create _previousLocationsFile.
