@@ -1,3 +1,7 @@
+## 1.0.7-dev
+
+- Update to latest analyzer version `1.0.0`.
+
 ## 1.0.6
 
 - Allow the latest analyzer verion `0.41.x`.

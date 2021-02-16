@@ -1,5 +1,6 @@
 ## 1.3.7-dev
 
+- Update to analyzer `1.x`.
 - Update to glob `2.x`.
 
 ## 1.3.6

@@ -80,7 +80,7 @@ Visible libraries: $visibleLibraries
 
 Iterable<Element> allElements(LibraryElement element) sync* {
   for (var cu in element.units) {
-    yield* cu.functionTypeAliases;
+    yield* cu.typeAliases;
     yield* cu.functions;
     yield* cu.mixins;
     yield* cu.topLevelVariables;

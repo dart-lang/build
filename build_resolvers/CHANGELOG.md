@@ -1,3 +1,7 @@
+## 1.5.4-dev
+
+- Allow analyzer 1.0.0.
+
 ## 1.5.3
 
 - Allow the null safe pre-release of `package_config`.
