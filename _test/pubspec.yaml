@@ -11,6 +11,10 @@ dev_dependencies:
   test_process: ^1.0.4
   provides_builder:
     path: pkgs/provides_builder/
+  build_vm_compilers: any
+  build_web_compilers: any
+  build_runner: any
+  build_test: any
 
 dependency_overrides:
   build:
