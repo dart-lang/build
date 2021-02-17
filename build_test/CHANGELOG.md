@@ -1,4 +1,4 @@
-## 1.3.7-dev
+## 1.3.7
 
 - Update to analyzer `1.x`.
 - Update to glob `2.x`.
