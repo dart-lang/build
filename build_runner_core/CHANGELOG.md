@@ -1,3 +1,7 @@
+## 6.1.9
+
+- Allow the latest `build_config`.
+
 ## 6.1.8
 
 - Update glob to `2.x`.
