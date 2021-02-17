@@ -211,12 +211,11 @@ Map<String, List<String>> _parsePackageDependencies(
   return dependencies;
 }
 
-/// Gets the deps from a yaml file, taking into account dependency_overrides.
+/// Gets the deps from a yaml file, omitting dependency_overrides.
 List<String> _depsFromYaml(YamlMap yaml, {bool isRoot = false}) {
   var deps = <String>{
     ..._stringKeys(yaml['dependencies'] as Map),
     if (isRoot) ..._stringKeys(yaml['dev_dependencies'] as Map),
-    if (isRoot) ..._stringKeys(yaml['dependency_overrides'] as Map),
   };
   // A consistent package order _should_ mean a consistent order of build
   // phases. It's not a guarantee, but also not required for correctness, only
