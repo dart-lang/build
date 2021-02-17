@@ -183,7 +183,8 @@ Future<int> _createSnapshotIfNeeded(Logger logger) async {
     });
     if (hadStdOut) {
       logger.info('There was output on stdout while compiling the build script '
-          'snapshot, run with `--verbose` to see the it\n.');
+          'snapshot, run with `--verbose` to see the it (you will need to run '
+          'a `clean` first to re-snapshot)\n.');
     }
     if (!await snapshotFile.exists()) {
       logger.severe('''
