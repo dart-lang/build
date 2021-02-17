@@ -1,3 +1,8 @@
+## 3.0.5-dev
+
+- Update to glob `2.x`.
+- Update to analyzer `1.x`.
+
 ## 3.0.4
 
 - Allow the null safe pre-releases of `bazel_worker`.

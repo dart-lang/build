@@ -1,10 +1,10 @@
 name: build_modules
-version: 3.0.4
+version: 3.0.5-dev
 description: Builders for Dart modules
 repository: https://github.com/dart-lang/build/tree/master/build_modules
 
 environment:
-  sdk: ">=2.10.0 <3.0.0"
+  sdk: ">=2.11.99 <3.0.0"
 
 dependencies:
   analyzer: ^1.0.0
@@ -14,7 +14,7 @@ dependencies:
   build_config: ">=0.3.0 <0.5.0"
   collection: ^1.0.0
   crypto: ">=2.0.0 <4.0.0"
-  glob: '>=1.1.0 <3.0.0' # todo: Check that we're not affected by breaking changes
+  glob: ^2.0.0
   graphs: ^0.2.0
   json_annotation: ">=1.2.0 <5.0.0"
   logging: ">=0.11.2 <2.0.0"
@@ -34,12 +34,21 @@ dev_dependencies:
     path: test/fixtures/b
 
 dependency_overrides:
-  analyzer: ^0.42.0-nullsafety.0 # pkg:test doesn't support the latest analyzer yet
+  ## Remove each of the below as they are published
   build:
     path: ../build
-  build_test:
-    path: ../build_test
-  build_runner_core:
-    path: ../build_runner_core
+  build_config:
+    path: ../build_config
+  build_daemon:
+    path: ../build_daemon
+  build_resolvers:
+    path: ../build_resolvers
   build_runner:
     path: ../build_runner
+  build_runner_core:
+    path: ../build_runner_core
+  build_test:
+    path: ../build_test
+  scratch_space:
+    path: ../scratch_space
+  ## Remove each of the above as they are published

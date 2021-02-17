@@ -1,5 +1,5 @@
 name: build_config
-version: 0.4.5
+version: 0.4.6-dev
 description: Support for parsing `build.yaml` configuration.
 repository: https://github.com/dart-lang/build/tree/master/build_config
 
@@ -16,20 +16,22 @@ dependencies:
 
 dev_dependencies:
   build_runner: ^1.0.0
-  json_serializable: ^3.0.0
+  # TODO: Untangle source_gen dependency
+  #json_serializable: ^3.0.0
   term_glyph: ^1.0.0
   test: ^1.6.0
 
 dependency_overrides:
+  ## Remove each of the following as they are published
+  build:
+    path: ../build
+  build_daemon:
+    path: ../build_daemon
+  build_resolvers:
+    path: ../build_resolvers
+  ## Remove each of the above as they are published
   # Required due to the tight dependency on this package from these packages
   build_runner:
     path: ../build_runner
   build_runner_core:
     path: ../build_runner_core
-  # Temporarily required until build: 2.0.0 is released
-  build:
-    path: ../build
-  build_resolvers:
-    path: ../build_resolvers
-  analyzer: ^1.0.0 # temporarily required until json_serializable supports the latest analyzer
-  glob: ^2.0.0 # temporarily required until source_gen supports glob: 2.0.0

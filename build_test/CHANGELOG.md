@@ -2,6 +2,11 @@
 
 - Migrate to null safety
 
+## 1.3.7-dev
+
+- Update to analyzer `1.x`.
+- Update to glob `2.x`.
+
 ## 1.3.6
 
 - Allow the null safe pre-release version of `html`.

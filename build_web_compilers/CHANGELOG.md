@@ -1,3 +1,8 @@
+## 2.16.4-dev
+
+- Update analyzer to `1.x`.
+- Update glob to `2.x`.
+
 ## 2.16.3
 
 - Allow the null safety pre-release of `bazel_worker`.

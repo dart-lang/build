@@ -3,6 +3,11 @@
 - Migrate to null-safety
 - __Breaking__: Remove the deprecated `rootPackage` argument to `runBuilder`
 
+## 1.6.3-dev
+
+- Use latest analyzer version `1.x`.
+- Use latest glob version `2.x`.
+
 ## 1.6.2
 
 - Fix `AssetId.resolve` for empty uris

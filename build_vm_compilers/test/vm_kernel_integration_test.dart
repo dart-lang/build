@@ -1,3 +1,4 @@
+@OnPlatform({'windows': Skip('https://github.com/dart-lang/build/issues/3001')})
 // Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
@@ -23,6 +24,7 @@ void main() {
           'build_runner',
           'build_runner_core',
           'build_vm_compilers',
+          'scratch_space',
         ], versionDependencies: {
           'glob': 'any',
           'path': 'any',
