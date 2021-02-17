@@ -22,14 +22,6 @@ dev_dependencies:
   test: ^1.6.0
 
 dependency_overrides:
-  ## Remove each of the following as they are published
-  build:
-    path: ../build
-  build_daemon:
-    path: ../build_daemon
-  build_resolvers:
-    path: ../build_resolvers
-  ## Remove each of the above as they are published
   # Required due to the tight dependency on this package from these packages
   build_runner:
     path: ../build_runner

@@ -1,3 +1,7 @@
+## 1.11.3
+
+- Allow the latest `build_config`.
+
 ## 1.11.2
 
 - Update to glob `2.x`.
