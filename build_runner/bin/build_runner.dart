@@ -28,9 +28,9 @@ Future<void> main(List<String> args) async {
       BuildCommandRunner([], await PackageGraph.forThisPackage());
   var localCommands = [CleanCommand(), GenerateBuildScript()];
   var localCommandNames = localCommands.map((c) => c.name).toSet();
-  localCommands.forEach(commandRunner.addCommand);
   for (var command in localCommands) {
-    // This flag is added to each command indivudally
+    commandRunner.addCommand(command);
+    // This flag is added to each command individually and not the top level.
     command.argParser.addFlag(verboseOption,
         abbr: 'v',
         defaultsTo: false,
