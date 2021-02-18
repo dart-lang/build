@@ -1,3 +1,7 @@
+## 1.11.5
+
+- Fix arg parsing for the `clean` and `generate-build-script` commands.
+
 ## 1.11.4
 
 - Fix snapshot generation hanging on windows if there is anything on stdout.
