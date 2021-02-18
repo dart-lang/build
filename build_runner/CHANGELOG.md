@@ -1,3 +1,7 @@
+## 1.11.4
+
+- Fix snapshot generation hanging on windows if there is anything on stdout.
+
 ## 1.11.3
 
 - Allow the latest `build_config`.
@@ -5,7 +9,6 @@
 ## 1.11.2
 
 - Update to glob `2.x`.
-- Fix snapshot generation hanging on windows if there is anything on stdout.
 
 ## 1.11.1
 
