@@ -31,9 +31,21 @@ Future<d.FileDescriptor> pubspec(String name,
     ..writeln('name: $name')
     ..writeln('environment:')
     ..writeln('  sdk: ">=2.9.0 <3.0.0"')
-    // Using dependency_overrides forces the path dependency and silences
-    // warnings about hosted vs path dependency conflicts.
-    ..writeln('dependency_overrides:');
+    ..writeln('dependencies:');
+
+  // Add all deps as `any` deps, real versions are set in dependency_overrides below.
+  var allPackages = [
+    ...currentIsolateDependencies,
+    ...pathDependencies.keys,
+    ...versionDependencies.keys,
+  ];
+  for (var package in allPackages) {
+    buffer.writeln('  $package: any');
+  }
+
+  // Using dependency_overrides forces the path dependency and silences
+  // warnings about hosted vs path dependency conflicts.
+  buffer.writeln('dependency_overrides:');
 
   var packageConfig = await loadPackageConfigUri(await Isolate.packageConfig);
   await Future.forEach(currentIsolateDependencies, (String package) async {
