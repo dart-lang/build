@@ -1,3 +1,7 @@
+## 0.9.10+3
+
+* Allow the latest version of `package:analyzer`.
+
 ## 0.9.10+2
 
 * Expand allowed versions for the glob package as source_gen is compatible

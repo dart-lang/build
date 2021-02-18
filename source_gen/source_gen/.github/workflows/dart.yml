@@ -1,4 +1,4 @@
-# Created with package:mono_repo v3.3.0
+# Created with package:mono_repo v3.4.6
 name: Dart CI
 on:
   push:
@@ -27,16 +27,17 @@ jobs:
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
-      - uses: cedx/setup-dart@v2
+      - uses: dart-lang/setup-dart@v0.3
         with:
-          release-channel: stable
-          version: latest
-      - run: dart --version
-      - uses: actions/checkout@v2
-      - run: pub global activate mono_repo 3.3.0
-      - run: pub global run mono_repo generate --validate
+          sdk: stable
+      - id: checkout
+        uses: actions/checkout@v2
+      - name: mono_repo self validate
+        run: pub global activate mono_repo 3.4.6
+      - name: mono_repo self validate
+        run: pub global run mono_repo generate --validate
   job_002:
-    name: "OS: linux; SDK: dev; PKGS: _test_annotations, example, example_usage, source_gen; TASKS: [`dartfmt -n --set-exit-if-changed .`, `dartanalyzer --fatal-infos --fatal-warnings .`]"
+    name: "analyze_format; Dart dev; PKGS: _test_annotations, example, example_usage, source_gen; `dartfmt -n --set-exit-if-changed .`, `dartanalyzer --fatal-infos --fatal-warnings .`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -49,17 +50,65 @@ jobs:
             os:ubuntu-latest;pub-cache-hosted;dart:dev
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
-      - uses: cedx/setup-dart@v2
+      - uses: dart-lang/setup-dart@v0.3
         with:
-          release-channel: dev
-      - run: dart --version
-      - uses: actions/checkout@v2
-      - env:
-          PKGS: _test_annotations example example_usage source_gen
-          TRAVIS_OS_NAME: linux
-        run: tool/ci.sh dartfmt dartanalyzer_0
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: _test_annotations_pub_upgrade
+        name: "_test_annotations; pub upgrade --no-precompile"
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: _test_annotations
+        run: pub upgrade --no-precompile
+      - name: "_test_annotations; dartfmt -n --set-exit-if-changed ."
+        if: "always() && steps._test_annotations_pub_upgrade.conclusion == 'success'"
+        working-directory: _test_annotations
+        run: dartfmt -n --set-exit-if-changed .
+      - name: "_test_annotations; dartanalyzer --fatal-infos --fatal-warnings ."
+        if: "always() && steps._test_annotations_pub_upgrade.conclusion == 'success'"
+        working-directory: _test_annotations
+        run: dartanalyzer --fatal-infos --fatal-warnings .
+      - id: example_pub_upgrade
+        name: "example; pub upgrade --no-precompile"
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: example
+        run: pub upgrade --no-precompile
+      - name: "example; dartfmt -n --set-exit-if-changed ."
+        if: "always() && steps.example_pub_upgrade.conclusion == 'success'"
+        working-directory: example
+        run: dartfmt -n --set-exit-if-changed .
+      - name: "example; dartanalyzer --fatal-infos --fatal-warnings ."
+        if: "always() && steps.example_pub_upgrade.conclusion == 'success'"
+        working-directory: example
+        run: dartanalyzer --fatal-infos --fatal-warnings .
+      - id: example_usage_pub_upgrade
+        name: "example_usage; pub upgrade --no-precompile"
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: example_usage
+        run: pub upgrade --no-precompile
+      - name: "example_usage; dartfmt -n --set-exit-if-changed ."
+        if: "always() && steps.example_usage_pub_upgrade.conclusion == 'success'"
+        working-directory: example_usage
+        run: dartfmt -n --set-exit-if-changed .
+      - name: "example_usage; dartanalyzer --fatal-infos --fatal-warnings ."
+        if: "always() && steps.example_usage_pub_upgrade.conclusion == 'success'"
+        working-directory: example_usage
+        run: dartanalyzer --fatal-infos --fatal-warnings .
+      - id: source_gen_pub_upgrade
+        name: "source_gen; pub upgrade --no-precompile"
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: source_gen
+        run: pub upgrade --no-precompile
+      - name: "source_gen; dartfmt -n --set-exit-if-changed ."
+        if: "always() && steps.source_gen_pub_upgrade.conclusion == 'success'"
+        working-directory: source_gen
+        run: dartfmt -n --set-exit-if-changed .
+      - name: "source_gen; dartanalyzer --fatal-infos --fatal-warnings ."
+        if: "always() && steps.source_gen_pub_upgrade.conclusion == 'success'"
+        working-directory: source_gen
+        run: dartanalyzer --fatal-infos --fatal-warnings .
   job_003:
-    name: "OS: linux; SDK: 2.10.0; PKGS: _test_annotations, example, example_usage, source_gen; TASKS: `dartanalyzer --fatal-warnings .`"
+    name: "analyze_format; Dart 2.10.0; PKGS: _test_annotations, example, example_usage, source_gen; `dartanalyzer --fatal-warnings .`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -72,18 +121,49 @@ jobs:
             os:ubuntu-latest;pub-cache-hosted;dart:2.10.0
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
-      - uses: cedx/setup-dart@v2
+      - uses: dart-lang/setup-dart@v0.3
         with:
-          release-channel: stable
-          version: "2.10.0"
-      - run: dart --version
-      - uses: actions/checkout@v2
-      - env:
-          PKGS: _test_annotations example example_usage source_gen
-          TRAVIS_OS_NAME: linux
-        run: tool/ci.sh dartanalyzer_1
+          sdk: "2.10.0"
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: _test_annotations_pub_upgrade
+        name: "_test_annotations; pub upgrade --no-precompile"
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: _test_annotations
+        run: pub upgrade --no-precompile
+      - name: "_test_annotations; dartanalyzer --fatal-warnings ."
+        if: "always() && steps._test_annotations_pub_upgrade.conclusion == 'success'"
+        working-directory: _test_annotations
+        run: dartanalyzer --fatal-warnings .
+      - id: example_pub_upgrade
+        name: "example; pub upgrade --no-precompile"
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: example
+        run: pub upgrade --no-precompile
+      - name: "example; dartanalyzer --fatal-warnings ."
+        if: "always() && steps.example_pub_upgrade.conclusion == 'success'"
+        working-directory: example
+        run: dartanalyzer --fatal-warnings .
+      - id: example_usage_pub_upgrade
+        name: "example_usage; pub upgrade --no-precompile"
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: example_usage
+        run: pub upgrade --no-precompile
+      - name: "example_usage; dartanalyzer --fatal-warnings ."
+        if: "always() && steps.example_usage_pub_upgrade.conclusion == 'success'"
+        working-directory: example_usage
+        run: dartanalyzer --fatal-warnings .
+      - id: source_gen_pub_upgrade
+        name: "source_gen; pub upgrade --no-precompile"
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: source_gen
+        run: pub upgrade --no-precompile
+      - name: "source_gen; dartanalyzer --fatal-warnings ."
+        if: "always() && steps.source_gen_pub_upgrade.conclusion == 'success'"
+        working-directory: source_gen
+        run: dartanalyzer --fatal-warnings .
   job_004:
-    name: "OS: linux; SDK: dev; PKG: example_usage; TASKS: `pub run test --run-skipped`"
+    name: "unit_test; Dart dev; PKG: example_usage; `pub run test --run-skipped`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -96,21 +176,26 @@ jobs:
             os:ubuntu-latest;pub-cache-hosted;dart:dev
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
-      - uses: cedx/setup-dart@v2
+      - uses: dart-lang/setup-dart@v0.3
         with:
-          release-channel: dev
-      - run: dart --version
-      - uses: actions/checkout@v2
-      - env:
-          PKGS: example_usage
-          TRAVIS_OS_NAME: linux
-        run: tool/ci.sh test_0
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: example_usage_pub_upgrade
+        name: "example_usage; pub upgrade --no-precompile"
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: example_usage
+        run: pub upgrade --no-precompile
+      - name: "example_usage; pub run test --run-skipped"
+        if: "always() && steps.example_usage_pub_upgrade.conclusion == 'success'"
+        working-directory: example_usage
+        run: pub run test --run-skipped
     needs:
       - job_001
       - job_002
       - job_003
   job_005:
-    name: "OS: linux; SDK: 2.10.0; PKG: example_usage; TASKS: `pub run test --run-skipped`"
+    name: "unit_test; Dart 2.10.0; PKG: example_usage; `pub run test --run-skipped`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -123,22 +208,26 @@ jobs:
             os:ubuntu-latest;pub-cache-hosted;dart:2.10.0
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
-      - uses: cedx/setup-dart@v2
+      - uses: dart-lang/setup-dart@v0.3
         with:
-          release-channel: stable
-          version: "2.10.0"
-      - run: dart --version
-      - uses: actions/checkout@v2
-      - env:
-          PKGS: example_usage
-          TRAVIS_OS_NAME: linux
-        run: tool/ci.sh test_0
+          sdk: "2.10.0"
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: example_usage_pub_upgrade
+        name: "example_usage; pub upgrade --no-precompile"
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: example_usage
+        run: pub upgrade --no-precompile
+      - name: "example_usage; pub run test --run-skipped"
+        if: "always() && steps.example_usage_pub_upgrade.conclusion == 'success'"
+        working-directory: example_usage
+        run: pub run test --run-skipped
     needs:
       - job_001
       - job_002
       - job_003
   job_006:
-    name: "OS: linux; SDK: 2.10.0; PKG: source_gen; TASKS: `pub run test`"
+    name: "unit_test; Dart 2.10.0; PKG: source_gen; `pub run test`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -151,22 +240,26 @@ jobs:
             os:ubuntu-latest;pub-cache-hosted;dart:2.10.0
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
-      - uses: cedx/setup-dart@v2
+      - uses: dart-lang/setup-dart@v0.3
         with:
-          release-channel: stable
-          version: "2.10.0"
-      - run: dart --version
-      - uses: actions/checkout@v2
-      - env:
-          PKGS: source_gen
-          TRAVIS_OS_NAME: linux
-        run: tool/ci.sh test_1
+          sdk: "2.10.0"
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: source_gen_pub_upgrade
+        name: "source_gen; pub upgrade --no-precompile"
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: source_gen
+        run: pub upgrade --no-precompile
+      - name: source_gen; pub run test
+        if: "always() && steps.source_gen_pub_upgrade.conclusion == 'success'"
+        working-directory: source_gen
+        run: pub run test
     needs:
       - job_001
       - job_002
       - job_003
   job_007:
-    name: "OS: linux; SDK: dev; PKG: source_gen; TASKS: `pub run test`"
+    name: "unit_test; Dart dev; PKG: source_gen; `pub run test`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -179,15 +272,20 @@ jobs:
             os:ubuntu-latest;pub-cache-hosted;dart:dev
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
-      - uses: cedx/setup-dart@v2
+      - uses: dart-lang/setup-dart@v0.3
         with:
-          release-channel: dev
-      - run: dart --version
-      - uses: actions/checkout@v2
-      - env:
-          PKGS: source_gen
-          TRAVIS_OS_NAME: linux
-        run: tool/ci.sh test_1
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2
+      - id: source_gen_pub_upgrade
+        name: "source_gen; pub upgrade --no-precompile"
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: source_gen
+        run: pub upgrade --no-precompile
+      - name: source_gen; pub run test
+        if: "always() && steps.source_gen_pub_upgrade.conclusion == 'success'"
+        working-directory: source_gen
+        run: pub run test
     needs:
       - job_001
       - job_002

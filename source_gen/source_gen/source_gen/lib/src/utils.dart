@@ -19,6 +19,7 @@ import 'package:path/path.dart' as p;
 /// This function will return `'VoidFunc'`, unlike [DartType.element.name].
 String typeNameOf(DartType type) {
   if (type is FunctionType) {
+    // ignore: deprecated_member_use
     final element = type.element;
     if (element is GenericFunctionTypeElement) {
       return element.enclosingElement.name;
