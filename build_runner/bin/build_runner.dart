@@ -28,6 +28,8 @@ Future<void> main(List<String> args) async {
   var localCommands = [CleanCommand(), GenerateBuildScript()];
   var localCommandNames = localCommands.map((c) => c.name).toSet();
   localCommands.forEach(commandRunner.addCommand);
+  commandRunner.argParser.addFlag('verbose',
+      defaultsTo: false, negatable: false, help: 'Enables verbose logging.');
 
   ArgResults parsedArgs;
   try {
@@ -79,7 +81,7 @@ Future<void> main(List<String> args) async {
       }
     });
   } else {
-    var verbose = parsedArgs.command['verbose'] as bool ?? false;
+    var verbose = parsedArgs['verbose'] as bool ?? false;
     if (verbose) Logger.root.level = Level.ALL;
     logListener =
         Logger.root.onRecord.listen(stdIOLogListener(verbose: verbose));
