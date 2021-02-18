@@ -27,3 +27,7 @@ dependencies:
 dev_dependencies:
   analyzer: ^1.0.0
   collection: ^1.14.0
+
+dependency_overrides:
+  build:
+    path: ../build
