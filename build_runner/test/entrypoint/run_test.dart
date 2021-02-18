@@ -17,7 +17,7 @@ import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
 void main() {
-  setUp(() async {
+  setUpAll(() async {
     await d.dir('a', [
       await pubspec(
         'a',
@@ -51,6 +51,11 @@ main() {
     ]).create();
 
     await pubGet('a', offline: false);
+  });
+
+  tearDown(() async {
+    expect((await runPub('a', 'run', args: ['build_runner', 'clean'])).exitCode,
+        0);
   });
 
   void expectOutput(String path, {@required bool exists}) {
