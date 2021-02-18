@@ -31,9 +31,9 @@ void main() {
     test('warns when builder definition produces invalid build script',
         () async {
       var result = await buildTool.build(expectExitCode: ExitCode.config.code);
+      expect(result, emitsThrough(contains('Getter not found: \'wrongKey\'')));
       expect(
           result, emitsThrough(contains('misconfigured builder definition')));
-      expect(result, emitsThrough(contains('Getter not found: \'wrongKey\'')));
     });
   });
 }
