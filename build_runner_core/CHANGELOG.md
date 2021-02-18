@@ -1,4 +1,14 @@
-## 6.1.8-dev
+## 6.1.10
+
+- Don't count packages in dependency_overrides as immediate dependencies when
+  building package graphs. This allows you to override transitive builder deps
+  without accidentally applying those builders to the root package.
+
+## 6.1.9
+
+- Allow the latest `build_config`.
+
+## 6.1.8
 
 - Update glob to `2.x`.
 

@@ -1,4 +1,8 @@
-## 1.0.7-dev
+## 1.0.8
+
+- Update to build_modules version `3.0.0`.
+
+## 1.0.7
 
 - Update to latest analyzer version `1.0.0`.
 
