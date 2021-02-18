@@ -1,5 +1,5 @@
 name: build_runner
-version: 1.11.2-dev
+version: 1.11.3
 description: A build system for Dart code generation and modular compilation.
 repository: https://github.com/dart-lang/build/tree/master/build_runner
 
@@ -10,7 +10,7 @@ dependencies:
   args: ">=1.4.0 <3.0.0"
   async: ">=1.13.3 <3.0.0"
   build: ">=1.5.0 <1.7.0"
-  build_config: '>=0.4.1 <0.4.6'
+  build_config: '>=0.4.1 <0.4.7'
   build_daemon: ^2.1.0
   build_resolvers: ^1.4.0
   build_runner_core: ">=5.2.0 <7.0.0"
@@ -51,25 +51,3 @@ dev_dependencies:
   test_process: ^1.0.0
   _test_common:
     path: ../_test_common
-
-dependency_overrides:
-  ## Remove each of the below as they are published
-  build:
-    path: ../build
-  build_config:
-    path: ../build_config
-  build_daemon:
-    path: ../build_daemon
-  build_modules:
-    path: ../build_modules
-  build_resolvers:
-    path: ../build_resolvers
-  build_runner_core:
-    path: ../build_runner_core
-  build_test:
-    path: ../build_test
-  build_web_compilers:
-    path: ../build_web_compilers
-  scratch_space:
-    path: ../scratch_space
-  ## Remove each of the above as they are published

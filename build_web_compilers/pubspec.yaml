@@ -1,5 +1,5 @@
 name: build_web_compilers
-version: 2.16.4-dev
+version: 2.16.4
 description: Builder implementations wrapping Dart compilers.
 homepage: https://github.com/dart-lang/build/tree/master/build_web_compilers
 
@@ -7,7 +7,7 @@ environment:
   sdk: ">=2.11.99 <3.0.0"
 
 dependencies:
-  analyzer: ">=0.36.4 <0.42.0"
+  analyzer: ^1.0.0
   archive: '>=2.0.0 <4.0.0'
   bazel_worker: ">=0.1.18 <2.0.0"
   build: ">=1.5.0 <2.0.0"
@@ -33,25 +33,3 @@ dev_dependencies:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
-
-dependency_overrides:
-  ## Remove each of the below as they are published
-  build:
-    path: ../build
-  build_config:
-    path: ../build_config
-  build_daemon:
-    path: ../build_daemon
-  build_modules:
-    path: ../build_modules
-  build_resolvers:
-    path: ../build_resolvers
-  build_runner:
-    path: ../build_runner
-  build_runner_core:
-    path: ../build_runner_core
-  build_test:
-    path: ../build_test
-  scratch_space:
-    path: ../scratch_space
-  ## Remove each of the above as they are published

@@ -63,7 +63,7 @@ main(List<String> args) async {
           'build_runner',
           'build_runner_core',
           'build_test',
-          'glob'
+          'glob',
         ]),
         d.dir('bin', [
           d.file('main.dart', executableFileContent),
