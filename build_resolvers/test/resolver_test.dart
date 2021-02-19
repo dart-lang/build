@@ -396,6 +396,29 @@ void main() {
       }, resolvers: AnalyzerResolvers());
     });
 
+    test('assetIdForElement throws for ambigious elements', () {
+      return resolveSources({
+        'a|lib/a.dart': '''
+              import 'b.dart';
+
+              class SomeClass {}
+
+              main() {
+                SomeClass();
+              } ''',
+        'a|lib/b.dart': '''
+            class SomeClass {}
+              ''',
+      }, (resolver) async {
+        var entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
+        var classDefinition = entry.importedLibraries
+            .map((l) => l.getType('SomeClass'))
+            .singleWhere((c) => c != null);
+        expect(() => resolver.assetIdForElement(classDefinition),
+            throwsA(isA<UnresolvableAssetException>()));
+      }, resolvers: AnalyzerResolvers());
+    });
+
     test('Respects withEnabledExperiments', () async {
       Logger.root.level = Level.ALL;
       Logger.root.onRecord.listen(print);

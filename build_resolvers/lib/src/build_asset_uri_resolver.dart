@@ -203,9 +203,9 @@ Set<AssetId> _parseDirectives(String content, AssetId from) => HashSet.of(
           .unit
           .directives
           .whereType<UriBasedDirective>()
-          .map((directive) => directive.uriContent)
+          .map((directive) => directive.uri.stringValue)
           .where((uriContent) {
-        // Filter out nulls. uriContent can be null for strings that use
+        // Filter out nulls. uri.stringValue can be null for strings that use
         // interpolation. That's invalid, but we shouldn't crash.
         if (uriContent == null) return false;
 
