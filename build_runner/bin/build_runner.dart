@@ -13,6 +13,7 @@ import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 
 import 'package:build_runner/src/build_script_generate/bootstrap.dart';
+import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner/src/entrypoint/runner.dart';
 import 'package:build_runner/src/logging/std_io_logging.dart';
 
@@ -27,7 +28,15 @@ Future<void> main(List<String> args) async {
       BuildCommandRunner([], await PackageGraph.forThisPackage());
   var localCommands = [CleanCommand(), GenerateBuildScript()];
   var localCommandNames = localCommands.map((c) => c.name).toSet();
-  localCommands.forEach(commandRunner.addCommand);
+  for (var command in localCommands) {
+    commandRunner.addCommand(command);
+    // This flag is added to each command individually and not the top level.
+    command.argParser.addFlag(verboseOption,
+        abbr: 'v',
+        defaultsTo: false,
+        negatable: false,
+        help: 'Enables verbose logging.');
+  }
 
   ArgResults parsedArgs;
   try {
