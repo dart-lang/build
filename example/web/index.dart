@@ -5,5 +5,5 @@
 import 'dart:html';
 
 void main() {
-  querySelector('#content').appendText('Script running!');
+  querySelector('#content')!.appendText('Script running!');
 }
