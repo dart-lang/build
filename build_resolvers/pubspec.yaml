@@ -19,7 +19,7 @@ dependencies:
 
 dev_dependencies:
   test: ^1.16.0
-  build_test: ^1.0.0
+  build_test: ^1.4.0-dev
 
 dependency_overrides:
   # Temporarily required until build version 2.0.0 is released
