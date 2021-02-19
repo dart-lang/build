@@ -22,7 +22,6 @@ import 'package:analyzer/src/generated/source.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
@@ -81,8 +80,11 @@ class PerActionResolver implements ReleasableResolver {
   }
 
   @override
-  Future<LibraryElement> findLibraryByName(String libraryName) async =>
-      libraries.firstWhere((l) => l.name == libraryName, orElse: () => null);
+  Future<LibraryElement?> findLibraryByName(String libraryName) async {
+    await for (final library in libraries) {
+      if (library.name == libraryName) return library;
+    }
+  }
 
   @override
   Future<bool> isLibrary(AssetId assetId) async {
@@ -92,7 +94,7 @@ class PerActionResolver implements ReleasableResolver {
   }
 
   @override
-  Future<AstNode> astNodeFor(Element element, {bool resolve = false}) =>
+  Future<AstNode?> astNodeFor(Element element, {bool resolve = false}) =>
       _delegate.astNodeFor(element, resolve: resolve);
 
   @override
@@ -116,7 +118,7 @@ class PerActionResolver implements ReleasableResolver {
   // another, otherwise there are race conditions with `_entryPoints` being
   // updated before it is actually ready, or resolved more than once.
   final _resolvePool = Pool(1);
-  Future<void> _resolveIfNecessary(AssetId id, {@required bool transitive}) =>
+  Future<void> _resolveIfNecessary(AssetId id, {required bool transitive}) =>
       _resolvePool.withResource(() async {
         if (!_entryPoints.contains(id)) {
           // We only want transitively resolved ids in `_entrypoints`.
@@ -156,9 +158,15 @@ class AnalyzerResolver implements ReleasableResolver {
   }
 
   @override
-  Future<AstNode> astNodeFor(Element element, {bool resolve = false}) async {
+  Future<AstNode?> astNodeFor(Element element, {bool resolve = false}) async {
     var session = _driver.currentSession;
-    var path = element.library.source.fullName;
+    final library = element.library;
+    if (library == null) {
+      // Invalid elements (e.g. an MultiplyDefinedElement) are not part of any
+      // library and can't be resolved like this.
+      return null;
+    }
+    var path = library.source.fullName;
 
     if (resolve) {
       return (await session.getResolvedLibrary(path))
@@ -221,21 +229,22 @@ class AnalyzerResolver implements ReleasableResolver {
       for (final part in element.parts)
         // The source may be null if the part doesn't exist. That's not
         // important for us since we only care about syntax
-        if (part.source != null && part.source.exists()) part,
+        if (part.source.exists()) part,
     ];
 
     // Map from elements to absolute paths
     final paths = existingElements
         .map((part) => _uriResolver.lookupCachedAsset(part.source.uri))
-        .where((asset) => asset != null)
+        .whereType<AssetId>() // filter out nulls
         .map(assetPath);
 
     final relevantResults = <ErrorsResult>[];
 
     for (final path in paths) {
       final result = await _driver.getErrors(path);
-      if (result.errors
-          .any((error) => error.errorCode.type == ErrorType.SYNTACTIC_ERROR)) {
+      if (result != null &&
+          result.errors.any(
+              (error) => error.errorCode.type == ErrorType.SYNTACTIC_ERROR)) {
         relevantResults.add(result);
       }
     }
@@ -263,12 +272,17 @@ class AnalyzerResolver implements ReleasableResolver {
 
   @override
   Future<AssetId> assetIdForElement(Element element) async {
-    final uri = element.source.uri;
-    if (!uri.isScheme('package') && !uri.isScheme('asset')) {
+    final source = element.source;
+    if (source == null) {
       throw UnresolvableAssetException(
-          '${element.name} in ${element.source.uri}');
+          '${element.name} does not have a source');
     }
-    return AssetId.resolve('${element.source.uri}');
+
+    final uri = source.uri;
+    if (!uri.isScheme('package') && !uri.isScheme('asset')) {
+      throw UnresolvableAssetException('${element.name} in ${source.uri}');
+    }
+    return AssetId.resolve('${source.uri}');
   }
 }
 
@@ -282,13 +296,13 @@ class AnalyzerResolvers implements Resolvers {
   final Future<String> Function() _sdkSummaryGenerator;
 
   // Lazy, all access must be preceded by a call to `_ensureInitialized`.
-  AnalyzerResolver _resolver;
-  BuildAssetUriResolver _uriResolver;
+  late final AnalyzerResolver _resolver;
+  BuildAssetUriResolver? _uriResolver;
 
   /// Nullable, should not be accessed outside of [_ensureInitialized].
-  Future<void> _initialized;
+  Future<void>? _initialized;
 
-  PackageConfig _packageConfig;
+  PackageConfig? _packageConfig;
 
   /// Lazily creates and manages a single [AnalysisDriver], that can be shared
   /// across [BuildStep]s.
@@ -305,8 +319,8 @@ class AnalyzerResolvers implements Resolvers {
   /// primarily used to get the language versions. Any other data (including
   /// extra data), may be passed to the analyzer on an as needed basis.
   AnalyzerResolvers(
-      [AnalysisOptions analysisOptions,
-      Future<String> Function() sdkSummaryGenerator,
+      [AnalysisOptions? analysisOptions,
+      Future<String> Function()? sdkSummaryGenerator,
       this._packageConfig])
       : _analysisOptions = analysisOptions ??
             (AnalysisOptionsImpl()
@@ -320,12 +334,12 @@ class AnalyzerResolvers implements Resolvers {
   Future<void> _ensureInitialized() {
     return _initialized ??= () async {
       _warnOnLanguageVersionMismatch();
-      _uriResolver = BuildAssetUriResolver();
-      _packageConfig ??=
-          await loadPackageConfigUri(await Isolate.packageConfig);
-      var driver = await analysisDriver(_uriResolver, _analysisOptions,
-          await _sdkSummaryGenerator(), _packageConfig);
-      _resolver = AnalyzerResolver(driver, _uriResolver);
+      final uriResolver = _uriResolver = BuildAssetUriResolver();
+      final loadedConfig = _packageConfig ??=
+          await loadPackageConfigUri((await Isolate.packageConfig)!);
+      var driver = await analysisDriver(uriResolver, _analysisOptions,
+          await _sdkSummaryGenerator(), loadedConfig);
+      return _resolver = AnalyzerResolver(driver, uriResolver);
     }();
   }
 
@@ -451,7 +465,7 @@ final _dartUiPath =
 
 /// The current feature set based on the current sdk version and enabled
 /// experiments.
-FeatureSet _featureSet({List<String> enableExperiments}) {
+FeatureSet _featureSet({List<String>? enableExperiments}) {
   enableExperiments ??= [];
   if (enableExperiments.isNotEmpty &&
       sdkLanguageVersion > ExperimentStatus.currentVersion) {
