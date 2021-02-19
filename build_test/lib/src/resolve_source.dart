@@ -175,8 +175,9 @@ Future<T> _resolveAssets<T>(
   Future<Null>? tearDown,
   Resolvers? resolvers,
 }) async {
-  packageConfig ??= await loadPackageConfigUri((await Isolate.packageConfig)!);
-  final assetReader = PackageAssetReader(packageConfig, rootPackage);
+  final resolvedConfig = packageConfig ??
+      await loadPackageConfigUri((await Isolate.packageConfig)!);
+  final assetReader = PackageAssetReader(resolvedConfig, rootPackage);
   final resolveBuilder = _ResolveSourceBuilder(
     action,
     resolverFor,
@@ -198,9 +199,9 @@ Future<T> _resolveAssets<T>(
 
   // Use the default resolver if no experiments are enabled. This is much
   // faster.
-  resolvers ??= enabledExperiments.isEmpty
+  resolvers ??= packageConfig == null && enabledExperiments.isEmpty
       ? defaultResolvers
-      : AnalyzerResolvers(null, null, packageConfig);
+      : AnalyzerResolvers(null, null, resolvedConfig);
 
   // We don't care about the results of this build, but we also can't await
   // it because that would block on the `tearDown` of the `resolveBuilder`.
