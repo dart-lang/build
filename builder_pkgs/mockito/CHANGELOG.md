@@ -3,7 +3,6 @@
 * `verifyInOrder` now returns a `List<VerificationResult>` which stores
   arguments which were captured in a call to `verifiyInOrder`.
 * **Breaking change:** Remove the public constructor for `VerificationResult`.
-* Doesn't allow `verify` been used inside the `verifyInOrder`.
 
 ## 5.0.0-nullsafety.7
 

@@ -466,19 +466,6 @@ void main() {
       });
     });
 
-    test('verify been used as an argument fails', () {
-      mock.methodWithoutArgs();
-      mock.getter;
-      expectFail(
-          'There is already a verification in progress, '
-          'check if it was not called with a verify argument(s)', () {
-        verifyInOrder([
-          verify(mock.getter),
-          verify(mock.methodWithoutArgs()),
-        ]);
-      });
-    });
-
     test('methods can be called again and again', () {
       mock.methodWithoutArgs();
       mock.getter;

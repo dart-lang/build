@@ -939,10 +939,6 @@ Verification _makeVerify(bool never) {
     }
     throw StateError(message);
   }
-  if (_verificationInProgress) {
-    fail('There is already a verification in progress, '
-        'check if it was not called with a verify argument(s)');
-  }
   _verificationInProgress = true;
   return <T>(T mock) {
     _verificationInProgress = false;
