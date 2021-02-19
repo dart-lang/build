@@ -670,7 +670,7 @@ class _TestingBuildStep implements BuildStep {
   Future<bool> canRead(AssetId id) async => assets.containsKey(id);
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding}) async =>
+  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async =>
       assets[id];
 
   @override
