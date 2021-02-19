@@ -10,7 +10,7 @@ Iterable<AssetId> expectedOutputs(Builder builder, AssetId input) {
   var matchingExtensions =
       builder.buildExtensions.keys.where((e) => input.path.endsWith(e));
   return matchingExtensions
-      .expand((e) => _replaceExtensions(input, e, builder.buildExtensions[e]));
+      .expand((e) => _replaceExtensions(input, e, builder.buildExtensions[e]!));
 }
 
 Iterable<AssetId> _replaceExtensions(

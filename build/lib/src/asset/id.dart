@@ -55,7 +55,7 @@ class AssetId implements Comparable<AssetId> {
   ///
   /// `asset:` uris have the format '$package/$path', including the top level
   /// directory.
-  factory AssetId.resolve(String uri, {AssetId from}) {
+  factory AssetId.resolve(String uri, {AssetId? from}) {
     final parsedUri = Uri.parse(uri);
     if (parsedUri.hasScheme) {
       if (parsedUri.scheme == 'package') {
@@ -108,8 +108,7 @@ class AssetId implements Comparable<AssetId> {
   /// A `package:` URI suitable for use directly with other systems if this
   /// asset is under it's package's `lib/` directory, else an `asset:` URI
   /// suitable for use within build tools.
-  Uri get uri => _uri ??= _constructUri(this);
-  Uri _uri;
+  late final Uri uri = _constructUri(this);
 
   /// Deserializes an [AssetId] from [data], which must be the result of
   /// calling [serialize] on an existing [AssetId].

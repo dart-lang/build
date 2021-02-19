@@ -9,7 +9,7 @@ import 'package:build/build.dart';
 import 'in_memory_writer.dart';
 
 int _nextId = 0;
-AssetId makeAssetId([String assetIdString]) {
+AssetId makeAssetId([String? assetIdString]) {
   if (assetIdString == null) {
     assetIdString = 'a|web/asset_$_nextId.txt';
     _nextId++;

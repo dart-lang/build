@@ -1,3 +1,8 @@
+## 2.0.0-dev
+
+- Migrate to null-safety
+- __Breaking__: Remove the deprecated `rootPackage` argument to `runBuilder`
+
 ## 1.6.3
 
 - Use latest analyzer version `1.x`.

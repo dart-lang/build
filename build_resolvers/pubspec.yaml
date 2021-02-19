@@ -8,7 +8,7 @@ environment:
 
 dependencies:
   analyzer: ^1.0.0
-  build: ">=1.6.0 <1.7.0"
+  build: "^2.0.0"
   crypto: ">=2.0.0 <4.0.0"
   graphs: ^0.2.0
   logging: ">=0.11.2 <2.0.0"
@@ -21,3 +21,8 @@ dependencies:
 dev_dependencies:
   test: ^1.0.0
   build_test: ^1.0.0
+
+dependency_overrides:
+  # Temporarily required until build version 2.0.0 is released
+  build:
+    path: ../build

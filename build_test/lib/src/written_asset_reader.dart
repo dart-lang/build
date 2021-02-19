@@ -17,7 +17,7 @@ class WrittenAssetReader extends MultiPackageAssetReader {
   ///
   /// Only assets reported as written trough this [AssetWriterSpy] can be read
   /// from this reader. When null, all assets from [source] are available.
-  final AssetWriterSpy filterSpy;
+  final AssetWriterSpy? filterSpy;
 
   WrittenAssetReader(this.source, [this.filterSpy]);
 
@@ -25,17 +25,17 @@ class WrittenAssetReader extends MultiPackageAssetReader {
   Future<bool> canRead(AssetId id) {
     var canRead = source.assets.containsKey(id);
     if (filterSpy != null) {
-      canRead = canRead && filterSpy.assetsWritten.contains(id);
+      canRead = canRead && filterSpy!.assetsWritten.contains(id);
     }
 
     return Future.value(canRead);
   }
 
   @override
-  Stream<AssetId> findAssets(Glob glob, {String package}) async* {
+  Stream<AssetId> findAssets(Glob glob, {String? package}) async* {
     var available = source.assets.keys.toSet();
     if (filterSpy != null) {
-      available = available.intersection(filterSpy.assetsWritten.toSet());
+      available = available.intersection(filterSpy!.assetsWritten.toSet());
     }
 
     for (var asset in available) {
@@ -55,8 +55,7 @@ class WrittenAssetReader extends MultiPackageAssetReader {
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding}) async {
-    encoding ??= utf8;
+  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
     return encoding.decode(await readAsBytes(id));
   }
 }

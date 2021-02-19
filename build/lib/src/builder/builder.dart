@@ -40,7 +40,7 @@ class BuilderOptions {
   /// Whether or not this builder is running on the root package.
   final bool isRoot;
 
-  const BuilderOptions(this.config, {bool isRoot}) : isRoot = isRoot ?? false;
+  const BuilderOptions(this.config, {this.isRoot = false});
 
   /// Returns a new set of options with keys from [other] overriding options in
   /// this instance.
@@ -50,7 +50,7 @@ class BuilderOptions {
   /// returned directly.
   ///
   /// The `isRoot` value will also be overridden to value from [other].
-  BuilderOptions overrideWith(BuilderOptions other) {
+  BuilderOptions overrideWith(BuilderOptions? other) {
     if (other == null) return this;
     return BuilderOptions({}..addAll(config)..addAll(other.config),
         isRoot: other.isRoot);

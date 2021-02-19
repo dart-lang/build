@@ -79,9 +79,7 @@ class CachingAssetReader implements AssetReader {
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding}) {
-    encoding ??= utf8;
-
+  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
     if (encoding != utf8) {
       // Fallback case, we never cache the String value for the non-default,
       // encoding but we do allow it to cache the bytes.

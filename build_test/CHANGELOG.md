@@ -1,3 +1,7 @@
+## 1.4.0-dev
+
+- Migrate to null safety
+
 ## 1.3.7
 
 - Update to analyzer `1.x`.

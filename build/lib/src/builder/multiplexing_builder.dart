@@ -42,8 +42,7 @@ Map<String, List<String>> _mergeMaps(Iterable<Map<String, List<String>>> maps) {
   var result = <String, List<String>>{};
   for (var map in maps) {
     for (var key in map.keys) {
-      result.putIfAbsent(key, () => []);
-      result[key].addAll(map[key]);
+      result.putIfAbsent(key, () => []).addAll(map[key]!);
     }
   }
   return result;

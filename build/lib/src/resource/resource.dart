@@ -22,18 +22,18 @@ class Resource<T> {
 
   /// Optional method which is given an existing instance that is ready to be
   /// disposed.
-  final DisposeInstance<T> _userDispose;
+  final DisposeInstance<T>? _userDispose;
 
   /// Optional method which is called before the process is going to exit.
   ///
   /// This allows resources to do any final cleanup, and is not given an
   /// instance.
-  final BeforeExit _userBeforeExit;
+  final BeforeExit? _userBeforeExit;
 
   /// A Future instance of this resource if one has ever been requested.
   final _instanceByManager = <ResourceManager, Future<T>>{};
 
-  Resource(this._create, {DisposeInstance<T> dispose, BeforeExit beforeExit})
+  Resource(this._create, {DisposeInstance<T>? dispose, BeforeExit? beforeExit})
       : _userDispose = dispose,
         _userBeforeExit = beforeExit;
 
@@ -47,7 +47,7 @@ class Resource<T> {
     var oldInstance = _fetch(manager);
     _instanceByManager.remove(manager);
     if (_userDispose != null) {
-      return oldInstance.then(_userDispose);
+      return oldInstance.then(_userDispose!);
     } else {
       return Future.value(null);
     }
@@ -88,7 +88,7 @@ class ResourceManager {
   /// Invokes the `beforeExit` callbacks of all [Resource]s that had one.
   Future<Null> beforeExit() async {
     await Future.wait(_resourcesWithBeforeExit.map((r) async {
-      if (r._userBeforeExit != null) return r._userBeforeExit();
+      return r._userBeforeExit?.call();
     }));
     _resourcesWithBeforeExit.clear();
   }

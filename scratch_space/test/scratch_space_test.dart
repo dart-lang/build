@@ -1,6 +1,7 @@
 // Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+// @dart=2.9
 
 import 'dart:async';
 import 'dart:convert';
@@ -157,7 +158,8 @@ class RecursiveScratchSpaceAssetReader implements AssetReader {
   Stream<AssetId> findAssets(_) => throw UnimplementedError();
 
   @override
-  Future<String> readAsString(_, {encoding}) => throw UnimplementedError();
+  Future<String> readAsString(_, {encoding = utf8}) =>
+      throw UnimplementedError();
 
   @override
   Future<Digest> digest(AssetId id) async => Digest(await readAsBytes(id));

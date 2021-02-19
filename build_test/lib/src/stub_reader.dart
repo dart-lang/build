@@ -22,7 +22,8 @@ class StubAssetReader extends AssetReader implements MultiPackageAssetReader {
       Future.value(null);
 
   @override
-  Stream<AssetId> findAssets(Glob glob, {String package}) => null;
+  Stream<AssetId> findAssets(Glob glob, {String? package}) =>
+      const Stream<Never>.empty();
 
   @override
   Future<Digest> digest(AssetId id) => Future.value(Digest([1, 2, 3]));

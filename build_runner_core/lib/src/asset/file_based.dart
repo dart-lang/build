@@ -35,7 +35,7 @@ class FileBasedAssetReader extends AssetReader
       .then((file) => _descriptorPool.withResource(file.readAsBytes));
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding}) =>
+  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) =>
       _fileForOrThrow(id, packageGraph).then((file) => _descriptorPool
           .withResource(() => file.readAsString(encoding: encoding ?? utf8)));
 

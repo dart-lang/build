@@ -29,22 +29,21 @@ import 'expected_outputs.dart';
 /// `BuildStep.reportUnusedAssets` in [builder] will be forwarded to this
 /// function with the associated primary input.
 Future<void> runBuilder(Builder builder, Iterable<AssetId> inputs,
-    AssetReader reader, AssetWriter writer, Resolvers resolvers,
-    {Logger logger,
-    ResourceManager resourceManager,
-    @Deprecated('The rootPackage argument is unused') String rootPackage,
+    AssetReader reader, AssetWriter writer, Resolvers? resolvers,
+    {Logger? logger,
+    ResourceManager? resourceManager,
     StageTracker stageTracker = NoOpStageTracker.instance,
-    void Function(AssetId input, Iterable<AssetId> assets)
+    void Function(AssetId input, Iterable<AssetId> assets)?
         reportUnusedAssetsForInput}) async {
   var shouldDisposeResourceManager = resourceManager == null;
-  resourceManager ??= ResourceManager();
+  final resources = resourceManager ?? ResourceManager();
   logger ??= Logger('runBuilder');
   //TODO(nbosch) check overlapping outputs?
   Future<void> buildForInput(AssetId input) async {
     var outputs = expectedOutputs(builder, input);
     if (outputs.isEmpty) return;
     var buildStep = BuildStepImpl(
-        input, outputs, reader, writer, resolvers, resourceManager,
+        input, outputs, reader, writer, resolvers, resources,
         stageTracker: stageTracker,
         reportUnusedAssets: reportUnusedAssetsForInput == null
             ? null
@@ -59,7 +58,7 @@ Future<void> runBuilder(Builder builder, Iterable<AssetId> inputs,
   await scopeLogAsync(() => Future.wait(inputs.map(buildForInput)), logger);
 
   if (shouldDisposeResourceManager) {
-    await resourceManager.disposeAll();
-    await resourceManager.beforeExit();
+    await resources.disposeAll();
+    await resources.beforeExit();
   }
 }

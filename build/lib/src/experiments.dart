@@ -10,7 +10,7 @@ const Symbol _enabledExperimentsKey = #dartLanguageEnabledExperiments;
 ///
 /// This can be overridden for a new [Zone] by using [withEnabledExperiments].
 List<String> get enabledExperiments =>
-    Zone.current[_enabledExperimentsKey] as List<String> ?? const [];
+    Zone.current[_enabledExperimentsKey] as List<String>? ?? const [];
 
 /// Runs [fn] in a [Zone], setting [enabledExperiments] for all code running
 /// in that [Zone].
