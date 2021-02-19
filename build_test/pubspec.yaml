@@ -29,7 +29,12 @@ dev_dependencies:
   collection: ^1.14.0
 
 dependency_overrides:
+  # Remove this once the respective packages are published
   build:
     path: ../build
   build_resolvers:
     path: ../build_resolvers
+  graphs:
+    git:
+      url: https://github.com/hovadur/graphs.git
+      ref: a19da5b30388752a62d0eb96d38f371311c0cebf

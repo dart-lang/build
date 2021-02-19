@@ -1,7 +1,6 @@
 // Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-//@dart=2.9
 
 import 'dart:async';
 import 'dart:isolate';
@@ -30,10 +29,10 @@ const useAssetReader = '__useAssetReader__';
 Future<T> resolveSource<T>(
   String inputSource,
   FutureOr<T> Function(Resolver resolver) action, {
-  AssetId inputId,
-  PackageConfig packageConfig,
-  Future<Null> tearDown,
-  Resolvers resolvers,
+  AssetId? inputId,
+  PackageConfig? packageConfig,
+  Future<Null>? tearDown,
+  Resolvers? resolvers,
 }) {
   inputId ??= AssetId('_resolve_source', 'lib/_resolve_source.dart');
   return _resolveAssets(
@@ -121,13 +120,13 @@ Future<T> resolveSource<T>(
 Future<T> resolveSources<T>(
   Map<String, String> inputs,
   FutureOr<T> Function(Resolver resolver) action, {
-  PackageConfig packageConfig,
-  String resolverFor,
-  String rootPackage,
-  Future<Null> tearDown,
-  Resolvers resolvers,
+  PackageConfig? packageConfig,
+  String? resolverFor,
+  String? rootPackage,
+  Future<Null>? tearDown,
+  Resolvers? resolvers,
 }) {
-  if (inputs == null || inputs.isEmpty) {
+  if (inputs.isEmpty) {
     throw ArgumentError.value(inputs, 'inputs', 'Must be a non-empty Map');
   }
   return _resolveAssets(
@@ -145,9 +144,9 @@ Future<T> resolveSources<T>(
 Future<T> resolveAsset<T>(
   AssetId inputId,
   FutureOr<T> Function(Resolver resolver) action, {
-  PackageConfig packageConfig,
-  Future<Null> tearDown,
-  Resolvers resolvers,
+  PackageConfig? packageConfig,
+  Future<Null>? tearDown,
+  Resolvers? resolvers,
 }) {
   return _resolveAssets(
     {
@@ -171,12 +170,12 @@ Future<T> _resolveAssets<T>(
   Map<String, String> inputs,
   String rootPackage,
   FutureOr<T> Function(Resolver resolver) action, {
-  PackageConfig packageConfig,
-  AssetId resolverFor,
-  Future<Null> tearDown,
-  Resolvers resolvers,
+  PackageConfig? packageConfig,
+  AssetId? resolverFor,
+  Future<Null>? tearDown,
+  Resolvers? resolvers,
 }) async {
-  packageConfig ??= await loadPackageConfigUri(await Isolate.packageConfig);
+  packageConfig ??= await loadPackageConfigUri((await Isolate.packageConfig)!);
   final assetReader = PackageAssetReader(packageConfig, rootPackage);
   final resolveBuilder = _ResolveSourceBuilder(
     action,
@@ -186,7 +185,7 @@ Future<T> _resolveAssets<T>(
   final inputAssets = <AssetId, String>{};
   await Future.wait(inputs.keys.map((String rawAssetId) async {
     final assetId = AssetId.parse(rawAssetId);
-    var assetValue = inputs[rawAssetId];
+    var assetValue = inputs[rawAssetId]!;
     if (assetValue == useAssetReader) {
       assetValue = await assetReader.readAsString(assetId);
     }
@@ -197,9 +196,9 @@ Future<T> _resolveAssets<T>(
     rootPackage: rootPackage,
   );
 
-  // Use the default resolver if not provided a package config and no
-  // experiments are enabled. This is much faster.
-  resolvers ??= packageConfig == null && enabledExperiments.isEmpty
+  // Use the default resolver if no experiments are enabled. This is much
+  // faster.
+  resolvers ??= enabledExperiments.isEmpty
       ? defaultResolvers
       : AnalyzerResolvers(null, null, packageConfig);
 
@@ -227,8 +226,8 @@ Future<T> _resolveAssets<T>(
 /// input given a set of dependencies to also use. See `resolveSource`.
 class _ResolveSourceBuilder<T> implements Builder {
   final FutureOr<T> Function(Resolver) _action;
-  final Future _tearDown;
-  final AssetId _resolverFor;
+  final Future? _tearDown;
+  final AssetId? _resolverFor;
 
   final onDone = Completer<T>();
 
