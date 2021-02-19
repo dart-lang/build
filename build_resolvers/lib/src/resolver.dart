@@ -417,9 +417,9 @@ Future<String> _defaultSdkSummaryGenerator() async {
 final _packageDepsToCheck = ['analyzer', 'build_resolvers'];
 
 Future<bool> _checkDeps(
-    File versionsFile, Map<String, Object> currentDeps) async {
+    File versionsFile, Map<String, Object?> currentDeps) async {
   var previous =
-      jsonDecode(await versionsFile.readAsString()) as Map<String, Object>;
+      jsonDecode(await versionsFile.readAsString()) as Map<String, Object?>;
 
   if (previous.keys.length != currentDeps.keys.length) return false;
 
@@ -431,7 +431,7 @@ Future<bool> _checkDeps(
 }
 
 Future<void> _createDepsFile(
-    File depsFile, Map<String, Object> currentDeps) async {
+    File depsFile, Map<String, Object?> currentDeps) async {
   await depsFile.create(recursive: true);
   await depsFile.writeAsString(jsonEncode(currentDeps));
 }
