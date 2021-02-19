@@ -74,10 +74,6 @@ for PKG in ${PKGS}; do
         echo 'pub run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random'
         pub run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
-      command_4)
-        echo 'dart --no-sound-null-safety test --test-randomize-ordering-seed=random'
-        dart --no-sound-null-safety test --test-randomize-ordering-seed=random || EXIT_CODE=$?
-        ;;
       dartanalyzer)
         echo 'dartanalyzer --fatal-infos --fatal-warnings .'
         dartanalyzer --fatal-infos --fatal-warnings . || EXIT_CODE=$?
