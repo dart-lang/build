@@ -37,14 +37,14 @@ jobs:
       - name: mono_repo self validate
         run: pub global run mono_repo generate --validate
   job_002:
-    name: "analyze_format; Dart dev; PKGS: _test_annotations, example, example_usage, source_gen; `dartfmt -n --set-exit-if-changed .`, `dartanalyzer --fatal-infos --fatal-warnings .`"
+    name: "analyze_format; PKGS: _test_annotations, example, example_usage, source_gen; `dartfmt -n --set-exit-if-changed .`, `dartanalyzer --fatal-infos --fatal-warnings .`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
         uses: actions/cache@v2
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_annotations-example-example_usage-source_gen;commands:dartfmt-dartanalyzer_0"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_annotations-example-example_usage-source_gen;commands:dartfmt-dartanalyzer"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_annotations-example-example_usage-source_gen
             os:ubuntu-latest;pub-cache-hosted;dart:dev
@@ -108,62 +108,7 @@ jobs:
         working-directory: source_gen
         run: dartanalyzer --fatal-infos --fatal-warnings .
   job_003:
-    name: "analyze_format; Dart 2.10.0; PKGS: _test_annotations, example, example_usage, source_gen; `dartanalyzer --fatal-warnings .`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:2.10.0;packages:_test_annotations-example-example_usage-source_gen;commands:dartanalyzer_1"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:2.10.0;packages:_test_annotations-example-example_usage-source_gen
-            os:ubuntu-latest;pub-cache-hosted;dart:2.10.0
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - uses: dart-lang/setup-dart@v0.3
-        with:
-          sdk: "2.10.0"
-      - id: checkout
-        uses: actions/checkout@v2
-      - id: _test_annotations_pub_upgrade
-        name: "_test_annotations; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: _test_annotations
-        run: pub upgrade --no-precompile
-      - name: "_test_annotations; dartanalyzer --fatal-warnings ."
-        if: "always() && steps._test_annotations_pub_upgrade.conclusion == 'success'"
-        working-directory: _test_annotations
-        run: dartanalyzer --fatal-warnings .
-      - id: example_pub_upgrade
-        name: "example; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: example
-        run: pub upgrade --no-precompile
-      - name: "example; dartanalyzer --fatal-warnings ."
-        if: "always() && steps.example_pub_upgrade.conclusion == 'success'"
-        working-directory: example
-        run: dartanalyzer --fatal-warnings .
-      - id: example_usage_pub_upgrade
-        name: "example_usage; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: example_usage
-        run: pub upgrade --no-precompile
-      - name: "example_usage; dartanalyzer --fatal-warnings ."
-        if: "always() && steps.example_usage_pub_upgrade.conclusion == 'success'"
-        working-directory: example_usage
-        run: dartanalyzer --fatal-warnings .
-      - id: source_gen_pub_upgrade
-        name: "source_gen; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: source_gen
-        run: pub upgrade --no-precompile
-      - name: "source_gen; dartanalyzer --fatal-warnings ."
-        if: "always() && steps.source_gen_pub_upgrade.conclusion == 'success'"
-        working-directory: source_gen
-        run: dartanalyzer --fatal-warnings .
-  job_004:
-    name: "unit_test; Dart dev; PKG: example_usage; `pub run test --run-skipped`"
+    name: "unit_test; PKG: example_usage; `pub run test --run-skipped`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -193,73 +138,8 @@ jobs:
     needs:
       - job_001
       - job_002
-      - job_003
-  job_005:
-    name: "unit_test; Dart 2.10.0; PKG: example_usage; `pub run test --run-skipped`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:2.10.0;packages:example_usage;commands:test_0"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:2.10.0;packages:example_usage
-            os:ubuntu-latest;pub-cache-hosted;dart:2.10.0
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - uses: dart-lang/setup-dart@v0.3
-        with:
-          sdk: "2.10.0"
-      - id: checkout
-        uses: actions/checkout@v2
-      - id: example_usage_pub_upgrade
-        name: "example_usage; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: example_usage
-        run: pub upgrade --no-precompile
-      - name: "example_usage; pub run test --run-skipped"
-        if: "always() && steps.example_usage_pub_upgrade.conclusion == 'success'"
-        working-directory: example_usage
-        run: pub run test --run-skipped
-    needs:
-      - job_001
-      - job_002
-      - job_003
-  job_006:
-    name: "unit_test; Dart 2.10.0; PKG: source_gen; `pub run test`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:2.10.0;packages:source_gen;commands:test_1"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:2.10.0;packages:source_gen
-            os:ubuntu-latest;pub-cache-hosted;dart:2.10.0
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - uses: dart-lang/setup-dart@v0.3
-        with:
-          sdk: "2.10.0"
-      - id: checkout
-        uses: actions/checkout@v2
-      - id: source_gen_pub_upgrade
-        name: "source_gen; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: source_gen
-        run: pub upgrade --no-precompile
-      - name: source_gen; pub run test
-        if: "always() && steps.source_gen_pub_upgrade.conclusion == 'success'"
-        working-directory: source_gen
-        run: pub run test
-    needs:
-      - job_001
-      - job_002
-      - job_003
-  job_007:
-    name: "unit_test; Dart dev; PKG: source_gen; `pub run test`"
+  job_004:
+    name: "unit_test; PKG: source_gen; `pub run test`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -289,4 +169,3 @@ jobs:
     needs:
       - job_001
       - job_002
-      - job_003

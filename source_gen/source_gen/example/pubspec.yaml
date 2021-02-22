@@ -4,9 +4,9 @@ environment:
   sdk: ">=2.10.0 <3.0.0"
 
 dependencies:
-  analyzer: '>=0.41.2 <2.0.0'
+  analyzer: '>=0.42.0-nullsafety <2.0.0'
   build: ^1.4.0
-  source_gen: ^0.9.0
+  source_gen: any
 
 dependency_overrides:
   source_gen:

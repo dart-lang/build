@@ -38,8 +38,7 @@ class LibraryReader {
     for (var cu in element.units) {
       yield* cu.accessors;
       yield* cu.enums;
-      // ignore: deprecated_member_use
-      yield* cu.functionTypeAliases;
+      yield* cu.typeAliases;
       yield* cu.functions;
       yield* cu.mixins;
       yield* cu.topLevelVariables;

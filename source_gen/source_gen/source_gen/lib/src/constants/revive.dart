@@ -4,6 +4,7 @@
 
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/type.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/constant/value.dart';
 
@@ -19,7 +20,15 @@ import '../utils.dart';
 /// Dart source code (such as referencing private constructors). It is up to the
 /// build tool(s) using this library to surface error messages to the user.
 Revivable reviveInstance(DartObject object, [LibraryElement origin]) {
-  final element = object.type.element ?? object.toFunctionValue();
+  final objectType = object.type;
+  Element element = object.type.aliasElement;
+  if (element == null) {
+    if (objectType is InterfaceType) {
+      element = objectType.element;
+    } else {
+      element = object.toFunctionValue();
+    }
+  }
   origin ??= element.library;
   var url = Uri.parse(urlOfElement(element));
   if (element is FunctionElement) {

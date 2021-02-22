@@ -18,14 +18,20 @@ import 'package:path/path.dart' as p;
 ///
 /// This function will return `'VoidFunc'`, unlike [DartType.element.name].
 String typeNameOf(DartType type) {
-  if (type is FunctionType) {
-    // ignore: deprecated_member_use
-    final element = type.element;
-    if (element is GenericFunctionTypeElement) {
-      return element.enclosingElement.name;
-    }
+  final aliasElement = type.aliasElement;
+  if (aliasElement != null) {
+    return aliasElement.name;
   }
-  return type.element.name;
+  if (type is DynamicType) {
+    return 'dynamic';
+  }
+  if (type is InterfaceType) {
+    return type.element.name;
+  }
+  if (type is TypeParameterType) {
+    return type.element.name;
+  }
+  throw UnimplementedError('(${type.runtimeType}) $type');
 }
 
 /// Returns a name suitable for `part of "..."` when pointing to [element].
