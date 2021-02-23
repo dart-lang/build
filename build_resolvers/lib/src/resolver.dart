@@ -339,7 +339,7 @@ class AnalyzerResolvers implements Resolvers {
           await loadPackageConfigUri((await Isolate.packageConfig)!);
       var driver = await analysisDriver(uriResolver, _analysisOptions,
           await _sdkSummaryGenerator(), loadedConfig);
-      return _resolver = AnalyzerResolver(driver, uriResolver);
+      _resolver = AnalyzerResolver(driver, uriResolver);
     }();
   }
 
@@ -465,8 +465,7 @@ final _dartUiPath =
 
 /// The current feature set based on the current sdk version and enabled
 /// experiments.
-FeatureSet _featureSet({List<String>? enableExperiments}) {
-  enableExperiments ??= [];
+FeatureSet _featureSet({List<String> enableExperiments = const []}) {
   if (enableExperiments.isNotEmpty &&
       sdkLanguageVersion > ExperimentStatus.currentVersion) {
     log.warning('''

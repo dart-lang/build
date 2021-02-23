@@ -1,5 +1,5 @@
 name: build_resolvers
-version: 1.6.0
+version: 2.0.0-dev
 description: Resolve Dart code in a Builder
 homepage: https://github.com/dart-lang/build/tree/master/build_resolvers
 

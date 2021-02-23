@@ -68,9 +68,8 @@ class BuildAssetUriResolver extends UriResolver {
                 transitivelyResolved: transitivelyResolved),
             (id, state) => state.dependencies.where(notCrawled)).toList()
         : [
-            for (final state in await Future.wait(uncrawledIds
-                .map((id) => _updateCachedAssetState(id, buildStep))))
-              if (state != null) state,
+            for (final id in uncrawledIds)
+              (await _updateCachedAssetState(id, buildStep))!
           ];
 
     for (final state in assetStates) {
