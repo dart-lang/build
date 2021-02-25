@@ -661,7 +661,7 @@ class _VerifyCall {
 
   void _checkWith(bool never) {
     if (!never && matchingInvocations.isEmpty) {
-      var message;
+      String message;
       if (mock._realCalls.isEmpty) {
         message = 'No matching calls (actually, no calls at all).';
       } else {
