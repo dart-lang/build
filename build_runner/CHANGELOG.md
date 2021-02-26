@@ -2,6 +2,7 @@
 
 - __Breaking__: Remove support for hot-reloads. Use `package:webdev` instead.
 - Support version 2.0.x of the `build` package
+- Update to graphs `1.x`
 
 ## 1.11.5
 

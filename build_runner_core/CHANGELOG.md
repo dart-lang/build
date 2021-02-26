@@ -1,3 +1,7 @@
+## 6.1.11-dev
+
+- Update to graphs `1.x`
+
 ## 6.1.10
 
 - Don't count packages in dependency_overrides as immediate dependencies when
