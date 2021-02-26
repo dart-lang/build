@@ -62,11 +62,13 @@ class BuildAssetUriResolver extends UriResolver {
 
     final uncrawledIds = entryPoints.where(notCrawled);
     final assetStates = transitive
-        ? await crawlAsync<AssetId, _AssetState>(
+        ? await crawlAsync<AssetId, _AssetState?>(
             uncrawledIds,
             (id) => _updateCachedAssetState(id, buildStep,
-                transitivelyResolved: transitivelyResolved),
-            (id, state) => state.dependencies.where(notCrawled)).toList()
+                transitivelyResolved: transitivelyResolved), (id, state) {
+            if (state == null) return const [];
+            return state.dependencies.where(notCrawled);
+          }).where((state) => state != null).cast<_AssetState>().toList()
         : [
             for (final id in uncrawledIds)
               (await _updateCachedAssetState(id, buildStep))!

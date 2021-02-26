@@ -10,7 +10,7 @@ dependencies:
   analyzer: ^1.0.0
   build: ^2.0.0
   crypto: ^3.0.0
-  graphs: ^0.2.0
+  graphs: ^1.0.0
   logging: ^1.0.0
   path: ^1.8.0
   package_config: ^2.0.0
@@ -27,7 +27,3 @@ dependency_overrides:
     path: ../build
   build_test:
     path: ../build_test
-  graphs:
-    git:
-      url: https://github.com/hovadur/graphs.git
-      ref: a19da5b30388752a62d0eb96d38f371311c0cebf
