@@ -23,7 +23,6 @@ const deleteFilesByDefaultOption = 'delete-conflicting-outputs';
 const enableExperimentOption = 'enable-experiment';
 const failOnSevereOption = 'fail-on-severe';
 const hostnameOption = 'hostname';
-const hotReloadOption = 'hot-reload';
 const liveReloadOption = 'live-reload';
 const logPerformanceOption = 'log-performance';
 const logRequestsOption = 'log-requests';
@@ -36,7 +35,7 @@ const symlinkOption = 'symlink';
 const usePollingWatcherOption = 'use-polling-watcher';
 const verboseOption = 'verbose';
 
-enum BuildUpdatesOption { none, liveReload, hotReload }
+enum BuildUpdatesOption { none, liveReload }
 
 final _defaultWebDirs = const ['web', 'test', 'example', 'benchmark'];
 
@@ -357,16 +356,8 @@ class ServeOptions extends WatchOptions {
     var buildFilters = _parseBuildFilters(argResults, rootPackage);
 
     BuildUpdatesOption buildUpdates;
-    if (argResults[liveReloadOption] as bool &&
-        argResults[hotReloadOption] as bool) {
-      throw UsageException(
-          'Options --$liveReloadOption and --$hotReloadOption '
-          "can't both be used together",
-          command.usage);
-    } else if (argResults[liveReloadOption] as bool) {
+    if (argResults[liveReloadOption] as bool) {
       buildUpdates = BuildUpdatesOption.liveReload;
-    } else if (argResults[hotReloadOption] as bool) {
-      buildUpdates = BuildUpdatesOption.hotReload;
     }
 
     return ServeOptions._(

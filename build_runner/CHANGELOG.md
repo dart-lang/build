@@ -1,3 +1,8 @@
+## 2.0.0-dev
+
+- __Breaking__: Remove support for hot-reloads. Use `package:webdev` instead.
+- Support version 2.0.x of the `build` package
+
 ## 1.11.5
 
 - Fix arg parsing for the `clean` and `generate-build-script` commands.

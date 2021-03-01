@@ -77,7 +77,7 @@ void main() {
   test('caching with etags takes into account injected JS', () async {
     _addSource('a|web/some.js', entrypointExtensionMarker + '\nalert(1)');
     var hotReloadEtag = (await serveHandler.handlerFor('web',
-                buildUpdates: BuildUpdatesOption.hotReload)(
+                buildUpdates: BuildUpdatesOption.liveReload)(
             Request('GET', Uri.parse('http://server.com/some.js'))))
         .headers[HttpHeaders.etagHeader];
     var liveReloadEtag = (await serveHandler.handlerFor('web',
@@ -257,8 +257,6 @@ void main() {
           });
         });
 
-    createBuildUpdatesGroup(
-        'hot-reload', 'hot_reload_client', BuildUpdatesOption.hotReload);
     createBuildUpdatesGroup(
         'live-reload', 'live_reload_client', BuildUpdatesOption.liveReload);
 
