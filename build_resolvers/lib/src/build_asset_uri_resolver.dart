@@ -206,13 +206,12 @@ Set<AssetId> _parseDirectives(String content, AssetId from) => HashSet.of(
           .directives
           .whereType<UriBasedDirective>()
           .map((directive) => directive.uri.stringValue)
-          .where((uriContent) {
-        // Filter out nulls. uri.stringValue can be null for strings that use
-        // interpolation. That's invalid, but we shouldn't crash.
-        if (uriContent == null) return false;
-
-        return !_ignoredSchemes.any(Uri.parse(uriContent).isScheme);
-      }).map((content) => AssetId.resolve(content!, from: from)),
+          // Filter out nulls. uri.stringValue can be null for strings that use
+          // interpolation.
+          .whereType<String>()
+          .where((uriContent) =>
+              !_ignoredSchemes.any(Uri.parse(uriContent).isScheme))
+          .map((content) => AssetId.resolve(content, from: from)),
     );
 
 class _AssetState {
