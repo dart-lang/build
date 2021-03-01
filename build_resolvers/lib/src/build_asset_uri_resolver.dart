@@ -13,6 +13,7 @@ import 'package:build/build.dart' show AssetId, BuildStep;
 import 'package:crypto/crypto.dart';
 import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
+import 'package:stream_transform/stream_transform.dart';
 
 const _ignoredSchemes = ['dart', 'dart-ext'];
 
@@ -68,7 +69,7 @@ class BuildAssetUriResolver extends UriResolver {
                 transitivelyResolved: transitivelyResolved), (id, state) {
             if (state == null) return const [];
             return state.dependencies.where(notCrawled);
-          }).where((state) => state != null).cast<_AssetState>().toList()
+          }).whereType<_AssetState>().toList()
         : [
             for (final id in uncrawledIds)
               (await _updateCachedAssetState(id, buildStep))!
