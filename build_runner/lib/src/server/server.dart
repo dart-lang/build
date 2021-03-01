@@ -125,9 +125,6 @@ class ServeHandler implements BuildState {
       case BuildUpdatesOption.liveReload:
         pipeline = pipeline.addMiddleware(_injectLiveReloadClientCode);
         break;
-      case BuildUpdatesOption.hotReload:
-        pipeline = pipeline.addMiddleware(_injectHotReloadClientCode);
-        break;
       case BuildUpdatesOption.none:
         break;
     }
@@ -288,9 +285,6 @@ shelf.Handler Function(shelf.Handler) _injectBuildUpdatesClientCode(
         return response.change(body: body);
       };
     };
-
-final _injectHotReloadClientCode =
-    _injectBuildUpdatesClientCode('hot_reload_client.dart');
 
 final _injectLiveReloadClientCode =
     _injectBuildUpdatesClientCode('live_reload_client');

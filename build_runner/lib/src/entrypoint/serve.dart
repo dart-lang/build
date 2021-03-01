@@ -31,13 +31,7 @@ class ServeCommand extends WatchCommand {
       ..addFlag(liveReloadOption,
           defaultsTo: false,
           negatable: false,
-          help: 'Enables automatic page reloading on rebuilds. '
-              "Can't be used together with --$hotReloadOption.")
-      ..addFlag(hotReloadOption,
-          defaultsTo: false,
-          negatable: false,
-          help: 'Enables automatic reloading of changed modules on rebuilds. '
-              "Can't be used together with --$liveReloadOption.");
+          help: 'Enables automatic page reloading on rebuilds. ');
   }
 
   @override
