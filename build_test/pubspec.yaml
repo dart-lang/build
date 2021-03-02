@@ -1,6 +1,6 @@
 name: build_test
 description: Utilities for writing unit tests of Builders.
-version: 1.4.0-dev
+version: 2.0.0-dev
 homepage: https://github.com/dart-lang/build/tree/master/build_test
 
 environment:
@@ -29,6 +29,7 @@ dev_dependencies:
   collection: ^1.14.0
 
 dependency_overrides:
+  # Remove this once the respective packages are published
   build:
     path: ../build
   build_resolvers:

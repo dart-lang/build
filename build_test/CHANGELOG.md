@@ -1,6 +1,6 @@
-## 1.4.0-dev
+## 2.0.0
 
-- Migrate to null safety
+- Migrate `package:build_test/build_test.dart` to null safety.
 
 ## 1.3.7
 

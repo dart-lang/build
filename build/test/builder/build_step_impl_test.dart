@@ -1,7 +1,6 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-//@dart=2.9
 @TestOn('vm')
 import 'dart:async';
 import 'dart:convert';
@@ -16,7 +15,7 @@ import 'package:build/build.dart';
 import 'package:build/src/builder/build_step_impl.dart';
 
 void main() {
-  ResourceManager resourceManager;
+  late ResourceManager resourceManager;
 
   setUp(() {
     resourceManager = ResourceManager();
@@ -27,8 +26,8 @@ void main() {
   });
 
   group('with reader/writer stub', () {
-    AssetId primary;
-    BuildStepImpl buildStep;
+    late AssetId primary;
+    late BuildStepImpl buildStep;
 
     setUp(() {
       var reader = StubAssetReader();
@@ -55,8 +54,8 @@ void main() {
   });
 
   group('with in memory file system', () {
-    InMemoryAssetWriter writer;
-    InMemoryAssetReader reader;
+    late InMemoryAssetWriter writer;
+    late InMemoryAssetReader reader;
 
     setUp(() {
       writer = InMemoryAssetWriter();
@@ -107,7 +106,7 @@ void main() {
             isTrue);
 
         var bLib = await resolver.findLibraryByName('b');
-        expect(bLib.name, 'b');
+        expect(bLib!.name, 'b');
         expect(bLib.importedLibraries.length, 1);
 
         await buildStep.complete();
@@ -116,10 +115,10 @@ void main() {
   });
 
   group('With slow writes', () {
-    BuildStepImpl buildStep;
-    SlowAssetWriter assetWriter;
-    AssetId outputId;
-    String outputContent;
+    late BuildStepImpl buildStep;
+    late SlowAssetWriter assetWriter;
+    late AssetId outputId;
+    late String outputContent;
 
     setUp(() async {
       var primary = makeAssetId();
@@ -165,9 +164,9 @@ void main() {
   });
 
   group('With erroring writes', () {
-    AssetId primary;
-    BuildStepImpl buildStep;
-    AssetId output;
+    late AssetId primary;
+    late BuildStepImpl buildStep;
+    late AssetId output;
 
     setUp(() {
       var reader = StubAssetReader();
