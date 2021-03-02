@@ -38,7 +38,7 @@ AssetId _passThrough(AssetId id) => id;
 /// association to a package pass [mapAssetIds] to translate from the logical
 /// location to the actual written location.
 void checkOutputs(
-    Map<String, /*List<int>|String|Matcher<List<int>>*/ dynamic>? outputs,
+    Map<String, /*List<int>|String|Matcher<List<int>>*/ Object>? outputs,
     Iterable<AssetId> actualAssets,
     RecordingAssetWriter writer,
     {AssetId Function(AssetId id) mapAssetIds = _passThrough}) {
@@ -125,13 +125,13 @@ void checkOutputs(
 /// Enabling of language experiments is supported through the
 /// `withEnabledExperiments` method from package:build.
 Future testBuilder(
-    Builder builder, Map<String, /*String|List<int>*/ dynamic> sourceAssets,
+    Builder builder, Map<String, /*String|List<int>*/ Object> sourceAssets,
     {Set<String>? generateFor,
     bool Function(String assetId)? isInput,
     String? rootPackage,
     MultiPackageAssetReader? reader,
     RecordingAssetWriter? writer,
-    Map<String, /*String|List<int>|Matcher<List<int>>*/ dynamic>? outputs,
+    Map<String, /*String|List<int>|Matcher<List<int>>*/ Object>? outputs,
     void Function(LogRecord log)? onLog,
     void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput,
     PackageConfig? packageConfig}) async {
