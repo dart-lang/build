@@ -37,6 +37,8 @@ dependency_overrides:
   # Remove these when they're published
   build:
     path: ../build
+  build_config:
+    path: ../build_config
   build_resolvers:
     path: ../build_resolvers
   build_test:

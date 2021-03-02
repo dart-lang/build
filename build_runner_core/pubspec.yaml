@@ -29,8 +29,8 @@ dependencies:
 dev_dependencies:
   build_test: ^1.0.0
   test: ^1.0.0
-  test_descriptor: ^1.0.0
-  test_process: ^1.0.0
+  test_descriptor: ^2.0.0
+  test_process: ^2.0.0
   _test_common:
     path: ../_test_common
 

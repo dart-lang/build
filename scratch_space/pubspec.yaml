@@ -22,6 +22,8 @@ dependency_overrides:
   # Temporarily required until build version 2.0.0 is released
   build:
     path: ../build
+  build_config:
+    path: ../build_config
   build_resolvers:
     path: ../build_resolvers
   build_test:

@@ -58,6 +58,7 @@ main(List<String> args) async {
       await d.dir('a', [
         await pubspec('a', currentIsolateDependencies: [
           'build',
+          'build_config',
           'build_daemon',
           'build_resolvers',
           'build_runner',
