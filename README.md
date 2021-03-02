@@ -1,6 +1,4 @@
-[![Build Status](https://travis-ci.org/dart-lang/build.svg?branch=master)](https://travis-ci.org/dart-lang/build)
-[![Build Status](https://ci.appveyor.com/api/projects/status/wga4jexvmjih346p?svg=true)](https://ci.appveyor.com/project/kevmoo/build)
-[![Build Status](https://github.com/dart-lang/build/workflows/Dart%20CI/badge.svg)](https://github.com/dart-lang/build/actions)
+[![Build Status](https://github.com/dart-lang/build/workflows/Dart%20CI/badge.svg?branch=master)](https://github.com/dart-lang/build/actions?query=branch%3Amaster)
 
 These packages provide libraries for generating, compiling and serving Dart code.
 
