@@ -29,7 +29,3 @@ dependency_overrides:
     path: ../build_test
   # Remove each of the above as they are published.
   # They're only used for testing.
-  graphs:
-    git:
-      url: https://github.com/hovadur/graphs.git
-      ref: a19da5b30388752a62d0eb96d38f371311c0cebf
