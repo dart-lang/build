@@ -11,9 +11,9 @@ import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
 import 'package:analyzer/src/generated/source.dart';
 import 'package:build/build.dart' show AssetId, BuildStep;
 import 'package:crypto/crypto.dart';
-import 'package:meta/meta.dart';
 import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
+import 'package:stream_transform/stream_transform.dart';
 
 const _ignoredSchemes = ['dart', 'dart-ext'];
 
@@ -56,21 +56,23 @@ class BuildAssetUriResolver extends UriResolver {
   /// also updated.
   Future<void> performResolve(
       BuildStep buildStep, List<AssetId> entryPoints, AnalysisDriver driver,
-      {@required bool transitive}) async {
+      {required bool transitive}) async {
     final transitivelyResolved = _buildStepTransitivelyResolvedAssets
         .putIfAbsent(buildStep, () => HashSet());
     bool notCrawled(AssetId asset) => !transitivelyResolved.contains(asset);
 
     final uncrawledIds = entryPoints.where(notCrawled);
     final assetStates = transitive
-        ? await crawlAsync<AssetId, _AssetState>(
+        ? await crawlAsync<AssetId, _AssetState?>(
             uncrawledIds,
             (id) => _updateCachedAssetState(id, buildStep,
-                transitivelyResolved: transitivelyResolved),
-            (id, state) => state.dependencies.where(notCrawled)).toList()
+                transitivelyResolved: transitivelyResolved), (id, state) {
+            if (state == null) return const [];
+            return state.dependencies.where(notCrawled);
+          }).whereType<_AssetState>().toList()
         : [
-            for (var id in uncrawledIds)
-              await _updateCachedAssetState(id, buildStep),
+            for (final id in uncrawledIds)
+              (await _updateCachedAssetState(id, buildStep))!
           ];
 
     for (final state in assetStates) {
@@ -91,8 +93,8 @@ class BuildAssetUriResolver extends UriResolver {
   ///
   /// If [id] can be read, then it will be added to [transitivelyResolved] (if
   /// non-null).
-  Future<_AssetState> _updateCachedAssetState(AssetId id, BuildStep buildStep,
-      {Set<AssetId> /*?*/ transitivelyResolved}) async {
+  Future<_AssetState?> _updateCachedAssetState(AssetId id, BuildStep buildStep,
+      {Set<AssetId>? transitivelyResolved}) async {
     final path = assetPath(id);
     if (!await buildStep.canRead(id)) {
       if (globallySeenAssets.contains(id)) {
@@ -112,13 +114,13 @@ class BuildAssetUriResolver extends UriResolver {
     transitivelyResolved?.add(id);
     final digest = await buildStep.digest(id);
     if (_cachedAssetDigests[id] == digest) {
-      return _AssetState(path, _cachedAssetDependencies[id]);
+      return _AssetState(path, _cachedAssetDependencies[id]!);
     } else {
       final isChange = _cachedAssetDigests.containsKey(id);
       final content = await buildStep.readAsString(id);
       if (_cachedAssetDigests[id] == digest) {
         // Cache may have been updated while reading asset content
-        return _AssetState(path, _cachedAssetDependencies[id]);
+        return _AssetState(path, _cachedAssetDependencies[id]!);
       }
       if (isChange) {
         resourceProvider.updateFile(path, content);
@@ -139,7 +141,7 @@ class BuildAssetUriResolver extends UriResolver {
   /// same pattern used by [assetPath].
   ///
   /// Returns null if the Uri cannot be parsed.
-  AssetId parseAsset(Uri uri) {
+  AssetId? parseAsset(Uri uri) {
     if (_ignoredSchemes.any(uri.isScheme)) return null;
     if (uri.isScheme('package') || uri.isScheme('asset')) {
       return AssetId.resolve('$uri');
@@ -157,7 +159,7 @@ class BuildAssetUriResolver extends UriResolver {
   /// same pattern used by [assetPath].
   ///
   /// Returns null if the Uri cannot be parsed or is not cached.
-  AssetId lookupCachedAsset(Uri uri) {
+  AssetId? lookupCachedAsset(Uri uri) {
     final assetId = parseAsset(uri);
     if (assetId == null || !_cachedAssetDigests.containsKey(assetId)) {
       return null;
@@ -179,7 +181,7 @@ class BuildAssetUriResolver extends UriResolver {
   }
 
   @override
-  Source resolveAbsolute(Uri uri, [Uri actualUri]) {
+  Source? resolveAbsolute(Uri uri, [Uri? actualUri]) {
     final assetId = parseAsset(uri);
     if (assetId == null) return null;
 
@@ -189,7 +191,7 @@ class BuildAssetUriResolver extends UriResolver {
   }
 
   @override
-  Uri restoreAbsolute(Source source) =>
+  Uri? restoreAbsolute(Source source) =>
       lookupCachedAsset(source.uri)?.uri ?? source.uri;
 }
 
@@ -198,17 +200,19 @@ String assetPath(AssetId assetId) =>
 
 /// Returns all the directives from a Dart library that can be resolved to an
 /// [AssetId].
-Set<AssetId> _parseDirectives(String content, AssetId from) =>
-    HashSet.of(parseString(content: content, throwIfDiagnostics: false)
-        .unit
-        .directives
-        .whereType<UriBasedDirective>()
-        .where((directive) {
-          var uri = Uri.parse(directive.uri.stringValue);
-          return !_ignoredSchemes.any(uri.isScheme);
-        })
-        .map((d) => AssetId.resolve(d.uri.stringValue, from: from))
-        .where((id) => id != null));
+Set<AssetId> _parseDirectives(String content, AssetId from) => HashSet.of(
+      parseString(content: content, throwIfDiagnostics: false)
+          .unit
+          .directives
+          .whereType<UriBasedDirective>()
+          .map((directive) => directive.uri.stringValue)
+          // Filter out nulls. uri.stringValue can be null for strings that use
+          // interpolation.
+          .whereType<String>()
+          .where((uriContent) =>
+              !_ignoredSchemes.any(Uri.parse(uriContent).isScheme))
+          .map((content) => AssetId.resolve(content, from: from)),
+    );
 
 class _AssetState {
   final String path;

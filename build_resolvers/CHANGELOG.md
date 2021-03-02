@@ -1,3 +1,7 @@
+## 2.0.0-dev
+
+- Migrate to null-safety
+
 ## 1.5.4
 
 - Allow analyzer 1.0.0.

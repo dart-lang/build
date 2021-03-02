@@ -71,8 +71,8 @@ Packages _buildAnalyzerPackages(
           name: package.name,
           languageVersion: package.languageVersion == null
               ? sdkLanguageVersion
-              : Version(package.languageVersion.major,
-                  package.languageVersion.minor, 0),
+              : Version(package.languageVersion!.major,
+                  package.languageVersion!.minor, 0),
           // Analyzer does not see the original file paths at all, we need to
           // make them match the paths that we give it, so we use the `assetPath`
           // function to create those.

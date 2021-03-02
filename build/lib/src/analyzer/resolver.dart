@@ -35,7 +35,7 @@ abstract class Resolver {
   /// Returns `null` if the ast node can not be found. This can happen if an
   /// element is coming from a summary, or is unavailable for some other
   /// reason.
-  Future<AstNode> astNodeFor(Element element, {bool resolve = false});
+  Future<AstNode?> astNodeFor(Element element, {bool resolve = false});
 
   /// Returns a parsed AST structor representing the file defined in [assetId].
   ///

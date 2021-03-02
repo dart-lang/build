@@ -1,6 +1,8 @@
 // Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+//
+// @dart=2.9
 
 import 'dart:convert';
 import 'dart:isolate';
@@ -391,6 +393,29 @@ void main() {
             .singleWhere((c) => c != null);
         expect(await resolver.assetIdForElement(classDefinition),
             AssetId('a', 'lib/b.dart'));
+      }, resolvers: AnalyzerResolvers());
+    });
+
+    test('assetIdForElement throws for ambigious elements', () {
+      return resolveSources({
+        'a|lib/a.dart': '''
+              import 'b.dart';
+
+              class SomeClass {}
+
+              main() {
+                SomeClass();
+              } ''',
+        'a|lib/b.dart': '''
+            class SomeClass {}
+              ''',
+      }, (resolver) async {
+        var entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
+        var classDefinition = entry.importedLibraries
+            .map((l) => l.getType('SomeClass'))
+            .singleWhere((c) => c != null);
+        expect(() => resolver.assetIdForElement(classDefinition),
+            throwsA(isA<UnresolvableAssetException>()));
       }, resolvers: AnalyzerResolvers());
     });
 

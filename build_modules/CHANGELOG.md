@@ -1,3 +1,7 @@
+## 3.0.6-dev
+
+- Update to graphs `1.x`
+
 ## 3.0.5
 
 - Update to glob `2.x`.

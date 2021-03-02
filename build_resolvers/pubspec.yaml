@@ -1,28 +1,29 @@
 name: build_resolvers
-version: 1.5.4
+version: 2.0.0-dev
 description: Resolve Dart code in a Builder
 homepage: https://github.com/dart-lang/build/tree/master/build_resolvers
 
 environment:
-  sdk: ">=2.11.99 <3.0.0"
+  sdk: ">=2.12.0-0 <3.0.0"
 
 dependencies:
   analyzer: ^1.0.0
-  build: "^2.0.0"
-  crypto: ">=2.0.0 <4.0.0"
-  graphs: ^0.2.0
-  logging: ">=0.11.2 <2.0.0"
-  meta: ^1.2.3
-  path: ^1.1.0
-  package_config: '>=1.9.3 <3.0.0'
-  pool: ^1.4.0
-  pub_semver: ">=1.3.0 <3.0.0"
+  build: ^2.0.0
+  crypto: ^3.0.0
+  graphs: ^1.0.0
+  logging: ^1.0.0
+  path: ^1.8.0
+  package_config: ^2.0.0
+  pool: ^1.5.0
+  pub_semver: ^2.0.0
 
 dev_dependencies:
-  test: ^1.0.0
+  test: ^1.16.0
   build_test: ^1.0.0
 
 dependency_overrides:
   # Temporarily required until build version 2.0.0 is released
   build:
     path: ../build
+  build_test:
+    path: ../build_test

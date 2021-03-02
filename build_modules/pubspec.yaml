@@ -1,5 +1,5 @@
 name: build_modules
-version: 3.0.5
+version: 3.0.6-dev
 description: Builders for Dart modules
 repository: https://github.com/dart-lang/build/tree/master/build_modules
 
@@ -10,12 +10,12 @@ dependencies:
   analyzer: ^1.0.0
   async: ^2.0.0
   bazel_worker: ">=0.1.20 <2.0.0"
-  build: ">=1.3.0 <2.0.0"
+  build: "^2.0.0"
   build_config: ">=0.3.0 <0.5.0"
   collection: ^1.0.0
   crypto: ">=2.0.0 <4.0.0"
   glob: ^2.0.0
-  graphs: ^0.2.0
+  graphs: ^1.0.0
   json_annotation: ">=1.2.0 <5.0.0"
   logging: ">=0.11.2 <2.0.0"
   meta: ^1.1.0
@@ -32,3 +32,16 @@ dev_dependencies:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
+
+dependency_overrides:
+  # Remove these when they're published
+  build:
+    path: ../build
+  build_resolvers:
+    path: ../build_resolvers
+  build_test:
+    path: ../build_test
+  build_runner_core:
+    path: ../build_runner_core
+  build_runner:
+    path: ../build_runner
