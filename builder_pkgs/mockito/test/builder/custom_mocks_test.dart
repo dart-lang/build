@@ -94,7 +94,7 @@ void main() {
     ]);
     await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
         writer: writer, packageConfig: packageConfig);
-    var mocksAsset = AssetId.parse('foo|test/foo_test.mocks.dart');
+    var mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
     return utf8.decode(writer.assets[mocksAsset]);
   }
 

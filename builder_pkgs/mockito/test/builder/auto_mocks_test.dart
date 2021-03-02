@@ -112,7 +112,7 @@ void main() {
 
     await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
         writer: writer, packageConfig: packageConfig);
-    var mocksAsset = AssetId.parse('foo|test/foo_test.mocks.dart');
+    var mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
     return utf8.decode(writer.assets[mocksAsset]);
   }
 
@@ -141,7 +141,7 @@ void main() {
       ...simpleTestAsset,
       'foo|lib/foo.dart': sourceAssetText,
     });
-    var mocksAsset = AssetId.parse('foo|test/foo_test.mocks.dart');
+    var mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
     return utf8.decode(writer.assets[mocksAsset]);
   }
 
@@ -961,7 +961,7 @@ void main() {
         }
         ''',
     });
-    var mocksAsset = AssetId.parse('foo|test/foo_test.mocks.dart');
+    var mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
     var mocksContent = utf8.decode(writer.assets[mocksAsset]);
     expect(mocksContent, contains("import 'dart:async' as _i3;"));
     expect(mocksContent, contains('m(_i3.Future<void>? a)'));
@@ -984,7 +984,7 @@ void main() {
         }
         ''',
     });
-    var mocksAsset = AssetId.parse('foo|test/foo_test.mocks.dart');
+    var mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
     var mocksContent = utf8.decode(writer.assets[mocksAsset]);
     expect(mocksContent, contains("import 'dart:async' as _i3;"));
     expect(mocksContent, contains('m(_i3.Future<void>? a)'));
