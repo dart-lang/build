@@ -1,5 +1,3 @@
-# [![Build Status](https://travis-ci.org/dart-lang/build.svg?branch=master)](https://travis-ci.org/dart-lang/build)
-
 Defines the basic pieces of how a build happens and how they interact.
 
 ## [`Builder`][dartdoc:Builder]
