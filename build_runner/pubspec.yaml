@@ -30,7 +30,7 @@ dependencies:
   pedantic: ^1.0.0
   pool: ^1.0.0
   pub_semver: ">=1.4.0 <3.0.0"
-  pubspec_parse: ^0.1.0
+  pubspec_parse: ^1.0.0
   shelf: ">=0.6.5 <2.0.0"
   shelf_web_socket: ^0.2.2+4
   stack_trace: ^1.9.0
@@ -56,6 +56,8 @@ dependency_overrides:
   # Temporarily required until build version 2.0.0 is released
   build:
     path: ../build
+  build_config:
+    path: ../build_config
   build_modules:
     path: ../build_modules
   build_resolvers:

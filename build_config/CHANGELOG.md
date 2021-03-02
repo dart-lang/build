@@ -1,3 +1,5 @@
+## 0.4.7-dev
+
 ## 0.4.6
 
 - Comment out dev dependency temporarily to break source_gen/json_serializable
