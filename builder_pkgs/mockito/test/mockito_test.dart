@@ -51,7 +51,7 @@ void expectFail(String expectedMessage, void Function() expectedToFail) {
     expectedToFail();
     fail('It was expected to fail!');
   } catch (e) {
-    if (!(e is TestFailure)) {
+    if (e is! TestFailure) {
       rethrow;
     } else {
       if (expectedMessage != e.message) {
