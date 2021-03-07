@@ -1,3 +1,7 @@
+## 2.1.9-dev
+
+- Support version `1.x` of `shelf_web_socket` and `2.x` of `web_socket_channel`
+
 ## 2.1.8
 
 - Begin conversion to use analyzer 1.0.0.
