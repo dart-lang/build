@@ -1,4 +1,4 @@
-## 2.1.9-dev
+## 2.1.9
 
 - Support version `1.x` of `shelf_web_socket` and `2.x` of `web_socket_channel`
 
