@@ -599,6 +599,20 @@ void main() {
     );
   });
 
+  test('overrides methods of mixed in classes, from hierarchy', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      mixin Mixin {
+        void m(int a) {}
+      }
+      class FooBase with Mixin {}
+      class Foo extends FooBase {}
+      '''),
+      _containsAllOf(
+          'void m(int? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+    );
+  });
+
   test(
       'overrides methods of indirect generic super classes, substituting types',
       () async {

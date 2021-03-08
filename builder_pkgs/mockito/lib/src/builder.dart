@@ -734,8 +734,9 @@ class _MockLibraryInfo {
         yield* fieldOverrides(mixin, overriddenFields);
       }
     }
-    if (!type.superclass.isDartCoreObject) {
-      yield* fieldOverrides(type.superclass, overriddenFields);
+    var superclass = type.superclass;
+    if (superclass != null && !superclass.isDartCoreObject) {
+      yield* fieldOverrides(superclass, overriddenFields);
     }
   }
 
@@ -773,8 +774,9 @@ class _MockLibraryInfo {
         yield* methodOverrides(mixin, overriddenMethods);
       }
     }
-    if (!type.superclass.isDartCoreObject) {
-      yield* methodOverrides(type.superclass, overriddenMethods);
+    var superclass = type.superclass;
+    if (superclass != null && !superclass.isDartCoreObject) {
+      yield* methodOverrides(superclass, overriddenMethods);
     }
   }
 
