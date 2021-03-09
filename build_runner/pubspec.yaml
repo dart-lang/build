@@ -1,5 +1,5 @@
 name: build_runner
-version: 2.0.0-dev
+version: 1.12.0-dev
 description: A build system for Dart code generation and modular compilation.
 repository: https://github.com/dart-lang/build/tree/master/build_runner
 
@@ -32,12 +32,12 @@ dependencies:
   pub_semver: ">=1.4.0 <3.0.0"
   pubspec_parse: ^1.0.0
   shelf: ">=0.6.5 <2.0.0"
-  shelf_web_socket: ^0.2.2+4
+  shelf_web_socket: ">=0.2.2+4 <2.0.0"
   stack_trace: ^1.9.0
   stream_transform: ">=0.0.20 <3.0.0"
   timing: ^0.1.1
   watcher: '>=0.9.7 <2.0.0'
-  web_socket_channel: ^1.0.9
+  web_socket_channel: '>=1.0.9 <3.0.0'
   yaml: ">=2.1.11 <4.0.0"
 
 dev_dependencies:
@@ -64,3 +64,7 @@ dependency_overrides:
     path: ../build_resolvers
   build_runner_core:
     path: ../build_runner_core
+  # We're overriding build_daemon so that the CI runs tests with the latest
+  # versions of web_socket_channel. This can be removed safely.
+  build_daemon:
+    path: ../build_daemon

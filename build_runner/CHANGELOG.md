@@ -1,8 +1,9 @@
-## 2.0.0-dev
+## 1.12.0-dev
 
-- __Breaking__: Remove support for hot-reloads. Use `package:webdev` instead.
+- Remove support for hot-reloads. Use `package:webdev` instead.
 - Support version 2.0.x of the `build` package
 - Update to graphs `1.x`
+- Support version `1.x` of `shelf_web_socket` and `2.x` of `web_socket_channel`
 
 ## 1.11.5
 
