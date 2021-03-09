@@ -1,3 +1,7 @@
+## 5.0.1
+
+* Update to the latest test_api.
+
 ## 5.0.0
 
 * `verifyInOrder` now returns a `List<VerificationResult>` which stores
