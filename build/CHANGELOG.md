@@ -2,6 +2,9 @@
 
 - Migrate to null-safety
 - __Breaking__: Remove the deprecated `rootPackage` argument to `runBuilder`
+- __Breaking__: Change the first argument to `AssetId.resolve` from a `String`
+  (which previously was required to be a valid URI) to a `Uri` instance. Call
+  sites which have static errors can wrap the argument with `Uri.parse()`.
 
 ## 1.6.3
 

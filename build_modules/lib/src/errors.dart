@@ -97,7 +97,7 @@ Future<String> _missingImportMessage(
       parsed.directives.whereType<UriBasedDirective>().firstWhere((directive) {
     var uriString = directive.uri.stringValue;
     if (uriString.startsWith('dart:')) return false;
-    var id = AssetId.resolve(uriString, from: sourceId);
+    var id = AssetId.resolve(Uri.parse(uriString), from: sourceId);
     return id == missingId;
   }, orElse: () => null);
   if (import == null) return null;

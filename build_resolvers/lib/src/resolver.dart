@@ -282,7 +282,7 @@ class AnalyzerResolver implements ReleasableResolver {
     if (!uri.isScheme('package') && !uri.isScheme('asset')) {
       throw UnresolvableAssetException('${element.name} in ${source.uri}');
     }
-    return AssetId.resolve('${source.uri}');
+    return AssetId.resolve(source.uri);
   }
 }
 
