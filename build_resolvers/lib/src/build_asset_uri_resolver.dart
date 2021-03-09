@@ -144,7 +144,7 @@ class BuildAssetUriResolver extends UriResolver {
   AssetId? parseAsset(Uri uri) {
     if (_ignoredSchemes.any(uri.isScheme)) return null;
     if (uri.isScheme('package') || uri.isScheme('asset')) {
-      return AssetId.resolve('$uri');
+      return AssetId.resolve(uri);
     }
     if (uri.isScheme('file')) {
       final parts = p.split(uri.path);
@@ -211,7 +211,7 @@ Set<AssetId> _parseDirectives(String content, AssetId from) => HashSet.of(
           .whereType<String>()
           .where((uriContent) =>
               !_ignoredSchemes.any(Uri.parse(uriContent).isScheme))
-          .map((content) => AssetId.resolve(content, from: from)),
+          .map((content) => AssetId.resolve(Uri.parse(content), from: from)),
     );
 
 class _AssetState {

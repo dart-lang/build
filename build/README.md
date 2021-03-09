@@ -95,7 +95,8 @@ class ResolvingCopyBuilder implements Builder {
     var resolver = buildStep.resolver;
     // Get a `LibraryElement` for another asset.
     var libFromAsset = await resolver.libraryFor(
-        AssetId.resolve('some_import.dart', from: buildStep.inputId));
+        AssetId.resolve(Uri.parse('some_import.dart'),
+        from: buildStep.inputId));
     // Or get a `LibraryElement` by name.
     var libByName = await resolver.findLibraryByName('my.library');
   }

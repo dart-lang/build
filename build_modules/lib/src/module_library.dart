@@ -91,7 +91,7 @@ class ModuleLibrary {
         sdkDeps.add(uri.path);
         continue;
       }
-      var linkedId = AssetId.resolve(path, from: id);
+      var linkedId = AssetId.resolve(uri, from: id);
       if (linkedId == null) continue;
       if (directive is PartDirective) {
         parts.add(linkedId);
@@ -114,7 +114,7 @@ class ModuleLibrary {
                 '`${condition.uri.stringValue}` found in $id.');
           }
           conditions[condition.name.toSource()] =
-              AssetId.resolve(condition.uri.stringValue, from: id);
+              AssetId.resolve(Uri.parse(condition.uri.stringValue), from: id);
         }
         conditionalDeps.add(conditions);
       } else {
