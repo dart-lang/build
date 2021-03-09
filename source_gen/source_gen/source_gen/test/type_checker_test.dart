@@ -41,7 +41,7 @@ void main() {
       core = await resolver.findLibraryByName('dart.core');
       collection = await resolver.findLibraryByName('dart.collection');
       sourceGen = LibraryReader(await resolver
-          .libraryFor(AssetId.resolve('asset:source_gen/lib/source_gen.dart')));
+          .libraryFor(AssetId('source_gen', 'lib/source_gen.dart')));
     });
 
     final staticIterable = core.getType('Iterable').instantiate(

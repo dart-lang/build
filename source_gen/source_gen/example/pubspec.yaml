@@ -5,9 +5,17 @@ environment:
 
 dependencies:
   analyzer: '>=0.42.0-nullsafety <2.0.0'
-  build: ^1.4.0
+  build: ^2.0.0
   source_gen: any
 
 dependency_overrides:
   source_gen:
     path: ../source_gen
+  build_resolvers:
+    git:
+      url: git://github.com/dart-lang/build.git
+      path: build_resolvers
+  build:
+    git:
+      url: git://github.com/dart-lang/build.git
+      path: build

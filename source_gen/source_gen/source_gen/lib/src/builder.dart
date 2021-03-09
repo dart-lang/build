@@ -358,7 +358,8 @@ Future<bool> _hasAnyTopLevelAnnotations(
   for (var directive in parsed.directives) {
     if (directive.metadata.isNotEmpty) return true;
     if (directive is PartDirective) {
-      partIds.add(AssetId.resolve(directive.uri.stringValue, from: input));
+      partIds.add(
+          AssetId.resolve(Uri.parse(directive.uri.stringValue), from: input));
     }
   }
   for (var declaration in parsed.declarations) {
