@@ -1,3 +1,7 @@
+## 4.1.1+1
+
+* Allow test\_api 0.3.x.
+
 ## 4.1.1
 
 * Mark the unexported and accidentally public `setDefaultResponse` as
