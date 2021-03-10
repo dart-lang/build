@@ -1,7 +1,7 @@
 name: build_test
 description: Utilities for writing unit tests of Builders.
 version: 2.0.0-dev
-homepage: https://github.com/dart-lang/build/tree/master/build_test
+repository: https://github.com/dart-lang/build/tree/master/build_test
 
 environment:
   sdk: ">=2.12.0 <3.0.0"

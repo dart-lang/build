@@ -1,7 +1,7 @@
 name: build_vm_compilers
-version: 1.0.8
+version: 1.0.9-dev
 description: Builder implementations wrapping Dart VM compilers.
-homepage: https://github.com/dart-lang/build/tree/master/build_vm_compilers
+repository: https://github.com/dart-lang/build/tree/master/build_vm_compilers
 
 environment:
   sdk: ">=2.11.99 <3.0.0"
