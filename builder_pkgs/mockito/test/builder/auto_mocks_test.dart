@@ -1912,11 +1912,61 @@ void main() {
         T? Function<T>(T) m() => (int i, [String s]) {};
       }
       '''),
-      // TODO(srawlins): This output is invalid: `T __p0` is out of the scope
-      // where T is defined.
       _containsAllOf(dedent2('''
       T? Function<T>(T) m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: (T __p0) => null) as T? Function<T>(T));
+          returnValue: <T>(T __p0) => null) as T? Function<T>(T));
+      ''')),
+    );
+  });
+
+  test('creates a dummy non-null generic bounded function-typed return value',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      import 'dart:io';
+      class Foo {
+        T? Function<T extends File>(T) m() => (int i, [String s]) {};
+      }
+      '''),
+      _containsAllOf(dedent2('''
+      T? Function<T extends _i3.File>(T) m() =>
+          (super.noSuchMethod(Invocation.method(#m, []),
+                  returnValue: <T extends _i3.File>(T __p0) => null)
+              as T? Function<T extends _i3.File>(T));
+      ''')),
+    );
+  });
+
+  test(
+      'creates a dummy non-null function-typed (with an imported parameter type) return value',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      import 'dart:io';
+      class Foo {
+        void Function(File) m() => (int i, [String s]) {};
+      }
+      '''),
+      _containsAllOf(dedent2('''
+      void Function(_i3.File) m() => (super.noSuchMethod(Invocation.method(#m, []),
+          returnValue: (_i3.File __p0) {}) as void Function(_i3.File));
+      ''')),
+    );
+  });
+
+  test(
+      'creates a dummy non-null function-typed (with an imported return type) return value',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      import 'dart:io';
+      class Foo {
+        File Function() m() => (int i, [String s]) {};
+      }
+      '''),
+      _containsAllOf(dedent2('''
+      _i2.File Function() m() => (super.noSuchMethod(Invocation.method(#m, []),
+          returnValue: () => _FakeFile()) as _i2.File Function());
       ''')),
     );
   });

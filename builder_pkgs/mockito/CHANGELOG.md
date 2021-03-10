@@ -1,6 +1,9 @@
 ## 5.0.1
 
 * Update to the latest test_api.
+* Fix mock generation of type which has a supertype which mixes in a mixin.
+* Fix mock generation of method which returns a non-nullable generic function
+  type.
 
 ## 5.0.0
 

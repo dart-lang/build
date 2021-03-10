@@ -187,6 +187,7 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
     super.visitTypeParameterElement(element);
   }
 
+  /// Adds [type] to the collected [_elements].
   void _addType(analyzer.DartType type) {
     if (type == null) return;
 
@@ -195,6 +196,18 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
       (type.typeArguments ?? []).forEach(_addType);
     } else if (type is analyzer.FunctionType) {
       _addType(type.returnType);
+
+      // [RecursiveElementVisitor] does not "step out of" the element model,
+      // into types, while traversing, so we must explicitly traverse [type]
+      // here, in order to visit contained elements.
+      if (type.typeFormals != null) {
+        for (var typeParameter in type.typeFormals) {
+          typeParameter.accept(this);
+        }
+      }
+      for (var parameter in type.parameters) {
+        parameter.accept(this);
+      }
       var aliasElement = type.aliasElement;
       if (aliasElement != null) {
         _elements.add(aliasElement);
@@ -944,6 +957,9 @@ class _MockLibraryInfo {
       // The positional parameters in a FunctionType have no names. This
       // counter lets us create unique dummy names.
       var counter = 0;
+      if (type.typeFormals != null) {
+        b.types.addAll(type.typeFormals.map(_typeParameterReference));
+      }
       for (final parameter in type.parameters) {
         if (parameter.isRequiredPositional) {
           b.requiredParameters
@@ -962,7 +978,7 @@ class _MockLibraryInfo {
       } else {
         b.body = _dummyValue(type.returnType).code;
       }
-    }).closure;
+    }).genericClosure;
   }
 
   Expression _dummyValueImplementing(analyzer.InterfaceType dartType) {
