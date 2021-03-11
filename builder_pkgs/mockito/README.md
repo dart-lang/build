@@ -7,8 +7,21 @@ Mock library for Dart inspired by [Mockito](https://github.com/mockito/mockito).
 
 ## Let's create mocks
 
+Mockito 5.0.0 supports Dart's new **null safety** language feature in Dart 2.12,
+primarily with code generation.
+
+To use Mockito's generated mock classes, add a `build_runner` dependency in your
+package's `pubspec.yaml` file, under `dev_dependencies`; something like
+`build_runner: ^1.11.0`.
+
+For alternatives to the code generation API, see the [NULL_SAFETY_README][].
+
+Let's start with a Dart library, `cat.dart`:
+
 ```dart
+import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
+import 'cat.mocks.dart';
 
 // Real class
 class Cat {
@@ -21,18 +34,30 @@ class Cat {
   int lives = 9;
 }
 
-// Mock class
-class MockCat extends Mock implements Cat {}
-
-// Create mock object.
-var cat = MockCat();
+// Annotation which generates the cat.mocks.dart library and the MockCat class.
+@GenerateMocks([Cat])
+void main() {
+  // Create mock object.
+  var cat = MockCat();
+}
 ```
 
-By declaring a class which extends Mockito's Mock class and implements the Cat
-class under test, we have a class which supports stubbing and verifying.
+By annotating a library element (such as a test file's `main` function, or a
+class) with `@GenerateMocks`, you are directing Mockito's code generation to
+write a mock class for each "real" class listed, in a new library.
 
-**Using Dart's new null safety feature?** Read the [NULL_SAFETY_README][] for
-help on creating mocks of classes featuring non-nullable types.
+The next step is to run `build_runner` in order to generate this new library:
+
+```shell
+pub run build_runner build
+```
+
+`build_runner` will generate a file with a name based on the file containing the
+`@GenerateMocks` annotation. In the above `cat.dart` example, we import the
+generated library as `cat.mocks.dart`.
+
+The generated mock class, `MockCat`, extends Mockito's Mock class and implements
+the Cat class, giving us a class which supports stubbing and verifying.
 
 [NULL_SAFETY_README]: https://github.com/dart-lang/mockito/blob/master/NULL_SAFETY_README.md
 
@@ -126,7 +151,6 @@ pre-defined instance.
 final future = Future.value('Stub');
 when(mock.methodThatReturnsAFuture()).thenAnswer((_) => future);
 ```
-
 
 ## Argument matchers
 
