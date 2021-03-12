@@ -1,4 +1,6 @@
-## 2.1.10-dev
+## 2.1.10
+
+- Allow the latest `http_multi_server`.
 
 ## 2.1.9
 
