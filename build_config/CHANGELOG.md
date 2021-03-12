@@ -1,4 +1,6 @@
-## 0.4.7-dev
+## 0.4.7
+
+- Allow the latest `pubspec_parse` and `checked_yaml`.
 
 ## 0.4.6
 
