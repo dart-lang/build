@@ -16,6 +16,7 @@ import 'package:graphs/graphs.dart' show crawlAsync;
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
+import 'package:stream_transform/stream_transform.dart';
 
 import 'errors.dart';
 import 'module_builder.dart';
@@ -305,7 +306,7 @@ Future<void> _findModuleDeps(
 Future<List<Module>> _resolveTransitiveModules(
     Module root, BuildStep buildStep) async {
   var missing = <AssetId>{};
-  var modules = await crawlAsync<AssetId, Module>(
+  var modules = await crawlAsync<AssetId, Module /*?*/>(
           [root.primarySource],
           (id) => buildStep.fetchResource(moduleCache).then((c) async {
                 var moduleId =
@@ -318,8 +319,9 @@ Future<List<Module>> _resolveTransitiveModules(
                 }
                 return module;
               }),
-          (id, module) => module.directDependencies)
+          (id, module) => module?.directDependencies ?? [])
       .skip(1) // Skip the root.
+      .whereType<Module>()
       .toList();
 
   if (missing.isNotEmpty) {
