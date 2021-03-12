@@ -1,6 +1,8 @@
-## 6.1.11-dev
+## 6.1.11
 
 - Update to graphs `1.x`
+- Update to build `2.x`.
+- Update to build_resolvers `2.x`.
 
 ## 6.1.10
 

@@ -1,6 +1,7 @@
-## 2.0.0-dev
+## 2.0.0
 
 - Migrate to null-safety
+- Update to build `2.x`.
 
 ## 1.5.4
 

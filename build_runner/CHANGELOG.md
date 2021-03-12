@@ -1,4 +1,4 @@
-## 1.12.0-dev
+## 1.12.0
 
 - Remove support for hot-reloads. Use `package:webdev` instead.
 - Support version 2.0.x of the `build` package

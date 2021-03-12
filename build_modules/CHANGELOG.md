@@ -1,6 +1,8 @@
-## 3.0.6-dev
+## 3.0.6
 
 - Update to graphs `1.x`
+- Update to build `2.x`
+- Update to scratch_space `1.x`
 
 ## 3.0.5
 

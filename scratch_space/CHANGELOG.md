@@ -1,6 +1,7 @@
 ## 0.0.5
 
 - Migrate to null-safety
+- Update to build `2.x`.
 
 ## 0.0.4+3
 
