@@ -1,5 +1,5 @@
 name: build_runner_core
-version: 6.1.11
+version: 6.1.12
 description: Core tools to write binaries that run builders.
 repository: https://github.com/dart-lang/build/tree/master/build_runner_core
 
@@ -9,7 +9,7 @@ environment:
 dependencies:
   async: ">=1.13.3 <3.0.0"
   build: "^2.0.0"
-  build_config: ">=0.4.3 <0.4.6"
+  build_config: ">=0.4.7 <0.4.8"
   build_resolvers: ^2.0.0
   collection: ^1.14.0
   convert: ">=2.0.1 <4.0.0"
