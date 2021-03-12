@@ -445,16 +445,18 @@ void _warnOnLanguageVersionMismatch() {
   log.warning('''
 Your current `analyzer` version may not fully support your current SDK version.
 
-Please try upgrading to the latest `analyzer` by running `$upgradeCommand`.
+Please try upgrading to the latest `analyzer` package by running
+`$upgradeCommand`.
 
 Analyzer language version: ${ExperimentStatus.currentVersion}
 SDK language version: $sdkLanguageVersion
 
-If you are getting this message and have the latest analyzer please file
-an issue at https://github.com/dart-lang/sdk/issues/new with the title
+If you are getting this message and have the latest `analyzer` version, then a
+new version of `analyzer` needs to be published. Check for an open issue at:
+https://github.com/dart-lang/sdk/issues?q=is%3Aissue+is%3Aopen+No+published+analyzer+$sdkLanguageVersion
+and thumbs up and/or subscribe to the existing issue, or file a new issue at
+https://github.com/dart-lang/sdk/issues/new with the title
 "No published analyzer available for language version $sdkLanguageVersion".
-Please search the issue tracker first and thumbs up and/or subscribe to
-existing issues if present to avoid duplicates.
 ''');
 }
 
