@@ -115,11 +115,12 @@ void throwOnMissingStub(
 /// with [verify] or [when]. To implement a subset of an interface manually use
 /// [Fake] instead.
 ///
-/// **WARNING**: [Mock] uses [noSuchMethod](goo.gl/r3IQUH), which is a _form_ of
-/// runtime reflection, and causes sub-standard code to be generated. As such,
-/// [Mock] should strictly _not_ be used in any production code, especially if
-/// used within the context of Dart for Web (dart2js, DDC) and Dart for Mobile
-/// (Flutter).
+/// **WARNING**: [Mock] uses 
+/// [noSuchMethod](http://bit.ly/dart-emulating-functions)
+/// , which is a _form_ of runtime reflection, and causes sub-standard code to
+/// be generated. As such, [Mock] should strictly _not_ be used in any
+/// production code, especially if used within the context of Dart for Web
+/// (dart2js, DDC) and Dart for Mobile (Flutter).
 class Mock {
   static Null _answerNull(_) => null;
 
