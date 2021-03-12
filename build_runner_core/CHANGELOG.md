@@ -1,6 +1,10 @@
+## 6.1.12
+
+- Allow build_config `0.4.7`
+
 ## 6.1.11
 
-- Update to graphs `1.x`
+- Update to graphs `1.x`.
 - Update to build `2.x`.
 - Update to build_resolvers `2.x`.
 
