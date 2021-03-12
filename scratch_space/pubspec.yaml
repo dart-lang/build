@@ -1,5 +1,5 @@
 name: scratch_space
-version: 0.0.5-dev
+version: 1.0.0
 description: A tool to manage running external executables within package:build
 respository: https://github.com/dart-lang/build/tree/master/scratch_space
 
@@ -7,7 +7,7 @@ environment:
   sdk: ">=2.12.0 <3.0.0"
 
 dependencies:
-  build: "^2.0.0-dev"
+  build: "^2.0.0"
   crypto: "^3.0.0"
   path: ^1.8.0
   pedantic: ^1.10.0

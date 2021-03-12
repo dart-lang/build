@@ -1,6 +1,8 @@
 ## 2.0.0
 
 - Migrate `package:build_test/build_test.dart` to null safety.
+- Update to build `2.x`.
+- Update to build_resolvers `2.x`.
 
 ## 1.3.7
 

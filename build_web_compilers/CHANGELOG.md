@@ -1,4 +1,7 @@
-## 2.16.5-dev
+## 2.16.5
+
+- Update to build `2.x`.
+- Update to scratch_space `1.x`.
 
 ## 2.16.4
 
