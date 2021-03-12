@@ -1,4 +1,4 @@
-## 0.0.5
+## 1.0.0
 
 - Migrate to null-safety
 - Update to build `2.x`.
