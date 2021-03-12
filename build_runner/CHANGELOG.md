@@ -1,3 +1,7 @@
+## 1.12.1
+
+- Allow the latest `http_multi_server`.
+
 ## 1.12.0
 
 - Remove support for hot-reloads. Use `package:webdev` instead.

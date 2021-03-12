@@ -1,5 +1,5 @@
 name: build_daemon
-version: 2.1.10-dev
+version: 2.1.10
 description: A daemon for running Dart builds.
 repository: https://github.com/dart-lang/build/tree/master/build_daemon
 
@@ -9,7 +9,7 @@ environment:
 dependencies:
   built_collection: '>=4.1.0 <6.0.0'
   built_value: '>=7.0.0 <9.0.0'
-  http_multi_server: ^2.0.0
+  http_multi_server: '>=2.0.0 <4.0.0'
   logging: ">=0.11.0 <2.0.0"
   pedantic: ^1.0.0
   path: ^1.6.2
