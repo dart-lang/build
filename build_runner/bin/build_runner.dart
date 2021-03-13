@@ -88,7 +88,7 @@ Future<void> main(List<String> args) async {
       }
     });
   } else {
-    var verbose = parsedArgs.command['verbose'] as bool ?? false;
+    var verbose = parsedArgs.command?['verbose'] as bool;
     if (verbose) Logger.root.level = Level.ALL;
     logListener =
         Logger.root.onRecord.listen(stdIOLogListener(verbose: verbose));
@@ -98,5 +98,5 @@ Future<void> main(List<String> args) async {
   } else {
     while ((exitCode = await generateAndRun(args)) == ExitCode.tempFail.code) {}
   }
-  await logListener?.cancel();
+  await logListener.cancel();
 }
