@@ -1,5 +1,5 @@
 name: source_gen
-version: 0.9.10+4-dev
+version: 0.9.10+4
 description: >-
   Source code generation builders and utilities for the Dart build system
 repository: https://github.com/dart-lang/source_gen
@@ -21,15 +21,6 @@ dependencies:
 dev_dependencies:
   _test_annotations:
     path: ../_test_annotations
-  build_test: ^1.0.0
+  build_test: ^2.0.0
   test: ^1.0.0
 
-dependency_overrides:
-  build_resolvers:
-    git:
-      url: git://github.com/dart-lang/build.git
-      path: build_resolvers
-  build:
-    git:
-      url: git://github.com/dart-lang/build.git
-      path: build

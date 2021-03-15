@@ -1,4 +1,4 @@
-## 0.9.10+4-dev
+## 0.9.10+4
 
 * Upgrade to `package:build` version `2.0.0`.
 * Handle alias types with `DartType.aliasElement`.
