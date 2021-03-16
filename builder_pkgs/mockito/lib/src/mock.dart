@@ -616,7 +616,7 @@ class _UntilCall {
 }
 
 /// A simple struct for storing a [RealCall] and any [capturedArgs] stored
-/// during [InvocationMatcher.match].
+/// during [InvocationMatcher.matches].
 class _RealCallWithCapturedArgs {
   final RealCall realCall;
   final List<Object?> capturedArgs;
