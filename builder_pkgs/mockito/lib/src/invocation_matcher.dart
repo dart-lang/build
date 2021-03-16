@@ -40,12 +40,6 @@ Matcher invokes(
   if (isGetter && isSetter) {
     throw ArgumentError('Cannot set isGetter and iSetter');
   }
-  if (positionalArguments == null) {
-    throw ArgumentError.notNull('positionalArguments');
-  }
-  if (namedArguments == null) {
-    throw ArgumentError.notNull('namedArguments');
-  }
   return _InvocationMatcher(_InvocationSignature(
     memberName: memberName,
     positionalArguments: positionalArguments,
@@ -127,11 +121,7 @@ class _InvocationMatcher implements Matcher {
 
   final Invocation _invocation;
 
-  _InvocationMatcher(this._invocation) {
-    if (_invocation == null) {
-      throw ArgumentError.notNull();
-    }
-  }
+  _InvocationMatcher(this._invocation);
 
   @override
   Description describe(Description d) => _describeInvocation(d, _invocation);
