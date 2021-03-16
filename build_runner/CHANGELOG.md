@@ -1,3 +1,7 @@
+## 1.12.2-dev
+
+- Allow the latest `dart_style`.
+
 ## 1.12.1
 
 - Allow the latest `http_multi_server`.
