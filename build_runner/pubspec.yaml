@@ -17,7 +17,7 @@ dependencies:
   code_builder: ">2.3.0 <4.0.0"
   collection: ^1.14.0
   crypto: ">=0.9.2 <4.0.0"
-  dart_style: ^1.0.0
+  dart_style: '>=1.0.0 <3.0.0'
   glob: ^2.0.0
   graphs: ^1.0.0
   http_multi_server: '>=2.1.0 <4.0.0'
@@ -53,17 +53,13 @@ dev_dependencies:
     path: ../_test_common
 
 dependency_overrides:
-  # Temporarily required until build version 2.0.0 is released
+  # The following are necessary because mockito doesn't support the
+  # latest build and dart_style packages yet.
+  dart_style: ^2.0.0
   build:
     path: ../build
-  build_config:
-    path: ../build_config
-  build_modules:
-    path: ../build_modules
   build_resolvers:
     path: ../build_resolvers
-  build_runner_core:
-    path: ../build_runner_core
   # We're overriding build_daemon so that the CI runs tests with the latest
   # versions of web_socket_channel. This can be removed safely.
   build_daemon:
