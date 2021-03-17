@@ -68,6 +68,3 @@ dependency_overrides:
   # versions of web_socket_channel. This can be removed safely.
   build_daemon:
     path: ../build_daemon
-
-  # setting for testing!
-  dart_style: 2.0.0
