@@ -226,7 +226,7 @@ void main() {
           (e) => e.toString(),
           'toString',
           allOf(
-            contains('Could not resolve annotation for class X'),
+            contains('Could not resolve annotation for `class X`.'),
             contains('@depracated'),
           ),
         ),

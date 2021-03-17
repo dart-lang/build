@@ -4,11 +4,11 @@
 
 import 'dart:mirrors' hide SourceLocation;
 
-import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:build/build.dart';
 import 'package:source_span/source_span.dart';
 
 import 'utils.dart';
@@ -295,24 +295,42 @@ class UnresolvedAnnotationException implements Exception {
   /// May be `null` if the import library was not found.
   final SourceSpan? annotationSource;
 
-  static SourceSpan _findSpan(
+  static SourceSpan? _findSpan(
     Element annotatedElement,
     int annotationIndex,
   ) {
-    final parsedLibrary = annotatedElement.session!
-        .getParsedLibraryByElement(annotatedElement.library!);
-    final declaration = parsedLibrary.getElementDeclaration(annotatedElement)
-        as ElementDeclarationResult;
-    final annotatedNode = declaration.node as AnnotatedNode;
-    final annotation = annotatedNode.metadata[annotationIndex];
-    final start = annotation.offset;
-    final end = start + annotation.length;
-    final parsedUnit = declaration.parsedUnit!;
-    return SourceSpan(
-      SourceLocation(start, sourceUrl: parsedUnit.uri),
-      SourceLocation(end, sourceUrl: parsedUnit.uri),
-      parsedUnit.content.substring(start, end),
-    );
+    try {
+      final parsedLibrary = annotatedElement.session!
+          .getParsedLibraryByElement(annotatedElement.library!);
+      final declaration = parsedLibrary.getElementDeclaration(annotatedElement);
+      if (declaration == null) {
+        return null;
+      }
+      final annotatedNode = declaration.node as AnnotatedNode;
+      final annotation = annotatedNode.metadata[annotationIndex];
+      final start = annotation.offset;
+      final end = start + annotation.length;
+      final parsedUnit = declaration.parsedUnit!;
+      return SourceSpan(
+        SourceLocation(start, sourceUrl: parsedUnit.uri),
+        SourceLocation(end, sourceUrl: parsedUnit.uri),
+        parsedUnit.content.substring(start, end),
+      );
+    } catch (e, stack) {
+      // Trying to get more information on https://github.com/dart-lang/sdk/issues/45127
+      log.warning(
+        '''
+An unexpected error was thrown trying to get location information on `$annotatedElement` (${annotatedElement.runtimeType}). 
+
+Please file an issue at https://github.com/dart-lang/source_gen/issues/new
+Include the contents of this warning and the stack trace along with
+the version of `package:source_gen`, `package:analyzer` from `pubspec.lock`.
+''',
+        e,
+        stack,
+      );
+      return null;
+    }
   }
 
   /// Creates an exception from an annotation ([annotationIndex]) that was not
@@ -332,7 +350,7 @@ class UnresolvedAnnotationException implements Exception {
 
   @override
   String toString() {
-    final message = 'Could not resolve annotation for $annotatedElement';
+    final message = 'Could not resolve annotation for `$annotatedElement`.';
     if (annotationSource != null) {
       return annotationSource!.message(message);
     }
