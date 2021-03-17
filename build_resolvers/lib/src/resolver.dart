@@ -242,9 +242,8 @@ class AnalyzerResolver implements ReleasableResolver {
 
     for (final path in paths) {
       final result = await _driver.getErrors(path);
-      if (result != null &&
-          result.errors.any(
-              (error) => error.errorCode.type == ErrorType.SYNTACTIC_ERROR)) {
+      if (result.errors
+          .any((error) => error.errorCode.type == ErrorType.SYNTACTIC_ERROR)) {
         relevantResults.add(result);
       }
     }
