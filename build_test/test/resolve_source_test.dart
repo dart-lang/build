@@ -127,7 +127,7 @@ void main() {
       var errors =
           await libExample.session.getErrors(libExample.source.fullName);
       expect(
-          errors!.errors.map((e) => e.message),
+          errors.errors.map((e) => e.message),
           contains(contains(
               'This requires the \'extension-methods\' language feature to be '
               'enabled.')));

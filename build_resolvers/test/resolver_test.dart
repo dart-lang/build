@@ -434,7 +434,7 @@ int? get x => 1;
                 expect(lib.languageVersion.effective.minor,
                     sdkLanguageVersion.minor);
                 var errors = await lib.session.getErrors('/a/web/main.dart');
-                expect(errors!.errors, isEmpty);
+                expect(errors.errors, isEmpty);
               }, resolvers: AnalyzerResolvers()),
           ['non-nullable']);
     });
