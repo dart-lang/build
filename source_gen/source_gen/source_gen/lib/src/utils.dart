@@ -38,8 +38,8 @@ String typeNameOf(DartType type) {
 ///
 /// Returns `null` if [element] is missing identifier.
 String nameOfPartial(LibraryElement element, AssetId source) {
-  if (element.name != null && element.name.isNotEmpty) {
-    return element.name;
+  if (element.name != null && element.name!.isNotEmpty) {
+    return element.name!;
   }
 
   final sourceUrl = p.basename(source.uri.toString());
@@ -69,7 +69,7 @@ String computePartUrl(AssetId input, AssetId output) =>
 String urlOfElement(Element element) => element.kind == ElementKind.DYNAMIC
     ? 'dart:core#dynamic'
     // using librarySource.uri – in case the element is in a part
-    : normalizeUrl(element.librarySource.uri)
+    : normalizeUrl(element.librarySource!.uri)
         .replace(fragment: element.name)
         .toString();
 

@@ -7,7 +7,7 @@ import 'package:async/async.dart';
 /// Converts [Future], [Iterable], and [Stream] implementations
 /// containing [String] to a single [Stream] while ensuring all thrown
 /// exceptions are forwarded through the return value.
-Stream<String> normalizeGeneratorOutput(Object value) {
+Stream<String> normalizeGeneratorOutput(Object? value) {
   if (value == null) {
     return const Stream.empty();
   } else if (value is Future) {
@@ -17,7 +17,7 @@ Stream<String> normalizeGeneratorOutput(Object value) {
   }
 
   if (value is Iterable) {
-    value = Stream.fromIterable(value as Iterable);
+    value = Stream.fromIterable(value);
   }
 
   if (value is Stream) {
@@ -26,7 +26,7 @@ Stream<String> normalizeGeneratorOutput(Object value) {
         return e.trim();
       }
 
-      throw _argError(e);
+      throw _argError(e as Object);
     }).where((e) => e.isNotEmpty);
   }
   throw _argError(value);

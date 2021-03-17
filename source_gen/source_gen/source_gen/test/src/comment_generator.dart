@@ -15,7 +15,7 @@ class CommentGenerator extends Generator {
   Future<String> generate(LibraryReader library, _) async {
     final output = <String>[];
     if (forLibrary) {
-      var name = library.element.name;
+      var name = library.element.name!;
       if (name.isEmpty) {
         name = library.element.source.uri.pathSegments.last;
       }

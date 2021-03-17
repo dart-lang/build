@@ -10,10 +10,11 @@ import 'package:test/test.dart';
 
 void main() {
   group('assertHasField', () {
-    LibraryElement testLib;
+    late LibraryElement testLib;
 
     setUpAll(() async {
-      testLib = await resolveSource(r'''
+      testLib = await resolveSource(
+        r'''
           library test_lib;
 
           class A {
@@ -27,30 +28,33 @@ void main() {
           class C {
             String c;
           }
-          ''', (resolver) => resolver.findLibraryByName('test_lib'));
+          ''',
+        (resolver) async => (await resolver.findLibraryByName('test_lib'))!,
+      );
     });
 
     test('should not throw when a class contains a field', () {
-      final $A = testLib.getType('A');
+      final $A = testLib.getType('A')!;
       expect(() => assertHasField($A, 'a'), returnsNormally);
     });
 
     test('should not throw when a super class contains a field', () {
-      final $B = testLib.getType('B');
+      final $B = testLib.getType('B')!;
       expect(() => assertHasField($B, 'a'), returnsNormally);
     });
 
     test('should throw when a class does not contain a field', () {
-      final $C = testLib.getType('C');
+      final $C = testLib.getType('C')!;
       expect(() => assertHasField($C, 'a'), throwsFormatException);
     });
   });
 
   group('getFieldRecursive', () {
-    List<DartObject> objects;
+    late List<DartObject> objects;
 
     setUpAll(() async {
-      final testLib = await resolveSource(r'''
+      final testLib = await resolveSource(
+        r'''
           library test_lib;
 
           @A('a-value')
@@ -75,21 +79,23 @@ void main() {
 
             const C(this.c);
           }
-          ''', (resolver) => resolver.findLibraryByName('test_lib'));
+          ''',
+        (resolver) async => (await resolver.findLibraryByName('test_lib'))!,
+      );
       objects = testLib
-          .getType('Example')
+          .getType('Example')!
           .metadata
-          .map((e) => e.computeConstantValue())
+          .map((e) => e.computeConstantValue()!)
           .toList();
     });
 
     test('should find a field directly on an object', () {
-      expect(getFieldRecursive(objects[0], 'a').toStringValue(), 'a-value');
+      expect(getFieldRecursive(objects[0], 'a')!.toStringValue(), 'a-value');
     });
 
     test('should find a field available on a super', () {
-      expect(getFieldRecursive(objects[1], 'b').toStringValue(), 'b-value');
-      expect(getFieldRecursive(objects[1], 'a').toStringValue(), 'a-value');
+      expect(getFieldRecursive(objects[1], 'b')!.toStringValue(), 'b-value');
+      expect(getFieldRecursive(objects[1], 'a')!.toStringValue(), 'a-value');
     });
 
     test('should return null when a field is not found', () {

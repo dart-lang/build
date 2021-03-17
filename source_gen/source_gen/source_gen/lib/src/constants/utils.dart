@@ -9,7 +9,7 @@ import 'package:analyzer/dart/element/element.dart';
 ///
 /// Super types [ClassElement.supertype] are also checked before throwing.
 void assertHasField(ClassElement root, String name) {
-  var element = root;
+  ClassElement? element = root;
   while (element != null) {
     final field = element.getField(name);
     if (field != null) {
@@ -26,16 +26,16 @@ void assertHasField(ClassElement root, String name) {
 }
 
 /// Returns whether or not [object] is or represents a `null` value.
-bool isNullLike(DartObject object) => object?.isNull != false;
+bool isNullLike(DartObject? object) => object?.isNull != false;
 
 /// Similar to [DartObject.getField], but traverses super classes.
 ///
 /// Returns `null` if ultimately [field] is never found.
-DartObject getFieldRecursive(DartObject object, String field) {
+DartObject? getFieldRecursive(DartObject? object, String field) {
   if (isNullLike(object)) {
     return null;
   }
-  final result = object.getField(field);
+  final result = object!.getField(field);
   if (isNullLike(result)) {
     return getFieldRecursive(object.getField('(super)'), field);
   }

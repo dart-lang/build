@@ -9,7 +9,7 @@ import 'package:source_gen/source_gen.dart';
 import 'package:test/test.dart';
 
 void main() {
-  LibraryReader reader;
+  late LibraryReader reader;
 
   final packageA = Uri.parse('package:a/a.dart');
   final packageB = Uri.parse('package:b/b.dart');

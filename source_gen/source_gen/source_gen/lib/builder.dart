@@ -22,12 +22,12 @@ import 'src/utils.dart';
 const _outputExtensions = '.g.dart';
 const _partFiles = '.g.part';
 
-Builder combiningBuilder([BuilderOptions options]) {
-  final optionsMap = Map<String, dynamic>.from(options?.config ?? {});
+Builder combiningBuilder([BuilderOptions options = BuilderOptions.empty]) {
+  final optionsMap = Map<String, dynamic>.from(options.config);
 
-  final includePartName = optionsMap.remove('include_part_name') as bool;
+  final includePartName = optionsMap.remove('include_part_name') as bool?;
   final ignoreForFile = Set<String>.from(
-    optionsMap.remove('ignore_for_file') as List ?? <String>[],
+    optionsMap.remove('ignore_for_file') as List? ?? <String>[],
   );
 
   final builder = CombiningBuilder(
@@ -36,11 +36,7 @@ Builder combiningBuilder([BuilderOptions options]) {
   );
 
   if (optionsMap.isNotEmpty) {
-    if (log == null) {
-      throw StateError('Upgrade `build_runner` to at least 0.8.2.');
-    } else {
-      log.warning('These options were ignored: `$optionsMap`.');
-    }
+    log.warning('These options were ignored: `$optionsMap`.');
   }
   return builder;
 }
@@ -67,8 +63,8 @@ class CombiningBuilder implements Builder {
   /// is output as a comment before its content. This can be useful when
   /// debugging build issues.
   const CombiningBuilder({
-    bool includePartName = false,
-    Set<String> ignoreForFile,
+    bool? includePartName,
+    Set<String>? ignoreForFile,
   })  : _includePartName = includePartName ?? false,
         _ignoreForFile = ignoreForFile ?? const <String>{};
 
@@ -89,7 +85,7 @@ class CombiningBuilder implements Builder {
       partIdRegExpLiteral, // A valid part ID
       RegExp.escape(_partFiles), // the ending part extension
       '\$', // end of string
-    ].join(''));
+    ].join());
 
     final assetIds = await buildStep
         .findAssets(Glob(pattern))

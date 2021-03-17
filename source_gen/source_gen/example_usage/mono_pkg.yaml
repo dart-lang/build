@@ -1,5 +1,6 @@
 # See https://github.com/google/mono_repo.dart for details
 dart:
+- 2.12.0
 - dev
 
 stages:

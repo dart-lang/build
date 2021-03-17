@@ -29,19 +29,17 @@ enum PartEnum{A,B}
 ''';
 
 void main() {
-  LibraryReader library;
+  late LibraryReader library;
 
   setUpAll(() async {
     library = await resolveSources(
       {'a|source.dart': _source, 'a|part.dart': _partSource},
-      (r) async => LibraryReader(await r.findLibraryByName('test_lib')),
+      (r) async => LibraryReader((await r.findLibraryByName('test_lib'))!),
     );
   });
 
   test('class count', () {
     expect(library.classes.map((c) => c.name), ['Example', 'PartClass']);
-    // ignore: deprecated_member_use_from_same_package, deprecated_member_use
-    expect(library.classElements, orderedEquals(library.classes));
   });
 
   test('enum count', () {

@@ -41,10 +41,10 @@ class _Builder extends Builder {
   /// Wrap [_generators] to form a [Builder]-compatible API.
   _Builder(
     this._generators, {
-    String Function(String code) formatOutput,
+    String Function(String code)? formatOutput,
     String generatedExtension = '.g.dart',
     List<String> additionalOutputExtensions = const [],
-    String header,
+    String? header,
     this.allowSyntaxErrors = false,
   })  : _generatedExtension = generatedExtension,
         buildExtensions = {
@@ -55,9 +55,6 @@ class _Builder extends Builder {
         },
         formatOutput = formatOutput ?? _formatter.format,
         _header = (header ?? defaultFileHeader).trim() {
-    if (_generatedExtension == null) {
-      throw ArgumentError.notNull('generatedExtension');
-    }
     if (_generatedExtension.isEmpty || !_generatedExtension.startsWith('.')) {
       throw ArgumentError.value(_generatedExtension, 'generatedExtension',
           'Extension must be in the format of .*');
@@ -109,14 +106,6 @@ class _Builder extends Builder {
     if (!_isLibraryBuilder) {
       final asset = buildStep.inputId;
       final name = nameOfPartial(library, asset);
-      if (name == null) {
-        final suggest = suggestLibraryName(asset);
-        throw InvalidGenerationSourceError(
-            'Could not find library identifier so a "part of" cannot be built.',
-            todo: ''
-                'Consider adding the following to your source file:\n\n'
-                'library $suggest;');
-      }
       contentBuffer.writeln();
 
       String part;
@@ -212,7 +201,7 @@ class SharedPartBuilder extends _Builder {
   SharedPartBuilder(
     List<Generator> generators,
     String partId, {
-    String Function(String code) formatOutput,
+    String Function(String code)? formatOutput,
     List<String> additionalOutputExtensions = const [],
     bool allowSyntaxErrors = false,
   }) : super(
@@ -267,9 +256,9 @@ class PartBuilder extends _Builder {
   PartBuilder(
     List<Generator> generators,
     String generatedExtension, {
-    String Function(String code) formatOutput,
+    String Function(String code)? formatOutput,
     List<String> additionalOutputExtensions = const [],
-    String header,
+    String? header,
     bool allowSyntaxErrors = false,
   }) : super(
           generators,
@@ -307,10 +296,10 @@ class LibraryBuilder extends _Builder {
   /// libraries.
   LibraryBuilder(
     Generator generator, {
-    String Function(String code) formatOutput,
+    String Function(String code)? formatOutput,
     String generatedExtension = '.g.dart',
     List<String> additionalOutputExtensions = const [],
-    String header,
+    String? header,
     bool allowSyntaxErrors = false,
   }) : super(
           [generator],
@@ -359,7 +348,8 @@ Future<bool> _hasAnyTopLevelAnnotations(
     if (directive.metadata.isNotEmpty) return true;
     if (directive is PartDirective) {
       partIds.add(
-          AssetId.resolve(Uri.parse(directive.uri.stringValue), from: input));
+        AssetId.resolve(Uri.parse(directive.uri.stringValue!), from: input),
+      );
     }
   }
   for (var declaration in parsed.declarations) {

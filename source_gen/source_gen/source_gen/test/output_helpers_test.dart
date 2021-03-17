@@ -42,7 +42,7 @@ void main() {
   });
 }
 
-void _testSimpleValue(String testName, Object value, expected) {
+void _testSimpleValue(String testName, Object? value, expected) {
   _testFunction(testName, value, expected);
 
   assert(value is! Future);

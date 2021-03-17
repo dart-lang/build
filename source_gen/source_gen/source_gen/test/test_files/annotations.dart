@@ -19,8 +19,8 @@ class PublicAnnotationClass {
   final String aString;
   final List aList;
   final bool aBool;
-  final PublicAnnotationClass child1;
-  final PublicAnnotationClass child2;
+  final PublicAnnotationClass? child1;
+  final PublicAnnotationClass? child2;
 
   const PublicAnnotationClass()
       : anInt = 0,

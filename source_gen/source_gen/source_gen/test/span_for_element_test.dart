@@ -9,10 +9,11 @@ import 'package:source_gen/source_gen.dart';
 import 'package:test/test.dart';
 
 void main() {
-  LibraryElement library;
+  late LibraryElement library;
 
   setUpAll(() async {
-    library = await resolveSource(r'''
+    library = await resolveSource(
+      r'''
 library test_lib;
 
 abstract class Example implements List {
@@ -24,13 +25,15 @@ abstract class Example implements List {
     field = value;
   }
 }
-''', (resolver) => resolver.findLibraryByName('test_lib'),
-        inputId: AssetId('test_lib', 'lib/test_lib.dart'));
+''',
+      (resolver) async => (await resolver.findLibraryByName('test_lib'))!,
+      inputId: AssetId('test_lib', 'lib/test_lib.dart'),
+    );
   });
 
   test('should highlight the use of "class Example"', () async {
     expect(
-        spanForElement(library.getType('Example')).message('Here it is'), r'''
+        spanForElement(library.getType('Example')!).message('Here it is'), r'''
 line 3, column 16 of package:test_lib/test_lib.dart: Here it is
   ╷
 3 │ abstract class Example implements List {
@@ -40,7 +43,7 @@ line 3, column 16 of package:test_lib/test_lib.dart: Here it is
 
   test('should correctly highlight getter', () async {
     expect(
-        spanForElement(library.getType('Example').getField('getter'))
+        spanForElement(library.getType('Example')!.getField('getter')!)
             .message('Here it is'),
         r'''
 line 4, column 15 of package:test_lib/test_lib.dart: Here it is
@@ -52,7 +55,7 @@ line 4, column 15 of package:test_lib/test_lib.dart: Here it is
 
   test('should correctly highlight setter', () async {
     expect(
-        spanForElement(library.getType('Example').getField('setter'))
+        spanForElement(library.getType('Example')!.getField('setter')!)
             .message('Here it is'),
         r'''
 line 5, column 7 of package:test_lib/test_lib.dart: Here it is
@@ -64,7 +67,7 @@ line 5, column 7 of package:test_lib/test_lib.dart: Here it is
 
   test('should correctly highlight field', () async {
     expect(
-        spanForElement(library.getType('Example').getField('field'))
+        spanForElement(library.getType('Example')!.getField('field')!)
             .message('Here it is'),
         r'''
 line 6, column 7 of package:test_lib/test_lib.dart: Here it is
@@ -76,7 +79,7 @@ line 6, column 7 of package:test_lib/test_lib.dart: Here it is
 
   test('highlight getter with getter/setter property', () async {
     expect(
-        spanForElement(library.getType('Example').getField('fieldProp'))
+        spanForElement(library.getType('Example')!.getField('fieldProp')!)
             .message('Here it is'),
         r'''
 line 7, column 11 of package:test_lib/test_lib.dart: Here it is

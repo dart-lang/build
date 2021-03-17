@@ -617,25 +617,25 @@ Future _generateTest(CommentGenerator gen, String expectedContent) async {
 }
 
 Map<String, String> _createPackageStub(
-        {String testLibContent, String testLibPartContent}) =>
+        {String? testLibContent, String? testLibPartContent}) =>
     {
       '$_pkgName|lib/test_lib.dart': testLibContent ?? _testLibContent,
       '$_pkgName|lib/test_lib.foo.dart':
           testLibPartContent ?? _testLibPartContent,
     };
 
-PartBuilder _unformattedLiteral([String content]) =>
+PartBuilder _unformattedLiteral([String? content]) =>
     PartBuilder([_LiteralGenerator(content)], '.foo.dart',
         formatOutput: (s) => s);
 
 /// Returns the [String] provided in the constructor, or `null`.
 class _LiteralGenerator extends Generator {
-  final String _content;
+  final String? _content;
 
   const _LiteralGenerator([this._content]);
 
   @override
-  String generate(_, __) => _content;
+  String? generate(_, __) => _content;
 }
 
 class _BadOutputGenerator extends Generator {
@@ -671,7 +671,7 @@ class _TestingBuildStep implements BuildStep {
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async =>
-      assets[id];
+      assets[id]!;
 
   @override
   void noSuchMethod(_) => throw UnimplementedError();
@@ -688,7 +688,7 @@ class _TestingResolver implements Resolver {
   Future<CompilationUnit> compilationUnitFor(AssetId assetId,
       {bool allowSyntaxErrors = false}) async {
     parsedUnits.add(assetId);
-    return parseString(content: assets[assetId]).unit;
+    return parseString(content: assets[assetId]!).unit;
   }
 
   @override
@@ -701,7 +701,7 @@ class _TestingResolver implements Resolver {
   Future<LibraryElement> libraryFor(AssetId assetId,
       {bool allowSyntaxErrors = false}) async {
     resolvedLibs.add(assetId);
-    return null;
+    return null as LibraryElement;
   }
 
   @override

@@ -109,12 +109,12 @@ class RepeatingGenerator extends GeneratorForAnnotation<Deprecated> {
 }
 
 class LiteralOutput<T> extends GeneratorForAnnotation<Deprecated> {
-  final T value;
+  final T? value;
 
   const LiteralOutput([this.value]);
 
   @override
-  T generateForAnnotatedElement(
+  T? generateForAnnotatedElement(
           Element element, ConstantReader annotation, BuildStep buildStep) =>
       null;
 }

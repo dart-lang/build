@@ -18,10 +18,10 @@ import 'utils.dart';
 ///
 /// Not all results from the analyzer API may return source information as part
 /// of the element, so [file] may need to be manually provided in those cases.
-SourceSpan spanForElement(Element element, [SourceFile file]) {
-  final url = assetToPackageUrl(element.source.uri);
+SourceSpan spanForElement(Element element, [SourceFile? file]) {
+  final url = assetToPackageUrl(element.source!.uri);
   if (file == null) {
-    final contents = element?.source?.contents;
+    final contents = element.source?.contents;
     if (contents == null) {
       return SourceSpan(
         SourceLocation(
@@ -32,7 +32,7 @@ SourceSpan spanForElement(Element element, [SourceFile file]) {
           element.nameOffset + element.nameLength,
           sourceUrl: url,
         ),
-        element.name,
+        element.name!,
       );
     }
     file = SourceFile.fromString(contents.data, url: url);
@@ -40,11 +40,11 @@ SourceSpan spanForElement(Element element, [SourceFile file]) {
   if (element.nameOffset < 0) {
     if (element is PropertyInducingElement) {
       if (element.getter != null) {
-        return spanForElement(element.getter);
+        return spanForElement(element.getter!);
       }
 
       if (element.setter != null) {
-        return spanForElement(element.setter);
+        return spanForElement(element.setter!);
       }
     }
   }

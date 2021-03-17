@@ -53,7 +53,7 @@ abstract class GeneratorForAnnotation<T> extends Generator {
       final generatedValue = generateForAnnotatedElement(
           annotatedElement.element, annotatedElement.annotation, buildStep);
       await for (var value in normalizeGeneratorOutput(generatedValue)) {
-        assert(value == null || (value.length == value.trim().length));
+        assert(value.length == value.trim().length);
         values.add(value);
       }
     }

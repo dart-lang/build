@@ -10,7 +10,7 @@ import 'package:source_gen/source_gen.dart';
 import 'package:test/test.dart';
 
 void main() {
-  ClassElement example;
+  late ClassElement example;
 
   setUpAll(() async {
     const source = r'''
@@ -28,7 +28,7 @@ void main() {
         source,
         (resolver) => resolver
             .findLibraryByName('example')
-            .then((e) => e.getType('Example')));
+            .then((e) => e!.getType('Example')!));
   });
 
   test('should return the name of a class type', () {

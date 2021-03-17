@@ -16,22 +16,10 @@ import 'utils.dart';
 /// Unlike [DartObject.getField], the [read] method attempts to access super
 /// classes for the field value if not found.
 abstract class ConstantReader {
-  factory ConstantReader(DartObject object) =>
-      isNullLike(object) ? const _NullConstant() : _DartObjectConstant(object);
+  factory ConstantReader(DartObject? object) =>
+      isNullLike(object) ? const _NullConstant() : _DartObjectConstant(object!);
 
   const ConstantReader._();
-
-  /// Whether this constant is a literal value.
-  @Deprecated('Use `isLiteral`, will be removed in 0.8.0')
-  bool get isAny => isLiteral;
-
-  /// Constant as a literal value.
-  ///
-  /// Throws [FormatException] if a valid literal value cannot be returned. This
-  /// is the case if the constant is not a literal or if the literal value
-  /// is represented at least partially with [DartObject] instances.
-  @Deprecated('Use `literalValue`, will be removed in 0.8.0')
-  Object get anyValue => literalValue;
 
   /// Whether this constant is a literal value.
   bool get isLiteral => true;
@@ -41,7 +29,7 @@ abstract class ConstantReader {
   /// Throws [FormatException] if a valid literal value cannot be returned. This
   /// is the case if the constant is not a literal or if the literal value
   /// is represented at least partially with [DartObject] instances.
-  Object get literalValue => null;
+  Object? get literalValue => null;
 
   /// Underlying object this instance is reading from.
   DartObject get objectValue;
@@ -59,7 +47,7 @@ abstract class ConstantReader {
   /// Reads [field] from the constant as another constant value.
   ///
   /// Unlike [read], returns `null` if the field is not found.
-  ConstantReader peek(String field);
+  ConstantReader? peek(String field);
 
   /// Whether this constant is a `null` value.
   bool get isNull => true;
@@ -104,7 +92,7 @@ abstract class ConstantReader {
   bool get isMap => false;
 
   /// Constant as a `Map` value.
-  Map<DartObject, DartObject> get mapValue;
+  Map<DartObject?, DartObject?> get mapValue;
 
   /// Whether this constant represents a `List` value.
   bool get isList => false;
@@ -156,7 +144,7 @@ class _NullConstant extends ConstantReader {
   Map<DartObject, DartObject> get mapValue => _throw('Map');
 
   @override
-  ConstantReader peek(_) => null;
+  ConstantReader? peek(_) => null;
 
   @override
   ConstantReader read(_) => throw UnsupportedError('Null');
@@ -180,7 +168,7 @@ class _DartObjectConstant extends ConstantReader {
 
   const _DartObjectConstant(this.objectValue) : super._();
 
-  T _check<T>(T value, String expected) {
+  T _check<T>(T? value, String expected) {
     if (value == null) {
       throw FormatException('Not an instance of $expected.', objectValue);
     }
@@ -212,7 +200,7 @@ class _DartObjectConstant extends ConstantReader {
 
   @override
   bool instanceOf(TypeChecker checker) =>
-      checker.isAssignableFromType(objectValue.type);
+      checker.isAssignableFromType(objectValue.type!);
 
   @override
   bool get isNull => isNullLike(objectValue);
@@ -251,7 +239,7 @@ class _DartObjectConstant extends ConstantReader {
   bool get isMap => objectValue.toMapValue() != null;
 
   @override
-  Map<DartObject, DartObject> get mapValue =>
+  Map<DartObject?, DartObject?> get mapValue =>
       _check(objectValue.toMapValue(), 'Map');
 
   @override
@@ -274,7 +262,7 @@ class _DartObjectConstant extends ConstantReader {
   DartType get typeValue => _check(objectValue.toTypeValue(), 'Type');
 
   @override
-  ConstantReader peek(String field) {
+  ConstantReader? peek(String field) {
     final constant = ConstantReader(getFieldRecursive(objectValue, field));
     return constant.isNull ? null : constant;
   }
@@ -283,7 +271,7 @@ class _DartObjectConstant extends ConstantReader {
   ConstantReader read(String field) {
     final reader = peek(field);
     if (reader == null) {
-      assertHasField(objectValue?.type?.element as ClassElement, field);
+      assertHasField(objectValue.type?.element as ClassElement, field);
       return const _NullConstant();
     }
     return reader;
