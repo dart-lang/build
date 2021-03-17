@@ -306,7 +306,7 @@ Future<void> _findModuleDeps(
 Future<List<Module>> _resolveTransitiveModules(
     Module root, BuildStep buildStep) async {
   var missing = <AssetId>{};
-  var modules = await crawlAsync<AssetId, Module /*?*/>(
+  var modules = await crawlAsync<AssetId, Module /*?*/ >(
           [root.primarySource],
           (id) => buildStep.fetchResource(moduleCache).then((c) async {
                 var moduleId =
