@@ -1,6 +1,6 @@
-## 5.0.2-dev
+## 5.0.2
 
-* Support the latest build packages
+* Support the latest build packages and dart_style.
 
 ## 5.0.1
 
