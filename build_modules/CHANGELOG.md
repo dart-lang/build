@@ -1,3 +1,5 @@
+## 3.0.7-dev
+
 ## 3.0.6
 
 - Update to graphs `1.x`

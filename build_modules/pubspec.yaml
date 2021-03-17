@@ -1,5 +1,5 @@
 name: build_modules
-version: 3.0.6
+version: 3.0.7-dev
 description: Builders for Dart modules
 repository: https://github.com/dart-lang/build/tree/master/build_modules
 
@@ -22,6 +22,7 @@ dependencies:
   path: ^1.4.2
   pedantic: ^1.0.0
   scratch_space: ">=0.0.4 <2.0.0"
+  stream_transform: ^2.0.0
 
 dev_dependencies:
   # Used inside tests
