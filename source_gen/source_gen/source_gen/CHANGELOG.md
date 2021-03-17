@@ -1,7 +1,10 @@
-## 1.0.0
+## 1.0.0-dev
 
-- Migrate to null safety.
-- Require Dart `2.12.0`.
+* Migrate to null safety.
+* Drop deprecated APIs:
+  - `ConstantReader.isAny`.
+  - `ConstantReader.anyValue`.
+  - `LibraryReader.classElements`.
 
 ## 0.9.10+4
 
