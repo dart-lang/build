@@ -1,3 +1,7 @@
+## 5.0.3
+
+* Support 1.x releases of source_gen.
+
 ## 5.0.2
 
 * Support the latest build packages and dart_style.
