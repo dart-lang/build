@@ -206,6 +206,12 @@ void main() {
                     '2 verify calls have been stored.')));
       }
     });
+
+    test('should fail when called with non-mock-call parameter', () {
+      expectFail('Used on a non-mockito object', () {
+        verifyInOrder(['a string is not a mock call']);
+      });
+    });
   });
 
   group('verify should fail when no matching call is found', () {
@@ -454,6 +460,12 @@ void main() {
           'Matching call #1 not found. All calls: '
           '_MockedClass.methodWithoutArgs(), _MockedClass.getter', () {
         verifyInOrder([mock.getter, mock.methodWithoutArgs()]);
+      });
+    });
+
+    test('should fail when given non-mock-call parameters', () {
+      expectFail('Used on a non-mockito object', () {
+        verifyInOrder(['a string is not a mock call']);
       });
     });
 

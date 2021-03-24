@@ -997,7 +997,10 @@ _InOrderVerification get verifyInOrder {
     throw StateError(_verifyCalls.join());
   }
   _verificationInProgress = true;
-  return <T>(List<T> _) {
+  return <T>(List<T> responses) {
+    if (responses.length != _verifyCalls.length) {
+      fail('Used on a non-mockito object');
+    }
     _verificationInProgress = false;
     var verificationResults = <VerificationResult>[];
     var time = DateTime.fromMillisecondsSinceEpoch(0);
