@@ -20,6 +20,8 @@ dev_dependencies:
   test: ^1.16.0
 
 dependency_overrides:
+  # Required due to cyclic dep
+  json_serializable: ^4.0.0
   # Required due to the tight dependency on this package from these packages
   build_runner:
     path: ../build_runner
