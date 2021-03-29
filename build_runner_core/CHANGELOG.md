@@ -1,4 +1,6 @@
-## 6.1.13-dev
+## 7.0.0-dev
+
+- Migrate to null safety.
 
 ## 6.1.12
 
