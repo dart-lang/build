@@ -28,6 +28,10 @@ class InputSet {
 
   factory InputSet.fromJson(dynamic json) {
     if (json is List) {
+      if (json.any((e) => e == null)) {
+        throw ArgumentError.value(
+            json, 'generate_for', 'Include globs must not be empty');
+      }
       json = <String, List>{'include': json};
     } else if (json is! Map) {
       throw ArgumentError.value(json, 'sources',
