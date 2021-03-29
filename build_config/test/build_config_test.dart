@@ -151,9 +151,9 @@ builders:
     applies_builders: ["a|foo_builder"]
 ''');
     expect(buildConfig.builderDefinitions.keys, ['example:example']);
-    expect(buildConfig.builderDefinitions['example:example'].runsBefore,
+    expect(buildConfig.builderDefinitions['example:example']!.runsBefore,
         ['a:foo_builder']);
-    expect(buildConfig.builderDefinitions['example:example'].appliesBuilders,
+    expect(buildConfig.builderDefinitions['example:example']!.appliesBuilders,
         ['a:foo_builder']);
   });
 }
@@ -251,7 +251,7 @@ void expectBuilderDefinitions(Map<String, BuilderDefinition> actual,
     Map<String, BuilderDefinition> expected) {
   expect(actual.keys, unorderedEquals(expected.keys));
   for (var p in actual.keys) {
-    expect(actual[p], _matchesBuilderDefinition(expected[p]));
+    expect(actual[p], _matchesBuilderDefinition(expected[p]!));
   }
 }
 
@@ -260,7 +260,7 @@ void expectPostProcessBuilderDefinitions(
     Map<String, PostProcessBuilderDefinition> expected) {
   expect(actual.keys, unorderedEquals(expected.keys));
   for (var p in actual.keys) {
-    expect(actual[p], _matchesPostProcessBuilderDefinition(expected[p]));
+    expect(actual[p], _matchesPostProcessBuilderDefinition(expected[p]!));
   }
 }
 
@@ -268,7 +268,7 @@ void expectGlobalOptions(Map<String, GlobalBuilderConfig> actual,
     Map<String, GlobalBuilderConfig> expected) {
   expect(actual.keys, unorderedEquals(expected.keys));
   for (var p in actual.keys) {
-    expect(actual[p], _matchesGlobalBuilderConfig(expected[p]));
+    expect(actual[p], _matchesGlobalBuilderConfig(expected[p]!));
   }
 }
 
@@ -325,7 +325,7 @@ void expectBuildTargets(
     Map<String, BuildTarget> actual, Map<String, BuildTarget> expected) {
   expect(actual.keys, unorderedEquals(expected.keys));
   for (var p in actual.keys) {
-    expect(actual[p], _matchesBuildTarget(expected[p]));
+    expect(actual[p], _matchesBuildTarget(expected[p]!));
   }
 }
 
@@ -355,11 +355,11 @@ Matcher _matchesBuilderConfig(TargetBuilderConfig expected) =>
             expected.generateFor?.exclude);
 
 BuildTarget createBuildTarget(String package,
-    {String key,
-    Map<String, TargetBuilderConfig> builders,
-    Iterable<String> dependencies,
-    InputSet sources,
-    bool autoApplyBuilders}) {
+    {String? key,
+    Map<String, TargetBuilderConfig>? builders,
+    Iterable<String>? dependencies,
+    InputSet? sources,
+    bool? autoApplyBuilders}) {
   return runInBuildConfigZone(() {
     var target = BuildTarget(
       autoApplyBuilders: autoApplyBuilders,
@@ -376,17 +376,17 @@ BuildTarget createBuildTarget(String package,
 }
 
 BuilderDefinition createBuilderDefinition(String package,
-    {List<String> builderFactories,
-    AutoApply autoApply,
-    bool isOptional,
-    BuildTo buildTo,
-    String import,
-    Map<String, List<String>> buildExtensions,
-    String key,
-    Iterable<String> requiredInputs,
-    Iterable<String> runsBefore,
-    Iterable<String> appliesBuilders,
-    TargetBuilderConfigDefaults defaults}) {
+    {required List<String> builderFactories,
+    AutoApply? autoApply,
+    bool? isOptional,
+    BuildTo? buildTo,
+    required String import,
+    required Map<String, List<String>> buildExtensions,
+    String? key,
+    Iterable<String>? requiredInputs,
+    Iterable<String>? runsBefore,
+    Iterable<String>? appliesBuilders,
+    TargetBuilderConfigDefaults? defaults}) {
   return runInBuildConfigZone(() {
     var definition = BuilderDefinition(
         builderFactories: builderFactories,
@@ -406,10 +406,10 @@ BuilderDefinition createBuilderDefinition(String package,
 }
 
 PostProcessBuilderDefinition createPostProcessBuilderDefinition(String package,
-    {String builderFactory,
-    String import,
-    String key,
-    TargetBuilderConfigDefaults defaults}) {
+    {required String builderFactory,
+    required String import,
+    String? key,
+    TargetBuilderConfigDefaults? defaults}) {
   return runInBuildConfigZone(() {
     var definition = PostProcessBuilderDefinition(
         builderFactory: builderFactory, import: import, defaults: defaults);

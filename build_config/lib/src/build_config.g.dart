@@ -17,33 +17,30 @@ BuildConfig _$BuildConfigFromJson(Map json) {
     ]);
     final val = BuildConfig(
       buildTargets: $checkedConvert(
-          json, 'targets', (v) => _buildTargetsFromJson(v as Map)),
+          json, 'targets', (v) => _buildTargetsFromJson(v as Map?)),
       globalOptions: $checkedConvert(
           json,
           'global_options',
-          (v) => (v as Map)?.map(
-                (k, e) => MapEntry(k as String,
-                    e == null ? null : GlobalBuilderConfig.fromJson(e as Map)),
+          (v) => (v as Map?)?.map(
+                (k, e) => MapEntry(
+                    k as String, GlobalBuilderConfig.fromJson(e as Map)),
               )),
       builderDefinitions: $checkedConvert(
           json,
           'builders',
-          (v) => (v as Map)?.map(
-                (k, e) => MapEntry(k as String,
-                    e == null ? null : BuilderDefinition.fromJson(e as Map)),
+          (v) => (v as Map?)?.map(
+                (k, e) =>
+                    MapEntry(k as String, BuilderDefinition.fromJson(e as Map)),
               )),
       postProcessBuilderDefinitions: $checkedConvert(
           json,
           'post_process_builders',
-          (v) => (v as Map)?.map(
-                (k, e) => MapEntry(
-                    k as String,
-                    e == null
-                        ? null
-                        : PostProcessBuilderDefinition.fromJson(e as Map)),
+          (v) => (v as Map?)?.map(
+                (k, e) => MapEntry(k as String,
+                    PostProcessBuilderDefinition.fromJson(e as Map)),
               )),
       additionalPublicAssets: $checkedConvert(json, 'additional_public_assets',
-          (v) => (v as List)?.map((e) => e as String)?.toList()),
+          (v) => (v as List<dynamic>).map((e) => e as String).toList()),
     );
     return val;
   }, fieldKeyMap: const {

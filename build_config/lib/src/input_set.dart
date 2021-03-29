@@ -17,30 +17,28 @@ class InputSet {
   /// The globs to include in the set.
   ///
   /// May be null or empty which means every possible path (like `'**'`).
-  final List<String> include;
+  final List<String>? include;
 
   /// The globs as a subset of [include] to remove from the set.
   ///
   /// May be null or empty which means every path in [include].
-  final List<String> exclude;
+  final List<String>? exclude;
 
   const InputSet({this.include, this.exclude});
 
   factory InputSet.fromJson(dynamic json) {
     if (json is List) {
-      json = {'include': json};
+      json = <String, List>{'include': json};
     } else if (json is! Map) {
       throw ArgumentError.value(json, 'sources',
           'Expected a Map or a List but got a ${json.runtimeType}');
     }
     final parsed = _$InputSetFromJson(json as Map);
-    if (parsed.include != null &&
-        parsed.include.any((s) => s == null || s.isEmpty)) {
+    if (parsed.include != null && parsed.include!.any((s) => s.isEmpty)) {
       throw ArgumentError.value(
           parsed.include, 'include', 'Include globs must not be empty');
     }
-    if (parsed.exclude != null &&
-        parsed.exclude.any((s) => s == null || s.isEmpty)) {
+    if (parsed.exclude != null && parsed.exclude!.any((s) => s.isEmpty)) {
       throw ArgumentError.value(
           parsed.exclude, 'exclude', 'Exclude globs must not be empty');
     }
@@ -50,12 +48,12 @@ class InputSet {
   @override
   String toString() {
     final result = StringBuffer();
-    if (include == null || include.isEmpty) {
+    if (include == null || include!.isEmpty) {
       result.write('any path');
     } else {
       result.write('paths matching $include');
     }
-    if (exclude != null && exclude.isNotEmpty) {
+    if (exclude != null && exclude!.isNotEmpty) {
       result.write(' except $exclude');
     }
     return '$result';

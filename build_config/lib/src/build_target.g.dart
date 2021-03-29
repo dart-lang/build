@@ -16,17 +16,17 @@ BuildTarget _$BuildTargetFromJson(Map json) {
     ]);
     final val = BuildTarget(
       autoApplyBuilders:
-          $checkedConvert(json, 'auto_apply_builders', (v) => v as bool),
+          $checkedConvert(json, 'auto_apply_builders', (v) => v as bool?),
       sources: $checkedConvert(
           json, 'sources', (v) => v == null ? null : InputSet.fromJson(v)),
-      dependencies: $checkedConvert(
-          json, 'dependencies', (v) => (v as List)?.map((e) => e as String)),
+      dependencies: $checkedConvert(json, 'dependencies',
+          (v) => (v as List<dynamic>?)?.map((e) => e as String)),
       builders: $checkedConvert(
           json,
           'builders',
-          (v) => (v as Map)?.map(
-                (k, e) => MapEntry(k as String,
-                    e == null ? null : TargetBuilderConfig.fromJson(e as Map)),
+          (v) => (v as Map?)?.map(
+                (k, e) => MapEntry(
+                    k as String, TargetBuilderConfig.fromJson(e as Map)),
               )),
     );
     return val;
@@ -43,25 +43,25 @@ TargetBuilderConfig _$TargetBuilderConfigFromJson(Map json) {
       'release_options'
     ]);
     final val = TargetBuilderConfig(
-      isEnabled: $checkedConvert(json, 'enabled', (v) => v as bool),
+      isEnabled: $checkedConvert(json, 'enabled', (v) => v as bool?),
       generateFor: $checkedConvert(
           json, 'generate_for', (v) => v == null ? null : InputSet.fromJson(v)),
       options: $checkedConvert(
           json,
           'options',
-          (v) => (v as Map)?.map(
+          (v) => (v as Map?)?.map(
                 (k, e) => MapEntry(k as String, e),
               )),
       devOptions: $checkedConvert(
           json,
           'dev_options',
-          (v) => (v as Map)?.map(
+          (v) => (v as Map?)?.map(
                 (k, e) => MapEntry(k as String, e),
               )),
       releaseOptions: $checkedConvert(
           json,
           'release_options',
-          (v) => (v as Map)?.map(
+          (v) => (v as Map?)?.map(
                 (k, e) => MapEntry(k as String, e),
               )),
     );
@@ -82,19 +82,19 @@ GlobalBuilderConfig _$GlobalBuilderConfigFromJson(Map json) {
       options: $checkedConvert(
           json,
           'options',
-          (v) => (v as Map)?.map(
+          (v) => (v as Map?)?.map(
                 (k, e) => MapEntry(k as String, e),
               )),
       devOptions: $checkedConvert(
           json,
           'dev_options',
-          (v) => (v as Map)?.map(
+          (v) => (v as Map?)?.map(
                 (k, e) => MapEntry(k as String, e),
               )),
       releaseOptions: $checkedConvert(
           json,
           'release_options',
-          (v) => (v as Map)?.map(
+          (v) => (v as Map?)?.map(
                 (k, e) => MapEntry(k as String, e),
               )),
     );
