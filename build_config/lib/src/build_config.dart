@@ -74,7 +74,7 @@ class BuildConfig {
   @JsonKey(name: 'global_options')
   final Map<String, GlobalBuilderConfig> globalOptions;
 
-  @JsonKey(name: 'additional_public_assets')
+  @JsonKey(name: 'additional_public_assets', defaultValue: [])
   final List<String> additionalPublicAssets;
 
   /// The default config if you have no `build.yaml` file.

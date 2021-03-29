@@ -40,7 +40,8 @@ BuildConfig _$BuildConfigFromJson(Map json) {
                     PostProcessBuilderDefinition.fromJson(e as Map)),
               )),
       additionalPublicAssets: $checkedConvert(json, 'additional_public_assets',
-          (v) => (v as List<dynamic>).map((e) => e as String).toList()),
+              (v) => (v as List<dynamic>?)?.map((e) => e as String).toList()) ??
+          [],
     );
     return val;
   }, fieldKeyMap: const {
