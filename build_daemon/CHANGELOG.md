@@ -1,3 +1,7 @@
+## 3.0.0-dev
+
+- Migrate to null safety.
+
 ## 2.1.10
 
 - Allow the latest `http_multi_server`.

@@ -26,8 +26,7 @@ abstract class DefaultBuildTarget
   /// If a change matches a pattern this target will not be built.
   BuiltSet<RegExp> get blackListPatterns;
 
-  @nullable
-  OutputLocation get outputLocation;
+  OutputLocation? get outputLocation;
 
   /// A set of globs patterns for files to build.
   ///
@@ -38,8 +37,7 @@ abstract class DefaultBuildTarget
   /// If null then the default is the following patterns:
   /// - package:*/**
   /// - $target/**
-  @nullable
-  BuiltSet<String> get buildFilters;
+  BuiltSet<String>? get buildFilters;
 }
 
 /// The location to write the build outputs.
