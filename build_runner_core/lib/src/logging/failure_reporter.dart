@@ -102,7 +102,7 @@ class FailureReporter {
 class ErrorReport {
   final String message;
   final String error;
-  final StackTrace stackTrace;
+  final StackTrace? stackTrace;
   ErrorReport(this.message, this.error, this.stackTrace);
 }
 

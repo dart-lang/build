@@ -54,17 +54,14 @@ class TargetGraph {
   /// All [requiredRootSourcePaths] should appear in the root package. A
   /// warning is logged if this condition is not met.
   static Future<TargetGraph> forPackageGraph(PackageGraph packageGraph,
-      {Map<String, BuildConfig> overrideBuildConfig,
-      List<String> defaultRootPackageSources,
-      List<String> requiredSourcePaths,
-      List<String> requiredRootSourcePaths}) async {
-    requiredSourcePaths ??= const [];
-    requiredRootSourcePaths ??= const [];
-    overrideBuildConfig ??= const {};
+      {Map<String, BuildConfig> overrideBuildConfig = const {},
+      required List<String> defaultRootPackageSources,
+      List<String> requiredSourcePaths = const [],
+      List<String> requiredRootSourcePaths = const []}) async {
     final modulesByKey = <String, TargetNode>{};
     final publicAssetsByPackage = <String, InputMatcher>{};
     final modulesByPackage = <String, List<TargetNode>>{};
-    BuildConfig rootPackageConfig;
+    late BuildConfig rootPackageConfig;
     for (final package in packageGraph.allPackages.values) {
       final config = overrideBuildConfig[package.name] ??
           await _packageBuildConfig(package);
@@ -80,7 +77,7 @@ class TargetGraph {
       } else {
         defaultInclude = [
           ...defaultNonRootVisibleAssets,
-          ...?config.additionalPublicAssets
+          ...config.additionalPublicAssets
         ];
         publicAssetsByPackage[package.name] =
             InputMatcher(const InputSet(), defaultInclude: defaultInclude);
@@ -129,7 +126,9 @@ class TargetGraph {
       // that we don't allow users to exclude inputs, so we can just return the
       // including globs.
       return [
-        for (final glob in _matcherForNonRoot(package).includeGlobs)
+        // `_matcherForNonRoot` always returns a matcher with non-null include
+        // globs.
+        for (final glob in _matcherForNonRoot(package).includeGlobs!)
           glob.pattern
       ];
     }
@@ -166,10 +165,12 @@ class TargetNode {
   final BuildTarget target;
   final PackageNode package;
 
-  List<Glob> get sourceIncludes => _sourcesMatcher.includeGlobs;
+  // Note that default includes are required for `_sourcesMatcher`, so we know
+  // these are never null.
+  List<Glob> get sourceIncludes => _sourcesMatcher.includeGlobs!;
   final InputMatcher _sourcesMatcher;
 
-  TargetNode(this.target, this.package, {List<String> defaultInclude})
+  TargetNode(this.target, this.package, {required List<String> defaultInclude})
       : _sourcesMatcher =
             InputMatcher(target.sources, defaultInclude: defaultInclude);
 
@@ -183,9 +184,6 @@ class TargetNode {
 
 Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
   final dependencyNames = package.dependencies.map((n) => n.name);
-  if (package.path == null) {
-    return BuildConfig.useDefault(package.name, dependencyNames);
-  }
   try {
     return await BuildConfig.fromBuildConfigDir(
         package.name, dependencyNames, package.path);
