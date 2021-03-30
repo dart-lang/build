@@ -12,7 +12,6 @@ import 'package:build/experiments.dart' as experiments_zone;
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
-import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:watcher/watcher.dart';
 
@@ -41,7 +40,7 @@ class AssetGraph {
   /// originally created from the [build] constructor.
   final List<String> enabledExperiments;
 
-  final Map<String, LanguageVersion> packageLanguageVersions;
+  final Map<String, LanguageVersion?> packageLanguageVersions;
 
   AssetGraph._(this.buildPhasesDigest, this.dartVersion,
       this.packageLanguageVersions, this.enabledExperiments);
@@ -88,8 +87,8 @@ class AssetGraph {
       _nodesByPackage[id.package]?.containsKey(id.path) ?? false;
 
   /// Gets the [AssetNode] for [id], if one exists.
-  AssetNode get(AssetId id) {
-    var pkg = _nodesByPackage[id?.package];
+  AssetNode? get(AssetId id) {
+    var pkg = _nodesByPackage[id.package];
     if (pkg == null) return null;
     return pkg[id.path];
   }
@@ -103,7 +102,7 @@ class AssetGraph {
       if (existing is SyntheticSourceAssetNode) {
         // Don't call _removeRecursive, that recursively removes all transitive
         // primary outputs. We only want to remove this node.
-        _nodesByPackage[existing.id.package].remove(existing.id.path);
+        _nodesByPackage[existing.id.package]!.remove(existing.id.path);
         node.outputs.addAll(existing.outputs);
         node.primaryOutputs.addAll(existing.primaryOutputs);
       } else {
@@ -179,7 +178,7 @@ class AssetGraph {
   /// Also removes all edges between all removed nodes and other nodes.
   ///
   /// Returns a [Set<AssetId>] of all removed nodes.
-  Set<AssetId> _removeRecursive(AssetId id, {Set<AssetId> removedIds}) {
+  Set<AssetId> _removeRecursive(AssetId id, {Set<AssetId>? removedIds}) {
     removedIds ??= <AssetId>{};
     var node = get(id);
     if (node == null) return removedIds;
@@ -191,11 +190,11 @@ class AssetGraph {
       _removeRecursive(output, removedIds: removedIds);
     }
     for (var output in node.outputs) {
-      var inputsNode = get(output) as NodeWithInputs;
+      var inputsNode = get(output) as NodeWithInputs?;
       if (inputsNode != null) {
         inputsNode.inputs.remove(id);
         if (inputsNode is GlobAssetNode) {
-          inputsNode.results.remove(id);
+          inputsNode.results?.remove(id);
         }
       }
     }
@@ -209,12 +208,12 @@ class AssetGraph {
         }
       }
       if (node is GeneratedAssetNode) {
-        get(node.builderOptionsId).outputs.remove(id);
+        get(node.builderOptionsId)!.outputs.remove(id);
       }
     }
     // Synthetic nodes need to be kept to retain dependency tracking.
     if (node is! SyntheticSourceAssetNode) {
-      _nodesByPackage[id.package].remove(id.path);
+      _nodesByPackage[id.package]!.remove(id.path);
     }
     return removedIds;
   }
@@ -277,7 +276,7 @@ class AssetGraph {
       }
     });
 
-    var newAndModifiedNodes = modifyIds.map(get).toList()
+    var newAndModifiedNodes = modifyIds.map((id) => get(id)!).toList()
       ..addAll(_addSources(newIds));
     // Pre-emptively compute digests for the new and modified nodes we know have
     // outputs.
@@ -295,7 +294,7 @@ class AssetGraph {
     var transitiveRemovedIds = <AssetId>{};
     void addTransitivePrimaryOutputs(AssetId id) {
       transitiveRemovedIds.add(id);
-      get(id).primaryOutputs.forEach(addTransitivePrimaryOutputs);
+      get(id)!.primaryOutputs.forEach(addTransitivePrimaryOutputs);
     }
 
     removeIds
@@ -387,9 +386,9 @@ class AssetGraph {
     }
     var inputNode = get(input);
     while (inputNode is GeneratedAssetNode) {
-      inputNode = get((inputNode as GeneratedAssetNode).primaryInput);
+      inputNode = get(inputNode.primaryInput);
     }
-    return action.targetSources.matches(inputNode.id);
+    return action.targetSources.matches(inputNode!.id);
   }
 
   /// Returns a set containing [newSources] plus any new generated sources
@@ -400,7 +399,7 @@ class AssetGraph {
   /// the full input set.
   Set<AssetId> _addOutputsForSources(
       List<BuildPhase> buildPhases, Set<AssetId> newSources, String rootPackage,
-      {Set<AssetId> placeholders}) {
+      {Set<AssetId>? placeholders}) {
     var allInputs = Set<AssetId>.from(newSources);
     if (placeholders != null) allInputs.addAll(placeholders);
 
@@ -444,9 +443,7 @@ class AssetGraph {
       // We might have deleted some inputs during this loop, if they turned
       // out to be generated assets.
       if (!allInputs.contains(input)) continue;
-      var node = get(input);
-      assert(node != null, 'The node from `$input` does not exist.');
-
+      var node = get(input)!;
       var outputs = expectedOutputs(phase.builder, input);
       phaseOutputs.addAll(outputs);
       node.primaryOutputs.addAll(outputs);
@@ -475,7 +472,7 @@ class AssetGraph {
         var anchor = PostProcessAnchorNode.forInputAndAction(
             input, actionNum, buildOptionsNodeId);
         add(anchor);
-        get(input).anchorOutputs.add(anchor.id);
+        get(input)!.anchorOutputs.add(anchor.id);
       }
       actionNum++;
     }
@@ -494,16 +491,16 @@ class AssetGraph {
       BuilderOptionsAssetNode builderOptionsNode,
       List<BuildPhase> buildPhases,
       String rootPackage,
-      {AssetId primaryInput,
-      @required bool isHidden}) {
+      {required AssetId primaryInput,
+      required bool isHidden}) {
     var removed = <AssetId>{};
     for (var output in outputs) {
-      AssetNode existing;
+      AssetNode? existing;
       // When any outputs aren't hidden we can pick up old generated outputs as
       // regular `AssetNode`s, we need to delete them and all their primary
       // outputs, and replace them with a `GeneratedAssetNode`.
       if (contains(output)) {
-        existing = get(output);
+        existing = get(output)!;
         if (existing is GeneratedAssetNode) {
           throw DuplicateAssetNodeException(
               rootPackage,

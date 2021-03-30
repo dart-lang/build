@@ -49,19 +49,20 @@ Future<bool> createMergedOutputDirectories(
   }
 
   for (var target in buildDirs) {
-    var output = target.outputLocation?.path;
-    if (output != null) {
+    var outputLocation = target.outputLocation;
+    if (outputLocation != null) {
       if (!await _createMergedOutputDir(
-          output,
+          outputLocation.path,
           target.directory,
           packageGraph,
           environment,
           reader,
           finalizedAssetsView,
           // TODO(grouma) - retrieve symlink information from target only.
-          outputSymlinksOnly || target.outputLocation.useSymlinks,
-          target.outputLocation.hoist)) {
-        _logger.severe('Unable to create merged directory for $output.');
+          outputSymlinksOnly || outputLocation.useSymlinks,
+          outputLocation.hoist)) {
+        _logger.severe(
+            'Unable to create merged directory for ${outputLocation.path}.');
         return false;
       }
     }
@@ -73,7 +74,7 @@ Set<String> _conflicts(Set<BuildDirectory> buildDirs) {
   final seen = <String>{};
   final conflicts = <String>{};
   var outputLocations =
-      buildDirs.map((d) => d.outputLocation?.path).where((p) => p != null);
+      buildDirs.map((d) => d.outputLocation?.path).whereType<String>();
   for (var location in outputLocations) {
     if (!seen.add(location)) conflicts.add(location);
   }
@@ -82,7 +83,7 @@ Set<String> _conflicts(Set<BuildDirectory> buildDirs) {
 
 Future<bool> _createMergedOutputDir(
     String outputPath,
-    String root,
+    String? root,
     PackageGraph packageGraph,
     BuildEnvironment environment,
     AssetReader reader,

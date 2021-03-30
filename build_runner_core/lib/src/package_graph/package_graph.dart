@@ -110,7 +110,7 @@ class PackageGraph {
       PackageGraph.forPath(p.current);
 
   /// Shorthand to get a package by name.
-  PackageNode operator [](String packageName) => allPackages[packageName];
+  PackageNode? operator [](String packageName) => allPackages[packageName];
 
   @override
   String toString() {

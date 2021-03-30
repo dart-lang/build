@@ -34,9 +34,10 @@ class IOEnvironment implements BuildEnvironment {
 
   final PackageGraph _packageGraph;
 
-  IOEnvironment(this._packageGraph, {bool assumeTty, bool outputSymlinksOnly})
+  IOEnvironment(this._packageGraph,
+      {bool? assumeTty, bool outputSymlinksOnly = false})
       : _isInteractive = assumeTty == true || _canPrompt(),
-        _outputSymlinksOnly = outputSymlinksOnly ?? false,
+        _outputSymlinksOnly = outputSymlinksOnly,
         reader = FileBasedAssetReader(_packageGraph),
         writer = FileBasedAssetWriter(_packageGraph) {
     if (_outputSymlinksOnly && Platform.isWindows) {
@@ -63,7 +64,7 @@ class IOEnvironment implements BuildEnvironment {
       for (var i = 0, l = choices.length; i < l; i++) {
         stdout.writeln('${i + 1} - ${choices[i]}');
       }
-      final input = stdin.readLineSync();
+      final input = stdin.readLineSync()!;
       final choice = int.tryParse(input) ?? -1;
       if (choice > 0 && choice <= choices.length) return choice - 1;
       stdout.writeln('Unrecognized option $input, '
@@ -96,7 +97,7 @@ bool _canPrompt() =>
     Platform.script.scheme != 'data';
 
 BuildResult _convertToFailure(BuildResult previous,
-        {FailureType failureType}) =>
+        {FailureType? failureType}) =>
     BuildResult(
       BuildStatus.failure,
       previous.outputs,

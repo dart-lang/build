@@ -19,7 +19,7 @@ import '../asset_graph/optional_output_tracker.dart';
 class FinalizedReader implements AssetReader {
   final AssetReader _delegate;
   final AssetGraph _assetGraph;
-  OptionalOutputTracker _optionalOutputTracker;
+  OptionalOutputTracker? _optionalOutputTracker;
   final String _rootPackage;
   final List<BuildPhase> _buildPhases;
 
@@ -32,11 +32,11 @@ class FinalizedReader implements AssetReader {
       this._delegate, this._assetGraph, this._buildPhases, this._rootPackage);
 
   /// Returns a reason why [id] is not readable, or null if it is readable.
-  Future<UnreadableReason> unreadableReason(AssetId id) async {
+  Future<UnreadableReason?> unreadableReason(AssetId id) async {
     if (!_assetGraph.contains(id)) return UnreadableReason.notFound;
-    var node = _assetGraph.get(id);
+    var node = _assetGraph.get(id)!;
     if (_optionalOutputTracker != null &&
-        !_optionalOutputTracker.isRequired(node.id)) {
+        !_optionalOutputTracker!.isRequired(node.id)) {
       return UnreadableReason.notOutput;
     }
     if (node.isDeleted) return UnreadableReason.deleted;

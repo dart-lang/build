@@ -15,8 +15,8 @@ var _logger = Logger('Heartbeat');
 /// Once [start]ed, if [waitDuration] passes between calls to [ping], then
 /// [onTimeout] will be invoked with the duration.
 abstract class Heartbeat {
-  Stopwatch _intervalWatch;
-  Timer _timer;
+  Stopwatch? _intervalWatch;
+  Timer? _timer;
 
   /// The interval at which to check if [waitDuration] has passed.
   final Duration checkInterval;
@@ -24,9 +24,10 @@ abstract class Heartbeat {
   /// The amount of time between heartbeats.
   final Duration waitDuration;
 
-  Heartbeat({Duration checkInterval, Duration waitDuration})
-      : checkInterval = checkInterval ?? const Duration(milliseconds: 100),
-        waitDuration = waitDuration ?? const Duration(seconds: 5);
+  Heartbeat({
+    this.checkInterval = const Duration(milliseconds: 100),
+    this.waitDuration = const Duration(seconds: 5),
+  });
 
   /// Invoked if [waitDuration] time has elapsed since the last call to [ping].
   void onTimeout(Duration elapsed);
@@ -35,7 +36,7 @@ abstract class Heartbeat {
   /// this method being called, then [onTimeout] will be invoked with the
   /// duration since the last ping.
   void ping() {
-    _intervalWatch.reset();
+    _intervalWatch!.reset();
   }
 
   /// Starts this heartbeat logger, must not already be started.
@@ -59,15 +60,15 @@ abstract class Heartbeat {
     if (_intervalWatch == null || _timer == null) {
       throw StateError('HeartbeatLogger was never started');
     }
-    _intervalWatch.stop();
+    _intervalWatch!.stop();
     _intervalWatch = null;
-    _timer.cancel();
+    _timer!.cancel();
     _timer = null;
   }
 
   void _checkDuration(void _) {
-    if (_intervalWatch.elapsed < waitDuration) return;
-    onTimeout(_intervalWatch.elapsed);
+    if (_intervalWatch!.elapsed < waitDuration) return;
+    onTimeout(_intervalWatch!.elapsed);
     ping();
   }
 }
@@ -76,16 +77,18 @@ abstract class Heartbeat {
 /// will log a heartbeat message with the current elapsed time since [start] was
 /// originally invoked.
 class HeartbeatLogger extends Heartbeat {
-  StreamSubscription<LogRecord> _listener;
-  Stopwatch _totalWatch;
+  StreamSubscription<LogRecord>? _listener;
+  Stopwatch? _totalWatch;
 
   /// Will be invoked with each original log message and the returned value will
   /// be logged instead.
-  final String Function(String original) transformLog;
+  final String Function(String original)? transformLog;
 
-  HeartbeatLogger(
-      {Duration checkInterval, Duration waitDuration, this.transformLog})
-      : super(checkInterval: checkInterval, waitDuration: waitDuration);
+  HeartbeatLogger({
+    Duration checkInterval = const Duration(milliseconds: 100),
+    Duration waitDuration = const Duration(seconds: 5),
+    this.transformLog,
+  }) : super(checkInterval: checkInterval, waitDuration: waitDuration);
 
   /// Start listening to logs.
   @override
@@ -99,19 +102,19 @@ class HeartbeatLogger extends Heartbeat {
   @override
   void stop() {
     super.stop();
-    _listener.cancel();
+    _listener!.cancel();
     _listener = null;
-    _totalWatch.stop();
+    _totalWatch!.stop();
     _totalWatch = null;
   }
 
   /// Logs a heartbeat message if we reach the timeout.
   @override
   void onTimeout(void _) {
-    var formattedTime = humanReadable(_totalWatch.elapsed);
+    var formattedTime = humanReadable(_totalWatch!.elapsed);
     var message = '$formattedTime elapsed';
     if (transformLog != null) {
-      message = transformLog(message);
+      message = transformLog!(message);
     }
     _logger.info(message);
   }
@@ -121,11 +124,11 @@ class HungActionsHeartbeat extends Heartbeat {
   /// Returns a description of pending actions
   final String Function() listActions;
 
-  HungActionsHeartbeat(this.listActions,
-      {Duration checkInterval, Duration waitDuration})
-      : super(
-            checkInterval: checkInterval,
-            waitDuration: waitDuration ?? Duration(seconds: 15));
+  HungActionsHeartbeat(
+    this.listActions, {
+    Duration checkInterval = const Duration(milliseconds: 100),
+    Duration waitDuration = const Duration(seconds: 15),
+  }) : super(checkInterval: checkInterval, waitDuration: waitDuration);
 
   @override
   void onTimeout(Duration elapsed) {
