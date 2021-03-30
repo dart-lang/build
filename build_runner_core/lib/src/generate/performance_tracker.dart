@@ -56,6 +56,7 @@ class BuildPhasePerformance extends TimeSlice {
 class BuilderActionPerformance extends TimeSlice {
   final String builderKey;
 
+  @JsonKey(fromJson: _assetIdFromJson, toJson: _assetIdToJson)
   final AssetId primaryInput;
 
   final Iterable<BuilderActionStagePerformance> stages;

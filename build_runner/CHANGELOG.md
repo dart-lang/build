@@ -1,5 +1,7 @@
 ## 1.12.3-dev
 
+- Update to the latest `build_runner_core`.
+
 ## 1.12.2
 
 - Allow the latest `dart_style`.

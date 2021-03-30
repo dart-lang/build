@@ -228,8 +228,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
     var changeProvider = daemonOptions.buildMode == BuildMode.Auto
         ? AutoChangeProvider(graphEvents())
-        : ManualChangeProvider(AssetTracker(builder.assetGraph,
-            daemonEnvironment.reader, buildOptions.targetGraph));
+        : ManualChangeProvider(
+            AssetTracker(daemonEnvironment.reader, buildOptions.targetGraph),
+            builder.assetGraph);
 
     return BuildRunnerDaemonBuilder._(
         builder, buildOptions, outputStreamController, changeProvider);
