@@ -15,8 +15,7 @@ String _dartBinary = p.join(sdkBin, 'dart');
 
 /// Runs `pub get` on [package] (which is assumed to be in a directory with
 /// that name under the [d.sandbox] directory).
-Future<ProcessResult> pubGet(String package, {bool offline}) async {
-  offline ??= true;
+Future<ProcessResult> pubGet(String package, {bool offline = true}) async {
   var pubGetresult =
       await runPub(package, 'get', args: offline ? ['--offline'] : []);
   expect(pubGetresult.exitCode, 0, reason: pubGetresult.stderr as String);
@@ -25,13 +24,13 @@ Future<ProcessResult> pubGet(String package, {bool offline}) async {
 
 /// Runs the `pub` [command] on [package] with [args].
 Future<ProcessResult> runPub(String package, String command,
-        {Iterable<String> args}) =>
+        {Iterable<String>? args}) =>
     Process.run(pubBinary, [command, ...?args],
         workingDirectory: p.join(d.sandbox, package));
 
 /// Starts the `pub` [command] on [package] with [args].
 Future<Process> startPub(String package, String command,
-        {Iterable<String> args}) =>
+        {Iterable<String>? args}) =>
     Process.start(pubBinary, [command, ...args ?? []],
         workingDirectory: p.join(d.sandbox, package));
 
@@ -39,7 +38,7 @@ Future<Process> startPub(String package, String command,
 ///
 /// The [script] should be a relative path under [package].
 Future<ProcessResult> runDart(String package, String script,
-        {Iterable<String> args}) =>
+        {Iterable<String>? args}) =>
     Process.run(_dartBinary, [script, ...?args],
         workingDirectory: p.join(d.sandbox, package));
 
@@ -47,6 +46,6 @@ Future<ProcessResult> runDart(String package, String script,
 ///
 /// The [script] should be a relative path under [package].
 Future<Process> startDart(String package, String script,
-        {Iterable<String> args}) =>
+        {Iterable<String>? args}) =>
     Process.start(_dartBinary, [script, ...?args],
         workingDirectory: p.join(d.sandbox, package));

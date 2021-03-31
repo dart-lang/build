@@ -619,7 +619,7 @@ a:file://different/fake/pkg/path
 
         var result = await results.next;
         expect(runCount, 1);
-        checkBuild(result, status: BuildStatus.failure);
+        checkBuild(result, status: BuildStatus.failure, writer: writer);
 
         await writer.writeAsString(makeAssetId('a|web/a.txt'), 'a');
 

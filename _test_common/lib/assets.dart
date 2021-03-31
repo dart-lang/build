@@ -7,7 +7,7 @@ import 'package:build_test/build_test.dart';
 import 'package:crypto/crypto.dart';
 
 AssetNode makeAssetNode(
-    [String assetIdString, List<AssetId> outputs, Digest lastKnownDigest]) {
+    [String? assetIdString, List<AssetId>? outputs, Digest? lastKnownDigest]) {
   var id = makeAssetId(assetIdString);
   var node = SourceAssetNode(id, lastKnownDigest: lastKnownDigest);
   if (outputs != null) {

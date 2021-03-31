@@ -78,7 +78,7 @@ void main() {
           ..state = NodeState.upToDate
           ..wasOutput = true
           ..isFailure = false;
-        assetReader.cacheStringAsset(id, sources[node.primaryInput]);
+        assetReader.cacheStringAsset(id, sources[node.primaryInput]!);
       }
       tmpDir = await Directory.systemTemp.createTemp('build_tests');
       anotherTmpDir = await Directory.systemTemp.createTemp('build_tests');
