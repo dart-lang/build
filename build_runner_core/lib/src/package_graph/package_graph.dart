@@ -90,7 +90,7 @@ class PackageGraph {
       nodes[package.name] = PackageNode(
           package.name,
           package.root.toFilePath(),
-          isRoot ? DependencyType.path : dependencyTypes[package.name]!,
+          isRoot ? DependencyType.path : dependencyTypes[package.name],
           package.languageVersion,
           isRoot: isRoot);
     }
@@ -134,7 +134,7 @@ class PackageNode {
   /// The type of dependency being used to pull in this package.
   ///
   /// May be `null`.
-  final DependencyType dependencyType;
+  final DependencyType? dependencyType;
 
   /// All the packages that this package directly depends on.
   final List<PackageNode> dependencies = [];
@@ -212,8 +212,8 @@ Map<String, List<String>> _parsePackageDependencies(
 /// Gets the deps from a yaml file, omitting dependency_overrides.
 List<String> _depsFromYaml(YamlMap yaml, {bool isRoot = false}) {
   var deps = <String>{
-    ..._stringKeys(yaml['dependencies'] as Map),
-    if (isRoot) ..._stringKeys(yaml['dev_dependencies'] as Map),
+    ..._stringKeys(yaml['dependencies'] as Map?),
+    if (isRoot) ..._stringKeys(yaml['dev_dependencies'] as Map?),
   };
   // A consistent package order _should_ mean a consistent order of build
   // phases. It's not a guarantee, but also not required for correctness, only

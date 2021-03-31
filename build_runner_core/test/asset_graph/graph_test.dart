@@ -117,7 +117,7 @@ void main() {
             globNode.outputs.add(generatedNode.id);
             builderOptionsNode.outputs.add(generatedNode.id);
             if (g % 2 == 0) {
-              node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
+              node.deletedBy.add(anchorNode.id);
             }
 
             var syntheticNode = SyntheticSourceAssetNode(makeAssetId());

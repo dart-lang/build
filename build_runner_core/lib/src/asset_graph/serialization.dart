@@ -96,7 +96,7 @@ class _AssetGraphDeserializer {
     var typeId =
         _NodeType.values[serializedNode[_AssetField.NodeType.index] as int];
     var id = _idToAssetId[serializedNode[_AssetField.Id.index] as int]!;
-    var serializedDigest = serializedNode[_AssetField.Digest.index] as String;
+    var serializedDigest = serializedNode[_AssetField.Digest.index] as String?;
     var digest = _deserializeDigest(serializedDigest);
     switch (typeId) {
       case _NodeType.Source:
@@ -128,7 +128,7 @@ class _AssetGraphDeserializer {
                   as int]!,
           lastKnownDigest: digest,
           previousInputsDigest: _deserializeDigest(serializedNode[
-              _GeneratedField.PreviousInputsDigest.index + offset] as String),
+              _GeneratedField.PreviousInputsDigest.index + offset] as String?),
           isHidden: _deserializeBool(
               serializedNode[_GeneratedField.IsHidden.index + offset] as int),
         );
@@ -174,7 +174,7 @@ class _AssetGraphDeserializer {
                     as int]!,
             previousInputsDigest: _deserializeDigest(serializedNode[
                     _PostAnchorField.PreviousInputsDigest.index + offset]
-                as String));
+                as String?));
         break;
     }
     node.outputs.addAll(_deserializeAssetIds(

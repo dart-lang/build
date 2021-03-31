@@ -142,10 +142,9 @@ targets:
           LogSubscription(environment, logLevel: Level.OFF),
           packageGraph: packageGraph,
           skipBuildScriptCheck: true);
-    });
-
-    tearDown(() async {
-      await options.logListener.cancel();
+      // we don't want this unconditionally in a normal `tearDown`, this may
+      // not be initialized if something above this fails.
+      addTearDown(options.logListener.cancel);
     });
 
     group('updates the asset graph', () {
