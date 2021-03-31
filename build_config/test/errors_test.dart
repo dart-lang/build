@@ -45,7 +45,7 @@ line 4, column 7 of build.yaml: Unsupported value for "build_extensions". May no
   ╵''');
   });
 
-  test('for empty include globs', () {
+  test('for null generate_for globs', () {
     var buildYaml = r'''
 targets:
   $default:
@@ -61,6 +61,82 @@ line 6, column 9 of build.yaml: Unsupported value for "generate_for". Include gl
 6 │         -
   │         ^
   ╵''');
+  });
+  test('for empty generate_for globs', () {
+    var buildYaml = r'''
+targets:
+  $default:
+    builders:
+      some_package:some_builder:
+        generate_for:
+        - ''
+''';
+
+    _expectThrows(buildYaml, r'''
+line 6, column 9 of build.yaml: Unsupported value for "generate_for". Include globs must not be empty
+  ╷
+6 │         - ''
+  │         ^^^^
+  ╵''');
+  });
+
+  test('for null exclude globs', () {
+    var buildYaml = r'''
+targets:
+  $default:
+    builders:
+      some_package:some_builder:
+        generate_for:
+          exclude:
+          -
+''';
+
+    _expectThrows(buildYaml, r'''
+line 7, column 11 of build.yaml: Unsupported value for "exclude". type 'Null' is not a subtype of type 'String' in type cast
+  ╷
+7 │           -
+  │           ^
+  ╵''');
+  });
+
+  test('for empty exclude globs', () {
+    var buildYaml = r'''
+targets:
+  $default:
+    builders:
+      some_package:some_builder:
+        generate_for:
+          exclude:
+          - ''
+''';
+
+    _expectThrows(buildYaml, r'''
+line 6, column 11 of build.yaml: Unsupported value for "generate_for". Exclude globs must not be empty
+  ╷
+6 │ ┌           exclude:
+7 │ └           - ''
+  ╵''');
+  });
+
+  test('for null builder config', () {
+    var buildYaml = r'''
+targets:
+  $default:
+    builders:
+      not:defined:
+''';
+
+    _expectThrows(
+        buildYaml,
+        allOf(
+          contains(
+              'line 4, column 7 of build.yaml: Unsupported value for "builders".'),
+          contains(r'''
+  ╷
+4 │       not:defined:
+  │       ^^^^^^^^^^^^
+  ╵'''),
+        ));
   });
 }
 

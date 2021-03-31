@@ -1,3 +1,7 @@
+## 1.0.0-dev
+
+- Migrate to null safety.
+
 ## 0.4.7
 
 - Allow the latest `pubspec_parse` and `checked_yaml`.
