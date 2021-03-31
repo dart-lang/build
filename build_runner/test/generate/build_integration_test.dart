@@ -523,6 +523,7 @@ targets:
   $default:
     builders:
       bad:builder:
+        enabled: true
 '''),
         d.dir('tool', [d.file('build.dart', buildContent)]),
         d.dir('web', [
@@ -551,6 +552,7 @@ targets:
         d.file('build.yaml', r'''
 global_options:
   bad:builder:
+    options: {}
 '''),
         d.dir('tool', [d.file('build.dart', buildContent)]),
         d.dir('web', [

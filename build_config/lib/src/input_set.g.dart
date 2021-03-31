@@ -11,9 +11,9 @@ InputSet _$InputSetFromJson(Map json) {
     $checkKeys(json, allowedKeys: const ['include', 'exclude']);
     final val = InputSet(
       include: $checkedConvert(json, 'include',
-          (v) => (v as List)?.map((e) => e as String)?.toList()),
+          (v) => (v as List<dynamic>?)?.map((e) => e as String).toList()),
       exclude: $checkedConvert(json, 'exclude',
-          (v) => (v as List)?.map((e) => e as String)?.toList()),
+          (v) => (v as List<dynamic>?)?.map((e) => e as String).toList()),
     );
     return val;
   });

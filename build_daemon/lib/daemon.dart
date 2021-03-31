@@ -25,11 +25,11 @@ import 'src/server.dart';
 /// notification.
 class Daemon {
   final String _workingDirectory;
-  final RandomAccessFile _lock;
+  final RandomAccessFile? _lock;
   final _doneCompleter = Completer();
 
-  Server _server;
-  StreamSubscription _sub;
+  Server? _server;
+  StreamSubscription? _sub;
 
   Daemon(String workingDirectory)
       : _workingDirectory = workingDirectory,
@@ -37,15 +37,15 @@ class Daemon {
 
   Future<void> get onDone => _doneCompleter.future;
 
-  Future<void> stop({String message, int failureType}) =>
-      _server.stop(message: message, failureType: failureType);
+  Future<void> stop({String message = '', int failureType = 0}) =>
+      _server!.stop(message: message, failureType: failureType);
 
   bool get hasLock => _lock != null;
 
   /// Returns the current version of the running build daemon.
   ///
   /// Null if one isn't running.
-  Future<String> runningVersion() async {
+  Future<String?> runningVersion() async {
     var versionFile = File(versionFilePath(_workingDirectory));
     if (!await waitForFile(versionFile)) return null;
     return versionFile.readAsStringSync();
@@ -64,8 +64,8 @@ class Daemon {
     Set<String> options,
     DaemonBuilder builder,
     ChangeProvider changeProvider, {
-    Serializers serializersOverride,
-    bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuild,
+    Serializers? serializersOverride,
+    bool Function(BuildTarget, Iterable<WatchEvent>)? shouldBuild,
     Duration timeout = const Duration(seconds: 30),
   }) async {
     if (_server != null || _lock == null) return;
@@ -74,17 +74,17 @@ class Daemon {
     _createVersionFile();
     _createOptionsFile(options);
 
-    _server = Server(
+    var server = _server = Server(
       builder,
       timeout,
       changeProvider,
       serializersOverride: serializersOverride,
       shouldBuild: shouldBuild,
     );
-    var port = await _server.listen();
+    var port = await server.listen();
     _createPortFile(port);
 
-    unawaited(_server.onDone.then((_) async {
+    unawaited(server.onDone.then((_) async {
       await _cleanUp();
     }));
   }
@@ -116,14 +116,14 @@ class Daemon {
     _sub = ProcessSignal.sigint.watch().listen((signal) async {
       if (signal == ProcessSignal.sigint) {
         cancelCount++;
-        await _server.stop();
+        await _server!.stop();
         if (cancelCount > 1) exit(1);
       }
     });
   }
 }
 
-RandomAccessFile _tryGetLock(String workingDirectory) {
+RandomAccessFile? _tryGetLock(String workingDirectory) {
   try {
     _createDaemonWorkspace(workingDirectory);
     var lock = File(lockFilePath(workingDirectory))

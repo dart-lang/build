@@ -150,11 +150,13 @@ void main() {
 ///
 /// If the status is null, the stderr ir returned.
 Future<String> _statusOf(Process daemon) async {
-  var status = await daemon.stdout
-      .transform(utf8.decoder)
-      .transform(const LineSplitter())
-      .firstWhere((line) => line == 'RUNNING' || line == 'ALREADY RUNNING',
-          orElse: () => null);
+  String? status;
+  try {
+    status = await daemon.stdout
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .firstWhere((line) => line == 'RUNNING' || line == 'ALREADY RUNNING');
+  } catch (_) {}
   status ??= (await daemon.stderr
           .transform(utf8.decoder)
           .transform(const LineSplitter())
@@ -199,7 +201,7 @@ Future<Process> _runDaemon(var workspace, {int timeout = 30}) async {
     ...Platform.executableArguments,
     if (!Platform.executableArguments
         .any((arg) => arg.startsWith('--packages')))
-      '--packages=${(await Isolate.packageConfig).path}',
+      '--packages=${(await Isolate.packageConfig)!.path}',
     'test.dart'
   ];
   var process = await Process.start(Platform.resolvedExecutable, args,

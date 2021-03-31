@@ -48,7 +48,7 @@ Future<void> _handleDaemonStartup(
   // Whenever we see a `logStartMarker` we will parse everything between that
   // and the `logEndMarker` as a `ServerLog`. Everything else is considered a
   // normal INFO level log.
-  StringBuffer nextLogRecord;
+  StringBuffer? nextLogRecord;
   var sub = stdout.where((line) => !_isActionMessage(line)).listen((line) {
     if (nextLogRecord != null) {
       if (line == logEndMarker) {
@@ -64,7 +64,7 @@ Future<void> _handleDaemonStartup(
         }
         nextLogRecord = null;
       } else {
-        nextLogRecord.writeln(line);
+        nextLogRecord!.writeln(line);
       }
     } else if (line == logStartMarker) {
       nextLogRecord = StringBuffer();
@@ -75,12 +75,10 @@ Future<void> _handleDaemonStartup(
     }
   });
 
-  var daemonAction =
-      await stdout.firstWhere(_isActionMessage, orElse: () => null);
+  var daemonAction = await stdout.firstWhere(_isActionMessage,
+      orElse: () => throw StateError('Unable to start build daemon.'));
 
-  if (daemonAction == null) {
-    throw StateError('Unable to start build daemon.');
-  } else if (daemonAction == versionSkew) {
+  if (daemonAction == versionSkew) {
     throw VersionSkew();
   } else if (daemonAction == optionsSkew) {
     throw OptionsSkew();
@@ -103,31 +101,30 @@ class BuildDaemonClient {
       StreamController<ShutdownNotification>.broadcast();
   final Serializers _serializers;
 
-  IOWebSocketChannel _channel;
+  final IOWebSocketChannel _channel;
 
   BuildDaemonClient._(
     int port,
     this._serializers,
     void Function(ServerLog) logHandler,
-  ) {
-    _channel = IOWebSocketChannel.connect('ws://localhost:$port')
-      ..stream.listen((data) {
-        var message = _serializers.deserialize(jsonDecode(data as String));
-        if (message is ServerLog) {
-          logHandler(message);
-        } else if (message is BuildResults) {
-          _buildResults.add(message);
-        } else if (message is ShutdownNotification) {
-          _shutdownNotifications.add(message);
-        } else {
-          // In practice we should never reach this state due to the
-          // deserialize call.
-          throw StateError(
-              'Unexpected message from the Dart Build Daemon\n $message');
-        }
-      })
-          // TODO(grouma) - Implement proper error handling.
-          .onError(print);
+  ) : _channel = IOWebSocketChannel.connect('ws://localhost:$port') {
+    _channel.stream.listen((data) {
+      var message = _serializers.deserialize(jsonDecode(data as String));
+      if (message is ServerLog) {
+        logHandler(message);
+      } else if (message is BuildResults) {
+        _buildResults.add(message);
+      } else if (message is ShutdownNotification) {
+        _shutdownNotifications.add(message);
+      } else {
+        // In practice we should never reach this state due to the
+        // deserialize call.
+        throw StateError(
+            'Unexpected message from the Dart Build Daemon\n $message');
+      }
+    })
+        // TODO(grouma) - Implement proper error handling.
+        .onError(print);
   }
 
   Stream<BuildResults> get buildResults => _buildResults.stream;
@@ -156,16 +153,13 @@ class BuildDaemonClient {
   static Future<BuildDaemonClient> connect(
     String workingDirectory,
     List<String> daemonCommand, {
-    Serializers serializersOverride,
-    void Function(ServerLog) logHandler,
-    bool includeParentEnvironment,
-    Map<String, String> environment,
-    BuildMode buildMode,
+    Serializers? serializersOverride,
+    void Function(ServerLog)? logHandler,
+    bool includeParentEnvironment = true,
+    Map<String, String>? environment,
+    BuildMode buildMode = BuildMode.Auto,
   }) async {
     logHandler ??= (_) {};
-    includeParentEnvironment ??= true;
-    buildMode ??= BuildMode.Auto;
-
     var daemonSerializers = serializersOverride ?? serializers;
 
     var daemonArgs = daemonCommand.sublist(1)
