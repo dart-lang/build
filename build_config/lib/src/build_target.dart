@@ -46,7 +46,10 @@ class BuildTarget {
             MapEntry(normalizeBuilderKeyUsage(key, currentPackage), config)),
         sources = sources ?? InputSet.anything;
 
-  factory BuildTarget.fromJson(Map json) => _$BuildTargetFromJson(json);
+  factory BuildTarget.fromJson(Map json) {
+    ArgumentError.checkNotNull(json);
+    return _$BuildTargetFromJson(json);
+  }
 
   @override
   String toString() => {
@@ -110,8 +113,10 @@ class TargetBuilderConfig {
         devOptions = devOptions ?? const {},
         releaseOptions = releaseOptions ?? const {};
 
-  factory TargetBuilderConfig.fromJson(Map json) =>
-      _$TargetBuilderConfigFromJson(json);
+  factory TargetBuilderConfig.fromJson(Map json) {
+    ArgumentError.checkNotNull(json);
+    return _$TargetBuilderConfigFromJson(json);
+  }
 
   @override
   String toString() => {
@@ -151,8 +156,10 @@ class GlobalBuilderConfig {
         devOptions = devOptions ?? const {},
         releaseOptions = releaseOptions ?? const {};
 
-  factory GlobalBuilderConfig.fromJson(Map json) =>
-      _$GlobalBuilderConfigFromJson(json);
+  factory GlobalBuilderConfig.fromJson(Map json) {
+    ArgumentError.checkNotNull(json);
+    return _$GlobalBuilderConfigFromJson(json);
+  }
 
   @override
   String toString() => {

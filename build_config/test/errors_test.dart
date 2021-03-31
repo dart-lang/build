@@ -117,6 +117,27 @@ line 6, column 11 of build.yaml: Unsupported value for "generate_for". Exclude g
 7 │ └           - ''
   ╵''');
   });
+
+  test('for null builder config', () {
+    var buildYaml = r'''
+targets:
+  $default:
+    builders:
+      not:defined:
+''';
+
+    _expectThrows(
+        buildYaml,
+        allOf(
+          contains(
+              'line 4, column 7 of build.yaml: Unsupported value for "builders".'),
+          contains(r'''
+  ╷
+4 │       not:defined:
+  │       ^^^^^^^^^^^^
+  ╵'''),
+        ));
+  });
 }
 
 void _expectThrows(String buildYaml, Object matcher) => expect(

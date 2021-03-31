@@ -138,8 +138,10 @@ class BuilderDefinition {
     }
   }
 
-  factory BuilderDefinition.fromJson(Map json) =>
-      _$BuilderDefinitionFromJson(json);
+  factory BuilderDefinition.fromJson(Map json) {
+    ArgumentError.checkNotNull(json);
+    return _$BuilderDefinitionFromJson(json);
+  }
 
   @override
   String toString() => {
@@ -197,8 +199,10 @@ class PostProcessBuilderDefinition {
     TargetBuilderConfigDefaults? defaults,
   }) : defaults = defaults ?? const TargetBuilderConfigDefaults();
 
-  factory PostProcessBuilderDefinition.fromJson(Map json) =>
-      _$PostProcessBuilderDefinitionFromJson(json);
+  factory PostProcessBuilderDefinition.fromJson(Map json) {
+    ArgumentError.checkNotNull(json);
+    return _$PostProcessBuilderDefinitionFromJson(json);
+  }
 
   @override
   String toString() => {
@@ -233,6 +237,8 @@ class TargetBuilderConfigDefaults {
         devOptions = devOptions ?? const {},
         releaseOptions = releaseOptions ?? const {};
 
-  factory TargetBuilderConfigDefaults.fromJson(Map json) =>
-      _$TargetBuilderConfigDefaultsFromJson(json);
+  factory TargetBuilderConfigDefaults.fromJson(Map json) {
+    ArgumentError.checkNotNull(json);
+    return _$TargetBuilderConfigDefaultsFromJson(json);
+  }
 }
