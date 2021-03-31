@@ -31,7 +31,7 @@ void main() {
   final postCopyABuilderApplication = applyPostProcess(
       'a:post_copy_builder',
       (options) => CopyingPostProcessBuilder(
-          outputExtension: options.config['extension'] as String ?? '.post'));
+          outputExtension: options.config['extension'] as String? ?? '.post'));
   final globBuilder = GlobbingBuilder(Glob('**.txt'));
   final defaultBuilderOptions = const BuilderOptions({});
   final placeholders =
@@ -400,7 +400,7 @@ void main() {
 
         var graphId = makeAssetId('a|$assetGraphPath');
         expect(writer.assets, contains(graphId));
-        var cachedGraph = AssetGraph.deserialize(writer.assets[graphId]);
+        var cachedGraph = AssetGraph.deserialize(writer.assets[graphId]!);
         expect(
             cachedGraph.allNodes.map((node) => node.id),
             unorderedEquals([
@@ -565,7 +565,7 @@ void main() {
     });
 
     group('with `hideOutput: true`', () {
-      PackageGraph packageGraph;
+      late PackageGraph packageGraph;
 
       setUp(() {
         packageGraph = buildPackageGraph({
@@ -962,7 +962,7 @@ void main() {
 
     var graphId = makeAssetId('a|$assetGraphPath');
     expect(writer.assets, contains(graphId));
-    var cachedGraph = AssetGraph.deserialize(writer.assets[graphId]);
+    var cachedGraph = AssetGraph.deserialize(writer.assets[graphId]!);
 
     var expectedGraph = await AssetGraph.build(
         [],
@@ -1099,7 +1099,7 @@ void main() {
     }, writer: writer);
 
     final graphId = makeAssetId('a|$assetGraphPath');
-    final cachedGraph = AssetGraph.deserialize(writer.assets[graphId]);
+    final cachedGraph = AssetGraph.deserialize(writer.assets[graphId]!);
     final outputId = AssetId('a', 'lib/a.txt.out');
 
     final outputNode = cachedGraph.get(outputId) as GeneratedAssetNode;
@@ -1357,7 +1357,7 @@ void main() {
             writer: writer);
 
         var graph = AssetGraph.deserialize(
-            writer.assets[makeAssetId('a|$assetGraphPath')]);
+            writer.assets[makeAssetId('a|$assetGraphPath')]!);
         expect(graph.get(makeAssetId('a|lib/a.txt.copy')), isNull);
       });
     });
@@ -1397,7 +1397,7 @@ void main() {
 
       /// Should be deleted using the writer, and removed from the new graph.
       var newGraph = AssetGraph.deserialize(
-          writer.assets[makeAssetId('a|$assetGraphPath')]);
+          writer.assets[makeAssetId('a|$assetGraphPath')]!);
       var aNodeId = makeAssetId('a|lib/a.txt');
       var aCopyNodeId = makeAssetId('a|lib/a.txt.copy');
       var aCloneNodeId = makeAssetId('a|lib/a.txt.copy.clone');
@@ -1486,12 +1486,12 @@ void main() {
 
       // Read cached graph and validate.
       var graph = AssetGraph.deserialize(
-          writer.assets[makeAssetId('a|$assetGraphPath')]);
+          writer.assets[makeAssetId('a|$assetGraphPath')]!);
       var outputNode =
           graph.get(makeAssetId('a|lib/file.a.copy')) as GeneratedAssetNode;
-      var fileANode = graph.get(makeAssetId('a|lib/file.a'));
-      var fileBNode = graph.get(makeAssetId('a|lib/file.b'));
-      var fileCNode = graph.get(makeAssetId('a|lib/file.c'));
+      var fileANode = graph.get(makeAssetId('a|lib/file.a'))!;
+      var fileBNode = graph.get(makeAssetId('a|lib/file.b'))!;
+      var fileCNode = graph.get(makeAssetId('a|lib/file.c'))!;
       expect(outputNode.inputs, unorderedEquals([fileANode.id, fileCNode.id]));
       expect(fileANode.outputs, contains(outputNode.id));
       expect(fileBNode.outputs, isEmpty);
@@ -1705,7 +1705,7 @@ void main() {
           writer: writer);
 
       var finalGraph =
-          AssetGraph.deserialize(writer.assets[AssetId('a', assetGraphPath)]);
+          AssetGraph.deserialize(writer.assets[AssetId('a', assetGraphPath)]!);
       for (var i = 1; i < 4; i++) {
         var node =
             finalGraph.get(AssetId('a', 'web/a.g$i')) as GeneratedAssetNode;

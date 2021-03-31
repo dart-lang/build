@@ -22,7 +22,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('createMergedDir', () {
-    AssetGraph graph;
+    late AssetGraph graph;
     final phases = [
       InBuildPhase(
           TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')),
@@ -58,12 +58,12 @@ void main() {
       rootPackage('a'): ['b'],
       package('b'): []
     });
-    Directory tmpDir;
-    Directory anotherTmpDir;
-    TestBuildEnvironment environment;
-    InMemoryRunnerAssetReader assetReader;
-    OptionalOutputTracker optionalOutputTracker;
-    FinalizedAssetsView finalizedAssetsView;
+    late Directory tmpDir;
+    late Directory anotherTmpDir;
+    late TestBuildEnvironment environment;
+    late InMemoryRunnerAssetReader assetReader;
+    late OptionalOutputTracker optionalOutputTracker;
+    late FinalizedAssetsView finalizedAssetsView;
 
     setUp(() async {
       assetReader = InMemoryRunnerAssetReader(sources);
@@ -301,8 +301,8 @@ void main() {
     });
 
     group('existing output dir handling', () {
-      File garbageFile;
-      Directory emptyDirectory;
+      late File garbageFile;
+      late Directory emptyDirectory;
       setUp(() {
         garbageFile = File(p.join(tmpDir.path, 'garbage_file.txt'))
           ..createSync();
@@ -375,13 +375,9 @@ void main() {
 
       test('fails if the input path is invalid', () async {
         environment.nextPromptResponse = 1;
-        var success = await createMergedOutputDirectories(
-            {BuildDirectory(null, outputLocation: OutputLocation(tmpDir.path))},
-            packageGraph,
-            environment,
-            assetReader,
-            finalizedAssetsView,
-            false);
+        var success = await createMergedOutputDirectories({
+          BuildDirectory('../', outputLocation: OutputLocation(tmpDir.path))
+        }, packageGraph, environment, assetReader, finalizedAssetsView, false);
         expect(success, isFalse);
       });
 
@@ -417,7 +413,7 @@ void main() {
         final removes = ['a|lib/a.txt', 'a|lib/a.txt.copy'];
         for (var remove in removes) {
           graph
-              .get(makeAssetId(remove))
+              .get(makeAssetId(remove))!
               .deletedBy
               .add(makeAssetId(remove).addExtension('.post_anchor.1'));
         }

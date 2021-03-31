@@ -19,7 +19,8 @@ import 'package:build_runner_core/src/package_graph/target_graph.dart';
 
 void main() {
   group('AssetTracker.collectChanges()', () {
-    AssetTracker assetTracker;
+    late AssetTracker assetTracker;
+    late AssetGraph assetGraph;
 
     setUp(() async {
       await d.dir('a', [
@@ -36,17 +37,18 @@ void main() {
           isRoot: true));
       var reader = FileBasedAssetReader(packageGraph);
       var aId = AssetId('a', 'web/a.txt');
-      var assetGraph =
+      assetGraph =
           await AssetGraph.build([], {aId}, <AssetId>{}, packageGraph, reader);
       // We need to pre-emptively assign a digest so we determine that the
       // node is "interesting".
-      assetGraph.get(aId).lastKnownDigest = await reader.digest(aId);
+      assetGraph.get(aId)!.lastKnownDigest = await reader.digest(aId);
 
       var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
           defaultRootPackageSources: ['web/**']);
-      assetTracker = AssetTracker(assetGraph, reader, targetGraph);
-      var updates = await assetTracker.collectChanges();
-      await assetGraph.updateAndInvalidate([], updates, 'a', null, reader);
+      assetTracker = AssetTracker(reader, targetGraph);
+      var updates = await assetTracker.collectChanges(assetGraph);
+      await assetGraph
+          .updateAndInvalidate([], updates, 'a', (_) async {}, reader);
       // We should see no changes initially other than new sdk sources
       expect(
           updates
@@ -58,21 +60,21 @@ void main() {
     test('Collects file edits', () async {
       File(p.join(d.sandbox, 'a', 'web', 'a.txt')).writeAsStringSync('goodbye');
 
-      expect(await assetTracker.collectChanges(),
+      expect(await assetTracker.collectChanges(assetGraph),
           {AssetId('a', 'web/a.txt'): ChangeType.MODIFY});
     });
 
     test('Collects new files', () async {
       File(p.join(d.sandbox, 'a', 'web', 'b.txt')).writeAsStringSync('yo!');
 
-      expect(await assetTracker.collectChanges(),
+      expect(await assetTracker.collectChanges(assetGraph),
           {AssetId('a', 'web/b.txt'): ChangeType.ADD});
     });
 
     test('Collects deleted files', () async {
       File(p.join(d.sandbox, 'a', 'web', 'a.txt')).deleteSync();
 
-      expect(await assetTracker.collectChanges(),
+      expect(await assetTracker.collectChanges(assetGraph),
           {AssetId('a', 'web/a.txt'): ChangeType.REMOVE});
     });
   });

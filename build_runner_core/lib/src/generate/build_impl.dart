@@ -741,7 +741,7 @@ class _SingleBuild {
   Future<GlobAssetNode> _getUpdatedGlobNode(
       Glob glob, String package, int phaseNum) {
     var globNodeId = GlobAssetNode.createId(package, glob, phaseNum);
-    var globNode = _assetGraph.get(globNodeId) as GlobAssetNode;
+    var globNode = _assetGraph.get(globNodeId) as GlobAssetNode?;
     if (globNode == null) {
       globNode = GlobAssetNode(
           globNodeId, glob, phaseNum, NodeState.definitelyNeedsUpdate);
@@ -751,7 +751,7 @@ class _SingleBuild {
     return toFuture(doAfter(
         // ignore: void_checks
         _updateGlobNodeIfNecessary(globNode),
-        (_) => globNode));
+        (_) => globNode!));
   }
 
   FutureOr<void> _updateGlobNodeIfNecessary(GlobAssetNode globNode) {

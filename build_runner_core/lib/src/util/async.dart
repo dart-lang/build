@@ -11,7 +11,7 @@ FutureOr<S> doAfter<T, S>(
   if (value is Future<T>) {
     return value.then(callback);
   } else {
-    return callback(value as T);
+    return callback(value);
   }
 }
 

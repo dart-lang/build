@@ -17,8 +17,8 @@ void main() {
   var assets = <AssetId, dynamic>{
     fooTxt: 'bar',
   };
-  InMemoryRunnerAssetReader delegate;
-  CachingAssetReader reader;
+  late InMemoryRunnerAssetReader delegate;
+  late CachingAssetReader reader;
 
   setUp(() {
     delegate = InMemoryRunnerAssetReader(assets);

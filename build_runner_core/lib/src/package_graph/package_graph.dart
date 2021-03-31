@@ -221,7 +221,7 @@ List<String> _depsFromYaml(YamlMap yaml, {bool isRoot = false}) {
   return deps.toList()..sort();
 }
 
-Iterable<String> _stringKeys(Map m) =>
+Iterable<String> _stringKeys(Map? m) =>
     m == null ? const [] : m.keys.cast<String>();
 
 /// Should point to the top level directory for the package.

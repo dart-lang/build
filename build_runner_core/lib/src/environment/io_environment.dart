@@ -78,8 +78,8 @@ class IOEnvironment implements BuildEnvironment {
       FinalizedAssetsView finalizedAssetsView,
       AssetReader reader,
       Set<BuildDirectory> buildDirs) async {
-    if (buildDirs.any(
-            (target) => target.outputLocation?.path?.isNotEmpty ?? false) &&
+    if (buildDirs
+            .any((target) => target.outputLocation?.path.isNotEmpty ?? false) &&
         buildResult.status == BuildStatus.success) {
       if (!await createMergedOutputDirectories(buildDirs, _packageGraph, this,
           reader, finalizedAssetsView, _outputSymlinksOnly)) {
