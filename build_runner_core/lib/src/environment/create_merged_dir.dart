@@ -92,7 +92,9 @@ Future<bool> _createMergedOutputDir(
     bool hoist) async {
   try {
     if (root == null) return false;
-    if (!p.isWithin(packageGraph.root.path, root)) {
+    var absoluteRoot = p.join(packageGraph.root.path, root);
+    if (absoluteRoot != packageGraph.root.path &&
+        !p.isWithin(packageGraph.root.path, absoluteRoot)) {
       _logger.severe(
           'Invalid dir to build `$root`, must be within the package root.');
       return false;
