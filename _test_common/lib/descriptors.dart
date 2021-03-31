@@ -45,13 +45,16 @@ Future<d.FileDescriptor> pubspec(String name,
 
   var packageConfig =
       await loadPackageConfigUri((await Isolate.packageConfig)!);
+
+  void addPathDep(package, path) {
+    buffer..writeln('  $package:')..writeln('    path: $path');
+  }
+
   await Future.forEach(currentIsolateDependencies, (String package) async {
-    pathDependencies[package] = packageConfig[package]!.root.toFilePath();
+    addPathDep(package, packageConfig[package]!.root.toFilePath());
   });
 
-  pathDependencies.forEach((package, path) {
-    buffer..writeln('  $package:')..writeln('    path: $path');
-  });
+  pathDependencies.forEach(addPathDep);
 
   versionDependencies.forEach((package, version) {
     buffer.writeln('  $package: $version');
