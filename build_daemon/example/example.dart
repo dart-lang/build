@@ -10,7 +10,7 @@ import 'package:build_daemon/data/build_target.dart';
 import 'package:path/path.dart' as p;
 
 void main(List<String> args) async {
-  BuildDaemonClient? client;
+  BuildDaemonClient client;
   var workingDirectory =
       p.normalize(p.join(Directory.current.path + '/../example'));
 
