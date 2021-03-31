@@ -61,9 +61,10 @@ class _$DefaultBuildResultSerializer
   final String wireName = 'DefaultBuildResult';
 
   @override
-  Iterable<Object> serialize(Serializers serializers, DefaultBuildResult object,
+  Iterable<Object?> serialize(
+      Serializers serializers, DefaultBuildResult object,
       {FullType specifiedType = FullType.unspecified}) {
-    final result = <Object>[
+    final result = <Object?>[
       'status',
       serializers.serialize(object.status,
           specifiedType: const FullType(BuildStatus)),
@@ -71,30 +72,34 @@ class _$DefaultBuildResultSerializer
       serializers.serialize(object.target,
           specifiedType: const FullType(String)),
     ];
-    if (object.buildId != null) {
+    Object? value;
+    value = object.buildId;
+    if (value != null) {
       result
         ..add('buildId')
-        ..add(serializers.serialize(object.buildId,
+        ..add(serializers.serialize(value,
             specifiedType: const FullType(String)));
     }
-    if (object.error != null) {
+    value = object.error;
+    if (value != null) {
       result
         ..add('error')
-        ..add(serializers.serialize(object.error,
+        ..add(serializers.serialize(value,
             specifiedType: const FullType(String)));
     }
-    if (object.isCached != null) {
+    value = object.isCached;
+    if (value != null) {
       result
         ..add('isCached')
-        ..add(serializers.serialize(object.isCached,
-            specifiedType: const FullType(bool)));
+        ..add(
+            serializers.serialize(value, specifiedType: const FullType(bool)));
     }
     return result;
   }
 
   @override
   DefaultBuildResult deserialize(
-      Serializers serializers, Iterable<Object> serialized,
+      Serializers serializers, Iterable<Object?> serialized,
       {FullType specifiedType = FullType.unspecified}) {
     final result = new DefaultBuildResultBuilder();
 
@@ -102,7 +107,7 @@ class _$DefaultBuildResultSerializer
     while (iterator.moveNext()) {
       final key = iterator.current as String;
       iterator.moveNext();
-      final dynamic value = iterator.current;
+      final Object? value = iterator.current;
       switch (key) {
         case 'status':
           result.status = serializers.deserialize(value,
@@ -138,9 +143,9 @@ class _$BuildResultsSerializer implements StructuredSerializer<BuildResults> {
   final String wireName = 'BuildResults';
 
   @override
-  Iterable<Object> serialize(Serializers serializers, BuildResults object,
+  Iterable<Object?> serialize(Serializers serializers, BuildResults object,
       {FullType specifiedType = FullType.unspecified}) {
-    final result = <Object>[
+    final result = <Object?>[
       'results',
       serializers.serialize(object.results,
           specifiedType:
@@ -151,7 +156,8 @@ class _$BuildResultsSerializer implements StructuredSerializer<BuildResults> {
   }
 
   @override
-  BuildResults deserialize(Serializers serializers, Iterable<Object> serialized,
+  BuildResults deserialize(
+      Serializers serializers, Iterable<Object?> serialized,
       {FullType specifiedType = FullType.unspecified}) {
     final result = new BuildResultsBuilder();
 
@@ -159,13 +165,13 @@ class _$BuildResultsSerializer implements StructuredSerializer<BuildResults> {
     while (iterator.moveNext()) {
       final key = iterator.current as String;
       iterator.moveNext();
-      final dynamic value = iterator.current;
+      final Object? value = iterator.current;
       switch (key) {
         case 'results':
           result.results.replace(serializers.deserialize(value,
                   specifiedType: const FullType(
-                      BuiltList, const [const FullType(BuildResult)]))
-              as BuiltList<dynamic>);
+                      BuiltList, const [const FullType(BuildResult)]))!
+              as BuiltList<Object>);
           break;
       }
     }
@@ -180,25 +186,27 @@ class _$DefaultBuildResult extends DefaultBuildResult {
   @override
   final String target;
   @override
-  final String buildId;
+  final String? buildId;
   @override
-  final String error;
+  final String? error;
   @override
-  final bool isCached;
+  final bool? isCached;
 
   factory _$DefaultBuildResult(
-          [void Function(DefaultBuildResultBuilder) updates]) =>
+          [void Function(DefaultBuildResultBuilder)? updates]) =>
       (new DefaultBuildResultBuilder()..update(updates)).build();
 
   _$DefaultBuildResult._(
-      {this.status, this.target, this.buildId, this.error, this.isCached})
+      {required this.status,
+      required this.target,
+      this.buildId,
+      this.error,
+      this.isCached})
       : super._() {
-    if (status == null) {
-      throw new BuiltValueNullFieldError('DefaultBuildResult', 'status');
-    }
-    if (target == null) {
-      throw new BuiltValueNullFieldError('DefaultBuildResult', 'target');
-    }
+    BuiltValueNullFieldError.checkNotNull(
+        status, 'DefaultBuildResult', 'status');
+    BuiltValueNullFieldError.checkNotNull(
+        target, 'DefaultBuildResult', 'target');
   }
 
   @override
@@ -245,37 +253,38 @@ class _$DefaultBuildResult extends DefaultBuildResult {
 
 class DefaultBuildResultBuilder
     implements Builder<DefaultBuildResult, DefaultBuildResultBuilder> {
-  _$DefaultBuildResult _$v;
+  _$DefaultBuildResult? _$v;
 
-  BuildStatus _status;
-  BuildStatus get status => _$this._status;
-  set status(BuildStatus status) => _$this._status = status;
+  BuildStatus? _status;
+  BuildStatus? get status => _$this._status;
+  set status(BuildStatus? status) => _$this._status = status;
 
-  String _target;
-  String get target => _$this._target;
-  set target(String target) => _$this._target = target;
+  String? _target;
+  String? get target => _$this._target;
+  set target(String? target) => _$this._target = target;
 
-  String _buildId;
-  String get buildId => _$this._buildId;
-  set buildId(String buildId) => _$this._buildId = buildId;
+  String? _buildId;
+  String? get buildId => _$this._buildId;
+  set buildId(String? buildId) => _$this._buildId = buildId;
 
-  String _error;
-  String get error => _$this._error;
-  set error(String error) => _$this._error = error;
+  String? _error;
+  String? get error => _$this._error;
+  set error(String? error) => _$this._error = error;
 
-  bool _isCached;
-  bool get isCached => _$this._isCached;
-  set isCached(bool isCached) => _$this._isCached = isCached;
+  bool? _isCached;
+  bool? get isCached => _$this._isCached;
+  set isCached(bool? isCached) => _$this._isCached = isCached;
 
   DefaultBuildResultBuilder();
 
   DefaultBuildResultBuilder get _$this {
-    if (_$v != null) {
-      _status = _$v.status;
-      _target = _$v.target;
-      _buildId = _$v.buildId;
-      _error = _$v.error;
-      _isCached = _$v.isCached;
+    final $v = _$v;
+    if ($v != null) {
+      _status = $v.status;
+      _target = $v.target;
+      _buildId = $v.buildId;
+      _error = $v.error;
+      _isCached = $v.isCached;
       _$v = null;
     }
     return this;
@@ -283,14 +292,12 @@ class DefaultBuildResultBuilder
 
   @override
   void replace(DefaultBuildResult other) {
-    if (other == null) {
-      throw new ArgumentError.notNull('other');
-    }
+    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$DefaultBuildResult;
   }
 
   @override
-  void update(void Function(DefaultBuildResultBuilder) updates) {
+  void update(void Function(DefaultBuildResultBuilder)? updates) {
     if (updates != null) updates(this);
   }
 
@@ -298,8 +305,10 @@ class DefaultBuildResultBuilder
   _$DefaultBuildResult build() {
     final _$result = _$v ??
         new _$DefaultBuildResult._(
-            status: status,
-            target: target,
+            status: BuiltValueNullFieldError.checkNotNull(
+                status, 'DefaultBuildResult', 'status'),
+            target: BuiltValueNullFieldError.checkNotNull(
+                target, 'DefaultBuildResult', 'target'),
             buildId: buildId,
             error: error,
             isCached: isCached);
@@ -312,13 +321,11 @@ class _$BuildResults extends BuildResults {
   @override
   final BuiltList<BuildResult> results;
 
-  factory _$BuildResults([void Function(BuildResultsBuilder) updates]) =>
+  factory _$BuildResults([void Function(BuildResultsBuilder)? updates]) =>
       (new BuildResultsBuilder()..update(updates)).build();
 
-  _$BuildResults._({this.results}) : super._() {
-    if (results == null) {
-      throw new BuiltValueNullFieldError('BuildResults', 'results');
-    }
+  _$BuildResults._({required this.results}) : super._() {
+    BuiltValueNullFieldError.checkNotNull(results, 'BuildResults', 'results');
   }
 
   @override
@@ -349,18 +356,19 @@ class _$BuildResults extends BuildResults {
 
 class BuildResultsBuilder
     implements Builder<BuildResults, BuildResultsBuilder> {
-  _$BuildResults _$v;
+  _$BuildResults? _$v;
 
-  ListBuilder<BuildResult> _results;
+  ListBuilder<BuildResult>? _results;
   ListBuilder<BuildResult> get results =>
       _$this._results ??= new ListBuilder<BuildResult>();
-  set results(ListBuilder<BuildResult> results) => _$this._results = results;
+  set results(ListBuilder<BuildResult>? results) => _$this._results = results;
 
   BuildResultsBuilder();
 
   BuildResultsBuilder get _$this {
-    if (_$v != null) {
-      _results = _$v.results?.toBuilder();
+    final $v = _$v;
+    if ($v != null) {
+      _results = $v.results.toBuilder();
       _$v = null;
     }
     return this;
@@ -368,14 +376,12 @@ class BuildResultsBuilder
 
   @override
   void replace(BuildResults other) {
-    if (other == null) {
-      throw new ArgumentError.notNull('other');
-    }
+    ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$BuildResults;
   }
 
   @override
-  void update(void Function(BuildResultsBuilder) updates) {
+  void update(void Function(BuildResultsBuilder)? updates) {
     if (updates != null) updates(this);
   }
 
@@ -385,7 +391,7 @@ class BuildResultsBuilder
     try {
       _$result = _$v ?? new _$BuildResults._(results: results.build());
     } catch (_) {
-      String _$failedField;
+      late String _$failedField;
       try {
         _$failedField = 'results';
         results.build();

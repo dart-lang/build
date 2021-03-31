@@ -23,7 +23,7 @@ class BuildTargetManager {
   bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuild;
 
   BuildTargetManager(
-      {bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuildOverride})
+      {bool Function(BuildTarget, Iterable<WatchEvent>)? shouldBuildOverride})
       : shouldBuild = shouldBuildOverride ?? _shouldBuild;
 
   bool get isEmpty => _buildTargets.isEmpty;

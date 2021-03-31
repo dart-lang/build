@@ -34,9 +34,9 @@ class Server {
   final _pool = Pool(1);
   final Serializers _serializers;
   final ChangeProvider _changeProvider;
-  Timer _timeout;
+  late final Timer _timeout;
 
-  HttpServer _server;
+  HttpServer? _server;
   final DaemonBuilder _builder;
   // Channels that are interested in the current build.
   var _interestedChannels = <WebSocketChannel>{};
@@ -44,8 +44,8 @@ class Server {
   final _subs = <StreamSubscription>[];
 
   Server(this._builder, Duration timeout, ChangeProvider changeProvider,
-      {Serializers serializersOverride,
-      bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuild})
+      {Serializers? serializersOverride,
+      bool Function(BuildTarget, Iterable<WatchEvent>)? shouldBuild})
       : _changeProvider = changeProvider,
         _serializers = serializersOverride ?? serializers,
         _buildTargetManager =
@@ -89,14 +89,12 @@ class Server {
       });
     });
 
-    _server = await HttpMultiServer.loopback(0);
-    serveRequests(_server, handler);
-    return _server.port;
+    var server = _server = await HttpMultiServer.loopback(0);
+    serveRequests(server, handler);
+    return server.port;
   }
 
-  Future<void> stop({String message, int failureType}) async {
-    message ??= '';
-    failureType ??= 0;
+  Future<void> stop({String message = '', int failureType = 0}) async {
     if (message.isNotEmpty && failureType != 0) {
       for (var connection in _buildTargetManager.allChannels) {
         connection.sink
@@ -107,7 +105,7 @@ class Server {
     }
     _timeout.cancel();
     await _server?.close(force: true);
-    await _builder?.stop();
+    await _builder.stop();
     for (var sub in _subs) {
       await sub.cancel();
     }
