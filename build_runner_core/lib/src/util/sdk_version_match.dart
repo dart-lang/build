@@ -4,5 +4,5 @@
 
 /// Checks whether [thisVersion] and [thatVersion] have the same semver
 /// identifier without extra platform specific information.
-bool isSameSdkVersion(String thisVersion, String thatVersion) =>
-    thisVersion?.split(' ')?.first == thatVersion?.split(' ')?.first;
+bool isSameSdkVersion(String? thisVersion, String? thatVersion) =>
+    thisVersion?.split(' ').first == thatVersion?.split(' ').first;

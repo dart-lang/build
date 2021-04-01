@@ -70,7 +70,15 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     String logPerformanceDir,
     Set<BuildFilter> buildFilters}) async {
   builderConfigOverrides ??= const {};
+  buildDirs ??= <BuildDirectory>{};
+  buildFilters ??= <BuildFilter>{};
+  deleteFilesByDefault ??= false;
+  enableLowResourcesMode ??= false;
+  isReleaseBuild ??= false;
+  outputSymlinksOnly ??= false;
   packageGraph ??= await PackageGraph.forThisPackage();
+  skipBuildScriptCheck ??= false;
+  trackPerformance ??= false;
   var environment = OverrideableEnvironment(
       IOEnvironment(
         packageGraph,
@@ -101,7 +109,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       environment,
       builders,
       builderConfigOverrides,
-      isReleaseBuild: isReleaseBuild ?? false,
+      isReleaseBuild: isReleaseBuild,
     );
     var result =
         await build.run({}, buildDirs: buildDirs, buildFilters: buildFilters);

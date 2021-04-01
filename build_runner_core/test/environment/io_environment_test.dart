@@ -11,8 +11,8 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 void main() {
-  Process process;
-  StreamQueue<String> stdoutLines;
+  late Process process;
+  late StreamQueue<String> stdoutLines;
 
   setUpAll(() async {
     process = await Process.start(Platform.resolvedExecutable,
@@ -40,7 +40,7 @@ void main() {
 
 Future<void> _expectEmits(StreamQueue<String> stream, Matcher line) async {
   while (true) {
-    if (line.matches(await stream.next, null)) {
+    if (line.matches(await stream.next, {})) {
       return;
     }
   }

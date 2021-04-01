@@ -54,9 +54,16 @@ Future<ServeHandler> watch(
   Set<BuildFilter> buildFilters,
 }) async {
   builderConfigOverrides ??= const {};
-  packageGraph ??= await PackageGraph.forThisPackage();
   buildDirs ??= <BuildDirectory>{};
   buildFilters ??= <BuildFilter>{};
+  debounceDelay ??= const Duration(milliseconds: 250);
+  deleteFilesByDefault ??= false;
+  enableLowResourcesMode ??= false;
+  outputSymlinksOnly ??= false;
+  overrideBuildConfig ??= const {};
+  packageGraph ??= await PackageGraph.forThisPackage();
+  skipBuildScriptCheck ??= false;
+  trackPerformance ??= false;
 
   var environment = OverrideableEnvironment(
       IOEnvironment(packageGraph,
@@ -219,6 +226,7 @@ class WatchImpl implements BuildState {
     var firstBuildCompleter = Completer<BuildResult>();
     currentBuild = firstBuildCompleter.future;
     var controller = StreamController<BuildResult>();
+    isReleaseMode ??= false;
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
       assert(_build != null);

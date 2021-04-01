@@ -25,7 +25,7 @@ class FinalizedAssetsView {
   FinalizedAssetsView(
       this._assetGraph, this._packageGraph, this._optionalOutputTracker);
 
-  List<AssetId> allAssets({String rootDir}) {
+  List<AssetId> allAssets({String? rootDir}) {
     if (_expired) {
       throw StateError(
           'Cannot use a FinalizedAssetsView after it has expired!');
@@ -38,7 +38,7 @@ class FinalizedAssetsView {
           }
           return node.id;
         })
-        .where((id) => id != null)
+        .whereType<AssetId>()
         .toList();
   }
 
@@ -48,7 +48,7 @@ class FinalizedAssetsView {
   }
 }
 
-bool _shouldSkipNode(AssetNode node, String rootDir, PackageGraph packageGraph,
+bool _shouldSkipNode(AssetNode node, String? rootDir, PackageGraph packageGraph,
     OptionalOutputTracker optionalOutputTracker) {
   if (!node.isReadable) return true;
   if (node.isDeleted) return true;

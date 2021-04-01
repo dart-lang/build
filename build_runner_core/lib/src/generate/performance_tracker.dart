@@ -8,6 +8,7 @@ library build_runner.src.generate.performance_tracker;
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 import 'package:timing/timing.dart';
 
@@ -16,6 +17,7 @@ import 'phase.dart';
 part 'performance_tracker.g.dart';
 
 /// The [TimeSlice] of an entire build, including all its [actions].
+@JsonSerializable()
 class BuildPerformance extends TimeSlice {
   /// The [TimeSlice] of each phase ran in this build.
   final Iterable<BuildPhasePerformance> phases;
@@ -35,6 +37,7 @@ class BuildPerformance extends TimeSlice {
 }
 
 /// The [TimeSlice] of a full [BuildPhase] within a larger build.
+@JsonSerializable()
 class BuildPhasePerformance extends TimeSlice {
   final List<String> builderKeys;
 
@@ -49,9 +52,11 @@ class BuildPhasePerformance extends TimeSlice {
 }
 
 /// The [TimeSlice] of a [builderKey] running on [primaryInput] within a build.
+@JsonSerializable()
 class BuilderActionPerformance extends TimeSlice {
   final String builderKey;
 
+  @JsonKey(fromJson: _assetIdFromJson, toJson: _assetIdToJson)
   final AssetId primaryInput;
 
   final Iterable<BuilderActionStagePerformance> stages;
@@ -73,6 +78,7 @@ class BuilderActionPerformance extends TimeSlice {
 /// The [TimeSlice] of a particular task within a builder action.
 ///
 /// This is some slice of overall [BuilderActionPerformance].
+@JsonSerializable()
 class BuilderActionStagePerformance extends TimeSliceGroup {
   final String label;
 

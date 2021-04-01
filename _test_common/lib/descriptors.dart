@@ -20,13 +20,9 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 /// If [versionDependencies] is provided then the keys are the package names
 /// and the values are the exact versions which will be added as a dependency.
 Future<d.FileDescriptor> pubspec(String name,
-    {Iterable<String> currentIsolateDependencies,
-    Map<String, String> pathDependencies,
-    Map<String, String> versionDependencies}) async {
-  currentIsolateDependencies ??= [];
-  pathDependencies ??= {};
-  versionDependencies ??= {};
-
+    {Iterable<String> currentIsolateDependencies = const [],
+    Map<String, String> pathDependencies = const {},
+    Map<String, String> versionDependencies = const {}}) async {
   var buffer = StringBuffer()
     ..writeln('name: $name')
     ..writeln('environment:')
@@ -47,14 +43,18 @@ Future<d.FileDescriptor> pubspec(String name,
   // warnings about hosted vs path dependency conflicts.
   buffer.writeln('dependency_overrides:');
 
-  var packageConfig = await loadPackageConfigUri(await Isolate.packageConfig);
+  var packageConfig =
+      await loadPackageConfigUri((await Isolate.packageConfig)!);
+
+  void addPathDep(package, path) {
+    buffer..writeln('  $package:')..writeln('    path: $path');
+  }
+
   await Future.forEach(currentIsolateDependencies, (String package) async {
-    pathDependencies[package] = packageConfig[package].root.toFilePath();
+    addPathDep(package, packageConfig[package]!.root.toFilePath());
   });
 
-  pathDependencies.forEach((package, path) {
-    buffer..writeln('  $package:')..writeln('    path: $path');
-  });
+  pathDependencies.forEach(addPathDep);
 
   versionDependencies.forEach((package, version) {
     buffer.writeln('  $package: $version');

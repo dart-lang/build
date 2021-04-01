@@ -14,7 +14,7 @@ void main() {
   final customGeneratedDir = 'my-custom-dir';
   overrideGeneratedOutputDirectory(customGeneratedDir);
 
-  PackageGraph packageGraph;
+  late PackageGraph packageGraph;
 
   setUp(() {
     packageGraph = buildPackageGraph({

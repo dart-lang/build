@@ -29,7 +29,9 @@ void main() {
         ..dependencies.add(packageB);
       var packageGraph = PackageGraph.fromRoot(packageA);
 
-      TargetGraph.forPackageGraph(packageGraph, overrideBuildConfig: {
+      TargetGraph.forPackageGraph(packageGraph, defaultRootPackageSources: [
+        '**'
+      ], overrideBuildConfig: {
         'a': BuildConfig.fromMap('a', [
           'b'
         ], {
@@ -91,7 +93,8 @@ void main() {
     });
 
     test('for root package', () async {
-      final targetGraph = await TargetGraph.forPackageGraph(packages);
+      final targetGraph = await TargetGraph.forPackageGraph(packages,
+          defaultRootPackageSources: ['**']);
 
       expect(targetGraph.isVisibleInBuild(AssetId('a', 'web/index.html'), a),
           isTrue);
@@ -103,7 +106,8 @@ void main() {
     });
 
     test('for non-root package with default configuration', () async {
-      final targetGraph = await TargetGraph.forPackageGraph(packages);
+      final targetGraph = await TargetGraph.forPackageGraph(packages,
+          defaultRootPackageSources: ['**']);
 
       expect(targetGraph.isVisibleInBuild(AssetId('b', 'web/index.html'), b),
           isFalse);
@@ -119,11 +123,14 @@ void main() {
     });
 
     test('for non-root package exposing additional assets', () async {
-      final targetGraph =
-          await TargetGraph.forPackageGraph(packages, overrideBuildConfig: {
-        'b':
-            BuildConfig.parse('b', [], 'additional_public_assets: ["test/**"]'),
-      });
+      final targetGraph = await TargetGraph.forPackageGraph(packages,
+          defaultRootPackageSources: [
+            '**'
+          ],
+          overrideBuildConfig: {
+            'b': BuildConfig.parse(
+                'b', [], 'additional_public_assets: ["test/**"]'),
+          });
 
       expect(
           targetGraph.isVisibleInBuild(AssetId('b', 'lib/b.dart'), b), isTrue);
@@ -132,7 +139,7 @@ void main() {
 
       expect(targetGraph.validInputsFor(b), contains('test/**'));
       // The additional input should also be included in the default target
-      expect(targetGraph.allModules['b:b'].sourceIncludes,
+      expect(targetGraph.allModules['b:b']!.sourceIncludes,
           contains(isA<Glob>().having((e) => e.pattern, 'pattern', 'test/**')));
     });
   });

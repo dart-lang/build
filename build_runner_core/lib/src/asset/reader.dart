@@ -10,7 +10,6 @@ import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
-import 'package:meta/meta.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../util/async.dart';
@@ -28,7 +27,7 @@ class Readability {
   final bool canRead;
   final bool inSamePhase;
 
-  const Readability({@required this.canRead, @required this.inSamePhase});
+  const Readability({required this.canRead, required this.inSamePhase});
 
   /// Determines readability for a node written in a previous build phase, which
   /// means that [ownOutput] is impossible.
@@ -44,7 +43,7 @@ class Readability {
 }
 
 typedef IsReadable = FutureOr<Readability> Function(
-    AssetNode node, int phaseNum, AssetWriterSpy writtenAssets);
+    AssetNode node, int phaseNum, AssetWriterSpy? writtenAssets);
 
 /// Signature of a function throwing an [InvalidInputException] if the given
 /// asset [id] is an invalid input in a build.
@@ -66,11 +65,11 @@ class SingleStepReader implements AssetReader {
   final AssetReader _delegate;
   final int _phaseNumber;
   final String _primaryPackage;
-  final AssetWriterSpy _writtenAssets;
+  final AssetWriterSpy? _writtenAssets;
   final IsReadable _isReadableNode;
   final CheckInvalidInput _checkInvalidInput;
   final FutureOr<GlobAssetNode> Function(
-      Glob glob, String package, int phaseNum) _getGlobNode;
+      Glob glob, String package, int phaseNum)? _getGlobNode;
 
   /// The assets read during this step.
   final assetsRead = HashSet<AssetId>();
@@ -169,19 +168,26 @@ class SingleStepReader implements AssetReader {
 
   @override
   Stream<AssetId> findAssets(Glob glob) {
+    if (_getGlobNode == null) {
+      throw StateError('this reader does not support `findAssets`');
+    }
     var streamCompleter = StreamCompleter<AssetId>();
 
-    doAfter(_getGlobNode(glob, _primaryPackage, _phaseNumber),
+    doAfter(_getGlobNode!(glob, _primaryPackage, _phaseNumber),
         (GlobAssetNode globNode) {
       assetsRead.add(globNode.id);
-      streamCompleter.setSourceStream(Stream.fromIterable(globNode.results));
+      streamCompleter.setSourceStream(Stream.fromIterable(globNode.results!));
     });
     return streamCompleter.stream;
   }
 
+  /// Returns the `lastKnownDigest` of [id], computing and caching it if
+  /// necessary.
+  ///
+  /// Note that [id] must exist in the asset graph.
   FutureOr<Digest> _ensureDigest(AssetId id) {
-    var node = _assetGraph.get(id);
-    if (node?.lastKnownDigest != null) return node.lastKnownDigest;
+    var node = _assetGraph.get(id)!;
+    if (node.lastKnownDigest != null) return node.lastKnownDigest!;
     return _delegate.digest(id).then((digest) => node.lastKnownDigest = digest);
   }
 }

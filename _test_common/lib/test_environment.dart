@@ -39,11 +39,11 @@ class TestBuildEnvironment extends BuildEnvironment {
     _nextPromptResponse = next;
   }
 
-  int _nextPromptResponse;
+  int? _nextPromptResponse;
 
   TestBuildEnvironment(
-      {RunnerAssetReader reader,
-      RunnerAssetWriter writer,
+      {RunnerAssetReader? reader,
+      RunnerAssetWriter? writer,
       this.throwOnPrompt = false})
       : reader = reader ?? InMemoryRunnerAssetReader(),
         writer = writer ?? InMemoryRunnerAssetWriter();

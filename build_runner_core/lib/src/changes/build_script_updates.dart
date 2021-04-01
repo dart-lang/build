@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:mirrors';
 
 import 'package:build/build.dart';
+import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
@@ -28,7 +29,6 @@ abstract class BuildScriptUpdates {
   static Future<BuildScriptUpdates> create(RunnerAssetReader reader,
       PackageGraph packageGraph, AssetGraph assetGraph,
       {bool disabled = false}) async {
-    disabled ??= false;
     if (disabled) return _NoopBuildScriptUpdates();
     return _MirrorBuildScriptUpdates.create(reader, packageGraph, assetGraph);
   }
@@ -51,10 +51,9 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
     try {
       allSources = _urisForThisScript
           .map((id) => _idForUri(id, rootPackage))
-          .where((id) => id != null)
+          .whereNotNull()
           .toSet();
-      var missing = allSources.firstWhere((id) => !graph.contains(id),
-          orElse: () => null);
+      var missing = allSources.firstWhereOrNull((id) => !graph.contains(id));
       if (missing != null) {
         supportsIncrementalRebuilds = false;
         logger.warning('$missing was not found in the asset graph, '
@@ -64,7 +63,7 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
       } else {
         // Make sure we are tracking changes for all ids in [allSources].
         for (var id in allSources) {
-          graph.get(id).lastKnownDigest ??= await reader.digest(id);
+          graph.get(id)!.lastKnownDigest ??= await reader.digest(id);
         }
       }
     } on ArgumentError catch (_) {
@@ -89,7 +88,7 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
   ///
   /// Returns `null` if the uri should be ignored, or throws an [ArgumentError]
   /// if the [uri] is not recognized.
-  static AssetId _idForUri(Uri uri, String _rootPackage) {
+  static AssetId? _idForUri(Uri uri, String _rootPackage) {
     switch (uri.scheme) {
       case 'dart':
         // TODO: check for sdk updates!

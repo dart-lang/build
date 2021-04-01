@@ -21,7 +21,8 @@ class BuildRunner {
   Future<void> beforeExit() => _build.beforeExit();
 
   Future<BuildResult> run(Map<AssetId, ChangeType> updates,
-          {Set<BuildDirectory> buildDirs, Set<BuildFilter> buildFilters}) =>
+          {Set<BuildDirectory> buildDirs = const <BuildDirectory>{},
+          Set<BuildFilter> buildFilters = const {}}) =>
       _build.run(updates, buildDirs: buildDirs, buildFilters: buildFilters);
 
   static Future<BuildRunner> create(

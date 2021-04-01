@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
@@ -49,19 +50,20 @@ Future<bool> createMergedOutputDirectories(
   }
 
   for (var target in buildDirs) {
-    var output = target.outputLocation?.path;
-    if (output != null) {
+    var outputLocation = target.outputLocation;
+    if (outputLocation != null) {
       if (!await _createMergedOutputDir(
-          output,
+          outputLocation.path,
           target.directory,
           packageGraph,
           environment,
           reader,
           finalizedAssetsView,
           // TODO(grouma) - retrieve symlink information from target only.
-          outputSymlinksOnly || target.outputLocation.useSymlinks,
-          target.outputLocation.hoist)) {
-        _logger.severe('Unable to create merged directory for $output.');
+          outputSymlinksOnly || outputLocation.useSymlinks,
+          outputLocation.hoist)) {
+        _logger.severe(
+            'Unable to create merged directory for ${outputLocation.path}.');
         return false;
       }
     }
@@ -73,7 +75,7 @@ Set<String> _conflicts(Set<BuildDirectory> buildDirs) {
   final seen = <String>{};
   final conflicts = <String>{};
   var outputLocations =
-      buildDirs.map((d) => d.outputLocation?.path).where((p) => p != null);
+      buildDirs.map((d) => d.outputLocation?.path).whereNotNull();
   for (var location in outputLocations) {
     if (!seen.add(location)) conflicts.add(location);
   }
@@ -82,7 +84,7 @@ Set<String> _conflicts(Set<BuildDirectory> buildDirs) {
 
 Future<bool> _createMergedOutputDir(
     String outputPath,
-    String root,
+    String? root,
     PackageGraph packageGraph,
     BuildEnvironment environment,
     AssetReader reader,
@@ -91,6 +93,13 @@ Future<bool> _createMergedOutputDir(
     bool hoist) async {
   try {
     if (root == null) return false;
+    var absoluteRoot = p.join(packageGraph.root.path, root);
+    if (absoluteRoot != packageGraph.root.path &&
+        !p.isWithin(packageGraph.root.path, absoluteRoot)) {
+      _logger.severe(
+          'Invalid dir to build `$root`, must be within the package root.');
+      return false;
+    }
     var outputDir = Directory(outputPath);
     var outputDirExists = await outputDir.exists();
     if (outputDirExists) {

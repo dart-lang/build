@@ -6,7 +6,7 @@ import '../util/hash.dart';
 
 class BuildDirectory {
   final String directory;
-  final OutputLocation outputLocation;
+  final OutputLocation? outputLocation;
   BuildDirectory(this.directory, {this.outputLocation});
 
   @override
@@ -28,9 +28,7 @@ class OutputLocation {
   final String path;
   final bool useSymlinks;
   final bool hoist;
-  OutputLocation(this.path, {bool useSymlinks, bool hoist})
-      : useSymlinks = useSymlinks ?? false,
-        hoist = hoist ?? true {
+  OutputLocation(this.path, {this.useSymlinks = false, this.hoist = true}) {
     if (path.isEmpty && hoist) {
       throw ArgumentError('Can not build everything and hoist');
     }

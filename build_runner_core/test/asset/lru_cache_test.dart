@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 import 'package:build_runner_core/src/asset/lru_cache.dart';
 
 void main() {
-  LruCache<String, int> cache;
+  late LruCache<String, int> cache;
   final maxIndividualWeight = 10;
   final maxTotalWeight = 100;
 

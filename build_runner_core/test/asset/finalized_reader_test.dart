@@ -10,6 +10,7 @@ import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
+import 'package:test/fake.dart';
 import 'package:test/test.dart';
 
 import 'package:_test_common/common.dart';
@@ -17,11 +18,11 @@ import 'package:_test_common/common.dart';
 void main() {
   group('FinalizedReader', () {
     FinalizedReader reader;
-    AssetGraph graph;
+    late AssetGraph graph;
 
     setUp(() async {
       graph = await AssetGraph.build([], <AssetId>{}, <AssetId>{},
-          buildPackageGraph({rootPackage('foo'): []}), null);
+          buildPackageGraph({rootPackage('foo'): []}), _FakeAssetReader());
     });
 
     test('can not read deleted files', () async {
@@ -67,3 +68,5 @@ void main() {
     });
   });
 }
+
+class _FakeAssetReader with Fake implements AssetReader {}

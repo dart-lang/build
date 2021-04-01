@@ -12,17 +12,17 @@ class InputMatcher {
   /// The files to include
   ///
   /// Null or empty means include everything.
-  final List<Glob> includeGlobs;
+  final List<Glob>? includeGlobs;
 
   /// The files within [includeGlobs] to exclude.
   ///
   /// Null or empty means exclude nothing.
-  final List<Glob> excludeGlobs;
+  final List<Glob>? excludeGlobs;
 
-  InputMatcher(InputSet inputSet, {List<String> defaultInclude})
+  InputMatcher(InputSet inputSet, {List<String>? defaultInclude})
       : includeGlobs =
-            (inputSet.include ?? defaultInclude)?.map((p) => Glob(p))?.toList(),
-        excludeGlobs = inputSet.exclude?.map((p) => Glob(p))?.toList();
+            (inputSet.include ?? defaultInclude)?.map((p) => Glob(p)).toList(),
+        excludeGlobs = inputSet.exclude?.map((p) => Glob(p)).toList();
 
   /// Whether [input] is included in this set of assets.
   bool matches(AssetId input) => includes(input) && !excludes(input);
@@ -30,29 +30,31 @@ class InputMatcher {
   /// Whether [input] matches any [includeGlobs].
   ///
   /// If there are no [includeGlobs] this always returns `true`.
-  bool includes(AssetId input) =>
-      includeGlobs == null ||
-      includeGlobs.isEmpty ||
-      includeGlobs.any((g) => g.matches(input.path));
+  bool includes(AssetId input) {
+    final includeGlobs = this.includeGlobs;
+    return includeGlobs == null ||
+        includeGlobs.isEmpty ||
+        includeGlobs.any((g) => g.matches(input.path));
+  }
 
   /// Whether [input] matches any [excludeGlobs].
   ///
   /// If there are no [excludeGlobs] this always returns `false`.
   bool excludes(AssetId input) =>
       excludeGlobs != null &&
-      excludeGlobs.isNotEmpty &&
-      excludeGlobs.any((g) => g.matches(input.path));
+      excludeGlobs!.isNotEmpty &&
+      excludeGlobs!.any((g) => g.matches(input.path));
 
   @override
   String toString() {
     final result = StringBuffer();
-    if (includeGlobs == null || includeGlobs.isEmpty) {
+    if (includeGlobs == null || includeGlobs!.isEmpty) {
       result.write('any assets');
     } else {
-      result.write('assets matching ${_patterns(includeGlobs).toList()}');
+      result.write('assets matching ${_patterns(includeGlobs)!.toList()}');
     }
-    if (excludeGlobs != null && excludeGlobs.isNotEmpty) {
-      result.write(' except ${_patterns(excludeGlobs).toList()}');
+    if (excludeGlobs != null && excludeGlobs!.isNotEmpty) {
+      result.write(' except ${_patterns(excludeGlobs)!.toList()}');
     }
     return '$result';
   }
@@ -73,5 +75,5 @@ class InputMatcher {
 
 final _deepEquals = const DeepCollectionEquality();
 
-Iterable<String> _patterns(Iterable<Glob> globs) =>
+Iterable<String>? _patterns(Iterable<Glob>? globs) =>
     globs?.map((g) => g.pattern);

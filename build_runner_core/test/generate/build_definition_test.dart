@@ -34,11 +34,11 @@ void main() {
   final languageVersion = LanguageVersion(2, 0);
 
   group('BuildDefinition.prepareWorkspace', () {
-    BuildOptions options;
-    BuildEnvironment environment;
-    String pkgARoot;
-    String pkgBRoot;
-    PackageGraph aPackageGraph;
+    late BuildOptions options;
+    late BuildEnvironment environment;
+    late String pkgARoot;
+    late String pkgBRoot;
+    late PackageGraph aPackageGraph;
 
     Future<File> createFile(String path, dynamic contents) async {
       var file = File(p.join(pkgARoot, path));
@@ -142,10 +142,9 @@ targets:
           LogSubscription(environment, logLevel: Level.OFF),
           packageGraph: packageGraph,
           skipBuildScriptCheck: true);
-    });
-
-    tearDown(() async {
-      await options?.logListener?.cancel();
+      // we don't want this unconditionally in a normal `tearDown`, this may
+      // not be initialized if something above this fails.
+      addTearDown(options.logListener.cancel);
     });
 
     group('updates the asset graph', () {
@@ -218,7 +217,7 @@ targets:
         (originalAssetGraph.get(aTxtCopy) as GeneratedAssetNode)
           ..state = NodeState.upToDate
           ..inputs.add(aTxt);
-        originalAssetGraph.get(aTxt).outputs.add(aTxtCopy);
+        originalAssetGraph.get(aTxt)!.outputs.add(aTxtCopy);
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
         await modifyFile(p.join('lib', 'a.txt'), 'b');
@@ -723,10 +722,10 @@ targets:
             });
 
         expect(
-            options.targetGraph.allModules['$rootPkg:another'].sourceIncludes,
+            options.targetGraph.allModules['$rootPkg:another']!.sourceIncludes,
             isNotEmpty);
         expect(
-            options.targetGraph.allModules['$rootPkg:$rootPkg'].sourceIncludes,
+            options.targetGraph.allModules['$rootPkg:$rootPkg']!.sourceIncludes,
             isNotEmpty);
       });
 
@@ -750,11 +749,11 @@ targets:
               })
             });
         expect(
-            options.targetGraph.allModules['$rootPkg:another'].sourceIncludes
+            options.targetGraph.allModules['$rootPkg:another']!.sourceIncludes
                 .map((glob) => glob.pattern),
             defaultRootPackageSources);
         expect(
-            options.targetGraph.allModules['$rootPkg:$rootPkg'].sourceIncludes
+            options.targetGraph.allModules['$rootPkg:$rootPkg']!.sourceIncludes
                 .map((glob) => glob.pattern),
             defaultRootPackageSources);
       });
