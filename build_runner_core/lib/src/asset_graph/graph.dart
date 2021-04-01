@@ -276,7 +276,10 @@ class AssetGraph {
       }
     });
 
-    var newAndModifiedNodes = modifyIds.map((id) => get(id)!).toList()
+    var newAndModifiedNodes = [
+        for (var id in modifyIds) get(id)!,
+        ..._addSources(newIds),
+    ];
       ..addAll(_addSources(newIds));
     // Pre-emptively compute digests for the new and modified nodes we know have
     // outputs.
