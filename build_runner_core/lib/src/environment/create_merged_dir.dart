@@ -74,7 +74,7 @@ Set<String> _conflicts(Set<BuildDirectory> buildDirs) {
   final seen = <String>{};
   final conflicts = <String>{};
   var outputLocations =
-      buildDirs.map((d) => d.outputLocation?.path).whereType<String>();
+      buildDirs.map((d) => d.outputLocation?.path).whereNotNull();
   for (var location in outputLocations) {
     if (!seen.add(location)) conflicts.add(location);
   }
