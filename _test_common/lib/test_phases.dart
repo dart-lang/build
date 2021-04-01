@@ -76,7 +76,7 @@ void _printOnFailure(LogRecord record) {
 ///
 Future<BuildResult> testBuilders(
   List<BuilderApplication> builders,
-  Map<String, /*String|List<int>*/ dynamic> inputs, {
+  Map<String, /*String|List<int>*/ Object> inputs, {
   Map<String, /*String|List<int>*/ Object>? outputs,
   PackageGraph? packageGraph,
   BuildStatus status = BuildStatus.success,

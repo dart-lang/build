@@ -277,10 +277,9 @@ class AssetGraph {
     });
 
     var newAndModifiedNodes = [
-        for (var id in modifyIds) get(id)!,
-        ..._addSources(newIds),
+      for (var id in modifyIds) get(id)!,
+      ..._addSources(newIds),
     ];
-      ..addAll(_addSources(newIds));
     // Pre-emptively compute digests for the new and modified nodes we know have
     // outputs.
     await _setLastKnownDigests(

@@ -1165,7 +1165,7 @@ void main() {
           writer: writer);
 
       // Followup build with modified inputs.
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
       writer.assets.clear();
       await testBuilders(
           builders,
@@ -1218,7 +1218,7 @@ void main() {
             writer: writer);
 
         // Followup build with modified unused inputs should have no outputs.
-        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
         writer.assets.clear();
         await testBuilders(
             builders,
@@ -1233,7 +1233,7 @@ void main() {
             writer: writer);
 
         // And now modify a real input.
-        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
         writer.assets.clear();
         await testBuilders(
             builders,
@@ -1250,7 +1250,7 @@ void main() {
             writer: writer);
 
         // Finally modify the primary input.
-        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
         writer.assets.clear();
         await testBuilders(
             builders,
@@ -1292,7 +1292,7 @@ void main() {
             writer: writer);
 
         // Followup build with modified primary input should have no outputs.
-        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
         writer.assets.clear();
         await testBuilders(
             builders,
@@ -1306,7 +1306,7 @@ void main() {
             writer: writer);
 
         // But modifying other inputs still causes a rebuild.
-        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
         writer.assets.clear();
         await testBuilders(
             builders,
@@ -1345,7 +1345,7 @@ void main() {
             writer: writer);
 
         // Delete the primary input, the output shoud still be deleted
-        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
         writer.assets.clear();
         await testBuilders(
             builders,
@@ -1383,7 +1383,7 @@ void main() {
           writer: writer);
 
       // Followup build with deleted input + cached graph.
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
       writer.assets.clear();
       await testBuilders(
           builders,
@@ -1418,7 +1418,7 @@ void main() {
           outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
       // Followup build with same sources + cached graph.
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
       await testBuilders(builders, {
         'a|web/a.txt': 'a',
         'a|web/a.txt.copy': 'a',
@@ -1440,7 +1440,7 @@ void main() {
           writer: writer);
 
       // Followup build with same sources + cached graph.
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
       await testBuilders(builders, {
         'a|web/a.txt': 'a',
         'a|web/a.txt.copy': 'a',
@@ -1465,7 +1465,7 @@ void main() {
 
       // Followup build with same sources + cached graph, but configure the
       // builder to read a different file.
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
       writer.assets.clear();
 
       await testBuilders([
@@ -1523,7 +1523,7 @@ void main() {
 
       // Modify the primary input of `file.a.copy`, but its output doesn't
       // change so `file.a.copy.copy` shouldn't be rebuilt.
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
       writer.assets.clear();
       await testBuilders(
           builders,
@@ -1555,7 +1555,7 @@ void main() {
         'a|web/a.txt': 'b',
         'a|web/a.txt.sibling': 'sibling',
         'a|web/a.txt.new': 'sibling',
-        'a|$assetGraphPath': writer.assets[makeAssetId('a|$assetGraphPath')],
+        'a|$assetGraphPath': writer.assets[makeAssetId('a|$assetGraphPath')]!,
       }, outputs: {});
 
       // And now try modifying the sibling to make sure that still works.
@@ -1563,7 +1563,7 @@ void main() {
         'a|web/a.txt': 'b',
         'a|web/a.txt.sibling': 'new!',
         'a|web/a.txt.new': 'sibling',
-        'a|$assetGraphPath': writer.assets[makeAssetId('a|$assetGraphPath')],
+        'a|$assetGraphPath': writer.assets[makeAssetId('a|$assetGraphPath')]!,
       }, outputs: {
         'a|web/a.txt.new': 'new!',
       });
@@ -1598,7 +1598,7 @@ void main() {
         writer: writer,
       );
 
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
       writer.assets.clear();
 
       await testBuilders(
@@ -1673,7 +1673,7 @@ void main() {
         writer: writer,
       );
 
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
       writer.assets.clear();
 
       await testBuilders(
@@ -1689,7 +1689,7 @@ void main() {
           },
           writer: writer);
 
-      serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
       writer.assets.clear();
 
       // Make sure if we mark the original node as a failure again, that we

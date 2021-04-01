@@ -30,10 +30,12 @@ class InputMatcher {
   /// Whether [input] matches any [includeGlobs].
   ///
   /// If there are no [includeGlobs] this always returns `true`.
-  bool includes(AssetId input) =>
-      includeGlobs == null ||
-      includeGlobs!.isEmpty ||
-      includeGlobs!.any((g) => g.matches(input.path));
+  bool includes(AssetId input) {
+    final includeGlobs = this.includeGlobs;
+    return includeGlobs == null ||
+        includeGlobs.isEmpty ||
+        includeGlobs.any((g) => g.matches(input.path));
+  }
 
   /// Whether [input] matches any [excludeGlobs].
   ///

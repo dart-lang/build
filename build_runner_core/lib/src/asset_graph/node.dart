@@ -288,7 +288,7 @@ class GlobAssetNode extends InternalAssetNode implements NodeWithInputs {
 
 /// A node which has [inputs], a [NodeState], and a [phaseNumber].
 abstract class NodeWithInputs implements AssetNode {
-  abstract HashSet<AssetId> inputs;
+  HashSet<AssetId> get inputs;
 
   int get phaseNumber;
 
