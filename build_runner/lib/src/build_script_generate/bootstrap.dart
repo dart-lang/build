@@ -28,24 +28,17 @@ final _logger = Logger('Bootstrap');
 /// If an exit code of 75 is returned, this function should be re-ran.
 Future<int> generateAndRun(
   List<String> args, {
-  Logger logger,
+  Logger? logger,
   Future<String> Function() generateBuildScript = generateBuildScript,
-  void Function(Object error, StackTrace stackTrace) handleUncaughtError,
+  void Function(Object error, StackTrace stackTrace) handleUncaughtError =
+      _defaultHandleUncaughtError,
 }) async {
   logger ??= _logger;
-  handleUncaughtError ??= (error, stackTrace) {
-    stderr
-      ..writeln('\n\nYou have hit a bug in build_runner')
-      ..writeln('Please file an issue with reproduction steps at '
-          'https://github.com/dart-lang/build/issues\n\n')
-      ..writeln(error)
-      ..writeln(stackTrace);
-  };
-  ReceivePort exitPort;
-  ReceivePort errorPort;
-  ReceivePort messagePort;
-  StreamSubscription errorListener;
-  int scriptExitCode;
+  ReceivePort? exitPort;
+  ReceivePort? errorPort;
+  ReceivePort? messagePort;
+  StreamSubscription? errorListener;
+  int? scriptExitCode;
 
   var tryCount = 0;
   var succeeded = false;
@@ -74,13 +67,13 @@ Future<int> generateAndRun(
     }
 
     scriptExitCode = await _createSnapshotIfNeeded(logger);
-    if (scriptExitCode != 0) return scriptExitCode;
+    if (scriptExitCode != 0) return scriptExitCode!;
 
     exitPort = ReceivePort();
     errorPort = ReceivePort();
     messagePort = ReceivePort();
     errorListener = errorPort.listen((e) {
-      final error = e[0];
+      final error = e[0] as Object? ?? NullThrownError();
       final trace = Trace.parse(e[1] as String).terse;
 
       handleUncaughtError(error, trace);
@@ -111,8 +104,8 @@ Future<int> generateAndRun(
     }
   }
 
-  StreamSubscription exitCodeListener;
-  exitCodeListener = messagePort.listen((isolateExitCode) {
+  StreamSubscription? exitCodeListener;
+  exitCodeListener = messagePort!.listen((isolateExitCode) {
     if (isolateExitCode is int) {
       scriptExitCode = isolateExitCode;
     } else {
@@ -120,14 +113,14 @@ Future<int> generateAndRun(
           'Bad response from isolate, expected an exit code but got '
           '$isolateExitCode');
     }
-    exitCodeListener.cancel();
+    exitCodeListener!.cancel();
     exitCodeListener = null;
   });
-  await exitPort.first;
-  await errorListener.cancel();
+  await exitPort?.first;
+  await errorListener?.cancel();
   await exitCodeListener?.cancel();
 
-  return scriptExitCode;
+  return scriptExitCode ?? 1;
 }
 
 /// Creates a script snapshot for the build script in necessary.
@@ -233,4 +226,13 @@ Future<bool> _checkImportantPackageDeps() async {
   }
 
   return true;
+}
+
+void _defaultHandleUncaughtError(error, stackTrace) {
+  stderr
+    ..writeln('\n\nYou have hit a bug in build_runner')
+    ..writeln('Please file an issue with reproduction steps at '
+        'https://github.com/dart-lang/build/issues\n\n')
+    ..writeln(error)
+    ..writeln(stackTrace);
 }
