@@ -185,7 +185,8 @@ class AssetTracker {
           var path = packagePath.substring(firstSlash + 1);
           return AssetId(package, path);
         })
-        .whereNotNull();
+        .where((id) => id != null)
+        .cast<AssetId>();
   }
 
   /// Lists asset IDs and swallows file not found errors.
