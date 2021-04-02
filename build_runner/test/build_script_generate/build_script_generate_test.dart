@@ -20,6 +20,7 @@ void main() {
           'build_resolvers',
           'build_runner',
           'build_runner_core',
+          'code_builder',
         ]),
       ]).create();
       await runPub('a', 'get');
@@ -37,6 +38,7 @@ builders:
       ]).create();
 
       var result = await runPub('a', 'run', args: ['build_runner', 'build']);
+      expect(result.stderr, isEmpty);
       expect(result.stdout,
           contains('The `../` import syntax in build.yaml is now deprecated'));
     });
@@ -53,6 +55,7 @@ builders:
       ]).create();
 
       var result = await runPub('a', 'run', args: ['build_runner', 'build']);
+      expect(result.stderr, isEmpty);
       expect(
           result.stdout,
           isNot(contains(
@@ -81,6 +84,7 @@ builders:
 ''')
       ]).create();
       var result = await runPub('a', 'run', args: ['build_runner', 'build']);
+      expect(result.stderr, isEmpty);
       expect(result.stdout, contains('could not be parsed'));
     });
   });

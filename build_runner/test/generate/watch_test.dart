@@ -862,7 +862,7 @@ Future terminateWatch() async {
   /// Can add any type of event.
   terminateWatchController.add(ProcessSignal.sigabrt);
   await terminateWatchController.close();
-  terminateWatchController = null;
+  _terminateWatchController = null;
 }
 
 const _packageConfig = {
