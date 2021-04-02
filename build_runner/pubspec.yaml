@@ -67,3 +67,5 @@ dependency_overrides:
   # versions of web_socket_channel. This can be removed safely.
   build_daemon:
     path: ../build_daemon
+  build_web_compilers:
+    path: ../build_web_compilers
