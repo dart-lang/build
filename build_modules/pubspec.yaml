@@ -40,6 +40,8 @@ dependency_overrides:
     path: ../build
   build_config:
     path: ../build_config
+  build_daemon:
+    path: ../build_daemon
   build_resolvers:
     path: ../build_resolvers
   build_test:
