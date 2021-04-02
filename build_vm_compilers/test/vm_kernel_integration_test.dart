@@ -23,6 +23,7 @@ void main() {
           'build_runner',
           'build_runner_core',
           'build_vm_compilers',
+          'code_builder',
           'scratch_space',
         ], versionDependencies: {
           'glob': 'any',
