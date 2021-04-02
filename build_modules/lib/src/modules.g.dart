@@ -15,7 +15,7 @@ Module _$ModuleFromJson(Map<String, dynamic> json) {
         .map((e) => const _AssetIdConverter().fromJson(e as List)),
     const _DartPlatformConverter().fromJson(json['pf'] as String),
     json['is'] as bool,
-    isMissing: json['m'] as bool ?? false,
+    isMissing: json['m'] as bool? ?? false,
   );
 }
 

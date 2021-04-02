@@ -12,10 +12,10 @@ import 'package:build_modules/src/module_cache.dart';
 
 void main() {
   group(DecodingCache, () {
-    Map<String, int> toBytesCalls;
-    Map<String, int> fromBytesCalls;
-    DecodingCache<String> cache;
-    ResourceManager resourceManager;
+    late Map<String, int> toBytesCalls;
+    late Map<String, int> fromBytesCalls;
+    late DecodingCache<String> cache;
+    late ResourceManager resourceManager;
 
     setUp(() async {
       toBytesCalls = {};
@@ -23,11 +23,11 @@ void main() {
       final resource = DecodingCache.resource<String>((bytes) {
         var decoded = utf8.decode(bytes);
         fromBytesCalls.putIfAbsent(decoded, () => 0);
-        fromBytesCalls[decoded] += 1;
+        fromBytesCalls[decoded] = fromBytesCalls[decoded]! + 1;
         return decoded;
       }, (value) {
         toBytesCalls.putIfAbsent(value, () => 0);
-        toBytesCalls[value] += 1;
+        toBytesCalls[value] = toBytesCalls[value]! + 1;
         return utf8.encode(value);
       });
       resourceManager = ResourceManager();
