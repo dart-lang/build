@@ -30,6 +30,7 @@ void main() {
           'build_runner_core',
           'build_test',
           'build_web_compilers',
+          'code_builder',
           'test',
         ],
       ),

@@ -28,6 +28,7 @@ void main() {
           'build_runner',
           'build_runner_core',
           'build_test',
+          'code_builder',
         ]),
         d.dir('lib', [
           d.file('example.dart', "String hello = 'hello'"),

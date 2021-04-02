@@ -41,7 +41,8 @@ void main() {
           'build_runner',
           'build_runner_core',
           'build_test',
-          'glob'
+          'code_builder',
+          'glob',
         ]),
         d.dir('tool', [d.file('build.dart', originalBuildContent)]),
         d.dir('web', [d.file('a.txt', 'a'), d.file('a.no_output', 'a')]),

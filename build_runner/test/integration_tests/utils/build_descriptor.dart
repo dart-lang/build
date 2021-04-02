@@ -102,6 +102,7 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
               'build_resolvers',
               'build_runner',
               'build_runner_core',
+              'code_builder',
             ], pathDependencies: {
               for (var o in otherPackages) o.name: p.join(d.sandbox, o.name),
             }),
@@ -139,7 +140,8 @@ Future<BuildTool> packageWithBuildScript(
               'build_resolvers',
               'build_runner',
               'build_runner_core',
-              'build_test'
+              'build_test',
+              'code_builder',
             ]),
             d.dir('tool', [
               d.file(
@@ -219,6 +221,7 @@ Future<d.FileDescriptor> _pubspecWithDeps(String name,
     Map<String, String> versionDependencies = const {}}) async {
   var packageConfig =
       await loadPackageConfigUri((await Isolate.packageConfig)!);
+  pathDependencies = Map.of(pathDependencies);
   await Future.forEach(currentIsolateDependencies, (String package) async {
     pathDependencies[package] = packageConfig[package]!.root.path;
   });
