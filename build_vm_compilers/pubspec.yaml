@@ -34,3 +34,8 @@ dependency_overrides:
     path: ../build_runner
   build_runner_core:
     path: ../build_runner_core
+  # Needed to run null safe build tests
+  code_builder:
+    git:
+      url: https://github.com/dart-lang/code_builder
+      ref: nnbd
