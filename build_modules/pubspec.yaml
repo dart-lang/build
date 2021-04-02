@@ -27,6 +27,7 @@ dev_dependencies:
   # Used inside tests
   build_runner: ^2.0.0
   build_test: ^2.0.0
+  json_serializable: ^4.1.0
   test: ^1.16.0
   a:
     path: test/fixtures/a
