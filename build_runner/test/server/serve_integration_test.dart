@@ -6,6 +6,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
@@ -21,12 +22,12 @@ import 'package:_test_common/common.dart';
 import 'package:_test_common/package_graphs.dart';
 
 void main() {
-  FutureOr<Response> Function(Request) handler;
-  InMemoryRunnerAssetReader reader;
-  InMemoryRunnerAssetWriter writer;
-  StreamSubscription subscription;
-  Completer<BuildResult> nextBuild;
-  StreamController terminateController;
+  late FutureOr<Response> Function(Request) handler;
+  late InMemoryRunnerAssetReader reader;
+  late InMemoryRunnerAssetWriter writer;
+  late StreamSubscription subscription;
+  late Completer<BuildResult> nextBuild;
+  late StreamController<ProcessSignal> terminateController;
 
   final path = p.absolute('example');
 
@@ -53,7 +54,7 @@ void main() {
             ],
           }));
 
-    terminateController = StreamController();
+    terminateController = StreamController<ProcessSignal>();
     final server = await watch_impl.watch(
       [applyToRoot(const UppercaseBuilder())],
       packageGraph: graph,
@@ -76,7 +77,7 @@ void main() {
 
   tearDown(() async {
     await subscription.cancel();
-    terminateController.add(null);
+    terminateController.add(ProcessSignal.sigabrt);
     await terminateController.close();
   });
 

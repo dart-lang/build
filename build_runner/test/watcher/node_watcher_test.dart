@@ -15,7 +15,7 @@ import 'package:build_runner/src/watcher/node_watcher.dart';
 
 void main() {
   group('PackageNodeWatcher', () {
-    Directory tmpDir;
+    late Directory tmpDir;
 
     setUp(() {
       tmpDir = Directory.systemTemp.createTempSync();

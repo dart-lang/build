@@ -51,7 +51,7 @@ class BuildCommand extends BuildRunnerCommand {
     if (result.status == BuildStatus.success) {
       return ExitCode.success.code;
     } else {
-      return result.failureType.exitCode;
+      return result.failureType?.exitCode ?? 1;
     }
   }
 }

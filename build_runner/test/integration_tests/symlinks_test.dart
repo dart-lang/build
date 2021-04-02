@@ -27,7 +27,7 @@ final readThroughLink = TestBuilder(
 void main() {
   final builders = [builder('readThroughLink', readThroughLink)];
 
-  BuildTool buildTool;
+  late BuildTool buildTool;
 
   setUpAll(() async {
     buildTool = await packageWithBuildScript(builders, contents: [

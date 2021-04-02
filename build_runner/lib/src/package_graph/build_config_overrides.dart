@@ -14,9 +14,8 @@ import 'package:path/path.dart' as p;
 final _log = Logger('BuildConfigOverrides');
 
 Future<Map<String, BuildConfig>> findBuildConfigOverrides(
-    PackageGraph packageGraph,
-    String configKey,
-    RunnerAssetReader reader) async {
+    PackageGraph packageGraph, RunnerAssetReader reader,
+    {String? configKey}) async {
   final configs = <String, BuildConfig>{};
   final configFiles =
       reader.findAssets(Glob('*.build.yaml'), package: packageGraph.root.name);

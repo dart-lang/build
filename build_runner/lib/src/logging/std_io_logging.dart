@@ -9,12 +9,12 @@ import 'package:io/ansi.dart';
 import 'package:logging/logging.dart';
 import 'package:stack_trace/stack_trace.dart';
 
-void Function(LogRecord) stdIOLogListener({bool assumeTty, bool verbose}) =>
+void Function(LogRecord) stdIOLogListener({bool? assumeTty, bool? verbose}) =>
     (record) => overrideAnsiOutput(assumeTty == true || ansiOutputEnabled, () {
           _stdIOLogListener(record, verbose: verbose ?? false);
         });
 
-StringBuffer colorLog(LogRecord record, {bool verbose}) {
+StringBuffer colorLog(LogRecord record, {required bool verbose}) {
   AnsiCode color;
   if (record.level < Level.WARNING) {
     color = cyan;
@@ -30,11 +30,11 @@ StringBuffer colorLog(LogRecord record, {bool verbose}) {
   ];
 
   if (record.error != null) {
-    lines.add(record.error);
+    lines.add(record.error!);
   }
 
   if (record.stackTrace != null && verbose) {
-    var trace = Trace.from(record.stackTrace).foldFrames((f) {
+    var trace = Trace.from(record.stackTrace!).foldFrames((f) {
       return f.package == 'build_runner' || f.package == 'build';
     }, terse: true);
 
@@ -54,7 +54,7 @@ StringBuffer colorLog(LogRecord record, {bool verbose}) {
   return message;
 }
 
-void _stdIOLogListener(LogRecord record, {bool verbose}) =>
+void _stdIOLogListener(LogRecord record, {required bool verbose}) =>
     stdout.write(colorLog(record, verbose: verbose));
 
 /// Filter out the Logger names which aren't coming from specific builders and

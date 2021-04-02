@@ -36,7 +36,7 @@ class WatchCommand extends BuildRunnerCommand {
 
   @override
   WatchOptions readOptions() => WatchOptions.fromParsedArgs(
-      argResults, argResults.rest, packageGraph.root.name, this);
+      argResults!, argResults!.rest, packageGraph.root.name, this);
 
   @override
   Future<int> run() {
@@ -63,7 +63,6 @@ class WatchCommand extends BuildRunnerCommand {
       directoryWatcherFactory: options.directoryWatcherFactory,
       buildFilters: options.buildFilters,
     );
-    if (handler == null) return ExitCode.config.code;
 
     final completer = Completer<int>();
     handleBuildResultsStream(handler.buildResults, completer);

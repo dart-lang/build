@@ -22,8 +22,8 @@ abstract class BuildRunnerCommand extends Command<int> {
 
   PackageGraph get packageGraph => (runner as BuildCommandRunner).packageGraph;
 
-  BuildRunnerCommand({bool symlinksDefault}) {
-    _addBaseFlags(symlinksDefault ?? false);
+  BuildRunnerCommand({bool symlinksDefault = false}) {
+    _addBaseFlags(symlinksDefault);
   }
 
   @override
@@ -105,6 +105,6 @@ abstract class BuildRunnerCommand extends Command<int> {
   /// must extend [SharedOptions].
   SharedOptions readOptions() {
     return SharedOptions.fromParsedArgs(
-        argResults, argResults.rest, packageGraph.root.name, this);
+        argResults!, argResults!.rest, packageGraph.root.name, this);
   }
 }

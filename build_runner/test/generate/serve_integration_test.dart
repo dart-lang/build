@@ -15,8 +15,8 @@ import 'package:_test_common/common.dart';
 
 void main() {
   group('serve integration tests', () {
-    Process pubProcess;
-    Stream<String> pubStdOutLines;
+    late Process pubProcess;
+    late Stream<String> pubStdOutLines;
 
     setUp(() async {
       await d.dir('a', [

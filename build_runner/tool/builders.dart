@@ -21,7 +21,7 @@ class _CopyBuilder extends Builder {
     }
     buildStep.writeAsString(
         AssetId(buildStep.inputId.package,
-            buildExtensions[buildStep.inputId.path].single),
+            buildExtensions[buildStep.inputId.path]!.single),
         buildStep.readAsString(buildStep.inputId));
   }
 }

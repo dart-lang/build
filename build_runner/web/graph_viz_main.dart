@@ -7,28 +7,27 @@ import 'dart:convert';
 import 'dart:html';
 import 'dart:js' as js;
 
-final _graphReference = js.context[r'$build'];
-final _details = document.getElementById('details');
+final _graphReference = js.context[r'$build']!;
+final _details = document.getElementById('details')!;
 
 void main() async {
   var filterBox = document.getElementById('filter') as InputElement;
   var searchBox = document.getElementById('searchbox') as InputElement;
-  var searchForm = document.getElementById('searchform');
+  var searchForm = document.getElementById('searchform')!;
   searchForm.onSubmit.listen((e) {
     e.preventDefault();
-    _focus(searchBox.value.trim(),
-        filter: filterBox.value.isNotEmpty ? filterBox.value : null);
-    return null;
+    _focus(searchBox.value!.trim(),
+        filter: filterBox.value!.isNotEmpty ? filterBox.value : null);
   });
   _graphReference.callMethod('initializeGraph', [_focus]);
 }
 
-void _error(String message, [Object error, StackTrace stack]) {
+void _error(String message, [Object? error, StackTrace? stack]) {
   var msg = [message, error, stack].where((e) => e != null).join('\n');
   _details.innerHtml = '<pre>$msg</pre>';
 }
 
-Future _focus(String query, {String filter}) async {
+Future _focus(String query, {String? filter}) async {
   if (query.isEmpty) {
     _error('Provide content in the query.');
     return;

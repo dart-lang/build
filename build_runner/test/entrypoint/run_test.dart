@@ -11,7 +11,6 @@ import 'dart:io';
 import 'package:_test_common/common.dart';
 import 'package:async/async.dart';
 import 'package:io/io.dart';
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
@@ -58,14 +57,14 @@ main() {
         0);
   });
 
-  void expectOutput(String path, {@required bool exists}) {
+  void expectOutput(String path, {required bool exists}) {
     path =
         p.join(d.sandbox, 'a', '.dart_tool', 'build', 'generated', 'a', path);
     expect(File(path).existsSync(), exists);
   }
 
   Future<int> runSingleBuild(String command, List<String> args,
-      {StreamSink<String> stdoutSink}) async {
+      {StreamSink<String>? stdoutSink}) async {
     var process = await startPub('a', 'run', args: args);
     var stdoutLines = process.stdout
         .transform(Utf8Decoder())

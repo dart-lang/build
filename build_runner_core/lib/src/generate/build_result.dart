@@ -63,6 +63,6 @@ class FailureType {
 }
 
 abstract class BuildState {
-  Future<BuildResult> get currentBuild;
+  Future<BuildResult>? get currentBuild;
   Stream<BuildResult> get buildResults;
 }

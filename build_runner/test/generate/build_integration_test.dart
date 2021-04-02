@@ -700,8 +700,7 @@ main() async {
   });
 }
 
-Future<String> runBuild({List<String> extraArgs}) async {
-  extraArgs ??= [];
+Future<String> runBuild({List<String> extraArgs = const []}) async {
   var buildArgs = ['build', '-o', 'build', ...extraArgs];
   var result = await runDart('a', 'tool/build.dart', args: buildArgs);
   expect(result.exitCode, 0, reason: '${result.stdout}\n${result.stderr}');
