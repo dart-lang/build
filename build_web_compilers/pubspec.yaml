@@ -33,3 +33,16 @@ dev_dependencies:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
+
+dependency_overrides:
+  build_config:
+    path: ../build_config
+  build_modules:
+    path: ../build_modules
+  build_resolvers:
+    path: ../build_resolvers
+  build_runner:
+    path: ../build_runner
+  build_runner_core:
+    path: ../build_runner_core
+
