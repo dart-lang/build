@@ -111,11 +111,10 @@ class Module {
 
   Module(this.primarySource, Iterable<AssetId> sources,
       Iterable<AssetId> directDependencies, this.platform, this.isSupported,
-      {bool isMissing})
+      {this.isMissing = false})
       : sources = UnmodifiableSetView(HashSet.of(sources)),
         directDependencies =
-            UnmodifiableSetView(HashSet.of(directDependencies)),
-        isMissing = isMissing ?? false;
+            UnmodifiableSetView(HashSet.of(directDependencies));
 
   /// Generated factory constructor.
   factory Module.fromJson(Map<String, dynamic> json) => _$ModuleFromJson(json);
@@ -131,10 +130,7 @@ class Module {
   /// If [throwIfUnsupported] is `true`, then an [UnsupportedModules]
   /// will be thrown if there are any modules that are not supported.
   Future<List<Module>> computeTransitiveDependencies(BuildStep buildStep,
-      {bool throwIfUnsupported = false,
-      @deprecated Set<String> skipPlatformCheckPackages = const {}}) async {
-    throwIfUnsupported ??= false;
-    skipPlatformCheckPackages ??= const {};
+      {bool throwIfUnsupported = false}) async {
     final modules = await buildStep.fetchResource(moduleCache);
     var transitiveDeps = <AssetId, Module>{};
     var modulesToCrawl = {primarySource};
@@ -151,9 +147,7 @@ class Module {
         missingModuleSources.add(next);
         continue;
       }
-      if (throwIfUnsupported &&
-          !module.isSupported &&
-          !skipPlatformCheckPackages.contains(module.primarySource.package)) {
+      if (throwIfUnsupported && !module.isSupported) {
         unsupportedModules.add(module);
       }
       // Don't include the root module in the transitive deps.
@@ -170,7 +164,7 @@ class Module {
     }
     var orderedModules = stronglyConnectedComponents<Module>(
         transitiveDeps.values,
-        (m) => m.directDependencies.map((s) => transitiveDeps[s]),
+        (m) => m.directDependencies.map((s) => transitiveDeps[s]!),
         equals: (a, b) => a.primarySource == b.primarySource,
         hashCode: (m) => m.primarySource.hashCode);
     return orderedModules.map((c) => c.single).toList();

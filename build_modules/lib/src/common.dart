@@ -14,7 +14,7 @@ String defaultAnalysisOptionsArg(ScratchSpace scratchSpace) =>
 enum ModuleStrategy { fine, coarse }
 
 ModuleStrategy moduleStrategy(BuilderOptions options) {
-  var config = options.config['strategy'] as String ?? 'coarse';
+  var config = options.config['strategy'] as String? ?? 'coarse';
   switch (config) {
     case 'coarse':
       return ModuleStrategy.coarse;

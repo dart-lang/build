@@ -20,7 +20,7 @@ part 'meta_module.g.dart';
 /// Throws an [ArgumentError] if [path] is just a filename with no directory.
 String _topLevelDir(String path) {
   var parts = p.url.split(p.url.normalize(path));
-  String error;
+  String? error;
   if (parts.length == 1) {
     error = 'The path `$path` does not contain a directory.';
   } else if (parts.first == '..') {
@@ -144,7 +144,7 @@ List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
       var mId = (entrypointIds.toList()..sort()).map((m) => m.path).join('\$');
       mergedModules.putIfAbsent(mId, () => []).add(module);
     } else {
-      entrypointModuleGroups[entrypointIds.single].add(module);
+      entrypointModuleGroups[entrypointIds.single]!.add(module);
     }
   }
 
@@ -188,7 +188,7 @@ List<Module> _computeModules(
           .depsForPlatform(platform)
           // Only "internal" dependencies
           .where(libraries.containsKey)
-          .map((dep) => libraries[dep]),
+          .map((dep) => libraries[dep]!),
       equals: (a, b) => a.id == b.id,
       hashCode: (l) => l.id.hashCode);
 
@@ -227,7 +227,6 @@ class MetaModule {
       case ModuleStrategy.coarse:
         return _coarseModulesForLibraries(reader, libraries, platform);
     }
-    throw StateError('Unrecognized module strategy $strategy');
   }
 }
 
@@ -239,7 +238,7 @@ MetaModule _coarseModulesForLibraries(
     if (!librariesByDirectory.containsKey(dir)) {
       librariesByDirectory[dir] = <AssetId, ModuleLibrary>{};
     }
-    librariesByDirectory[dir][library.id] = library;
+    librariesByDirectory[dir]![library.id] = library;
   }
   final modules = librariesByDirectory.values
       .expand((libs) => _computeModules(libs, platform))
