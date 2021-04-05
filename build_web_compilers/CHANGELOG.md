@@ -1,5 +1,6 @@
 ## 3.0.0-dev
 
+- Migrate to null safety.
 - Update to the latest `build_modules`.
 - Drop support for `skipPlatformCheckPackages`.
 

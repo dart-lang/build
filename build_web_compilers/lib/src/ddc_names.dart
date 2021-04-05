@@ -29,7 +29,7 @@ String toJSIdentifier(String name) {
   if (name.isEmpty) return r'$';
 
   // Escape any invalid characters
-  StringBuffer buffer;
+  StringBuffer? buffer;
   for (var i = 0; i < name.length; i++) {
     var ch = name[i];
     var needsEscape = ch == r'$' || _invalidCharInIdentifier.hasMatch(ch);

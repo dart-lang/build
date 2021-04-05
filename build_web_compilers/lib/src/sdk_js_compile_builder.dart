@@ -9,7 +9,6 @@ import 'dart:io';
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 import 'common.dart';
@@ -45,11 +44,11 @@ class SdkJsCompileBuilder implements Builder {
   final bool soundNullSafety;
 
   SdkJsCompileBuilder({
-    @required this.sdkKernelPath,
-    @required String outputPath,
-    @required this.soundNullSafety,
-    String librariesPath,
-    String platformSdk,
+    required this.sdkKernelPath,
+    required String outputPath,
+    required this.soundNullSafety,
+    String? librariesPath,
+    String? platformSdk,
   })  : platformSdk = platformSdk ?? sdkDir,
         librariesPath = librariesPath ??
             p.join(platformSdk ?? sdkDir, 'lib', 'libraries.json'),

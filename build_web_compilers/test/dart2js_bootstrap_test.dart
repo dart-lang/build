@@ -15,10 +15,10 @@ import 'package:build_modules/build_modules.dart';
 import 'util.dart';
 
 void main() {
-  Map<String, dynamic> assets;
+  late Map<String, Object> assets;
   final platform = dart2jsPlatform;
 
-  StreamSubscription<LogRecord> logSubscription;
+  late StreamSubscription<LogRecord> logSubscription;
   setUp(() {
     Logger.root.level = Level.ALL;
     logSubscription = Logger.root.onRecord.listen((r) => printOnFailure('$r'));
