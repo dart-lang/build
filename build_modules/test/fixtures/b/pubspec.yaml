@@ -1,7 +1,7 @@
 name: b
 
 environment:
-  sdk: ">=1.0.0 <3.0.0"
+  sdk: ">=2.12.0 <3.0.0"
 
 dependencies:
   a:

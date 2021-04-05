@@ -1,4 +1,6 @@
-## 3.0.7-dev
+## 4.0.0-dev
+
+- Migrate to null safety.
 
 ## 3.0.6
 

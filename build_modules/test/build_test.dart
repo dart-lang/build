@@ -34,7 +34,7 @@ void main() {
 
     // 2 - run build - should be no output, since nothing should change
     var result = _runProc('pub${Platform.isWindows ? '.bat' : ''}',
-        ['run', 'build_runner', 'build']);
+        ['run', 'build_runner', 'build', '--delete-conflicting-outputs']);
     expect(result,
         contains(RegExp(r'Succeeded after \S+( \S+)? with \d+ outputs')));
 
@@ -59,7 +59,10 @@ String _runProc(String proc, List<String> args) {
 
   if (result.exitCode != 0) {
     throw ProcessException(
-        proc, args, result.stderr as String, result.exitCode);
+        proc,
+        args,
+        'Stdout:\n${result.stdout}\n\nStderr:\n${result.stderr}',
+        result.exitCode);
   }
   var stderr = result.stderr as String;
   if (stderr.isNotEmpty) print('stderr: $stderr');

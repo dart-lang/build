@@ -1,3 +1,8 @@
+## 3.0.0-dev
+
+- Update to the latest `build_modules`.
+- Drop support for `skipPlatformCheckPackages`.
+
 ## 2.16.5
 
 - Update to build `2.x`.
