@@ -1,6 +1,8 @@
 ## 7.0.0-dev
 
 - Migrate to null safety.
+- Add an early error if any output extensions overlap with any input
+  extensions to avoid infinite loops.
 
 ## 6.1.12
 
