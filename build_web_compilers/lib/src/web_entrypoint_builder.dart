@@ -9,7 +9,6 @@ import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
-import 'package:meta/meta.dart';
 
 import 'common.dart';
 import 'dart2js_bootstrap.dart';
@@ -59,7 +58,7 @@ class WebEntrypointBuilder implements Builder {
 
   /// Explicit configuration from the user to enable or disable sound null
   /// safety if provided, otherwise `null`.
-  final bool /*?*/ soundNullSafetyOverride;
+  final bool? soundNullSafetyOverride;
 
   /// Whether or not to enable runtime null assertions in unsound mode.
   ///
@@ -73,9 +72,9 @@ class WebEntrypointBuilder implements Builder {
   const WebEntrypointBuilder(
     this.webCompiler, {
     this.dart2JsArgs = const [],
-    @required this.nullAssertions,
-    @required this.soundNullSafetyOverride,
-    @required this.nativeNullAssertions,
+    required this.nullAssertions,
+    required this.soundNullSafetyOverride,
+    required this.nativeNullAssertions,
   });
 
   factory WebEntrypointBuilder.fromOptions(BuilderOptions options) {
@@ -83,7 +82,7 @@ class WebEntrypointBuilder implements Builder {
         options.config, _supportedOptions, 'build_web_compilers:entrypoint',
         deprecatedOptions: _deprecatedOptions);
     var compilerOption =
-        options.config[_compilerOption] as String ?? 'dartdevc';
+        options.config[_compilerOption] as String? ?? 'dartdevc';
     WebCompiler compiler;
     switch (compilerOption) {
       case 'dartdevc':
@@ -101,20 +100,18 @@ class WebEntrypointBuilder implements Builder {
       throw ArgumentError.value(options.config[_dart2jsArgsOption],
           _dart2jsArgsOption, 'Expected a list for $_dart2jsArgsOption.');
     }
-    var dart2JsArgs = (options.config[_dart2jsArgsOption] as List)
+    var dart2JsArgs = (options.config[_dart2jsArgsOption] as List?)
             ?.map((arg) => '$arg')
-            ?.toList() ??
+            .toList() ??
         const <String>[];
 
     return WebEntrypointBuilder(compiler,
         dart2JsArgs: dart2JsArgs,
         nativeNullAssertions:
-            options.config[_nativeNullAssertionsOption] as bool /*?*/ ?? true,
-        nullAssertions:
-            options.config[_nullAssertionsOption] as bool /*?*/ ?? false,
+            options.config[_nativeNullAssertionsOption] as bool? ?? true,
+        nullAssertions: options.config[_nullAssertionsOption] as bool? ?? false,
         soundNullSafetyOverride:
-            options.config[_soundNullSafetyOption] as bool /*?*/
-        );
+            options.config[_soundNullSafetyOption] as bool?);
   }
 
   @override
@@ -183,13 +180,14 @@ Future<bool> _isAppEntryPoint(AssetId dartId, AssetReader reader) async {
   return parsed.declarations.any((node) {
     return node is FunctionDeclaration &&
         node.name.name == 'main' &&
-        node.functionExpression.parameters.parameters.length <= 2;
+        node.functionExpression.parameters != null &&
+        node.functionExpression.parameters!.parameters.length <= 2;
   });
 }
 
 /// Files copied from the SDK that are required at runtime to run a DDC
 /// application.
-List<AssetId> _ddcSdkResources({@required bool soundNullSafety}) => [
+List<AssetId> _ddcSdkResources({required bool soundNullSafety}) => [
       AssetId('build_web_compilers',
           'lib/src/dev_compiler/dart_sdk${soundNullSafety ? '.sound' : ''}.js'),
       AssetId('build_web_compilers', 'lib/src/dev_compiler/require.js')

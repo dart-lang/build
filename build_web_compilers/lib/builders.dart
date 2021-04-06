@@ -84,7 +84,7 @@ PostProcessBuilder dart2jsArchiveExtractor(BuilderOptions options) =>
 
 // General purpose builders
 PostProcessBuilder dartSourceCleanup(BuilderOptions options) =>
-    (options.config['enabled'] as bool ?? false)
+    (options.config['enabled'] as bool? ?? false)
         ? const FileDeletingBuilder(
             ['.dart', '.js.map', '.ddc.js.metadata', '.ddc_merged_metadata'])
         : const FileDeletingBuilder(
@@ -108,23 +108,23 @@ void _ensureSameDdcOptions(BuilderOptions options) {
 }
 
 bool _readUseIncrementalCompilerOption(BuilderOptions options) {
-  return options.config[_useIncrementalCompilerOption] as bool ?? true;
+  return options.config[_useIncrementalCompilerOption] as bool? ?? true;
 }
 
 bool _readGenerateFullDillOption(BuilderOptions options) {
-  return options.config[_generateFullDillOption] as bool ?? false;
+  return options.config[_generateFullDillOption] as bool? ?? false;
 }
 
 bool _readTrackInputsCompilerOption(BuilderOptions options) {
-  return options.config[_trackUnusedInputsCompilerOption] as bool ?? true;
+  return options.config[_trackUnusedInputsCompilerOption] as bool? ?? true;
 }
 
 Map<String, String> _readEnvironmentOption(BuilderOptions options) {
-  final environment = options.config[_environmentOption] as Map ?? const {};
+  final environment = options.config[_environmentOption] as Map? ?? const {};
   return environment.map((key, value) => MapEntry('$key', '$value'));
 }
 
-Map<String, dynamic> _previousDdcConfig;
+Map<String, dynamic>? _previousDdcConfig;
 const _useIncrementalCompilerOption = 'use-incremental-compiler';
 const _generateFullDillOption = 'generate-full-dill';
 const _trackUnusedInputsCompilerOption = 'track-unused-inputs';

@@ -19,7 +19,7 @@ class Dart2JsArchiveExtractor implements PostProcessBuilder {
   Dart2JsArchiveExtractor() : filterOutputs = false;
 
   Dart2JsArchiveExtractor.fromOptions(BuilderOptions options)
-      : filterOutputs = options.config['filter_outputs'] as bool ?? false;
+      : filterOutputs = options.config['filter_outputs'] as bool? ?? false;
 
   @override
   final inputExtensions = const [jsEntrypointArchiveExtension];
