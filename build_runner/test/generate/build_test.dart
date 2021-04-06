@@ -21,7 +21,7 @@ void main() {
   final copyABuildApplication = applyToRoot(
       TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')));
   final packageConfigId = makeAssetId('a|.dart_tool/package_config.json');
-  InMemoryRunnerAssetWriter writer;
+  late InMemoryRunnerAssetWriter writer;
 
   setUp(() async {
     writer = InMemoryRunnerAssetWriter();
@@ -65,10 +65,10 @@ builders:
 
 Future<BuildResult> _doBuild(List<BuilderApplication> builders,
     Map<String, String> inputs, InMemoryRunnerAssetWriter writer,
-    {PackageGraph packageGraph,
-    void Function(LogRecord) onLog,
-    Level logLevel,
-    String configKey}) async {
+    {PackageGraph? packageGraph,
+    void Function(LogRecord)? onLog,
+    Level? logLevel,
+    String? configKey}) async {
   onLog ??= (_) {};
   inputs.forEach((serializedId, contents) {
     writer.writeAsString(makeAssetId(serializedId), contents);

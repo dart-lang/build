@@ -38,14 +38,14 @@ class DaemonCommand extends WatchCommand {
 
   @override
   DaemonOptions readOptions() => DaemonOptions.fromParsedArgs(
-      argResults, argResults.rest, packageGraph.root.name, this);
+      argResults!, argResults!.rest, packageGraph.root.name, this);
 
   @override
   Future<int> run() async {
     var workingDirectory = Directory.current.path;
     var options = readOptions();
     var daemon = Daemon(workingDirectory);
-    var requestedOptions = argResults.arguments.toSet();
+    var requestedOptions = argResults!.arguments.toSet();
     if (!daemon.hasLock) {
       var runningOptions = await daemon.currentOptions();
       var version = await daemon.runningVersion();

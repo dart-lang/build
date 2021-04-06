@@ -67,7 +67,7 @@ class AssetGraphHandler {
   }
 
   Future<shelf.Response> _handleQuery(String query, String rootDir,
-      {String filter}) async {
+      {String? filter}) async {
     var filterGlob = filter != null ? Glob(filter) : null;
     var pipeIndex = query.indexOf('|');
 
@@ -96,7 +96,7 @@ class AssetGraphHandler {
             'Could not find asset in build graph: $assetId');
       }
     }
-    var node = _assetGraph.get(assetId);
+    var node = _assetGraph.get(assetId)!;
     var currentEdge = 0;
     var nodes = [
       {'id': '${node.id}', 'label': '${node.id}'}

@@ -25,8 +25,8 @@ void main() {
     builder('copyBuilder', copyBuilder),
   ];
 
-  BuildTool buildTool;
-  d.Descriptor builderPackage;
+  late BuildTool buildTool;
+  late d.Descriptor builderPackage;
 
   setUpAll(() async {
     builderPackage = await packageWithBuilders(builders);
@@ -64,7 +64,7 @@ void main() {
   }
 
   group('Invalidates next build', () {
-    File markerFile;
+    late File markerFile;
     setUp(() async {
       // Run a first build before invalidation.
       await buildTool.build();
@@ -112,7 +112,7 @@ void main() {
   });
 
   group('Recreates snapshot while serving', () {
-    BuildServer server;
+    late BuildServer server;
 
     setUp(() async {
       server = await buildTool.serve();

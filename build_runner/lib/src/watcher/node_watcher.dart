@@ -17,7 +17,7 @@ class PackageNodeWatcher {
   final PackageNode node;
 
   /// The actual watcher instance.
-  Watcher _watcher;
+  late final Watcher _watcher;
   Watcher get watcher => _watcher;
 
   /// Creates a new watcher for a [PackageNode].
@@ -27,12 +27,11 @@ class PackageNodeWatcher {
   /// (i.e. a file versus directory).
   PackageNodeWatcher(
     this.node, {
-    Watcher Function(String path) watch,
+    Watcher Function(String path)? watch,
   }) : _strategy = watch ?? _default;
 
   /// Returns a stream of records for assets that change recursively.
   Stream<AssetChange> watch() {
-    assert(_watcher == null);
     _watcher = _strategy(node.path);
     final events = _watcher.events;
     return events.map((e) => AssetChange.fromEvent(node, e));

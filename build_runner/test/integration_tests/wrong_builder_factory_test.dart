@@ -21,7 +21,7 @@ void main() {
     builder('wrongKey', correctKey),
   ];
 
-  BuildTool buildTool;
+  late BuildTool buildTool;
 
   setUpAll(() async {
     buildTool = await package([await packageWithBuilders(builders)]);

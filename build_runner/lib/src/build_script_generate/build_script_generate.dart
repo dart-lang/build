@@ -64,8 +64,8 @@ Future<String> _generateBuildScript() async {
 /// By default, the [PackageGraph.forThisPackage] will be used and configuration
 /// overrides will be loaded from the root package.
 Future<Iterable<Expression>> findBuilderApplications({
-  PackageGraph packageGraph,
-  Map<String, BuildConfig> buildConfigOverrides,
+  PackageGraph? packageGraph,
+  Map<String, BuildConfig>? buildConfigOverrides,
 }) async {
   packageGraph ??= await PackageGraph.forThisPackage();
   final orderedPackages = stronglyConnectedComponents<PackageNode>(
@@ -74,11 +74,11 @@ Future<Iterable<Expression>> findBuilderApplications({
     equals: (a, b) => a.name == b.name,
     hashCode: (n) => n.name.hashCode,
   ).expand((c) => c);
-  buildConfigOverrides ??= await findBuildConfigOverrides(
-      packageGraph, null, FileBasedAssetReader(packageGraph));
+  var overrides = buildConfigOverrides ??= await findBuildConfigOverrides(
+      packageGraph, FileBasedAssetReader(packageGraph));
   Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
-    if (buildConfigOverrides.containsKey(package.name)) {
-      return buildConfigOverrides[package.name];
+    if (overrides.containsKey(package.name)) {
+      return overrides[package.name]!;
     }
     try {
       return await BuildConfig.fromBuildConfigDir(
@@ -94,7 +94,7 @@ Future<Iterable<Expression>> findBuilderApplications({
     // Filter out builderDefinitions with relative imports that aren't
     // from the root package, because they will never work.
     if (definition.import.startsWith('package:') as bool) return true;
-    return definition.package == packageGraph.root.name;
+    return definition.package == packageGraph!.root.name;
   }
 
   final orderedConfigs =
@@ -149,21 +149,21 @@ Expression _applyBuilder(BuilderDefinition definition) {
       'hideOutput': literalTrue
     else
       'hideOutput': literalFalse,
-    if (!identical(definition.defaults?.generateFor, InputSet.anything))
+    if (!identical(definition.defaults.generateFor, InputSet.anything))
       'defaultGenerateFor':
           refer('InputSet', 'package:build_config/build_config.dart')
               .constInstance([], {
         if (definition.defaults.generateFor.include != null)
-          'include': _rawStringList(definition.defaults.generateFor.include),
+          'include': _rawStringList(definition.defaults.generateFor.include!),
         if (definition.defaults.generateFor.exclude != null)
-          'exclude': _rawStringList(definition.defaults.generateFor.exclude),
+          'exclude': _rawStringList(definition.defaults.generateFor.exclude!),
       }),
-    if (definition.defaults?.options?.isNotEmpty ?? false)
+    if (definition.defaults.options.isNotEmpty)
       'defaultOptions': _constructBuilderOptions(definition.defaults.options),
-    if (definition.defaults?.devOptions?.isNotEmpty ?? false)
+    if (definition.defaults.devOptions.isNotEmpty)
       'defaultDevOptions':
           _constructBuilderOptions(definition.defaults.devOptions),
-    if (definition.defaults?.releaseOptions?.isNotEmpty ?? false)
+    if (definition.defaults.releaseOptions.isNotEmpty)
       'defaultReleaseOptions':
           _constructBuilderOptions(definition.defaults.releaseOptions),
     if (definition.appliesBuilders.isNotEmpty)
@@ -182,21 +182,21 @@ Expression _applyBuilder(BuilderDefinition definition) {
 /// PostProcessBuilder.
 Expression _applyPostProcessBuilder(PostProcessBuilderDefinition definition) {
   final namedArgs = {
-    if (!identical(definition.defaults?.generateFor, InputSet.anything))
+    if (!identical(definition.defaults.generateFor, InputSet.anything))
       'defaultGenerateFor':
           refer('InputSet', 'package:build_config/build_config.dart')
               .constInstance([], {
         if (definition.defaults.generateFor.include != null)
-          'include': _rawStringList(definition.defaults.generateFor.include),
+          'include': _rawStringList(definition.defaults.generateFor.include!),
         if (definition.defaults.generateFor.exclude != null)
-          'exclude': _rawStringList(definition.defaults.generateFor.exclude),
+          'exclude': _rawStringList(definition.defaults.generateFor.exclude!),
       }),
-    if (definition.defaults?.options?.isNotEmpty ?? false)
+    if (definition.defaults.options.isNotEmpty)
       'defaultOptions': _constructBuilderOptions(definition.defaults.options),
-    if (definition.defaults?.devOptions?.isNotEmpty ?? false)
+    if (definition.defaults.devOptions.isNotEmpty)
       'defaultDevOptions':
           _constructBuilderOptions(definition.defaults.devOptions),
-    if (definition.defaults?.releaseOptions?.isNotEmpty ?? false)
+    if (definition.defaults.releaseOptions.isNotEmpty)
       'defaultReleaseOptions':
           _constructBuilderOptions(definition.defaults.releaseOptions),
   };
@@ -245,7 +245,6 @@ Expression _findToExpression(BuilderDefinition definition) {
       return refer('toRoot', 'package:build_runner_core/build_runner_core.dart')
           .call([]);
   }
-  throw ArgumentError('Unhandled AutoApply type: ${definition.autoApply}');
 }
 
 /// An expression creating a [BuilderOptions] from a json string.

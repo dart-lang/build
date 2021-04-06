@@ -15,8 +15,8 @@ import 'package:_test_common/common.dart';
 
 void main() {
   group('serve integration tests', () {
-    Process pubProcess;
-    Stream<String> pubStdOutLines;
+    late Process pubProcess;
+    late Stream<String> pubStdOutLines;
 
     setUp(() async {
       await d.dir('a', [
@@ -28,6 +28,7 @@ void main() {
           'build_runner',
           'build_runner_core',
           'build_test',
+          'code_builder',
         ]),
         d.dir('lib', [
           d.file('example.dart', "String hello = 'hello'"),

@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
@@ -28,7 +29,7 @@ void main() {
       TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')));
   final defaultBuilderOptions = const BuilderOptions({});
   final packageConfigId = makeAssetId('a|.dart_tool/package_config.json');
-  InMemoryRunnerAssetWriter writer;
+  late InMemoryRunnerAssetWriter writer;
 
   setUp(() async {
     writer = InMemoryRunnerAssetWriter();
@@ -256,7 +257,7 @@ a:file://fake/pkg/path
             writer: writer);
 
         var cachedGraph = AssetGraph.deserialize(
-            writer.assets[makeAssetId('a|$assetGraphPath')]);
+            writer.assets[makeAssetId('a|$assetGraphPath')]!);
 
         var expectedGraph = await AssetGraph.build(
             [],
@@ -430,7 +431,7 @@ a:file://different/fake/pkg/path
         await writer.delete(packageConfigId);
 
         // Wait for it to try reading the file twice to ensure it will retry.
-        await _readerForState[buildState]
+        await _readerForState[buildState]!
             .onCanRead
             .where((id) => id == packageConfigId)
             .take(2)
@@ -453,8 +454,8 @@ a:file://different/fake/pkg/path
           rootPackage('a', path: path.absolute('a')): ['b'],
           package('b', path: path.absolute('b'), type: DependencyType.path): []
         });
-        List<LogRecord> logs;
-        StreamQueue<BuildResult> results;
+        late List<LogRecord> logs;
+        late StreamQueue<BuildResult> results;
 
         group('is added', () {
           setUp(() async {
@@ -815,16 +816,16 @@ a:file://different/fake/pkg/path
 }
 
 final _debounceDelay = Duration(milliseconds: 10);
-StreamController _terminateWatchController;
+StreamController<ProcessSignal>? _terminateWatchController;
 
 /// Start watching files and running builds.
 Future<BuildState> startWatch(List<BuilderApplication> builders,
     Map<String, String> inputs, InMemoryRunnerAssetWriter writer,
-    {PackageGraph packageGraph,
-    Map<String, BuildConfig> overrideBuildConfig,
-    void Function(LogRecord) onLog,
+    {PackageGraph? packageGraph,
+    Map<String, BuildConfig> overrideBuildConfig = const {},
+    void Function(LogRecord)? onLog,
     Level logLevel = Level.OFF,
-    String configKey}) async {
+    String? configKey}) async {
   onLog ??= (_) {};
   inputs.forEach((serializedId, contents) {
     writer.writeAsString(makeAssetId(serializedId), contents);
@@ -844,7 +845,7 @@ Future<BuildState> startWatch(List<BuilderApplication> builders,
       reader: reader,
       writer: writer,
       packageGraph: packageGraph,
-      terminateEventStream: _terminateWatchController.stream,
+      terminateEventStream: _terminateWatchController!.stream,
       logLevel: logLevel,
       onLog: onLog,
       skipBuildScriptCheck: true);
@@ -855,11 +856,12 @@ Future<BuildState> startWatch(List<BuilderApplication> builders,
 
 /// Tells the program to stop watching files and terminate.
 Future terminateWatch() async {
-  if (_terminateWatchController == null) return;
+  var terminateWatchController = _terminateWatchController;
+  if (terminateWatchController == null) return;
 
   /// Can add any type of event.
-  _terminateWatchController.add(null);
-  await _terminateWatchController.close();
+  terminateWatchController.add(ProcessSignal.sigabrt);
+  await terminateWatchController.close();
   _terminateWatchController = null;
 }
 

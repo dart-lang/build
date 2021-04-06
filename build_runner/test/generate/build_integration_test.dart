@@ -38,6 +38,7 @@ main(List<String> args) async {
             'build_runner',
             'build_runner_core',
             'build_test',
+            'code_builder',
             'glob'
           ]),
           d.dir('tool', [d.file('build.dart', originalBuildContent)]),
@@ -160,6 +161,7 @@ main(List<String> args) async {
             'build_runner',
             'build_runner_core',
             'build_test',
+            'code_builder',
             'glob'
           ], pathDependencies: {
             'b': '../b'
@@ -236,6 +238,7 @@ main(List<String> args) async {
             'build_runner',
             'build_runner_core',
             'build_test',
+            'code_builder',
             'glob'
           ]),
           d.dir('tool', [
@@ -346,6 +349,7 @@ main() async {
             'build_runner',
             'build_runner_core',
             'build_test',
+            'code_builder',
             'glob'
           ]),
           d.dir('tool', [
@@ -461,6 +465,7 @@ main(List<String> args) async {
             'build_runner',
             'build_runner_core',
             'build_test',
+            'code_builder',
           ]),
           d.file('build.yaml', r'''
 targets:
@@ -517,6 +522,7 @@ main(List<String> args) async {
           'build_runner',
           'build_runner_core',
           'build_test',
+          'code_builder',
         ]),
         d.file('build.yaml', r'''
 targets:
@@ -577,6 +583,7 @@ global_options:
           'build_runner',
           'build_runner_core',
           'build_test',
+          'code_builder',
         ]),
         d.dir('tool', [d.file('build.dart', buildContent)]),
         d.dir('web', [
@@ -605,6 +612,7 @@ global_options:
           'build_runner',
           'build_runner_core',
           'build_test',
+          'code_builder',
           'glob'
         ]),
         d.dir('tool', [
@@ -653,6 +661,7 @@ main() async {
           'build_resolvers',
           'build_runner',
           'build_runner_core',
+          'code_builder',
         ]),
         d.dir('web', [
           d.file('a.txt', 'a'),
@@ -677,7 +686,8 @@ main() async {
           'build_resolvers',
           'build_runner',
           'build_runner_core',
-          'build_test'
+          'build_test',
+          'code_builder',
         ]),
         d.dir('web', [
           d.file('a.dart', 'void main() {}'),
@@ -700,8 +710,7 @@ main() async {
   });
 }
 
-Future<String> runBuild({List<String> extraArgs}) async {
-  extraArgs ??= [];
+Future<String> runBuild({List<String> extraArgs = const []}) async {
   var buildArgs = ['build', '-o', 'build', ...extraArgs];
   var result = await runDart('a', 'tool/build.dart', args: buildArgs);
   expect(result.exitCode, 0, reason: '${result.stdout}\n${result.stderr}');

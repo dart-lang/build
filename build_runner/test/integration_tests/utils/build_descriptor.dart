@@ -59,8 +59,10 @@ Future<d.Descriptor> packageWithBuilders(
         currentIsolateDependencies: ['build', 'build_test']),
     d.file('build.yaml', jsonEncode(_buildConfig(builders))),
     d.dir('lib', [
-      d.file('builders.dart',
-          _buildersFile(builders, await Isolate.resolvePackageUri(frameCaller)))
+      d.file(
+          'builders.dart',
+          _buildersFile(
+              builders, (await Isolate.resolvePackageUri(frameCaller))!))
     ])
   ]);
 }
@@ -88,7 +90,7 @@ Map _builderDefinition(TestBuilderDefinition builder) => {
 ///
 /// Files other than the pubspec should be set up with [packageContents].
 Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
-    {Iterable<d.Descriptor> packageContents}) async {
+    {Iterable<d.Descriptor> packageContents = const []}) async {
   await d
       .dir(
           'a',
@@ -100,6 +102,7 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
               'build_resolvers',
               'build_runner',
               'build_runner_core',
+              'code_builder',
             ], pathDependencies: {
               for (var o in otherPackages) o.name: p.join(d.sandbox, o.name),
             }),
@@ -137,13 +140,14 @@ Future<BuildTool> packageWithBuildScript(
               'build_resolvers',
               'build_runner',
               'build_runner_core',
-              'build_test'
+              'build_test',
+              'code_builder',
             ]),
             d.dir('tool', [
               d.file(
                   'build.dart',
-                  _buildToolFile(
-                      builders, await Isolate.resolvePackageUri(frameCaller)))
+                  _buildToolFile(builders,
+                      (await Isolate.resolvePackageUri(frameCaller))!))
             ])
           ].followedBy(contents))
       .create();
@@ -212,14 +216,14 @@ String _builders(Uri callingScript) {
 /// If [versionDependencies] is provided then the keys are the package names
 /// and the values are the exact versions which will be added as a dependency.
 Future<d.FileDescriptor> _pubspecWithDeps(String name,
-    {Iterable<String> currentIsolateDependencies,
-    Map<String, String> pathDependencies,
-    Map<String, String> versionDependencies}) async {
-  currentIsolateDependencies ??= [];
-  pathDependencies ??= {};
-  var packageConfig = await loadPackageConfigUri(await Isolate.packageConfig);
+    {Iterable<String> currentIsolateDependencies = const [],
+    Map<String, String> pathDependencies = const {},
+    Map<String, String> versionDependencies = const {}}) async {
+  var packageConfig =
+      await loadPackageConfigUri((await Isolate.packageConfig)!);
+  pathDependencies = Map.of(pathDependencies);
   await Future.forEach(currentIsolateDependencies, (String package) async {
-    pathDependencies[package] = packageConfig[package].root.path;
+    pathDependencies[package] = packageConfig[package]!.root.path;
   });
   return _pubspec(name,
       pathDependencies: pathDependencies,
@@ -234,11 +238,8 @@ Future<d.FileDescriptor> _pubspecWithDeps(String name,
 /// If [versionDependencies] is provided then the keys are the package names
 /// and the values are the exact versions which will be added as a dependency.
 d.FileDescriptor _pubspec(String name,
-    {Map<String, String> pathDependencies,
-    Map<String, String> versionDependencies}) {
-  pathDependencies ??= {};
-  versionDependencies ??= {};
-
+    {Map<String, String> pathDependencies = const {},
+    Map<String, String> versionDependencies = const {}}) {
   var buffer = StringBuffer()
     ..writeln('name: $name')
     ..writeln('environment:')
@@ -296,7 +297,7 @@ class BuildServer {
 
   BuildServer(this._process);
 
-  Future<void> _serversStarted;
+  Future<void>? _serversStarted;
   Future<void> get started => _serversStarted ??= readThrough('Serving `web`');
 
   Future<void> get nextSuccessfulBuild => readThrough('Succeeded after');

@@ -49,7 +49,7 @@ ServeHandler createServeHandler(WatchImpl watch) {
   watch.ready.then((_) async {
     assetHandlerCompleter.complete(AssetHandler(watch.reader, rootPackage));
     assetGraphHanderCompleter.complete(
-        AssetGraphHandler(watch.reader, rootPackage, watch.assetGraph));
+        AssetGraphHandler(watch.reader, rootPackage, watch.assetGraph!));
   });
   return ServeHandler._(watch, assetHandlerCompleter.future,
       assetGraphHanderCompleter.future, rootPackage);
@@ -57,7 +57,7 @@ ServeHandler createServeHandler(WatchImpl watch) {
 
 class ServeHandler implements BuildState {
   final WatchImpl _state;
-  BuildResult _lastBuildResult;
+  BuildResult? _lastBuildResult;
   final String _rootPackage;
 
   final Future<AssetHandler> _assetHandler;
@@ -75,15 +75,14 @@ class ServeHandler implements BuildState {
   }
 
   @override
-  Future<BuildResult> get currentBuild => _state.currentBuild;
+  Future<BuildResult>? get currentBuild => _state.currentBuild;
 
   @override
   Stream<BuildResult> get buildResults => _state.buildResults;
 
   shelf.Handler handlerFor(String rootDir,
-      {bool logRequests, BuildUpdatesOption buildUpdates}) {
-    buildUpdates ??= BuildUpdatesOption.none;
-    logRequests ??= false;
+      {bool logRequests = false,
+      BuildUpdatesOption buildUpdates = BuildUpdatesOption.none}) {
     if (p.url.split(rootDir).length != 1 || rootDir == '.') {
       throw ArgumentError.value(
         rootDir,
@@ -91,7 +90,7 @@ class ServeHandler implements BuildState {
         'Only top level directories such as `web` or `test` can be served, got',
       );
     }
-    _state.currentBuild.then((_) {
+    _state.currentBuild?.then((_) {
       // If the first build fails with a handled exception, we might not have
       // an asset graph and can't do this check.
       if (_state.assetGraph == null) return;
@@ -151,14 +150,14 @@ class ServeHandler implements BuildState {
     }
     if (request.url.queryParameters.containsKey('slicesResolution')) {
       slicesResolution =
-          int.parse(request.url.queryParameters['slicesResolution']);
+          int.parse(request.url.queryParameters['slicesResolution']!);
     }
     if (request.url.queryParameters.containsKey('sortOrder')) {
       sortOrder = PerfSortOrder
-          .values[int.parse(request.url.queryParameters['sortOrder'])];
+          .values[int.parse(request.url.queryParameters['sortOrder']!)];
     }
     return shelf.Response.ok(
-        _renderPerformance(_lastBuildResult.performance, hideSkipped,
+        _renderPerformance(_lastBuildResult!.performance!, hideSkipped,
             detailedSlices, slicesResolution, sortOrder, filter),
         headers: {HttpHeaders.contentTypeHeader: 'text/html'});
   }
@@ -183,7 +182,7 @@ class ServeHandler implements BuildState {
   }
 
   void _warnForEmptyDirectory(String rootDir) {
-    if (!_state.assetGraph
+    if (!_state.assetGraph!
         .packageNodes(_rootPackage)
         .any((n) => n.id.path.startsWith('$rootDir/'))) {
       _logger.warning('Requested a server for `$rootDir` but this directory '
@@ -212,7 +211,7 @@ class BuildUpdatesWebSocketHandler {
       _internalHandlers[rootDir] = _handlerFactory(closureForRootDir,
           protocols: [_buildUpdatesProtocol]);
     }
-    return _internalHandlers[rootDir];
+    return _internalHandlers[rootDir]!;
   }
 
   Future emitUpdateMessage(BuildResult buildResult) async {
@@ -223,14 +222,14 @@ class BuildUpdatesWebSocketHandler {
       digests[assetId] = digest.toString();
     }
     for (var rootDir in connectionsByRootDir.keys) {
-      var resultMap = <String, String>{};
+      var resultMap = <String, String?>{};
       for (var assetId in digests.keys) {
         var path = assetIdToPath(assetId, rootDir);
         if (path != null) {
           resultMap[path] = digests[assetId];
         }
       }
-      for (var connection in connectionsByRootDir[rootDir]) {
+      for (var connection in connectionsByRootDir[rootDir]!) {
         connection.sink.add(jsonEncode(resultMap));
       }
     }
@@ -238,13 +237,11 @@ class BuildUpdatesWebSocketHandler {
 
   void _handleConnection(
       WebSocketChannel webSocket, String protocol, String rootDir) async {
-    if (!connectionsByRootDir.containsKey(rootDir)) {
-      connectionsByRootDir[rootDir] = [];
-    }
-    connectionsByRootDir[rootDir].add(webSocket);
+    var connections = connectionsByRootDir.putIfAbsent(rootDir, () => [])
+      ..add(webSocket);
     await webSocket.stream.drain();
-    connectionsByRootDir[rootDir].remove(webSocket);
-    if (connectionsByRootDir[rootDir].isEmpty) {
+    connections.remove(webSocket);
+    if (connections.isEmpty) {
       connectionsByRootDir.remove(rootDir);
     }
   }
@@ -305,7 +302,7 @@ class AssetHandler {
 
   AssetHandler(this._reader, this._rootPackage);
 
-  Future<shelf.Response> handle(shelf.Request request, {String rootDir}) =>
+  Future<shelf.Response> handle(shelf.Request request, {String rootDir = ''}) =>
       (request.url.path.endsWith('/') || request.url.path.isEmpty)
           ? _handle(
               request.headers,
@@ -345,9 +342,11 @@ class AssetHandler {
 
     var etag = base64.encode((await _reader.digest(assetId)).bytes);
     var contentType = _typeResolver.lookup(assetId.path);
-    if (contentType == 'text/x-dart') contentType += '; charset=utf-8';
-    var headers = {
-      HttpHeaders.contentTypeHeader: contentType,
+    if (contentType == 'text/x-dart') {
+      contentType = '$contentType; charset=utf-8';
+    }
+    var headers = <String, Object>{
+      if (contentType != null) HttpHeaders.contentTypeHeader: contentType,
       HttpHeaders.etagHeader: etag,
       // We always want this revalidated, which requires specifying both
       // max-age=0 and must-revalidate.
@@ -652,11 +651,12 @@ shelf.Handler _logRequests(shelf.Handler innerHandler) {
           request.requestedUri, request.method, watch.elapsed);
       logFn(msg);
       return response;
-    }, onError: (dynamic error, StackTrace stackTrace) {
+    }, onError: (Object error, StackTrace stackTrace) {
       if (error is shelf.HijackException) throw error;
       var msg = _getMessage(
           startTime, 500, request.requestedUri, request.method, watch.elapsed);
       _logger.severe('$msg\r\n$error\r\n$stackTrace', true);
+      // ignore: only_throw_errors
       throw error;
     });
   };

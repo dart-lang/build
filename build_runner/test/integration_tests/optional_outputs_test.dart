@@ -7,7 +7,6 @@
 import 'dart:async';
 
 import 'package:build_test/build_test.dart';
-import 'package:meta/meta.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
@@ -35,7 +34,7 @@ void main() {
     builder('maybeReadCopy', maybeReadCopy, requiredInputs: ['.txt.copy'])
   ];
 
-  BuildTool buildTool;
+  late BuildTool buildTool;
 
   setUpAll(() async {
     buildTool = await packageWithBuildScript(builders, contents: [
@@ -78,7 +77,7 @@ void main() {
   group('build', () {
     /// Expects the build output based on [expectCopy].
     Future<void> expectBuildOutput(
-        {@required bool expectCopy, @required String content}) async {
+        {required bool expectCopy, required String content}) async {
       await d.dir('a', [
         d.dir('build', [
           d.dir('web', [

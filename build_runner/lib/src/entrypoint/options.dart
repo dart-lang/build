@@ -10,7 +10,6 @@ import 'package:args/command_runner.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_daemon/constants.dart';
 import 'package:build_runner_core/build_runner_core.dart';
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
@@ -88,19 +87,19 @@ class SharedOptions {
   final List<String> enableExperiments;
 
   SharedOptions._({
-    @required this.buildFilters,
-    @required this.deleteFilesByDefault,
-    @required this.enableLowResourcesMode,
-    @required this.configKey,
-    @required this.buildDirs,
-    @required this.outputSymlinksOnly,
-    @required this.trackPerformance,
-    @required this.skipBuildScriptCheck,
-    @required this.verbose,
-    @required this.builderConfigOverrides,
-    @required this.isReleaseBuild,
-    @required this.logPerformanceDir,
-    @required this.enableExperiments,
+    required this.buildFilters,
+    required this.deleteFilesByDefault,
+    required this.enableLowResourcesMode,
+    required this.configKey,
+    required this.buildDirs,
+    required this.outputSymlinksOnly,
+    required this.trackPerformance,
+    required this.skipBuildScriptCheck,
+    required this.verbose,
+    required this.builderConfigOverrides,
+    required this.isReleaseBuild,
+    required this.logPerformanceDir,
+    required this.enableExperiments,
   });
 
   SharedOptions.fromParsedArgs(ArgResults argResults,
@@ -131,21 +130,21 @@ class DaemonOptions extends WatchOptions {
   BuildMode buildMode;
 
   DaemonOptions._({
-    @required Set<BuildFilter> buildFilters,
-    @required this.buildMode,
-    @required bool deleteFilesByDefault,
-    @required bool enableLowResourcesMode,
-    @required String configKey,
-    @required Set<BuildDirectory> buildDirs,
-    @required bool outputSymlinksOnly,
-    @required bool trackPerformance,
-    @required bool skipBuildScriptCheck,
-    @required bool verbose,
-    @required Map<String, Map<String, dynamic>> builderConfigOverrides,
-    @required bool isReleaseBuild,
-    @required String logPerformanceDir,
-    @required bool usePollingWatcher,
-    @required List<String> enableExperiments,
+    required Set<BuildFilter> buildFilters,
+    required this.buildMode,
+    required bool deleteFilesByDefault,
+    required bool enableLowResourcesMode,
+    required String configKey,
+    required Set<BuildDirectory> buildDirs,
+    required bool outputSymlinksOnly,
+    required bool trackPerformance,
+    required bool skipBuildScriptCheck,
+    required bool verbose,
+    required Map<String, Map<String, dynamic>> builderConfigOverrides,
+    required bool isReleaseBuild,
+    required String logPerformanceDir,
+    required bool usePollingWatcher,
+    required List<String> enableExperiments,
   }) : super._(
           buildFilters: buildFilters,
           deleteFilesByDefault: deleteFilesByDefault,
@@ -213,20 +212,20 @@ class WatchOptions extends SharedOptions {
           : defaultDirectoryWatcherFactory;
 
   WatchOptions._({
-    @required this.usePollingWatcher,
-    @required Set<BuildFilter> buildFilters,
-    @required bool deleteFilesByDefault,
-    @required bool enableLowResourcesMode,
-    @required String configKey,
-    @required Set<BuildDirectory> buildDirs,
-    @required bool outputSymlinksOnly,
-    @required bool trackPerformance,
-    @required bool skipBuildScriptCheck,
-    @required bool verbose,
-    @required Map<String, Map<String, dynamic>> builderConfigOverrides,
-    @required bool isReleaseBuild,
-    @required String logPerformanceDir,
-    @required List<String> enableExperiments,
+    required this.usePollingWatcher,
+    required Set<BuildFilter> buildFilters,
+    required bool deleteFilesByDefault,
+    required bool enableLowResourcesMode,
+    required String configKey,
+    required Set<BuildDirectory> buildDirs,
+    required bool outputSymlinksOnly,
+    required bool trackPerformance,
+    required bool skipBuildScriptCheck,
+    required bool verbose,
+    required Map<String, Map<String, dynamic>> builderConfigOverrides,
+    required bool isReleaseBuild,
+    required String logPerformanceDir,
+    required List<String> enableExperiments,
   }) : super._(
           buildFilters: buildFilters,
           deleteFilesByDefault: deleteFilesByDefault,
@@ -275,24 +274,24 @@ class ServeOptions extends WatchOptions {
   final List<ServeTarget> serveTargets;
 
   ServeOptions._({
-    @required this.hostName,
-    @required this.buildUpdates,
-    @required this.logRequests,
-    @required this.serveTargets,
-    @required Set<BuildFilter> buildFilters,
-    @required bool deleteFilesByDefault,
-    @required bool enableLowResourcesMode,
-    @required String configKey,
-    @required Set<BuildDirectory> buildDirs,
-    @required bool outputSymlinksOnly,
-    @required bool trackPerformance,
-    @required bool skipBuildScriptCheck,
-    @required bool verbose,
-    @required Map<String, Map<String, dynamic>> builderConfigOverrides,
-    @required bool isReleaseBuild,
-    @required String logPerformanceDir,
-    @required bool usePollingWatcher,
-    @required List<String> enableExperiments,
+    required this.hostName,
+    required this.buildUpdates,
+    required this.logRequests,
+    required this.serveTargets,
+    required Set<BuildFilter> buildFilters,
+    required bool deleteFilesByDefault,
+    required bool enableLowResourcesMode,
+    required String configKey,
+    required Set<BuildDirectory> buildDirs,
+    required bool outputSymlinksOnly,
+    required bool trackPerformance,
+    required bool skipBuildScriptCheck,
+    required bool verbose,
+    required Map<String, Map<String, dynamic>> builderConfigOverrides,
+    required bool isReleaseBuild,
+    required String logPerformanceDir,
+    required bool usePollingWatcher,
+    required List<String> enableExperiments,
   }) : super._(
           buildFilters: buildFilters,
           deleteFilesByDefault: deleteFilesByDefault,
@@ -355,10 +354,9 @@ class ServeOptions extends WatchOptions {
 
     var buildFilters = _parseBuildFilters(argResults, rootPackage);
 
-    BuildUpdatesOption buildUpdates;
-    if (argResults[liveReloadOption] as bool) {
-      buildUpdates = BuildUpdatesOption.liveReload;
-    }
+    var buildUpdates = (argResults[liveReloadOption] as bool)
+        ? BuildUpdatesOption.liveReload
+        : BuildUpdatesOption.none;
 
     return ServeOptions._(
       buildFilters: buildFilters,
@@ -441,7 +439,7 @@ Map<String, Map<String, dynamic>> _parseBuilderConfigOverrides(
 /// root input directory and the second value output directory.
 /// If no delimeter is provided the root input directory will be null.
 Set<BuildDirectory> _parseBuildDirs(ArgResults argResults) {
-  var outputs = argResults[outputOption] as List<String>;
+  var outputs = argResults[outputOption] as List<String>?;
   if (outputs == null) return <BuildDirectory>{};
   var result = <BuildDirectory>{};
   var outputPaths = <String>{};
@@ -502,8 +500,8 @@ Set<BuildDirectory> _parsePositionalBuildDirs(
 /// These support `package:` uri syntax as well as regular path syntax,
 /// with glob support for both package names and paths.
 Set<BuildFilter> _parseBuildFilters(ArgResults argResults, String rootPackage) {
-  var filterArgs = argResults[buildFilterOption] as List<String>;
-  if (filterArgs?.isEmpty ?? true) return null;
+  var filterArgs = argResults[buildFilterOption] as List<String>?;
+  if (filterArgs == null || filterArgs.isEmpty) return const {};
   try {
     return {
       for (var arg in filterArgs) BuildFilter.fromArg(arg, rootPackage),

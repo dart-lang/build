@@ -21,6 +21,7 @@ void main() {
           'build_runner',
           'build_runner_core',
           'build_test',
+          'code_builder',
           'glob'
         ]),
         d.dir('tool', [d.file('build.dart', buildFile)]),

@@ -11,8 +11,8 @@ import '../integration_tests/utils/build_descriptor.dart';
 
 void main() {
   test('invokes custom error function', () async {
-    Object error;
-    StackTrace stackTrace;
+    Object? error;
+    StackTrace? stackTrace;
 
     final pkgDir = (await package([])).rootPackageDir;
 

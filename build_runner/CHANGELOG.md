@@ -1,4 +1,6 @@
-## 1.12.3-dev
+## 2.0.0-dev
+
+- Migrate to null safety.
 
 - Update to the latest `build_runner_core`.
 

@@ -64,6 +64,7 @@ main(List<String> args) async {
           'build_runner',
           'build_runner_core',
           'build_test',
+          'code_builder',
           'glob',
         ]),
         d.dir('bin', [
