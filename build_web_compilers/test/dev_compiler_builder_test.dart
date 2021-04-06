@@ -13,7 +13,7 @@ import 'package:test/test.dart';
 import 'util.dart';
 
 void main() {
-  Map<String, dynamic> assets;
+  late Map<String, Object> assets;
 
   for (var soundNullSafety in [true, false]) {
     group('error free project (${soundNullSafety ? 'sound' : 'unsound'})', () {

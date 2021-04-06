@@ -18,7 +18,7 @@ import 'package:build_modules/src/platform.dart';
 import 'matchers.dart';
 
 void main() {
-  InMemoryAssetReader reader;
+  late InMemoryAssetReader reader;
   final defaultPlatform = DartPlatform.register('test', ['async']);
 
   List<AssetId> makeAssets(Map<String, String> assetDescriptors) {
@@ -34,7 +34,7 @@ void main() {
 
   Future<MetaModule> metaModuleFromSources(
       InMemoryAssetReader reader, List<AssetId> sources,
-      {DartPlatform platform}) async {
+      {DartPlatform? platform}) async {
     platform ??= defaultPlatform;
     final libraries = (await Future.wait(sources
             .where((s) => s.package != r'$sdk')
@@ -443,7 +443,7 @@ void main() {
       var meta =
           await metaModuleFromSources(reader, assets, platform: platform);
       expect(
-          meta.modules, unorderedMatches(expectedModulesForPlatform[platform]),
+          meta.modules, unorderedMatches(expectedModulesForPlatform[platform]!),
           reason: meta.modules.map((m) => m.toJson()).toString());
     }
   });

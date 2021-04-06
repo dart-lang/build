@@ -95,7 +95,7 @@ Future<Set<Module>> _transitiveModules(
   // Ensures we only process a meta file once.
   var seenMetas = <AssetId>{}..add(metaAsset);
   var metaModules = await buildStep.fetchResource(metaModuleCache);
-  var meta = await metaModules.find(buildStep.inputId, buildStep);
+  var meta = (await metaModules.find(buildStep.inputId, buildStep))!;
   var nextModules = List.of(meta.modules);
   while (nextModules.isNotEmpty) {
     var module = nextModules.removeLast();
@@ -122,7 +122,7 @@ Future<Set<Module>> _transitiveModules(
             'on it in your pubspec.');
         continue;
       }
-      var depMeta = await metaModules.find(depMetaAsset, buildStep);
+      var depMeta = (await metaModules.find(depMetaAsset, buildStep))!;
       nextModules.addAll(depMeta.modules);
     }
   }

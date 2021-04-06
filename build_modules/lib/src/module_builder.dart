@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:collection/collection.dart';
 
 import 'meta_module_clean_builder.dart';
 import 'module_cache.dart';
@@ -32,13 +33,12 @@ class ModuleBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
     final cleanMetaModules = await buildStep.fetchResource(metaModuleCache);
-    final metaModule = await cleanMetaModules.find(
+    final metaModule = (await cleanMetaModules.find(
         AssetId(buildStep.inputId.package,
             'lib/${metaModuleCleanExtension(_platform)}'),
-        buildStep);
-    var outputModule = metaModule.modules.firstWhere(
-        (m) => m.primarySource == buildStep.inputId,
-        orElse: () => null);
+        buildStep))!;
+    var outputModule = metaModule.modules
+        .firstWhereOrNull((m) => m.primarySource == buildStep.inputId);
     if (outputModule == null) {
       final serializedLibrary = await buildStep.readAsString(
           buildStep.inputId.changeExtension(moduleLibraryExtension));

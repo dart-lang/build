@@ -12,7 +12,7 @@ import 'package:test/test.dart';
 import 'util.dart';
 
 void main() {
-  Map<String, dynamic> assets;
+  late Map<String, Object> assets;
 
   group('simple project', () {
     setUp(() async {
@@ -131,12 +131,12 @@ void main() {
 }
 
 // Runs all the DDC related builders except the entrypoint builder.
-Future<void> runPrerequisites(Map<String, dynamic> assets) async {
+Future<void> runPrerequisites(Map<String, Object> assets) async {
   // Uses the real sdk copy builder to copy required files from the SDK.
   //
   // It is necessary to add a fake asset so that the build_web_compilers
   // package exists.
-  var sdkAssets = <String, dynamic>{'build_web_compilers|fake.txt': ''};
+  var sdkAssets = <String, Object>{'build_web_compilers|fake.txt': ''};
   await testBuilderAndCollectAssets(sdkJsCopyRequirejs(null), sdkAssets);
   await testBuilderAndCollectAssets(sdkJsCompileUnsound(null), sdkAssets);
   await testBuilderAndCollectAssets(sdkJsCompileSound(null), sdkAssets);

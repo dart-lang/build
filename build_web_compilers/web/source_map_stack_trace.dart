@@ -8,6 +8,7 @@
 /// This is forked from the equivalent file that ships with the SDK which is
 /// intended for use within bazel only.
 
+import 'package:collection/collection.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_maps/source_maps.dart';
 import 'package:stack_trace/stack_trace.dart';
@@ -21,7 +22,7 @@ void main() {}
 /// [roots] are the paths (usually `http:` URI strings) that DDC applications
 /// are served from.  This is used to identify sdk and package URIs.
 StackTrace mapStackTrace(Mapping sourceMap, StackTrace stackTrace,
-    {List<String> roots}) {
+    {List<String?> roots = const []}) {
   if (stackTrace is Chain) {
     return Chain(stackTrace.traces.map(
         (trace) => Trace.from(mapStackTrace(sourceMap, trace, roots: roots))));
@@ -31,15 +32,16 @@ StackTrace mapStackTrace(Mapping sourceMap, StackTrace stackTrace,
   return Trace(trace.frames.map((frame) {
     // If there's no line information, there's no way to translate this frame.
     // We could return it as-is, but these lines are usually not useful anyways.
-    if (frame.line == null) return null;
+    var line = frame.line;
+    if (line == null) return null;
 
     // If there's no column, try using the first column of the line.
     var column = frame.column ?? 0;
 
     // Subtract 1 because stack traces use 1-indexed lines and columns and
     // source maps uses 0-indexed.
-    var span = sourceMap.spanFor(frame.line - 1, column - 1,
-        uri: frame.uri?.toString());
+    var span =
+        sourceMap.spanFor(line - 1, column - 1, uri: frame.uri.toString());
 
     // If we can't find a source span, ignore the frame. It's probably something
     // internal that the user doesn't care about.
@@ -71,8 +73,8 @@ StackTrace mapStackTrace(Mapping sourceMap, StackTrace stackTrace,
     }
 
     return Frame(Uri.parse(sourceUrl), span.start.line + 1,
-        span.start.column + 1, _prettifyMember(frame.member));
-  }).where((frame) => frame != null))
+        span.start.column + 1, _prettifyMember(frame.member!));
+  }).whereNotNull())
       .foldFrames((Frame frame) => frame.uri.scheme.contains('dart'));
 }
 

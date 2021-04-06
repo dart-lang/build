@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:collection/collection.dart';
 
@@ -38,7 +37,6 @@ Builder ddcBuilder(BuilderOptions options, {bool soundNullSafety = false}) {
     trackUnusedInputs: _readTrackInputsCompilerOption(options),
     platform: ddcPlatform,
     environment: _readEnvironmentOption(options),
-    experiments: _readExperimentOption(options),
     soundNullSafety: soundNullSafety,
   );
 }
@@ -62,8 +60,6 @@ Builder ddcKernelBuilder(BuilderOptions options,
       platform: ddcPlatform,
       useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
       trackUnusedInputs: _readTrackInputsCompilerOption(options),
-      // ignore: deprecated_member_use
-      experiments: _readExperimentOption(options),
       soundNullSafety: soundNullSafety);
 }
 
@@ -88,7 +84,7 @@ PostProcessBuilder dart2jsArchiveExtractor(BuilderOptions options) =>
 
 // General purpose builders
 PostProcessBuilder dartSourceCleanup(BuilderOptions options) =>
-    (options.config['enabled'] as bool ?? false)
+    (options.config['enabled'] as bool? ?? false)
         ? const FileDeletingBuilder(
             ['.dart', '.js.map', '.ddc.js.metadata', '.ddc_merged_metadata'])
         : const FileDeletingBuilder(
@@ -112,41 +108,23 @@ void _ensureSameDdcOptions(BuilderOptions options) {
 }
 
 bool _readUseIncrementalCompilerOption(BuilderOptions options) {
-  return options.config[_useIncrementalCompilerOption] as bool ?? true;
+  return options.config[_useIncrementalCompilerOption] as bool? ?? true;
 }
 
 bool _readGenerateFullDillOption(BuilderOptions options) {
-  return options.config[_generateFullDillOption] as bool ?? false;
+  return options.config[_generateFullDillOption] as bool? ?? false;
 }
 
 bool _readTrackInputsCompilerOption(BuilderOptions options) {
-  return options.config[_trackUnusedInputsCompilerOption] as bool ?? true;
+  return options.config[_trackUnusedInputsCompilerOption] as bool? ?? true;
 }
 
 Map<String, String> _readEnvironmentOption(BuilderOptions options) {
-  final environment = options.config[_environmentOption] as Map ?? const {};
+  final environment = options.config[_environmentOption] as Map? ?? const {};
   return environment.map((key, value) => MapEntry('$key', '$value'));
 }
 
-List<String> _readExperimentOption(BuilderOptions options) {
-  var deprecatedConfig = options.config[_experimentOption] as List;
-  if (deprecatedConfig != null) {
-    log.warning('The `experiments` option to build_web_compilers:entrypoint '
-        'has been deprecated in favor of the new `--enable-experiment` '
-        'command line argument which matches other dart tooling and is shared '
-        'across all builders.');
-    if (enabledExperiments.isNotEmpty &&
-        !const ListEquality().equals(deprecatedConfig, enabledExperiments)) {
-      throw ArgumentError('The (deprecated) `experiments` option to the '
-          'build_web_compilers:entrypoint builder cannot be used in '
-          'conjunction with the `--enable-experiment` command line option.');
-    }
-    return List.from(deprecatedConfig);
-  }
-  return enabledExperiments;
-}
-
-Map<String, dynamic> _previousDdcConfig;
+Map<String, dynamic>? _previousDdcConfig;
 const _useIncrementalCompilerOption = 'use-incremental-compiler';
 const _generateFullDillOption = 'generate-full-dill';
 const _trackUnusedInputsCompilerOption = 'track-unused-inputs';
