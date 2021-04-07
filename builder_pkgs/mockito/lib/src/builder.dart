@@ -735,10 +735,10 @@ class _MockLibraryInfo {
         continue;
       }
       overriddenFields.add(accessor.name);
-      if (accessor.isGetter != null && _returnTypeIsNonNullable(accessor)) {
+      if (accessor.isGetter && _returnTypeIsNonNullable(accessor)) {
         yield Method((mBuilder) => _buildOverridingGetter(mBuilder, accessor));
       }
-      if (accessor.isSetter != null && _hasNonNullableParameter(accessor)) {
+      if (accessor.isSetter) {
         yield Method((mBuilder) => _buildOverridingSetter(mBuilder, accessor));
       }
     }
@@ -777,7 +777,8 @@ class _MockLibraryInfo {
         continue;
       }
       if (_returnTypeIsNonNullable(method) ||
-          _hasNonNullableParameter(method)) {
+          _hasNonNullableParameter(method) ||
+          _needsOverrideForVoidStub(method)) {
         yield Method((mBuilder) => _buildOverridingMethod(mBuilder, method,
             className: type.getDisplayString(withNullability: true)));
       }
@@ -803,6 +804,9 @@ class _MockLibraryInfo {
 
   bool _returnTypeIsNonNullable(ExecutableElement method) =>
       typeSystem.isPotentiallyNonNullable(method.returnType);
+
+  bool _needsOverrideForVoidStub(ExecutableElement method) =>
+      method.returnType.isVoid || method.returnType.isFutureOfVoid;
 
   // Returns whether [method] has at least one parameter whose type is
   // potentially non-nullable.
@@ -858,9 +862,6 @@ class _MockLibraryInfo {
       }
     }
 
-    if (_returnTypeIsNonNullable(method) &&
-        method.returnType is analyzer.TypeParameterType) {}
-
     final invocation = refer('Invocation').property('method').call([
       refer('#${method.displayName}'),
       literalList(invocationPositionalArgs),
@@ -870,8 +871,7 @@ class _MockLibraryInfo {
     Expression returnValueForMissingStub;
     if (method.returnType.isVoid) {
       returnValueForMissingStub = refer('null');
-    } else if (method.returnType ==
-        typeProvider.futureType2(typeProvider.voidType)) {
+    } else if (method.returnType.isFutureOfVoid) {
       returnValueForMissingStub = refer('Future').property('value').call([]);
     }
     final namedArgs = {
@@ -1179,21 +1179,19 @@ class _MockLibraryInfo {
       ..annotations.addAll([refer('override')])
       ..type = MethodType.setter;
 
-    final invocationPositionalArgs = <Expression>[];
-    // There should only be one required positional parameter. Should we assert
-    // on that? Leave it alone?
-    for (final parameter in setter.parameters) {
-      if (parameter.isRequiredPositional) {
-        builder.requiredParameters.add(Parameter((pBuilder) => pBuilder
-          ..name = parameter.displayName
-          ..type = _typeReference(parameter.type, forceNullable: true)));
-        invocationPositionalArgs.add(refer(parameter.displayName));
-      }
+    Expression invocationPositionalArg;
+    assert(setter.parameters.length == 1);
+    final parameter = setter.parameters.single;
+    if (parameter.isRequiredPositional) {
+      builder.requiredParameters.add(Parameter((pBuilder) => pBuilder
+        ..name = parameter.displayName
+        ..type = _typeReference(parameter.type, forceNullable: true)));
+      invocationPositionalArg = refer(parameter.displayName);
     }
 
     final invocation = refer('Invocation').property('setter').call([
       refer('#${setter.displayName}'),
-      invocationPositionalArgs.single,
+      invocationPositionalArg,
     ]);
     final returnNoSuchMethod = refer('super')
         .property('noSuchMethod')
@@ -1333,4 +1331,11 @@ extension on Element {
       return 'unknown element';
     }
   }
+}
+
+extension on analyzer.DartType {
+  /// Returns whether this type is `Future<void>` or `Future<void>?`.
+  bool get isFutureOfVoid =>
+      isDartAsyncFuture &&
+      (this as analyzer.InterfaceType).typeArguments.first.isVoid;
 }

@@ -629,15 +629,17 @@ void main() {
     );
   });
 
-  test('does not override methods of generic super classes using void',
-      () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+  test('overrides methods of generic super classes using void', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
       class FooBase<T> {
-        T method1() {}
+        T m() {}
       }
       class Foo extends FooBase<void> {}
-      '''));
-    expect(mocksContent, isNot(contains('method1')));
+      '''),
+      _containsAllOf('void m() => super',
+          '.noSuchMethod(Invocation.method(#m, []), returnValueForMissingStub: null);'),
+    );
   });
 
   test('overrides methods of generic super classes (type variable)', () async {
@@ -1258,7 +1260,7 @@ void main() {
   test('does not override methods with all nullable parameters', () async {
     var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo {
-        void method1(int? p) {}
+        int? method1(int? p) => null;
       }
       '''));
     expect(mocksContent, isNot(contains('method1')));
@@ -1268,7 +1270,7 @@ void main() {
       () async {
     var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo {
-        void method1(dynamic p) {}
+        int? method1(dynamic p) => null;
       }
       '''));
     expect(mocksContent, isNot(contains('method1')));
@@ -1278,7 +1280,7 @@ void main() {
       () async {
     var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo {
-        void method1(var p) {}
+        int? method1(var p) => null;
       }
       '''));
     expect(mocksContent, isNot(contains('method1')));
@@ -1288,7 +1290,7 @@ void main() {
       () async {
     var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo {
-        void method1(final p) {}
+        int? method1(final p) => null;
       }
       '''));
     expect(mocksContent, isNot(contains('method1')));
@@ -1298,7 +1300,7 @@ void main() {
       () async {
     var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo<T> {
-        void method1(T? p) {}
+        int? method1(T? p) => null;
       }
       '''));
     expect(mocksContent, isNot(contains('method1')));
@@ -1309,16 +1311,7 @@ void main() {
       () async {
     var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo {
-        void method1(int Function()? p) {}
-      }
-      '''));
-    expect(mocksContent, isNot(contains('method1')));
-  });
-
-  test('does not override methods with a void return type', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
-      abstract class Foo {
-        void method1();
+        int? method1(int Function()? p) => null;
       }
       '''));
     expect(mocksContent, isNot(contains('method1')));
@@ -1484,13 +1477,18 @@ void main() {
     );
   });
 
-  test('does not override nullable instance setters', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+  test('overrides nullable instance setters', () async {
+    await expectSingleNonNullableOutput(
+      dedent('''
       class Foo {
-        void set setter1(int? a) {}
+        void set m(int? a) {}
       }
-      '''));
-    expect(mocksContent, isNot(contains('setter1')));
+      '''),
+      _containsAllOf(dedent2('''
+      set m(int? a) => super
+          .noSuchMethod(Invocation.setter(#m, a), returnValueForMissingStub: null);
+      ''')),
+    );
   });
 
   test('overrides inherited non-nullable instance setters', () async {
@@ -1587,13 +1585,13 @@ void main() {
     );
   });
 
-  test('does not override nullable fields', () async {
+  test('does not override getters for nullable fields', () async {
     var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo {
         int? field1;
       }
       '''));
-    expect(mocksContent, isNot(contains('field1')));
+    expect(mocksContent, isNot(contains('get field1')));
   });
 
   test('does not override private fields', () async {
