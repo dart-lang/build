@@ -174,7 +174,7 @@ class GeneratedAssetNode extends AssetNode implements NodeWithInputs {
     required this.isFailure,
     required this.primaryInput,
     required this.builderOptionsId,
-  })   : inputs = inputs != null ? HashSet.from(inputs) : HashSet(),
+  })  : inputs = inputs != null ? HashSet.from(inputs) : HashSet(),
         super(id, lastKnownDigest: lastKnownDigest);
 
   @override

@@ -398,7 +398,7 @@ BuilderOptions _options(Map<String, dynamic>? options) =>
 void _validateBuilder(Builder builder) {
   var inputExtensions = builder.buildExtensions.keys.toSet();
   var matching = inputExtensions.intersection(
-      {for (outputs in builder.buildExtensions.values) ...outputs});
+      {for (var outputs in builder.buildExtensions.values) ...outputs});
   if (matching.isNotEmpty) {
     var mapDescription = builder.buildExtensions.entries
         .map((e) => '${e.key}: ${e.value},')
