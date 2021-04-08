@@ -4,9 +4,10 @@ dart:
 
 stages:
 - analyze_and_format:
-  - group:
-    - dartfmt: sdk
-    - dartanalyzer: --fatal-infos --fatal-warnings .
+  - dartanalyzer: --fatal-infos --fatal-warnings .
+  - dartfmt: sdk
+    dart:
+    - dev
 - unit_test:
   - test: --test-randomize-ordering-seed=random
     os:
