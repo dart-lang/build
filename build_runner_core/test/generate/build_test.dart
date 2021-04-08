@@ -101,6 +101,34 @@ void main() {
           throwsA(TypeMatcher<CannotBuildException>()));
     });
 
+    test('throws an error if any output extensions match input extensions', () {
+      expect(
+          testBuilders(
+            [
+              apply(
+                  '',
+                  [
+                    expectAsync1((_) => TestBuilder(buildExtensions: {
+                          '.dart': ['.g.dart', '.json'],
+                          '.json': ['.dart']
+                        })),
+                  ],
+                  toRoot(),
+                  isOptional: false,
+                  hideOutput: false),
+            ],
+            {},
+            status: BuildStatus.failure,
+          ),
+          throwsA(isA<ArgumentError>()
+              .having((e) => e.name, 'name', 'TestBuilder.buildExtensions')
+              .having(
+                  (e) => e.message,
+                  'message',
+                  allOf(contains('.json'), contains('.dart'),
+                      isNot(contains('.g.dart'))))));
+    });
+
     test('runs a max of 16 concurrent actions per phase', () async {
       var assets = <String, String>{};
       for (var i = 0; i < buildPhasePoolSize * 2; i++) {

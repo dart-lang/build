@@ -178,6 +178,7 @@ class BuilderApplication {
         final builder =
             _scopeLogSync(() => builderFactory(optionsWithDefaults), logger);
         if (builder == null) throw CannotBuildException();
+        _validateBuilder(builder);
         return InBuildPhase(builder, package.name,
             builderKey: builderKey,
             targetSources: targetSources,
@@ -393,3 +394,19 @@ T? _scopeLogSync<T>(T Function() fn, Logger log) {
 
 BuilderOptions _options(Map<String, dynamic>? options) =>
     options?.isEmpty ?? true ? BuilderOptions.empty : BuilderOptions(options!);
+
+void _validateBuilder(Builder builder) {
+  var inputExtensions = builder.buildExtensions.keys.toSet();
+  var matching = inputExtensions.intersection(
+      {for (var outputs in builder.buildExtensions.values) ...outputs});
+  if (matching.isNotEmpty) {
+    var mapDescription = builder.buildExtensions.entries
+        .map((e) => '${e.key}: ${e.value},')
+        .join('\n');
+    throw ArgumentError.value(
+        '{ $mapDescription }',
+        '${builder.runtimeType}.buildExtensions',
+        'Output extensions must not match any input extensions, but got '
+            'the following overlapping output extensions: $matching');
+  }
+}
