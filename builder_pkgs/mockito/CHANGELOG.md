@@ -1,3 +1,10 @@
+## 5.0.4
+
+* Allow calling methods with void return types w/o stubbing.
+  [#367](https://github.com/dart-lang/mockito/issues/367)
+* Add type argument to dummy `Future` return value.
+  [#380](https://github.com/dart-lang/mockito/issues/380)
+
 ## 5.0.3
 
 * Support 1.x releases of source_gen.

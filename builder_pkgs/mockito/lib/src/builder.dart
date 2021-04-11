@@ -872,7 +872,7 @@ class _MockLibraryInfo {
     if (method.returnType.isVoid) {
       returnValueForMissingStub = refer('null');
     } else if (method.returnType.isFutureOfVoid) {
-      returnValueForMissingStub = refer('Future').property('value').call([]);
+      returnValueForMissingStub = _futureReference().property('value').call([]);
     }
     final namedArgs = {
       if (_returnTypeIsNonNullable(method))
@@ -912,7 +912,7 @@ class _MockLibraryInfo {
     } else if (interfaceType.isDartAsyncFuture ||
         interfaceType.isDartAsyncFutureOr) {
       var typeArgument = typeArguments.first;
-      return refer('Future')
+      return _futureReference(_typeReference(typeArgument))
           .property('value')
           .call([_dummyValue(typeArgument)]);
     } else if (interfaceType.isDartCoreInt) {
@@ -951,6 +951,15 @@ class _MockLibraryInfo {
     // an instance here.
     return _dummyValueImplementing(type as analyzer.InterfaceType);
   }
+
+  /// Returns a reference to [Future], optionally with a type argument for the
+  /// value of the Future.
+  TypeReference _futureReference([Reference valueType]) => TypeReference((b) {
+        b.symbol = 'Future';
+        if (valueType != null) {
+          b.types.add(valueType);
+        }
+      });
 
   Expression _dummyFunctionValue(analyzer.FunctionType type) {
     return Method((b) {
