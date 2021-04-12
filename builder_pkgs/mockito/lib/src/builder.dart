@@ -21,7 +21,13 @@ import 'package:analyzer/dart/element/type_provider.dart';
 import 'package:analyzer/dart/element/type_system.dart';
 import 'package:analyzer/dart/element/visitor.dart';
 import 'package:build/build.dart';
-import 'package:code_builder/code_builder.dart';
+// Do not expose [refer] in the default namespace.
+//
+// [refer] allows a reference to include or not include a URL. Omitting the URL
+// of an element, like a class, has resulted in many bugs. [_MockLibraryInfo]
+// provides a [refer] function and a [referBasic] function. The former requires
+// a URL to be passed.
+import 'package:code_builder/code_builder.dart' hide refer;
 import 'package:dart_style/dart_style.dart';
 import 'package:meta/meta.dart';
 import 'package:mockito/src/version.dart';
@@ -665,7 +671,7 @@ class _MockLibraryInfo {
     return Class((cBuilder) {
       cBuilder
         ..name = mockTarget.mockName
-        ..extend = refer('Mock', 'package:mockito/mockito.dart')
+        ..extend = referImported('Mock', 'package:mockito/mockito.dart')
         // TODO(srawlins): Refer to [classToMock] properly, which will yield the
         // appropriate import prefix.
         ..docs.add('/// A class which mocks [$className].')
@@ -685,7 +691,8 @@ class _MockLibraryInfo {
         // implements the mock target with said type arguments. For example:
         // `class MockFoo extends Mock implements Foo<int> {}`
         for (var typeArgument in typeToMock.typeArguments) {
-          typeArguments.add(refer(typeArgument.element.name));
+          typeArguments.add(referImported(
+              typeArgument.element.name, _typeImport(typeArgument.element)));
         }
       } else if (classToMock.typeParameters != null) {
         // [typeToMock] is a simple reference to a generic type (for example:
@@ -799,7 +806,7 @@ class _MockLibraryInfo {
   /// `throwOnMissingStub`.
   Constructor get _constructorWithThrowOnMissingStub =>
       Constructor((cBuilder) => cBuilder.body =
-          refer('throwOnMissingStub', 'package:mockito/mockito.dart')
+          referImported('throwOnMissingStub', 'package:mockito/mockito.dart')
               .call([refer('this').expression]).statement);
 
   bool _returnTypeIsNonNullable(ExecutableElement method) =>
@@ -1009,7 +1016,7 @@ class _MockLibraryInfo {
         fakeClasses.add(Class((cBuilder) {
           cBuilder
             ..name = fakeName
-            ..extend = refer('Fake', 'package:mockito/mockito.dart');
+            ..extend = referImported('Fake', 'package:mockito/mockito.dart');
           if (elementToFake.typeParameters != null) {
             for (var typeParameter in elementToFake.typeParameters) {
               cBuilder.types.add(_typeParameterReference(typeParameter));
@@ -1119,11 +1126,12 @@ class _MockLibraryInfo {
         // A top-level function, like `void f() {}` must be referenced by its
         // identifier, rather than a revived value.
         var element = object.toFunctionValue();
-        return refer(revivable.accessor, _typeImport(element));
+        return referImported(revivable.accessor, _typeImport(element));
       } else if (revivable.source.fragment.isEmpty) {
         // We can create this invocation by referring to a const field or
         // top-level variable.
-        return refer(revivable.accessor, _typeImport(object.type.element));
+        return referImported(
+            revivable.accessor, _typeImport(object.type.element));
       }
 
       final name = revivable.source.fragment;
@@ -1135,7 +1143,7 @@ class _MockLibraryInfo {
         for (var pair in revivable.namedArguments.entries)
           pair.key: _expressionFromDartObject(pair.value)
       };
-      final type = refer(name, _typeImport(object.type.element));
+      final type = referImported(name, _typeImport(object.type.element));
       if (revivable.accessor.isNotEmpty) {
         return type.constInstanceNamed(
           revivable.accessor,
@@ -1280,7 +1288,7 @@ class _MockLibraryInfo {
           ..isNullable = forceNullable || typeSystem.isNullable(type);
       });
     } else {
-      return refer(
+      return referImported(
         type.getDisplayString(withNullability: false),
         _typeImport(type.element),
       );
@@ -1302,6 +1310,16 @@ class _MockLibraryInfo {
 
     return assetUris[element];
   }
+
+  /// Returns a [Reference] to [symbol] with [url].
+  ///
+  /// This function overrides [code_builder.refer] so as to ensure that [url] is
+  /// given.
+  static Reference referImported(String symbol, String url) =>
+      Reference(symbol, url);
+
+  /// Returns a [Reference] to [symbol] with no URL.
+  static Reference refer(String symbol) => Reference(symbol);
 }
 
 /// An exception thrown when reviving a potentially deep value in a constant.

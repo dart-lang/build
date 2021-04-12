@@ -124,19 +124,20 @@ void main() {
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo<T, U> {}
+        class Bar {}
         '''),
       'foo|test/foo_test.dart': '''
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
         @GenerateMocks(
-            [], customMocks: [MockSpec<Foo<int, bool>>(as: #MockFooOfIntBool)])
+            [], customMocks: [MockSpec<Foo<int, Bar>>(as: #MockFooOfIntBar)])
         void main() {}
         '''
     });
     expect(
         mocksContent,
         contains(
-            'class MockFooOfIntBool extends _i1.Mock implements _i2.Foo<int, bool>'));
+            'class MockFooOfIntBar extends _i1.Mock implements _i2.Foo<int, _i2.Bar>'));
   });
 
   test('generates a generic mock class with type arguments but no name',
