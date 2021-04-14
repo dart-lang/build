@@ -24,7 +24,6 @@ const scriptLocation = '$entryPointDir/build.dart';
 const scriptSnapshotLocation = '$scriptLocation.snapshot';
 
 final _log = Logger('Entrypoint');
-final _minVersionForNullSafety = Version(2, 12, 0);
 
 Future<String> generateBuildScript() =>
     logTimedAsync(_log, 'Generating build script', _generateBuildScript);
@@ -181,13 +180,7 @@ Future<bool> _allMigratedToNullSafety(PackageGraph packageGraph,
       return false;
     }
 
-    final definedLanguageVersion = parsedFile.unit.languageVersionToken;
-    if (definedLanguageVersion != null) {
-      version = Version(
-          definedLanguageVersion.major, definedLanguageVersion.minor, 0);
-    }
-
-    if (version < _minVersionForNullSafety) return false;
+    return parsedFile.unit.featureSet.isEnabled(Feature.non_nullable);
   }
 
   return true;
