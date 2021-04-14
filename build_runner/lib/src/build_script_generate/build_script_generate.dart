@@ -14,6 +14,7 @@ import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:graphs/graphs.dart';
 import 'package:logging/logging.dart';
+import 'package:package_config/package_config.dart' show LanguageVersion;
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
@@ -152,6 +153,16 @@ Future<bool> _allMigratedToNullSafety(PackageGraph packageGraph,
     AssetReader reader, Iterable<String> imports) async {
   final baseForRelative = AssetId(packageGraph.root.name, scriptLocation);
 
+  // Regardless of imports, the root package must have support for null safety
+  // since the build script will run in its context.
+  final rootPackageVersion = packageGraph.root.languageVersion;
+  if (rootPackageVersion == null) return false;
+  final rootPackageFeatures = FeatureSet.fromEnableFlags2(
+      sdkLanguageVersion: rootPackageVersion.asVersion, flags: const []);
+  if (!rootPackageFeatures.isEnabled(Feature.non_nullable)) {
+    return false;
+  }
+
   for (final import in imports.toSet()) {
     final id = AssetId.resolve(Uri.parse(import), from: baseForRelative);
     String content;
@@ -163,12 +174,13 @@ Future<bool> _allMigratedToNullSafety(PackageGraph packageGraph,
       return false;
     }
 
-    final rawVersion = packageGraph.allPackages[id.package]?.languageVersion;
-    if (rawVersion == null) {
+    final version =
+        packageGraph.allPackages[id.package]?.languageVersion?.asVersion;
+    if (version == null) {
       // Can't determine language version of import, bail out
       return false;
     }
-    var version = Version(rawVersion.major, rawVersion.minor, 0);
+
     final parsedFile = parseString(
       content: content,
       featureSet: FeatureSet.fromEnableFlags2(
@@ -335,3 +347,7 @@ Expression _findToExpression(BuilderDefinition definition) {
 Expression _constructBuilderOptions(Map<String, dynamic> options) =>
     refer('BuilderOptions', 'package:build/build.dart')
         .newInstance([literalMap(options)]);
+
+extension on LanguageVersion {
+  Version get asVersion => Version(major, minor, 0);
+}

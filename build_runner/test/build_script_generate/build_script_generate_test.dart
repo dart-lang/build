@@ -117,15 +117,43 @@ environment:
       expect(options.canRunWithSoundNullSafety, isTrue);
     });
 
-    test('when a builder package opts out', () async {
+    test('when the root package opts out', () async {
       await d.dir('a', [
         d.file('pubspec.yaml', '''
 name: a
 environment:
   sdk: '>=2.9.0 <3.0.0'
       '''),
-        buildYaml,
         d.dir('lib', [d.file('builder.dart', '')]),
+      ]).create();
+      await runPub('a', 'get');
+
+      final options = await findBuildScriptOptions(
+          packageGraph: await PackageGraph.forPath('${d.sandbox}/a'));
+      expect(options.canRunWithSoundNullSafety, isFalse);
+    });
+
+    test('when a builder-defining package opts out', () async {
+      await d.dir('a', [
+        d.file('pubspec.yaml', '''
+name: a
+environment:
+  sdk: '>=2.12.0 <3.0.0'
+dependencies:
+  b:
+    path: ../b/
+      '''),
+      ]).create();
+      await d.dir('b', [
+        d.file('pubspec.yaml', '''
+name: b
+environment:
+  sdk: '>=2.9.0 <3.0.0'
+      '''),
+        buildYaml,
+        d.dir('lib', [
+          d.file('builder.dart', ''),
+        ]),
       ]).create();
       await runPub('a', 'get');
 
