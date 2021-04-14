@@ -1,6 +1,6 @@
 dart:
 - 2.12.0
-- dev
+# - dev (Dart stable and dev disagree on formatting)
 
 stages:
 - analyze_and_format:
