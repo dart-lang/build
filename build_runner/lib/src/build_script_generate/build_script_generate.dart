@@ -30,7 +30,7 @@ Future<String> generateBuildScript() =>
     logTimedAsync(_log, 'Generating build script', _generateBuildScript);
 
 Future<String> _generateBuildScript() async {
-  final info = await _findBuildScriptOptions();
+  final info = await findBuildScriptOptions();
   final builders = info.builderApplications;
   final library = Library((b) => b.body.addAll([
         literalList(
@@ -79,12 +79,12 @@ Future<Iterable<Expression>> findBuilderApplications({
   PackageGraph? packageGraph,
   Map<String, BuildConfig>? buildConfigOverrides,
 }) async {
-  final info = await _findBuildScriptOptions(
+  final info = await findBuildScriptOptions(
       packageGraph: packageGraph, buildConfigOverrides: buildConfigOverrides);
   return info.builderApplications;
 }
 
-Future<_BuildScriptInfo> _findBuildScriptOptions({
+Future<_BuildScriptInfo> findBuildScriptOptions({
   PackageGraph? packageGraph,
   Map<String, BuildConfig>? buildConfigOverrides,
 }) async {
