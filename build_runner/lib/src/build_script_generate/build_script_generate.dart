@@ -41,7 +41,9 @@ Future<String> _generateBuildScript() async {
             .statement,
         _main()
       ]));
-  final emitter = DartEmitter(allocator: Allocator.simplePrefixing());
+  final emitter = DartEmitter(
+      allocator: Allocator.simplePrefixing(),
+      useNullSafetySyntax: info.canRunWithSoundNullSafety);
   try {
     final preamble = StringBuffer();
     if (!info.canRunWithSoundNullSafety) {
@@ -210,7 +212,10 @@ Method _main() => Method((b) => b
       ..types.add(refer('String')))))
   ..optionalParameters.add(Parameter((b) => b
     ..name = 'sendPort'
-    ..type = refer('SendPort', 'dart:isolate')))
+    ..type = TypeReference((b) => b
+      ..symbol = 'SendPort'
+      ..url = 'dart:isolate'
+      ..isNullable = true)))
   ..body = Block.of([
     refer('run', 'package:build_runner/build_runner.dart')
         .call([refer('args'), refer('_builders')])
