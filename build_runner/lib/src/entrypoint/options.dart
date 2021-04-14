@@ -55,7 +55,7 @@ class SharedOptions {
   final bool enableLowResourcesMode;
 
   /// Read `build.$configKey.yaml` instead of `build.yaml`.
-  final String configKey;
+  final String? configKey;
 
   /// A set of targets to build with their corresponding output locations.
   final Set<BuildDirectory> buildDirs;
@@ -68,7 +68,7 @@ class SharedOptions {
   final bool trackPerformance;
 
   /// A directory to log performance information to.
-  String logPerformanceDir;
+  String? logPerformanceDir;
 
   /// Check digest of imports to the build script to invalidate the build.
   final bool skipBuildScriptCheck;
@@ -108,7 +108,7 @@ class SharedOptions {
           buildFilters: _parseBuildFilters(argResults, rootPackage),
           deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
           enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
-          configKey: argResults[configOption] as String,
+          configKey: argResults[configOption] as String?,
           buildDirs: {
             ..._parseBuildDirs(argResults),
             ..._parsePositionalBuildDirs(positionalArgs, command),
@@ -120,7 +120,7 @@ class SharedOptions {
           builderConfigOverrides: _parseBuilderConfigOverrides(
               argResults[defineOption], rootPackage),
           isReleaseBuild: argResults[releaseOption] as bool,
-          logPerformanceDir: argResults[logPerformanceOption] as String,
+          logPerformanceDir: argResults[logPerformanceOption] as String?,
           enableExperiments: argResults[enableExperimentOption] as List<String>,
         );
 }
@@ -134,7 +134,7 @@ class DaemonOptions extends WatchOptions {
     required this.buildMode,
     required bool deleteFilesByDefault,
     required bool enableLowResourcesMode,
-    required String configKey,
+    required String? configKey,
     required Set<BuildDirectory> buildDirs,
     required bool outputSymlinksOnly,
     required bool trackPerformance,
@@ -142,7 +142,7 @@ class DaemonOptions extends WatchOptions {
     required bool verbose,
     required Map<String, Map<String, dynamic>> builderConfigOverrides,
     required bool isReleaseBuild,
-    required String logPerformanceDir,
+    required String? logPerformanceDir,
     required bool usePollingWatcher,
     required List<String> enableExperiments,
   }) : super._(
@@ -196,7 +196,7 @@ class DaemonOptions extends WatchOptions {
       builderConfigOverrides:
           _parseBuilderConfigOverrides(argResults[defineOption], rootPackage),
       isReleaseBuild: argResults[releaseOption] as bool,
-      logPerformanceDir: argResults[logPerformanceOption] as String,
+      logPerformanceDir: argResults[logPerformanceOption] as String?,
       usePollingWatcher: argResults[usePollingWatcherOption] as bool,
       enableExperiments: argResults[enableExperimentOption] as List<String>,
     );
@@ -216,7 +216,7 @@ class WatchOptions extends SharedOptions {
     required Set<BuildFilter> buildFilters,
     required bool deleteFilesByDefault,
     required bool enableLowResourcesMode,
-    required String configKey,
+    required String? configKey,
     required Set<BuildDirectory> buildDirs,
     required bool outputSymlinksOnly,
     required bool trackPerformance,
@@ -224,7 +224,7 @@ class WatchOptions extends SharedOptions {
     required bool verbose,
     required Map<String, Map<String, dynamic>> builderConfigOverrides,
     required bool isReleaseBuild,
-    required String logPerformanceDir,
+    required String? logPerformanceDir,
     required List<String> enableExperiments,
   }) : super._(
           buildFilters: buildFilters,
@@ -248,7 +248,7 @@ class WatchOptions extends SharedOptions {
           buildFilters: _parseBuildFilters(argResults, rootPackage),
           deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
           enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
-          configKey: argResults[configOption] as String,
+          configKey: argResults[configOption] as String?,
           buildDirs: {
             ..._parseBuildDirs(argResults),
             ..._parsePositionalBuildDirs(positionalArgs, command),
@@ -260,7 +260,7 @@ class WatchOptions extends SharedOptions {
           builderConfigOverrides: _parseBuilderConfigOverrides(
               argResults[defineOption], rootPackage),
           isReleaseBuild: argResults[releaseOption] as bool,
-          logPerformanceDir: argResults[logPerformanceOption] as String,
+          logPerformanceDir: argResults[logPerformanceOption] as String?,
           usePollingWatcher: argResults[usePollingWatcherOption] as bool,
           enableExperiments: argResults[enableExperimentOption] as List<String>,
         );
@@ -281,7 +281,7 @@ class ServeOptions extends WatchOptions {
     required Set<BuildFilter> buildFilters,
     required bool deleteFilesByDefault,
     required bool enableLowResourcesMode,
-    required String configKey,
+    required String? configKey,
     required Set<BuildDirectory> buildDirs,
     required bool outputSymlinksOnly,
     required bool trackPerformance,
@@ -289,7 +289,7 @@ class ServeOptions extends WatchOptions {
     required bool verbose,
     required Map<String, Map<String, dynamic>> builderConfigOverrides,
     required bool isReleaseBuild,
-    required String logPerformanceDir,
+    required String? logPerformanceDir,
     required bool usePollingWatcher,
     required List<String> enableExperiments,
   }) : super._(
@@ -366,7 +366,7 @@ class ServeOptions extends WatchOptions {
       serveTargets: serveTargets,
       deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
       enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
-      configKey: argResults[configOption] as String,
+      configKey: argResults[configOption] as String?,
       buildDirs: buildDirs,
       outputSymlinksOnly: argResults[symlinkOption] as bool,
       trackPerformance: argResults[trackPerformanceOption] as bool,
@@ -375,7 +375,7 @@ class ServeOptions extends WatchOptions {
       builderConfigOverrides:
           _parseBuilderConfigOverrides(argResults[defineOption], rootPackage),
       isReleaseBuild: argResults[releaseOption] as bool,
-      logPerformanceDir: argResults[logPerformanceOption] as String,
+      logPerformanceDir: argResults[logPerformanceOption] as String?,
       usePollingWatcher: argResults[usePollingWatcherOption] as bool,
       enableExperiments: argResults[enableExperimentOption] as List<String>,
     );
