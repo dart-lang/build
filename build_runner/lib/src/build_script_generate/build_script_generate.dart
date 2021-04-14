@@ -180,7 +180,11 @@ Future<bool> _allMigratedToNullSafety(PackageGraph packageGraph,
       return false;
     }
 
-    return parsedFile.unit.featureSet.isEnabled(Feature.non_nullable);
+    if (!parsedFile.unit.featureSet.isEnabled(Feature.non_nullable)) {
+      // An import does not support null-safety, so the build script can't opt
+      // in either.
+      return false;
+    }
   }
 
   return true;
