@@ -87,5 +87,14 @@ builders:
       expect(result.stderr, isEmpty);
       expect(result.stdout, contains('could not be parsed'));
     });
+
+    test('generates null-safe build scrips', () async {
+      await runPub('a', 'run', args: ['build_runner', 'generate-build-script']);
+
+      await d
+          .file('a/.dart_tool/build/entrypoint/build.dart',
+              isNot(contains('@dart=2.9')))
+          .validate();
+    });
   });
 }
