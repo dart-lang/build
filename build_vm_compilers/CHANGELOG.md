@@ -1,6 +1,7 @@
 ## 1.0.9-dev
 
 - Update to build version `2.0.0`.
+- Migrate to null safety
 
 ## 1.0.8
 

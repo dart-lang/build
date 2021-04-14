@@ -68,27 +68,27 @@ void printAsync() async {
       // Run a build and expect it to succeed.
       var buildResult = await runPub('a', 'run',
           args: ['build_runner', 'build', '-o', 'out']);
-      expect(buildResult.exitCode, 0, reason: buildResult.stderr as String);
+      expect(buildResult.exitCode, 0, reason: buildResult.stderr as String?);
     });
 
     test(' and run them', () async {
       var runResult = await runDart('a', 'out/bin/hello.vm.app.dill');
 
-      expect(runResult.exitCode, 0, reason: runResult.stderr as String);
+      expect(runResult.exitCode, 0, reason: runResult.stderr as String?);
       expect(runResult.stdout, 'hello/world$_newLine');
     });
 
     test(' and run root libraries main', () async {
       var runResult = await runDart('a', 'out/bin/goodbye.vm.app.dill');
 
-      expect(runResult.exitCode, 0, reason: runResult.stderr as String);
+      expect(runResult.exitCode, 0, reason: runResult.stderr as String?);
       expect(runResult.stdout, 'goodbye/world$_newLine');
     });
 
     test(' and enables sync-async', () async {
       var runResult = await runDart('a', 'out/bin/sync_async.vm.app.dill');
 
-      expect(runResult.exitCode, 0, reason: runResult.stderr as String);
+      expect(runResult.exitCode, 0, reason: runResult.stderr as String?);
 
       expect(runResult.stdout,
           'before${_newLine}running${_newLine}after$_newLine');
