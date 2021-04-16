@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'dart:isolate';
 
 import 'package:analyzer/dart/analysis/session.dart';
@@ -10,14 +11,14 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
-import 'package:build_test/build_test.dart';
-import 'package:logging/logging.dart';
-import 'package:package_config/package_config.dart';
-import 'package:test/test.dart';
-
 import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_resolvers/src/analysis_driver.dart';
 import 'package:build_resolvers/src/resolver.dart';
+import 'package:build_test/build_test.dart';
+import 'package:logging/logging.dart';
+import 'package:package_config/package_config.dart';
+import 'package:pub_semver/pub_semver.dart';
+import 'package:test/test.dart';
 
 void main() {
   final entryPoint = AssetId('a', 'web/main.dart');
@@ -178,7 +179,7 @@ void main() {
         }, (resolver) async {
           await resolver.libraryFor(entryPoint);
         }, resolvers: AnalyzerResolvers());
-      });
+      }, skip: _skipOnPreRelease);
     });
 
     group('assets that aren\'t a transitive import of input', () {
@@ -437,7 +438,7 @@ int? get x => 1;
                 expect(errors.errors, isEmpty);
               }, resolvers: AnalyzerResolvers()),
           ['non-nullable']);
-    });
+    }, skip: _skipOnPreRelease);
 
     test('can get a new analysis session after resolving additional assets',
         () async {
@@ -809,3 +810,8 @@ int? get x => 1;
     });
   });
 }
+
+final _skipOnPreRelease =
+    Version.parse(Platform.version.split(' ').first).isPreRelease
+        ? 'Skipped on prerelease sdks'
+        : null;
