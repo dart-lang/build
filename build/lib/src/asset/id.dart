@@ -59,9 +59,9 @@ class AssetId implements Comparable<AssetId> {
     var resolved = uri.hasScheme
         ? uri
         : from != null
-        ? from.uri.resolveUri(uri)
-        : (throw ArgumentError.value(from, 'from',
-            'An AssetId "from" must be specified to resolve a relative URI'));
+            ? from.uri.resolveUri(uri)
+            : (throw ArgumentError.value(from, 'from',
+                'An AssetId "from" must be specified to resolve a relative URI'));
     if (resolved.scheme == 'package') {
       return AssetId(resolved.pathSegments.first,
           p.url.join('lib', p.url.joinAll(resolved.pathSegments.skip(1))));

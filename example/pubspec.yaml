@@ -31,3 +31,5 @@ dependency_overrides:
     path: ../build_config
   scratch_space:
     path: ../scratch_space
+  code_builder:
+    git: https://github.com/dart-lang/code_builder
