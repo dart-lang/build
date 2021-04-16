@@ -26,7 +26,7 @@ import 'cat.mocks.dart';
 // Real class
 class Cat {
   String sound() => "Meow";
-  bool eatFood(String food, {bool hungry}) => true;
+  bool eatFood(String food, {bool? hungry}) => true;
   Future<void> chew() async => print("Chewing...");
   int walk(List<String> places) => 7;
   void sleep() {}
@@ -49,7 +49,7 @@ write a mock class for each "real" class listed, in a new library.
 The next step is to run `build_runner` in order to generate this new library:
 
 ```shell
-pub run build_runner build
+dart run build_runner build
 ```
 
 `build_runner` will generate a file with a name based on the file containing the
@@ -61,7 +61,7 @@ the Cat class, giving us a class which supports stubbing and verifying.
 
 [NULL_SAFETY_README]: https://github.com/dart-lang/mockito/blob/master/NULL_SAFETY_README.md
 
-## Let's verify some behaviour!
+## Let's verify some behavior!
 
 ```dart
 // Interact with the mock object.
@@ -77,9 +77,6 @@ interactions you are interested in.
 ## How about some stubbing?
 
 ```dart
-// Unstubbed methods return null.
-expect(cat.sound(), nullValue);
-
 // Stub a mock method before interacting.
 when(cat.sound()).thenReturn("Purr");
 expect(cat.sound(), "Purr");
@@ -106,8 +103,7 @@ expect(cat.sound(), "Purr");
 expect(cat.sound(), "Meow");
 ```
 
-By default, any instance method of the mock instance returns `null`. The
-[`when`], [`thenReturn`], [`thenAnswer`], and [`thenThrow`] APIs provide a
+The [`when`], [`thenReturn`], [`thenAnswer`], and [`thenThrow`] APIs provide a
 stubbing mechanism to override this behavior. Once stubbed, the method will
 always return stubbed value regardless of how many times it is called. If a
 method invocation matches multiple stubs, the one which was declared last will
@@ -286,7 +282,7 @@ Use the [`captureAny`], [`captureThat`], and [`captureNamed`] argument matchers:
 ```dart
 // Simple capture
 cat.eatFood("Fish");
-expect(verify(cat.eatFood(captureAny)).captured.single, ["Fish"]);
+expect(verify(cat.eatFood(captureAny)).captured.single, "Fish");
 
 // Capture multiple calls
 cat.eatFood("Milk");
@@ -325,7 +321,7 @@ the Fake class implements the default behavior of throwing [UnimplementedError]
 // Fake class
 class FakeCat extends Fake implements Cat {
   @override
-  bool eatFood(String food, {bool hungry}) {
+  bool eatFood(String food, {bool? hungry}) {
     print('Fake eat $food');
     return true;
   }
@@ -420,5 +416,5 @@ Read more information about this package in the
 [Fake]: https://pub.dev/documentation/mockito/latest/mockito/Fake-class.html
 [UnimplementedError]: https://api.dartlang.org/stable/dart-core/UnimplementedError-class.html
 [`reset`]: https://pub.dev/documentation/mockito/latest/mockito/reset.html
-[`logInvocations]: https://pub.dev/documentation/mockito/latest/mockito/logInvocations.html
+[`logInvocations`]: https://pub.dev/documentation/mockito/latest/mockito/logInvocations.html
 [`throwOnMissingStub`]: https://pub.dev/documentation/mockito/latest/mockito/throwOnMissingStub.html
