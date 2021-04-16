@@ -39,6 +39,24 @@ then all you need is the `dev_dependency` listed above.
 
 ## Configuration
 
+### Configuring the sound null safety mode
+
+By default sound null safety is enabled or disabled based on the entrypoint of
+the app (the file with a `main` function).
+
+You can override this with the `sound_null_safety` option, like this:
+
+```yaml
+targets:
+  $default:
+    builders:
+      build_web_compilers:entrypoint:
+        options:
+          sound_null_safety: false
+```
+
+### Configuring the default compiler
+
 By default, the `dartdevc` compiler will be used, which is the Dart Development
 Compiler.
 
