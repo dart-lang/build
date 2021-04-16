@@ -35,7 +35,7 @@ Future<String> _generateBuildScript() async {
             .statement,
         _main()
       ]));
-  final emitter = DartEmitter(Allocator.simplePrefixing());
+  final emitter = DartEmitter(allocator: Allocator.simplePrefixing());
   try {
     return DartFormatter().format('''
       // Ensure that the build script itself is not opted in to null safety,
