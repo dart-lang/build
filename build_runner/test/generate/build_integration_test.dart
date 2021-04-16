@@ -554,6 +554,7 @@ targets:
           'build_runner',
           'build_runner_core',
           'build_test',
+          'code_builder',
         ]),
         d.file('build.yaml', r'''
 global_options:
