@@ -1,10 +1,4 @@
-// Ensure that the build script itself is not opted in to null safety,
-// instead of taking the language version from the current package.
-//
-// @dart=2.9
-//
 // ignore_for_file: directives_ordering
-
 import 'package:build_runner_core/build_runner_core.dart' as _i1;
 import 'package:build_test/builder.dart' as _i2;
 import 'package:build_config/build_config.dart' as _i3;
@@ -138,7 +132,7 @@ final _builders = <_i1.BuilderApplication>[
   _i1.applyPostProcess(
       r'provides_builder:some_post_process_builder', _i4.somePostProcessBuilder)
 ];
-void main(List<String> args, [_i9.SendPort sendPort]) async {
+void main(List<String> args, [_i9.SendPort? sendPort]) async {
   var result = await _i10.run(args, _builders);
   sendPort?.send(result);
   _i11.exitCode = result;

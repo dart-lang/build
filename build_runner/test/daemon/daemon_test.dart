@@ -237,7 +237,7 @@ main() {
       var succeededResult = await client.buildResults.first;
       expect(succeededResult.results.first.status, BuildStatus.succeeded);
       var ddcContent = await File(p.join(d.sandbox, 'a', '.dart_tool', 'build',
-              'generated', 'a', 'web', 'main.unsound.ddc.js'))
+              'generated', 'a', 'web', 'main.sound.ddc.js'))
           .readAsString();
       expect(ddcContent, contains('goodbye world'));
     });

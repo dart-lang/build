@@ -1,3 +1,7 @@
+## 2.1.0-dev
+
+- Migrate internal builders of this package to null safety
+
 ## 2.0.0
 
 - Migrate `package:build_test/build_test.dart` to null safety.

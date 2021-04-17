@@ -15,11 +15,11 @@ void main() {
   setUp(startApp);
 
   tearDown(() {
-    document.body.innerHtml = '';
+    document.body!.innerHtml = '';
   });
 
   test('hello world', () async {
     await m.loadLibrary();
-    expect(document.body.text, contains(m.message));
+    expect(document.body?.text, contains(m.message));
   });
 }

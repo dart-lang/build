@@ -16,11 +16,11 @@ void main() {
   setUp(startApp);
 
   tearDown(() {
-    document.body.innerHtml = '';
+    document.body!.innerHtml = '';
   });
 
   test('hello world', () {
-    expect(document.body.text, contains(message));
+    expect(document.body!.text, contains(message));
   });
 
   test('failing test', () {
