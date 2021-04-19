@@ -34,5 +34,3 @@ dependency_overrides:
     path: ../build
   build_resolvers:
     path: ../build_resolvers
-  code_builder:
-    git: https://github.com/dart-lang/code_builder

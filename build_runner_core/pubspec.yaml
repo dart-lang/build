@@ -50,6 +50,4 @@ dependency_overrides:
     path: ../build_runner
   build_test:
     path: ../build_test
-  code_builder:
-    git: https://github.com/dart-lang/code_builder
   ## Remove each of the above as they are published

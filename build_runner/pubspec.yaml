@@ -70,7 +70,5 @@ dependency_overrides:
   # versions of web_socket_channel. This can be removed safely.
   build_daemon:
     path: ../build_daemon
-  code_builder:
-    git: https://github.com/dart-lang/code_builder
   build_web_compilers:
     path: ../build_web_compilers
