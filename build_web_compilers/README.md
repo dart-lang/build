@@ -41,8 +41,8 @@ then all you need is the `dev_dependency` listed above.
 
 ### Configuring the sound null safety mode
 
-By default sound null safety is enabled or disabled based on the entrypoint of
-the app (the file with a `main` function).
+By default [sound null safety][] is enabled or disabled based on the entrypoint
+of the app (the file with a `main` function).
 
 You can override this with the `sound_null_safety` option, like this:
 
@@ -57,10 +57,10 @@ targets:
 
 ### Configuring the default compiler
 
-By default, the `dartdevc` compiler will be used, which is the Dart Development
-Compiler.
+By default, the [Dart development compiler][] (_dartdevc_, also known as
+_DDC_) will be used.
 
-If you would like to opt into `dart2js` you will need to add a `build.yaml`
+If you would like to opt into dart2js you will need to add a `build.yaml`
 file, which should look roughly like the following:
 
 ```yaml
@@ -81,10 +81,10 @@ targets:
 
 ### Configuring -D environment variables
 
-DDC is a modular compiler, so in order to ensure consistent builds in every
-module environment variables must be configured globally. Configure with a Map
-in yaml. Environment defined variables can be read with `const
-String.fromEnvironment` and `const bool.fromEnvironment`. For example:
+dartdevc is a modular compiler, so in order to ensure consistent builds
+in every module environment variables must be configured globally. Configure
+with a mapping in YAML. Environment defined variables can be read with
+`const String.fromEnvironment` and `const bool.fromEnvironment`. For example:
 
 ```yaml
 global_options:
@@ -96,7 +96,7 @@ global_options:
 ```
 
 For dart2js, use the `dart2js_args` option. This may be configured globally, or
-per-target.
+per target.
 
 ```yaml
 targets:
@@ -149,4 +149,6 @@ the list (unless you need to post-process the js files).
 ```
 
 [development dependency]: https://dart.dev/tools/pub/dependencies#dev-dependencies
+[sound null safety]: https://dart.dev/null-safety
+[Dart development compiler]: https://dart.dev/tools/dartdevc
 [`package:build`]: https://pub.dev/packages/build
