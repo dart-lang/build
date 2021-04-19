@@ -170,7 +170,7 @@ environment:
   sdk: '>=2.12.0 <3.0.0'
       '''),
         buildYaml,
-        d.dir('lib', [d.file('builder.dart', '//@dart=2.9')]),
+        d.dir('lib', [d.file('builder.dart', '// @dart=2.9')]),
       ]).create();
       await runPub('a', 'get');
 

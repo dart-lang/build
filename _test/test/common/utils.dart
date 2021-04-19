@@ -77,7 +77,7 @@ Future<void> _startServer(String command, List<String> buildArgs,
   }
 
   final proc = _process = await Process.start(command, buildArgs);
-  final stdout = _stdOutLines = proc.stdout
+  final stdOutLines = _stdOutLines = proc.stdout
       .transform(utf8.decoder)
       .transform(const LineSplitter())
       .asBroadcastStream();
@@ -87,7 +87,7 @@ Future<void> _startServer(String command, List<String> buildArgs,
       .transform(const LineSplitter())
       .asBroadcastStream();
 
-  stdout.listen((line) => printOnFailure('StdOut: $line'));
+  stdOutLines.listen((line) => printOnFailure('StdOut: $line'));
   stdErrLines.listen((line) => printOnFailure('StdErr: $line'));
 
   extraExpects.add(() => nextSuccessfulBuild);
