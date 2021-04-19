@@ -95,6 +95,7 @@ Future<bool> _isAppEntryPoint(AssetId dartId, AssetReader reader) async {
   return parsed.declarations.any((node) {
     return node is FunctionDeclaration &&
         node.name.name == 'main' &&
-        node.functionExpression.parameters.parameters.length <= 2;
+        node.functionExpression.parameters != null &&
+        node.functionExpression.parameters!.parameters.length <= 2;
   });
 }

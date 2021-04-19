@@ -46,7 +46,7 @@ void main() {
   });
 }
 
-Future<void> _testHelpCommand(List<String> args, {String checkContent}) async {
+Future<void> _testHelpCommand(List<String> args, {String? checkContent}) async {
   var asyncResult = runCommand(args);
   expect(asyncResult, completes,
       reason: 'should not cause the auto build script to hang');

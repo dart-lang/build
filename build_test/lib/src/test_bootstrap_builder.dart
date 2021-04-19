@@ -1,8 +1,6 @@
 // Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-//
-//@dart=2.9
 
 import 'dart:async';
 
@@ -130,7 +128,7 @@ class _ConfigLoader {
   final _configByPackage = <String, Future<Configuration>>{};
   final _configDigestByPackage = <String, Digest>{};
 
-  Future<Configuration> load(String package, AssetReader reader) async {
+  Future<Configuration?> load(String package, AssetReader reader) async {
     var customConfigId = AssetId(package, 'dart_test.yaml');
     if (!await reader.canRead(customConfigId)) return null;
 

@@ -13,9 +13,9 @@ import 'package:test_process/test_process.dart';
 Directory _generatedDir = Directory(p.join(_toolDir.path, 'generated'));
 Directory _toolDir = Directory(p.join('.dart_tool', 'build'));
 
-Process _process;
-Stream<String> _stdOutLines;
-Stream<String> get stdOutLines => _stdOutLines;
+Process? _process;
+Stream<String>? _stdOutLines;
+Stream<String>? get stdOutLines => _stdOutLines;
 
 final String _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
 
@@ -37,9 +37,9 @@ Future<ProcessResult> runCommand(List<String> args) =>
 /// expects that happen before that using [extraExpects]. All of these will be
 /// invoked and awaited before awaiting the next successful build.
 Future<void> startServer(
-        {bool ensureCleanBuild,
-        List<Function> extraExpects,
-        List<String> buildArgs}) =>
+        {bool? ensureCleanBuild,
+        List<Function>? extraExpects,
+        List<String>? buildArgs}) =>
     _startServer(
         'dart',
         [
@@ -52,7 +52,7 @@ Future<void> startServer(
         extraExpects: extraExpects);
 
 Future<ProcessResult> _runBuild(String command, List<String> args,
-    {bool ensureCleanBuild}) async {
+    {bool? ensureCleanBuild}) async {
   ensureCleanBuild ??= false;
 
   // Make sure this is a clean build
@@ -67,7 +67,7 @@ Future<ProcessResult> _runBuild(String command, List<String> args,
 }
 
 Future<void> _startServer(String command, List<String> buildArgs,
-    {bool ensureCleanBuild, List<Function> extraExpects}) async {
+    {bool? ensureCleanBuild, List<Function>? extraExpects}) async {
   ensureCleanBuild ??= false;
   extraExpects ??= [];
 
@@ -76,18 +76,18 @@ Future<void> _startServer(String command, List<String> buildArgs,
     await _toolDir.delete(recursive: true);
   }
 
-  _process = await Process.start(command, buildArgs);
-  _stdOutLines = _process.stdout
+  final proc = _process = await Process.start(command, buildArgs);
+  final stdOutLines = _stdOutLines = proc.stdout
       .transform(utf8.decoder)
       .transform(const LineSplitter())
       .asBroadcastStream();
 
-  var stdErrLines = _process.stderr
+  var stdErrLines = proc.stderr
       .transform(utf8.decoder)
       .transform(const LineSplitter())
       .asBroadcastStream();
 
-  _stdOutLines.listen((line) => printOnFailure('StdOut: $line'));
+  stdOutLines.listen((line) => printOnFailure('StdOut: $line'));
   stdErrLines.listen((line) => printOnFailure('StdErr: $line'));
 
   extraExpects.add(() => nextSuccessfulBuild);
@@ -97,11 +97,12 @@ Future<void> _startServer(String command, List<String> buildArgs,
 /// Kills the current build script.
 ///
 /// To clean up the `.dart_tool` directory as well, set [cleanUp] to `true`.
-Future<void> stopServer({bool cleanUp}) async {
+Future<void> stopServer({bool? cleanUp}) async {
   cleanUp ??= false;
-  if (_process != null) {
-    expect(_process.kill(), true);
-    await _process.exitCode;
+  final process = _process;
+  if (process != null) {
+    expect(process.kill(), true);
+    await process.exitCode;
     _process = null;
   }
   _stdOutLines = null;
@@ -138,7 +139,7 @@ Future<void> _resetGitClient() async {
   // to a non-pristine git environment.
   Process.runSync('git', ['checkout', 'HEAD', '--', '.']);
 
-  Future<void> nextBuild;
+  Future<void>? nextBuild;
   if (_process != null) nextBuild = nextSuccessfulBuild;
   // Delete the untracked files.
   await Process.run('git', ['clean', '-df', '.']);
@@ -146,29 +147,29 @@ Future<void> _resetGitClient() async {
 }
 
 Future<void> get nextSuccessfulBuild async {
-  await _stdOutLines.firstWhere((line) => line.contains('Succeeded after'));
+  await _stdOutLines!.firstWhere((line) => line.contains('Succeeded after'));
 }
 
 Future<void> get nextFailedBuild async {
-  await _stdOutLines.firstWhere((line) => line.contains('Failed after'));
+  await _stdOutLines!.firstWhere((line) => line.contains('Failed after'));
 }
 
 Future<String> nextStdOutLine(String message) =>
-    _stdOutLines.firstWhere((line) => line.contains(message));
+    _stdOutLines!.firstWhere((line) => line.contains(message));
 
 /// Runs tests using the auto build script.
 Future<TestProcess> runTests(
-    {bool usePrecompiled,
-    List<String> buildArgs,
-    List<String> testArgs}) async {
+    {bool? usePrecompiled,
+    List<String>? buildArgs,
+    List<String>? testArgs}) async {
   return _runTests(_pubBinary, ['run', 'build_runner'],
       usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
 }
 
 Future<TestProcess> _runTests(String executable, List<String> scriptArgs,
-    {bool usePrecompiled,
-    List<String> buildArgs,
-    List<String> testArgs}) async {
+    {bool? usePrecompiled,
+    List<String>? buildArgs,
+    List<String>? testArgs}) async {
   usePrecompiled ??= true;
   testArgs ??= [];
   testArgs.addAll(['-p', 'chrome']);
@@ -187,9 +188,9 @@ Future<TestProcess> _runTests(String executable, List<String> scriptArgs,
 }
 
 Future<void> expectTestsFail(
-    {bool usePrecompiled,
-    List<String> buildArgs,
-    List<String> testArgs}) async {
+    {bool? usePrecompiled,
+    List<String>? buildArgs,
+    List<String>? testArgs}) async {
   var result = await runTests(
       usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
   expect(result.stdout, emitsThrough(contains('Some tests failed')));
@@ -197,10 +198,10 @@ Future<void> expectTestsFail(
 }
 
 Future<void> expectTestsPass(
-    {int expectedNumRan,
-    bool usePrecompiled,
-    List<String> buildArgs,
-    List<String> testArgs}) async {
+    {int? expectedNumRan,
+    bool? usePrecompiled,
+    List<String>? buildArgs,
+    List<String>? testArgs}) async {
   var result = await runTests(
       usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
   var allLines = await result.stdout.rest.toList();

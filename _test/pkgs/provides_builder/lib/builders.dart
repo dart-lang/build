@@ -35,10 +35,10 @@ class _SomePostProcessBuilder extends PostProcessBuilder {
   @override
   final inputExtensions = const ['.txt'];
 
-  final String defaultContent;
+  final String? defaultContent;
 
   _SomePostProcessBuilder.fromOptions(BuilderOptions options)
-      : defaultContent = options.config['default_content'] as String;
+      : defaultContent = options.config['default_content'] as String?;
 
   @override
   Future<void> build(PostProcessBuildStep buildStep) async {

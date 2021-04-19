@@ -4,14 +4,19 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart' show BuilderOptions;
+import 'package:analyzer/dart/analysis/features.dart';
+import 'package:analyzer/dart/analysis/utilities.dart';
+import 'package:build/build.dart'
+    show AssetId, AssetNotFoundException, AssetReader, BuilderOptions;
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:graphs/graphs.dart';
 import 'package:logging/logging.dart';
+import 'package:package_config/package_config.dart' show LanguageVersion;
 import 'package:path/path.dart' as p;
+import 'package:pub_semver/pub_semver.dart';
 
 import '../package_graph/build_config_overrides.dart';
 import 'builder_ordering.dart';
@@ -25,7 +30,8 @@ Future<String> generateBuildScript() =>
     logTimedAsync(_log, 'Generating build script', _generateBuildScript);
 
 Future<String> _generateBuildScript() async {
-  final builders = await findBuilderApplications();
+  final info = await findBuildScriptOptions();
+  final builders = info.builderApplications;
   final library = Library((b) => b.body.addAll([
         literalList(
                 builders,
@@ -35,16 +41,24 @@ Future<String> _generateBuildScript() async {
             .statement,
         _main()
       ]));
-  final emitter = DartEmitter(allocator: Allocator.simplePrefixing());
+  final emitter = DartEmitter(
+      allocator: Allocator.simplePrefixing(),
+      useNullSafetySyntax: info.canRunWithSoundNullSafety);
   try {
-    return DartFormatter().format('''
-      // Ensure that the build script itself is not opted in to null safety,
-      // instead of taking the language version from the current package.
-      //
-      // @dart=2.9
-      //
-      // ignore_for_file: directives_ordering
+    final preamble = StringBuffer();
+    if (!info.canRunWithSoundNullSafety) {
+      preamble.write('''
+        // Ensure that the build script itself is not opted in to null safety,
+        // instead of taking the language version from the current package.
+        //
+        // @dart=2.9
+        //
+      ''');
+    }
+    preamble.write('// ignore_for_file: directives_ordering');
 
+    return DartFormatter().format('''
+      $preamble
       ${library.accept(emitter)}''');
   } on FormatterException {
     _log.severe('Generated build script could not be parsed.\n'
@@ -67,6 +81,15 @@ Future<Iterable<Expression>> findBuilderApplications({
   PackageGraph? packageGraph,
   Map<String, BuildConfig>? buildConfigOverrides,
 }) async {
+  final info = await findBuildScriptOptions(
+      packageGraph: packageGraph, buildConfigOverrides: buildConfigOverrides);
+  return info.builderApplications;
+}
+
+Future<_BuildScriptInfo> findBuildScriptOptions({
+  PackageGraph? packageGraph,
+  Map<String, BuildConfig>? buildConfigOverrides,
+}) async {
   packageGraph ??= await PackageGraph.forThisPackage();
   final orderedPackages = stronglyConnectedComponents<PackageNode>(
     [packageGraph.root],
@@ -74,8 +97,9 @@ Future<Iterable<Expression>> findBuilderApplications({
     equals: (a, b) => a.name == b.name,
     hashCode: (n) => n.name.hashCode,
   ).expand((c) => c);
-  var overrides = buildConfigOverrides ??= await findBuildConfigOverrides(
-      packageGraph, FileBasedAssetReader(packageGraph));
+  var reader = FileBasedAssetReader(packageGraph);
+  var overrides = buildConfigOverrides ??=
+      await findBuildConfigOverrides(packageGraph, reader);
   Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
     if (overrides.containsKey(package.name)) {
       return overrides[package.name]!;
@@ -109,11 +133,80 @@ Future<Iterable<Expression>> findBuilderApplications({
       .expand((c) => c.postProcessBuilderDefinitions.values)
       .where(_isValidDefinition);
 
-  return [
+  final applications = [
     for (var builder in orderedBuilders) _applyBuilder(builder),
     for (var builder in postProcessBuilderDefinitions)
       _applyPostProcessBuilder(builder)
   ];
+
+  final canRunWithSoundNullSafety = await _allMigratedToNullSafety(
+      packageGraph,
+      reader,
+      orderedBuilders
+          .map((e) => e.import)
+          .followedBy(postProcessBuilderDefinitions.map((e) => e.import)));
+
+  return _BuildScriptInfo(applications, canRunWithSoundNullSafety);
+}
+
+Future<bool> _allMigratedToNullSafety(PackageGraph packageGraph,
+    AssetReader reader, Iterable<String> imports) async {
+  final baseForRelative = AssetId(packageGraph.root.name, scriptLocation);
+
+  // Regardless of imports, the root package must have support for null safety
+  // since the build script will run in its context.
+  final rootPackageVersion = packageGraph.root.languageVersion;
+  if (rootPackageVersion == null) return false;
+  final rootPackageFeatures = FeatureSet.fromEnableFlags2(
+      sdkLanguageVersion: rootPackageVersion.asVersion, flags: const []);
+  if (!rootPackageFeatures.isEnabled(Feature.non_nullable)) {
+    return false;
+  }
+
+  for (final import in imports.toSet()) {
+    final id = AssetId.resolve(Uri.parse(import), from: baseForRelative);
+    String content;
+    try {
+      content = await reader.readAsString(id);
+    } on AssetNotFoundException {
+      // Build is likely to be invalid, so the language version shouldn't
+      // matter. Still, don't assume null safety.
+      return false;
+    }
+
+    final version =
+        packageGraph.allPackages[id.package]?.languageVersion?.asVersion;
+    if (version == null) {
+      // Can't determine language version of import, bail out
+      return false;
+    }
+
+    final parsedFile = parseString(
+      content: content,
+      featureSet: FeatureSet.fromEnableFlags2(
+          sdkLanguageVersion: version, flags: const []),
+      throwIfDiagnostics: false,
+    );
+    if (parsedFile.errors.isNotEmpty) {
+      // Don't try to assume a language version if the imported file is invalid
+      return false;
+    }
+
+    if (!parsedFile.unit.featureSet.isEnabled(Feature.non_nullable)) {
+      // An import does not support null-safety, so the build script can't opt
+      // in either.
+      return false;
+    }
+  }
+
+  return true;
+}
+
+class _BuildScriptInfo {
+  final Iterable<Expression> builderApplications;
+  final bool canRunWithSoundNullSafety;
+
+  _BuildScriptInfo(this.builderApplications, this.canRunWithSoundNullSafety);
 }
 
 /// A method forwarding to `run`.
@@ -128,7 +221,10 @@ Method _main() => Method((b) => b
       ..types.add(refer('String')))))
   ..optionalParameters.add(Parameter((b) => b
     ..name = 'sendPort'
-    ..type = refer('SendPort', 'dart:isolate')))
+    ..type = TypeReference((b) => b
+      ..symbol = 'SendPort'
+      ..url = 'dart:isolate'
+      ..isNullable = true)))
   ..body = Block.of([
     refer('run', 'package:build_runner/build_runner.dart')
         .call([refer('args'), refer('_builders')])
@@ -251,3 +347,7 @@ Expression _findToExpression(BuilderDefinition definition) {
 Expression _constructBuilderOptions(Map<String, dynamic> options) =>
     refer('BuilderOptions', 'package:build/build.dart')
         .newInstance([literalMap(options)]);
+
+extension on LanguageVersion {
+  Version get asVersion => Version(major, minor, 0);
+}
