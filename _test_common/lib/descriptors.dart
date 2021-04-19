@@ -26,7 +26,7 @@ Future<d.FileDescriptor> pubspec(
   Iterable<String> currentIsolateDependencies = const [],
   Map<String, String> pathDependencies = const {},
   Map<String, String> versionDependencies = const {},
-  String sdkEnvironment = '>=2.9.0 <3.0.0',
+  String sdkEnvironment = '>=2.12.0 <3.0.0',
 }) async {
   var buffer = StringBuffer()
     ..writeln('name: $name')
