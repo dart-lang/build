@@ -1,4 +1,6 @@
-## 2.0.1-dev
+## 2.0.1
+
+- Update to package:graphs 2.0.0.
 
 ## 2.0.0
 
