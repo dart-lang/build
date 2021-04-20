@@ -1,3 +1,7 @@
+## 5.0.5
+
+* Support 4.x releases of code_builder.
+
 ## 5.0.4
 
 * Allow calling methods with void return types w/o stubbing.
