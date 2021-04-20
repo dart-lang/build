@@ -169,12 +169,11 @@ class AnalyzerResolver implements ReleasableResolver {
     var path = library.source.fullName;
 
     if (resolve) {
-      return (await session.getResolvedLibrary(path))
+      return (await session.getResolvedLibrary2(path) as ResolvedLibraryResult)
           .getElementDeclaration(element)
           ?.node;
     } else {
-      return session
-          .getParsedLibrary(path)
+      return (session.getParsedLibrary2(path) as ParsedLibraryResult)
           .getElementDeclaration(element)
           ?.node;
     }
