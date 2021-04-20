@@ -1,6 +1,7 @@
-## 2.1.0-dev
+## 2.1.0
 
 - Migrate internal builders of this package to null safety
+- Require build_config version 1.0.0.
 
 ## 2.0.0
 
