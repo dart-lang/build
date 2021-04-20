@@ -27,5 +27,7 @@ dependency_overrides:
     path: ../build_resolvers
   build_test:
     path: ../build_test
+  build_config:
+    path: ../build_config
   # Remove each of the above as they are published.
   # They're only used for testing.
