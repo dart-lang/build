@@ -22,13 +22,3 @@ dev_dependencies:
 dependency_overrides:
   # Required due to cyclic dep
   json_serializable: ^4.0.0
-  # Required due to the tight dependency on this package from these packages
-  build_daemon:
-    path: ../build_daemon
-  build_runner:
-    path: ../build_runner
-  build_runner_core:
-    path: ../build_runner_core
-  # Required until latest build_resolvers is published
-  build_resolvers:
-    path: ../build_resolvers

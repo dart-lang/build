@@ -38,13 +38,5 @@ dev_dependencies:
     path: ../_test_common
 
 dependency_overrides:
-  ## Remove each of the below as they are published
-  build_config:
-    path: ../build_config
-  build_daemon:
-    path: ../build_daemon
-  build_resolvers:
-    path: ../build_resolvers
-  build_runner:
-    path: ../build_runner
-  ## Remove each of the above as they are published
+  # Required until json_serializable allows the latest build_config
+  build_config: ^1.0.0
