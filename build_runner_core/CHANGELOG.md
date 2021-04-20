@@ -1,4 +1,4 @@
-## 7.0.0-dev
+## 7.0.0
 
 - Migrate to null safety.
 - Add an early error if any output extensions overlap with any input
