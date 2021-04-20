@@ -1,4 +1,4 @@
-## 3.0.0-dev
+## 3.0.0
 
 - Migrate to null safety.
 - Update to the latest `build_modules`.
