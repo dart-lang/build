@@ -1,5 +1,5 @@
 name: build
-version: 2.0.0
+version: 2.0.1
 description: A build system for Dart.
 repository: https://github.com/dart-lang/build/tree/master/build
 
@@ -8,7 +8,7 @@ environment:
 
 dependencies:
   analyzer: ^1.0.0
-  async: ^2.0.0
+  async: ^2.5.0
   convert: ^3.0.0
   crypto: ^3.0.0
   glob: ^2.0.0

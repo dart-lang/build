@@ -1,3 +1,8 @@
+## 2.0.1
+
+- Require package:async version 2.5.0 (previous null safety release should
+  have as well).
+
 ## 2.0.0
 
 - Migrate to null-safety
