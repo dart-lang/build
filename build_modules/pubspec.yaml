@@ -1,5 +1,5 @@
 name: build_modules
-version: 4.0.0-dev
+version: 4.0.0
 description: Builders for Dart modules
 repository: https://github.com/dart-lang/build/tree/master/build_modules
 
@@ -36,16 +36,12 @@ dev_dependencies:
 
 dependency_overrides:
   # Remove these when they're published
-  build:
-    path: ../build
   build_config:
     path: ../build_config
   build_daemon:
     path: ../build_daemon
   build_resolvers:
     path: ../build_resolvers
-  build_test:
-    path: ../build_test
   build_runner_core:
     path: ../build_runner_core
   build_runner:
