@@ -1,5 +1,5 @@
 name: build_web_compilers
-version: 3.0.0-dev
+version: 3.0.0
 description: Builder implementations wrapping Dart compilers.
 repository: https://github.com/dart-lang/build/tree/master/build_web_compilers
 
@@ -13,7 +13,7 @@ dependencies:
   build: ^2.0.0
   build_config: ^1.0.0
   build_modules: ^4.0.0
-  collection: ^1.0.0
+  collection: ^1.15.0
   glob: ^2.0.0
   js: ^0.6.3
   logging: ^1.0.0

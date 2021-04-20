@@ -21,10 +21,3 @@ dependencies:
 dev_dependencies:
   test: ^1.16.0
   build_test: ^2.0.0
-
-dependency_overrides:
-  # Temporarily required until build version 2.0.0 is released
-  build:
-    path: ../build
-  build_test:
-    path: ../build_test

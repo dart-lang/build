@@ -1,3 +1,7 @@
+## 2.0.1
+
+- Require package:async version 2.5.0 and package:collection version 1.15.0.
+
 ## 2.0.0
 
 - Migrate to null-safety
