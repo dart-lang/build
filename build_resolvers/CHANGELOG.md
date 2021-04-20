@@ -1,6 +1,6 @@
 ## 2.0.1
 
-- Update to package:graphs 2.0.0.
+- Update to allow package:graphs 2.0.0.
 
 ## 2.0.0
 
