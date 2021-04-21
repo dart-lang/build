@@ -152,8 +152,8 @@ class AnalyzerResolver implements ReleasableResolver {
   Future<bool> isLibrary(AssetId assetId) async {
     var source = _driver.sourceFactory.forUri2(assetId.uri);
     if (source == null || !source.exists()) return false;
-    var result = _driver.getFileSync2(assetPath(assetId));
-    return result is FileResult && !result.isPart;
+    var result = _driver.getFileSync2(assetPath(assetId)) as FileResult;
+    return !result.isPart;
   }
 
   @override
@@ -199,15 +199,19 @@ class AnalyzerResolver implements ReleasableResolver {
   Future<LibraryElement> libraryFor(AssetId assetId,
       {bool allowSyntaxErrors = false}) async {
     var uri = assetId.uri;
+    var path = assetPath(assetId);
     var source = _driver.sourceFactory.forUri2(uri);
     if (source == null || !source.exists()) {
       throw AssetNotFoundException(assetId);
     }
 
-    final library = await _driver.getLibraryByUri2(uri.toString());
-    if (library is! LibraryElementResult) {
+    var parsedResult = _driver.parseFileSync2(path);
+    if (parsedResult is! ParsedUnitResult || parsedResult.isPart) {
       throw NonLibraryAssetException(assetId);
     }
+
+    final library =
+        await _driver.getLibraryByUri2(uri.toString()) as LibraryElementResult;
     if (!allowSyntaxErrors) {
       final errors = await _syntacticErrorsFor(library.element);
       if (errors.isNotEmpty) {
