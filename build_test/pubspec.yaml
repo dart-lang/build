@@ -27,10 +27,3 @@ dependencies:
 dev_dependencies:
   analyzer: ^1.0.0
   collection: ^1.15.0
-
-dependency_overrides:
-  # Remove this once the respective packages are published
-  build_config:
-    path: ../build_config
-  build_resolvers:
-    path: ../build_resolvers

@@ -30,13 +30,5 @@ dev_dependencies:
   uuid: ^3.0.0
 
 dependency_overrides:
-  ## Remove each of the following as they are published
-  build_config:
-    path: ../build_config
-  build_resolvers:
-    path: ../build_resolvers
-  build_runner:
-    path: ../build_runner
-  build_runner_core:
-    path: ../build_runner_core
-  ## Remove each of the above as they are published
+  # Required until built_value_generator updates to the latest build_config
+  build_config: ^1.0.0
