@@ -187,7 +187,7 @@ class DaemonOptions extends WatchOptions {
       buildMode: buildMode,
       deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
       enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
-      configKey: argResults[configOption] as String,
+      configKey: argResults[configOption] as String?,
       buildDirs: buildDirs,
       outputSymlinksOnly: argResults[symlinkOption] as bool,
       trackPerformance: argResults[trackPerformanceOption] as bool,
