@@ -301,6 +301,8 @@ class UnresolvedAnnotationException implements Exception {
   ) {
     try {
       final parsedLibrary = annotatedElement.session!
+          // Update usage when we're ready to require the latest pkg:analyzer
+          // ignore: deprecated_member_use
           .getParsedLibraryByElement(annotatedElement.library!);
       final declaration = parsedLibrary.getElementDeclaration(annotatedElement);
       if (declaration == null) {
