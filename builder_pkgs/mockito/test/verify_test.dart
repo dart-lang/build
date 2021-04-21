@@ -209,7 +209,7 @@ void main() {
 
     test('should fail when called with non-mock-call parameter', () {
       expectFail('Used on a non-mockito object', () {
-        verifyInOrder(['a string is not a mock call']);
+        verify(['a string is not a mock call']);
       });
     });
   });
@@ -464,8 +464,20 @@ void main() {
     });
 
     test('should fail when given non-mock-call parameters', () {
-      expectFail('Used on a non-mockito object', () {
-        verifyInOrder(['a string is not a mock call']);
+      expectFail(
+          RegExp("'verifyInOrder' called with non-mockito stub calls; List "
+              'contains 3 elements, but 2 stub calls were stored'), () {
+        verifyInOrder([mock.getter, mock.methodWithoutArgs, mock.getter]);
+      });
+    });
+
+    test('should fail when parameters do not map to List elements', () {
+      expectFail(
+          RegExp("'verifyInOrder' called with non-mockito stub calls; List "
+              'contains 1 elements, but 2 stub calls were stored'), () {
+        verifyInOrder([
+          [mock.getter, mock.getter]
+        ]);
       });
     });
 

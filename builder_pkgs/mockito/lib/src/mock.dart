@@ -999,7 +999,9 @@ _InOrderVerification get verifyInOrder {
   _verificationInProgress = true;
   return <T>(List<T> responses) {
     if (responses.length != _verifyCalls.length) {
-      fail('Used on a non-mockito object');
+      fail("'verifyInOrder' called with non-mockito stub calls; List contains "
+          '${responses.length} elements, but ${_verifyCalls.length} stub calls '
+          'were stored: $_verifyCalls');
     }
     _verificationInProgress = false;
     var verificationResults = <VerificationResult>[];
