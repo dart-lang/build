@@ -1,3 +1,7 @@
+## 2.0.1
+
+- Fix bad cast in build_runner while parsing options for daemon mode.
+
 ## 2.0.0
 
 - Migrate to null safety.
