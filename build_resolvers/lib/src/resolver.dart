@@ -18,7 +18,6 @@ import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
 import 'package:analyzer/src/dart/analysis/experiments.dart';
 import 'package:analyzer/src/generated/engine.dart'
     show AnalysisOptions, AnalysisOptionsImpl;
-import 'package:analyzer/src/generated/source.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:logging/logging.dart';
@@ -152,9 +151,9 @@ class AnalyzerResolver implements ReleasableResolver {
   @override
   Future<bool> isLibrary(AssetId assetId) async {
     var source = _driver.sourceFactory.forUri2(assetId.uri);
-    return source != null &&
-        source.exists() &&
-        (await _driver.getSourceKind(assetPath(assetId))) == SourceKind.LIBRARY;
+    if (source == null || !source.exists()) return false;
+    var result = _driver.getFileSync2(assetPath(assetId)) as FileResult;
+    return !result.isPart;
   }
 
   @override
@@ -189,7 +188,7 @@ class AnalyzerResolver implements ReleasableResolver {
     }
 
     var path = assetPath(assetId);
-    var parsedResult = await _driver.parseFile(path);
+    var parsedResult = await _driver.parseFile2(path) as ParsedUnitResult;
     if (!allowSyntaxErrors && parsedResult.errors.isNotEmpty) {
       throw SyntaxErrorInAssetException(assetId, [parsedResult]);
     }
@@ -199,24 +198,28 @@ class AnalyzerResolver implements ReleasableResolver {
   @override
   Future<LibraryElement> libraryFor(AssetId assetId,
       {bool allowSyntaxErrors = false}) async {
-    var path = assetPath(assetId);
     var uri = assetId.uri;
+    var path = assetPath(assetId);
     var source = _driver.sourceFactory.forUri2(uri);
     if (source == null || !source.exists()) {
       throw AssetNotFoundException(assetId);
     }
-    var kind = await _driver.getSourceKind(path);
-    if (kind != SourceKind.LIBRARY) throw NonLibraryAssetException(assetId);
 
-    final library = await _driver.getLibraryByUri(uri.toString());
+    var parsedResult = _driver.parseFileSync2(path);
+    if (parsedResult is! ParsedUnitResult || parsedResult.isPart) {
+      throw NonLibraryAssetException(assetId);
+    }
+
+    final library =
+        await _driver.getLibraryByUri2(uri.toString()) as LibraryElementResult;
     if (!allowSyntaxErrors) {
-      final errors = await _syntacticErrorsFor(library);
+      final errors = await _syntacticErrorsFor(library.element);
       if (errors.isNotEmpty) {
         throw SyntaxErrorInAssetException(assetId, errors);
       }
     }
 
-    return library;
+    return library.element;
   }
 
   /// Finds syntax errors in files related to the [element].
@@ -240,7 +243,7 @@ class AnalyzerResolver implements ReleasableResolver {
     final relevantResults = <ErrorsResult>[];
 
     for (final path in paths) {
-      final result = await _driver.getErrors(path);
+      final result = await _driver.getErrors2(path) as ErrorsResult;
       if (result.errors
           .any((error) => error.errorCode.type == ErrorType.SYNTACTIC_ERROR)) {
         relevantResults.add(result);

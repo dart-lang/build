@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
@@ -124,8 +125,8 @@ void main() {
         extension _Foo on int {}
       ''', (resolver) => resolver.findLibraryNotNull('example'),
           packageConfig: packageConfig, inputId: AssetId('a', 'invalid.dart'));
-      var errors =
-          await libExample.session.getErrors(libExample.source.fullName);
+      var errors = await libExample.session
+          .getErrors2(libExample.source.fullName) as ErrorsResult;
       expect(
           errors.errors.map((e) => e.message),
           contains(contains(
