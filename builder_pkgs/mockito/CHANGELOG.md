@@ -1,5 +1,9 @@
 ## 5.0.5
 
+* Support the 0.4.x releases of `test_api`.
+
+## 5.0.5
+
 * Support 4.x releases of code_builder.
 
 ## 5.0.4
