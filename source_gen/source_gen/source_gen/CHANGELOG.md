@@ -1,3 +1,7 @@
+## 1.0.1-dev
+
+* Improve the error message for a missing part directive.
+
 ## 1.0.0
 
 * Migrate to null safety.

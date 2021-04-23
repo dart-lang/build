@@ -127,7 +127,8 @@ class _Builder extends Builder {
           .any((e) => e.uri.stringValue == part);
       if (!hasLibraryPartDirectiveWithOutputUri) {
         // TODO: Upgrade to error in a future breaking change?
-        log.warning('Missing "part \'$part\';".');
+        log.warning('$part must be included as a part directive in '
+            'the input library with:\n    part \'$part\';');
         return;
       }
     }
