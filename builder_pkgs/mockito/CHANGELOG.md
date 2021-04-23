@@ -1,4 +1,4 @@
-## 5.0.5
+## 5.0.6
 
 * Support the 0.4.x releases of `test_api`.
 
