@@ -5,9 +5,9 @@
 @TestOn('browser')
 import 'dart:html';
 
+import 'package:_test/app.dart';
 import 'package:test/test.dart';
 
-import 'package:_test/app.dart';
 //import_anchor
 
 import 'common/message.dart';

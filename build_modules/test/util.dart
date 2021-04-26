@@ -5,9 +5,8 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:logging/logging.dart';
-
 import 'package:build_test/build_test.dart';
+import 'package:logging/logging.dart';
 
 /// Forwards to [testBuilder], and adds all output assets to [assets].
 Future<void> testBuilderAndCollectAssets(

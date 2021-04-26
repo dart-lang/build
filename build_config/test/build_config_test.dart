@@ -2,11 +2,10 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:test/test.dart';
-
 import 'package:build_config/build_config.dart';
 import 'package:build_config/src/common.dart';
 import 'package:build_config/src/expandos.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('build.yaml can be parsed', () {

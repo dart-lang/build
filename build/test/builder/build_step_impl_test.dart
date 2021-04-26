@@ -5,14 +5,13 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:build/build.dart';
 import 'package:build/src/builder/build_step.dart';
+import 'package:build/src/builder/build_step_impl.dart';
 import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_test/build_test.dart';
 import 'package:pedantic/pedantic.dart';
 import 'package:test/test.dart';
-
-import 'package:build/build.dart';
-import 'package:build/src/builder/build_step_impl.dart';
 
 void main() {
   late ResourceManager resourceManager;

@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:_test_common/sdk.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:package_config/package_config.dart';
@@ -16,8 +17,6 @@ import 'package:test/test.dart'
     show expect, expectLater, emitsThrough, contains;
 import 'package:test_descriptor/test_descriptor.dart' as d;
 import 'package:test_process/test_process.dart';
-
-import 'package:_test_common/sdk.dart';
 
 class TestBuilderDefinition {
   final String key;

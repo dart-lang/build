@@ -2,10 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 @TestOn('vm')
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
-
-import 'package:build_runner_core/build_runner_core.dart';
 
 void main() {
   late PackageGraph graph;

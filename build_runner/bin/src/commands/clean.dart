@@ -6,12 +6,11 @@ import 'dart:async';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:build_runner_core/build_runner_core.dart';
-import 'package:logging/logging.dart';
-
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
 import 'package:build_runner/src/entrypoint/base_command.dart' show lineLength;
 import 'package:build_runner/src/entrypoint/clean.dart' show cleanFor;
+import 'package:build_runner_core/build_runner_core.dart';
+import 'package:logging/logging.dart';
 
 class CleanCommand extends Command<int> {
   @override

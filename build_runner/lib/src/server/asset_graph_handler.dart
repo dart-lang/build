@@ -7,11 +7,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:glob/glob.dart';
 import 'package:shelf/shelf.dart' as shelf;
 
-import 'package:build_runner_core/src/asset_graph/graph.dart';
-import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'path_to_asset_id.dart';
 
 /// A handler for `/$graph` requests under a specific `rootDir`.

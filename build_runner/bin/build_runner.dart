@@ -7,15 +7,14 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import 'package:build_runner_core/build_runner_core.dart';
-import 'package:io/ansi.dart';
-import 'package:io/io.dart';
-import 'package:logging/logging.dart';
-
 import 'package:build_runner/src/build_script_generate/bootstrap.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner/src/entrypoint/runner.dart';
 import 'package:build_runner/src/logging/std_io_logging.dart';
+import 'package:build_runner_core/build_runner_core.dart';
+import 'package:io/ansi.dart';
+import 'package:io/io.dart';
+import 'package:logging/logging.dart';
 
 import 'src/commands/clean.dart';
 import 'src/commands/generate_build_script.dart';

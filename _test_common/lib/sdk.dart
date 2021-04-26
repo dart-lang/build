@@ -5,11 +5,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:build_runner_core/src/util/constants.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
-
-import 'package:build_runner_core/src/util/constants.dart';
 
 String _dartBinary = p.join(sdkBin, 'dart');
 

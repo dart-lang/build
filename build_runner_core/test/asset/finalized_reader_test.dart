@@ -1,7 +1,9 @@
 // Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
 @TestOn('vm')
+import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset/finalized_reader.dart';
@@ -12,8 +14,6 @@ import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
 import 'package:test/fake.dart';
 import 'package:test/test.dart';
-
-import 'package:_test_common/common.dart';
 
 void main() {
   group('FinalizedReader', () {

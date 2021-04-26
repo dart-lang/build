@@ -4,13 +4,11 @@
 @TestOn('vm')
 import 'dart:io';
 
+import 'package:_test_common/common.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
-
-import 'package:build_runner_core/build_runner_core.dart';
-
-import 'package:_test_common/common.dart';
 
 final newLine = Platform.isWindows ? '\r\n' : '\n';
 

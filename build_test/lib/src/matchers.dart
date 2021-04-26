@@ -4,9 +4,8 @@
 
 import 'dart:convert';
 
-import 'package:test/test.dart';
-
 import 'package:build/build.dart';
+import 'package:test/test.dart';
 
 /// Matches instance of [AssetNotFoundException].
 final assetNotFoundException = const TypeMatcher<AssetNotFoundException>();

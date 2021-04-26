@@ -5,11 +5,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
-
-import 'package:build_runner_core/build_runner_core.dart';
 
 class InMemoryRunnerAssetWriter extends InMemoryAssetWriter
     implements RunnerAssetWriter {
