@@ -78,6 +78,9 @@ class MockBuilder implements Builder {
       b.body.add(Code('\n\n// ignore_for_file: comment_references\n'));
       // The code_builder `asA` API unconditionally adds defensive parentheses.
       b.body.add(Code('// ignore_for_file: unnecessary_parenthesis\n\n'));
+      b.body.add(Code('// ignore_for_file: prefer_const_constructors\n\n'));
+      b.body
+          .add(Code('// ignore_for_file: avoid_redundant_argument_values\n\n'));
       b.body.addAll(mockLibraryInfo.fakeClasses);
       b.body.addAll(mockLibraryInfo.mockClasses);
     });
