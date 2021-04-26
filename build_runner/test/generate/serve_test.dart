@@ -5,20 +5,18 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:_test_common/common.dart';
+import 'package:_test_common/package_graphs.dart';
 import 'package:async/async.dart';
+import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
+import 'package:build_runner/src/server/server.dart';
+import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:pedantic/pedantic.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
-
-import 'package:build_runner/src/server/server.dart';
-import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
-import 'package:build_test/build_test.dart';
-
-import 'package:_test_common/common.dart';
-import 'package:_test_common/package_graphs.dart';
 
 void main() {
   group('ServeHandler', () {

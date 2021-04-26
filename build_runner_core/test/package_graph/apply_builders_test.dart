@@ -3,17 +3,15 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 
+import 'package:_test_common/common.dart';
+import 'package:_test_common/package_graphs.dart';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
-import 'package:test/test.dart';
-
 import 'package:build_runner_core/src/generate/exceptions.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:build_runner_core/src/package_graph/apply_builders.dart';
 import 'package:build_runner_core/src/package_graph/target_graph.dart';
-
-import 'package:_test_common/common.dart';
-import 'package:_test_common/package_graphs.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('apply_builders.createBuildPhases', () {

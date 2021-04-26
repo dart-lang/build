@@ -5,11 +5,10 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
-
-import 'package:build_test/build_test.dart';
 
 void main() {
   test('can glob files in the root package', () async {

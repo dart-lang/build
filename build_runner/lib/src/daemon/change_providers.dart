@@ -3,8 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build_daemon/change_provider.dart';
-import 'package:build_runner_core/src/generate/build_definition.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner_core/src/generate/build_definition.dart';
 import 'package:watcher/src/watch_event.dart';
 
 /// Continually updates the [changes] stream as watch events are seen on the

@@ -5,16 +5,14 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:_test_common/common.dart';
+import 'package:_test_common/package_graphs.dart';
+import 'package:build_runner/src/generate/build.dart' as build_impl;
+import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
-
-import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_runner/src/generate/build.dart' as build_impl;
-import 'package:build_test/build_test.dart';
-
-import 'package:_test_common/common.dart';
-import 'package:_test_common/package_graphs.dart';
 
 void main() {
   // Basic phases/phase groups which get used in many tests

@@ -3,11 +3,10 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_test/build_test.dart';
-import 'package:test/test.dart';
-
 import 'package:build_modules/src/module_library.dart';
 import 'package:build_modules/src/platform.dart';
+import 'package:build_test/build_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   final platform = DartPlatform.register('test', ['async']);

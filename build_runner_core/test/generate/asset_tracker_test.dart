@@ -6,16 +6,15 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:package_config/package_config.dart';
-import 'package:path/path.dart' as p;
-import 'package:test_descriptor/test_descriptor.dart' as d;
-import 'package:test/test.dart';
-import 'package:watcher/watcher.dart';
-
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/generate/build_definition.dart';
 import 'package:build_runner_core/src/package_graph/target_graph.dart';
+import 'package:package_config/package_config.dart';
+import 'package:path/path.dart' as p;
+import 'package:test/test.dart';
+import 'package:test_descriptor/test_descriptor.dart' as d;
+import 'package:watcher/watcher.dart';
 
 void main() {
   group('AssetTracker.collectChanges()', () {

@@ -4,11 +4,10 @@
 
 import 'dart:async';
 
+import 'package:_test_common/test_phases.dart';
 import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:test/test.dart';
-
-import 'package:_test_common/test_phases.dart';
 
 void main() {
   test('should resolve a dart file with a part file', () async {

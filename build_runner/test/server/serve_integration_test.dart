@@ -3,23 +3,20 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @Tags(['integration'])
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:_test_common/common.dart';
+import 'package:_test_common/package_graphs.dart';
 import 'package:build/build.dart';
+import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
-
-import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
-
-import 'package:_test_common/common.dart';
-import 'package:_test_common/package_graphs.dart';
 
 void main() {
   late FutureOr<Response> Function(Request) handler;

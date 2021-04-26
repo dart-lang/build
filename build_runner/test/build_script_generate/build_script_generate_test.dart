@@ -2,14 +2,12 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 @Timeout.factor(4)
-
+import 'package:_test_common/descriptors.dart';
+import 'package:_test_common/sdk.dart';
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
-
-import 'package:_test_common/descriptors.dart';
-import 'package:_test_common/sdk.dart';
 
 void main() {
   group('Builder imports', () {

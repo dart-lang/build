@@ -5,15 +5,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:_test_common/common.dart';
+import 'package:_test_common/package_graphs.dart';
+import 'package:_test_common/runner_asset_writer_spy.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_config/build_config.dart';
-import 'package:logging/logging.dart';
-import 'package:package_config/package_config.dart';
-import 'package:path/path.dart' as p;
-import 'package:test/test.dart';
-import 'package:test_descriptor/test_descriptor.dart' as d;
-
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
@@ -25,10 +22,11 @@ import 'package:build_runner_core/src/generate/options.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:build_runner_core/src/package_graph/package_graph.dart';
 import 'package:build_runner_core/src/util/constants.dart';
-
-import 'package:_test_common/common.dart';
-import 'package:_test_common/package_graphs.dart';
-import 'package:_test_common/runner_asset_writer_spy.dart';
+import 'package:logging/logging.dart';
+import 'package:package_config/package_config.dart';
+import 'package:path/path.dart' as p;
+import 'package:test/test.dart';
+import 'package:test_descriptor/test_descriptor.dart' as d;
 
 void main() {
   final languageVersion = LanguageVersion(2, 0);

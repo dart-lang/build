@@ -5,9 +5,8 @@
 @TestOn('browser')
 import 'dart:html';
 
-import 'package:test/test.dart';
-
 import 'package:_test/app.dart';
+import 'package:test/test.dart';
 
 import 'common/message.dart' deferred as m;
 

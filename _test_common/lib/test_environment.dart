@@ -4,11 +4,10 @@
 
 import 'dart:async';
 
-import 'package:logging/logging.dart';
-
 import 'package:build_runner_core/src/asset/reader.dart';
 import 'package:build_runner_core/src/asset/writer.dart';
 import 'package:build_runner_core/src/environment/build_environment.dart';
+import 'package:logging/logging.dart';
 
 import 'common.dart';
 

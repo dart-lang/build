@@ -5,10 +5,9 @@
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build_modules/src/module_cache.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
-
-import 'package:build_modules/src/module_cache.dart';
 
 void main() {
   group(DecodingCache, () {
