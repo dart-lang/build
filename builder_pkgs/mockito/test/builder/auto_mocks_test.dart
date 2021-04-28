@@ -18,6 +18,7 @@
 import 'dart:convert' show utf8;
 
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
 import 'package:build_test/build_test.dart';
 import 'package:meta/meta.dart';
 import 'package:mockito/src/builder.dart';
@@ -95,10 +96,14 @@ void main() {
     var packageConfig = PackageConfig([
       Package('foo', Uri.file('/foo/'),
           packageUriRoot: Uri.file('/foo/lib/'),
-          languageVersion: LanguageVersion(2, 12))
+          languageVersion: LanguageVersion(2, 13))
     ]);
-    await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
-        writer: writer, outputs: outputs, packageConfig: packageConfig);
+    await withEnabledExperiments(
+      () async => await testBuilder(
+          buildMocks(BuilderOptions({})), sourceAssets,
+          writer: writer, outputs: outputs, packageConfig: packageConfig),
+      ['nonfunction-type-aliases'],
+    );
   }
 
   /// Builds with [MockBuilder] in a package which has opted into null safety,
@@ -2003,12 +2008,58 @@ void main() {
     await expectSingleNonNullableOutput(
       dedent(r'''
       class Foo {
-        Bar m1() => Bar('name1');
+        Bar m1() => Bar();
       }
       class Bar<T, U> {}
       '''),
       _containsAllOf(
           'class _FakeBar<T, U> extends _i1.Fake implements _i2.Bar<T, U> {}'),
+    );
+  });
+
+  test('generates a fake, bounded generic class used in return values',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Baz {}
+      class Bar<T extends Baz> {}
+      class Foo {
+        Bar<Baz> m1() => Bar();
+      }
+      '''),
+      _containsAllOf(
+          'class _FakeBar<T extends _i1.Baz> extends _i2.Fake implements _i1.Bar<T> {}'),
+    );
+  });
+
+  test('generates a fake, aliased class used in return values', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Baz {}
+      class Bar<T extends Baz> {}
+      typedef BarOfBaz = Bar<Baz>;
+      class Foo {
+        BarOfBaz m1() => Bar();
+      }
+      '''),
+      _containsAllOf(
+          'class _FakeBar<T extends _i1.Baz> extends _i2.Fake implements _i1.Bar<T> {}'),
+    );
+  });
+
+  test(
+      'generates a fake, recursively bounded generic class used in return values',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Baz<T extends Baz<T>> {}
+      class Bar<T> {}
+      class Foo {
+        Bar<Baz> m1() => Bar();
+      }
+      '''),
+      _containsAllOf(
+          'class _FakeBar<T> extends _i1.Fake implements _i2.Bar<T> {}'),
     );
   });
 

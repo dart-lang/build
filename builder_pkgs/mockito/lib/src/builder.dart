@@ -201,8 +201,12 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
     if (type == null) return;
 
     if (type is analyzer.InterfaceType) {
+      final alreadyVisitedElement = _elements.contains(type.element);
       _elements.add(type.element);
       (type.typeArguments ?? []).forEach(_addType);
+      if (!alreadyVisitedElement) {
+        (type.element.typeParameters ?? []).forEach(visitTypeParameterElement);
+      }
     } else if (type is analyzer.FunctionType) {
       _addType(type.returnType);
 
@@ -1309,7 +1313,7 @@ class _MockLibraryInfo {
     if (element?.library == null) return null;
 
     assert(assetUris.containsKey(element),
-        () => 'An element, "$element", is missing from the asset URI mapping');
+        'An element, "$element", is missing from the asset URI mapping');
 
     return assetUris[element];
   }
