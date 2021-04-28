@@ -1925,6 +1925,22 @@ void main() {
     );
   });
 
+  test(
+      'creates a dummy non-null function-typed return value, with private type '
+      'alias', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      typedef _Callback = Foo Function();
+      class Foo {
+        _Callback m() => () => Foo();
+      }
+      '''),
+      _containsAllOf(
+          '_i2.Foo Function() m() => (super.noSuchMethod(Invocation.method(#m, []),\n'
+          '      returnValue: () => _FakeFoo()) as _i2.Foo Function());'),
+    );
+  });
+
   test('creates a dummy non-null generic function-typed return value',
       () async {
     await expectSingleNonNullableOutput(
@@ -1959,8 +1975,8 @@ void main() {
   });
 
   test(
-      'creates a dummy non-null function-typed (with an imported parameter type) return value',
-      () async {
+      'creates a dummy non-null function-typed (with an imported parameter '
+      'type) return value', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
       import 'dart:io';
@@ -1976,8 +1992,8 @@ void main() {
   });
 
   test(
-      'creates a dummy non-null function-typed (with an imported return type) return value',
-      () async {
+      'creates a dummy non-null function-typed (with an imported return type) '
+      'return value', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
       import 'dart:io';
@@ -2118,6 +2134,49 @@ void main() {
       message: contains(
           "The method 'Foo.m' features a private return type, and cannot be "
           'stubbed.'),
+    );
+  });
+
+  test(
+      'throws when GenerateMocks is given a class with a method with a '
+      'type alias return type which refers to private types', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent('''
+        abstract class Foo {
+          Callback m(int a);
+        }
+        class _Bar {}
+        typedef Callback = Function(_Bar?);
+        '''),
+      },
+      message: contains(
+          "The method 'Foo.m' features a private parameter type, '_Bar', and "
+          'cannot be stubbed.'),
+    );
+  });
+
+  test(
+      'throws when GenerateMocks is given a class with a method with a '
+      'private type alias parameter type which refers to private types',
+      () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent('''
+        abstract class Foo {
+          void m(_Callback c);
+        }
+        class _Bar {}
+        typedef _Callback = Function(_Bar?);
+        '''),
+      },
+      message: contains(
+          "The method 'Foo.m' features a private parameter type, '_Bar', and "
+          'cannot be stubbed.'),
     );
   });
 

@@ -1,3 +1,12 @@
+## 5.0.7
+
+* Properly refer to type parameter bounds with import prefixes.
+  [#389](https://github.com/dart-lang/mockito/issues/389)
+* Stop referring to private typedefs in generated code.
+  [#396](https://github.com/dart-lang/mockito/issues/396)
+* Ignore `prefer_const_constructors` and `avoid_redundant_argument_values` lint
+  rule violations in generated code.
+
 ## 5.0.6
 
 * Support the 0.4.x releases of `test_api`.

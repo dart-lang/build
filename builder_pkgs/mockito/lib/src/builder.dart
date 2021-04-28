@@ -1259,9 +1259,10 @@ class _MockLibraryInfo {
           ..types.addAll(type.typeArguments.map(_typeReference));
       });
     } else if (type is analyzer.FunctionType) {
-      var element = type.aliasElement;
-      if (element == null) {
-        // [type] represents a FunctionTypedFormalParameter.
+      final element = type.aliasElement;
+      if (element == null || element.isPrivate) {
+        // [type] does not refer to a type alias, or it refers to a private type
+        // alias; we must instead write out its signature.
         return FunctionType((b) {
           b
             ..isNullable =
