@@ -3,12 +3,12 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
 import 'package:build_runner_core/build_runner_core.dart';
+import 'package:frontend_server_client/frontend_server_client.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
@@ -150,31 +150,24 @@ Future<int> _createSnapshotIfNeeded(Logger logger) async {
   }
 
   if (!await snapshotFile.exists()) {
-    var mode = stdin.hasTerminal
-        ? ProcessStartMode.normal
-        : ProcessStartMode.detachedWithStdio;
-    var hadStdOut = false;
+    final client = await FrontendServerClient.start(
+      scriptLocation,
+      scriptSnapshotLocation,
+      'lib/_internal/vm_platform_strong.dill',
+      printIncrementalDependencies: false,
+    );
+
+    var hadOutput = false;
     await logTimedAsync(logger, 'Creating build script snapshot...', () async {
-      var snapshot = await Process.start(Platform.executable,
-          ['--snapshot=$scriptSnapshotLocation', scriptLocation],
-          mode: mode);
-      await Future.wait([
-        snapshot.stderr
-            .transform(utf8.decoder)
-            .transform(LineSplitter())
-            .listen((l) {
-          logger.warning('stderr: $l');
-        }).asFuture(),
-        snapshot.stdout
-            .transform(utf8.decoder)
-            .transform(LineSplitter())
-            .listen((l) {
-          hadStdOut = true;
-          logger.fine('stdout: $l');
-        }).asFuture(),
-      ]);
+      try {
+        final result = await client.compile();
+        result?.compilerOutputLines.forEach(logger.fine);
+        hadOutput = result == null || result.errorCount > 0;
+      } finally {
+        client.kill();
+      }
     });
-    if (hadStdOut) {
+    if (hadOutput) {
       logger.info('There was output on stdout while compiling the build script '
           'snapshot, run with `--verbose` to see it (you will need to run '
           'a `clean` first to re-snapshot).\n');
