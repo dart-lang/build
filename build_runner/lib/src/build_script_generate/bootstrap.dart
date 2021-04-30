@@ -100,7 +100,7 @@ Future<int> generateAndRun(
             'Error spawning build script isolate, this is likely due to a Dart '
             'SDK update. Deleting precompiled script and retrying...');
       }
-      await File(scriptKernelLocation).delete();
+      await File(scriptKernelLocation).rename(scriptKernelCachedLocation);
     }
   }
 
@@ -136,25 +136,26 @@ Future<int> generateAndRun(
 Future<int> _createKernelIfNeeded(Logger logger) async {
   var assetGraphFile = File(assetGraphPathFor(scriptKernelLocation));
   var kernelFile = File(scriptKernelLocation);
+  var kernelCacheFile = File(scriptKernelCachedLocation);
 
   if (await kernelFile.exists()) {
     // If we failed to serialize an asset graph for the snapshot, then we don't
     // want to re-use it because we can't check if it is up to date.
     if (!await assetGraphFile.exists()) {
-      await kernelFile.delete();
+      await kernelFile.rename(scriptKernelCachedLocation);
       logger.warning(
-          'Deleted precompiled build script due to missing asset graph.');
+          'Invalidated precompiled build script due to missing asset graph.');
     } else if (!await _checkImportantPackageDeps()) {
-      await kernelFile.delete();
+      await kernelFile.rename(scriptKernelCachedLocation);
       logger.warning(
-          'Deleted precompiled build script due to core package update');
+          'Invalidated precompiled build script due to core package update');
     }
   }
 
   if (!await kernelFile.exists()) {
     final client = await FrontendServerClient.start(
       scriptLocation,
-      scriptKernelLocation,
+      scriptKernelCachedLocation,
       'lib/_internal/vm_platform_strong.dill',
       printIncrementalDependencies: false,
     );
@@ -164,7 +165,9 @@ Future<int> _createKernelIfNeeded(Logger logger) async {
     await logTimedAsync(logger, 'Precompiling build script...', () async {
       try {
         final result = await client.compile();
-        hadErrors = result == null || result.errorCount > 0;
+        hadErrors = result == null ||
+            result.errorCount > 0 ||
+            !(await kernelCacheFile.exists());
 
         // Note: We're logging all output with a single log call to keep
         // annotated source spans intact.
@@ -182,16 +185,20 @@ Future<int> _createKernelIfNeeded(Logger logger) async {
         client.kill();
       }
     });
-    if (hadErrors) {
-      // For some compilation errors, the frontend inserts an "invalid
-      // expression" which throws at runtime. When running those kernel files
-      // with an onError receive port, the VM can crash (dartbug.com/45865).
-      // So, let's refuse to accept the precompiled kernel in that case!
-      await kernelFile.delete();
-    } else if (hadOutput) {
-      logger.info('There was output on stdout while precompiling the build  '
-          'script, run with `--verbose` to see it (you will need to run '
-          'a `clean` first to re-generate it).\n');
+
+    // For some compilation errors, the frontend inserts an "invalid
+    // expression" which throws at runtime. When running those kernel files
+    // with an onError receive port, the VM can crash (dartbug.com/45865).
+    //
+    // In this case we leave the cached kernel file in tact so future compiles
+    // are faster, but don't copy it over to the real location.
+    if (!hadErrors) {
+      await kernelCacheFile.rename(scriptKernelLocation);
+      if (hadOutput) {
+        logger.info('There was output on stdout while precompiling the build  '
+            'script, run with `--verbose` to see it (you will need to run '
+            'a `clean` first to re-generate it).\n');
+      }
     }
 
     if (!await kernelFile.exists()) {
