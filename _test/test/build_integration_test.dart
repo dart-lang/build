@@ -113,8 +113,8 @@ void main() {
           nextBuild.stdout.split('\n'),
           containsAllInOrder([
             contains('Generating build script'),
-            contains('Deleted previous build script Kernel due to missing '
-                'asset graph.'),
+            contains(
+                'Deleted precompiled build script due to missing asset graph.'),
             contains('Precompiling build script'),
             contains('Building new asset graph.'),
             contains('Succeeded after'),

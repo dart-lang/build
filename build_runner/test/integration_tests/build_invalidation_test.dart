@@ -158,7 +158,7 @@ void main() {
     final secondBuild = await buildTool.build();
 
     await expectOutput(secondBuild, [
-      'Deleted previous build script Kernel due to core package update',
+      'Deleted precompiled build script due to core package update',
       'Precompiling build script',
     ]);
   });

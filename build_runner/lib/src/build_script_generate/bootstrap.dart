@@ -143,11 +143,11 @@ Future<int> _createKernelIfNeeded(Logger logger) async {
     if (!await assetGraphFile.exists()) {
       await kernelFile.delete();
       logger.warning(
-          'Deleted previous build script Kernel due to missing asset graph.');
+          'Deleted precompiled build script due to missing asset graph.');
     } else if (!await _checkImportantPackageDeps()) {
       await kernelFile.delete();
       logger.warning(
-          'Deleted previous build script Kernel due to core package update');
+          'Deleted precompiled build script due to core package update');
     }
   }
 
