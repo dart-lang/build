@@ -160,20 +160,40 @@ Future<int> _createKernelIfNeeded(Logger logger) async {
     );
 
     var hadOutput = false;
+    var hadErrors = false;
     await logTimedAsync(logger, 'Precompiling build script...', () async {
       try {
         final result = await client.compile();
-        result?.compilerOutputLines.forEach(logger.fine);
-        hadOutput = result == null || result.compilerOutputLines.isNotEmpty;
+        hadErrors = result == null || result.errorCount > 0;
+
+        // Note: We're logging all output with a single log call to keep
+        // annotated source spans intact.
+        final logOutput = result?.compilerOutputLines.join('\n');
+        if (logOutput != null) {
+          hadOutput = true;
+          if (hadErrors) {
+            // Always show compiler output if there were errors
+            logger.warning(logOutput);
+          } else {
+            logger.fine(logOutput);
+          }
+        }
       } finally {
         client.kill();
       }
     });
-    if (hadOutput) {
+    if (hadErrors) {
+      // For some compilation errors, the frontend inserts an "invalid
+      // expression" which throws at runtime. When running those kernel files
+      // with an onError receive port, the VM can crash (dartbug.com/45865).
+      // So, let's refuse to accept the precompiled kernel in that case!
+      await kernelFile.delete();
+    } else if (hadOutput) {
       logger.info('There was output on stdout while precompiling the build  '
           'script, run with `--verbose` to see it (you will need to run '
           'a `clean` first to re-generate it).\n');
     }
+
     if (!await kernelFile.exists()) {
       logger.severe('''
 Failed to precompile build script $scriptLocation.
