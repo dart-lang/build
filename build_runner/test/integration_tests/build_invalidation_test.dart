@@ -87,7 +87,7 @@ void main() {
 
       await expectOutput(secondBuild, [
         'Invalidating asset graph due to build script update',
-        'Creating build script snapshot',
+        'Precompiling build script',
         'Building new asset graph',
       ]);
     });
@@ -124,7 +124,7 @@ void main() {
 
       await expectOutput(server.stdout, [
         'Terminating builds due to build script update',
-        'Creating build script snapshot',
+        'Precompiling build script',
         'Building new asset graph',
       ]);
 
@@ -158,8 +158,8 @@ void main() {
     final secondBuild = await buildTool.build();
 
     await expectOutput(secondBuild, [
-      'Deleted previous snapshot due to core package update',
-      'Creating build script snapshot',
+      'Deleted previous build script Kernel due to core package update',
+      'Precompiling build script',
     ]);
   });
 
