@@ -7,6 +7,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
 import 'package:build_runner_core/src/util/constants.dart';
 import 'package:build_test/build_test.dart';
 import 'package:path/path.dart' as p;
@@ -93,11 +94,8 @@ void main() {
     });
 
     test('for invalid asset graph version', () async {
-      final assetGraph = File(p.join(
-          d.sandbox,
-          'a',
-          assetGraphPathFor(p.url.join(
-              '.dart_tool', 'build', 'entrypoint', 'build.dart.snapshot'))));
+      final assetGraph =
+          File(p.join(d.sandbox, 'a', assetGraphPathFor(scriptKernelLocation)));
       // Prepend a 1 to the version number
       await assetGraph.writeAsString((await assetGraph.readAsString())
           .replaceFirst('"version":', '"version":1'));
@@ -158,7 +156,7 @@ void main() {
     final secondBuild = await buildTool.build();
 
     await expectOutput(secondBuild, [
-      'Deleted precompiled build script due to core package update',
+      'Invalidated precompiled build script due to core package update',
       'Precompiling build script',
     ]);
   });

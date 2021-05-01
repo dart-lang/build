@@ -6,6 +6,7 @@
 import 'dart:io';
 
 import 'package:build_runner_core/src/util/constants.dart';
+import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -104,8 +105,7 @@ void main() {
     });
 
     test('Re-snapshots if there is no asset graph', () async {
-      var assetGraph = assetGraphPathFor(p.url
-          .join('.dart_tool', 'build', 'entrypoint', 'build.dart.snapshot'));
+      var assetGraph = assetGraphPathFor(scriptKernelLocation);
       await File(assetGraph).delete();
 
       var nextBuild = await runBuild();
@@ -114,7 +114,7 @@ void main() {
           containsAllInOrder([
             contains('Generating build script'),
             contains(
-                'Deleted precompiled build script due to missing asset graph.'),
+                'Invalidated precompiled build script due to missing asset graph.'),
             contains('Precompiling build script'),
             contains('Building new asset graph.'),
             contains('Succeeded after'),
