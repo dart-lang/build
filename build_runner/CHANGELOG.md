@@ -1,4 +1,4 @@
-## 2.0.2-dev
+## 2.0.2
 
 - Use the frontend server to improve the performance of generating build script
   snapshots.
