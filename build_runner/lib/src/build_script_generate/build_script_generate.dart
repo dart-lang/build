@@ -22,7 +22,11 @@ import '../package_graph/build_config_overrides.dart';
 import 'builder_ordering.dart';
 
 const scriptLocation = '$entryPointDir/build.dart';
-const scriptSnapshotLocation = '$scriptLocation.snapshot';
+const scriptKernelLocation = '$scriptLocation$scriptKernelSuffix';
+const scriptKernelSuffix = '.dill';
+const scriptKernelCachedLocation =
+    '$scriptKernelLocation$scriptKernelCachedSuffix';
+const scriptKernelCachedSuffix = '.cached';
 
 final _log = Logger('Entrypoint');
 
