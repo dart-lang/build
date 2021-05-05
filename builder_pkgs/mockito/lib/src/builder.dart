@@ -800,6 +800,11 @@ class _MockLibraryInfo {
         yield* fieldOverrides(mixin, overriddenFields);
       }
     }
+    if (type.interfaces != null) {
+      for (var interface in type.interfaces) {
+        yield* fieldOverrides(interface, overriddenFields);
+      }
+    }
     var superclass = type.superclass;
     if (superclass != null && !superclass.isDartCoreObject) {
       yield* fieldOverrides(superclass, overriddenFields);
@@ -839,6 +844,11 @@ class _MockLibraryInfo {
     if (type.mixins != null) {
       for (var mixin in type.mixins) {
         yield* methodOverrides(mixin, overriddenMethods);
+      }
+    }
+    if (type.interfaces != null) {
+      for (var interface in type.interfaces) {
+        yield* methodOverrides(interface, overriddenMethods);
       }
     }
     var superclass = type.superclass;
