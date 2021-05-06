@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 // This file explicitly does _not_ end in `_test.dart`, so that it is not picked
 // up by `pub run test`. It is here for coveralls.
 

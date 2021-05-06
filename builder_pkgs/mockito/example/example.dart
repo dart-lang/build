@@ -1,10 +1,7 @@
 // ignore_for_file: sdk_version_async_exported_from_core
 // ignore_for_file: unawaited_futures
-import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
-
-import 'example.mocks.dart';
 
 // Real class
 class Cat {
@@ -17,6 +14,9 @@ class Cat {
   int lives = 9;
 }
 
+// Mock class
+class MockCat extends Mock implements Cat {}
+
 // Fake class
 class FakeCat extends Fake implements Cat {
   @override
@@ -26,11 +26,6 @@ class FakeCat extends Fake implements Cat {
   }
 }
 
-@GenerateMocks([
-  Cat
-], customMocks: [
-  MockSpec<Cat>(as: #MockCatRelaxed, returnNullOnMissingStub: true),
-])
 void main() {
   late Cat cat;
 
@@ -40,9 +35,6 @@ void main() {
   });
 
   test("Let's verify some behaviour!", () {
-    // Stub a method before interacting with it.
-    when(cat.sound()).thenReturn('Meow');
-
     // Interact with the mock object.
     cat.sound();
 
@@ -51,11 +43,8 @@ void main() {
   });
 
   test('How about some stubbing?', () {
-    try {
-      cat.sound();
-    } on MissingStubError {
-      // Unstubbed methods throw MissingStubError.
-    }
+    // Unstubbed methods return null.
+    expect(cat.sound(), null);
 
     // Stub a method before interacting with it.
     when(cat.sound()).thenReturn('Purr');
@@ -129,8 +118,6 @@ void main() {
   });
 
   test('Verifying exact number of invocations / at least x / never', () {
-    when(cat.sound()).thenReturn('Meow');
-
     cat.sound();
     cat.sound();
     // Exact number of invocations
@@ -147,9 +134,6 @@ void main() {
   });
 
   test('Verification in order', () {
-    when(cat.sound()).thenReturn('Meow');
-    when(cat.eatFood(any)).thenReturn(true);
-
     cat.eatFood('Milk');
     cat.sound();
     cat.eatFood('Fish');
@@ -161,16 +145,12 @@ void main() {
   });
 
   test('Finding redundant invocations', () {
-    when(cat.sound()).thenReturn('Meow');
-
     cat.sound();
     verify(cat.sound());
     verifyNoMoreInteractions(cat);
   });
 
   test('Capturing arguments for further assertions', () {
-    when(cat.eatFood(any)).thenReturn(true);
-
     // Simple capture:
     cat.eatFood('Fish');
     expect(verify(cat.eatFood(captureAny)).captured.single, 'Fish');
@@ -188,8 +168,6 @@ void main() {
   });
 
   test('Waiting for an interaction', () async {
-    when(cat.eatFood(any)).thenReturn(true);
-
     Future<void> chewHelper(Cat cat) {
       return cat.chew();
     }
@@ -209,19 +187,5 @@ void main() {
 
     cat.eatFood('Milk'); // Prints 'Fake eat Milk'.
     expect(() => cat.sleep(), throwsUnimplementedError);
-  });
-
-  test('Relaxed mock class', () {
-    // Create a new mock Cat at runtime.
-    var cat = MockCatRelaxed();
-
-    // You can call it without stubbing.
-    cat.sleep();
-
-    // Returns null unless you stub it.
-    expect(cat.sound(), null);
-    expect(cat.eatFood('Milk'), null);
-
-    verify(cat.sleep());
   });
 }

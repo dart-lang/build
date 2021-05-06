@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart' as analyzer;
@@ -28,8 +26,8 @@ import 'package:build/build.dart';
 // provides a [refer] function and a [referBasic] function. The former requires
 // a URL to be passed.
 import 'package:code_builder/code_builder.dart' hide refer;
+import 'package:collection/collection.dart';
 import 'package:dart_style/dart_style.dart';
-import 'package:meta/meta.dart';
 import 'package:mockito/src/version.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
@@ -112,7 +110,7 @@ $rawOutput
       seenTypes.add(type);
       type.element.accept(typeVisitor);
       // For a type like `Foo<Bar>`, add the `Bar`.
-      (type.typeArguments ?? [])
+      type.typeArguments
           .whereType<analyzer.InterfaceType>()
           .forEach(addTypesFrom);
       // For a type like `Foo extends Bar<Baz>`, add the `Baz`.
@@ -128,13 +126,14 @@ $rawOutput
     final typeUris = <Element, String>{};
 
     for (var element in typeVisitor._elements) {
-      if (element.library.isInSdk) {
-        typeUris[element] = element.library.source.uri.toString();
+      final elementLibrary = element.library!;
+      if (elementLibrary.isInSdk) {
+        typeUris[element] = elementLibrary.source.uri.toString();
         continue;
       }
 
       try {
-        var typeAssetId = await resolver.assetIdForElement(element.library);
+        final typeAssetId = await resolver.assetIdForElement(elementLibrary);
 
         if (typeAssetId.path.startsWith('lib/')) {
           typeUris[element] = typeAssetId.uri.toString();
@@ -144,7 +143,7 @@ $rawOutput
         }
       } on UnresolvableAssetException {
         // Asset may be in a summary.
-        typeUris[element] = element.library.source.uri.toString();
+        typeUris[element] = elementLibrary.source.uri.toString();
         continue;
       }
     }
@@ -185,7 +184,7 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
   void visitParameterElement(ParameterElement element) {
     _addType(element.type);
     if (element.hasDefaultValue) {
-      _addTypesFromConstant(element.computeConstantValue());
+      _addTypesFromConstant(element.computeConstantValue()!);
     }
     super.visitParameterElement(element);
   }
@@ -197,15 +196,15 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
   }
 
   /// Adds [type] to the collected [_elements].
-  void _addType(analyzer.DartType type) {
+  void _addType(analyzer.DartType? type) {
     if (type == null) return;
 
     if (type is analyzer.InterfaceType) {
       final alreadyVisitedElement = _elements.contains(type.element);
       _elements.add(type.element);
-      (type.typeArguments ?? []).forEach(_addType);
+      type.typeArguments.forEach(_addType);
       if (!alreadyVisitedElement) {
-        (type.element.typeParameters ?? []).forEach(visitTypeParameterElement);
+        type.element.typeParameters.forEach(visitTypeParameterElement);
       }
     } else if (type is analyzer.FunctionType) {
       _addType(type.returnType);
@@ -248,11 +247,11 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
       }
     } else if (constant.isMap) {
       for (var pair in constant.mapValue.entries) {
-        _addTypesFromConstant(pair.key);
-        _addTypesFromConstant(pair.value);
+        _addTypesFromConstant(pair.key!);
+        _addTypesFromConstant(pair.value!);
       }
     } else if (object.toFunctionValue() != null) {
-      _elements.add(object.toFunctionValue());
+      _elements.add(object.toFunctionValue()!);
     } else {
       // If [constant] is not null, a literal, or a type, then it must be an
       // object constructed with `const`. Revive it.
@@ -277,7 +276,8 @@ class _MockTarget {
 
   final bool returnNullOnMissingStub;
 
-  _MockTarget(this.classType, this.mockName, {this.returnNullOnMissingStub});
+  _MockTarget(this.classType, this.mockName,
+      {required this.returnNullOnMissingStub});
 
   ClassElement get classElement => classType.element;
 }
@@ -305,7 +305,7 @@ class _MockTargetGatherer {
       for (final annotation in element.metadata) {
         if (annotation == null) continue;
         if (annotation.element is! ConstructorElement) continue;
-        final annotationClass = annotation.element.enclosingElement.name;
+        final annotationClass = annotation.element!.enclosingElement!.name;
         // TODO(srawlins): check library as well.
         if (annotationClass == 'GenerateMocks') {
           mockTargets
@@ -319,15 +319,15 @@ class _MockTargetGatherer {
 
   static Iterable<_MockTarget> _mockTargetsFromGenerateMocks(
       ElementAnnotation annotation, LibraryElement entryLib) {
-    final generateMocksValue = annotation.computeConstantValue();
-    final classesField = generateMocksValue.getField('classes');
+    final generateMocksValue = annotation.computeConstantValue()!;
+    final classesField = generateMocksValue.getField('classes')!;
     if (classesField.isNull) {
       throw InvalidMockitoAnnotationException(
           'The GenerateMocks "classes" argument is missing, includes an '
           'unknown type, or includes an extension');
     }
     final mockTargets = <_MockTarget>[];
-    for (var objectToMock in classesField.toListValue()) {
+    for (var objectToMock in classesField.toListValue()!) {
       final typeToMock = objectToMock.toTypeValue();
       if (typeToMock == null) {
         throw InvalidMockitoAnnotationException(
@@ -348,8 +348,8 @@ class _MockTargetGatherer {
     }
     final customMocksField = generateMocksValue.getField('customMocks');
     if (customMocksField != null && !customMocksField.isNull) {
-      for (var mockSpec in customMocksField.toListValue()) {
-        final mockSpecType = mockSpec.type;
+      for (var mockSpec in customMocksField.toListValue()!) {
+        final mockSpecType = mockSpec.type!;
         assert(mockSpecType.typeArguments.length == 1);
         final typeToMock = mockSpecType.typeArguments.single;
         if (typeToMock.isDynamic) {
@@ -358,10 +358,10 @@ class _MockTargetGatherer {
               'arguments on MockSpec(), in @GenerateMocks.');
         }
         var type = _determineDartType(typeToMock, entryLib.typeProvider);
-        final mockName = mockSpec.getField('mockName').toSymbolValue() ??
+        final mockName = mockSpec.getField('mockName')!.toSymbolValue() ??
             'Mock${type.element.name}';
         final returnNullOnMissingStub =
-            mockSpec.getField('returnNullOnMissingStub').toBoolValue();
+            mockSpec.getField('returnNullOnMissingStub')!.toBoolValue()!;
         mockTargets.add(_MockTarget(type, mockName,
             returnNullOnMissingStub: returnNullOnMissingStub));
       }
@@ -427,11 +427,11 @@ class _MockTargetGatherer {
     for (final mockTarget in _mockTargets) {
       var name = mockTarget.mockName;
       if (classNamesToMock.containsKey(name)) {
-        var firstSource = classNamesToMock[name].source.fullName;
+        var firstSource = classNamesToMock[name]!.source.fullName;
         var secondSource = mockTarget.classElement.source.fullName;
         throw InvalidMockitoAnnotationException(
             'Mockito cannot generate two mocks with the same name: $name (for '
-            '${classNamesToMock[name].name} declared in $firstSource, and for '
+            '${classNamesToMock[name]!.name} declared in $firstSource, and for '
             '${mockTarget.classElement.name} declared in $secondSource); '
             '$uniqueNameSuggestion.');
       }
@@ -439,8 +439,8 @@ class _MockTargetGatherer {
     }
 
     classNamesToMock.forEach((name, element) {
-      var conflictingClass = classesInEntryLib.firstWhere((c) => c.name == name,
-          orElse: () => null);
+      var conflictingClass =
+          classesInEntryLib.firstWhereOrNull((c) => c.name == name);
       if (conflictingClass != null) {
         throw InvalidMockitoAnnotationException(
             'Mockito cannot generate a mock with a name which conflicts with '
@@ -448,11 +448,9 @@ class _MockTargetGatherer {
             '$uniqueNameSuggestion.');
       }
 
-      var preexistingMock = classesInEntryLib.firstWhere(
-          (c) =>
-              c.interfaces.map((type) => type.element).contains(element) &&
-              _isMockClass(c.supertype),
-          orElse: () => null);
+      var preexistingMock = classesInEntryLib.firstWhereOrNull((c) =>
+          c.interfaces.map((type) => type.element).contains(element) &&
+          _isMockClass(c.supertype!));
       if (preexistingMock != null) {
         throw InvalidMockitoAnnotationException(
             'The GenerateMocks annotation contains a class which appears to '
@@ -500,7 +498,7 @@ class _MockTargetGatherer {
     var errorMessages = <String>[];
     var returnType = function.returnType;
     if (returnType is analyzer.InterfaceType) {
-      if (returnType.element?.isPrivate ?? false) {
+      if (returnType.element.isPrivate) {
         errorMessages.add(
             '${enclosingElement.fullName} features a private return type, and '
             'cannot be stubbed.');
@@ -522,7 +520,7 @@ class _MockTargetGatherer {
       var parameterType = parameter.type;
       if (parameterType is analyzer.InterfaceType) {
         var parameterTypeElement = parameterType.element;
-        if (parameterTypeElement?.isPrivate ?? false) {
+        if (parameterTypeElement.isPrivate) {
           // Technically, we can expand the type in the mock to something like
           // `Object?`. However, until there is a decent use case, we will not
           // generate such a mock.
@@ -558,7 +556,7 @@ class _MockTargetGatherer {
       var typeParameter = element.bound;
       if (typeParameter == null) continue;
       if (typeParameter is analyzer.InterfaceType) {
-        if (typeParameter.element?.isPrivate ?? false) {
+        if (typeParameter.element.isPrivate) {
           errorMessages.add(
               '${enclosingElement.fullName} features a private type parameter '
               'bound, and cannot be stubbed.');
@@ -578,7 +576,7 @@ class _MockTargetGatherer {
     var errorMessages = <String>[];
     for (var typeArgument in typeArguments) {
       if (typeArgument is analyzer.InterfaceType) {
-        if (typeArgument.element?.isPrivate ?? false) {
+        if (typeArgument.element.isPrivate) {
           errorMessages.add(
               '${enclosingElement.fullName} features a private type argument, '
               'and cannot be stubbed.');
@@ -626,9 +624,11 @@ class _MockLibraryInfo {
   final Map<Element, String> assetUris;
 
   /// Build mock classes for [mockTargets].
-  _MockLibraryInfo(Iterable<_MockTarget> mockTargets,
-      {this.assetUris, LibraryElement entryLib})
-      : sourceLibIsNonNullable = entryLib.isNonNullableByDefault,
+  _MockLibraryInfo(
+    Iterable<_MockTarget> mockTargets, {
+    required this.assetUris,
+    required LibraryElement entryLib,
+  })   : sourceLibIsNonNullable = entryLib.isNonNullableByDefault,
         typeProvider = entryLib.typeProvider,
         typeSystem = entryLib.typeSystem {
     for (final mockTarget in mockTargets) {
@@ -699,7 +699,7 @@ class _MockLibraryInfo {
         // `class MockFoo extends Mock implements Foo<int> {}`
         for (var typeArgument in typeToMock.typeArguments) {
           typeArguments.add(referImported(
-              typeArgument.element.name, _typeImport(typeArgument.element)));
+              typeArgument.element!.name!, _typeImport(typeArgument.element)));
         }
       } else if (classToMock.typeParameters != null) {
         // [typeToMock] is a simple reference to a generic type (for example:
@@ -842,7 +842,7 @@ class _MockLibraryInfo {
   /// This new method just calls `super.noSuchMethod`, optionally passing a
   /// return value for methods with a non-nullable return type.
   void _buildOverridingMethod(MethodBuilder builder, MethodElement method,
-      {@required String className}) {
+      {required String className}) {
     var name = method.displayName;
     if (method.isOperator) name = 'operator$name';
     builder
@@ -882,7 +882,7 @@ class _MockLibraryInfo {
       if (invocationNamedArgs.isNotEmpty) literalMap(invocationNamedArgs),
     ]);
 
-    Expression returnValueForMissingStub;
+    Expression? returnValueForMissingStub;
     if (method.returnType.isVoid) {
       returnValueForMissingStub = refer('null');
     } else if (method.returnType.isFutureOfVoid) {
@@ -902,9 +902,7 @@ class _MockLibraryInfo {
           superNoSuchMethod.asA(_typeReference(method.returnType));
     }
 
-    builder
-      ..lambda = true
-      ..body = superNoSuchMethod.code;
+    builder.body = superNoSuchMethod.code;
   }
 
   Expression _dummyValue(analyzer.DartType type) {
@@ -917,39 +915,36 @@ class _MockLibraryInfo {
       return literalNull;
     }
 
-    var interfaceType = type as analyzer.InterfaceType;
-    var typeArguments = interfaceType.typeArguments;
-    if (interfaceType.isDartCoreBool) {
+    var typeArguments = type.typeArguments;
+    if (type.isDartCoreBool) {
       return literalFalse;
-    } else if (interfaceType.isDartCoreDouble) {
+    } else if (type.isDartCoreDouble) {
       return literalNum(0.0);
-    } else if (interfaceType.isDartAsyncFuture ||
-        interfaceType.isDartAsyncFutureOr) {
+    } else if (type.isDartAsyncFuture || type.isDartAsyncFutureOr) {
       var typeArgument = typeArguments.first;
       return _futureReference(_typeReference(typeArgument))
           .property('value')
           .call([_dummyValue(typeArgument)]);
-    } else if (interfaceType.isDartCoreInt) {
+    } else if (type.isDartCoreInt) {
       return literalNum(0);
-    } else if (interfaceType.isDartCoreIterable) {
+    } else if (type.isDartCoreIterable) {
       return literalList([]);
-    } else if (interfaceType.isDartCoreList) {
+    } else if (type.isDartCoreList) {
       assert(typeArguments.length == 1);
       var elementType = _typeReference(typeArguments[0]);
       return literalList([], elementType);
-    } else if (interfaceType.isDartCoreMap) {
+    } else if (type.isDartCoreMap) {
       assert(typeArguments.length == 2);
       var keyType = _typeReference(typeArguments[0]);
       var valueType = _typeReference(typeArguments[1]);
       return literalMap({}, keyType, valueType);
-    } else if (interfaceType.isDartCoreNum) {
+    } else if (type.isDartCoreNum) {
       return literalNum(0);
-    } else if (interfaceType.isDartCoreSet) {
+    } else if (type.isDartCoreSet) {
       assert(typeArguments.length == 1);
       var elementType = _typeReference(typeArguments[0]);
       return literalSet({}, elementType);
-    } else if (interfaceType.element?.declaration ==
-        typeProvider.streamElement) {
+    } else if (type.element.declaration == typeProvider.streamElement) {
       assert(typeArguments.length == 1);
       var elementType = _typeReference(typeArguments[0]);
       return TypeReference((b) {
@@ -957,18 +952,18 @@ class _MockLibraryInfo {
           ..symbol = 'Stream'
           ..types.add(elementType);
       }).property('empty').call([]);
-    } else if (interfaceType.isDartCoreString) {
+    } else if (type.isDartCoreString) {
       return literalString('');
     }
 
     // This class is unknown; we must likely generate a fake class, and return
     // an instance here.
-    return _dummyValueImplementing(type as analyzer.InterfaceType);
+    return _dummyValueImplementing(type);
   }
 
   /// Returns a reference to [Future], optionally with a type argument for the
   /// value of the Future.
-  TypeReference _futureReference([Reference valueType]) => TypeReference((b) {
+  TypeReference _futureReference([Reference? valueType]) => TypeReference((b) {
         b.symbol = 'Future';
         if (valueType != null) {
           b.types.add(valueType);
@@ -1056,8 +1051,13 @@ class _MockLibraryInfo {
   /// If the type needs to be nullable, rather than matching the nullability of
   /// [parameter], use [forceNullable].
   Parameter _matchingParameter(ParameterElement parameter,
-      {String defaultName, bool forceNullable = false}) {
-    var name = parameter.name?.isEmpty ?? false ? defaultName : parameter.name;
+      {String? defaultName, bool forceNullable = false}) {
+    assert(
+        parameter.name.isNotEmpty || defaultName != null,
+        'parameter must have a non-empty name, or non-null defaultName must be '
+        'passed, but parameter name is "${parameter.name}" and defaultName is '
+        '$defaultName');
+    var name = parameter.name.isEmpty ? defaultName! : parameter.name;
     return Parameter((pBuilder) {
       pBuilder
         ..name = name
@@ -1066,10 +1066,10 @@ class _MockLibraryInfo {
       if (parameter.defaultValueCode != null) {
         try {
           pBuilder.defaultTo =
-              _expressionFromDartObject(parameter.computeConstantValue()).code;
+              _expressionFromDartObject(parameter.computeConstantValue()!).code;
         } on _ReviveException catch (e) {
-          final method = parameter.enclosingElement;
-          final clazz = method.enclosingElement;
+          final method = parameter.enclosingElement!;
+          final clazz = method.enclosingElement!;
           throw InvalidMockitoAnnotationException(
               'Mockito cannot generate a valid stub for method '
               "'${clazz.displayName}.${method.displayName}'; parameter "
@@ -1104,8 +1104,8 @@ class _MockLibraryInfo {
     } else if (constant.isMap) {
       return literalConstMap({
         for (var pair in constant.mapValue.entries)
-          _expressionFromDartObject(pair.key):
-              _expressionFromDartObject(pair.value)
+          _expressionFromDartObject(pair.key!):
+              _expressionFromDartObject(pair.value!)
       });
     } else if (constant.isSet) {
       return literalConstSet({
@@ -1115,7 +1115,7 @@ class _MockLibraryInfo {
     } else if (constant.isType) {
       // TODO(srawlins): It seems like this might be revivable, but Angular
       // does not revive Types; we should investigate this if users request it.
-      var type = object.toTypeValue();
+      var type = object.toTypeValue()!;
       var typeStr = type.getDisplayString(withNullability: false);
       throw _ReviveException('default value is a Type: $typeStr.');
     } else {
@@ -1123,7 +1123,7 @@ class _MockLibraryInfo {
       // object constructed with `const`. Revive it.
       var revivable = constant.revive();
       if (revivable.isPrivate) {
-        final privateReference = revivable.accessor?.isNotEmpty == true
+        final privateReference = revivable.accessor.isNotEmpty
             ? '${revivable.source}::${revivable.accessor}'
             : '${revivable.source}';
         throw _ReviveException(
@@ -1138,7 +1138,7 @@ class _MockLibraryInfo {
         // We can create this invocation by referring to a const field or
         // top-level variable.
         return referImported(
-            revivable.accessor, _typeImport(object.type.element));
+            revivable.accessor, _typeImport(object.type!.element));
       }
 
       final name = revivable.source.fragment;
@@ -1150,7 +1150,7 @@ class _MockLibraryInfo {
         for (var pair in revivable.namedArguments.entries)
           pair.key: _expressionFromDartObject(pair.value)
       };
-      final type = referImported(name, _typeImport(object.type.element));
+      final type = referImported(name, _typeImport(object.type!.element));
       if (revivable.accessor.isNotEmpty) {
         return type.constInstanceNamed(
           revivable.accessor,
@@ -1187,9 +1187,7 @@ class _MockLibraryInfo {
           superNoSuchMethod.asA(_typeReference(getter.returnType));
     }
 
-    builder
-      ..lambda = true
-      ..body = superNoSuchMethod.code;
+    builder.body = superNoSuchMethod.code;
   }
 
   /// Build a setter which overrides [setter], widening the single parameter
@@ -1203,15 +1201,12 @@ class _MockLibraryInfo {
       ..annotations.addAll([refer('override')])
       ..type = MethodType.setter;
 
-    Expression invocationPositionalArg;
     assert(setter.parameters.length == 1);
     final parameter = setter.parameters.single;
-    if (parameter.isRequiredPositional) {
-      builder.requiredParameters.add(Parameter((pBuilder) => pBuilder
-        ..name = parameter.displayName
-        ..type = _typeReference(parameter.type, forceNullable: true)));
-      invocationPositionalArg = refer(parameter.displayName);
-    }
+    builder.requiredParameters.add(Parameter((pBuilder) => pBuilder
+      ..name = parameter.displayName
+      ..type = _typeReference(parameter.type, forceNullable: true)));
+    final invocationPositionalArg = refer(parameter.displayName);
 
     final invocation = refer('Invocation').property('setter').call([
       refer('#${setter.displayName}'),
@@ -1230,7 +1225,7 @@ class _MockLibraryInfo {
     return TypeReference((b) {
       b.symbol = typeParameter.name;
       if (typeParameter.bound != null) {
-        b.bound = _typeReference(typeParameter.bound);
+        b.bound = _typeReference(typeParameter.bound!);
       }
     });
   }
@@ -1285,7 +1280,7 @@ class _MockLibraryInfo {
           ..symbol = element.name
           ..url = _typeImport(element)
           ..isNullable = forceNullable || typeSystem.isNullable(type);
-        for (var typeArgument in type.aliasArguments) {
+        for (var typeArgument in type.aliasArguments!) {
           b.types.add(_typeReference(typeArgument));
         }
       });
@@ -1306,7 +1301,7 @@ class _MockLibraryInfo {
   /// Returns the import URL for [element].
   ///
   /// For some types, like `dynamic` and type variables, this may return null.
-  String _typeImport(Element element) {
+  String? _typeImport(Element? element) {
     // For type variables, no import needed.
     if (element is TypeParameterElement) return null;
 
@@ -1316,14 +1311,14 @@ class _MockLibraryInfo {
     assert(assetUris.containsKey(element),
         'An element, "$element", is missing from the asset URI mapping');
 
-    return assetUris[element];
+    return assetUris[element]!;
   }
 
   /// Returns a [Reference] to [symbol] with [url].
   ///
   /// This function overrides [code_builder.refer] so as to ensure that [url] is
   /// given.
-  static Reference referImported(String symbol, String url) =>
+  static Reference referImported(String symbol, String? url) =>
       Reference(symbol, url);
 
   /// Returns a [Reference] to [symbol] with no URL.
@@ -1360,7 +1355,7 @@ extension on Element {
     if (this is ClassElement) {
       return "The class '$name'";
     } else if (this is MethodElement) {
-      var className = enclosingElement.name;
+      var className = enclosingElement!.name;
       return "The method '$className.$name'";
     } else {
       return 'unknown element';

@@ -12,15 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// @dart=2.9
-
 @TestOn('vm')
 import 'dart:convert' show utf8;
 
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_test/build_test.dart';
-import 'package:meta/meta.dart';
 import 'package:mockito/src/builder.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
@@ -76,11 +73,11 @@ void main() {}
 };
 
 void main() {
-  InMemoryAssetWriter writer;
+  late InMemoryAssetWriter writer;
 
   /// Test [MockBuilder] in a package which has not opted into null safety.
   Future<void> testPreNonNullable(Map<String, String> sourceAssets,
-      {Map<String, /*String|Matcher<String>*/ dynamic> outputs}) async {
+      {Map<String, /*String|Matcher<String>*/ Object>? outputs}) async {
     var packageConfig = PackageConfig([
       Package('foo', Uri.file('/foo/'),
           packageUriRoot: Uri.file('/foo/lib/'),
@@ -92,7 +89,7 @@ void main() {
 
   /// Test [MockBuilder] in a package which has opted into null safety.
   Future<void> testWithNonNullable(Map<String, String> sourceAssets,
-      {Map<String, /*String|Matcher<List<int>>*/ dynamic> outputs}) async {
+      {Map<String, /*String|Matcher<List<int>>*/ Object>? outputs}) async {
     var packageConfig = PackageConfig([
       Package('foo', Uri.file('/foo/'),
           packageUriRoot: Uri.file('/foo/lib/'),
@@ -118,14 +115,14 @@ void main() {
     await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
         writer: writer, packageConfig: packageConfig);
     var mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
-    return utf8.decode(writer.assets[mocksAsset]);
+    return utf8.decode(writer.assets[mocksAsset]!);
   }
 
   /// Test [MockBuilder] on a single source file, in a package which has opted
   /// into null safety, and with the non-nullable experiment enabled.
   Future<void> expectSingleNonNullableOutput(
       String sourceAssetText,
-      /*String|Matcher<List<int>>*/ dynamic output) async {
+      /*String|Matcher<List<int>>*/ Object output) async {
     await testWithNonNullable({
       ...metaAssets,
       ...annotationsAsset,
@@ -147,7 +144,7 @@ void main() {
       'foo|lib/foo.dart': sourceAssetText,
     });
     var mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
-    return utf8.decode(writer.assets[mocksAsset]);
+    return utf8.decode(writer.assets[mocksAsset]!);
   }
 
   setUp(() {
@@ -983,7 +980,7 @@ void main() {
         ''',
     });
     var mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
-    var mocksContent = utf8.decode(writer.assets[mocksAsset]);
+    var mocksContent = utf8.decode(writer.assets[mocksAsset]!);
     expect(mocksContent, contains("import 'dart:async' as _i3;"));
     expect(mocksContent, contains('m(_i3.Future<void>? a)'));
   });
@@ -1006,7 +1003,7 @@ void main() {
         ''',
     });
     var mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
-    var mocksContent = utf8.decode(writer.assets[mocksAsset]);
+    var mocksContent = utf8.decode(writer.assets[mocksAsset]!);
     expect(mocksContent, contains("import 'dart:async' as _i3;"));
     expect(mocksContent, contains('m(_i3.Future<void>? a)'));
   });
@@ -2627,9 +2624,10 @@ TypeMatcher<List<int>> _containsAllOf(a, [b]) => decodedMatches(
 /// Expect that [testBuilder], given [assets], in a package which has opted into
 /// null safety, throws an [InvalidMockitoAnnotationException] with a message
 /// containing [message].
-void _expectBuilderThrows(
-    {@required Map<String, String> assets,
-    @required dynamic /*String|Matcher<List<int>>*/ message}) {
+void _expectBuilderThrows({
+  required Map<String, String> assets,
+  required dynamic /*String|Matcher<List<int>>*/ message,
+}) {
   var packageConfig = PackageConfig([
     Package('foo', Uri.file('/foo/'),
         packageUriRoot: Uri.file('/foo/lib/'),
@@ -2646,8 +2644,8 @@ void _expectBuilderThrows(
 /// Dedent [input], so that each line is shifted to the left, so that the first
 /// line is at the 0 column.
 String dedent(String input) {
-  final indentMatch = RegExp(r'^(\s*)').firstMatch(input);
-  final indent = ''.padRight(indentMatch.group(1).length);
+  final indentMatch = RegExp(r'^(\s*)').firstMatch(input)!;
+  final indent = ''.padRight(indentMatch.group(1)!.length);
   return input.splitMapJoin('\n',
       onNonMatch: (s) => s.replaceFirst(RegExp('^$indent'), ''));
 }
@@ -2655,8 +2653,8 @@ String dedent(String input) {
 /// Dedent [input], so that each line is shifted to the left, so that the first
 /// line is at column 2 (starting position for a class member).
 String dedent2(String input) {
-  final indentMatch = RegExp(r'^  (\s*)').firstMatch(input);
-  final indent = ''.padRight(indentMatch.group(1).length);
+  final indentMatch = RegExp(r'^  (\s*)').firstMatch(input)!;
+  final indent = ''.padRight(indentMatch.group(1)!.length);
   return input.replaceFirst(RegExp(r'\s*$'), '').splitMapJoin('\n',
       onNonMatch: (s) => s.replaceFirst(RegExp('^$indent'), ''));
 }

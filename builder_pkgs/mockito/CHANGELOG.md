@@ -1,3 +1,7 @@
+## 5.0.8-dev
+
+* Migrate Mockito codegen to null safety.
+
 ## 5.0.7
 
 * Properly refer to type parameter bounds with import prefixes.
