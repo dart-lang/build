@@ -14,14 +14,14 @@
 
 import 'dart:math';
 
+import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
 import 'iss.dart';
+import 'iss_test.mocks.dart';
 
-// The Mock class uses noSuchMethod to catch all method invocations.
-class MockIssLocator extends Mock implements IssLocator {}
-
+@GenerateMocks([IssLocator])
 void main() {
   // Given two predefined points on earth,
   // verify the calculated distance between them.
