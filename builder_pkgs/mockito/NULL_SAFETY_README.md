@@ -247,7 +247,8 @@ additional argument:
 class MockHttpServer extends Mock implements HttpServer {
   @override
   Uri get uri =>
-      super.noSuchMethod(Invocation.getter(#uri), Uri.http('example.org', '/'));
+      super.noSuchMethod(
+          Invocation.getter(#uri), returnValue: Uri.http('example.org', '/'));
 }
 ```
 
