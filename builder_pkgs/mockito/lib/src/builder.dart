@@ -72,13 +72,18 @@ class MockBuilder implements Builder {
     final mockLibrary = Library((b) {
       // These comments are added after import directives; leading newlines
       // are necessary.
+      b.body.add(
+          Code('\n\n// ignore_for_file: avoid_redundant_argument_values\n'));
       // We don't properly prefix imported class names in doc comments.
-      b.body.add(Code('\n\n// ignore_for_file: comment_references\n'));
+      b.body.add(Code('// ignore_for_file: comment_references\n'));
+      // `Mock.noSuchMethod` is `@visibleForTesting`, but the generated code is
+      // not always in a test directory; the Mockito `example/iss` tests, for
+      // example.
+      b.body.add(Code(
+          '// ignore_for_file: invalid_use_of_visible_for_testing_member\n'));
+      b.body.add(Code('// ignore_for_file: prefer_const_constructors\n'));
       // The code_builder `asA` API unconditionally adds defensive parentheses.
       b.body.add(Code('// ignore_for_file: unnecessary_parenthesis\n\n'));
-      b.body.add(Code('// ignore_for_file: prefer_const_constructors\n\n'));
-      b.body
-          .add(Code('// ignore_for_file: avoid_redundant_argument_values\n\n'));
       b.body.addAll(mockLibraryInfo.fakeClasses);
       b.body.addAll(mockLibraryInfo.mockClasses);
     });
