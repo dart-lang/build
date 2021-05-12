@@ -499,7 +499,8 @@ class _MockTargetGatherer {
   /// - bounds of type parameters
   /// - type arguments
   List<String> _checkFunction(
-      analyzer.FunctionType function, Element enclosingElement) {
+      analyzer.FunctionType function, Element enclosingElement,
+      {bool isParameter = false}) {
     var errorMessages = <String>[];
     var returnType = function.returnType;
     if (returnType is analyzer.InterfaceType) {
@@ -513,7 +514,7 @@ class _MockTargetGatherer {
     } else if (returnType is analyzer.FunctionType) {
       errorMessages.addAll(_checkFunction(returnType, enclosingElement));
     } else if (returnType is analyzer.TypeParameterType) {
-      if (function.returnType is analyzer.TypeParameterType &&
+      if (!isParameter &&
           _entryLib.typeSystem.isPotentiallyNonNullable(function.returnType)) {
         errorMessages
             .add('${enclosingElement.fullName} features a non-nullable unknown '
@@ -536,7 +537,8 @@ class _MockTargetGatherer {
         errorMessages.addAll(
             _checkTypeArguments(parameterType.typeArguments, enclosingElement));
       } else if (parameterType is analyzer.FunctionType) {
-        errorMessages.addAll(_checkFunction(parameterType, enclosingElement));
+        errorMessages.addAll(
+            _checkFunction(parameterType, enclosingElement, isParameter: true));
       }
     }
 

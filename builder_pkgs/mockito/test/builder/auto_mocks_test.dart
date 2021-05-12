@@ -798,6 +798,18 @@ void main() {
     );
   });
 
+  test('matches function parameters with scoped return types', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+        class Foo {
+          void m<T>(T Function() a) {}
+        }
+        '''),
+      _containsAllOf(
+          'void m<T>(T Function()? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+    );
+  });
+
   test('writes type variables types w/o import prefixes', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
