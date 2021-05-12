@@ -31,7 +31,7 @@ jobs:
         with:
           sdk: stable
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - name: mono_repo self validate
         run: pub global activate mono_repo 3.4.7
       - name: mono_repo self validate
@@ -54,7 +54,7 @@ jobs:
         with:
           sdk: "2.12.0"
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_test_pub_upgrade
         name: "build_test; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -125,7 +125,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: scratch_space_pub_upgrade
         name: "scratch_space; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -287,7 +287,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: _test_common_pub_upgrade
         name: "_test_common; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -342,7 +342,7 @@ jobs:
         with:
           sdk: "2.12.0"
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: _test_null_safety_pub_upgrade
         name: "_test_null_safety; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -369,7 +369,7 @@ jobs:
         with:
           sdk: "2.12.0"
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: _test_null_safety_pub_upgrade
         name: "_test_null_safety; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -387,7 +387,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: _test_null_safety_pub_upgrade
         name: "_test_null_safety; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -415,7 +415,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_pub_upgrade
         name: "build; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -443,7 +443,7 @@ jobs:
         with:
           sdk: "2.12.0"
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_pub_upgrade
         name: "build; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -480,7 +480,7 @@ jobs:
         with:
           sdk: "2.12.0"
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_resolvers_pub_upgrade
         name: "build_resolvers; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -517,7 +517,7 @@ jobs:
         with:
           sdk: "2.12.0"
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_test_pub_upgrade
         name: "build_test; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -554,7 +554,7 @@ jobs:
         with:
           sdk: "2.12.0"
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: scratch_space_pub_upgrade
         name: "scratch_space; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -581,7 +581,7 @@ jobs:
         with:
           sdk: "2.12.0"
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_pub_upgrade
         name: "build; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -608,7 +608,7 @@ jobs:
         with:
           sdk: "2.12.0"
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: scratch_space_pub_upgrade
         name: "scratch_space; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -635,7 +635,7 @@ jobs:
         with:
           sdk: "2.12.0"
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_resolvers_pub_upgrade
         name: "build_resolvers; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -662,7 +662,7 @@ jobs:
         with:
           sdk: "2.12.0"
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_test_pub_upgrade
         name: "build_test; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -699,7 +699,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_pub_upgrade
         name: "build; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -736,7 +736,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_config_pub_upgrade
         name: "build_config; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -773,7 +773,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_web_compilers_pub_upgrade
         name: "build_web_compilers; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -810,7 +810,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_daemon_pub_upgrade
         name: "build_daemon; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -847,7 +847,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: scratch_space_pub_upgrade
         name: "scratch_space; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -884,7 +884,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_resolvers_pub_upgrade
         name: "build_resolvers; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -921,7 +921,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_test_pub_upgrade
         name: "build_test; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -958,7 +958,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_runner_core_pub_upgrade
         name: "build_runner_core; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -985,7 +985,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_pub_upgrade
         name: "build; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1012,7 +1012,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_web_compilers_pub_upgrade
         name: "build_web_compilers; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1039,7 +1039,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_config_pub_upgrade
         name: "build_config; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1066,7 +1066,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_daemon_pub_upgrade
         name: "build_daemon; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1093,7 +1093,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_resolvers_pub_upgrade
         name: "build_resolvers; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1120,7 +1120,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_test_pub_upgrade
         name: "build_test; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1147,7 +1147,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_runner_core_pub_upgrade
         name: "build_runner_core; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1174,7 +1174,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: scratch_space_pub_upgrade
         name: "scratch_space; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1211,7 +1211,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_modules_pub_upgrade
         name: "build_modules; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1238,7 +1238,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_modules_pub_upgrade
         name: "build_modules; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1275,7 +1275,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_vm_compilers_pub_upgrade
         name: "build_vm_compilers; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1312,7 +1312,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_runner_pub_upgrade
         name: "build_runner; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1349,7 +1349,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
         name: "_test; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1380,7 +1380,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
         name: "_test; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1411,7 +1411,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_vm_compilers_pub_upgrade
         name: "build_vm_compilers; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1448,7 +1448,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_runner_pub_upgrade
         name: "build_runner; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1516,7 +1516,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_runner_pub_upgrade
         name: "build_runner; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1584,7 +1584,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_runner_pub_upgrade
         name: "build_runner; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1642,7 +1642,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: _test_null_safety_pub_upgrade
         name: "_test_null_safety; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1714,7 +1714,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_runner_pub_upgrade
         name: "build_runner; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1782,7 +1782,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: _test_null_safety_pub_upgrade
         name: "_test_null_safety; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1844,7 +1844,7 @@ jobs:
         with:
           sdk: "2.12.0"
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: _test_null_safety_pub_upgrade
         name: "_test_null_safety; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1916,7 +1916,7 @@ jobs:
         with:
           sdk: "2.12.0"
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: _test_null_safety_pub_upgrade
         name: "_test_null_safety; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -1978,7 +1978,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
         name: "_test; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -2036,7 +2036,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
         name: "_test; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -2094,7 +2094,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
         name: "_test; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -2162,7 +2162,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
         name: "_test; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -2230,7 +2230,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
         name: "_test; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -2298,7 +2298,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
         name: "_test; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -2366,7 +2366,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: build_runner_pub_upgrade
         name: "build_runner; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -2424,7 +2424,7 @@ jobs:
         with:
           sdk: main
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: _test_null_safety_pub_upgrade
         name: "_test_null_safety; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -2512,7 +2512,7 @@ jobs:
         with:
           sdk: main
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: _test_null_safety_pub_upgrade
         name: "_test_null_safety; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -2590,7 +2590,7 @@ jobs:
         with:
           sdk: main
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
         name: "_test; pub.bat upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -2674,7 +2674,7 @@ jobs:
         with:
           sdk: main
       - id: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
         name: "_test; pub upgrade --no-precompile"
         if: "always() && steps.checkout.conclusion == 'success'"
