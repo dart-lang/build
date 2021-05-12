@@ -152,11 +152,6 @@ class WatchImpl implements BuildState {
 
   AssetGraph? get assetGraph => _build?.assetGraph;
 
-  final _readyCompleter = Completer<void>();
-
-  /// Completes with an error if it fails to initialize.
-  Future<void> get ready => _readyCompleter.future;
-
   final String? _configKey;
 
   /// Delay to wait for more file watcher events.
@@ -188,10 +183,10 @@ class WatchImpl implements BuildState {
   /// Pending expected delete events from the build.
   final Set<AssetId> _expectedDeletes = <AssetId>{};
 
-  FinalizedReader? _reader;
+  final _readerCompleter = Completer<FinalizedReader>();
 
-  /// Only non-null after [ready] completes without error.
-  FinalizedReader? get reader => _reader;
+  /// Completes with an error if we fail to initialize.
+  Future<FinalizedReader> get reader => _readerCompleter.future;
 
   WatchImpl(
       BuildOptions options,
@@ -309,7 +304,7 @@ class WatchImpl implements BuildState {
           return change;
         })
         .asyncWhere((change) {
-          assert(_readyCompleter.isCompleted);
+          assert(_readerCompleter.isCompleted);
           return shouldProcess(
             change,
             assetGraph!,
@@ -357,18 +352,17 @@ class WatchImpl implements BuildState {
         _terminateCompleter.complete();
 
         firstBuild = BuildResult(BuildStatus.failure, []);
-        _readyCompleter.completeError(e, s);
+        _readerCompleter.completeError(e, s);
       } on BuildScriptChangedException catch (e, s) {
         _terminateCompleter.complete();
 
         firstBuild = BuildResult(BuildStatus.failure, [],
             failureType: FailureType.buildScriptChanged);
-        _readyCompleter.completeError(e, s);
+        _readerCompleter.completeError(e, s);
       }
       if (build != null) {
-        assert(!_readyCompleter.isCompleted);
-        _reader = build.finalizedReader;
-        _readyCompleter.complete();
+        assert(!_readerCompleter.isCompleted);
+        _readerCompleter.complete(build.finalizedReader);
       }
       // It is possible this is already closed if the user kills the process
       // early, which results in an exception without this check.

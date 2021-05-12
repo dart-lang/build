@@ -46,9 +46,7 @@ ServeHandler createServeHandler(WatchImpl watch) {
   var rootPackage = watch.packageGraph.root.name;
   var assetGraphHanderCompleter = Completer<AssetGraphHandler>();
   var assetHandlerCompleter = Completer<AssetHandler>();
-  watch.ready.then((_) async {
-    // Once ready completes successfully then the reader must be initialized.
-    var reader = watch.reader!;
+  watch.reader.then((reader) async {
     assetHandlerCompleter.complete(AssetHandler(reader, rootPackage));
     assetGraphHanderCompleter
         .complete(AssetGraphHandler(reader, rootPackage, watch.assetGraph!));
@@ -166,11 +164,7 @@ class ServeHandler implements BuildState {
 
   Future<shelf.Response> _assetsDigestHandler(
       shelf.Request request, String rootDir) async {
-    final reader = _state.reader;
-    if (reader == null) {
-      return shelf.Response.internalServerError(
-          body: 'Server failed to initialize');
-    }
+    final reader = await _state.reader;
     var assertPathList =
         (jsonDecode(await request.readAsString()) as List).cast<String>();
     var rootPackage = _state.packageGraph.root.name;
@@ -223,9 +217,7 @@ class BuildUpdatesWebSocketHandler {
 
   Future emitUpdateMessage(BuildResult buildResult) async {
     if (buildResult.status != BuildStatus.success) return;
-    // If we get a successful build we know we initialized properly and have
-    // a reader.
-    final reader = _state.reader!;
+    final reader = await _state.reader;
     final digests = <AssetId, String>{};
     for (var assetId in buildResult.outputs) {
       var digest = await reader.digest(assetId);
