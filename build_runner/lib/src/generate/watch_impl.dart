@@ -366,7 +366,7 @@ class WatchImpl implements BuildState {
         _readyCompleter.completeError(e, s);
       }
       if (build != null) {
-        assert(_readyCompleter.isCompleted);
+        assert(!_readyCompleter.isCompleted);
         _reader = build.finalizedReader;
         _readyCompleter.complete();
       }
