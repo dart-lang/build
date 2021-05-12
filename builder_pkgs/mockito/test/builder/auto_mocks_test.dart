@@ -1799,6 +1799,25 @@ void main() {
   });
 
   test(
+      'creates dummy non-null return values for Futures of known typed_data classes',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent('''
+      import 'dart:typed_data';
+      class Foo {
+        Future<Uint8List> m() async => Uint8List(0);
+      }
+      '''),
+      _containsAllOf(dedent2('''
+      _i3.Future<_i4.Uint8List> m() =>
+          (super.noSuchMethod(Invocation.method(#m, []),
+                  returnValue: Future<_i4.Uint8List>.value(_i4.Uint8List(0)))
+              as _i3.Future<_i4.Uint8List>);
+      ''')),
+    );
+  });
+
+  test(
       'creates dummy non-null return values for Futures of known generic core classes',
       () async {
     await expectSingleNonNullableOutput(

@@ -961,6 +961,14 @@ class _MockLibraryInfo {
       }).property('empty').call([]);
     } else if (type.isDartCoreString) {
       return literalString('');
+    } else if (type.isDartTypedDataList) {
+      // These "List" types from dart:typed_data are "non-subtypeable", but they
+      // have predicatble constructors; each has an unnamed constructor which
+      // takes a single int argument.
+      return referImported(type.displayName, 'dart:typed_data')
+          .call([literalNum(0)]);
+      // TODO(srawlins): Do other types from typed_data have a "non-subtypeable"
+      // restriction as well?
     }
 
     // This class is unknown; we must likely generate a fake class, and return
@@ -1375,4 +1383,23 @@ extension on analyzer.DartType {
   bool get isFutureOfVoid =>
       isDartAsyncFuture &&
       (this as analyzer.InterfaceType).typeArguments.first.isVoid;
+
+  /// Returns whether this type is a "List" type from the dart:typed_data
+  /// library.
+  bool get isDartTypedDataList {
+    if (element!.library!.name != 'dart.typed_data') {
+      return false;
+    }
+    final name = element!.name;
+    return name == 'Float32List' ||
+        name == 'Float64List' ||
+        name == 'Int8List' ||
+        name == 'Int16List' ||
+        name == 'Int32List' ||
+        name == 'Int64List' ||
+        name == 'Uint8List' ||
+        name == 'Uint16List' ||
+        name == 'Uint32List' ||
+        name == 'Uint64List';
+  }
 }
