@@ -1,6 +1,7 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
 import 'dart:async';
 import 'dart:io';
 
@@ -151,9 +152,6 @@ class WatchImpl implements BuildState {
 
   AssetGraph? get assetGraph => _build?.assetGraph;
 
-  final _readyCompleter = Completer<void>();
-  Future<void> get ready => _readyCompleter.future;
-
   final String? _configKey;
 
   /// Delay to wait for more file watcher events.
@@ -185,8 +183,10 @@ class WatchImpl implements BuildState {
   /// Pending expected delete events from the build.
   final Set<AssetId> _expectedDeletes = <AssetId>{};
 
-  FinalizedReader? _reader;
-  FinalizedReader get reader => _reader!;
+  final _readerCompleter = Completer<FinalizedReader>();
+
+  /// Completes with an error if we fail to initialize.
+  Future<FinalizedReader> get reader => _readerCompleter.future;
 
   WatchImpl(
       BuildOptions options,
@@ -304,7 +304,7 @@ class WatchImpl implements BuildState {
           return change;
         })
         .asyncWhere((change) {
-          assert(_readyCompleter.isCompleted);
+          assert(_readerCompleter.isCompleted);
           return shouldProcess(
             change,
             assetGraph!,
@@ -340,26 +340,30 @@ class WatchImpl implements BuildState {
           await watcherEnvironment.reader.readAsBytes(rootPackageConfigId));
 
       BuildResult firstBuild;
+      BuildImpl? build;
       try {
-        var build = _build = await BuildImpl.create(
+        build = _build = await BuildImpl.create(
             options, watcherEnvironment, builders, builderConfigOverrides,
             isReleaseBuild: isReleaseMode);
 
         firstBuild = await build
             .run({}, buildDirs: _buildDirs, buildFilters: _buildFilters);
-      } on CannotBuildException {
+      } on CannotBuildException catch (e, s) {
         _terminateCompleter.complete();
 
         firstBuild = BuildResult(BuildStatus.failure, []);
-      } on BuildScriptChangedException {
+        _readerCompleter.completeError(e, s);
+      } on BuildScriptChangedException catch (e, s) {
         _terminateCompleter.complete();
 
         firstBuild = BuildResult(BuildStatus.failure, [],
             failureType: FailureType.buildScriptChanged);
+        _readerCompleter.completeError(e, s);
       }
-
-      _reader = _build?.finalizedReader;
-      _readyCompleter.complete();
+      if (build != null) {
+        assert(!_readerCompleter.isCompleted);
+        _readerCompleter.complete(build.finalizedReader);
+      }
       // It is possible this is already closed if the user kills the process
       // early, which results in an exception without this check.
       if (!controller.isClosed) controller.add(firstBuild);

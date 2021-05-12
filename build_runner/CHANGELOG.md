@@ -1,3 +1,8 @@
+## 2.0.3
+
+- Fix a serve mode bug which causes an unhandled exception if the build fails
+  to initialize (usually because it is out of date).
+
 ## 2.0.2
 
 - Use the frontend server to improve the performance of generating build script

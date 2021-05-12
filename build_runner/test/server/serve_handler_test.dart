@@ -35,7 +35,9 @@ void main() {
     assetGraph = await AssetGraph.build(
         [], <AssetId>{}, <AssetId>{}, packageGraph, reader);
     watchImpl = MockWatchImpl(
-        FinalizedReader(reader, assetGraph, [], 'a'), packageGraph, assetGraph);
+        Future.value(FinalizedReader(reader, assetGraph, [], 'a')),
+        packageGraph,
+        assetGraph);
     serveHandler = createServeHandler(watchImpl);
     watchImpl
         .addFutureResult(Future.value(BuildResult(BuildStatus.success, [])));
@@ -462,7 +464,7 @@ class MockWatchImpl implements WatchImpl {
   final PackageGraph packageGraph;
 
   @override
-  final FinalizedReader reader;
+  final Future<FinalizedReader> reader;
 
   void addFutureResult(Future<BuildResult> result) {
     _futureBuildResultsController.add(result);
@@ -479,9 +481,6 @@ class MockWatchImpl implements WatchImpl {
         ..then(_buildResultsController.add);
     });
   }
-
-  @override
-  Future<void> get ready => Future.value();
 }
 
 class FakeRequest with Fake implements Request {}
