@@ -47,10 +47,12 @@ ServeHandler createServeHandler(WatchImpl watch) {
   var assetGraphHanderCompleter = Completer<AssetGraphHandler>();
   var assetHandlerCompleter = Completer<AssetHandler>();
   watch.ready.then((_) async {
-    assetHandlerCompleter.complete(AssetHandler(watch.reader, rootPackage));
-    assetGraphHanderCompleter.complete(
-        AssetGraphHandler(watch.reader, rootPackage, watch.assetGraph!));
-  });
+    // Once ready completes successfully then the reader must be initialized.
+    var reader = watch.reader!;
+    assetHandlerCompleter.complete(AssetHandler(reader, rootPackage));
+    assetGraphHanderCompleter
+        .complete(AssetGraphHandler(reader, rootPackage, watch.assetGraph!));
+  }).catchError((_) {}); // These errors are separately handled.
   return ServeHandler._(watch, assetHandlerCompleter.future,
       assetGraphHanderCompleter.future, rootPackage);
 }
@@ -164,6 +166,11 @@ class ServeHandler implements BuildState {
 
   Future<shelf.Response> _assetsDigestHandler(
       shelf.Request request, String rootDir) async {
+    final reader = _state.reader;
+    if (reader == null) {
+      return shelf.Response.internalServerError(
+          body: 'Server failed to initialize');
+    }
     var assertPathList =
         (jsonDecode(await request.readAsString()) as List).cast<String>();
     var rootPackage = _state.packageGraph.root.name;
@@ -171,7 +178,7 @@ class ServeHandler implements BuildState {
     for (final path in assertPathList) {
       try {
         var assetId = pathToAssetId(rootPackage, rootDir, p.url.split(path));
-        var digest = await _state.reader.digest(assetId);
+        var digest = await reader.digest(assetId);
         results[path] = digest.toString();
       } on AssetNotFoundException {
         results.remove(path);
@@ -216,9 +223,12 @@ class BuildUpdatesWebSocketHandler {
 
   Future emitUpdateMessage(BuildResult buildResult) async {
     if (buildResult.status != BuildStatus.success) return;
-    var digests = <AssetId, String>{};
+    // If we get a successful build we know we initialized properly and have
+    // a reader.
+    final reader = _state.reader!;
+    final digests = <AssetId, String>{};
     for (var assetId in buildResult.outputs) {
-      var digest = await _state.reader.digest(assetId);
+      var digest = await reader.digest(assetId);
       digests[assetId] = digest.toString();
     }
     for (var rootDir in connectionsByRootDir.keys) {
