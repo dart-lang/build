@@ -188,7 +188,7 @@ class WatchImpl implements BuildState {
   /// Pending expected delete events from the build.
   final Set<AssetId> _expectedDeletes = <AssetId>{};
 
-  late FinalizedReader _reader;
+  FinalizedReader? _reader;
 
   /// Only non-null after [ready] completes without error.
   FinalizedReader? get reader => _reader;
