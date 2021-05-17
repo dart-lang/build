@@ -1,4 +1,4 @@
-## 5.0.8-dev
+## 5.0.8
 
 * Migrate Mockito codegen to null safety.
 * Support mocking methods with typed_data List return types.
