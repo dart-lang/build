@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dart:collection';
+
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart' as analyzer;
@@ -57,8 +59,8 @@ class MockBuilder implements Builder {
     final mockTargetGatherer = _MockTargetGatherer(entryLib);
 
     var entryAssetId = await buildStep.resolver.assetIdForElement(entryLib);
-    final assetUris = await _resolveAssetUris(
-        buildStep.resolver, mockTargetGatherer._mockTargets, entryAssetId.path);
+    final assetUris = await _resolveAssetUris(buildStep.resolver,
+        mockTargetGatherer._mockTargets, entryAssetId.path, entryLib);
 
     final mockLibraryInfo = _MockLibraryInfo(mockTargetGatherer._mockTargets,
         assetUris: assetUris, entryLib: entryLib);
@@ -102,10 +104,14 @@ $rawOutput
     await buildStep.writeAsString(mockLibraryAsset, mockLibraryContent);
   }
 
-  Future<Map<Element, String>> _resolveAssetUris(Resolver resolver,
-      List<_MockTarget> mockTargets, String entryAssetPath) async {
+  Future<Map<Element, String>> _resolveAssetUris(
+      Resolver resolver,
+      List<_MockTarget> mockTargets,
+      String entryAssetPath,
+      LibraryElement entryLib) async {
     final typeVisitor = _TypeVisitor();
     final seenTypes = <analyzer.InterfaceType>{};
+    final librariesWithTypes = <LibraryElement>{};
 
     void addTypesFrom(analyzer.InterfaceType type) {
       // Prevent infinite recursion.
@@ -113,6 +119,7 @@ $rawOutput
         return;
       }
       seenTypes.add(type);
+      librariesWithTypes.add(type.element.library);
       type.element.accept(typeVisitor);
       // For a type like `Foo<Bar>`, add the `Bar`.
       type.typeArguments
@@ -133,7 +140,12 @@ $rawOutput
     for (var element in typeVisitor._elements) {
       final elementLibrary = element.library!;
       if (elementLibrary.isInSdk) {
-        typeUris[element] = elementLibrary.source.uri.toString();
+        if (elementLibrary.name!.startsWith('dart._')) {
+          typeUris[element] = _findPublicExportOf(
+              Queue.of(librariesWithTypes), elementLibrary)!;
+        } else {
+          typeUris[element] = elementLibrary.source.uri.toString();
+        }
         continue;
       }
 
@@ -154,6 +166,26 @@ $rawOutput
     }
 
     return typeUris;
+  }
+
+  /// Returns the String import path of the correct public library which
+  /// exports [privateLibrary], selecting from the imports of [inputLibraries].
+  static String? _findPublicExportOf(
+      Queue<LibraryElement> inputLibraries, LibraryElement privateLibrary) {
+    final libraries = Queue.of([
+      for (final library in inputLibraries) ...library.importedLibraries,
+    ]);
+
+    while (libraries.isNotEmpty) {
+      final library = libraries.removeFirst();
+      if (library.exportedLibraries.contains(privateLibrary)) {
+        return library.source.uri.toString();
+      }
+      // A library may provide [privateLibrary] by exporting a library which
+      // provides it (directly or via further exporting).
+      libraries.addAll(library.exportedLibraries);
+    }
+    return null;
   }
 
   @override

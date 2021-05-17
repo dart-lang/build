@@ -1039,6 +1039,44 @@ void main() {
     expect(mocksContent, contains('_i2.Callback3<_i2.Foo>? c'));
   });
 
+  test('imports libraries for types declared in private SDK libraries',
+      () async {
+    var mocksContent = await buildWithSingleNonNullableSource(dedent('''
+        import 'dart:io';
+        abstract class Foo {
+          HttpClient f() {}
+        }
+        '''));
+    expect(mocksContent, contains("import 'dart:io' as _i2;"));
+    expect(mocksContent, contains('_i2.HttpClient f() =>'));
+  });
+
+  test(
+      'imports libraries for types declared in private SDK libraries exported '
+      'in dart:io', () async {
+    var mocksContent = await buildWithSingleNonNullableSource(dedent('''
+        import 'dart:io';
+        abstract class Foo {
+          HttpStatus f() {}
+        }
+        '''));
+    expect(mocksContent, contains("import 'dart:io' as _i2;"));
+    expect(mocksContent, contains('_i2.HttpStatus f() =>'));
+  });
+
+  test(
+      'imports libraries for types declared in private SDK libraries exported '
+      'in dart:html', () async {
+    var mocksContent = await buildWithSingleNonNullableSource(dedent('''
+        import 'dart:html';
+        abstract class Foo {
+          HttpStatus f() {}
+        }
+        '''));
+    expect(mocksContent, contains("import 'dart:html' as _i2;"));
+    expect(mocksContent, contains('_i2.HttpStatus f() =>'));
+  });
+
   test('prefixes parameter type on generic function-typed parameter', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''

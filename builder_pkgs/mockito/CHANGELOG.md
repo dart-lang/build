@@ -2,6 +2,8 @@
 
 * Migrate Mockito codegen to null safety.
 * Support mocking methods with typed_data List return types.
+* Support mocking methods with return types declared in private SDK libraries
+  (such as HttpClient and WebSocket, declared in `dart:_http`).
 
 ## 5.0.7
 
