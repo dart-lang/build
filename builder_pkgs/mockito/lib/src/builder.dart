@@ -960,10 +960,14 @@ class _MockLibraryInfo {
     } else if (type.isDartCoreDouble) {
       return literalNum(0.0);
     } else if (type.isDartAsyncFuture || type.isDartAsyncFutureOr) {
-      var typeArgument = typeArguments.first;
+      final typeArgument = typeArguments.first;
+      final futureValueArguments =
+          typeSystem.isPotentiallyNonNullable(typeArgument)
+              ? [_dummyValue(typeArgument)]
+              : <Expression>[];
       return _futureReference(_typeReference(typeArgument))
           .property('value')
-          .call([_dummyValue(typeArgument)]);
+          .call(futureValueArguments);
     } else if (type.isDartCoreInt) {
       return literalNum(0);
     } else if (type.isDartCoreIterable) {

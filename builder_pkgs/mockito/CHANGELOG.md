@@ -4,6 +4,8 @@
 * Support mocking methods with typed_data List return types.
 * Support mocking methods with return types declared in private SDK libraries
   (such as HttpClient and WebSocket, declared in `dart:_http`).
+* Do not generate a fake for a class which is only used as a nullable type in a
+  Future. [#409](https://github.com/dart-lang/mockito/issues/409)
 
 ## 5.0.7
 

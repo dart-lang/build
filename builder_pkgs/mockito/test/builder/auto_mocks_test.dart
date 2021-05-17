@@ -526,7 +526,7 @@ void main() {
       '''),
       _containsAllOf(dedent2('''
       _i3.Future<void> m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: Future<void>.value(null),
+          returnValue: Future<void>.value(),
           returnValueForMissingStub: Future.value()) as _i3.Future<void>);
       ''')),
     );
@@ -1832,6 +1832,22 @@ void main() {
       _containsAllOf(dedent2('''
       _i3.Future<bool> m() => (super.noSuchMethod(Invocation.method(#m, []),
           returnValue: Future<bool>.value(false)) as _i3.Future<bool>);
+      ''')),
+    );
+  });
+
+  test('creates dummy non-null return values for Futures of nullable types',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent('''
+      class Bar {}
+      class Foo {
+        Future<Bar?> m() async => null;
+      }
+      '''),
+      _containsAllOf(dedent2('''
+      _i3.Future<_i2.Bar?> m() => (super.noSuchMethod(Invocation.method(#m, []),
+          returnValue: Future<_i2.Bar?>.value()) as _i3.Future<_i2.Bar?>);
       ''')),
     );
   });
