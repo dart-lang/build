@@ -24,6 +24,7 @@ import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
+import 'package:yaml/yaml.dart';
 
 import 'analysis_driver.dart';
 import 'build_asset_uri_resolver.dart';
@@ -439,26 +440,69 @@ Future<void> _createDepsFile(
 
 /// Checks that the current analyzer version supports the current language
 /// version.
-void _warnOnLanguageVersionMismatch() {
+void _warnOnLanguageVersionMismatch() async {
   if (sdkLanguageVersion <= ExperimentStatus.currentVersion) return;
 
-  var upgradeCommand = isFlutter ? 'flutter packages upgrade' : 'pub upgrade';
-  log.warning('''
-Your current `analyzer` version may not fully support your current SDK version.
+  try {
+    var client = HttpClient();
+    var request = await client
+        .getUrl(Uri.parse('https://pub.dartlang.org/api/packages/analyzer'));
+    var response = await request.close();
+    var content = StringBuffer();
+    await response.transform(utf8.decoder).listen(content.write).asFuture();
+    var json = jsonDecode(content.toString());
+    var latestAnalyzer = json['latest']['version'];
+    var analyzerPubspecPath =
+        p.join(await _packagePath('analyzer'), 'pubspec.yaml');
+    var currentAnalyzer =
+        loadYaml(await File(analyzerPubspecPath).readAsString())['version'];
 
-Please try upgrading to the latest `analyzer` package by running
-`$upgradeCommand`.
+    if (latestAnalyzer == currentAnalyzer) {
+      log.warning('''
+The latest `analyzer` version may not fully support your current SDK version.
 
 Analyzer language version: ${ExperimentStatus.currentVersion}
 SDK language version: $sdkLanguageVersion
 
-If you are getting this message and have the latest `analyzer` version, then a
-new version of `analyzer` needs to be published. Check for an open issue at:
+Check for an open issue at:
 https://github.com/dart-lang/sdk/issues?q=is%3Aissue+is%3Aopen+No+published+analyzer+$sdkLanguageVersion
 and thumbs up and/or subscribe to the existing issue, or file a new issue at
 https://github.com/dart-lang/sdk/issues/new with the title
 "No published analyzer available for language version $sdkLanguageVersion".
+    ''');
+    } else {
+      var upgradeCommand =
+          isFlutter ? 'flutter packages upgrade' : 'pub upgrade';
+      log.warning('''
+Your current `analyzer` version may not fully support your current SDK version.
+
+Analyzer language version: ${ExperimentStatus.currentVersion}
+SDK language version: $sdkLanguageVersion
+
+Please update to the latest `analyzer` version ($latestAnalyzer) by running
+`$upgradeCommand`.
+
+If you are not getting the latest version by running the above command, you
+can try adding a constraint like the following to your pubspec to start
+diagnosing why you can't get the latest version:
+
+dev_dependencies:
+  analyzer: ^$latestAnalyzer 
 ''');
+    }
+  } catch (_) {
+    // Fall back on a basic message if we fail to detect the latest version for
+    // any reason.
+    log.warning('''
+Your current `analyzer` version may not fully support your current SDK version.
+
+Analyzer language version: ${ExperimentStatus.currentVersion}
+SDK language version: $sdkLanguageVersion
+
+Please ensure you are on the latest `analyzer` version, which can be seen at
+https://pub.dev/packages/analyzer.
+''');
+  }
 }
 
 /// Path where the dart:ui package will be found, if executing via the dart

@@ -1,4 +1,7 @@
-## 2.0.2-dev
+## 2.0.2
+
+- Add more context to the outdated analyzer version message. It now provides
+  different suggestions depending on if you are on the latest analyzer.
 
 ## 2.0.1
 
