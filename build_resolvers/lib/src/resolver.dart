@@ -446,7 +446,7 @@ void _warnOnLanguageVersionMismatch() async {
   try {
     var client = HttpClient();
     var request = await client
-        .getUrl(Uri.parse('https://pub.dartlang.org/api/packages/analyzer'));
+        .getUrl(Uri.https('pub.dartlang.org', 'api/packages/analyzer'));
     var response = await request.close();
     var content = StringBuffer();
     await response.transform(utf8.decoder).listen(content.write).asFuture();
