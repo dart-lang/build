@@ -10,6 +10,7 @@ export 'src/dev_compiler_builder.dart'
         jsModuleExtension,
         jsSourceMapExtension,
         metadataExtension,
+        symbolsExtension,
         fullKernelExtension;
 export 'src/platforms.dart' show dart2jsPlatform, ddcPlatform;
 export 'src/web_entrypoint_builder.dart'

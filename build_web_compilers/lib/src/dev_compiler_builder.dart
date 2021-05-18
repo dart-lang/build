@@ -24,6 +24,8 @@ String jsSourceMapExtension(bool soundNullSafety) =>
     '${soundnessExt(soundNullSafety)}.ddc.js.map';
 String metadataExtension(bool soundNullSafety) =>
     '${soundnessExt(soundNullSafety)}.ddc.js.metadata';
+String symbolsExtension(bool soundNullSafety) =>
+    '${soundnessExt(soundNullSafety)}.ddc.js.symbols';
 String fullKernelExtension(bool soundNullSafety) =>
     '${soundnessExt(soundNullSafety)}.ddc.full.dill';
 
@@ -92,6 +94,7 @@ class DevCompilerBuilder implements Builder {
             jsModuleErrorsExtension(soundNullSafety),
             jsSourceMapExtension(soundNullSafety),
             metadataExtension(soundNullSafety),
+            symbolsExtension(soundNullSafety),
             fullKernelExtension(soundNullSafety),
           ],
         },
@@ -282,6 +285,15 @@ Future<void> _createDevCompilerModule(
       _fixMetadataSources(
           json as Map<String, dynamic>, scratchSpace.tempDir.uri);
       await buildStep.writeAsString(metadataId, jsonEncode(json));
+
+      // Copy the symbols output, modifying its contents to remove the temp
+      // directory from paths
+      var symbolsId = module.primarySource
+          .changeExtension(symbolsExtension(soundNullSafety));
+      file = scratchSpace.fileFor(symbolsId);
+      content = await file.readAsString();
+      json = jsonDecode(content);
+      await buildStep.writeAsString(symbolsId, jsonEncode(json));
     }
 
     // Note that we only want to do this on success, we can't trust the unused
@@ -338,9 +350,9 @@ void _fixMetadataSources(Map<String, dynamic> json, Uri scratchUri) {
     json['moduleUri'] = updatePath(moduleUri);
   }
 
-  var fullKernelUri = json['fullKernelUri'] as String?;
+  var fullKernelUri = json['fullDillUri'] as String;
   if (fullKernelUri != null) {
-    json['fullKernelUri'] = updatePath(fullKernelUri);
+    json['fullDillUri'] = updatePath(fullKernelUri);
   }
 
   var libraries = json['libraries'] as List<Object?>?;
