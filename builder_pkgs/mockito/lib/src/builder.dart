@@ -667,7 +667,7 @@ class _MockLibraryInfo {
     Iterable<_MockTarget> mockTargets, {
     required this.assetUris,
     required LibraryElement entryLib,
-  })   : sourceLibIsNonNullable = entryLib.isNonNullableByDefault,
+  })  : sourceLibIsNonNullable = entryLib.isNonNullableByDefault,
         typeProvider = entryLib.typeProvider,
         typeSystem = entryLib.typeSystem {
     for (final mockTarget in mockTargets) {
