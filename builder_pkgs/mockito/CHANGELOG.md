@@ -1,3 +1,8 @@
+## 5.0.9-dev
+
+* Mock classes now implement a type's nested type arguments properly.
+  [#410](https://github.com/dart-lang/mockito/issues/410)
+
 ## 5.0.8
 
 * Migrate Mockito codegen to null safety.
