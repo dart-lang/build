@@ -6,7 +6,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:_test_common/common.dart';
-import 'package:_test_common/package_graphs.dart';
 import 'package:_test_common/test_environment.dart';
 import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
@@ -14,9 +13,7 @@ import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/asset_graph/optional_output_tracker.dart';
 import 'package:build_runner_core/src/environment/create_merged_dir.dart';
-import 'package:build_runner_core/src/generate/finalized_assets_view.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
-import 'package:build_test/build_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 

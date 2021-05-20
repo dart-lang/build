@@ -4,7 +4,6 @@
 
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:build_test/src/multi_asset_reader.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 

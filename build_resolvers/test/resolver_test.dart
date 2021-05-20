@@ -12,7 +12,6 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
-import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_resolvers/src/analysis_driver.dart';
 import 'package:build_resolvers/src/resolver.dart';
 import 'package:build_test/build_test.dart';

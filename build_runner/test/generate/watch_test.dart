@@ -7,7 +7,6 @@ import 'dart:io';
 
 import 'package:_test_common/build_configs.dart';
 import 'package:_test_common/common.dart';
-import 'package:_test_common/package_graphs.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';

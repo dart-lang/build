@@ -5,7 +5,6 @@
 import 'dart:async';
 
 import 'package:_test_common/common.dart';
-import 'package:_test_common/package_graphs.dart';
 import 'package:build/build.dart';
 import 'package:build_runner_core/src/generate/build_result.dart';
 import 'package:build_runner_core/src/generate/exceptions.dart';
