@@ -7,7 +7,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:_test_common/common.dart';
-import 'package:_test_common/package_graphs.dart';
 import 'package:build/build.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner/src/generate/watch_impl.dart';

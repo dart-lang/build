@@ -6,7 +6,6 @@
 import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_runner_core/src/asset/finalized_reader.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/generate/phase.dart';

@@ -18,11 +18,7 @@ import 'package:scratch_space/scratch_space.dart';
 import 'package:stream_transform/stream_transform.dart';
 
 import 'errors.dart';
-import 'module_builder.dart';
 import 'module_cache.dart';
-import 'modules.dart';
-import 'platform.dart';
-import 'scratch_space.dart';
 import 'workers.dart';
 
 const multiRootScheme = 'org-dartlang-app';

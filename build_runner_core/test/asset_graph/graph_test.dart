@@ -7,13 +7,11 @@ import 'dart:collection';
 import 'dart:convert';
 
 import 'package:_test_common/common.dart';
-import 'package:_test_common/package_graphs.dart';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
-import 'package:build_test/build_test.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';

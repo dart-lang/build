@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_runner_core/src/environment/io_environment.dart';
 import 'package:logging/logging.dart';
 
 void main() async {
