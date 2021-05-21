@@ -615,6 +615,37 @@ void main() {
     );
   });
 
+  test('contains methods of implemented classes', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Interface<T> {
+        void m(T a) {}
+      }
+      class Foo implements Interface<int> {}
+      '''),
+      _containsAllOf(
+          'void m(int? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+    );
+  });
+
+  test('contains fields of implemented classes', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Interface<T> {
+        int m;
+      }
+      class Foo implements Interface<int> {}
+      '''),
+      _containsAllOf(dedent2('''
+      int get m =>
+          (super.noSuchMethod(Invocation.getter(#m), returnValue: 0) as int);
+      '''), dedent2('''
+      set m(int? _m) => super
+          .noSuchMethod(Invocation.setter(#m, _m), returnValueForMissingStub: null);
+      ''')),
+    );
+  });
+
   test(
       'overrides methods of indirect generic super classes, substituting types',
       () async {
