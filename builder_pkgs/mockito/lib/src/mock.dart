@@ -1155,7 +1155,9 @@ extension on Invocation {
   /// improve readability.
   String toPrettyString() {
     String argString;
-    var args = positionalArguments.map((v) => '$v');
+    // Add quotes around strings to clarify the type of the argument to the user
+    // and so the empty string is represented.
+    var args = positionalArguments.map((v) => v is String ? "'$v'" : '$v');
     if (args.any((arg) => arg.contains('\n'))) {
       // As one or more arg contains newlines, put each on its own line, and
       // indent each, for better readability.
