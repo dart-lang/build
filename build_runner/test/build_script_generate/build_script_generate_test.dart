@@ -200,5 +200,29 @@ builders:
           packageGraph: await PackageGraph.forPath('${d.sandbox}/a'));
       expect(options.canRunWithSoundNullSafety, isFalse);
     });
+
+    test('when a builder-defining library uses a top-level relative path',
+        () async {
+      await d.dir('a', [
+        d.file('pubspec.yaml', '''
+name: a
+environment:
+  sdk: '>=2.12.0 <3.0.0'
+      '''),
+        d.file('build.yaml', '''
+builders:
+  a:
+    import: 'tool/builder.dart'
+    build_extensions: {'.foo': ['.bar']}
+    builder_factories: ['builder']
+    '''),
+        d.dir('tool', [d.file('builder.dart', '')]),
+      ]).create();
+      await runPub('a', 'get');
+
+      final options = await findBuildScriptOptions(
+          packageGraph: await PackageGraph.forPath('${d.sandbox}/a'));
+      expect(options.canRunWithSoundNullSafety, isTrue);
+    });
   });
 }
