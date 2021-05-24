@@ -168,7 +168,8 @@ Future<bool> _allMigratedToNullSafety(PackageGraph packageGraph,
   }
 
   for (final import in imports.toSet()) {
-    final id = AssetId.resolve(Uri.parse(import), from: baseForRelative);
+    final id = AssetId.resolve(Uri.parse(_buildScriptImport(import)),
+        from: baseForRelative);
     String content;
     try {
       content = await reader.readAsString(id);
