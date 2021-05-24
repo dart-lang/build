@@ -137,7 +137,15 @@ $rawOutput
 
     final typeUris = <Element, String>{};
 
-    for (var element in typeVisitor._elements) {
+    final elements = [
+      // Types which may be referenced.
+      ...typeVisitor._elements,
+      // Fallback generator functions which may be referenced.
+      for (final mockTarget in mockTargets)
+        ...mockTarget.fallbackGenerators.values,
+    ];
+
+    for (final element in elements) {
       final elementLibrary = element.library!;
       if (elementLibrary.isInSdk) {
         if (elementLibrary.name!.startsWith('dart._')) {
@@ -313,8 +321,14 @@ class _MockTarget {
 
   final bool returnNullOnMissingStub;
 
-  _MockTarget(this.classType, this.mockName,
-      {required this.returnNullOnMissingStub});
+  final Map<String, ExecutableElement> fallbackGenerators;
+
+  _MockTarget(
+    this.classType,
+    this.mockName, {
+    required this.returnNullOnMissingStub,
+    required this.fallbackGenerators,
+  });
 
   ClassElement get classElement => classType.element;
 }
@@ -381,7 +395,7 @@ class _MockTargetGatherer {
           (type.element.declaration as ClassElement).thisType;
       final mockName = 'Mock${declarationType.element.name}';
       mockTargets.add(_MockTarget(declarationType, mockName,
-          returnNullOnMissingStub: false));
+          returnNullOnMissingStub: false, fallbackGenerators: {}));
     }
     final customMocksField = generateMocksValue.getField('customMocks');
     if (customMocksField != null && !customMocksField.isNull) {
@@ -399,11 +413,34 @@ class _MockTargetGatherer {
             'Mock${type.element.name}';
         final returnNullOnMissingStub =
             mockSpec.getField('returnNullOnMissingStub')!.toBoolValue()!;
+        final fallbackGeneratorObjects =
+            mockSpec.getField('fallbackGenerators')!.toMapValue()!;
         mockTargets.add(_MockTarget(type, mockName,
-            returnNullOnMissingStub: returnNullOnMissingStub));
+            returnNullOnMissingStub: returnNullOnMissingStub,
+            fallbackGenerators:
+                _extractFallbackGenerators(fallbackGeneratorObjects)));
       }
     }
     return mockTargets;
+  }
+
+  static Map<String, ExecutableElement> _extractFallbackGenerators(
+      Map<DartObject?, DartObject?> objects) {
+    final fallbackGenerators = <String, ExecutableElement>{};
+    objects.forEach((methodName, generator) {
+      if (methodName == null) {
+        throw InvalidMockitoAnnotationException(
+            'Unexpected null key in fallbackGenerators: $objects');
+      }
+      if (generator == null) {
+        throw InvalidMockitoAnnotationException(
+            'Unexpected null value in fallbackGenerators for key '
+            '"$methodName"');
+      }
+      fallbackGenerators[methodName.toSymbolValue()!] =
+          generator.toFunctionValue()!;
+    });
+    return fallbackGenerators;
   }
 
   /// Map the values passed to the GenerateMocks annotation to the classes which
@@ -455,27 +492,28 @@ class _MockTargetGatherer {
   }
 
   void _checkClassesToMockAreValid() {
-    var classesInEntryLib =
+    final classesInEntryLib =
         _entryLib.topLevelElements.whereType<ClassElement>();
-    var classNamesToMock = <String, ClassElement>{};
-    var uniqueNameSuggestion =
+    final classNamesToMock = <String, _MockTarget>{};
+    final uniqueNameSuggestion =
         "use the 'customMocks' argument in @GenerateMocks to specify a unique "
         'name';
     for (final mockTarget in _mockTargets) {
-      var name = mockTarget.mockName;
+      final name = mockTarget.mockName;
       if (classNamesToMock.containsKey(name)) {
-        var firstSource = classNamesToMock[name]!.source.fullName;
-        var secondSource = mockTarget.classElement.source.fullName;
+        final firstClass = classNamesToMock[name]!.classElement;
+        final firstSource = firstClass.source.fullName;
+        final secondSource = mockTarget.classElement.source.fullName;
         throw InvalidMockitoAnnotationException(
             'Mockito cannot generate two mocks with the same name: $name (for '
-            '${classNamesToMock[name]!.name} declared in $firstSource, and for '
+            '${firstClass.name} declared in $firstSource, and for '
             '${mockTarget.classElement.name} declared in $secondSource); '
             '$uniqueNameSuggestion.');
       }
-      classNamesToMock[name] = mockTarget.classElement;
+      classNamesToMock[name] = mockTarget;
     }
 
-    classNamesToMock.forEach((name, element) {
+    classNamesToMock.forEach((name, mockTarget) {
       var conflictingClass =
           classesInEntryLib.firstWhereOrNull((c) => c.name == name);
       if (conflictingClass != null) {
@@ -486,7 +524,9 @@ class _MockTargetGatherer {
       }
 
       var preexistingMock = classesInEntryLib.firstWhereOrNull((c) =>
-          c.interfaces.map((type) => type.element).contains(element) &&
+          c.interfaces
+              .map((type) => type.element)
+              .contains(mockTarget.classElement) &&
           _isMockClass(c.supertype!));
       if (preexistingMock != null) {
         throw InvalidMockitoAnnotationException(
@@ -495,7 +535,7 @@ class _MockTargetGatherer {
             '$uniqueNameSuggestion.');
       }
 
-      _checkMethodsToStubAreValid(element);
+      _checkMethodsToStubAreValid(mockTarget);
     });
   }
 
@@ -505,13 +545,17 @@ class _MockTargetGatherer {
   /// A method is not valid for stubbing if:
   /// - It has a private type anywhere in its signature; Mockito cannot override
   ///   such a method.
-  /// - It has a non-nullable type variable return type, for example `T m<T>()`.
-  ///   Mockito cannot generate dummy return values for unknown types.
-  void _checkMethodsToStubAreValid(ClassElement classElement) {
-    var className = classElement.name;
-    var unstubbableErrorMessages = classElement.methods
+  /// - It has a non-nullable type variable return type, for example `T m<T>()`,
+  ///   and no corresponding dummy generator. Mockito cannot generate its own
+  ///   dummy return values for unknown types.
+  void _checkMethodsToStubAreValid(_MockTarget mockTarget) {
+    final classElement = mockTarget.classElement;
+    final className = classElement.name;
+    final unstubbableErrorMessages = classElement.methods
         .where((m) => !m.isPrivate && !m.isStatic)
-        .expand((m) => _checkFunction(m.type, m))
+        .expand((m) => _checkFunction(m.type, m,
+            hasDummyGenerator:
+                mockTarget.fallbackGenerators.containsKey(m.name)))
         .toList();
 
     if (unstubbableErrorMessages.isNotEmpty) {
@@ -531,10 +575,13 @@ class _MockTargetGatherer {
   /// - bounds of type parameters
   /// - type arguments
   List<String> _checkFunction(
-      analyzer.FunctionType function, Element enclosingElement,
-      {bool isParameter = false}) {
-    var errorMessages = <String>[];
-    var returnType = function.returnType;
+    analyzer.FunctionType function,
+    Element enclosingElement, {
+    bool isParameter = false,
+    bool hasDummyGenerator = false,
+  }) {
+    final errorMessages = <String>[];
+    final returnType = function.returnType;
     if (returnType is analyzer.InterfaceType) {
       if (returnType.element.isPrivate) {
         errorMessages.add(
@@ -547,10 +594,12 @@ class _MockTargetGatherer {
       errorMessages.addAll(_checkFunction(returnType, enclosingElement));
     } else if (returnType is analyzer.TypeParameterType) {
       if (!isParameter &&
-          _entryLib.typeSystem.isPotentiallyNonNullable(function.returnType)) {
+          !hasDummyGenerator &&
+          _entryLib.typeSystem.isPotentiallyNonNullable(returnType)) {
         errorMessages
             .add('${enclosingElement.fullName} features a non-nullable unknown '
-                'return type, and cannot be stubbed.');
+                'return type, and cannot be stubbed without a dummy generator '
+                'specified on the MockSpec.');
       }
     }
 
@@ -662,6 +711,12 @@ class _MockLibraryInfo {
   /// Asset-resolving while building the mock library.
   final Map<Element, String> assetUris;
 
+  /// A mapping of any fallback generators specified for the classes-to-mock.
+  ///
+  /// Each value is another mapping from method names to the generator
+  /// function elements.
+  final Map<ClassElement, Map<String, ExecutableElement>> fallbackGenerators;
+
   /// Build mock classes for [mockTargets].
   _MockLibraryInfo(
     Iterable<_MockTarget> mockTargets, {
@@ -669,7 +724,11 @@ class _MockLibraryInfo {
     required LibraryElement entryLib,
   })  : sourceLibIsNonNullable = entryLib.isNonNullableByDefault,
         typeProvider = entryLib.typeProvider,
-        typeSystem = entryLib.typeSystem {
+        typeSystem = entryLib.typeSystem,
+        fallbackGenerators = {
+          for (final mockTarget in mockTargets)
+            mockTarget.classElement: mockTarget.fallbackGenerators
+        } {
     for (final mockTarget in mockTargets) {
       mockClasses.add(_buildMockClass(mockTarget));
     }
@@ -939,8 +998,14 @@ class _MockLibraryInfo {
     } else if (method.returnType.isFutureOfVoid) {
       returnValueForMissingStub = _futureReference().property('value').call([]);
     }
+    final class_ = method.enclosingElement;
+    final fallbackGenerator = fallbackGenerators.containsKey(class_)
+        ? fallbackGenerators[class_]![method.name]
+        : null;
     final namedArgs = {
-      if (_returnTypeIsNonNullable(method))
+      if (fallbackGenerator != null)
+        'returnValue': _fallbackGeneratorCode(method, fallbackGenerator)
+      else if (_returnTypeIsNonNullable(method))
         'returnValue': _dummyValue(method.returnType),
       if (returnValueForMissingStub != null)
         'returnValueForMissingStub': returnValueForMissingStub,
@@ -954,6 +1019,23 @@ class _MockLibraryInfo {
     }
 
     builder.body = superNoSuchMethod.code;
+  }
+
+  Expression _fallbackGeneratorCode(
+      MethodElement method, ExecutableElement function) {
+    final positionalArguments = <Expression>[];
+    final namedArguments = <String, Expression>{};
+    for (final parameter in method.parameters) {
+      if (parameter.isPositional) {
+        positionalArguments.add(refer(parameter.name));
+      } else if (parameter.isNamed) {
+        namedArguments[parameter.name] = refer(parameter.name);
+      }
+    }
+    final functionReference =
+        referImported(function.name, _typeImport(function));
+    return functionReference.call(positionalArguments, namedArguments,
+        [for (var t in method.typeParameters) refer(t.name)]);
   }
 
   Expression _dummyValue(analyzer.DartType type) {

@@ -16,3 +16,9 @@ class Foo<T> {
 class FooSub extends Foo<int> {}
 
 class Bar {}
+
+abstract class Baz {
+  T returnsTypeVariable<T>();
+  T returnsBoundedTypeVariable<T extends num?>();
+  T returnsTypeVariableFromTwo<T, U>();
+}

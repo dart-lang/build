@@ -2467,7 +2467,7 @@ void main() {
       },
       message: contains(
           "The method 'Foo.m' features a non-nullable unknown return type, and "
-          'cannot be stubbed.'),
+          'cannot be stubbed'),
     );
   });
 
@@ -2486,7 +2486,7 @@ void main() {
       },
       message: contains(
           "The method 'Foo.m' features a non-nullable unknown return type, and "
-          'cannot be stubbed.'),
+          'cannot be stubbed'),
     );
   });
 
@@ -2506,7 +2506,7 @@ void main() {
       },
       message: contains(
           "The method 'Foo.m' features a non-nullable unknown return type, and "
-          'cannot be stubbed.'),
+          'cannot be stubbed'),
     );
   });
 

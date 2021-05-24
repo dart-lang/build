@@ -5,6 +5,12 @@ import 'package:test/test.dart';
 import 'foo.dart';
 import 'generated_mocks_test.mocks.dart';
 
+T dummyMethod<T>() => [1, 1.5].whereType<T>().first!;
+
+T dummyBoundedMethod<T extends num?>() => [1, 1.5].whereType<T>().first!;
+
+T dummyMethodTwo<T, U>() => [1, 1.5].whereType<T>().first!;
+
 @GenerateMocks([
   Foo,
   FooSub,
@@ -12,6 +18,11 @@ import 'generated_mocks_test.mocks.dart';
 ], customMocks: [
   MockSpec<Foo>(as: #MockFooRelaxed, returnNullOnMissingStub: true),
   MockSpec<Bar>(as: #MockBarRelaxed, returnNullOnMissingStub: true),
+  MockSpec<Baz>(as: #MockBaz, fallbackGenerators: {
+    #returnsTypeVariable: dummyMethod,
+    #returnsBoundedTypeVariable: dummyBoundedMethod,
+    #returnsTypeVariableFromTwo: dummyMethodTwo,
+  }),
 ])
 void main() {
   group('for a generated mock,', () {
@@ -21,6 +32,12 @@ void main() {
     setUp(() {
       foo = MockFoo();
       fooSub = MockFooSub();
+    });
+
+    tearDown(() {
+      // In some of the tests that expect an Error to be thrown, Mockito's
+      // global state can become invalid. Reset it.
+      resetMockitoState();
     });
 
     test('a method with a positional parameter can be stubbed', () {
@@ -118,6 +135,31 @@ void main() {
         throwsA(TypeMatcher<MissingStubError>()
             .having((e) => e.toString(), 'toString()', contains('getter'))),
       );
+    });
+  });
+
+  group('for a generated mock using fallbackGenerators,', () {
+    late Baz baz;
+
+    setUp(() {
+      baz = MockBaz();
+    });
+
+    test('a method with a type variable return type can be called', () {
+      when(baz.returnsTypeVariable()).thenReturn(3);
+      baz.returnsTypeVariable();
+    });
+
+    test('a method with a bounded type variable return type can be called', () {
+      when(baz.returnsBoundedTypeVariable()).thenReturn(3);
+      baz.returnsBoundedTypeVariable();
+    });
+
+    test(
+        'a method with multiple type parameters and a type variable return '
+        'type can be called', () {
+      when(baz.returnsTypeVariable()).thenReturn(3);
+      baz.returnsTypeVariable();
     });
   });
 

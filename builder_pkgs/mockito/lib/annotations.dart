@@ -66,13 +66,28 @@ class GenerateMocks {
 /// directs Mockito to generate two mocks:
 /// `class MockFoo<T> extends Mocks implements Foo<T>` and
 /// `class MockFooOfInt extends Mock implements Foo<int>`.
-// TODO(srawlins): Document this in NULL_SAFETY_README.md.
-// TODO(srawlins): Add 'mixingIn'.
 class MockSpec<T> {
   final Symbol? mockName;
 
   final bool returnNullOnMissingStub;
 
-  const MockSpec({Symbol? as, this.returnNullOnMissingStub = false})
-      : mockName = as;
+  final Map<Symbol, Function> fallbackGenerators;
+
+  /// Constructs a custom mock specification.
+  ///
+  /// Specify a custom name with the [as] parameter.
+  ///
+  /// If [returnNullOnMissingStub] is true, the mock class will return `null`
+  /// when a method is called and no stub could be found. This may result in a
+  /// runtime error, if the return type of the method is non-nullable.
+  ///
+  /// Each entry in [fallbackGenerators] specifies a mapping from a method name
+  /// to a function, with the same signature as the method. This function will
+  /// be used to generate fallback values when a non-null value needs to be
+  /// returned when stubbing or verifying.
+  const MockSpec({
+    Symbol? as,
+    this.returnNullOnMissingStub = false,
+    this.fallbackGenerators = const {},
+  }) : mockName = as;
 }

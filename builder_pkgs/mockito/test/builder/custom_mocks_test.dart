@@ -37,8 +37,13 @@ class MockSpec<T> {
 
   final bool returnNullOnMissingStub;
 
-  const MockSpec({Symbol as, this.returnNullOnMissingStub = false})
-      : mockName = as;
+  final Map<Symbol, Function> fallbackGenerators;
+
+  const MockSpec({
+    Symbol? as,
+    this.returnNullOnMissingStub = false,
+    this.fallbackGenerators = const {},
+  }) : mockName = as;
 }
 '''
 };
@@ -279,6 +284,105 @@ void main() {
         '''
     });
     expect(mocksContent, isNot(contains('throwOnMissingStub')));
+  });
+
+  test(
+      'generates mock classes including a dummy builder for a generic method '
+      'with positional parameters', () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        abstract class Foo {
+          T m<T>(T a);
+        }
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+
+        T mShim<T>(T a) {
+          if (a is int) return 1;
+          throw 'unknown';
+        }
+
+        @GenerateMocks(
+          [],
+          customMocks: [MockSpec<Foo>(as: #MockFoo, fallbackGenerators: {#m: mShim})],
+        )
+        void main() {}
+        '''
+    });
+    expect(
+        mocksContent,
+        contains(
+            'T m<T>(T? a) => (super.noSuchMethod(Invocation.method(#m, [a]),\n'
+            '      returnValue: _i3.mShim<T>(a)) as T)'));
+  });
+
+  test(
+      'generates mock classes including a dummy builder for a generic method '
+      'with named parameters', () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        abstract class Foo {
+          T m<T>({T a});
+        }
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+
+        T mShim<T>({T a}) {
+          if (a is int) return 1;
+          throw 'unknown';
+        }
+
+        @GenerateMocks(
+          [],
+          customMocks: [MockSpec<Foo>(as: #MockFoo, fallbackGenerators: {#m: mShim})],
+        )
+        void main() {}
+        '''
+    });
+    expect(
+        mocksContent,
+        contains(
+            'T m<T>({T? a}) => (super.noSuchMethod(Invocation.method(#m, [], {#a: a}),\n'
+            '      returnValue: _i3.mShim<T>(a: a)) as T);'));
+  });
+
+  test(
+      'generates mock classes including a dummy builder for a bounded generic '
+      'method with named parameters', () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        abstract class Foo {
+          T m<T extends num>({T a});
+        }
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+
+        T mShim<T extends num>({T a}) {
+          if (a is int) return 1;
+          throw 'unknown';
+        }
+
+        @GenerateMocks(
+          [],
+          customMocks: [MockSpec<Foo>(as: #MockFoo, fallbackGenerators: {#m: mShim})],
+        )
+        void main() {}
+        '''
+    });
+    expect(
+        mocksContent,
+        contains('T m<T extends num>({T? a}) =>\n'
+            '      (super.noSuchMethod(Invocation.method(#m, [], {#a: a}),\n'
+            '          returnValue: _i3.mShim<T>(a: a)) as T);'));
   });
 
   test(
