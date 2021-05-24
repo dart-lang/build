@@ -692,6 +692,29 @@ int? get x => 1;
     await runBuilder(builder, [input], reader, writer, resolvers);
   });
 
+  test('assets with extensions other than `.dart` are not considered libraries',
+      () async {
+    var writer = InMemoryAssetWriter();
+    var reader = InMemoryAssetReader.shareAssetCache(writer.assets);
+    var input = AssetId('a', 'lib/input.dart');
+    writer.assets[input] = utf8.encode('void doStuff() {}');
+
+    var otherFile = AssetId('a', 'lib/input.notdart');
+    writer.assets[otherFile] = utf8.encode('Not a Dart file');
+
+    var builder = TestBuilder(
+        buildExtensions: {
+          '.dart': ['.a.dart']
+        },
+        build: expectAsync2((buildStep, _) async {
+          var other = buildStep.inputId.changeExtension('.notdart');
+          expect(await buildStep.canRead(other), true);
+          expect(await buildStep.resolver.isLibrary(other), false);
+        }));
+    var resolvers = AnalyzerResolvers();
+    await runBuilder(builder, [input], reader, writer, resolvers);
+  });
+
   group('compilationUnitFor', () {
     test('can parse a given input', () {
       return resolveSources({
