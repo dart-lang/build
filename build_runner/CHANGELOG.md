@@ -1,3 +1,8 @@
+## 2.0.4
+
+- Allow builders defined as relative imports from the root of a package to run
+  with sound null safety.
+
 ## 2.0.3
 
 - Fix a serve mode bug which causes an unhandled exception if the build fails
