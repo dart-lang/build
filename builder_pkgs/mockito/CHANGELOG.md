@@ -1,7 +1,17 @@
-## 5.0.9-dev
+## 5.0.9
 
 * Mock classes now implement a type's nested type arguments properly.
   [#410](https://github.com/dart-lang/mockito/issues/410)
+* Mock classes now implement API from a class's interface(s) (in addition to
+  superclasses and mix ins). Thanks @markgravity.
+  [#404](https://github.com/dart-lang/mockito/pull/404)
+* A MockSpec passed into a `@GenerateMocks` annotation's `customMocks` list can
+  now specify "fallback generators." These are functions which can be used to
+  generate fake responses that mockito's code generation needs in order to
+  return a value for a method with a generic return type. See
+  [NULL_SAFETY_README][] for details.
+
+[NULL_SAFETY_README]: https://github.com/dart-lang/mockito/blob/master/NULL_SAFETY_README.md
 
 ## 5.0.8
 

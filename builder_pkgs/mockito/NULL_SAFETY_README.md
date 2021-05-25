@@ -156,6 +156,46 @@ sense in the Null safety type system), for legacy code, use
 @GenerateMocks([], customMocks: [MockSpec<Foo>(returnNullOnMissingStub: true)])
 ```
 
+#### Fallback generators
+
+If a class has a method with a type variable as a return type (for example,
+`T get<T>();`), mockito cannot generate code which will internally return valid
+values. For example, given this class and test:
+
+```dart
+abstract class Foo {
+  T m<T>(T a);
+}
+
+@GenerateMocks([], customMocks: [MockSpec<Foo>(as: #MockFoo, {#m: mShim})])
+void testFoo(Foo foo) {
+  when(   foo.m(7)   ).thenReturn(42);
+       // ^^^^^^^^
+       // mockito needs a valid value which this call to `foo.m` will return.
+}
+```
+
+In order to generate a mock for such a class, pass a `fallbackGenerators`
+argument. Specify a mapping from the method to a top level function with the
+same signature as the method:
+
+```dart
+abstract class Foo {
+  T m<T>(T a);
+}
+
+T mShim<T>(T a) {
+  if (a is int) return 1;
+  throw 'unknown';
+}
+
+@GenerateMocks([], customMocks: [MockSpec<Foo>(as: #MockFoo, {#m: mShim})])
+```
+
+The fallback values will never be returned from a real method call; these are
+not stub return values. They are only used internally by mockito as valid return
+values.
+
 ### Manual mock implementaion
 
 **In the general case, we strongly recommend generating mocks with the above

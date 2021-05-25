@@ -321,6 +321,39 @@ void main() {
 
   test(
       'generates mock classes including a dummy builder for a generic method '
+      'with positional parameters returning a Future of the generic', () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        abstract class Foo {
+          Future<T> m<T>(T a);
+        }
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+
+        Future<T> mShim<T>(T a) async {
+          if (a is int) return 1;
+          throw 'unknown';
+        }
+
+        @GenerateMocks(
+          [],
+          customMocks: [MockSpec<Foo>(as: #MockFoo, fallbackGenerators: {#m: mShim})],
+        )
+        void main() {}
+        '''
+    });
+    expect(
+        mocksContent,
+        contains(
+            '_i3.Future<T> m<T>(T? a) => (super.noSuchMethod(Invocation.method(#m, [a]),\n'
+            '      returnValue: _i4.mShim<T>(a)) as _i3.Future<T>)'));
+  });
+
+  test(
+      'generates mock classes including a dummy builder for a generic method '
       'with named parameters', () async {
     var mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
