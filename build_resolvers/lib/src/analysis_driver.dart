@@ -47,6 +47,7 @@ Future<AnalysisDriver> analysisDriver(
   var scheduler = AnalysisDriverScheduler(logger);
   var packages = _buildAnalyzerPackages(
       packageConfig, buildAssetUriResolver.resourceProvider);
+  // ignore: deprecated_member_use
   var driver = AnalysisDriver(
       scheduler,
       logger,
