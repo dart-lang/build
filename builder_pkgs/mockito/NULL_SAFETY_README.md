@@ -189,7 +189,9 @@ T mShim<T>(T a) {
   throw 'unknown';
 }
 
-@GenerateMocks([], customMocks: [MockSpec<Foo>(as: #MockFoo, {#m: mShim})])
+@GenerateMocks([], customMocks: [
+  MockSpec<Foo>(as: #MockFoo, fallbackGenerators: {#m: mShim})
+])
 ```
 
 The fallback values will never be returned from a real method call; these are

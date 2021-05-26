@@ -703,31 +703,65 @@ class ArgMatcher {
   String toString() => '$ArgMatcher {$matcher: $_capture}';
 }
 
-/// An argument matcher that matches any argument passed in "this" position.
+/// An argument matcher that matches any argument passed in this argument
+/// position.
+///
+/// See the README section on
+/// [argument matchers](https://pub.dev/packages/mockito#argument-matchers)
+/// for examples.
 Null get any => _registerMatcher(anything, false, argumentMatcher: 'any');
 
 /// An argument matcher that matches any named argument passed in for the
 /// parameter named [named].
+///
+/// See the README section on
+/// [named argument matchers](https://pub.dev/packages/mockito#named-arguments)
+/// for examples.
 Null anyNamed(String named) => _registerMatcher(anything, false,
     named: named, argumentMatcher: 'anyNamed');
 
-/// An argument matcher that matches any argument passed in "this" position, and
-/// captures the argument for later access with `captured`.
+/// An argument matcher that matches any argument passed in this argument
+/// position, and captures the argument for later access with
+/// [VerificationResult.captured].
+///
+/// See the README section on
+/// [capturing arguments](https://pub.dev/packages/mockito#capturing-arguments-for-further-assertions)
+/// for examples.
 Null get captureAny =>
     _registerMatcher(anything, true, argumentMatcher: 'captureAny');
 
 /// An argument matcher that matches any named argument passed in for the
 /// parameter named [named], and captures the argument for later access with
-/// `captured`.
+/// [VerificationResult.captured].
+///
+/// See the README section on
+/// [capturing arguments](https://pub.dev/packages/mockito#capturing-arguments-for-further-assertions)
+/// for examples.
 Null captureAnyNamed(String named) => _registerMatcher(anything, true,
     named: named, argumentMatcher: 'captureAnyNamed');
 
-/// An argument matcher that matches an argument that matches [matcher].
+/// An argument matcher that matches an argument (named or positional) that
+/// matches [matcher].
+
+/// When capturing a named argument, the name of the argument must be passed via
+/// [named].
+///
+/// See the README section on
+/// [argument matchers](https://pub.dev/packages/mockito#argument-matchers)
+/// for examples.
 Null argThat(Matcher matcher, {String? named}) =>
     _registerMatcher(matcher, false, named: named, argumentMatcher: 'argThat');
 
-/// An argument matcher that matches an argument that matches [matcher], and
-/// captures the argument for later access with `captured`.
+/// An argument matcher that matches an argument (named or positional) that
+/// matches [matcher], and captures the argument for later access with
+/// [VerificationResult.captured].
+
+/// When capturing a named argument, the name of the argument must be passed via
+/// [named].
+///
+/// See the README section on
+/// [capturing arguments](https://pub.dev/packages/mockito#capturing-arguments-for-further-assertions)
+/// for examples.
 Null captureThat(Matcher matcher, {String? named}) =>
     _registerMatcher(matcher, true,
         named: named, argumentMatcher: 'captureThat');

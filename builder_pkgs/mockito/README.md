@@ -277,7 +277,8 @@ verifyNoMoreInteractions(cat);
 
 ## Capturing arguments for further assertions
 
-Use the [`captureAny`], [`captureThat`], and [`captureNamed`] argument matchers:
+Use the [`captureAny`], [`captureThat`], and [`captureAnyNamed`] argument
+matchers:
 
 ```dart
 // Simple capture
