@@ -7,7 +7,7 @@ os:
 
 stages:
 - analyze_and_format:
-  - dartanalyzer: --fatal-infos --fatal-warnings .
+  - dartanalyzer: --fatal-infos .
     os: linux
 - unit_test:
   - group:
