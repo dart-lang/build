@@ -1,6 +1,7 @@
-## 1.0.1-dev
+## 1.0.1
 
 * Improve the error message for a missing part directive.
+* Upgrade to `package:analyzer` version `1.7.0`.
 
 ## 1.0.0
 

@@ -4,6 +4,7 @@
 
 import 'dart:mirrors' hide SourceLocation;
 
+import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
@@ -301,9 +302,8 @@ class UnresolvedAnnotationException implements Exception {
   ) {
     try {
       final parsedLibrary = annotatedElement.session!
-          // Update usage when we're ready to require the latest pkg:analyzer
-          // ignore: deprecated_member_use
-          .getParsedLibraryByElement(annotatedElement.library!);
+              .getParsedLibraryByElement2(annotatedElement.library!)
+          as ParsedLibraryResult;
       final declaration = parsedLibrary.getElementDeclaration(annotatedElement);
       if (declaration == null) {
         return null;
