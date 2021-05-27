@@ -164,10 +164,10 @@ values. For example, given this class and test:
 
 ```dart
 abstract class Foo {
-  T m<T>(T a);
+  T m<T>(T a, int b);
 }
 
-@GenerateMocks([], customMocks: [MockSpec<Foo>(as: #MockFoo, {#m: mShim})])
+@GenerateMocks([], customMocks: [MockSpec<Foo>(as: #MockFoo)])
 void testFoo(Foo foo) {
   when(   foo.m(7)   ).thenReturn(42);
        // ^^^^^^^^
@@ -176,15 +176,17 @@ void testFoo(Foo foo) {
 ```
 
 In order to generate a mock for such a class, pass a `fallbackGenerators`
-argument. Specify a mapping from the method to a top level function with the
-same signature as the method:
+argument. Specify a mapping from the method to a top level function with
+_almost_ the same signature as the method. The function must have the same
+return type as the method, and it must have the same positional and named
+parameters as the method, except that each parameter must be made nullable:
 
 ```dart
 abstract class Foo {
-  T m<T>(T a);
+  T m<T>(T a, int b);
 }
 
-T mShim<T>(T a) {
+T mShim<T>(T a, int? b) {
   if (a is int) return 1;
   throw 'unknown';
 }
