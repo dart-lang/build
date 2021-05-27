@@ -400,7 +400,7 @@ class _MockTargetGatherer {
     final customMocksField = generateMocksValue.getField('customMocks');
     if (customMocksField != null && !customMocksField.isNull) {
       for (var mockSpec in customMocksField.toListValue()!) {
-        final mockSpecType = mockSpec.type!;
+        final mockSpecType = mockSpec.type as analyzer.InterfaceType;
         assert(mockSpecType.typeArguments.length == 1);
         final typeToMock = mockSpecType.typeArguments.single;
         if (typeToMock.isDynamic) {
