@@ -1,3 +1,8 @@
+## 2.0.3
+
+- Fix an issue where the build process would hang if the resolver fails to
+  properly initialize.
+
 ## 2.0.2
 
 - Add more context to the outdated analyzer version message. It now provides
