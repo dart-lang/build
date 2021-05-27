@@ -157,7 +157,9 @@ class BuildStepImpl implements BuildStep {
   Future<void> complete() async {
     _isComplete = true;
     await Future.wait(_writeResults.map(Result.release));
-    (await _resolver)?.release();
+    try {
+      (await _resolver)?.release();
+    } catch (_) {}
   }
 
   /// Checks that [id] is an expected output, and throws an
