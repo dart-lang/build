@@ -1,7 +1,7 @@
 name: mockito
 version: 5.0.9
 
-description: A mock framework inspired by Mockito.
+description: A mock framework inspired by Mockito.  With APIs for Fakes, Mocks, behavior verification, stubbing, and much more.
 homepage: https://github.com/dart-lang/mockito
 
 environment:
