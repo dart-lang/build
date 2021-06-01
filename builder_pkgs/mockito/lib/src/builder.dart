@@ -457,7 +457,7 @@ class _MockTargetGatherer {
         throw InvalidMockitoAnnotationException(
             'Mockito cannot mock an enum: ${elementToMock.displayName}');
       }
-      if (typeProvider.nonSubtypableClasses.contains(elementToMock)) {
+      if (typeProvider.isNonSubtypableClass(elementToMock)) {
         throw InvalidMockitoAnnotationException(
             'Mockito cannot mock a non-subtypable type: '
             '${elementToMock.displayName}. It is illegal to subtype this '
