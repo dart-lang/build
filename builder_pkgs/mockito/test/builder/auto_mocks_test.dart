@@ -615,7 +615,7 @@ void main() {
     );
   });
 
-  test('contains methods of implemented classes', () async {
+  test('overrides methods of implemented classes', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
       class Interface<T> {
@@ -628,7 +628,7 @@ void main() {
     );
   });
 
-  test('contains fields of implemented classes', () async {
+  test('overrides fields of implemented classes', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
       class Interface<T> {
@@ -686,6 +686,38 @@ void main() {
       _containsAllOf(
           'void m(T? a) =>', 'super.noSuchMethod(Invocation.method(#m, [a])'),
     );
+  });
+
+  test('overrides `toString` with correct signature if the class overrides it',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent('''
+      abstract class Foo {
+        String toString({bool a = false});
+      }
+      '''),
+      _containsAllOf('String toString({bool? a = false}) => super.toString()'),
+    );
+  });
+
+  test('does not override `operator==`, even if the class overrides it',
+      () async {
+    var mocksContent = await buildWithSingleNonNullableSource(dedent('''
+      class Foo {
+        bool operator==(Object? other);
+      }
+      '''));
+    expect(mocksContent, isNot(contains('==')));
+  });
+
+  test('does not override `hashCode`, even if the class overrides it',
+      () async {
+    var mocksContent = await buildWithSingleNonNullableSource(dedent('''
+      class Foo {
+        final int hashCode = 7;
+      }
+      '''));
+    expect(mocksContent, isNot(contains('hashCode')));
   });
 
   test('generates mock classes from part files', () async {

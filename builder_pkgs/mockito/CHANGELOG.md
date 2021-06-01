@@ -1,3 +1,9 @@
+## 5.0.10-dev
+
+* Generate a proper mock class when the mocked class overrides `toString`,
+  `hashCode`, or `operator==`.
+  [#420](https://github.com/dart-lang/mockito/issues/420)
+
 ## 5.0.9
 
 * Mock classes now implement a type's nested type arguments properly.

@@ -848,6 +848,10 @@ class _MockLibraryInfo {
       if (overriddenFields.contains(accessor.name)) {
         continue;
       }
+      if (accessor.name == 'hashCode') {
+        // Never override this getter; user code cannot narrow the return type.
+        continue;
+      }
       overriddenFields.add(accessor.name);
       if (accessor.isGetter && _returnTypeIsNonNullable(accessor)) {
         yield Method((mBuilder) => _buildOverridingGetter(mBuilder, accessor));
@@ -893,6 +897,11 @@ class _MockLibraryInfo {
       }
       overriddenMethods.add(methodName);
       if (methodName == 'noSuchMethod') {
+        continue;
+      }
+      if (methodName == '==') {
+        // Never override this operator; user code cannot add parameters or
+        // narrow the return type.
         continue;
       }
       if (_returnTypeIsNonNullable(method) ||
@@ -984,6 +993,13 @@ class _MockLibraryInfo {
         invocationNamedArgs[refer('#${parameter.displayName}')] =
             refer(parameter.displayName);
       }
+    }
+
+    if (name == 'toString') {
+      // We cannot call `super.noSuchMethod` here; we must use [Mock]'s
+      // implementation.
+      builder.body = refer('super').property('toString').call([]).code;
+      return;
     }
 
     final invocation = refer('Invocation').property('method').call([
