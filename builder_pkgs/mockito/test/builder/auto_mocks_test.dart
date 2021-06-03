@@ -2224,6 +2224,26 @@ void main() {
     );
   });
 
+  test('generates a fake class with an overridden `toString` implementation',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent('''
+      class Foo {
+        Bar m1() => Bar('name1');
+      }
+      class Bar {
+        String toString({bool a = true}) => '';
+      }
+      '''),
+      _containsAllOf(dedent('''
+      class _FakeBar extends _i1.Fake implements _i2.Bar {
+        @override
+        String toString({bool? a = true}) => super.toString();
+      }
+      ''')),
+    );
+  });
+
   test('deduplicates fake classes', () async {
     var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo {

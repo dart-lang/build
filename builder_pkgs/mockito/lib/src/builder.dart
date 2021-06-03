@@ -907,8 +907,7 @@ class _MockLibraryInfo {
       if (_returnTypeIsNonNullable(method) ||
           _hasNonNullableParameter(method) ||
           _needsOverrideForVoidStub(method)) {
-        yield Method((mBuilder) => _buildOverridingMethod(mBuilder, method,
-            className: type.getDisplayString(withNullability: true)));
+        yield Method((mBuilder) => _buildOverridingMethod(mBuilder, method));
       }
     }
     if (type.mixins != null) {
@@ -960,8 +959,7 @@ class _MockLibraryInfo {
   ///
   /// This new method just calls `super.noSuchMethod`, optionally passing a
   /// return value for methods with a non-nullable return type.
-  void _buildOverridingMethod(MethodBuilder builder, MethodElement method,
-      {required String className}) {
+  void _buildOverridingMethod(MethodBuilder builder, MethodElement method) {
     var name = method.displayName;
     if (method.isOperator) name = 'operator$name';
     builder
@@ -1161,11 +1159,7 @@ class _MockLibraryInfo {
   }
 
   Expression _dummyValueImplementing(analyzer.InterfaceType dartType) {
-    // For each type parameter on [dartType], the Mock class needs a type
-    // parameter with same type variables, and a mirrored type argument for the
-    // "implements" clause.
-    var typeParameters = <Reference>[];
-    var elementToFake = dartType.element;
+    final elementToFake = dartType.element;
     if (elementToFake.isEnum) {
       return _typeReference(dartType).property(
           elementToFake.fields.firstWhere((f) => f.isEnumConstant).name);
@@ -1173,35 +1167,53 @@ class _MockLibraryInfo {
       // There is a potential for these names to collide. If one mock class
       // requires a fake for a certain Foo, and another mock class requires a
       // fake for a different Foo, they will collide.
-      var fakeName = '_Fake${elementToFake.name}';
+      final fakeName = '_Fake${elementToFake.name}';
       // Only make one fake class for each class that needs to be faked.
       if (!fakedClassElements.contains(elementToFake)) {
-        fakeClasses.add(Class((cBuilder) {
-          cBuilder
-            ..name = fakeName
-            ..extend = referImported('Fake', 'package:mockito/mockito.dart');
-          if (elementToFake.typeParameters != null) {
-            for (var typeParameter in elementToFake.typeParameters) {
-              cBuilder.types.add(_typeParameterReference(typeParameter));
-              typeParameters.add(refer(typeParameter.name));
-            }
-          }
-          cBuilder.implements.add(TypeReference((b) {
-            b
-              ..symbol = elementToFake.name
-              ..url = _typeImport(elementToFake)
-              ..types.addAll(typeParameters);
-          }));
-        }));
-        fakedClassElements.add(elementToFake);
+        _addFakeClass(fakeName, elementToFake);
       }
-      var typeArguments = dartType.typeArguments;
+      final typeArguments = dartType.typeArguments;
       return TypeReference((b) {
         b
           ..symbol = fakeName
           ..types.addAll(typeArguments.map(_typeReference));
       }).newInstance([]);
     }
+  }
+
+  /// Adds a [Fake] implementation of [elementToFake], named [fakeName].
+  void _addFakeClass(String fakeName, ClassElement elementToFake) {
+    fakeClasses.add(Class((cBuilder) {
+      // For each type parameter on [elementToFake], the Fake class needs a type
+      // parameter with same type variables, and a mirrored type argument for
+      // the "implements" clause.
+      final typeParameters = <Reference>[];
+      cBuilder
+        ..name = fakeName
+        ..extend = referImported('Fake', 'package:mockito/mockito.dart');
+      if (elementToFake.typeParameters != null) {
+        for (var typeParameter in elementToFake.typeParameters) {
+          cBuilder.types.add(_typeParameterReference(typeParameter));
+          typeParameters.add(refer(typeParameter.name));
+        }
+      }
+      cBuilder.implements.add(TypeReference((b) {
+        b
+          ..symbol = elementToFake.name
+          ..url = _typeImport(elementToFake)
+          ..types.addAll(typeParameters);
+      }));
+
+      final toStringMethod = elementToFake.methods
+          .firstWhereOrNull((method) => method.name == 'toString');
+      if (toStringMethod != null) {
+        // If [elementToFake] includes an overriding `toString` implementation,
+        // we need to include an implementation which matches the signature.
+        cBuilder.methods.add(Method(
+            (mBuilder) => _buildOverridingMethod(mBuilder, toStringMethod)));
+      }
+    }));
+    fakedClassElements.add(elementToFake);
   }
 
   /// Returns a [Parameter] which matches [parameter].

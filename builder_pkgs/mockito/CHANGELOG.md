@@ -1,8 +1,11 @@
-## 5.0.10-dev
+## 5.0.10
 
 * Generate a proper mock class when the mocked class overrides `toString`,
   `hashCode`, or `operator==`.
   [#420](https://github.com/dart-lang/mockito/issues/420)
+* Override `toString` implementation on generated Fakes in order to match the
+  signature of an overriding method which adds optional parameters.
+  [#371](https://github.com/dart-lang/mockito/issues/371)
 
 ## 5.0.9
 
