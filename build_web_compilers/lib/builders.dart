@@ -33,6 +33,7 @@ Builder ddcBuilder(BuilderOptions options, {bool soundNullSafety = false}) {
   return DevCompilerBuilder(
     useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
     generateFullDill: _readGenerateFullDillOption(options),
+    generateDebugSymbols: _readGenerateDebugSymbolsOption(options),
     trackUnusedInputs: _readTrackInputsCompilerOption(options),
     platform: ddcPlatform,
     environment: _readEnvironmentOption(options),
@@ -114,6 +115,10 @@ bool _readGenerateFullDillOption(BuilderOptions options) {
   return options.config[_generateFullDillOption] as bool? ?? false;
 }
 
+bool _readGenerateDebugSymbolsOption(BuilderOptions options) {
+  return options.config[_generateDebugSymbolsOption] as bool? ?? false;
+}
+
 bool _readTrackInputsCompilerOption(BuilderOptions options) {
   return options.config[_trackUnusedInputsCompilerOption] as bool? ?? true;
 }
@@ -126,6 +131,7 @@ Map<String, String> _readEnvironmentOption(BuilderOptions options) {
 Map<String, dynamic>? _previousDdcConfig;
 const _useIncrementalCompilerOption = 'use-incremental-compiler';
 const _generateFullDillOption = 'generate-full-dill';
+const _generateDebugSymbolsOption = 'generate-debug-symbols';
 const _trackUnusedInputsCompilerOption = 'track-unused-inputs';
 const _environmentOption = 'environment';
 const _experimentOption = 'experiments';
@@ -134,5 +140,6 @@ const _supportedOptions = [
   _experimentOption,
   _useIncrementalCompilerOption,
   _generateFullDillOption,
+  _generateDebugSymbolsOption,
   _trackUnusedInputsCompilerOption,
 ];

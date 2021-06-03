@@ -44,6 +44,14 @@ class DevCompilerBuilder implements Builder {
   /// build, such as webdev.
   final bool generateFullDill;
 
+  /// Whether to generate debug symbols file outputs for each module.
+  ///
+  /// Debug symbols file is an additional file produced by DDC that stores
+  /// symbols for code compiled for one module, not including dependencies.
+  /// Debug symbols are used by the to display variables and objects in
+  /// watch, expression evaluation, and variable inspection windows.
+  final bool generateDebugSymbols;
+
   final bool trackUnusedInputs;
 
   final DartPlatform platform;
@@ -77,6 +85,7 @@ class DevCompilerBuilder implements Builder {
   DevCompilerBuilder(
       {this.useIncrementalCompiler = true,
       this.generateFullDill = false,
+      this.generateDebugSymbols = false,
       this.trackUnusedInputs = false,
       required this.platform,
       String? sdkKernelPath,
@@ -129,6 +138,7 @@ class DevCompilerBuilder implements Builder {
           buildStep,
           useIncrementalCompiler,
           generateFullDill,
+          generateDebugSymbols,
           trackUnusedInputs,
           platformSdk,
           sdkKernelPath,
@@ -150,6 +160,7 @@ Future<void> _createDevCompilerModule(
     BuildStep buildStep,
     bool useIncrementalCompiler,
     bool generateFullDill,
+    bool generateDebugSymbols,
     bool trackUnusedInputs,
     String dartSdk,
     String sdkKernelPath,
@@ -196,6 +207,7 @@ Future<void> _createDevCompilerModule(
       '--modules=amd',
       '--no-summarize',
       if (generateFullDill) '--experimental-output-compiled-kernel',
+      if (generateDebugSymbols) '--experimental-output-debug-symbols',
       '-o',
       jsOutputFile.path,
       debugMode ? '--source-map' : '--no-source-map',
@@ -288,12 +300,14 @@ Future<void> _createDevCompilerModule(
 
       // Copy the symbols output, modifying its contents to remove the temp
       // directory from paths
-      var symbolsId = module.primarySource
-          .changeExtension(symbolsExtension(soundNullSafety));
-      file = scratchSpace.fileFor(symbolsId);
-      content = await file.readAsString();
-      json = jsonDecode(content);
-      await buildStep.writeAsString(symbolsId, jsonEncode(json));
+      if (generateDebugSymbols) {
+        var symbolsId = module.primarySource
+            .changeExtension(symbolsExtension(soundNullSafety));
+        file = scratchSpace.fileFor(symbolsId);
+        content = await file.readAsString();
+        json = jsonDecode(content);
+        await buildStep.writeAsString(symbolsId, jsonEncode(json));
+      }
     }
 
     // Note that we only want to do this on success, we can't trust the unused
@@ -350,9 +364,9 @@ void _fixMetadataSources(Map<String, dynamic> json, Uri scratchUri) {
     json['moduleUri'] = updatePath(moduleUri);
   }
 
-  var fullKernelUri = json['fullDillUri'] as String;
-  if (fullKernelUri != null) {
-    json['fullDillUri'] = updatePath(fullKernelUri);
+  var fullDillUri = json['fullDillUri'] as String?;
+  if (fullDillUri != null) {
+    json['fullDillUri'] = updatePath(fullDillUri);
   }
 
   var libraries = json['libraries'] as List<Object?>?;

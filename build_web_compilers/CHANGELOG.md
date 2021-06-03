@@ -1,4 +1,17 @@
-## 3.0.1-dev
+## 3.1.0-dev
+
+- Add the `generate-debug-symbols` option for the `build_web_compilers:ddc`
+  builder. The sdebug ymbols output is used by the debugger in webdev for
+  variable inspection. This setting is disabled by default but can be
+  enabled by setting it to `true` globally:
+
+```yaml
+global_options:
+  build_web_compilers:ddc:
+    options:
+      generate-debug-symbols: true
+```
+
 
 ## 3.0.0
 
