@@ -303,10 +303,7 @@ Future<void> _createDevCompilerModule(
       if (generateDebugSymbols) {
         var symbolsId = module.primarySource
             .changeExtension(symbolsExtension(soundNullSafety));
-        file = scratchSpace.fileFor(symbolsId);
-        content = await file.readAsString();
-        json = jsonDecode(content);
-        await buildStep.writeAsString(symbolsId, jsonEncode(json));
+        await scratchSpace.copyOutput(symbolsId, buildStep);
       }
     }
 
