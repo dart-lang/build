@@ -6,6 +6,11 @@
 * Override `toString` implementation on generated Fakes in order to match the
   signature of an overriding method which adds optional parameters.
   [#371](https://github.com/dart-lang/mockito/issues/371)
+  Properly type methods in a generated mock class which comes from a "custom
+  mock" annotation referencing an implicit type. Given a method which references
+  type variables defined on their enclosing class (for example, `T` in
+  `class Foo<T>`), mockito will now correctly reference `T` in generated code.
+  [#422](https://github.com/dart-lang/mockito/issues/422)
 
 ## 5.0.9
 

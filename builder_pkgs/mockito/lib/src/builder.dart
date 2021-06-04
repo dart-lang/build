@@ -389,8 +389,10 @@ class _MockTargetGatherer {
             'Mockito cannot mock `dynamic`');
       }
       final type = _determineDartType(typeToMock, entryLib.typeProvider);
-      // [type] is `Foo<dynamic>` for generic classes. Switch to declaration,
-      // which will yield `Foo<T>`.
+      // For a generic class like `Foo<T>` or `Foo<T extends num>`, a type
+      // literal (`Foo`) cannot express type arguments. The type argument(s) on
+      // `type` have been instantiated to bounds here. Switch to the
+      // declaration, which will be an uninstantiated type.
       final declarationType =
           (type.element.declaration as ClassElement).thisType;
       final mockName = 'Mock${declarationType.element.name}';
@@ -409,6 +411,14 @@ class _MockTargetGatherer {
               'arguments on MockSpec(), in @GenerateMocks.');
         }
         var type = _determineDartType(typeToMock, entryLib.typeProvider);
+
+        if (!type.hasExplicitTypeArguments) {
+          // We assume the type was given without explicit type arguments. In
+          // this case the type argument(s) on `type` have been instantiated to
+          // bounds. Switch to the declaration, which will be an uninstantiated
+          // type.
+          type = (type.element.declaration as ClassElement).thisType;
+        }
         final mockName = mockSpec.getField('mockName')!.toSymbolValue() ??
             'Mock${type.element.name}';
         final returnNullOnMissingStub =
@@ -734,39 +744,6 @@ class _MockLibraryInfo {
     }
   }
 
-  bool _hasExplicitTypeArguments(analyzer.InterfaceType type) {
-    if (type.typeArguments == null) return false;
-
-    // If it appears that one type argument was given, then they all were. This
-    // returns the wrong result when the type arguments given are all `dynamic`,
-    // or are each equal to the bound of the corresponding type parameter. There
-    // may not be a way to get around this.
-    for (var i = 0; i < type.typeArguments.length; i++) {
-      var typeArgument = type.typeArguments[i];
-      // If [typeArgument] is a type parameter, this indicates that no type
-      // arguments were passed. This likely came from the 'classes' argument of
-      // GenerateMocks, and [type] is the declaration type (`Foo<T>` vs
-      // `Foo<dynamic>`).
-      if (typeArgument is analyzer.TypeParameterType) return false;
-
-      // If [type] was given to @GenerateMocks as a Type, and no explicit type
-      // argument is given, [typeArgument] is `dynamic` (_not_ the bound, as one
-      // might think). We determine that an explicit type argument was given if
-      // it is not `dynamic`.
-      if (typeArgument.isDynamic) continue;
-
-      // If, on the other hand, [type] was given to @GenerateMock as a type
-      // argument to `Of()`, and no type argument is given, [typeArgument] is
-      // the bound of the corresponding type paramter (dynamic or otherwise). We
-      // determine that an explicit type argument was given if [typeArgument] is
-      // not [bound].
-      var bound =
-          type.element.typeParameters[i].bound ?? typeProvider.dynamicType;
-      if (!typeArgument.isDynamic && typeArgument != bound) return true;
-    }
-    return false;
-  }
-
   Class _buildMockClass(_MockTarget mockTarget) {
     final typeToMock = mockTarget.classType;
     final classToMock = mockTarget.classElement;
@@ -790,7 +767,7 @@ class _MockLibraryInfo {
       // parameter with same type variables, and a mirrored type argument for
       // the "implements" clause.
       var typeArguments = <Reference>[];
-      if (_hasExplicitTypeArguments(typeToMock)) {
+      if (typeToMock.hasExplicitTypeArguments) {
         // [typeToMock] is a reference to a type with type arguments (for
         // example: `Foo<int>`). Generate a non-generic mock class which
         // implements the mock target with said type arguments. For example:
@@ -1559,5 +1536,39 @@ extension on analyzer.DartType {
         name == 'Uint16List' ||
         name == 'Uint32List' ||
         name == 'Uint64List';
+  }
+}
+
+extension on analyzer.InterfaceType {
+  bool get hasExplicitTypeArguments {
+    if (typeArguments == null) return false;
+
+    // If it appears that one type argument was given, then they all were. This
+    // returns the wrong result when the type arguments given are all `dynamic`,
+    // or are each equal to the bound of the corresponding type parameter. There
+    // may not be a way to get around this.
+    for (var i = 0; i < typeArguments.length; i++) {
+      final typeArgument = typeArguments[i];
+      // If [typeArgument] is a type parameter, this indicates that no type
+      // arguments were passed. This likely came from the 'classes' argument of
+      // GenerateMocks, and [type] is the declaration type (`Foo<T>` vs
+      // `Foo<dynamic>`).
+      if (typeArgument is analyzer.TypeParameterType) return false;
+
+      // If [type] was given to @GenerateMocks as a Type, and no explicit type
+      // argument is given, [typeArgument] is `dynamic` (_not_ the bound, as one
+      // might think). We determine that an explicit type argument was given if
+      // it is not `dynamic`.
+      if (typeArgument.isDynamic) continue;
+
+      // If, on the other hand, [type] was given to @GenerateMock as a type
+      // argument to `MockSpec()`, and no type argument is given, [typeArgument]
+      // is the bound of the corresponding type paramter (`dynamic` or
+      // otherwise). We determine that an explicit type argument was given if
+      // [typeArgument] is not equal to [bound].
+      final bound = element.typeParameters[i].bound;
+      if (!typeArgument.isDynamic && typeArgument != bound) return true;
+    }
+    return false;
   }
 }
