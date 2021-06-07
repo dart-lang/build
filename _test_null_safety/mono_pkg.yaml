@@ -9,9 +9,6 @@ os:
 stages:
 - analyze_and_format:
   - group:
-    - dartanalyzer
-    dart: 2.12.0
-  - group:
     - dartanalyzer: --fatal-infos
     dart: dev
 - e2e_test:
