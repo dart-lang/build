@@ -50,7 +50,7 @@ class DevCompilerBuilder implements Builder {
   /// symbols for code compiled for one module, not including dependencies.
   /// Debug symbols are used by the to display variables and objects in
   /// watch, expression evaluation, and variable inspection windows.
-  final bool outputDebugSymbols;
+  final bool emitDebugSymbols;
 
   final bool trackUnusedInputs;
 
@@ -85,7 +85,7 @@ class DevCompilerBuilder implements Builder {
   DevCompilerBuilder(
       {this.useIncrementalCompiler = true,
       this.generateFullDill = false,
-      this.outputDebugSymbols = false,
+      this.emitDebugSymbols = false,
       this.trackUnusedInputs = false,
       required this.platform,
       String? sdkKernelPath,
@@ -138,7 +138,7 @@ class DevCompilerBuilder implements Builder {
           buildStep,
           useIncrementalCompiler,
           generateFullDill,
-          outputDebugSymbols,
+          emitDebugSymbols,
           trackUnusedInputs,
           platformSdk,
           sdkKernelPath,
@@ -160,7 +160,7 @@ Future<void> _createDevCompilerModule(
     BuildStep buildStep,
     bool useIncrementalCompiler,
     bool generateFullDill,
-    bool outputDebugSymbols,
+    bool emitDebugSymbols,
     bool trackUnusedInputs,
     String dartSdk,
     String sdkKernelPath,
@@ -207,7 +207,7 @@ Future<void> _createDevCompilerModule(
       '--modules=amd',
       '--no-summarize',
       if (generateFullDill) '--experimental-output-compiled-kernel',
-      if (outputDebugSymbols) '--output-debug-symbols',
+      if (emitDebugSymbols) '--emit-debug-symbols',
       '-o',
       jsOutputFile.path,
       debugMode ? '--source-map' : '--no-source-map',
@@ -300,7 +300,7 @@ Future<void> _createDevCompilerModule(
 
       // Copy the symbols output, modifying its contents to remove the temp
       // directory from paths
-      if (outputDebugSymbols) {
+      if (emitDebugSymbols) {
         var symbolsId = module.primarySource
             .changeExtension(symbolsExtension(soundNullSafety));
         await scratchSpace.copyOutput(symbolsId, buildStep);
