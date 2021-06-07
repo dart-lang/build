@@ -8,7 +8,12 @@ os:
 
 stages:
 - analyze_and_format:
-  - dartanalyzer
+  - group:
+    - dartanalyzer
+    dart: 2.12.0
+  - group:
+    - dartanalyzer: --fatal-infos
+    dart: dev
 - e2e_test:
   - group:
     - command: pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random

@@ -210,14 +210,14 @@ jobs:
         working-directory: build
         run: dart analyze --fatal-infos .
   job_006:
-    name: "analyze_and_format; linux; Dart dev; PKG: _test_null_safety; `dart analyze`"
+    name: "analyze_and_format; linux; Dart dev; PKG: _test_null_safety; `dart analyze --fatal-infos`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
         uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_null_safety;commands:dartanalyzer_1"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_null_safety;commands:dartanalyzer_2"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_null_safety
             os:ubuntu-latest;pub-cache-hosted;dart:dev
@@ -233,10 +233,10 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test_null_safety
         run: pub upgrade
-      - name: _test_null_safety; dart analyze
+      - name: "_test_null_safety; dart analyze --fatal-infos"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: dart analyze
+        run: dart analyze --fatal-infos
   job_007:
     name: "analyze_and_format; linux; Dart dev; PKG: build; `dart format --output=none --set-exit-if-changed .`"
     runs-on: ubuntu-latest
@@ -446,7 +446,7 @@ jobs:
         working-directory: _test_null_safety
         run: dart analyze
   job_010:
-    name: "analyze_and_format; windows; Dart dev; PKG: _test_null_safety; `dart analyze`"
+    name: "analyze_and_format; windows; Dart dev; PKG: _test_null_safety; `dart analyze --fatal-infos`"
     runs-on: windows-latest
     steps:
       - uses: dart-lang/setup-dart@v1.0
@@ -459,10 +459,10 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test_null_safety
         run: pub.bat upgrade
-      - name: _test_null_safety; dart analyze
+      - name: "_test_null_safety; dart analyze --fatal-infos"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: dart analyze
+        run: dart analyze --fatal-infos
   job_011:
     name: "unit_test; linux; Dart 2.12.0; PKG: build; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
