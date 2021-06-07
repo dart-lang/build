@@ -1,4 +1,4 @@
-# Created with package:mono_repo v4.0.0
+# Created with package:mono_repo v4.1.0
 name: Dart CI
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
+        uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;dart:stable"
@@ -33,20 +33,20 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - name: mono_repo self validate
-        run: pub global activate mono_repo 4.0.0
+        run: dart pub global activate mono_repo 4.1.0
       - name: mono_repo self validate
-        run: pub global run mono_repo generate --validate
+        run: dart pub global run mono_repo generate --validate
   job_002:
-    name: "analyze_and_format; linux; Dart 2.12.0; PKGS: build_test, scratch_space, example, build_resolvers; `dartfmt -n --set-exit-if-changed .`, `dartanalyzer --fatal-infos .`"
+    name: "analyze_and_format; linux; Dart 2.12.0; PKG: build; `dart analyze --fatal-infos .`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
+        uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:build_test-scratch_space-example-build_resolvers;commands:dartfmt-dartanalyzer"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:build;commands:dartanalyzer_0"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:build_test-scratch_space-example-build_resolvers
+            os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:build
             os:ubuntu-latest;pub-cache-hosted;dart:2.12.0
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
@@ -55,354 +55,166 @@ jobs:
           sdk: "2.12.0"
       - id: checkout
         uses: actions/checkout@v2.3.4
-      - id: build_test_pub_upgrade
-        name: "build_test; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_test
-        run: pub upgrade --no-precompile
-      - name: "build_test; dartfmt -n --set-exit-if-changed ."
-        if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
-        working-directory: build_test
-        run: dartfmt -n --set-exit-if-changed .
-      - name: "build_test; dartanalyzer --fatal-infos ."
-        if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
-        working-directory: build_test
-        run: dartanalyzer --fatal-infos .
-      - id: scratch_space_pub_upgrade
-        name: "scratch_space; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: scratch_space
-        run: pub upgrade --no-precompile
-      - name: "scratch_space; dartfmt -n --set-exit-if-changed ."
-        if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
-        working-directory: scratch_space
-        run: dartfmt -n --set-exit-if-changed .
-      - name: "scratch_space; dartanalyzer --fatal-infos ."
-        if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
-        working-directory: scratch_space
-        run: dartanalyzer --fatal-infos .
-      - id: example_pub_upgrade
-        name: "example; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: example
-        run: pub upgrade --no-precompile
-      - name: "example; dartfmt -n --set-exit-if-changed ."
-        if: "always() && steps.example_pub_upgrade.conclusion == 'success'"
-        working-directory: example
-        run: dartfmt -n --set-exit-if-changed .
-      - name: "example; dartanalyzer --fatal-infos ."
-        if: "always() && steps.example_pub_upgrade.conclusion == 'success'"
-        working-directory: example
-        run: dartanalyzer --fatal-infos .
-      - id: build_resolvers_pub_upgrade
-        name: "build_resolvers; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_resolvers
-        run: pub upgrade --no-precompile
-      - name: "build_resolvers; dartfmt -n --set-exit-if-changed ."
-        if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
-        working-directory: build_resolvers
-        run: dartfmt -n --set-exit-if-changed .
-      - name: "build_resolvers; dartanalyzer --fatal-infos ."
-        if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
-        working-directory: build_resolvers
-        run: dartanalyzer --fatal-infos .
-  job_003:
-    name: "analyze_and_format; linux; Dart dev; PKGS: scratch_space, example, build_web_compilers, build_vm_compilers, build_config, build_daemon, build_modules, build_resolvers, build_runner, build_test, build_runner_core; `dartfmt -n --set-exit-if-changed .`, `dartanalyzer --fatal-infos .`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:scratch_space-example-build_web_compilers-build_vm_compilers-build_config-build_daemon-build_modules-build_resolvers-build_runner-build_test-build_runner_core;commands:dartfmt-dartanalyzer"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:scratch_space-example-build_web_compilers-build_vm_compilers-build_config-build_daemon-build_modules-build_resolvers-build_runner-build_test-build_runner_core
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: scratch_space_pub_upgrade
-        name: "scratch_space; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: scratch_space
-        run: pub upgrade --no-precompile
-      - name: "scratch_space; dartfmt -n --set-exit-if-changed ."
-        if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
-        working-directory: scratch_space
-        run: dartfmt -n --set-exit-if-changed .
-      - name: "scratch_space; dartanalyzer --fatal-infos ."
-        if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
-        working-directory: scratch_space
-        run: dartanalyzer --fatal-infos .
-      - id: example_pub_upgrade
-        name: "example; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: example
-        run: pub upgrade --no-precompile
-      - name: "example; dartfmt -n --set-exit-if-changed ."
-        if: "always() && steps.example_pub_upgrade.conclusion == 'success'"
-        working-directory: example
-        run: dartfmt -n --set-exit-if-changed .
-      - name: "example; dartanalyzer --fatal-infos ."
-        if: "always() && steps.example_pub_upgrade.conclusion == 'success'"
-        working-directory: example
-        run: dartanalyzer --fatal-infos .
-      - id: build_web_compilers_pub_upgrade
-        name: "build_web_compilers; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_web_compilers
-        run: pub upgrade --no-precompile
-      - name: "build_web_compilers; dartfmt -n --set-exit-if-changed ."
-        if: "always() && steps.build_web_compilers_pub_upgrade.conclusion == 'success'"
-        working-directory: build_web_compilers
-        run: dartfmt -n --set-exit-if-changed .
-      - name: "build_web_compilers; dartanalyzer --fatal-infos ."
-        if: "always() && steps.build_web_compilers_pub_upgrade.conclusion == 'success'"
-        working-directory: build_web_compilers
-        run: dartanalyzer --fatal-infos .
-      - id: build_vm_compilers_pub_upgrade
-        name: "build_vm_compilers; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_vm_compilers
-        run: pub upgrade --no-precompile
-      - name: "build_vm_compilers; dartfmt -n --set-exit-if-changed ."
-        if: "always() && steps.build_vm_compilers_pub_upgrade.conclusion == 'success'"
-        working-directory: build_vm_compilers
-        run: dartfmt -n --set-exit-if-changed .
-      - name: "build_vm_compilers; dartanalyzer --fatal-infos ."
-        if: "always() && steps.build_vm_compilers_pub_upgrade.conclusion == 'success'"
-        working-directory: build_vm_compilers
-        run: dartanalyzer --fatal-infos .
-      - id: build_config_pub_upgrade
-        name: "build_config; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_config
-        run: pub upgrade --no-precompile
-      - name: "build_config; dartfmt -n --set-exit-if-changed ."
-        if: "always() && steps.build_config_pub_upgrade.conclusion == 'success'"
-        working-directory: build_config
-        run: dartfmt -n --set-exit-if-changed .
-      - name: "build_config; dartanalyzer --fatal-infos ."
-        if: "always() && steps.build_config_pub_upgrade.conclusion == 'success'"
-        working-directory: build_config
-        run: dartanalyzer --fatal-infos .
-      - id: build_daemon_pub_upgrade
-        name: "build_daemon; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_daemon
-        run: pub upgrade --no-precompile
-      - name: "build_daemon; dartfmt -n --set-exit-if-changed ."
-        if: "always() && steps.build_daemon_pub_upgrade.conclusion == 'success'"
-        working-directory: build_daemon
-        run: dartfmt -n --set-exit-if-changed .
-      - name: "build_daemon; dartanalyzer --fatal-infos ."
-        if: "always() && steps.build_daemon_pub_upgrade.conclusion == 'success'"
-        working-directory: build_daemon
-        run: dartanalyzer --fatal-infos .
-      - id: build_modules_pub_upgrade
-        name: "build_modules; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_modules
-        run: pub upgrade --no-precompile
-      - name: "build_modules; dartfmt -n --set-exit-if-changed ."
-        if: "always() && steps.build_modules_pub_upgrade.conclusion == 'success'"
-        working-directory: build_modules
-        run: dartfmt -n --set-exit-if-changed .
-      - name: "build_modules; dartanalyzer --fatal-infos ."
-        if: "always() && steps.build_modules_pub_upgrade.conclusion == 'success'"
-        working-directory: build_modules
-        run: dartanalyzer --fatal-infos .
-      - id: build_resolvers_pub_upgrade
-        name: "build_resolvers; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_resolvers
-        run: pub upgrade --no-precompile
-      - name: "build_resolvers; dartfmt -n --set-exit-if-changed ."
-        if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
-        working-directory: build_resolvers
-        run: dartfmt -n --set-exit-if-changed .
-      - name: "build_resolvers; dartanalyzer --fatal-infos ."
-        if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
-        working-directory: build_resolvers
-        run: dartanalyzer --fatal-infos .
-      - id: build_runner_pub_upgrade
-        name: "build_runner; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_runner
-        run: pub upgrade --no-precompile
-      - name: "build_runner; dartfmt -n --set-exit-if-changed ."
-        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
-        working-directory: build_runner
-        run: dartfmt -n --set-exit-if-changed .
-      - name: "build_runner; dartanalyzer --fatal-infos ."
-        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
-        working-directory: build_runner
-        run: dartanalyzer --fatal-infos .
-      - id: build_test_pub_upgrade
-        name: "build_test; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_test
-        run: pub upgrade --no-precompile
-      - name: "build_test; dartfmt -n --set-exit-if-changed ."
-        if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
-        working-directory: build_test
-        run: dartfmt -n --set-exit-if-changed .
-      - name: "build_test; dartanalyzer --fatal-infos ."
-        if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
-        working-directory: build_test
-        run: dartanalyzer --fatal-infos .
-      - id: build_runner_core_pub_upgrade
-        name: "build_runner_core; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_runner_core
-        run: pub upgrade --no-precompile
-      - name: "build_runner_core; dartfmt -n --set-exit-if-changed ."
-        if: "always() && steps.build_runner_core_pub_upgrade.conclusion == 'success'"
-        working-directory: build_runner_core
-        run: dartfmt -n --set-exit-if-changed .
-      - name: "build_runner_core; dartanalyzer --fatal-infos ."
-        if: "always() && steps.build_runner_core_pub_upgrade.conclusion == 'success'"
-        working-directory: build_runner_core
-        run: dartanalyzer --fatal-infos .
-  job_004:
-    name: "analyze_and_format; linux; Dart dev; PKGS: _test_common, _test_null_safety, build, _test; `dartanalyzer --fatal-infos .`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_common-_test_null_safety-build-_test;commands:dartanalyzer"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_common-_test_null_safety-build-_test
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: _test_common_pub_upgrade
-        name: "_test_common; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: _test_common
-        run: pub upgrade --no-precompile
-      - name: "_test_common; dartanalyzer --fatal-infos ."
-        if: "always() && steps._test_common_pub_upgrade.conclusion == 'success'"
-        working-directory: _test_common
-        run: dartanalyzer --fatal-infos .
-      - id: _test_null_safety_pub_upgrade
-        name: "_test_null_safety; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: pub upgrade --no-precompile
-      - name: "_test_null_safety; dartanalyzer --fatal-infos ."
-        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: dartanalyzer --fatal-infos .
       - id: build_pub_upgrade
-        name: "build; pub upgrade --no-precompile"
+        name: build; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build
-        run: pub upgrade --no-precompile
-      - name: "build; dartanalyzer --fatal-infos ."
+        run: pub upgrade
+      - name: "build; dart analyze --fatal-infos ."
         if: "always() && steps.build_pub_upgrade.conclusion == 'success'"
         working-directory: build
-        run: dartanalyzer --fatal-infos .
+        run: dart analyze --fatal-infos .
+  job_003:
+    name: "analyze_and_format; linux; Dart 2.12.0; PKGS: build_resolvers, build_test, example, scratch_space; `dart format --output=none --set-exit-if-changed .`, `dart analyze --fatal-infos .`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2.1.6
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:build_resolvers-build_test-example-scratch_space;commands:dartfmt-dartanalyzer_0"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:build_resolvers-build_test-example-scratch_space
+            os:ubuntu-latest;pub-cache-hosted;dart:2.12.0
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: "2.12.0"
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_resolvers_pub_upgrade
+        name: build_resolvers; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_resolvers
+        run: pub upgrade
+      - name: "build_resolvers; dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
+        working-directory: build_resolvers
+        run: "dart format --output=none --set-exit-if-changed ."
+      - name: "build_resolvers; dart analyze --fatal-infos ."
+        if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
+        working-directory: build_resolvers
+        run: dart analyze --fatal-infos .
+      - id: build_test_pub_upgrade
+        name: build_test; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_test
+        run: pub upgrade
+      - name: "build_test; dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
+        working-directory: build_test
+        run: "dart format --output=none --set-exit-if-changed ."
+      - name: "build_test; dart analyze --fatal-infos ."
+        if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
+        working-directory: build_test
+        run: dart analyze --fatal-infos .
+      - id: example_pub_upgrade
+        name: example; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: example
+        run: pub upgrade
+      - name: "example; dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.example_pub_upgrade.conclusion == 'success'"
+        working-directory: example
+        run: "dart format --output=none --set-exit-if-changed ."
+      - name: "example; dart analyze --fatal-infos ."
+        if: "always() && steps.example_pub_upgrade.conclusion == 'success'"
+        working-directory: example
+        run: dart analyze --fatal-infos .
+      - id: scratch_space_pub_upgrade
+        name: scratch_space; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: scratch_space
+        run: pub upgrade
+      - name: "scratch_space; dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
+        working-directory: scratch_space
+        run: "dart format --output=none --set-exit-if-changed ."
+      - name: "scratch_space; dart analyze --fatal-infos ."
+        if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
+        working-directory: scratch_space
+        run: dart analyze --fatal-infos .
+  job_004:
+    name: "analyze_and_format; linux; Dart dev; PKGS: _test, _test_common, build; `dart analyze --fatal-infos .`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2.1.6
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test-_test_common-build;commands:dartanalyzer_0"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test-_test_common-build
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
-        name: "_test; pub upgrade --no-precompile"
+        name: _test; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-        run: pub upgrade --no-precompile
-      - name: "_test; dartanalyzer --fatal-infos ."
+        run: pub upgrade
+      - name: "_test; dart analyze --fatal-infos ."
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
-        run: dartanalyzer --fatal-infos .
+        run: dart analyze --fatal-infos .
+      - id: _test_common_pub_upgrade
+        name: _test_common; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: _test_common
+        run: pub upgrade
+      - name: "_test_common; dart analyze --fatal-infos ."
+        if: "always() && steps._test_common_pub_upgrade.conclusion == 'success'"
+        working-directory: _test_common
+        run: dart analyze --fatal-infos .
+      - id: build_pub_upgrade
+        name: build; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build
+        run: pub upgrade
+      - name: "build; dart analyze --fatal-infos ."
+        if: "always() && steps.build_pub_upgrade.conclusion == 'success'"
+        working-directory: build
+        run: dart analyze --fatal-infos .
   job_005:
-    name: "analyze_and_format; linux; Dart 2.12.0; PKGS: _test_null_safety, build; `dartanalyzer --fatal-infos .`"
+    name: "analyze_and_format; linux; Dart dev; PKG: _test_null_safety; `dart analyze --fatal-infos`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
+        uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:_test_null_safety-build;commands:dartanalyzer"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_null_safety;commands:dartanalyzer_1"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:_test_null_safety-build
-            os:ubuntu-latest;pub-cache-hosted;dart:2.12.0
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_null_safety
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: "2.12.0"
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: _test_null_safety_pub_upgrade
-        name: "_test_null_safety; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: pub upgrade --no-precompile
-      - name: "_test_null_safety; dartanalyzer --fatal-infos ."
-        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: dartanalyzer --fatal-infos .
-      - id: build_pub_upgrade
-        name: "build; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build
-        run: pub upgrade --no-precompile
-      - name: "build; dartanalyzer --fatal-infos ."
-        if: "always() && steps.build_pub_upgrade.conclusion == 'success'"
-        working-directory: build
-        run: dartanalyzer --fatal-infos .
-  job_006:
-    name: "analyze_and_format; windows; Dart 2.12.0; PKG: _test_null_safety; `dartanalyzer --fatal-infos .`"
-    runs-on: windows-latest
-    steps:
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: "2.12.0"
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: _test_null_safety_pub_upgrade
-        name: "_test_null_safety; pub.bat upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: pub.bat upgrade --no-precompile
-      - name: "_test_null_safety; dartanalyzer --fatal-infos ."
-        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: dartanalyzer.bat --fatal-infos .
-  job_007:
-    name: "analyze_and_format; windows; Dart dev; PKG: _test_null_safety; `dartanalyzer --fatal-infos .`"
-    runs-on: windows-latest
-    steps:
       - uses: dart-lang/setup-dart@v1.0
         with:
           sdk: dev
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_null_safety_pub_upgrade
-        name: "_test_null_safety; pub.bat upgrade --no-precompile"
+        name: _test_null_safety; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: pub.bat upgrade --no-precompile
-      - name: "_test_null_safety; dartanalyzer --fatal-infos ."
+        run: pub upgrade
+      - name: "_test_null_safety; dart analyze --fatal-infos"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: dartanalyzer.bat --fatal-infos .
-  job_008:
-    name: "analyze_and_format; linux; Dart dev; PKG: build; `dartfmt -n --set-exit-if-changed .`"
+        run: dart analyze --fatal-infos
+  job_006:
+    name: "analyze_and_format; linux; Dart dev; PKG: build; `dart format --output=none --set-exit-if-changed .`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
+        uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build;commands:dartfmt"
@@ -417,20 +229,200 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_pub_upgrade
-        name: "build; pub upgrade --no-precompile"
+        name: build; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build
-        run: pub upgrade --no-precompile
-      - name: "build; dartfmt -n --set-exit-if-changed ."
+        run: pub upgrade
+      - name: "build; dart format --output=none --set-exit-if-changed ."
         if: "always() && steps.build_pub_upgrade.conclusion == 'success'"
         working-directory: build
-        run: dartfmt -n --set-exit-if-changed .
-  job_009:
-    name: "unit_test; linux; Dart 2.12.0; PKG: build; `pub run test --test-randomize-ordering-seed=random`"
+        run: "dart format --output=none --set-exit-if-changed ."
+  job_007:
+    name: "analyze_and_format; linux; Dart dev; PKGS: build_config, build_daemon, build_modules, build_resolvers, build_runner, build_runner_core, build_test, build_vm_compilers, build_web_compilers, example, scratch_space; `dart format --output=none --set-exit-if-changed .`, `dart analyze --fatal-infos .`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
+        uses: actions/cache@v2.1.6
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_config-build_daemon-build_modules-build_resolvers-build_runner-build_runner_core-build_test-build_vm_compilers-build_web_compilers-example-scratch_space;commands:dartfmt-dartanalyzer_0"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_config-build_daemon-build_modules-build_resolvers-build_runner-build_runner_core-build_test-build_vm_compilers-build_web_compilers-example-scratch_space
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_config_pub_upgrade
+        name: build_config; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_config
+        run: pub upgrade
+      - name: "build_config; dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.build_config_pub_upgrade.conclusion == 'success'"
+        working-directory: build_config
+        run: "dart format --output=none --set-exit-if-changed ."
+      - name: "build_config; dart analyze --fatal-infos ."
+        if: "always() && steps.build_config_pub_upgrade.conclusion == 'success'"
+        working-directory: build_config
+        run: dart analyze --fatal-infos .
+      - id: build_daemon_pub_upgrade
+        name: build_daemon; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_daemon
+        run: pub upgrade
+      - name: "build_daemon; dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.build_daemon_pub_upgrade.conclusion == 'success'"
+        working-directory: build_daemon
+        run: "dart format --output=none --set-exit-if-changed ."
+      - name: "build_daemon; dart analyze --fatal-infos ."
+        if: "always() && steps.build_daemon_pub_upgrade.conclusion == 'success'"
+        working-directory: build_daemon
+        run: dart analyze --fatal-infos .
+      - id: build_modules_pub_upgrade
+        name: build_modules; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_modules
+        run: pub upgrade
+      - name: "build_modules; dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.build_modules_pub_upgrade.conclusion == 'success'"
+        working-directory: build_modules
+        run: "dart format --output=none --set-exit-if-changed ."
+      - name: "build_modules; dart analyze --fatal-infos ."
+        if: "always() && steps.build_modules_pub_upgrade.conclusion == 'success'"
+        working-directory: build_modules
+        run: dart analyze --fatal-infos .
+      - id: build_resolvers_pub_upgrade
+        name: build_resolvers; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_resolvers
+        run: pub upgrade
+      - name: "build_resolvers; dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
+        working-directory: build_resolvers
+        run: "dart format --output=none --set-exit-if-changed ."
+      - name: "build_resolvers; dart analyze --fatal-infos ."
+        if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
+        working-directory: build_resolvers
+        run: dart analyze --fatal-infos .
+      - id: build_runner_pub_upgrade
+        name: build_runner; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_runner
+        run: pub upgrade
+      - name: "build_runner; dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+        run: "dart format --output=none --set-exit-if-changed ."
+      - name: "build_runner; dart analyze --fatal-infos ."
+        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+        run: dart analyze --fatal-infos .
+      - id: build_runner_core_pub_upgrade
+        name: build_runner_core; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_runner_core
+        run: pub upgrade
+      - name: "build_runner_core; dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.build_runner_core_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner_core
+        run: "dart format --output=none --set-exit-if-changed ."
+      - name: "build_runner_core; dart analyze --fatal-infos ."
+        if: "always() && steps.build_runner_core_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner_core
+        run: dart analyze --fatal-infos .
+      - id: build_test_pub_upgrade
+        name: build_test; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_test
+        run: pub upgrade
+      - name: "build_test; dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
+        working-directory: build_test
+        run: "dart format --output=none --set-exit-if-changed ."
+      - name: "build_test; dart analyze --fatal-infos ."
+        if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
+        working-directory: build_test
+        run: dart analyze --fatal-infos .
+      - id: build_vm_compilers_pub_upgrade
+        name: build_vm_compilers; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_vm_compilers
+        run: pub upgrade
+      - name: "build_vm_compilers; dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.build_vm_compilers_pub_upgrade.conclusion == 'success'"
+        working-directory: build_vm_compilers
+        run: "dart format --output=none --set-exit-if-changed ."
+      - name: "build_vm_compilers; dart analyze --fatal-infos ."
+        if: "always() && steps.build_vm_compilers_pub_upgrade.conclusion == 'success'"
+        working-directory: build_vm_compilers
+        run: dart analyze --fatal-infos .
+      - id: build_web_compilers_pub_upgrade
+        name: build_web_compilers; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_web_compilers
+        run: pub upgrade
+      - name: "build_web_compilers; dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.build_web_compilers_pub_upgrade.conclusion == 'success'"
+        working-directory: build_web_compilers
+        run: "dart format --output=none --set-exit-if-changed ."
+      - name: "build_web_compilers; dart analyze --fatal-infos ."
+        if: "always() && steps.build_web_compilers_pub_upgrade.conclusion == 'success'"
+        working-directory: build_web_compilers
+        run: dart analyze --fatal-infos .
+      - id: example_pub_upgrade
+        name: example; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: example
+        run: pub upgrade
+      - name: "example; dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.example_pub_upgrade.conclusion == 'success'"
+        working-directory: example
+        run: "dart format --output=none --set-exit-if-changed ."
+      - name: "example; dart analyze --fatal-infos ."
+        if: "always() && steps.example_pub_upgrade.conclusion == 'success'"
+        working-directory: example
+        run: dart analyze --fatal-infos .
+      - id: scratch_space_pub_upgrade
+        name: scratch_space; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: scratch_space
+        run: pub upgrade
+      - name: "scratch_space; dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
+        working-directory: scratch_space
+        run: "dart format --output=none --set-exit-if-changed ."
+      - name: "scratch_space; dart analyze --fatal-infos ."
+        if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
+        working-directory: scratch_space
+        run: dart analyze --fatal-infos .
+  job_008:
+    name: "analyze_and_format; windows; Dart dev; PKG: _test_null_safety; `dart analyze --fatal-infos`"
+    runs-on: windows-latest
+    steps:
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: _test_null_safety_pub_upgrade
+        name: _test_null_safety; pub.bat upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: _test_null_safety
+        run: pub.bat upgrade
+      - name: "_test_null_safety; dart analyze --fatal-infos"
+        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
+        working-directory: _test_null_safety
+        run: dart analyze --fatal-infos
+  job_009:
+    name: "unit_test; linux; Dart 2.12.0; PKG: build; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:build;commands:test_04"
@@ -445,14 +437,14 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_pub_upgrade
-        name: "build; pub upgrade --no-precompile"
+        name: build; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build
-        run: pub upgrade --no-precompile
-      - name: "build; pub run test --test-randomize-ordering-seed=random"
+        run: pub upgrade
+      - name: "build; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_pub_upgrade.conclusion == 'success'"
         working-directory: build
-        run: "pub run test --test-randomize-ordering-seed=random"
+        run: "dart test --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002
@@ -463,11 +455,11 @@ jobs:
       - job_007
       - job_008
   job_010:
-    name: "unit_test; linux; Dart 2.12.0; PKG: build_resolvers; `pub run test --test-randomize-ordering-seed=random`"
+    name: "unit_test; linux; Dart 2.12.0; PKG: build_resolvers; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
+        uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:build_resolvers;commands:test_04"
@@ -482,14 +474,14 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_resolvers_pub_upgrade
-        name: "build_resolvers; pub upgrade --no-precompile"
+        name: build_resolvers; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_resolvers
-        run: pub upgrade --no-precompile
-      - name: "build_resolvers; pub run test --test-randomize-ordering-seed=random"
+        run: pub upgrade
+      - name: "build_resolvers; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
         working-directory: build_resolvers
-        run: "pub run test --test-randomize-ordering-seed=random"
+        run: "dart test --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002
@@ -500,11 +492,11 @@ jobs:
       - job_007
       - job_008
   job_011:
-    name: "unit_test; linux; Dart 2.12.0; PKG: build_test; `pub run test --test-randomize-ordering-seed=random`"
+    name: "unit_test; linux; Dart 2.12.0; PKG: build_test; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
+        uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:build_test;commands:test_04"
@@ -519,14 +511,14 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_test_pub_upgrade
-        name: "build_test; pub upgrade --no-precompile"
+        name: build_test; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_test
-        run: pub upgrade --no-precompile
-      - name: "build_test; pub run test --test-randomize-ordering-seed=random"
+        run: pub upgrade
+      - name: "build_test; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
         working-directory: build_test
-        run: "pub run test --test-randomize-ordering-seed=random"
+        run: "dart test --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002
@@ -537,11 +529,11 @@ jobs:
       - job_007
       - job_008
   job_012:
-    name: "unit_test; linux; Dart 2.12.0; PKG: scratch_space; `pub run test --test-randomize-ordering-seed=random`"
+    name: "unit_test; linux; Dart 2.12.0; PKG: scratch_space; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
+        uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:scratch_space;commands:test_04"
@@ -556,14 +548,14 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: scratch_space_pub_upgrade
-        name: "scratch_space; pub upgrade --no-precompile"
+        name: scratch_space; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: scratch_space
-        run: pub upgrade --no-precompile
-      - name: "scratch_space; pub run test --test-randomize-ordering-seed=random"
+        run: pub upgrade
+      - name: "scratch_space; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
         working-directory: scratch_space
-        run: "pub run test --test-randomize-ordering-seed=random"
+        run: "dart test --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002
@@ -574,769 +566,11 @@ jobs:
       - job_007
       - job_008
   job_013:
-    name: "unit_test; windows; Dart 2.12.0; PKG: build; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
-    steps:
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: "2.12.0"
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_pub_upgrade
-        name: "build; pub.bat upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build
-        run: pub.bat upgrade --no-precompile
-      - name: "build; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_pub_upgrade.conclusion == 'success'"
-        working-directory: build
-        run: "pub.bat run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_014:
-    name: "unit_test; windows; Dart 2.12.0; PKG: scratch_space; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
-    steps:
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: "2.12.0"
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: scratch_space_pub_upgrade
-        name: "scratch_space; pub.bat upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: scratch_space
-        run: pub.bat upgrade --no-precompile
-      - name: "scratch_space; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
-        working-directory: scratch_space
-        run: "pub.bat run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_015:
-    name: "unit_test; windows; Dart 2.12.0; PKG: build_resolvers; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
-    steps:
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: "2.12.0"
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_resolvers_pub_upgrade
-        name: "build_resolvers; pub.bat upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_resolvers
-        run: pub.bat upgrade --no-precompile
-      - name: "build_resolvers; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
-        working-directory: build_resolvers
-        run: "pub.bat run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_016:
-    name: "unit_test; windows; Dart 2.12.0; PKG: build_test; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
-    steps:
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: "2.12.0"
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_test_pub_upgrade
-        name: "build_test; pub.bat upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_test
-        run: pub.bat upgrade --no-precompile
-      - name: "build_test; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
-        working-directory: build_test
-        run: "pub.bat run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_017:
-    name: "unit_test; linux; Dart dev; PKG: build; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build;commands:test_04"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_pub_upgrade
-        name: "build; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build
-        run: pub upgrade --no-precompile
-      - name: "build; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_pub_upgrade.conclusion == 'success'"
-        working-directory: build
-        run: "pub run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_018:
-    name: "unit_test; linux; Dart dev; PKG: build_config; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_config;commands:test_04"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_config
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_config_pub_upgrade
-        name: "build_config; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_config
-        run: pub upgrade --no-precompile
-      - name: "build_config; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_config_pub_upgrade.conclusion == 'success'"
-        working-directory: build_config
-        run: "pub run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_019:
-    name: "unit_test; linux; Dart dev; PKG: build_web_compilers; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_web_compilers;commands:test_04"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_web_compilers
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_web_compilers_pub_upgrade
-        name: "build_web_compilers; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_web_compilers
-        run: pub upgrade --no-precompile
-      - name: "build_web_compilers; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_web_compilers_pub_upgrade.conclusion == 'success'"
-        working-directory: build_web_compilers
-        run: "pub run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_020:
-    name: "unit_test; linux; Dart dev; PKG: build_daemon; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_daemon;commands:test_04"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_daemon
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_daemon_pub_upgrade
-        name: "build_daemon; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_daemon
-        run: pub upgrade --no-precompile
-      - name: "build_daemon; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_daemon_pub_upgrade.conclusion == 'success'"
-        working-directory: build_daemon
-        run: "pub run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_021:
-    name: "unit_test; linux; Dart dev; PKG: scratch_space; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:scratch_space;commands:test_04"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:scratch_space
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: scratch_space_pub_upgrade
-        name: "scratch_space; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: scratch_space
-        run: pub upgrade --no-precompile
-      - name: "scratch_space; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
-        working-directory: scratch_space
-        run: "pub run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_022:
-    name: "unit_test; linux; Dart dev; PKG: build_resolvers; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_resolvers;commands:test_04"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_resolvers
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_resolvers_pub_upgrade
-        name: "build_resolvers; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_resolvers
-        run: pub upgrade --no-precompile
-      - name: "build_resolvers; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
-        working-directory: build_resolvers
-        run: "pub run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_023:
-    name: "unit_test; linux; Dart dev; PKG: build_test; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_test;commands:test_04"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_test
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_test_pub_upgrade
-        name: "build_test; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_test
-        run: pub upgrade --no-precompile
-      - name: "build_test; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
-        working-directory: build_test
-        run: "pub run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_024:
-    name: "unit_test; linux; Dart dev; PKG: build_runner_core; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner_core;commands:test_04"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner_core
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_runner_core_pub_upgrade
-        name: "build_runner_core; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_runner_core
-        run: pub upgrade --no-precompile
-      - name: "build_runner_core; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_runner_core_pub_upgrade.conclusion == 'success'"
-        working-directory: build_runner_core
-        run: "pub run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_025:
-    name: "unit_test; windows; Dart dev; PKG: build; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
-    steps:
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_pub_upgrade
-        name: "build; pub.bat upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build
-        run: pub.bat upgrade --no-precompile
-      - name: "build; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_pub_upgrade.conclusion == 'success'"
-        working-directory: build
-        run: "pub.bat run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_026:
-    name: "unit_test; windows; Dart dev; PKG: build_web_compilers; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
-    steps:
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_web_compilers_pub_upgrade
-        name: "build_web_compilers; pub.bat upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_web_compilers
-        run: pub.bat upgrade --no-precompile
-      - name: "build_web_compilers; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_web_compilers_pub_upgrade.conclusion == 'success'"
-        working-directory: build_web_compilers
-        run: "pub.bat run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_027:
-    name: "unit_test; windows; Dart dev; PKG: build_config; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
-    steps:
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_config_pub_upgrade
-        name: "build_config; pub.bat upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_config
-        run: pub.bat upgrade --no-precompile
-      - name: "build_config; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_config_pub_upgrade.conclusion == 'success'"
-        working-directory: build_config
-        run: "pub.bat run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_028:
-    name: "unit_test; windows; Dart dev; PKG: build_daemon; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
-    steps:
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_daemon_pub_upgrade
-        name: "build_daemon; pub.bat upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_daemon
-        run: pub.bat upgrade --no-precompile
-      - name: "build_daemon; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_daemon_pub_upgrade.conclusion == 'success'"
-        working-directory: build_daemon
-        run: "pub.bat run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_029:
-    name: "unit_test; windows; Dart dev; PKG: build_resolvers; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
-    steps:
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_resolvers_pub_upgrade
-        name: "build_resolvers; pub.bat upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_resolvers
-        run: pub.bat upgrade --no-precompile
-      - name: "build_resolvers; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
-        working-directory: build_resolvers
-        run: "pub.bat run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_030:
-    name: "unit_test; windows; Dart dev; PKG: build_test; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
-    steps:
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_test_pub_upgrade
-        name: "build_test; pub.bat upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_test
-        run: pub.bat upgrade --no-precompile
-      - name: "build_test; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
-        working-directory: build_test
-        run: "pub.bat run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_031:
-    name: "unit_test; windows; Dart dev; PKG: build_runner_core; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
-    steps:
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_runner_core_pub_upgrade
-        name: "build_runner_core; pub.bat upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_runner_core
-        run: pub.bat upgrade --no-precompile
-      - name: "build_runner_core; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_runner_core_pub_upgrade.conclusion == 'success'"
-        working-directory: build_runner_core
-        run: "pub.bat run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_032:
-    name: "unit_test; windows; Dart dev; PKG: scratch_space; `pub run test --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
-    steps:
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: scratch_space_pub_upgrade
-        name: "scratch_space; pub.bat upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: scratch_space
-        run: pub.bat upgrade --no-precompile
-      - name: "scratch_space; pub run test --test-randomize-ordering-seed=random"
-        if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
-        working-directory: scratch_space
-        run: "pub.bat run test --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_033:
-    name: "unit_test; linux; Dart dev; PKG: build_modules; `pub run test -P presubmit --test-randomize-ordering-seed=random`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_modules;commands:test_05"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_modules
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_modules_pub_upgrade
-        name: "build_modules; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_modules
-        run: pub upgrade --no-precompile
-      - name: "build_modules; pub run test -P presubmit --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_modules_pub_upgrade.conclusion == 'success'"
-        working-directory: build_modules
-        run: "pub run test -P presubmit --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_034:
-    name: "unit_test; windows; Dart dev; PKG: build_modules; `pub run test -P presubmit --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
-    steps:
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_modules_pub_upgrade
-        name: "build_modules; pub.bat upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_modules
-        run: pub.bat upgrade --no-precompile
-      - name: "build_modules; pub run test -P presubmit --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_modules_pub_upgrade.conclusion == 'success'"
-        working-directory: build_modules
-        run: "pub.bat run test -P presubmit --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_035:
-    name: "unit_test; linux; Dart dev; PKG: build_vm_compilers; `pub run test`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_vm_compilers;commands:test_03"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_vm_compilers
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_vm_compilers_pub_upgrade
-        name: "build_vm_compilers; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_vm_compilers
-        run: pub upgrade --no-precompile
-      - name: build_vm_compilers; pub run test
-        if: "always() && steps.build_vm_compilers_pub_upgrade.conclusion == 'success'"
-        working-directory: build_vm_compilers
-        run: pub run test
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_036:
-    name: "unit_test; linux; Dart dev; PKG: build_runner; `pub run test -x integration --test-randomize-ordering-seed=random`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner;commands:test_06"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - uses: dart-lang/setup-dart@v1.0
-        with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@v2.3.4
-      - id: build_runner_pub_upgrade
-        name: "build_runner; pub upgrade --no-precompile"
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_runner
-        run: pub upgrade --no-precompile
-      - name: "build_runner; pub run test -x integration --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
-        working-directory: build_runner
-        run: "pub run test -x integration --test-randomize-ordering-seed=random"
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_037:
     name: "unit_test; linux; Dart dev; PKG: _test; `pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random`, `pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
+        uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test;commands:command_0-command_1"
@@ -1351,10 +585,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
-        name: "_test; pub upgrade --no-precompile"
+        name: _test; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-        run: pub upgrade --no-precompile
+        run: pub upgrade
       - name: "_test; pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
@@ -1372,7 +606,522 @@ jobs:
       - job_006
       - job_007
       - job_008
-  job_038:
+  job_014:
+    name: "unit_test; linux; Dart dev; PKG: build; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2.1.6
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build;commands:test_04"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_pub_upgrade
+        name: build; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build
+        run: pub upgrade
+      - name: "build; dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_pub_upgrade.conclusion == 'success'"
+        working-directory: build
+        run: "dart test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_015:
+    name: "unit_test; linux; Dart dev; PKG: build_config; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2.1.6
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_config;commands:test_04"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_config
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_config_pub_upgrade
+        name: build_config; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_config
+        run: pub upgrade
+      - name: "build_config; dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_config_pub_upgrade.conclusion == 'success'"
+        working-directory: build_config
+        run: "dart test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_016:
+    name: "unit_test; linux; Dart dev; PKG: build_daemon; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2.1.6
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_daemon;commands:test_04"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_daemon
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_daemon_pub_upgrade
+        name: build_daemon; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_daemon
+        run: pub upgrade
+      - name: "build_daemon; dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_daemon_pub_upgrade.conclusion == 'success'"
+        working-directory: build_daemon
+        run: "dart test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_017:
+    name: "unit_test; linux; Dart dev; PKG: build_resolvers; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2.1.6
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_resolvers;commands:test_04"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_resolvers
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_resolvers_pub_upgrade
+        name: build_resolvers; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_resolvers
+        run: pub upgrade
+      - name: "build_resolvers; dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
+        working-directory: build_resolvers
+        run: "dart test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_018:
+    name: "unit_test; linux; Dart dev; PKG: build_runner_core; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2.1.6
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner_core;commands:test_04"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner_core
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_runner_core_pub_upgrade
+        name: build_runner_core; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_runner_core
+        run: pub upgrade
+      - name: "build_runner_core; dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_runner_core_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner_core
+        run: "dart test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_019:
+    name: "unit_test; linux; Dart dev; PKG: build_test; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2.1.6
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_test;commands:test_04"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_test
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_test_pub_upgrade
+        name: build_test; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_test
+        run: pub upgrade
+      - name: "build_test; dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
+        working-directory: build_test
+        run: "dart test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_020:
+    name: "unit_test; linux; Dart dev; PKG: build_web_compilers; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2.1.6
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_web_compilers;commands:test_04"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_web_compilers
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_web_compilers_pub_upgrade
+        name: build_web_compilers; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_web_compilers
+        run: pub upgrade
+      - name: "build_web_compilers; dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_web_compilers_pub_upgrade.conclusion == 'success'"
+        working-directory: build_web_compilers
+        run: "dart test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_021:
+    name: "unit_test; linux; Dart dev; PKG: scratch_space; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2.1.6
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:scratch_space;commands:test_04"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:scratch_space
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: scratch_space_pub_upgrade
+        name: scratch_space; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: scratch_space
+        run: pub upgrade
+      - name: "scratch_space; dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
+        working-directory: scratch_space
+        run: "dart test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_022:
+    name: "unit_test; linux; Dart dev; PKG: build_modules; `dart test -P presubmit --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2.1.6
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_modules;commands:test_05"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_modules
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_modules_pub_upgrade
+        name: build_modules; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_modules
+        run: pub upgrade
+      - name: "build_modules; dart test -P presubmit --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_modules_pub_upgrade.conclusion == 'success'"
+        working-directory: build_modules
+        run: "dart test -P presubmit --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_023:
+    name: "unit_test; linux; Dart dev; PKG: build_runner; `dart test -x integration --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2.1.6
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner;commands:test_06"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_runner_pub_upgrade
+        name: build_runner; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_runner
+        run: pub upgrade
+      - name: "build_runner; dart test -x integration --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+        run: "dart test -x integration --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_024:
+    name: "unit_test; linux; Dart dev; PKG: build_vm_compilers; `dart test`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2.1.6
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_vm_compilers;commands:test_03"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_vm_compilers
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_vm_compilers_pub_upgrade
+        name: build_vm_compilers; pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_vm_compilers
+        run: pub upgrade
+      - name: build_vm_compilers; dart test
+        if: "always() && steps.build_vm_compilers_pub_upgrade.conclusion == 'success'"
+        working-directory: build_vm_compilers
+        run: dart test
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_025:
+    name: "unit_test; windows; Dart 2.12.0; PKG: build; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
+    steps:
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: "2.12.0"
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_pub_upgrade
+        name: build; pub.bat upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build
+        run: pub.bat upgrade
+      - name: "build; dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_pub_upgrade.conclusion == 'success'"
+        working-directory: build
+        run: "dart test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_026:
+    name: "unit_test; windows; Dart 2.12.0; PKG: build_resolvers; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
+    steps:
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: "2.12.0"
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_resolvers_pub_upgrade
+        name: build_resolvers; pub.bat upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_resolvers
+        run: pub.bat upgrade
+      - name: "build_resolvers; dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
+        working-directory: build_resolvers
+        run: "dart test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_027:
+    name: "unit_test; windows; Dart 2.12.0; PKG: build_test; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
+    steps:
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: "2.12.0"
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_test_pub_upgrade
+        name: build_test; pub.bat upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_test
+        run: pub.bat upgrade
+      - name: "build_test; dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
+        working-directory: build_test
+        run: "dart test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_028:
+    name: "unit_test; windows; Dart 2.12.0; PKG: scratch_space; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
+    steps:
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: "2.12.0"
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: scratch_space_pub_upgrade
+        name: scratch_space; pub.bat upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: scratch_space
+        run: pub.bat upgrade
+      - name: "scratch_space; dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
+        working-directory: scratch_space
+        run: "dart test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_029:
     name: "unit_test; windows; Dart dev; PKG: _test; `pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random`, `pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -1382,10 +1131,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
-        name: "_test; pub.bat upgrade --no-precompile"
+        name: _test; pub.bat upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-        run: pub.bat upgrade --no-precompile
+        run: pub.bat upgrade
       - name: "_test; pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
@@ -1403,8 +1152,251 @@ jobs:
       - job_006
       - job_007
       - job_008
+  job_030:
+    name: "unit_test; windows; Dart dev; PKG: build; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
+    steps:
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_pub_upgrade
+        name: build; pub.bat upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build
+        run: pub.bat upgrade
+      - name: "build; dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_pub_upgrade.conclusion == 'success'"
+        working-directory: build
+        run: "dart test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_031:
+    name: "unit_test; windows; Dart dev; PKG: build_config; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
+    steps:
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_config_pub_upgrade
+        name: build_config; pub.bat upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_config
+        run: pub.bat upgrade
+      - name: "build_config; dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_config_pub_upgrade.conclusion == 'success'"
+        working-directory: build_config
+        run: "dart test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_032:
+    name: "unit_test; windows; Dart dev; PKG: build_daemon; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
+    steps:
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_daemon_pub_upgrade
+        name: build_daemon; pub.bat upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_daemon
+        run: pub.bat upgrade
+      - name: "build_daemon; dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_daemon_pub_upgrade.conclusion == 'success'"
+        working-directory: build_daemon
+        run: "dart test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_033:
+    name: "unit_test; windows; Dart dev; PKG: build_resolvers; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
+    steps:
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_resolvers_pub_upgrade
+        name: build_resolvers; pub.bat upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_resolvers
+        run: pub.bat upgrade
+      - name: "build_resolvers; dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
+        working-directory: build_resolvers
+        run: "dart test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_034:
+    name: "unit_test; windows; Dart dev; PKG: build_runner_core; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
+    steps:
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_runner_core_pub_upgrade
+        name: build_runner_core; pub.bat upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_runner_core
+        run: pub.bat upgrade
+      - name: "build_runner_core; dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_runner_core_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner_core
+        run: "dart test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_035:
+    name: "unit_test; windows; Dart dev; PKG: build_test; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
+    steps:
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_test_pub_upgrade
+        name: build_test; pub.bat upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_test
+        run: pub.bat upgrade
+      - name: "build_test; dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
+        working-directory: build_test
+        run: "dart test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_036:
+    name: "unit_test; windows; Dart dev; PKG: build_web_compilers; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
+    steps:
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_web_compilers_pub_upgrade
+        name: build_web_compilers; pub.bat upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_web_compilers
+        run: pub.bat upgrade
+      - name: "build_web_compilers; dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_web_compilers_pub_upgrade.conclusion == 'success'"
+        working-directory: build_web_compilers
+        run: "dart test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_037:
+    name: "unit_test; windows; Dart dev; PKG: scratch_space; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
+    steps:
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: scratch_space_pub_upgrade
+        name: scratch_space; pub.bat upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: scratch_space
+        run: pub.bat upgrade
+      - name: "scratch_space; dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
+        working-directory: scratch_space
+        run: "dart test --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_038:
+    name: "unit_test; windows; Dart dev; PKG: build_modules; `dart test -P presubmit --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
+    steps:
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.3.4
+      - id: build_modules_pub_upgrade
+        name: build_modules; pub.bat upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_modules
+        run: pub.bat upgrade
+      - name: "build_modules; dart test -P presubmit --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_modules_pub_upgrade.conclusion == 'success'"
+        working-directory: build_modules
+        run: "dart test -P presubmit --test-randomize-ordering-seed=random"
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
   job_039:
-    name: "unit_test; windows; Dart dev; PKG: build_vm_compilers; `pub run test`"
+    name: "unit_test; windows; Dart dev; PKG: build_vm_compilers; `dart test`"
     runs-on: windows-latest
     steps:
       - uses: dart-lang/setup-dart@v1.0
@@ -1413,14 +1405,14 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_vm_compilers_pub_upgrade
-        name: "build_vm_compilers; pub.bat upgrade --no-precompile"
+        name: build_vm_compilers; pub.bat upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_vm_compilers
-        run: pub.bat upgrade --no-precompile
-      - name: build_vm_compilers; pub run test
+        run: pub.bat upgrade
+      - name: build_vm_compilers; dart test
         if: "always() && steps.build_vm_compilers_pub_upgrade.conclusion == 'success'"
         working-directory: build_vm_compilers
-        run: pub.bat run test
+        run: dart test
     needs:
       - job_001
       - job_002
@@ -1431,33 +1423,37 @@ jobs:
       - job_007
       - job_008
   job_040:
-    name: "e2e_test; linux; Dart dev; PKG: build_runner; `pub run test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
+    name: "e2e_test; linux; Dart 2.12.0; PKG: _test_null_safety; `pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
+        uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner;commands:test_09"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:_test_null_safety;commands:command_2-command_3"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:_test_null_safety
+            os:ubuntu-latest;pub-cache-hosted;dart:2.12.0
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.0
         with:
-          sdk: dev
+          sdk: "2.12.0"
       - id: checkout
         uses: actions/checkout@v2.3.4
-      - id: build_runner_pub_upgrade
-        name: "build_runner; pub upgrade --no-precompile"
+      - id: _test_null_safety_pub_upgrade
+        name: _test_null_safety; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_runner
-        run: pub upgrade --no-precompile
-      - name: "build_runner; pub run test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces"
-        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
-        working-directory: build_runner
-        run: "pub run test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+        working-directory: _test_null_safety
+        run: pub upgrade
+      - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
+        working-directory: _test_null_safety
+        run: "pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+      - name: "_test_null_safety; pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
+        working-directory: _test_null_safety
+        run: "pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002
@@ -1499,16 +1495,16 @@ jobs:
       - job_038
       - job_039
   job_041:
-    name: "e2e_test; linux; Dart dev; PKG: build_runner; `pub run test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
+    name: "e2e_test; linux; Dart dev; PKG: _test; `dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
+        uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner;commands:test_08"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test;commands:test_00"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test
             os:ubuntu-latest;pub-cache-hosted;dart:dev
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
@@ -1517,15 +1513,15 @@ jobs:
           sdk: dev
       - id: checkout
         uses: actions/checkout@v2.3.4
-      - id: build_runner_pub_upgrade
-        name: "build_runner; pub upgrade --no-precompile"
+      - id: _test_pub_upgrade
+        name: _test; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_runner
-        run: pub upgrade --no-precompile
-      - name: "build_runner; pub run test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces"
-        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
-        working-directory: build_runner
-        run: "pub run test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+        working-directory: _test
+        run: pub upgrade
+      - name: "_test; dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random"
+        if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
+        working-directory: _test
+        run: "dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002
@@ -1567,16 +1563,16 @@ jobs:
       - job_038
       - job_039
   job_042:
-    name: "e2e_test; linux; Dart dev; PKG: build_runner; `pub run test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
+    name: "e2e_test; linux; Dart dev; PKG: _test; `dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
+        uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner;commands:test_07"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test;commands:test_01"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test
             os:ubuntu-latest;pub-cache-hosted;dart:dev
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
@@ -1585,15 +1581,15 @@ jobs:
           sdk: dev
       - id: checkout
         uses: actions/checkout@v2.3.4
-      - id: build_runner_pub_upgrade
-        name: "build_runner; pub upgrade --no-precompile"
+      - id: _test_pub_upgrade
+        name: _test; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_runner
-        run: pub upgrade --no-precompile
-      - name: "build_runner; pub run test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces"
-        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
-        working-directory: build_runner
-        run: "pub run test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+        working-directory: _test
+        run: pub upgrade
+      - name: "_test; dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random"
+        if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
+        working-directory: _test
+        run: "dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002
@@ -1635,27 +1631,33 @@ jobs:
       - job_038
       - job_039
   job_043:
-    name: "e2e_test; windows; Dart dev; PKG: _test_null_safety; `pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
+    name: "e2e_test; linux; Dart dev; PKG: _test; `dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
     steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2.1.6
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test;commands:test_02"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.0
         with:
           sdk: dev
       - id: checkout
         uses: actions/checkout@v2.3.4
-      - id: _test_null_safety_pub_upgrade
-        name: "_test_null_safety; pub.bat upgrade --no-precompile"
+      - id: _test_pub_upgrade
+        name: _test; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: pub.bat upgrade --no-precompile
-      - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
-        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: "pub.bat run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
-      - name: "_test_null_safety; pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
-        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: "pub.bat run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+        working-directory: _test
+        run: pub upgrade
+      - name: "_test; dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random"
+        if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
+        working-directory: _test
+        run: "dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002
@@ -1697,16 +1699,16 @@ jobs:
       - job_038
       - job_039
   job_044:
-    name: "e2e_test; linux; Dart dev; PKG: build_runner; `pub run test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
+    name: "e2e_test; linux; Dart dev; PKG: _test_null_safety; `pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
+        uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner;commands:test_10"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_null_safety;commands:command_2-command_3"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_null_safety
             os:ubuntu-latest;pub-cache-hosted;dart:dev
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
@@ -1715,15 +1717,19 @@ jobs:
           sdk: dev
       - id: checkout
         uses: actions/checkout@v2.3.4
-      - id: build_runner_pub_upgrade
-        name: "build_runner; pub upgrade --no-precompile"
+      - id: _test_null_safety_pub_upgrade
+        name: _test_null_safety; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_runner
-        run: pub upgrade --no-precompile
-      - name: "build_runner; pub run test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces"
-        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
-        working-directory: build_runner
-        run: "pub run test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+        working-directory: _test_null_safety
+        run: pub upgrade
+      - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
+        working-directory: _test_null_safety
+        run: "pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+      - name: "_test_null_safety; pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
+        working-directory: _test_null_safety
+        run: "pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002
@@ -1765,16 +1771,16 @@ jobs:
       - job_038
       - job_039
   job_045:
-    name: "e2e_test; linux; Dart dev; PKG: _test_null_safety; `pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
+    name: "e2e_test; linux; Dart dev; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
+        uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_null_safety;commands:command_2-command_3"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner;commands:test_07"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_null_safety
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner
             os:ubuntu-latest;pub-cache-hosted;dart:dev
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
@@ -1783,19 +1789,15 @@ jobs:
           sdk: dev
       - id: checkout
         uses: actions/checkout@v2.3.4
-      - id: _test_null_safety_pub_upgrade
-        name: "_test_null_safety; pub upgrade --no-precompile"
+      - id: build_runner_pub_upgrade
+        name: build_runner; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: pub upgrade --no-precompile
-      - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
-        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: "pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
-      - name: "_test_null_safety; pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
-        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: "pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+        working-directory: build_runner
+        run: pub upgrade
+      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+        run: "dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces"
     needs:
       - job_001
       - job_002
@@ -1837,27 +1839,33 @@ jobs:
       - job_038
       - job_039
   job_046:
-    name: "e2e_test; windows; Dart 2.12.0; PKG: _test_null_safety; `pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
+    name: "e2e_test; linux; Dart dev; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
+    runs-on: ubuntu-latest
     steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2.1.6
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner;commands:test_08"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.0
         with:
-          sdk: "2.12.0"
+          sdk: dev
       - id: checkout
         uses: actions/checkout@v2.3.4
-      - id: _test_null_safety_pub_upgrade
-        name: "_test_null_safety; pub.bat upgrade --no-precompile"
+      - id: build_runner_pub_upgrade
+        name: build_runner; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: pub.bat upgrade --no-precompile
-      - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
-        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: "pub.bat run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
-      - name: "_test_null_safety; pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
-        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: "pub.bat run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+        working-directory: build_runner
+        run: pub upgrade
+      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+        run: "dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces"
     needs:
       - job_001
       - job_002
@@ -1899,37 +1907,33 @@ jobs:
       - job_038
       - job_039
   job_047:
-    name: "e2e_test; linux; Dart 2.12.0; PKG: _test_null_safety; `pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
+    name: "e2e_test; linux; Dart dev; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
+        uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:_test_null_safety;commands:command_2-command_3"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner;commands:test_09"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:_test_null_safety
-            os:ubuntu-latest;pub-cache-hosted;dart:2.12.0
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.0
         with:
-          sdk: "2.12.0"
+          sdk: dev
       - id: checkout
         uses: actions/checkout@v2.3.4
-      - id: _test_null_safety_pub_upgrade
-        name: "_test_null_safety; pub upgrade --no-precompile"
+      - id: build_runner_pub_upgrade
+        name: build_runner; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: pub upgrade --no-precompile
-      - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
-        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: "pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
-      - name: "_test_null_safety; pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
-        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: "pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+        working-directory: build_runner
+        run: pub upgrade
+      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+        run: "dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces"
     needs:
       - job_001
       - job_002
@@ -1971,23 +1975,33 @@ jobs:
       - job_038
       - job_039
   job_048:
-    name: "e2e_test; windows; Dart dev; PKG: _test; `pub run test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
+    name: "e2e_test; linux; Dart dev; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
+    runs-on: ubuntu-latest
     steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2.1.6
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner;commands:test_10"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.0
         with:
           sdk: dev
       - id: checkout
         uses: actions/checkout@v2.3.4
-      - id: _test_pub_upgrade
-        name: "_test; pub.bat upgrade --no-precompile"
+      - id: build_runner_pub_upgrade
+        name: build_runner; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: _test
-        run: pub.bat upgrade --no-precompile
-      - name: "_test; pub run test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random"
-        if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
-        working-directory: _test
-        run: "pub.bat run test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random"
+        working-directory: build_runner
+        run: pub upgrade
+      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+        run: "dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces"
     needs:
       - job_001
       - job_002
@@ -2029,23 +2043,33 @@ jobs:
       - job_038
       - job_039
   job_049:
-    name: "e2e_test; windows; Dart dev; PKG: _test; `pub run test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
+    name: "e2e_test; linux; Dart dev; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
+    runs-on: ubuntu-latest
     steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2.1.6
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner;commands:test_11"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner
+            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.0
         with:
           sdk: dev
       - id: checkout
         uses: actions/checkout@v2.3.4
-      - id: _test_pub_upgrade
-        name: "_test; pub.bat upgrade --no-precompile"
+      - id: build_runner_pub_upgrade
+        name: build_runner; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: _test
-        run: pub.bat upgrade --no-precompile
-      - name: "_test; pub run test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random"
-        if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
-        working-directory: _test
-        run: "pub.bat run test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random"
+        working-directory: build_runner
+        run: pub upgrade
+      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner
+        run: "dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces"
     needs:
       - job_001
       - job_002
@@ -2087,23 +2111,27 @@ jobs:
       - job_038
       - job_039
   job_050:
-    name: "e2e_test; windows; Dart dev; PKG: _test; `pub run test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random`"
+    name: "e2e_test; windows; Dart 2.12.0; PKG: _test_null_safety; `pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
       - uses: dart-lang/setup-dart@v1.0
         with:
-          sdk: dev
+          sdk: "2.12.0"
       - id: checkout
         uses: actions/checkout@v2.3.4
-      - id: _test_pub_upgrade
-        name: "_test; pub.bat upgrade --no-precompile"
+      - id: _test_null_safety_pub_upgrade
+        name: _test_null_safety; pub.bat upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: _test
-        run: pub.bat upgrade --no-precompile
-      - name: "_test; pub run test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random"
-        if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
-        working-directory: _test
-        run: "pub.bat run test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random"
+        working-directory: _test_null_safety
+        run: pub.bat upgrade
+      - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
+        working-directory: _test_null_safety
+        run: "pub.bat run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+      - name: "_test_null_safety; pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
+        working-directory: _test_null_safety
+        run: "pub.bat run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002
@@ -2145,33 +2173,23 @@ jobs:
       - job_038
       - job_039
   job_051:
-    name: "e2e_test; linux; Dart dev; PKG: _test; `pub run test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random`"
-    runs-on: ubuntu-latest
+    name: "e2e_test; windows; Dart dev; PKG: _test; `dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
     steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test;commands:test_02"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.0
         with:
           sdk: dev
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
-        name: "_test; pub upgrade --no-precompile"
+        name: _test; pub.bat upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-        run: pub upgrade --no-precompile
-      - name: "_test; pub run test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random"
+        run: pub.bat upgrade
+      - name: "_test; dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
-        run: "pub run test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random"
+        run: "dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002
@@ -2213,33 +2231,23 @@ jobs:
       - job_038
       - job_039
   job_052:
-    name: "e2e_test; linux; Dart dev; PKG: _test; `pub run test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random`"
-    runs-on: ubuntu-latest
+    name: "e2e_test; windows; Dart dev; PKG: _test; `dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
     steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test;commands:test_01"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.0
         with:
           sdk: dev
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
-        name: "_test; pub upgrade --no-precompile"
+        name: _test; pub.bat upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-        run: pub upgrade --no-precompile
-      - name: "_test; pub run test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random"
+        run: pub.bat upgrade
+      - name: "_test; dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
-        run: "pub run test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random"
+        run: "dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002
@@ -2281,33 +2289,23 @@ jobs:
       - job_038
       - job_039
   job_053:
-    name: "e2e_test; linux; Dart dev; PKG: _test; `pub run test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random`"
-    runs-on: ubuntu-latest
+    name: "e2e_test; windows; Dart dev; PKG: _test; `dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
     steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test;commands:test_00"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.0
         with:
           sdk: dev
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
-        name: "_test; pub upgrade --no-precompile"
+        name: _test; pub.bat upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-        run: pub upgrade --no-precompile
-      - name: "_test; pub run test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random"
+        run: pub.bat upgrade
+      - name: "_test; dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
-        run: "pub run test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random"
+        run: "dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002
@@ -2349,33 +2347,27 @@ jobs:
       - job_038
       - job_039
   job_054:
-    name: "e2e_test; linux; Dart dev; PKG: build_runner; `pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
-    runs-on: ubuntu-latest
+    name: "e2e_test; windows; Dart dev; PKG: _test_null_safety; `pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
     steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner;commands:test_11"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_runner
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.0
         with:
           sdk: dev
       - id: checkout
         uses: actions/checkout@v2.3.4
-      - id: build_runner_pub_upgrade
-        name: "build_runner; pub upgrade --no-precompile"
+      - id: _test_null_safety_pub_upgrade
+        name: _test_null_safety; pub.bat upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_runner
-        run: pub upgrade --no-precompile
-      - name: "build_runner; pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces"
-        if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
-        working-directory: build_runner
-        run: "pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+        working-directory: _test_null_safety
+        run: pub.bat upgrade
+      - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
+        working-directory: _test_null_safety
+        run: "pub.bat run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+      - name: "_test_null_safety; pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
+        working-directory: _test_null_safety
+        run: "pub.bat run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002
@@ -2417,27 +2409,33 @@ jobs:
       - job_038
       - job_039
   job_055:
-    name: "e2e_test_cron; windows; Dart main; PKG: _test_null_safety; `pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
+    name: "e2e_test_cron; linux; Dart main; PKG: _test; `dart test`"
+    runs-on: ubuntu-latest
     steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@v2.1.6
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:main;packages:_test;commands:test_03"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;dart:main;packages:_test
+            os:ubuntu-latest;pub-cache-hosted;dart:main
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.0
         with:
           sdk: main
       - id: checkout
         uses: actions/checkout@v2.3.4
-      - id: _test_null_safety_pub_upgrade
-        name: "_test_null_safety; pub.bat upgrade --no-precompile"
+      - id: _test_pub_upgrade
+        name: _test; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: pub.bat upgrade --no-precompile
-      - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
-        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: "pub.bat run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
-      - name: "_test_null_safety; pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
-        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: "pub.bat run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+        working-directory: _test
+        run: pub upgrade
+      - name: _test; dart test
+        if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
+        working-directory: _test
+        run: dart test
     if: "github.event_name == 'schedule'"
     needs:
       - job_001
@@ -2499,7 +2497,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
+        uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;dart:main;packages:_test_null_safety;commands:command_2-command_3"
@@ -2514,10 +2512,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_null_safety_pub_upgrade
-        name: "_test_null_safety; pub upgrade --no-precompile"
+        name: _test_null_safety; pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: pub upgrade --no-precompile
+        run: pub upgrade
       - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
@@ -2583,7 +2581,7 @@ jobs:
       - job_053
       - job_054
   job_057:
-    name: "e2e_test_cron; windows; Dart main; PKG: _test; `pub run test`"
+    name: "e2e_test_cron; windows; Dart main; PKG: _test; `dart test`"
     runs-on: windows-latest
     steps:
       - uses: dart-lang/setup-dart@v1.0
@@ -2592,14 +2590,14 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
-        name: "_test; pub.bat upgrade --no-precompile"
+        name: _test; pub.bat upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-        run: pub.bat upgrade --no-precompile
-      - name: _test; pub run test
+        run: pub.bat upgrade
+      - name: _test; dart test
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
-        run: pub.bat run test
+        run: dart test
     if: "github.event_name == 'schedule'"
     needs:
       - job_001
@@ -2657,33 +2655,27 @@ jobs:
       - job_053
       - job_054
   job_058:
-    name: "e2e_test_cron; linux; Dart main; PKG: _test; `pub run test`"
-    runs-on: ubuntu-latest
+    name: "e2e_test_cron; windows; Dart main; PKG: _test_null_safety; `pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
     steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.5
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:main;packages:_test;commands:test_03"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:main;packages:_test
-            os:ubuntu-latest;pub-cache-hosted;dart:main
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.0
         with:
           sdk: main
       - id: checkout
         uses: actions/checkout@v2.3.4
-      - id: _test_pub_upgrade
-        name: "_test; pub upgrade --no-precompile"
+      - id: _test_null_safety_pub_upgrade
+        name: _test_null_safety; pub.bat upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: _test
-        run: pub upgrade --no-precompile
-      - name: _test; pub run test
-        if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
-        working-directory: _test
-        run: pub run test
+        working-directory: _test_null_safety
+        run: pub.bat upgrade
+      - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
+        working-directory: _test_null_safety
+        run: "pub.bat run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+      - name: "_test_null_safety; pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
+        working-directory: _test_null_safety
+        run: "pub.bat run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
     if: "github.event_name == 'schedule'"
     needs:
       - job_001

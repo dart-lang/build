@@ -1,5 +1,5 @@
 #!/bin/bash
-# Created with package:mono_repo v4.0.0
+# Created with package:mono_repo v4.1.0
 
 # Support built in commands on windows out of the box.
 # When it is a flutter repo (check the pubspec.yaml for "sdk: flutter")
@@ -16,7 +16,7 @@ function pub() {
     if [[ $TRAVIS_OS_NAME == "windows" ]]; then
       command pub.bat "$@"
     else
-      command pub "$@"
+      command dart pub "$@"
     fi
   fi
 }
@@ -58,11 +58,11 @@ for PKG in ${PKGS}; do
     exit 64
   fi
 
-  pub upgrade --no-precompile || EXIT_CODE=$?
+  dart pub upgrade || EXIT_CODE=$?
 
   if [[ ${EXIT_CODE} -ne 0 ]]; then
-    echo -e "\033[31mPKG: ${PKG}; 'pub upgrade' - FAILED  (${EXIT_CODE})\033[0m"
-    FAILURES+=("${PKG}; 'pub upgrade'")
+    echo -e "\033[31mPKG: ${PKG}; 'dart pub upgrade' - FAILED  (${EXIT_CODE})\033[0m"
+    FAILURES+=("${PKG}; 'dart pub upgrade'")
   else
     for TASK in "$@"; do
       EXIT_CODE=0
@@ -85,61 +85,65 @@ for PKG in ${PKGS}; do
         echo 'pub run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random'
         pub run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
-      dartanalyzer)
-        echo 'dartanalyzer --fatal-infos .'
-        dartanalyzer --fatal-infos . || EXIT_CODE=$?
+      dartanalyzer_0)
+        echo 'dart analyze --fatal-infos .'
+        dart analyze --fatal-infos . || EXIT_CODE=$?
+        ;;
+      dartanalyzer_1)
+        echo 'dart analyze --fatal-infos'
+        dart analyze --fatal-infos || EXIT_CODE=$?
         ;;
       dartfmt)
-        echo 'dartfmt -n --set-exit-if-changed .'
-        dartfmt -n --set-exit-if-changed . || EXIT_CODE=$?
+        echo 'dart format --output=none --set-exit-if-changed .'
+        dart format --output=none --set-exit-if-changed . || EXIT_CODE=$?
         ;;
       test_00)
-        echo 'pub run test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random'
-        pub run test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        echo 'dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random'
+        dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       test_01)
-        echo 'pub run test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random'
-        pub run test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        echo 'dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random'
+        dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       test_02)
-        echo 'pub run test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random'
-        pub run test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        echo 'dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random'
+        dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       test_03)
-        echo 'pub run test'
-        pub run test || EXIT_CODE=$?
+        echo 'dart test'
+        dart test || EXIT_CODE=$?
         ;;
       test_04)
-        echo 'pub run test --test-randomize-ordering-seed=random'
-        pub run test --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        echo 'dart test --test-randomize-ordering-seed=random'
+        dart test --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       test_05)
-        echo 'pub run test -P presubmit --test-randomize-ordering-seed=random'
-        pub run test -P presubmit --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        echo 'dart test -P presubmit --test-randomize-ordering-seed=random'
+        dart test -P presubmit --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       test_06)
-        echo 'pub run test -x integration --test-randomize-ordering-seed=random'
-        pub run test -x integration --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        echo 'dart test -x integration --test-randomize-ordering-seed=random'
+        dart test -x integration --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       test_07)
-        echo 'pub run test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces'
-        pub run test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces || EXIT_CODE=$?
+        echo 'dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces'
+        dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces || EXIT_CODE=$?
         ;;
       test_08)
-        echo 'pub run test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces'
-        pub run test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces || EXIT_CODE=$?
+        echo 'dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces'
+        dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces || EXIT_CODE=$?
         ;;
       test_09)
-        echo 'pub run test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces'
-        pub run test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces || EXIT_CODE=$?
+        echo 'dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces'
+        dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces || EXIT_CODE=$?
         ;;
       test_10)
-        echo 'pub run test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces'
-        pub run test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces || EXIT_CODE=$?
+        echo 'dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces'
+        dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces || EXIT_CODE=$?
         ;;
       test_11)
-        echo 'pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces'
-        pub run test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces || EXIT_CODE=$?
+        echo 'dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces'
+        dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces || EXIT_CODE=$?
         ;;
       *)
         echo -e "\033[31mUnknown TASK '${TASK}' - TERMINATING JOB\033[0m"
