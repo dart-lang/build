@@ -166,7 +166,7 @@ when(cat.walk(["roof","tree"])).thenReturn(2);
 when(cat.eatFood(argThat(startsWith("dry")))).thenReturn(false);
 when(cat.eatFood(any)).thenReturn(false);
 
-// ... or mix arguments with matchers
+// ... or mix aguments with matchers
 when(cat.eatFood(argThat(startsWith("dry")), hungry: true)).thenReturn(true);
 expect(cat.eatFood("fish"), isTrue);
 expect(cat.walk(["roof","tree"]), equals(2));
@@ -380,8 +380,8 @@ tests. Finally an object which `extends Fake` using manually overridden methods
 is preferred over an object which `extends Mock` used as either a stub or a
 mock.
 
-A class which `extends Mock` should _never_ stub out its own responses with
-`when` in its constructor or anywhere else. Stubbed responses should be defined
+A class which `extends Mock` should _never_ stub out it's own responses with
+`when` in it's constructor or anywhere else. Stubbed responses should be defined
 in the tests where they are used. For responses controlled outside of the test
 use `@override` methods for either the entire interface, or with `extends Fake`
 to skip some parts of the interface.

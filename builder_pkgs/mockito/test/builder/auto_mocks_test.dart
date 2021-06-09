@@ -120,8 +120,7 @@ void main() {
 
   /// Test [MockBuilder] on a single source file, in a package which has opted
   /// into null safety, and with the non-nullable experiment enabled.
-  Future<void> expectSingleNonNullableOutput(
-      String sourceAssetText,
+  Future<void> expectSingleNonNullableOutput(String sourceAssetText,
       /*String|Matcher<List<int>>*/ Object output) async {
     await testWithNonNullable({
       ...metaAssets,

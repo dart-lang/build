@@ -1,3 +1,9 @@
+## 5.0.11-dev
+
+* Allow two mocks of the same class (with different type arguments) to be
+  specified with different fallback generators.
+* Allow fallback generators on super types of a mocked class.
+
 ## 5.0.10
 
 * Generate a proper mock class when the mocked class overrides `toString`,

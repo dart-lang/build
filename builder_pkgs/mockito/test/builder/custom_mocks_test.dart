@@ -305,8 +305,8 @@ void main() {
   });
 
   test(
-      'generates mock classes including a dummy builder for a generic method '
-      'with positional parameters', () async {
+      'generates mock classes including a fallback generator for a generic '
+      'method with positional parameters', () async {
     var mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
@@ -325,7 +325,9 @@ void main() {
 
         @GenerateMocks(
           [],
-          customMocks: [MockSpec<Foo>(as: #MockFoo, fallbackGenerators: {#m: mShim})],
+          customMocks: [
+            MockSpec<Foo>(as: #MockFoo, fallbackGenerators: {#m: mShim}),
+          ],
         )
         void main() {}
         '''
@@ -338,8 +340,87 @@ void main() {
   });
 
   test(
-      'generates mock classes including a dummy builder for a generic method '
-      'with positional parameters returning a Future of the generic', () async {
+      'generates mock classes including a fallback generator for a generic '
+      'method on a super class', () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent('''
+        abstract class FooBase {
+          T m<T>(T a);
+        }
+        abstract class Foo extends FooBase {}
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+
+        T mShim<T>(T a) {
+          if (a is int) return 1;
+          throw 'unknown';
+        }
+
+        @GenerateMocks(
+          [],
+          customMocks: [
+            MockSpec<Foo>(as: #MockFoo, fallbackGenerators: {#m: mShim}),
+          ],
+        )
+        void main() {}
+        '''
+    });
+    expect(
+        mocksContent,
+        contains(
+            'T m<T>(T? a) => (super.noSuchMethod(Invocation.method(#m, [a]),\n'
+            '      returnValue: _i3.mShim<T>(a)) as T)'));
+  });
+
+  test('generates mock classes including two fallback generators', () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent('''
+        abstract class Foo<S> {
+          T m<T>(T a);
+        }
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+
+        T mShimA<T>(T a) {
+          throw 'unknown';
+        }
+
+        T mShimB<T>(T a) {
+          throw 'unknown';
+        }
+
+        @GenerateMocks(
+          [],
+          customMocks: [
+            MockSpec<Foo<int>>(as: #MockFooA, fallbackGenerators: {#m: mShimA}),
+            MockSpec<Foo<String>>(as: #MockFooB, fallbackGenerators: {#m: mShimB}),
+          ],
+        )
+        void main() {}
+        '''
+    });
+    expect(
+        mocksContent,
+        contains(
+            'T m<T>(T? a) => (super.noSuchMethod(Invocation.method(#m, [a]),\n'
+            '      returnValue: _i3.mShimA<T>(a)) as T)'));
+    expect(
+        mocksContent,
+        contains(
+            'T m<T>(T? a) => (super.noSuchMethod(Invocation.method(#m, [a]),\n'
+            '      returnValue: _i3.mShimB<T>(a)) as T)'));
+  });
+
+  test(
+      'generates mock classes including a fallback generator for a generic '
+      'method with positional parameters returning a Future of the generic',
+      () async {
     var mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
@@ -371,8 +452,8 @@ void main() {
   });
 
   test(
-      'generates mock classes including a dummy builder for a generic method '
-      'with named parameters', () async {
+      'generates mock classes including a fallback generator for a generic '
+      'method with named parameters', () async {
     var mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
@@ -404,8 +485,8 @@ void main() {
   });
 
   test(
-      'generates mock classes including a dummy builder for a bounded generic '
-      'method with named parameters', () async {
+      'generates mock classes including a fallback generator for a bounded '
+      'generic method with named parameters', () async {
     var mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
