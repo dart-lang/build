@@ -2,10 +2,13 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:io';
+
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
 
 /// Returns a non-null name for the provided [type].
 ///
@@ -79,6 +82,8 @@ Uri normalizeUrl(Uri url) {
       return normalizeDartUrl(url);
     case 'package':
       return packageToAssetUrl(url);
+    case 'file':
+      return fileToAssetUrl(url);
     default:
       return url;
   }
@@ -93,6 +98,12 @@ Uri normalizeUrl(Uri url) {
 Uri normalizeDartUrl(Uri url) => url.pathSegments.isNotEmpty
     ? url.replace(pathSegments: url.pathSegments.take(1))
     : url;
+
+Uri fileToAssetUrl(Uri url) {
+  if (!p.isWithin(p.current, url.path)) return url;
+  return Uri(
+      scheme: 'asset', path: p.join(rootPackageName, p.relative(url.path)));
+}
 
 /// Returns a `package:` URL converted to a `asset:` URL.
 ///
@@ -130,3 +141,13 @@ Uri assetToPackageUrl(Uri url) => url.scheme == 'asset' &&
         ...url.pathSegments.skip(2),
       ])
     : url;
+
+final String rootPackageName = () {
+  final name = loadYaml(File('pubspec.yaml').readAsStringSync())['name'];
+  if (name is! String) {
+    throw StateError(
+        'Your pubspec.yaml file is missing a `name` field or it isn\'t '
+        'a String.');
+  }
+  return name;
+}();

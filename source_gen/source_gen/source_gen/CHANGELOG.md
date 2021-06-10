@@ -1,3 +1,7 @@
+## 1.0.2
+
+* Fix `TypeChecker.fromRuntimeType` for types that come from non-package uris.
+
 ## 1.0.1
 
 * Improve the error message for a missing part directive.

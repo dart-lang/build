@@ -27,21 +27,27 @@ void main() {
   // Resolved top-level types from package:source_gen.
   late InterfaceType staticGenerator;
   late InterfaceType staticGeneratorForAnnotation;
+  late InterfaceType staticNonPublic;
   late TypeChecker staticGeneratorChecker;
   late TypeChecker staticGeneratorForAnnotationChecker;
+  late TypeChecker staticNonPublicChecker;
 
   setUpAll(() async {
     late LibraryElement core;
     late LibraryElement collection;
     late LibraryReader sourceGen;
+    late LibraryReader thisTest;
     await resolveSource(r'''
       export 'package:source_gen/source_gen.dart';
+      export 'type_checker_test.dart' show NonPublic;
     ''', (resolver) async {
       core = (await resolver.findLibraryByName('dart.core'))!;
       collection = (await resolver.findLibraryByName('dart.collection'))!;
       sourceGen = LibraryReader(await resolver
           .libraryFor(AssetId('source_gen', 'lib/source_gen.dart')));
-    });
+      thisTest = LibraryReader(await resolver
+          .libraryFor(AssetId('source_gen', 'test/type_checker_test.dart')));
+    }, inputId: AssetId('source_gen', 'test/example.dart'));
 
     final staticIterable = core.getType('Iterable')!.instantiate(
         typeArguments: [core.typeProvider.dynamicType],
@@ -79,6 +85,9 @@ void main() {
             nullabilitySuffix: NullabilitySuffix.none);
     staticGeneratorForAnnotationChecker =
         TypeChecker.fromStatic(staticGeneratorForAnnotation);
+    staticNonPublic = thisTest.findType('NonPublic')!.instantiate(
+        typeArguments: const [], nullabilitySuffix: NullabilitySuffix.none);
+    staticNonPublicChecker = TypeChecker.fromStatic(staticNonPublic);
   });
 
   // Run a common set of type comparison checks with various implementations.
@@ -88,6 +97,7 @@ void main() {
     required TypeChecker Function() checkHashMap,
     required TypeChecker Function() checkGenerator,
     required TypeChecker Function() checkGeneratorForAnnotation,
+    required TypeChecker Function() checkNonPublic,
   }) {
     group('(Iterable)', () {
       test('should be assignable from dart:collection#UnmodifiableListView',
@@ -173,37 +183,56 @@ void main() {
                 '${staticGeneratorForAnnotation.element.name}');
       });
     });
+
+    group('NonPublic', () {
+      test('should equal NonPublic', () {
+        expect(checkNonPublic().isExactlyType(staticNonPublic), isTrue,
+            reason: '${checkNonPublic()} != ${staticNonPublic.element.name}');
+      });
+
+      test('should be assignable from NonPublic', () {
+        expect(checkNonPublic().isAssignableFromType(staticNonPublic), isTrue,
+            reason: '${checkNonPublic()} is not assignable from '
+                '${staticNonPublic.element.name}');
+      });
+    });
   }
 
   group('TypeChecker.forRuntime', () {
     commonTests(
-        checkIterable: () => const TypeChecker.fromRuntime(Iterable),
-        checkMap: () => const TypeChecker.fromRuntime(Map),
-        checkHashMap: () => const TypeChecker.fromRuntime(HashMap),
-        checkGenerator: () => const TypeChecker.fromRuntime(Generator),
-        checkGeneratorForAnnotation: () =>
-            const TypeChecker.fromRuntime(GeneratorForAnnotation));
+      checkIterable: () => const TypeChecker.fromRuntime(Iterable),
+      checkMap: () => const TypeChecker.fromRuntime(Map),
+      checkHashMap: () => const TypeChecker.fromRuntime(HashMap),
+      checkGenerator: () => const TypeChecker.fromRuntime(Generator),
+      checkGeneratorForAnnotation: () =>
+          const TypeChecker.fromRuntime(GeneratorForAnnotation),
+      checkNonPublic: () => const TypeChecker.fromRuntime(NonPublic),
+    );
   });
 
   group('TypeChecker.forStatic', () {
     commonTests(
-        checkIterable: () => staticIterableChecker,
-        checkMap: () => staticMapChecker,
-        checkHashMap: () => staticHashMapChecker,
-        checkGenerator: () => staticGeneratorChecker,
-        checkGeneratorForAnnotation: () => staticGeneratorForAnnotationChecker);
+      checkIterable: () => staticIterableChecker,
+      checkMap: () => staticMapChecker,
+      checkHashMap: () => staticHashMapChecker,
+      checkGenerator: () => staticGeneratorChecker,
+      checkGeneratorForAnnotation: () => staticGeneratorForAnnotationChecker,
+      checkNonPublic: () => staticNonPublicChecker,
+    );
   });
 
   group('TypeChecker.fromUrl', () {
     commonTests(
-        checkIterable: () => const TypeChecker.fromUrl('dart:core#Iterable'),
-        checkMap: () => const TypeChecker.fromUrl('dart:core#Map'),
-        checkHashMap: () =>
-            const TypeChecker.fromUrl('dart:collection#HashMap'),
-        checkGenerator: () => const TypeChecker.fromUrl(
-            'package:source_gen/src/generator.dart#Generator'),
-        checkGeneratorForAnnotation: () => const TypeChecker.fromUrl(
-            'package:source_gen/src/generator_for_annotation.dart#GeneratorForAnnotation'));
+      checkIterable: () => const TypeChecker.fromUrl('dart:core#Iterable'),
+      checkMap: () => const TypeChecker.fromUrl('dart:core#Map'),
+      checkHashMap: () => const TypeChecker.fromUrl('dart:collection#HashMap'),
+      checkGenerator: () => const TypeChecker.fromUrl(
+          'package:source_gen/src/generator.dart#Generator'),
+      checkGeneratorForAnnotation: () => const TypeChecker.fromUrl(
+          'package:source_gen/src/generator_for_annotation.dart#GeneratorForAnnotation'),
+      checkNonPublic: () => const TypeChecker.fromUrl(
+          'asset:source_gen/test/type_checker_test.dart#NonPublic'),
+    );
   });
 
   test('should fail gracefully when something is not resolvable', () async {
@@ -400,3 +429,6 @@ void main() {
 
 final throwsUnresolvedAnnotationException =
     throwsA(const TypeMatcher<UnresolvedAnnotationException>());
+
+// Used to check identity of non-public classes
+class NonPublic {}
