@@ -5,5 +5,5 @@ dart:
 stages:
 - analyze_and_format:
   - group:
-    - dartfmt: sdk
-    - dartanalyzer: --fatal-infos .
+    - format
+    - analyze: --fatal-infos .

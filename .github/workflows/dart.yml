@@ -1,4 +1,4 @@
-# Created with package:mono_repo v4.1.0
+# Created with package:mono_repo v5.0.0
 name: Dart CI
 on:
   push:
@@ -33,7 +33,7 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - name: mono_repo self validate
-        run: dart pub global activate mono_repo 4.1.0
+        run: dart pub global activate mono_repo 5.0.0
       - name: mono_repo self validate
         run: dart pub global run mono_repo generate --validate
   job_002:
@@ -44,7 +44,7 @@ jobs:
         uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:build;commands:dartanalyzer_0"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:build;commands:analyze_0"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:build
             os:ubuntu-latest;pub-cache-hosted;dart:2.12.0
@@ -56,10 +56,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_pub_upgrade
-        name: build; pub upgrade
+        name: build; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build; dart analyze --fatal-infos ."
         if: "always() && steps.build_pub_upgrade.conclusion == 'success'"
         working-directory: build
@@ -72,7 +72,7 @@ jobs:
         uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:build_resolvers-build_test-example-scratch_space;commands:dartfmt-dartanalyzer_0"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:build_resolvers-build_test-example-scratch_space;commands:format-analyze_0"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:build_resolvers-build_test-example-scratch_space
             os:ubuntu-latest;pub-cache-hosted;dart:2.12.0
@@ -84,10 +84,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_resolvers_pub_upgrade
-        name: build_resolvers; pub upgrade
+        name: build_resolvers; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_resolvers
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_resolvers; dart format --output=none --set-exit-if-changed ."
         if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
         working-directory: build_resolvers
@@ -97,10 +97,10 @@ jobs:
         working-directory: build_resolvers
         run: dart analyze --fatal-infos .
       - id: build_test_pub_upgrade
-        name: build_test; pub upgrade
+        name: build_test; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_test
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_test; dart format --output=none --set-exit-if-changed ."
         if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
         working-directory: build_test
@@ -110,10 +110,10 @@ jobs:
         working-directory: build_test
         run: dart analyze --fatal-infos .
       - id: example_pub_upgrade
-        name: example; pub upgrade
+        name: example; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: example
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "example; dart format --output=none --set-exit-if-changed ."
         if: "always() && steps.example_pub_upgrade.conclusion == 'success'"
         working-directory: example
@@ -123,10 +123,10 @@ jobs:
         working-directory: example
         run: dart analyze --fatal-infos .
       - id: scratch_space_pub_upgrade
-        name: scratch_space; pub upgrade
+        name: scratch_space; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: scratch_space
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "scratch_space; dart format --output=none --set-exit-if-changed ."
         if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
         working-directory: scratch_space
@@ -143,7 +143,7 @@ jobs:
         uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test-_test_common-build;commands:dartanalyzer_0"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test-_test_common-build;commands:analyze_0"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test-_test_common-build
             os:ubuntu-latest;pub-cache-hosted;dart:dev
@@ -155,28 +155,28 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
-        name: _test; pub upgrade
+        name: _test; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "_test; dart analyze --fatal-infos ."
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
         run: dart analyze --fatal-infos .
       - id: _test_common_pub_upgrade
-        name: _test_common; pub upgrade
+        name: _test_common; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test_common
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "_test_common; dart analyze --fatal-infos ."
         if: "always() && steps._test_common_pub_upgrade.conclusion == 'success'"
         working-directory: _test_common
         run: dart analyze --fatal-infos .
       - id: build_pub_upgrade
-        name: build; pub upgrade
+        name: build; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build; dart analyze --fatal-infos ."
         if: "always() && steps.build_pub_upgrade.conclusion == 'success'"
         working-directory: build
@@ -189,7 +189,7 @@ jobs:
         uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_null_safety;commands:dartanalyzer_1"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_null_safety;commands:analyze_1"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_null_safety
             os:ubuntu-latest;pub-cache-hosted;dart:dev
@@ -201,10 +201,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_null_safety_pub_upgrade
-        name: _test_null_safety; pub upgrade
+        name: _test_null_safety; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "_test_null_safety; dart analyze --fatal-infos"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
@@ -217,7 +217,7 @@ jobs:
         uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build;commands:dartfmt"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build;commands:format"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build
             os:ubuntu-latest;pub-cache-hosted;dart:dev
@@ -229,10 +229,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_pub_upgrade
-        name: build; pub upgrade
+        name: build; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build; dart format --output=none --set-exit-if-changed ."
         if: "always() && steps.build_pub_upgrade.conclusion == 'success'"
         working-directory: build
@@ -245,7 +245,7 @@ jobs:
         uses: actions/cache@v2.1.6
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_config-build_daemon-build_modules-build_resolvers-build_runner-build_runner_core-build_test-build_vm_compilers-build_web_compilers-example-scratch_space;commands:dartfmt-dartanalyzer_0"
+          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_config-build_daemon-build_modules-build_resolvers-build_runner-build_runner_core-build_test-build_vm_compilers-build_web_compilers-example-scratch_space;commands:format-analyze_0"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:build_config-build_daemon-build_modules-build_resolvers-build_runner-build_runner_core-build_test-build_vm_compilers-build_web_compilers-example-scratch_space
             os:ubuntu-latest;pub-cache-hosted;dart:dev
@@ -257,10 +257,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_config_pub_upgrade
-        name: build_config; pub upgrade
+        name: build_config; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_config
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_config; dart format --output=none --set-exit-if-changed ."
         if: "always() && steps.build_config_pub_upgrade.conclusion == 'success'"
         working-directory: build_config
@@ -270,10 +270,10 @@ jobs:
         working-directory: build_config
         run: dart analyze --fatal-infos .
       - id: build_daemon_pub_upgrade
-        name: build_daemon; pub upgrade
+        name: build_daemon; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_daemon
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_daemon; dart format --output=none --set-exit-if-changed ."
         if: "always() && steps.build_daemon_pub_upgrade.conclusion == 'success'"
         working-directory: build_daemon
@@ -283,10 +283,10 @@ jobs:
         working-directory: build_daemon
         run: dart analyze --fatal-infos .
       - id: build_modules_pub_upgrade
-        name: build_modules; pub upgrade
+        name: build_modules; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_modules
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_modules; dart format --output=none --set-exit-if-changed ."
         if: "always() && steps.build_modules_pub_upgrade.conclusion == 'success'"
         working-directory: build_modules
@@ -296,10 +296,10 @@ jobs:
         working-directory: build_modules
         run: dart analyze --fatal-infos .
       - id: build_resolvers_pub_upgrade
-        name: build_resolvers; pub upgrade
+        name: build_resolvers; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_resolvers
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_resolvers; dart format --output=none --set-exit-if-changed ."
         if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
         working-directory: build_resolvers
@@ -309,10 +309,10 @@ jobs:
         working-directory: build_resolvers
         run: dart analyze --fatal-infos .
       - id: build_runner_pub_upgrade
-        name: build_runner; pub upgrade
+        name: build_runner; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_runner; dart format --output=none --set-exit-if-changed ."
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
@@ -322,10 +322,10 @@ jobs:
         working-directory: build_runner
         run: dart analyze --fatal-infos .
       - id: build_runner_core_pub_upgrade
-        name: build_runner_core; pub upgrade
+        name: build_runner_core; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner_core
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_runner_core; dart format --output=none --set-exit-if-changed ."
         if: "always() && steps.build_runner_core_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner_core
@@ -335,10 +335,10 @@ jobs:
         working-directory: build_runner_core
         run: dart analyze --fatal-infos .
       - id: build_test_pub_upgrade
-        name: build_test; pub upgrade
+        name: build_test; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_test
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_test; dart format --output=none --set-exit-if-changed ."
         if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
         working-directory: build_test
@@ -348,10 +348,10 @@ jobs:
         working-directory: build_test
         run: dart analyze --fatal-infos .
       - id: build_vm_compilers_pub_upgrade
-        name: build_vm_compilers; pub upgrade
+        name: build_vm_compilers; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_vm_compilers
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_vm_compilers; dart format --output=none --set-exit-if-changed ."
         if: "always() && steps.build_vm_compilers_pub_upgrade.conclusion == 'success'"
         working-directory: build_vm_compilers
@@ -361,10 +361,10 @@ jobs:
         working-directory: build_vm_compilers
         run: dart analyze --fatal-infos .
       - id: build_web_compilers_pub_upgrade
-        name: build_web_compilers; pub upgrade
+        name: build_web_compilers; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_web_compilers
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_web_compilers; dart format --output=none --set-exit-if-changed ."
         if: "always() && steps.build_web_compilers_pub_upgrade.conclusion == 'success'"
         working-directory: build_web_compilers
@@ -374,10 +374,10 @@ jobs:
         working-directory: build_web_compilers
         run: dart analyze --fatal-infos .
       - id: example_pub_upgrade
-        name: example; pub upgrade
+        name: example; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: example
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "example; dart format --output=none --set-exit-if-changed ."
         if: "always() && steps.example_pub_upgrade.conclusion == 'success'"
         working-directory: example
@@ -387,10 +387,10 @@ jobs:
         working-directory: example
         run: dart analyze --fatal-infos .
       - id: scratch_space_pub_upgrade
-        name: scratch_space; pub upgrade
+        name: scratch_space; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: scratch_space
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "scratch_space; dart format --output=none --set-exit-if-changed ."
         if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
         working-directory: scratch_space
@@ -409,10 +409,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_null_safety_pub_upgrade
-        name: _test_null_safety; pub.bat upgrade
+        name: _test_null_safety; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "_test_null_safety; dart analyze --fatal-infos"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
@@ -437,10 +437,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_pub_upgrade
-        name: build; pub upgrade
+        name: build; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_pub_upgrade.conclusion == 'success'"
         working-directory: build
@@ -474,10 +474,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_resolvers_pub_upgrade
-        name: build_resolvers; pub upgrade
+        name: build_resolvers; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_resolvers
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_resolvers; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
         working-directory: build_resolvers
@@ -511,10 +511,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_test_pub_upgrade
-        name: build_test; pub upgrade
+        name: build_test; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_test
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_test; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
         working-directory: build_test
@@ -548,10 +548,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: scratch_space_pub_upgrade
-        name: scratch_space; pub upgrade
+        name: scratch_space; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: scratch_space
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "scratch_space; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
         working-directory: scratch_space
@@ -585,10 +585,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
-        name: _test; pub upgrade
+        name: _test; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "_test; pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
@@ -626,10 +626,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_pub_upgrade
-        name: build; pub upgrade
+        name: build; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_pub_upgrade.conclusion == 'success'"
         working-directory: build
@@ -663,10 +663,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_config_pub_upgrade
-        name: build_config; pub upgrade
+        name: build_config; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_config
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_config; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_config_pub_upgrade.conclusion == 'success'"
         working-directory: build_config
@@ -700,10 +700,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_daemon_pub_upgrade
-        name: build_daemon; pub upgrade
+        name: build_daemon; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_daemon
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_daemon; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_daemon_pub_upgrade.conclusion == 'success'"
         working-directory: build_daemon
@@ -737,10 +737,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_resolvers_pub_upgrade
-        name: build_resolvers; pub upgrade
+        name: build_resolvers; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_resolvers
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_resolvers; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
         working-directory: build_resolvers
@@ -774,10 +774,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_runner_core_pub_upgrade
-        name: build_runner_core; pub upgrade
+        name: build_runner_core; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner_core
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_runner_core; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_runner_core_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner_core
@@ -811,10 +811,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_test_pub_upgrade
-        name: build_test; pub upgrade
+        name: build_test; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_test
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_test; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
         working-directory: build_test
@@ -848,10 +848,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_web_compilers_pub_upgrade
-        name: build_web_compilers; pub upgrade
+        name: build_web_compilers; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_web_compilers
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_web_compilers; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_web_compilers_pub_upgrade.conclusion == 'success'"
         working-directory: build_web_compilers
@@ -885,10 +885,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: scratch_space_pub_upgrade
-        name: scratch_space; pub upgrade
+        name: scratch_space; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: scratch_space
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "scratch_space; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
         working-directory: scratch_space
@@ -922,10 +922,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_modules_pub_upgrade
-        name: build_modules; pub upgrade
+        name: build_modules; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_modules
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_modules; dart test -P presubmit --test-randomize-ordering-seed=random"
         if: "always() && steps.build_modules_pub_upgrade.conclusion == 'success'"
         working-directory: build_modules
@@ -959,10 +959,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_runner_pub_upgrade
-        name: build_runner; pub upgrade
+        name: build_runner; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_runner; dart test -x integration --test-randomize-ordering-seed=random"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
@@ -996,10 +996,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_vm_compilers_pub_upgrade
-        name: build_vm_compilers; pub upgrade
+        name: build_vm_compilers; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_vm_compilers
-        run: pub upgrade
+        run: dart pub upgrade
       - name: build_vm_compilers; dart test
         if: "always() && steps.build_vm_compilers_pub_upgrade.conclusion == 'success'"
         working-directory: build_vm_compilers
@@ -1023,10 +1023,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_pub_upgrade
-        name: build; pub.bat upgrade
+        name: build; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "build; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_pub_upgrade.conclusion == 'success'"
         working-directory: build
@@ -1050,10 +1050,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_resolvers_pub_upgrade
-        name: build_resolvers; pub.bat upgrade
+        name: build_resolvers; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_resolvers
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "build_resolvers; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
         working-directory: build_resolvers
@@ -1077,10 +1077,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_test_pub_upgrade
-        name: build_test; pub.bat upgrade
+        name: build_test; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_test
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "build_test; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
         working-directory: build_test
@@ -1104,10 +1104,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: scratch_space_pub_upgrade
-        name: scratch_space; pub.bat upgrade
+        name: scratch_space; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: scratch_space
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "scratch_space; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
         working-directory: scratch_space
@@ -1131,10 +1131,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
-        name: _test; pub.bat upgrade
+        name: _test; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "_test; pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
@@ -1162,10 +1162,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_pub_upgrade
-        name: build; pub.bat upgrade
+        name: build; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "build; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_pub_upgrade.conclusion == 'success'"
         working-directory: build
@@ -1189,10 +1189,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_config_pub_upgrade
-        name: build_config; pub.bat upgrade
+        name: build_config; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_config
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "build_config; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_config_pub_upgrade.conclusion == 'success'"
         working-directory: build_config
@@ -1216,10 +1216,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_daemon_pub_upgrade
-        name: build_daemon; pub.bat upgrade
+        name: build_daemon; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_daemon
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "build_daemon; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_daemon_pub_upgrade.conclusion == 'success'"
         working-directory: build_daemon
@@ -1243,10 +1243,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_resolvers_pub_upgrade
-        name: build_resolvers; pub.bat upgrade
+        name: build_resolvers; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_resolvers
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "build_resolvers; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
         working-directory: build_resolvers
@@ -1270,10 +1270,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_runner_core_pub_upgrade
-        name: build_runner_core; pub.bat upgrade
+        name: build_runner_core; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner_core
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "build_runner_core; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_runner_core_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner_core
@@ -1297,10 +1297,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_test_pub_upgrade
-        name: build_test; pub.bat upgrade
+        name: build_test; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_test
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "build_test; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_test_pub_upgrade.conclusion == 'success'"
         working-directory: build_test
@@ -1324,10 +1324,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_web_compilers_pub_upgrade
-        name: build_web_compilers; pub.bat upgrade
+        name: build_web_compilers; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_web_compilers
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "build_web_compilers; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_web_compilers_pub_upgrade.conclusion == 'success'"
         working-directory: build_web_compilers
@@ -1351,10 +1351,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: scratch_space_pub_upgrade
-        name: scratch_space; pub.bat upgrade
+        name: scratch_space; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: scratch_space
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "scratch_space; dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.scratch_space_pub_upgrade.conclusion == 'success'"
         working-directory: scratch_space
@@ -1378,10 +1378,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_modules_pub_upgrade
-        name: build_modules; pub.bat upgrade
+        name: build_modules; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_modules
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "build_modules; dart test -P presubmit --test-randomize-ordering-seed=random"
         if: "always() && steps.build_modules_pub_upgrade.conclusion == 'success'"
         working-directory: build_modules
@@ -1405,10 +1405,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_vm_compilers_pub_upgrade
-        name: build_vm_compilers; pub.bat upgrade
+        name: build_vm_compilers; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_vm_compilers
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: build_vm_compilers; dart test
         if: "always() && steps.build_vm_compilers_pub_upgrade.conclusion == 'success'"
         working-directory: build_vm_compilers
@@ -1442,10 +1442,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_null_safety_pub_upgrade
-        name: _test_null_safety; pub upgrade
+        name: _test_null_safety; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
@@ -1514,10 +1514,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
-        name: _test; pub upgrade
+        name: _test; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "_test; dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
@@ -1582,10 +1582,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
-        name: _test; pub upgrade
+        name: _test; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "_test; dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
@@ -1650,10 +1650,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
-        name: _test; pub upgrade
+        name: _test; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "_test; dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
@@ -1718,10 +1718,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_null_safety_pub_upgrade
-        name: _test_null_safety; pub upgrade
+        name: _test_null_safety; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
@@ -1790,10 +1790,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_runner_pub_upgrade
-        name: build_runner; pub upgrade
+        name: build_runner; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
@@ -1858,10 +1858,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_runner_pub_upgrade
-        name: build_runner; pub upgrade
+        name: build_runner; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
@@ -1926,10 +1926,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_runner_pub_upgrade
-        name: build_runner; pub upgrade
+        name: build_runner; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
@@ -1994,10 +1994,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_runner_pub_upgrade
-        name: build_runner; pub upgrade
+        name: build_runner; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
@@ -2062,10 +2062,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: build_runner_pub_upgrade
-        name: build_runner; pub upgrade
+        name: build_runner; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
@@ -2120,10 +2120,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_null_safety_pub_upgrade
-        name: _test_null_safety; pub.bat upgrade
+        name: _test_null_safety; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
@@ -2182,10 +2182,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
-        name: _test; pub.bat upgrade
+        name: _test; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "_test; dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
@@ -2240,10 +2240,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
-        name: _test; pub.bat upgrade
+        name: _test; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "_test; dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
@@ -2298,10 +2298,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
-        name: _test; pub.bat upgrade
+        name: _test; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "_test; dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
@@ -2356,10 +2356,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_null_safety_pub_upgrade
-        name: _test_null_safety; pub.bat upgrade
+        name: _test_null_safety; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
@@ -2428,10 +2428,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
-        name: _test; pub upgrade
+        name: _test; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-        run: pub upgrade
+        run: dart pub upgrade
       - name: _test; dart test
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
@@ -2512,10 +2512,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_null_safety_pub_upgrade
-        name: _test_null_safety; pub upgrade
+        name: _test_null_safety; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: pub upgrade
+        run: dart pub upgrade
       - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
@@ -2590,10 +2590,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_pub_upgrade
-        name: _test; pub.bat upgrade
+        name: _test; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: _test; dart test
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
@@ -2664,10 +2664,10 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.3.4
       - id: _test_null_safety_pub_upgrade
-        name: _test_null_safety; pub.bat upgrade
+        name: _test_null_safety; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: pub.bat upgrade
+        run: dart pub upgrade
       - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
