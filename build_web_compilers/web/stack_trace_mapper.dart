@@ -47,7 +47,7 @@ List<String> fixSourceMapSources(List<String> uris) {
     var newSegments = uri.pathSegments.first == 'packages'
         ? uri.pathSegments
         : uri.pathSegments.skip(1);
-    return Uri(path: p.url.joinAll(['/'].followedBy(newSegments))).toString();
+    return Uri(path: p.url.joinAll(['/', ...newSegments])).toString();
   }).toList();
 }
 

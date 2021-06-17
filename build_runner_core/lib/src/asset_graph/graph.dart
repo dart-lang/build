@@ -319,8 +319,7 @@ class AssetGraph {
 
     var newGeneratedOutputs =
         _addOutputsForSources(buildPhases, newIds, rootPackage);
-    var allNewAndDeletedIds =
-        Set.of(newGeneratedOutputs.followedBy(transitiveRemovedIds));
+    var allNewAndDeletedIds = {...newGeneratedOutputs, ...transitiveRemovedIds};
 
     void invalidateNodeAndDeps(AssetId id) {
       var node = get(id);
