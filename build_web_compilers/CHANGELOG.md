@@ -12,6 +12,7 @@ global_options:
       emit-debug-symbols: true
 ```
 
+- Update min SDK constraint to 2.14.0-216.0.dev
 
 ## 3.0.0
 
