@@ -6,8 +6,8 @@ dart:
 stages:
 - analyze_format:
   - group:
-    - dartfmt
-    - dartanalyzer: --fatal-infos --fatal-warnings .
+    - format
+    - analyze: --fatal-infos .
     dart: dev
 - unit_test:
   - test: --run-skipped

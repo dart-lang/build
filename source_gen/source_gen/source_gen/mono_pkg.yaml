@@ -6,11 +6,11 @@ dart:
 stages:
 - analyze_format:
   - group:
-    - dartfmt
-    - dartanalyzer: --fatal-infos .
+    - format
+    - analyze: --fatal-infos .
     dart: dev
   - group:
-    - dartanalyzer: .
+    - analyze
     dart: 2.12.0
 - unit_test:
   - test
