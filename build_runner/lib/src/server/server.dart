@@ -308,11 +308,8 @@ class AssetHandler {
       (request.url.path.endsWith('/') || request.url.path.isEmpty)
           ? _handle(
               request.headers,
-              pathToAssetId(
-                  _rootPackage,
-                  rootDir,
-                  request.url.pathSegments
-                      .followedBy(const ['index.html']).toList()),
+              pathToAssetId(_rootPackage, rootDir,
+                  [...request.url.pathSegments, 'index.html']),
               fallbackToDirectoryList: true)
           : _handle(request.headers,
               pathToAssetId(_rootPackage, rootDir, request.url.pathSegments));
