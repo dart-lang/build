@@ -1,4 +1,6 @@
-## 2.0.5-dev
+## 2.0.5
+
+- Don't set the content length header or body when responding to HEAD requests.
 
 ## 2.0.4
 
