@@ -307,15 +307,14 @@ class AssetHandler {
   Future<shelf.Response> handle(shelf.Request request, {String rootDir = ''}) =>
       (request.url.path.endsWith('/') || request.url.path.isEmpty)
           ? _handle(
-              request.headers,
+              request,
               pathToAssetId(_rootPackage, rootDir,
                   [...request.url.pathSegments, 'index.html']),
               fallbackToDirectoryList: true)
-          : _handle(request.headers,
+          : _handle(request,
               pathToAssetId(_rootPackage, rootDir, request.url.pathSegments));
 
-  Future<shelf.Response> _handle(
-      Map<String, String> requestHeaders, AssetId assetId,
+  Future<shelf.Response> _handle(shelf.Request request, AssetId assetId,
       {bool fallbackToDirectoryList = false}) async {
     try {
       if (!await _reader.canRead(assetId)) {
@@ -354,15 +353,17 @@ class AssetHandler {
       HttpHeaders.cacheControlHeader: 'max-age=0, must-revalidate',
     };
 
-    if (requestHeaders[HttpHeaders.ifNoneMatchHeader] == etag) {
+    if (request.headers[HttpHeaders.ifNoneMatchHeader] == etag) {
       // This behavior is still useful for cases where a file is hit
       // without a cache-busting query string.
       return shelf.Response.notModified(headers: headers);
     }
-
-    var bytes = await _reader.readAsBytes(assetId);
-    headers[HttpHeaders.contentLengthHeader] = '${bytes.length}';
-    return shelf.Response.ok(bytes, headers: headers);
+    List<int>? body;
+    if (request.method != 'HEAD') {
+      body = await _reader.readAsBytes(assetId);
+      headers[HttpHeaders.contentLengthHeader] = '${body.length}';
+    }
+    return shelf.Response.ok(body, headers: headers);
   }
 
   Future<String> _findDirectoryList(AssetId from) async {
