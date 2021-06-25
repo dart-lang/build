@@ -12,14 +12,14 @@ class StubAssetReader extends AssetReader implements MultiPackageAssetReader {
   StubAssetReader();
 
   @override
-  Future<bool> canRead(AssetId id) => Future.value(null);
+  Future<bool> canRead(AssetId id) => Future.value(false);
 
   @override
-  Future<List<int>> readAsBytes(AssetId id) => Future.value(null);
+  Future<List<int>> readAsBytes(AssetId id) => Future.value([]);
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) =>
-      Future.value(null);
+      Future.value('');
 
   @override
   Stream<AssetId> findAssets(Glob glob, {String? package}) =>
