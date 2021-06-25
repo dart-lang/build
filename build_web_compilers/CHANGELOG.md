@@ -1,4 +1,4 @@
-## 3.1.0-dev
+## 3.1.0
 
 - Add the `emit-debug-symbols` option for the `build_web_compilers:ddc`
   builder. The debug symbols output is used by the debugger in webdev for
