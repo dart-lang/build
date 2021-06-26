@@ -1,4 +1,18 @@
-## 3.0.1-dev
+## 3.1.0
+
+- Add the `emit-debug-symbols` option for the `build_web_compilers:ddc`
+  builder. The debug symbols output is used by the debugger in webdev for
+  variable inspection. This setting is disabled by default but can be
+  enabled by setting it to `true` globally:
+
+```yaml
+global_options:
+  build_web_compilers:ddc:
+    options:
+      emit-debug-symbols: true
+```
+
+- Update min SDK constraint to 2.14.0-216.0.dev
 
 ## 3.0.0
 
