@@ -148,6 +148,7 @@ $rawOutput
     for (final element in elements) {
       final elementLibrary = element.library!;
       if (elementLibrary.isInSdk) {
+        // ignore:unnecessary_non_null_assertion
         if (elementLibrary.name!.startsWith('dart._')) {
           typeUris[element] = _findPublicExportOf(
               Queue.of(librariesWithTypes), elementLibrary)!;
