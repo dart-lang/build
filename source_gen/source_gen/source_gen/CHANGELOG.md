@@ -1,3 +1,5 @@
+## 1.0.3-dev
+
 ## 1.0.2
 
 * Fix `TypeChecker.fromRuntimeType` for types that come from non-package uris.
