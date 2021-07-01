@@ -42,7 +42,7 @@ String typeNameOf(DartType type) {
 /// Returns `null` if [element] is missing identifier.
 String nameOfPartial(LibraryElement element, AssetId source) {
   // TODO(scheglov) Remove when switched to newer package:analyzer.
-  // ignore:unnecessary_non_null_assertion
+  // ignore:unnecessary_non_null_assertion, unnecessary_null_comparison
   if (element.name != null && element.name!.isNotEmpty) {
     // ignore:unnecessary_non_null_assertion
     return element.name!;
