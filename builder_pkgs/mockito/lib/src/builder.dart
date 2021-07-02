@@ -1007,7 +1007,8 @@ class _MockClassInfo {
     if (method.returnType.isVoid) {
       returnValueForMissingStub = refer('null');
     } else if (method.returnType.isFutureOfVoid) {
-      returnValueForMissingStub = _futureReference().property('value').call([]);
+      returnValueForMissingStub =
+          _futureReference(refer('void')).property('value').call([]);
     }
     final fallbackGenerator = fallbackGenerators[method.name];
     final namedArgs = {

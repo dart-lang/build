@@ -526,7 +526,7 @@ void main() {
       _containsAllOf(dedent2('''
       _i3.Future<void> m() => (super.noSuchMethod(Invocation.method(#m, []),
           returnValue: Future<void>.value(),
-          returnValueForMissingStub: Future.value()) as _i3.Future<void>);
+          returnValueForMissingStub: Future<void>.value()) as _i3.Future<void>);
       ''')),
     );
   });
