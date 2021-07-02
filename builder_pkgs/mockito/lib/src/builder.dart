@@ -78,6 +78,8 @@ class MockBuilder implements Builder {
           Code('\n\n// ignore_for_file: avoid_redundant_argument_values\n'));
       // We don't properly prefix imported class names in doc comments.
       b.body.add(Code('// ignore_for_file: comment_references\n'));
+      // We might import a package's 'src' directory.
+      b.body.add(Code('// ignore_for_file: implementation_imports\n'));
       // `Mock.noSuchMethod` is `@visibleForTesting`, but the generated code is
       // not always in a test directory; the Mockito `example/iss` tests, for
       // example.
