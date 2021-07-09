@@ -42,7 +42,7 @@ void main() {
             // through the resolver.
             var importedLibrary = inputLibrary.importedLibraries.firstWhere(
                 (l) => l.source.uri.path.endsWith('.imported.dart'));
-            var classNames = importedLibrary.definingCompilationUnit.types
+            var classNames = importedLibrary.definingCompilationUnit.classes
                 .map((c) => c.name)
                 .toList();
             return buildStep.writeAsString(
