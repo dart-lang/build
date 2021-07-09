@@ -30,6 +30,5 @@ dev_dependencies:
   uuid: ^3.0.0
 
 dependency_overrides:
-  analyzer: ^2.0.0
   # Required until built_value_generator updates to the latest build_config
   build_config: ^1.0.0

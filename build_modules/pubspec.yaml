@@ -35,6 +35,5 @@ dev_dependencies:
     path: test/fixtures/b
 
 dependency_overrides:
-  analyzer: ^2.0.0
   # Required until json_serializable allows the latest build_config
   build_config: ^1.0.0

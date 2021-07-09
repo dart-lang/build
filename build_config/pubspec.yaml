@@ -20,6 +20,5 @@ dev_dependencies:
   test: ^1.16.0
 
 dependency_overrides:
-  analyzer: ^2.0.0
   # Required due to cyclic dep
   json_serializable: ^4.0.0
