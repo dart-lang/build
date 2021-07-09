@@ -33,7 +33,3 @@ dev_dependencies:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
-
-dependency_overrides:
-  # Required until json_serializable allows the latest build_config
-  build_config: ^1.0.0
