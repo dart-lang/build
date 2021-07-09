@@ -105,7 +105,7 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
     ...packageContents
   ]).create();
   await Future.wait(otherPackages.map((d) => d.create()));
-  await pubGet('a', offline: false);
+  await pubGet('a');
   return BuildTool._('pub', ['run', 'build_runner']);
 }
 
