@@ -106,9 +106,9 @@ main() {
         .transform(Utf8Decoder())
         .transform(LineSplitter())
         .asBroadcastStream()
-          ..listen((line) {
-            printOnFailure('Daemon: $line');
-          });
+      ..listen((line) {
+        printOnFailure('Daemon: $line');
+      });
     daemon.stderr
         .transform(Utf8Decoder())
         .transform(LineSplitter())

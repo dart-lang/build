@@ -61,7 +61,9 @@ void main() {
         for (var i = 0; i < 5; i++) {
           nodes.add(testAddNode());
         }
-        graph..remove(nodes[1].id)..remove(nodes[4].id);
+        graph
+          ..remove(nodes[1].id)
+          ..remove(nodes[4].id);
 
         expectNodeExists(nodes[0]);
         expectNodeDoesNotExist(nodes[1]);

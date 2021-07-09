@@ -210,7 +210,9 @@ class _AssetGraphSerializer {
     for (var node in _graph.allNodes) {
       _assetIdToId[node.id] = pathId;
       pathId++;
-      assetPaths..add(node.id.path)..add(packages.indexOf(node.id.package));
+      assetPaths
+        ..add(node.id.path)
+        ..add(packages.indexOf(node.id.package));
     }
 
     var result = <String, dynamic>{

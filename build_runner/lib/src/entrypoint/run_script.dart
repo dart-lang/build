@@ -81,7 +81,9 @@ class RunCommand extends BuildRunnerCommand {
     try {
       // Ensure that the user passed the name of a file to run.
       if (argResults.rest.isEmpty) {
-        logger..severe('Must specify an executable to run.')..severe(usage);
+        logger
+          ..severe('Must specify an executable to run.')
+          ..severe(usage);
         return ExitCode.usage.code;
       }
 

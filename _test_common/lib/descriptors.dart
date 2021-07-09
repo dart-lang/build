@@ -52,7 +52,9 @@ Future<d.FileDescriptor> pubspec(
       await loadPackageConfigUri((await Isolate.packageConfig)!);
 
   void addPathDep(package, path) {
-    buffer..writeln('  $package:')..writeln('    path: $path');
+    buffer
+      ..writeln('  $package:')
+      ..writeln('    path: $path');
   }
 
   await Future.forEach(currentIsolateDependencies, (String package) async {
