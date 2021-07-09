@@ -1,5 +1,6 @@
-## 1.0.9-dev
+## 1.0.9
 
+- Allow analyzer version 2.x.x.
 - Update to build version `2.0.0`.
 - Migrate builders to null safety. Note that compiling with sound null safety
   is not yet supported.

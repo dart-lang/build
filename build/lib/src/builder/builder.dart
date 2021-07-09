@@ -52,7 +52,10 @@ class BuilderOptions {
   /// The `isRoot` value will also be overridden to value from [other].
   BuilderOptions overrideWith(BuilderOptions? other) {
     if (other == null) return this;
-    return BuilderOptions({}..addAll(config)..addAll(other.config),
+    return BuilderOptions(
+        {}
+          ..addAll(config)
+          ..addAll(other.config),
         isRoot: other.isRoot);
   }
 }

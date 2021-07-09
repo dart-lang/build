@@ -71,10 +71,10 @@ main() {
         .transform(Utf8Decoder())
         .transform(LineSplitter())
         .asBroadcastStream()
-          ..listen((line) {
-            stdoutSink?.add(line);
-            printOnFailure(line);
-          });
+      ..listen((line) {
+        stdoutSink?.add(line);
+        printOnFailure(line);
+      });
     var queue = StreamQueue(stdoutLines);
     if (command == 'serve' || command == 'watch') {
       while (await queue.hasNext) {

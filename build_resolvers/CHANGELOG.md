@@ -1,3 +1,7 @@
+## 2.0.4
+
+- Allow analyzer version 2.x.x.
+
 ## 2.0.3
 
 - Fix an issue where the build process would hang if the resolver fails to

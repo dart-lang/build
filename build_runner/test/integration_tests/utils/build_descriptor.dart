@@ -242,7 +242,9 @@ d.FileDescriptor _pubspec(String name,
     buffer.writeln(group);
 
     pathDependencies.forEach((package, path) {
-      buffer..writeln('  $package:')..writeln('    path: $path');
+      buffer
+        ..writeln('  $package:')
+        ..writeln('    path: $path');
     });
 
     versionDependencies.forEach((package, version) {
