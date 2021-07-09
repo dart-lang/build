@@ -1,3 +1,7 @@
+## 2.0.3
+
+- Allow analyzer version 2.x.x.
+
 ## 2.0.2
 
 - Handle failed resolvers in `buildStep.complete`.

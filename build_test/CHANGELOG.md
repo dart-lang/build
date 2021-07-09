@@ -1,4 +1,6 @@
-## 2.1.1-dev
+## 2.1.1
+
+- Allow analyzer version 2.x.x.
 
 ## 2.1.0
 

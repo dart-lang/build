@@ -1,3 +1,7 @@
+## 3.2.0
+
+- Allow analyzer version 2.x.x.
+
 ## 3.1.0
 
 - Add the `emit-debug-symbols` option for the `build_web_compilers:ddc`
