@@ -84,6 +84,6 @@ Iterable<Element> allElements(LibraryElement element) sync* {
     yield* cu.functions;
     yield* cu.mixins;
     yield* cu.topLevelVariables;
-    yield* cu.types;
+    yield* cu.classes;
   }
 }
