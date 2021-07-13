@@ -18,7 +18,3 @@ dev_dependencies:
   json_serializable: ^4.0.0
   term_glyph: ^1.2.0
   test: ^1.16.0
-
-dependency_overrides:
-  # Required due to cyclic dep
-  json_serializable: ^4.0.0
