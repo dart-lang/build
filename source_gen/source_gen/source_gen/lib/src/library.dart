@@ -34,18 +34,7 @@ class LibraryReader {
   }
 
   /// All of the declarations in this library.
-  Iterable<Element> get allElements sync* {
-    for (var cu in element.units) {
-      yield* cu.accessors;
-      yield* cu.enums;
-      yield* cu.typeAliases;
-      yield* cu.functions;
-      yield* cu.mixins;
-      yield* cu.topLevelVariables;
-      yield* cu.types;
-      yield* cu.extensions;
-    }
-  }
+  Iterable<Element> get allElements => element.topLevelElements;
 
   /// All of the declarations in this library annotated with [checker].
   Iterable<AnnotatedElement> annotatedWith(TypeChecker checker,
@@ -162,6 +151,7 @@ class LibraryReader {
   }
 
   /// All of the elements representing classes in this library.
+  // ignore: deprecated_member_use
   Iterable<ClassElement> get classes => element.units.expand((cu) => cu.types);
 
   /// All of the elements representing enums in this library.

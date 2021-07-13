@@ -5,7 +5,6 @@
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
-
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/constant/value.dart';
 
@@ -65,6 +64,7 @@ Revivable reviveInstance(DartObject object, [LibraryElement? origin]) {
     return !result.isPrivate;
   }
 
+  // ignore: deprecated_member_use
   for (final e in origin!.definingCompilationUnit.types
       .expand((t) => t.fields)
       .where((f) => f.isConst && f.computeConstantValue() == object)) {

@@ -60,7 +60,9 @@ class InvalidGenerationSourceError extends Error {
       } catch (_) {
         // Source for `element` wasn't found, it must be in a summary with no
         // associated source. We can still give the name.
-        buffer..writeln()..writeln('Cause: $element');
+        buffer
+          ..writeln()
+          ..writeln('Cause: $element');
       }
     }
 
