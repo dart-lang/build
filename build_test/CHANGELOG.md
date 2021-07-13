@@ -1,3 +1,7 @@
+## 2.1.2
+
+- Allow the latest `package:test_core`.
+
 ## 2.1.1
 
 - Allow analyzer version 2.x.x.
