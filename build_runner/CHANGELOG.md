@@ -1,5 +1,8 @@
 ## 2.0.7-dev
 
+- Add `--log-requests` flag to build daemon.
+- Log failed asset requests in build_runner server.
+
 ## 2.0.6
 
 - Allow analyzer version 2.x.x.

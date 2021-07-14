@@ -31,9 +31,14 @@ class DaemonCommand extends WatchCommand {
   String get name => 'daemon';
 
   DaemonCommand() {
-    argParser.addOption(buildModeFlag,
-        help: 'Specify the build mode of the daemon, e.g. auto or manual.',
-        defaultsTo: 'BuildMode.Auto');
+    argParser
+      ..addOption(buildModeFlag,
+          help: 'Specify the build mode of the daemon, e.g. auto or manual.',
+          defaultsTo: 'BuildMode.Auto')
+      ..addFlag(logRequestsOption,
+          defaultsTo: false,
+          negatable: false,
+          help: 'Enables logging for each request to the server.');
   }
 
   @override
@@ -98,7 +103,8 @@ $logEndMarker'''));
           stdout.writeln(log.message);
         }
       });
-      var server = await AssetServer.run(builder, packageGraph.root.name);
+      var server =
+          await AssetServer.run(options, builder, packageGraph.root.name);
       File(assetServerPortFilePath(workingDirectory))
           .writeAsStringSync('${server.port}');
       unawaited(builder.buildScriptUpdated.then((_) async {

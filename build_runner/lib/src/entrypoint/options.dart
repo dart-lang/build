@@ -128,10 +128,12 @@ class SharedOptions {
 /// Options specific to the `daemon` command.
 class DaemonOptions extends WatchOptions {
   BuildMode buildMode;
+  bool logRequests;
 
   DaemonOptions._({
     required Set<BuildFilter> buildFilters,
     required this.buildMode,
+    required this.logRequests,
     required bool deleteFilesByDefault,
     required bool enableLowResourcesMode,
     required String? configKey,
@@ -185,6 +187,7 @@ class DaemonOptions extends WatchOptions {
     return DaemonOptions._(
       buildFilters: buildFilters,
       buildMode: buildMode,
+      logRequests: argResults[logRequestsOption] as bool,
       deleteFilesByDefault: argResults[deleteFilesByDefaultOption] as bool,
       enableLowResourcesMode: argResults[lowResourcesModeOption] as bool,
       configKey: argResults[configOption] as String?,
