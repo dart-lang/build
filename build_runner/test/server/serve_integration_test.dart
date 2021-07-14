@@ -56,12 +56,14 @@ void main() {
       packageGraph: graph,
       reader: reader,
       writer: writer,
-      logLevel: Level.OFF,
+      logLevel: Level.ALL,
+      onLog: (record) => printOnFailure('[${record.level}] '
+          '${record.loggerName}: ${record.message}'),
       directoryWatcherFactory: (path) => FakeWatcher(path),
       terminateEventStream: terminateController.stream,
       skipBuildScriptCheck: true,
     );
-    handler = server.handlerFor('web');
+    handler = server.handlerFor('web', logRequests: true);
 
     nextBuild = Completer<BuildResult>();
     subscription = server.buildResults.listen((result) {

@@ -25,7 +25,10 @@ void main() {
   group('basic serve', () {
     setUpAll(() async {
       // These tests depend on running `test` while a `serve` is ongoing.
-      await startServer(ensureCleanBuild: true);
+      await startServer(
+        ensureCleanBuild: true,
+        buildArgs: ['--verbose', '--log-requests'],
+      );
     });
 
     tearDownAll(() async {
@@ -135,6 +138,8 @@ void main() {
       'web',
       '--build-filter',
       'web/sub/main.dart.js',
+      '--verbose',
+      '--log-requests',
       '--define',
       'build_web_compilers|ddc=environment={"message": "goodbye"}',
     ]);
