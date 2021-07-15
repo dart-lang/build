@@ -6,16 +6,15 @@ part of build_runner.src.generate.performance_tracker;
 // JsonSerializableGenerator
 // **************************************************************************
 
-BuildPerformance _$BuildPerformanceFromJson(Map<String, dynamic> json) {
-  return BuildPerformance(
-    (json['phases'] as List<dynamic>)
-        .map((e) => BuildPhasePerformance.fromJson(e as Map<String, dynamic>)),
-    (json['actions'] as List<dynamic>).map(
-        (e) => BuilderActionPerformance.fromJson(e as Map<String, dynamic>)),
-    DateTime.parse(json['startTime'] as String),
-    DateTime.parse(json['stopTime'] as String),
-  );
-}
+BuildPerformance _$BuildPerformanceFromJson(Map<String, dynamic> json) =>
+    BuildPerformance(
+      (json['phases'] as List<dynamic>).map(
+          (e) => BuildPhasePerformance.fromJson(e as Map<String, dynamic>)),
+      (json['actions'] as List<dynamic>).map(
+          (e) => BuilderActionPerformance.fromJson(e as Map<String, dynamic>)),
+      DateTime.parse(json['startTime'] as String),
+      DateTime.parse(json['stopTime'] as String),
+    );
 
 Map<String, dynamic> _$BuildPerformanceToJson(BuildPerformance instance) =>
     <String, dynamic>{
@@ -26,13 +25,12 @@ Map<String, dynamic> _$BuildPerformanceToJson(BuildPerformance instance) =>
     };
 
 BuildPhasePerformance _$BuildPhasePerformanceFromJson(
-    Map<String, dynamic> json) {
-  return BuildPhasePerformance(
-    (json['builderKeys'] as List<dynamic>).map((e) => e as String).toList(),
-    DateTime.parse(json['startTime'] as String),
-    DateTime.parse(json['stopTime'] as String),
-  );
-}
+        Map<String, dynamic> json) =>
+    BuildPhasePerformance(
+      (json['builderKeys'] as List<dynamic>).map((e) => e as String).toList(),
+      DateTime.parse(json['startTime'] as String),
+      DateTime.parse(json['stopTime'] as String),
+    );
 
 Map<String, dynamic> _$BuildPhasePerformanceToJson(
         BuildPhasePerformance instance) =>
@@ -43,16 +41,15 @@ Map<String, dynamic> _$BuildPhasePerformanceToJson(
     };
 
 BuilderActionPerformance _$BuilderActionPerformanceFromJson(
-    Map<String, dynamic> json) {
-  return BuilderActionPerformance(
-    json['builderKey'] as String,
-    _assetIdFromJson(json['primaryInput'] as String),
-    (json['stages'] as List<dynamic>).map((e) =>
-        BuilderActionStagePerformance.fromJson(e as Map<String, dynamic>)),
-    DateTime.parse(json['startTime'] as String),
-    DateTime.parse(json['stopTime'] as String),
-  );
-}
+        Map<String, dynamic> json) =>
+    BuilderActionPerformance(
+      json['builderKey'] as String,
+      _assetIdFromJson(json['primaryInput'] as String),
+      (json['stages'] as List<dynamic>).map((e) =>
+          BuilderActionStagePerformance.fromJson(e as Map<String, dynamic>)),
+      DateTime.parse(json['startTime'] as String),
+      DateTime.parse(json['stopTime'] as String),
+    );
 
 Map<String, dynamic> _$BuilderActionPerformanceToJson(
         BuilderActionPerformance instance) =>
@@ -65,14 +62,13 @@ Map<String, dynamic> _$BuilderActionPerformanceToJson(
     };
 
 BuilderActionStagePerformance _$BuilderActionStagePerformanceFromJson(
-    Map<String, dynamic> json) {
-  return BuilderActionStagePerformance(
-    json['label'] as String,
-    (json['slices'] as List<dynamic>)
-        .map((e) => TimeSlice.fromJson(e as Map<String, dynamic>))
-        .toList(),
-  );
-}
+        Map<String, dynamic> json) =>
+    BuilderActionStagePerformance(
+      json['label'] as String,
+      (json['slices'] as List<dynamic>)
+          .map((e) => TimeSlice.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
 
 Map<String, dynamic> _$BuilderActionStagePerformanceToJson(
         BuilderActionStagePerformance instance) =>
