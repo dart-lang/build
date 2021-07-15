@@ -120,7 +120,8 @@ void main() {
 
   /// Test [MockBuilder] on a single source file, in a package which has opted
   /// into null safety, and with the non-nullable experiment enabled.
-  Future<void> expectSingleNonNullableOutput(String sourceAssetText,
+  Future<void> expectSingleNonNullableOutput(
+      String sourceAssetText,
       /*String|Matcher<List<int>>*/ Object output) async {
     await testWithNonNullable({
       ...metaAssets,
@@ -554,7 +555,7 @@ void main() {
       '''),
       _containsAllOf(dedent2('''
       Iterable<int> m() =>
-          (super.noSuchMethod(Invocation.method(#m, []), returnValue: [])
+          (super.noSuchMethod(Invocation.method(#m, []), returnValue: <int>[])
               as Iterable<int>);
       ''')),
     );
@@ -1950,8 +1951,8 @@ void main() {
   });
 
   test(
-      'creates dummy non-null return values for Futures of known generic core classes',
-      () async {
+      'creates dummy non-null return values for Futures of known generic core '
+      'classes', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
       class Foo {
@@ -1961,7 +1962,7 @@ void main() {
       _containsAllOf(dedent2('''
       _i3.Future<Iterable<bool>> m() =>
           (super.noSuchMethod(Invocation.method(#m, []),
-                  returnValue: Future<Iterable<bool>>.value([]))
+                  returnValue: Future<Iterable<bool>>.value(<bool>[]))
               as _i3.Future<Iterable<bool>>);
       ''')),
     );

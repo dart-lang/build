@@ -1075,26 +1075,24 @@ class _MockClassInfo {
           .call(futureValueArguments);
     } else if (type.isDartCoreInt) {
       return literalNum(0);
-    } else if (type.isDartCoreIterable) {
-      return literalList([]);
-    } else if (type.isDartCoreList) {
+    } else if (type.isDartCoreIterable || type.isDartCoreList) {
       assert(typeArguments.length == 1);
-      var elementType = _typeReference(typeArguments[0]);
+      final elementType = _typeReference(typeArguments[0]);
       return literalList([], elementType);
     } else if (type.isDartCoreMap) {
       assert(typeArguments.length == 2);
-      var keyType = _typeReference(typeArguments[0]);
-      var valueType = _typeReference(typeArguments[1]);
+      final keyType = _typeReference(typeArguments[0]);
+      final valueType = _typeReference(typeArguments[1]);
       return literalMap({}, keyType, valueType);
     } else if (type.isDartCoreNum) {
       return literalNum(0);
     } else if (type.isDartCoreSet) {
       assert(typeArguments.length == 1);
-      var elementType = _typeReference(typeArguments[0]);
+      final elementType = _typeReference(typeArguments[0]);
       return literalSet({}, elementType);
     } else if (type.element.declaration == typeProvider.streamElement) {
       assert(typeArguments.length == 1);
-      var elementType = _typeReference(typeArguments[0]);
+      final elementType = _typeReference(typeArguments[0]);
       return TypeReference((b) {
         b
           ..symbol = 'Stream'

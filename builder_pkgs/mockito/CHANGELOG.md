@@ -1,3 +1,9 @@
+## 5.0.12-dev
+
+* Use an empty list with a correct type argument for a fallback value for a
+  method which returns Iterable.
+  [#445](https://github.com/dart-lang/mockito/issues/445)
+
 ## 5.0.11
 
 * Allow two mocks of the same class (with different type arguments) to be
