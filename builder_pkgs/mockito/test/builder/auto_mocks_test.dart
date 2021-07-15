@@ -1898,6 +1898,22 @@ void main() {
     );
   });
 
+  test(
+      'creates dummy non-null return values for Futures of core Function class',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent('''
+      abstract class Foo {
+        Future<Function> m();
+      }
+      '''),
+      _containsAllOf(dedent2('''
+      _i3.Future<Function> m() => (super.noSuchMethod(Invocation.method(#m, []),
+          returnValue: Future<Function>.value(() {})) as _i3.Future<Function>);
+      ''')),
+    );
+  });
+
   test('creates dummy non-null return values for Futures of nullable types',
       () async {
     await expectSingleNonNullableOutput(

@@ -1,8 +1,11 @@
-## 5.0.11-dev
+## 5.0.11
 
 * Allow two mocks of the same class (with different type arguments) to be
   specified with different fallback generators.
 * Allow fallback generators on super types of a mocked class.
+* Avoid `inference_failure_on_instance_creation` errors in generated code.
+* Ignore `implementation_imports` lint in generated code.
+* Support methods with `Function` and `Future<Function>` return types.
 
 ## 5.0.10
 

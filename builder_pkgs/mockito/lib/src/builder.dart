@@ -1062,6 +1062,8 @@ class _MockClassInfo {
       return literalFalse;
     } else if (type.isDartCoreDouble) {
       return literalNum(0.0);
+    } else if (type.isDartCoreFunction) {
+      return refer('() {}');
     } else if (type.isDartAsyncFuture || type.isDartAsyncFutureOr) {
       final typeArgument = typeArguments.first;
       final futureValueArguments =
