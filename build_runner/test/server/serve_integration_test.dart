@@ -33,6 +33,8 @@ void main() {
     reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
         rootPackage: 'example')
       ..cacheStringAsset(AssetId('example', 'web/initial.txt'), 'initial')
+      ..cacheStringAsset(AssetId('example', 'web/large.txt'),
+          List.filled(10000, 'large').join(''))
       ..cacheStringAsset(
           AssetId('example', '.packages'),
           '# Fake packages file\n'
@@ -83,6 +85,18 @@ void main() {
     final getHello = Uri.parse('http://localhost/initial.txt');
     final response = await handler(Request('GET', getHello));
     expect(await response.readAsString(), 'initial');
+  });
+
+  test('should serve original files in parallel', () async {
+    final getHello = Uri.parse('http://localhost/large.txt');
+    final futures = [
+      for (var i = 0; i < 512; i++)
+        (() async => await handler(Request('GET', getHello)))(),
+    ];
+    var responses = await Future.wait(futures);
+    for (var response in responses) {
+      expect(await response.readAsString(), startsWith('large'));
+    }
   });
 
   test('should serve built files', () async {
