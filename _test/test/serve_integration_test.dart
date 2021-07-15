@@ -15,7 +15,13 @@ void main() {
   late HttpClient httpClient;
 
   setUpAll(() {
-    httpClient = HttpClient();
+    // Configure the client so it is possible to download a large number
+    // of files simultaneously. This prevents getting SocketException on
+    // too many connections.
+    httpClient = HttpClient()
+      ..maxConnectionsPerHost = 200
+      ..idleTimeout = Duration(seconds: 30)
+      ..connectionTimeout = Duration(seconds: 30);
   });
 
   tearDownAll(() {
@@ -27,7 +33,9 @@ void main() {
       // These tests depend on running `test` while a `serve` is ongoing.
       await startServer(
         ensureCleanBuild: true,
-        buildArgs: ['--verbose', '--log-requests'],
+        buildArgs: [
+          '--verbose',
+        ],
       );
     });
 
@@ -139,7 +147,6 @@ void main() {
       '--build-filter',
       'web/sub/main.dart.js',
       '--verbose',
-      '--log-requests',
       '--define',
       'build_web_compilers|ddc=environment={"message": "goodbye"}',
     ]);
@@ -161,5 +168,49 @@ void main() {
         await (await httpClient.get('localhost', 8080, 'main.sound.ddc.js'))
             .close();
     expect(await utf8.decodeStream(ddcFileResponse), contains('"goodbye"'));
+  });
+
+  test('should serve files in parallel', () async {
+    await startServer(buildArgs: [
+      'web',
+      '--build-filter',
+      'web/sub/main.dart.js',
+      '--verbose',
+      '--define',
+      'build_web_compilers|ddc=generate-full-dill=true',
+    ]);
+
+    addTearDown(() async {
+      await stopServer();
+    });
+
+    Future<void> read(String path) async {
+      try {
+        var request = httpClient.get('localhost', 8080, path);
+        var response = await (await request).close();
+        expect(
+          response.statusCode,
+          HttpStatus.ok,
+          reason: '$path ${response.reasonPhrase}',
+        );
+        await response.drain();
+      } catch (e, s) {
+        print('Test error on: $e:$s');
+        rethrow;
+      }
+    }
+
+    const n = 1000;
+    var futures = [
+      for (var i = 0; i < n; i++) read('main.sound.ddc.js'),
+      for (var i = 0; i < n; i++) read('main.sound.ddc.js.map'),
+      for (var i = 0; i < n; i++) read('main.sound.ddc.dill'),
+      for (var i = 0; i < n; i++) read('main.sound.ddc.full.dill'),
+      for (var i = 0; i < n; i++) read('sub/message.sound.ddc.js'),
+      for (var i = 0; i < n; i++) read('sub/message.sound.ddc.js.map'),
+      for (var i = 0; i < n; i++) read('sub/message.sound.ddc.dill'),
+      for (var i = 0; i < n; i++) read('sub/message.sound.ddc.full.dill'),
+    ];
+    await Future.wait(futures);
   });
 }
