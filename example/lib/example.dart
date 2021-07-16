@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 
 /// Copy contents of a `txt` files into `name.txt.copy`.
@@ -67,7 +66,7 @@ class ResolvingBuilder implements Builder {
 
     await buildStep.writeAsString(info, '''
          Input ID: ${buildStep.inputId}
-     Member count: ${allElements(entryLib).length}
+     Member count: ${entryLib.topLevelElements.length}
 Visible libraries: $visibleLibraries
 ''');
   }
@@ -76,14 +75,4 @@ Visible libraries: $visibleLibraries
   final buildExtensions = const {
     '.dart': ['.dart.info']
   };
-}
-
-Iterable<Element> allElements(LibraryElement element) sync* {
-  for (var cu in element.units) {
-    yield* cu.typeAliases;
-    yield* cu.functions;
-    yield* cu.mixins;
-    yield* cu.topLevelVariables;
-    yield* cu.classes;
-  }
 }
