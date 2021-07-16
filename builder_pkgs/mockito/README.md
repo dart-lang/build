@@ -107,7 +107,7 @@ The [`when`], [`thenReturn`], [`thenAnswer`], and [`thenThrow`] APIs provide a
 stubbing mechanism to override this behavior. Once stubbed, the method will
 always return stubbed value regardless of how many times it is called. If a
 method invocation matches multiple stubs, the one which was declared last will
-be used.
+be used. It is worth noting that stubbing only works on methods of a mocked class e.g `MockCat` in this case. 
 
 ### A quick word on async stubbing
 
