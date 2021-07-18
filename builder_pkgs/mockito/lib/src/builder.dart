@@ -149,19 +149,15 @@ $rawOutput
 
     for (final element in elements) {
       final elementLibrary = element.library!;
-      if (elementLibrary.isInSdk) {
-        // ignore:unnecessary_non_null_assertion
-        if (elementLibrary.name!.startsWith('dart._')) {
-          typeUris[element] = _findPublicExportOf(
-              Queue.of(librariesWithTypes), elementLibrary)!;
-        } else {
-          typeUris[element] = elementLibrary.source.uri.toString();
-        }
+      if (elementLibrary.isInSdk && !elementLibrary.name.startsWith('dart._')) {
+        // For public SDK libraries, just use the source URI.
+        typeUris[element] = elementLibrary.source.uri.toString();
         continue;
       }
+      final exportingLibrary = _findExportOf(librariesWithTypes, element);
 
       try {
-        final typeAssetId = await resolver.assetIdForElement(elementLibrary);
+        final typeAssetId = await resolver.assetIdForElement(exportingLibrary);
 
         if (typeAssetId.path.startsWith('lib/')) {
           typeUris[element] = typeAssetId.uri.toString();
@@ -171,32 +167,35 @@ $rawOutput
         }
       } on UnresolvableAssetException {
         // Asset may be in a summary.
-        typeUris[element] = elementLibrary.source.uri.toString();
-        continue;
+        typeUris[element] = exportingLibrary.source.uri.toString();
       }
     }
 
     return typeUris;
   }
 
-  /// Returns the String import path of the correct public library which
-  /// exports [privateLibrary], selecting from the imports of [inputLibraries].
-  static String? _findPublicExportOf(
-      Queue<LibraryElement> inputLibraries, LibraryElement privateLibrary) {
+  /// Returns a library which exports [element], selecting from the imports of
+  /// [inputLibraries] (and all exported libraries).
+  ///
+  /// If [element] is not exported by any libraries in this set, then
+  /// [element]'s declaring library is returned.
+  static LibraryElement _findExportOf(
+      Iterable<LibraryElement> inputLibraries, Element element) {
+    final elementName = element.name;
+    if (elementName == null) {
+      return element.library!;
+    }
+
     final libraries = Queue.of([
       for (final library in inputLibraries) ...library.importedLibraries,
     ]);
 
-    while (libraries.isNotEmpty) {
-      final library = libraries.removeFirst();
-      if (library.exportedLibraries.contains(privateLibrary)) {
-        return library.source.uri.toString();
+    for (final library in libraries) {
+      if (library.exportNamespace.get(elementName) == element) {
+        return library;
       }
-      // A library may provide [privateLibrary] by exporting a library which
-      // provides it (directly or via further exporting).
-      libraries.addAll(library.exportedLibraries);
     }
-    return null;
+    return element.library!;
   }
 
   @override

@@ -120,8 +120,7 @@ void main() {
 
   /// Test [MockBuilder] on a single source file, in a package which has opted
   /// into null safety, and with the non-nullable experiment enabled.
-  Future<void> expectSingleNonNullableOutput(
-      String sourceAssetText,
+  Future<void> expectSingleNonNullableOutput(String sourceAssetText,
       /*String|Matcher<List<int>>*/ Object output) async {
     await testWithNonNullable({
       ...metaAssets,
@@ -1138,6 +1137,32 @@ void main() {
         '''));
     expect(mocksContent, contains("import 'dart:html' as _i2;"));
     expect(mocksContent, contains('_i2.HttpStatus f() =>'));
+  });
+
+  test('imports libraries which export external class types', () async {
+    await testWithNonNullable({
+      ...annotationsAsset,
+      ...simpleTestAsset,
+      'foo|lib/foo.dart': '''
+        import 'types.dart';
+        abstract class Foo {
+          void m(Bar a);
+        }
+        ''',
+      'foo|lib/types.dart': '''
+        export 'base.dart' if (dart.library.html) 'html.dart';
+        ''',
+      'foo|lib/base.dart': '''
+        class Bar {}
+        ''',
+      'foo|lib/html.dart': '''
+        class Bar {}
+        ''',
+    });
+    final mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
+    final mocksContent = utf8.decode(writer.assets[mocksAsset]!);
+    expect(mocksContent, contains("import 'package:foo/types.dart' as _i3;"));
+    expect(mocksContent, contains('m(_i3.Bar? a)'));
   });
 
   test('prefixes parameter type on generic function-typed parameter', () async {
