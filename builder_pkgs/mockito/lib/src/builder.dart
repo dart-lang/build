@@ -149,7 +149,10 @@ $rawOutput
 
     for (final element in elements) {
       final elementLibrary = element.library!;
-      if (elementLibrary.isInSdk && !elementLibrary.name.startsWith('dart._')) {
+      if (elementLibrary.isInSdk &&
+          // TODO(srawlins): Remove this when analyzer dep is >=2.0.0.
+          // ignore: unnecessary_non_null_assertion
+          !elementLibrary.name!.startsWith('dart._')) {
         // For public SDK libraries, just use the source URI.
         typeUris[element] = elementLibrary.source.uri.toString();
         continue;
