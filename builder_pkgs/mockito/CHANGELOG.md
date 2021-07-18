@@ -1,8 +1,9 @@
-## 5.0.12-dev
+## 5.0.12
 
 * Use an empty list with a correct type argument for a fallback value for a
   method which returns Iterable.
   [#445](https://github.com/dart-lang/mockito/issues/445)
+* Support analyzer 2.0.0
 
 ## 5.0.11
 
