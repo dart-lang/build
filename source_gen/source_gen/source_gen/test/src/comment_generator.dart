@@ -15,9 +15,7 @@ class CommentGenerator extends Generator {
   Future<String> generate(LibraryReader library, _) async {
     final output = <String>[];
     if (forLibrary) {
-      // TODO(scheglov) Remove when switched to newer package:analyzer.
-      // ignore:unnecessary_non_null_assertion
-      var name = library.element.name!;
+      var name = library.element.name;
       if (name.isEmpty) {
         name = library.element.source.uri.pathSegments.last;
       }

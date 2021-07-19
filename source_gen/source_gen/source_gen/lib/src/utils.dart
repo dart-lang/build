@@ -38,14 +38,9 @@ String typeNameOf(DartType type) {
 }
 
 /// Returns a name suitable for `part of "..."` when pointing to [element].
-///
-/// Returns `null` if [element] is missing identifier.
 String nameOfPartial(LibraryElement element, AssetId source) {
-  // TODO(scheglov) Remove when switched to newer package:analyzer.
-  // ignore:unnecessary_non_null_assertion, unnecessary_null_comparison
-  if (element.name != null && element.name!.isNotEmpty) {
-    // ignore:unnecessary_non_null_assertion
-    return element.name!;
+  if (element.name.isNotEmpty) {
+    return element.name;
   }
 
   final sourceUrl = p.basename(source.uri.toString());

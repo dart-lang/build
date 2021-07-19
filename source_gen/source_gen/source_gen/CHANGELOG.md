@@ -1,3 +1,7 @@
+## 1.0.4
+
+* Fix warnings with latest analyzer, require analyzer 2.x.
+
 ## 1.0.3
 
 * Allow the latest version of `package:analyzer`.
