@@ -7,6 +7,11 @@
   type, prefer a library which exports the library in which the type is
   declared. This avoids some confusion with conditional exports.
   [#443](https://github.com/dart-lang/mockito/issues/443)
+* Properly reference types in overridden `toString` implementations.
+  [#438](https://github.com/dart-lang/mockito/issues/438)
+* Override `toString` in a Fake implementation when the class-to-be-faked has
+  a superclass which overrides `toString` with additional parameters.
+  [#371](https://github.com/dart-lang/mockito/issues/371)
 * Support analyzer 2.0.0
 
 ## 5.0.11

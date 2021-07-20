@@ -257,6 +257,21 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
       type.typeArguments.forEach(_addType);
       if (!alreadyVisitedElement) {
         type.element.typeParameters.forEach(visitTypeParameterElement);
+
+        final toStringMethod =
+            type.element.lookUpMethod('toString', type.element.library);
+        if (toStringMethod != null && toStringMethod.parameters.isNotEmpty) {
+          // In a Fake class which implements a class which overrides `toString`
+          // with additional (optional) parameters, we must also override
+          // `toString` and reference the same types referenced in those
+          // parameters.
+          for (final parameter in toStringMethod.parameters) {
+            final parameterType = parameter.type;
+            if (parameterType is analyzer.InterfaceType) {
+              parameterType.element.accept(this);
+            }
+          }
+        }
       }
     } else if (type is analyzer.FunctionType) {
       _addType(type.returnType);
@@ -1203,9 +1218,9 @@ class _MockClassInfo {
           ..types.addAll(typeParameters);
       }));
 
-      final toStringMethod = elementToFake.methods
-          .firstWhereOrNull((method) => method.name == 'toString');
-      if (toStringMethod != null) {
+      final toStringMethod =
+          elementToFake.lookUpMethod('toString', elementToFake.library);
+      if (toStringMethod != null && toStringMethod.parameters.isNotEmpty) {
         // If [elementToFake] includes an overriding `toString` implementation,
         // we need to include an implementation which matches the signature.
         cBuilder.methods.add(Method(
@@ -1483,7 +1498,8 @@ class _MockClassInfo {
     assert(mockLibraryInfo.assetUris.containsKey(element),
         'An element, "$element", is missing from the asset URI mapping');
 
-    return mockLibraryInfo.assetUris[element]!;
+    return mockLibraryInfo.assetUris[element] ??
+        (throw StateError('Asset URI is missing for $element'));
   }
 
   /// Returns a [Reference] to [symbol] with [url].

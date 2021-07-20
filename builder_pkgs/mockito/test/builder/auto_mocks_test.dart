@@ -687,13 +687,31 @@ void main() {
     );
   });
 
-  test('overrides `toString` with correct signature if the class overrides it',
-      () async {
+  test(
+      'overrides `toString` with a correct signature if the class overrides '
+      'it', () async {
     await expectSingleNonNullableOutput(
       dedent('''
       abstract class Foo {
         String toString({bool a = false});
       }
+      '''),
+      _containsAllOf('String toString({bool? a = false}) => super.toString()'),
+    );
+  });
+
+  test(
+      'overrides `toString` with a correct signature if a mixed in class '
+      'overrides it, in a Fake', () async {
+    await expectSingleNonNullableOutput(
+      dedent('''
+      abstract class Foo {
+        Bar m();
+      }
+      abstract class BarBase {
+        String toString({bool a = false});
+      }
+      abstract class Bar extends BarBase {}
       '''),
       _containsAllOf('String toString({bool? a = false}) => super.toString()'),
     );
@@ -1060,7 +1078,7 @@ void main() {
   });
 
   test(
-      'imports libraries for external class types found in an inherited method'
+      'imports libraries for external class types found in an inherited method '
       'via a generic instantiation', () async {
     await testWithNonNullable({
       ...annotationsAsset,
@@ -2282,6 +2300,21 @@ void main() {
         String toString({bool? a = true}) => super.toString();
       }
       ''')),
+    );
+  });
+
+  test('imports libraries for types used in generated fake classes', () async {
+    await expectSingleNonNullableOutput(
+      dedent('''
+      class Foo {
+        Bar m1() => Bar('name1');
+      }
+      class Bar {
+        String toString({Baz? baz}) => '';
+      }
+      class Baz {}
+      '''),
+      _containsAllOf('String toString({_i2.Baz? baz}) => super.toString();'),
     );
   });
 
