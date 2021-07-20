@@ -36,8 +36,8 @@ StringBuffer colorLog(LogRecord record, {required bool verbose}) {
   if (record.stackTrace != null && verbose) {
     var trace = Trace.from(record.stackTrace!);
     const buildSystem = {'build_runner', 'build_runner_core', 'build'};
-    var exceptionRoot = trace.frames.first.package;
-    if (!buildSystem.contains(exceptionRoot)) {
+    if (trace.frames.isNotEmpty &&
+        !buildSystem.contains(trace.frames.first.package)) {
       trace =
           trace.foldFrames((f) => buildSystem.contains(f.package), terse: true);
     }
