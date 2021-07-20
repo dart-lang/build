@@ -641,28 +641,27 @@ final _enablePerformanceTracking = '''
 
 /// [shelf.Middleware] that logs all requests, inspired by [shelf.logRequests].
 shelf.Handler _logRequests(shelf.Handler innerHandler) {
-  return (shelf.Request request) {
+  return (shelf.Request request) async {
     var startTime = DateTime.now();
     var watch = Stopwatch()..start();
-
-    return Future.sync(() => innerHandler(request)).then((response) {
+    try {
+      var response = await innerHandler(request);
       var logFn = response.statusCode >= 500 ? _logger.warning : _logger.info;
-      var msg = _getMessage(startTime, response.statusCode,
+      var msg = _requestLabel(startTime, response.statusCode,
           request.requestedUri, request.method, watch.elapsed);
       logFn(msg);
       return response;
-    }, onError: (Object error, StackTrace stackTrace) {
-      if (error is shelf.HijackException) throw error;
-      var msg = _getMessage(
+    } catch (error, stackTrace) {
+      if (error is shelf.HijackException) rethrow;
+      var msg = _requestLabel(
           startTime, 500, request.requestedUri, request.method, watch.elapsed);
-      _logger.severe('$msg\r\n$error\r\n$stackTrace', true);
-      // ignore: only_throw_errors
-      throw error;
-    });
+      _logger.severe(msg, error, stackTrace);
+      rethrow;
+    }
   };
 }
 
-String _getMessage(DateTime requestTime, int statusCode, Uri requestedUri,
+String _requestLabel(DateTime requestTime, int statusCode, Uri requestedUri,
     String method, Duration elapsedTime) {
   return '${requestTime.toIso8601String()} '
       '${humanReadable(elapsedTime)} '
