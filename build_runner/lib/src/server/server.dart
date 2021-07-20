@@ -651,7 +651,7 @@ shelf.Handler _logRequests(shelf.Handler innerHandler) {
           request.requestedUri, request.method, watch.elapsed);
       logFn(msg);
       return response;
-    } catch(error, stackTrace) {
+    } catch (error, stackTrace) {
       if (error is shelf.HijackException) rethrow;
       var msg = _requestLabel(
           startTime, 500, request.requestedUri, request.method, watch.elapsed);
