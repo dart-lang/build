@@ -76,6 +76,8 @@ class MockBuilder implements Builder {
       // are necessary.
       b.body.add(
           Code('\n\n// ignore_for_file: avoid_redundant_argument_values\n'));
+      // We might generate a setter without a corresponding getter.
+      b.body.add(Code('// ignore_for_file: avoid_setters_without_getters\n'));
       // We don't properly prefix imported class names in doc comments.
       b.body.add(Code('// ignore_for_file: comment_references\n'));
       // We might import a package's 'src' directory.
