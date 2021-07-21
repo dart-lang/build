@@ -218,14 +218,22 @@ void main() {
         @Wrapper(_privateFunction)
         class Example {}
 
-        class Int64Like {
-          static const Int64Like ZERO = const Int64Like._bits(0, 0, 0);
+        class Int64Like implements Int64LikeBase{
+          static const Int64Like ZERO = const Int64LikeBase._bits(0, 0, 0);
 
           final int _l;
           final int _m;
           final int _h;
 
           const Int64Like._bits(this._l, this._m, this._h);
+        }
+
+        class Int64LikeBase {
+          final int _l;
+          final int _m;
+          final int _h;
+
+          const Int64LikeBase._bits(this._l, this._m, this._h);
         }
 
         enum Enum {
