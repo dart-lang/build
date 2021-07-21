@@ -1,3 +1,8 @@
+## 1.0.5
+
+* Fix a bug with reviving constant expressions which are fields defined on a
+  different class than their type (but in the same library).
+
 ## 1.0.4
 
 * Fix warnings with latest analyzer, require analyzer 2.x.
