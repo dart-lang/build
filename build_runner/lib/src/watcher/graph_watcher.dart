@@ -55,13 +55,11 @@ class PackageGraphWatcher {
                 .watch()
                 .where(_nestedPathFilter(w.node))
                 .handleError((Object e, StackTrace s) {
-              _logger
-                ..severe('Error in watcher for package: ${w.node.name}: $e:$s')
-                ..severe(
-                    'Error from directory watcher for package:${w.node.name}\n\n'
-                    'If you see this consistently then it is recommended that '
-                    'you enable the polling file watcher with '
-                    '--use-polling-watcher.');
+              _logger.severe(
+                  'Error from directory watcher for package:${w.node.name}\n\n'
+                  'If you see this consistently then it is recommended that '
+                  'you enable the polling file watcher with '
+                  '--use-polling-watcher.');
               // ignore: only_throw_errors
               throw e;
             }))

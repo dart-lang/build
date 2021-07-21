@@ -4,7 +4,13 @@
 
 @TestOn('vm')
 import 'dart:convert';
-import 'dart:io' show HttpClient, HttpHeaders, HttpStatus;
+import 'dart:io'
+    show
+        HttpClient,
+        HttpClientRequest,
+        HttpClientResponse,
+        HttpHeaders,
+        HttpStatus;
 
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -31,12 +37,7 @@ void main() {
   group('basic serve', () {
     setUpAll(() async {
       // These tests depend on running `test` while a `serve` is ongoing.
-      await startServer(
-        ensureCleanBuild: true,
-        buildArgs: [
-          '--verbose',
-        ],
-      );
+      await startServer(ensureCleanBuild: true);
     });
 
     tearDownAll(() async {
@@ -146,7 +147,6 @@ void main() {
       'web',
       '--build-filter',
       'web/sub/main.dart.js',
-      '--verbose',
       '--define',
       'build_web_compilers|ddc=environment={"message": "goodbye"}',
     ]);
@@ -185,18 +185,21 @@ void main() {
     });
 
     Future<void> read(String path) async {
+      HttpClientRequest? request;
+      HttpClientResponse? response;
       try {
-        var request = httpClient.get('localhost', 8080, path);
-        var response = await (await request).close();
+        request = await httpClient.get('localhost', 8080, path);
+        response = await request.close();
         expect(
           response.statusCode,
           HttpStatus.ok,
           reason: '$path ${response.reasonPhrase}',
         );
-        await response.drain();
       } catch (e, s) {
-        print('Test error on: $e:$s');
-        rethrow;
+        fail('Error reading $path: $e:$s');
+      } finally {
+        request?.abort();
+        await response?.drain().catchError((_) {});
       }
     }
 
