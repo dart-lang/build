@@ -35,6 +35,7 @@ Iterable<BuilderDefinition> findBuilderOrder(
 /// Whether [parent] has a `required_input` that wants to read outputs produced
 /// by [child].
 bool _hasInputDependency(BuilderDefinition parent, BuilderDefinition child) {
+  // todo this might need some changes now?
   final childOutputs = child.buildExtensions.values.expand((v) => v).toSet();
   return parent.requiredInputs
       .any((input) => childOutputs.any((output) => output.endsWith(input)));

@@ -16,3 +16,7 @@ dev_dependencies:
 dependency_overrides:
   # Needed until the world rolls forward
   analyzer: ^2.0.0
+  build:
+    path: ../build
+  build_runner_core:
+    path: ../build_runner_core

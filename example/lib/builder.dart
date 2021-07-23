@@ -11,3 +11,5 @@ Builder copyBuilder(BuilderOptions options) => CopyBuilder();
 Builder resolvingBuilder(BuilderOptions options) => ResolvingBuilder();
 
 Builder cssBuilder(BuilderOptions options) => CssBuilder();
+
+Builder movingBuilder(BuilderOptions options) => MovingBuilder();

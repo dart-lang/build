@@ -1,5 +1,6 @@
 ## 2.1.0-dev
 
+- Expand the expressiveness of `buildExtensions` to allow directory moves.
 - Add an `allowedOutputs` getter to `BuildStep`. It returns assets that may be
   written in that step.
 

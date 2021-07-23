@@ -374,17 +374,20 @@ class AssetGraph {
   bool _actionMatches(BuildAction action, AssetId input) {
     if (input.package != action.package) return false;
     if (!action.generateFor.matches(input)) return false;
-    Iterable<String> inputExtensions;
+
     if (action is InBuildPhase) {
-      inputExtensions = action.builder.buildExtensions.keys;
+      if (expectedOutputs(action.builder, input).isEmpty) return false;
     } else if (action is PostBuildAction) {
-      inputExtensions = action.builder.inputExtensions;
+      // todo: Do we want to allow capture groups for post process builders?
+      // I guess not?
+      var inputExtensions = action.builder.inputExtensions;
+      if (!inputExtensions.any(input.path.endsWith)) {
+        return false;
+      }
     } else {
       throw StateError('Unrecognized action type $action');
     }
-    if (!inputExtensions.any(input.path.endsWith)) {
-      return false;
-    }
+
     var inputNode = get(input);
     while (inputNode is GeneratedAssetNode) {
       inputNode = get(inputNode.primaryInput);

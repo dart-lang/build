@@ -396,6 +396,7 @@ BuilderOptions _options(Map<String, dynamic>? options) =>
     options?.isEmpty ?? true ? BuilderOptions.empty : BuilderOptions(options!);
 
 void _validateBuilder(Builder builder) {
+  // todo: This needs to be changed now.
   var inputExtensions = builder.buildExtensions.keys.toSet();
   var matching = inputExtensions.intersection(
       {for (var outputs in builder.buildExtensions.values) ...outputs});

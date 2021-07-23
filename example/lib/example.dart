@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:path/path.dart' as p;
 
 /// Copy contents of a `txt` files into `name.txt.copy`.
 ///
@@ -75,4 +76,29 @@ Visible libraries: $visibleLibraries
   final buildExtensions = const {
     '.dart': ['.dart.info']
   };
+}
+
+class MovingBuilder implements Builder {
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    final inputId = buildStep.inputId;
+    final outputId = AssetId(
+        inputId.package,
+        p.url.joinAll([
+          'assets',
+          ...inputId.changeExtension('.md').pathSegments.skip(1)
+        ]));
+
+    final bytesInInput = (await buildStep.readAsBytes(inputId)).length;
+
+    await buildStep.writeAsString(
+      outputId,
+      'File `$inputId` contains $bytesInInput bytes.',
+    );
+  }
+
+  @override
+  Map<String, List<String>> get buildExtensions => const {
+        'lib/{{}}.dart': ['assets/{{}}.md'],
+      };
 }
