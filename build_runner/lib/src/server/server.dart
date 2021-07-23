@@ -367,8 +367,8 @@ class AssetHandler {
       }
       return shelf.Response.ok(body, headers: headers);
     } catch (e, s) {
-      _logger.finest('Error on request '
-          '${request.method} ${request.requestedUri}: $e:$s');
+      _logger.finest(
+          'Error on request ${request.method} ${request.requestedUri}', e, s);
       rethrow;
     }
   }
