@@ -58,6 +58,16 @@ void main() {
         throwsArgumentError,
       );
     });
+
+    test('can use `^` to start at the beginning', () {
+      const extensions = {
+        '^lib/{{}}.dart': ['lib/generated/{{}}.dart']
+      };
+
+      _expectOutputs(extensions, _asset('lib/foo.dart'),
+          [_asset('lib/generated/foo.dart')]);
+      _expectOutputs(extensions, _asset('web/nested/lib/foo.dart'), isEmpty);
+    });
   });
 }
 

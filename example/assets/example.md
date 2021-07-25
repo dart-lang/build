@@ -1,1 +1,1 @@
-File `example|lib/example.dart` contains 3125 bytes.
+File `example|lib/example.dart` contains 2755 bytes.

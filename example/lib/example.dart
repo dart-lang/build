@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:path/path.dart' as p;
 
 /// Copy contents of a `txt` files into `name.txt.copy`.
 ///
@@ -82,12 +81,9 @@ class MovingBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
     final inputId = buildStep.inputId;
-    final outputId = AssetId(
-        inputId.package,
-        p.url.joinAll([
-          'assets',
-          ...inputId.changeExtension('.md').pathSegments.skip(1)
-        ]));
+
+    final outputId = AssetId(inputId.package,
+        inputId.changeExtension('.md').path.replaceFirst('lib/', 'assets/'));
 
     final bytesInInput = (await buildStep.readAsBytes(inputId)).length;
 

@@ -69,13 +69,25 @@ class _ParsedBuildOutput {
       }
     }
 
+    final regexBuffer = StringBuffer();
+    // Start writing the regex up to the capture group
+    if (input.startsWith('^')) {
+      // Build inputs starting with `^` start matching at the beginning of the
+      // input path.
+      regexBuffer
+        ..write('^')
+        ..write(RegExp.escape(input.substring(1, match.start)));
+    } else {
+      regexBuffer.write(RegExp.escape(input.substring(0, match.start)));
+    }
+
+    regexBuffer
+      ..write('(.+)') // capture group
+      ..write(RegExp.escape(input.substring(match.end))) // rest of path
+      ..write(r'$'); // build inputs always match a suffix
+
     return _ParsedBuildOutput(
-      RegExp(
-        RegExp.escape(input.substring(0, match.start)) +
-            '(.+)' +
-            RegExp.escape(input.substring(match.end)) +
-            r'$',
-      ),
+      RegExp(regexBuffer.toString()),
       outputs,
       true,
     );
