@@ -376,7 +376,7 @@ class AssetGraph {
     if (!action.generateFor.matches(input)) return false;
 
     if (action is InBuildPhase) {
-      if (expectedOutputs(action.builder, input).isEmpty) return false;
+      if (!hasOutputFor(action.builder, input)) return false;
     } else if (action is PostBuildAction) {
       // todo: Do we want to allow capture groups for post process builders?
       // I guess not?

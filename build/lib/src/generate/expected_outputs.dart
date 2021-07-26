@@ -11,49 +11,56 @@ Iterable<AssetId> expectedOutputs(Builder builder, AssetId input) {
       .expand((extension) => extension.matchingOutputsFor(input));
 }
 
+/// Whether the [builder] is expected to output assets when running on [input].
+///
+/// This will be `true` iff its [expectedOutputs] is not empty, but may be more
+/// efficient to compute.
+bool hasOutputFor(Builder builder, AssetId input) {
+  return builder.parsedExtensions.any((e) => e.hasAnyOutputFor(input));
+}
+
 // We can safely cache parsed build extensions for each builder since build
 // extensions are required to not change for a builder.
-final _parsedInputs = Expando<List<_ParsedBuildOutput>>();
+final _parsedInputs = Expando<List<_ParsedBuildOutputs>>();
 
 extension on Builder {
-  List<_ParsedBuildOutput> get parsedExtensions {
-    final existing = _parsedInputs[this];
-    if (existing == null) {
-      return _parsedInputs[this] = [
-        for (final entry in buildExtensions.entries)
-          _ParsedBuildOutput.parse(entry.key, entry.value),
-      ];
-    }
-
-    return existing;
+  List<_ParsedBuildOutputs> get parsedExtensions {
+    return _parsedInputs[this] ??= [
+      for (final entry in buildExtensions.entries)
+        _ParsedBuildOutputs.parse(this, entry.key, entry.value),
+    ];
   }
 }
 
-class _ParsedBuildOutput {
+AssetId _replaceSuffix(AssetId input, int matchedSuffix, String newExtension) {
+  final path = input.path;
+  return AssetId(
+    input.package,
+    path.substring(0, path.length - matchedSuffix) + newExtension,
+  );
+}
+
+abstract class _ParsedBuildOutputs {
   static final RegExp _captureGroup = RegExp('{{}}');
 
-  final RegExp _pathMatcher;
-  final List<String> _outputs;
-  final bool _usesCaptureGroup;
+  _ParsedBuildOutputs();
 
-  _ParsedBuildOutput(this._pathMatcher, this._outputs, this._usesCaptureGroup);
-
-  factory _ParsedBuildOutput.parse(String input, List<String> outputs) {
+  factory _ParsedBuildOutputs.parse(
+      Builder builder, String input, List<String> outputs) {
     final groups = _captureGroup.allMatches(input).iterator;
 
     if (!groups.moveNext()) {
       // The input does not contain a capture group, so we should simply match
-      // all files whose paths ends with the desired input.
-      return _ParsedBuildOutput(
-          RegExp('${RegExp.escape(input)}\$'), outputs, false);
+      // all assets whose paths ends with the desired input.
+      return _SuffixBuildOutputs(input, outputs);
     }
 
     final match = groups.current;
 
     if (groups.moveNext()) {
       throw ArgumentError(
-        'The builder declares an input "$input" which contains multiple '
-        'groups ("{{}}"). This is not supported.',
+        'The builder `$builder` declares an input "$input" which contains '
+        'multiple groups ("{{}}"). This is not supported.',
       );
     }
 
@@ -62,9 +69,9 @@ class _ParsedBuildOutput {
     for (final output in outputs) {
       if (!_captureGroup.hasMatch(output)) {
         throw ArgumentError(
-          'A builder declares an input "$input" using a capture group. '
-          'It is required that all of its output also refer to that capture '
-          'group. However, "$output" does not.',
+          'The builder `$builder` declares an input "$input" using a capture '
+          'group. It is required that all of its outputs also refer to that '
+          'capture group. However, "$output" does not.',
         );
       }
     }
@@ -86,13 +93,45 @@ class _ParsedBuildOutput {
       ..write(RegExp.escape(input.substring(match.end))) // rest of path
       ..write(r'$'); // build inputs always match a suffix
 
-    return _ParsedBuildOutput(
-      RegExp(regexBuffer.toString()),
-      outputs,
-      true,
-    );
+    return _CapturingBuildOutputs(RegExp(regexBuffer.toString()), outputs);
   }
 
+  bool hasAnyOutputFor(AssetId input);
+  Iterable<AssetId> matchingOutputsFor(AssetId input);
+}
+
+/// A simple build input/output set that doesn't use capture groups.
+class _SuffixBuildOutputs extends _ParsedBuildOutputs {
+  final String inputExtension;
+  final List<String> outputExtensions;
+
+  _SuffixBuildOutputs(this.inputExtension, this.outputExtensions);
+
+  @override
+  bool hasAnyOutputFor(AssetId input) => input.path.endsWith(inputExtension);
+
+  @override
+  Iterable<AssetId> matchingOutputsFor(AssetId input) {
+    if (!hasAnyOutputFor(input)) return const Iterable.empty();
+
+    // If we expect an output, the asset's path ends with the input extension.
+    // Expected outputs just replace the matched suffix in the path.
+    return outputExtensions.map(
+        (extension) => _replaceSuffix(input, inputExtension.length, extension));
+  }
+}
+
+/// A build input with a capture group `{{}}` that's referenced in the outputs.
+class _CapturingBuildOutputs extends _ParsedBuildOutputs {
+  final RegExp _pathMatcher;
+  final List<String> _outputs;
+
+  _CapturingBuildOutputs(this._pathMatcher, this._outputs);
+
+  @override
+  bool hasAnyOutputFor(AssetId input) => _pathMatcher.hasMatch(input.path);
+
+  @override
   Iterable<AssetId> matchingOutputsFor(AssetId input) {
     // Note that there will always be at most one match because the regex is
     // defined to match suffixes only.
@@ -107,14 +146,12 @@ class _ParsedBuildOutput {
     final lengthOfMatch = match.end - match.start;
 
     return _outputs.map((output) {
-      if (_usesCaptureGroup) {
-        output = output.replaceFirst('{{}}', match.group(1)!);
-      }
+      final resolvedOutput = output.replaceFirst('{{}}', match.group(1)!);
 
       return AssetId(
         input.package,
         inputPath.replaceRange(
-            inputPath.length - lengthOfMatch, inputPath.length, output),
+            inputPath.length - lengthOfMatch, inputPath.length, resolvedOutput),
       );
     });
   }
