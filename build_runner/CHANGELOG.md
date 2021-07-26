@@ -1,4 +1,4 @@
-## 2.0.7-dev
+## 2.1.0-dev
 
 - Add `--log-requests` flag to build daemon.
 - Log failed asset requests in build_runner server.
