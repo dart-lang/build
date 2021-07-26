@@ -378,8 +378,6 @@ class AssetGraph {
     if (action is InBuildPhase) {
       if (!hasOutputFor(action.builder, input)) return false;
     } else if (action is PostBuildAction) {
-      // todo: Do we want to allow capture groups for post process builders?
-      // I guess not?
       var inputExtensions = action.builder.inputExtensions;
       if (!inputExtensions.any(input.path.endsWith)) {
         return false;
