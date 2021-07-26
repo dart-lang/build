@@ -317,53 +317,60 @@ class AssetHandler {
   Future<shelf.Response> _handle(shelf.Request request, AssetId assetId,
       {bool fallbackToDirectoryList = false}) async {
     try {
-      if (!await _reader.canRead(assetId)) {
-        var reason = await _reader.unreadableReason(assetId);
-        switch (reason) {
-          case UnreadableReason.failed:
-            return shelf.Response.internalServerError(
-                body: 'Build failed for $assetId');
-          case UnreadableReason.notOutput:
-            return shelf.Response.notFound('$assetId was not output');
-          case UnreadableReason.notFound:
-            if (fallbackToDirectoryList) {
-              return shelf.Response.notFound(await _findDirectoryList(assetId));
-            }
-            return shelf.Response.notFound('Not Found');
-          default:
-            return shelf.Response.notFound('Not Found');
+      try {
+        if (!await _reader.canRead(assetId)) {
+          var reason = await _reader.unreadableReason(assetId);
+          switch (reason) {
+            case UnreadableReason.failed:
+              return shelf.Response.internalServerError(
+                  body: 'Build failed for $assetId');
+            case UnreadableReason.notOutput:
+              return shelf.Response.notFound('$assetId was not output');
+            case UnreadableReason.notFound:
+              if (fallbackToDirectoryList) {
+                return shelf.Response.notFound(
+                    await _findDirectoryList(assetId));
+              }
+              return shelf.Response.notFound('Not Found');
+            default:
+              return shelf.Response.notFound('Not Found');
+          }
         }
+      } on ArgumentError catch (_) {
+        return shelf.Response.notFound('Not Found');
       }
-    } on ArgumentError catch (_) {
-      return shelf.Response.notFound('Not Found');
-    }
 
-    var etag = base64.encode((await _reader.digest(assetId)).bytes);
-    var contentType = _typeResolver.lookup(assetId.path);
-    if (contentType == 'text/x-dart') {
-      contentType = '$contentType; charset=utf-8';
-    }
-    var headers = <String, Object>{
-      if (contentType != null) HttpHeaders.contentTypeHeader: contentType,
-      HttpHeaders.etagHeader: etag,
-      // We always want this revalidated, which requires specifying both
-      // max-age=0 and must-revalidate.
-      //
-      // See spec https://goo.gl/Lhvttg for more info about this header.
-      HttpHeaders.cacheControlHeader: 'max-age=0, must-revalidate',
-    };
+      var etag = base64.encode((await _reader.digest(assetId)).bytes);
+      var contentType = _typeResolver.lookup(assetId.path);
+      if (contentType == 'text/x-dart') {
+        contentType = '$contentType; charset=utf-8';
+      }
+      var headers = <String, Object>{
+        if (contentType != null) HttpHeaders.contentTypeHeader: contentType,
+        HttpHeaders.etagHeader: etag,
+        // We always want this revalidated, which requires specifying both
+        // max-age=0 and must-revalidate.
+        //
+        // See spec https://goo.gl/Lhvttg for more info about this header.
+        HttpHeaders.cacheControlHeader: 'max-age=0, must-revalidate',
+      };
 
-    if (request.headers[HttpHeaders.ifNoneMatchHeader] == etag) {
-      // This behavior is still useful for cases where a file is hit
-      // without a cache-busting query string.
-      return shelf.Response.notModified(headers: headers);
+      if (request.headers[HttpHeaders.ifNoneMatchHeader] == etag) {
+        // This behavior is still useful for cases where a file is hit
+        // without a cache-busting query string.
+        return shelf.Response.notModified(headers: headers);
+      }
+      List<int>? body;
+      if (request.method != 'HEAD') {
+        body = await _reader.readAsBytes(assetId);
+        headers[HttpHeaders.contentLengthHeader] = '${body.length}';
+      }
+      return shelf.Response.ok(body, headers: headers);
+    } catch (e, s) {
+      _logger.finest(
+          'Error on request ${request.method} ${request.requestedUri}', e, s);
+      rethrow;
     }
-    List<int>? body;
-    if (request.method != 'HEAD') {
-      body = await _reader.readAsBytes(assetId);
-      headers[HttpHeaders.contentLengthHeader] = '${body.length}';
-    }
-    return shelf.Response.ok(body, headers: headers);
   }
 
   Future<String> _findDirectoryList(AssetId from) async {
