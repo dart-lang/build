@@ -215,6 +215,36 @@ void main() {
         });
       });
 
+      test('outputs with a capture group', () async {
+        await testBuilders(
+          [
+            applyToRoot(
+              TestBuilder(
+                buildExtensions: {
+                  'assets/{{}}.txt': ['lib/src/generated/{{}}.dart']
+                },
+                build: (step, _) async {
+                  final input = step.inputId;
+                  final output = AssetId(
+                      input.package,
+                      input.path
+                          .replaceAll('assets/', 'lib/src/generated/')
+                          .replaceAll('.txt', '.dart'));
+                  await step.writeAsString(
+                      output, await step.readAsString(input));
+                },
+              ),
+            )
+          ],
+          {
+            'a|assets/nested/input/file.txt': 'a',
+          },
+          outputs: {
+            'a|lib/src/generated/nested/input/file.dart': 'a',
+          },
+        );
+      });
+
       test('optional build actions don\'t run if their outputs aren\'t read',
           () async {
         await testBuilders([
@@ -1004,9 +1034,7 @@ void main() {
         'a|web/a.txt', [], computeDigest(AssetId('a', 'web/a.txt'), 'a'));
     var bSourceNode = makeAssetNode(
         'a|lib/b.txt', [], computeDigest(AssetId('a', 'lib/b.txt'), 'b'));
-    expectedGraph
-      ..add(aSourceNode)
-      ..add(bSourceNode);
+    expectedGraph..add(aSourceNode)..add(bSourceNode);
 
     // Regular generated asset nodes and supporting nodes.
     var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
@@ -1056,9 +1084,7 @@ void main() {
         aSourceNode.id, 0, postBuilderOptionsId);
     var bAnchorNode = PostProcessAnchorNode.forInputAndAction(
         bSourceNode.id, 0, postBuilderOptionsId);
-    expectedGraph
-      ..add(aAnchorNode)
-      ..add(bAnchorNode);
+    expectedGraph..add(aAnchorNode)..add(bAnchorNode);
 
     var aPostCopyNode = GeneratedAssetNode(makeAssetId('a|web/a.txt.post'),
         phaseNumber: 1,
