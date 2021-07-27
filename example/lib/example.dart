@@ -109,7 +109,7 @@ class TextBuilder implements Builder {
 
     final outputBuffer = StringBuffer('// Generated, do not edit\n');
     messages.forEach((key, value) {
-      outputBuffer.write('const String $key = \'$value\';');
+      outputBuffer.writeln('const String $key = \'$value\';');
     });
 
     await buildStep.writeAsString(outputId, outputBuffer.toString());
