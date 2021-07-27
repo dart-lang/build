@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
+
 import 'package:build/build.dart';
 
 /// Copy contents of a `txt` files into `name.txt.copy`.
@@ -77,24 +79,39 @@ Visible libraries: $visibleLibraries
   };
 }
 
-class MovingBuilder implements Builder {
+/// A builder that generates Dart constants for strings defined in a json file.
+///
+/// Unlike most other builders, which emit files next to their primary inputs,
+/// this builder generates files in a different directory! Inputs are expected
+/// in `assets` and generated files go to `lib/generated/`.
+class TextBuilder implements Builder {
+  @override
+  Map<String, List<String>> get buildExtensions => const {
+        // To implement directory moves, this builder uses capture groups
+        // ({{}}). Capture groups can match anything in the input's path,
+        // including subdirectories. The `^assets` at the beginning ensures that
+        // only jsons under the top-level `assets/` folder will be considered.
+        '^assets/{{}}.json': ['lib/generated/{{}}.dart'],
+      };
+
   @override
   Future<void> build(BuildStep buildStep) async {
     final inputId = buildStep.inputId;
-
-    final outputId = AssetId(inputId.package,
-        inputId.changeExtension('.md').path.replaceFirst('lib/', 'assets/'));
-
-    final bytesInInput = (await buildStep.readAsBytes(inputId)).length;
-
-    await buildStep.writeAsString(
-      outputId,
-      'File `$inputId` contains $bytesInInput bytes.',
+    final outputId = AssetId(
+      inputId.package,
+      inputId.path
+          .replaceFirst('assets/', 'lib/generated/')
+          .replaceFirst('.json', '.dart'),
     );
-  }
 
-  @override
-  Map<String, List<String>> get buildExtensions => const {
-        'lib/{{}}.dart': ['assets/{{}}.md'],
-      };
+    final messages = (json.decode(await buildStep.readAsString(inputId)) as Map)
+        .cast<String, String>();
+
+    final outputBuffer = StringBuffer('// Generated, do not edit\n');
+    messages.forEach((key, value) {
+      outputBuffer.write('const String $key = \'$value\';');
+    });
+
+    await buildStep.writeAsString(outputId, outputBuffer.toString());
+  }
 }

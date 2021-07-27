@@ -12,4 +12,4 @@ Builder resolvingBuilder(BuilderOptions options) => ResolvingBuilder();
 
 Builder cssBuilder(BuilderOptions options) => CssBuilder();
 
-Builder movingBuilder(BuilderOptions options) => MovingBuilder();
+Builder textBuilder(BuilderOptions options) => TextBuilder();
