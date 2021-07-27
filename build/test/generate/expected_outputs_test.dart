@@ -80,6 +80,37 @@ void main() {
           [_asset('lib/generated/foo.dart')]);
       _expectOutputs(extensions, _asset('web/nested/lib/foo.dart'), isEmpty);
     });
+
+    test('can be used at the start of an input', () {
+      _expectOutputs(
+        {
+          '{{}}.proto': ['lib/src/{{}}.dart']
+        },
+        _asset('proto/services/auth.proto'),
+        [_asset('lib/src/proto/services/auth.dart')],
+      );
+    });
+
+    test('match greedily', () {
+      _expectOutputs(
+        {
+          'lib/{{}}.dart': ['docs/{{}}.md']
+        },
+        // The input extension should match the outer "lib/"
+        _asset('lib/src/lib/foo.dart'),
+        [_asset('docs/src/lib/foo.md')],
+      );
+    });
+
+    test('can be used at the end of an input', () {
+      _expectOutputs(
+        {
+          'lib/{{}}': ['lib/copied/{{}}']
+        },
+        _asset('lib/src/foo.dart'),
+        [_asset('lib/copied/src/foo.dart')],
+      );
+    });
   });
 }
 

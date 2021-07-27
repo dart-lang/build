@@ -376,7 +376,7 @@ class AssetGraph {
     if (!action.generateFor.matches(input)) return false;
 
     if (action is InBuildPhase) {
-      if (!hasOutputFor(action.builder, input)) return false;
+      if (!action.builder.hasOutputFor(input)) return false;
     } else if (action is PostBuildAction) {
       var inputExtensions = action.builder.inputExtensions;
       if (!inputExtensions.any(input.path.endsWith)) {

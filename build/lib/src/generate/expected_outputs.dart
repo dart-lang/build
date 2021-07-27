@@ -7,24 +7,25 @@ import '../builder/builder.dart';
 /// Collects the expected AssetIds created by [builder] when given [input] based
 /// on the extension configuration.
 Iterable<AssetId> expectedOutputs(Builder builder, AssetId input) {
-  return builder.parsedExtensions
+  return builder._parsedExtensions
       .expand((extension) => extension.matchingOutputsFor(input));
-}
-
-/// Whether the [builder] is expected to output assets when running on [input].
-///
-/// This will be `true` iff its [expectedOutputs] is not empty, but may be more
-/// efficient to compute.
-bool hasOutputFor(Builder builder, AssetId input) {
-  return builder.parsedExtensions.any((e) => e.hasAnyOutputFor(input));
 }
 
 // We can safely cache parsed build extensions for each builder since build
 // extensions are required to not change for a builder.
 final _parsedInputs = Expando<List<_ParsedBuildOutputs>>();
 
-extension on Builder {
-  List<_ParsedBuildOutputs> get parsedExtensions {
+/// Extensions on [Builder] describing expected outputs.
+extension BuildOutputExtensions on Builder {
+  /// Whether this builder is expected to output assets when running on [input].
+  ///
+  /// This will be `true` iff its [expectedOutputs] is not empty, but may be
+  /// more efficient to compute.
+  bool hasOutputFor(AssetId input) {
+    return _parsedExtensions.any((e) => e.hasAnyOutputFor(input));
+  }
+
+  List<_ParsedBuildOutputs> get _parsedExtensions {
     return _parsedInputs[this] ??= [
       for (final entry in buildExtensions.entries)
         _ParsedBuildOutputs.parse(this, entry.key, entry.value),
@@ -32,12 +33,12 @@ extension on Builder {
   }
 }
 
-AssetId _replaceSuffix(AssetId input, int matchedSuffix, String newExtension) {
-  final path = input.path;
-  return AssetId(
-    input.package,
-    path.substring(0, path.length - matchedSuffix) + newExtension,
-  );
+extension on AssetId {
+  /// Replaces the last [matchedSuffix] characters with [newExtension].
+  AssetId replaceSuffix(int matchedSuffix, String newExtension) {
+    return AssetId(
+        package, path.substring(0, path.length - matchedSuffix) + newExtension);
+  }
 }
 
 abstract class _ParsedBuildOutputs {
@@ -117,7 +118,7 @@ class _SuffixBuildOutputs extends _ParsedBuildOutputs {
     // If we expect an output, the asset's path ends with the input extension.
     // Expected outputs just replace the matched suffix in the path.
     return outputExtensions.map(
-        (extension) => _replaceSuffix(input, inputExtension.length, extension));
+        (extension) => input.replaceSuffix(inputExtension.length, extension));
   }
 }
 
@@ -133,8 +134,9 @@ class _CapturingBuildOutputs extends _ParsedBuildOutputs {
 
   @override
   Iterable<AssetId> matchingOutputsFor(AssetId input) {
-    // Note that there will always be at most one match because the regex is
-    // defined to match suffixes only.
+    // There may be multiple matches when a capture group appears at the
+    // beginning or end of an input string. We always want a group to match as
+    // much as possible, so we use the first match.
     final match = _pathMatcher.firstMatch(input.path);
     if (match == null) {
       // The build input doesn't match the input asset, so the builder shouldn't
@@ -142,17 +144,11 @@ class _CapturingBuildOutputs extends _ParsedBuildOutputs {
       return const Iterable.empty();
     }
 
-    final inputPath = input.path;
     final lengthOfMatch = match.end - match.start;
 
     return _outputs.map((output) {
       final resolvedOutput = output.replaceFirst('{{}}', match.group(1)!);
-
-      return AssetId(
-        input.package,
-        inputPath.replaceRange(
-            inputPath.length - lengthOfMatch, inputPath.length, resolvedOutput),
-      );
+      return input.replaceSuffix(lengthOfMatch, resolvedOutput);
     });
   }
 }
