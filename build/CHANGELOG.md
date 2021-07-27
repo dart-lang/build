@@ -2,7 +2,7 @@
 
 - Expand the expressiveness of `buildExtensions` include capture groups,
   enabling directory moves. For more information on this feature, see
-  https://github.com/dart-lang/build/blob/master/docs/writing_a_builder.md#configuring-outputs
+  https://github.com/dart-lang/build/blob/master/docs/writing_a_builder.md#capture-groups
 - Add an `allowedOutputs` getter to `BuildStep`. It returns assets that may be
   written in that step.
 

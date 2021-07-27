@@ -18,11 +18,16 @@ Having a predictable set of outputs allows:
 
 Each `Builder` implements a property `buildExtensions` which is a `Map<String,
 List<String>>` to configure what outputs are created for 1 or more input
-extensions. For example with the configuration `{'.dart': ['.foo.dart']}` all
-Dart files in the build will be passed as a primary input, and each build step
-may produce a single asset. For the primary input `some_library.dart` the
-allowed output is `some_library.foo.dart`. Only assets which will produce at
-least one output will trigger a build step.
+extensions.
+
+Keys in `buildExtensions` match a suffix in the path of potential inputs. That
+is, a builder will run when an input ends with its input extension.
+Valid outputs are formed by replacing the matched suffix with values in that 
+map. For instance, `{'.dart': ['.g.dart']}` matches all files ending with
+`.dart` and allows the builder to write a file  with the same name but with a
+`.g.dart` extension instead.
+A primary input `some_library.dart` would match the `.dart` suffix and expect
+an output `some_library.g.dart`.
 
 If a `Builder` has an empty string key in `buildExtensions` then every input
 will trigger a build step, and the expected output will have the extension
@@ -31,12 +36,7 @@ will be passed as a primary input, and each build step may produce two assets.
 For the primary input `some_file.txt` the allowed outputs are
 `some_file.txt.foo` and `some_file.txt.bar`.
 
-Keys in `buildExtensions` match a suffix in the path of potential inputs. That
-is, a builder will run when an input ends with its input extension.
-Valid outputs are formed by replacing the matched suffix with values in that 
-map. For instance, `{'.dart': ['.g.dart']}` matches all files ending with
-`.dart` and allows the builder to write a file  with the same name but with a
-`.g.dart` extension instead.
+### Capture groups
 
 Builders can declare more complex inputs and outputs by using a capture group
 in their build input. Capture groups allow builders to move files across
