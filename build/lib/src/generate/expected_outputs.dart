@@ -67,11 +67,11 @@ abstract class _ParsedBuildOutputs {
     // When using a capture group in the build input, it must also be used in
     // every output to ensure outputs have unique names.
     for (final output in outputs) {
-      if (!_captureGroup.hasMatch(output)) {
+      if (_captureGroup.allMatches(output).length != 1) {
         throw ArgumentError(
           'The builder `$builder` declares an input "$input" using a capture '
           'group. It is required that all of its outputs also refer to that '
-          'capture group. However, "$output" does not.',
+          'capture group exactly once. However, "$output" does not.',
         );
       }
     }

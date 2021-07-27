@@ -59,6 +59,18 @@ void main() {
       );
     });
 
+    test('may not be used in the same output multiple times', () {
+      expect(
+        () => expectedOutputs(
+          TestBuilder(buildExtensions: {
+            '{{}}.txt': ['{{}}/{{}}/.foo']
+          }),
+          _asset('foo.txt'),
+        ),
+        throwsArgumentError,
+      );
+    });
+
     test('can use `^` to start at the beginning', () {
       const extensions = {
         '^lib/{{}}.dart': ['lib/generated/{{}}.dart']
