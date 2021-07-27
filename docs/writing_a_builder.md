@@ -31,6 +31,48 @@ will be passed as a primary input, and each build step may produce two assets.
 For the primary input `some_file.txt` the allowed outputs are
 `some_file.txt.foo` and `some_file.txt.bar`.
 
+Keys in `buildExtensions` match a suffix in the path of potential inputs. That
+is, a builder will run when an input ends with its input extension.
+Valid outputs are formed by replacing the matched suffix with values in that 
+map. For instance, `{'.dart': ['.g.dart']}` matches all files ending with
+`.dart` and allows the builder to write a file  with the same name but with a
+`.g.dart` extension instead.
+
+Builders can declare more complex inputs and outputs by using a capture group
+in their build input. Capture groups allow builders to move files across
+directories. For instance, consider a builder that generates Dart code for
+[Protocol Buffers][protobuf]. Let's assume that proto definitions are stored in
+a top-level `proto/` folder, and that generated files should go to
+`lib/src/proto/`. This cannot be expressed with simple build extensions that
+may replace a suffix in the asset's path only.
+Using `{'proto/{{}}.proto': ['lib/src/proto/{{}}.dart']}` as a build extension
+lets the builder read files in `proto/` and emit Dart files in the desired 
+location. Here, the __`{{}}`__ is called a _capture group_. Capture groups have
+the following noteworthy properties:
+
+- Capture groups match at least one character in the input path, but may match
+  arbitrarily many characters.
+- When the input uses a capture group, every output must reference that capture
+  group as well.
+- It is not currently allowed to declare multiple capture groups in one input
+  extension.
+- Capture groups match as many characters as possible. In the proto example,
+  the asset `proto/nested/proto/test.proto` would match with `{{}}` capturing
+  `nested/proto/test`. The shorter suffix match with `{{}}` capturing just
+  `test` is not considered.
+- General rules about build extensions matching suffixes still apply. When
+  using capture groups, the suffix typically spans across multiple path
+  components which is what enables directory moves.
+  In the proto example, the input extension might match an entire file
+  `proto/services/auth.proto`. With `{{}}` bound to `services/auth`, the
+  expected output is `lib/src/proto/services/auth.dart`.
+- Build extensions using capture groups can start with `^` to enforce matches
+  over the entire input (which is still technically a suffix).
+  In the example above, the builder would also run on 
+  `lib/src/proto/test.proto` (outputting `lib/src/lib/src/proto/test.dart`).
+  If the builder had used `^proto/{{}}.proto` as an input, it would not have
+  run on strict suffix matches.
+
 ## Working around the restrictions
 
 ### Builders which produce an unknown number of outputs
@@ -55,3 +97,5 @@ inputs existing Dart files in `lib/`. - Write an empty file to
 `lib/foo.placeholder` - Use the extension config `{'.placeholder': ['.dart']}` -
 Ignore the `buildStep.inputId` and find the real inputs with
 `buildStep.findAssets(new Glob('lib/*dart')`
+
+[protobuf]: https://developers.google.com/protocol-buffers
