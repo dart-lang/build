@@ -245,6 +245,41 @@ void main() {
         );
       });
 
+      test('recognizes right optional builder with capture groups', () async {
+        await testBuilders(
+          [
+            applyToRoot(
+              TestBuilder(
+                buildExtensions: {
+                  'assets/{{}}.txt': ['lib/src/generated/{{}}.dart']
+                },
+                build: (step, _) async {
+                  final input = step.inputId;
+                  final output = AssetId(
+                      input.package,
+                      input.path
+                          .replaceAll('assets/', 'lib/src/generated/')
+                          .replaceAll('.txt', '.dart'));
+                  await step.writeAsString(
+                      output, await step.readAsString(input));
+                },
+              ),
+              isOptional: true,
+            ),
+            applyToRoot(TestBuilder(buildExtensions: {
+              '.dart': ['.copy.dart']
+            })),
+          ],
+          {
+            'a|assets/nested/input/file.txt': 'a',
+          },
+          outputs: {
+            'a|lib/src/generated/nested/input/file.dart': 'a',
+            'a|lib/src/generated/nested/input/file.copy.dart': 'a',
+          },
+        );
+      });
+
       test('optional build actions don\'t run if their outputs aren\'t read',
           () async {
         await testBuilders([
