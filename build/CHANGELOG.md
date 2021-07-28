@@ -1,3 +1,8 @@
+## 2.1.0-dev
+
+- Add an `allowedOutputs` getter to `BuildStep`. It returns assets that may be
+  written in that step.
+
 ## 2.0.3
 
 - Allow analyzer version 2.x.x.

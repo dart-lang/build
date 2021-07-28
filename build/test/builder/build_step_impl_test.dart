@@ -27,13 +27,15 @@ void main() {
   group('with reader/writer stub', () {
     late AssetId primary;
     late BuildStepImpl buildStep;
+    late List<AssetId> outputs;
 
     setUp(() {
       var reader = StubAssetReader();
       var writer = StubAssetWriter();
       primary = makeAssetId();
-      buildStep = BuildStepImpl(
-          primary, [], reader, writer, AnalyzerResolvers(), resourceManager);
+      outputs = List.generate(5, (index) => makeAssetId());
+      buildStep = BuildStepImpl(primary, outputs, reader, writer,
+          AnalyzerResolvers(), resourceManager);
     });
 
     test('doesnt allow non-expected outputs', () {
@@ -42,6 +44,10 @@ void main() {
           throwsA(TypeMatcher<UnexpectedOutputException>()));
       expect(() => buildStep.writeAsBytes(id, [0]),
           throwsA(TypeMatcher<UnexpectedOutputException>()));
+    });
+
+    test('reports allowed outputs', () {
+      expect(buildStep.allowedOutputs, outputs);
     });
 
     test('fetchResource can fetch resources', () async {
