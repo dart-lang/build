@@ -1,3 +1,7 @@
+## 2.1.3-dev
+
+- Use `allowedOutputs` in `TestBuilder` instead of computing them again.
+
 ## 2.1.2
 
 - Allow the latest `package:test_core`.
