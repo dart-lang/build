@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:analyzer/dart/element/element.dart';
+import 'package:meta/meta.dart';
 
 import '../analyzer/resolver.dart';
 import '../asset/id.dart';
@@ -17,6 +18,7 @@ import '../resource/resource.dart';
 /// This represents a single [inputId], logic around resolving as a library,
 /// and the ability to read and write assets as allowed by the underlying build
 /// system.
+@sealed
 abstract class BuildStep implements AssetReader, AssetWriter {
   /// The primary for this build step.
   AssetId get inputId;
@@ -49,7 +51,8 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// Returns a [Future] that completes after writing the asset out.
   ///
   /// * Throws a `PackageNotFoundException` if `id.package` is not found.
-  /// * Throws an `InvalidOutputException` if the output was not valid.
+  /// * Throws an `InvalidOutputException` if the output was not valid (that is,
+  ///   [id] is not in [allowedOutputs])
   ///
   /// **NOTE**: Most `Builder` implementations should not need to `await` this
   /// Future since the runner will be responsible for waiting until all outputs
@@ -62,7 +65,8 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// Returns a [Future] that completes after writing the asset out.
   ///
   /// * Throws a `PackageNotFoundException` if `id.package` is not found.
-  /// * Throws an `InvalidOutputException` if the output was not valid.
+  /// * Throws an `InvalidOutputException` if the output was not valid (that is,
+  ///   [id] is not in [allowedOutputs])
   ///
   /// **NOTE**: Most `Builder` implementations should not need to `await` this
   /// Future since the runner will be responsible for waiting until all outputs
@@ -103,6 +107,17 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// assumed to be a no-op by default. Implementations must explicitly
   /// choose to support this feature.
   void reportUnusedAssets(Iterable<AssetId> ids);
+
+  /// Returns assets that may be written in this build step.
+  ///
+  /// Allowed outputs are formed by matching the [inputId] against the builder's
+  /// `buildExtensions`, which declares a list of output extensions for this
+  /// input.
+  ///
+  /// The writing methods [writeAsBytes] and [writeAsString] will throw an
+  /// `InvalidOutputException` when attempting to write an asset not part of
+  /// the [allowedOutputs].
+  Iterable<AssetId> get allowedOutputs;
 }
 
 abstract class StageTracker {
