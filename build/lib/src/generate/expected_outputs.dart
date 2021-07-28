@@ -34,10 +34,10 @@ extension BuildOutputExtensions on Builder {
 }
 
 extension on AssetId {
-  /// Replaces the last [matchedSuffix] characters with [newExtension].
-  AssetId replaceSuffix(int matchedSuffix, String newExtension) {
+  /// Replaces the last [suffixLength] characters with [newSuffix].
+  AssetId replaceSuffix(int suffixLength, String newSuffix) {
     return AssetId(
-        package, path.substring(0, path.length - matchedSuffix) + newExtension);
+        package, path.substring(0, path.length - suffixLength) + newSuffix);
   }
 }
 

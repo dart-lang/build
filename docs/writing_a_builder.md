@@ -39,8 +39,9 @@ For the primary input `some_file.txt` the allowed outputs are
 ### Capture groups
 
 Builders can declare more complex inputs and outputs by using a capture group
-in their build input. Capture groups allow builders to move files across
-directories. For instance, consider a builder that generates Dart code for
+in their build input. Capture groups can be used to write outputs in a
+different directory than the primary input.
+For instance, consider a builder that generates Dart code for
 [Protocol Buffers][protobuf]. Let's assume that proto definitions are stored in
 a top-level `proto/` folder, and that generated files should go to
 `lib/src/proto/`. This cannot be expressed with simple build extensions that
