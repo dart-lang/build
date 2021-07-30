@@ -141,7 +141,8 @@ Uri assetToPackageUrl(Uri url) => url.scheme == 'asset' &&
     : url;
 
 final String rootPackageName = () {
-  final name = loadYaml(File('pubspec.yaml').readAsStringSync())['name'];
+  final name =
+      (loadYaml(File('pubspec.yaml').readAsStringSync()) as Map)['name'];
   if (name is! String) {
     throw StateError(
         'Your pubspec.yaml file is missing a `name` field or it isn\'t '

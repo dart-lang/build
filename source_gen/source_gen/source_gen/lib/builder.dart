@@ -81,7 +81,7 @@ class CombiningBuilder implements Builder {
     final restrictedPattern = RegExp([
       '^', // start of string
       RegExp.escape(inputBaseName), // file name, without extension
-      '\.', // `.` character
+      '.', // `.` character
       partIdRegExpLiteral, // A valid part ID
       RegExp.escape(_partFiles), // the ending part extension
       '\$', // end of string
