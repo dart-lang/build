@@ -20,6 +20,10 @@ import 'package:analyzer/dart/element/type.dart' as analyzer;
 import 'package:analyzer/dart/element/type_provider.dart';
 import 'package:analyzer/dart/element/type_system.dart';
 import 'package:analyzer/dart/element/visitor.dart';
+import 'package:analyzer/src/dart/element/inheritance_manager3.dart'
+    show InheritanceManager3;
+import 'package:analyzer/src/dart/element/member.dart' show ExecutableMember;
+import 'package:analyzer/src/dart/element/type_algebra.dart' show Substitution;
 import 'package:build/build.dart';
 // Do not expose [refer] in the default namespace.
 //
@@ -842,33 +846,40 @@ class _MockClassInfo {
       if (!sourceLibIsNonNullable) {
         return;
       }
-      cBuilder.methods.addAll(fieldOverrides(typeToMock, {}));
-      cBuilder.methods.addAll(methodOverrides(typeToMock, {}));
+      final inheritanceManager = InheritanceManager3();
+      final substitution = Substitution.fromInterfaceType(typeToMock);
+      final members =
+          inheritanceManager.getInterface(classToMock).map.values.map((member) {
+        return ExecutableMember.from2(member, substitution);
+      });
+      cBuilder.methods
+          .addAll(fieldOverrides(members.whereType<PropertyAccessorElement>()));
+      cBuilder.methods
+          .addAll(methodOverrides(members.whereType<MethodElement>()));
     });
   }
 
   /// Yields all of the field overrides required for [type].
   ///
-  /// This includes fields of supertypes and mixed in types. [overriddenFields]
-  /// is used to track which fields have already been yielded.
+  /// This includes fields of supertypes and mixed in types.
   ///
   /// Only public instance fields which have either a potentially non-nullable
   /// return type (for getters) or a parameter with a potentially non-nullable
   /// type (for setters) are yielded.
   Iterable<Method> fieldOverrides(
-      analyzer.InterfaceType type, Set<String> overriddenFields) sync* {
-    for (final accessor in type.accessors) {
-      if (accessor.isPrivate || accessor.isStatic) {
-        continue;
-      }
-      if (overriddenFields.contains(accessor.name)) {
+      Iterable<PropertyAccessorElement> accessors) sync* {
+    for (final accessor in accessors) {
+      if (accessor.isPrivate) {
         continue;
       }
       if (accessor.name == 'hashCode') {
         // Never override this getter; user code cannot narrow the return type.
         continue;
       }
-      overriddenFields.add(accessor.name);
+      if (accessor.name == 'runtimeType') {
+        // Never override this getter; user code cannot narrow the return type.
+        continue;
+      }
       if (accessor.isGetter && _returnTypeIsNonNullable(accessor)) {
         yield Method((mBuilder) => _buildOverridingGetter(mBuilder, accessor));
       }
@@ -876,42 +887,21 @@ class _MockClassInfo {
         yield Method((mBuilder) => _buildOverridingSetter(mBuilder, accessor));
       }
     }
-    if (type.mixins != null) {
-      for (var mixin in type.mixins) {
-        yield* fieldOverrides(mixin, overriddenFields);
-      }
-    }
-    if (type.interfaces != null) {
-      for (var interface in type.interfaces) {
-        yield* fieldOverrides(interface, overriddenFields);
-      }
-    }
-    var superclass = type.superclass;
-    if (superclass != null && !superclass.isDartCoreObject) {
-      yield* fieldOverrides(superclass, overriddenFields);
-    }
   }
 
   /// Yields all of the method overrides required for [type].
   ///
   /// This includes methods of supertypes and mixed in types.
-  /// [overriddenMethods] is used to track which methods have already been
-  /// yielded.
   ///
   /// Only public instance methods which have either a potentially non-nullable
   /// return type or a parameter with a potentially non-nullable type are
   /// yielded.
-  Iterable<Method> methodOverrides(
-      analyzer.InterfaceType type, Set<String> overriddenMethods) sync* {
-    for (final method in type.methods) {
-      if (method.isPrivate || method.isStatic) {
+  Iterable<Method> methodOverrides(Iterable<MethodElement> methods) sync* {
+    for (final method in methods) {
+      if (method.isPrivate) {
         continue;
       }
-      var methodName = method.name;
-      if (overriddenMethods.contains(methodName)) {
-        continue;
-      }
-      overriddenMethods.add(methodName);
+      final methodName = method.name;
       if (methodName == 'noSuchMethod') {
         continue;
       }
@@ -925,20 +915,6 @@ class _MockClassInfo {
           _needsOverrideForVoidStub(method)) {
         yield Method((mBuilder) => _buildOverridingMethod(mBuilder, method));
       }
-    }
-    if (type.mixins != null) {
-      for (var mixin in type.mixins) {
-        yield* methodOverrides(mixin, overriddenMethods);
-      }
-    }
-    if (type.interfaces != null) {
-      for (var interface in type.interfaces) {
-        yield* methodOverrides(interface, overriddenMethods);
-      }
-    }
-    var superclass = type.superclass;
-    if (superclass != null && !superclass.isDartCoreObject) {
-      yield* methodOverrides(superclass, overriddenMethods);
     }
   }
 

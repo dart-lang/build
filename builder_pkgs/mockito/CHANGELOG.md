@@ -1,3 +1,10 @@
+## 5.0.13
+
+* Implement methods which have been overridden in the mixin hierarchy properly.
+  Previously, mixins were being applied in the wrong order, which could skip
+  over one method that overrides another with a different signature.
+  [#456](https://github.com/dart-lang/mockito/issues/456)
+
 ## 5.0.12
 
 * Use an empty list with a correct type argument for a fallback value for a

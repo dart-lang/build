@@ -614,6 +614,25 @@ void main() {
     );
   });
 
+  test('overrides mixed in methods, using correct overriding signature',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Base {
+        void m(int a) {}
+      }
+      mixin MixinConstraint implements Base {}
+      mixin Mixin on MixinConstraint {
+        @override
+        void m(num a) {}
+      }
+      class Foo with MixinConstraint, Mixin {}
+      '''),
+      _containsAllOf(
+          'void m(num? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+    );
+  });
+
   test('overrides methods of implemented classes', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
