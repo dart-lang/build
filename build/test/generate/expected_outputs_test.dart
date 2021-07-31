@@ -38,10 +38,17 @@ void main() {
       );
     });
 
-    test('can only be used once per input', () {
+    test('must have unique names', () {
       expect(
         () => expectedOutputs(
             TestBuilder(buildExtensions: {'{{}}/{{}}/foo.txt': []}),
+            _asset('foo.txt')),
+        throwsArgumentError,
+      );
+
+      expect(
+        () => expectedOutputs(
+            TestBuilder(buildExtensions: {'{{x}}/{{x}}/foo.txt': []}),
             _asset('foo.txt')),
         throwsArgumentError,
       );
@@ -52,6 +59,16 @@ void main() {
         () => expectedOutputs(
           TestBuilder(buildExtensions: {
             '{{}}.txt': ['invalid.txt']
+          }),
+          _asset('foo.txt'),
+        ),
+        throwsArgumentError,
+      );
+
+      expect(
+        () => expectedOutputs(
+          TestBuilder(buildExtensions: {
+            '{{x}}/{{y}}.txt': ['{{x}}.txt']
           }),
           _asset('foo.txt'),
         ),
@@ -102,6 +119,16 @@ void main() {
       );
     });
 
+    test('can use multiple capture groups', () {
+      _expectOutputs(
+        {
+          '{{dir}}/{{file}}.dart': ['{{dir}}/generated/{{file}}.g.dart']
+        },
+        _asset('somewhat/nested/input/directory/with/file.dart'),
+        [_asset('somewhat/nested/input/directory/with/generated/file.g.dart')],
+      );
+    });
+
     test('can be used at the end of an input', () {
       _expectOutputs(
         {
@@ -109,6 +136,24 @@ void main() {
         },
         _asset('lib/src/foo.dart'),
         [_asset('lib/copied/src/foo.dart')],
+      );
+    });
+
+    test('outputs can use {{}} without it being a capture group', () {
+      _expectOutputs(
+        {
+          '.dart': ['.{{}}.dart']
+        },
+        _asset('lib/src/foo.dart'),
+        [_asset('lib/src/foo.{{}}.dart')],
+      );
+
+      _expectOutputs(
+        {
+          '{{dir}}/{{file}}.dart': ['{{dir}}/{{file}}.{{}}.dart']
+        },
+        _asset('lib/src/foo.dart'),
+        [_asset('lib/src/foo.{{}}.dart')],
       );
     });
   });

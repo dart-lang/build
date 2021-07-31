@@ -42,59 +42,74 @@ extension on AssetId {
 }
 
 abstract class _ParsedBuildOutputs {
-  static final RegExp _captureGroup = RegExp('{{}}');
+  static final RegExp _captureGroup = RegExp('{{([\\w\\d]*)}}');
 
   _ParsedBuildOutputs();
 
   factory _ParsedBuildOutputs.parse(
       Builder builder, String input, List<String> outputs) {
-    final groups = _captureGroup.allMatches(input).iterator;
+    final groups = _captureGroup.allMatches(input);
 
-    if (!groups.moveNext()) {
+    if (groups.isEmpty) {
       // The input does not contain a capture group, so we should simply match
       // all assets whose paths ends with the desired input.
       return _SuffixBuildOutputs(input, outputs);
     }
 
-    final match = groups.current;
-
-    if (groups.moveNext()) {
-      throw ArgumentError(
-        'The builder `$builder` declares an input "$input" which contains '
-        'multiple groups ("{{}}"). This is not supported.',
-      );
+    final regexBuffer = StringBuffer();
+    var positionInInput = 0;
+    if (input.startsWith('^')) {
+      regexBuffer.write('^');
+      positionInInput = 1;
     }
+
+    // Builders can have multiple capture groups, which are disambiguated by
+    // their name. Names can be empty as well: `{{}}` is a valid capture group.
+    final names = <String>{};
+
+    for (final group in groups) {
+      final name = group.group(1)!;
+      if (!names.add(name)) {
+        throw ArgumentError(
+          'The builder `$builder` declares an input "$input" which contains '
+          'multiple capture groups with the same name (`{{$name}}`). This is '
+          'not allowed.',
+        );
+      }
+
+      // Write the input regex from the last position up until the start of
+      // this capture group.
+      assert(positionInInput <= group.start);
+      regexBuffer
+        ..write(RegExp.escape(input.substring(positionInInput, group.start)))
+        // Introduce the capture group.
+        ..write('(.+)');
+      positionInInput = group.end;
+    }
+
+    // Write the input part after the last capture group.
+    regexBuffer
+      ..write(RegExp.escape(input.substring(positionInInput)))
+      // This is a build extension, so we're always matching suffixes.
+      ..write(r'$');
 
     // When using a capture group in the build input, it must also be used in
     // every output to ensure outputs have unique names.
     for (final output in outputs) {
-      if (_captureGroup.allMatches(output).length != 1) {
-        throw ArgumentError(
-          'The builder `$builder` declares an input "$input" using a capture '
-          'group. It is required that all of its outputs also refer to that '
-          'capture group exactly once. However, "$output" does not.',
-        );
+      for (final name in names) {
+        if ('{{$name}}'.allMatches(output).length != 1) {
+          throw ArgumentError(
+            'The builder `$builder` declares an input "$input" using a capture '
+            'group. It is required that all of its outputs also refer to that '
+            'capture group exactly once. However, "$output" does not refer to '
+            '`{{$name}}`!',
+          );
+        }
       }
     }
 
-    final regexBuffer = StringBuffer();
-    // Start writing the regex up to the capture group
-    if (input.startsWith('^')) {
-      // Build inputs starting with `^` start matching at the beginning of the
-      // input path.
-      regexBuffer
-        ..write('^')
-        ..write(RegExp.escape(input.substring(1, match.start)));
-    } else {
-      regexBuffer.write(RegExp.escape(input.substring(0, match.start)));
-    }
-
-    regexBuffer
-      ..write('(.+)') // capture group
-      ..write(RegExp.escape(input.substring(match.end))) // rest of path
-      ..write(r'$'); // build inputs always match a suffix
-
-    return _CapturingBuildOutputs(RegExp(regexBuffer.toString()), outputs);
+    return _CapturingBuildOutputs(
+        RegExp(regexBuffer.toString()), names.toList(), outputs);
   }
 
   bool hasAnyOutputFor(AssetId input);
@@ -125,9 +140,15 @@ class _SuffixBuildOutputs extends _ParsedBuildOutputs {
 /// A build input with a capture group `{{}}` that's referenced in the outputs.
 class _CapturingBuildOutputs extends _ParsedBuildOutputs {
   final RegExp _pathMatcher;
+
+  /// The names of all capture groups used in the inputs.
+  ///
+  /// The [_pathMatcher] will always match the same amount of groups in the
+  /// same order.
+  final List<String> _groupNames;
   final List<String> _outputs;
 
-  _CapturingBuildOutputs(this._pathMatcher, this._outputs);
+  _CapturingBuildOutputs(this._pathMatcher, this._groupNames, this._outputs);
 
   @override
   bool hasAnyOutputFor(AssetId input) => _pathMatcher.hasMatch(input.path);
@@ -147,7 +168,22 @@ class _CapturingBuildOutputs extends _ParsedBuildOutputs {
     final lengthOfMatch = match.end - match.start;
 
     return _outputs.map((output) {
-      final resolvedOutput = output.replaceFirst('{{}}', match.group(1)!);
+      final resolvedOutput = output.replaceAllMapped(
+        _ParsedBuildOutputs._captureGroup,
+        (outputMatch) {
+          final name = outputMatch.group(1)!;
+          final index = _groupNames.indexOf(name);
+
+          if (index < 0) {
+            // The output refers to a capture group that does not appear in the
+            // input. In that case we just treat as raw text.
+            return outputMatch.group(0)!;
+          }
+
+          // Regex group indices start at 1.
+          return match.group(index + 1)!;
+        },
+      );
       return input.replaceSuffix(lengthOfMatch, resolvedOutput);
     });
   }

@@ -55,8 +55,6 @@ the following noteworthy properties:
   arbitrarily many characters.
 - When the input uses a capture group, every output must reference that capture
   group as well.
-- It is not currently allowed to declare multiple capture groups in one input
-  extension.
 - Capture groups match as many characters as possible. In the proto example,
   the asset `proto/nested/proto/test.proto` would match with `{{}}` capturing
   `nested/proto/test`. The shorter suffix match with `{{}}` capturing just
@@ -73,6 +71,39 @@ the following noteworthy properties:
   `lib/src/proto/test.proto` (outputting `lib/src/lib/src/proto/test.dart`).
   If the builder had used `^proto/{{}}.proto` as an input, it would not have
   run on strict suffix matches.
+
+#### Using multiple groups
+
+A builder may use multiple capture groups in an input. Groups can be given a
+name to distinguish them. For instance, `{{foo}}` declares a capture group 
+named `foo`. Names may consist of alphanumeric characters only. When using
+multiple capture groups, they must all have unique names. And once again, every
+output must refer to every capture group used in the input.
+
+Multiple groups come in handy when a builder needs to distinguish an asset's
+directory and its file name. Consider a builder running on `.dart` files and
+emitting files in a subdirectory next to the input. The following diagram
+highlights the desired structure:
+
+```
+lib/src/
+├── generated/
+│   ├── service.api.dart    (generated)
+│   └── service.impl.dart   (generated)
+└── service.dart
+```
+
+This structure cannot be expressed with a single capture group. One might use
+`{{}}.dart` as an input, but as `{{}}` matches the whole path there's no way to
+introduce a `generated/` in the middle of the output path.
+
+With two capture groups, `{{dir}}/{{file}}.dart` can be used as an input. As
+input extensions match suffixes, `{{file}}.dart` matches Dart files and assigns
+everything between the last slash and the `.dart` extension to a capture named
+`file`. Finally, `{{dir}}` captures the directory of the input.
+By using `{{dir}}/generated/{{file}}.api.dart` and 
+`{{dir}}/generated/{{file}}.impl.dart` as output extensions, the builder may
+emit files in the desired directory.
 
 ## Working around the restrictions
 
