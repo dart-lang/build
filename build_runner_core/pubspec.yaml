@@ -43,3 +43,5 @@ dependency_overrides:
   analyzer: ^2.0.0
   build:
     path: ../build
+  build_test:
+    path: ../build_test
