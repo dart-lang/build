@@ -72,9 +72,9 @@ the following noteworthy properties:
   If the builder had used `^proto/{{}}.proto` as an input, it would not have
   run on strict suffix matches.
 
-#### Using multiple groups
+#### Using multiple capture groups
 
-A builder may use multiple capture groups in an input. Groups can be given a
+A builder may use multiple capture groups in an input. Groups must be given a
 name to distinguish them. For instance, `{{foo}}` declares a capture group 
 named `foo`. Names may consist of alphanumeric characters only. When using
 multiple capture groups, they must all have unique names. And once again, every

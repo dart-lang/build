@@ -88,6 +88,18 @@ void main() {
       );
     });
 
+    test('output may not use capture groups not used in the input', () {
+      expect(
+        () => expectedOutputs(
+          TestBuilder(buildExtensions: {
+            '{{input}}.txt': ['{{output}}.foo']
+          }),
+          _asset('foo.txt'),
+        ),
+        throwsArgumentError,
+      );
+    });
+
     test('can use `^` to start at the beginning', () {
       const extensions = {
         '^lib/{{}}.dart': ['lib/generated/{{}}.dart']
@@ -136,24 +148,6 @@ void main() {
         },
         _asset('lib/src/foo.dart'),
         [_asset('lib/copied/src/foo.dart')],
-      );
-    });
-
-    test('outputs can use {{}} without it being a capture group', () {
-      _expectOutputs(
-        {
-          '.dart': ['.{{}}.dart']
-        },
-        _asset('lib/src/foo.dart'),
-        [_asset('lib/src/foo.{{}}.dart')],
-      );
-
-      _expectOutputs(
-        {
-          '{{dir}}/{{file}}.dart': ['{{dir}}/{{file}}.{{}}.dart']
-        },
-        _asset('lib/src/foo.dart'),
-        [_asset('lib/src/foo.{{}}.dart')],
       );
     });
   });

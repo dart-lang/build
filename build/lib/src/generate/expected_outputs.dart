@@ -42,15 +42,15 @@ extension on AssetId {
 }
 
 abstract class _ParsedBuildOutputs {
-  static final RegExp _captureGroup = RegExp('{{([\\w\\d]*)}}');
+  static final RegExp _captureGroup = RegExp('{{(\\w*)}}');
 
   _ParsedBuildOutputs();
 
   factory _ParsedBuildOutputs.parse(
       Builder builder, String input, List<String> outputs) {
-    final groups = _captureGroup.allMatches(input);
+    final matches = _captureGroup.allMatches(input).toList();
 
-    if (groups.isEmpty) {
+    if (matches.isEmpty) {
       // The input does not contain a capture group, so we should simply match
       // all assets whose paths ends with the desired input.
       return _SuffixBuildOutputs(input, outputs);
@@ -65,26 +65,27 @@ abstract class _ParsedBuildOutputs {
 
     // Builders can have multiple capture groups, which are disambiguated by
     // their name. Names can be empty as well: `{{}}` is a valid capture group.
-    final names = <String>{};
+    final names = <String>[];
 
-    for (final group in groups) {
-      final name = group.group(1)!;
-      if (!names.add(name)) {
+    for (final match in matches) {
+      final name = match.group(1)!;
+      if (names.contains(name)) {
         throw ArgumentError(
           'The builder `$builder` declares an input "$input" which contains '
           'multiple capture groups with the same name (`{{$name}}`). This is '
           'not allowed.',
         );
       }
+      names.add(name);
 
       // Write the input regex from the last position up until the start of
       // this capture group.
-      assert(positionInInput <= group.start);
+      assert(positionInInput <= match.start);
       regexBuffer
-        ..write(RegExp.escape(input.substring(positionInInput, group.start)))
+        ..write(RegExp.escape(input.substring(positionInInput, match.start)))
         // Introduce the capture group.
         ..write('(.+)');
-      positionInInput = group.end;
+      positionInInput = match.end;
     }
 
     // Write the input part after the last capture group.
@@ -95,21 +96,38 @@ abstract class _ParsedBuildOutputs {
 
     // When using a capture group in the build input, it must also be used in
     // every output to ensure outputs have unique names.
+    // Also, an output must not refer to capture groups that aren't included in
+    // the input.
     for (final output in outputs) {
-      for (final name in names) {
-        if ('{{$name}}'.allMatches(output).length != 1) {
+      final remainingNames = names.toSet();
+
+      // Ensure that the output extension does not refer to unknown groups, and
+      // that no group appears in the output multiple times.
+      for (final outputMatch in _captureGroup.allMatches(output)) {
+        final outputName = outputMatch.group(1)!;
+        if (!remainingNames.remove(outputName)) {
           throw ArgumentError(
-            'The builder `$builder` declares an input "$input" using a capture '
-            'group. It is required that all of its outputs also refer to that '
-            'capture group exactly once. However, "$output" does not refer to '
-            '`{{$name}}`!',
+            'The builder `$builder` declares an output "$output", which uses '
+            'the capture group "$outputName". This group does not exist or has '
+            'been referenced multiple times which is not allowed!',
           );
         }
+      }
+
+      // Finally, ensure that each capture group from the input appears in this
+      // output.
+      if (remainingNames.isNotEmpty) {
+        throw ArgumentError(
+          'The builder `$builder` declares an input "$input" using a capture '
+          'group. It is required that all of its outputs also refer to that '
+          'capture group exactly once. However, "$output" does not refer to '
+          '${remainingNames.join(', ')}!',
+        );
       }
     }
 
     return _CapturingBuildOutputs(
-        RegExp(regexBuffer.toString()), names.toList(), outputs);
+        RegExp(regexBuffer.toString()), names, outputs);
   }
 
   bool hasAnyOutputFor(AssetId input);
@@ -173,12 +191,11 @@ class _CapturingBuildOutputs extends _ParsedBuildOutputs {
         (outputMatch) {
           final name = outputMatch.group(1)!;
           final index = _groupNames.indexOf(name);
-
-          if (index < 0) {
-            // The output refers to a capture group that does not appear in the
-            // input. In that case we just treat as raw text.
-            return outputMatch.group(0)!;
-          }
+          assert(
+            !index.isNegative,
+            'Output refers to a group not declared in the input extension. '
+            'Validation was supposed to catch that.',
+          );
 
           // Regex group indices start at 1.
           return match.group(index + 1)!;
