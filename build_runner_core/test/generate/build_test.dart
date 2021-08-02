@@ -215,6 +215,49 @@ void main() {
         });
       });
 
+      test('outputs with a capture group', () async {
+        await testBuilders(
+          [
+            applyToRoot(
+              TestBuilder(buildExtensions: {
+                'assets/{{}}.txt': ['lib/src/generated/{{}}.dart']
+              }),
+            )
+          ],
+          {
+            'a|assets/nested/input/file.txt': 'a',
+          },
+          outputs: {
+            'a|lib/src/generated/nested/input/file.dart': 'a',
+          },
+        );
+      });
+
+      test('recognizes right optional builder with capture groups', () async {
+        await testBuilders(
+          [
+            applyToRoot(
+              TestBuilder(
+                buildExtensions: {
+                  'assets/{{}}.txt': ['lib/src/generated/{{}}.dart']
+                },
+              ),
+              isOptional: true,
+            ),
+            applyToRoot(TestBuilder(buildExtensions: {
+              '.dart': ['.copy.dart']
+            })),
+          ],
+          {
+            'a|assets/nested/input/file.txt': 'a',
+          },
+          outputs: {
+            'a|lib/src/generated/nested/input/file.dart': 'a',
+            'a|lib/src/generated/nested/input/file.copy.dart': 'a',
+          },
+        );
+      });
+
       test('optional build actions don\'t run if their outputs aren\'t read',
           () async {
         await testBuilders([

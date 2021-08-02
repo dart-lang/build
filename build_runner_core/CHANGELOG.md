@@ -1,4 +1,6 @@
-## 7.0.2-dev
+## 7.1.0-dev
+
+- Support capture groups, a feature introduced in `build`: `2.1.0`.
 
 ## 7.0.1
 

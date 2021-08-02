@@ -265,6 +265,36 @@ void main() {
       });
     });
   });
+
+  test(
+    'does not allow post process builders with capturing inputs',
+    () async {
+      var packageGraph = buildPackageGraph({
+        rootPackage('a'): [],
+      });
+      var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+          defaultRootPackageSources: const ['**']);
+      var builderApplications = [
+        apply(
+          'a:regular',
+          [(_) => TestBuilder()],
+          toAllPackages(),
+          appliesBuilders: ['a:post'],
+        ),
+        applyPostProcess('a:post', (_) => _InvalidPostProcessBuilder())
+      ];
+
+      expect(
+        () => createBuildPhases(
+          targetGraph,
+          builderApplications,
+          const {},
+          false,
+        ),
+        throwsA(isArgumentError),
+      );
+    },
+  );
 }
 
 class CoolBuilder extends Builder {
@@ -284,4 +314,12 @@ class CoolBuilder extends Builder {
 
   @override
   Future build(BuildStep buildStep) async => throw UnimplementedError();
+}
+
+class _InvalidPostProcessBuilder extends PostProcessBuilder {
+  @override
+  FutureOr<void> build(PostProcessBuildStep buildStep) {}
+
+  @override
+  Iterable<String> get inputExtensions => const ['lib/{{}}.dart'];
 }
