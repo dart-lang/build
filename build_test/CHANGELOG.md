@@ -1,4 +1,4 @@
-## 2.1.3-dev
+## 2.1.3
 
 - Use `allowedOutputs` in `TestBuilder` instead of computing them again.
 

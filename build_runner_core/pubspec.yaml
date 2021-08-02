@@ -39,9 +39,9 @@ dev_dependencies:
     path: ../_test_common
 
 dependency_overrides:
-  # Needed for testing until the world rolls forward
-  analyzer: ^2.0.0
   build:
     path: ../build
+  build_runner:
+    path: ../build_runner
   build_test:
     path: ../build_test
