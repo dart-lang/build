@@ -98,6 +98,16 @@ void main() {
         ),
         throwsArgumentError,
       );
+
+      expect(
+        () => expectedOutputs(
+          TestBuilder(buildExtensions: {
+            '.txt': ['{{output}}.foo']
+          }),
+          _asset('foo.txt'),
+        ),
+        throwsArgumentError,
+      );
     });
 
     test('can use `^` to start at the beginning', () {

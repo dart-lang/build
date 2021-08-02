@@ -53,6 +53,17 @@ abstract class _ParsedBuildOutputs {
     if (matches.isEmpty) {
       // The input does not contain a capture group, so we should simply match
       // all assets whose paths ends with the desired input.
+      // Also, make sure that no outputs use capture groups.
+      for (final output in outputs) {
+        if (_captureGroup.hasMatch(output)) {
+          throw ArgumentError(
+            'The builder `$builder` declares an output "$output" using a '
+            'capture group. As its input "$input" does not use a capture '
+            'group, this is forbidden.',
+          );
+        }
+      }
+
       return _SuffixBuildOutputs(input, outputs);
     }
 
