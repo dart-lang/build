@@ -2,7 +2,7 @@
 
 - Add `--log-requests` flag to build daemon.
 - Log failed asset requests in build_runner server.
-- Support the latest build_runner
+- Support the latest build (`2.1.0`).
 
 ## 2.0.6
 
