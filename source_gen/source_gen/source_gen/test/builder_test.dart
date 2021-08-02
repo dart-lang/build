@@ -3,8 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @TestOn('vm')
-import 'dart:convert';
-
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
@@ -556,12 +554,16 @@ foo generated content
       () async {
     final builder = LibraryBuilder(const _DeprecatedGenerator());
     final input = AssetId('a', 'lib/a.dart');
-    final buildStep = _TestingBuildStep(input, {
-      input: 'main() {}',
-    });
-    await builder.build(buildStep);
-    expect(buildStep.resolver.parsedUnits, {input});
-    expect(buildStep.resolver.resolvedLibs, isEmpty);
+    final assets = {input: 'main() {}'};
+
+    final reader = InMemoryAssetReader(sourceAssets: assets);
+    final resolver = _TestingResolver(assets);
+
+    await runBuilder(builder, [input], reader, InMemoryAssetWriter(),
+        _FixedResolvers(resolver));
+
+    expect(resolver.parsedUnits, {input});
+    expect(resolver.resolvedLibs, isEmpty);
   });
 
   test('Searches in part files for annotations', () async {
@@ -660,30 +662,7 @@ class _DeprecatedGenerator extends GeneratorForAnnotation<Deprecated> {
       throw UnimplementedError();
 }
 
-class _TestingBuildStep implements BuildStep {
-  @override
-  final AssetId inputId;
-
-  @override
-  final _TestingResolver resolver;
-
-  final Map<AssetId, String> assets;
-
-  _TestingBuildStep(this.inputId, this.assets)
-      : resolver = _TestingResolver(assets);
-
-  @override
-  Future<bool> canRead(AssetId id) async => assets.containsKey(id);
-
-  @override
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async =>
-      assets[id]!;
-
-  @override
-  void noSuchMethod(_) => throw UnimplementedError();
-}
-
-class _TestingResolver implements Resolver {
+class _TestingResolver implements ReleasableResolver {
   final Map<AssetId, String> assets;
   final parsedUnits = <AssetId>{};
   final resolvedLibs = <AssetId>{};
@@ -711,7 +690,23 @@ class _TestingResolver implements Resolver {
   }
 
   @override
+  void release() {}
+
+  @override
   void noSuchMethod(_) => throw UnimplementedError();
+}
+
+class _FixedResolvers implements Resolvers {
+  final ReleasableResolver _resolver;
+
+  _FixedResolvers(this._resolver);
+
+  @override
+  Future<ReleasableResolver> get(BuildStep buildStep) =>
+      Future.value(_resolver);
+
+  @override
+  void reset() {}
 }
 
 const _customHeader = '// Copyright 1979';
