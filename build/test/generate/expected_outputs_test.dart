@@ -17,6 +17,17 @@ void main() {
     );
   });
 
+  test('outputs cannot be equal to inputs', () {
+    expect(
+      () => expectedOutputs(
+          TestBuilder(buildExtensions: {
+            'foo.txt': ['foo.txt']
+          }),
+          _asset('foo.txt')),
+      throwsArgumentError,
+    );
+  });
+
   group('capture groups', () {
     test('can match files in directory', () {
       _expectOutputs(

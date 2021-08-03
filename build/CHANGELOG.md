@@ -1,3 +1,7 @@
+## 2.1.1-dev
+
+- Throw an `ArgumentError` if an expected output matches the input.
+
 ## 2.1.0
 
 - Expand the expressiveness of `buildExtensions` include capture groups,
