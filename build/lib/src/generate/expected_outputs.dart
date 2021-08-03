@@ -6,9 +6,19 @@ import '../builder/builder.dart';
 
 /// Collects the expected AssetIds created by [builder] when given [input] based
 /// on the extension configuration.
-Iterable<AssetId> expectedOutputs(Builder builder, AssetId input) {
-  return builder._parsedExtensions
-      .expand((extension) => extension.matchingOutputsFor(input));
+Iterable<AssetId> expectedOutputs(Builder builder, AssetId input) sync* {
+  for (var parsedExtension in builder._parsedExtensions) {
+    var outputs = parsedExtension.matchingOutputsFor(input);
+    for (var output in outputs) {
+      if (output == input) {
+        throw ArgumentError(
+          'The builder `$builder` declares an output "$output" which is '
+          'identical to its input, which is not allowed.',
+        );
+      }
+      yield output;
+    }
+  }
 }
 
 // We can safely cache parsed build extensions for each builder since build
