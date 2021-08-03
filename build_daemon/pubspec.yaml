@@ -29,6 +29,3 @@ dev_dependencies:
   test_descriptor: ^2.0.0
   uuid: ^3.0.0
 
-dependency_overrides:
-  # Required until built_value_generator updates to the latest build_config
-  build_config: ^1.0.0
