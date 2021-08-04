@@ -1,3 +1,7 @@
+## 3.2.1-dev
+
+- Fix `doctor` command warnings for this package.
+
 ## 3.2.0
 
 - Allow analyzer version 2.x.x.
