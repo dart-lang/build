@@ -59,8 +59,9 @@ class PackageGraphWatcher {
                   'Error from directory watcher for package:${w.node.name}\n\n'
                   'If you see this consistently then it is recommended that '
                   'you enable the polling file watcher with '
-                  '--use-polling-watcher.');
-              throw e;
+                  '--use-polling-watcher.',
+                  e,
+                  s);
             }))
         .toList();
     // Asynchronously complete the `_readyCompleter` once all the watchers

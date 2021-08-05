@@ -1,3 +1,10 @@
+## 1.12.3
+
+- Backport of 2.1.1:
+  - Don't rethrow file watcher errors - instead log at severe level and continue
+    going. The file watcher implementation should restart automatically as of
+    package:watcher version `0.9.7+13`.
+
 ## 1.12.2
 
 - Allow the latest `dart_style`.
