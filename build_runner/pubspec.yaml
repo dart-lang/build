@@ -1,5 +1,5 @@
 name: build_runner
-version: 1.11.1
+version: 1.11.1+1
 description: A build system for Dart code generation and modular compilation.
 repository: https://github.com/dart-lang/build/tree/master/build_runner
 
@@ -36,7 +36,7 @@ dependencies:
   stack_trace: ^1.9.0
   stream_transform: ">=0.0.20 <3.0.0"
   timing: ^0.1.1
-  watcher: '>=0.9.7 <2.0.0'
+  watcher: '>=0.9.7+13 <2.0.0'
   web_socket_channel: ^1.0.9
   yaml: ">=2.1.11 <4.0.0"
 
