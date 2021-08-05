@@ -757,6 +757,14 @@ class _MockLibraryInfo {
       )._buildMockClass());
     }
   }
+
+  var _fakeNameCounter = 0;
+
+  final _fakeNames = <Element, String>{};
+
+  /// Generates a unique name for a fake class representing [element].
+  String _fakeNameFor(Element element) => _fakeNames.putIfAbsent(
+      element, () => '_Fake${element.name}_${_fakeNameCounter++}');
 }
 
 class _MockClassInfo {
@@ -1154,10 +1162,7 @@ class _MockClassInfo {
       return _typeReference(dartType).property(
           elementToFake.fields.firstWhere((f) => f.isEnumConstant).name);
     } else {
-      // There is a potential for these names to collide. If one mock class
-      // requires a fake for a certain Foo, and another mock class requires a
-      // fake for a different Foo, they will collide.
-      final fakeName = '_Fake${elementToFake.name}';
+      final fakeName = mockLibraryInfo._fakeNameFor(elementToFake);
       // Only make one fake class for each class that needs to be faked.
       if (!mockLibraryInfo.fakedClassElements.contains(elementToFake)) {
         _addFakeClass(fakeName, elementToFake);

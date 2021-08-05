@@ -1,3 +1,8 @@
+## 5.0.14
+
+* Generate Fake classes with unique names.
+  [#441](https://github.com/dart-lang/mockito/issues/441)
+
 ## 5.0.13
 
 * Implement methods which have been overridden in the mixin hierarchy properly.
