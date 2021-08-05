@@ -1,3 +1,9 @@
+## 2.1.1-dev
+
+- Don't rethrow file watcher errors - instead log at severe level and continue
+  going. The file watcher implementation should restart automatically as of
+  package:watcher version `0.9.7+13`.
+
 ## 2.1.0
 
 - Add `--log-requests` flag to build daemon.
