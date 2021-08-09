@@ -19,30 +19,49 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 ///
 /// If [versionDependencies] is provided then the keys are the package names
 /// and the values are the exact versions which will be added as a dependency.
-Future<d.FileDescriptor> pubspec(String name,
-    {Iterable<String> currentIsolateDependencies,
-    Map<String, String> pathDependencies,
-    Map<String, String> versionDependencies}) async {
-  currentIsolateDependencies ??= [];
-  pathDependencies ??= {};
-  versionDependencies ??= {};
-
+///
+/// The [sdkEnvironment] describes the `environment.sdk` field in the pubspec.
+Future<d.FileDescriptor> pubspec(
+  String name, {
+  Iterable<String> currentIsolateDependencies = const [],
+  Map<String, String> pathDependencies = const {},
+  Map<String, String> versionDependencies = const {},
+  String sdkEnvironment = '>=2.12.0 <3.0.0',
+}) async {
   var buffer = StringBuffer()
     ..writeln('name: $name')
     ..writeln('environment:')
-    ..writeln('  sdk: ">=2.9.0 <3.0.0"')
-    // Using dependency_overrides forces the path dependency and silences
-    // warnings about hosted vs path dependency conflicts.
-    ..writeln('dependency_overrides:');
+    ..writeln('  sdk: "$sdkEnvironment"')
+    ..writeln('dependencies:');
 
-  var packageConfig = await loadPackageConfigUri(await Isolate.packageConfig);
+  // Add all deps as `any` deps, real versions are set in dependency_overrides below.
+  var allPackages = [
+    ...currentIsolateDependencies,
+    ...pathDependencies.keys,
+    ...versionDependencies.keys,
+  ];
+  for (var package in allPackages) {
+    buffer.writeln('  $package: any');
+  }
+
+  // Using dependency_overrides forces the path dependency and silences
+  // warnings about hosted vs path dependency conflicts.
+  buffer.writeln('dependency_overrides:');
+
+  var packageConfig =
+      await loadPackageConfigUri((await Isolate.packageConfig)!);
+
+  void addPathDep(package, path) {
+    buffer
+      ..writeln('  $package:')
+      ..writeln('    path: $path');
+  }
+
   await Future.forEach(currentIsolateDependencies, (String package) async {
-    pathDependencies[package] = packageConfig[package].root.toFilePath();
+    addPathDep(package, packageConfig[package]!.root.toFilePath());
   });
 
-  pathDependencies.forEach((package, path) {
-    buffer..writeln('  $package:')..writeln('    path: $path');
-  });
+  pathDependencies.forEach(addPathDep);
 
   versionDependencies.forEach((package, version) {
     buffer.writeln('  $package: $version');

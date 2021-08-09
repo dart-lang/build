@@ -17,7 +17,7 @@ class Terminator {
   final Future shouldTerminate;
   final StreamSubscription _subscription;
 
-  factory Terminator([Stream terminateEventStream]) {
+  factory Terminator([Stream<ProcessSignal>? terminateEventStream]) {
     var shouldTerminate = Completer<void>();
     terminateEventStream ??= ProcessSignal.sigint.watch();
     var numEventsSeen = 0;

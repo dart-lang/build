@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:graphs/graphs.dart';
+import 'package:json_annotation/json_annotation.dart';
 import 'package:path/path.dart' as p;
 
 import 'common.dart';
@@ -20,7 +21,7 @@ part 'meta_module.g.dart';
 /// Throws an [ArgumentError] if [path] is just a filename with no directory.
 String _topLevelDir(String path) {
   var parts = p.url.split(p.url.normalize(path));
-  String error;
+  String? error;
   if (parts.length == 1) {
     error = 'The path `$path` does not contain a directory.';
   } else if (parts.first == '..') {
@@ -144,16 +145,16 @@ List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
       var mId = (entrypointIds.toList()..sort()).map((m) => m.path).join('\$');
       mergedModules.putIfAbsent(mId, () => []).add(module);
     } else {
-      entrypointModuleGroups[entrypointIds.single].add(module);
+      entrypointModuleGroups[entrypointIds.single]!.add(module);
     }
   }
 
-  return mergedModules.values
-      .map(Module.merge)
-      .map(_withConsistentPrimarySource)
-      .followedBy(entrypointModuleGroups.values.map(Module.merge))
-      .followedBy(standaloneModules)
-      .toList();
+  return [
+    for (var module in mergedModules.values)
+      _withConsistentPrimarySource(Module.merge(module)),
+    for (var module in entrypointModuleGroups.values) Module.merge(module),
+    ...standaloneModules
+  ];
 }
 
 Module _withConsistentPrimarySource(Module m) => Module(m.sources.reduce(_min),
@@ -188,7 +189,7 @@ List<Module> _computeModules(
           .depsForPlatform(platform)
           // Only "internal" dependencies
           .where(libraries.containsKey)
-          .map((dep) => libraries[dep]),
+          .map((dep) => libraries[dep]!),
       equals: (a, b) => a.id == b.id,
       hashCode: (l) => l.id.hashCode);
 
@@ -199,7 +200,9 @@ List<Module> _computeModules(
       entryIds);
 }
 
+@JsonSerializable()
 class MetaModule {
+  @JsonKey(name: 'm')
   final List<Module> modules;
 
   MetaModule(List<Module> modules) : modules = List.unmodifiable(modules);
@@ -227,7 +230,6 @@ class MetaModule {
       case ModuleStrategy.coarse:
         return _coarseModulesForLibraries(reader, libraries, platform);
     }
-    throw StateError('Unrecognized module strategy $strategy');
   }
 }
 
@@ -239,7 +241,7 @@ MetaModule _coarseModulesForLibraries(
     if (!librariesByDirectory.containsKey(dir)) {
       librariesByDirectory[dir] = <AssetId, ModuleLibrary>{};
     }
-    librariesByDirectory[dir][library.id] = library;
+    librariesByDirectory[dir]![library.id] = library;
   }
   final modules = librariesByDirectory.values
       .expand((libs) => _computeModules(libs, platform))
@@ -250,14 +252,15 @@ MetaModule _coarseModulesForLibraries(
 
 MetaModule _fineModulesForLibraries(
     AssetReader reader, List<ModuleLibrary> libraries, DartPlatform platform) {
-  var modules = libraries
-      .map((library) => Module(
+  var modules = [
+    for (var library in libraries)
+      Module(
           library.id,
-          library.parts.followedBy([library.id]),
+          [...library.parts, library.id],
           library.depsForPlatform(platform),
           platform,
-          library.sdkDeps.every(platform.supportsLibrary)))
-      .toList();
+          library.sdkDeps.every(platform.supportsLibrary))
+  ];
   _sortModules(modules);
   return MetaModule(modules);
 }

@@ -32,8 +32,8 @@ class PackageGraphWatcher {
   /// reasonable default based on the current platform.
   PackageGraphWatcher(
     this._graph, {
-    Logger logger,
-    PackageNodeWatcher Function(PackageNode node) watch,
+    Logger? logger,
+    PackageNodeWatcher Function(PackageNode node)? watch,
   })  : _logger = logger ?? Logger('build_runner'),
         _strategy = watch ?? _default;
 
@@ -54,7 +54,7 @@ class PackageGraphWatcher {
         .map((w) => w
                 .watch()
                 .where(_nestedPathFilter(w.node))
-                .handleError((dynamic e, StackTrace s) {
+                .handleError((Object e, StackTrace s) {
               _logger.severe(
                   'Error from directory watcher for package:${w.node.name}\n\n'
                   'If you see this consistently then it is recommended that '

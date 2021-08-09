@@ -10,6 +10,7 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/ansi.dart' as ansi;
 import 'package:io/io.dart' show ExitCode;
 
+import '../build_script_generate/build_script_generate.dart';
 import 'clean.dart';
 import 'runner.dart';
 
@@ -37,7 +38,7 @@ Future<int> run(List<String> args, List<BuilderApplication> builders) async {
     return ExitCode.config.code;
   } on BuildScriptChangedException {
     _deleteAssetGraph();
-    if (_runningFromSnapshot) _deleteSelf();
+    if (_runningFromKernel) _invalidateSelf();
     return ExitCode.tempFail.code;
   } on BuildConfigChangedException {
     return ExitCode.tempFail.code;
@@ -56,11 +57,13 @@ void _deleteAssetGraph() {
 ///
 /// This should only happen if the current script is a snapshot, and it has
 /// been invalidated.
-void _deleteSelf() {
-  var self = File(Platform.script.toFilePath());
-  if (self.existsSync()) {
-    self.deleteSync();
+void _invalidateSelf() {
+  var kernelPath = Platform.script.toFilePath();
+  var kernelFile = File(kernelPath);
+  if (kernelFile.existsSync()) {
+    kernelFile.renameSync('$kernelPath$scriptKernelCachedSuffix');
   }
 }
 
-bool get _runningFromSnapshot => !Platform.script.path.endsWith('.dart');
+bool get _runningFromKernel =>
+    !Platform.script.path.endsWith(scriptKernelSuffix);

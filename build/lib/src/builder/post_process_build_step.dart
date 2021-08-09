@@ -76,4 +76,4 @@ class PostProcessBuildStep {
 
 Future<void> _futureOrWrite<T>(
         FutureOr<T> content, Future<void> Function(T content) write) =>
-    (content is Future<T>) ? content.then(write) : write(content as T);
+    (content is Future<T>) ? content.then(write) : write(content);

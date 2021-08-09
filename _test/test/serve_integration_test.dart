@@ -4,7 +4,13 @@
 
 @TestOn('vm')
 import 'dart:convert';
-import 'dart:io' show HttpClient, HttpHeaders, HttpStatus;
+import 'dart:io'
+    show
+        HttpClient,
+        HttpClientRequest,
+        HttpClientResponse,
+        HttpHeaders,
+        HttpStatus;
 
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -12,10 +18,16 @@ import 'package:test/test.dart';
 import 'common/utils.dart';
 
 void main() {
-  HttpClient httpClient;
+  late HttpClient httpClient;
 
   setUpAll(() {
-    httpClient = HttpClient();
+    // Configure the client so it is possible to download a large number
+    // of files simultaneously. This prevents getting SocketException on
+    // too many connections.
+    httpClient = HttpClient()
+      ..maxConnectionsPerHost = 200
+      ..idleTimeout = Duration(seconds: 30)
+      ..connectionTimeout = Duration(seconds: 30);
   });
 
   tearDownAll(() {
@@ -34,8 +46,7 @@ void main() {
 
     test('Doesn\'t compile submodules into the root module', () {
       expect(
-          readGeneratedFileAsString(
-              '_test/test/hello_world_test.unsound.ddc.js'),
+          readGeneratedFileAsString('_test/test/hello_world_test.sound.ddc.js'),
           isNot(contains('Hello World!')));
     });
 
@@ -61,7 +72,7 @@ void main() {
       test('ddc errors can be fixed', () async {
         var path = p.join('test', 'common', 'message.dart');
         var error = nextStdOutLine('Error compiling dartdevc module:'
-            '_test|test/common/message.unsound.ddc.js');
+            '_test|test/common/message.sound.ddc.js');
         var nextBuild = nextFailedBuild;
         await replaceAllInFile(path, "'Hello World!'", '1');
         await error;
@@ -95,7 +106,7 @@ void main() {
 
         var cachedRequest =
             await httpClient.get('localhost', 8080, 'main.dart.js');
-        cachedRequest.headers.add(HttpHeaders.ifNoneMatchHeader, etag);
+        cachedRequest.headers.add(HttpHeaders.ifNoneMatchHeader, etag!);
         var cachedResponse = await cachedRequest.close();
         expect(cachedResponse.statusCode, HttpStatus.notModified);
       });
@@ -111,7 +122,7 @@ void main() {
 
           var cachedRequest =
               await httpClient.get('localhost', 8080, 'index.html')
-                ..headers.add(HttpHeaders.ifNoneMatchHeader, etag);
+                ..headers.add(HttpHeaders.ifNoneMatchHeader, etag!);
           var cachedResponse = await cachedRequest.close();
           expect(cachedResponse.statusCode, HttpStatus.notModified);
 
@@ -154,8 +165,55 @@ void main() {
     expect(badResponse.statusCode, HttpStatus.notFound);
 
     var ddcFileResponse =
-        await (await httpClient.get('localhost', 8080, 'main.unsound.ddc.js'))
+        await (await httpClient.get('localhost', 8080, 'main.sound.ddc.js'))
             .close();
     expect(await utf8.decodeStream(ddcFileResponse), contains('"goodbye"'));
+  });
+
+  test('should serve files in parallel', () async {
+    await startServer(buildArgs: [
+      'web',
+      '--build-filter',
+      'web/sub/main.dart.js',
+      '--verbose',
+      '--define',
+      'build_web_compilers|ddc=generate-full-dill=true',
+    ]);
+
+    addTearDown(() async {
+      await stopServer();
+    });
+
+    Future<void> read(String path) async {
+      HttpClientRequest? request;
+      HttpClientResponse? response;
+      try {
+        request = await httpClient.get('localhost', 8080, path);
+        response = await request.close();
+        expect(
+          response.statusCode,
+          HttpStatus.ok,
+          reason: '$path ${response.reasonPhrase}',
+        );
+      } catch (e, s) {
+        fail('Error reading $path: $e:$s');
+      } finally {
+        request?.abort();
+        await response?.drain().catchError((_) {});
+      }
+    }
+
+    const n = 1000;
+    var futures = [
+      for (var i = 0; i < n; i++) read('main.sound.ddc.js'),
+      for (var i = 0; i < n; i++) read('main.sound.ddc.js.map'),
+      for (var i = 0; i < n; i++) read('main.sound.ddc.dill'),
+      for (var i = 0; i < n; i++) read('main.sound.ddc.full.dill'),
+      for (var i = 0; i < n; i++) read('sub/message.sound.ddc.js'),
+      for (var i = 0; i < n; i++) read('sub/message.sound.ddc.js.map'),
+      for (var i = 0; i < n; i++) read('sub/message.sound.ddc.dill'),
+      for (var i = 0; i < n; i++) read('sub/message.sound.ddc.full.dill'),
+    ];
+    await Future.wait(futures);
   });
 }

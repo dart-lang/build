@@ -2,10 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:test/test.dart';
-
 import 'package:build_test/build_test.dart';
 import 'package:build_test/src/debug_test_builder.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('DebugTestBuilder', () {
@@ -97,7 +96,7 @@ class _IgnoringNewlinesAndWhitespaceMatcher extends Matcher {
   @override
   bool matches(item, Map matchState) {
     if (item is! String) return false;
-    return _stripWhitespaceAndNewlines(item as String) == _expected;
+    return _stripWhitespaceAndNewlines(item) == _expected;
   }
 }
 

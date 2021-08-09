@@ -25,7 +25,7 @@ void main() {
     builder('alwaysThrow', alwaysThrow),
   ];
 
-  BuildTool buildTool;
+  late BuildTool buildTool;
 
   setUpAll(() async {
     buildTool = await packageWithBuildScript(builders, contents: [

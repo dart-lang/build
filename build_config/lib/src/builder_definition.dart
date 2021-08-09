@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:json_annotation/json_annotation.dart';
-import 'package:meta/meta.dart';
 
 import 'build_target.dart';
 import 'common.dart';
@@ -35,37 +34,29 @@ enum BuildTo {
 @JsonSerializable(createToJson: false, disallowUnrecognizedKeys: true)
 class BuilderDefinition {
   /// The package which provides this Builder.
-  String get package => packageExpando[this];
+  String get package => packageExpando[this]!;
 
   /// A unique key for this Builder in `'$package:$builder'` format.
-  String get key => builderKeyExpando[this];
+  String get key => builderKeyExpando[this]!;
 
   /// The names of the top-level methods in [import] from args -> Builder.
-  @JsonKey(
-      name: 'builder_factories',
-      nullable: false,
-      required: true,
-      disallowNullValue: true)
+  @JsonKey(name: 'builder_factories', required: true, disallowNullValue: true)
   final List<String> builderFactories;
 
   /// The import to be used to load `clazz`.
-  @JsonKey(nullable: false, required: true, disallowNullValue: true)
+  @JsonKey(required: true, disallowNullValue: true)
   final String import;
 
   /// A map from input extension to the output extensions created for matching
   /// inputs.
-  @JsonKey(
-      name: 'build_extensions',
-      nullable: false,
-      required: true,
-      disallowNullValue: true)
+  @JsonKey(name: 'build_extensions', required: true, disallowNullValue: true)
   final Map<String, List<String>> buildExtensions;
 
   /// The name of the dart_library target that contains `import`.
   ///
   /// May be null or unreliable and should not be used.
   @deprecated
-  final String target;
+  final String? target;
 
   /// Which packages should have this builder applied automatically.
   @JsonKey(name: 'auto_apply')
@@ -103,17 +94,17 @@ class BuilderDefinition {
   final TargetBuilderConfigDefaults defaults;
 
   BuilderDefinition({
-    @required this.builderFactories,
-    @required this.buildExtensions,
-    @required this.import,
-    String target,
-    AutoApply autoApply,
-    Iterable<String> requiredInputs,
-    Iterable<String> runsBefore,
-    Iterable<String> appliesBuilders,
-    bool isOptional,
-    BuildTo buildTo,
-    TargetBuilderConfigDefaults defaults,
+    required this.builderFactories,
+    required this.buildExtensions,
+    required this.import,
+    String? target,
+    AutoApply? autoApply,
+    Iterable<String>? requiredInputs,
+    Iterable<String>? runsBefore,
+    Iterable<String>? appliesBuilders,
+    bool? isOptional,
+    BuildTo? buildTo,
+    TargetBuilderConfigDefaults? defaults,
   })  :
         // ignore: deprecated_member_use
         target = target != null
@@ -124,12 +115,12 @@ class BuilderDefinition {
         runsBefore = runsBefore
                 ?.map((builder) =>
                     normalizeBuilderKeyUsage(builder, currentPackage))
-                ?.toList() ??
+                .toList() ??
             const [],
         appliesBuilders = appliesBuilders
                 ?.map((builder) =>
                     normalizeBuilderKeyUsage(builder, currentPackage))
-                ?.toList() ??
+                .toList() ??
             const [],
         isOptional = isOptional ?? false,
         buildTo = buildTo ?? BuildTo.cache,
@@ -147,8 +138,10 @@ class BuilderDefinition {
     }
   }
 
-  factory BuilderDefinition.fromJson(Map json) =>
-      _$BuilderDefinitionFromJson(json);
+  factory BuilderDefinition.fromJson(Map json) {
+    ArgumentError.checkNotNull(json);
+    return _$BuilderDefinitionFromJson(json);
+  }
 
   @override
   String toString() => {
@@ -169,22 +162,18 @@ class BuilderDefinition {
 @JsonSerializable(createToJson: false, disallowUnrecognizedKeys: true)
 class PostProcessBuilderDefinition {
   /// The package which provides this Builder.
-  String get package => packageExpando[this];
+  String get package => packageExpando[this]!;
 
   /// A unique key for this Builder in `'$package:$builder'` format.
-  String get key => builderKeyExpando[this];
+  String get key => builderKeyExpando[this]!;
 
   /// The name of the top-level method in [import] from
   /// Map<String, dynamic> -> Builder.
-  @JsonKey(
-      name: 'builder_factory',
-      nullable: false,
-      required: true,
-      disallowNullValue: true)
+  @JsonKey(name: 'builder_factory', required: true, disallowNullValue: true)
   final String builderFactory;
 
   /// The import to be used to load `clazz`.
-  @JsonKey(nullable: false, required: true, disallowNullValue: true)
+  @JsonKey(required: true, disallowNullValue: true)
   final String import;
 
   /// A list of input extensions for this builder.
@@ -192,26 +181,28 @@ class PostProcessBuilderDefinition {
   /// May be null or unreliable and should not be used.
   @deprecated
   @JsonKey(name: 'input_extensions')
-  final Iterable<String> inputExtensions;
+  final Iterable<String>? inputExtensions;
 
   /// The name of the dart_library target that contains `import`.
   ///
   /// May be null or unreliable and should not be used.
   @deprecated
-  final String target;
+  final String? target;
 
   final TargetBuilderConfigDefaults defaults;
 
   PostProcessBuilderDefinition({
-    @required this.builderFactory,
-    @required this.import,
+    required this.builderFactory,
+    required this.import,
     this.inputExtensions,
     this.target,
-    TargetBuilderConfigDefaults defaults,
+    TargetBuilderConfigDefaults? defaults,
   }) : defaults = defaults ?? const TargetBuilderConfigDefaults();
 
-  factory PostProcessBuilderDefinition.fromJson(Map json) =>
-      _$PostProcessBuilderDefinitionFromJson(json);
+  factory PostProcessBuilderDefinition.fromJson(Map json) {
+    ArgumentError.checkNotNull(json);
+    return _$PostProcessBuilderDefinitionFromJson(json);
+  }
 
   @override
   String toString() => {
@@ -237,15 +228,17 @@ class TargetBuilderConfigDefaults {
   final Map<String, dynamic> releaseOptions;
 
   const TargetBuilderConfigDefaults({
-    InputSet generateFor,
-    Map<String, dynamic> options,
-    Map<String, dynamic> devOptions,
-    Map<String, dynamic> releaseOptions,
+    InputSet? generateFor,
+    Map<String, dynamic>? options,
+    Map<String, dynamic>? devOptions,
+    Map<String, dynamic>? releaseOptions,
   })  : generateFor = generateFor ?? InputSet.anything,
         options = options ?? const {},
         devOptions = devOptions ?? const {},
         releaseOptions = releaseOptions ?? const {};
 
-  factory TargetBuilderConfigDefaults.fromJson(Map json) =>
-      _$TargetBuilderConfigDefaultsFromJson(json);
+  factory TargetBuilderConfigDefaults.fromJson(Map json) {
+    ArgumentError.checkNotNull(json);
+    return _$TargetBuilderConfigDefaultsFromJson(json);
+  }
 }

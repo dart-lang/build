@@ -54,7 +54,7 @@ class DebugTestBuilder implements Builder {
     final document = parse(customHtml);
 
     // Replace <link rel="x-dart-test"> with <script src="{jsScriptPath}">.
-    final linkTag = document.querySelector('link[rel="x-dart-test"]');
+    final linkTag = document.querySelector('link[rel="x-dart-test"]')!;
     final scriptTag = Element.tag('script');
     scriptTag.attributes['src'] = jsScriptPath;
     linkTag.replaceWith(scriptTag);

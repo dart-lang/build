@@ -3,20 +3,22 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'dart:isolate';
 
+import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
+import 'package:build_resolvers/src/analysis_driver.dart';
+import 'package:build_resolvers/src/resolver.dart';
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
+import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
-
-import 'package:build_resolvers/build_resolvers.dart';
-import 'package:build_resolvers/src/analysis_driver.dart';
-import 'package:build_resolvers/src/resolver.dart';
 
 void main() {
   final entryPoint = AssetId('a', 'web/main.dart');
@@ -80,7 +82,7 @@ void main() {
       }, (resolver) async {
         await resolver.isLibrary(entryPoint);
         var libs = await resolver.libraries.toList();
-        expect(libs, contains(predicate((l) => l.name == 'b')));
+        expect(libs, contains(predicate((LibraryElement l) => l.name == 'b')));
       }, resolvers: AnalyzerResolvers());
     });
 
@@ -98,7 +100,7 @@ void main() {
       }, (resolver) async {
         await resolver.compilationUnitFor(entryPoint);
         var libs = await resolver.libraries.toList();
-        expect(libs, contains(predicate((l) => l.name == 'b')));
+        expect(libs, contains(predicate((LibraryElement l) => l.name == 'b')));
       }, resolvers: AnalyzerResolvers());
     });
 
@@ -121,9 +123,9 @@ void main() {
               AssetId('build_resolvers', 'lib/build_resolvers.dart');
           var lib = await resolver.libraryFor(buildResolversId);
           var currentPackageConfig =
-              await loadPackageConfigUri(await Isolate.packageConfig);
+              await loadPackageConfigUri((await Isolate.packageConfig)!);
           var expectedVersion =
-              currentPackageConfig['build_resolvers'].languageVersion;
+              currentPackageConfig['build_resolvers']!.languageVersion!;
           expect(lib.languageVersion.effective.major, expectedVersion.major);
           expect(lib.languageVersion.effective.minor, expectedVersion.minor);
         }, resolvers: AnalyzerResolvers());
@@ -177,7 +179,7 @@ void main() {
         }, (resolver) async {
           await resolver.libraryFor(entryPoint);
         }, resolvers: AnalyzerResolvers());
-      });
+      }, skip: _skipOnPreRelease);
     });
 
     group('assets that aren\'t a transitive import of input', () {
@@ -250,7 +252,7 @@ void main() {
         var lib = await resolver.libraryFor(entryPoint);
         var clazz = lib.getType('A');
         expect(clazz, isNotNull);
-        expect(clazz.interfaces, isEmpty);
+        expect(clazz!.interfaces, isEmpty);
       }, resolvers: resolvers);
 
       await resolveSources({
@@ -267,7 +269,7 @@ void main() {
         var lib = await resolver.libraryFor(entryPoint);
         var clazz = lib.getType('A');
         expect(clazz, isNotNull);
-        expect(clazz.interfaces, hasLength(1));
+        expect(clazz!.interfaces, hasLength(1));
         expect(clazz.interfaces.first.getDisplayString(withNullability: false),
             'B');
       }, resolvers: resolvers);
@@ -348,8 +350,8 @@ void main() {
               @annotation
               class Bar {}''',
       }, (resolver) async {
-        var main = await resolver.findLibraryByName('web.main');
-        var meta = main.getType('Foo').supertype.element.metadata[0];
+        var main = (await resolver.findLibraryByName('web.main'))!;
+        var meta = main.getType('Foo')!.supertype!.element.metadata[0];
         expect(meta, isNotNull);
         expect(meta.computeConstantValue()?.toIntValue(), 0);
       }, resolvers: AnalyzerResolvers());
@@ -388,9 +390,32 @@ void main() {
         var entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
         var classDefinition = entry.importedLibraries
             .map((l) => l.getType('SomeClass'))
-            .singleWhere((c) => c != null);
+            .singleWhere((c) => c != null)!;
         expect(await resolver.assetIdForElement(classDefinition),
             AssetId('a', 'lib/b.dart'));
+      }, resolvers: AnalyzerResolvers());
+    });
+
+    test('assetIdForElement throws for ambigious elements', () {
+      return resolveSources({
+        'a|lib/a.dart': '''
+              import 'b.dart';
+
+              class SomeClass {}
+
+              main() {
+                SomeClass();
+              } ''',
+        'a|lib/b.dart': '''
+            class SomeClass {}
+              ''',
+      }, (resolver) async {
+        var entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
+        var classDefinition = entry.importedLibraries
+            .map((l) => l.getType('SomeClass'))
+            .singleWhere((c) => c != null)!;
+        expect(() => resolver.assetIdForElement(classDefinition),
+            throwsA(isA<UnresolvableAssetException>()));
       }, resolvers: AnalyzerResolvers());
     });
 
@@ -409,11 +434,12 @@ int? get x => 1;
                     sdkLanguageVersion.major);
                 expect(lib.languageVersion.effective.minor,
                     sdkLanguageVersion.minor);
-                var errors = await lib.session.getErrors('/a/web/main.dart');
+                var errors = await lib.session.getErrors2('/a/web/main.dart')
+                    as ErrorsResult;
                 expect(errors.errors, isEmpty);
               }, resolvers: AnalyzerResolvers()),
           ['non-nullable']);
-    });
+    }, skip: _skipOnPreRelease);
 
     test('can get a new analysis session after resolving additional assets',
         () async {
@@ -426,8 +452,8 @@ int? get x => 1;
         expect(await resolver.isLibrary(AssetId('a', 'web/other.dart')), true);
         var newLib =
             await resolver.libraryFor(await resolver.assetIdForElement(lib));
-        expect(await newLib.session.getResolvedLibraryByElement(newLib),
-            isNotNull);
+        expect(await newLib.session.getResolvedLibraryByElement2(newLib),
+            isA<ResolvedLibraryResult>());
       }, resolvers: resolvers);
     });
 
@@ -598,18 +624,18 @@ int? get x => 1;
               } ''',
       }, (resolver) async {
         var entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
-        var classDefinition = entry.getType('MyClass');
-        var color = classDefinition.getField('color');
+        var classDefinition = entry.getType('MyClass')!;
+        var color = classDefinition.getField('color')!;
 
         if (isFlutter) {
-          expect(color.type.element.name, equals('Color'));
-          expect(color.type.element.library.name, equals('dart.ui'));
+          expect(color.type.element!.name, equals('Color'));
+          expect(color.type.element!.library!.name, equals('dart.ui'));
           expect(
-              color.type.element.library.definingCompilationUnit.source.uri
+              color.type.element!.library!.definingCompilationUnit.source.uri
                   .toString(),
               equals('dart:ui'));
         } else {
-          expect(color.type.element.name, equals('dynamic'));
+          expect(color.type.element!.name, equals('dynamic'));
         }
       }, resolvers: AnalyzerResolvers());
     });
@@ -630,7 +656,7 @@ int? get x => 1;
           if (buildStep.inputId == input) {
             await buildStep.writeAsString(
                 buildStep.inputId
-                    .changeExtension(buildExtensions['.dart'].first),
+                    .changeExtension(buildExtensions['.dart']!.first),
                 "part of 'input.dart';");
             expect(isLibrary, true);
           } else {
@@ -690,7 +716,7 @@ int? get x => 1;
         var lib = await resolver.libraryFor(entryPoint);
         var unit = await resolver.astNodeFor(lib.topLevelElements.first);
         expect(unit, isA<FunctionDeclaration>());
-        expect(unit.toSource(), 'main() {}');
+        expect(unit!.toSource(), 'main() {}');
         expect((unit as FunctionDeclaration).declaredElement, isNull);
       }, resolvers: AnalyzerResolvers());
     });
@@ -702,9 +728,12 @@ int? get x => 1;
         var lib = await resolver.libraryFor(entryPoint);
         var unit = await resolver.astNodeFor(lib.topLevelElements.first,
             resolve: true);
-        expect(unit, isA<FunctionDeclaration>());
-        expect(unit.toSource(), 'main() {}');
-        expect((unit as FunctionDeclaration).declaredElement, isNotNull);
+        expect(
+          unit,
+          isA<FunctionDeclaration>()
+              .having((fd) => fd.toSource(), 'toSource()', 'main() {}')
+              .having((fd) => fd.declaredElement, 'declaredElement', isNotNull),
+        );
       }, resolvers: AnalyzerResolvers());
     });
 
@@ -722,13 +751,13 @@ int? get x => 1;
         expect(await resolver.isLibrary(AssetId('a', 'web/other.dart')), true);
 
         // Validate that direct session usage would throw
-        expect(() => lib.session.getParsedLibraryByElement(x.library),
+        expect(() => lib.session.getParsedLibraryByElement2(x.library!),
             throwsA(isA<InconsistentAnalysisException>()));
 
         var astNode = await resolver.astNodeFor(x);
         expect(astNode, isA<VariableDeclaration>());
         expect((astNode as VariableDeclaration).name.name, 'x');
-        expect((astNode as VariableDeclaration).declaredElement, isNull);
+        expect(astNode.declaredElement, isNull);
       }, resolvers: resolvers);
     });
 
@@ -746,13 +775,13 @@ int? get x => 1;
         expect(await resolver.isLibrary(AssetId('a', 'web/other.dart')), true);
 
         // Validate that direct session usage would throw
-        expect(() => lib.session.getParsedLibraryByElement(x.library),
+        expect(() => lib.session.getParsedLibraryByElement2(x.library!),
             throwsA(isA<InconsistentAnalysisException>()));
 
         var astNode = await resolver.astNodeFor(x, resolve: true);
         expect(astNode, isA<VariableDeclaration>());
         expect((astNode as VariableDeclaration).name.name, 'x');
-        expect((astNode as VariableDeclaration).declaredElement, isNotNull);
+        expect(astNode.declaredElement, isNotNull);
       }, resolvers: resolvers);
     });
 
@@ -766,19 +795,24 @@ int? get x => 1;
         var lib = await resolver.libraryFor(entryPoint);
         var x = lib.topLevelElements.firstWhere((x) => !x.isSynthetic);
         expect(x.name, 'x');
-        var originalResult =
-            await lib.session.getResolvedLibrary(lib.source.fullName);
+        var originalResult = await lib.session
+            .getResolvedLibrary2(lib.source.fullName) as ResolvedLibraryResult;
         expect(await resolver.isLibrary(AssetId('a', 'web/other.dart')), true);
 
         // Validate that direct session usage would throw
-        expect(() => lib.session.getResolvedLibrary(lib.source.fullName),
+        expect(() => lib.session.getResolvedLibrary2(lib.source.fullName),
             throwsA(isA<InconsistentAnalysisException>()));
 
-        var astNode = originalResult.getElementDeclaration(x).node;
+        var astNode = originalResult.getElementDeclaration(x)!.node;
         expect(astNode, isA<VariableDeclaration>());
         expect((astNode as VariableDeclaration).name.name, 'x');
-        expect((astNode as VariableDeclaration).declaredElement, isNotNull);
+        expect(astNode.declaredElement, isNotNull);
       }, resolvers: resolvers);
     });
   });
 }
+
+final _skipOnPreRelease =
+    Version.parse(Platform.version.split(' ').first).isPreRelease
+        ? 'Skipped on prerelease sdks'
+        : null;

@@ -8,7 +8,6 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as _p; // ignore: library_prefixes
 import 'package:pool/pool.dart';
 
@@ -26,32 +25,22 @@ String _modulePartialExtension(bool soundNullSafety) =>
 /// Bootstraps a ddc application, creating the main entrypoint as well as the
 /// bootstrap and digest entrypoints.
 ///
-/// If [skipPlatformCheck] is `true` then all `dart:` imports will be
-/// allowed in all packages.
-///
-/// Deprecated: If [skipPlatformCheckPackages] is provided then any dart:
-/// imports will be allowed in the specified packages.
-///
 /// If [requiredAssets] is provided then this will ensure those assets are
 /// available to the app by making them inputs of this build action.
 Future<void> bootstrapDdc(
   BuildStep buildStep, {
-  DartPlatform platform,
-  bool skipPlatformCheck = false,
-  @deprecated Set<String> skipPlatformCheckPackages = const {},
-  Iterable<AssetId> requiredAssets,
-  @required bool soundNullSafety,
-  @required bool nativeNullAssertions,
-  @required bool nullAssertions,
+  DartPlatform? platform,
+  Iterable<AssetId> requiredAssets = const [],
+  required bool soundNullSafety,
+  required bool nativeNullAssertions,
+  required bool nullAssertions,
 }) async {
-  requiredAssets ??= [];
-  skipPlatformCheck ??= false;
+  platform = ddcPlatform;
   // Ensures that the sdk resources are built and available.
   await _ensureResources(buildStep, requiredAssets);
 
   var dartEntrypointId = buildStep.inputId;
-  var moduleId = buildStep.inputId
-      .changeExtension(moduleExtension(platform ?? ddcPlatform));
+  var moduleId = buildStep.inputId.changeExtension(moduleExtension(platform));
   var module = Module.fromJson(json
       .decode(await buildStep.readAsString(moduleId)) as Map<String, dynamic>);
 
@@ -59,8 +48,6 @@ Future<void> bootstrapDdc(
   List<AssetId> transitiveJsModules;
   try {
     transitiveJsModules = await _ensureTransitiveJsModules(module, buildStep,
-        skipPlatformCheck: skipPlatformCheck,
-        skipPlatformCheckPackages: skipPlatformCheckPackages,
         soundNullSafety: soundNullSafety);
   } on UnsupportedModules catch (e) {
     var librariesString = (await e.exactLibraries(buildStep).toList())
@@ -182,14 +169,10 @@ final _lazyBuildPool = Pool(16);
 /// unsupported modules.
 Future<List<AssetId>> _ensureTransitiveJsModules(
     Module module, BuildStep buildStep,
-    {@required bool skipPlatformCheck,
-    @required Set<String> skipPlatformCheckPackages,
-    @required bool soundNullSafety}) async {
+    {required bool soundNullSafety}) async {
   // Collect all the modules this module depends on, plus this module.
   var transitiveDeps = await module.computeTransitiveDependencies(buildStep,
-      throwIfUnsupported: !skipPlatformCheck,
-      // ignore: deprecated_member_use
-      skipPlatformCheckPackages: skipPlatformCheckPackages);
+      throwIfUnsupported: true);
 
   var jsModules = [
     module.primarySource.changeExtension(jsModuleExtension(soundNullSafety)),
@@ -215,13 +198,13 @@ Future<List<AssetId>> _ensureTransitiveJsModules(
 ///
 /// Also performs other necessary initialization.
 String _appBootstrap({
-  @required String bootstrapModuleName,
-  @required String moduleName,
-  @required String moduleScope,
-  @required String entrypointLibraryName,
-  @required String oldModuleScope,
-  @required bool nullAssertions,
-  @required bool nativeNullAssertions,
+  required String bootstrapModuleName,
+  required String moduleName,
+  required String moduleScope,
+  required String entrypointLibraryName,
+  required String oldModuleScope,
+  required bool nullAssertions,
+  required bool nativeNullAssertions,
 }) =>
     '''
 define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_sdk) {

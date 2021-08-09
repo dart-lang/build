@@ -6,9 +6,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:build/build.dart';
+import 'package:build_modules/build_modules.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
-import 'package:build_modules/build_modules.dart';
 
 final defaultAnalysisOptionsId =
     AssetId('build_modules', 'lib/src/analysis_options.default.yaml');
@@ -43,8 +43,7 @@ Future<File> createPackagesFile(Iterable<AssetId> allAssets) async {
 /// Throws an [ArgumentError] if not.
 void validateOptions(Map<String, dynamic> config, List<String> supportedOptions,
     String builderKey,
-    {List<String> deprecatedOptions}) {
-  deprecatedOptions ??= [];
+    {List<String> deprecatedOptions = const []}) {
   var unsupported = config.keys.where(
       (o) => !supportedOptions.contains(o) && !deprecatedOptions.contains(o));
   if (unsupported.isNotEmpty) {
@@ -73,6 +72,6 @@ List<String> fixSourceMapSources(List<String> uris) {
     var newSegments = uri.pathSegments.first == 'packages'
         ? uri.pathSegments
         : uri.pathSegments.skip(1);
-    return Uri(path: p.url.joinAll(['/'].followedBy(newSegments))).toString();
+    return Uri(path: p.url.joinAll(['/', ...newSegments])).toString();
   }).toList();
 }

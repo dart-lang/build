@@ -5,7 +5,6 @@
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:collection/collection.dart';
-import 'package:meta/meta.dart';
 
 import 'input_matcher.dart';
 
@@ -69,13 +68,11 @@ class InBuildPhase extends BuildPhase implements BuildAction {
   final bool hideOutput;
 
   InBuildPhase._(this.package, this.builder, this.builderOptions,
-      {@required this.targetSources,
-      @required this.generateFor,
-      @required this.builderLabel,
-      bool isOptional,
-      bool hideOutput})
-      : isOptional = isOptional ?? false,
-        hideOutput = hideOutput ?? false;
+      {required this.targetSources,
+      required this.generateFor,
+      required this.builderLabel,
+      this.isOptional = false,
+      this.hideOutput = false});
 
   /// Creates an [BuildPhase] for a normal [Builder].
   ///
@@ -91,15 +88,15 @@ class InBuildPhase extends BuildPhase implements BuildAction {
   InBuildPhase(
     Builder builder,
     String package, {
-    String builderKey,
-    InputSet targetSources,
-    InputSet generateFor,
-    BuilderOptions builderOptions,
-    bool isOptional,
-    bool hideOutput,
-  }) : this._(package, builder, builderOptions ?? const BuilderOptions({}),
-            targetSources: InputMatcher(targetSources ?? const InputSet()),
-            generateFor: InputMatcher(generateFor ?? const InputSet()),
+    String? builderKey,
+    InputSet targetSources = const InputSet(),
+    InputSet generateFor = const InputSet(),
+    BuilderOptions builderOptions = const BuilderOptions({}),
+    bool isOptional = false,
+    bool hideOutput = false,
+  }) : this._(package, builder, builderOptions,
+            targetSources: InputMatcher(targetSources),
+            generateFor: InputMatcher(generateFor),
             builderLabel: builderKey == null || builderKey.isEmpty
                 ? _builderLabel(builder)
                 : _simpleBuilderKey(builderKey),
@@ -173,16 +170,15 @@ class PostBuildAction implements BuildAction {
   final InputMatcher targetSources;
 
   PostBuildAction(this.builder, this.package,
-      {String builderKey,
-      @required BuilderOptions builderOptions,
-      @required InputSet targetSources,
-      @required InputSet generateFor})
+      {String? builderKey,
+      required this.builderOptions,
+      required InputSet targetSources,
+      required InputSet generateFor})
       : builderLabel = builderKey == null || builderKey.isEmpty
             ? _builderLabel(builder)
             : _simpleBuilderKey(builderKey),
-        builderOptions = builderOptions ?? const BuilderOptions({}),
-        targetSources = InputMatcher(targetSources ?? const InputSet()),
-        generateFor = InputMatcher(generateFor ?? const InputSet());
+        targetSources = InputMatcher(targetSources),
+        generateFor = InputMatcher(generateFor);
 
   int get identity => _deepEquals.hash([
         builderLabel,

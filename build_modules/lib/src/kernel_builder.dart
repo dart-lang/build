@@ -13,16 +13,12 @@ import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:crypto/crypto.dart';
 import 'package:graphs/graphs.dart' show crawlAsync;
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
+import 'package:stream_transform/stream_transform.dart';
 
 import 'errors.dart';
-import 'module_builder.dart';
 import 'module_cache.dart';
-import 'modules.dart';
-import 'platform.dart';
-import 'scratch_space.dart';
 import 'workers.dart';
 
 const multiRootScheme = 'org-dartlang-app';
@@ -80,28 +76,25 @@ class KernelBuilder implements Builder {
   /// same mode as the kernel output itself.
   final bool soundNullSafety;
 
-  KernelBuilder(
-      {@required this.platform,
-      @required this.summaryOnly,
-      @required this.sdkKernelPath,
-      @required this.outputExtension,
-      this.soundNullSafety = false,
-      String librariesPath,
-      bool useIncrementalCompiler,
-      bool trackUnusedInputs,
-      String platformSdk,
-      String kernelTargetName,
-      @Deprecated(_deprecatedExperimentsMessage) Iterable<String> experiments})
-      : platformSdk = platformSdk ?? sdkDir,
+  KernelBuilder({
+    required this.platform,
+    required this.summaryOnly,
+    required this.sdkKernelPath,
+    required this.outputExtension,
+    this.soundNullSafety = false,
+    String? librariesPath,
+    this.useIncrementalCompiler = false,
+    this.trackUnusedInputs = false,
+    String? platformSdk,
+    String? kernelTargetName,
+  })  : platformSdk = platformSdk ?? sdkDir,
         kernelTargetName = kernelTargetName ?? platform.name,
         librariesPath = librariesPath ??
             p.join(platformSdk ?? sdkDir, 'lib', 'libraries.json'),
-        useIncrementalCompiler = useIncrementalCompiler ?? false,
-        trackUnusedInputs = trackUnusedInputs ?? false,
         buildExtensions = {
           moduleExtension(platform): [outputExtension]
         },
-        experiments = experiments ?? enabledExperiments;
+        experiments = enabledExperiments;
 
   @override
   Future build(BuildStep buildStep) async {
@@ -143,18 +136,18 @@ class KernelBuilder implements Builder {
 
 /// Creates a kernel file for [module].
 Future<void> _createKernel(
-    {@required Module module,
-    @required BuildStep buildStep,
-    @required bool summaryOnly,
-    @required String outputExtension,
-    @required String targetName,
-    @required String dartSdkDir,
-    @required String sdkKernelPath,
-    @required String librariesPath,
-    @required bool useIncrementalCompiler,
-    @required bool trackUnusedInputs,
-    @required Iterable<String> experiments,
-    @required bool soundNullSafety}) async {
+    {required Module module,
+    required BuildStep buildStep,
+    required bool summaryOnly,
+    required String outputExtension,
+    required String targetName,
+    required String dartSdkDir,
+    required String sdkKernelPath,
+    required String librariesPath,
+    required bool useIncrementalCompiler,
+    required bool trackUnusedInputs,
+    required Iterable<String> experiments,
+    required bool soundNullSafety}) async {
   var request = WorkRequest();
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
   var outputId = module.primarySource.changeExtension(outputExtension);
@@ -163,10 +156,10 @@ Future<void> _createKernel(
 
   // Maps the inputs paths we provide to the kernel worker to asset ids,
   // if `trackUnusedInputs` is `true`.
-  Map<String, AssetId> kernelInputPathToId;
+  Map<String, AssetId>? kernelInputPathToId;
   // If `trackUnusedInputs` is `true`, this is the file we will use to
   // communicate the used inputs with the kernel worker.
-  File usedInputsFile;
+  File? usedInputsFile;
 
   await buildStep.trackStage('CollectDeps', () async {
     var sourceDeps = <AssetId>[];
@@ -218,7 +211,7 @@ Future<void> _createKernel(
           outputId, '${request.arguments.join(' ')}\n${response.output}');
     }
 
-    if (response.output?.isEmpty == false) {
+    if (response.output.isNotEmpty) {
       log.info(response.output);
     }
 
@@ -229,10 +222,10 @@ Future<void> _createKernel(
     // inputs if there is a failure.
     if (usedInputsFile != null) {
       await reportUnusedKernelInputs(
-          usedInputsFile, kernelDeps, kernelInputPathToId, buildStep);
+          usedInputsFile!, kernelDeps, kernelInputPathToId!, buildStep);
     }
   } finally {
-    await usedInputsFile?.parent?.delete(recursive: true);
+    await usedInputsFile?.parent.delete(recursive: true);
   }
 }
 
@@ -256,7 +249,7 @@ Future<void> reportUnusedKernelInputs(
   var usedPaths = await usedInputsFile.readAsLines();
   if (usedPaths.isEmpty || usedPaths.first == '') return;
 
-  String firstMissingInputPath;
+  String? firstMissingInputPath;
   var usedIds = usedPaths.map((usedPath) {
     var id = inputPathToId[usedPath];
     if (id == null) firstMissingInputPath ??= usedPath;
@@ -305,7 +298,7 @@ Future<void> _findModuleDeps(
 Future<List<Module>> _resolveTransitiveModules(
     Module root, BuildStep buildStep) async {
   var missing = <AssetId>{};
-  var modules = await crawlAsync<AssetId, Module>(
+  var modules = await crawlAsync<AssetId, Module?>(
           [root.primarySource],
           (id) => buildStep.fetchResource(moduleCache).then((c) async {
                 var moduleId =
@@ -318,8 +311,9 @@ Future<List<Module>> _resolveTransitiveModules(
                 }
                 return module;
               }),
-          (id, module) => module.directDependencies)
+          (id, module) => module?.directDependencies ?? [])
       .skip(1) // Skip the root.
+      .whereType<Module>()
       .toList();
 
   if (missing.isNotEmpty) {
@@ -352,7 +346,7 @@ Future<Set<AssetId>> _parentsOfMissingKernelFiles(
   while (toCrawl.isNotEmpty) {
     final current = toCrawl.removeFirst();
     if (!parents.containsKey(current)) continue;
-    for (final next in parents[current]) {
+    for (final next in parents[current]!) {
       if (!sourceOnly.add(next)) {
         toCrawl.add(next);
       }
@@ -377,8 +371,8 @@ Future<void> _addRequestArguments(
   AssetReader reader,
   Iterable<String> experiments,
   bool soundNullSafety, {
-  File usedInputsFile,
-  Map<String, AssetId> kernelInputPathToId,
+  File? usedInputsFile,
+  Map<String, AssetId>? kernelInputPathToId,
 }) async {
   // Add all kernel outlines as summary inputs, with digests.
   var inputs = await Future.wait(transitiveKernelDeps.map((id) async {
@@ -429,8 +423,3 @@ String _sourceArg(AssetId id) {
       : '$multiRootScheme:///${id.path}';
   return '--source=$uri';
 }
-
-// Extracted into a local variable to avoid
-// https://github.com/dart-lang/dart_style/issues/860
-const _deprecatedExperimentsMessage =
-    'Use `withEnabledExperiments` from package:build/experiments.dart.';

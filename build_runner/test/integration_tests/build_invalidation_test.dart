@@ -7,6 +7,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
 import 'package:build_runner_core/src/util/constants.dart';
 import 'package:build_test/build_test.dart';
 import 'package:path/path.dart' as p;
@@ -25,8 +26,8 @@ void main() {
     builder('copyBuilder', copyBuilder),
   ];
 
-  BuildTool buildTool;
-  d.Descriptor builderPackage;
+  late BuildTool buildTool;
+  late d.Descriptor builderPackage;
 
   setUpAll(() async {
     builderPackage = await packageWithBuilders(builders);
@@ -64,7 +65,7 @@ void main() {
   }
 
   group('Invalidates next build', () {
-    File markerFile;
+    late File markerFile;
     setUp(() async {
       // Run a first build before invalidation.
       await buildTool.build();
@@ -87,17 +88,14 @@ void main() {
 
       await expectOutput(secondBuild, [
         'Invalidating asset graph due to build script update',
-        'Creating build script snapshot',
+        'Precompiling build script',
         'Building new asset graph',
       ]);
     });
 
     test('for invalid asset graph version', () async {
-      final assetGraph = File(p.join(
-          d.sandbox,
-          'a',
-          assetGraphPathFor(p.url.join(
-              '.dart_tool', 'build', 'entrypoint', 'build.dart.snapshot'))));
+      final assetGraph =
+          File(p.join(d.sandbox, 'a', assetGraphPathFor(scriptKernelLocation)));
       // Prepend a 1 to the version number
       await assetGraph.writeAsString((await assetGraph.readAsString())
           .replaceFirst('"version":', '"version":1'));
@@ -112,7 +110,7 @@ void main() {
   });
 
   group('Recreates snapshot while serving', () {
-    BuildServer server;
+    late BuildServer server;
 
     setUp(() async {
       server = await buildTool.serve();
@@ -124,7 +122,7 @@ void main() {
 
       await expectOutput(server.stdout, [
         'Terminating builds due to build script update',
-        'Creating build script snapshot',
+        'Precompiling build script',
         'Building new asset graph',
       ]);
 
@@ -158,8 +156,8 @@ void main() {
     final secondBuild = await buildTool.build();
 
     await expectOutput(secondBuild, [
-      'Deleted previous snapshot due to core package update',
-      'Creating build script snapshot',
+      'Invalidated precompiled build script due to core package update',
+      'Precompiling build script',
     ]);
   });
 

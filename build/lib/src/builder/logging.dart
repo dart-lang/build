@@ -13,7 +13,7 @@ final _default = Logger('build.fallback');
 /// The log instance for the currently running BuildStep.
 ///
 /// Will be `null` when not running within a build.
-Logger get log => Zone.current[logKey] as Logger ?? _default;
+Logger get log => Zone.current[logKey] as Logger? ?? _default;
 
 /// Runs [fn] in an error handling [Zone].
 ///
@@ -29,7 +29,7 @@ Future<T> scopeLogAsync<T>(Future<T> Function() fn, Logger log) {
     done.completeError(e, st);
   }, zoneSpecification: ZoneSpecification(print: (self, parent, zone, message) {
     log.warning(message);
-  }), zoneValues: {logKey: log}).then((result) {
+  }), zoneValues: {logKey: log})?.then((result) {
     if (done.isCompleted) return;
     done.complete(result);
   });

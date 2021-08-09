@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
+import 'package:collection/collection.dart';
 
 import 'module_library.dart';
 import 'module_library_builder.dart';
@@ -89,19 +90,21 @@ Please check the following imports:\n
 
 /// Checks if [sourceId] directly imports [missingId], and returns an error
 /// message if so.
-Future<String> _missingImportMessage(
+Future<String?> _missingImportMessage(
     AssetId sourceId, AssetId missingId, AssetReader reader) async {
   var contents = await reader.readAsString(sourceId);
   var parsed = parseString(content: contents, throwIfDiagnostics: false).unit;
-  var import =
-      parsed.directives.whereType<UriBasedDirective>().firstWhere((directive) {
+  var import = parsed.directives
+      .whereType<UriBasedDirective>()
+      .firstWhereOrNull((directive) {
     var uriString = directive.uri.stringValue;
+    if (uriString == null) return false;
     if (uriString.startsWith('dart:')) return false;
-    var id = AssetId.resolve(uriString, from: sourceId);
+    var id = AssetId.resolve(Uri.parse(uriString), from: sourceId);
     return id == missingId;
-  }, orElse: () => null);
+  });
   if (import == null) return null;
-  var lineInfo = parsed.lineInfo.getLocation(import.offset);
+  var lineInfo = parsed.lineInfo!.getLocation(import.offset);
   return '`$import` from $sourceId at $lineInfo';
 }
 

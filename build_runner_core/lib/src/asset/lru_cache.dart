@@ -4,8 +4,8 @@
 
 /// A basic LRU Cache.
 class LruCache<K, V> {
-  _Link<K, V> _head;
-  _Link<K, V> _tail;
+  _Link<K, V>? _head;
+  _Link<K, V>? _tail;
 
   final int Function(V) _computeWeight;
 
@@ -18,7 +18,7 @@ class LruCache<K, V> {
   LruCache(
       this._individualWeightMax, this._totalWeightMax, this._computeWeight);
 
-  V operator [](K key) {
+  V? operator [](K key) {
     var entry = _entries[key];
     if (entry == null) return null;
 
@@ -38,14 +38,13 @@ class LruCache<K, V> {
     _promote(entry);
 
     while (_currentWeightTotal > _totalWeightMax) {
-      assert(_tail != null);
-      remove(_tail.key);
+      remove(_tail!.key);
     }
   }
 
   /// Removes the value at [key] from the cache, and returns the value if it
   /// existed.
-  V remove(K key) {
+  V? remove(K key) {
     var entry = _entries[key];
     if (entry == null) return null;
 
@@ -73,10 +72,10 @@ class LruCache<K, V> {
     }
 
     if (link.previous != null) {
-      link.previous.next = link.next;
+      link.previous!.next = link.next;
     }
     if (link.next != null) {
-      link.next.previous = link.previous;
+      link.next!.previous = link.previous;
     }
 
     _head?.next = link;
@@ -89,8 +88,8 @@ class LruCache<K, V> {
 
 /// A [MapEntry] which is also a part of a doubly linked list.
 class _Link<K, V> implements MapEntry<K, V> {
-  _Link<K, V> next;
-  _Link<K, V> previous;
+  _Link<K, V>? next;
+  _Link<K, V>? previous;
 
   final int weight;
 

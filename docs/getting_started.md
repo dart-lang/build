@@ -8,13 +8,15 @@ To use `build_runner`, you need a 2.x version of the Dart SDK.
 If you have issues using `build_runner`, see the
 [Troubleshooting section](#troubleshooting), below.
 
-*   [Using `build_runner` as a development server](#using-build_runner-as-a-development-server)
-*   [Creating an output directory](#creating-an-output-directory)
-*   [Using other `build_runner` commands](#using-other-build_runner-commands)
-*   [Switching to Dart2JS](#switching-to-dart2js)
-*   [Troubleshooting](#troubleshooting)
-    *   [`build_runner` has no versions that match...](#build_runner-has-no-versions-that-match)
-    *   [Too many open files](#too-many-open-files)
+- [Getting started with `build_runner`](#getting-started-with-build_runner)
+  - [Using `build_runner` as a development server](#using-build_runner-as-a-development-server)
+  - [Creating an output directory](#creating-an-output-directory)
+  - [Using other `build_runner` commands](#using-other-build_runner-commands)
+  - [Switching to dart2js](#switching-to-dart2js)
+  - [Troubleshooting](#troubleshooting)
+    - [Diagnosing build times](#diagnosing-build-times)
+    - [build_runner has no versions that match...](#build_runner-has-no-versions-that-match)
+    - [Too many open files](#too-many-open-files)
 
 ## Using `build_runner` as a development server
 
@@ -22,13 +24,9 @@ If you have issues using `build_runner`, see the
     **build_runner** and **build_web_compilers**:
 
     ```yaml
-    ...
-    environment:
-      sdk: '>=2.0.0 <3.0.0'
-    ...
     dev_dependencies:
-      build_runner: ^1.0.0
-      build_web_compilers: ^0.4.0
+      build_runner: ^2.0.0
+      build_web_compilers: ^3.0.0
     ```
 
 2.  Get package dependencies:

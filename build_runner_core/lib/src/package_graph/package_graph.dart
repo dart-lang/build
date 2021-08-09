@@ -72,6 +72,10 @@ class PackageGraph {
 
     final packageConfig =
         await findPackageConfig(Directory(packagePath), recurse: false);
+    if (packageConfig == null) {
+      throw StateError(
+          'Unable to find package config for package at $packagePath');
+    }
 
     final dependencyTypes = _parseDependencyTypes(packagePath);
 
@@ -90,16 +94,16 @@ class PackageGraph {
           package.languageVersion,
           isRoot: isRoot);
     }
-    final rootNode = nodes[rootPackageName];
+    final rootNode = nodes[rootPackageName]!;
     rootNode.dependencies
-        .addAll(_depsFromYaml(rootPubspec, isRoot: true).map((n) => nodes[n]));
+        .addAll(_depsFromYaml(rootPubspec, isRoot: true).map((n) => nodes[n]!));
 
     final packageDependencies = _parsePackageDependencies(
         packageConfig.packages.where((p) => p.name != rootPackageName));
     for (final packageName in packageDependencies.keys) {
-      nodes[packageName]
+      nodes[packageName]!
           .dependencies
-          .addAll(packageDependencies[packageName].map((n) => nodes[n]));
+          .addAll(packageDependencies[packageName]!.map((n) => nodes[n]!));
     }
     return PackageGraph._(rootNode, nodes);
   }
@@ -110,7 +114,7 @@ class PackageGraph {
       PackageGraph.forPath(p.current);
 
   /// Shorthand to get a package by name.
-  PackageNode operator [](String packageName) => allPackages[packageName];
+  PackageNode? operator [](String packageName) => allPackages[packageName];
 
   @override
   String toString() {
@@ -130,7 +134,7 @@ class PackageNode {
   /// The type of dependency being used to pull in this package.
   ///
   /// May be `null`.
-  final DependencyType dependencyType;
+  final DependencyType? dependencyType;
 
   /// All the packages that this package directly depends on.
   final List<PackageNode> dependencies = [];
@@ -143,12 +147,11 @@ class PackageNode {
   /// Whether this node is the [PackageGraph.root].
   final bool isRoot;
 
-  final LanguageVersion languageVersion;
+  final LanguageVersion? languageVersion;
 
   PackageNode(this.name, String path, this.dependencyType, this.languageVersion,
-      {bool isRoot})
-      : path = _toAbsolute(path),
-        isRoot = isRoot ?? false;
+      {this.isRoot = false})
+      : path = p.canonicalize(path);
 
   @override
   String toString() => '''
@@ -156,11 +159,6 @@ class PackageNode {
     type: $dependencyType
     path: $path
     dependencies: [${dependencies.map((d) => d.name).join(', ')}]''';
-
-  /// Converts [path] to a canonical absolute path, returns `null` if given
-  /// `null`.
-  static String _toAbsolute(String path) =>
-      (path == null) ? null : p.canonicalize(path);
 }
 
 /// The type of dependency being used. This dictates how the package should be
@@ -211,12 +209,11 @@ Map<String, List<String>> _parsePackageDependencies(
   return dependencies;
 }
 
-/// Gets the deps from a yaml file, taking into account dependency_overrides.
+/// Gets the deps from a yaml file, omitting dependency_overrides.
 List<String> _depsFromYaml(YamlMap yaml, {bool isRoot = false}) {
   var deps = <String>{
-    ..._stringKeys(yaml['dependencies'] as Map),
-    if (isRoot) ..._stringKeys(yaml['dev_dependencies'] as Map),
-    if (isRoot) ..._stringKeys(yaml['dependency_overrides'] as Map),
+    ..._stringKeys(yaml['dependencies'] as Map?),
+    if (isRoot) ..._stringKeys(yaml['dev_dependencies'] as Map?),
   };
   // A consistent package order _should_ mean a consistent order of build
   // phases. It's not a guarantee, but also not required for correctness, only
@@ -224,7 +221,7 @@ List<String> _depsFromYaml(YamlMap yaml, {bool isRoot = false}) {
   return deps.toList()..sort();
 }
 
-Iterable<String> _stringKeys(Map m) =>
+Iterable<String> _stringKeys(Map? m) =>
     m == null ? const [] : m.keys.cast<String>();
 
 /// Should point to the top level directory for the package.

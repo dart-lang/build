@@ -4,6 +4,8 @@
 
 import 'dart:html';
 
+import 'package:example/generated/texts/web.dart';
+
 void main() {
-  querySelector('#content').appendText('Script running!');
+  querySelector('#content')!.appendText(running);
 }

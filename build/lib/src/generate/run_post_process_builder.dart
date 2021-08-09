@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart';
 
 import '../asset/id.dart';
 import '../asset/reader.dart';
@@ -20,8 +19,8 @@ import '../builder/post_process_builder.dart';
 /// deleted on disk since the `writer` has no mechanism for delete.
 Future<void> runPostProcessBuilder(PostProcessBuilder builder, AssetId inputId,
     AssetReader reader, AssetWriter writer, Logger logger,
-    {@required void Function(AssetId) addAsset,
-    @required void Function(AssetId) deleteAsset}) async {
+    {required void Function(AssetId) addAsset,
+    required void Function(AssetId) deleteAsset}) async {
   await scopeLogAsync(() async {
     var buildStep =
         postProcessBuildStep(inputId, reader, writer, addAsset, deleteAsset);

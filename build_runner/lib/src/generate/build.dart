@@ -49,28 +49,37 @@ import 'watch_impl.dart' as watch_impl;
 /// the default [logLevel] to [Level.ALL] and removes stack frame folding, among
 /// other things.
 Future<BuildResult> build(List<BuilderApplication> builders,
-    {bool deleteFilesByDefault,
-    bool assumeTty,
-    String configKey,
-    PackageGraph packageGraph,
-    RunnerAssetReader reader,
-    RunnerAssetWriter writer,
-    Resolvers resolvers,
-    Level logLevel,
-    void Function(LogRecord) onLog,
-    Stream terminateEventStream,
-    bool enableLowResourcesMode,
-    Set<BuildDirectory> buildDirs,
-    bool outputSymlinksOnly,
-    bool trackPerformance,
-    bool skipBuildScriptCheck,
-    bool verbose,
-    bool isReleaseBuild,
-    Map<String, Map<String, dynamic>> builderConfigOverrides,
-    String logPerformanceDir,
-    Set<BuildFilter> buildFilters}) async {
+    {bool? deleteFilesByDefault,
+    bool? assumeTty,
+    String? configKey,
+    PackageGraph? packageGraph,
+    RunnerAssetReader? reader,
+    RunnerAssetWriter? writer,
+    Resolvers? resolvers,
+    Level? logLevel,
+    void Function(LogRecord)? onLog,
+    Stream<ProcessSignal>? terminateEventStream,
+    bool? enableLowResourcesMode,
+    Set<BuildDirectory>? buildDirs,
+    bool? outputSymlinksOnly,
+    bool? trackPerformance,
+    bool? skipBuildScriptCheck,
+    bool? verbose,
+    bool? isReleaseBuild,
+    Map<String, Map<String, dynamic>>? builderConfigOverrides,
+    String? logPerformanceDir,
+    Set<BuildFilter>? buildFilters}) async {
   builderConfigOverrides ??= const {};
+  buildDirs ??= <BuildDirectory>{};
+  buildFilters ??= <BuildFilter>{};
+  deleteFilesByDefault ??= false;
+  enableLowResourcesMode ??= false;
+  isReleaseBuild ??= false;
+  outputSymlinksOnly ??= false;
   packageGraph ??= await PackageGraph.forThisPackage();
+  skipBuildScriptCheck ??= false;
+  trackPerformance ??= false;
+  verbose ??= false;
   var environment = OverrideableEnvironment(
       IOEnvironment(
         packageGraph,
@@ -88,7 +97,8 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     packageGraph: packageGraph,
     skipBuildScriptCheck: skipBuildScriptCheck,
     overrideBuildConfig: await findBuildConfigOverrides(
-        packageGraph, configKey, environment.reader),
+        packageGraph, environment.reader,
+        configKey: configKey),
     enableLowResourcesMode: enableLowResourcesMode,
     trackPerformance: trackPerformance,
     logPerformanceDir: logPerformanceDir,
@@ -101,11 +111,11 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       environment,
       builders,
       builderConfigOverrides,
-      isReleaseBuild: isReleaseBuild ?? false,
+      isReleaseBuild: isReleaseBuild,
     );
     var result =
         await build.run({}, buildDirs: buildDirs, buildFilters: buildFilters);
-    await build?.beforeExit();
+    await build.beforeExit();
     return result;
   } finally {
     await terminator.cancel();
@@ -134,28 +144,28 @@ Future<BuildResult> build(List<BuilderApplication> builders,
 /// will complete normally. Subsequent events are not handled (and will
 /// typically cause a shutdown).
 Future<ServeHandler> watch(List<BuilderApplication> builders,
-        {bool deleteFilesByDefault,
-        bool assumeTty,
-        String configKey,
-        PackageGraph packageGraph,
-        RunnerAssetReader reader,
-        RunnerAssetWriter writer,
-        Resolvers resolvers,
-        Level logLevel,
-        void Function(LogRecord) onLog,
-        Duration debounceDelay,
-        DirectoryWatcher Function(String) directoryWatcherFactory,
-        Stream terminateEventStream,
-        bool enableLowResourcesMode,
-        Set<BuildDirectory> buildDirs,
-        bool outputSymlinksOnly,
-        bool trackPerformance,
-        bool skipBuildScriptCheck,
-        bool verbose,
-        bool isReleaseBuild,
-        Map<String, Map<String, dynamic>> builderConfigOverrides,
-        String logPerformanceDir,
-        Set<BuildFilter> buildFilters}) =>
+        {bool? deleteFilesByDefault,
+        bool? assumeTty,
+        String? configKey,
+        PackageGraph? packageGraph,
+        RunnerAssetReader? reader,
+        RunnerAssetWriter? writer,
+        Resolvers? resolvers,
+        Level? logLevel,
+        void Function(LogRecord)? onLog,
+        Duration? debounceDelay,
+        required DirectoryWatcher Function(String) directoryWatcherFactory,
+        Stream<ProcessSignal>? terminateEventStream,
+        bool? enableLowResourcesMode,
+        Set<BuildDirectory>? buildDirs,
+        bool? outputSymlinksOnly,
+        bool? trackPerformance,
+        bool? skipBuildScriptCheck,
+        bool? verbose,
+        bool? isReleaseBuild,
+        Map<String, Map<String, dynamic>>? builderConfigOverrides,
+        String? logPerformanceDir,
+        Set<BuildFilter>? buildFilters}) =>
     watch_impl.watch(
       builders,
       assumeTty: assumeTty,

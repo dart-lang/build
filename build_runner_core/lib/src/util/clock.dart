@@ -11,7 +11,7 @@ DateTime _defaultClock() => DateTime.now();
 /// Returns the current [DateTime].
 ///
 /// May be overridden for tests using [scopeClock].
-DateTime now() => (Zone.current[_Clock] as _Clock ?? _defaultClock)();
+DateTime now() => (Zone.current[_Clock] as _Clock? ?? _defaultClock)();
 
 /// Runs [f], with [clock] scoped whenever [now] is called.
 T scopeClock<T>(DateTime Function() clock, T Function() f) =>

@@ -1,9 +1,6 @@
 <p align="center">
   Standalone generator and watcher for Dart using <a href="https://pub.dev/packages/build"><code>package:build</code></a>.
   <br>
-  <a href="https://travis-ci.org/dart-lang/build">
-    <img src="https://travis-ci.org/dart-lang/build.svg?branch=master" alt="Build Status" />
-  </a>
   <a href="https://github.com/dart-lang/build/labels/package%3A%20build_runner">
     <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3A%20build_runner.svg" alt="Issues related to build_runner" />
   </a>
@@ -95,10 +92,6 @@ Some commands also have additional options:
 
 - `--hostname`: The host to run the server on.
 - `--live-reload`: Enables automatic page reloading on rebuilds.
-  Can't be used together with `--hot-reload`.
-- `--hot-reload`: Enables automatic reloading of changed modules on rebuilds.
-  See [hot-module-reloading](../docs/hot_module_reloading.md) for more info.
-  Can't be used together with `--live-reload`.
 
 Trailing args of the form `<directory>:<port>` are supported to customize what
 directories are served, and on what ports.
@@ -207,7 +200,7 @@ changes (like documentation, minor bug fixes), just send a pull request.
 
 ### Testing
 
-All pull requests are validated against [travis][travis], and must pass. The
+All pull requests are validated against CI, and must pass. The
 `build_runner` package lives in a mono repository with other `build` packages,
 and _all_ of the following checks must pass for _each_ package.
 
@@ -238,7 +231,6 @@ $ pub run test
 [builder_application]: https://pub.dev/documentation/build_runner/latest/build_runner/BuilderApplication-class.html
 [build_extensions]: https://pub.dev/documentation/build/latest/build/Builder/buildExtensions.html
 
-[travis]: https://travis-ci.org/
 [dev_sdk]: https://dart.dev/get-dart
 [dev_dependencies]: https://dart.dev/tools/pub/dependencies#dev-dependencies
 [pubspec]: https://dart.dev/tools/pub/pubspec

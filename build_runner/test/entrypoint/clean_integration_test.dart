@@ -3,11 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @Tags(['integration'])
-
+import 'package:_test_common/common.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
-
-import 'package:_test_common/common.dart';
 
 void main() {
   group('clean command', () {
@@ -21,6 +19,7 @@ void main() {
           'build_runner',
           'build_runner_core',
           'build_test',
+          'code_builder',
           'glob'
         ]),
         d.dir('tool', [d.file('build.dart', buildFile)]),

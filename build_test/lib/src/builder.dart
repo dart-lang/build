@@ -11,7 +11,7 @@ typedef BuildBehavior = FutureOr Function(
     BuildStep buildStep, Map<String, List<String>> buildExtensions);
 
 /// Copy the input asset to all possible output assets.
-void _defaultBehavior(
+Future<void> _defaultBehavior(
         BuildStep buildStep, Map<String, List<String>> buildExtensions) =>
     _copyToAll(buildStep, buildExtensions);
 
@@ -21,23 +21,22 @@ Future<String> _readAsset(BuildStep buildStep, AssetId assetId) =>
 
 /// Pass the input assetId through [readFrom] and duplicate the results of
 /// [read] on that asset into every matching output based on [buildExtensions].
-void _copyToAll(BuildStep buildStep, Map<String, List<String>> buildExtensions,
-    {AssetId Function(AssetId assetId) readFrom = _identity,
-    Future<String> Function(BuildStep buildStep, AssetId assetId) read =
-        _readAsset}) {
-  if (!buildExtensions.keys.any((e) => buildStep.inputId.path.endsWith(e))) {
+Future<void> _copyToAll(
+  BuildStep buildStep,
+  Map<String, List<String>> buildExtensions, {
+  AssetId Function(AssetId assetId) readFrom = _identity,
+  Future<String> Function(BuildStep buildStep, AssetId assetId) read =
+      _readAsset,
+}) {
+  final outputs = buildStep.allowedOutputs;
+  if (outputs.isEmpty) {
+    // If there's no output, the builder shouldn't run.
     throw ArgumentError('Only expected inputs with extension in '
         '${buildExtensions.keys.toList()} but got ${buildStep.inputId}');
   }
-  for (final inputExtension in buildExtensions.keys) {
-    if (!buildStep.inputId.path.endsWith(inputExtension)) continue;
-    for (final outputExtension in buildExtensions[inputExtension]) {
-      final newPath = _replaceSuffix(
-          buildStep.inputId.path, inputExtension, outputExtension);
-      final id = AssetId(buildStep.inputId.package, newPath);
-      buildStep.writeAsString(id, read(buildStep, readFrom(buildStep.inputId)));
-    }
-  }
+
+  return Future.wait(outputs.map((id) => buildStep.writeAsString(
+      id, read(buildStep, readFrom(buildStep.inputId)))));
 }
 
 /// A build behavior which reads [assetId] and copies it's content into every
@@ -76,7 +75,7 @@ class TestBuilder implements Builder {
   final Map<String, List<String>> buildExtensions;
 
   final BuildBehavior _build;
-  final BuildBehavior _extraWork;
+  final BuildBehavior? _extraWork;
 
   /// A stream of all the [BuildStep.inputId]s that are seen.
   ///
@@ -91,9 +90,9 @@ class TestBuilder implements Builder {
   Stream<AssetId> get buildsCompleted => _buildsCompletedController.stream;
 
   TestBuilder({
-    Map<String, List<String>> buildExtensions,
-    BuildBehavior build,
-    BuildBehavior extraWork,
+    Map<String, List<String>>? buildExtensions,
+    BuildBehavior? build,
+    BuildBehavior? extraWork,
   })  : buildExtensions = buildExtensions ?? appendExtension('.copy'),
         _build = build ?? _defaultBehavior,
         _extraWork = extraWork;
@@ -103,10 +102,7 @@ class TestBuilder implements Builder {
     if (!await buildStep.canRead(buildStep.inputId)) return;
     _buildInputsController.add(buildStep.inputId);
     await _build(buildStep, buildExtensions);
-    if (_extraWork != null) await _extraWork(buildStep, buildExtensions);
+    await _extraWork?.call(buildStep, buildExtensions);
     _buildsCompletedController.add(buildStep.inputId);
   }
 }
-
-String _replaceSuffix(String path, String old, String replacement) =>
-    path.substring(0, path.length - old.length) + replacement;

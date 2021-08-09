@@ -40,7 +40,6 @@ void main(List<String> args) async {
 
     exit(1);
   }
-  if (client == null) throw Exception('Error connecting');
   print('Connected to Dart Build Daemon');
 
   // Next we register a build target (directory) to build.

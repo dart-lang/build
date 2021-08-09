@@ -2,9 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 @TestOn('vm')
-import 'package:test/test.dart';
-
 import 'package:build/build.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('constructor', () {
@@ -51,60 +50,61 @@ void main() {
 
   group('resolve', () {
     test('should parse a package: URI', () {
-      var id = AssetId.resolve(r'package:app/app.dart');
+      var id = AssetId.resolve(Uri.parse(r'package:app/app.dart'));
       expect(id, AssetId('app', 'lib/app.dart'));
     });
 
     test('should parse a package: URI with a long path', () {
-      var id = AssetId.resolve(r'package:app/src/some/path.dart');
+      var id = AssetId.resolve(Uri.parse(r'package:app/src/some/path.dart'));
       expect(id, AssetId('app', 'lib/src/some/path.dart'));
     });
 
     test('should parse an asset: URI', () {
-      var id = AssetId.resolve(r'asset:app/test/foo_test.dart');
+      var id = AssetId.resolve(Uri.parse(r'asset:app/test/foo_test.dart'));
       expect(id, AssetId('app', 'test/foo_test.dart'));
     });
 
     test('should throw for a file: URI', () {
-      expect(() => AssetId.resolve(r'file://localhost/etc/fstab1'),
+      expect(() => AssetId.resolve(Uri.parse(r'file://localhost/etc/fstab1')),
           throwsUnsupportedError);
     });
 
     test('should throw for a dart: URI', () {
-      expect(() => AssetId.resolve(r'dart:collection'), throwsUnsupportedError);
+      expect(() => AssetId.resolve(Uri.parse(r'dart:collection')),
+          throwsUnsupportedError);
     });
 
     test('should throw parsing a relative package URI without an origin', () {
-      expect(() => AssetId.resolve('some/relative/path.dart'),
+      expect(() => AssetId.resolve(Uri.parse('some/relative/path.dart')),
           throwsArgumentError);
     });
 
     test('should parse a relative URI within the test/ folder', () {
-      var id = AssetId.resolve('common.dart',
+      var id = AssetId.resolve(Uri.parse('common.dart'),
           from: AssetId('app', 'test/some_test.dart'));
       expect(id, AssetId('app', 'test/common.dart'));
     });
 
     test('should parse a relative package URI', () {
-      var id = AssetId.resolve('some/relative/path.dart',
+      var id = AssetId.resolve(Uri.parse('some/relative/path.dart'),
           from: AssetId('app', 'lib/app.dart'));
       expect(id, AssetId('app', 'lib/some/relative/path.dart'));
     });
 
     test('should parse a relative package URI pointing back', () {
-      var id = AssetId.resolve('../src/some/path.dart',
+      var id = AssetId.resolve(Uri.parse('../src/some/path.dart'),
           from: AssetId('app', 'folder/folder.dart'));
       expect(id, AssetId('app', 'src/some/path.dart'));
     });
 
     test('should parse an empty url in lib/', () {
       var source = AssetId('foo', 'lib/src/bar.dart');
-      expect(AssetId.resolve('', from: source), source);
+      expect(AssetId.resolve(Uri.parse(''), from: source), source);
     });
 
     test('should parse an empty url in test/', () {
       var source = AssetId('foo', 'test/bar.dart');
-      expect(AssetId.resolve('', from: source), source);
+      expect(AssetId.resolve(Uri.parse(''), from: source), source);
     });
   });
 

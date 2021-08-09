@@ -1,3 +1,8 @@
+## 1.0.0
+
+- Migrate to null-safety
+- Update to build `2.x`.
+
 ## 0.0.4+3
 
 - Change returns from `Future<dynamic>` to `Future<void>`.

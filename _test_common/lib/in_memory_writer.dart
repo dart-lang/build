@@ -5,15 +5,14 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
-import 'package:build_runner_core/build_runner_core.dart';
-
 class InMemoryRunnerAssetWriter extends InMemoryAssetWriter
     implements RunnerAssetWriter {
-  void Function(AssetId) onDelete;
+  void Function(AssetId)? onDelete;
 
   @override
   Future writeAsBytes(AssetId id, List<int> bytes) async {
@@ -34,7 +33,7 @@ class InMemoryRunnerAssetWriter extends InMemoryAssetWriter
 
   @override
   Future delete(AssetId id) async {
-    if (onDelete != null) onDelete(id);
+    onDelete?.call(id);
     assets.remove(id);
     FakeWatcher.notifyWatchers(
         WatchEvent(ChangeType.REMOVE, p.absolute(id.package, id.path)));

@@ -5,9 +5,8 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:build_test/build_test.dart';
-
 import 'package:build_runner_core/src/asset/reader.dart';
+import 'package:build_test/build_test.dart';
 
 class InMemoryRunnerAssetReader extends InMemoryAssetReader
     implements RunnerAssetReader {
@@ -21,10 +20,10 @@ class InMemoryRunnerAssetReader extends InMemoryAssetReader
   }
 
   InMemoryRunnerAssetReader(
-      [Map<AssetId, dynamic> sourceAssets, String rootPackage])
+      [Map<AssetId, dynamic>? sourceAssets, String? rootPackage])
       : super(sourceAssets: sourceAssets, rootPackage: rootPackage);
 
   InMemoryRunnerAssetReader.shareAssetCache(Map<AssetId, List<int>> assetCache,
-      {String rootPackage})
+      {String? rootPackage})
       : super.shareAssetCache(assetCache, rootPackage: rootPackage);
 }

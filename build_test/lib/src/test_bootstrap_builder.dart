@@ -128,7 +128,7 @@ class _ConfigLoader {
   final _configByPackage = <String, Future<Configuration>>{};
   final _configDigestByPackage = <String, Digest>{};
 
-  Future<Configuration> load(String package, AssetReader reader) async {
+  Future<Configuration?> load(String package, AssetReader reader) async {
     var customConfigId = AssetId(package, 'dart_test.yaml');
     if (!await reader.canRead(customConfigId)) return null;
 

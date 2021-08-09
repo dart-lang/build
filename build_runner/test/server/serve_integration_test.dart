@@ -3,30 +3,27 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @Tags(['integration'])
-
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
+import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
-import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
-
-import 'package:_test_common/common.dart';
-import 'package:_test_common/package_graphs.dart';
-
 void main() {
-  FutureOr<Response> Function(Request) handler;
-  InMemoryRunnerAssetReader reader;
-  InMemoryRunnerAssetWriter writer;
-  StreamSubscription subscription;
-  Completer<BuildResult> nextBuild;
-  StreamController terminateController;
+  late FutureOr<Response> Function(Request) handler;
+  late InMemoryRunnerAssetReader reader;
+  late InMemoryRunnerAssetWriter writer;
+  late StreamSubscription subscription;
+  late Completer<BuildResult> nextBuild;
+  late StreamController<ProcessSignal> terminateController;
 
   final path = p.absolute('example');
 
@@ -36,6 +33,8 @@ void main() {
     reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
         rootPackage: 'example')
       ..cacheStringAsset(AssetId('example', 'web/initial.txt'), 'initial')
+      ..cacheStringAsset(AssetId('example', 'web/large.txt'),
+          List.filled(10000, 'large').join(''))
       ..cacheStringAsset(
           AssetId('example', '.packages'),
           '# Fake packages file\n'
@@ -53,18 +52,20 @@ void main() {
             ],
           }));
 
-    terminateController = StreamController();
+    terminateController = StreamController<ProcessSignal>();
     final server = await watch_impl.watch(
       [applyToRoot(const UppercaseBuilder())],
       packageGraph: graph,
       reader: reader,
       writer: writer,
-      logLevel: Level.OFF,
+      logLevel: Level.ALL,
+      onLog: (record) => printOnFailure('[${record.level}] '
+          '${record.loggerName}: ${record.message}'),
       directoryWatcherFactory: (path) => FakeWatcher(path),
       terminateEventStream: terminateController.stream,
       skipBuildScriptCheck: true,
     );
-    handler = server.handlerFor('web');
+    handler = server.handlerFor('web', logRequests: true);
 
     nextBuild = Completer<BuildResult>();
     subscription = server.buildResults.listen((result) {
@@ -76,7 +77,7 @@ void main() {
 
   tearDown(() async {
     await subscription.cancel();
-    terminateController.add(null);
+    terminateController.add(ProcessSignal.sigabrt);
     await terminateController.close();
   });
 
@@ -84,6 +85,18 @@ void main() {
     final getHello = Uri.parse('http://localhost/initial.txt');
     final response = await handler(Request('GET', getHello));
     expect(await response.readAsString(), 'initial');
+  });
+
+  test('should serve original files in parallel', () async {
+    final getHello = Uri.parse('http://localhost/large.txt');
+    final futures = [
+      for (var i = 0; i < 512; i++)
+        (() async => await handler(Request('GET', getHello)))(),
+    ];
+    var responses = await Future.wait(futures);
+    for (var response in responses) {
+      expect(await response.readAsString(), startsWith('large'));
+    }
   });
 
   test('should serve built files', () async {

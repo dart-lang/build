@@ -2,11 +2,10 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:test/test.dart';
-
 import 'package:build_runner_core/src/asset_graph/exceptions.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:test/test.dart';
 
 final Matcher throwsCorruptedException =
     throwsA(TypeMatcher<AssetGraphCorruptedException>());
@@ -14,8 +13,8 @@ final Matcher duplicateAssetNodeException =
     TypeMatcher<DuplicateAssetNodeException>();
 
 Matcher equalsAssetGraph(AssetGraph expected,
-        {bool checkPreviousInputsDigest}) =>
-    _AssetGraphMatcher(expected, checkPreviousInputsDigest ?? true);
+        {bool checkPreviousInputsDigest = true}) =>
+    _AssetGraphMatcher(expected, checkPreviousInputsDigest);
 
 class _AssetGraphMatcher extends Matcher {
   final AssetGraph _expected;
@@ -27,14 +26,13 @@ class _AssetGraphMatcher extends Matcher {
   bool matches(dynamic item, Map<dynamic, dynamic> matchState) {
     if (item is! AssetGraph) return false;
     var matches = true;
-    var graph = item as AssetGraph;
-    if (graph.allNodes.length != _expected.allNodes.length) matches = false;
-    for (var node in graph.allNodes) {
+    if (item.allNodes.length != _expected.allNodes.length) matches = false;
+    for (var node in item.allNodes) {
       var expectedNode = _expected.get(node.id);
-      if (node.isDeleted != expectedNode.isDeleted) {
+      if (node.isDeleted != expectedNode?.isDeleted) {
         matchState['IsDeleted of ${node.id}'] = [
           node.isDeleted,
-          expectedNode.isDeleted
+          expectedNode?.isDeleted
         ];
         matches = false;
       }
@@ -46,10 +44,10 @@ class _AssetGraphMatcher extends Matcher {
         matches = false;
       }
       if (expectedNode == null || expectedNode.id != node.id) {
-        matchState['AssetId'] = [node.id, expectedNode.id];
+        matchState['AssetId'] = [node.id, expectedNode!.id];
         matches = false;
       }
-      if (!unorderedEquals(node.outputs).matches(expectedNode.outputs, null)) {
+      if (!unorderedEquals(node.outputs).matches(expectedNode.outputs, {})) {
         matchState['Outputs of ${node.id}'] = [
           node.outputs,
           expectedNode.outputs
@@ -57,7 +55,7 @@ class _AssetGraphMatcher extends Matcher {
         matches = false;
       }
       if (!unorderedEquals(node.primaryOutputs)
-          .matches(expectedNode.primaryOutputs, null)) {
+          .matches(expectedNode.primaryOutputs, {})) {
         matchState['Primary outputs of ${node.id}'] = [
           node.primaryOutputs,
           expectedNode.primaryOutputs
@@ -65,7 +63,7 @@ class _AssetGraphMatcher extends Matcher {
         matches = false;
       }
       if (!unorderedEquals(node.anchorOutputs)
-          .matches(expectedNode.anchorOutputs, null)) {
+          .matches(expectedNode.anchorOutputs, {})) {
         matchState['Anchor outputs of ${node.id}'] = [
           node.anchorOutputs,
           expectedNode.anchorOutputs
@@ -88,8 +86,7 @@ class _AssetGraphMatcher extends Matcher {
             ];
             matches = false;
           }
-          if (!unorderedEquals(node.inputs)
-              .matches(expectedNode.inputs, null)) {
+          if (!unorderedEquals(node.inputs).matches(expectedNode.inputs, {})) {
             matchState['Inputs of ${node.id}'] = [
               node.inputs,
               expectedNode.inputs
@@ -132,8 +129,8 @@ class _AssetGraphMatcher extends Matcher {
           }
         } else if (node is GlobAssetNode) {
           if (expectedNode is GlobAssetNode) {
-            if (!unorderedEquals(node.results)
-                .matches(expectedNode.results, null)) {
+            if (!unorderedEquals(node.results!)
+                .matches(expectedNode.results, {})) {
               matchState['results of ${node.id}'] = [
                 node.results,
                 expectedNode.results
@@ -184,7 +181,7 @@ class _AssetGraphMatcher extends Matcher {
       }
     }
     if (!equals(_expected.packageLanguageVersions).matches(
-        graph.packageLanguageVersions,
+        item.packageLanguageVersions,
         matchState['packageLanguageVersions'] = {})) {
       matches = false;
     }

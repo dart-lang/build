@@ -1,3 +1,18 @@
+## 1.0.9
+
+- Allow analyzer version 2.x.x.
+- Update to build version `2.0.0`.
+- Migrate builders to null safety. Note that compiling with sound null safety
+  is not yet supported.
+
+## 1.0.8
+
+- Update to build_modules version `3.0.0`.
+
+## 1.0.7
+
+- Update to latest analyzer version `1.0.0`.
+
 ## 1.0.6
 
 - Allow the latest analyzer verion `0.41.x`.

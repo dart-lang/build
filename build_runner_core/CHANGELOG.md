@@ -1,3 +1,41 @@
+## 7.1.0
+
+- Support capture groups, a feature introduced in `build`: `2.1.0`.
+
+## 7.0.1
+
+- Allow analyzer version 2.x.x.
+
+## 7.0.0
+
+- Migrate to null safety.
+- Add an early error if any output extensions overlap with any input
+  extensions to avoid infinite loops.
+
+## 6.1.12
+
+- Allow build_config `0.4.7`
+
+## 6.1.11
+
+- Update to graphs `1.x`.
+- Update to build `2.x`.
+- Update to build_resolvers `2.x`.
+
+## 6.1.10
+
+- Don't count packages in dependency_overrides as immediate dependencies when
+  building package graphs. This allows you to override transitive builder deps
+  without accidentally applying those builders to the root package.
+
+## 6.1.9
+
+- Allow the latest `build_config`.
+
+## 6.1.8
+
+- Update glob to `2.x`.
+
 ## 6.1.7
 
 - Allow the null safe pre-release of `package_config` and `watcher`.

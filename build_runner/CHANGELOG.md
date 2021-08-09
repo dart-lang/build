@@ -1,3 +1,79 @@
+## 2.1.1
+
+- Don't rethrow file watcher errors - instead log at severe level and continue
+  going. The file watcher implementation should restart automatically as of
+  package:watcher version `0.9.7+13`.
+
+## 2.1.0
+
+- Add `--log-requests` flag to build daemon.
+- Log failed asset requests in build_runner server.
+- Support the latest build (`2.1.0`).
+
+## 2.0.6
+
+- Allow analyzer version 2.x.x.
+
+## 2.0.5
+
+- Don't set the content length header or body when responding to HEAD requests.
+
+## 2.0.4
+
+- Allow builders defined as relative imports from the root of a package to run
+  with sound null safety.
+
+## 2.0.3
+
+- Fix a serve mode bug which causes an unhandled exception if the build fails
+  to initialize (usually because it is out of date).
+
+## 2.0.2
+
+- Use the frontend server to improve the performance of generating build script
+  snapshots.
+
+## 2.0.1
+
+- Fix bad cast in build_runner while parsing options for daemon mode.
+
+## 2.0.0
+
+- Migrate to null safety.
+
+- Update to the latest `build_runner_core`.
+
+## 1.12.2
+
+- Allow the latest `dart_style`.
+
+## 1.12.1
+
+- Allow the latest `http_multi_server`.
+
+## 1.12.0
+
+- Remove support for hot-reloads. Use `package:webdev` instead.
+- Support version 2.0.x of the `build` package
+- Update to graphs `1.x`
+- Support version `1.x` of `shelf_web_socket` and `2.x` of `web_socket_channel`
+
+## 1.11.5
+
+- Fix arg parsing for the `clean` and `generate-build-script` commands.
+
+## 1.11.4
+
+- Fix snapshot generation hanging on windows if there is anything on stdout.
+
+## 1.11.3
+
+- Allow the latest `build_config`.
+
+## 1.11.2
+
+- Update to glob `2.x`.
+
 ## 1.11.1+1
 
 - Backport of [622c659](https://github.com/dart-lang/build/commit/622c659d6dfcb982d599d6dddbd9988b25a064a1).
@@ -405,7 +481,6 @@ also work when you create an output directory.
 ## 0.10.2
 
 - Added `--hot-reload` cli option and appropriate functionality.
-  See [hot-module-reloading](../docs/hot_module_reloading.md) for more info.
 - Removed dependency on cli_util.
 
 ## 0.10.1+1

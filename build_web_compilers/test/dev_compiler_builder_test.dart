@@ -13,7 +13,7 @@ import 'package:test/test.dart';
 import 'util.dart';
 
 void main() {
-  Map<String, dynamic> assets;
+  late Map<String, Object> assets;
 
   for (var soundNullSafety in [true, false]) {
     group('error free project (${soundNullSafety ? 'sound' : 'unsound'})', () {
@@ -148,6 +148,49 @@ void main() {
       });
 
       test('does not generate full dill by default', () async {
+        var expectedOutputs = {
+          'b|lib/b${jsModuleExtension(soundNullSafety)}': isNotEmpty,
+          'b|lib/b${jsSourceMapExtension(soundNullSafety)}': isNotEmpty,
+          'b|lib/b${metadataExtension(soundNullSafety)}': isNotEmpty,
+          'a|lib/a${jsModuleExtension(soundNullSafety)}': isNotEmpty,
+          'a|lib/a${jsSourceMapExtension(soundNullSafety)}': isNotEmpty,
+          'a|lib/a${metadataExtension(soundNullSafety)}': isNotEmpty,
+          'a|web/index${jsModuleExtension(soundNullSafety)}': isNotEmpty,
+          'a|web/index${jsSourceMapExtension(soundNullSafety)}': isNotEmpty,
+          'a|web/index${metadataExtension(soundNullSafety)}': isNotEmpty,
+        };
+        await testBuilder(
+            DevCompilerBuilder(
+                platform: ddcPlatform, soundNullSafety: soundNullSafety),
+            assets,
+            outputs: expectedOutputs);
+      });
+
+      test('emits debug symbols when enabled', () async {
+        var expectedOutputs = {
+          'b|lib/b${jsModuleExtension(soundNullSafety)}': isNotEmpty,
+          'b|lib/b${jsSourceMapExtension(soundNullSafety)}': isNotEmpty,
+          'b|lib/b${metadataExtension(soundNullSafety)}': isNotEmpty,
+          'b|lib/b${symbolsExtension(soundNullSafety)}': isNotEmpty,
+          'a|lib/a${jsModuleExtension(soundNullSafety)}': isNotEmpty,
+          'a|lib/a${jsSourceMapExtension(soundNullSafety)}': isNotEmpty,
+          'a|lib/a${metadataExtension(soundNullSafety)}': isNotEmpty,
+          'a|lib/a${symbolsExtension(soundNullSafety)}': isNotEmpty,
+          'a|web/index${jsModuleExtension(soundNullSafety)}': isNotEmpty,
+          'a|web/index${jsSourceMapExtension(soundNullSafety)}': isNotEmpty,
+          'a|web/index${metadataExtension(soundNullSafety)}': isNotEmpty,
+          'a|web/index${symbolsExtension(soundNullSafety)}': isNotEmpty,
+        };
+        await testBuilder(
+            DevCompilerBuilder(
+                platform: ddcPlatform,
+                emitDebugSymbols: true,
+                soundNullSafety: soundNullSafety),
+            assets,
+            outputs: expectedOutputs);
+      });
+
+      test('does not emit debug symbols by default', () async {
         var expectedOutputs = {
           'b|lib/b${jsModuleExtension(soundNullSafety)}': isNotEmpty,
           'b|lib/b${jsSourceMapExtension(soundNullSafety)}': isNotEmpty,

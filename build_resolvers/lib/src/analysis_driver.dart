@@ -5,11 +5,11 @@
 import 'dart:io';
 
 import 'package:analyzer/file_system/file_system.dart' show ResourceProvider;
+import 'package:analyzer/src/context/packages.dart' show Packages, Package;
 import 'package:analyzer/src/dart/analysis/byte_store.dart'
     show MemoryByteStore;
 import 'package:analyzer/src/dart/analysis/driver.dart';
 import 'package:analyzer/src/dart/analysis/file_state.dart';
-import 'package:analyzer/src/context/packages.dart' show Packages, Package;
 import 'package:analyzer/src/dart/analysis/performance_logger.dart'
     show PerformanceLog;
 import 'package:analyzer/src/generated/engine.dart'
@@ -47,6 +47,7 @@ Future<AnalysisDriver> analysisDriver(
   var scheduler = AnalysisDriverScheduler(logger);
   var packages = _buildAnalyzerPackages(
       packageConfig, buildAssetUriResolver.resourceProvider);
+  // ignore: deprecated_member_use
   var driver = AnalysisDriver(
       scheduler,
       logger,
@@ -71,8 +72,8 @@ Packages _buildAnalyzerPackages(
           name: package.name,
           languageVersion: package.languageVersion == null
               ? sdkLanguageVersion
-              : Version(package.languageVersion.major,
-                  package.languageVersion.minor, 0),
+              : Version(package.languageVersion!.major,
+                  package.languageVersion!.minor, 0),
           // Analyzer does not see the original file paths at all, we need to
           // make them match the paths that we give it, so we use the `assetPath`
           // function to create those.

@@ -47,7 +47,7 @@ List<String> fixSourceMapSources(List<String> uris) {
     var newSegments = uri.pathSegments.first == 'packages'
         ? uri.pathSegments
         : uri.pathSegments.skip(1);
-    return Uri(path: p.url.joinAll(['/'].followedBy(newSegments))).toString();
+    return Uri(path: p.url.joinAll(['/', ...newSegments])).toString();
   }).toList();
 }
 
@@ -86,15 +86,16 @@ class LazyMapping extends Mapping {
   List toJson() => _bundle.toJson();
 
   @override
-  SourceMapSpan spanFor(int line, int column,
-      {Map<String, SourceFile> files, String uri}) {
+  SourceMapSpan? spanFor(int line, int column,
+      {Map<String, SourceFile>? files, String? uri}) {
     if (uri == null) {
       throw ArgumentError.notNull('uri');
     }
 
     if (!_bundle.containsMapping(uri)) {
       var rawMap = _provider(uri);
-      var parsedMap = (rawMap is String ? jsonDecode(rawMap) : rawMap) as Map;
+      var parsedMap = (rawMap is String ? jsonDecode(rawMap) : rawMap)
+          as Map<String, Object?>?;
       if (parsedMap != null) {
         parsedMap['sources'] =
             fixSourceMapSources((parsedMap['sources'] as List).cast());
@@ -108,15 +109,15 @@ class LazyMapping extends Mapping {
     // TODO(jacobr): we shouldn't have to filter out invalid sourceUrl entries
     // here.
     if (span == null || span.start.sourceUrl == null) return null;
-    var pathSegments = span.start.sourceUrl.pathSegments;
+    var pathSegments = span.start.sourceUrl!.pathSegments;
     if (pathSegments.isNotEmpty && pathSegments.last == 'null') return null;
     return span;
   }
 }
 
-LazyMapping _mapping;
+LazyMapping? _mapping;
 
-List<String> roots = rootDirectories.map((s) => '$s').toList();
+final roots = rootDirectories.map((s) => '$s').toList();
 
 String mapper(String rawStackTrace) {
   if (_mapping == null) {
@@ -125,7 +126,7 @@ String mapper(String rawStackTrace) {
     throw StateError('Source maps are not done loading.');
   }
   var trace = Trace.parse(rawStackTrace);
-  return mapStackTrace(_mapping, trace, roots: roots).toString();
+  return mapStackTrace(_mapping!, trace, roots: roots).toString();
 }
 
 void setSourceMapProvider(SourceMapProvider provider) {

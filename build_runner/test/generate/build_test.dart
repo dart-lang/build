@@ -5,23 +5,19 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:_test_common/common.dart';
+import 'package:build_runner/src/generate/build.dart' as build_impl;
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
-
-import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_runner/src/generate/build.dart' as build_impl;
-import 'package:build_test/build_test.dart';
-
-import 'package:_test_common/common.dart';
-import 'package:_test_common/package_graphs.dart';
 
 void main() {
   // Basic phases/phase groups which get used in many tests
   final copyABuildApplication = applyToRoot(
       TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')));
   final packageConfigId = makeAssetId('a|.dart_tool/package_config.json');
-  InMemoryRunnerAssetWriter writer;
+  late InMemoryRunnerAssetWriter writer;
 
   setUp(() async {
     writer = InMemoryRunnerAssetWriter();
@@ -65,10 +61,10 @@ builders:
 
 Future<BuildResult> _doBuild(List<BuilderApplication> builders,
     Map<String, String> inputs, InMemoryRunnerAssetWriter writer,
-    {PackageGraph packageGraph,
-    void Function(LogRecord) onLog,
-    Level logLevel,
-    String configKey}) async {
+    {PackageGraph? packageGraph,
+    void Function(LogRecord)? onLog,
+    Level? logLevel,
+    String? configKey}) async {
   onLog ??= (_) {};
   inputs.forEach((serializedId, contents) {
     writer.writeAsString(makeAssetId(serializedId), contents);

@@ -3,10 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @Tags(['integration'])
-
 import 'package:build_test/build_test.dart';
-import 'package:test/test.dart';
 import 'package:io/io.dart' show ExitCode;
+import 'package:test/test.dart';
 
 import 'utils/build_descriptor.dart';
 
@@ -21,7 +20,7 @@ void main() {
     builder('wrongKey', correctKey),
   ];
 
-  BuildTool buildTool;
+  late BuildTool buildTool;
 
   setUpAll(() async {
     buildTool = await package([await packageWithBuilders(builders)]);
@@ -31,9 +30,9 @@ void main() {
     test('warns when builder definition produces invalid build script',
         () async {
       var result = await buildTool.build(expectExitCode: ExitCode.config.code);
+      expect(result, emitsThrough(contains('Getter not found: \'wrongKey\'')));
       expect(
           result, emitsThrough(contains('misconfigured builder definition')));
-      expect(result, emitsThrough(contains('Getter not found: \'wrongKey\'')));
     });
   });
 }

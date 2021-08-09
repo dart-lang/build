@@ -4,11 +4,10 @@
 
 import 'dart:async';
 
-import 'package:logging/logging.dart';
-
 import 'package:build_runner_core/src/asset/reader.dart';
 import 'package:build_runner_core/src/asset/writer.dart';
 import 'package:build_runner_core/src/environment/build_environment.dart';
+import 'package:logging/logging.dart';
 
 import 'common.dart';
 
@@ -39,11 +38,11 @@ class TestBuildEnvironment extends BuildEnvironment {
     _nextPromptResponse = next;
   }
 
-  int _nextPromptResponse;
+  int? _nextPromptResponse;
 
   TestBuildEnvironment(
-      {RunnerAssetReader reader,
-      RunnerAssetWriter writer,
+      {RunnerAssetReader? reader,
+      RunnerAssetWriter? writer,
       this.throwOnPrompt = false})
       : reader = reader ?? InMemoryRunnerAssetReader(),
         writer = writer ?? InMemoryRunnerAssetWriter();

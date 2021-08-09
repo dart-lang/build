@@ -3,25 +3,22 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:_test_common/common.dart';
 import 'package:async/async.dart';
+import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
+import 'package:build_runner/src/server/server.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:pedantic/pedantic.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
-import 'package:build_runner/src/server/server.dart';
-import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
-import 'package:build_test/build_test.dart';
-
-import 'package:_test_common/common.dart';
-import 'package:_test_common/package_graphs.dart';
-
 void main() {
   group('ServeHandler', () {
-    InMemoryRunnerAssetWriter writer;
+    late InMemoryRunnerAssetWriter writer;
 
     setUp(() async {
       _terminateServeController = StreamController();
@@ -118,13 +115,14 @@ a:file://fake/pkg/path
 }
 
 final _debounceDelay = Duration(milliseconds: 10);
-StreamController _terminateServeController;
+StreamController<ProcessSignal>? _terminateServeController;
 
 /// Start serving files and running builds.
 Future<ServeHandler> createHandler(List<BuilderApplication> builders,
     Map<String, String> inputs, InMemoryRunnerAssetWriter writer) async {
   await Future.wait(inputs.keys.map((serializedId) async {
-    await writer.writeAsString(makeAssetId(serializedId), inputs[serializedId]);
+    await writer.writeAsString(
+        makeAssetId(serializedId), inputs[serializedId]!);
   }));
   final packageGraph =
       buildPackageGraph({rootPackage('a', path: path.absolute('a')): []});
@@ -139,16 +137,14 @@ Future<ServeHandler> createHandler(List<BuilderApplication> builders,
       reader: reader,
       writer: writer,
       packageGraph: packageGraph,
-      terminateEventStream: _terminateServeController.stream,
+      terminateEventStream: _terminateServeController!.stream,
       logLevel: Level.OFF,
       skipBuildScriptCheck: true);
 }
 
 /// Tells the program to terminate.
 Future terminateServe() {
-  assert(_terminateServeController != null);
-
   /// Can add any type of event.
-  _terminateServeController.add(null);
-  return _terminateServeController.close();
+  _terminateServeController!.add(ProcessSignal.sigabrt);
+  return _terminateServeController!.close();
 }

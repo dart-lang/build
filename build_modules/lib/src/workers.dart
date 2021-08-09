@@ -25,17 +25,17 @@ final _processMode = stdin.hasTerminal
 /// Completes once the dartdevk workers have been shut down.
 Future<void> get dartdevkWorkersAreDone =>
     _dartdevkWorkersAreDoneCompleter?.future ?? Future.value();
-Completer<void> _dartdevkWorkersAreDoneCompleter;
+Completer<void>? _dartdevkWorkersAreDoneCompleter;
 
 /// Completes once the dart2js workers have been shut down.
 Future<void> get dart2jsWorkersAreDone =>
     _dart2jsWorkersAreDoneCompleter?.future ?? Future.value();
-Completer<void> _dart2jsWorkersAreDoneCompleter;
+Completer<void>? _dart2jsWorkersAreDoneCompleter;
 
 /// Completes once the common frontend workers have been shut down.
 Future<void> get frontendWorkersAreDone =>
     _frontendWorkersAreDoneCompleter?.future ?? Future.value();
-Completer<void> _frontendWorkersAreDoneCompleter;
+Completer<void>? _frontendWorkersAreDoneCompleter;
 
 final int _defaultMaxWorkers = min((Platform.numberOfProcessors / 2).ceil(), 4);
 
@@ -69,13 +69,13 @@ BazelWorkerDriver get _dartdevkDriver {
       maxWorkers: maxWorkersPerTask);
 }
 
-BazelWorkerDriver __dartdevkDriver;
+BazelWorkerDriver? __dartdevkDriver;
 
 /// Resource for fetching the current [BazelWorkerDriver] for dartdevk.
 final dartdevkDriverResource =
     Resource<BazelWorkerDriver>(() => _dartdevkDriver, beforeExit: () async {
-  await _dartdevkDriver?.terminateWorkers();
-  _dartdevkWorkersAreDoneCompleter.complete();
+  await __dartdevkDriver?.terminateWorkers();
+  _dartdevkWorkersAreDoneCompleter?.complete();
   _dartdevkWorkersAreDoneCompleter = null;
   __dartdevkDriver = null;
 });
@@ -95,13 +95,13 @@ BazelWorkerDriver get _frontendDriver {
       maxWorkers: maxWorkersPerTask);
 }
 
-BazelWorkerDriver __frontendDriver;
+BazelWorkerDriver? __frontendDriver;
 
 /// Resource for fetching the current [BazelWorkerDriver] for common frontend.
 final frontendDriverResource =
     Resource<BazelWorkerDriver>(() => _frontendDriver, beforeExit: () async {
-  await _frontendDriver?.terminateWorkers();
-  _frontendWorkersAreDoneCompleter.complete();
+  await __frontendDriver?.terminateWorkers();
+  _frontendWorkersAreDoneCompleter?.complete();
   _frontendWorkersAreDoneCompleter = null;
   __frontendDriver = null;
 });
@@ -128,14 +128,14 @@ Dart2JsBatchWorkerPool get _dart2jsWorkerPool {
       workingDirectory: scratchSpace.tempDir.path));
 }
 
-Dart2JsBatchWorkerPool __dart2jsWorkerPool;
+Dart2JsBatchWorkerPool? __dart2jsWorkerPool;
 
 /// Resource for fetching the current [Dart2JsBatchWorkerPool] for dart2js.
 @Deprecated('Will be removed in build_modules version 3.x, no longer used')
 final dart2JsWorkerResource = Resource<Dart2JsBatchWorkerPool>(
     () => _dart2jsWorkerPool, beforeExit: () async {
-  await _dart2jsWorkerPool.terminateWorkers();
-  _dart2jsWorkersAreDoneCompleter.complete();
+  await __dart2jsWorkerPool?.terminateWorkers();
+  _dart2jsWorkersAreDoneCompleter?.complete();
   _dart2jsWorkersAreDoneCompleter = null;
 });
 
@@ -166,14 +166,14 @@ class Dart2JsBatchWorkerPool {
     _queueIsActive = true;
     () async {
       while (_workQueue.isNotEmpty) {
-        _Dart2JsWorker worker;
+        _Dart2JsWorker? worker;
         if (_availableWorkers.isEmpty &&
             _allWorkers.length < maxWorkersPerTask) {
           worker = _Dart2JsWorker(_spawnWorker);
           _allWorkers.add(worker);
         }
 
-        _Dart2JsWorker nextWorker() => _availableWorkers.isNotEmpty
+        _Dart2JsWorker? nextWorker() => _availableWorkers.isNotEmpty
             ? _availableWorkers.removeFirst()
             : null;
 
@@ -186,7 +186,7 @@ class Dart2JsBatchWorkerPool {
         }
         unawaited(worker
             .doJob(_workQueue.removeFirst())
-            .whenComplete(() => _availableWorkers.add(worker)));
+            .whenComplete(() => _availableWorkers.add(worker!)));
       }
       _queueIsActive = false;
     }();
@@ -211,26 +211,24 @@ class _Dart2JsWorker {
   static const int _jobsBeforeRestartMax = 5;
   static const int _retryCountMax = 2;
 
-  Stream<String> __workerStderrLines;
+  Stream<String>? __workerStderrLines;
   Stream<String> get _workerStderrLines {
-    assert(__worker != null);
-    return __workerStderrLines ??= __worker.stderr
+    return __workerStderrLines ??= __worker!.stderr
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .asBroadcastStream();
   }
 
-  Stream<String> __workerStdoutLines;
+  Stream<String>? __workerStdoutLines;
   Stream<String> get _workerStdoutLines {
-    assert(__worker != null);
-    return __workerStdoutLines ??= __worker.stdout
+    return __workerStdoutLines ??= __worker!.stdout
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .asBroadcastStream();
   }
 
-  Process __worker;
-  Future<Process> _spawningWorker;
+  Process? __worker;
+  Future<Process>? _spawningWorker;
   Future<Process> get _worker {
     if (__worker != null) return Future.value(__worker);
     return _spawningWorker ??= () async {
@@ -246,11 +244,11 @@ class _Dart2JsWorker {
               ?.completeError('Dart2js exited with an unknown error');
         }));
       }
-      return __worker;
+      return __worker!;
     }();
   }
 
-  Completer<Dart2JsResult> _currentJobResult;
+  Completer<Dart2JsResult>? _currentJobResult;
 
   _Dart2JsWorker(this._spawnWorker);
 
@@ -268,7 +266,7 @@ class _Dart2JsWorker {
       _jobsSinceLastRestartCount++;
       var worker = await _worker;
       var output = StringBuffer();
-      _currentJobResult = Completer<Dart2JsResult>();
+      var currentJobResult = _currentJobResult = Completer<Dart2JsResult>();
       var sawError = false;
       var stderrListener = _workerStderrLines.listen((line) {
         if (line == '>>> EOF STDERR') {
@@ -293,14 +291,14 @@ class _Dart2JsWorker {
 
       Dart2JsResult result;
       try {
-        result = await _currentJobResult.future;
+        result = await currentJobResult.future;
         job.resultCompleter.complete(result);
         succeeded = true;
       } catch (e) {
         log.warning('Dart2Js failure: $e\n$output');
         succeeded = false;
         if (tryCount >= _retryCountMax) {
-          job.resultCompleter.complete(_currentJobResult.future);
+          job.resultCompleter.complete(currentJobResult.future);
         }
       } finally {
         _currentJobResult = null;

@@ -6,15 +6,20 @@ part of 'input_set.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-InputSet _$InputSetFromJson(Map json) {
-  return $checkedNew('InputSet', json, () {
-    $checkKeys(json, allowedKeys: const ['include', 'exclude']);
-    final val = InputSet(
-      include: $checkedConvert(json, 'include',
-          (v) => (v as List)?.map((e) => e as String)?.toList()),
-      exclude: $checkedConvert(json, 'exclude',
-          (v) => (v as List)?.map((e) => e as String)?.toList()),
+InputSet _$InputSetFromJson(Map json) => $checkedCreate(
+      'InputSet',
+      json,
+      ($checkedConvert) {
+        $checkKeys(
+          json,
+          allowedKeys: const ['include', 'exclude'],
+        );
+        final val = InputSet(
+          include: $checkedConvert('include',
+              (v) => (v as List<dynamic>?)?.map((e) => e as String).toList()),
+          exclude: $checkedConvert('exclude',
+              (v) => (v as List<dynamic>?)?.map((e) => e as String).toList()),
+        );
+        return val;
+      },
     );
-    return val;
-  });
-}

@@ -8,16 +8,15 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:build/build.dart';
+import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
-import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_runner_core/src/asset_graph/graph.dart';
-import 'package:build_runner_core/src/asset_graph/node.dart';
-
-AssetGraph assetGraph;
-PackageGraph packageGraph;
+late final AssetGraph assetGraph;
+late final PackageGraph packageGraph;
 
 final logger = Logger('graph_inspector');
 
@@ -68,7 +67,7 @@ Future<void> main(List<String> args) async {
     var nextCommand = stdin.readLineSync();
     stdout.writeln('');
     try {
-      shouldExit = await commandRunner.run(nextCommand.split(' '));
+      shouldExit = await commandRunner.run(nextCommand!.split(' ')) ?? true;
     } on UsageException {
       stdout.writeln('Unrecognized option');
       await commandRunner.run(['help']);
@@ -105,6 +104,7 @@ class InspectNodeCommand extends Command<bool> {
 
   @override
   bool run() {
+    var argResults = this.argResults!;
     var stringUris = argResults.rest;
     if (stringUris.isEmpty) {
       stderr.writeln('Expected at least one uri for a node to inspect.');
@@ -182,6 +182,7 @@ class GraphCommand extends Command<bool> {
 
   @override
   bool run() {
+    var argResults = this.argResults!;
     var showGenerated = argResults['generated'] as bool;
     var showSources = argResults['original'] as bool;
     Iterable<AssetId> assets;
@@ -193,12 +194,12 @@ class GraphCommand extends Command<bool> {
       assets = assetGraph.allNodes.map((n) => n.id);
     }
 
-    var package = argResults['package'] as String;
+    var package = argResults['package'] as String?;
     if (package != null) {
       assets = assets.where((id) => id.package == package);
     }
 
-    var pattern = argResults['pattern'] as String;
+    var pattern = argResults['pattern'] as String?;
     if (pattern != null) {
       var glob = Glob(pattern);
       assets = assets.where((id) => glob.matches(id.path));
@@ -222,7 +223,7 @@ class QuitCommand extends Command<bool> {
   bool run() => true;
 }
 
-AssetId _idFromString(String stringUri) {
+AssetId? _idFromString(String stringUri) {
   var uri = Uri.parse(stringUri);
   if (uri.scheme == 'package') {
     return AssetId(uri.pathSegments.first,

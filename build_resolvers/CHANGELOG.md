@@ -1,3 +1,30 @@
+## 2.0.4
+
+- Allow analyzer version 2.x.x.
+
+## 2.0.3
+
+- Fix an issue where the build process would hang if the resolver fails to
+  properly initialize.
+
+## 2.0.2
+
+- Add more context to the outdated analyzer version message. It now provides
+  different suggestions depending on if you are on the latest analyzer.
+
+## 2.0.1
+
+- Update to allow package:graphs 2.0.0.
+
+## 2.0.0
+
+- Migrate to null-safety
+- Update to build `2.x`.
+
+## 1.5.4
+
+- Allow analyzer 1.0.0.
+
 ## 1.5.3
 
 - Allow the null safe pre-release of `package_config`.

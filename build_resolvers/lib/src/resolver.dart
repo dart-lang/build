@@ -18,14 +18,14 @@ import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
 import 'package:analyzer/src/dart/analysis/experiments.dart';
 import 'package:analyzer/src/generated/engine.dart'
     show AnalysisOptions, AnalysisOptionsImpl;
-import 'package:analyzer/src/generated/source.dart';
+import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
+import 'package:yaml/yaml.dart';
 
 import 'analysis_driver.dart';
 import 'build_asset_uri_resolver.dart';
@@ -81,8 +81,11 @@ class PerActionResolver implements ReleasableResolver {
   }
 
   @override
-  Future<LibraryElement> findLibraryByName(String libraryName) async =>
-      libraries.firstWhere((l) => l.name == libraryName, orElse: () => null);
+  Future<LibraryElement?> findLibraryByName(String libraryName) async {
+    await for (final library in libraries) {
+      if (library.name == libraryName) return library;
+    }
+  }
 
   @override
   Future<bool> isLibrary(AssetId assetId) async {
@@ -92,7 +95,7 @@ class PerActionResolver implements ReleasableResolver {
   }
 
   @override
-  Future<AstNode> astNodeFor(Element element, {bool resolve = false}) =>
+  Future<AstNode?> astNodeFor(Element element, {bool resolve = false}) =>
       _delegate.astNodeFor(element, resolve: resolve);
 
   @override
@@ -116,7 +119,7 @@ class PerActionResolver implements ReleasableResolver {
   // another, otherwise there are race conditions with `_entryPoints` being
   // updated before it is actually ready, or resolved more than once.
   final _resolvePool = Pool(1);
-  Future<void> _resolveIfNecessary(AssetId id, {@required bool transitive}) =>
+  Future<void> _resolveIfNecessary(AssetId id, {required bool transitive}) =>
       _resolvePool.withResource(() async {
         if (!_entryPoints.contains(id)) {
           // We only want transitively resolved ids in `_entrypoints`.
@@ -150,23 +153,28 @@ class AnalyzerResolver implements ReleasableResolver {
   @override
   Future<bool> isLibrary(AssetId assetId) async {
     var source = _driver.sourceFactory.forUri2(assetId.uri);
-    return source != null &&
-        source.exists() &&
-        (await _driver.getSourceKind(assetPath(assetId))) == SourceKind.LIBRARY;
+    if (source == null || !source.exists()) return false;
+    var result = _driver.getFileSync2(assetPath(assetId)) as FileResult;
+    return !result.isPart;
   }
 
   @override
-  Future<AstNode> astNodeFor(Element element, {bool resolve = false}) async {
+  Future<AstNode?> astNodeFor(Element element, {bool resolve = false}) async {
     var session = _driver.currentSession;
-    var path = element.library.source.fullName;
+    final library = element.library;
+    if (library == null) {
+      // Invalid elements (e.g. an MultiplyDefinedElement) are not part of any
+      // library and can't be resolved like this.
+      return null;
+    }
+    var path = library.source.fullName;
 
     if (resolve) {
-      return (await session.getResolvedLibrary(path))
+      return (await session.getResolvedLibrary2(path) as ResolvedLibraryResult)
           .getElementDeclaration(element)
           ?.node;
     } else {
-      return session
-          .getParsedLibrary(path)
+      return (session.getParsedLibrary2(path) as ParsedLibraryResult)
           .getElementDeclaration(element)
           ?.node;
     }
@@ -182,7 +190,7 @@ class AnalyzerResolver implements ReleasableResolver {
     }
 
     var path = assetPath(assetId);
-    var parsedResult = await _driver.parseFile(path);
+    var parsedResult = await _driver.parseFile2(path) as ParsedUnitResult;
     if (!allowSyntaxErrors && parsedResult.errors.isNotEmpty) {
       throw SyntaxErrorInAssetException(assetId, [parsedResult]);
     }
@@ -192,24 +200,28 @@ class AnalyzerResolver implements ReleasableResolver {
   @override
   Future<LibraryElement> libraryFor(AssetId assetId,
       {bool allowSyntaxErrors = false}) async {
-    var path = assetPath(assetId);
     var uri = assetId.uri;
+    var path = assetPath(assetId);
     var source = _driver.sourceFactory.forUri2(uri);
     if (source == null || !source.exists()) {
       throw AssetNotFoundException(assetId);
     }
-    var kind = await _driver.getSourceKind(path);
-    if (kind != SourceKind.LIBRARY) throw NonLibraryAssetException(assetId);
 
-    final library = await _driver.getLibraryByUri(uri.toString());
+    var parsedResult = _driver.parseFileSync2(path);
+    if (parsedResult is! ParsedUnitResult || parsedResult.isPart) {
+      throw NonLibraryAssetException(assetId);
+    }
+
+    final library =
+        await _driver.getLibraryByUri2(uri.toString()) as LibraryElementResult;
     if (!allowSyntaxErrors) {
-      final errors = await _syntacticErrorsFor(library);
+      final errors = await _syntacticErrorsFor(library.element);
       if (errors.isNotEmpty) {
         throw SyntaxErrorInAssetException(assetId, errors);
       }
     }
 
-    return library;
+    return library.element;
   }
 
   /// Finds syntax errors in files related to the [element].
@@ -221,19 +233,19 @@ class AnalyzerResolver implements ReleasableResolver {
       for (final part in element.parts)
         // The source may be null if the part doesn't exist. That's not
         // important for us since we only care about syntax
-        if (part.source != null && part.source.exists()) part,
+        if (part.source.exists()) part,
     ];
 
     // Map from elements to absolute paths
     final paths = existingElements
         .map((part) => _uriResolver.lookupCachedAsset(part.source.uri))
-        .where((asset) => asset != null)
+        .whereType<AssetId>() // filter out nulls
         .map(assetPath);
 
     final relevantResults = <ErrorsResult>[];
 
     for (final path in paths) {
-      final result = await _driver.getErrors(path);
+      final result = await _driver.getErrors2(path) as ErrorsResult;
       if (result.errors
           .any((error) => error.errorCode.type == ErrorType.SYNTACTIC_ERROR)) {
         relevantResults.add(result);
@@ -263,12 +275,17 @@ class AnalyzerResolver implements ReleasableResolver {
 
   @override
   Future<AssetId> assetIdForElement(Element element) async {
-    final uri = element.source.uri;
-    if (!uri.isScheme('package') && !uri.isScheme('asset')) {
+    final source = element.source;
+    if (source == null) {
       throw UnresolvableAssetException(
-          '${element.name} in ${element.source.uri}');
+          '${element.name} does not have a source');
     }
-    return AssetId.resolve('${element.source.uri}');
+
+    final uri = source.uri;
+    if (!uri.isScheme('package') && !uri.isScheme('asset')) {
+      throw UnresolvableAssetException('${element.name} in ${source.uri}');
+    }
+    return AssetId.resolve(source.uri);
   }
 }
 
@@ -282,13 +299,13 @@ class AnalyzerResolvers implements Resolvers {
   final Future<String> Function() _sdkSummaryGenerator;
 
   // Lazy, all access must be preceded by a call to `_ensureInitialized`.
-  AnalyzerResolver _resolver;
-  BuildAssetUriResolver _uriResolver;
+  late final AnalyzerResolver _resolver;
+  BuildAssetUriResolver? _uriResolver;
 
   /// Nullable, should not be accessed outside of [_ensureInitialized].
-  Future<void> _initialized;
+  Future<Result<void>>? _initialized;
 
-  PackageConfig _packageConfig;
+  PackageConfig? _packageConfig;
 
   /// Lazily creates and manages a single [AnalysisDriver], that can be shared
   /// across [BuildStep]s.
@@ -305,8 +322,8 @@ class AnalyzerResolvers implements Resolvers {
   /// primarily used to get the language versions. Any other data (including
   /// extra data), may be passed to the analyzer on an as needed basis.
   AnalyzerResolvers(
-      [AnalysisOptions analysisOptions,
-      Future<String> Function() sdkSummaryGenerator,
+      [AnalysisOptions? analysisOptions,
+      Future<String> Function()? sdkSummaryGenerator,
       this._packageConfig])
       : _analysisOptions = analysisOptions ??
             (AnalysisOptionsImpl()
@@ -318,15 +335,15 @@ class AnalyzerResolvers implements Resolvers {
   /// Create a Resolvers backed by an `AnalysisContext` using options
   /// [_analysisOptions].
   Future<void> _ensureInitialized() {
-    return _initialized ??= () async {
+    return Result.release(_initialized ??= Result.capture(() async {
       _warnOnLanguageVersionMismatch();
-      _uriResolver = BuildAssetUriResolver();
-      _packageConfig ??=
-          await loadPackageConfigUri(await Isolate.packageConfig);
-      var driver = await analysisDriver(_uriResolver, _analysisOptions,
-          await _sdkSummaryGenerator(), _packageConfig);
-      _resolver = AnalyzerResolver(driver, _uriResolver);
-    }();
+      final uriResolver = _uriResolver = BuildAssetUriResolver();
+      final loadedConfig = _packageConfig ??=
+          await loadPackageConfigUri((await Isolate.packageConfig)!);
+      var driver = await analysisDriver(uriResolver, _analysisOptions,
+          await _sdkSummaryGenerator(), loadedConfig);
+      _resolver = AnalyzerResolver(driver, uriResolver);
+    }()));
   }
 
   @override
@@ -403,9 +420,9 @@ Future<String> _defaultSdkSummaryGenerator() async {
 final _packageDepsToCheck = ['analyzer', 'build_resolvers'];
 
 Future<bool> _checkDeps(
-    File versionsFile, Map<String, Object> currentDeps) async {
+    File versionsFile, Map<String, Object?> currentDeps) async {
   var previous =
-      jsonDecode(await versionsFile.readAsString()) as Map<String, Object>;
+      jsonDecode(await versionsFile.readAsString()) as Map<String, Object?>;
 
   if (previous.keys.length != currentDeps.keys.length) return false;
 
@@ -417,31 +434,76 @@ Future<bool> _checkDeps(
 }
 
 Future<void> _createDepsFile(
-    File depsFile, Map<String, Object> currentDeps) async {
+    File depsFile, Map<String, Object?> currentDeps) async {
   await depsFile.create(recursive: true);
   await depsFile.writeAsString(jsonEncode(currentDeps));
 }
 
 /// Checks that the current analyzer version supports the current language
 /// version.
-void _warnOnLanguageVersionMismatch() {
+void _warnOnLanguageVersionMismatch() async {
   if (sdkLanguageVersion <= ExperimentStatus.currentVersion) return;
 
-  var upgradeCommand = isFlutter ? 'flutter packages upgrade' : 'pub upgrade';
-  log.warning('''
-Your current `analyzer` version may not fully support your current SDK version.
+  try {
+    var client = HttpClient();
+    var request = await client
+        .getUrl(Uri.https('pub.dartlang.org', 'api/packages/analyzer'));
+    var response = await request.close();
+    var content = StringBuffer();
+    await response.transform(utf8.decoder).listen(content.write).asFuture();
+    var json = jsonDecode(content.toString());
+    var latestAnalyzer = json['latest']['version'];
+    var analyzerPubspecPath =
+        p.join(await _packagePath('analyzer'), 'pubspec.yaml');
+    var currentAnalyzer =
+        loadYaml(await File(analyzerPubspecPath).readAsString())['version'];
 
-Please try upgrading to the latest `analyzer` by running `$upgradeCommand`.
+    if (latestAnalyzer == currentAnalyzer) {
+      log.warning('''
+The latest `analyzer` version may not fully support your current SDK version.
 
 Analyzer language version: ${ExperimentStatus.currentVersion}
 SDK language version: $sdkLanguageVersion
 
-If you are getting this message and have the latest analyzer please file
-an issue at https://github.com/dart-lang/sdk/issues/new with the title
+Check for an open issue at:
+https://github.com/dart-lang/sdk/issues?q=is%3Aissue+is%3Aopen+No+published+analyzer+$sdkLanguageVersion
+and thumbs up and/or subscribe to the existing issue, or file a new issue at
+https://github.com/dart-lang/sdk/issues/new with the title
 "No published analyzer available for language version $sdkLanguageVersion".
-Please search the issue tracker first and thumbs up and/or subscribe to
-existing issues if present to avoid duplicates.
+    ''');
+    } else {
+      var upgradeCommand =
+          isFlutter ? 'flutter packages upgrade' : 'pub upgrade';
+      log.warning('''
+Your current `analyzer` version may not fully support your current SDK version.
+
+Analyzer language version: ${ExperimentStatus.currentVersion}
+SDK language version: $sdkLanguageVersion
+
+Please update to the latest `analyzer` version ($latestAnalyzer) by running
+`$upgradeCommand`.
+
+If you are not getting the latest version by running the above command, you
+can try adding a constraint like the following to your pubspec to start
+diagnosing why you can't get the latest version:
+
+dev_dependencies:
+  analyzer: ^$latestAnalyzer 
 ''');
+    }
+  } catch (_) {
+    // Fall back on a basic message if we fail to detect the latest version for
+    // any reason.
+    log.warning('''
+Your current `analyzer` version may not fully support your current SDK version.
+
+Analyzer language version: ${ExperimentStatus.currentVersion}
+SDK language version: $sdkLanguageVersion
+
+Please ensure you are on the latest `analyzer` version, which can be seen at
+https://pub.dev/packages/analyzer.
+''');
+  }
 }
 
 /// Path where the dart:ui package will be found, if executing via the dart
@@ -451,8 +513,7 @@ final _dartUiPath =
 
 /// The current feature set based on the current sdk version and enabled
 /// experiments.
-FeatureSet _featureSet({List<String> enableExperiments}) {
-  enableExperiments ??= [];
+FeatureSet _featureSet({List<String> enableExperiments = const []}) {
   if (enableExperiments.isNotEmpty &&
       sdkLanguageVersion > ExperimentStatus.currentVersion) {
     log.warning('''

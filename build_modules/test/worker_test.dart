@@ -3,10 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:build_modules/build_modules.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
-
-import 'package:build_modules/build_modules.dart';
 
 void main() {
   test('can pass dart2js arguments with spaces', () async {

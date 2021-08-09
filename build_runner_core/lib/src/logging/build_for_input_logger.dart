@@ -21,7 +21,7 @@ class BuildForInputLogger implements Logger {
   Level get level => _delegate.level;
 
   @override
-  set level(Level level) => _delegate.level = level;
+  set level(Level? level) => _delegate.level = level;
 
   @override
   Map<String, Logger> get children => _delegate.children;
@@ -30,34 +30,34 @@ class BuildForInputLogger implements Logger {
   void clearListeners() => _delegate.clearListeners();
 
   @override
-  void config(Object message, [Object error, StackTrace stackTrace]) =>
+  void config(Object? message, [Object? error, StackTrace? stackTrace]) =>
       _delegate.config(message, error, stackTrace);
 
   @override
-  void fine(Object message, [Object error, StackTrace stackTrace]) =>
+  void fine(Object? message, [Object? error, StackTrace? stackTrace]) =>
       _delegate.fine(message, error, stackTrace);
 
   @override
-  void finer(Object message, [Object error, StackTrace stackTrace]) =>
+  void finer(Object? message, [Object? error, StackTrace? stackTrace]) =>
       _delegate.finer(message, error, stackTrace);
 
   @override
-  void finest(Object message, [Object error, StackTrace stackTrace]) =>
+  void finest(Object? message, [Object? error, StackTrace? stackTrace]) =>
       _delegate.finest(message, error, stackTrace);
 
   @override
   String get fullName => _delegate.fullName;
 
   @override
-  void info(Object message, [Object error, StackTrace stackTrace]) =>
+  void info(Object? message, [Object? error, StackTrace? stackTrace]) =>
       _delegate.info(message, error, stackTrace);
 
   @override
   bool isLoggable(Level value) => _delegate.isLoggable(value);
 
   @override
-  void log(Level logLevel, Object message,
-      [Object error, StackTrace stackTrace, Zone zone]) {
+  void log(Level logLevel, Object? message,
+      [Object? error, StackTrace? stackTrace, Zone? zone]) {
     if (logLevel >= Level.SEVERE) {
       errorsSeen.add(ErrorReport('$message', '${error ?? ''}', stackTrace));
     }
@@ -71,21 +71,21 @@ class BuildForInputLogger implements Logger {
   Stream<LogRecord> get onRecord => _delegate.onRecord;
 
   @override
-  Logger get parent => _delegate.parent;
+  Logger? get parent => _delegate.parent;
 
   @override
-  void severe(Object message, [Object error, StackTrace stackTrace]) {
+  void severe(Object? message, [Object? error, StackTrace? stackTrace]) {
     errorsSeen.add(ErrorReport('$message', '${error ?? ''}', stackTrace));
     _delegate.severe(message, error, stackTrace);
   }
 
   @override
-  void shout(Object message, [Object error, StackTrace stackTrace]) {
+  void shout(Object? message, [Object? error, StackTrace? stackTrace]) {
     errorsSeen.add(ErrorReport('$message', '${error ?? ''}', stackTrace));
     _delegate.shout(message, error, stackTrace);
   }
 
   @override
-  void warning(Object message, [Object error, StackTrace stackTrace]) =>
+  void warning(Object? message, [Object? error, StackTrace? stackTrace]) =>
       _delegate.warning(message, error, stackTrace);
 }

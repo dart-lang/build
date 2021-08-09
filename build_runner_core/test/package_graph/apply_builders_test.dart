@@ -3,17 +3,14 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 
+import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
-import 'package:test/test.dart';
-
 import 'package:build_runner_core/src/generate/exceptions.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:build_runner_core/src/package_graph/apply_builders.dart';
 import 'package:build_runner_core/src/package_graph/target_graph.dart';
-
-import 'package:_test_common/common.dart';
-import 'package:_test_common/package_graphs.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('apply_builders.createBuildPhases', () {
@@ -22,7 +19,8 @@ void main() {
         rootPackage('a'): ['b'],
         package('b'): []
       });
-      var targetGraph = await TargetGraph.forPackageGraph(packageGraph);
+      var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+          defaultRootPackageSources: const ['**']);
       var builderApplications = [
         apply('b:cool_builder', [(options) => CoolBuilder(options)],
             toAllPackages())
@@ -63,7 +61,7 @@ void main() {
           )
         };
         var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
-            overrideBuildConfig: overrides);
+            defaultRootPackageSources: ['**'], overrideBuildConfig: overrides);
         var builderApplications = [
           apply('b:cool_builder', [(options) => CoolBuilder(options)],
               toAllPackages())
@@ -90,7 +88,8 @@ void main() {
         rootPackage('a'): ['b'],
         package('b'): [],
       });
-      var targetGraph = await TargetGraph.forPackageGraph(packageGraph);
+      var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+          defaultRootPackageSources: ['**']);
       var builderApplications = [
         apply('b:cool_builder', [(options) => CoolBuilder(options)],
             toDependentsOf('b')),
@@ -106,7 +105,8 @@ void main() {
         rootPackage('a'): ['b'],
         package('b'): [],
       });
-      var targetGraph = await TargetGraph.forPackageGraph(packageGraph);
+      var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+          defaultRootPackageSources: ['**']);
       var builderApplications = [
         apply('b:cool_builder', [(options) => CoolBuilder(options)],
             toDependentsOf('b'),
@@ -128,7 +128,8 @@ void main() {
         package('b'): ['c'],
         package('c'): [],
       });
-      var targetGraph = await TargetGraph.forPackageGraph(packageGraph);
+      var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+          defaultRootPackageSources: ['**']);
       var builderApplications = [
         apply('c:cool_builder', [(options) => CoolBuilder(options)],
             toDependentsOf('c'),
@@ -150,7 +151,8 @@ void main() {
         package('b'): ['c'],
         package('c'): [],
       });
-      var targetGraph = await TargetGraph.forPackageGraph(packageGraph);
+      var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+          defaultRootPackageSources: ['**']);
       var builderApplications = [
         apply('c:cool_builder', [(options) => CoolBuilder(options)],
             toDependentsOf('c'),
@@ -182,7 +184,7 @@ void main() {
           )
         };
         var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
-            overrideBuildConfig: overrides);
+            defaultRootPackageSources: ['**'], overrideBuildConfig: overrides);
         var builderApplications = [
           apply('b:cool_builder', [(options) => CoolBuilder(options)],
               toAllPackages()),
@@ -197,19 +199,22 @@ void main() {
 
     group('autoApplyBuilders', () {
       Future<List<BuildPhase>> _createPhases(
-          {Map<String, TargetBuilderConfig> builderConfigs}) async {
+          {Map<String, TargetBuilderConfig>? builderConfigs}) async {
         var packageGraph = buildPackageGraph({
           rootPackage('a'): ['b'],
           package('b'): [],
         });
         var targetGraph = await runInBuildConfigZone(
-            () =>
-                TargetGraph.forPackageGraph(packageGraph, overrideBuildConfig: {
-                  'a': BuildConfig(packageName: 'a', buildTargets: {
-                    'a|a': BuildTarget(
-                        autoApplyBuilders: false, builders: builderConfigs),
-                  })
-                }),
+            () => TargetGraph.forPackageGraph(packageGraph,
+                    defaultRootPackageSources: [
+                      '**'
+                    ],
+                    overrideBuildConfig: {
+                      'a': BuildConfig(packageName: 'a', buildTargets: {
+                        'a|a': BuildTarget(
+                            autoApplyBuilders: false, builders: builderConfigs),
+                      })
+                    }),
             'a',
             []);
         var builderApplications = [
@@ -260,6 +265,36 @@ void main() {
       });
     });
   });
+
+  test(
+    'does not allow post process builders with capturing inputs',
+    () async {
+      var packageGraph = buildPackageGraph({
+        rootPackage('a'): [],
+      });
+      var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+          defaultRootPackageSources: const ['**']);
+      var builderApplications = [
+        apply(
+          'a:regular',
+          [(_) => TestBuilder()],
+          toAllPackages(),
+          appliesBuilders: ['a:post'],
+        ),
+        applyPostProcess('a:post', (_) => _InvalidPostProcessBuilder())
+      ];
+
+      expect(
+        () => createBuildPhases(
+          targetGraph,
+          builderApplications,
+          const {},
+          false,
+        ),
+        throwsA(isArgumentError),
+      );
+    },
+  );
 }
 
 class CoolBuilder extends Builder {
@@ -268,9 +303,9 @@ class CoolBuilder extends Builder {
   final String optionC;
 
   CoolBuilder(BuilderOptions options)
-      : optionA = options.config['option_a'] as String ?? 'defaultA',
-        optionB = options.config['option_b'] as String ?? 'defaultB',
-        optionC = options.config['option_c'] as String ?? 'defaultC';
+      : optionA = options.config['option_a'] as String? ?? 'defaultA',
+        optionB = options.config['option_b'] as String? ?? 'defaultB',
+        optionC = options.config['option_c'] as String? ?? 'defaultC';
 
   @override
   final buildExtensions = {
@@ -279,4 +314,12 @@ class CoolBuilder extends Builder {
 
   @override
   Future build(BuildStep buildStep) async => throw UnimplementedError();
+}
+
+class _InvalidPostProcessBuilder extends PostProcessBuilder {
+  @override
+  FutureOr<void> build(PostProcessBuildStep buildStep) {}
+
+  @override
+  Iterable<String> get inputExtensions => const ['lib/{{}}.dart'];
 }

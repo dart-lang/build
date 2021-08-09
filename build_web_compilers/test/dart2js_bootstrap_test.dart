@@ -5,20 +5,19 @@
 import 'dart:async';
 
 import 'package:build/experiments.dart';
+import 'package:build_modules/build_modules.dart';
 import 'package:build_test/build_test.dart';
+import 'package:build_web_compilers/build_web_compilers.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
-
-import 'package:build_web_compilers/build_web_compilers.dart';
-import 'package:build_modules/build_modules.dart';
 
 import 'util.dart';
 
 void main() {
-  Map<String, dynamic> assets;
+  late Map<String, Object> assets;
   final platform = dart2jsPlatform;
 
-  StreamSubscription<LogRecord> logSubscription;
+  late StreamSubscription<LogRecord> logSubscription;
   setUp(() {
     Logger.root.level = Level.ALL;
     logSubscription = Logger.root.onRecord.listen((r) => printOnFailure('$r'));

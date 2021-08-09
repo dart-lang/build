@@ -11,7 +11,6 @@ import 'dart:io';
 import 'package:_test_common/common.dart';
 import 'package:async/async.dart';
 import 'package:io/io.dart';
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
@@ -31,6 +30,7 @@ void main() {
           'build_runner_core',
           'build_test',
           'build_web_compilers',
+          'code_builder',
           'test',
         ],
       ),
@@ -54,26 +54,27 @@ main() {
   });
 
   tearDown(() async {
-    await runPub('a', 'run', args: ['build_runner', 'clean']);
+    expect((await runPub('a', 'run', args: ['build_runner', 'clean'])).exitCode,
+        0);
   });
 
-  void expectOutput(String path, {@required bool exists}) {
+  void expectOutput(String path, {required bool exists}) {
     path =
         p.join(d.sandbox, 'a', '.dart_tool', 'build', 'generated', 'a', path);
     expect(File(path).existsSync(), exists);
   }
 
   Future<int> runSingleBuild(String command, List<String> args,
-      {StreamSink<String> stdoutSink}) async {
+      {StreamSink<String>? stdoutSink}) async {
     var process = await startPub('a', 'run', args: args);
     var stdoutLines = process.stdout
         .transform(Utf8Decoder())
         .transform(LineSplitter())
         .asBroadcastStream()
-          ..listen((line) {
-            stdoutSink?.add(line);
-            printOnFailure(line);
-          });
+      ..listen((line) {
+        stdoutSink?.add(line);
+        printOnFailure(line);
+      });
     var queue = StreamQueue(stdoutLines);
     if (command == 'serve' || command == 'watch') {
       while (await queue.hasNext) {

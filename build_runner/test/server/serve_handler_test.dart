@@ -6,29 +6,27 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
-import 'package:logging/logging.dart';
-import 'package:shelf/shelf.dart';
-import 'package:stream_channel/stream_channel.dart';
-import 'package:test/test.dart';
-
+import 'package:build_runner/src/generate/watch_impl.dart';
+import 'package:build_runner/src/server/server.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/generate/performance_tracker.dart';
-import 'package:build_runner/src/generate/watch_impl.dart';
-import 'package:build_runner/src/server/server.dart';
-
-import 'package:_test_common/common.dart';
-import 'package:_test_common/package_graphs.dart';
+import 'package:logging/logging.dart';
+import 'package:shelf/shelf.dart';
+import 'package:stream_channel/stream_channel.dart';
+import 'package:test/fake.dart';
+import 'package:test/test.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 void main() {
-  ServeHandler serveHandler;
-  InMemoryRunnerAssetReader reader;
-  MockWatchImpl watchImpl;
-  AssetGraph assetGraph;
+  late ServeHandler serveHandler;
+  late InMemoryRunnerAssetReader reader;
+  late MockWatchImpl watchImpl;
+  late AssetGraph assetGraph;
 
   setUp(() async {
     reader = InMemoryRunnerAssetReader();
@@ -36,7 +34,9 @@ void main() {
     assetGraph = await AssetGraph.build(
         [], <AssetId>{}, <AssetId>{}, packageGraph, reader);
     watchImpl = MockWatchImpl(
-        FinalizedReader(reader, assetGraph, [], 'a'), packageGraph, assetGraph);
+        Future.value(FinalizedReader(reader, assetGraph, [], 'a')),
+        packageGraph,
+        assetGraph);
     serveHandler = createServeHandler(watchImpl);
     watchImpl
         .addFutureResult(Future.value(BuildResult(BuildStatus.success, [])));
@@ -69,22 +69,22 @@ void main() {
     expect(await firstResponse.readAsString(), 'content');
 
     var cachedResponse = await handler(Request('GET', requestUri,
-        headers: {HttpHeaders.ifNoneMatchHeader: etag}));
+        headers: {HttpHeaders.ifNoneMatchHeader: etag!}));
     expect(cachedResponse.statusCode, HttpStatus.notModified);
     expect(await cachedResponse.readAsString(), isEmpty);
   });
 
   test('caching with etags takes into account injected JS', () async {
     _addSource('a|web/some.js', entrypointExtensionMarker + '\nalert(1)');
-    var hotReloadEtag = (await serveHandler.handlerFor('web',
-                buildUpdates: BuildUpdatesOption.hotReload)(
+    var noReloadEtag = (await serveHandler.handlerFor('web',
+                buildUpdates: BuildUpdatesOption.none)(
             Request('GET', Uri.parse('http://server.com/some.js'))))
         .headers[HttpHeaders.etagHeader];
     var liveReloadEtag = (await serveHandler.handlerFor('web',
                 buildUpdates: BuildUpdatesOption.liveReload)(
             Request('GET', Uri.parse('http://server.com/some.js'))))
         .headers[HttpHeaders.etagHeader];
-    expect(hotReloadEtag, isNot(liveReloadEtag));
+    expect(noReloadEtag, isNot(liveReloadEtag));
   });
 
   test('throws if you pass a non-root directory', () {
@@ -96,14 +96,14 @@ void main() {
     setUp(() async {
       _addSource('a|web/index.html', '');
       assetGraph.add(GeneratedAssetNode(
-        makeAssetId('a|web/main.ddc.js'),
-        builderOptionsId: null,
-        phaseNumber: null,
+        AssetId('a', 'web/main.ddc.js'),
+        builderOptionsId: AssetId('_\$fake', 'options_id'),
+        phaseNumber: 0,
         state: NodeState.upToDate,
         isHidden: false,
         wasOutput: true,
         isFailure: true,
-        primaryInput: null,
+        primaryInput: AssetId('a', 'web/main.dart'),
       ));
       watchImpl
           .addFutureResult(Future.value(BuildResult(BuildStatus.failure, [])));
@@ -258,8 +258,6 @@ void main() {
         });
 
     createBuildUpdatesGroup(
-        'hot-reload', 'hot_reload_client', BuildUpdatesOption.hotReload);
-    createBuildUpdatesGroup(
         'live-reload', 'live_reload_client', BuildUpdatesOption.liveReload);
 
     test('reject websocket connection if disabled', () async {
@@ -276,31 +274,31 @@ void main() {
     });
 
     group('WebSocket handler', () {
-      BuildUpdatesWebSocketHandler handler;
-      Future<void> Function(WebSocketChannel, String) createMockConnection;
+      late BuildUpdatesWebSocketHandler handler;
+      late Future<void> Function(WebSocketChannel, String) createMockConnection;
 
       // client to server stream controlllers
-      StreamController<List<int>> c2sController1;
-      StreamController<List<int>> c2sController2;
+      late StreamController<List<int>> c2sController1;
+      late StreamController<List<int>> c2sController2;
       // server to client stream controlllers
-      StreamController<List<int>> s2cController1;
-      StreamController<List<int>> s2cController2;
+      late StreamController<List<int>> s2cController1;
+      late StreamController<List<int>> s2cController2;
 
-      WebSocketChannel clientChannel1;
-      WebSocketChannel clientChannel2;
-      WebSocketChannel serverChannel1;
-      WebSocketChannel serverChannel2;
+      late WebSocketChannel clientChannel1;
+      late WebSocketChannel clientChannel2;
+      late WebSocketChannel serverChannel1;
+      late WebSocketChannel serverChannel2;
 
       setUp(() {
         var mockHandlerFactory = (Function onConnect,
-                {Iterable<String> protocols}) =>
+                {Iterable<String>? protocols}) =>
             (Request request) =>
                 Response(200, context: {'onConnect': onConnect});
 
         createMockConnection =
             (WebSocketChannel serverChannel, String rootDir) async {
           var mockResponse =
-              await handler.createHandlerByRootDir(rootDir)(null);
+              await handler.createHandlerByRootDir(rootDir)(FakeRequest());
           var onConnect = mockResponse.context['onConnect'] as Function;
           onConnect(serverChannel, '');
         };
@@ -444,11 +442,12 @@ class MockWatchImpl implements WatchImpl {
   @override
   final AssetGraph assetGraph;
 
-  Future<BuildResult> _currentBuild;
+  Future<BuildResult>? _currentBuild;
+
   @override
-  Future<BuildResult> get currentBuild => _currentBuild;
+  Future<BuildResult>? get currentBuild => _currentBuild;
   @override
-  set currentBuild(Future<BuildResult> _) =>
+  set currentBuild(Future<BuildResult>? _) =>
       throw UnsupportedError('unsupported!');
 
   final _futureBuildResultsController = StreamController<Future<BuildResult>>();
@@ -464,7 +463,7 @@ class MockWatchImpl implements WatchImpl {
   final PackageGraph packageGraph;
 
   @override
-  final FinalizedReader reader;
+  final Future<FinalizedReader> reader;
 
   void addFutureResult(Future<BuildResult> result) {
     _futureBuildResultsController.add(result);
@@ -477,11 +476,10 @@ class MockWatchImpl implements WatchImpl {
       if (!firstBuild.isCompleted) {
         firstBuild.complete(futureBuildResult);
       }
-      _currentBuild = _currentBuild.then((_) => futureBuildResult)
+      _currentBuild = _currentBuild!.then((_) => futureBuildResult)
         ..then(_buildResultsController.add);
     });
   }
-
-  @override
-  Future<void> get ready => Future.value();
 }
+
+class FakeRequest with Fake implements Request {}

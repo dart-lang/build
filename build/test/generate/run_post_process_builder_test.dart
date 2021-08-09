@@ -11,8 +11,8 @@ import '../common/builders.dart';
 
 void main() {
   group('runPostProcessBuilder', () {
-    InMemoryAssetReader reader;
-    InMemoryAssetWriter writer;
+    late InMemoryAssetReader reader;
+    late InMemoryAssetWriter writer;
     final copyBuilder = CopyingPostProcessBuilder();
     final deleteBuilder = DeletePostProcessBuilder();
     final aTxt = makeAssetId('a|lib/a.txt');

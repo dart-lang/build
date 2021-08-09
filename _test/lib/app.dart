@@ -4,8 +4,8 @@
 
 import 'dart:html';
 
-void startApp({String text}) {
+void startApp({String? text}) {
   text ??= 'Hello World!';
   var component = DivElement()..text = text;
-  document.body.append(component);
+  document.body!.append(component);
 }

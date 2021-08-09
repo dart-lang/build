@@ -31,13 +31,7 @@ class ServeCommand extends WatchCommand {
       ..addFlag(liveReloadOption,
           defaultsTo: false,
           negatable: false,
-          help: 'Enables automatic page reloading on rebuilds. '
-              "Can't be used together with --$hotReloadOption.")
-      ..addFlag(hotReloadOption,
-          defaultsTo: false,
-          negatable: false,
-          help: 'Enables automatic reloading of changed modules on rebuilds. '
-              "Can't be used together with --$liveReloadOption.");
+          help: 'Enables automatic page reloading on rebuilds. ');
   }
 
   @override
@@ -53,7 +47,7 @@ class ServeCommand extends WatchCommand {
 
   @override
   ServeOptions readOptions() => ServeOptions.fromParsedArgs(
-      argResults, argResults.rest, packageGraph.root.name, this);
+      argResults!, argResults!.rest, packageGraph.root.name, this);
 
   @override
   Future<int> run() {
@@ -78,7 +72,7 @@ class ServeCommand extends WatchCommand {
       var listener = Logger.root.onRecord.listen(stdIOLogListener());
       if (e.address != null && e.port != null) {
         logger.severe(
-            'Error starting server at ${e.address.address}:${e.port}, address '
+            'Error starting server at ${e.address!.address}:${e.port}, address '
             'is already in use. Please kill the server running on that port or '
             'serve on a different port and restart this process.');
       } else {
@@ -105,8 +99,6 @@ class ServeCommand extends WatchCommand {
       directoryWatcherFactory: options.directoryWatcherFactory,
       buildFilters: options.buildFilters,
     );
-
-    if (handler == null) return ExitCode.config.code;
 
     servers.forEach((target, server) {
       serveRequests(

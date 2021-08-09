@@ -4,12 +4,11 @@
 @TestOn('vm')
 import 'dart:async';
 
+import 'package:build/build.dart';
 import 'package:test/test.dart';
 
-import 'package:build/build.dart';
-
 void main() {
-  ResourceManager resourceManager;
+  late ResourceManager resourceManager;
   setUp(() {
     resourceManager = ResourceManager();
   });

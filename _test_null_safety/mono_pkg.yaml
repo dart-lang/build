@@ -7,7 +7,9 @@ os:
 
 stages:
 - analyze_and_format:
-  - dartanalyzer: --fatal-infos --fatal-warnings .
+  - group:
+    - analyze: --fatal-infos
+    dart: dev
 - e2e_test:
   - group:
     - command: pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random

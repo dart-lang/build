@@ -9,7 +9,6 @@ import 'dart:io';
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 
@@ -25,6 +24,8 @@ String jsSourceMapExtension(bool soundNullSafety) =>
     '${soundnessExt(soundNullSafety)}.ddc.js.map';
 String metadataExtension(bool soundNullSafety) =>
     '${soundnessExt(soundNullSafety)}.ddc.js.metadata';
+String symbolsExtension(bool soundNullSafety) =>
+    '${soundnessExt(soundNullSafety)}.ddc.js.symbols';
 String fullKernelExtension(bool soundNullSafety) =>
     '${soundnessExt(soundNullSafety)}.ddc.full.dill';
 
@@ -42,6 +43,14 @@ class DevCompilerBuilder implements Builder {
   /// debugger to compile expressions in debugging worklows that use modular
   /// build, such as webdev.
   final bool generateFullDill;
+
+  /// Whether to generate debug symbols file outputs for each module.
+  ///
+  /// Debug symbols file is an additional file produced by DDC that stores
+  /// symbols for code compiled for one module, not including dependencies.
+  /// Debug symbols are used by the to display variables and objects in
+  /// watch, expression evaluation, and variable inspection windows.
+  final bool emitDebugSymbols;
 
   final bool trackUnusedInputs;
 
@@ -74,34 +83,31 @@ class DevCompilerBuilder implements Builder {
   final bool soundNullSafety;
 
   DevCompilerBuilder(
-      {bool useIncrementalCompiler,
-      bool generateFullDill,
-      bool trackUnusedInputs,
-      @required this.platform,
-      this.sdkKernelPath,
-      String librariesPath,
-      String platformSdk,
-      Map<String, String> environment,
-      Iterable<String> experiments,
-      bool soundNullSafety = false})
-      : useIncrementalCompiler = useIncrementalCompiler ?? true,
-        generateFullDill = generateFullDill ?? false,
-        platformSdk = platformSdk ?? sdkDir,
+      {this.useIncrementalCompiler = true,
+      this.generateFullDill = false,
+      this.emitDebugSymbols = false,
+      this.trackUnusedInputs = false,
+      required this.platform,
+      String? sdkKernelPath,
+      String? librariesPath,
+      String? platformSdk,
+      this.environment = const {},
+      this.experiments = const [],
+      this.soundNullSafety = false})
+      : platformSdk = platformSdk ?? sdkDir,
         librariesPath = librariesPath ??
             p.join(platformSdk ?? sdkDir, 'lib', 'libraries.json'),
-        trackUnusedInputs = trackUnusedInputs ?? false,
         buildExtensions = {
           moduleExtension(platform): [
             jsModuleExtension(soundNullSafety),
             jsModuleErrorsExtension(soundNullSafety),
             jsSourceMapExtension(soundNullSafety),
             metadataExtension(soundNullSafety),
+            symbolsExtension(soundNullSafety),
             fullKernelExtension(soundNullSafety),
           ],
         },
-        environment = environment ?? {},
-        experiments = experiments ?? {},
-        soundNullSafety = soundNullSafety ?? false;
+        sdkKernelPath = sdkKernelPath ?? sdkDdcKernelPath(soundNullSafety);
 
   @override
   final Map<String, List<String>> buildExtensions;
@@ -132,6 +138,7 @@ class DevCompilerBuilder implements Builder {
           buildStep,
           useIncrementalCompiler,
           generateFullDill,
+          emitDebugSymbols,
           trackUnusedInputs,
           platformSdk,
           sdkKernelPath,
@@ -153,6 +160,7 @@ Future<void> _createDevCompilerModule(
     BuildStep buildStep,
     bool useIncrementalCompiler,
     bool generateFullDill,
+    bool emitDebugSymbols,
     bool trackUnusedInputs,
     String dartSdk,
     String sdkKernelPath,
@@ -175,15 +183,15 @@ Future<void> _createDevCompilerModule(
   var jsId =
       module.primarySource.changeExtension(jsModuleExtension(soundNullSafety));
   var jsOutputFile = scratchSpace.fileFor(jsId);
-  var sdkSummary =
-      p.url.join(dartSdk, sdkKernelPath ?? sdkDdcKernelPath(soundNullSafety));
+  var sdkSummary = p.url.join(dartSdk, sdkKernelPath);
 
   // Maps the inputs paths we provide to the ddc worker to asset ids, if
   // `trackUnusedInputs` is `true`.
-  Map<String, AssetId> kernelInputPathToId;
+  Map<String, AssetId>? kernelInputPathToId;
+
   // If `trackUnusedInputs` is `true`, this is the file we will use to
   // communicate the used inputs with the ddc worker.
-  File usedInputsFile;
+  File? usedInputsFile;
 
   if (trackUnusedInputs) {
     usedInputsFile = await File(p.join(
@@ -199,6 +207,7 @@ Future<void> _createDevCompilerModule(
       '--modules=amd',
       '--no-summarize',
       if (generateFullDill) '--experimental-output-compiled-kernel',
+      if (emitDebugSymbols) '--emit-debug-symbols',
       '-o',
       jsOutputFile.path,
       debugMode ? '--source-map' : '--no-source-map',
@@ -288,16 +297,24 @@ Future<void> _createDevCompilerModule(
       _fixMetadataSources(
           json as Map<String, dynamic>, scratchSpace.tempDir.uri);
       await buildStep.writeAsString(metadataId, jsonEncode(json));
+
+      // Copy the symbols output, modifying its contents to remove the temp
+      // directory from paths
+      if (emitDebugSymbols) {
+        var symbolsId = module.primarySource
+            .changeExtension(symbolsExtension(soundNullSafety));
+        await scratchSpace.copyOutput(symbolsId, buildStep);
+      }
     }
 
     // Note that we only want to do this on success, we can't trust the unused
     // inputs if there is a failure.
     if (usedInputsFile != null) {
-      await reportUnusedKernelInputs(
-          usedInputsFile, transitiveKernelDeps, kernelInputPathToId, buildStep);
+      await reportUnusedKernelInputs(usedInputsFile, transitiveKernelDeps,
+          kernelInputPathToId!, buildStep);
     }
   } finally {
-    await usedInputsFile?.parent?.delete(recursive: true);
+    await usedInputsFile?.parent.delete(recursive: true);
   }
 }
 
@@ -334,28 +351,30 @@ void _fixMetadataSources(Map<String, dynamic> json, Uri scratchUri) {
   String updatePath(String path) =>
       Uri.parse(path).path.replaceAll(scratchUri.path, '');
 
-  var sourceMapUri = json['sourceMapUri'] as String;
+  var sourceMapUri = json['sourceMapUri'] as String?;
   if (sourceMapUri != null) {
     json['sourceMapUri'] = updatePath(sourceMapUri);
   }
 
-  var moduleUri = json['moduleUri'] as String;
+  var moduleUri = json['moduleUri'] as String?;
   if (moduleUri != null) {
     json['moduleUri'] = updatePath(moduleUri);
   }
 
-  var fullKernelUri = json['fullKernelUri'] as String;
-  if (fullKernelUri != null) {
-    json['fullKernelUri'] = updatePath(fullKernelUri);
+  var fullDillUri = json['fullDillUri'] as String?;
+  if (fullDillUri != null) {
+    json['fullDillUri'] = updatePath(fullDillUri);
   }
 
-  var libraries = json['libraries'] as List<dynamic>;
+  var libraries = json['libraries'] as List<Object?>?;
   if (libraries != null) {
     for (var lib in libraries) {
-      var libraryJson = lib as Map<String, dynamic>;
-      var fileUri = libraryJson['fileUri'] as String;
-      if (fileUri != null) {
-        libraryJson['fileUri'] = updatePath(fileUri);
+      var libraryJson = lib as Map<String, Object?>?;
+      if (libraryJson != null) {
+        var fileUri = libraryJson['fileUri'] as String?;
+        if (fileUri != null) {
+          libraryJson['fileUri'] = updatePath(fileUri);
+        }
       }
     }
   }

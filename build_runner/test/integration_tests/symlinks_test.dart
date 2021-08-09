@@ -3,14 +3,13 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @Tags(['integration'])
-
 import 'dart:async';
 import 'dart:io';
 
 import 'package:build_test/build_test.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
-import 'package:path/path.dart' as p;
 
 import 'utils/build_descriptor.dart';
 
@@ -27,7 +26,7 @@ final readThroughLink = TestBuilder(
 void main() {
   final builders = [builder('readThroughLink', readThroughLink)];
 
-  BuildTool buildTool;
+  late BuildTool buildTool;
 
   setUpAll(() async {
     buildTool = await packageWithBuildScript(builders, contents: [

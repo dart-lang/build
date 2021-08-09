@@ -5,9 +5,9 @@
 @TestOn('browser')
 import 'dart:html';
 
+import 'package:_test/app.dart';
 import 'package:test/test.dart';
 
-import 'package:_test/app.dart';
 //import_anchor
 
 import 'common/message.dart';
@@ -16,11 +16,11 @@ void main() {
   setUp(startApp);
 
   tearDown(() {
-    document.body.innerHtml = '';
+    document.body!.innerHtml = '';
   });
 
   test('hello world', () {
-    expect(document.body.text, contains(message));
+    expect(document.body!.text, contains(message));
   });
 
   test('failing test', () {

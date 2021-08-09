@@ -4,26 +4,25 @@
 
 import 'dart:io';
 
+import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
-import 'package:shelf/shelf.dart';
-import 'package:test/test.dart';
-
+import 'package:build_runner/src/server/server.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
-import 'package:build_runner/src/server/server.dart';
-
-import 'package:_test_common/common.dart';
+import 'package:shelf/shelf.dart';
+import 'package:test/fake.dart';
+import 'package:test/test.dart';
 
 void main() {
-  AssetHandler handler;
-  FinalizedReader reader;
-  InMemoryRunnerAssetReader delegate;
-  AssetGraph graph;
+  late AssetHandler handler;
+  late FinalizedReader reader;
+  late InMemoryRunnerAssetReader delegate;
+  late AssetGraph graph;
 
   setUp(() async {
     graph = await AssetGraph.build([], <AssetId>{}, <AssetId>{},
-        buildPackageGraph({rootPackage('foo'): []}), null);
+        buildPackageGraph({rootPackage('foo'): []}), FakeAssetReader());
     delegate = InMemoryRunnerAssetReader();
     reader = FinalizedReader(delegate, graph, [], 'a');
     handler = AssetHandler(reader, 'a');
@@ -105,18 +104,29 @@ void main() {
 
   test('Fails request for failed outputs', () async {
     graph.add(GeneratedAssetNode(
-      makeAssetId('a|web/main.ddc.js'),
-      builderOptionsId: null,
-      phaseNumber: null,
+      AssetId('a', 'web/main.ddc.js'),
+      builderOptionsId: AssetId('_\$fake', 'options_id'),
+      phaseNumber: 0,
       state: NodeState.upToDate,
       isHidden: false,
       wasOutput: true,
       isFailure: true,
-      primaryInput: null,
+      primaryInput: AssetId('a', 'web/main.dart'),
     ));
     var response = await handler.handle(
         Request('GET', Uri.parse('http://server.com/main.ddc.js')),
         rootDir: 'web');
     expect(response.statusCode, HttpStatus.internalServerError);
   });
+
+  test('Supports HEAD requests', () async {
+    _addAsset('a|web/index.html', 'content');
+    var response = await handler.handle(
+        Request('HEAD', Uri.parse('http://server.com/index.html')),
+        rootDir: 'web');
+    expect(response.contentLength, 0);
+    expect(await response.readAsString(), '');
+  });
 }
+
+class FakeAssetReader with Fake implements AssetReader {}

@@ -56,10 +56,10 @@ class FailureReporter {
     if (!_reportedActions.add(_actionKey(output))) return;
     final errorFile =
         await File(_errorPathForOutput(output)).create(recursive: true);
-    await errorFile.writeAsString(jsonEncode(<dynamic>[actionDescription]
-        .followedBy(errors
-            .map((e) => [e.message, e.error, e.stackTrace?.toString() ?? '']))
-        .toList()));
+    await errorFile.writeAsString(jsonEncode(<dynamic>[
+      actionDescription,
+      for (var e in errors) [e.message, e.error, e.stackTrace?.toString() ?? '']
+    ]));
   }
 
   /// Indicate that the build steps which would produce [outputs] are failing
@@ -102,7 +102,7 @@ class FailureReporter {
 class ErrorReport {
   final String message;
   final String error;
-  final StackTrace stackTrace;
+  final StackTrace? stackTrace;
   ErrorReport(this.message, this.error, this.stackTrace);
 }
 

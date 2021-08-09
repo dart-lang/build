@@ -11,15 +11,14 @@ import 'package:build_test/build_test.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:pedantic/pedantic.dart';
-import 'package:test/test.dart';
-
 import 'package:scratch_space/scratch_space.dart';
 import 'package:scratch_space/src/util.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('ScratchSpace', () {
-    ScratchSpace scratchSpace;
-    InMemoryAssetReader assetReader;
+    late ScratchSpace scratchSpace;
+    late InMemoryAssetReader assetReader;
 
     var allAssets = [
       'dep|lib/dep.dart',
@@ -157,7 +156,8 @@ class RecursiveScratchSpaceAssetReader implements AssetReader {
   Stream<AssetId> findAssets(_) => throw UnimplementedError();
 
   @override
-  Future<String> readAsString(_, {encoding}) => throw UnimplementedError();
+  Future<String> readAsString(_, {encoding = utf8}) =>
+      throw UnimplementedError();
 
   @override
   Future<Digest> digest(AssetId id) async => Digest(await readAsBytes(id));

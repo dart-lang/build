@@ -4,13 +4,10 @@
 
 import 'dart:async';
 
-import 'package:build_config/build_config.dart';
-import 'package:build_test/build_test.dart';
-import 'package:test/test.dart';
-
-import 'package:build_runner_core/build_runner_core.dart';
-
 import 'package:_test_common/common.dart';
+import 'package:build_config/build_config.dart';
+import 'package:build_runner_core/build_runner_core.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('Resolver Reuse', () {
@@ -45,7 +42,7 @@ void main() {
             // through the resolver.
             var importedLibrary = inputLibrary.importedLibraries.firstWhere(
                 (l) => l.source.uri.path.endsWith('.imported.dart'));
-            var classNames = importedLibrary.definingCompilationUnit.types
+            var classNames = importedLibrary.definingCompilationUnit.classes
                 .map((c) => c.name)
                 .toList();
             return buildStep.writeAsString(

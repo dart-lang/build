@@ -35,7 +35,7 @@ class RunCommand extends BuildRunnerCommand {
   SharedOptions readOptions() {
     // Here we validate that [argResults.rest] is exactly equal to all the
     // arguments after the `--`.
-
+    var argResults = this.argResults!;
     var separatorPos = argResults.arguments.indexOf('--');
 
     if (separatorPos >= 0) {
@@ -77,11 +77,13 @@ class RunCommand extends BuildRunnerCommand {
   FutureOr<int> _run(SharedOptions options) async {
     var logSubscription =
         Logger.root.onRecord.listen(stdIOLogListener(verbose: options.verbose));
-
+    var argResults = this.argResults!;
     try {
       // Ensure that the user passed the name of a file to run.
       if (argResults.rest.isEmpty) {
-        logger..severe('Must specify an executable to run.')..severe(usage);
+        logger
+          ..severe('Must specify an executable to run.')
+          ..severe(usage);
         return ExitCode.usage.code;
       }
 
@@ -106,13 +108,13 @@ class RunCommand extends BuildRunnerCommand {
       //
       // Define these before starting the isolate, so that we can close
       // them if there is a spawn exception.
-      ReceivePort onExit, onError;
+      ReceivePort? onExit, onError;
 
       // Use a completer to determine the exit code.
       var exitCodeCompleter = Completer<int>();
 
       try {
-        var buildDirs = (options.buildDirs ?? <BuildDirectory>{})
+        var buildDirs = (options.buildDirs)
           ..add(BuildDirectory('',
               outputLocation: OutputLocation(tempPath,
                   useSymlinks: options.outputSymlinksOnly, hoist: false)));
@@ -134,7 +136,7 @@ class RunCommand extends BuildRunnerCommand {
 
         if (result.status == BuildStatus.failure) {
           logger.warning('Skipping script run due to build failure');
-          return result.failureType.exitCode;
+          return result.failureType?.exitCode ?? 1;
         }
 
         // Find the path of the script to run.
@@ -152,8 +154,8 @@ class RunCommand extends BuildRunnerCommand {
 
         // On an error, kill the isolate, and log the error.
         onError.listen((e) {
-          onExit.close();
-          onError.close();
+          onExit?.close();
+          onError?.close();
           logger.severe('Unhandled error from script: $scriptName', e[0],
               StackTrace.fromString(e[1].toString()));
           if (!exitCodeCompleter.isCompleted) exitCodeCompleter.complete(1);

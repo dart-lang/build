@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:analyzer/dart/ast/ast.dart';
@@ -25,7 +26,7 @@ import 'exceptions.dart';
 /// This represents a single input and its expected and real outputs. It also
 /// handles tracking of dependencies.
 class BuildStepImpl implements BuildStep {
-  final Resolvers _resolvers;
+  final Resolvers? _resolvers;
   final StageTracker _stageTracker;
 
   /// The primary input id for this build step.
@@ -40,7 +41,8 @@ class BuildStepImpl implements BuildStep {
 
   /// The list of all outputs which are expected/allowed to be output from this
   /// step.
-  final Set<AssetId> _expectedOutputs;
+  @override
+  final Set<AssetId> allowedOutputs;
 
   /// The result of any writes which are starting during this step.
   final _writeResults = <Future<Result<void>>>[];
@@ -55,23 +57,28 @@ class BuildStepImpl implements BuildStep {
 
   bool _isComplete = false;
 
-  final void Function(Iterable<AssetId>) _reportUnusedAssets;
+  final void Function(Iterable<AssetId>)? _reportUnusedAssets;
 
   BuildStepImpl(this.inputId, Iterable<AssetId> expectedOutputs, this._reader,
       this._writer, this._resolvers, this._resourceManager,
-      {StageTracker stageTracker,
-      void Function(Iterable<AssetId>) reportUnusedAssets})
-      : _expectedOutputs = expectedOutputs.toSet(),
+      {StageTracker? stageTracker,
+      void Function(Iterable<AssetId>)? reportUnusedAssets})
+      : allowedOutputs = UnmodifiableSetView(expectedOutputs.toSet()),
         _stageTracker = stageTracker ?? NoOpStageTracker.instance,
         _reportUnusedAssets = reportUnusedAssets;
 
   @override
   Resolver get resolver {
     if (_isComplete) throw BuildStepCompletedException();
-    return _DelayedResolver(_resolver ??= _resolvers.get(this));
+    final resolvers = _resolvers;
+    if (resolvers == null) {
+      throw UnsupportedError('Resolvers are not available in this build.');
+    }
+
+    return _DelayedResolver(_resolver ??= resolvers.get(this));
   }
 
-  Future<ReleasableResolver> _resolver;
+  Future<ReleasableResolver>? _resolver;
 
   @override
   Future<bool> canRead(AssetId id) {
@@ -142,7 +149,7 @@ class BuildStepImpl implements BuildStep {
 
   Future<void> _futureOrWrite<T>(
           FutureOr<T> content, Future<void> Function(T content) write) =>
-      (content is Future<T>) ? content.then(write) : write(content as T);
+      (content is Future<T>) ? content.then(write) : write(content);
 
   /// Waits for work to finish and cleans up resources.
   ///
@@ -152,20 +159,22 @@ class BuildStepImpl implements BuildStep {
   Future<void> complete() async {
     _isComplete = true;
     await Future.wait(_writeResults.map(Result.release));
-    (await _resolver)?.release();
+    try {
+      (await _resolver)?.release();
+    } catch (_) {}
   }
 
   /// Checks that [id] is an expected output, and throws an
   /// [InvalidOutputException] or [UnexpectedOutputException] if it's not.
   void _checkOutput(AssetId id) {
-    if (!_expectedOutputs.contains(id)) {
-      throw UnexpectedOutputException(id, expected: _expectedOutputs);
+    if (!allowedOutputs.contains(id)) {
+      throw UnexpectedOutputException(id, expected: allowedOutputs);
     }
   }
 
   @override
   void reportUnusedAssets(Iterable<AssetId> assets) {
-    if (_reportUnusedAssets != null) _reportUnusedAssets(assets);
+    _reportUnusedAssets?.call(assets);
   }
 }
 
@@ -186,7 +195,7 @@ class _DelayedResolver implements Resolver {
   }
 
   @override
-  Future<AstNode> astNodeFor(Element element, {bool resolve = false}) async =>
+  Future<AstNode?> astNodeFor(Element element, {bool resolve = false}) async =>
       (await _delegate).astNodeFor(element, resolve: resolve);
 
   @override
@@ -202,7 +211,7 @@ class _DelayedResolver implements Resolver {
           .libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
 
   @override
-  Future<LibraryElement> findLibraryByName(String libraryName) async =>
+  Future<LibraryElement?> findLibraryByName(String libraryName) async =>
       (await _delegate).findLibraryByName(libraryName);
 
   @override

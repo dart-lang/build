@@ -2,19 +2,16 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build/build.dart';
-import 'package:test/test.dart';
-
-import 'package:build_runner_core/build_runner_core.dart';
-
 import 'package:_test_common/common.dart';
-import 'package:_test_common/package_graphs.dart';
+import 'package:build/build.dart';
+import 'package:build_runner_core/build_runner_core.dart';
+import 'package:test/test.dart';
 
 void main() {
   final customGeneratedDir = 'my-custom-dir';
   overrideGeneratedOutputDirectory(customGeneratedDir);
 
-  PackageGraph packageGraph;
+  late PackageGraph packageGraph;
 
   setUp(() {
     packageGraph = buildPackageGraph({

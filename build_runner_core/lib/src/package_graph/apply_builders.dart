@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build/src/builder/logging.dart';
@@ -21,7 +20,7 @@ typedef BuildPhaseFactory = BuildPhase Function(
     PackageNode package,
     BuilderOptions options,
     InputSet targetSources,
-    InputSet generateFor,
+    InputSet? generateFor,
     bool isReleaseBuild);
 
 typedef PackageFilter = bool Function(PackageNode node);
@@ -56,7 +55,7 @@ PackageFilter toRoot() => (p) => p.isRoot;
 BuilderApplication applyToRoot(Builder builder,
         {bool isOptional = false,
         bool hideOutput = false,
-        InputSet generateFor}) =>
+        InputSet generateFor = const InputSet()}) =>
     BuilderApplication.forBuilder('', [(_) => builder], toRoot(),
         isOptional: isOptional,
         hideOutput: hideOutput,
@@ -79,13 +78,13 @@ BuilderApplication applyToRoot(Builder builder,
 /// because it matches [filter] or because it was enabled manually.
 BuilderApplication apply(String builderKey,
         List<BuilderFactory> builderFactories, PackageFilter filter,
-        {bool isOptional,
-        bool hideOutput,
-        InputSet defaultGenerateFor,
-        BuilderOptions defaultOptions,
-        BuilderOptions defaultDevOptions,
-        BuilderOptions defaultReleaseOptions,
-        Iterable<String> appliesBuilders}) =>
+        {bool isOptional = false,
+        bool hideOutput = true,
+        InputSet defaultGenerateFor = const InputSet(),
+        BuilderOptions defaultOptions = BuilderOptions.empty,
+        BuilderOptions? defaultDevOptions,
+        BuilderOptions? defaultReleaseOptions,
+        Iterable<String> appliesBuilders = const []}) =>
     BuilderApplication.forBuilder(
       builderKey,
       builderFactories,
@@ -106,10 +105,10 @@ BuilderApplication apply(String builderKey,
 /// always hidden.
 BuilderApplication applyPostProcess(
         String builderKey, PostProcessBuilderFactory builderFactory,
-        {InputSet defaultGenerateFor,
-        BuilderOptions defaultOptions,
-        BuilderOptions defaultDevOptions,
-        BuilderOptions defaultReleaseOptions}) =>
+        {InputSet defaultGenerateFor = const InputSet(),
+        BuilderOptions defaultOptions = BuilderOptions.empty,
+        BuilderOptions? defaultDevOptions,
+        BuilderOptions? defaultReleaseOptions}) =>
     BuilderApplication.forPostProcessBuilder(
       builderKey,
       builderFactory,
@@ -146,28 +145,27 @@ class BuilderApplication {
     this.buildPhaseFactories,
     this.filter,
     this.hideOutput,
-    Iterable<String> appliesBuilders,
-  ) : appliesBuilders = appliesBuilders ?? const [];
+    this.appliesBuilders,
+  );
 
   factory BuilderApplication.forBuilder(
     String builderKey,
     List<BuilderFactory> builderFactories,
     PackageFilter filter, {
-    bool isOptional,
-    bool hideOutput,
-    InputSet defaultGenerateFor,
-    BuilderOptions defaultOptions,
-    BuilderOptions defaultDevOptions,
-    BuilderOptions defaultReleaseOptions,
-    Iterable<String> appliesBuilders,
+    bool isOptional = false,
+    bool hideOutput = true,
+    InputSet defaultGenerateFor = const InputSet(),
+    BuilderOptions defaultOptions = BuilderOptions.empty,
+    BuilderOptions? defaultDevOptions,
+    BuilderOptions? defaultReleaseOptions,
+    Iterable<String> appliesBuilders = const [],
   }) {
-    hideOutput ??= true;
     var phaseFactories = builderFactories.map((builderFactory) {
       return (PackageNode package, BuilderOptions options,
-          InputSet targetSources, InputSet generateFor, bool isReleaseBuild) {
+          InputSet targetSources, InputSet? generateFor, bool isReleaseBuild) {
         generateFor ??= defaultGenerateFor;
 
-        var optionsWithDefaults = (defaultOptions ?? BuilderOptions.empty)
+        var optionsWithDefaults = defaultOptions
             .overrideWith(
                 isReleaseBuild ? defaultReleaseOptions : defaultDevOptions)
             .overrideWith(options);
@@ -179,10 +177,8 @@ class BuilderApplication {
         final logger = Logger(builderKey);
         final builder =
             _scopeLogSync(() => builderFactory(optionsWithDefaults), logger);
-        if (builder == null) {
-          logger.severe(_factoryFailure(package.name, optionsWithDefaults));
-          throw CannotBuildException();
-        }
+        if (builder == null) throw CannotBuildException();
+        _validateBuilder(builder);
         return InBuildPhase(builder, package.name,
             builderKey: builderKey,
             targetSources: targetSources,
@@ -201,16 +197,16 @@ class BuilderApplication {
   factory BuilderApplication.forPostProcessBuilder(
     String builderKey,
     PostProcessBuilderFactory builderFactory, {
-    InputSet defaultGenerateFor,
-    BuilderOptions defaultOptions,
-    BuilderOptions defaultDevOptions,
-    BuilderOptions defaultReleaseOptions,
+    InputSet defaultGenerateFor = const InputSet(),
+    BuilderOptions defaultOptions = BuilderOptions.empty,
+    BuilderOptions? defaultDevOptions,
+    BuilderOptions? defaultReleaseOptions,
   }) {
     var phaseFactory = (PackageNode package, BuilderOptions options,
-        InputSet targetSources, InputSet generateFor, bool isReleaseBuild) {
+        InputSet targetSources, InputSet? generateFor, bool isReleaseBuild) {
       generateFor ??= defaultGenerateFor;
 
-      var optionsWithDefaults = (defaultOptions ?? BuilderOptions.empty)
+      var optionsWithDefaults = defaultOptions
           .overrideWith(
               isReleaseBuild ? defaultReleaseOptions : defaultDevOptions)
           .overrideWith(options);
@@ -222,10 +218,8 @@ class BuilderApplication {
       final logger = Logger(builderKey);
       final builder =
           _scopeLogSync(() => builderFactory(optionsWithDefaults), logger);
-      if (builder == null) {
-        logger.severe(_factoryFailure(package.name, optionsWithDefaults));
-        throw CannotBuildException();
-      }
+      if (builder == null) throw CannotBuildException();
+      _validatePostProcessBuilder(builder);
       var builderAction = PostBuildAction(builder, package.name,
           builderOptions: optionsWithDefaults,
           generateFor: generateFor,
@@ -260,25 +254,25 @@ Future<List<BuildPhase>> createBuildPhases(
   final globalOptions = targetGraph.rootPackageConfig.globalOptions.map(
       (key, config) => MapEntry(
           key,
-          _options(config?.options).overrideWith(isReleaseMode
-              ? _options(config?.releaseOptions)
-              : _options(config?.devOptions))));
+          _options(config.options).overrideWith(isReleaseMode
+              ? _options(config.releaseOptions)
+              : _options(config.devOptions))));
   for (final key in builderConfigOverrides.keys) {
-    final overrides = BuilderOptions(builderConfigOverrides[key]);
+    final overrides = BuilderOptions(builderConfigOverrides[key]!);
     globalOptions[key] =
         (globalOptions[key] ?? BuilderOptions.empty).overrideWith(overrides);
   }
 
   final cycles = stronglyConnectedComponents<TargetNode>(
       targetGraph.allModules.values,
-      (node) => node.target.dependencies?.map((key) {
+      (node) => node.target.dependencies.map((key) {
             if (!targetGraph.allModules.containsKey(key)) {
               _logger.severe('${node.target.key} declares a dependency on $key '
                   'but it does not exist');
               throw CannotBuildException();
             }
-            return targetGraph.allModules[key];
-          })?.where((n) => n != null),
+            return targetGraph.allModules[key]!;
+          }),
       equals: (a, b) => a.target.key == b.target.key,
       hashCode: (node) => node.target.key.hashCode);
   final applyWith = _applyWith(builderApplications);
@@ -334,7 +328,7 @@ Iterable<BuildPhase> _createBuildPhasesForBuilderInCycle(
     Map<String, List<BuilderApplication>> applyWith,
     Map<String, BuilderApplication> allBuilders,
     bool isReleaseMode) {
-  TargetBuilderConfig targetConfig(TargetNode node) =>
+  TargetBuilderConfig? targetConfig(TargetNode node) =>
       node.target.builders[builderApplication.builderKey];
   return builderApplication.buildPhaseFactories.expand((createPhase) => cycle
           .where((targetNode) => _shouldApply(
@@ -364,7 +358,7 @@ bool _shouldApply(
   }
   final builderConfig = node.target.builders[builderApplication.builderKey];
   if (builderConfig?.isEnabled != null) {
-    return builderConfig.isEnabled;
+    return builderConfig!.isEnabled;
   }
   final shouldAutoApply =
       node.target.autoApplyBuilders && builderApplication.filter(node.package);
@@ -391,7 +385,7 @@ Map<String, List<BuilderApplication>> _applyWith(
 ///
 /// Any calls to [print] will be logged with `log.info`, and any errors will be
 /// logged with `log.severe`.
-T _scopeLogSync<T>(T Function() fn, Logger log) {
+T? _scopeLogSync<T>(T Function() fn, Logger log) {
   return runZonedGuarded(fn, (e, st) {
     log.severe('', e, st);
   }, zoneSpecification: ZoneSpecification(print: (self, parent, zone, message) {
@@ -399,9 +393,35 @@ T _scopeLogSync<T>(T Function() fn, Logger log) {
   }), zoneValues: {logKey: log});
 }
 
-String _factoryFailure(String packageName, BuilderOptions options) =>
-    'Failed to instantiate builder for $packageName with configuration:\n'
-    '${JsonEncoder.withIndent(' ').convert(options.config)}';
+BuilderOptions _options(Map<String, dynamic>? options) =>
+    options?.isEmpty ?? true ? BuilderOptions.empty : BuilderOptions(options!);
 
-BuilderOptions _options(Map<String, dynamic> options) =>
-    options?.isEmpty ?? true ? BuilderOptions.empty : BuilderOptions(options);
+void _validateBuilder(Builder builder) {
+  var inputExtensions = builder.buildExtensions.keys.toSet();
+  var matching = inputExtensions.intersection(
+      {for (var outputs in builder.buildExtensions.values) ...outputs});
+  if (matching.isNotEmpty) {
+    var mapDescription = builder.buildExtensions.entries
+        .map((e) => '${e.key}: ${e.value},')
+        .join('\n');
+    throw ArgumentError.value(
+        '{ $mapDescription }',
+        '${builder.runtimeType}.buildExtensions',
+        'Output extensions must not match any input extensions, but got '
+            'the following overlapping output extensions: $matching');
+  }
+}
+
+void _validatePostProcessBuilder(PostProcessBuilder builder) {
+  // Regular builders may use `{{}}` to define a capture group in build
+  // extensions. We don't currently support this syntax for post process
+  // builders.
+  if (builder.inputExtensions.any((input) => input.contains('{{}}'))) {
+    throw ArgumentError(
+      '${builder.runtimeType}.buildInputs contains capture groups (`{{}}`), '
+      'which is not currently supported for post-process builders. \n'
+      'Try generalizing input extensions and manually skip uninteresting '
+      'assets in the `build()` method.',
+    );
+  }
+}

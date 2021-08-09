@@ -5,6 +5,7 @@
 @TestOn('vm')
 import 'dart:io';
 
+import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
 import 'package:build_runner_core/src/util/constants.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -58,8 +59,7 @@ void main() {
   group('experiments', () {
     test('can serve a single app with experiments enabled', () async {
       var result = await runBuild(trailingArgs: [
-        '--define',
-        'build_web_compilers|ddc=experiments=["fake-experiment"]',
+        '--enable-experiment=fake-experiment',
       ]);
 
       expect(result.exitCode, isNot(0));
@@ -105,8 +105,7 @@ void main() {
     });
 
     test('Re-snapshots if there is no asset graph', () async {
-      var assetGraph = assetGraphPathFor(p.url
-          .join('.dart_tool', 'build', 'entrypoint', 'build.dart.snapshot'));
+      var assetGraph = assetGraphPathFor(scriptKernelLocation);
       await File(assetGraph).delete();
 
       var nextBuild = await runBuild();
@@ -114,8 +113,9 @@ void main() {
           nextBuild.stdout.split('\n'),
           containsAllInOrder([
             contains('Generating build script'),
-            contains('Deleted previous snapshot due to missing asset graph.'),
-            contains('Creating build script snapshot'),
+            contains(
+                'Invalidated precompiled build script due to missing asset graph.'),
+            contains('Precompiling build script'),
             contains('Building new asset graph.'),
             contains('Succeeded after'),
           ]));

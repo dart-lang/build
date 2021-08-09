@@ -1,3 +1,43 @@
+## 3.2.0
+
+- Allow analyzer version 2.x.x.
+
+## 3.1.0
+
+- Add the `emit-debug-symbols` option for the `build_web_compilers:ddc`
+  builder. The debug symbols output is used by the debugger in webdev for
+  variable inspection. This setting is disabled by default but can be
+  enabled by setting it to `true` globally:
+
+```yaml
+global_options:
+  build_web_compilers:ddc:
+    options:
+      emit-debug-symbols: true
+```
+
+- Update min SDK constraint to 2.14.0-216.0.dev
+
+## 3.0.0
+
+- Migrate to null safety.
+- Update to the latest `build_modules`.
+- Drop support for `skipPlatformCheckPackages`.
+
+## 2.16.5
+
+- Update to build `2.x`.
+- Update to scratch_space `1.x`.
+
+## 2.16.4
+
+- Update analyzer to `1.x`.
+- Update glob to `2.x`.
+
+## 2.16.3
+
+- Allow the null safety pre-release of `bazel_worker`.
+
 ## 2.16.2
 
 - Allow the null safety pre-release of `logging`.

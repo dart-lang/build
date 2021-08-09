@@ -1,3 +1,28 @@
+## 4.0.2-dev
+
+## 4.0.1
+
+- Allow analyzer version 2.x.x.
+
+## 4.0.0
+
+- Migrate to null safety.
+
+## 3.0.6
+
+- Update to graphs `1.x`
+- Update to build `2.x`
+- Update to scratch_space `1.x`
+
+## 3.0.5
+
+- Update to glob `2.x`.
+- Update to analyzer `1.x`.
+
+## 3.0.4
+
+- Allow the null safe pre-releases of `bazel_worker`.
+
 ## 3.0.3
 
 - Allow the null safe pre-releases of all migrated deps.

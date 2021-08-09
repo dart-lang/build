@@ -31,7 +31,7 @@ void main() {
   final postCopyABuilderApplication = applyPostProcess(
       'a:post_copy_builder',
       (options) => CopyingPostProcessBuilder(
-          outputExtension: options.config['extension'] as String ?? '.post'));
+          outputExtension: options.config['extension'] as String? ?? '.post'));
   final globBuilder = GlobbingBuilder(Glob('**.txt'));
   final defaultBuilderOptions = const BuilderOptions({});
   final placeholders =
@@ -99,6 +99,34 @@ void main() {
                 {'a|web/a.txt': 'a'},
               ),
           throwsA(TypeMatcher<CannotBuildException>()));
+    });
+
+    test('throws an error if any output extensions match input extensions', () {
+      expect(
+          testBuilders(
+            [
+              apply(
+                  '',
+                  [
+                    expectAsync1((_) => TestBuilder(buildExtensions: {
+                          '.dart': ['.g.dart', '.json'],
+                          '.json': ['.dart']
+                        })),
+                  ],
+                  toRoot(),
+                  isOptional: false,
+                  hideOutput: false),
+            ],
+            {},
+            status: BuildStatus.failure,
+          ),
+          throwsA(isA<ArgumentError>()
+              .having((e) => e.name, 'name', 'TestBuilder.buildExtensions')
+              .having(
+                  (e) => e.message,
+                  'message',
+                  allOf(contains('.json'), contains('.dart'),
+                      isNot(contains('.g.dart'))))));
     });
 
     test('runs a max of 16 concurrent actions per phase', () async {
@@ -185,6 +213,49 @@ void main() {
           'a|lib/b.txt.copy.0': 'b',
           'a|lib/b.txt.copy.1': 'b',
         });
+      });
+
+      test('outputs with a capture group', () async {
+        await testBuilders(
+          [
+            applyToRoot(
+              TestBuilder(buildExtensions: {
+                'assets/{{}}.txt': ['lib/src/generated/{{}}.dart']
+              }),
+            )
+          ],
+          {
+            'a|assets/nested/input/file.txt': 'a',
+          },
+          outputs: {
+            'a|lib/src/generated/nested/input/file.dart': 'a',
+          },
+        );
+      });
+
+      test('recognizes right optional builder with capture groups', () async {
+        await testBuilders(
+          [
+            applyToRoot(
+              TestBuilder(
+                buildExtensions: {
+                  'assets/{{}}.txt': ['lib/src/generated/{{}}.dart']
+                },
+              ),
+              isOptional: true,
+            ),
+            applyToRoot(TestBuilder(buildExtensions: {
+              '.dart': ['.copy.dart']
+            })),
+          ],
+          {
+            'a|assets/nested/input/file.txt': 'a',
+          },
+          outputs: {
+            'a|lib/src/generated/nested/input/file.dart': 'a',
+            'a|lib/src/generated/nested/input/file.copy.dart': 'a',
+          },
+        );
       });
 
       test('optional build actions don\'t run if their outputs aren\'t read',
@@ -400,7 +471,7 @@ void main() {
 
         var graphId = makeAssetId('a|$assetGraphPath');
         expect(writer.assets, contains(graphId));
-        var cachedGraph = AssetGraph.deserialize(writer.assets[graphId]);
+        var cachedGraph = AssetGraph.deserialize(writer.assets[graphId]!);
         expect(
             cachedGraph.allNodes.map((node) => node.id),
             unorderedEquals([
@@ -565,7 +636,7 @@ void main() {
     });
 
     group('with `hideOutput: true`', () {
-      PackageGraph packageGraph;
+      late PackageGraph packageGraph;
 
       setUp(() {
         packageGraph = buildPackageGraph({
@@ -962,7 +1033,7 @@ void main() {
 
     var graphId = makeAssetId('a|$assetGraphPath');
     expect(writer.assets, contains(graphId));
-    var cachedGraph = AssetGraph.deserialize(writer.assets[graphId]);
+    var cachedGraph = AssetGraph.deserialize(writer.assets[graphId]!);
 
     var expectedGraph = await AssetGraph.build(
         [],
@@ -976,7 +1047,9 @@ void main() {
         'a|web/a.txt', [], computeDigest(AssetId('a', 'web/a.txt'), 'a'));
     var bSourceNode = makeAssetNode(
         'a|lib/b.txt', [], computeDigest(AssetId('a', 'lib/b.txt'), 'b'));
-    expectedGraph..add(aSourceNode)..add(bSourceNode);
+    expectedGraph
+      ..add(aSourceNode)
+      ..add(bSourceNode);
 
     // Regular generated asset nodes and supporting nodes.
     var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
@@ -1026,7 +1099,9 @@ void main() {
         aSourceNode.id, 0, postBuilderOptionsId);
     var bAnchorNode = PostProcessAnchorNode.forInputAndAction(
         bSourceNode.id, 0, postBuilderOptionsId);
-    expectedGraph..add(aAnchorNode)..add(bAnchorNode);
+    expectedGraph
+      ..add(aAnchorNode)
+      ..add(bAnchorNode);
 
     var aPostCopyNode = GeneratedAssetNode(makeAssetId('a|web/a.txt.post'),
         phaseNumber: 1,
@@ -1099,7 +1174,7 @@ void main() {
     }, writer: writer);
 
     final graphId = makeAssetId('a|$assetGraphPath');
-    final cachedGraph = AssetGraph.deserialize(writer.assets[graphId]);
+    final cachedGraph = AssetGraph.deserialize(writer.assets[graphId]!);
     final outputId = AssetId('a', 'lib/a.txt.out');
 
     final outputNode = cachedGraph.get(outputId) as GeneratedAssetNode;
@@ -1165,7 +1240,7 @@ void main() {
           writer: writer);
 
       // Followup build with modified inputs.
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
       writer.assets.clear();
       await testBuilders(
           builders,
@@ -1218,7 +1293,7 @@ void main() {
             writer: writer);
 
         // Followup build with modified unused inputs should have no outputs.
-        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
         writer.assets.clear();
         await testBuilders(
             builders,
@@ -1233,7 +1308,7 @@ void main() {
             writer: writer);
 
         // And now modify a real input.
-        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
         writer.assets.clear();
         await testBuilders(
             builders,
@@ -1250,7 +1325,7 @@ void main() {
             writer: writer);
 
         // Finally modify the primary input.
-        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
         writer.assets.clear();
         await testBuilders(
             builders,
@@ -1292,7 +1367,7 @@ void main() {
             writer: writer);
 
         // Followup build with modified primary input should have no outputs.
-        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
         writer.assets.clear();
         await testBuilders(
             builders,
@@ -1306,7 +1381,7 @@ void main() {
             writer: writer);
 
         // But modifying other inputs still causes a rebuild.
-        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
         writer.assets.clear();
         await testBuilders(
             builders,
@@ -1345,7 +1420,7 @@ void main() {
             writer: writer);
 
         // Delete the primary input, the output shoud still be deleted
-        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
         writer.assets.clear();
         await testBuilders(
             builders,
@@ -1357,7 +1432,7 @@ void main() {
             writer: writer);
 
         var graph = AssetGraph.deserialize(
-            writer.assets[makeAssetId('a|$assetGraphPath')]);
+            writer.assets[makeAssetId('a|$assetGraphPath')]!);
         expect(graph.get(makeAssetId('a|lib/a.txt.copy')), isNull);
       });
     });
@@ -1383,7 +1458,7 @@ void main() {
           writer: writer);
 
       // Followup build with deleted input + cached graph.
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
       writer.assets.clear();
       await testBuilders(
           builders,
@@ -1397,7 +1472,7 @@ void main() {
 
       /// Should be deleted using the writer, and removed from the new graph.
       var newGraph = AssetGraph.deserialize(
-          writer.assets[makeAssetId('a|$assetGraphPath')]);
+          writer.assets[makeAssetId('a|$assetGraphPath')]!);
       var aNodeId = makeAssetId('a|lib/a.txt');
       var aCopyNodeId = makeAssetId('a|lib/a.txt.copy');
       var aCloneNodeId = makeAssetId('a|lib/a.txt.copy.clone');
@@ -1418,7 +1493,7 @@ void main() {
           outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
       // Followup build with same sources + cached graph.
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
       await testBuilders(builders, {
         'a|web/a.txt': 'a',
         'a|web/a.txt.copy': 'a',
@@ -1440,7 +1515,7 @@ void main() {
           writer: writer);
 
       // Followup build with same sources + cached graph.
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
       await testBuilders(builders, {
         'a|web/a.txt': 'a',
         'a|web/a.txt.copy': 'a',
@@ -1465,7 +1540,7 @@ void main() {
 
       // Followup build with same sources + cached graph, but configure the
       // builder to read a different file.
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
       writer.assets.clear();
 
       await testBuilders([
@@ -1486,12 +1561,12 @@ void main() {
 
       // Read cached graph and validate.
       var graph = AssetGraph.deserialize(
-          writer.assets[makeAssetId('a|$assetGraphPath')]);
+          writer.assets[makeAssetId('a|$assetGraphPath')]!);
       var outputNode =
           graph.get(makeAssetId('a|lib/file.a.copy')) as GeneratedAssetNode;
-      var fileANode = graph.get(makeAssetId('a|lib/file.a'));
-      var fileBNode = graph.get(makeAssetId('a|lib/file.b'));
-      var fileCNode = graph.get(makeAssetId('a|lib/file.c'));
+      var fileANode = graph.get(makeAssetId('a|lib/file.a'))!;
+      var fileBNode = graph.get(makeAssetId('a|lib/file.b'))!;
+      var fileCNode = graph.get(makeAssetId('a|lib/file.c'))!;
       expect(outputNode.inputs, unorderedEquals([fileANode.id, fileCNode.id]));
       expect(fileANode.outputs, contains(outputNode.id));
       expect(fileBNode.outputs, isEmpty);
@@ -1523,7 +1598,7 @@ void main() {
 
       // Modify the primary input of `file.a.copy`, but its output doesn't
       // change so `file.a.copy.copy` shouldn't be rebuilt.
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
       writer.assets.clear();
       await testBuilders(
           builders,
@@ -1555,7 +1630,7 @@ void main() {
         'a|web/a.txt': 'b',
         'a|web/a.txt.sibling': 'sibling',
         'a|web/a.txt.new': 'sibling',
-        'a|$assetGraphPath': writer.assets[makeAssetId('a|$assetGraphPath')],
+        'a|$assetGraphPath': writer.assets[makeAssetId('a|$assetGraphPath')]!,
       }, outputs: {});
 
       // And now try modifying the sibling to make sure that still works.
@@ -1563,7 +1638,7 @@ void main() {
         'a|web/a.txt': 'b',
         'a|web/a.txt.sibling': 'new!',
         'a|web/a.txt.new': 'sibling',
-        'a|$assetGraphPath': writer.assets[makeAssetId('a|$assetGraphPath')],
+        'a|$assetGraphPath': writer.assets[makeAssetId('a|$assetGraphPath')]!,
       }, outputs: {
         'a|web/a.txt.new': 'new!',
       });
@@ -1598,7 +1673,7 @@ void main() {
         writer: writer,
       );
 
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
       writer.assets.clear();
 
       await testBuilders(
@@ -1673,7 +1748,7 @@ void main() {
         writer: writer,
       );
 
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
       writer.assets.clear();
 
       await testBuilders(
@@ -1689,7 +1764,7 @@ void main() {
           },
           writer: writer);
 
-      serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')];
+      serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
       writer.assets.clear();
 
       // Make sure if we mark the original node as a failure again, that we
@@ -1705,7 +1780,7 @@ void main() {
           writer: writer);
 
       var finalGraph =
-          AssetGraph.deserialize(writer.assets[AssetId('a', assetGraphPath)]);
+          AssetGraph.deserialize(writer.assets[AssetId('a', assetGraphPath)]!);
       for (var i = 1; i < 4; i++) {
         var node =
             finalGraph.get(AssetId('a', 'web/a.g$i')) as GeneratedAssetNode;

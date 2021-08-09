@@ -18,22 +18,22 @@ import 'build_environment.dart';
 class OverrideableEnvironment implements BuildEnvironment {
   final BuildEnvironment _default;
 
-  final RunnerAssetReader _reader;
-  final RunnerAssetWriter _writer;
+  final RunnerAssetReader? _reader;
+  final RunnerAssetWriter? _writer;
 
-  final void Function(LogRecord) _onLog;
+  final void Function(LogRecord)? _onLog;
 
   final Future<BuildResult> Function(
-          BuildResult, FinalizedAssetsView, AssetReader, Set<BuildDirectory>)
+          BuildResult, FinalizedAssetsView, AssetReader, Set<BuildDirectory>)?
       _finalizeBuild;
 
   OverrideableEnvironment(
     this._default, {
-    RunnerAssetReader reader,
-    RunnerAssetWriter writer,
-    void Function(LogRecord) onLog,
+    RunnerAssetReader? reader,
+    RunnerAssetWriter? writer,
+    void Function(LogRecord)? onLog,
     Future<BuildResult> Function(
-            BuildResult, FinalizedAssetsView, AssetReader, Set<BuildDirectory>)
+            BuildResult, FinalizedAssetsView, AssetReader, Set<BuildDirectory>)?
         finalizeBuild,
   })  : _reader = reader,
         _writer = writer,
@@ -56,13 +56,7 @@ class OverrideableEnvironment implements BuildEnvironment {
           buildResult, finalizedAssetsView, reader, buildDirs);
 
   @override
-  void onLog(LogRecord record) {
-    if (_onLog != null) {
-      _onLog(record);
-    } else {
-      _default.onLog(record);
-    }
-  }
+  void onLog(LogRecord record) => (_onLog ?? _default.onLog)(record);
 
   @override
   Future<int> prompt(String message, List<String> choices) =>

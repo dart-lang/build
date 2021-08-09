@@ -25,7 +25,7 @@ class PackageAssetReader extends AssetReader
   final PackageConfig _packageConfig;
 
   /// What package is the originating build occurring in.
-  final String _rootPackage;
+  final String? _rootPackage;
 
   /// Wrap a [PackageConfig] to identify where files are located.
   ///
@@ -44,7 +44,7 @@ class PackageAssetReader extends AssetReader
   /// the name of the package is the name of the directory. This is similar to
   /// the older "packages" folder paradigm for resolution.
   factory PackageAssetReader.forPackageRoot(String packageRoot,
-      [String rootPackage]) {
+      [String? rootPackage]) {
     final directory = Directory(packageRoot);
     final packages = <String, String>{};
     for (final entity in directory.listSync()) {
@@ -58,7 +58,7 @@ class PackageAssetReader extends AssetReader
 
   /// Returns a [PackageAssetReader] with a simple [packageToPath] mapping.
   PackageAssetReader.forPackages(Map<String, String> packageToPath,
-      [String rootPackage])
+      [String? rootPackage])
       : this(
             PackageConfig([
               for (var entry in packageToPath.entries)
@@ -72,12 +72,17 @@ class PackageAssetReader extends AssetReader
   /// A reader that can resolve files known to the current isolate.
   ///
   /// A [rootPackage] should be provided for full API compatibility.
-  static Future<PackageAssetReader> currentIsolate({String rootPackage}) async {
-    return PackageAssetReader(
-        await findPackageConfigUri(await Isolate.packageConfig), rootPackage);
+  static Future<PackageAssetReader> currentIsolate(
+      {String? rootPackage}) async {
+    final packageConfig = await Isolate.packageConfig ??
+        (throw UnsupportedError('No package config found'));
+    final configUri = await findPackageConfigUri(packageConfig) ??
+        (throw UnsupportedError('Package configuration file not found'));
+
+    return PackageAssetReader(configUri, rootPackage);
   }
 
-  File _resolve(AssetId id) {
+  File? _resolve(AssetId id) {
     final uri = id.uri;
     if (uri.isScheme('package')) {
       final uri = _packageConfig.resolve(id.uri);
@@ -93,7 +98,10 @@ class PackageAssetReader extends AssetReader
 
   String get _rootPackagePath {
     // If the root package has a pub layout, use `packagePath`.
-    final root = _packageConfig[_rootPackage]?.root?.toFilePath();
+    final rootPackage = _rootPackage;
+    final root = rootPackage != null
+        ? _packageConfig[rootPackage]?.root.toFilePath()
+        : null;
     if (root != null && Directory(p.join(root, 'lib')).existsSync()) {
       return root;
     }
@@ -102,7 +110,7 @@ class PackageAssetReader extends AssetReader
   }
 
   @override
-  Stream<AssetId> findAssets(Glob glob, {String package}) {
+  Stream<AssetId> findAssets(Glob glob, {String? package}) {
     package ??= _rootPackage;
     if (package == null) {
       throw UnsupportedError(
@@ -124,7 +132,7 @@ class PackageAssetReader extends AssetReader
           .map((f) => p.relative(f.path, from: _rootPackagePath))
           .where((p) => !(p.startsWith('packages/') || p.startsWith('lib/'))));
     }
-    return packageFiles.where(glob.matches).map((p) => AssetId(package, p));
+    return packageFiles.where(glob.matches).map((p) => AssetId(package!, p));
   }
 
   @override

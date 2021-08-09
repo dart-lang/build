@@ -4,8 +4,8 @@
 
 import 'dart:convert';
 
-import 'package:crypto/crypto.dart';
 import 'package:convert/convert.dart';
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
 import 'id.dart';
@@ -28,7 +28,7 @@ abstract class AssetReader {
   /// * Throws a `PackageNotFoundException` if `id.package` is not found.
   /// * Throws a `AssetNotFoundException` if `id.path` is not found.
   /// * Throws an `InvalidInputException` if [id] is an invalid input.
-  Future<String> readAsString(AssetId id, {Encoding encoding});
+  Future<String> readAsString(AssetId id, {Encoding encoding = utf8});
 
   /// Indicates whether asset at [id] is readable.
   Future<bool> canRead(AssetId id);
@@ -68,5 +68,5 @@ abstract class MultiPackageAssetReader extends AssetReader {
   /// Some implementations may require the [package] argument, while others
   /// may have a sane default.
   @override
-  Stream<AssetId> findAssets(Glob glob, {String package});
+  Stream<AssetId> findAssets(Glob glob, {String? package});
 }

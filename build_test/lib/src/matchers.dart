@@ -4,9 +4,8 @@
 
 import 'dart:convert';
 
-import 'package:test/test.dart';
-
 import 'package:build/build.dart';
+import 'package:test/test.dart';
 
 /// Matches instance of [AssetNotFoundException].
 final assetNotFoundException = const TypeMatcher<AssetNotFoundException>();
@@ -21,8 +20,8 @@ final invalidOutputException = const TypeMatcher<InvalidOutputException>();
 final packageNotFoundException = const TypeMatcher<PackageNotFoundException>();
 
 /// Decodes the value using [encoding] and matches it against [expected].
-TypeMatcher<List<int>> decodedMatches(dynamic expected, {Encoding encoding}) {
+TypeMatcher<List<int>> decodedMatches(dynamic expected, {Encoding? encoding}) {
   encoding ??= utf8;
-  return TypeMatcher<List<int>>().having(
-      (e) => encoding.decode(e), '${encoding.name} decoded bytes', expected);
+  return TypeMatcher<List<int>>()
+      .having(encoding.decode, '${encoding.name} decoded bytes', expected);
 }

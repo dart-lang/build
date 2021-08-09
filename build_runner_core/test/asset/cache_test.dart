@@ -2,12 +2,10 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:build/build.dart';
-import 'package:test/test.dart';
-
-import 'package:build_runner_core/src/asset/cache.dart';
-
 import 'package:_test_common/common.dart';
+import 'package:build/build.dart';
+import 'package:build_runner_core/src/asset/cache.dart';
+import 'package:test/test.dart';
 
 void main() {
   var fooTxt = AssetId('a', 'foo.txt');
@@ -17,8 +15,8 @@ void main() {
   var assets = <AssetId, dynamic>{
     fooTxt: 'bar',
   };
-  InMemoryRunnerAssetReader delegate;
-  CachingAssetReader reader;
+  late InMemoryRunnerAssetReader delegate;
+  late CachingAssetReader reader;
 
   setUp(() {
     delegate = InMemoryRunnerAssetReader(assets);

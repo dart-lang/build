@@ -6,27 +6,23 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
+import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
+import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
-
-import 'package:build_runner_core/src/asset_graph/graph.dart';
-import 'package:build_runner_core/src/asset_graph/node.dart';
-import 'package:build_runner_core/src/generate/phase.dart';
-import 'package:build_test/build_test.dart';
-
-import 'package:_test_common/common.dart';
-import 'package:_test_common/package_graphs.dart';
 
 void main() {
   final digestReader = StubAssetReader();
   final fooPackageGraph = buildPackageGraph({rootPackage('foo'): []});
 
   group('AssetGraph', () {
-    AssetGraph graph;
+    late AssetGraph graph;
 
     void expectNodeDoesNotExist(AssetNode node) {
       expect(graph.contains(node.id), isFalse);
@@ -65,7 +61,9 @@ void main() {
         for (var i = 0; i < 5; i++) {
           nodes.add(testAddNode());
         }
-        graph..remove(nodes[1].id)..remove(nodes[4].id);
+        graph
+          ..remove(nodes[1].id)
+          ..remove(nodes[4].id);
 
         expectNodeExists(nodes[0]);
         expectNodeDoesNotExist(nodes[1]);
@@ -89,7 +87,7 @@ void main() {
         for (var n = 0; n < 5; n++) {
           var node = makeAssetNode();
           globNode.inputs.add(node.id);
-          globNode.results.add(node.id);
+          globNode.results!.add(node.id);
           node.outputs.add(globNode.id);
           graph.add(node);
           var phaseNum = n;
@@ -117,7 +115,7 @@ void main() {
             globNode.outputs.add(generatedNode.id);
             builderOptionsNode.outputs.add(generatedNode.id);
             if (g % 2 == 0) {
-              node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
+              node.deletedBy.add(anchorNode.id);
             }
 
             var syntheticNode = SyntheticSourceAssetNode(makeAssetId());
@@ -212,7 +210,7 @@ void main() {
               postBuilderOptionsId,
               ...placeholders,
             ]));
-        var node = graph.get(primaryInputId);
+        var node = graph.get(primaryInputId)!;
         expect(node.primaryOutputs, [primaryOutputId]);
         expect(node.outputs, isEmpty);
         expect(node.lastKnownDigest, isNotNull,
@@ -220,7 +218,7 @@ void main() {
 
         var excludedNode = graph.get(excludedInputId);
         expect(excludedNode, isNotNull);
-        expect(excludedNode.lastKnownDigest, isNull,
+        expect(excludedNode!.lastKnownDigest, isNull,
             reason: 'Nodes with no output shouldn\'t get an eager digest.');
 
         expect(graph.get(internalId), TypeMatcher<InternalAssetNode>());
@@ -249,10 +247,10 @@ void main() {
         test('add new primary input', () async {
           var changes = {AssetId('foo', 'new.txt'): ChangeType.ADD};
           await graph.updateAndInvalidate(
-              buildPhases, changes, 'foo', null, digestReader);
+              buildPhases, changes, 'foo', (_) async {}, digestReader);
           expect(graph.contains(AssetId('foo', 'new.txt.copy')), isTrue);
-          var newAnchor =
-              PostProcessAnchorNode.forInputAndAction(primaryInputId, 0, null);
+          var newAnchor = PostProcessAnchorNode.forInputAndAction(
+              primaryInputId, 0, AssetId('foo', '\$builder_options'));
           expect(graph.contains(newAnchor.id), isTrue);
         });
 
@@ -276,7 +274,7 @@ void main() {
           (graph.get(primaryOutputId) as GeneratedAssetNode)
             ..state = NodeState.upToDate
             ..inputs.add(primaryInputId);
-          graph.get(primaryInputId).outputs.add(primaryOutputId);
+          graph.get(primaryInputId)!.outputs.add(primaryOutputId);
           await graph.updateAndInvalidate(buildPhases, changes, 'foo',
               (id) async => deletes.add(id), digestReader);
           expect(graph.contains(primaryInputId), isTrue);
@@ -295,7 +293,7 @@ void main() {
 
           var changes = {syntheticId: ChangeType.ADD};
           await graph.updateAndInvalidate(
-              buildPhases, changes, 'foo', null, digestReader);
+              buildPhases, changes, 'foo', (_) async {}, digestReader);
 
           expect(graph.contains(syntheticId), isTrue);
           expect(graph.get(syntheticId), TypeMatcher<SourceAssetNode>());
@@ -303,8 +301,8 @@ void main() {
           expect(
               graph.get(syntheticOutputId), TypeMatcher<GeneratedAssetNode>());
 
-          var newAnchor =
-              PostProcessAnchorNode.forInputAndAction(syntheticId, 0, null);
+          var newAnchor = PostProcessAnchorNode.forInputAndAction(
+              syntheticId, 0, AssetId('foo', '\$builder_options'));
           expect(graph.contains(newAnchor.id), isTrue);
           expect(graph.get(newAnchor.id), TypeMatcher<PostProcessAnchorNode>());
         });
@@ -317,7 +315,7 @@ void main() {
 
           var changes = {syntheticId: ChangeType.ADD};
           await graph.updateAndInvalidate(
-              buildPhases, changes, 'foo', null, digestReader);
+              buildPhases, changes, 'foo', (_) async {}, digestReader);
 
           expect(graph.contains(syntheticOutputId), isTrue);
           expect(
@@ -343,8 +341,8 @@ void main() {
 
           expect(graph.contains(primaryInputId), isFalse);
           expect(graph.contains(primaryOutputId), isFalse);
-          expect(
-              graph.get(secondaryId).outputs, isNot(contains(primaryOutputId)));
+          expect(graph.get(secondaryId)!.outputs,
+              isNot(contains(primaryOutputId)));
         });
 
         test(
@@ -387,8 +385,8 @@ void main() {
           primaryOutputNode.state = NodeState.upToDate;
           globNode.state = NodeState.upToDate;
           globNode.inputs.add(coolAssetId);
-          globNode.results.add(coolAssetId);
-          graph.get(coolAssetId).outputs.add(globNode.id);
+          globNode.results!.add(coolAssetId);
+          graph.get(coolAssetId)!.outputs.add(globNode.id);
           await checkChangeType(ChangeType.MODIFY);
 
           expect(globNode.inputs, contains(coolAssetId));
@@ -565,7 +563,7 @@ void main() {
 
         // The generated part file should not exist in outputs of the new
         // generated dart file
-        expect(graph.get(toBeGeneratedDart).outputs,
+        expect(graph.get(toBeGeneratedDart)!.outputs,
             isNot(contains(generatedPart)));
       });
     });

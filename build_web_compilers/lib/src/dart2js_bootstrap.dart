@@ -11,7 +11,7 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:glob/glob.dart';
-import 'package:meta/meta.dart';
+import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 import 'package:scratch_space/scratch_space.dart';
@@ -21,32 +21,25 @@ import 'platforms.dart';
 import 'web_entrypoint_builder.dart';
 
 /// Compiles an the primary input of [buildStep] with dart2js.
-///
-/// If [skipPlatformCheck] is `true` then all `dart:` imports will be
-/// allowed in all packages.
 Future<void> bootstrapDart2Js(
   BuildStep buildStep,
   List<String> dart2JsArgs, {
-  @required bool nativeNullAssertions,
-  @required bool nullAssertions,
-  @required bool soundNullSafety,
-  bool skipPlatformCheck,
+  required bool nativeNullAssertions,
+  required bool nullAssertions,
+  required bool soundNullSafety,
 }) =>
     _resourcePool.withResource(() => _bootstrapDart2Js(buildStep, dart2JsArgs,
         nativeNullAssertions: nativeNullAssertions,
         nullAssertions: nullAssertions,
-        soundNullSafety: soundNullSafety,
-        skipPlatformCheck: skipPlatformCheck));
+        soundNullSafety: soundNullSafety));
 
 Future<void> _bootstrapDart2Js(
   BuildStep buildStep,
   List<String> dart2JsArgs, {
-  @required bool nativeNullAssertions,
-  @required bool nullAssertions,
-  @required bool soundNullSafety,
-  bool skipPlatformCheck,
+  required bool nativeNullAssertions,
+  required bool nullAssertions,
+  required bool soundNullSafety,
 }) async {
-  skipPlatformCheck ??= false;
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
       dartEntrypointId.changeExtension(moduleExtension(dart2jsPlatform));
@@ -58,7 +51,7 @@ Future<void> _bootstrapDart2Js(
     List<Module> allDeps;
     try {
       allDeps = (await module.computeTransitiveDependencies(buildStep,
-          throwIfUnsupported: !skipPlatformCheck))
+          throwIfUnsupported: true))
         ..add(module);
     } on UnsupportedModules catch (e) {
       var librariesString = (await e.exactLibraries(buildStep).toList())
@@ -132,10 +125,10 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
       if (jsFile is File) {
         var fileName = p.relative(jsFile.path, from: rootDir);
         var fileStats = await jsFile.stat();
-        archive.addFile(
-            ArchiveFile(fileName, fileStats.size, await jsFile.readAsBytes())
-              ..mode = fileStats.mode
-              ..lastModTime = fileStats.modified.millisecondsSinceEpoch);
+        archive.addFile(ArchiveFile(
+            fileName, fileStats.size, await (jsFile as File).readAsBytes())
+          ..mode = fileStats.mode
+          ..lastModTime = fileStats.modified.millisecondsSinceEpoch);
       }
     }
     if (archive.isNotEmpty) {

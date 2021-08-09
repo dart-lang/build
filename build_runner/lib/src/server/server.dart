@@ -46,18 +46,18 @@ ServeHandler createServeHandler(WatchImpl watch) {
   var rootPackage = watch.packageGraph.root.name;
   var assetGraphHanderCompleter = Completer<AssetGraphHandler>();
   var assetHandlerCompleter = Completer<AssetHandler>();
-  watch.ready.then((_) async {
-    assetHandlerCompleter.complete(AssetHandler(watch.reader, rootPackage));
-    assetGraphHanderCompleter.complete(
-        AssetGraphHandler(watch.reader, rootPackage, watch.assetGraph));
-  });
+  watch.reader.then((reader) async {
+    assetHandlerCompleter.complete(AssetHandler(reader, rootPackage));
+    assetGraphHanderCompleter
+        .complete(AssetGraphHandler(reader, rootPackage, watch.assetGraph!));
+  }).catchError((_) {}); // These errors are separately handled.
   return ServeHandler._(watch, assetHandlerCompleter.future,
       assetGraphHanderCompleter.future, rootPackage);
 }
 
 class ServeHandler implements BuildState {
   final WatchImpl _state;
-  BuildResult _lastBuildResult;
+  BuildResult? _lastBuildResult;
   final String _rootPackage;
 
   final Future<AssetHandler> _assetHandler;
@@ -75,15 +75,14 @@ class ServeHandler implements BuildState {
   }
 
   @override
-  Future<BuildResult> get currentBuild => _state.currentBuild;
+  Future<BuildResult>? get currentBuild => _state.currentBuild;
 
   @override
   Stream<BuildResult> get buildResults => _state.buildResults;
 
   shelf.Handler handlerFor(String rootDir,
-      {bool logRequests, BuildUpdatesOption buildUpdates}) {
-    buildUpdates ??= BuildUpdatesOption.none;
-    logRequests ??= false;
+      {bool logRequests = false,
+      BuildUpdatesOption buildUpdates = BuildUpdatesOption.none}) {
     if (p.url.split(rootDir).length != 1 || rootDir == '.') {
       throw ArgumentError.value(
         rootDir,
@@ -91,7 +90,7 @@ class ServeHandler implements BuildState {
         'Only top level directories such as `web` or `test` can be served, got',
       );
     }
-    _state.currentBuild.then((_) {
+    _state.currentBuild?.then((_) {
       // If the first build fails with a handled exception, we might not have
       // an asset graph and can't do this check.
       if (_state.assetGraph == null) return;
@@ -125,9 +124,6 @@ class ServeHandler implements BuildState {
       case BuildUpdatesOption.liveReload:
         pipeline = pipeline.addMiddleware(_injectLiveReloadClientCode);
         break;
-      case BuildUpdatesOption.hotReload:
-        pipeline = pipeline.addMiddleware(_injectHotReloadClientCode);
-        break;
       case BuildUpdatesOption.none:
         break;
     }
@@ -154,20 +150,21 @@ class ServeHandler implements BuildState {
     }
     if (request.url.queryParameters.containsKey('slicesResolution')) {
       slicesResolution =
-          int.parse(request.url.queryParameters['slicesResolution']);
+          int.parse(request.url.queryParameters['slicesResolution']!);
     }
     if (request.url.queryParameters.containsKey('sortOrder')) {
       sortOrder = PerfSortOrder
-          .values[int.parse(request.url.queryParameters['sortOrder'])];
+          .values[int.parse(request.url.queryParameters['sortOrder']!)];
     }
     return shelf.Response.ok(
-        _renderPerformance(_lastBuildResult.performance, hideSkipped,
+        _renderPerformance(_lastBuildResult!.performance!, hideSkipped,
             detailedSlices, slicesResolution, sortOrder, filter),
         headers: {HttpHeaders.contentTypeHeader: 'text/html'});
   }
 
   Future<shelf.Response> _assetsDigestHandler(
       shelf.Request request, String rootDir) async {
+    final reader = await _state.reader;
     var assertPathList =
         (jsonDecode(await request.readAsString()) as List).cast<String>();
     var rootPackage = _state.packageGraph.root.name;
@@ -175,7 +172,7 @@ class ServeHandler implements BuildState {
     for (final path in assertPathList) {
       try {
         var assetId = pathToAssetId(rootPackage, rootDir, p.url.split(path));
-        var digest = await _state.reader.digest(assetId);
+        var digest = await reader.digest(assetId);
         results[path] = digest.toString();
       } on AssetNotFoundException {
         results.remove(path);
@@ -186,7 +183,7 @@ class ServeHandler implements BuildState {
   }
 
   void _warnForEmptyDirectory(String rootDir) {
-    if (!_state.assetGraph
+    if (!_state.assetGraph!
         .packageNodes(_rootPackage)
         .any((n) => n.id.path.startsWith('$rootDir/'))) {
       _logger.warning('Requested a server for `$rootDir` but this directory '
@@ -215,25 +212,26 @@ class BuildUpdatesWebSocketHandler {
       _internalHandlers[rootDir] = _handlerFactory(closureForRootDir,
           protocols: [_buildUpdatesProtocol]);
     }
-    return _internalHandlers[rootDir];
+    return _internalHandlers[rootDir]!;
   }
 
   Future emitUpdateMessage(BuildResult buildResult) async {
     if (buildResult.status != BuildStatus.success) return;
-    var digests = <AssetId, String>{};
+    final reader = await _state.reader;
+    final digests = <AssetId, String>{};
     for (var assetId in buildResult.outputs) {
-      var digest = await _state.reader.digest(assetId);
+      var digest = await reader.digest(assetId);
       digests[assetId] = digest.toString();
     }
     for (var rootDir in connectionsByRootDir.keys) {
-      var resultMap = <String, String>{};
+      var resultMap = <String, String?>{};
       for (var assetId in digests.keys) {
         var path = assetIdToPath(assetId, rootDir);
         if (path != null) {
           resultMap[path] = digests[assetId];
         }
       }
-      for (var connection in connectionsByRootDir[rootDir]) {
+      for (var connection in connectionsByRootDir[rootDir]!) {
         connection.sink.add(jsonEncode(resultMap));
       }
     }
@@ -241,13 +239,11 @@ class BuildUpdatesWebSocketHandler {
 
   void _handleConnection(
       WebSocketChannel webSocket, String protocol, String rootDir) async {
-    if (!connectionsByRootDir.containsKey(rootDir)) {
-      connectionsByRootDir[rootDir] = [];
-    }
-    connectionsByRootDir[rootDir].add(webSocket);
+    var connections = connectionsByRootDir.putIfAbsent(rootDir, () => [])
+      ..add(webSocket);
     await webSocket.stream.drain();
-    connectionsByRootDir[rootDir].remove(webSocket);
-    if (connectionsByRootDir[rootDir].isEmpty) {
+    connections.remove(webSocket);
+    if (connections.isEmpty) {
       connectionsByRootDir.remove(rootDir);
     }
   }
@@ -289,9 +285,6 @@ shelf.Handler Function(shelf.Handler) _injectBuildUpdatesClientCode(
       };
     };
 
-final _injectHotReloadClientCode =
-    _injectBuildUpdatesClientCode('hot_reload_client.dart');
-
 final _injectLiveReloadClientCode =
     _injectBuildUpdatesClientCode('live_reload_client');
 
@@ -311,66 +304,73 @@ class AssetHandler {
 
   AssetHandler(this._reader, this._rootPackage);
 
-  Future<shelf.Response> handle(shelf.Request request, {String rootDir}) =>
+  Future<shelf.Response> handle(shelf.Request request, {String rootDir = ''}) =>
       (request.url.path.endsWith('/') || request.url.path.isEmpty)
           ? _handle(
-              request.headers,
-              pathToAssetId(
-                  _rootPackage,
-                  rootDir,
-                  request.url.pathSegments
-                      .followedBy(const ['index.html']).toList()),
+              request,
+              pathToAssetId(_rootPackage, rootDir,
+                  [...request.url.pathSegments, 'index.html']),
               fallbackToDirectoryList: true)
-          : _handle(request.headers,
+          : _handle(request,
               pathToAssetId(_rootPackage, rootDir, request.url.pathSegments));
 
-  Future<shelf.Response> _handle(
-      Map<String, String> requestHeaders, AssetId assetId,
+  Future<shelf.Response> _handle(shelf.Request request, AssetId assetId,
       {bool fallbackToDirectoryList = false}) async {
     try {
-      if (!await _reader.canRead(assetId)) {
-        var reason = await _reader.unreadableReason(assetId);
-        switch (reason) {
-          case UnreadableReason.failed:
-            return shelf.Response.internalServerError(
-                body: 'Build failed for $assetId');
-          case UnreadableReason.notOutput:
-            return shelf.Response.notFound('$assetId was not output');
-          case UnreadableReason.notFound:
-            if (fallbackToDirectoryList) {
-              return shelf.Response.notFound(await _findDirectoryList(assetId));
-            }
-            return shelf.Response.notFound('Not Found');
-          default:
-            return shelf.Response.notFound('Not Found');
+      try {
+        if (!await _reader.canRead(assetId)) {
+          var reason = await _reader.unreadableReason(assetId);
+          switch (reason) {
+            case UnreadableReason.failed:
+              return shelf.Response.internalServerError(
+                  body: 'Build failed for $assetId');
+            case UnreadableReason.notOutput:
+              return shelf.Response.notFound('$assetId was not output');
+            case UnreadableReason.notFound:
+              if (fallbackToDirectoryList) {
+                return shelf.Response.notFound(
+                    await _findDirectoryList(assetId));
+              }
+              return shelf.Response.notFound('Not Found');
+            default:
+              return shelf.Response.notFound('Not Found');
+          }
         }
+      } on ArgumentError catch (_) {
+        return shelf.Response.notFound('Not Found');
       }
-    } on ArgumentError catch (_) {
-      return shelf.Response.notFound('Not Found');
+
+      var etag = base64.encode((await _reader.digest(assetId)).bytes);
+      var contentType = _typeResolver.lookup(assetId.path);
+      if (contentType == 'text/x-dart') {
+        contentType = '$contentType; charset=utf-8';
+      }
+      var headers = <String, Object>{
+        if (contentType != null) HttpHeaders.contentTypeHeader: contentType,
+        HttpHeaders.etagHeader: etag,
+        // We always want this revalidated, which requires specifying both
+        // max-age=0 and must-revalidate.
+        //
+        // See spec https://goo.gl/Lhvttg for more info about this header.
+        HttpHeaders.cacheControlHeader: 'max-age=0, must-revalidate',
+      };
+
+      if (request.headers[HttpHeaders.ifNoneMatchHeader] == etag) {
+        // This behavior is still useful for cases where a file is hit
+        // without a cache-busting query string.
+        return shelf.Response.notModified(headers: headers);
+      }
+      List<int>? body;
+      if (request.method != 'HEAD') {
+        body = await _reader.readAsBytes(assetId);
+        headers[HttpHeaders.contentLengthHeader] = '${body.length}';
+      }
+      return shelf.Response.ok(body, headers: headers);
+    } catch (e, s) {
+      _logger.finest(
+          'Error on request ${request.method} ${request.requestedUri}', e, s);
+      rethrow;
     }
-
-    var etag = base64.encode((await _reader.digest(assetId)).bytes);
-    var contentType = _typeResolver.lookup(assetId.path);
-    if (contentType == 'text/x-dart') contentType += '; charset=utf-8';
-    var headers = {
-      HttpHeaders.contentTypeHeader: contentType,
-      HttpHeaders.etagHeader: etag,
-      // We always want this revalidated, which requires specifying both
-      // max-age=0 and must-revalidate.
-      //
-      // See spec https://goo.gl/Lhvttg for more info about this header.
-      HttpHeaders.cacheControlHeader: 'max-age=0, must-revalidate',
-    };
-
-    if (requestHeaders[HttpHeaders.ifNoneMatchHeader] == etag) {
-      // This behavior is still useful for cases where a file is hit
-      // without a cache-busting query string.
-      return shelf.Response.notModified(headers: headers);
-    }
-
-    var bytes = await _reader.readAsBytes(assetId);
-    headers[HttpHeaders.contentLengthHeader] = '${bytes.length}';
-    return shelf.Response.ok(bytes, headers: headers);
   }
 
   Future<String> _findDirectoryList(AssetId from) async {
@@ -648,27 +648,27 @@ final _enablePerformanceTracking = '''
 
 /// [shelf.Middleware] that logs all requests, inspired by [shelf.logRequests].
 shelf.Handler _logRequests(shelf.Handler innerHandler) {
-  return (shelf.Request request) {
+  return (shelf.Request request) async {
     var startTime = DateTime.now();
     var watch = Stopwatch()..start();
-
-    return Future.sync(() => innerHandler(request)).then((response) {
+    try {
+      var response = await innerHandler(request);
       var logFn = response.statusCode >= 500 ? _logger.warning : _logger.info;
-      var msg = _getMessage(startTime, response.statusCode,
+      var msg = _requestLabel(startTime, response.statusCode,
           request.requestedUri, request.method, watch.elapsed);
       logFn(msg);
       return response;
-    }, onError: (dynamic error, StackTrace stackTrace) {
-      if (error is shelf.HijackException) throw error;
-      var msg = _getMessage(
+    } catch (error, stackTrace) {
+      if (error is shelf.HijackException) rethrow;
+      var msg = _requestLabel(
           startTime, 500, request.requestedUri, request.method, watch.elapsed);
-      _logger.severe('$msg\r\n$error\r\n$stackTrace', true);
-      throw error;
-    });
+      _logger.severe(msg, error, stackTrace);
+      rethrow;
+    }
   };
 }
 
-String _getMessage(DateTime requestTime, int statusCode, Uri requestedUri,
+String _requestLabel(DateTime requestTime, int statusCode, Uri requestedUri,
     String method, Duration elapsedTime) {
   return '${requestTime.toIso8601String()} '
       '${humanReadable(elapsedTime)} '

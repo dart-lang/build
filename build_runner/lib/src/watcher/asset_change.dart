@@ -3,10 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
-
-import 'package:build_runner_core/build_runner_core.dart';
 
 /// Represents an [id] that was modified on disk as a result of [type].
 class AssetChange {

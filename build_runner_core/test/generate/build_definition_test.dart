@@ -5,40 +5,33 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:_test_common/common.dart';
+import 'package:_test_common/runner_asset_writer_spy.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_config/build_config.dart';
+import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner_core/src/asset_graph/graph.dart';
+import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/generate/build_definition.dart';
+import 'package:build_runner_core/src/generate/options.dart';
+import 'package:build_runner_core/src/generate/phase.dart';
+import 'package:build_runner_core/src/util/constants.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
-import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_runner_core/src/asset_graph/graph.dart';
-import 'package:build_runner_core/src/asset_graph/node.dart';
-import 'package:build_runner_core/src/environment/build_environment.dart';
-import 'package:build_runner_core/src/environment/io_environment.dart';
-import 'package:build_runner_core/src/environment/overridable_environment.dart';
-import 'package:build_runner_core/src/generate/build_definition.dart';
-import 'package:build_runner_core/src/generate/options.dart';
-import 'package:build_runner_core/src/generate/phase.dart';
-import 'package:build_runner_core/src/package_graph/package_graph.dart';
-import 'package:build_runner_core/src/util/constants.dart';
-
-import 'package:_test_common/common.dart';
-import 'package:_test_common/package_graphs.dart';
-import 'package:_test_common/runner_asset_writer_spy.dart';
-
 void main() {
   final languageVersion = LanguageVersion(2, 0);
 
   group('BuildDefinition.prepareWorkspace', () {
-    BuildOptions options;
-    BuildEnvironment environment;
-    String pkgARoot;
-    String pkgBRoot;
-    PackageGraph aPackageGraph;
+    late BuildOptions options;
+    late BuildEnvironment environment;
+    late String pkgARoot;
+    late String pkgBRoot;
+    late PackageGraph aPackageGraph;
 
     Future<File> createFile(String path, dynamic contents) async {
       var file = File(p.join(pkgARoot, path));
@@ -142,10 +135,9 @@ targets:
           LogSubscription(environment, logLevel: Level.OFF),
           packageGraph: packageGraph,
           skipBuildScriptCheck: true);
-    });
-
-    tearDown(() async {
-      await options?.logListener?.cancel();
+      // we don't want this unconditionally in a normal `tearDown`, this may
+      // not be initialized if something above this fails.
+      addTearDown(options.logListener.cancel);
     });
 
     group('updates the asset graph', () {
@@ -218,7 +210,7 @@ targets:
         (originalAssetGraph.get(aTxtCopy) as GeneratedAssetNode)
           ..state = NodeState.upToDate
           ..inputs.add(aTxt);
-        originalAssetGraph.get(aTxt).outputs.add(aTxtCopy);
+        originalAssetGraph.get(aTxt)!.outputs.add(aTxtCopy);
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
         await modifyFile(p.join('lib', 'a.txt'), 'b');
@@ -723,10 +715,10 @@ targets:
             });
 
         expect(
-            options.targetGraph.allModules['$rootPkg:another'].sourceIncludes,
+            options.targetGraph.allModules['$rootPkg:another']!.sourceIncludes,
             isNotEmpty);
         expect(
-            options.targetGraph.allModules['$rootPkg:$rootPkg'].sourceIncludes,
+            options.targetGraph.allModules['$rootPkg:$rootPkg']!.sourceIncludes,
             isNotEmpty);
       });
 
@@ -750,11 +742,11 @@ targets:
               })
             });
         expect(
-            options.targetGraph.allModules['$rootPkg:another'].sourceIncludes
+            options.targetGraph.allModules['$rootPkg:another']!.sourceIncludes
                 .map((glob) => glob.pattern),
             defaultRootPackageSources);
         expect(
-            options.targetGraph.allModules['$rootPkg:$rootPkg'].sourceIncludes
+            options.targetGraph.allModules['$rootPkg:$rootPkg']!.sourceIncludes
                 .map((glob) => glob.pattern),
             defaultRootPackageSources);
       });

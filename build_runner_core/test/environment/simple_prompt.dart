@@ -5,8 +5,6 @@
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
 
-import 'package:build_runner_core/src/environment/io_environment.dart';
-
 void main() async {
   var env = IOEnvironment(await PackageGraph.forThisPackage(), assumeTty: true);
   var result = await env.prompt('Select an option!', ['a', 'b', 'c']);

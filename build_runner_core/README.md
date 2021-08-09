@@ -3,9 +3,6 @@
   for running pure Dart builds for
   <a href="https://pub.dev/packages/build"><code>package:build</code></a>.
   <br>
-  <a href="https://travis-ci.org/dart-lang/build">
-    <img src="https://travis-ci.org/dart-lang/build.svg?branch=master" alt="Build Status" />
-  </a>
   <a href="https://github.com/dart-lang/build/labels/package%3A%20build_runner">
     <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3A%20build_runner_core.svg" alt="Issues related to build_runner_core" />
   </a>

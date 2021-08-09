@@ -5,9 +5,8 @@
 @TestOn('browser')
 import 'dart:html';
 
-import 'package:test/test.dart';
-
 import 'package:_test/app.dart';
+import 'package:test/test.dart';
 
 import 'common/message.dart' deferred as m;
 
@@ -15,11 +14,11 @@ void main() {
   setUp(startApp);
 
   tearDown(() {
-    document.body.innerHtml = '';
+    document.body!.innerHtml = '';
   });
 
   test('hello world', () async {
     await m.loadLibrary();
-    expect(document.body.text, contains(m.message));
+    expect(document.body?.text, contains(m.message));
   });
 }

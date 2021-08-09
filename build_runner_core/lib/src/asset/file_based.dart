@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
+import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as path;
 import 'package:pool/pool.dart';
 
@@ -34,12 +35,12 @@ class FileBasedAssetReader extends AssetReader
       .then((file) => _descriptorPool.withResource(file.readAsBytes));
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding}) =>
+  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) =>
       _fileForOrThrow(id, packageGraph).then((file) => _descriptorPool
-          .withResource(() => file.readAsString(encoding: encoding ?? utf8)));
+          .withResource(() => file.readAsString(encoding: encoding)));
 
   @override
-  Stream<AssetId> findAssets(Glob glob, {String package}) {
+  Stream<AssetId> findAssets(Glob glob, {String? package}) {
     var packageNode =
         package == null ? packageGraph.root : packageGraph[package];
     if (packageNode == null) {

@@ -4,21 +4,20 @@
 
 import 'dart:convert';
 
-import 'package:test/test.dart';
-
 import 'package:build/build.dart';
-import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:build_runner_core/src/generate/performance_tracker.dart';
+import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:build_test/build_test.dart';
+import 'package:test/test.dart';
 import 'package:timing/src/clock.dart';
 
 void main() {
   group('PerformanceTracker', () {
-    DateTime time;
+    late DateTime time;
     final startTime = DateTime(2017);
     DateTime fakeClock() => time;
 
-    BuildPerformanceTracker tracker;
+    late BuildPerformanceTracker tracker;
 
     T scopedTrack<T>(T Function() f) =>
         scopeClock(fakeClock, () => tracker.track(f));
@@ -38,7 +37,7 @@ void main() {
     });
 
     test('can track multiple phases', () async {
-      Iterable<InBuildPhase> phases;
+      late Iterable<InBuildPhase> phases;
       await scopedTrack(() async {
         var packages = ['a', 'b', 'c'];
         var builder = TestBuilder();

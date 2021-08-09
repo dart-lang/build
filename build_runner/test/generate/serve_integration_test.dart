@@ -3,20 +3,18 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @Tags(['integration'])
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:_test_common/common.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
-import 'package:_test_common/common.dart';
-
 void main() {
   group('serve integration tests', () {
-    Process pubProcess;
-    Stream<String> pubStdOutLines;
+    late Process pubProcess;
+    late Stream<String> pubStdOutLines;
 
     setUp(() async {
       await d.dir('a', [
@@ -28,6 +26,7 @@ void main() {
           'build_runner',
           'build_runner_core',
           'build_test',
+          'code_builder',
         ]),
         d.dir('lib', [
           d.file('example.dart', "String hello = 'hello'"),

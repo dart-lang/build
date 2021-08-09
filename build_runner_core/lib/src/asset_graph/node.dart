@@ -8,7 +8,6 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
-import 'package:meta/meta.dart';
 
 import '../generate/phase.dart';
 
@@ -32,7 +31,7 @@ abstract class AssetNode {
   ///
   /// May be `null` if this asset has no outputs, or if it doesn't actually
   /// exist.
-  Digest lastKnownDigest;
+  Digest? lastKnownDigest;
 
   /// Whether or not this node was an output of this build.
   bool get isGenerated => false;
@@ -95,7 +94,7 @@ class InternalAssetNode extends AssetNode {
   @override
   bool get isValidInput => false;
 
-  InternalAssetNode(AssetId id, {Digest lastKnownDigest})
+  InternalAssetNode(AssetId id, {Digest? lastKnownDigest})
       : super(id, lastKnownDigest: lastKnownDigest);
 
   @override
@@ -104,7 +103,7 @@ class InternalAssetNode extends AssetNode {
 
 /// A node which is an original source asset (not generated).
 class SourceAssetNode extends AssetNode {
-  SourceAssetNode(AssetId id, {Digest lastKnownDigest})
+  SourceAssetNode(AssetId id, {Digest? lastKnownDigest})
       : super(id, lastKnownDigest: lastKnownDigest);
 
   @override
@@ -151,7 +150,7 @@ class GeneratedAssetNode extends AssetNode implements NodeWithInputs {
   ///
   /// Used to determine whether all the inputs to a build step are identical to
   /// the previous run, indicating that the previous output is still valid.
-  Digest previousInputsDigest;
+  Digest? previousInputsDigest;
 
   /// Whether the action which did or would produce this node failed.
   bool isFailure;
@@ -165,16 +164,16 @@ class GeneratedAssetNode extends AssetNode implements NodeWithInputs {
 
   GeneratedAssetNode(
     AssetId id, {
-    Digest lastKnownDigest,
-    Iterable<AssetId> inputs,
+    Digest? lastKnownDigest,
+    Iterable<AssetId>? inputs,
     this.previousInputsDigest,
-    @required this.isHidden,
-    @required this.state,
-    @required this.phaseNumber,
-    @required this.wasOutput,
-    @required this.isFailure,
-    @required this.primaryInput,
-    @required this.builderOptionsId,
+    required this.isHidden,
+    required this.state,
+    required this.phaseNumber,
+    required this.wasOutput,
+    required this.isFailure,
+    required this.primaryInput,
+    required this.builderOptionsId,
   })  : inputs = inputs != null ? HashSet.from(inputs) : HashSet(),
         super(id, lastKnownDigest: lastKnownDigest);
 
@@ -238,7 +237,7 @@ class PostProcessAnchorNode extends AssetNode with _SyntheticAssetNode {
   final int actionNumber;
   final AssetId builderOptionsId;
   final AssetId primaryInput;
-  Digest previousInputsDigest;
+  Digest? previousInputsDigest;
 
   PostProcessAnchorNode(
       AssetId id, this.primaryInput, this.actionNumber, this.builderOptionsId,
@@ -273,14 +272,15 @@ class GlobAssetNode extends InternalAssetNode implements NodeWithInputs {
   final int phaseNumber;
 
   /// The actual results of the glob.
-  List<AssetId> results;
+  List<AssetId>? results;
 
   @override
   NodeState state;
 
   GlobAssetNode(AssetId id, this.glob, this.phaseNumber, this.state,
-      {this.inputs, Digest lastKnownDigest, this.results})
-      : super(id, lastKnownDigest: lastKnownDigest);
+      {HashSet<AssetId>? inputs, Digest? lastKnownDigest, this.results})
+      : inputs = inputs ?? HashSet(),
+        super(id, lastKnownDigest: lastKnownDigest);
 
   static AssetId createId(String package, Glob glob, int phaseNum) => AssetId(
       package, 'glob.$phaseNum.${base64.encode(utf8.encode(glob.pattern))}');
@@ -288,9 +288,9 @@ class GlobAssetNode extends InternalAssetNode implements NodeWithInputs {
 
 /// A node which has [inputs], a [NodeState], and a [phaseNumber].
 abstract class NodeWithInputs implements AssetNode {
-  HashSet<AssetId> inputs;
+  HashSet<AssetId> get inputs;
 
   int get phaseNumber;
 
-  NodeState state;
+  abstract NodeState state;
 }

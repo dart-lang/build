@@ -57,21 +57,21 @@ class DecodingCache<T> {
   /// If the asset at [id] is unreadable the returned future will resolve to
   /// `null`. If the instance is cached it will not be decoded again, but the
   /// content dependencies will be tracked through [reader].
-  Future<T> find(AssetId id, AssetReader reader) async {
+  Future<T?> find(AssetId id, AssetReader reader) async {
     if (!await reader.canRead(id)) return null;
     _Entry<T> entry;
     if (!_cached.containsKey(id)) {
-      entry = _cached[id] = _Entry()
-        ..needsCheck = false
-        ..value = Result.capture(reader.readAsBytes(id).then(_fromBytes))
-        ..digest = Result.capture(reader.digest(id));
+      entry = _cached[id] = _Entry(
+          Result.capture(reader.readAsBytes(id).then(_fromBytes)),
+          digest: Result.capture(reader.digest(id)));
     } else {
-      entry = _cached[id];
+      entry = _cached[id]!;
       if (entry.needsCheck) {
         await (entry.onGoingCheck ??= () async {
-          var previousDigest = await Result.release(entry.digest);
+          var previousDigest =
+              entry.digest == null ? null : await Result.release(entry.digest!);
           entry.digest = Result.capture(reader.digest(id));
-          if (await Result.release(entry.digest) != previousDigest) {
+          if (await Result.release(entry.digest!) != previousDigest) {
             entry.value =
                 Result.capture(reader.readAsBytes(id).then(_fromBytes));
           }
@@ -90,15 +90,15 @@ class DecodingCache<T> {
   /// instances without deserializing it.
   Future<void> write(AssetId id, AssetWriter writer, T instance) async {
     await writer.writeAsBytes(id, _toBytes(instance));
-    _cached[id] = _Entry()
-      ..needsCheck = false
-      ..value = Result.capture(Future.value(instance));
+    _cached[id] = _Entry(Result.capture(Future.value(instance)));
   }
 }
 
 class _Entry<T> {
   bool needsCheck = false;
   Future<Result<T>> value;
-  Future<Result<Digest>> digest;
-  Future<void> onGoingCheck;
+  Future<Result<Digest>>? digest;
+  Future<void>? onGoingCheck;
+
+  _Entry(this.value, {this.needsCheck = false, this.digest, this.onGoingCheck});
 }

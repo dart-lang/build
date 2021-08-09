@@ -24,12 +24,9 @@ class BuildStatus extends EnumClass {
 abstract class BuildResult {
   BuildStatus get status;
   String get target;
-  @nullable
-  String get buildId;
-  @nullable
-  String get error;
-  @nullable
-  bool get isCached;
+  String? get buildId;
+  String? get error;
+  bool? get isCached;
 }
 
 abstract class DefaultBuildResult

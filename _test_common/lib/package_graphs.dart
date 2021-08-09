@@ -10,19 +10,21 @@ PackageGraph buildPackageGraph(Map<PackageNode, Iterable<String>> packages) {
       key: (p) => (p as PackageNode).name);
   for (final package in packages.keys) {
     package.dependencies
-        .addAll(packages[package].map((name) => packagesByName[name]));
+        .addAll(packages[package]!.map((name) => packagesByName[name]!));
   }
   var root = packages.keys.singleWhere((n) => n.isRoot);
   return PackageGraph.fromRoot(root);
 }
 
 PackageNode package(String packageName,
-        {String path, DependencyType type, LanguageVersion languageVersion}) =>
-    PackageNode(
-        packageName, path, type, languageVersion ?? LanguageVersion(0, 0));
+        {String? path,
+        DependencyType? type,
+        LanguageVersion? languageVersion}) =>
+    PackageNode(packageName, path ?? '/$packageName',
+        type ?? DependencyType.path, languageVersion ?? LanguageVersion(0, 0));
 
 PackageNode rootPackage(String packageName,
-        {String path, LanguageVersion languageVersion}) =>
-    PackageNode(packageName, path, DependencyType.path,
+        {String? path, LanguageVersion? languageVersion}) =>
+    PackageNode(packageName, path ?? '/$packageName', DependencyType.path,
         languageVersion ?? LanguageVersion(0, 0),
         isRoot: true);

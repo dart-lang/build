@@ -5,17 +5,16 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
-import 'package:logging/logging.dart';
-
 import 'package:build_test/build_test.dart';
+import 'package:logging/logging.dart';
 
 /// Forwards to [testBuilder], and adds all output assets to [assets].
 Future<void> testBuilderAndCollectAssets(
-    Builder builder, Map<String, dynamic> assets,
-    {Set<String> generateFor,
-    Map<String, /*String|List<int>|Matcher<String|List<int>>*/ dynamic> outputs,
-    void Function(LogRecord log) onLog,
-    void Function(AssetId, Iterable<AssetId>)
+    Builder builder, Map<String, Object> assets,
+    {Set<String>? generateFor,
+    Map<String, /*String|List<int>|Matcher<String|List<int>>*/ Object>? outputs,
+    void Function(LogRecord log)? onLog,
+    void Function(AssetId, Iterable<AssetId>)?
         reportUnusedAssetsForInput}) async {
   var writer = InMemoryAssetWriter();
   await testBuilder(builder, assets,

@@ -1,6 +1,4 @@
-[![Build Status](https://travis-ci.org/dart-lang/build.svg?branch=master)](https://travis-ci.org/dart-lang/build)
-[![Build Status](https://ci.appveyor.com/api/projects/status/wga4jexvmjih346p?svg=true)](https://ci.appveyor.com/project/kevmoo/build)
-[![Build Status](https://github.com/dart-lang/build/workflows/Dart%20CI/badge.svg)](https://github.com/dart-lang/build/actions)
+[![Build Status](https://github.com/dart-lang/build/workflows/Dart%20CI/badge.svg?branch=master)](https://github.com/dart-lang/build/actions?query=branch%3Amaster)
 
 These packages provide libraries for generating, compiling and serving Dart code.
 
@@ -78,7 +76,4 @@ directory has an example of a build with custom builders which generate outputs
 into both the source tree and a hidden generated directory. Try a build with
 `pub run build_runner build -o web:deploy` to see what the output looks like.
 
-Most projects should not need custom builders. A more typical project which uses
-Angular and compiles to javascript can be found in the [angular repo][hacker_news].
-
-[hacker_news]:https://github.com/dart-lang/angular/tree/master/examples/hacker_news_pwa
+Most projects should not need custom builders.

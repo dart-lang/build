@@ -1,3 +1,18 @@
+## 1.0.1-dev
+
+## 1.0.0
+
+- Migrate to null safety.
+
+## 0.4.7
+
+- Allow the latest `pubspec_parse` and `checked_yaml`.
+
+## 0.4.6
+
+- Comment out dev dependency temporarily to break source_gen/json_serializable
+  dependency loop.
+
 ## 0.4.5
 
 - Allow `package:json_annotation` `v4.x`.

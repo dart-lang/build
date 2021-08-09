@@ -4,11 +4,10 @@
 
 import 'dart:async';
 
+import 'package:_test_common/test_phases.dart';
 import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:test/test.dart';
-
-import 'package:_test_common/test_phases.dart';
 
 void main() {
   test('should resolve a dart file with a part file', () async {
@@ -45,8 +44,8 @@ class ListClassesAndHierarchyBuilder implements Builder {
     // Process both the main and part files of a given library.
     final library = await buildStep.inputLibrary;
     final types = [
-      library.definingCompilationUnit.types,
-      library.parts.map((p) => p.types).expand((t) => t),
+      library.definingCompilationUnit.classes,
+      library.parts.map((p) => p.classes).expand((t) => t),
     ].expand((t) => t);
     final output = StringBuffer();
     final outputId = buildStep.inputId.changeExtension('.txt');

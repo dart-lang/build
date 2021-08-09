@@ -3,12 +3,12 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
 import 'package:build_runner_core/build_runner_core.dart';
+import 'package:frontend_server_client/frontend_server_client.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
@@ -16,7 +16,7 @@ import 'package:stack_trace/stack_trace.dart';
 
 final _logger = Logger('Bootstrap');
 
-/// Generates the build script, snapshots it if needed, and runs it.
+/// Generates the build script, precompiles it if needed, and runs it.
 ///
 /// The [handleUncaughtError] function will be invoked when the build script
 /// terminates with an uncaught error.
@@ -28,24 +28,17 @@ final _logger = Logger('Bootstrap');
 /// If an exit code of 75 is returned, this function should be re-ran.
 Future<int> generateAndRun(
   List<String> args, {
-  Logger logger,
+  Logger? logger,
   Future<String> Function() generateBuildScript = generateBuildScript,
-  void Function(Object error, StackTrace stackTrace) handleUncaughtError,
+  void Function(Object error, StackTrace stackTrace) handleUncaughtError =
+      _defaultHandleUncaughtError,
 }) async {
   logger ??= _logger;
-  handleUncaughtError ??= (error, stackTrace) {
-    stderr
-      ..writeln('\n\nYou have hit a bug in build_runner')
-      ..writeln('Please file an issue with reproduction steps at '
-          'https://github.com/dart-lang/build/issues\n\n')
-      ..writeln(error)
-      ..writeln(stackTrace);
-  };
-  ReceivePort exitPort;
-  ReceivePort errorPort;
-  ReceivePort messagePort;
-  StreamSubscription errorListener;
-  int scriptExitCode;
+  ReceivePort? exitPort;
+  ReceivePort? errorPort;
+  ReceivePort? messagePort;
+  StreamSubscription? errorListener;
+  int? scriptExitCode;
 
   var tryCount = 0;
   var succeeded = false;
@@ -73,21 +66,21 @@ Future<int> generateAndRun(
       return ExitCode.config.code;
     }
 
-    scriptExitCode = await _createSnapshotIfNeeded(logger);
-    if (scriptExitCode != 0) return scriptExitCode;
+    scriptExitCode = await _createKernelIfNeeded(logger);
+    if (scriptExitCode != 0) return scriptExitCode!;
 
     exitPort = ReceivePort();
     errorPort = ReceivePort();
     messagePort = ReceivePort();
     errorListener = errorPort.listen((e) {
-      final error = e[0];
+      final error = e[0] as Object? ?? NullThrownError();
       final trace = Trace.parse(e[1] as String).terse;
 
       handleUncaughtError(error, trace);
       if (scriptExitCode == 0) scriptExitCode = 1;
     });
     try {
-      await Isolate.spawnUri(Uri.file(p.absolute(scriptSnapshotLocation)), args,
+      await Isolate.spawnUri(Uri.file(p.absolute(scriptKernelLocation)), args,
           messagePort.sendPort,
           errorsAreFatal: true,
           onExit: exitPort.sendPort,
@@ -105,14 +98,14 @@ Future<int> generateAndRun(
       } else {
         logger.warning(
             'Error spawning build script isolate, this is likely due to a Dart '
-            'SDK update. Deleting snapshot and retrying...');
+            'SDK update. Deleting precompiled script and retrying...');
       }
-      await File(scriptSnapshotLocation).delete();
+      await File(scriptKernelLocation).rename(scriptKernelCachedLocation);
     }
   }
 
-  StreamSubscription exitCodeListener;
-  exitCodeListener = messagePort.listen((isolateExitCode) {
+  StreamSubscription? exitCodeListener;
+  exitCodeListener = messagePort!.listen((isolateExitCode) {
     if (isolateExitCode is int) {
       scriptExitCode = isolateExitCode;
     } else {
@@ -120,17 +113,17 @@ Future<int> generateAndRun(
           'Bad response from isolate, expected an exit code but got '
           '$isolateExitCode');
     }
-    exitCodeListener.cancel();
+    exitCodeListener!.cancel();
     exitCodeListener = null;
   });
-  await exitPort.first;
-  await errorListener.cancel();
+  await exitPort?.first;
+  await errorListener?.cancel();
   await exitCodeListener?.cancel();
 
-  return scriptExitCode;
+  return scriptExitCode ?? 1;
 }
 
-/// Creates a script snapshot for the build script in necessary.
+/// Creates a precompiled Kernel snapshot for the build script if necessary.
 ///
 /// A snapshot is generated if:
 ///
@@ -140,43 +133,79 @@ Future<int> generateAndRun(
 ///
 /// Returns zero for success or a number for failure which should be set to the
 /// exit code.
-Future<int> _createSnapshotIfNeeded(Logger logger) async {
-  var assetGraphFile = File(assetGraphPathFor(scriptSnapshotLocation));
-  var snapshotFile = File(scriptSnapshotLocation);
+Future<int> _createKernelIfNeeded(Logger logger) async {
+  var assetGraphFile = File(assetGraphPathFor(scriptKernelLocation));
+  var kernelFile = File(scriptKernelLocation);
+  var kernelCacheFile = File(scriptKernelCachedLocation);
 
-  if (await snapshotFile.exists()) {
+  if (await kernelFile.exists()) {
     // If we failed to serialize an asset graph for the snapshot, then we don't
     // want to re-use it because we can't check if it is up to date.
     if (!await assetGraphFile.exists()) {
-      await snapshotFile.delete();
-      logger.warning('Deleted previous snapshot due to missing asset graph.');
+      await kernelFile.rename(scriptKernelCachedLocation);
+      logger.warning(
+          'Invalidated precompiled build script due to missing asset graph.');
     } else if (!await _checkImportantPackageDeps()) {
-      await snapshotFile.delete();
-      logger.warning('Deleted previous snapshot due to core package update');
+      await kernelFile.rename(scriptKernelCachedLocation);
+      logger.warning(
+          'Invalidated precompiled build script due to core package update');
     }
   }
 
-  String stderr;
-  if (!await snapshotFile.exists()) {
-    var mode = stdin.hasTerminal
-        ? ProcessStartMode.normal
-        : ProcessStartMode.detachedWithStdio;
-    await logTimedAsync(logger, 'Creating build script snapshot...', () async {
-      var snapshot = await Process.start(Platform.executable,
-          ['--snapshot=$scriptSnapshotLocation', scriptLocation],
-          mode: mode);
-      stderr = (await snapshot.stderr
-              .transform(utf8.decoder)
-              .transform(LineSplitter())
-              .toList())
-          .join('');
-    });
-    if (!await snapshotFile.exists()) {
-      logger.severe('Failed to snapshot build script $scriptLocation.\n'
-          'This is likely caused by a misconfigured builder definition.');
-      if (stderr.isNotEmpty) {
-        logger.severe(stderr);
+  if (!await kernelFile.exists()) {
+    final client = await FrontendServerClient.start(
+      scriptLocation,
+      scriptKernelCachedLocation,
+      'lib/_internal/vm_platform_strong.dill',
+      printIncrementalDependencies: false,
+    );
+
+    var hadOutput = false;
+    var hadErrors = false;
+    await logTimedAsync(logger, 'Precompiling build script...', () async {
+      try {
+        final result = await client.compile();
+        hadErrors = result == null ||
+            result.errorCount > 0 ||
+            !(await kernelCacheFile.exists());
+
+        // Note: We're logging all output with a single log call to keep
+        // annotated source spans intact.
+        final logOutput = result?.compilerOutputLines.join('\n');
+        if (logOutput != null && logOutput.isNotEmpty) {
+          hadOutput = true;
+          if (hadErrors) {
+            // Always show compiler output if there were errors
+            logger.warning(logOutput);
+          } else {
+            logger.fine(logOutput);
+          }
+        }
+      } finally {
+        client.kill();
       }
+    });
+
+    // For some compilation errors, the frontend inserts an "invalid
+    // expression" which throws at runtime. When running those kernel files
+    // with an onError receive port, the VM can crash (dartbug.com/45865).
+    //
+    // In this case we leave the cached kernel file in tact so future compiles
+    // are faster, but don't copy it over to the real location.
+    if (!hadErrors) {
+      await kernelCacheFile.rename(scriptKernelLocation);
+      if (hadOutput) {
+        logger.info('There was output on stdout while precompiling the build  '
+            'script, run with `--verbose` to see it (you will need to run '
+            'a `clean` first to re-generate it).\n');
+      }
+    }
+
+    if (!await kernelFile.exists()) {
+      logger.severe('''
+Failed to precompile build script $scriptLocation.
+This is likely caused by a misconfigured builder definition.
+''');
       return ExitCode.config.code;
     }
     // Create _previousLocationsFile.
@@ -189,8 +218,8 @@ const _importantPackages = [
   'build_daemon',
   'build_runner',
 ];
-final _previousLocationsFile = File(
-    p.url.join(p.url.dirname(scriptSnapshotLocation), '.packageLocations'));
+final _previousLocationsFile =
+    File(p.url.join(p.url.dirname(scriptKernelLocation), '.packageLocations'));
 
 /// Returns whether the [_importantPackages] are all pointing at same locations
 /// from the previous run.
@@ -198,7 +227,7 @@ final _previousLocationsFile = File(
 /// Also updates the [_previousLocationsFile] with the new locations if not.
 ///
 /// This is used to detect potential changes to the user facing api and
-/// pre-emptively resolve them by resnapshotting, see
+/// pre-emptively resolve them by precompiling the build script again, see
 /// https://github.com/dart-lang/build/issues/1929.
 Future<bool> _checkImportantPackageDeps() async {
   var currentLocations = await Future.wait(_importantPackages.map((pkg) =>
@@ -219,4 +248,13 @@ Future<bool> _checkImportantPackageDeps() async {
   }
 
   return true;
+}
+
+void _defaultHandleUncaughtError(error, stackTrace) {
+  stderr
+    ..writeln('\n\nYou have hit a bug in build_runner')
+    ..writeln('Please file an issue with reproduction steps at '
+        'https://github.com/dart-lang/build/issues\n\n')
+    ..writeln(error)
+    ..writeln(stackTrace);
 }

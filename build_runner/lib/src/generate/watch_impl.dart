@@ -1,7 +1,9 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
 import 'dart:async';
+import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
@@ -29,34 +31,41 @@ final _logger = Logger('Watch');
 
 Future<ServeHandler> watch(
   List<BuilderApplication> builders, {
-  bool deleteFilesByDefault,
-  bool assumeTty,
-  String configKey,
-  PackageGraph packageGraph,
-  RunnerAssetReader reader,
-  RunnerAssetWriter writer,
-  Resolvers resolvers,
-  Level logLevel,
-  void Function(LogRecord) onLog,
-  Duration debounceDelay,
-  DirectoryWatcher Function(String) directoryWatcherFactory,
-  Stream terminateEventStream,
-  bool skipBuildScriptCheck,
-  bool enableLowResourcesMode,
-  Map<String, BuildConfig> overrideBuildConfig,
-  Set<BuildDirectory> buildDirs,
-  bool outputSymlinksOnly,
-  bool trackPerformance,
-  bool verbose,
-  Map<String, Map<String, dynamic>> builderConfigOverrides,
-  bool isReleaseBuild,
-  String logPerformanceDir,
-  Set<BuildFilter> buildFilters,
+  bool? deleteFilesByDefault,
+  bool? assumeTty,
+  String? configKey,
+  PackageGraph? packageGraph,
+  RunnerAssetReader? reader,
+  RunnerAssetWriter? writer,
+  Resolvers? resolvers,
+  Level? logLevel,
+  void Function(LogRecord)? onLog,
+  Duration? debounceDelay,
+  required DirectoryWatcher Function(String) directoryWatcherFactory,
+  Stream<ProcessSignal>? terminateEventStream,
+  bool? skipBuildScriptCheck,
+  bool? enableLowResourcesMode,
+  Map<String, BuildConfig>? overrideBuildConfig,
+  Set<BuildDirectory>? buildDirs,
+  bool? outputSymlinksOnly,
+  bool? trackPerformance,
+  bool? verbose,
+  Map<String, Map<String, dynamic>>? builderConfigOverrides,
+  bool? isReleaseBuild,
+  String? logPerformanceDir,
+  Set<BuildFilter>? buildFilters,
 }) async {
   builderConfigOverrides ??= const {};
-  packageGraph ??= await PackageGraph.forThisPackage();
   buildDirs ??= <BuildDirectory>{};
   buildFilters ??= <BuildFilter>{};
+  debounceDelay ??= const Duration(milliseconds: 250);
+  deleteFilesByDefault ??= false;
+  enableLowResourcesMode ??= false;
+  outputSymlinksOnly ??= false;
+  packageGraph ??= await PackageGraph.forThisPackage();
+  skipBuildScriptCheck ??= false;
+  trackPerformance ??= false;
+  verbose ??= false;
 
   var environment = OverrideableEnvironment(
       IOEnvironment(packageGraph,
@@ -67,7 +76,8 @@ Future<ServeHandler> watch(
   var logSubscription =
       LogSubscription(environment, verbose: verbose, logLevel: logLevel);
   overrideBuildConfig ??= await findBuildConfigOverrides(
-      packageGraph, configKey, environment.reader);
+      packageGraph, environment.reader,
+      configKey: configKey);
   var options = await BuildOptions.create(
     logSubscription,
     deleteFilesByDefault: deleteFilesByDefault,
@@ -91,7 +101,7 @@ Future<ServeHandler> watch(
       directoryWatcherFactory,
       configKey,
       buildDirs
-          .any((target) => target?.outputLocation?.path?.isNotEmpty ?? false),
+          .any((target) => target.outputLocation?.path.isNotEmpty ?? false),
       buildDirs,
       buildFilters,
       isReleaseMode: isReleaseBuild ?? false);
@@ -119,7 +129,7 @@ WatchImpl _runWatch(
         Map<String, Map<String, dynamic>> builderConfigOverrides,
         Future until,
         DirectoryWatcher Function(String) directoryWatcherFactory,
-        String configKey,
+        String? configKey,
         bool willCreateOutputDirs,
         Set<BuildDirectory> buildDirs,
         Set<BuildFilter> buildFilters,
@@ -138,14 +148,11 @@ WatchImpl _runWatch(
         isReleaseMode: isReleaseMode);
 
 class WatchImpl implements BuildState {
-  BuildImpl _build;
+  BuildImpl? _build;
 
-  AssetGraph get assetGraph => _build?.assetGraph;
+  AssetGraph? get assetGraph => _build?.assetGraph;
 
-  final _readyCompleter = Completer<void>();
-  Future<void> get ready => _readyCompleter.future;
-
-  final String _configKey; // may be null
+  final String? _configKey;
 
   /// Delay to wait for more file watcher events.
   final Duration _debounceDelay;
@@ -171,13 +178,15 @@ class WatchImpl implements BuildState {
   final Set<BuildFilter> _buildFilters;
 
   @override
-  Future<BuildResult> currentBuild;
+  Future<BuildResult>? currentBuild;
 
   /// Pending expected delete events from the build.
   final Set<AssetId> _expectedDeletes = <AssetId>{};
 
-  FinalizedReader _reader;
-  FinalizedReader get reader => _reader;
+  final _readerCompleter = Completer<FinalizedReader>();
+
+  /// Completes with an error if we fail to initialize.
+  Future<FinalizedReader> get reader => _readerCompleter.future;
 
   WatchImpl(
       BuildOptions options,
@@ -200,7 +209,7 @@ class WatchImpl implements BuildState {
   }
 
   @override
-  Stream<BuildResult> buildResults;
+  late final Stream<BuildResult> buildResults;
 
   /// Runs a build any time relevant files change.
   ///
@@ -221,13 +230,15 @@ class WatchImpl implements BuildState {
     var controller = StreamController<BuildResult>();
 
     Future<BuildResult> doBuild(List<List<AssetChange>> changes) async {
-      assert(_build != null);
-      _logger..info('${'-' * 72}\n')..info('Starting Build\n');
+      var build = _build!;
+      _logger
+        ..info('${'-' * 72}\n')
+        ..info('Starting Build\n');
       var mergedChanges = collectChanges(changes);
 
       _expectedDeletes.clear();
       if (!options.skipBuildScriptCheck) {
-        if (_build.buildScriptUpdates
+        if (build.buildScriptUpdates!
             .hasBeenUpdated(mergedChanges.keys.toSet())) {
           _terminateCompleter.complete();
           _logger.severe('Terminating builds due to build script update');
@@ -235,7 +246,7 @@ class WatchImpl implements BuildState {
               failureType: FailureType.buildScriptChanged);
         }
       }
-      return _build.run(mergedChanges,
+      return build.run(mergedChanges,
           buildDirs: _buildDirs, buildFilters: _buildFilters);
     }
 
@@ -243,8 +254,8 @@ class WatchImpl implements BuildState {
       _logger.info('Terminating. No further builds will be scheduled\n');
     });
 
-    Digest originalRootPackagesDigest;
-    Digest originalRootPackageConfigDigest;
+    Digest? originalRootPackagesDigest;
+    Digest? originalRootPackageConfigDigest;
     final rootPackagesId = AssetId(packageGraph.root.name, '.packages');
     final rootPackageConfigId =
         AssetId(packageGraph.root.name, '.dart_tool/package_config.json');
@@ -295,10 +306,10 @@ class WatchImpl implements BuildState {
           return change;
         })
         .asyncWhere((change) {
-          assert(_readyCompleter.isCompleted);
+          assert(_readerCompleter.isCompleted);
           return shouldProcess(
             change,
-            assetGraph,
+            assetGraph!,
             options,
             _willCreateOutputDirs,
             _expectedDeletes,
@@ -331,26 +342,30 @@ class WatchImpl implements BuildState {
           await watcherEnvironment.reader.readAsBytes(rootPackageConfigId));
 
       BuildResult firstBuild;
+      BuildImpl? build;
       try {
-        _build = await BuildImpl.create(
+        build = _build = await BuildImpl.create(
             options, watcherEnvironment, builders, builderConfigOverrides,
             isReleaseBuild: isReleaseMode);
 
-        firstBuild = await _build
+        firstBuild = await build
             .run({}, buildDirs: _buildDirs, buildFilters: _buildFilters);
-      } on CannotBuildException {
+      } on CannotBuildException catch (e, s) {
         _terminateCompleter.complete();
 
         firstBuild = BuildResult(BuildStatus.failure, []);
-      } on BuildScriptChangedException {
+        _readerCompleter.completeError(e, s);
+      } on BuildScriptChangedException catch (e, s) {
         _terminateCompleter.complete();
 
         firstBuild = BuildResult(BuildStatus.failure, [],
             failureType: FailureType.buildScriptChanged);
+        _readerCompleter.completeError(e, s);
       }
-
-      _reader = _build?.finalizedReader;
-      _readyCompleter.complete();
+      if (build != null) {
+        assert(!_readerCompleter.isCompleted);
+        _readerCompleter.complete(build.finalizedReader);
+      }
       // It is possible this is already closed if the user kills the process
       // early, which results in an exception without this check.
       if (!controller.isClosed) controller.add(firstBuild);

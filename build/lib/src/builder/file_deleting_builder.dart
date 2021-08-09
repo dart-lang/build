@@ -24,7 +24,7 @@ class FileDeletingBuilder implements PostProcessBuilder {
   FileDeletingBuilder.withExcludes(
       this.inputExtensions, Iterable<String> exclude,
       {this.isEnabled = true})
-      : exclude = exclude?.map((s) => Glob(s))?.toList() ?? const [];
+      : exclude = exclude.map((s) => Glob(s)).toList();
 
   @override
   FutureOr<Null> build(PostProcessBuildStep buildStep) {

@@ -1,12 +1,11 @@
 dart:
-- 2.9.0
 - dev
 
 stages:
 - analyze_and_format:
   - group:
-    - dartfmt: sdk
-    - dartanalyzer: --fatal-infos --fatal-warnings .
+    - format
+    - analyze: --fatal-infos .
     dart: dev
 - unit_test:
   - test: --test-randomize-ordering-seed=random

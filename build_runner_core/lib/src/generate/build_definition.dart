@@ -45,7 +45,7 @@ class BuildDefinition {
   final bool deleteFilesByDefault;
   final ResourceManager resourceManager;
 
-  final BuildScriptUpdates buildScriptUpdates;
+  final BuildScriptUpdates? buildScriptUpdates;
 
   /// Whether or not to run in a mode that conserves RAM at the cost of build
   /// speed.
@@ -73,20 +73,19 @@ class BuildDefinition {
 /// Understands how to find all assets relevant to a build as well as compute
 /// updates to those assets.
 class AssetTracker {
-  final AssetGraph _assetGraph;
   final RunnerAssetReader _reader;
   final TargetGraph _targetGraph;
 
-  AssetTracker(this._assetGraph, this._reader, this._targetGraph);
+  AssetTracker(this._reader, this._targetGraph);
 
   /// Checks for and returns any file system changes compared to the current
   /// state of the asset graph.
-  Future<Map<AssetId, ChangeType>> collectChanges() async {
+  Future<Map<AssetId, ChangeType>> collectChanges(AssetGraph assetGraph) async {
     var inputSources = await _findInputSources();
     var generatedSources = await _findCacheDirSources();
     var internalSources = await _findInternalSources();
     return _computeSourceUpdates(
-        inputSources, generatedSources, internalSources);
+        inputSources, generatedSources, internalSources, assetGraph);
   }
 
   /// Returns the all the sources found in the cache directory.
@@ -118,7 +117,8 @@ class AssetTracker {
   Future<Map<AssetId, ChangeType>> _computeSourceUpdates(
       Set<AssetId> inputSources,
       Set<AssetId> generatedSources,
-      Set<AssetId> internalSources) async {
+      Set<AssetId> internalSources,
+      AssetGraph assetGraph) async {
     final allSources = <AssetId>{}
       ..addAll(inputSources)
       ..addAll(generatedSources)
@@ -130,12 +130,12 @@ class AssetTracker {
       }
     }
 
-    var newSources = inputSources.difference(_assetGraph.allNodes
+    var newSources = inputSources.difference(assetGraph.allNodes
         .where((node) => node.isValidInput)
         .map((node) => node.id)
         .toSet());
     addUpdates(newSources, ChangeType.ADD);
-    var removedAssets = _assetGraph.allNodes
+    var removedAssets = assetGraph.allNodes
         .where((n) {
           if (!n.isReadable) return false;
           if (n is GeneratedAssetNode) return n.wasOutput;
@@ -146,12 +146,11 @@ class AssetTracker {
 
     addUpdates(removedAssets, ChangeType.REMOVE);
 
-    var originalGraphSources = _assetGraph.sources.toSet();
+    var originalGraphSources = assetGraph.sources.toSet();
     var preExistingSources = originalGraphSources.intersection(inputSources)
-      ..addAll(internalSources.where(_assetGraph.contains));
+      ..addAll(internalSources.where(assetGraph.contains));
     var modifyChecks = preExistingSources.map((id) async {
-      var node = _assetGraph.get(id);
-      assert(node != null);
+      var node = assetGraph.get(id)!;
       var originalDigest = node.lastKnownDigest;
       if (originalDigest == null) return;
       var currentDigest = await _reader.digest(id);
@@ -176,23 +175,27 @@ class AssetTracker {
   Stream<AssetId> _listGeneratedAssetIds() {
     var glob = Glob('$generatedOutputDirectory/**');
 
-    return _listIdsSafe(glob).map((id) {
-      var packagePath = id.path.substring(generatedOutputDirectory.length + 1);
-      var firstSlash = packagePath.indexOf('/');
-      if (firstSlash == -1) return null;
-      var package = packagePath.substring(0, firstSlash);
-      var path = packagePath.substring(firstSlash + 1);
-      return AssetId(package, path);
-    }).where((id) => id != null);
+    return _listIdsSafe(glob)
+        .map((id) {
+          var packagePath =
+              id.path.substring(generatedOutputDirectory.length + 1);
+          var firstSlash = packagePath.indexOf('/');
+          if (firstSlash == -1) return null;
+          var package = packagePath.substring(0, firstSlash);
+          var path = packagePath.substring(firstSlash + 1);
+          return AssetId(package, path);
+        })
+        .where((id) => id != null)
+        .cast<AssetId>();
   }
 
   /// Lists asset IDs and swallows file not found errors.
   ///
   /// Ideally we would warn but in practice the default sources list will give
   /// this error a lot and it would be noisy.
-  Stream<AssetId> _listIdsSafe(Glob glob, {String package}) =>
+  Stream<AssetId> _listIdsSafe(Glob glob, {String? package}) =>
       _reader.findAssets(glob, package: package).handleError((void _) {},
-          test: (e) => e is FileSystemException && e.osError.errorCode == 2);
+          test: (e) => e is FileSystemException && e.osError?.errorCode == 2);
 }
 
 class _Loader {
@@ -208,18 +211,17 @@ class _Loader {
     _logger.info('Initializing inputs');
 
     var assetGraph = await _tryReadCachedAssetGraph();
-    var assetTracker =
-        AssetTracker(assetGraph, _environment.reader, _options.targetGraph);
+    var assetTracker = AssetTracker(_environment.reader, _options.targetGraph);
     var inputSources = await assetTracker._findInputSources();
     var cacheDirSources = await assetTracker._findCacheDirSources();
     var internalSources = await assetTracker._findInternalSources();
 
-    BuildScriptUpdates buildScriptUpdates;
+    BuildScriptUpdates? buildScriptUpdates;
     if (assetGraph != null) {
       var updates = await logTimedAsync(
           _logger,
           'Checking for updates since last build',
-          () => _updateAssetGraph(assetGraph, assetTracker, _buildPhases,
+          () => _updateAssetGraph(assetGraph!, assetTracker, _buildPhases,
               inputSources, cacheDirSources, internalSources));
       buildScriptUpdates = await BuildScriptUpdates.create(
           _environment.reader, _options.packageGraph, assetGraph,
@@ -244,7 +246,7 @@ class _Loader {
     }
 
     if (assetGraph == null) {
-      Set<AssetId> conflictingOutputs;
+      late Set<AssetId> conflictingOutputs;
 
       await logTimedAsync(_logger, 'Building new asset graph', () async {
         try {
@@ -255,14 +257,14 @@ class _Loader {
           throw CannotBuildException();
         }
         buildScriptUpdates = await BuildScriptUpdates.create(
-            _environment.reader, _options.packageGraph, assetGraph,
+            _environment.reader, _options.packageGraph, assetGraph!,
             disabled: _options.skipBuildScriptCheck);
 
-        conflictingOutputs = assetGraph.outputs
+        conflictingOutputs = assetGraph!.outputs
             .where((n) => n.package == _options.packageGraph.root.name)
             .where(inputSources.contains)
             .toSet();
-        final conflictsInDeps = assetGraph.outputs
+        final conflictsInDeps = assetGraph!.outputs
             .where((n) => n.package != _options.packageGraph.root.name)
             .where(inputSources.contains)
             .toSet();
@@ -279,14 +281,14 @@ class _Loader {
           _logger,
           'Checking for unexpected pre-existing outputs.',
           () => _initialBuildCleanup(conflictingOutputs,
-              _wrapWriter(_environment.writer, assetGraph)));
+              _wrapWriter(_environment.writer, assetGraph!)));
     }
 
     return BuildDefinition._(
-        assetGraph,
+        assetGraph!,
         _options.targetGraph,
-        _wrapReader(_environment.reader, assetGraph),
-        _wrapWriter(_environment.writer, assetGraph),
+        _wrapReader(_environment.reader, assetGraph!),
+        _wrapWriter(_environment.writer, assetGraph!),
         _options.packageGraph,
         _options.deleteFilesByDefault,
         ResourceManager(),
@@ -334,7 +336,7 @@ class _Loader {
 
   /// Attempts to read in an [AssetGraph] from disk, and returns `null` if it
   /// fails for any reason.
-  Future<AssetGraph> _tryReadCachedAssetGraph() async {
+  Future<AssetGraph?> _tryReadCachedAssetGraph() async {
     final assetGraphId =
         AssetId(_options.packageGraph.root.name, assetGraphPath);
     if (!await _environment.reader.canRead(assetGraphId)) {
@@ -459,7 +461,7 @@ class _Loader {
       Set<AssetId> cacheDirSources,
       Set<AssetId> internalSources) async {
     var updates = await assetTracker._computeSourceUpdates(
-        inputSources, cacheDirSources, internalSources);
+        inputSources, cacheDirSources, internalSources, assetGraph);
     updates.addAll(_computeBuilderOptionsUpdates(assetGraph, buildPhases));
     await assetGraph.updateAndInvalidate(
         _buildPhases,
@@ -473,14 +475,12 @@ class _Loader {
   /// Wraps [original] in a [BuildCacheWriter].
   RunnerAssetWriter _wrapWriter(
       RunnerAssetWriter original, AssetGraph assetGraph) {
-    assert(assetGraph != null);
     return BuildCacheWriter(
         original, assetGraph, _options.packageGraph.root.name);
   }
 
   /// Wraps [original] in a [BuildCacheReader].
   AssetReader _wrapReader(AssetReader original, AssetGraph assetGraph) {
-    assert(assetGraph != null);
     return BuildCacheReader(
         original, assetGraph, _options.packageGraph.root.name);
   }
@@ -557,7 +557,6 @@ class _Loader {
                 'output them are disabled. The outputs are: '
                 '${conflictingAssets.map((a) => a.path).join('\n')}');
             throw CannotBuildException();
-            break;
           case 2:
             _logger.info('Conflicts:\n${conflictingAssets.join('\n')}');
             // Logging should be sync :(

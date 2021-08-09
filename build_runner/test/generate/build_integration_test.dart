@@ -3,16 +3,14 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @Tags(['integration'])
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:_test_common/common.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
-
-import 'package:_test_common/common.dart';
 
 void main() {
   group('build integration tests', () {
@@ -38,6 +36,7 @@ main(List<String> args) async {
             'build_runner',
             'build_runner_core',
             'build_test',
+            'code_builder',
             'glob'
           ]),
           d.dir('tool', [d.file('build.dart', originalBuildContent)]),
@@ -160,6 +159,7 @@ main(List<String> args) async {
             'build_runner',
             'build_runner_core',
             'build_test',
+            'code_builder',
             'glob'
           ], pathDependencies: {
             'b': '../b'
@@ -236,6 +236,7 @@ main(List<String> args) async {
             'build_runner',
             'build_runner_core',
             'build_test',
+            'code_builder',
             'glob'
           ]),
           d.dir('tool', [
@@ -346,6 +347,7 @@ main() async {
             'build_runner',
             'build_runner_core',
             'build_test',
+            'code_builder',
             'glob'
           ]),
           d.dir('tool', [
@@ -461,6 +463,7 @@ main(List<String> args) async {
             'build_runner',
             'build_runner_core',
             'build_test',
+            'code_builder',
           ]),
           d.file('build.yaml', r'''
 targets:
@@ -517,12 +520,14 @@ main(List<String> args) async {
           'build_runner',
           'build_runner_core',
           'build_test',
+          'code_builder',
         ]),
         d.file('build.yaml', r'''
 targets:
   $default:
     builders:
       bad:builder:
+        enabled: true
 '''),
         d.dir('tool', [d.file('build.dart', buildContent)]),
         d.dir('web', [
@@ -547,10 +552,12 @@ targets:
           'build_runner',
           'build_runner_core',
           'build_test',
+          'code_builder',
         ]),
         d.file('build.yaml', r'''
 global_options:
   bad:builder:
+    options: {}
 '''),
         d.dir('tool', [d.file('build.dart', buildContent)]),
         d.dir('web', [
@@ -575,6 +582,7 @@ global_options:
           'build_runner',
           'build_runner_core',
           'build_test',
+          'code_builder',
         ]),
         d.dir('tool', [d.file('build.dart', buildContent)]),
         d.dir('web', [
@@ -603,6 +611,7 @@ global_options:
           'build_runner',
           'build_runner_core',
           'build_test',
+          'code_builder',
           'glob'
         ]),
         d.dir('tool', [
@@ -651,6 +660,7 @@ main() async {
           'build_resolvers',
           'build_runner',
           'build_runner_core',
+          'code_builder',
         ]),
         d.dir('web', [
           d.file('a.txt', 'a'),
@@ -675,7 +685,8 @@ main() async {
           'build_resolvers',
           'build_runner',
           'build_runner_core',
-          'build_test'
+          'build_test',
+          'code_builder',
         ]),
         d.dir('web', [
           d.file('a.dart', 'void main() {}'),
@@ -698,8 +709,7 @@ main() async {
   });
 }
 
-Future<String> runBuild({List<String> extraArgs}) async {
-  extraArgs ??= [];
+Future<String> runBuild({List<String> extraArgs = const []}) async {
   var buildArgs = ['build', '-o', 'build', ...extraArgs];
   var result = await runDart('a', 'tool/build.dart', args: buildArgs);
   expect(result.exitCode, 0, reason: '${result.stdout}\n${result.stderr}');

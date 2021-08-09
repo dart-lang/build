@@ -39,7 +39,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final StreamController<ServerLog> _outputStreamController;
   final ChangeProvider changeProvider;
 
-  Completer<Null> _buildingCompleter;
+  Completer<Null>? _buildingCompleter;
 
   @override
   final Stream<ServerLog> logs;
@@ -51,10 +51,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     this.changeProvider,
   ) : logs = _outputStreamController.stream.asBroadcastStream();
 
-  /// Waits for a running build to complete before returning.
-  ///
-  /// If there is no running build, it will return immediately.
-  Future<void> get building => _buildingCompleter?.future;
+  /// Returns a future that completes when the current build is complete, or
+  /// `null` if there is no active build.
+  Future<void>? get building => _buildingCompleter?.future;
 
   @override
   Stream<BuildResults> get builds => _buildResults.stream;
@@ -74,7 +73,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         .toList();
 
     if (!_buildOptions.skipBuildScriptCheck &&
-        _builder.buildScriptUpdates.hasBeenUpdated(
+        _builder.buildScriptUpdates!.hasBeenUpdated(
             changes.map<AssetId>((change) => change.id).toSet())) {
       if (!_buildScriptUpdateCompleter.isCompleted) {
         _buildScriptUpdateCompleter.complete();
@@ -88,17 +87,18 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     var buildDirs = <BuildDirectory>{};
     var buildFilters = <BuildFilter>{};
     for (var target in defaultTargets) {
-      OutputLocation outputLocation;
+      OutputLocation? outputLocation;
       if (target.outputLocation != null) {
-        outputLocation = OutputLocation(target.outputLocation.output,
-            useSymlinks: target.outputLocation.useSymlinks,
-            hoist: target.outputLocation.hoist);
+        final targetOutputLocation = target.outputLocation!;
+        outputLocation = OutputLocation(targetOutputLocation.output,
+            useSymlinks: targetOutputLocation.useSymlinks,
+            hoist: targetOutputLocation.hoist);
       }
       buildDirs
           .add(BuildDirectory(target.target, outputLocation: outputLocation));
-      if (target.buildFilters != null && target.buildFilters.isNotEmpty) {
+      if (target.buildFilters != null && target.buildFilters!.isNotEmpty) {
         buildFilters.addAll([
-          for (var pattern in target.buildFilters)
+          for (var pattern in target.buildFilters!)
             BuildFilter.fromArg(pattern, _buildOptions.packageGraph.root.name)
         ]);
       } else {
@@ -125,7 +125,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
             // TODO(grouma) - We should forward the error messages instead.
             // We can use the AssetGraph and FailureReporter to provide a better
             // error message.
-            ..error = 'FailureType: ${result.failureType.exitCode}'
+            ..error = 'FailureType: ${result.failureType?.exitCode}'
             ..target = target.target));
         }
       }
@@ -155,7 +155,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       ));
 
   void _signalEnd(Iterable<BuildResult> results) {
-    _buildingCompleter.complete();
+    _buildingCompleter!.complete();
     _buildResults.add(BuildResults((b) => b..results.addAll(results)));
   }
 
@@ -192,7 +192,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         LogSubscription(environment, verbose: daemonOptions.verbose);
 
     var overrideBuildConfig = await findBuildConfigOverrides(
-        packageGraph, daemonOptions.configKey, daemonEnvironment.reader);
+        packageGraph, daemonEnvironment.reader,
+        configKey: daemonOptions.configKey);
 
     var buildOptions = await BuildOptions.create(
       logSubscription,
@@ -228,8 +229,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
     var changeProvider = daemonOptions.buildMode == BuildMode.Auto
         ? AutoChangeProvider(graphEvents())
-        : ManualChangeProvider(AssetTracker(builder.assetGraph,
-            daemonEnvironment.reader, buildOptions.targetGraph));
+        : ManualChangeProvider(
+            AssetTracker(daemonEnvironment.reader, buildOptions.targetGraph),
+            builder.assetGraph);
 
     return BuildRunnerDaemonBuilder._(
         builder, buildOptions, outputStreamController, changeProvider);

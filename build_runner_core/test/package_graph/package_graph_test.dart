@@ -2,13 +2,12 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 @TestOn('vm')
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
-import 'package:build_runner_core/build_runner_core.dart';
-
 void main() {
-  PackageGraph graph;
+  late PackageGraph graph;
 
   group('PackageGraph', () {
     group('forThisPackage ', () {
@@ -43,12 +42,12 @@ void main() {
 
       test('root', () {
         expectPkg(graph.root, 'basic_pkg', basicPkgPath, DependencyType.path,
-            [graph['a'], graph['b'], graph['c'], graph['d']]);
+            [graph['a']!, graph['b']!, graph['c']!, graph['d']!]);
       });
 
       test('dependency', () {
-        expectPkg(graph['a'], 'a', '$basicPkgPath/pkg/a', DependencyType.hosted,
-            [graph['b'], graph['c']]);
+        expectPkg(graph['a']!, 'a', '$basicPkgPath/pkg/a',
+            DependencyType.hosted, [graph['b']!, graph['c']!]);
       });
     });
 
@@ -73,13 +72,13 @@ void main() {
       test('dev deps are contained in deps of root pkg, but not others', () {
         // Package `b` shows as a dep because this is the root package.
         expectPkg(graph.root, 'with_dev_deps', withDevDepsPkgPath,
-            DependencyType.path, [graph['a'], graph['b']]);
+            DependencyType.path, [graph['a']!, graph['b']!]);
 
         // Package `c` does not appear because this is not the root package.
-        expectPkg(graph['a'], 'a', '$withDevDepsPkgPath/pkg/a',
+        expectPkg(graph['a']!, 'a', '$withDevDepsPkgPath/pkg/a',
             DependencyType.hosted, []);
 
-        expectPkg(graph['b'], 'b', '$withDevDepsPkgPath/pkg/b',
+        expectPkg(graph['b']!, 'b', '$withDevDepsPkgPath/pkg/b',
             DependencyType.hosted, []);
 
         expect(graph['c'], isNull);
@@ -111,10 +110,10 @@ void main() {
     });
 
     test('custom creation via fromRoot', () {
-      var a = PackageNode('a', null, DependencyType.path, null, isRoot: true);
-      var b = PackageNode('b', null, null, null);
-      var c = PackageNode('c', null, null, null);
-      var d = PackageNode('d', null, null, null);
+      var a = PackageNode('a', '/a', DependencyType.path, null, isRoot: true);
+      var b = PackageNode('b', '/b', DependencyType.path, null);
+      var c = PackageNode('c', '/c', DependencyType.path, null);
+      var d = PackageNode('d', '/d', DependencyType.path, null);
       a.dependencies.addAll([b, d]);
       b.dependencies.add(c);
       var graph = PackageGraph.fromRoot(a);
@@ -140,7 +139,7 @@ void main() {
 
 void expectPkg(PackageNode node, String name, String location,
     DependencyType dependencyType,
-    [Iterable<PackageNode> dependencies]) {
+    [Iterable<PackageNode>? dependencies]) {
   location = p.canonicalize(location);
   expect(node.name, name);
   expect(node.path, location);

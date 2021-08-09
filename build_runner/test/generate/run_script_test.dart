@@ -3,14 +3,12 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @Tags(['integration'])
-
 import 'dart:convert';
 
+import 'package:_test_common/common.dart';
 import 'package:io/io.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
-
-import 'package:_test_common/common.dart';
 
 void main() {
   group('run_script validation tests', () {
@@ -58,12 +56,14 @@ main(List<String> args) async {
       await d.dir('a', [
         await pubspec('a', currentIsolateDependencies: [
           'build',
+          'build_config',
           'build_daemon',
           'build_resolvers',
           'build_runner',
           'build_runner_core',
           'build_test',
-          'glob'
+          'code_builder',
+          'glob',
         ]),
         d.dir('bin', [
           d.file('main.dart', executableFileContent),

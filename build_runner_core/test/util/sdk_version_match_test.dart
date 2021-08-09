@@ -2,9 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:test/test.dart';
-
 import 'package:build_runner_core/src/util/sdk_version_match.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('utils.sdk_version_match', () {

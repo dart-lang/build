@@ -11,9 +11,6 @@ class _CopyBuilder extends Builder {
   @override
   final buildExtensions = {
     'web/graph_viz_main.dart.js': ['lib/src/server/graph_viz_main.dart.js'],
-    'web/hot_reload_client.dart.js': [
-      'lib/src/server/build_updates_client/hot_reload_client.dart.js'
-    ]
   };
 
   @override
@@ -24,7 +21,7 @@ class _CopyBuilder extends Builder {
     }
     buildStep.writeAsString(
         AssetId(buildStep.inputId.package,
-            buildExtensions[buildStep.inputId.path].single),
+            buildExtensions[buildStep.inputId.path]!.single),
         buildStep.readAsString(buildStep.inputId));
   }
 }

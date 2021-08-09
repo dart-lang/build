@@ -7,13 +7,6 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_runner_core/src/environment/io_environment.dart';
-import 'package:build_runner_core/src/environment/overridable_environment.dart';
-import 'package:build_runner_core/src/generate/build_result.dart';
-import 'package:build_runner_core/src/generate/build_runner.dart';
-import 'package:build_runner_core/src/generate/options.dart';
-import 'package:build_runner_core/src/package_graph/apply_builders.dart';
-import 'package:build_runner_core/src/package_graph/package_graph.dart';
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
@@ -76,30 +69,30 @@ void _printOnFailure(LogRecord record) {
 ///
 Future<BuildResult> testBuilders(
   List<BuilderApplication> builders,
-  Map<String, /*String|List<int>*/ dynamic> inputs, {
-  Map<String, /*String|List<int>*/ dynamic> outputs,
-  PackageGraph packageGraph,
+  Map<String, /*String|List<int>*/ Object> inputs, {
+  Map<String, /*String|List<int>*/ Object>? outputs,
+  PackageGraph? packageGraph,
   BuildStatus status = BuildStatus.success,
-  Map<String, BuildConfig> overrideBuildConfig,
-  InMemoryRunnerAssetReader reader,
-  InMemoryRunnerAssetWriter writer,
-  Level logLevel,
+  Map<String, BuildConfig>? overrideBuildConfig,
+  InMemoryRunnerAssetReader? reader,
+  InMemoryRunnerAssetWriter? writer,
+  Level? logLevel,
   // A better way to "silence" logging than setting logLevel to OFF.
   Function(LogRecord record) onLog = _printOnFailure,
   bool checkBuildStatus = true,
   bool deleteFilesByDefault = true,
   bool enableLowResourcesMode = false,
-  Map<String, Map<String, dynamic>> builderConfigOverrides,
+  Map<String, Map<String, dynamic>>? builderConfigOverrides,
   bool verbose = false,
-  Set<BuildDirectory> buildDirs,
-  Set<BuildFilter> buildFilters,
-  String logPerformanceDir,
-  String expectedGeneratedDir,
+  Set<BuildDirectory> buildDirs = const {},
+  Set<BuildFilter> buildFilters = const {},
+  String? logPerformanceDir,
+  String expectedGeneratedDir = 'generated',
 }) async {
   packageGraph ??= buildPackageGraph({rootPackage('a'): []});
   writer ??= InMemoryRunnerAssetWriter();
   reader ??= InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
-      rootPackage: packageGraph?.root?.name);
+      rootPackage: packageGraph.root.name);
   var pkgConfigId =
       AssetId(packageGraph.root.name, '.dart_tool/package_config.json');
   if (!await reader.canRead(pkgConfigId)) {
@@ -121,9 +114,9 @@ Future<BuildResult> testBuilders(
   inputs.forEach((serializedId, contents) {
     var id = makeAssetId(serializedId);
     if (contents is String) {
-      reader.cacheStringAsset(id, contents);
+      reader!.cacheStringAsset(id, contents);
     } else if (contents is List<int>) {
-      reader.cacheBytesAsset(id, contents);
+      reader!.cacheBytesAsset(id, contents);
     }
   });
 
@@ -136,7 +129,7 @@ Future<BuildResult> testBuilders(
       deleteFilesByDefault: deleteFilesByDefault,
       packageGraph: packageGraph,
       skipBuildScriptCheck: true,
-      overrideBuildConfig: overrideBuildConfig,
+      overrideBuildConfig: overrideBuildConfig ?? const {},
       enableLowResourcesMode: enableLowResourcesMode,
       logPerformanceDir: logPerformanceDir);
 
@@ -167,23 +160,22 @@ Future<BuildResult> testBuilders(
 /// Translates expected outptus which start with `$$` to the build cache and
 /// validates the success and outputs of the build.
 void checkBuild(BuildResult result,
-    {Map<String, dynamic> outputs,
-    InMemoryAssetWriter writer,
+    {Map<String, Object>? outputs,
+    required InMemoryAssetWriter writer,
     BuildStatus status = BuildStatus.success,
-    String rootPackage,
-    String expectedGeneratedDir}) {
-  expectedGeneratedDir ??= 'generated';
+    String rootPackage = 'a',
+    String expectedGeneratedDir = 'generated'}) {
   expect(result.status, status, reason: '$result');
 
-  final unhiddenOutputs = <String, dynamic>{};
+  final unhiddenOutputs = <String, Object>{};
   final unhiddenAssets = <AssetId>{};
   for (final id in outputs?.keys ?? const <String>[]) {
     if (id.startsWith(r'$$')) {
       final unhidden = id.substring(2);
       unhiddenAssets.add(makeAssetId(unhidden));
-      unhiddenOutputs[unhidden] = outputs[id];
+      unhiddenOutputs[unhidden] = outputs![id]!;
     } else {
-      unhiddenOutputs[id] = outputs[id];
+      unhiddenOutputs[id] = outputs![id]!;
     }
   }
 

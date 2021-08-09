@@ -43,6 +43,7 @@ class TestCommand extends BuildRunnerCommand {
 
   @override
   SharedOptions readOptions() {
+    var argResults = this.argResults!;
     // This command doesn't allow specifying directories to build, instead it
     // always builds the `test` directory.
     //
@@ -99,7 +100,7 @@ class TestCommand extends BuildRunnerCommand {
   }
 
   Future<int> _run(SharedOptions options, String tempPath) async {
-    var buildDirs = (options.buildDirs ?? <BuildDirectory>{})
+    var buildDirs = (options.buildDirs)
       // Build test by default.
       ..add(BuildDirectory('test',
           outputLocation: OutputLocation(tempPath,
@@ -124,7 +125,7 @@ class TestCommand extends BuildRunnerCommand {
 
     if (result.status == BuildStatus.failure) {
       stdout.writeln('Skipping tests due to build failure');
-      return result.failureType.exitCode;
+      return result.failureType?.exitCode ?? 1;
     }
 
     return await _runTests(tempPath);
@@ -132,6 +133,7 @@ class TestCommand extends BuildRunnerCommand {
 
   /// Runs tests using [precompiledPath] as the precompiled test directory.
   Future<int> _runTests(String precompiledPath) async {
+    var argResults = this.argResults!;
     stdout.writeln('Running tests...\n');
     var extraTestArgs = argResults.rest;
     var testProcess = await Process.start(
@@ -155,7 +157,7 @@ bool _packageTestSupportsSymlinks(PackageGraph packageGraph) {
   var pubspecPath = p.join(testPackage.path, 'pubspec.yaml');
   var pubspec = Pubspec.parse(File(pubspecPath).readAsStringSync());
   if (pubspec.version == null) return false;
-  return pubspec.version >= Version(1, 3, 0);
+  return pubspec.version! >= Version(1, 3, 0);
 }
 
 void _ensureBuildTestDependency(PackageGraph packageGraph) {
@@ -165,7 +167,8 @@ void _ensureBuildTestDependency(PackageGraph packageGraph) {
 }
 
 void _ensureProcessExit(Process process) {
-  var signalsSub = _exitProcessSignals.listen((signal) async {
+  StreamSubscription<ProcessSignal>? signalsSub =
+      _exitProcessSignals.listen((signal) async {
     stdout.writeln('waiting for subprocess to exit...');
   });
   process.exitCode.then((_) {

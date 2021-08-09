@@ -15,17 +15,17 @@ class BuildResult {
   final BuildStatus status;
 
   /// The type of failure.
-  final FailureType failureType;
+  final FailureType? failureType;
 
   /// All outputs created/updated during this build.
   final List<AssetId> outputs;
 
   /// The [BuildPerformance] broken out by build action, may be `null`.
   @experimental
-  final BuildPerformance performance;
+  final BuildPerformance? performance;
 
   BuildResult(this.status, List<AssetId> outputs,
-      {this.performance, FailureType failureType})
+      {this.performance, FailureType? failureType})
       : outputs = List.unmodifiable(outputs),
         failureType = failureType == null && status == BuildStatus.failure
             ? FailureType.general
@@ -63,6 +63,6 @@ class FailureType {
 }
 
 abstract class BuildState {
-  Future<BuildResult> get currentBuild;
+  Future<BuildResult>? get currentBuild;
   Stream<BuildResult> get buildResults;
 }
