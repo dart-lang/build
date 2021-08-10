@@ -3,6 +3,7 @@ import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
 import 'foo.dart';
+import 'foo_sub.dart';
 import 'generated_mocks_test.mocks.dart';
 
 T dummyMethod<T>() => [1, 1.5].whereType<T>().first!;
@@ -66,6 +67,24 @@ void main() {
 
       when(foo.parameterWithDefault()).thenReturn('Default');
       expect(foo.parameterWithDefault(), equals('Default'));
+
+      const foo2 = FooSub();
+      when(foo.parameterWithDefault2(foo2)).thenReturn('Stubbed');
+      expect(foo.parameterWithDefault2(foo2), equals('Stubbed'));
+
+      when(foo.parameterWithDefault2()).thenReturn('Default');
+      expect(foo.parameterWithDefault2(), equals('Default'));
+    });
+
+    test(
+        'a method with a parameter with a default value factory redirect can be stubbed',
+        () {
+      const foo2 = FooSub2<int>();
+      when(foo.parameterWithDefaultFactoryRedirect(foo2)).thenReturn('Stubbed');
+      expect(foo.parameterWithDefaultFactoryRedirect(foo2), equals('Stubbed'));
+
+      when(foo.parameterWithDefaultFactoryRedirect()).thenReturn('Default');
+      expect(foo.parameterWithDefaultFactoryRedirect(), equals('Default'));
     });
 
     test('an inherited method can be stubbed', () {

@@ -1233,8 +1233,9 @@ class _MockClassInfo {
       if (parameter.isNamed) pBuilder.named = true;
       if (parameter.defaultValueCode != null) {
         try {
-          pBuilder.defaultTo =
-              _expressionFromDartObject(parameter.computeConstantValue()!).code;
+          pBuilder.defaultTo = _expressionFromDartObject(
+                  parameter.computeConstantValue()!, parameter)
+              .code;
         } on _ReviveException catch (e) {
           final method = parameter.enclosingElement!;
           final clazz = method.enclosingElement!;
@@ -1248,11 +1249,13 @@ class _MockClassInfo {
   }
 
   /// Creates a code_builder [Expression] from [object], a constant object from
-  /// analyzer.
+  /// analyzer and [parameter], an optional [ParameterElement], when the
+  /// expression is created for a method parameter.
   ///
   /// This is very similar to Angular's revive code, in
   /// angular_compiler/analyzer/di/injector.dart.
-  Expression _expressionFromDartObject(DartObject object) {
+  Expression _expressionFromDartObject(DartObject object,
+      [ParameterElement? parameter]) {
     final constant = ConstantReader(object);
     if (constant.isNull) {
       return literalNull;
@@ -1318,7 +1321,10 @@ class _MockClassInfo {
         for (var pair in revivable.namedArguments.entries)
           pair.key: _expressionFromDartObject(pair.value)
       };
-      final type = referImported(name, _typeImport(object.type!.element));
+      final element = parameter != null && name != object.type!.element!.name
+          ? parameter.type.element
+          : object.type!.element;
+      final type = referImported(name, _typeImport(element));
       if (revivable.accessor.isNotEmpty) {
         return type.constInstanceNamed(
           revivable.accessor,
