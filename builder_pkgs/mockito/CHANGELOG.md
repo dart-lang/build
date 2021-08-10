@@ -1,3 +1,9 @@
+## 5.0.15-dev
+
+* Fix an issue generating the correct parameter default value given a
+  constructor which redirects to a constructor declared in a separate library.
+  [#459](https://github.com/dart-lang/mockito/issues/459)
+
 ## 5.0.14
 
 * Generate Fake classes with unique names.

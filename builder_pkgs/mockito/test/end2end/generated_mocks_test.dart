@@ -77,8 +77,8 @@ void main() {
     });
 
     test(
-        'a method with a parameter with a default value factory redirect can be stubbed',
-        () {
+        'a method with a parameter with a default value factory redirect can '
+        'be stubbed', () {
       const foo2 = FooSub2<int>();
       when(foo.parameterWithDefaultFactoryRedirect(foo2)).thenReturn('Stubbed');
       expect(foo.parameterWithDefaultFactoryRedirect(foo2), equals('Stubbed'));

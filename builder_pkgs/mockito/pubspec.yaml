@@ -1,5 +1,5 @@
 name: mockito
-version: 5.0.14
+version: 5.0.15-dev
 
 description: >-
   A mock framework inspired by Mockito with APIs for Fakes, Mocks,
