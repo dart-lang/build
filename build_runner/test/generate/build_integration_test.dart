@@ -74,18 +74,9 @@ main(List<String> args) async {
 
       test('updates can change extensions', () async {
         // Update the extension from .copy to .copy2
-        var changedBuildScript = '''
-import 'dart:io';
-import 'package:build_runner/build_runner.dart';
-import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_test/build_test.dart';
-
-main(List<String> args) async {
-  exitCode = await run(args,
-      [applyToRoot(TestBuilder(buildExtensions: appendExtension('.copy2')))]);
-}
-''';
-
+        var changedBuildScript = originalBuildContent.replaceFirst(
+            'TestBuilder()',
+            "TestBuilder(buildExtensions: appendExtension('.copy2'))");
         await d.dir('a', [
           d.dir('tool', [d.file('build.dart', changedBuildScript)])
         ]).create();
