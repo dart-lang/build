@@ -1,5 +1,5 @@
 name: build_modules
-version: 4.0.2-dev
+version: 4.0.2
 description: Builders for Dart modules
 repository: https://github.com/dart-lang/build/tree/master/build_modules
 

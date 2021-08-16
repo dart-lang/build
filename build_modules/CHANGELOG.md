@@ -1,4 +1,7 @@
-## 4.0.2-dev
+## 4.0.2
+
+- Log a better and more consistent message when we encounter dart: uris in
+  conditional imports.
 
 ## 4.0.1
 
