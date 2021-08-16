@@ -17,10 +17,13 @@ abstract class Builder {
   /// from the values in this map are expected as outputs.
   ///
   /// - If an empty key exists, all inputs are considered matching.
-  /// - A builder must always return the same configuration. Typically this will
-  /// be `const` but may vary based on build arguments.
+  /// - An instance of a builder must always return the same configuration.
+  ///   Typically, a builder will return a `const` map. Builders may also choose
+  ///   extensions based on [BuilderOptions].
   /// - Most builders will use a single input extension and one or more output
-  /// extensions.
+  ///   extensions.
+  /// - For more information on build extensions, see
+  ///   https://github.com/dart-lang/build/blob/master/docs/writing_a_builder.md#configuring-outputs
   Map<String, List<String>> get buildExtensions;
 }
 
@@ -52,10 +55,7 @@ class BuilderOptions {
   /// The `isRoot` value will also be overridden to value from [other].
   BuilderOptions overrideWith(BuilderOptions? other) {
     if (other == null) return this;
-    return BuilderOptions(
-        {}
-          ..addAll(config)
-          ..addAll(other.config),
+    return BuilderOptions({}..addAll(config)..addAll(other.config),
         isRoot: other.isRoot);
   }
 }
