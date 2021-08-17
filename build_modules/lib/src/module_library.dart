@@ -140,9 +140,9 @@ class ModuleLibrary {
           'Unsupported conditional import of `$parsedUri` found in $id:\n\n'
           '${node.toSource()}\n\nThis environment does not support direct '
           'conditional imports of `dart:` libraries. Instead you must create '
-          'a separate library which imports (or exports) the `dart:` library '
-          'that you want to use, and conditionally import (or export) that '
-          'library.');
+          'a separate library which unconditionally imports (or exports) the '
+          '`dart:` library that you want to use, and conditionally import (or '
+          'export) that library.');
     }
   }
 
