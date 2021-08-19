@@ -2,10 +2,5 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:html';
-
-import 'shared.dart';
-
-void main() {
-  document.body!.appendHtml('<p>First app: counter == $counter</p>');
-}
+int _counter = 0;
+int get counter => ++_counter;

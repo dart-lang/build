@@ -4,6 +4,8 @@
 
 import 'dart:html';
 
+import 'shared.dart';
+
 void main() {
-  document.body!.appendHtml('<p>Second app</p>');
+  document.body!.appendHtml('<p>Second app: counter == $counter</p>');
 }
