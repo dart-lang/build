@@ -7,6 +7,8 @@ targets:
       build_web_compilers:entrypoint:
         generate_for:
           - web/main.dart
+          - web/multi_app/a.dart
+          - web/multi_app/b.dart
           - web/sub/main.dart
           - test/hello_world_test.dart
           - test/hello_world_test.dart.browser_test.dart
