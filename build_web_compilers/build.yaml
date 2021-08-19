@@ -102,6 +102,7 @@ builders:
     build_extensions:
       .dart:
         - .dart.bootstrap.js
+        - .dart.bootstrap.require.js
         - .dart.js
         - .dart.js.map
         - .dart.js.tar.gz

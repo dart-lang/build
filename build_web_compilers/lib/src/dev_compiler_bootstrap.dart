@@ -106,6 +106,8 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
   }
 
   var bootstrapId = dartEntrypointId.changeExtension(ddcBootstrapExtension);
+  var bootstrapRequireId =
+      dartEntrypointId.changeExtension(ddcBootstrapRequireExtension);
   var bootstrapModuleName = _context.withoutExtension(_context.relative(
       bootstrapId.path,
       from: _context.dirname(dartEntrypointId.path)));
@@ -137,6 +139,9 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
             oldModuleScope: oldAppModuleScope));
 
   await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
+
+  var bootstrapRequireContent = 'require(["$bootstrapModuleName"]);';
+  await buildStep.writeAsString(bootstrapRequireId, bootstrapRequireContent);
 
   var entrypointJsContent = _entryPointJs(bootstrapModuleName);
   await buildStep.writeAsString(
@@ -258,17 +263,34 @@ String _entryPointJs(String bootstrapModuleName) => '''
   var mainUri = _currentDirectory + "$bootstrapModuleName";
 
   if (typeof document != 'undefined') {
+    // Load stack trace mapper
     var el = document.createElement("script");
     el.defer = true;
     el.async = false;
     el.src = mapperUri;
     document.head.appendChild(el);
 
+    // Load require.js
     el = document.createElement("script");
     el.defer = true;
     el.async = false;
     el.src = requireUri;
-    el.setAttribute("data-main", mainUri);
+    document.head.appendChild(el);
+
+    // Load the bootstrap script for this entrypoint, which defines the module
+    // and its dependencies with requirejs.
+    el = document.createElement("script");
+    el.defer = true;
+    el.async = false;
+    el.src = mainUri + '.js';
+    document.head.appendChild(el);
+
+    // Load the require script for this entrypoint, which triggers the execution
+    // of this entrypoint's main() via requirejs.
+    el = document.createElement("script");
+    el.defer = true;
+    el.async = false;
+    el.src = mainUri + '.require.js';
     document.head.appendChild(el);
   } else {
     importScripts(mapperUri, requireUri);
@@ -319,10 +341,12 @@ String _dartLoaderSetup(Map<String, String> modulePaths, String appDigests,
     '''
 $_currentDirectoryScript
 $_baseUrlScript
+let rootDirectory = window.location.origin + baseUrl;
 let modulePaths = ${const JsonEncoder.withIndent(" ").convert(modulePaths)};
+let appDigests = _currentDirectory + '$appDigests';
 if(!window.\$dartLoader) {
    window.\$dartLoader = {
-     appDigests: _currentDirectory + '$appDigests',
+     appDigests: new Array(),
      moduleIdToUrl: new Map(),
      urlToModuleId: new Map(),
      rootDirectories: new Array(),
@@ -355,8 +379,11 @@ if(!window.\$dartLoader) {
      getModuleLibraries: null, // set up by _initializeTools
    };
 }
+if (window.\$dartLoader.rootDirectories.indexOf(rootDirectory) === -1) {
+  window.\$dartLoader.rootDirectories.push(rootDirectory);
+}
+window.\$dartLoader.appDigests.push(appDigests);
 let customModulePaths = {};
-window.\$dartLoader.rootDirectories.push(window.location.origin + baseUrl);
 for (let moduleName of Object.getOwnPropertyNames(modulePaths)) {
   let modulePath = modulePaths[moduleName];
   if (modulePath != moduleName) {
