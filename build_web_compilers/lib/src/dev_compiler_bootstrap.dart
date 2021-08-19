@@ -121,6 +121,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
     ...dartEntrypointParts.skip(1),
   ]);
 
+  var requireContextId = appModuleName;
   var bootstrapContent =
       StringBuffer('$_entrypointExtensionMarker\n(function() {\n')
         ..write(_dartLoaderSetup(
@@ -128,7 +129,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
             _p.url.relative(appDigestsOutput.path,
                 from: _p.url.dirname(bootstrapId.path)),
             soundNullSafety))
-        ..write(_requireJsConfig(soundNullSafety))
+        ..write(_requireJsConfig(soundNullSafety, requireContextId))
         ..write(_appBootstrap(
             bootstrapModuleName: bootstrapModuleName,
             entrypointLibraryName: entrypointLibraryName,
@@ -140,7 +141,8 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
 
   await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
 
-  var bootstrapRequireContent = 'require(["$bootstrapModuleName"]);';
+  var bootstrapRequireContent =
+      'window["$requireContextId"](["$bootstrapModuleName"]);';
   await buildStep.writeAsString(bootstrapRequireId, bootstrapRequireContent);
 
   var entrypointJsContent = _entryPointJs(bootstrapModuleName);
@@ -294,12 +296,13 @@ String _entryPointJs(String bootstrapModuleName) => '''
     document.head.appendChild(el);
   } else {
     importScripts(mapperUri, requireUri);
-    require.config({
+    var customRequire = require.config({
+      context: "$bootstrapModuleName",
       baseUrl: baseUrl,
     });
     // TODO: update bootstrap code to take argument - dart-lang/build#1115
     window = self;
-    require([mainUri + '.js']);
+    customRequire([mainUri + '.js']);
   }
 })();
 ''';
@@ -433,7 +436,7 @@ $_baseUrlScript
 ///
 /// Adds error handler code for require.js which requests a `.errors` file for
 /// any failed module, and logs it to the console.
-String _requireJsConfig(bool soundNullSafety) => '''
+String _requireJsConfig(bool soundNullSafety, String contextId) => '''
 // Whenever we fail to load a JS module, try to request the corresponding
 // `.errors` file, and log it to the console.
 (function() {
@@ -481,8 +484,9 @@ String _requireJsConfig(bool soundNullSafety) => '''
 
 $_baseUrlScript;
 
-require.config({
+window["$contextId"] = require.config({
     baseUrl: baseUrl,
+    context: "$contextId",
     waitSeconds: 0,
     paths: customModulePaths
 });
