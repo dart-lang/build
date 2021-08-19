@@ -1,3 +1,8 @@
+## 2.0.5-dev
+
+- Update usages of deprecated analyzer apis.
+- Require at least analyzer `2.1.0`.
+
 ## 2.0.4
 
 - Allow analyzer version 2.x.x.
