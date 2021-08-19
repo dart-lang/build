@@ -302,7 +302,7 @@ class UnresolvedAnnotationException implements Exception {
   ) {
     try {
       final parsedLibrary = annotatedElement.session!
-              .getParsedLibraryByElement2(annotatedElement.library!)
+              .getParsedLibraryByElement(annotatedElement.library!)
           as ParsedLibraryResult;
       final declaration = parsedLibrary.getElementDeclaration(annotatedElement);
       if (declaration == null) {

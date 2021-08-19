@@ -4,6 +4,7 @@
 
 import 'dart:io';
 
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
@@ -21,7 +22,7 @@ import 'package:yaml/yaml.dart';
 ///
 /// This function will return `'VoidFunc'`, unlike [DartType.element.name].
 String typeNameOf(DartType type) {
-  final aliasElement = type.aliasElement;
+  final aliasElement = type.alias?.element;
   if (aliasElement != null) {
     return aliasElement.name;
   }
@@ -37,14 +38,21 @@ String typeNameOf(DartType type) {
   throw UnimplementedError('(${type.runtimeType}) $type');
 }
 
+bool hasExpectedPartDirective(CompilationUnit unit, String part) =>
+    unit.directives
+        .whereType<PartDirective>()
+        .any((e) => e.uri.stringValue == part);
+
 /// Returns a name suitable for `part of "..."` when pointing to [element].
-String nameOfPartial(LibraryElement element, AssetId source) {
+String nameOfPartial(LibraryElement element, AssetId source, AssetId output) {
   if (element.name.isNotEmpty) {
     return element.name;
   }
 
-  final sourceUrl = p.basename(source.uri.toString());
-  return '\'$sourceUrl\'';
+  assert(source.package == output.package);
+  final relativeSourceUri =
+      p.url.relative(source.path, from: p.dirname(output.path));
+  return '\'$relativeSourceUri\'';
 }
 
 /// Returns a suggested library identifier based on [source] path and package.

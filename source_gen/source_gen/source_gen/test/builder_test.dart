@@ -275,24 +275,24 @@ part "a.foo.dart";'''
         });
   });
 
-  group('SharedPartBuilder', () {
-    test('warns about missing part', () async {
-      final srcs = _createPackageStub(testLibContent: _testLibContentNoPart);
-      final builder = SharedPartBuilder([const CommentGenerator()], 'comment');
-      final logs = <String>[];
-      await testBuilder(
-        builder,
-        srcs,
-        onLog: (log) {
-          logs.add(log.message);
-        },
-      );
-      expect(logs, [
-        'test_lib.g.dart must be included as a part directive in the input '
-            'library with:\n    part \'test_lib.g.dart\';'
-      ]);
-    });
+  test('PartBuilder warns about missing part', () async {
+    final srcs = _createPackageStub(testLibContent: _testLibContentNoPart);
+    final builder = PartBuilder([const CommentGenerator()], '.g.dart');
+    final logs = <String>[];
+    await testBuilder(
+      builder,
+      srcs,
+      onLog: (log) {
+        logs.add(log.message);
+      },
+    );
+    expect(logs, [
+      'test_lib.g.dart must be included as a part directive in the input '
+          'library with:\n    part \'test_lib.g.dart\';'
+    ]);
+  });
 
+  group('SharedPartBuilder', () {
     test('outputs <partId>.g.part files', () async {
       await testBuilder(
           SharedPartBuilder(
@@ -503,6 +503,129 @@ foo generated content
 ''')),
         },
       );
+    });
+
+    test('warns about missing part statement', () async {
+      final logs = <String>[];
+      await testBuilder(
+        combiningBuilder(),
+        {
+          '$_pkgName|lib/a.dart': '',
+          '$_pkgName|lib/a.foo.g.part': '// generated',
+        },
+        generateFor: {'$_pkgName|lib/a.dart'},
+        onLog: (msg) => logs.add(msg.message),
+        outputs: {},
+      );
+
+      expect(
+        logs,
+        contains(
+          'a.g.dart must be included as a part directive in the input '
+          'library with:\n    part \'a.g.dart\';',
+        ),
+      );
+    });
+
+    group('with custom extensions', () {
+      test("disallows options that aren't a map", () {
+        expect(
+          () => combiningBuilder(
+              const BuilderOptions({'build_extensions': 'foo'})),
+          throwsArgumentError,
+        );
+      });
+
+      test('disallows empty options', () {
+        expect(
+          () =>
+              combiningBuilder(const BuilderOptions({'build_extensions': {}})),
+          throwsArgumentError,
+        );
+      });
+
+      test('disallows inputs not ending with .dart', () {
+        expect(
+          () => combiningBuilder(const BuilderOptions({
+            'build_extensions': {
+              '.txt': ['.dart']
+            }
+          })),
+          throwsA(
+            isArgumentError.having(
+              (e) => e.message,
+              'message',
+              'Invalid key in build_extensions option: `.txt` should be a '
+                  'string ending with `.dart`',
+            ),
+          ),
+        );
+      });
+
+      test('disallows outputs not ending with .dart', () {
+        expect(
+          () => combiningBuilder(const BuilderOptions({
+            'build_extensions': {'.dart': '.out'}
+          })),
+          throwsA(
+            isArgumentError.having(
+              (e) => e.message,
+              'message',
+              'Invalid output extension `.out`. It should be a string ending '
+                  'with `.dart`',
+            ),
+          ),
+        );
+      });
+
+      test('generates relative `path of` for output in different directory',
+          () async {
+        await testBuilder(
+          combiningBuilder(const BuilderOptions({
+            'build_extensions': {'^lib/{{}}.dart': 'lib/generated/{{}}.g.dart'}
+          })),
+          {
+            '$_pkgName|lib/a.dart': 'part "generated/a.g.dart";',
+            '$_pkgName|lib/a.foo.g.part': '\n\nfoo generated content\n',
+            '$_pkgName|lib/a.only_whitespace.g.part': '\n\n\t  \n \n',
+            '$_pkgName|lib/a.bar.g.part': '\nbar generated content',
+          },
+          generateFor: {'$_pkgName|lib/a.dart'},
+          outputs: {
+            '$_pkgName|lib/generated/a.g.dart': decodedMatches(endsWith(r'''
+part of '../a.dart';
+
+bar generated content
+
+foo generated content
+''')),
+          },
+        );
+      });
+
+      test('warns about missing part statement', () async {
+        final logs = <String>[];
+        await testBuilder(
+          combiningBuilder(const BuilderOptions({
+            'build_extensions': {'^lib/{{}}.dart': 'lib/generated/{{}}.g.dart'}
+          })),
+          {
+            '$_pkgName|lib/a.dart': '',
+            '$_pkgName|lib/a.foo.g.part': '// generated',
+          },
+          generateFor: {'$_pkgName|lib/a.dart'},
+          onLog: (msg) => logs.add(msg.message),
+          outputs: {},
+        );
+
+        expect(
+          logs,
+          contains(
+            'generated/a.g.dart must be included as a part directive in the '
+            'input library with:\n    part \'generated/a.g.dart\';',
+          ),
+        );
+      });
     });
   });
 

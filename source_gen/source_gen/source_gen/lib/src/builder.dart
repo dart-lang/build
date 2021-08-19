@@ -105,31 +105,29 @@ class _Builder extends Builder {
 
     if (!_isLibraryBuilder) {
       final asset = buildStep.inputId;
-      final name = nameOfPartial(library, asset);
+      final name = nameOfPartial(library, asset, outputId);
       contentBuffer.writeln();
 
-      String part;
       if (this is PartBuilder) {
         contentBuffer
           ..write(languageOverrideForLibrary(library))
           ..writeln('part of $name;');
-        part = computePartUrl(buildStep.inputId, outputId);
+        final part = computePartUrl(buildStep.inputId, outputId);
+
+        final libraryUnit =
+            await buildStep.resolver.compilationUnitFor(buildStep.inputId);
+        final hasLibraryPartDirectiveWithOutputUri =
+            hasExpectedPartDirective(libraryUnit, part);
+        if (!hasLibraryPartDirectiveWithOutputUri) {
+          // TODO: Upgrade to error in a future breaking change?
+          log.warning('$part must be included as a part directive in '
+              'the input library with:\n    part \'$part\';');
+          return;
+        }
       } else {
         assert(this is SharedPartBuilder);
-        final finalPartId = buildStep.inputId.changeExtension('.g.dart');
-        part = computePartUrl(buildStep.inputId, finalPartId);
-      }
-
-      final libraryUnit =
-          await buildStep.resolver.compilationUnitFor(buildStep.inputId);
-      final hasLibraryPartDirectiveWithOutputUri = libraryUnit.directives
-          .whereType<PartDirective>()
-          .any((e) => e.uri.stringValue == part);
-      if (!hasLibraryPartDirectiveWithOutputUri) {
-        // TODO: Upgrade to error in a future breaking change?
-        log.warning('$part must be included as a part directive in '
-            'the input library with:\n    part \'$part\';');
-        return;
+        // For shared-part builders, `part` statements will be checked by the
+        // combining build step.
       }
     }
 

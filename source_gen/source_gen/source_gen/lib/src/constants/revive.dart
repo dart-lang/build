@@ -21,7 +21,7 @@ import '../utils.dart';
 /// build tool(s) using this library to surface error messages to the user.
 Revivable reviveInstance(DartObject object, [LibraryElement? origin]) {
   final objectType = object.type;
-  Element? element = objectType!.aliasElement;
+  Element? element = objectType!.alias?.element;
   if (element == null) {
     if (objectType is InterfaceType) {
       element = objectType.element;

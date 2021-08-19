@@ -117,6 +117,41 @@ targets:
 If you provide a builder that uses `SharedPartBuilder` and `combining_builder`,
 you should document this feature for your users.
 
+### Generating files in different directories
+
+When using shared-part builders which apply the `combining_builder` as part of
+the build, the output location for an input file can be changed.
+By default, a `.g.dart` file next to the input is generated.
+
+To change this, set the `build_extensions` option on the combining builder. In
+the options, `build_extensions` is a map from `String` to `String`, where the
+key is matches inputs and the value is a single build output.
+For more details on build extensions, see [the docs in the build package][outputs].
+
+For example, you can use these options to generate files under `lib/generated`
+with the following build configuration:
+
+```yaml
+targets:
+  $default:
+    builders:
+      source_gen|combining_builder:
+        options:
+          build_extensions:
+            '^lib/{{}}.dart': 'lib/generated/{{}}.g.dart'
+```
+
+Remember to change the `part` statement in the input to refer to the correct
+output file in the other directory.
+
+Note that builder options are part of `source_gen`'s public api! When using
+them in a build configuration, always add a dependency on `source_gen` as well:
+
+```yaml
+dev_dependencies:
+  source_gen: ^1.1.0
+```
+
 ## FAQ
 
 ### What is the difference between `source_gen` and [build][]?
@@ -148,3 +183,4 @@ wraps a single Generator to make a `Builder` which creates Dart library files.
 [Trivial example]: https://github.com/dart-lang/source_gen/blob/master/source_gen/test/src/comment_generator.dart
 [Full example package]: https://github.com/dart-lang/source_gen/tree/master/example
 [example usage]: https://github.com/dart-lang/source_gen/tree/master/example_usage
+[outputs]: https://github.com/dart-lang/build/blob/master/docs/writing_a_builder.md#configuring-outputs

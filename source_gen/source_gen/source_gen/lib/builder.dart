@@ -21,6 +21,9 @@ import 'src/utils.dart';
 
 const _outputExtensions = '.g.dart';
 const _partFiles = '.g.part';
+const _defaultExtensions = {
+  '.dart': [_outputExtensions]
+};
 
 Builder combiningBuilder([BuilderOptions options = BuilderOptions.empty]) {
   final optionsMap = Map<String, dynamic>.from(options.config);
@@ -29,16 +32,53 @@ Builder combiningBuilder([BuilderOptions options = BuilderOptions.empty]) {
   final ignoreForFile = Set<String>.from(
     optionsMap.remove('ignore_for_file') as List? ?? <String>[],
   );
+  final buildExtensions = _validatedBuildExtensionsFrom(optionsMap);
 
   final builder = CombiningBuilder(
     includePartName: includePartName,
     ignoreForFile: ignoreForFile,
+    buildExtensions: buildExtensions,
   );
 
   if (optionsMap.isNotEmpty) {
     log.warning('These options were ignored: `$optionsMap`.');
   }
   return builder;
+}
+
+Map<String, List<String>> _validatedBuildExtensionsFrom(
+    Map<String, dynamic> optionsMap) {
+  final extensionsOption = optionsMap.remove('build_extensions');
+  if (extensionsOption == null) return _defaultExtensions;
+
+  if (extensionsOption is! Map) {
+    throw ArgumentError(
+        'Configured build_extensions should be a map from inputs to outputs.');
+  }
+
+  final result = <String, List<String>>{};
+
+  for (final entry in extensionsOption.entries) {
+    final input = entry.key;
+    if (input is! String || !input.endsWith('.dart')) {
+      throw ArgumentError('Invalid key in build_extensions option: `$input` '
+          'should be a string ending with `.dart`');
+    }
+
+    final output = entry.value;
+    if (output is! String || !output.endsWith('.dart')) {
+      throw ArgumentError('Invalid output extension `$output`. It should be a '
+          'string ending with `.dart`');
+    }
+
+    result[input] = [output];
+  }
+
+  if (result.isEmpty) {
+    throw ArgumentError('Configured build_extensions must not be empty.');
+  }
+
+  return result;
 }
 
 PostProcessBuilder partCleanup(BuilderOptions options) =>
@@ -53,9 +93,7 @@ class CombiningBuilder implements Builder {
   final Set<String> _ignoreForFile;
 
   @override
-  Map<String, List<String>> get buildExtensions => const {
-        '.dart': [_outputExtensions]
-      };
+  final Map<String, List<String>> buildExtensions;
 
   /// Returns a new [CombiningBuilder].
   ///
@@ -65,6 +103,7 @@ class CombiningBuilder implements Builder {
   const CombiningBuilder({
     bool? includePartName,
     Set<String>? ignoreForFile,
+    this.buildExtensions = _defaultExtensions,
   })  : _includePartName = includePartName ?? false,
         _ignoreForFile = ignoreForFile ?? const <String>{};
 
@@ -104,8 +143,20 @@ class CombiningBuilder implements Builder {
         .where((s) => s.isNotEmpty)
         .join('\n\n');
     if (assets.isEmpty) return;
+
     final inputLibrary = await buildStep.inputLibrary;
-    final partOf = nameOfPartial(inputLibrary, buildStep.inputId);
+    final outputId = buildStep.allowedOutputs.single;
+    final partOf = nameOfPartial(inputLibrary, buildStep.inputId, outputId);
+
+    // Ensure that the input has a correct `part` statement.
+    final libraryUnit =
+        await buildStep.resolver.compilationUnitFor(buildStep.inputId);
+    final part = computePartUrl(buildStep.inputId, outputId);
+    if (!hasExpectedPartDirective(libraryUnit, part)) {
+      log.warning('$part must be included as a part directive in '
+          'the input library with:\n    part \'$part\';');
+      return;
+    }
 
     final ignoreForFile = _ignoreForFile.isEmpty
         ? ''
@@ -117,7 +168,6 @@ part of $partOf;
 
 $assets
 ''';
-    await buildStep.writeAsString(
-        buildStep.inputId.changeExtension(_outputExtensions), output);
+    await buildStep.writeAsString(outputId, output);
   }
 }
