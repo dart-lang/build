@@ -126,7 +126,7 @@ void main() {
       ''', (resolver) => resolver.findLibraryNotNull('example'),
           packageConfig: packageConfig, inputId: AssetId('a', 'invalid.dart'));
       var errors = await libExample.session
-          .getErrors2(libExample.source.fullName) as ErrorsResult;
+          .getErrors(libExample.source.fullName) as ErrorsResult;
       expect(
           errors.errors.map((e) => e.message),
           contains(contains(
