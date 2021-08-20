@@ -106,8 +106,6 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
   }
 
   var bootstrapId = dartEntrypointId.changeExtension(ddcBootstrapExtension);
-  var bootstrapRequireId =
-      dartEntrypointId.changeExtension(ddcBootstrapRequireExtension);
   var bootstrapModuleName = _context.withoutExtension(_context.relative(
       bootstrapId.path,
       from: _context.dirname(dartEntrypointId.path)));
@@ -137,13 +135,10 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
             moduleScope: appModuleScope,
             nativeNullAssertions: nativeNullAssertions,
             nullAssertions: nullAssertions,
-            oldModuleScope: oldAppModuleScope));
+            oldModuleScope: oldAppModuleScope,
+            requireContextId: requireContextId));
 
   await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
-
-  var bootstrapRequireContent =
-      'window.\$dartRequire.get("$requireContextId")(["$bootstrapModuleName"]);';
-  await buildStep.writeAsString(bootstrapRequireId, bootstrapRequireContent);
 
   var entrypointJsContent = _entryPointJs(bootstrapModuleName);
   await buildStep.writeAsString(
@@ -212,6 +207,7 @@ String _appBootstrap({
   required String oldModuleScope,
   required bool nullAssertions,
   required bool nativeNullAssertions,
+  required String requireContextId,
 }) =>
     '''
 define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_sdk) {
@@ -248,6 +244,7 @@ define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_s
     bootstrap: bootstrap
   };
 });
+window.\$dartRequire.get("$requireContextId")(["$bootstrapModuleName"]);
 })();
 ''';
 
@@ -293,14 +290,6 @@ String _entryPointJs(String bootstrapModuleName) => '''
     el.defer = true;
     el.async = false;
     el.src = mainUri + '.js';
-    document.head.appendChild(el);
-
-    // Load the require script for this entrypoint, which triggers the execution
-    // of this entrypoint's main() via requirejs.
-    el = document.createElement("script");
-    el.defer = true;
-    el.async = false;
-    el.src = mainUri + '.require.js';
     document.head.appendChild(el);
   } else {
     importScripts(mapperUri, requireUri);
