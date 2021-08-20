@@ -1,4 +1,4 @@
-## 5.0.15-dev
+## 5.0.15
 
 * Fix an issue generating the correct parameter default value given a
   constructor which redirects to a constructor declared in a separate library.
