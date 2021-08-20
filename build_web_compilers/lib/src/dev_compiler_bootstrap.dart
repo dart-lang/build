@@ -265,12 +265,10 @@ String _entryPointJs(String bootstrapModuleName) => '''
   var mainUri = _currentDirectory + "$bootstrapModuleName";
 
   if (typeof document != 'undefined') {
-    var el;
-
     // Load stack trace mapper if not already loaded
     var mapperId = 'dart-stack-trace-mapper';
-    if (!document.querySelector('#' + mapperId)) {
-      el = document.createElement("script");
+    if (!document.getElementById(mapperId)) {
+      var el = document.createElement("script");
       el.id = mapperId;
       el.defer = true;
       el.async = false;
@@ -280,8 +278,8 @@ String _entryPointJs(String bootstrapModuleName) => '''
 
     // Load require.js if not already loaded
     var requirejsId = 'dart-requirejs';
-    if (!document.querySelector('#' + requirejsId)) {
-      el = document.createElement("script");
+    if (!document.getElementById(requirejsId)) {
+      var el = document.createElement("script");
       el.id = requirejsId;
       el.defer = true;
       el.async = false;
@@ -291,7 +289,7 @@ String _entryPointJs(String bootstrapModuleName) => '''
 
     // Load the bootstrap script for this entrypoint, which defines the module
     // and its dependencies with requirejs.
-    el = document.createElement("script");
+    var el = document.createElement("script");
     el.defer = true;
     el.async = false;
     el.src = mainUri + '.js';
