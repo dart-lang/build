@@ -142,7 +142,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
   await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
 
   var bootstrapRequireContent =
-      'window["$requireContextId"](["$bootstrapModuleName"]);';
+      'window.\$dartRequire.get("$requireContextId")(["$bootstrapModuleName"]);';
   await buildStep.writeAsString(bootstrapRequireId, bootstrapRequireContent);
 
   var entrypointJsContent = _entryPointJs(bootstrapModuleName);
@@ -494,12 +494,15 @@ String _requireJsConfig(bool soundNullSafety, String contextId) => '''
 
 $_baseUrlScript;
 
-window["$contextId"] = require.config({
-    baseUrl: baseUrl,
-    context: "$contextId",
-    waitSeconds: 0,
-    paths: customModulePaths
-});
+if (!window.\$dartRequire) {
+  window.\$dartRequire = new Map();
+}
+window.\$dartRequire.set("$contextId", require.config({
+  baseUrl: baseUrl,
+  context: "$contextId",
+  waitSeconds: 0,
+  paths: customModulePaths
+}));
 
 const modulesGraph = new Map();
 function getRegisteredModuleName(moduleMap) {
