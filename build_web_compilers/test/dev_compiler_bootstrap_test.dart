@@ -46,12 +46,18 @@ void main() {
           // Maps lib modules to packages path
           contains('"packages/a/a": "packages/a/a.unsound.ddc"'),
           contains('"packages/b/b": "packages/b/b.unsound.ddc"'),
+          // Stores a unique requirejs config for this entrypoint on the window
+          contains('window.\$dartRequire.set("web/index", require.config('),
+          // Defines a unique requirejs context
+          contains('context: "web/index"'),
           // Requires the top level module and dart sdk.
           contains('define("index.dart.bootstrap", ["web/index", "dart_sdk"]'),
           // Calls main on the top level module.
           contains('(app.web__index || app.index).main()'),
           isNot(contains('lib/a')),
         ])),
+        'a|web/index.dart.bootstrap.require.js': decodedMatches(contains(
+            'window.\$dartRequire.get("web/index")(["index.dart.bootstrap"]);')),
       };
       await testBuilder(
           WebEntrypointBuilder(WebCompiler.DartDevc,
@@ -90,6 +96,7 @@ void main() {
           contains('(app.web__b || app.b).main()'),
           contains('if (childName === "b.dart")'),
         ])),
+        'a|web/b.dart.bootstrap.require.js': isNotEmpty,
         'a|web/b.digests': isNotEmpty,
         'a|web/b.dart.ddc_merged_metadata': isNotEmpty,
         'a|web/b.dart.js': isNotEmpty,
@@ -115,6 +122,7 @@ void main() {
           // and not relative path to the root dir being served.
           contains('if (childName === "package:a/app.dart")'),
         ])),
+        'a|lib/app.dart.bootstrap.require.js': isNotEmpty,
         'a|lib/app.digests': isNotEmpty,
         'a|lib/app.dart.ddc_merged_metadata': isNotEmpty,
         'a|lib/app.dart.js': isNotEmpty,
