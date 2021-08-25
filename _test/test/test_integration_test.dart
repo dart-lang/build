@@ -57,12 +57,12 @@ void main() {
 
     test('create new test', () async {
       await createFile(p.join('test', 'other_test.dart'), basicTestContents);
-      await expectTestsPass(expectedNumRan: 7);
+      await expectTestsPass(expectedNumRan: 8);
     });
 
     test('delete test', () async {
       await deleteFile(p.join('test', 'sub-dir', 'subdir_test.dart'));
-      await expectTestsPass(expectedNumRan: 5);
+      await expectTestsPass(expectedNumRan: 6);
     });
   });
 }
