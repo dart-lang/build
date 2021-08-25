@@ -15,7 +15,6 @@ import 'dart2js_bootstrap.dart';
 import 'dev_compiler_bootstrap.dart';
 
 const ddcBootstrapExtension = '.dart.bootstrap.js';
-const ddcBootstrapRequireExtension = '.dart.bootstrap.require.js';
 const jsEntrypointExtension = '.dart.js';
 const jsEntrypointSourceMapExtension = '.dart.js.map';
 const jsEntrypointArchiveExtension = '.dart.js.tar.gz';
@@ -119,7 +118,6 @@ class WebEntrypointBuilder implements Builder {
   final buildExtensions = const {
     '.dart': [
       ddcBootstrapExtension,
-      ddcBootstrapRequireExtension,
       jsEntrypointExtension,
       jsEntrypointSourceMapExtension,
       jsEntrypointArchiveExtension,
