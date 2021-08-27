@@ -1,3 +1,7 @@
+## 1.0.10-dev
+
+- Update `pub run` references to `dart run`.
+
 ## 1.0.9
 
 - Allow analyzer version 2.x.x.

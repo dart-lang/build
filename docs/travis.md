@@ -49,7 +49,7 @@ Then you will need to update it to be a normal `script` job, which invokes the
 
 ```yaml
 script:
-  - pub run build_runner test
+  - dart run build_runner test
 ```
 
 **Note:** If you are running out of memory due to large builds, you can use the
@@ -78,7 +78,7 @@ jobs:
     # This stage builds the entire `test` directory
     - stage: build
       script:
-        - pub run build_runner build test
+        - dart run build_runner build test
     # Set up several jobs in the next stage, using the built in sharding
     # feature from the `test` package.
     #
@@ -87,16 +87,16 @@ jobs:
     # properly above!).
     - stage: unit_test
       script:
-        - pub run build_runner test -- --total-shards 4 --shard-index 0
+        - dart run build_runner test -- --total-shards 4 --shard-index 0
     - stage: unit_test
       script:
-        - pub run build_runner test -- --total-shards 4 --shard-index 1
+        - dart run build_runner test -- --total-shards 4 --shard-index 1
     - stage: unit_test
       script:
-        - pub run build_runner test -- --total-shards 4 --shard-index 2
+        - dart run build_runner test -- --total-shards 4 --shard-index 2
     - stage: unit_test
       script:
-        - pub run build_runner test -- --total-shards 4 --shard-index 3
+        - dart run build_runner test -- --total-shards 4 --shard-index 3
 
 # Specify the ordering of your stages
 stages:
@@ -135,7 +135,7 @@ jobs:
     # Next, build the entire `test` directory
     - stage: build
       script:
-        - pub run build_runner build test
+        - dart run build_runner build test
     # Set up several jobs in the next stage, using the built in sharding
     # feature from the `test` package.
     #
@@ -144,16 +144,16 @@ jobs:
     # properly above!).
     - stage: unit_test
       script:
-        - pub run build_runner test -- --total-shards 4 --shard-index 0
+        - dart run build_runner test -- --total-shards 4 --shard-index 0
     - stage: unit_test
       script:
-        - pub run build_runner test -- --total-shards 4 --shard-index 1
+        - dart run build_runner test -- --total-shards 4 --shard-index 1
     - stage: unit_test
       script:
-        - pub run build_runner test -- --total-shards 4 --shard-index 2
+        - dart run build_runner test -- --total-shards 4 --shard-index 2
     - stage: unit_test
       script:
-        - pub run build_runner test -- --total-shards 4 --shard-index 3
+        - dart run build_runner test -- --total-shards 4 --shard-index 3
 
 # Specify the ordering of your stages
 stages:

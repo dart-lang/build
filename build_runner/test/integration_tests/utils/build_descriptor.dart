@@ -83,7 +83,7 @@ Map _builderDefinition(TestBuilderDefinition builder) => {
     };
 
 /// Create a package in [d.sandbox] with dependencies on [otherPackages] set up
-/// to run their builders with `pub run build_runner`.
+/// to run their builders with `dart run build_runner`.
 ///
 /// The package name is always 'a'.
 ///
@@ -262,7 +262,7 @@ d.FileDescriptor _pubspec(String name,
 
 /// An executable that can run builds.
 ///
-/// Either a manual build script or `pub run build_runner`.
+/// Either a manual build script or `dart run build_runner`.
 class BuildTool {
   final String _executable;
   final List<String> _baseArgs;

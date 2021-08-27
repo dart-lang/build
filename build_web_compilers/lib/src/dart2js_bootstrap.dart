@@ -193,7 +193,7 @@ void _validateUserArgs(List<String> args) {
       log.warning(
           'Detected a manual enable experiment dart2js argument `$arg`, '
           'this should be enabled on the command line instead, for example: '
-          '`pub run build_runner --enable-experiment=<experiment> <command>`.');
+          '`dart run build_runner --enable-experiment=<experiment> <command>`.');
     }
   }
 }

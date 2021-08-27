@@ -38,7 +38,7 @@ If you have issues using `build_runner`, see the
 3.  Start the server:
 
     ```sh
-    pub run build_runner serve
+    dart run build_runner serve
     ```
 
 While the `serve` command runs, every change you save triggers a rebuild.
@@ -70,13 +70,13 @@ In addition to **serve** you can use:
     This can be used to keep the outputs updated for use with another
     filed-based development server.
 
--   **test:** Creates an output directory and runs `pub run test` within it.
+-   **test:** Creates an output directory and runs `dart run test` within it.
     This command requires a dev dependency on `build_test`.
 
 ## Switching to dart2js
 
 By default `build_web_compilers` uses dartdevc. To switch to dart2js, pass
-`--release` to `pub run build_runner build` (or `serve`). Pass args to dart2js
+`--release` to `dart run build_runner build` (or `serve`). Pass args to dart2js
 by creating a `build.yaml` file.
 
 ```yaml
