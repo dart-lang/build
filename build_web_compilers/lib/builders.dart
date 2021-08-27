@@ -27,7 +27,8 @@ Builder ddcBuilderUnsound(BuilderOptions options) =>
     ddcBuilder(options, soundNullSafety: false);
 
 Builder ddcBuilder(BuilderOptions options, {bool soundNullSafety = false}) {
-  validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
+  validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc',
+      deprecatedOptions: _deprecatedOptions);
   _ensureSameDdcOptions(options);
 
   return DevCompilerBuilder(
@@ -50,7 +51,8 @@ Builder ddcKernelBuilderSound(BuilderOptions options) =>
 
 Builder ddcKernelBuilder(BuilderOptions options,
     {bool soundNullSafety = false}) {
-  validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
+  validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc',
+      deprecatedOptions: _deprecatedOptions);
   _ensureSameDdcOptions(options);
 
   return KernelBuilder(
@@ -135,9 +137,11 @@ const _emitDebugSymbolsOption = 'emit-debug-symbols';
 const _trackUnusedInputsCompilerOption = 'track-unused-inputs';
 const _environmentOption = 'environment';
 const _experimentOption = 'experiments';
+const _deprecatedOptions = [
+  _experimentOption,
+];
 const _supportedOptions = [
   _environmentOption,
-  _experimentOption,
   _useIncrementalCompilerOption,
   _generateFullDillOption,
   _emitDebugSymbolsOption,

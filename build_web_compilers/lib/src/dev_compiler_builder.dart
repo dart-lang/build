@@ -8,6 +8,7 @@ import 'dart:io';
 
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
@@ -76,9 +77,6 @@ class DevCompilerBuilder implements Builder {
   /// Environment defines to pass to ddc (as -D variables).
   final Map<String, String> environment;
 
-  /// Experiments to pass to ddc (as --enable-experiment=<experiment> args).
-  final Iterable<String> experiments;
-
   /// Whether or not strong null safety should be enabled.
   final bool soundNullSafety;
 
@@ -92,7 +90,6 @@ class DevCompilerBuilder implements Builder {
       String? librariesPath,
       String? platformSdk,
       this.environment = const {},
-      this.experiments = const [],
       this.soundNullSafety = false})
       : platformSdk = platformSdk ?? sdkDir,
         librariesPath = librariesPath ??
@@ -144,7 +141,6 @@ class DevCompilerBuilder implements Builder {
           sdkKernelPath,
           librariesPath,
           environment,
-          experiments,
           soundNullSafety);
     } on DartDevcCompilationException catch (e) {
       await handleError(e);
@@ -166,7 +162,6 @@ Future<void> _createDevCompilerModule(
     String sdkKernelPath,
     String librariesPath,
     Map<String, String> environment,
-    Iterable<String> experiments,
     bool soundNullSafety,
     {bool debugMode = true}) async {
   var transitiveDeps = await buildStep.trackStage('CollectTransitiveDeps',
@@ -228,7 +223,8 @@ Future<void> _createDevCompilerModule(
         '--used-inputs-file=${usedInputsFile.uri.toFilePath()}',
       for (var source in module.sources) _sourceArg(source),
       for (var define in environment.entries) '-D${define.key}=${define.value}',
-      for (var experiment in experiments) '--enable-experiment=$experiment',
+      for (var experiment in enabledExperiments)
+        '--enable-experiment=$experiment',
       '--${soundNullSafety ? '' : 'no-'}sound-null-safety',
     ])
     ..inputs.add(Input()
