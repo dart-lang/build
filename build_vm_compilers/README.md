@@ -29,7 +29,7 @@ multiple entrypoints, instead of doing a monolithic compile of each entrypoint
 like the Dart VM would normally do on each run.
 
 **Note**: If you want to use this package for running tests with
-`pub run build_runner test` you will also need a `build_test` dev dependency.
+`dart run build_runner test` you will also need a `build_test` dev dependency.
 
 ## Usage
 

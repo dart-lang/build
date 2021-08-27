@@ -1,5 +1,6 @@
 ## 3.2.1-dev
 
+- Update `pub run` references to `dart run`.
 - Fix `doctor` command warnings for this package.
 
 ## 3.2.0

@@ -74,6 +74,6 @@ TODO: scratch_space
 The [example](https://github.com/dart-lang/build/tree/master/example)
 directory has an example of a build with custom builders which generate outputs
 into both the source tree and a hidden generated directory. Try a build with
-`pub run build_runner build -o web:deploy` to see what the output looks like.
+`dart run build_runner build -o web:deploy` to see what the output looks like.
 
 Most projects should not need custom builders.

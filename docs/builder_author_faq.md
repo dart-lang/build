@@ -74,7 +74,7 @@ After running a build, or by running the `generate-build-script` command, a
 build script will be written to `.dart_tool/build/entrypoint/build.dart`. This
 is a Dart VM application that can be run manually, including with debugging
 enabled. See the [devtool docs][] or [IntelliJ debugging docs][]
-for usage instructions. The build script takes the same arguments as `pub run
+for usage instructions. The build script takes the same arguments as `dart run
 build_runner`, for example:
 
 `dart --observe --pause-isolates-on-start .dart_tool/build/entrypoint/build.dart

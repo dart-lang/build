@@ -1,5 +1,7 @@
 ## 2.1.4-dev
 
+- Update `pub run` references to `dart run`.
+
 ## 2.1.3
 
 - Use `allowedOutputs` in `TestBuilder` instead of computing them again.

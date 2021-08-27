@@ -1,3 +1,5 @@
+## 2.1.2-dev
+
 ## 2.1.1
 
 - Don't rethrow file watcher errors - instead log at severe level and continue

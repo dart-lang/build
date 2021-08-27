@@ -12,7 +12,7 @@ targets:
   $default:
     builders:
       # Typically the builder key is just the package name, run
-      # `pub run build_runner doctor` to check your config.
+      # `dart run build_runner doctor` to check your config.
       <builder-key>:
         generate_for:
           # Example glob for only the Dart files under `lib/models`
@@ -98,9 +98,9 @@ targets:
 If you need other configurations in addition to dev and release, you can define
 multiple `build.yaml` files. For instance if you have a `build.debug.yaml` file
 you can build with `--config debug` and this file will be used instead of the
-default `build.yaml`. The dev and release flavors still apply. `pub run
+default `build.yaml`. The dev and release flavors still apply. `dart run
 build_runner serve --config debug` will use the `dev_options` in
-`build.debug.yaml`, while `pub run build_runner build --config debug --release`
+`build.debug.yaml`, while `dart run build_runner build --config debug --release`
 will use the `release_options` in `build.debug.yaml`.
 
 Only one build flavor can be built at a time. It is not possible to have
@@ -163,7 +163,7 @@ global_options:
 And when running the build:
 
 ```
-pub run build_runner build --define=some_package:some_builder=some_option="Priority 6"
+dart run build_runner build --define=some_package:some_builder=some_option="Priority 6"
 ```
 
 ## How can I include additional sources in my build?
@@ -242,7 +242,7 @@ action fails, and a subsequent build has exactly the same inputs for that action
 it will not be rerun - the previous error messages, however, will get reprinted
 to avoid confusion if a build fails with no printed errors. To force the action
 to run again make an edit to any file that is an input to that action, or throw
-away all cached values with `pub run build_runner clean` before starting the
+away all cached values with `dart run build_runner clean` before starting the
 next build.
 
 ## How can I resolve "Skipped compiling" warnings?

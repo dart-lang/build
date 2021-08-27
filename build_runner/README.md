@@ -61,7 +61,7 @@ To have web code compiled to js add a `dev_dependency` on `build_web_compilers`.
 ### Built-in Commands
 
 The `build_runner` package exposes a binary by the same name, which can be
-invoked using `pub run build_runner <command>`.
+invoked using `dart run build_runner <command>`.
 
 The available commands are `build`, `watch`, `serve`, and `test`.
 
@@ -72,7 +72,7 @@ The available commands are `build`, `watch`, `serve`, and `test`.
   - By default this serves the `web` and `test` directories, on port `8080` and
     `8081` respectively. See below for how to configure this.
 - `test`: Runs a single build, creates a merged output directory, and then runs
-  `pub run test --precompiled <merged-output-dir>`. See below for instructions
+  `dart run test --precompiled <merged-output-dir>`. See below for instructions
   on passing custom args to the test command.
 
 #### Command Line Options
@@ -97,15 +97,15 @@ Trailing args of the form `<directory>:<port>` are supported to customize what
 directories are served, and on what ports.
 
 For example to serve the `example` and `web` directories on ports 8000 and 8001
-you would do `pub run build_runner serve example:8000 web:8001`.
+you would do `dart run build_runner serve example:8000 web:8001`.
 
 ##### test
 
 The test command will forward any arguments after an empty `--` arg to the
-`pub run test` command.
+`dart run test` command.
 
 For example if you wanted to pass `-p chrome` you would do
-`pub run build_runner test -- -p chrome`.
+`dart run build_runner test -- -p chrome`.
 
 ### Inputs
 
@@ -219,7 +219,7 @@ $ dartfmt -w .
 Run all of our unit tests:
 
 ```sh
-$ pub run test
+$ dart run test
 ```
 
 [Bazel]: https://bazel.build/
