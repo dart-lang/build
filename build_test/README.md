@@ -28,24 +28,24 @@ dev_dependencies:
 
 ## Running tests
 
-To run tests, you should go through the `pub run build_runner test` command.
+To run tests, you should go through the `dart run build_runner test` command.
 This will compile all your tests to a temp directory and run them using
-`pub run test`. If you would like to see the output directory, you can use the
+`dart run test`. If you would like to see the output directory, you can use the
 `--output=<dir>` option to force the output to go to a specific place.
 
-### Forwarding additional args to `pub run test`
+### Forwarding additional args to `dart run test`
 
 It is very common to need to pass some arguments through to the eventual call
-to `pub run test`. To do this, add all those args after an empty `--` arg.
+to `dart run test`. To do this, add all those args after an empty `--` arg.
 
 For example, to run all chrome platform tests you would do
-`pub run build_runner test -- -p chrome`.
+`dart run build_runner test -- -p chrome`.
 
 ## Debugging web tests
 
 This package will automatically create `*.debug.html` files next to all your
 `*_test.dart` files, which can be loaded in a browser from the normal
-development server (`pub run build_runner serve`).
+development server (`dart run build_runner serve`).
 
 **Note:** In order to run the tests this way, you will need to configure them
 to be compiled (by default we only compile `*.browser_test.dart` files). You

@@ -3,6 +3,7 @@
 - Fix enable-experiment flag support for dartdevc to also pass experiment flags
   to dartdevc as well as kernel.
 - Add deprecation warning for the old `experiments` config.
+- Update `pub run` references to `dart run`.
 - Fix `doctor` command warnings for this package.
 
 ## 3.2.0

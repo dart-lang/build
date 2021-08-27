@@ -566,7 +566,7 @@ jobs:
       - job_007
       - job_008
   job_013:
-    name: "unit_test; linux; Dart dev; PKG: _test; `pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random`, `pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random`"
+    name: "unit_test; linux; Dart dev; PKG: _test; `dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random`, `dart run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -589,14 +589,14 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
         run: dart pub upgrade
-      - name: "_test; pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random"
+      - name: "_test; dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
-        run: "pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random"
-      - name: "_test; pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random"
+        run: "dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random"
+      - name: "_test; dart run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
-        run: "pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random"
+        run: "dart run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002
@@ -1122,7 +1122,7 @@ jobs:
       - job_007
       - job_008
   job_029:
-    name: "unit_test; windows; Dart dev; PKG: _test; `pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random`, `pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random`"
+    name: "unit_test; windows; Dart dev; PKG: _test; `dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random`, `dart run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
       - uses: dart-lang/setup-dart@v1.2
@@ -1135,14 +1135,14 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
         run: dart pub upgrade
-      - name: "_test; pub run build_runner test -- -p chrome --test-randomize-ordering-seed=random"
+      - name: "_test; dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
-        run: "pub.bat run build_runner test -- -p chrome --test-randomize-ordering-seed=random"
-      - name: "_test; pub run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random"
+        run: "dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random"
+      - name: "_test; dart run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
-        run: "pub.bat run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random"
+        run: "dart run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002
@@ -1627,7 +1627,7 @@ jobs:
       - job_038
       - job_039
   job_043:
-    name: "e2e_test; linux; Dart dev; PKG: _test_null_safety; `pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
+    name: "e2e_test; linux; Dart dev; PKG: _test_null_safety; `dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `dart run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -1650,14 +1650,14 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test_null_safety
         run: dart pub upgrade
-      - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+      - name: "_test_null_safety; dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: "pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
-      - name: "_test_null_safety; pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+        run: "dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+      - name: "_test_null_safety; dart run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: "pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+        run: "dart run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002
@@ -2213,7 +2213,7 @@ jobs:
       - job_038
       - job_039
   job_052:
-    name: "e2e_test; windows; Dart dev; PKG: _test_null_safety; `pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
+    name: "e2e_test; windows; Dart dev; PKG: _test_null_safety; `dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `dart run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
       - uses: dart-lang/setup-dart@v1.2
@@ -2226,14 +2226,14 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test_null_safety
         run: dart pub upgrade
-      - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+      - name: "_test_null_safety; dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: "pub.bat run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
-      - name: "_test_null_safety; pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+        run: "dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+      - name: "_test_null_safety; dart run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: "pub.bat run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+        run: "dart run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
     needs:
       - job_001
       - job_002
@@ -2357,7 +2357,7 @@ jobs:
       - job_051
       - job_052
   job_054:
-    name: "e2e_test_cron; linux; Dart main; PKG: _test_null_safety; `pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
+    name: "e2e_test_cron; linux; Dart main; PKG: _test_null_safety; `dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `dart run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -2380,14 +2380,14 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test_null_safety
         run: dart pub upgrade
-      - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+      - name: "_test_null_safety; dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: "pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
-      - name: "_test_null_safety; pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+        run: "dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+      - name: "_test_null_safety; dart run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: "pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+        run: "dart run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
     if: "github.event_name == 'schedule'"
     needs:
       - job_001
@@ -2515,7 +2515,7 @@ jobs:
       - job_051
       - job_052
   job_056:
-    name: "e2e_test_cron; windows; Dart main; PKG: _test_null_safety; `pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
+    name: "e2e_test_cron; windows; Dart main; PKG: _test_null_safety; `dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `dart run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
       - uses: dart-lang/setup-dart@v1.2
@@ -2528,14 +2528,14 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test_null_safety
         run: dart pub upgrade
-      - name: "_test_null_safety; pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+      - name: "_test_null_safety; dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: "pub.bat run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
-      - name: "_test_null_safety; pub run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+        run: "dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+      - name: "_test_null_safety; dart run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: "pub.bat run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
+        run: "dart run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
     if: "github.event_name == 'schedule'"
     needs:
       - job_001

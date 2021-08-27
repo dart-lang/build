@@ -1,3 +1,7 @@
+## 7.1.1-dev
+
+- Update `pub run` references to `dart run`.
+
 ## 7.1.0
 
 - Support capture groups, a feature introduced in `build`: `2.1.0`.
