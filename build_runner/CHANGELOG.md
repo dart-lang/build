@@ -1,4 +1,6 @@
-## 2.1.2-dev
+## 2.1.2
+
+- Support `--enable-experiment` option in build daemon.
 
 ## 2.1.1
 

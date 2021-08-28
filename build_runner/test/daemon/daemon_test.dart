@@ -143,6 +143,19 @@ main() {
       ]).create();
     });
 
+    test('supports --enable-experiment option', () async {
+      await _startDaemon(options: ['--enable-experiment=fake-experiment']);
+      var client =
+          await _startClient(options: ['--enable-experiment=fake-experiment'])
+            ..registerBuildTarget(webTarget)
+            ..startBuild();
+      clients.add(client);
+      await expectLater(
+          client.buildResults,
+          emitsThrough((BuildResults b) =>
+              b.results.first.status == BuildStatus.succeeded));
+    });
+
     test('does not shut down down on build script change when configured',
         () async {
       await _startDaemon(options: ['--skip-build-script-check']);
