@@ -4,8 +4,6 @@ These packages provide libraries for generating, compiling and serving Dart code
 
 [Getting started with build_runner](https://github.com/dart-lang/build/blob/master/docs/getting_started.md)
 
-[Integrating with Travis](https://github.com/dart-lang/build/blob/master/docs/travis.md)
-
 [General FAQ](https://github.com/dart-lang/build/blob/master/docs/faq.md)
 
 [Windows FAQ](https://github.com/dart-lang/build/blob/master/docs/windows_faq.md)
