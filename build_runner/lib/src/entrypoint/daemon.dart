@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:build/experiments.dart';
 import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/daemon.dart';
 import 'package:build_daemon/data/serializers.dart';
@@ -47,8 +48,13 @@ class DaemonCommand extends WatchCommand {
 
   @override
   Future<int> run() async {
-    var workingDirectory = Directory.current.path;
     var options = readOptions();
+    return withEnabledExperiments(
+        () => _run(options), options.enableExperiments);
+  }
+
+  Future<int> _run(DaemonOptions options) async {
+    var workingDirectory = Directory.current.path;
     var daemon = Daemon(workingDirectory);
     var requestedOptions = argResults!.arguments.toSet();
     if (!daemon.hasLock) {
@@ -94,7 +100,7 @@ $logEndMarker'''));
 
       // Forward server logs to daemon command STDIO.
       var logSub = builder.logs.listen((log) {
-        if (log.level > Level.INFO) {
+        if (log.level > Level.INFO || options.verbose) {
           var buffer = StringBuffer(log.message);
           if (log.error != null) buffer.writeln(log.error);
           if (log.stackTrace != null) buffer.writeln(log.stackTrace);
