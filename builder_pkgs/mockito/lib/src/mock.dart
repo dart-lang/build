@@ -502,10 +502,8 @@ class InvocationMatcher {
     for (var roleKey in roleInvocation.namedArguments.keys) {
       var roleArg = roleInvocation.namedArguments[roleKey];
       var actArg = invocation.namedArguments[roleKey];
-      if (roleArg is ArgMatcher) {
-        if (roleArg is ArgMatcher && roleArg._capture) {
-          _capturedArgs.add(actArg);
-        }
+      if (roleArg is ArgMatcher && roleArg._capture) {
+        _capturedArgs.add(actArg);
       }
     }
   }
