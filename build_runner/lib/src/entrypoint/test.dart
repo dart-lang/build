@@ -137,7 +137,7 @@ class TestCommand extends BuildRunnerCommand {
     stdout.writeln('Running tests...\n');
     var extraTestArgs = argResults.rest;
     var testProcess = await Process.start(
-        pubBinary,
+        dartBinary,
         [
           'run',
           'test',
