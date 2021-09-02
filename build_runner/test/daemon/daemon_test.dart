@@ -54,10 +54,17 @@ main() {
   print('hello');
 }'''),
       ]),
+      d.dir('lib', [
+        d.file('message.dart', '''
+const message = 'hello world';
+      '''),
+      ]),
       d.dir('web', [
         d.file('main.dart', '''
+import 'package:a/message.dart';
+
 main() {
-  print('hello world');
+  print(message);
 }'''),
       ]),
     ]).create();
@@ -152,8 +159,9 @@ main() {
       clients.add(client);
       await expectLater(
           client.buildResults,
+          // TODO: Check for specific message about a bad experiment
           emitsThrough((BuildResults b) =>
-              b.results.first.status == BuildStatus.succeeded));
+              b.results.first.status == BuildStatus.failed));
     });
 
     test('does not shut down down on build script change when configured',
