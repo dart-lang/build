@@ -1,3 +1,7 @@
+## 2.1.3
+
+- Use `dart` top level command instead of `pub` when running pub executables.
+
 ## 2.1.2
 
 - Support `--enable-experiment` option in build daemon.

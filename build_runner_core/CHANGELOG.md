@@ -1,5 +1,7 @@
-## 7.1.1-dev
+## 7.2.0
 
+- Deprecate the `pubBinary` variable.
+- Add a `dartBinary` variable to be used instead of `pubBinary`.
 - Update `pub run` references to `dart run`.
 
 ## 7.1.0
