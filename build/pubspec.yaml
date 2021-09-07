@@ -1,6 +1,6 @@
 name: build
 version: 2.1.1-dev
-description: A build system for Dart.
+description: A package for authoring build_runner compatible code generators.
 repository: https://github.com/dart-lang/build/tree/master/build
 
 environment:
