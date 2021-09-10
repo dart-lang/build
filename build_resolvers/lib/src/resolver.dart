@@ -152,6 +152,7 @@ class AnalyzerResolver implements ReleasableResolver {
 
   @override
   Future<bool> isLibrary(AssetId assetId) async {
+    if (assetId.extension != '.dart') return false;
     var source = _driver.sourceFactory.forUri2(assetId.uri);
     if (source == null || !source.exists()) return false;
     var result = _driver.getFileSync2(assetPath(assetId)) as FileResult;
