@@ -157,10 +157,7 @@ $rawOutput
 
     for (final element in elements) {
       final elementLibrary = element.library!;
-      if (elementLibrary.isInSdk &&
-          // TODO(srawlins): Remove this when analyzer dep is >=2.0.0.
-          // ignore: unnecessary_non_null_assertion
-          !elementLibrary.name!.startsWith('dart._')) {
+      if (elementLibrary.isInSdk && !elementLibrary.name.startsWith('dart._')) {
         // For public SDK libraries, just use the source URI.
         typeUris[element] = elementLibrary.source.uri.toString();
         continue;
@@ -293,7 +290,7 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
       for (var parameter in type.parameters) {
         parameter.accept(this);
       }
-      var aliasElement = type.aliasElement;
+      var aliasElement = type.alias?.element;
       if (aliasElement != null) {
         _elements.add(aliasElement);
       }
@@ -519,7 +516,7 @@ class _MockTargetGatherer {
       return typeToMock;
     }
 
-    var aliasElement = typeToMock.aliasElement;
+    var aliasElement = typeToMock.alias?.element;
     if (aliasElement != null) {
       throw InvalidMockitoAnnotationException('Mockito cannot mock a typedef: '
           '${aliasElement.displayName}');
@@ -664,7 +661,7 @@ class _MockTargetGatherer {
     errorMessages
         .addAll(_checkTypeParameters(function.typeFormals, enclosingElement));
 
-    var aliasArguments = function.aliasArguments;
+    var aliasArguments = function.alias?.typeArguments;
     if (aliasArguments != null) {
       errorMessages
           .addAll(_checkTypeArguments(aliasArguments, enclosingElement));
@@ -1430,8 +1427,8 @@ class _MockClassInfo {
           ..types.addAll(type.typeArguments.map(_typeReference));
       });
     } else if (type is analyzer.FunctionType) {
-      final element = type.aliasElement;
-      if (element == null || element.isPrivate) {
+      final alias = type.alias;
+      if (alias == null || alias.element.isPrivate) {
         // [type] does not refer to a type alias, or it refers to a private type
         // alias; we must instead write out its signature.
         return FunctionType((b) {
@@ -1453,10 +1450,10 @@ class _MockClassInfo {
       }
       return TypeReference((b) {
         b
-          ..symbol = element.name
-          ..url = _typeImport(element)
+          ..symbol = alias.element.name
+          ..url = _typeImport(alias.element)
           ..isNullable = forceNullable || typeSystem.isNullable(type);
-        for (var typeArgument in type.aliasArguments!) {
+        for (var typeArgument in alias.typeArguments) {
           b.types.add(_typeReference(typeArgument));
         }
       });
