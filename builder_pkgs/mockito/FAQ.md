@@ -10,7 +10,7 @@ they are.
 One idea to consider is "Do I need to use mocks to test this code?" For
 example, the [test_descriptor package] allows testing file system concepts using
 real files, and the [test_process package] supports testing subprocesses using
-real subprocesses. `dart:io` also includes an [IOOVerides] class and a
+real subprocesses. `dart:io` also includes an [IOOverrides] class and a
 [runWithIOOverrides] function that can be used to mock out the filesystem.
 
 [IOOverrides]: https://api.dart.dev/stable/2.7.2/dart-io/IOOverrides-class.html
