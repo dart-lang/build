@@ -139,6 +139,27 @@ void main() {
     expect(mocksContent, contains('List<T> get f =>'));
   });
 
+  test('generates a generic mock class with deep type arguments', () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        class Foo<T> {}
+        class Bar {}
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks(
+            [], customMocks: [MockSpec<Foo<List<Bar>>>(as: #MockFoo)])
+        void main() {}
+        '''
+    });
+    expect(
+        mocksContent,
+        contains(
+            'class MockFoo extends _i1.Mock implements _i2.Foo<List<_i2.Bar>>'));
+  });
+
   test('generates a generic mock class with type arguments', () async {
     var mocksContent = await buildWithNonNullable({
       ...annotationsAsset,

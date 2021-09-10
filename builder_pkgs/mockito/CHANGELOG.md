@@ -1,3 +1,9 @@
+## 5.0.16-dev
+
+* Fix type reference for nested, imported types found in type arguments on a
+  custom class-to-mock.
+  [#469](https://github.com/dart-lang/mockito/issues/469)
+
 ## 5.0.15
 
 * Fix an issue generating the correct parameter default value given a

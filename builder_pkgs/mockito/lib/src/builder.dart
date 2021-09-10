@@ -93,9 +93,7 @@ class MockBuilder implements Builder {
           '// ignore_for_file: invalid_use_of_visible_for_testing_member\n'));
       b.body.add(Code('// ignore_for_file: prefer_const_constructors\n'));
       // The code_builder `asA` API unconditionally adds defensive parentheses.
-      b.body.add(Code('// ignore_for_file: unnecessary_parenthesis\n'));
-      // The generator appends a suffix to fake classes
-      b.body.add(Code('// ignore_for_file: camel_case_types\n\n'));
+      b.body.add(Code('// ignore_for_file: unnecessary_parenthesis\n\n'));
       b.body.addAll(mockLibraryInfo.fakeClasses);
       b.body.addAll(mockLibraryInfo.mockClasses);
     });
@@ -823,10 +821,7 @@ class _MockClassInfo {
         // implements the mock target with said type arguments. For example:
         // `class MockFoo extends Mock implements Foo<int> {}`
         for (var typeArgument in typeToMock.typeArguments) {
-          typeArguments.add(referImported(
-              typeArgument.getDisplayString(
-                  withNullability: sourceLibIsNonNullable),
-              _typeImport(typeArgument.element)));
+          typeArguments.add(_typeReference(typeArgument));
         }
       } else if (classToMock.typeParameters != null) {
         // [typeToMock] is a simple reference to a generic type (for example:
