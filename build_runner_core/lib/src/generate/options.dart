@@ -195,7 +195,7 @@ class BuildOptions {
 Failed to parse `build.yaml` for ${e.packageName}.
 
 If you believe you have gotten this message in error, especially if using a new
-feature, you may need to run `pub run build_runner clean` and then rebuild.
+feature, you may need to run `dart run build_runner clean` and then rebuild.
 ''', e.exception, s);
       throw CannotBuildException();
     }

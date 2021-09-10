@@ -319,8 +319,7 @@ class AssetGraph {
 
     var newGeneratedOutputs =
         _addOutputsForSources(buildPhases, newIds, rootPackage);
-    var allNewAndDeletedIds =
-        Set.of(newGeneratedOutputs.followedBy(transitiveRemovedIds));
+    var allNewAndDeletedIds = {...newGeneratedOutputs, ...transitiveRemovedIds};
 
     void invalidateNodeAndDeps(AssetId id) {
       var node = get(id);
@@ -375,17 +374,18 @@ class AssetGraph {
   bool _actionMatches(BuildAction action, AssetId input) {
     if (input.package != action.package) return false;
     if (!action.generateFor.matches(input)) return false;
-    Iterable<String> inputExtensions;
+
     if (action is InBuildPhase) {
-      inputExtensions = action.builder.buildExtensions.keys;
+      if (!action.builder.hasOutputFor(input)) return false;
     } else if (action is PostBuildAction) {
-      inputExtensions = action.builder.inputExtensions;
+      var inputExtensions = action.builder.inputExtensions;
+      if (!inputExtensions.any(input.path.endsWith)) {
+        return false;
+      }
     } else {
       throw StateError('Unrecognized action type $action');
     }
-    if (!inputExtensions.any(input.path.endsWith)) {
-      return false;
-    }
+
     var inputNode = get(input);
     while (inputNode is GeneratedAssetNode) {
       inputNode = get(inputNode.primaryInput);

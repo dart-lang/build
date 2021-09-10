@@ -83,30 +83,27 @@ Map _builderDefinition(TestBuilderDefinition builder) => {
     };
 
 /// Create a package in [d.sandbox] with dependencies on [otherPackages] set up
-/// to run their builders with `pub run build_runner`.
+/// to run their builders with `dart run build_runner`.
 ///
 /// The package name is always 'a'.
 ///
 /// Files other than the pubspec should be set up with [packageContents].
 Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
     {Iterable<d.Descriptor> packageContents = const []}) async {
-  await d
-      .dir(
-          'a',
-          <d.Descriptor>[
-            await _pubspecWithDeps('a', currentIsolateDependencies: [
-              'build',
-              'build_config',
-              'build_daemon',
-              'build_resolvers',
-              'build_runner',
-              'build_runner_core',
-              'code_builder',
-            ], pathDependencies: {
-              for (var o in otherPackages) o.name: p.join(d.sandbox, o.name),
-            }),
-          ].followedBy(packageContents))
-      .create();
+  await d.dir('a', <d.Descriptor>[
+    await _pubspecWithDeps('a', currentIsolateDependencies: [
+      'build',
+      'build_config',
+      'build_daemon',
+      'build_resolvers',
+      'build_runner',
+      'build_runner_core',
+      'code_builder',
+    ], pathDependencies: {
+      for (var o in otherPackages) o.name: p.join(d.sandbox, o.name),
+    }),
+    ...packageContents
+  ]).create();
   await Future.wait(otherPackages.map((d) => d.create()));
   await pubGet('a');
   return BuildTool._('pub', ['run', 'build_runner']);
@@ -128,28 +125,25 @@ Future<BuildTool> packageWithBuildScript(
     Iterable<TestBuilderDefinition> builders,
     {Iterable<d.Descriptor> contents = const []}) async {
   var frameCaller = Frame.caller().uri;
-  await d
-      .dir(
-          'a',
-          [
-            await _pubspecWithDeps('a', currentIsolateDependencies: [
-              'build',
-              'build_config',
-              'build_daemon',
-              'build_resolvers',
-              'build_runner',
-              'build_runner_core',
-              'build_test',
-              'code_builder',
-            ]),
-            d.dir('tool', [
-              d.file(
-                  'build.dart',
-                  _buildToolFile(builders,
-                      (await Isolate.resolvePackageUri(frameCaller))!))
-            ])
-          ].followedBy(contents))
-      .create();
+  await d.dir('a', [
+    await _pubspecWithDeps('a', currentIsolateDependencies: [
+      'build',
+      'build_config',
+      'build_daemon',
+      'build_resolvers',
+      'build_runner',
+      'build_runner_core',
+      'build_test',
+      'code_builder',
+    ]),
+    d.dir('tool', [
+      d.file(
+          'build.dart',
+          _buildToolFile(
+              builders, (await Isolate.resolvePackageUri(frameCaller))!))
+    ]),
+    ...contents
+  ]).create();
   await pubGet('a');
   return BuildTool._('dart', [p.join('tool', 'build.dart')]);
 }
@@ -248,7 +242,9 @@ d.FileDescriptor _pubspec(String name,
     buffer.writeln(group);
 
     pathDependencies.forEach((package, path) {
-      buffer..writeln('  $package:')..writeln('    path: $path');
+      buffer
+        ..writeln('  $package:')
+        ..writeln('    path: $path');
     });
 
     versionDependencies.forEach((package, version) {
@@ -266,21 +262,21 @@ d.FileDescriptor _pubspec(String name,
 
 /// An executable that can run builds.
 ///
-/// Either a manual build script or `pub run build_runner`.
+/// Either a manual build script or `dart run build_runner`.
 class BuildTool {
   final String _executable;
   final List<String> _baseArgs;
 
   BuildTool._(this._executable, this._baseArgs);
 
-  Future<BuildServer> serve() async => BuildServer(await TestProcess.start(
-      _executable, _baseArgs.followedBy(['serve']),
-      workingDirectory: rootPackageDir));
+  Future<BuildServer> serve() async =>
+      BuildServer(await TestProcess.start(_executable, [..._baseArgs, 'serve'],
+          workingDirectory: rootPackageDir));
 
   Future<StreamQueue<String>> build(
       {List<String> args = const [], int expectExitCode = 0}) async {
     var process = await TestProcess.start(
-        _executable, _baseArgs.followedBy(['build']).followedBy(args).toList(),
+        _executable, [..._baseArgs, 'build', ...args],
         workingDirectory: rootPackageDir);
     await process.shouldExit(expectExitCode);
     return process.stdout;

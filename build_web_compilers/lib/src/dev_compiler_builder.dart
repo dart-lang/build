@@ -8,6 +8,7 @@ import 'dart:io';
 
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
+import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
@@ -24,6 +25,8 @@ String jsSourceMapExtension(bool soundNullSafety) =>
     '${soundnessExt(soundNullSafety)}.ddc.js.map';
 String metadataExtension(bool soundNullSafety) =>
     '${soundnessExt(soundNullSafety)}.ddc.js.metadata';
+String symbolsExtension(bool soundNullSafety) =>
+    '${soundnessExt(soundNullSafety)}.ddc.js.symbols';
 String fullKernelExtension(bool soundNullSafety) =>
     '${soundnessExt(soundNullSafety)}.ddc.full.dill';
 
@@ -41,6 +44,14 @@ class DevCompilerBuilder implements Builder {
   /// debugger to compile expressions in debugging worklows that use modular
   /// build, such as webdev.
   final bool generateFullDill;
+
+  /// Whether to generate debug symbols file outputs for each module.
+  ///
+  /// Debug symbols file is an additional file produced by DDC that stores
+  /// symbols for code compiled for one module, not including dependencies.
+  /// Debug symbols are used by the to display variables and objects in
+  /// watch, expression evaluation, and variable inspection windows.
+  final bool emitDebugSymbols;
 
   final bool trackUnusedInputs;
 
@@ -66,22 +77,19 @@ class DevCompilerBuilder implements Builder {
   /// Environment defines to pass to ddc (as -D variables).
   final Map<String, String> environment;
 
-  /// Experiments to pass to ddc (as --enable-experiment=<experiment> args).
-  final Iterable<String> experiments;
-
   /// Whether or not strong null safety should be enabled.
   final bool soundNullSafety;
 
   DevCompilerBuilder(
       {this.useIncrementalCompiler = true,
       this.generateFullDill = false,
+      this.emitDebugSymbols = false,
       this.trackUnusedInputs = false,
       required this.platform,
       String? sdkKernelPath,
       String? librariesPath,
       String? platformSdk,
       this.environment = const {},
-      this.experiments = const [],
       this.soundNullSafety = false})
       : platformSdk = platformSdk ?? sdkDir,
         librariesPath = librariesPath ??
@@ -92,6 +100,7 @@ class DevCompilerBuilder implements Builder {
             jsModuleErrorsExtension(soundNullSafety),
             jsSourceMapExtension(soundNullSafety),
             metadataExtension(soundNullSafety),
+            symbolsExtension(soundNullSafety),
             fullKernelExtension(soundNullSafety),
           ],
         },
@@ -126,12 +135,12 @@ class DevCompilerBuilder implements Builder {
           buildStep,
           useIncrementalCompiler,
           generateFullDill,
+          emitDebugSymbols,
           trackUnusedInputs,
           platformSdk,
           sdkKernelPath,
           librariesPath,
           environment,
-          experiments,
           soundNullSafety);
     } on DartDevcCompilationException catch (e) {
       await handleError(e);
@@ -147,12 +156,12 @@ Future<void> _createDevCompilerModule(
     BuildStep buildStep,
     bool useIncrementalCompiler,
     bool generateFullDill,
+    bool emitDebugSymbols,
     bool trackUnusedInputs,
     String dartSdk,
     String sdkKernelPath,
     String librariesPath,
     Map<String, String> environment,
-    Iterable<String> experiments,
     bool soundNullSafety,
     {bool debugMode = true}) async {
   var transitiveDeps = await buildStep.trackStage('CollectTransitiveDeps',
@@ -193,6 +202,7 @@ Future<void> _createDevCompilerModule(
       '--modules=amd',
       '--no-summarize',
       if (generateFullDill) '--experimental-output-compiled-kernel',
+      if (emitDebugSymbols) '--emit-debug-symbols',
       '-o',
       jsOutputFile.path,
       debugMode ? '--source-map' : '--no-source-map',
@@ -213,7 +223,8 @@ Future<void> _createDevCompilerModule(
         '--used-inputs-file=${usedInputsFile.uri.toFilePath()}',
       for (var source in module.sources) _sourceArg(source),
       for (var define in environment.entries) '-D${define.key}=${define.value}',
-      for (var experiment in experiments) '--enable-experiment=$experiment',
+      for (var experiment in enabledExperiments)
+        '--enable-experiment=$experiment',
       '--${soundNullSafety ? '' : 'no-'}sound-null-safety',
     ])
     ..inputs.add(Input()
@@ -282,6 +293,14 @@ Future<void> _createDevCompilerModule(
       _fixMetadataSources(
           json as Map<String, dynamic>, scratchSpace.tempDir.uri);
       await buildStep.writeAsString(metadataId, jsonEncode(json));
+
+      // Copy the symbols output, modifying its contents to remove the temp
+      // directory from paths
+      if (emitDebugSymbols) {
+        var symbolsId = module.primarySource
+            .changeExtension(symbolsExtension(soundNullSafety));
+        await scratchSpace.copyOutput(symbolsId, buildStep);
+      }
     }
 
     // Note that we only want to do this on success, we can't trust the unused
@@ -338,9 +357,9 @@ void _fixMetadataSources(Map<String, dynamic> json, Uri scratchUri) {
     json['moduleUri'] = updatePath(moduleUri);
   }
 
-  var fullKernelUri = json['fullKernelUri'] as String?;
-  if (fullKernelUri != null) {
-    json['fullKernelUri'] = updatePath(fullKernelUri);
+  var fullDillUri = json['fullDillUri'] as String?;
+  if (fullDillUri != null) {
+    json['fullDillUri'] = updatePath(fullDillUri);
   }
 
   var libraries = json['libraries'] as List<Object?>?;

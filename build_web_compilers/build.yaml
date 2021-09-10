@@ -72,15 +72,19 @@ builders:
     build_extensions:
       .ddc.module:
         - .unsound.ddc.dill
+        - .unsound.ddc.full.dill
         - .unsound.ddc.js.errors
         - .unsound.ddc.js
         - .unsound.ddc.js.map
         - .unsound.ddc.js.metadata
+        - .unsound.ddc.js.symbols
         - .sound.ddc.dill
+        - .sound.ddc.full.dill
         - .sound.ddc.js.errors
         - .sound.ddc.js
         - .sound.ddc.js.map
         - .sound.ddc.js.metadata
+        - .sound.ddc.js.symbols
     is_optional: True
     auto_apply: all_packages
     required_inputs:
@@ -102,7 +106,7 @@ builders:
         - .dart.js.map
         - .dart.js.tar.gz
         - .digests
-        - .merged_metadata
+        - .dart.ddc_merged_metadata
     required_inputs:
       - .dart
       - .unsound.ddc.js

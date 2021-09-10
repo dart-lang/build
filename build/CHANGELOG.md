@@ -1,3 +1,23 @@
+## 2.1.1-dev
+
+- Throw an `ArgumentError` if an expected output matches the input.
+
+## 2.1.0
+
+- Expand the expressiveness of `buildExtensions` include capture groups,
+  enabling directory moves. For more information on this feature, see
+  [capture groups](https://github.com/dart-lang/build/blob/master/docs/writing_a_builder.md#capture-groups)
+- Add an `allowedOutputs` getter to `BuildStep`. It returns assets that may be
+  written in that step.
+
+## 2.0.3
+
+- Allow analyzer version 2.x.x.
+
+## 2.0.2
+
+- Handle failed resolvers in `buildStep.complete`.
+
 ## 2.0.1
 
 - Require package:async version 2.5.0 and package:collection version 1.15.0.

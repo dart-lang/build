@@ -149,12 +149,12 @@ List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
     }
   }
 
-  return mergedModules.values
-      .map(Module.merge)
-      .map(_withConsistentPrimarySource)
-      .followedBy(entrypointModuleGroups.values.map(Module.merge))
-      .followedBy(standaloneModules)
-      .toList();
+  return [
+    for (var module in mergedModules.values)
+      _withConsistentPrimarySource(Module.merge(module)),
+    for (var module in entrypointModuleGroups.values) Module.merge(module),
+    ...standaloneModules
+  ];
 }
 
 Module _withConsistentPrimarySource(Module m) => Module(m.sources.reduce(_min),
@@ -252,14 +252,15 @@ MetaModule _coarseModulesForLibraries(
 
 MetaModule _fineModulesForLibraries(
     AssetReader reader, List<ModuleLibrary> libraries, DartPlatform platform) {
-  var modules = libraries
-      .map((library) => Module(
+  var modules = [
+    for (var library in libraries)
+      Module(
           library.id,
-          library.parts.followedBy([library.id]),
+          [...library.parts, library.id],
           library.depsForPlatform(platform),
           platform,
-          library.sdkDeps.every(platform.supportsLibrary)))
-      .toList();
+          library.sdkDeps.every(platform.supportsLibrary))
+  ];
   _sortModules(modules);
   return MetaModule(modules);
 }

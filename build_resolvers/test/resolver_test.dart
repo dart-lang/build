@@ -434,7 +434,7 @@ int? get x => 1;
                     sdkLanguageVersion.major);
                 expect(lib.languageVersion.effective.minor,
                     sdkLanguageVersion.minor);
-                var errors = await lib.session.getErrors2('/a/web/main.dart')
+                var errors = await lib.session.getErrors('/a/web/main.dart')
                     as ErrorsResult;
                 expect(errors.errors, isEmpty);
               }, resolvers: AnalyzerResolvers()),
@@ -452,7 +452,7 @@ int? get x => 1;
         expect(await resolver.isLibrary(AssetId('a', 'web/other.dart')), true);
         var newLib =
             await resolver.libraryFor(await resolver.assetIdForElement(lib));
-        expect(await newLib.session.getResolvedLibraryByElement2(newLib),
+        expect(await newLib.session.getResolvedLibraryByElement(newLib),
             isA<ResolvedLibraryResult>());
       }, resolvers: resolvers);
     });
@@ -774,7 +774,7 @@ int? get x => 1;
         expect(await resolver.isLibrary(AssetId('a', 'web/other.dart')), true);
 
         // Validate that direct session usage would throw
-        expect(() => lib.session.getParsedLibraryByElement2(x.library!),
+        expect(() => lib.session.getParsedLibraryByElement(x.library!),
             throwsA(isA<InconsistentAnalysisException>()));
 
         var astNode = await resolver.astNodeFor(x);
@@ -798,7 +798,7 @@ int? get x => 1;
         expect(await resolver.isLibrary(AssetId('a', 'web/other.dart')), true);
 
         // Validate that direct session usage would throw
-        expect(() => lib.session.getParsedLibraryByElement2(x.library!),
+        expect(() => lib.session.getParsedLibraryByElement(x.library!),
             throwsA(isA<InconsistentAnalysisException>()));
 
         var astNode = await resolver.astNodeFor(x, resolve: true);
@@ -819,11 +819,11 @@ int? get x => 1;
         var x = lib.topLevelElements.firstWhere((x) => !x.isSynthetic);
         expect(x.name, 'x');
         var originalResult = await lib.session
-            .getResolvedLibrary2(lib.source.fullName) as ResolvedLibraryResult;
+            .getResolvedLibrary(lib.source.fullName) as ResolvedLibraryResult;
         expect(await resolver.isLibrary(AssetId('a', 'web/other.dart')), true);
 
         // Validate that direct session usage would throw
-        expect(() => lib.session.getResolvedLibrary2(lib.source.fullName),
+        expect(() => lib.session.getResolvedLibrary(lib.source.fullName),
             throwsA(isA<InconsistentAnalysisException>()));
 
         var astNode = originalResult.getElementDeclaration(x)!.node;

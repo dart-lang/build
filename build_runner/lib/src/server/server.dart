@@ -307,65 +307,70 @@ class AssetHandler {
   Future<shelf.Response> handle(shelf.Request request, {String rootDir = ''}) =>
       (request.url.path.endsWith('/') || request.url.path.isEmpty)
           ? _handle(
-              request.headers,
-              pathToAssetId(
-                  _rootPackage,
-                  rootDir,
-                  request.url.pathSegments
-                      .followedBy(const ['index.html']).toList()),
+              request,
+              pathToAssetId(_rootPackage, rootDir,
+                  [...request.url.pathSegments, 'index.html']),
               fallbackToDirectoryList: true)
-          : _handle(request.headers,
+          : _handle(request,
               pathToAssetId(_rootPackage, rootDir, request.url.pathSegments));
 
-  Future<shelf.Response> _handle(
-      Map<String, String> requestHeaders, AssetId assetId,
+  Future<shelf.Response> _handle(shelf.Request request, AssetId assetId,
       {bool fallbackToDirectoryList = false}) async {
     try {
-      if (!await _reader.canRead(assetId)) {
-        var reason = await _reader.unreadableReason(assetId);
-        switch (reason) {
-          case UnreadableReason.failed:
-            return shelf.Response.internalServerError(
-                body: 'Build failed for $assetId');
-          case UnreadableReason.notOutput:
-            return shelf.Response.notFound('$assetId was not output');
-          case UnreadableReason.notFound:
-            if (fallbackToDirectoryList) {
-              return shelf.Response.notFound(await _findDirectoryList(assetId));
-            }
-            return shelf.Response.notFound('Not Found');
-          default:
-            return shelf.Response.notFound('Not Found');
+      try {
+        if (!await _reader.canRead(assetId)) {
+          var reason = await _reader.unreadableReason(assetId);
+          switch (reason) {
+            case UnreadableReason.failed:
+              return shelf.Response.internalServerError(
+                  body: 'Build failed for $assetId');
+            case UnreadableReason.notOutput:
+              return shelf.Response.notFound('$assetId was not output');
+            case UnreadableReason.notFound:
+              if (fallbackToDirectoryList) {
+                return shelf.Response.notFound(
+                    await _findDirectoryList(assetId));
+              }
+              return shelf.Response.notFound('Not Found');
+            default:
+              return shelf.Response.notFound('Not Found');
+          }
         }
+      } on ArgumentError catch (_) {
+        return shelf.Response.notFound('Not Found');
       }
-    } on ArgumentError catch (_) {
-      return shelf.Response.notFound('Not Found');
-    }
 
-    var etag = base64.encode((await _reader.digest(assetId)).bytes);
-    var contentType = _typeResolver.lookup(assetId.path);
-    if (contentType == 'text/x-dart') {
-      contentType = '$contentType; charset=utf-8';
-    }
-    var headers = <String, Object>{
-      if (contentType != null) HttpHeaders.contentTypeHeader: contentType,
-      HttpHeaders.etagHeader: etag,
-      // We always want this revalidated, which requires specifying both
-      // max-age=0 and must-revalidate.
-      //
-      // See spec https://goo.gl/Lhvttg for more info about this header.
-      HttpHeaders.cacheControlHeader: 'max-age=0, must-revalidate',
-    };
+      var etag = base64.encode((await _reader.digest(assetId)).bytes);
+      var contentType = _typeResolver.lookup(assetId.path);
+      if (contentType == 'text/x-dart') {
+        contentType = '$contentType; charset=utf-8';
+      }
+      var headers = <String, Object>{
+        if (contentType != null) HttpHeaders.contentTypeHeader: contentType,
+        HttpHeaders.etagHeader: etag,
+        // We always want this revalidated, which requires specifying both
+        // max-age=0 and must-revalidate.
+        //
+        // See spec https://goo.gl/Lhvttg for more info about this header.
+        HttpHeaders.cacheControlHeader: 'max-age=0, must-revalidate',
+      };
 
-    if (requestHeaders[HttpHeaders.ifNoneMatchHeader] == etag) {
-      // This behavior is still useful for cases where a file is hit
-      // without a cache-busting query string.
-      return shelf.Response.notModified(headers: headers);
+      if (request.headers[HttpHeaders.ifNoneMatchHeader] == etag) {
+        // This behavior is still useful for cases where a file is hit
+        // without a cache-busting query string.
+        return shelf.Response.notModified(headers: headers);
+      }
+      List<int>? body;
+      if (request.method != 'HEAD') {
+        body = await _reader.readAsBytes(assetId);
+        headers[HttpHeaders.contentLengthHeader] = '${body.length}';
+      }
+      return shelf.Response.ok(body, headers: headers);
+    } catch (e, s) {
+      _logger.finest(
+          'Error on request ${request.method} ${request.requestedUri}', e, s);
+      rethrow;
     }
-
-    var bytes = await _reader.readAsBytes(assetId);
-    headers[HttpHeaders.contentLengthHeader] = '${bytes.length}';
-    return shelf.Response.ok(bytes, headers: headers);
   }
 
   Future<String> _findDirectoryList(AssetId from) async {
@@ -643,28 +648,27 @@ final _enablePerformanceTracking = '''
 
 /// [shelf.Middleware] that logs all requests, inspired by [shelf.logRequests].
 shelf.Handler _logRequests(shelf.Handler innerHandler) {
-  return (shelf.Request request) {
+  return (shelf.Request request) async {
     var startTime = DateTime.now();
     var watch = Stopwatch()..start();
-
-    return Future.sync(() => innerHandler(request)).then((response) {
+    try {
+      var response = await innerHandler(request);
       var logFn = response.statusCode >= 500 ? _logger.warning : _logger.info;
-      var msg = _getMessage(startTime, response.statusCode,
+      var msg = _requestLabel(startTime, response.statusCode,
           request.requestedUri, request.method, watch.elapsed);
       logFn(msg);
       return response;
-    }, onError: (Object error, StackTrace stackTrace) {
-      if (error is shelf.HijackException) throw error;
-      var msg = _getMessage(
+    } catch (error, stackTrace) {
+      if (error is shelf.HijackException) rethrow;
+      var msg = _requestLabel(
           startTime, 500, request.requestedUri, request.method, watch.elapsed);
-      _logger.severe('$msg\r\n$error\r\n$stackTrace', true);
-      // ignore: only_throw_errors
-      throw error;
-    });
+      _logger.severe(msg, error, stackTrace);
+      rethrow;
+    }
   };
 }
 
-String _getMessage(DateTime requestTime, int statusCode, Uri requestedUri,
+String _requestLabel(DateTime requestTime, int statusCode, Uri requestedUri,
     String method, Duration elapsedTime) {
   return '${requestTime.toIso8601String()} '
       '${humanReadable(elapsedTime)} '

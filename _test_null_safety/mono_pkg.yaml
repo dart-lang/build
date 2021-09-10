@@ -1,5 +1,4 @@
 dart:
-- 2.12.0
 - dev
 
 os:
@@ -8,15 +7,17 @@ os:
 
 stages:
 - analyze_and_format:
-  - dartanalyzer: --fatal-infos --fatal-warnings .
+  - group:
+    - analyze: --fatal-infos
+    dart: dev
 - e2e_test:
   - group:
-    - command: pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random
-    - command: pub run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random
+    - command: dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random
+    - command: dart run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random
 # This stage is configured to only run for scheduled builds (see mono_repo.yaml)
 - e2e_test_cron:
   - group:
-    - command: pub run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random
-    - command: pub run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random
+    - command: dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random
+    - command: dart run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random
     dart:
       - be/raw/latest

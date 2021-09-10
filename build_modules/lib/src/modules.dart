@@ -97,7 +97,7 @@ class Module {
   ///
   /// We want to report these errors lazily to allow for builds to succeed if it
   /// won't actually impact any apps negatively.
-  @JsonKey(name: 'm', defaultValue: false)
+  @JsonKey(name: 'm')
   final bool isMissing;
 
   /// Whether or not this module is supported for [platform].

@@ -78,12 +78,24 @@ class ModuleLibrary {
       if (directive is! UriBasedDirective) continue;
       var path = directive.uri.stringValue;
       if (path == null) continue;
+
+      List<Configuration>? conditionalDirectiveConfigurations;
+      if (directive is ImportDirective && directive.configurations.isNotEmpty) {
+        conditionalDirectiveConfigurations = directive.configurations;
+      } else if (directive is ExportDirective &&
+          directive.configurations.isNotEmpty) {
+        conditionalDirectiveConfigurations = directive.configurations;
+      }
+
       var uri = Uri.parse(path);
       if (uri.isScheme('dart-ext')) {
         // TODO: What should we do for native extensions?
         continue;
       }
       if (uri.scheme == 'dart') {
+        if (conditionalDirectiveConfigurations != null) {
+          _checkValidConditionalImport(uri, id, directive);
+        }
         sdkDeps.add(uri.path);
         continue;
       }
@@ -93,23 +105,13 @@ class ModuleLibrary {
         continue;
       }
 
-      List<Configuration>? conditionalDirectiveConfigurations;
-
-      if (directive is ImportDirective && directive.configurations.isNotEmpty) {
-        conditionalDirectiveConfigurations = directive.configurations;
-      } else if (directive is ExportDirective &&
-          directive.configurations.isNotEmpty) {
-        conditionalDirectiveConfigurations = directive.configurations;
-      }
       if (conditionalDirectiveConfigurations != null) {
         var conditions = <String, AssetId>{r'$default': linkedId};
         for (var condition in conditionalDirectiveConfigurations) {
           var uriString = condition.uri.stringValue;
           var parsedUri = uriString == null ? null : Uri.parse(uriString);
-          if (uriString == null || parsedUri!.scheme == 'dart') {
-            throw ArgumentError('Unsupported conditional import of '
-                '`${condition.uri.stringValue}` found in $id.');
-          }
+          _checkValidConditionalImport(parsedUri, id, directive);
+          parsedUri = parsedUri!;
           conditions[condition.name.toSource()] =
               AssetId.resolve(parsedUri, from: id);
         }
@@ -125,6 +127,23 @@ class ModuleLibrary {
         sdkDeps: sdkDeps,
         conditionalDeps: conditionalDeps,
         hasMain: _hasMainMethod(parsed));
+  }
+
+  static void _checkValidConditionalImport(
+      Uri? parsedUri, AssetId id, UriBasedDirective node) {
+    if (parsedUri == null) {
+      throw ArgumentError(
+          'Unsupported conditional import with non-constant uri found in $id:'
+          '\n\n${node.toSource()}');
+    } else if (parsedUri.scheme == 'dart') {
+      throw ArgumentError(
+          'Unsupported conditional import of `$parsedUri` found in $id:\n\n'
+          '${node.toSource()}\n\nThis environment does not support direct '
+          'conditional imports of `dart:` libraries. Instead you must create '
+          'a separate library which unconditionally imports (or exports) the '
+          '`dart:` library that you want to use, and conditionally import (or '
+          'export) that library.');
+    }
   }
 
   /// Parse the directives from [source] and compute the library information.

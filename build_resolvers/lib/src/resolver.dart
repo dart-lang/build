@@ -18,6 +18,7 @@ import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
 import 'package:analyzer/src/dart/analysis/experiments.dart';
 import 'package:analyzer/src/generated/engine.dart'
     show AnalysisOptions, AnalysisOptionsImpl;
+import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:logging/logging.dart';
@@ -169,11 +170,11 @@ class AnalyzerResolver implements ReleasableResolver {
     var path = library.source.fullName;
 
     if (resolve) {
-      return (await session.getResolvedLibrary2(path) as ResolvedLibraryResult)
+      return (await session.getResolvedLibrary(path) as ResolvedLibraryResult)
           .getElementDeclaration(element)
           ?.node;
     } else {
-      return (session.getParsedLibrary2(path) as ParsedLibraryResult)
+      return (session.getParsedLibrary(path) as ParsedLibraryResult)
           .getElementDeclaration(element)
           ?.node;
     }
@@ -302,7 +303,7 @@ class AnalyzerResolvers implements Resolvers {
   BuildAssetUriResolver? _uriResolver;
 
   /// Nullable, should not be accessed outside of [_ensureInitialized].
-  Future<void>? _initialized;
+  Future<Result<void>>? _initialized;
 
   PackageConfig? _packageConfig;
 
@@ -334,7 +335,7 @@ class AnalyzerResolvers implements Resolvers {
   /// Create a Resolvers backed by an `AnalysisContext` using options
   /// [_analysisOptions].
   Future<void> _ensureInitialized() {
-    return _initialized ??= () async {
+    return Result.release(_initialized ??= Result.capture(() async {
       _warnOnLanguageVersionMismatch();
       final uriResolver = _uriResolver = BuildAssetUriResolver();
       final loadedConfig = _packageConfig ??=
@@ -342,7 +343,7 @@ class AnalyzerResolvers implements Resolvers {
       var driver = await analysisDriver(uriResolver, _analysisOptions,
           await _sdkSummaryGenerator(), loadedConfig);
       _resolver = AnalyzerResolver(driver, uriResolver);
-    }();
+    }()));
   }
 
   @override

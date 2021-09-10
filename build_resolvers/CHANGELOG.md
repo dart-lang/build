@@ -1,4 +1,16 @@
-## 2.0.3-dev
+## 2.0.5-dev
+
+- Update usages of deprecated analyzer apis.
+- Require at least analyzer `2.1.0`.
+
+## 2.0.4
+
+- Allow analyzer version 2.x.x.
+
+## 2.0.3
+
+- Fix an issue where the build process would hang if the resolver fails to
+  properly initialize.
 
 ## 2.0.2
 

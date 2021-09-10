@@ -1,3 +1,12 @@
+## 4.0.2
+
+- Log a better and more consistent message when we encounter dart: uris in
+  conditional imports.
+
+## 4.0.1
+
+- Allow analyzer version 2.x.x.
+
 ## 4.0.0
 
 - Migrate to null safety.

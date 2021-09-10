@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:analyzer/dart/ast/ast.dart';
@@ -40,7 +41,8 @@ class BuildStepImpl implements BuildStep {
 
   /// The list of all outputs which are expected/allowed to be output from this
   /// step.
-  final Set<AssetId> _expectedOutputs;
+  @override
+  final Set<AssetId> allowedOutputs;
 
   /// The result of any writes which are starting during this step.
   final _writeResults = <Future<Result<void>>>[];
@@ -61,7 +63,7 @@ class BuildStepImpl implements BuildStep {
       this._writer, this._resolvers, this._resourceManager,
       {StageTracker? stageTracker,
       void Function(Iterable<AssetId>)? reportUnusedAssets})
-      : _expectedOutputs = expectedOutputs.toSet(),
+      : allowedOutputs = UnmodifiableSetView(expectedOutputs.toSet()),
         _stageTracker = stageTracker ?? NoOpStageTracker.instance,
         _reportUnusedAssets = reportUnusedAssets;
 
@@ -157,14 +159,16 @@ class BuildStepImpl implements BuildStep {
   Future<void> complete() async {
     _isComplete = true;
     await Future.wait(_writeResults.map(Result.release));
-    (await _resolver)?.release();
+    try {
+      (await _resolver)?.release();
+    } catch (_) {}
   }
 
   /// Checks that [id] is an expected output, and throws an
   /// [InvalidOutputException] or [UnexpectedOutputException] if it's not.
   void _checkOutput(AssetId id) {
-    if (!_expectedOutputs.contains(id)) {
-      throw UnexpectedOutputException(id, expected: _expectedOutputs);
+    if (!allowedOutputs.contains(id)) {
+      throw UnexpectedOutputException(id, expected: allowedOutputs);
     }
   }
 

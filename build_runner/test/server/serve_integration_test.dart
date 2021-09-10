@@ -33,6 +33,8 @@ void main() {
     reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
         rootPackage: 'example')
       ..cacheStringAsset(AssetId('example', 'web/initial.txt'), 'initial')
+      ..cacheStringAsset(AssetId('example', 'web/large.txt'),
+          List.filled(10000, 'large').join(''))
       ..cacheStringAsset(
           AssetId('example', '.packages'),
           '# Fake packages file\n'
@@ -56,12 +58,14 @@ void main() {
       packageGraph: graph,
       reader: reader,
       writer: writer,
-      logLevel: Level.OFF,
+      logLevel: Level.ALL,
+      onLog: (record) => printOnFailure('[${record.level}] '
+          '${record.loggerName}: ${record.message}'),
       directoryWatcherFactory: (path) => FakeWatcher(path),
       terminateEventStream: terminateController.stream,
       skipBuildScriptCheck: true,
     );
-    handler = server.handlerFor('web');
+    handler = server.handlerFor('web', logRequests: true);
 
     nextBuild = Completer<BuildResult>();
     subscription = server.buildResults.listen((result) {
@@ -81,6 +85,18 @@ void main() {
     final getHello = Uri.parse('http://localhost/initial.txt');
     final response = await handler(Request('GET', getHello));
     expect(await response.readAsString(), 'initial');
+  });
+
+  test('should serve original files in parallel', () async {
+    final getHello = Uri.parse('http://localhost/large.txt');
+    final futures = [
+      for (var i = 0; i < 512; i++)
+        (() async => await handler(Request('GET', getHello)))(),
+    ];
+    var responses = await Future.wait(futures);
+    for (var response in responses) {
+      expect(await response.readAsString(), startsWith('large'));
+    }
   });
 
   test('should serve built files', () async {

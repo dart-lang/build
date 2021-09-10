@@ -128,7 +128,7 @@ RandomAccessFile? _tryGetLock(String workingDirectory) {
     _createDaemonWorkspace(workingDirectory);
     var lock = File(lockFilePath(workingDirectory))
         .openSync(mode: FileMode.write)
-          ..lockSync();
+      ..lockSync();
     return lock;
   } on FileSystemException {
     return null;

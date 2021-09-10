@@ -5,8 +5,8 @@ dart:
 stages:
 - analyze_and_format:
   - group:
-    - dartfmt: sdk
-    - dartanalyzer: --fatal-infos --fatal-warnings .
+    - format
+    - analyze: --fatal-infos .
 - unit_test:
   - group:
     - test: --test-randomize-ordering-seed=random

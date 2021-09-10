@@ -1,4 +1,18 @@
-## 2.1.1-dev
+## 2.1.4-dev
+
+- Update `pub run` references to `dart run`.
+
+## 2.1.3
+
+- Use `allowedOutputs` in `TestBuilder` instead of computing them again.
+
+## 2.1.2
+
+- Allow the latest `package:test_core`.
+
+## 2.1.1
+
+- Allow analyzer version 2.x.x.
 
 ## 2.1.0
 

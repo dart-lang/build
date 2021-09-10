@@ -118,6 +118,15 @@ void main() {
         rootDir: 'web');
     expect(response.statusCode, HttpStatus.internalServerError);
   });
+
+  test('Supports HEAD requests', () async {
+    _addAsset('a|web/index.html', 'content');
+    var response = await handler.handle(
+        Request('HEAD', Uri.parse('http://server.com/index.html')),
+        rootDir: 'web');
+    expect(response.contentLength, 0);
+    expect(await response.readAsString(), '');
+  });
 }
 
 class FakeAssetReader with Fake implements AssetReader {}

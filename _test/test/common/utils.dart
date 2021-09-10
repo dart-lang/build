@@ -17,18 +17,16 @@ Process? _process;
 Stream<String>? _stdOutLines;
 Stream<String>? get stdOutLines => _stdOutLines;
 
-final String _pubBinary = Platform.isWindows ? 'pub.bat' : 'pub';
-
-/// Runs a single build using `pub run build_runner build`, and returns the
+/// Runs a single build using `dart run build_runner build`, and returns the
 /// [ProcessResult].
 Future<ProcessResult> runBuild({List<String> trailingArgs = const []}) =>
-    _runBuild(_pubBinary, ['run', 'build_runner', 'build', ...trailingArgs]);
+    _runBuild('dart', ['run', 'build_runner', 'build', ...trailingArgs]);
 
-/// Runs `pub run build_runner <args>`, and returns the [ProcessResult].
+/// Runs `dart run build_runner <args>`, and returns the [ProcessResult].
 Future<ProcessResult> runCommand(List<String> args) =>
-    _runBuild(_pubBinary, ['run', 'build_runner', ...args]);
+    _runBuild('dart', ['run', 'build_runner', ...args]);
 
-/// Runs `pub run build_runner serve` in this package, and waits for the first
+/// Runs `dart run build_runner serve` in this package, and waits for the first
 /// build to complete.
 ///
 /// To ensure a clean build, set [ensureCleanBuild] to `true`.
@@ -46,6 +44,7 @@ Future<void> startServer(
           '--packages=.packages',
           p.join('..', 'build_runner', 'bin', 'build_runner.dart'),
           'serve',
+          '--verbose',
           if (buildArgs != null) ...buildArgs,
         ],
         ensureCleanBuild: ensureCleanBuild,
@@ -162,7 +161,7 @@ Future<TestProcess> runTests(
     {bool? usePrecompiled,
     List<String>? buildArgs,
     List<String>? testArgs}) async {
-  return _runTests(_pubBinary, ['run', 'build_runner'],
+  return _runTests('dart', ['run', 'build_runner'],
       usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
 }
 
@@ -183,7 +182,7 @@ Future<TestProcess> _runTests(String executable, List<String> scriptArgs,
     return TestProcess.start(executable, args);
   } else {
     var args = ['run', 'test', '--pub-serve', '8081', ...testArgs];
-    return TestProcess.start(_pubBinary, args);
+    return TestProcess.start('dart', args);
   }
 }
 

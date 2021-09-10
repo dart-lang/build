@@ -25,3 +25,10 @@ builders:
     builder_factories: ["cssBuilder"]
     build_extensions: {"$package$": ["web/generated.css"]}
     auto_apply: root_package
+
+  textBuilder:
+    import: "package:example/builder.dart"
+    builder_factories: ["textBuilder"]
+    build_extensions: {"^assets/{{}}.json": ["lib/generated/{{}}.dart"]}
+    auto_apply: root_package
+    build_to: source

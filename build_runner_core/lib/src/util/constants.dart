@@ -75,7 +75,11 @@ String _scriptHashFor(String path) => md5
     .toString();
 
 /// The name of the pub binary on the current platform.
+@Deprecated('The pub binary is deprecated')
 final pubBinary = p.join(sdkBin, Platform.isWindows ? 'pub.bat' : 'pub');
+
+/// The dart binary from the current sdk.
+final dartBinary = p.join(sdkBin, 'dart');
 
 /// The path to the sdk bin directory on the current platform.
 final sdkBin = p.join(sdkPath, 'bin');

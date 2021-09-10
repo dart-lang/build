@@ -1,13 +1,13 @@
 name: build
-version: 2.0.1
-description: A build system for Dart.
+version: 2.1.1-dev
+description: A package for authoring build_runner compatible code generators.
 repository: https://github.com/dart-lang/build/tree/master/build
 
 environment:
   sdk: ">=2.12.0 <3.0.0"
 
 dependencies:
-  analyzer: ^1.0.0
+  analyzer: ">=1.5.0 <3.0.0"
   async: ^2.5.0
   convert: ^3.0.0
   crypto: ^3.0.0

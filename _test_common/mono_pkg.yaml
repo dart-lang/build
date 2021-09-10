@@ -3,4 +3,4 @@ dart:
 
 stages:
 - analyze_and_format:
-  - dartanalyzer: --fatal-infos --fatal-warnings .
+  - analyze: --fatal-infos .

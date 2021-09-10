@@ -34,10 +34,13 @@ StringBuffer colorLog(LogRecord record, {required bool verbose}) {
   }
 
   if (record.stackTrace != null && verbose) {
-    var trace = Trace.from(record.stackTrace!).foldFrames((f) {
-      return f.package == 'build_runner' || f.package == 'build';
-    }, terse: true);
-
+    var trace = Trace.from(record.stackTrace!);
+    const buildSystem = {'build_runner', 'build_runner_core', 'build'};
+    if (trace.frames.isNotEmpty &&
+        !buildSystem.contains(trace.frames.first.package)) {
+      trace =
+          trace.foldFrames((f) => buildSystem.contains(f.package), terse: true);
+    }
     lines.add(trace);
   }
 

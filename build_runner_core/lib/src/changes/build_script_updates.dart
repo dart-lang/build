@@ -111,7 +111,7 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
         throw ArgumentError('Unsupported uri scheme `${uri.scheme}` found for '
             'library in build script.\n'
             'This probably means you are running in an unsupported '
-            'context, such as in an isolate or via `pub run`.\n'
+            'context, such as in an isolate or via `dart run`.\n'
             'Full uri was: $uri.');
     }
     return null;

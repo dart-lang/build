@@ -15,7 +15,7 @@ import 'common.dart';
 class SdkJsCopyBuilder implements Builder {
   @override
   final buildExtensions = {
-    r'$lib$': ['src/dev_compiler/require.js']
+    r'$package$': ['lib/src/dev_compiler/require.js']
   };
 
   /// Path to the require.js file that should be used for all ddc web apps.

@@ -1,3 +1,31 @@
+## 2.1.3
+
+- Use `dart` top level command instead of `pub` when running pub executables.
+
+## 2.1.2
+
+- Support `--enable-experiment` option in build daemon.
+
+## 2.1.1
+
+- Don't rethrow file watcher errors - instead log at severe level and continue
+  going. The file watcher implementation should restart automatically as of
+  package:watcher version `0.9.7+13`.
+
+## 2.1.0
+
+- Add `--log-requests` flag to build daemon.
+- Log failed asset requests in build_runner server.
+- Support the latest build (`2.1.0`).
+
+## 2.0.6
+
+- Allow analyzer version 2.x.x.
+
+## 2.0.5
+
+- Don't set the content length header or body when responding to HEAD requests.
+
 ## 2.0.4
 
 - Allow builders defined as relative imports from the root of a package to run
@@ -53,6 +81,13 @@
 ## 1.11.2
 
 - Update to glob `2.x`.
+
+## 1.11.1+1
+
+- Backport of [622c659](https://github.com/dart-lang/build/commit/622c659d6dfcb982d599d6dddbd9988b25a064a1).
+  - Don't rethrow file watcher errors - instead log at severe level and continue
+    going. The file watcher implementation should restart automatically as of
+    package:watcher version `0.9.7+13`.
 
 ## 1.11.1
 

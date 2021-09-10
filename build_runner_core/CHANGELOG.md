@@ -1,3 +1,17 @@
+## 7.2.0
+
+- Deprecate the `pubBinary` variable.
+- Add a `dartBinary` variable to be used instead of `pubBinary`.
+- Update `pub run` references to `dart run`.
+
+## 7.1.0
+
+- Support capture groups, a feature introduced in `build`: `2.1.0`.
+
+## 7.0.1
+
+- Allow analyzer version 2.x.x.
+
 ## 7.0.0
 
 - Migrate to null safety.

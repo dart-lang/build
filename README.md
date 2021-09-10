@@ -4,8 +4,6 @@ These packages provide libraries for generating, compiling and serving Dart code
 
 [Getting started with build_runner](https://github.com/dart-lang/build/blob/master/docs/getting_started.md)
 
-[Integrating with Travis](https://github.com/dart-lang/build/blob/master/docs/travis.md)
-
 [General FAQ](https://github.com/dart-lang/build/blob/master/docs/faq.md)
 
 [Windows FAQ](https://github.com/dart-lang/build/blob/master/docs/windows_faq.md)
@@ -74,6 +72,6 @@ TODO: scratch_space
 The [example](https://github.com/dart-lang/build/tree/master/example)
 directory has an example of a build with custom builders which generate outputs
 into both the source tree and a hidden generated directory. Try a build with
-`pub run build_runner build -o web:deploy` to see what the output looks like.
+`dart run build_runner build -o web:deploy` to see what the output looks like.
 
 Most projects should not need custom builders.

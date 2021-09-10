@@ -72,6 +72,31 @@ main(List<String> args) async {
         ]).validate();
       });
 
+      test('updates can change extensions', () async {
+        // Update the extension from .copy to .copy2
+        var changedBuildScript = originalBuildContent.replaceFirst(
+            'TestBuilder()',
+            "TestBuilder(buildExtensions: appendExtension('.copy2'))");
+        await d.dir('a', [
+          d.dir('tool', [d.file('build.dart', changedBuildScript)])
+        ]).create();
+
+        var result = await runDart('a', 'tool/build.dart',
+            args: ['build', '--delete-conflicting-outputs']);
+        expect(result.exitCode, 0, reason: result.stderr as String);
+        expect(
+            result.stdout,
+            contains(
+                'Throwing away cached asset graph because the build phases '
+                'have changed.'));
+
+        // Running a new builder should delete the old generated asset and add
+        // the new copy.
+        await d.dir('a', [
+          d.dir('web', [d.file('a.txt.copy2', 'a'), d.nothing('a.txt.copy')])
+        ]).validate();
+      });
+
       test('--output creates a merged directory', () async {
         // Run a build and validate the full rebuild output.
         var result = await runDart('a', 'tool/build.dart',
