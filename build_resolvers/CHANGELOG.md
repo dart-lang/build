@@ -1,5 +1,10 @@
 ## 2.0.5-dev
 
+- Consider files without a `.dart` extension as not Dart libraries. Previously
+  the `isLibrary` getter was behaving like `isNotDartPartFile` which included
+  many assets that weren't Dart at all. This is potentially breaking if any
+  builders were intentionally resolving files with different extensions, but
+  will give a more predictable result for the majority of cases.
 - Update usages of deprecated analyzer apis.
 - Require at least analyzer `2.1.0`.
 
