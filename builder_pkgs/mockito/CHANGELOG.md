@@ -1,8 +1,10 @@
-## 5.0.16-dev
+## 5.0.16
 
 * Fix type reference for nested, imported types found in type arguments on a
   custom class-to-mock.
   [#469](https://github.com/dart-lang/mockito/issues/469)
+* Bump minimum analyzer dependency to version 2.1.0.
+* Ignore `camel_case_types` lint in generated code.
 
 ## 5.0.15
 
