@@ -1,3 +1,8 @@
+## 2.1.4-dev
+
+- Minor fixes to the log message when compiling the build script has some
+  output.
+
 ## 2.1.3
 
 - Use `dart` top level command instead of `pub` when running pub executables.
