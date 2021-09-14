@@ -195,9 +195,11 @@ Future<int> _createKernelIfNeeded(Logger logger) async {
     if (!hadErrors) {
       await kernelCacheFile.rename(scriptKernelLocation);
       if (hadOutput) {
-        logger.info('There was output on stdout while precompiling the build  '
-            'script, run with `--verbose` to see it (you will need to run '
-            'a `clean` first to re-generate it).\n');
+        logger.info(
+          'There was output on stdout while precompiling the build script; run '
+          'with `--verbose` to see it (you will need to run a `clean` first to '
+          're-generate it).\n',
+        );
       }
     }
 
