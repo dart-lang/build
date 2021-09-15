@@ -60,14 +60,18 @@ class MockBuilder implements Builder {
     if (entryLib == null) return;
     final sourceLibIsNonNullable = entryLib.isNonNullableByDefault;
     final mockLibraryAsset = buildStep.inputId.changeExtension('.mocks.dart');
-    final mockTargetGatherer = _MockTargetGatherer(entryLib);
+    final inheritanceManager = InheritanceManager3();
+    final mockTargetGatherer =
+        _MockTargetGatherer(entryLib, inheritanceManager);
 
     var entryAssetId = await buildStep.resolver.assetIdForElement(entryLib);
     final assetUris = await _resolveAssetUris(buildStep.resolver,
         mockTargetGatherer._mockTargets, entryAssetId.path, entryLib);
 
     final mockLibraryInfo = _MockLibraryInfo(mockTargetGatherer._mockTargets,
-        assetUris: assetUris, entryLib: entryLib);
+        assetUris: assetUris,
+        entryLib: entryLib,
+        inheritanceManager: inheritanceManager);
 
     if (mockLibraryInfo.fakeClasses.isEmpty &&
         mockLibraryInfo.mockClasses.isEmpty) {
@@ -365,14 +369,20 @@ class _MockTargetGatherer {
 
   final List<_MockTarget> _mockTargets;
 
-  _MockTargetGatherer._(this._entryLib, this._mockTargets) {
+  final InheritanceManager3 _inheritanceManager;
+
+  _MockTargetGatherer._(
+      this._entryLib, this._mockTargets, this._inheritanceManager) {
     _checkClassesToMockAreValid();
   }
 
   /// Searches the top-level elements of [entryLib] for `GenerateMocks`
   /// annotations and creates a [_MockTargetGatherer] with all of the classes
   /// identified as mocking targets.
-  factory _MockTargetGatherer(LibraryElement entryLib) {
+  factory _MockTargetGatherer(
+    LibraryElement entryLib,
+    InheritanceManager3 inheritanceManager,
+  ) {
     final mockTargets = <_MockTarget>{};
 
     for (final element in entryLib.topLevelElements) {
@@ -390,7 +400,8 @@ class _MockTargetGatherer {
       }
     }
 
-    return _MockTargetGatherer._(entryLib, mockTargets.toList());
+    return _MockTargetGatherer._(
+        entryLib, mockTargets.toList(), inheritanceManager);
   }
 
   static Iterable<_MockTarget> _mockTargetsFromGenerateMocks(
@@ -586,15 +597,29 @@ class _MockTargetGatherer {
   void _checkMethodsToStubAreValid(_MockTarget mockTarget) {
     final classElement = mockTarget.classElement;
     final className = classElement.name;
-    final unstubbableErrorMessages = classElement.methods
+    final substitution = Substitution.fromInterfaceType(mockTarget.classType);
+    final relevantMembers = _inheritanceManager
+        .getInterface(classElement)
+        .map
+        .values
         .where((m) => !m.isPrivate && !m.isStatic)
-        .expand((m) => _checkFunction(m.type, m,
+        .map((member) => ExecutableMember.from2(member, substitution));
+    final unstubbableErrorMessages = relevantMembers.expand((member) {
+      if (_entryLib.typeSystem._returnTypeIsNonNullable(member) ||
+          _entryLib.typeSystem._hasNonNullableParameter(member) ||
+          _needsOverrideForVoidStub(member)) {
+        return _checkFunction(member.type, member,
             hasDummyGenerator:
-                mockTarget.fallbackGenerators.containsKey(m.name)))
-        .toList();
+                mockTarget.fallbackGenerators.containsKey(member.name));
+      } else {
+        // Mockito is not going to override this method, so the types do not
+        // need to be checked.
+        return [];
+      }
+    }).toList();
 
     if (unstubbableErrorMessages.isNotEmpty) {
-      var joinedMessages =
+      final joinedMessages =
           unstubbableErrorMessages.map((m) => '    $m').join('\n');
       throw InvalidMockitoAnnotationException(
           'Mockito cannot generate a valid mock class which implements '
@@ -743,6 +768,7 @@ class _MockLibraryInfo {
     Iterable<_MockTarget> mockTargets, {
     required this.assetUris,
     required LibraryElement entryLib,
+    required InheritanceManager3 inheritanceManager,
   }) {
     for (final mockTarget in mockTargets) {
       final fallbackGenerators = mockTarget.fallbackGenerators;
@@ -753,6 +779,7 @@ class _MockLibraryInfo {
         typeSystem: entryLib.typeSystem,
         mockLibraryInfo: this,
         fallbackGenerators: fallbackGenerators,
+        inheritanceManager: inheritanceManager,
       )._buildMockClass());
     }
   }
@@ -785,6 +812,8 @@ class _MockClassInfo {
   /// function elements.
   final Map<String, ExecutableElement> fallbackGenerators;
 
+  final InheritanceManager3 inheritanceManager;
+
   _MockClassInfo({
     required this.mockTarget,
     required this.sourceLibIsNonNullable,
@@ -792,6 +821,7 @@ class _MockClassInfo {
     required this.typeSystem,
     required this.mockLibraryInfo,
     required this.fallbackGenerators,
+    required this.inheritanceManager,
   });
 
   Class _buildMockClass() {
@@ -850,7 +880,6 @@ class _MockClassInfo {
       if (!sourceLibIsNonNullable) {
         return;
       }
-      final inheritanceManager = InheritanceManager3();
       final substitution = Substitution.fromInterfaceType(typeToMock);
       final members =
           inheritanceManager.getInterface(classToMock).map.values.map((member) {
@@ -884,7 +913,7 @@ class _MockClassInfo {
         // Never override this getter; user code cannot narrow the return type.
         continue;
       }
-      if (accessor.isGetter && _returnTypeIsNonNullable(accessor)) {
+      if (accessor.isGetter && typeSystem._returnTypeIsNonNullable(accessor)) {
         yield Method((mBuilder) => _buildOverridingGetter(mBuilder, accessor));
       }
       if (accessor.isSetter) {
@@ -914,8 +943,8 @@ class _MockClassInfo {
         // narrow the return type.
         continue;
       }
-      if (_returnTypeIsNonNullable(method) ||
-          _hasNonNullableParameter(method) ||
+      if (typeSystem._returnTypeIsNonNullable(method) ||
+          typeSystem._hasNonNullableParameter(method) ||
           _needsOverrideForVoidStub(method)) {
         yield Method((mBuilder) => _buildOverridingMethod(mBuilder, method));
       }
@@ -929,26 +958,6 @@ class _MockClassInfo {
       Constructor((cBuilder) => cBuilder.body =
           referImported('throwOnMissingStub', 'package:mockito/mockito.dart')
               .call([refer('this').expression]).statement);
-
-  bool _returnTypeIsNonNullable(ExecutableElement method) =>
-      typeSystem.isPotentiallyNonNullable(method.returnType);
-
-  bool _needsOverrideForVoidStub(ExecutableElement method) =>
-      method.returnType.isVoid || method.returnType.isFutureOfVoid;
-
-  // Returns whether [method] has at least one parameter whose type is
-  // potentially non-nullable.
-  //
-  // A parameter whose type uses a type variable may be non-nullable on certain
-  // instances. For example:
-  //
-  //     class C<T> {
-  //       void m(T a) {}
-  //     }
-  //     final c1 = C<int?>(); // m's parameter's type is nullable.
-  //     final c2 = C<int>(); // m's parameter's type is non-nullable.
-  bool _hasNonNullableParameter(ExecutableElement method) =>
-      method.parameters.any((p) => typeSystem.isPotentiallyNonNullable(p.type));
 
   /// Build a method which overrides [method], with all non-nullable
   /// parameter types widened to be nullable.
@@ -1013,7 +1022,7 @@ class _MockClassInfo {
     final namedArgs = {
       if (fallbackGenerator != null)
         'returnValue': _fallbackGeneratorCode(method, fallbackGenerator)
-      else if (_returnTypeIsNonNullable(method))
+      else if (typeSystem._returnTypeIsNonNullable(method))
         'returnValue': _dummyValue(method.returnType),
       if (returnValueForMissingStub != null)
         'returnValueForMissingStub': returnValueForMissingStub,
@@ -1528,6 +1537,9 @@ extension on Element {
     } else if (this is MethodElement) {
       var className = enclosingElement!.name;
       return "The method '$className.$name'";
+    } else if (this is PropertyAccessorElement) {
+      var className = enclosingElement!.name;
+      return "The property accessor '$className.$name'";
     } else {
       return 'unknown element';
     }
@@ -1593,3 +1605,25 @@ extension on analyzer.InterfaceType {
     return false;
   }
 }
+
+extension on TypeSystem {
+  bool _returnTypeIsNonNullable(ExecutableElement method) =>
+      isPotentiallyNonNullable(method.returnType);
+
+  // Returns whether [method] has at least one parameter whose type is
+  // potentially non-nullable.
+  //
+  // A parameter whose type uses a type variable may be non-nullable on certain
+  // instances. For example:
+  //
+  //     class C<T> {
+  //       void m(T a) {}
+  //     }
+  //     final c1 = C<int?>(); // m's parameter's type is nullable.
+  //     final c2 = C<int>(); // m's parameter's type is non-nullable.
+  bool _hasNonNullableParameter(ExecutableElement method) =>
+      method.parameters.any((p) => isPotentiallyNonNullable(p.type));
+}
+
+bool _needsOverrideForVoidStub(ExecutableElement method) =>
+    method.returnType.isVoid || method.returnType.isFutureOfVoid;

@@ -1,3 +1,9 @@
+## 5.0.17-dev
+
+* Report when a class cannot be mocked because an inherited method or property
+  accessor requires a private type.
+  [#446](https://github.com/dart-lang/mockito/issues/446)
+
 ## 5.0.16
 
 * Fix type reference for nested, imported types found in type arguments on a

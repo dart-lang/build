@@ -2401,6 +2401,48 @@ void main() {
   });
 
   test(
+      'throws when GenerateMocks is given a class with a getter with a private '
+      'return type', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent('''
+        abstract class Foo with FooMixin {}
+        mixin FooMixin {
+          _Bar get f => _Bar();
+        }
+        class _Bar {}
+        '''),
+      },
+      message: contains(
+          "The property accessor 'FooMixin.f' features a private return type, "
+          'and cannot be stubbed.'),
+    );
+  });
+
+  test(
+      'throws when GenerateMocks is given a class with a setter with a private '
+      'return type', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent('''
+        abstract class Foo with FooMixin {}
+        mixin FooMixin {
+          void set f(_Bar value) {}
+        }
+        class _Bar {}
+        '''),
+      },
+      message: contains(
+          "The property accessor 'FooMixin.f=' features a private parameter "
+          "type, '_Bar', and cannot be stubbed."),
+    );
+  });
+
+  test(
       'throws when GenerateMocks is given a class with a method with a '
       'private return type', () async {
     _expectBuilderThrows(
@@ -2417,6 +2459,27 @@ void main() {
       message: contains(
           "The method 'Foo.m' features a private return type, and cannot be "
           'stubbed.'),
+    );
+  });
+
+  test(
+      'throws when GenerateMocks is given a class with an inherited method '
+      'with a private return type', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent('''
+        abstract class Foo with FooMixin {}
+        mixin FooMixin {
+          _Bar m(int a);
+        }
+        class _Bar {}
+        '''),
+      },
+      message: contains(
+          "The method 'FooMixin.m' features a private return type, and cannot "
+          'be stubbed.'),
     );
   });
 
