@@ -797,7 +797,6 @@ class _SingleBuild {
     var combinedBytes = Uint8List.fromList(List.filled(16, 0));
     void _combine(Uint8List other) {
       assert(other.length == 16);
-      assert(other is Uint8List);
       for (var i = 0; i < 16; i++) {
         combinedBytes[i] ^= other[i];
       }
