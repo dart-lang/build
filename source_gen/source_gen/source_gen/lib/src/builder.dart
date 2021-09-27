@@ -8,7 +8,6 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:dart_style/dart_style.dart';
-import 'package:pedantic/pedantic.dart';
 
 import 'generated_output.dart';
 import 'generator.dart';
@@ -162,7 +161,7 @@ source formatter.''',
       );
     }
 
-    unawaited(buildStep.writeAsString(outputId, genPartContent));
+    await buildStep.writeAsString(outputId, genPartContent);
   }
 
   @override

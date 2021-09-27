@@ -1,3 +1,7 @@
+## 1.1.1
+
+- Drop dependency on `package:pedantic`.
+
 ## 1.1.0
 
 * Add the `build_extensions` option to `combining_builder`, allowing output
