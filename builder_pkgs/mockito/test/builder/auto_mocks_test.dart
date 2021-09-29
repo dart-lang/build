@@ -720,6 +720,17 @@ void main() {
   });
 
   test(
+      'does not override `toString` if the class does not override `toString` '
+      'with additional parameters', () async {
+    var mocksContent = await buildWithSingleNonNullableSource(dedent('''
+      abstract class Foo {
+        String toString() => 'Foo';
+      }
+      '''));
+    expect(mocksContent, isNot(contains('toString')));
+  });
+
+  test(
       'overrides `toString` with a correct signature if a mixed in class '
       'overrides it, in a Fake', () async {
     await expectSingleNonNullableOutput(

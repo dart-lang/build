@@ -3,6 +3,9 @@
 * Report when a class cannot be mocked because an inherited method or property
   accessor requires a private type.
   [#446](https://github.com/dart-lang/mockito/issues/446)
+* Do not needlessly implement `toString` unless the class-to-mock implements
+  `toString` with additional parameters.
+  [#461](https://github.com/dart-lang/mockito/issues/461)
 
 ## 5.0.16
 

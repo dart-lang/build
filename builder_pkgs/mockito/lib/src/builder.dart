@@ -938,6 +938,11 @@ class _MockClassInfo {
       if (methodName == 'noSuchMethod') {
         continue;
       }
+      if (methodName == 'toString' && method.parameters.isEmpty) {
+        // Do not needlessly override this method with a simple call to
+        // `super.toString`, unless the class has added parameters.
+        continue;
+      }
       if (methodName == '==') {
         // Never override this operator; user code cannot add parameters or
         // narrow the return type.
