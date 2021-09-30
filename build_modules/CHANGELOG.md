@@ -1,3 +1,7 @@
+## 4.0.3
+
+- Drop package:pedantic dependency and replace it with package:lints.
+
 ## 4.0.2
 
 - Log a better and more consistent message when we encounter dart: uris in

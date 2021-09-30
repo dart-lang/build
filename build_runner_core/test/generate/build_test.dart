@@ -17,7 +17,6 @@ import 'package:build_runner_core/src/generate/options.dart'
 import 'package:build_runner_core/src/util/constants.dart';
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
-import 'package:pedantic/pedantic.dart';
 import 'package:test/test.dart';
 
 void main() {

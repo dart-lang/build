@@ -8,7 +8,6 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
-import 'package:pedantic/pedantic.dart';
 import 'package:pool/pool.dart';
 
 import 'util.dart';

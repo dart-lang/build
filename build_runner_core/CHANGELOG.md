@@ -1,5 +1,7 @@
 ## 7.2.1-dev
 
+- Drop package:pedantic dependency and replace it with package:lints.
+
 ## 7.2.0
 
 - Deprecate the `pubBinary` variable.

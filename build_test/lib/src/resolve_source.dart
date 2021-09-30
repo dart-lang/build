@@ -9,7 +9,6 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_resolvers/build_resolvers.dart';
 import 'package:package_config/package_config.dart';
-import 'package:pedantic/pedantic.dart';
 
 import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';

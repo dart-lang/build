@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:built_value/serializer.dart';
-import 'package:pedantic/pedantic.dart';
 import 'package:watcher/watcher.dart';
 
 import 'change_provider.dart';

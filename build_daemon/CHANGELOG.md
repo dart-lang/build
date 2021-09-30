@@ -1,3 +1,7 @@
+## 3.0.1
+
+- Drop package:pedantic dependency and replace it with package:lints.
+
 ## 3.0.0
 
 - Migrate to null safety.
