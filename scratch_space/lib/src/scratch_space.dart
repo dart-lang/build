@@ -116,7 +116,8 @@ class ScratchSpace {
                   await file.writeAsBytes(await reader.readAsBytes(id));
                 }));
       } finally {
-        unawaited(_pendingWrites.remove(id));
+        // TODO: Remove ?? fallback once 2.15 hits stable.
+        unawaited(_pendingWrites.remove(id) ?? Future.value());
       }
     }).toList();
 
