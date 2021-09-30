@@ -5,6 +5,8 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+// TODO: Move `scopeLogSync` to package:build?
+// ignore: implementation_imports
 import 'package:build/src/builder/logging.dart';
 import 'package:build_config/build_config.dart';
 import 'package:graphs/graphs.dart';
@@ -202,7 +204,7 @@ class BuilderApplication {
     BuilderOptions? defaultDevOptions,
     BuilderOptions? defaultReleaseOptions,
   }) {
-    var phaseFactory = (PackageNode package, BuilderOptions options,
+    PostBuildPhase phaseFactory(PackageNode package, BuilderOptions options,
         InputSet targetSources, InputSet? generateFor, bool isReleaseBuild) {
       generateFor ??= defaultGenerateFor;
 
@@ -225,7 +227,8 @@ class BuilderApplication {
           generateFor: generateFor,
           targetSources: targetSources);
       return PostBuildPhase([builderAction]);
-    };
+    }
+
     return BuilderApplication._(
         builderKey, [phaseFactory], toNoneByDefault(), true, []);
   }

@@ -15,7 +15,9 @@ import 'package:build_runner/src/watcher/delete_writer.dart';
 import 'package:build_runner/src/watcher/graph_watcher.dart';
 import 'package:build_runner/src/watcher/node_watcher.dart';
 import 'package:build_runner_core/build_runner_core.dart';
+// ignore: implementation_imports
 import 'package:build_runner_core/src/asset_graph/graph.dart';
+// ignore: implementation_imports
 import 'package:build_runner_core/src/generate/build_impl.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
@@ -165,7 +167,7 @@ class WatchImpl implements BuildState {
   final bool _willCreateOutputDirs;
 
   /// Should complete when we need to kill the build.
-  final _terminateCompleter = Completer<Null>();
+  final _terminateCompleter = Completer<void>();
 
   /// The [PackageGraph] for the current program.
   final PackageGraph packageGraph;

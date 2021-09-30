@@ -5,17 +5,26 @@
 import 'dart:io';
 
 import 'package:analyzer/file_system/file_system.dart' show ResourceProvider;
+// ignore: implementation_imports
 import 'package:analyzer/src/context/packages.dart' show Packages, Package;
+// ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/byte_store.dart'
     show MemoryByteStore;
+// ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/driver.dart';
+// ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/file_state.dart';
+// ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/performance_logger.dart'
     show PerformanceLog;
+// ignore: implementation_imports
 import 'package:analyzer/src/generated/engine.dart'
     show AnalysisOptionsImpl, AnalysisOptions;
+// ignore: implementation_imports
 import 'package:analyzer/src/generated/source.dart';
+// ignore: implementation_imports
 import 'package:analyzer/src/summary/package_bundle_reader.dart';
+// ignore: implementation_imports
 import 'package:analyzer/src/summary/summary_sdk.dart' show SummaryBasedDartSdk;
 import 'package:build/build.dart';
 import 'package:package_config/package_config.dart' show PackageConfig;

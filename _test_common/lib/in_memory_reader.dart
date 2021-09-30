@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
 import 'package:build_runner_core/src/asset/reader.dart';
 import 'package:build_test/build_test.dart';
 

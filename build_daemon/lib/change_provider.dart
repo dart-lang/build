@@ -4,7 +4,7 @@
 
 import 'dart:async';
 
-import 'package:watcher/src/watch_event.dart';
+import 'package:watcher/watcher.dart' show WatchEvent;
 
 abstract class ChangeProvider {
   /// Returns a list of file changes.

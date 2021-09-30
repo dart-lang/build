@@ -14,8 +14,11 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/sdk/build_sdk_summary.dart';
 import 'package:analyzer/error/error.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
+// ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
+// ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/experiments.dart';
+// ignore: implementation_imports
 import 'package:analyzer/src/generated/engine.dart'
     show AnalysisOptions, AnalysisOptionsImpl;
 import 'package:async/async.dart';
@@ -489,7 +492,7 @@ can try adding a constraint like the following to your pubspec to start
 diagnosing why you can't get the latest version:
 
 dev_dependencies:
-  analyzer: ^$latestAnalyzer 
+  analyzer: ^$latestAnalyzer
 ''');
     }
   } catch (_) {

@@ -23,7 +23,9 @@ import 'package:build_runner_core/build_runner_core.dart'
     hide BuildResult, BuildStatus;
 import 'package:build_runner_core/build_runner_core.dart' as core
     show BuildStatus;
+// ignore: implementation_imports
 import 'package:build_runner_core/src/generate/build_definition.dart';
+// ignore: implementation_imports
 import 'package:build_runner_core/src/generate/build_impl.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
@@ -39,7 +41,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
   final StreamController<ServerLog> _outputStreamController;
   final ChangeProvider changeProvider;
 
-  Completer<Null>? _buildingCompleter;
+  Completer<void>? _buildingCompleter;
 
   @override
   final Stream<ServerLog> logs;

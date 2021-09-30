@@ -135,7 +135,7 @@ void main() {
       }
       var concurrentCount = 0;
       var maxConcurrentCount = 0;
-      var reachedMax = Completer<Null>();
+      var reachedMax = Completer<void>();
       await testBuilders(
           [
             apply(
@@ -503,7 +503,7 @@ void main() {
         await testBuilders([copyABuilderApplication], {'a|web/a.txt': 'a'},
             outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
-        var blockingCompleter = Completer<Null>();
+        var blockingCompleter = Completer<void>();
         var builder = TestBuilder(
             buildExtensions: appendExtension('.copy', from: '.txt'),
             extraWork: (_, __) => blockingCompleter.future);

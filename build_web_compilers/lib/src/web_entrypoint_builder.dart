@@ -23,7 +23,9 @@ const mergedMetadataExtension = '.dart.ddc_merged_metadata';
 
 /// Which compiler to use when compiling web entrypoints.
 enum WebCompiler {
+  // ignore: constant_identifier_names
   Dart2Js,
+  // ignore: constant_identifier_names
   DartDevc,
 }
 

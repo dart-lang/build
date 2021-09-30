@@ -127,7 +127,7 @@ Future<ServeHandler> createHandler(List<BuilderApplication> builders,
       buildPackageGraph({rootPackage('a', path: path.absolute('a')): []});
   final reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
       rootPackage: packageGraph.root.name);
-  final watcherFactory = (String path) => FakeWatcher(path);
+  FakeWatcher watcherFactory(String path) => FakeWatcher(path);
 
   return watch_impl.watch(builders,
       deleteFilesByDefault: true,

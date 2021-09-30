@@ -4,8 +4,11 @@
 
 import 'dart:async';
 
+// ignore: implementation_imports
 import 'package:build_runner_core/src/asset/reader.dart';
+// ignore: implementation_imports
 import 'package:build_runner_core/src/asset/writer.dart';
+// ignore: implementation_imports
 import 'package:build_runner_core/src/environment/build_environment.dart';
 import 'package:logging/logging.dart';
 

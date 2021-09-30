@@ -141,8 +141,7 @@ class PostBuildPhase extends BuildPhase {
   PostBuildPhase(this.builderActions);
 
   @override
-  String toString() =>
-      '${builderActions.map((a) => a.builderLabel).join(', ')}';
+  String toString() => builderActions.map((a) => a.builderLabel).join(', ');
 
   @override
   int get identity =>
