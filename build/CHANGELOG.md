@@ -1,6 +1,7 @@
-## 2.1.1-dev
+## 2.1.1
 
 - Throw an `ArgumentError` if an expected output matches the input.
+- Bump min sdk to 2.14.0.
 
 ## 2.1.0
 
@@ -56,7 +57,7 @@
 ## 1.5.1
 
 - Expose a set of valid inputs in `InvalidInputException`.
-- `AssetReader` implementations are now expected to throw 
+- `AssetReader` implementations are now expected to throw
   `InvalidInputException`s when reading invalid inputs.
   The check has been removed from the build step implementation.
 
