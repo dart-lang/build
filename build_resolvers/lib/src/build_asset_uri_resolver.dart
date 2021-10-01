@@ -125,7 +125,7 @@ class BuildAssetUriResolver extends UriResolver {
         return _AssetState(path, _cachedAssetDependencies[id]!);
       }
       if (isChange) {
-        resourceProvider.modifyFile(path, content);
+        resourceProvider.updateFile(path, content);
       } else {
         resourceProvider.newFile(path, content);
       }
