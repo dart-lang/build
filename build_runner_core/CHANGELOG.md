@@ -1,4 +1,4 @@
-## 7.2.1-dev
+## 7.2.1
 
 - Drop package:pedantic dependency and replace it with package:lints.
 
