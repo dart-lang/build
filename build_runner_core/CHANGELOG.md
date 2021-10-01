@@ -1,3 +1,7 @@
+## 7.2.2
+
+- Fix a bug compilation bug on the 2.14 sdk.
+
 ## 7.2.1
 
 - Drop package:pedantic dependency and replace it with package:lints.

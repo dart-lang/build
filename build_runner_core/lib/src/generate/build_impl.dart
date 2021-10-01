@@ -785,7 +785,8 @@ class _SingleBuild {
         ..state = NodeState.upToDate
         ..lastKnownDigest = md5.convert(utf8.encode(actualMatches.join(' ')));
 
-      unawaited(_lazyGlobs.remove(globNode.id));
+      // TODO: remove ?? fallback after 2.15 sdk.
+      unawaited(_lazyGlobs.remove(globNode.id) ?? Future.value());
     });
   }
 
