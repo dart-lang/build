@@ -835,9 +835,6 @@ class VerificationResult {
   ///
   /// Named arguments are listed in the order they are captured in, not the
   /// order in which they were passed.
-  // TODO(https://github.com/dart-lang/linter/issues/1992): Remove ignore
-  // comments below when google3 has linter with this bug fixed.
-  // ignore: unnecessary_getters_setters
   List<dynamic> get captured => _captured;
 
   @Deprecated(
@@ -863,7 +860,7 @@ class VerificationResult {
   void _checkTestApiMismatch() {
     try {
       Invoker.current;
-    } on CastError catch (e) {
+    } on TypeError catch (e) {
       if (!e
           .toString()
           .contains("type 'Invoker' is not a subtype of type 'Invoker'")) {

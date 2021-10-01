@@ -18,8 +18,6 @@ import 'package:test/test.dart';
 class Foo {
   String? returnsNullableString() => 'Hello';
 
-  // TODO(srawlins): When it becomes available, opt this test library into NNBD,
-  // and make this method really return a non-nullable String.
   String returnsNonNullableString() => 'Hello';
 }
 

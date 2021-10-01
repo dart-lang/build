@@ -57,7 +57,6 @@ class MockBuilder implements Builder {
   Future<void> build(BuildStep buildStep) async {
     if (!await buildStep.resolver.isLibrary(buildStep.inputId)) return;
     final entryLib = await buildStep.inputLibrary;
-    if (entryLib == null) return;
     final sourceLibIsNonNullable = entryLib.isNonNullableByDefault;
     final mockLibraryAsset = buildStep.inputId.changeExtension('.mocks.dart');
     final inheritanceManager = InheritanceManager3();
@@ -81,10 +80,9 @@ class MockBuilder implements Builder {
 
     final mockLibrary = Library((b) {
       // These comments are added after import directives; leading newlines
-      // are necessary. Individual rules are still ignored to preserve backwards
-      // compatibility with older versions of Dart.
-      b.body.add(Code('\n\n// ignore_for_file: type=lint\n'));
-      b.body.add(Code('// ignore_for_file: avoid_redundant_argument_values\n'));
+      // are necessary.
+      b.body.add(
+          Code('\n\n// ignore_for_file: avoid_redundant_argument_values\n'));
       // We might generate a setter without a corresponding getter.
       b.body.add(Code('// ignore_for_file: avoid_setters_without_getters\n'));
       // We don't properly prefix imported class names in doc comments.
@@ -287,10 +285,8 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
       // [RecursiveElementVisitor] does not "step out of" the element model,
       // into types, while traversing, so we must explicitly traverse [type]
       // here, in order to visit contained elements.
-      if (type.typeFormals != null) {
-        for (var typeParameter in type.typeFormals) {
-          typeParameter.accept(this);
-        }
+      for (var typeParameter in type.typeFormals) {
+        typeParameter.accept(this);
       }
       for (var parameter in type.parameters) {
         parameter.accept(this);
@@ -390,7 +386,6 @@ class _MockTargetGatherer {
       // TODO(srawlins): Re-think the idea of multiple @GenerateMocks
       // annotations, on one element or even on different elements in a library.
       for (final annotation in element.metadata) {
-        if (annotation == null) continue;
         if (annotation.element is! ConstructorElement) continue;
         final annotationClass = annotation.element!.enclosingElement!.name;
         // TODO(srawlins): check library as well.
@@ -586,8 +581,8 @@ class _MockTargetGatherer {
     });
   }
 
-  /// Throws if any public instance methods of [classElement] are not valid
-  /// stubbing candidates.
+  /// Throws if any public instance methods of [mockTarget]'s class are not
+  /// valid stubbing candidates.
   ///
   /// A method is not valid for stubbing if:
   /// - It has a private type anywhere in its signature; Mockito cannot override
@@ -856,7 +851,7 @@ class _MockClassInfo {
         for (var typeArgument in typeToMock.typeArguments) {
           typeArguments.add(_typeReference(typeArgument));
         }
-      } else if (classToMock.typeParameters != null) {
+      } else {
         // [typeToMock] is a simple reference to a generic type (for example:
         // `Foo`, a reference to `class Foo<T> {}`). Generate a generic mock
         // class which perfectly mirrors the type parameters on [typeToMock],
@@ -893,7 +888,7 @@ class _MockClassInfo {
     });
   }
 
-  /// Yields all of the field overrides required for [type].
+  /// Yields all of the field overrides required for [accessors].
   ///
   /// This includes fields of supertypes and mixed in types.
   ///
@@ -923,7 +918,7 @@ class _MockClassInfo {
     }
   }
 
-  /// Yields all of the method overrides required for [type].
+  /// Yields all of the method overrides required for [methods].
   ///
   /// This includes methods of supertypes and mixed in types.
   ///
@@ -976,11 +971,8 @@ class _MockClassInfo {
     builder
       ..name = name
       ..annotations.addAll([refer('override')])
-      ..returns = _typeReference(method.returnType);
-
-    if (method.typeParameters != null) {
-      builder.types.addAll(method.typeParameters.map(_typeParameterReference));
-    }
+      ..returns = _typeReference(method.returnType)
+      ..types.addAll(method.typeParameters.map(_typeParameterReference));
 
     // These two variables store the arguments that will be passed to the
     // [Invocation] built for `noSuchMethod`.
@@ -1143,9 +1135,7 @@ class _MockClassInfo {
       // The positional parameters in a FunctionType have no names. This
       // counter lets us create unique dummy names.
       var counter = 0;
-      if (type.typeFormals != null) {
-        b.types.addAll(type.typeFormals.map(_typeParameterReference));
-      }
+      b.types.addAll(type.typeFormals.map(_typeParameterReference));
       for (final parameter in type.parameters) {
         if (parameter.isRequiredPositional) {
           b.requiredParameters
@@ -1197,11 +1187,9 @@ class _MockClassInfo {
       cBuilder
         ..name = fakeName
         ..extend = referImported('Fake', 'package:mockito/mockito.dart');
-      if (elementToFake.typeParameters != null) {
-        for (var typeParameter in elementToFake.typeParameters) {
-          cBuilder.types.add(_typeParameterReference(typeParameter));
-          typeParameters.add(refer(typeParameter.name));
-        }
+      for (var typeParameter in elementToFake.typeParameters) {
+        cBuilder.types.add(_typeParameterReference(typeParameter));
+        typeParameters.add(refer(typeParameter.name));
       }
       cBuilder.implements.add(TypeReference((b) {
         b
@@ -1455,9 +1443,7 @@ class _MockClassInfo {
           for (var parameter in type.namedParameterTypes.entries) {
             b.namedParameters[parameter.key] = _typeReference(parameter.value);
           }
-          if (type.typeFormals != null) {
-            b.types.addAll(type.typeFormals.map(_typeParameterReference));
-          }
+          b.types.addAll(type.typeFormals.map(_typeParameterReference));
         });
       }
       return TypeReference((b) {
@@ -1580,8 +1566,6 @@ extension on analyzer.DartType {
 
 extension on analyzer.InterfaceType {
   bool get hasExplicitTypeArguments {
-    if (typeArguments == null) return false;
-
     // If it appears that one type argument was given, then they all were. This
     // returns the wrong result when the type arguments given are all `dynamic`,
     // or are each equal to the bound of the corresponding type parameter. There
