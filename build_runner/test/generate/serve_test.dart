@@ -12,7 +12,6 @@ import 'package:build_runner/src/server/server.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
-import 'package:pedantic/pedantic.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
@@ -128,7 +127,7 @@ Future<ServeHandler> createHandler(List<BuilderApplication> builders,
       buildPackageGraph({rootPackage('a', path: path.absolute('a')): []});
   final reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
       rootPackage: packageGraph.root.name);
-  final watcherFactory = (String path) => FakeWatcher(path);
+  FakeWatcher watcherFactory(String path) => FakeWatcher(path);
 
   return watch_impl.watch(builders,
       deleteFilesByDefault: true,

@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+// ignore: implementation_imports
 import 'package:build/src/builder/logging.dart';
 import 'package:logging/logging.dart';
 import 'package:matcher/matcher.dart';

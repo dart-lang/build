@@ -5,7 +5,7 @@
 import 'dart:async';
 
 import 'package:build_daemon/change_provider.dart';
-import 'package:watcher/src/watch_event.dart';
+import 'package:watcher/watcher.dart' show WatchEvent;
 
 class FakeChangeProvider implements ChangeProvider {
   @override

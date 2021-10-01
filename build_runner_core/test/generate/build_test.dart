@@ -17,7 +17,6 @@ import 'package:build_runner_core/src/generate/options.dart'
 import 'package:build_runner_core/src/util/constants.dart';
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
-import 'package:pedantic/pedantic.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -136,7 +135,7 @@ void main() {
       }
       var concurrentCount = 0;
       var maxConcurrentCount = 0;
-      var reachedMax = Completer<Null>();
+      var reachedMax = Completer<void>();
       await testBuilders(
           [
             apply(
@@ -504,7 +503,7 @@ void main() {
         await testBuilders([copyABuilderApplication], {'a|web/a.txt': 'a'},
             outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
 
-        var blockingCompleter = Completer<Null>();
+        var blockingCompleter = Completer<void>();
         var builder = TestBuilder(
             buildExtensions: appendExtension('.copy', from: '.txt'),
             extraWork: (_, __) => blockingCompleter.future);

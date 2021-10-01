@@ -13,7 +13,6 @@ import 'package:build_daemon/data/serializers.dart';
 import 'package:build_daemon/data/server_log.dart';
 import 'package:build_runner/src/daemon/constants.dart';
 import 'package:logging/logging.dart' hide Level;
-import 'package:pedantic/pedantic.dart';
 
 import '../daemon/asset_server.dart';
 import '../daemon/daemon_builder.dart';

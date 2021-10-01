@@ -4,7 +4,7 @@
 
 import 'dart:async';
 
-import 'package:watcher/src/watch_event.dart';
+import 'package:watcher/watcher.dart' show WatchEvent;
 
 import 'data/build_status.dart';
 import 'data/build_target.dart';

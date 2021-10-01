@@ -6,7 +6,9 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner_core/build_runner_core.dart';
+// ignore: implementation_imports
 import 'package:build_runner_core/src/asset_graph/graph.dart';
+// ignore: implementation_imports
 import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:watcher/watcher.dart';
 

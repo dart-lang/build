@@ -342,7 +342,7 @@ a:file://fake/pkg/path
       });
 
       test('rebuilds on file updates during first build', () async {
-        var blocker = Completer<Null>();
+        var blocker = Completer<void>();
         var buildAction =
             applyToRoot(TestBuilder(extraWork: (_, __) => blocker.future));
         var buildState =
@@ -831,7 +831,7 @@ Future<BuildState> startWatch(List<BuilderApplication> builders,
       buildPackageGraph({rootPackage('a', path: path.absolute('a')): []});
   final reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
       rootPackage: packageGraph.root.name);
-  final watcherFactory = (String path) => FakeWatcher(path);
+  FakeWatcher watcherFactory(String path) => FakeWatcher(path);
 
   var state = await watch_impl.watch(builders,
       configKey: configKey,

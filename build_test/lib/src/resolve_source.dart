@@ -9,7 +9,6 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_resolvers/build_resolvers.dart';
 import 'package:package_config/package_config.dart';
-import 'package:pedantic/pedantic.dart';
 
 import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
@@ -31,7 +30,7 @@ Future<T> resolveSource<T>(
   FutureOr<T> Function(Resolver resolver) action, {
   AssetId? inputId,
   PackageConfig? packageConfig,
-  Future<Null>? tearDown,
+  Future<void>? tearDown,
   Resolvers? resolvers,
 }) {
   inputId ??= AssetId('_resolve_source', 'lib/_resolve_source.dart');
@@ -123,7 +122,7 @@ Future<T> resolveSources<T>(
   PackageConfig? packageConfig,
   String? resolverFor,
   String? rootPackage,
-  Future<Null>? tearDown,
+  Future<void>? tearDown,
   Resolvers? resolvers,
 }) {
   if (inputs.isEmpty) {
@@ -145,7 +144,7 @@ Future<T> resolveAsset<T>(
   AssetId inputId,
   FutureOr<T> Function(Resolver resolver) action, {
   PackageConfig? packageConfig,
-  Future<Null>? tearDown,
+  Future<void>? tearDown,
   Resolvers? resolvers,
 }) {
   return _resolveAssets(
@@ -172,7 +171,7 @@ Future<T> _resolveAssets<T>(
   FutureOr<T> Function(Resolver resolver) action, {
   PackageConfig? packageConfig,
   AssetId? resolverFor,
-  Future<Null>? tearDown,
+  Future<void>? tearDown,
   Resolvers? resolvers,
 }) async {
   final resolvedConfig = packageConfig ??

@@ -290,7 +290,7 @@ void main() {
       late WebSocketChannel serverChannel2;
 
       setUp(() {
-        var mockHandlerFactory = (Function onConnect,
+        Handler mockHandlerFactory(Function onConnect,
                 {Iterable<String>? protocols}) =>
             (Request request) =>
                 Response(200, context: {'onConnect': onConnect});

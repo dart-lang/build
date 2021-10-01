@@ -436,13 +436,13 @@ String _expectedPackageConfig(String rootPackage, List<String> packages) =>
         for (var package in packages)
           if (package == rootPackage)
             {
-              'name': '$package',
+              'name': package,
               'rootUri': '../',
               'packageUri': 'packages/$package',
             }
           else
             {
-              'name': '$package',
+              'name': package,
               'rootUri': '../packages/$package',
               'packageUri': '',
             },

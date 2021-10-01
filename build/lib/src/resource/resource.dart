@@ -79,14 +79,14 @@ class ResourceManager {
   }
 
   /// Disposes of all [Resource]s fetched since the last call to [disposeAll].
-  Future<Null> disposeAll() {
+  Future<void> disposeAll() {
     var done = Future.wait(_resources.map((r) => r._dispose(this)));
     _resources.clear();
     return done.then((_) => null);
   }
 
   /// Invokes the `beforeExit` callbacks of all [Resource]s that had one.
-  Future<Null> beforeExit() async {
+  Future<void> beforeExit() async {
     await Future.wait(_resourcesWithBeforeExit.map((r) async {
       return r._userBeforeExit?.call();
     }));

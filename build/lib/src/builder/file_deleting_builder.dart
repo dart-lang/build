@@ -27,7 +27,7 @@ class FileDeletingBuilder implements PostProcessBuilder {
       : exclude = exclude.map((s) => Glob(s)).toList();
 
   @override
-  FutureOr<Null> build(PostProcessBuildStep buildStep) {
+  FutureOr<void> build(PostProcessBuildStep buildStep) {
     if (!isEnabled) return null;
     if (exclude.any((g) => g.matches(buildStep.inputId.path))) return null;
     buildStep.deletePrimaryInput();

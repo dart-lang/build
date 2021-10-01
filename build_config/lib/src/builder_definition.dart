@@ -55,7 +55,7 @@ class BuilderDefinition {
   /// The name of the dart_library target that contains `import`.
   ///
   /// May be null or unreliable and should not be used.
-  @deprecated
+  @Deprecated('Do not use')
   final String? target;
 
   /// Which packages should have this builder applied automatically.
@@ -179,14 +179,14 @@ class PostProcessBuilderDefinition {
   /// A list of input extensions for this builder.
   ///
   /// May be null or unreliable and should not be used.
-  @deprecated
+  @Deprecated('do not use')
   @JsonKey(name: 'input_extensions')
   final Iterable<String>? inputExtensions;
 
   /// The name of the dart_library target that contains `import`.
   ///
   /// May be null or unreliable and should not be used.
-  @deprecated
+  @Deprecated('do not use')
   final String? target;
 
   final TargetBuilderConfigDefaults defaults;

@@ -1,6 +1,7 @@
 ## 2.1.4-dev
 
 - Update `pub run` references to `dart run`.
+- Drop package:pedantic dependency and replace it with package:lints.
 
 ## 2.1.3
 

@@ -2,6 +2,7 @@
 
 - Minor fixes to the log message when compiling the build script has some
   output.
+- Drop package:pedantic dependency and replace it with package:lints.
 
 ## 2.1.3
 
@@ -101,7 +102,7 @@
 
 ## 1.11.0
 
-- Support generating custom build scripts through 
+- Support generating custom build scripts through
  `package:build_runner/build_script_generate.dart`:
   - Export `generateAndRun` to snapshot and run build scripts.
   - Export `findBuilderApplications` to find builder applications from a
