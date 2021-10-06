@@ -94,8 +94,8 @@ class Server {
     var server = _server = await HttpMultiServer.loopback(0);
     // Serve requests in an error zone to prevent failures
     // when running from another error zone.
-    runZonedGuarded(() => serveRequests(server, handler), (e, _) {
-      _logger.warning('Error serving requests', e);
+    runZonedGuarded(() => serveRequests(server, handler), (e, s) {
+      _logger.severe('Error serving requests', e, s);
     });
     return server.port;
   }
