@@ -1,3 +1,7 @@
+## 3.0.2
+
+- Run `serveRequests` in a error zone and log errors.
+
 ## 3.0.1
 
 - Drop package:pedantic dependency and replace it with package:lints.
