@@ -30,7 +30,7 @@ import 'managers/build_target_manager.dart';
 /// Handles notifying clients of logs and results for registered build targets.
 /// Note the server will only notify clients of pertinent events.
 class Server {
-  final _logger = Logger('BuildDaemon Server');
+  static final _logger = Logger('BuildDaemon Server');
   final _isDoneCompleter = Completer();
   final BuildTargetManager _buildTargetManager;
   final _pool = Pool(1);
@@ -95,7 +95,7 @@ class Server {
     // Serve requests in an error zone to prevent failures
     // when running from another error zone.
     runZonedGuarded(() => serveRequests(server, handler), (e, _) {
-      _logger.warning('Error serving requests: $e');
+      _logger.warning('Error serving requests', e);
     });
     return server.port;
   }
