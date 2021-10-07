@@ -12,6 +12,7 @@ import 'change_provider.dart';
 import 'constants.dart';
 import 'daemon_builder.dart';
 import 'data/build_target.dart';
+import 'data/server_log.dart';
 import 'src/file_wait.dart';
 import 'src/server.dart';
 
@@ -26,13 +27,17 @@ class Daemon {
   final String _workingDirectory;
   final RandomAccessFile? _lock;
   final _doneCompleter = Completer();
+  final _outputStreamController = StreamController<ServerLog>();
+  late Stream<ServerLog> logs;
 
   Server? _server;
   StreamSubscription? _sub;
 
   Daemon(String workingDirectory)
       : _workingDirectory = workingDirectory,
-        _lock = _tryGetLock(workingDirectory);
+        _lock = _tryGetLock(workingDirectory) {
+    logs = _outputStreamController.stream.asBroadcastStream();
+  }
 
   Future<void> get onDone => _doneCompleter.future;
 
@@ -77,6 +82,8 @@ class Daemon {
       builder,
       timeout,
       changeProvider,
+      _outputStreamController,
+      logs,
       serializersOverride: serializersOverride,
       shouldBuild: shouldBuild,
     );
@@ -91,6 +98,7 @@ class Daemon {
   Future<void> _cleanUp() async {
     await _server?.stop();
     await _sub?.cancel();
+    await _outputStreamController.sink.close();
     // We need to close the lock prior to deleting the file.
     _lock?.closeSync();
     var workspace = Directory(daemonWorkspace(_workingDirectory));

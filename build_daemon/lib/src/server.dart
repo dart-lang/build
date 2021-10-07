@@ -6,9 +6,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:build_daemon/data/server_log.dart';
 import 'package:built_value/serializer.dart';
 import 'package:http_multi_server/http_multi_server.dart';
-import 'package:logging/logging.dart';
 import 'package:pool/pool.dart';
 import 'package:shelf/shelf_io.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
@@ -30,7 +30,8 @@ import 'managers/build_target_manager.dart';
 /// Handles notifying clients of logs and results for registered build targets.
 /// Note the server will only notify clients of pertinent events.
 class Server {
-  static final _logger = Logger('BuildDaemon Server');
+  static final loggerName = 'BuildDaemonServer';
+
   final _isDoneCompleter = Completer();
   final BuildTargetManager _buildTargetManager;
   final _pool = Pool(1);
@@ -45,10 +46,18 @@ class Server {
 
   final _subs = <StreamSubscription>[];
 
-  Server(this._builder, Duration timeout, ChangeProvider changeProvider,
-      {Serializers? serializersOverride,
-      bool Function(BuildTarget, Iterable<WatchEvent>)? shouldBuild})
-      : _changeProvider = changeProvider,
+  final StreamController<ServerLog> _outputStreamController;
+  final Stream<ServerLog> _logs;
+
+  Server(
+    this._builder,
+    Duration timeout,
+    ChangeProvider changeProvider,
+    this._outputStreamController,
+    this._logs, {
+    Serializers? serializersOverride,
+    bool Function(BuildTarget, Iterable<WatchEvent>)? shouldBuild,
+  })  : _changeProvider = changeProvider,
         _serializers = serializersOverride ?? serializers,
         _buildTargetManager =
             BuildTargetManager(shouldBuildOverride: shouldBuild) {
@@ -73,8 +82,8 @@ class Server {
         dynamic request;
         try {
           request = _serializers.deserialize(jsonDecode(message as String));
-        } catch (_) {
-          print('Unable to parse message: $message');
+        } catch (e, s) {
+          _logMessage(Level.WARNING, 'Unable to parse message: $message', e, s);
           return;
         }
         if (request is BuildTargetRequest) {
@@ -95,7 +104,7 @@ class Server {
     // Serve requests in an error zone to prevent failures
     // when running from another error zone.
     runZonedGuarded(() => serveRequests(server, handler), (e, s) {
-      _logger.severe('Error serving requests', e, s);
+      _logMessage(Level.WARNING, 'Error serving requests', e, s);
     });
     return server.port;
   }
@@ -139,6 +148,12 @@ class Server {
         for (var channel in _interestedChannels) {
           channel.sink.add(message);
         }
+      }))
+      ..add(_logs.listen((log) {
+        var message = jsonEncode(_serializers.serialize(log));
+        for (var channel in _interestedChannels) {
+          channel.sink.add(message);
+        }
       }));
   }
 
@@ -159,4 +174,13 @@ class Server {
       await stop();
     }
   }
+
+  void _logMessage(Level level, String message,
+          [Object? error, StackTrace? stackTrace]) =>
+      _outputStreamController.add(ServerLog((b) => b
+        ..message = message
+        ..level = level
+        ..loggerName = loggerName
+        ..error = error?.toString()
+        ..stackTrace = stackTrace?.toString()));
 }

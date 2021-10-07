@@ -98,16 +98,10 @@ $logEndMarker'''));
       await startupLogSub.cancel();
 
       // Forward server logs to daemon command STDIO.
-      var logSub = builder.logs.listen((log) {
-        if (log.level > Level.INFO || options.verbose) {
-          var buffer = StringBuffer(log.message);
-          if (log.error != null) buffer.writeln(log.error);
-          if (log.stackTrace != null) buffer.writeln(log.stackTrace);
-          stderr.writeln(buffer);
-        } else {
-          stdout.writeln(log.message);
-        }
-      });
+      var daemonLogSub =
+          daemon.logs.listen((log) => _logMessage(log, options.verbose));
+      var builderLogSub =
+          builder.logs.listen((log) => _logMessage(log, options.verbose));
       var server =
           await AssetServer.run(options, builder, packageGraph.root.name);
       File(assetServerPortFilePath(workingDirectory))
@@ -120,7 +114,8 @@ $logEndMarker'''));
       await daemon.start(requestedOptions, builder, builder.changeProvider,
           timeout: Duration(seconds: 60));
       stdout.writeln(readyToConnectLog);
-      await logSub.cancel();
+      await daemonLogSub.cancel();
+      await builderLogSub.cancel();
       await daemon.onDone.whenComplete(() async {
         await server.stop();
       });
@@ -129,6 +124,17 @@ $logEndMarker'''));
       // cause the build to hang. To ensure there are no ghost processes
       // fast exit.
       exit(0);
+    }
+  }
+
+  void _logMessage(ServerLog log, bool verbose) {
+    if (log.level > Level.INFO || verbose) {
+      var buffer = StringBuffer(log.message);
+      if (log.error != null) buffer.writeln(log.error);
+      if (log.stackTrace != null) buffer.writeln(log.stackTrace);
+      stderr.writeln(buffer);
+    } else {
+      stdout.writeln(log.message);
     }
   }
 }

@@ -1,5 +1,7 @@
-## 3.0.2
+## 4.0.0
 
+- Add `Server` now takes `_outputStreamController` and `_logs` parameters
+  to control logging.
 - Run `serveRequests` in a error zone and log errors.
 
 ## 3.0.1
