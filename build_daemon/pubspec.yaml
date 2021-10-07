@@ -29,3 +29,7 @@ dev_dependencies:
   test_descriptor: ^2.0.0
   uuid: ^3.0.0
 
+dependency_overrides:
+  build_runner:
+    path: ../build_runner
+
