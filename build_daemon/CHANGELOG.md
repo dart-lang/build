@@ -1,8 +1,7 @@
-## 4.0.0
+## 3.1.0
 
-- Add `Server` now takes `_outputStreamController` and `_logs` parameters
-  to control logging.
-- Run `serveRequests` in a error zone and log errors.
+- Add `Daemon.logs` API to expose daemon logs.
+- Run `serveRequests` in an error zone and log errors.
 
 ## 3.0.1
 

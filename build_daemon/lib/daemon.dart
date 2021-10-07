@@ -28,7 +28,7 @@ class Daemon {
   final RandomAccessFile? _lock;
   final _doneCompleter = Completer();
   final _outputStreamController = StreamController<ServerLog>();
-  late Stream<ServerLog> logs;
+  late final Stream<ServerLog> logs;
 
   Server? _server;
   StreamSubscription? _sub;
