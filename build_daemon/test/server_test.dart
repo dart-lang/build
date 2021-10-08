@@ -79,15 +79,10 @@ void main() {
 }
 
 Server _createServer() {
-  final serverLogController = StreamController<ServerLog>();
-  final serverLogs = serverLogController.stream.asBroadcastStream();
-
   return Server(
     FakeTestDaemonBuilder(),
     const Duration(seconds: 30),
     FakeChangeProvider(),
-    serverLogController,
-    serverLogs,
   );
 }
 

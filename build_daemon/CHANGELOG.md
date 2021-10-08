@@ -1,7 +1,6 @@
-## 3.1.0
+## 3.0.2
 
-- Add `Daemon.logs` API to expose daemon logs.
-- Run `serveRequests` in an error zone and log errors.
+- Run `serveRequests` in an error zone and forward errors to the clients.
 
 ## 3.0.1
 

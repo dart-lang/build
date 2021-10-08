@@ -1,7 +1,3 @@
-## 2.1.5-dev
-
-- Allow the latest `build_daemon`.
-
 ## 2.1.4
 
 - Minor fixes to the log message when compiling the build script has some

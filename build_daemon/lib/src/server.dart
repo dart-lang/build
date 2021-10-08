@@ -46,21 +46,20 @@ class Server {
 
   final _subs = <StreamSubscription>[];
 
-  final StreamController<ServerLog> _outputStreamController;
-  final Stream<ServerLog> _logs;
+  final _outputStreamController = StreamController<ServerLog>();
+  late final Stream<ServerLog> _logs;
 
   Server(
     this._builder,
     Duration timeout,
-    ChangeProvider changeProvider,
-    this._outputStreamController,
-    this._logs, {
+    ChangeProvider changeProvider, {
     Serializers? serializersOverride,
     bool Function(BuildTarget, Iterable<WatchEvent>)? shouldBuild,
   })  : _changeProvider = changeProvider,
         _serializers = serializersOverride ?? serializers,
         _buildTargetManager =
             BuildTargetManager(shouldBuildOverride: shouldBuild) {
+    _logs = _outputStreamController.stream;
     _forwardData();
 
     _handleChanges(changeProvider.changes);
@@ -124,6 +123,7 @@ class Server {
     for (var sub in _subs) {
       await sub.cancel();
     }
+    await _outputStreamController.close();
     if (!_isDoneCompleter.isCompleted) _isDoneCompleter.complete();
   }
 
