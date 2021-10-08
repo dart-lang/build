@@ -22,12 +22,13 @@ import 'package:web_socket_channel/io.dart';
 void main() {
   group('Server', () {
     final webTarget = DefaultBuildTarget((b) => b.target = 'web');
-    late Stream<ServerLog> logs;
-    late IOWebSocketChannel client;
-    late Server server;
+    late final StreamController<ServerLog> logController;
+    late final Stream<ServerLog> logs;
+    late final IOWebSocketChannel client;
+    late final Server server;
 
     setUp(() async {
-      final logController = StreamController<ServerLog>();
+      logController = StreamController<ServerLog>();
       logs = logController.stream.asBroadcastStream();
 
       // Start the server.
@@ -41,6 +42,7 @@ void main() {
     tearDown(() async {
       await server.stop();
       await client.sink.close();
+      await logController.close();
       await expectLater(server.onDone, completes);
     });
 
