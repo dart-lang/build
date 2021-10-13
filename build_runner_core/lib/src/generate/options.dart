@@ -15,7 +15,6 @@ import 'package:path/path.dart' as p;
 import '../environment/build_environment.dart';
 import '../package_graph/package_graph.dart';
 import '../package_graph/target_graph.dart';
-import '../util/hash.dart';
 import 'exceptions.dart';
 
 /// The default list of files visible for non-root packages.
@@ -112,16 +111,14 @@ class BuildFilter {
       _package.matches(id.package) && _path.matches(id.path);
 
   @override
-  int get hashCode {
-    var hash = 0;
-    hash = hashCombine(hash, _package.context.hashCode);
-    hash = hashCombine(hash, _package.pattern.hashCode);
-    hash = hashCombine(hash, _package.recursive.hashCode);
-    hash = hashCombine(hash, _path.context.hashCode);
-    hash = hashCombine(hash, _path.pattern.hashCode);
-    hash = hashCombine(hash, _path.recursive.hashCode);
-    return hashComplete(hash);
-  }
+  int get hashCode => Object.hash(
+        _package.context,
+        _package.pattern,
+        _package.recursive,
+        _path.context,
+        _path.pattern,
+        _path.recursive,
+      );
 
   @override
   bool operator ==(Object other) =>
