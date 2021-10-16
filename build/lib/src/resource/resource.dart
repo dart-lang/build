@@ -53,6 +53,30 @@ typedef BeforeExit = FutureOr<void> Function();
 /// Build system implementations should be the only users that directly
 /// instantiate a [ResourceManager] since they can handle the lifecycle
 /// guarantees in a sane way.
+///
+/// ```dart
+/// final someResource = Resource<SomeResource>(() => SomeResource._(),
+///     dispose: (something) => something._dispose(),
+///     beforeExit: (something) => something._beforeExit());
+///
+/// class SomeResource {
+///   SomeResource._();
+///
+///   Future<String> somethingUsefulForBuilders(AssetReader assetReader) async {
+///     // Any information returned to the caller should be derived from the
+///     // contents read through `assetReader`. Calling `assetReader.digest` is
+///     // sufficient for the build system to track dependencies.
+///   }
+///
+///   void _dispose() {
+///     // Clear or invalidate any cached state that was read during the build.
+///   }
+///
+///   void _beforeExit() {
+///     // Shutdown or clean up any externally held resources.
+///   }
+/// }
+/// ```
 class Resource<T> {
   /// Factory method which creates an instance of this resource.
   final CreateInstance<T> _create;
