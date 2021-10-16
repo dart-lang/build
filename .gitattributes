@@ -1,2 +1,4 @@
 # Exclude compiled file from github statistics
 **/*.dart.js linguist-generated=true
+.github/workflows/dart.yml linguist-generated=true
+tool/ci.sh linguist-generated=true
