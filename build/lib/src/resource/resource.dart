@@ -12,23 +12,26 @@ typedef BeforeExit = FutureOr<void> Function();
 /// defined by the build system.
 ///
 /// It is unsafe to read or write global state during a build. The build system
-/// might reuse isolates between builds where the previous state is invalid.
-/// [Resource] bridges the gap and allows a pattern for communicating "global"
-/// level information during a build, with hooks to maintain isolation between
-/// separate builds..
+/// may run incompatible builds where previously written global state is
+/// invalid. [Resource] bridges the gap and allows a pattern for communicating
+/// "global" level information during a build, with hooks to maintain isolation
+/// between separate builds..
 ///
-/// Reuse is based on the [Resource] identity. To allow for sharing each use
-/// should be fetched with the same instance. Commonly the [Resource] is a
-/// global variable. The values of type [T] should not be reused or shared
-/// outside of the reuse provided by the build system through
+/// Reuse is based on the [Resource] identity. To allow for sharing within a
+/// build, each value should be fetched with the same instance. Commonly the
+/// [Resource] is a global variable. The values of type [T] should not be reused
+/// or shared outside of the reuse provided by the build system through
 /// `BuildStep.fetchResource`.
 ///
 /// If a `dispose` method is available it will be called between builds and it
-/// should clean up any state that may become invalidated. For instance within a
-/// given build no asset content will change, however on subsequent builds
-/// assets may have difference content. Asset digests may be useful for managing
-/// caches that can be reused between builds. If no `dispose` method is passed
-/// the values will be discarded between builds.
+/// should clean up any state that may not be valid on a subsequent build. If no
+/// `dispose` method is passed the values will be discarded between builds. Only
+/// "universal" state should be retained by the instance after the `dispose`.
+/// Any state which is particular to a single build should be cleared or marked
+/// dirty during dispose, and validated before subsequent use. For instance
+/// within a given build no asset content will change, however on subsequent
+/// builds assets may have difference content. Asset digests may be useful for
+/// validating caches that can be reused between builds.
 ///
 /// If a `beforeExit` method is available it will be called before a clean
 /// exit of the build system for any resources fetched during any build.
