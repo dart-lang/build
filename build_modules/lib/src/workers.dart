@@ -11,7 +11,6 @@ import 'dart:math' show min;
 import 'package:bazel_worker/driver.dart';
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
-import 'package:pedantic/pedantic.dart';
 
 import 'scratch_space.dart';
 

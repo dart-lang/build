@@ -7,7 +7,7 @@ import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
-import 'package:crypto/src/digest.dart';
+import 'package:crypto/crypto.dart' show Digest;
 
 // This is not exported to hack around a package-private constructor.
 PostProcessBuildStep postProcessBuildStep(

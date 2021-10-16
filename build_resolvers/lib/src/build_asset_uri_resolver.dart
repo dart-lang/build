@@ -7,7 +7,9 @@ import 'dart:collection';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/file_system/memory_file_system.dart';
+// ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
+// ignore: implementation_imports
 import 'package:analyzer/src/generated/source.dart';
 import 'package:build/build.dart' show AssetId, BuildStep;
 import 'package:crypto/crypto.dart';
@@ -123,7 +125,7 @@ class BuildAssetUriResolver extends UriResolver {
         return _AssetState(path, _cachedAssetDependencies[id]!);
       }
       if (isChange) {
-        resourceProvider.updateFile(path, content);
+        resourceProvider.modifyFile(path, content);
       } else {
         resourceProvider.newFile(path, content);
       }

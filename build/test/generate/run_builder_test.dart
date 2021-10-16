@@ -80,7 +80,7 @@ class TrackingResourceManager extends ResourceManager {
   }
 
   @override
-  Future<Null> disposeAll() {
+  Future<void> disposeAll() {
     disposed = true;
     return super.disposeAll();
   }

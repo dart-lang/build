@@ -148,13 +148,13 @@ void main() {
         // Check the inlined constant value for soundness
         var expectedOutputs = {
           'a|web/sound.dart.js': decodedMatches(allOf(
-              contains('printString(String(false))'),
-              isNot(contains('printString(String(true))')))),
+              contains('NullSafetyMode.sound'),
+              isNot(contains('NullSafetyMode.unsound')))),
           'a|web/sound.dart.js.map': anything,
           'a|web/sound.dart.js.tar.gz': anything,
           'a|web/unsound.dart.js': decodedMatches(allOf(
-              contains('printString(String(true))'),
-              isNot(contains('printString(String(false))')))),
+              contains('NullSafetyMode.unsound'),
+              isNot(contains('NullSafetyMode.sound')))),
           'a|web/unsound.dart.js.map': anything,
           'a|web/unsound.dart.js.tar.gz': anything,
         };

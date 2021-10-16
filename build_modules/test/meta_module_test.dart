@@ -41,7 +41,7 @@ void main() {
     for (final library in libraries) {
       reader.cacheStringAsset(
           library.id.changeExtension(moduleLibraryExtension),
-          '${library.serialize()}');
+          library.serialize());
     }
     return MetaModule.forLibraries(
         reader,

@@ -78,7 +78,7 @@ void main() {
     });
 
     test('waits for tearDown', () async {
-      var resolverDone = Completer<Null>();
+      var resolverDone = Completer<void>();
       var resolver = await resolveSource(r'''
         library example;
 

@@ -12,7 +12,6 @@ import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
-import 'package:pedantic/pedantic.dart';
 import 'package:pool/pool.dart';
 import 'package:watcher/watcher.dart';
 
@@ -786,7 +785,8 @@ class _SingleBuild {
         ..state = NodeState.upToDate
         ..lastKnownDigest = md5.convert(utf8.encode(actualMatches.join(' ')));
 
-      unawaited(_lazyGlobs.remove(globNode.id));
+      // TODO: remove ?? fallback after 2.15 sdk.
+      unawaited(_lazyGlobs.remove(globNode.id) ?? Future.value());
     });
   }
 

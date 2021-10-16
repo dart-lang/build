@@ -8,7 +8,7 @@ import 'package:build_daemon/daemon_builder.dart';
 import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart';
 import 'package:build_daemon/data/server_log.dart';
-import 'package:watcher/src/watch_event.dart';
+import 'package:watcher/watcher.dart' show WatchEvent;
 
 class FakeDaemonBuilder implements DaemonBuilder {
   @override
