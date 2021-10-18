@@ -15,7 +15,7 @@ typedef BeforeExit = FutureOr<void> Function();
 /// may run incompatible builds where previously written global state is
 /// invalid. [Resource] bridges the gap and allows a pattern for communicating
 /// "global" level information during a build, with hooks to maintain isolation
-/// between separate builds..
+/// between separate builds.
 ///
 /// Reuse is based on the [Resource] identity. To allow for sharing within a
 /// build, each value should be fetched with the same instance. Commonly the
@@ -23,27 +23,27 @@ typedef BeforeExit = FutureOr<void> Function();
 /// or shared outside of the reuse provided by the build system through
 /// `BuildStep.fetchResource`.
 ///
-/// If a `dispose` method is available it will be called between builds and it
+/// If a `dispose` callback is available it will be called between builds and it
 /// should clean up any state that may not be valid on a subsequent build. If no
-/// `dispose` method is passed the values will be discarded between builds. Only
-/// "universal" state should be retained by the instance after the `dispose`.
+/// `dispose` callback is passed the value will be discarded between builds.
+/// Only "universal" state should be retained by the instance after `dispose`.
 /// Any state which is particular to a single build should be cleared or marked
-/// dirty during dispose, and validated before subsequent use. For instance
+/// dirty during dispose, and validated before subsequent use. For instance,
 /// within a given build no asset content will change, however on subsequent
 /// builds assets may have difference content. Asset digests may be useful for
 /// validating caches that can be reused between builds.
 ///
-/// If a `beforeExit` method is available it will be called before a clean
+/// If a `beforeExit` callback is available it will be called before a clean
 /// exit of the build system for any resources fetched during any build.
 ///
-/// The [Resource] system helps with the problem of leaking state across
+/// The [Resource] lifecycle helps with the problem of leaking state across
 /// separate builds, but it does not help with the problem of leaking state
 /// during a single build. For consistent output and correct rerunning of
 /// builders, the build system needs to track all of the inputs - any
-/// information that is read - for a given build.
+/// information that is read - for a given build step.
 ///
 /// Most resources should accept a `BuildStep`, or an `AssetReader` argument
-/// and ensure that any assets which contributed to the result have an
+/// and ensure that any assets which contribute to the result have an
 /// interaction for each builder which uses that result. For example if a
 /// resource is caching the result of an expensive computation on some asset, it
 /// might read the asset and perform some work the first time it is used, and
