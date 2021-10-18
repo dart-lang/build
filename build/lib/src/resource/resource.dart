@@ -46,9 +46,9 @@ typedef BeforeExit = FutureOr<void> Function();
 /// and ensure that any assets which contributed to the result have an
 /// interaction for each builder which uses that result. For example if a
 /// resource is caching the result of an expensive computation on some asset, it
-/// might read the asset and perform the work the first time it is used, and
-/// call only `AssetReader.digest` and returned the cached result on subsequent
-/// calls.
+/// might read the asset and perform some work the first time it is used, and
+/// call only `AssetReader.canRead` to verify the caller is allowed to access
+/// the information before returning the cached result on subsequent calls.
 ///
 /// Build system implementations should be the only users that directly
 /// instantiate a [ResourceManager] since they can handle the lifecycle
@@ -63,9 +63,10 @@ typedef BeforeExit = FutureOr<void> Function();
 ///   SomeResource._();
 ///
 ///   Future<String> somethingUsefulForBuilders(AssetReader assetReader) async {
-///     // Any information returned to the caller should be derived from the
-///     // contents read through `assetReader`. Calling `assetReader.digest` is
-///     // sufficient for the build system to track dependencies.
+///     // Any information returned to the caller should be derived from content
+///     // read through `assetReader`. Checking `assetReader.canRead` can
+///     // prevent information leaks and allow the build system to track
+///     // dependencies.
 ///   }
 ///
 ///   void _dispose() {
