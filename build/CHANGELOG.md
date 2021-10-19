@@ -1,3 +1,9 @@
+## 2.2.0-dev
+
+- Allow reusing the values held by `Resource`s when the resource has a `dispose`
+  method. Previously the instances were discarded and recreated for every build
+  even if they had tried to clean up their own state.
+
 ## 2.1.1
 
 - Throw an `ArgumentError` if an expected output matches the input.

@@ -8,14 +8,76 @@ typedef CreateInstance<T> = FutureOr<T> Function();
 typedef DisposeInstance<T> = FutureOr<void> Function(T instance);
 typedef BeforeExit = FutureOr<void> Function();
 
-/// A [Resource] encapsulates the logic for creating and disposing of some
-/// expensive object which has a lifecycle.
+/// A handle to create and cleanup some expensive object based on a lifecycle
+/// defined by the build system.
 ///
-/// Actual [Resource]s should be retrieved using `BuildStep#fetchResource`.
+/// It is unsafe to read or write global state during a build. The build system
+/// may run incompatible builds where previously written global state is
+/// invalid. [Resource] bridges the gap and allows a pattern for communicating
+/// "global" level information during a build, with hooks to maintain isolation
+/// between separate builds.
+///
+/// Reuse is based on the [Resource] identity. To allow for sharing within a
+/// build, each value should be fetched with the same instance. Commonly the
+/// [Resource] is a global variable. The values of type [T] should not be reused
+/// or shared outside of the reuse provided by the build system through
+/// `BuildStep.fetchResource`.
+///
+/// If a `dispose` callback is available it will be called between builds and it
+/// should clean up any state that may not be valid on a subsequent build. If no
+/// `dispose` callback is passed the value will be discarded between builds.
+/// Only "universal" state should be retained by the instance after `dispose`.
+/// Any state which is particular to a single build should be cleared or marked
+/// dirty during dispose, and validated before subsequent use. For instance,
+/// within a given build no asset content will change, however on subsequent
+/// builds assets may have difference content. Asset digests may be useful for
+/// validating caches that can be reused between builds.
+///
+/// If a `beforeExit` callback is available it will be called before a clean
+/// exit of the build system for any resources fetched during any build.
+///
+/// The [Resource] lifecycle helps with the problem of leaking state across
+/// separate builds, but it does not help with the problem of leaking state
+/// during a single build. For consistent output and correct rerunning of
+/// builders, the build system needs to track all of the inputs - any
+/// information that is read - for a given build step.
+///
+/// Most resources should accept a `BuildStep`, or an `AssetReader` argument
+/// and ensure that any assets which contribute to the result have an
+/// interaction for each builder which uses that result. For example if a
+/// resource is caching the result of an expensive computation on some asset, it
+/// might read the asset and perform some work the first time it is used, and
+/// call only `AssetReader.canRead` to verify the caller is allowed to access
+/// the information before returning the cached result on subsequent calls.
 ///
 /// Build system implementations should be the only users that directly
 /// instantiate a [ResourceManager] since they can handle the lifecycle
 /// guarantees in a sane way.
+///
+/// ```dart
+/// final someResource = Resource<SomeResource>(() => SomeResource._(),
+///     dispose: (something) => something._dispose(),
+///     beforeExit: (something) => something._beforeExit());
+///
+/// class SomeResource {
+///   SomeResource._();
+///
+///   Future<String> somethingUsefulForBuilders(AssetReader assetReader) async {
+///     // Any information returned to the caller should be derived from content
+///     // read through `assetReader`. Checking `assetReader.canRead` can
+///     // prevent information leaks and allow the build system to track
+///     // dependencies.
+///   }
+///
+///   void _dispose() {
+///     // Clear or invalidate any cached state that was read during the build.
+///   }
+///
+///   void _beforeExit() {
+///     // Shutdown or clean up any externally held resources.
+///   }
+/// }
+/// ```
 class Resource<T> {
   /// Factory method which creates an instance of this resource.
   final CreateInstance<T> _create;
@@ -42,13 +104,20 @@ class Resource<T> {
       _instanceByManager.putIfAbsent(manager, () async => await _create());
 
   /// Disposes the actual instance of this resource for [manager] if present.
+  ///
+  /// If there is no [_userDispose] the entire instance is assumed stale and it
+  /// is discarded, a fresh instance will be created with [_create] the next
+  /// time it is fetched.
+  ///
+  /// If a [_userDispose] was provided, invoke it and assume the state can be
+  /// retained for the next build.
   Future<void> _dispose(ResourceManager manager) {
-    if (!_instanceByManager.containsKey(manager)) return Future.value(null);
-    var oldInstance = _fetch(manager);
-    _instanceByManager.remove(manager);
+    assert(_instanceByManager.containsKey(manager));
+    var oldInstance = _instanceByManager[manager]!;
     if (_userDispose != null) {
       return oldInstance.then(_userDispose!);
     } else {
+      _instanceByManager.remove(manager);
       return Future.value(null);
     }
   }
