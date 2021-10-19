@@ -112,8 +112,8 @@ class Resource<T> {
   /// If a [_userDispose] was provided, invoke it and assume the state can be
   /// retained for the next build.
   Future<void> _dispose(ResourceManager manager) {
-    if (!_instanceByManager.containsKey(manager)) return Future.value(null);
-    var oldInstance = _fetch(manager);
+    assert(_instanceByManager.containsKey(manager));
+    var oldInstance = _instanceByManager[manager]!;
     if (_userDispose != null) {
       return oldInstance.then(_userDispose!);
     } else {
