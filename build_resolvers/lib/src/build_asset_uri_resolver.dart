@@ -8,7 +8,8 @@ import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/file_system/memory_file_system.dart';
 // ignore: implementation_imports
-import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
+import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart'
+    show AnalysisDriverForPackageBuild;
 // ignore: implementation_imports
 import 'package:analyzer/src/generated/source.dart';
 import 'package:build/build.dart' show AssetId, BuildStep;
@@ -56,8 +57,8 @@ class BuildAssetUriResolver extends UriResolver {
   ///
   /// If [transitive], then all the transitive imports from [entryPoints] are
   /// also updated.
-  Future<void> performResolve(
-      BuildStep buildStep, List<AssetId> entryPoints, AnalysisDriver driver,
+  Future<void> performResolve(BuildStep buildStep, List<AssetId> entryPoints,
+      AnalysisDriverForPackageBuild driver,
       {required bool transitive}) async {
     final transitivelyResolved = _buildStepTransitivelyResolvedAssets
         .putIfAbsent(buildStep, () => HashSet());

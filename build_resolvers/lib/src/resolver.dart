@@ -15,7 +15,7 @@ import 'package:analyzer/dart/sdk/build_sdk_summary.dart';
 import 'package:analyzer/error/error.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
 // ignore: implementation_imports
-import 'package:analyzer/src/dart/analysis/driver.dart' show AnalysisDriver;
+import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/experiments.dart';
 // ignore: implementation_imports
@@ -149,16 +149,16 @@ class PerActionResolver implements ReleasableResolver {
 
 class AnalyzerResolver implements ReleasableResolver {
   final BuildAssetUriResolver _uriResolver;
-  final AnalysisDriver _driver;
+  final AnalysisDriverForPackageBuild _driver;
 
   AnalyzerResolver(this._driver, this._uriResolver);
 
   @override
   Future<bool> isLibrary(AssetId assetId) async {
     if (assetId.extension != '.dart') return false;
-    var source = _driver.sourceFactory.forUri2(assetId.uri);
-    if (source == null || !source.exists()) return false;
-    var result = _driver.getFileSync2(assetPath(assetId)) as FileResult;
+    if (!_driver.isUriOfExistingFile(assetId.uri)) return false;
+    var result =
+        _driver.currentSession.getFile(assetPath(assetId)) as FileResult;
     return !result.isPart;
   }
 
@@ -187,14 +187,13 @@ class AnalyzerResolver implements ReleasableResolver {
   @override
   Future<CompilationUnit> compilationUnitFor(AssetId assetId,
       {bool allowSyntaxErrors = false}) async {
-    var uri = assetId.uri;
-    var source = _driver.sourceFactory.forUri2(uri);
-    if (source == null || !source.exists()) {
+    if (!_driver.isUriOfExistingFile(assetId.uri)) {
       throw AssetNotFoundException(assetId);
     }
 
     var path = assetPath(assetId);
-    var parsedResult = await _driver.parseFile2(path) as ParsedUnitResult;
+    var parsedResult =
+        _driver.currentSession.getParsedUnit(path) as ParsedUnitResult;
     if (!allowSyntaxErrors && parsedResult.errors.isNotEmpty) {
       throw SyntaxErrorInAssetException(assetId, [parsedResult]);
     }
@@ -205,19 +204,18 @@ class AnalyzerResolver implements ReleasableResolver {
   Future<LibraryElement> libraryFor(AssetId assetId,
       {bool allowSyntaxErrors = false}) async {
     var uri = assetId.uri;
-    var path = assetPath(assetId);
-    var source = _driver.sourceFactory.forUri2(uri);
-    if (source == null || !source.exists()) {
+    if (!_driver.isUriOfExistingFile(uri)) {
       throw AssetNotFoundException(assetId);
     }
 
-    var parsedResult = _driver.parseFileSync2(path);
+    var path = assetPath(assetId);
+    var parsedResult = _driver.currentSession.getParsedUnit(path);
     if (parsedResult is! ParsedUnitResult || parsedResult.isPart) {
       throw NonLibraryAssetException(assetId);
     }
 
-    final library =
-        await _driver.getLibraryByUri2(uri.toString()) as LibraryElementResult;
+    final library = await _driver.currentSession.getLibraryByUri(uri.toString())
+        as LibraryElementResult;
     if (!allowSyntaxErrors) {
       final errors = await _syntacticErrorsFor(library.element);
       if (errors.isNotEmpty) {
@@ -249,7 +247,8 @@ class AnalyzerResolver implements ReleasableResolver {
     final relevantResults = <ErrorsResult>[];
 
     for (final path in paths) {
-      final result = await _driver.getErrors2(path) as ErrorsResult;
+      final result =
+          await _driver.currentSession.getErrors(path) as ErrorsResult;
       if (result.errors
           .any((error) => error.errorCode.type == ErrorType.SYNTACTIC_ERROR)) {
         relevantResults.add(result);
@@ -311,8 +310,8 @@ class AnalyzerResolvers implements Resolvers {
 
   PackageConfig? _packageConfig;
 
-  /// Lazily creates and manages a single [AnalysisDriver], that can be shared
-  /// across [BuildStep]s.
+  /// Lazily creates and manages a single [AnalysisDriverForPackageBuild],that
+  /// can be shared across [BuildStep]s.
   ///
   /// If no [_analysisOptions] is provided, then an empty one is used.
   ///
