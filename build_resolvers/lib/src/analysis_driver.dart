@@ -7,10 +7,6 @@ import 'dart:io';
 import 'package:analyzer/file_system/file_system.dart' show ResourceProvider;
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
-// ignore: implementation_imports
-import 'package:analyzer/src/context/packages.dart' show Packages, Package;
-// ignore: implementation_imports
-import 'package:analyzer/src/generated/engine.dart' show AnalysisOptions;
 import 'package:build/build.dart';
 import 'package:package_config/package_config.dart' show PackageConfig;
 import 'package:path/path.dart' as p;

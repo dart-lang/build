@@ -8,10 +8,7 @@ import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/file_system/memory_file_system.dart';
 // ignore: implementation_imports
-import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart'
-    show AnalysisDriverForPackageBuild;
-// ignore: implementation_imports
-import 'package:analyzer/src/generated/source.dart';
+import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart' show AssetId, BuildStep;
 import 'package:crypto/crypto.dart';
 import 'package:graphs/graphs.dart';
