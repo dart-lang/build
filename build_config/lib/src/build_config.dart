@@ -20,7 +20,7 @@ import 'key_normalization.dart';
 part 'build_config.g.dart';
 
 /// The parsed values from a `build.yaml` file.
-@JsonSerializable(createToJson: false, disallowUnrecognizedKeys: true)
+@JsonSerializable()
 class BuildConfig {
   /// Returns a parsed [BuildConfig] file in [path], if one exist, otherwise a
   /// default config.
@@ -71,10 +71,8 @@ class BuildConfig {
   /// [_buildTargetsFromJson].
   static final _placeholderBuildTarget = <String, BuildTarget>{};
 
-  @JsonKey(name: 'global_options')
   final Map<String, GlobalBuilderConfig> globalOptions;
 
-  @JsonKey(name: 'additional_public_assets')
   final List<String> additionalPublicAssets;
 
   /// The default config if you have no `build.yaml` file.

@@ -48,7 +48,7 @@ BuilderDefinition _$BuilderDefinitionFromJson(Map json) => $checkedCreate(
           import: $checkedConvert('import', (v) => v as String),
           target: $checkedConvert('target', (v) => v as String?),
           autoApply: $checkedConvert(
-              'auto_apply', (v) => _$enumDecodeNullable(_$AutoApplyEnumMap, v)),
+              'auto_apply', (v) => $enumDecodeNullable(_$AutoApplyEnumMap, v)),
           requiredInputs: $checkedConvert('required_inputs',
               (v) => (v as List<dynamic>?)?.map((e) => e as String)),
           runsBefore: $checkedConvert('runs_before',
@@ -57,7 +57,7 @@ BuilderDefinition _$BuilderDefinitionFromJson(Map json) => $checkedCreate(
               (v) => (v as List<dynamic>?)?.map((e) => e as String)),
           isOptional: $checkedConvert('is_optional', (v) => v as bool?),
           buildTo: $checkedConvert(
-              'build_to', (v) => _$enumDecodeNullable(_$BuildToEnumMap, v)),
+              'build_to', (v) => $enumDecodeNullable(_$BuildToEnumMap, v)),
           defaults: $checkedConvert(
               'defaults',
               (v) => v == null
@@ -77,43 +77,6 @@ BuilderDefinition _$BuilderDefinitionFromJson(Map json) => $checkedCreate(
         'buildTo': 'build_to'
       },
     );
-
-K _$enumDecode<K, V>(
-  Map<K, V> enumValues,
-  Object? source, {
-  K? unknownValue,
-}) {
-  if (source == null) {
-    throw ArgumentError(
-      'A value must be provided. Supported values: '
-      '${enumValues.values.join(', ')}',
-    );
-  }
-
-  return enumValues.entries.singleWhere(
-    (e) => e.value == source,
-    orElse: () {
-      if (unknownValue == null) {
-        throw ArgumentError(
-          '`$source` is not one of the supported values: '
-          '${enumValues.values.join(', ')}',
-        );
-      }
-      return MapEntry(unknownValue, enumValues.values.first);
-    },
-  ).key;
-}
-
-K? _$enumDecodeNullable<K, V>(
-  Map<K, V> enumValues,
-  dynamic source, {
-  K? unknownValue,
-}) {
-  if (source == null) {
-    return null;
-  }
-  return _$enumDecode<K, V>(enumValues, source, unknownValue: unknownValue);
-}
 
 const _$AutoApplyEnumMap = {
   AutoApply.none: 'none',

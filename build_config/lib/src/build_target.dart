@@ -12,9 +12,8 @@ import 'key_normalization.dart';
 
 part 'build_target.g.dart';
 
-@JsonSerializable(createToJson: false, disallowUnrecognizedKeys: true)
+@JsonSerializable()
 class BuildTarget {
-  @JsonKey(name: 'auto_apply_builders')
   final bool autoApplyBuilders;
 
   /// A map from builder key to the configuration used for this target.
@@ -66,7 +65,7 @@ class BuildTarget {
 /// Build targets may have builders applied automatically based on
 /// [BuilderDefinition.autoApply] and may override with more specific
 /// configuration.
-@JsonSerializable(createToJson: false, disallowUnrecognizedKeys: true)
+@JsonSerializable()
 class TargetBuilderConfig {
   /// Overrides the setting of whether the Builder would run on this target.
   ///
@@ -82,7 +81,6 @@ class TargetBuilderConfig {
   /// This is always a subset of the `include` argument in the containing
   /// [BuildTarget]. May be `null` in which cases it will be all the sources in
   /// the target.
-  @JsonKey(name: 'generate_for')
   final InputSet? generateFor;
 
   /// The options to pass to the `BuilderFactory` when constructing this
@@ -95,11 +93,9 @@ class TargetBuilderConfig {
   final Map<String, dynamic> options;
 
   /// Overrides for [options] in dev mode.
-  @JsonKey(name: 'dev_options')
   final Map<String, dynamic> devOptions;
 
   /// Overrides for [options] in release mode.
-  @JsonKey(name: 'release_options')
   final Map<String, dynamic> releaseOptions;
 
   TargetBuilderConfig({
@@ -129,7 +125,7 @@ class TargetBuilderConfig {
 }
 
 /// The configuration for a Builder applied globally.
-@JsonSerializable(createToJson: false, disallowUnrecognizedKeys: true)
+@JsonSerializable()
 class GlobalBuilderConfig {
   /// The options to pass to the `BuilderFactory` when constructing this
   /// builder.
@@ -141,11 +137,9 @@ class GlobalBuilderConfig {
   final Map<String, dynamic> options;
 
   /// Overrides for [options] in dev mode.
-  @JsonKey(name: 'dev_options')
   final Map<String, dynamic> devOptions;
 
   /// Overrides for [options] in release mode.
-  @JsonKey(name: 'release_options')
   final Map<String, dynamic> releaseOptions;
 
   GlobalBuilderConfig({
