@@ -1,3 +1,4 @@
+# See https://pub.dev/packages/build_config
 builders:
   module_library:
     import: "package:build_modules/builders.dart"

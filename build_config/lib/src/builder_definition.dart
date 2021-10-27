@@ -12,14 +12,8 @@ import 'key_normalization.dart';
 
 part 'builder_definition.g.dart';
 
-enum AutoApply {
-  none,
-  dependents,
-  @JsonValue('all_packages')
-  allPackages,
-  @JsonValue('root_package')
-  rootPackage
-}
+@JsonEnum(fieldRename: FieldRename.snake)
+enum AutoApply { none, dependents, allPackages, rootPackage }
 
 enum BuildTo {
   /// Generated files are written to the source directory next to their primary
@@ -31,7 +25,7 @@ enum BuildTo {
 }
 
 /// Definition of a builder parsed from the `builders` section of `build.yaml`.
-@JsonSerializable(createToJson: false, disallowUnrecognizedKeys: true)
+@JsonSerializable()
 class BuilderDefinition {
   /// The package which provides this Builder.
   String get package => packageExpando[this]!;
@@ -40,7 +34,7 @@ class BuilderDefinition {
   String get key => builderKeyExpando[this]!;
 
   /// The names of the top-level methods in [import] from args -> Builder.
-  @JsonKey(name: 'builder_factories', required: true, disallowNullValue: true)
+  @JsonKey(required: true, disallowNullValue: true)
   final List<String> builderFactories;
 
   /// The import to be used to load `clazz`.
@@ -49,7 +43,7 @@ class BuilderDefinition {
 
   /// A map from input extension to the output extensions created for matching
   /// inputs.
-  @JsonKey(name: 'build_extensions', required: true, disallowNullValue: true)
+  @JsonKey(required: true, disallowNullValue: true)
   final Map<String, List<String>> buildExtensions;
 
   /// The name of the dart_library target that contains `import`.
@@ -59,24 +53,20 @@ class BuilderDefinition {
   final String? target;
 
   /// Which packages should have this builder applied automatically.
-  @JsonKey(name: 'auto_apply')
   final AutoApply autoApply;
 
   /// A list of file extensions which are required to run this builder.
   ///
   /// No builder which outputs any extension in this list is allowed to run
   /// after this builder.
-  @JsonKey(name: 'required_inputs')
   final List<String> requiredInputs;
 
   /// Builder keys in `$package:$builder` format which should only be run after
   /// this Builder.
-  @JsonKey(name: 'runs_before')
   final List<String> runsBefore;
 
   /// Builder keys in `$package:$builder` format which should be run on any
   /// target which also runs this Builder.
-  @JsonKey(name: 'applies_builders')
   final List<String> appliesBuilders;
 
   /// Whether this Builder should be deferred until it's output is requested.
@@ -84,11 +74,9 @@ class BuilderDefinition {
   /// Optional builders are lazy and will not run unless some later builder
   /// requests one of it's possible outputs through either `readAs*` or
   /// `canRead`.
-  @JsonKey(name: 'is_optional')
   final bool isOptional;
 
   /// Where the outputs of this builder should be written.
-  @JsonKey(name: 'build_to')
   final BuildTo buildTo;
 
   final TargetBuilderConfigDefaults defaults;
@@ -159,7 +147,7 @@ class BuilderDefinition {
 
 /// The definition of a `PostProcessBuilder` in the `post_process_builders`
 /// section of a `build.yaml`.
-@JsonSerializable(createToJson: false, disallowUnrecognizedKeys: true)
+@JsonSerializable()
 class PostProcessBuilderDefinition {
   /// The package which provides this Builder.
   String get package => packageExpando[this]!;
@@ -169,7 +157,7 @@ class PostProcessBuilderDefinition {
 
   /// The name of the top-level method in [import] from
   /// Map<String, dynamic> -> Builder.
-  @JsonKey(name: 'builder_factory', required: true, disallowNullValue: true)
+  @JsonKey(required: true, disallowNullValue: true)
   final String builderFactory;
 
   /// The import to be used to load `clazz`.
@@ -180,7 +168,6 @@ class PostProcessBuilderDefinition {
   ///
   /// May be null or unreliable and should not be used.
   @Deprecated('do not use')
-  @JsonKey(name: 'input_extensions')
   final Iterable<String>? inputExtensions;
 
   /// The name of the dart_library target that contains `import`.
@@ -214,17 +201,14 @@ class PostProcessBuilderDefinition {
 
 /// Default values that builder authors can specify when users don't fill in the
 /// corresponding key for [TargetBuilderConfig].
-@JsonSerializable(createToJson: false, disallowUnrecognizedKeys: true)
+@JsonSerializable()
 class TargetBuilderConfigDefaults {
-  @JsonKey(name: 'generate_for')
   final InputSet generateFor;
 
   final Map<String, dynamic> options;
 
-  @JsonKey(name: 'dev_options')
   final Map<String, dynamic> devOptions;
 
-  @JsonKey(name: 'release_options')
   final Map<String, dynamic> releaseOptions;
 
   const TargetBuilderConfigDefaults({

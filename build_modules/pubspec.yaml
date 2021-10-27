@@ -1,5 +1,5 @@
 name: build_modules
-version: 4.0.3
+version: 4.0.4-dev
 description: Builders for Dart modules
 repository: https://github.com/dart-lang/build/tree/master/build_modules
 
@@ -16,7 +16,7 @@ dependencies:
   crypto: ^3.0.0
   glob: ^2.0.0
   graphs: ^2.0.0
-  json_annotation: ^4.0.0
+  json_annotation: ^4.3.0
   logging: ^1.0.0
   path: ^1.8.0
   scratch_space: ^1.0.0
@@ -27,7 +27,7 @@ dev_dependencies:
   build_runner: ^2.0.0
   build_test: ^2.0.0
   lints: ^1.0.0
-  json_serializable: ^5.0.0
+  json_serializable: ^6.0.0
   test: ^1.16.0
   a:
     path: test/fixtures/a
