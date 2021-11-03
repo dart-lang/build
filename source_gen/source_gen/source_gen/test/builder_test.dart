@@ -3,9 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @TestOn('vm')
-import 'package:analyzer/dart/analysis/utilities.dart';
-import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/dart/element/element.dart';
+import 'dart:async';
+
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:source_gen/builder.dart';
@@ -26,7 +25,8 @@ void main() {
 
   test('Bad generated source', () async {
     final srcs = _createPackageStub();
-    final builder = PartBuilder([const _BadOutputGenerator()], '.foo.dart');
+    final builder = PartBuilder(
+        [_StubGenerator('Bad', () => 'not valid code!')], '.foo.dart');
 
     await testBuilder(builder, srcs, generateFor: {
       '$_pkgName|lib/test_lib.dart'
@@ -72,7 +72,8 @@ void main() {
       () async {
     expect(
         () => PartBuilder(
-            [const CommentGenerator(), const _LiteralGenerator()], '.foo.dart'),
+            [const CommentGenerator(), _StubGenerator('Null', () => null)],
+            '.foo.dart'),
         returnsNormally);
   });
 
@@ -662,31 +663,14 @@ foo generated content
   });
 
   test('Should have a readable toString() message for builders', () {
-    final builder = LibraryBuilder(const _LiteralGenerator());
-    expect(builder.toString(), 'Generating .g.dart: _LiteralGenerator');
+    final builder = LibraryBuilder(_StubGenerator('Null', () => null));
+    expect(builder.toString(), 'Generating .g.dart: Null');
 
     final builders = PartBuilder([
-      const _LiteralGenerator(),
-      const _LiteralGenerator(),
+      _StubGenerator('Null', () => null),
+      _StubGenerator('Null', () => null),
     ], '.foo.dart');
-    expect(builders.toString(),
-        'Generating .foo.dart: _LiteralGenerator, _LiteralGenerator');
-  });
-
-  test('Does not resolve the library if there are no top level annotations',
-      () async {
-    final builder = LibraryBuilder(const _DeprecatedGenerator());
-    final input = AssetId('a', 'lib/a.dart');
-    final assets = {input: 'main() {}'};
-
-    final reader = InMemoryAssetReader(sourceAssets: assets);
-    final resolver = _TestingResolver(assets);
-
-    await runBuilder(builder, [input], reader, InMemoryAssetWriter(),
-        _FixedResolvers(resolver));
-
-    expect(resolver.parsedUnits, {input});
-    expect(resolver.resolvedLibs, isEmpty);
+    expect(builders.toString(), 'Generating .foo.dart: Null, Null');
   });
 
   test('Searches in part files for annotations', () async {
@@ -756,80 +740,21 @@ Map<String, String> _createPackageStub(
     };
 
 PartBuilder _unformattedLiteral([String? content]) =>
-    PartBuilder([_LiteralGenerator(content)], '.foo.dart',
+    PartBuilder([_StubGenerator('Literal', () => content)], '.foo.dart',
         formatOutput: (s) => s);
 
-/// Returns the [String] provided in the constructor, or `null`.
-class _LiteralGenerator extends Generator {
-  final String? _content;
+class _StubGenerator implements Generator {
+  final String _name;
+  final FutureOr<String?> Function() _behavior;
 
-  const _LiteralGenerator([this._content]);
-
-  @override
-  String? generate(_, __) => _content;
-}
-
-class _BadOutputGenerator extends Generator {
-  const _BadOutputGenerator();
+  const _StubGenerator(this._name, this._behavior);
 
   @override
-  String generate(_, __) => 'not valid code!';
-}
-
-class _DeprecatedGenerator extends GeneratorForAnnotation<Deprecated> {
-  const _DeprecatedGenerator();
+  FutureOr<String?> generate(LibraryReader library, BuildStep buildStep) =>
+      _behavior();
 
   @override
-  void generateForAnnotatedElement(
-          Element element, ConstantReader annotation, BuildStep buildStep) =>
-      throw UnimplementedError();
-}
-
-class _TestingResolver implements ReleasableResolver {
-  final Map<AssetId, String> assets;
-  final parsedUnits = <AssetId>{};
-  final resolvedLibs = <AssetId>{};
-
-  _TestingResolver(this.assets);
-
-  @override
-  Future<CompilationUnit> compilationUnitFor(AssetId assetId,
-      {bool allowSyntaxErrors = false}) async {
-    parsedUnits.add(assetId);
-    return parseString(content: assets[assetId]!).unit;
-  }
-
-  @override
-  Future<bool> isLibrary(AssetId assetId) async {
-    final unit = await compilationUnitFor(assetId);
-    return unit.directives.every((d) => d is! PartOfDirective);
-  }
-
-  @override
-  Future<LibraryElement> libraryFor(AssetId assetId,
-      {bool allowSyntaxErrors = false}) async {
-    resolvedLibs.add(assetId);
-    return null as LibraryElement;
-  }
-
-  @override
-  void release() {}
-
-  @override
-  void noSuchMethod(_) => throw UnimplementedError();
-}
-
-class _FixedResolvers implements Resolvers {
-  final ReleasableResolver _resolver;
-
-  _FixedResolvers(this._resolver);
-
-  @override
-  Future<ReleasableResolver> get(BuildStep buildStep) =>
-      Future.value(_resolver);
-
-  @override
-  void reset() {}
+  String toString() => _name;
 }
 
 const _customHeader = '// Copyright 1979';
@@ -939,7 +864,7 @@ const _whitespaceTrimmed = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
 part of test_lib;
 
 // **************************************************************************
-// _LiteralGenerator
+// Generator: Literal
 // **************************************************************************
 
 // hello
