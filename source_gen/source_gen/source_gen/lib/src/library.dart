@@ -34,7 +34,7 @@ class LibraryReader {
   }
 
   /// All of the declarations in this library.
-  Iterable<Element> get allElements => element.topLevelElements;
+  Iterable<Element> get allElements => [element, ...element.topLevelElements];
 
   /// All of the declarations in this library annotated with [checker].
   Iterable<AnnotatedElement> annotatedWith(TypeChecker checker,

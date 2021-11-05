@@ -1,5 +1,10 @@
 ## 1.1.2-dev
 
+- Include the `LibraryElement` in `LibraryReader.allElements`,
+  `LibraryReader.annotatedWith`, and `LibraryReader.annotatedWithExact`. Run
+  `GeneratorForAnnotation` generators on library elements when the `library`
+  statement has the annotation.
+
 ## 1.1.1
 
 - Drop dependency on `package:pedantic`.

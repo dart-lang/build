@@ -98,6 +98,27 @@ void main() {
     expect(resolver.parsedUnits, {input});
     expect(resolver.resolvedLibs, isEmpty);
   });
+
+  test('applies to annotated libraries', () async {
+    final builder = LibraryBuilder(_StubGenerator<Deprecated>(
+        'Deprecated', (element) => '// ${element.displayName}'));
+    await testBuilder(builder, {
+      'a|lib/file.dart': '''
+      @deprecated
+      library foo;
+      '''
+    }, outputs: {
+      'a|lib/file.g.dart': '''
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+// **************************************************************************
+// Generator: Deprecated
+// **************************************************************************
+
+// foo
+'''
+    });
+  });
 }
 
 class _StubGenerator<T> extends GeneratorForAnnotation<T> {
