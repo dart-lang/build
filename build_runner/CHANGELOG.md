@@ -1,4 +1,4 @@
-## 2.1.5-dev
+## 2.1.5
 
 - Use raw string literals for builder options when generating build scripts.
 
