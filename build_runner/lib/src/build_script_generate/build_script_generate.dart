@@ -351,7 +351,7 @@ Expression _findToExpression(BuilderDefinition definition) {
 /// An expression creating a [BuilderOptions] from a json string.
 Expression _constructBuilderOptions(Map<String, dynamic> options) =>
     refer('BuilderOptions', 'package:build/build.dart')
-        .newInstance([options.toExpression(constant: true)]);
+        .constInstance([options.toExpression()]);
 
 extension on LanguageVersion {
   Version get asVersion => Version(major, minor, 0);
