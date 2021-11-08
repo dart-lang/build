@@ -1,3 +1,7 @@
+## 2.1.5
+
+- Use raw string literals for builder options when generating build scripts.
+
 ## 2.1.4
 
 - Minor fixes to the log message when compiling the build script has some

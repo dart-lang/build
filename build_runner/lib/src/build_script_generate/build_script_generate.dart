@@ -310,8 +310,8 @@ Expression _applyPostProcessBuilder(PostProcessBuilderDefinition definition) {
   ], namedArgs);
 }
 
-Expression _rawStringList(List<String> strings) => literalConstList(
-    [for (var string in strings) literalString(string, raw: true)]);
+Expression _rawStringList(List<String> strings) =>
+    strings.toExpression(constant: true);
 
 /// Returns the actual import to put in the generated script based on an import
 /// found in the build.yaml.
@@ -351,8 +351,34 @@ Expression _findToExpression(BuilderDefinition definition) {
 /// An expression creating a [BuilderOptions] from a json string.
 Expression _constructBuilderOptions(Map<String, dynamic> options) =>
     refer('BuilderOptions', 'package:build/build.dart')
-        .newInstance([literalMap(options)]);
+        .constInstance([options.toExpression()]);
 
 extension on LanguageVersion {
   Version get asVersion => Version(major, minor, 0);
+}
+
+/// Converts a Dart object to a source code representation.
+///
+/// This is similar to [literal] from `package:code_builder`, except that it
+/// always writes raw string literals.
+extension ConvertToExpression on Object? {
+  Expression toExpression({bool constant = false}) {
+    final $this = this;
+
+    if ($this is Map) {
+      final create = constant ? literalConstMap : literalMap;
+      return create({
+        for (final entry in $this.cast<Object?, Object?>().entries)
+          entry.key.toExpression(): entry.value.toExpression()
+      });
+    } else if ($this is List) {
+      final create = constant ? literalConstList : literalList;
+      return create(
+          [for (final entry in $this.cast<Object?>()) entry.toExpression()]);
+    } else if ($this is String) {
+      return literalString($this, raw: true);
+    } else {
+      return literal(this);
+    }
+  }
 }
