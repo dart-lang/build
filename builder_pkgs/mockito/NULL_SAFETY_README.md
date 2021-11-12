@@ -19,7 +19,7 @@ Mockito uses to stub methods.
 
 <!-- TODO(srawlins): point to details somewhere. -->
 
-Here is the standard way of defining a mock for the Foo class:
+Here is the standard way of defining a mock for the HttpServer class:
 
 ```dart
 class MockHttpServer extends Mock implements HttpServer {}
