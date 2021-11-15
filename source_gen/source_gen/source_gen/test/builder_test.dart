@@ -693,10 +693,7 @@ foo generated content
             decodedMatches(contains('// "int x" is deprecated!')),
       },
       onLog: (log) {
-        if (log.message.contains(
-          'Your current `analyzer` version may not fully support your current '
-          'SDK version.',
-        )) {
+        if (log.message.contains(_outdatedAnalyzerMessage)) {
           // This may happen with pre-release SDKs. Not an error.
           return;
         }
@@ -705,6 +702,10 @@ foo generated content
     );
   });
 }
+
+const _outdatedAnalyzerMessage =
+    'The latest `analyzer` version may not fully support your current '
+    'SDK version.';
 
 Future _generateTest(CommentGenerator gen, String expectedContent) async {
   final srcs = _createPackageStub();
@@ -718,10 +719,7 @@ Future _generateTest(CommentGenerator gen, String expectedContent) async {
       '$_pkgName|lib/test_lib.foo.dart': decodedMatches(expectedContent),
     },
     onLog: (log) {
-      if (log.message.contains(
-            'Your current `analyzer` version may not fully support your '
-            'current SDK version.',
-          ) ||
+      if (log.message.contains(_outdatedAnalyzerMessage) ||
           log.message.startsWith('Generating SDK summary')) {
         // This may happen with pre-release SDKs. Not an error.
         return;

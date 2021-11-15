@@ -11,4 +11,4 @@ part 'library_source.g.dart';
 @Multiplier(2)
 const answer = 42;
 
-final tau = pi * 2;
+const tau = pi * 2;
