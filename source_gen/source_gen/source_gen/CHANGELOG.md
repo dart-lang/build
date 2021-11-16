@@ -1,4 +1,4 @@
-## 1.1.2-dev
+## 1.2.0-dev
 
 - Include the `LibraryElement` in `LibraryReader.allElements`,
   `LibraryReader.annotatedWith`, and `LibraryReader.annotatedWithExact`. Run
