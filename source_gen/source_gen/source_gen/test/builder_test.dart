@@ -228,69 +228,185 @@ void main() {
         });
   });
 
-  test('PartBuilder uses a custom header when provided', () async {
-    await testBuilder(
-        PartBuilder([const UnformattedCodeGenerator()], '.foo.dart',
-            header: _customHeader),
-        {
-          '$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'
-        },
-        generateFor: {
-          '$_pkgName|lib/a.dart'
-        },
-        outputs: {
-          '$_pkgName|lib/a.foo.dart':
-              decodedMatches(startsWith('$_customHeader\n\npart of')),
-        });
-  });
+  group('PartBuilder', () {
+    test('uses a custom header when provided', () async {
+      await testBuilder(
+          PartBuilder([const UnformattedCodeGenerator()], '.foo.dart',
+              header: _customHeader),
+          {
+            '$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'
+          },
+          generateFor: {
+            '$_pkgName|lib/a.dart'
+          },
+          outputs: {
+            '$_pkgName|lib/a.foo.dart':
+                decodedMatches(startsWith('$_customHeader\n\npart of')),
+          });
+    });
 
-  test('PartBuilder includes no header when `header` is empty', () async {
-    await testBuilder(
-        PartBuilder([const UnformattedCodeGenerator()], '.foo.dart',
-            header: ''),
-        {
-          '$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'
-        },
-        generateFor: {
-          '$_pkgName|lib/a.dart'
-        },
-        outputs: {
-          '$_pkgName|lib/a.foo.dart': decodedMatches(startsWith('part of')),
-        });
-  });
+    test('includes no header when `header` is empty', () async {
+      await testBuilder(
+          PartBuilder([const UnformattedCodeGenerator()], '.foo.dart',
+              header: ''),
+          {
+            '$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'
+          },
+          generateFor: {
+            '$_pkgName|lib/a.dart'
+          },
+          outputs: {
+            '$_pkgName|lib/a.foo.dart': decodedMatches(startsWith('part of')),
+          });
+    });
 
-  test('PartBuilder includes matching language version in all parts', () async {
-    await testBuilder(
-        PartBuilder([const UnformattedCodeGenerator()], '.foo.dart',
-            header: ''),
-        {
-          '$_pkgName|lib/a.dart': '''// @dart=2.9
+    test('includes matching language version in all parts', () async {
+      await testBuilder(
+          PartBuilder([const UnformattedCodeGenerator()], '.foo.dart',
+              header: ''),
+          {
+            '$_pkgName|lib/a.dart': '''// @dart=2.9
 part "a.foo.dart";'''
+          },
+          generateFor: {
+            '$_pkgName|lib/a.dart'
+          },
+          outputs: {
+            '$_pkgName|lib/a.foo.dart':
+                decodedMatches(startsWith('// @dart=2.9\n')),
+          });
+    });
+
+    test('warns about missing part', () async {
+      final srcs = _createPackageStub(testLibContent: _testLibContentNoPart);
+      final builder = PartBuilder([const CommentGenerator()], '.foo.dart');
+      final logs = <String>[];
+      await testBuilder(
+        builder,
+        srcs,
+        onLog: (log) {
+          logs.add(log.message);
         },
-        generateFor: {
-          '$_pkgName|lib/a.dart'
-        },
-        outputs: {
-          '$_pkgName|lib/a.foo.dart':
-              decodedMatches(startsWith('// @dart=2.9\n')),
-        });
+      );
+      expect(logs, [
+        'test_lib.foo.dart must be included as a part directive in the input '
+            'library with:\n    part \'test_lib.foo.dart\';'
+      ]);
+    });
+
+    group('with build_extensions', () {
+      test('warns about missing part', () async {
+        final srcs = _createPackageStub(testLibContent: _testLibContentNoPart);
+        final builder = PartBuilder([const CommentGenerator()], '.foo.dart',
+            options: const BuilderOptions({
+              'build_extensions': {
+                '^lib/{{}}.dart': 'lib/generated/{{}}.foo.dart'
+              }
+            }));
+        final logs = <String>[];
+        await testBuilder(
+          builder,
+          srcs,
+          onLog: (log) {
+            logs.add(log.message);
+          },
+        );
+        expect(logs, [
+          'generated/test_lib.foo.dart must be included as a part directive in the input '
+              'library with:\n    part \'generated/test_lib.foo.dart\';'
+        ]);
+      });
+
+      test('generates relative `path of` for output in different directory',
+          () async {
+        await testBuilder(
+            PartBuilder(
+              [const UnformattedCodeGenerator()],
+              '.foo.dart',
+              header: '',
+              options: const BuilderOptions({
+                'build_extensions': {
+                  '^lib/{{}}.dart': 'lib/generated/{{}}.foo.dart'
+                }
+              }),
+            ),
+            {
+              '$_pkgName|lib/a.dart': 'part "generated/a.foo.dart";'
+            },
+            generateFor: {
+              '$_pkgName|lib/a.dart'
+            },
+            outputs: {
+              '$_pkgName|lib/generated/a.foo.dart':
+                  decodedMatches(startsWith("part of '../a.dart';")),
+            });
+      });
+
+      test(
+          'throws if `options` and `additionalOutputExtensions` are both given',
+          () async {
+        await expectLater(
+          () => testBuilder(
+            PartBuilder(
+              [const UnformattedCodeGenerator()],
+              '.foo.dart',
+              additionalOutputExtensions: ['.bar.dart'],
+              options: const BuilderOptions({
+                'build_extensions': {
+                  '^lib/{{}}.dart': 'lib/generated/{{}}.foo.dart'
+                }
+              }),
+            ),
+            {'$_pkgName|lib/a.dart': 'part "generated/a.foo.dart";'},
+          ),
+          throwsArgumentError,
+        );
+      });
+    });
   });
 
-  test('PartBuilder warns about missing part', () async {
-    final srcs = _createPackageStub(testLibContent: _testLibContentNoPart);
-    final builder = PartBuilder([const CommentGenerator()], '.g.dart');
-    final logs = <String>[];
-    await testBuilder(
-      builder,
-      srcs,
-      onLog: (log) {
-        logs.add(log.message);
-      },
-    );
-    expect(logs, [
-      'test_lib.g.dart must be included as a part directive in the input '
-          'library with:\n    part \'test_lib.g.dart\';'
-    ]);
+  group('LibraryBuilder', () {
+    group('with build_extensions', () {
+      test('outputs to the correct location', () async {
+        await testBuilder(
+            LibraryBuilder(
+              const CommentGenerator(),
+              options: const BuilderOptions({
+                'build_extensions': {
+                  '^lib/{{}}.dart': 'lib/generated/{{}}.g.dart'
+                }
+              }),
+            ),
+            _createPackageStub(),
+            generateFor: {
+              '$_pkgName|lib/test_lib.dart'
+            },
+            outputs: {
+              '$_pkgName|lib/generated/test_lib.g.dart':
+                  _testGenStandaloneContent,
+            });
+      });
+
+      test(
+          'throws if `options` and `additionalOutputExtensions` are both given',
+          () async {
+        await expectLater(
+          () => testBuilder(
+            LibraryBuilder(
+              const CommentGenerator(),
+              additionalOutputExtensions: ['.foo.dart'],
+              options: const BuilderOptions({
+                'build_extensions': {
+                  '^lib/{{}}.dart': 'lib/generated/{{}}.foo.dart'
+                }
+              }),
+            ),
+            {'$_pkgName|lib/a.dart': 'part "generated/a.foo.dart";'},
+          ),
+          throwsArgumentError,
+        );
+      });
+    });
   });
 
   group('SharedPartBuilder', () {
@@ -529,56 +645,6 @@ foo generated content
     });
 
     group('with custom extensions', () {
-      test("disallows options that aren't a map", () {
-        expect(
-          () => combiningBuilder(
-              const BuilderOptions({'build_extensions': 'foo'})),
-          throwsArgumentError,
-        );
-      });
-
-      test('disallows empty options', () {
-        expect(
-          () =>
-              combiningBuilder(const BuilderOptions({'build_extensions': {}})),
-          throwsArgumentError,
-        );
-      });
-
-      test('disallows inputs not ending with .dart', () {
-        expect(
-          () => combiningBuilder(const BuilderOptions({
-            'build_extensions': {
-              '.txt': ['.dart']
-            }
-          })),
-          throwsA(
-            isArgumentError.having(
-              (e) => e.message,
-              'message',
-              'Invalid key in build_extensions option: `.txt` should be a '
-                  'string ending with `.dart`',
-            ),
-          ),
-        );
-      });
-
-      test('disallows outputs not ending with .dart', () {
-        expect(
-          () => combiningBuilder(const BuilderOptions({
-            'build_extensions': {'.dart': '.out'}
-          })),
-          throwsA(
-            isArgumentError.having(
-              (e) => e.message,
-              'message',
-              'Invalid output extension `.out`. It should be a string ending '
-                  'with `.dart`',
-            ),
-          ),
-        );
-      });
-
       test('generates relative `path of` for output in different directory',
           () async {
         await testBuilder(

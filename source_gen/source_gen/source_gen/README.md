@@ -119,11 +119,13 @@ you should document this feature for your users.
 
 ### Generating files in different directories
 
-When using shared-part builders which apply the `combining_builder` as part of
-the build, the output location for an input file can be changed.
-By default, a `.g.dart` file next to the input is generated.
+The output location for an input file can be changed:
+- when using `PartBuilder` or `LibraryBuilder`.
+- when using `SharedPartBuilder` which apply the `combining_builder` as
+part of the build.
 
-To change this, set the `build_extensions` option on the combining builder. In
+By default, a `.g.dart` or `.some_name.dart` file is generated next to the input.
+To change this, set the `build_extensions` option on the corresponding builder. In
 the options, `build_extensions` is a map from `String` to `String`, where the
 key is matches inputs and the value is a single build output.
 For more details on build extensions, see [the docs in the build package][outputs].
@@ -135,10 +137,17 @@ with the following build configuration:
 targets:
   $default:
     builders:
+      # A SharedPartBuilder which uses the combining builder
       source_gen|combining_builder:
         options:
           build_extensions:
             '^lib/{{}}.dart': 'lib/generated/{{}}.g.dart'
+
+      # A PartBuilder or LibraryBuilder
+      some_cool_builder:
+        options:
+          build_extensions:
+            '^lib/models/{{}}.dart': 'lib/models/generated/{{}}.foo.dart'
 ```
 
 Remember to change the `part` statement in the input to refer to the correct

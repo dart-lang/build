@@ -4,6 +4,9 @@
   `LibraryReader.annotatedWith`, and `LibraryReader.annotatedWithExact`. Run
   `GeneratorForAnnotation` generators on library elements when the `library`
   statement has the annotation.
+- Add support for `build_extensions` configuration to the `PartBuilder` and
+  `LibraryBuilder`. You must forward the `BuilderOptions` object to the super
+  constructor for this to work.
 
 ## 1.1.1
 

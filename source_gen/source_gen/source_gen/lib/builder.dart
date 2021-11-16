@@ -32,7 +32,8 @@ Builder combiningBuilder([BuilderOptions options = BuilderOptions.empty]) {
   final ignoreForFile = Set<String>.from(
     optionsMap.remove('ignore_for_file') as List? ?? <String>[],
   );
-  final buildExtensions = _validatedBuildExtensionsFrom(optionsMap);
+  final buildExtensions =
+      validatedBuildExtensionsFrom(optionsMap, _defaultExtensions);
 
   final builder = CombiningBuilder(
     includePartName: includePartName,
@@ -44,41 +45,6 @@ Builder combiningBuilder([BuilderOptions options = BuilderOptions.empty]) {
     log.warning('These options were ignored: `$optionsMap`.');
   }
   return builder;
-}
-
-Map<String, List<String>> _validatedBuildExtensionsFrom(
-    Map<String, dynamic> optionsMap) {
-  final extensionsOption = optionsMap.remove('build_extensions');
-  if (extensionsOption == null) return _defaultExtensions;
-
-  if (extensionsOption is! Map) {
-    throw ArgumentError(
-        'Configured build_extensions should be a map from inputs to outputs.');
-  }
-
-  final result = <String, List<String>>{};
-
-  for (final entry in extensionsOption.entries) {
-    final input = entry.key;
-    if (input is! String || !input.endsWith('.dart')) {
-      throw ArgumentError('Invalid key in build_extensions option: `$input` '
-          'should be a string ending with `.dart`');
-    }
-
-    final output = entry.value;
-    if (output is! String || !output.endsWith('.dart')) {
-      throw ArgumentError('Invalid output extension `$output`. It should be a '
-          'string ending with `.dart`');
-    }
-
-    result[input] = [output];
-  }
-
-  if (result.isEmpty) {
-    throw ArgumentError('Configured build_extensions must not be empty.');
-  }
-
-  return result;
 }
 
 PostProcessBuilder partCleanup(BuilderOptions options) =>
