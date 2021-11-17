@@ -7,6 +7,8 @@
 - Add support for `build_extensions` configuration to the `PartBuilder` and
   `LibraryBuilder`. You must forward the `BuilderOptions` object to the super
   constructor for this to work.
+- Fix a bug finding source locations for reporting unresolved annotations on
+  parameters.
 
 ## 1.1.1
 

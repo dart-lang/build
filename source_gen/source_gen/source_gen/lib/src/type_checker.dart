@@ -308,8 +308,17 @@ class UnresolvedAnnotationException implements Exception {
       if (declaration == null) {
         return null;
       }
-      final annotatedNode = declaration.node as AnnotatedNode;
-      final annotation = annotatedNode.metadata[annotationIndex];
+      final node = declaration.node;
+      final List<Annotation> metadata;
+      if (node is AnnotatedNode) {
+        metadata = node.metadata;
+      } else if (node is FormalParameter) {
+        metadata = node.metadata;
+      } else {
+        throw StateError(
+            'Unhandled Annotated AST node type: ${node.runtimeType}');
+      }
+      final annotation = metadata[annotationIndex];
       final start = annotation.offset;
       final end = start + annotation.length;
       final parsedUnit = declaration.parsedUnit!;

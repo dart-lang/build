@@ -339,6 +339,7 @@ void main() {
   group('unresolved annotations', () {
     late TypeChecker $A;
     late ClassElement $ExampleOfA;
+    late ParameterElement $annotatedParameter;
 
     setUpAll(() async {
       final library = await resolveSource(
@@ -350,6 +351,8 @@ void main() {
       @A()
       class ExampleOfA {}
 
+      void annotatedParameter(@B() @A() String parameter) {}
+
       class A {
         const A();
       }
@@ -359,6 +362,11 @@ void main() {
       $A = TypeChecker.fromStatic(library.getType('A')!.instantiate(
           typeArguments: [], nullabilitySuffix: NullabilitySuffix.none));
       $ExampleOfA = library.getType('ExampleOfA')!;
+      $annotatedParameter = library.topLevelElements
+          .whereType<FunctionElement>()
+          .firstWhere((f) => f.name == 'annotatedParameter')
+          .parameters
+          .single;
     });
 
     test('should throw by default', () {
@@ -369,6 +377,14 @@ void main() {
       expect(() => $A.firstAnnotationOfExact($ExampleOfA),
           throwsUnresolvedAnnotationException);
       expect(() => $A.annotationsOfExact($ExampleOfA),
+          throwsUnresolvedAnnotationException);
+      expect(() => $A.firstAnnotationOf($annotatedParameter),
+          throwsUnresolvedAnnotationException);
+      expect(() => $A.annotationsOf($annotatedParameter),
+          throwsUnresolvedAnnotationException);
+      expect(() => $A.firstAnnotationOfExact($annotatedParameter),
+          throwsUnresolvedAnnotationException);
+      expect(() => $A.annotationsOfExact($annotatedParameter),
           throwsUnresolvedAnnotationException);
     });
 
@@ -401,5 +417,6 @@ void main() {
   });
 }
 
-final throwsUnresolvedAnnotationException =
-    throwsA(const TypeMatcher<UnresolvedAnnotationException>());
+final throwsUnresolvedAnnotationException = throwsA(
+    const TypeMatcher<UnresolvedAnnotationException>()
+        .having((e) => e.annotationSource, 'annotationSource', isNotNull));
