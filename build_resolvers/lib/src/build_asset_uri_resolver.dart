@@ -196,11 +196,15 @@ class BuildAssetUriResolver extends UriResolver {
     var pathSegments = resourceProvider.pathContext.split(path);
     var packageName = pathSegments[1];
     if (pathSegments[2] == 'lib') {
-      var packagePath = p.url.joinAll(pathSegments.skip(3));
-      return Uri.parse('package:$packageName/$packagePath');
+      return Uri(
+        scheme: 'package',
+        pathSegments: [packageName].followedBy(pathSegments.skip(3)),
+      );
     } else {
-      var packagePath = p.url.joinAll(pathSegments.skip(2));
-      return Uri.parse('asset:$packageName/$packagePath');
+      return Uri(
+        scheme: 'asset',
+        pathSegments: [packageName].followedBy(pathSegments.skip(2)),
+      );
     }
   }
 
