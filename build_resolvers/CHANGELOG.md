@@ -1,4 +1,4 @@
-## 2.0.5-dev
+## 2.0.5
 
 - Consider files without a `.dart` extension as not Dart libraries. Previously
   the `isLibrary` getter was behaving like `isNotDartPartFile` which included
@@ -7,6 +7,7 @@
   will give a more predictable result for the majority of cases.
 - Update usages of deprecated analyzer apis.
 - Require at least analyzer `2.1.0`.
+- Support upcoming analyzer changes to `UriResolver`.
 
 ## 2.0.4
 
