@@ -193,7 +193,7 @@ class BuildAssetUriResolver extends UriResolver {
   @override
   // ignore: override_on_non_overriding_member
   Uri pathToUri(String path) {
-    var pathSegments = resourceProvider.pathContext.split(path);
+    var pathSegments = p.posix.split(path);
     var packageName = pathSegments[1];
     if (pathSegments[2] == 'lib') {
       return Uri(
