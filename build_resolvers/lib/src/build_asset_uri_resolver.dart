@@ -191,8 +191,27 @@ class BuildAssetUriResolver extends UriResolver {
   }
 
   @override
-  Uri? restoreAbsolute(Source source) =>
-      lookupCachedAsset(source.uri)?.uri ?? source.uri;
+  // ignore: override_on_non_overriding_member
+  Uri pathToUri(String path) {
+    var pathSegments = p.posix.split(path);
+    var packageName = pathSegments[1];
+    if (pathSegments[2] == 'lib') {
+      return Uri(
+        scheme: 'package',
+        pathSegments: [packageName].followedBy(pathSegments.skip(3)),
+      );
+    } else {
+      return Uri(
+        scheme: 'asset',
+        pathSegments: [packageName].followedBy(pathSegments.skip(2)),
+      );
+    }
+  }
+
+  @override
+  Uri restoreAbsolute(Source source) {
+    return pathToUri(source.fullName);
+  }
 }
 
 String assetPath(AssetId assetId) =>
