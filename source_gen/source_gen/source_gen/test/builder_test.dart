@@ -315,6 +315,8 @@ part "a.foo.dart";'''
           'generated/test_lib.foo.dart must be included as a part directive in the input '
               'library with:\n    part \'generated/test_lib.foo.dart\';'
         ]);
+      }, onPlatform: const {
+        'windows': Skip('https://github.com/dart-lang/source_gen/issues/570')
       });
 
       test('generates relative `path of` for output in different directory',
@@ -340,6 +342,8 @@ part "a.foo.dart";'''
               '$_pkgName|lib/generated/a.foo.dart':
                   decodedMatches(startsWith("part of '../a.dart';")),
             });
+      }, onPlatform: const {
+        'windows': Skip('https://github.com/dart-lang/source_gen/issues/570')
       });
 
       test(
@@ -668,6 +672,8 @@ foo generated content
 ''')),
           },
         );
+      }, onPlatform: const {
+        'windows': Skip('https://github.com/dart-lang/source_gen/issues/570')
       });
 
       test('warns about missing part statement', () async {
@@ -692,6 +698,8 @@ foo generated content
             'input library with:\n    part \'generated/a.g.dart\';',
           ),
         );
+      }, onPlatform: const {
+        'windows': Skip('https://github.com/dart-lang/source_gen/issues/570')
       });
     });
   });

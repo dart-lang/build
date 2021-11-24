@@ -3,6 +3,10 @@ dart:
 - 2.12.0
 - dev
 
+os:
+- linux
+- windows
+
 stages:
 - analyze_format:
   - group:

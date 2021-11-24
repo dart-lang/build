@@ -1,4 +1,4 @@
-# Created with package:mono_repo v5.0.4
+# Created with package:mono_repo v5.0.5
 name: Dart CI
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v2.1.7
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;dart:stable"
@@ -31,17 +31,17 @@ jobs:
         with:
           sdk: stable
       - id: checkout
-        uses: actions/checkout@v2.3.5
+        uses: actions/checkout@v2.4.0
       - name: mono_repo self validate
-        run: dart pub global activate mono_repo 5.0.4
+        run: dart pub global activate mono_repo 5.0.5
       - name: mono_repo self validate
         run: dart pub global run mono_repo generate --validate
   job_002:
-    name: "analyze_format; Dart 2.12.0; PKG: source_gen; `dart analyze`"
+    name: "analyze_format; linux; Dart 2.12.0; PKG: source_gen; `dart analyze`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v2.1.7
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:source_gen;commands:analyze_1"
@@ -54,7 +54,7 @@ jobs:
         with:
           sdk: "2.12.0"
       - id: checkout
-        uses: actions/checkout@v2.3.5
+        uses: actions/checkout@v2.4.0
       - id: source_gen_pub_upgrade
         name: source_gen; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -65,11 +65,11 @@ jobs:
         working-directory: source_gen
         run: dart analyze
   job_003:
-    name: "analyze_format; Dart dev; PKGS: _test_annotations, example, example_usage, source_gen; `dart format --output=none --set-exit-if-changed .`, `dart analyze --fatal-infos .`"
+    name: "analyze_format; linux; Dart dev; PKGS: _test_annotations, example, example_usage, source_gen; `dart format --output=none --set-exit-if-changed .`, `dart analyze --fatal-infos .`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v2.1.7
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_annotations-example-example_usage-source_gen;commands:format-analyze_0"
@@ -82,7 +82,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2.3.5
+        uses: actions/checkout@v2.4.0
       - id: _test_annotations_pub_upgrade
         name: _test_annotations; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -136,11 +136,51 @@ jobs:
         working-directory: source_gen
         run: dart analyze --fatal-infos .
   job_004:
-    name: "unit_test; Dart 2.12.0; PKG: example_usage; `dart test --run-skipped`"
+    name: "analyze_format; windows; Dart 2.12.0; PKG: source_gen; `dart analyze`"
+    runs-on: windows-latest
+    steps:
+      - uses: dart-lang/setup-dart@v1.3
+        with:
+          sdk: "2.12.0"
+      - id: checkout
+        uses: actions/checkout@v2.4.0
+      - id: source_gen_pub_upgrade
+        name: source_gen; dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: source_gen
+        run: dart pub upgrade
+      - name: source_gen; dart analyze
+        if: "always() && steps.source_gen_pub_upgrade.conclusion == 'success'"
+        working-directory: source_gen
+        run: dart analyze
+  job_005:
+    name: "analyze_format; windows; Dart dev; PKG: source_gen; `dart format --output=none --set-exit-if-changed .`, `dart analyze --fatal-infos .`"
+    runs-on: windows-latest
+    steps:
+      - uses: dart-lang/setup-dart@v1.3
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.4.0
+      - id: source_gen_pub_upgrade
+        name: source_gen; dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: source_gen
+        run: dart pub upgrade
+      - name: "source_gen; dart format --output=none --set-exit-if-changed ."
+        if: "always() && steps.source_gen_pub_upgrade.conclusion == 'success'"
+        working-directory: source_gen
+        run: "dart format --output=none --set-exit-if-changed ."
+      - name: "source_gen; dart analyze --fatal-infos ."
+        if: "always() && steps.source_gen_pub_upgrade.conclusion == 'success'"
+        working-directory: source_gen
+        run: dart analyze --fatal-infos .
+  job_006:
+    name: "unit_test; linux; Dart 2.12.0; PKG: example_usage; `dart test --run-skipped`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v2.1.7
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:example_usage;commands:test_0"
@@ -153,7 +193,7 @@ jobs:
         with:
           sdk: "2.12.0"
       - id: checkout
-        uses: actions/checkout@v2.3.5
+        uses: actions/checkout@v2.4.0
       - id: example_usage_pub_upgrade
         name: example_usage; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -167,12 +207,14 @@ jobs:
       - job_001
       - job_002
       - job_003
-  job_005:
-    name: "unit_test; Dart 2.12.0; PKG: source_gen; `dart test`"
+      - job_004
+      - job_005
+  job_007:
+    name: "unit_test; linux; Dart 2.12.0; PKG: source_gen; `dart test`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v2.1.7
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:source_gen;commands:test_1"
@@ -185,7 +227,7 @@ jobs:
         with:
           sdk: "2.12.0"
       - id: checkout
-        uses: actions/checkout@v2.3.5
+        uses: actions/checkout@v2.4.0
       - id: source_gen_pub_upgrade
         name: source_gen; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -199,12 +241,14 @@ jobs:
       - job_001
       - job_002
       - job_003
-  job_006:
-    name: "unit_test; Dart dev; PKG: example_usage; `dart test --run-skipped`"
+      - job_004
+      - job_005
+  job_008:
+    name: "unit_test; linux; Dart dev; PKG: example_usage; `dart test --run-skipped`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v2.1.7
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:example_usage;commands:test_0"
@@ -217,7 +261,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2.3.5
+        uses: actions/checkout@v2.4.0
       - id: example_usage_pub_upgrade
         name: example_usage; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -231,12 +275,14 @@ jobs:
       - job_001
       - job_002
       - job_003
-  job_007:
-    name: "unit_test; Dart dev; PKG: source_gen; `dart test`"
+      - job_004
+      - job_005
+  job_009:
+    name: "unit_test; linux; Dart dev; PKG: source_gen; `dart test`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v2.1.7
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:source_gen;commands:test_1"
@@ -249,7 +295,7 @@ jobs:
         with:
           sdk: dev
       - id: checkout
-        uses: actions/checkout@v2.3.5
+        uses: actions/checkout@v2.4.0
       - id: source_gen_pub_upgrade
         name: source_gen; dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
@@ -263,3 +309,53 @@ jobs:
       - job_001
       - job_002
       - job_003
+      - job_004
+      - job_005
+  job_010:
+    name: "unit_test; windows; Dart 2.12.0; PKG: source_gen; `dart test`"
+    runs-on: windows-latest
+    steps:
+      - uses: dart-lang/setup-dart@v1.3
+        with:
+          sdk: "2.12.0"
+      - id: checkout
+        uses: actions/checkout@v2.4.0
+      - id: source_gen_pub_upgrade
+        name: source_gen; dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: source_gen
+        run: dart pub upgrade
+      - name: source_gen; dart test
+        if: "always() && steps.source_gen_pub_upgrade.conclusion == 'success'"
+        working-directory: source_gen
+        run: dart test
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+  job_011:
+    name: "unit_test; windows; Dart dev; PKG: source_gen; `dart test`"
+    runs-on: windows-latest
+    steps:
+      - uses: dart-lang/setup-dart@v1.3
+        with:
+          sdk: dev
+      - id: checkout
+        uses: actions/checkout@v2.4.0
+      - id: source_gen_pub_upgrade
+        name: source_gen; dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: source_gen
+        run: dart pub upgrade
+      - name: source_gen; dart test
+        if: "always() && steps.source_gen_pub_upgrade.conclusion == 'success'"
+        working-directory: source_gen
+        run: dart test
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005

@@ -22,4 +22,5 @@ dev_dependencies:
   _test_annotations:
     path: ../_test_annotations
   build_test: ^2.0.0
+  term_glyph: ^1.2.0
   test: ^1.16.0
