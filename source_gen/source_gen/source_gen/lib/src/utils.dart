@@ -51,7 +51,7 @@ String nameOfPartial(LibraryElement element, AssetId source, AssetId output) {
 
   assert(source.package == output.package);
   final relativeSourceUri =
-      p.url.relative(source.path, from: p.dirname(output.path));
+      p.url.relative(source.path, from: p.url.dirname(output.path));
   return '\'$relativeSourceUri\'';
 }
 
@@ -71,8 +71,8 @@ String suggestLibraryName(AssetId source) {
 /// Returns what 'part "..."' URL is needed to import [output] from [input].
 ///
 /// For example, will return `test_lib.g.dart` for `test_lib.dart`.
-String computePartUrl(AssetId input, AssetId output) =>
-    p.joinAll(p.split(p.relative(output.path, from: input.path)).skip(1));
+String computePartUrl(AssetId input, AssetId output) => p.url.joinAll(
+    p.url.split(p.url.relative(output.path, from: input.path)).skip(1));
 
 /// Returns a URL representing [element].
 String urlOfElement(Element element) => element.kind == ElementKind.DYNAMIC
@@ -106,7 +106,7 @@ Uri normalizeDartUrl(Uri url) => url.pathSegments.isNotEmpty
     : url;
 
 Uri fileToAssetUrl(Uri url) {
-  if (!p.isWithin(p.current, url.path)) return url;
+  if (!p.isWithin(p.url.current, url.path)) return url;
   return Uri(
       scheme: 'asset', path: p.join(rootPackageName, p.relative(url.path)));
 }

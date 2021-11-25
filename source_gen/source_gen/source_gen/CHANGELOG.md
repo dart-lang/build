@@ -9,6 +9,7 @@
   constructor for this to work.
 - Fix a bug finding source locations for reporting unresolved annotations on
   parameters.
+- Fix a bug checking for `part` statements on Windows.
 
 ## 1.1.1
 
