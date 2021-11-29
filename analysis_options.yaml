@@ -1,7 +1,7 @@
 include: package:lints/recommended.yaml
 analyzer:
-  strong-mode:
-    implicit-casts: false
+  language:
+    strict-casts: true
   errors:
     unused_import: error
     unused_local_variable: error
