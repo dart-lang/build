@@ -61,7 +61,7 @@ class _AssetGraphDeserializer {
     // Read in all the nodes and their outputs.
     //
     // Note that this does not read in the inputs of generated nodes.
-    for (var serializedItem in _serializedGraph['nodes']) {
+    for (var serializedItem in _serializedGraph['nodes'] as Iterable) {
       graph._add(_deserializeAssetNode(serializedItem as List));
     }
 
