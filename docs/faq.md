@@ -342,7 +342,9 @@ Add the following snippet to your `settings.json` to use the correct schema for
 ```json
 "yaml.schemas": {
     "https://json.schemastore.org/dart-build": [
-        "build.yaml"
+        "build.yaml",
+        "*.build.yaml",
+        "build.*.yaml"
     ]
 }
 ```
