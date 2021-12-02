@@ -324,3 +324,38 @@ principle being making the tradeoff of worse build times for less resource
 usage on the machine.
 
 See also [Configuring the number of compiler processes](#configuring-the-number-of-compiler-processes).
+
+## How can I setup my editor to work with `build.yaml` files?
+
+A schema for valid keys and values for build configuration files is available
+on [SchemaStore.org](https://www.schemastore.org/json/), but it is not assigned
+to any file names by default. You can configure your editor to use the correct
+schema.
+
+### VS Code
+
+When using VS Code, you can use the [YAML extension] by RedHat to validate the
+schema of build configuration files.
+Add the following snippet to your `settings.json` to use the correct schema for
+`build.yaml` files:
+
+```json
+"yaml.schemas": {
+    "https://json.schemastore.org/dart-build": [
+        "build.yaml"
+    ]
+}
+```
+
+### IntelliJ-based editors (e.g. IDEA, Android Studio, Webstorm)
+
+JetBrains IDEs have builtin support for YAML schema verification, but the
+correct schema for `build.yaml` files needs to be configured here too.
+To do so, open Settings and select "Languages & Frameworks", "Schemas and
+DTDs" and "JSON Schema Mappings".
+Add a new configuration with `https://json.schemastore.org/dart-build.json` as
+a schema URL. The configuration should look similar to this:
+
+![Schema configuration for IDEA based IDEs](images/idea_schema_config.png)
+
+[YAML extension]: https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml
