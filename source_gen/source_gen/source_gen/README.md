@@ -18,7 +18,7 @@
 * A **convention** for human and tool generated Dart code to coexist with clean
   separation, and for multiple code generators to integrate in the same project.
 
-It's main purpose is to expose a developer-friendly API on top of lower-level
+Its main purpose is to expose a developer-friendly API on top of lower-level
 packages like the [analyzer][] or [build][]. You don't _have_ to use
 `source_gen` in order to generate source code; we also expose a set of library
 APIs that might be useful in your generators.
