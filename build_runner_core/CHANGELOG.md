@@ -1,4 +1,6 @@
-## 7.2.3-dev
+## 7.2.3
+
+- Allow the latest analyzer.
 
 ## 7.2.2
 

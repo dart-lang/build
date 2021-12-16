@@ -1,3 +1,7 @@
+## 3.2.2
+
+- Allow the latest analyzer.
+
 ## 3.2.1
 
 - Fix enable-experiment flag support for dartdevc to also pass experiment flags

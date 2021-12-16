@@ -1,3 +1,7 @@
+## 2.1.5
+
+- Allow the latest analyzer.
+
 ## 2.1.4
 
 - Update `pub run` references to `dart run`.

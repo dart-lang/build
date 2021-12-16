@@ -1,3 +1,7 @@
+## 2.1.6
+
+- Allow the latest analyzer.
+
 ## 2.1.5
 
 - Use raw string literals for builder options when generating build scripts.

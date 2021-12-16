@@ -1,3 +1,7 @@
+## 2.0.6
+
+- Allow the latest analyzer.
+
 ## 2.0.5
 
 - Consider files without a `.dart` extension as not Dart libraries. Previously
