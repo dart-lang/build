@@ -1,4 +1,4 @@
-dart:
+sdk:
 - dev
 
 os:
@@ -29,5 +29,5 @@ stages:
 # This stage is configured to only run for scheduled builds (see mono_repo.yaml)
 - e2e_test_cron:
   - test:
-    dart:
+    sdk:
     - be/raw/latest
