@@ -1,8 +1,9 @@
-## 2.2.0-dev
+## 2.2.0
 
 - Allow reusing the values held by `Resource`s when the resource has a `dispose`
   method. Previously the instances were discarded and recreated for every build
   even if they had tried to clean up their own state.
+- Allow the latest analyzer.
 
 ## 2.1.1
 

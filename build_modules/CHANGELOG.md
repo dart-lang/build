@@ -1,5 +1,7 @@
 ## 4.0.4-dev
 
+- Allow the latest analyzer.
+
 ## 4.0.3
 
 - Drop package:pedantic dependency and replace it with package:lints.

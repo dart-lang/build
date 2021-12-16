@@ -7,7 +7,7 @@ environment:
   sdk: ">=2.14.0 <3.0.0"
 
 dependencies:
-  analyzer: ">=1.0.0 <3.0.0"
+  analyzer: ">=1.0.0 <4.0.0"
   async: ^2.5.0
   bazel_worker: ^1.0.0
   build: ^2.0.0
@@ -33,3 +33,6 @@ dev_dependencies:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
+
+dependency_overrides:
+  analyzer: ^3.0.0
