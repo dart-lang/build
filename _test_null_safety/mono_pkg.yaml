@@ -1,4 +1,4 @@
-dart:
+sdk:
 - dev
 
 os:
@@ -9,7 +9,7 @@ stages:
 - analyze_and_format:
   - group:
     - analyze: --fatal-infos
-    dart: dev
+    sdk: dev
 - e2e_test:
   - group:
     - command: dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random
@@ -19,5 +19,5 @@ stages:
   - group:
     - command: dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random
     - command: dart run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random
-    dart:
+    sdk:
       - be/raw/latest

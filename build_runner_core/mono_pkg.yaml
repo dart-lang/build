@@ -1,4 +1,4 @@
-dart:
+sdk:
 - dev
 
 stages:
@@ -6,7 +6,7 @@ stages:
   - group:
     - format
     - analyze: --fatal-infos .
-    dart: dev
+    sdk: dev
 - unit_test:
   - test: --test-randomize-ordering-seed=random
     os:
