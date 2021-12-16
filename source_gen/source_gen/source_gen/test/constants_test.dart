@@ -195,13 +195,14 @@ void main() {
     });
   });
 
-  group('Reviable', () {
+  group('Revivable', () {
     late List<ConstantReader> constants;
 
     setUpAll(() async {
       final library = await resolveSource(
         r'''
         library test_lib;
+        import 'dart:io';
 
         @Int64Like.ZERO
         @Duration(seconds: 30)
@@ -216,6 +217,7 @@ void main() {
         @PublicWithPrivateConstructor._()
         @_privateField
         @Wrapper(_privateFunction)
+        @ProcessStartMode.normal
         class Example {}
 
         class Int64Like implements Int64LikeBase{
@@ -373,6 +375,14 @@ void main() {
       expect(function.isPrivate, isTrue);
       expect(function.source.fragment, isEmpty);
       expect(function.accessor, '_privateFunction');
+    });
+
+    test('should decode public static fields backed by private constructors',
+        () {
+      final staticFieldWithPrivateImpl = constants[13].revive();
+      expect(staticFieldWithPrivateImpl.accessor, 'ProcessStartMode.normal');
+      expect(staticFieldWithPrivateImpl.isPrivate, isFalse);
+      expect(staticFieldWithPrivateImpl.source.fragment, isEmpty);
     });
   });
 }

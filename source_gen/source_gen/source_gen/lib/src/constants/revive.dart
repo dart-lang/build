@@ -43,14 +43,13 @@ Revivable reviveInstance(DartObject object, [LibraryElement? origin]) {
       accessor: '${element.enclosingElement.name}.${element.name}',
     );
   }
-  // Enums are not included in .definingCompilationUnit.types.
-  final clazz = element as ClassElement;
-  if (clazz.isEnum) {
-    for (final e in clazz.fields.where(
+
+  if (element is ClassElement) {
+    for (final e in element.fields.where(
         (f) => f.isPublic && f.isConst && f.computeConstantValue() == object)) {
       return Revivable._(
         source: url.removeFragment(),
-        accessor: '${clazz.name}.${e.name}',
+        accessor: '${element.name}.${e.name}',
       );
     }
   }

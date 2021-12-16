@@ -1,3 +1,9 @@
+## 1.2.1-dev
+
+- Allow reviving constants which are static fields defined on the class which
+  represents their type. Previously we checked this pattern only for enums,
+  however there are enum-like usages in classes which are not enums.
+
 ## 1.2.0
 
 - Include the `LibraryElement` in `LibraryReader.allElements`,
