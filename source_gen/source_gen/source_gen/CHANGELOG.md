@@ -1,8 +1,9 @@
-## 1.2.1-dev
+## 1.2.1
 
 - Allow reviving constants which are static fields defined on the class which
   represents their type. Previously we checked this pattern only for enums,
   however there are enum-like usages in classes which are not enums.
+- Allow the latest version of `package:analyzer`.
 
 ## 1.2.0
 
