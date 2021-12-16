@@ -23,7 +23,6 @@ dev_dependencies:
   test_process: ^2.0.0
 
 dependency_overrides:
-  analyzer: ^3.0.0
   build:
     path: ../build
   build_config:

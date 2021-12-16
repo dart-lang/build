@@ -23,6 +23,5 @@ dev_dependencies:
     path: ../_test_common
 
 dependency_overrides:
-  analyzer: ^3.0.0
   build_runner_core:
     path: ../build_runner_core

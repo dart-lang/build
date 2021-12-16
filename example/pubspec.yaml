@@ -15,8 +15,6 @@ dev_dependencies:
   lints: ^1.0.0
 
 dependency_overrides:
-  # Needed until the world rolls forward
-  analyzer: ^3.0.0
   build:
     path: ../build
   build_runner_core:
