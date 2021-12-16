@@ -1,4 +1,4 @@
-# Created with package:mono_repo v5.0.5
+# Created with package:mono_repo v6.0.0
 name: Dart CI
 on:
   push:
@@ -23,7 +23,7 @@ jobs:
         uses: actions/cache@v2.1.7
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:stable"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:stable"
           restore-keys: |
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
@@ -33,7 +33,7 @@ jobs:
       - id: checkout
         uses: actions/checkout@v2.4.0
       - name: mono_repo self validate
-        run: dart pub global activate mono_repo 5.0.5
+        run: dart pub global activate mono_repo 6.0.0
       - name: mono_repo self validate
         run: dart pub global run mono_repo generate --validate
   job_002:
@@ -44,10 +44,10 @@ jobs:
         uses: actions/cache@v2.1.7
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:source_gen;commands:analyze_1"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:2.12.0;packages:source_gen;commands:analyze_1"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:source_gen
-            os:ubuntu-latest;pub-cache-hosted;dart:2.12.0
+            os:ubuntu-latest;pub-cache-hosted;sdk:2.12.0;packages:source_gen
+            os:ubuntu-latest;pub-cache-hosted;sdk:2.12.0
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.3
@@ -72,10 +72,10 @@ jobs:
         uses: actions/cache@v2.1.7
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_annotations-example-example_usage-source_gen;commands:format-analyze_0"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_test_annotations-example-example_usage-source_gen;commands:format-analyze_0"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:_test_annotations-example-example_usage-source_gen
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_test_annotations-example-example_usage-source_gen
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.3
@@ -183,10 +183,10 @@ jobs:
         uses: actions/cache@v2.1.7
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:example_usage;commands:test_0"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:2.12.0;packages:example_usage;commands:test_0"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:example_usage
-            os:ubuntu-latest;pub-cache-hosted;dart:2.12.0
+            os:ubuntu-latest;pub-cache-hosted;sdk:2.12.0;packages:example_usage
+            os:ubuntu-latest;pub-cache-hosted;sdk:2.12.0
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.3
@@ -217,10 +217,10 @@ jobs:
         uses: actions/cache@v2.1.7
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:source_gen;commands:test_1"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:2.12.0;packages:source_gen;commands:test_1"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:2.12.0;packages:source_gen
-            os:ubuntu-latest;pub-cache-hosted;dart:2.12.0
+            os:ubuntu-latest;pub-cache-hosted;sdk:2.12.0;packages:source_gen
+            os:ubuntu-latest;pub-cache-hosted;sdk:2.12.0
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.3
@@ -251,10 +251,10 @@ jobs:
         uses: actions/cache@v2.1.7
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:example_usage;commands:test_0"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:example_usage;commands:test_0"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:example_usage
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:example_usage
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.3
@@ -285,10 +285,10 @@ jobs:
         uses: actions/cache@v2.1.7
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:source_gen;commands:test_1"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:source_gen;commands:test_1"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;dart:dev;packages:source_gen
-            os:ubuntu-latest;pub-cache-hosted;dart:dev
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:source_gen
+            os:ubuntu-latest;pub-cache-hosted;sdk:dev
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.3

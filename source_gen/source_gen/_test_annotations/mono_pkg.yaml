@@ -4,4 +4,4 @@ stages:
   - group:
     - format
     - analyze: --fatal-infos .
-    dart: dev
+    sdk: dev
