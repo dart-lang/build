@@ -1,4 +1,4 @@
-## 4.0.4-dev
+## 4.0.4
 
 - Allow the latest analyzer.
 

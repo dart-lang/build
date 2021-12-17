@@ -1,3 +1,7 @@
+## 2.1.7
+
+- Allow the latest `pkg:build`.
+
 ## 2.1.6
 
 - Allow the latest analyzer.
