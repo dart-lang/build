@@ -55,6 +55,19 @@ void main() {
       var actual = await buildStep.fetchResource(intResource);
       expect(actual, expected);
     });
+
+    test('does not allow multiple writes to the same output', () async {
+      final id = outputs.first;
+      await buildStep.writeAsString(id, 'foo');
+
+      final expectedException = isA<InvalidOutputException>()
+          .having((e) => e.assetId, 'assetId', id)
+          .having((e) => e.message, 'message', contains('already wrote to'));
+
+      expect(
+          () => buildStep.writeAsString(id, 'bar'), throwsA(expectedException));
+      expect(() => buildStep.writeAsBytes(id, []), throwsA(expectedException));
+    });
   });
 
   group('with in memory file system', () {
