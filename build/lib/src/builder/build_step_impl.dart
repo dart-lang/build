@@ -47,6 +47,8 @@ class BuildStepImpl implements BuildStep {
   /// The result of any writes which are starting during this step.
   final _writeResults = <Future<Result<void>>>[];
 
+  final _writtenAssets = <AssetId>{};
+
   /// Used internally for reading files.
   final AssetReader _reader;
 
@@ -169,6 +171,14 @@ class BuildStepImpl implements BuildStep {
   void _checkOutput(AssetId id) {
     if (!allowedOutputs.contains(id)) {
       throw UnexpectedOutputException(id, expected: allowedOutputs);
+    }
+
+    if (!_writtenAssets.add(id)) {
+      throw InvalidOutputException(
+        id,
+        'This build step already wrote to `$id`. Duplicate writes to the same '
+        'asset are forbidden.',
+      );
     }
   }
 

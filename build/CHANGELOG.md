@@ -1,3 +1,8 @@
+## 2.2.1
+
+- Fix a bug where builders were allowed to write to the same asset multiple
+  times.
+
 ## 2.2.0
 
 - Allow reusing the values held by `Resource`s when the resource has a `dispose`
