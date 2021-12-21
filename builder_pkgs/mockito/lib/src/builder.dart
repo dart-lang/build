@@ -83,7 +83,7 @@ class MockBuilder implements Builder {
       // These comments are added after import directives; leading newlines
       // are necessary. Individual rules are still ignored to preserve backwards
       // compatibility with older versions of Dart.
-      b.body.add(Code('\n\n// // ignore_for_file: type=lint\n'));
+      b.body.add(Code('\n\n// ignore_for_file: type=lint\n'));
       b.body.add(Code('// ignore_for_file: avoid_redundant_argument_values\n'));
       // We might generate a setter without a corresponding getter.
       b.body.add(Code('// ignore_for_file: avoid_setters_without_getters\n'));
