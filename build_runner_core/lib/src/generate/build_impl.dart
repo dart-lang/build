@@ -161,6 +161,8 @@ CheckInvalidInput _checkInvalidInputFactory(
   };
 }
 
+var unusedAssets = <AssetId>{};
+
 /// Performs a single build and manages state that only lives for a single
 /// build.
 class _SingleBuild {
@@ -517,7 +519,6 @@ class _SingleBuild {
             .putIfAbsent(phaseNumber, () => <String>{})
             .add(actionDescription);
 
-        var unusedAssets = <AssetId>{};
         await tracker.trackStage(
             'Build',
             () => runBuilder(
