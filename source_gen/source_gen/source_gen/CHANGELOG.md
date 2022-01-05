@@ -57,6 +57,10 @@
   - `ConstantReader.anyValue`.
   - `LibraryReader.classElements`.
 
+## 0.9.10+5
+
+* Widen `dart_style` range to include v2.x.
+
 ## 0.9.10+4
 
 * Upgrade to `package:build` version `2.0.0`.
