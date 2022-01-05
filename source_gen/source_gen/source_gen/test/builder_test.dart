@@ -654,6 +654,7 @@ class _DeprecatedGenerator extends GeneratorForAnnotation<Deprecated> {
       throw UnimplementedError();
 }
 
+// ignore: subtype_of_sealed_class
 class _TestingBuildStep implements BuildStep {
   @override
   final AssetId inputId;

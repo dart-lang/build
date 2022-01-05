@@ -294,6 +294,7 @@ class UnresolvedAnnotationException implements Exception {
     int annotationIndex,
   ) {
     final parsedLibrary = annotatedElement.session
+        // ignore: deprecated_member_use
         .getParsedLibraryByElement(annotatedElement.library);
     final declaration = parsedLibrary.getElementDeclaration(annotatedElement);
     final annotatedNode = declaration.node as AnnotatedNode;

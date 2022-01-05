@@ -7,8 +7,8 @@
 import 'dart:collection';
 
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:meta/meta.dart';
