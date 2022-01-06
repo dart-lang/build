@@ -60,17 +60,22 @@ class _Builder extends Builder {
         formatOutput = formatOutput ?? _formatter.format,
         _header = (header ?? defaultFileHeader).trim() {
     if (_generatedExtension.isEmpty || !_generatedExtension.startsWith('.')) {
-      throw ArgumentError.value(_generatedExtension, 'generatedExtension',
-          'Extension must be in the format of .*');
+      throw ArgumentError.value(
+        _generatedExtension,
+        'generatedExtension',
+        'Extension must be in the format of .*',
+      );
     }
     if (_isLibraryBuilder && _generators.length > 1) {
       throw ArgumentError(
-          'A standalone file can only be generated from a single Generator.');
+        'A standalone file can only be generated from a single Generator.',
+      );
     }
     if (options != null && additionalOutputExtensions.isNotEmpty) {
       throw ArgumentError(
-          'Either `options` or `additionalOutputExtensions` parameter '
-          'can be given. Not both.');
+        'Either `options` or `additionalOutputExtensions` parameter '
+        'can be given. Not both.',
+      );
     }
   }
 
@@ -82,7 +87,10 @@ class _Builder extends Builder {
 
     if (_generators.every((g) => g is GeneratorForAnnotation) &&
         !(await _hasAnyTopLevelAnnotations(
-            buildStep.inputId, resolver, buildStep))) {
+          buildStep.inputId,
+          resolver,
+          buildStep,
+        ))) {
       return;
     }
 
@@ -128,8 +136,10 @@ class _Builder extends Builder {
             hasExpectedPartDirective(libraryUnit, part);
         if (!hasLibraryPartDirectiveWithOutputUri) {
           // TODO: Upgrade to error in a future breaking change?
-          log.warning('$part must be included as a part directive in '
-              'the input library with:\n    part \'$part\';');
+          log.warning(
+            '$part must be included as a part directive in '
+            'the input library with:\n    part \'$part\';',
+          );
           return;
         }
       } else {
@@ -221,10 +231,11 @@ class SharedPartBuilder extends _Builder {
         ) {
     if (!_partIdRegExp.hasMatch(partId)) {
       throw ArgumentError.value(
-          partId,
-          'partId',
-          '`partId` can only contain letters, numbers, `_` and `.`. '
-              'It cannot start or end with `.`.');
+        partId,
+        'partId',
+        '`partId` can only contain letters, numbers, `_` and `.`. '
+            'It cannot start or end with `.`.',
+      );
     }
   }
 }
@@ -354,7 +365,10 @@ Stream<GeneratedOutput> _generate(
 }
 
 Future<bool> _hasAnyTopLevelAnnotations(
-    AssetId input, Resolver resolver, BuildStep buildStep) async {
+  AssetId input,
+  Resolver resolver,
+  BuildStep buildStep,
+) async {
   if (!await buildStep.canRead(input)) return false;
   final parsed = await resolver.compilationUnitFor(input);
   final partIds = <AssetId>[];

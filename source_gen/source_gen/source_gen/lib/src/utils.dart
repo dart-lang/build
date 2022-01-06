@@ -72,7 +72,8 @@ String suggestLibraryName(AssetId source) {
 ///
 /// For example, will return `test_lib.g.dart` for `test_lib.dart`.
 String computePartUrl(AssetId input, AssetId output) => p.url.joinAll(
-    p.url.split(p.url.relative(output.path, from: input.path)).skip(1));
+      p.url.split(p.url.relative(output.path, from: input.path)).skip(1),
+    );
 
 /// Returns a URL representing [element].
 String urlOfElement(Element element) => element.kind == ElementKind.DYNAMIC
@@ -108,7 +109,9 @@ Uri normalizeDartUrl(Uri url) => url.pathSegments.isNotEmpty
 Uri fileToAssetUrl(Uri url) {
   if (!p.isWithin(p.url.current, url.path)) return url;
   return Uri(
-      scheme: 'asset', path: p.join(rootPackageName, p.relative(url.path)));
+    scheme: 'asset',
+    path: p.join(rootPackageName, p.relative(url.path)),
+  );
 }
 
 /// Returns a `package:` URL converted to a `asset:` URL.
@@ -142,10 +145,13 @@ Uri packageToAssetUrl(Uri url) => url.scheme == 'package'
 Uri assetToPackageUrl(Uri url) => url.scheme == 'asset' &&
         url.pathSegments.isNotEmpty &&
         url.pathSegments[1] == 'lib'
-    ? url.replace(scheme: 'package', pathSegments: [
-        url.pathSegments.first,
-        ...url.pathSegments.skip(2),
-      ])
+    ? url.replace(
+        scheme: 'package',
+        pathSegments: [
+          url.pathSegments.first,
+          ...url.pathSegments.skip(2),
+        ],
+      )
     : url;
 
 final String rootPackageName = () {
@@ -153,8 +159,9 @@ final String rootPackageName = () {
       (loadYaml(File('pubspec.yaml').readAsStringSync()) as Map)['name'];
   if (name is! String) {
     throw StateError(
-        'Your pubspec.yaml file is missing a `name` field or it isn\'t '
-        'a String.');
+      'Your pubspec.yaml file is missing a `name` field or it isn\'t '
+      'a String.',
+    );
   }
   return name;
 }();
@@ -165,14 +172,16 @@ final String rootPackageName = () {
 /// Modifies [optionsMap] by removing the `build_extensions` key from it, if
 /// present.
 Map<String, List<String>> validatedBuildExtensionsFrom(
-    Map<String, dynamic>? optionsMap,
-    Map<String, List<String>> defaultExtensions) {
+  Map<String, dynamic>? optionsMap,
+  Map<String, List<String>> defaultExtensions,
+) {
   final extensionsOption = optionsMap?.remove('build_extensions');
   if (extensionsOption == null) return defaultExtensions;
 
   if (extensionsOption is! Map) {
     throw ArgumentError(
-        'Configured build_extensions should be a map from inputs to outputs.');
+      'Configured build_extensions should be a map from inputs to outputs.',
+    );
   }
 
   final result = <String, List<String>>{};
@@ -180,14 +189,18 @@ Map<String, List<String>> validatedBuildExtensionsFrom(
   for (final entry in extensionsOption.entries) {
     final input = entry.key;
     if (input is! String || !input.endsWith('.dart')) {
-      throw ArgumentError('Invalid key in build_extensions option: `$input` '
-          'should be a string ending with `.dart`');
+      throw ArgumentError(
+        'Invalid key in build_extensions option: `$input` '
+        'should be a string ending with `.dart`',
+      );
     }
 
     final output = entry.value;
     if (output is! String || !output.endsWith('.dart')) {
-      throw ArgumentError('Invalid output extension `$output`. It should be a '
-          'string ending with `.dart`');
+      throw ArgumentError(
+        'Invalid output extension `$output`. It should be a '
+        'string ending with `.dart`',
+      );
     }
 
     result[input] = [output];

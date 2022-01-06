@@ -25,10 +25,11 @@ void main() {
       typedef FunctionType();
     ''';
     example = await resolveSource(
-        source,
-        (resolver) => resolver
-            .findLibraryByName('example')
-            .then((e) => e!.getType('Example')!));
+      source,
+      (resolver) => resolver
+          .findLibraryByName('example')
+          .then((e) => e!.getType('Example')!),
+    );
   });
 
   test('should return the name of a class type', () {
@@ -67,11 +68,14 @@ void main() {
 
     test('disallows inputs not ending with .dart', () {
       expect(
-        () => validatedBuildExtensionsFrom({
-          'build_extensions': {
-            '.txt': ['.dart']
-          }
-        }, {}),
+        () => validatedBuildExtensionsFrom(
+          {
+            'build_extensions': {
+              '.txt': ['.dart']
+            }
+          },
+          {},
+        ),
         throwsA(
           isArgumentError.having(
             (e) => e.message,
@@ -85,9 +89,12 @@ void main() {
 
     test('disallows outputs not ending with .dart', () {
       expect(
-        () => validatedBuildExtensionsFrom({
-          'build_extensions': {'.dart': '.out'}
-        }, {}),
+        () => validatedBuildExtensionsFrom(
+          {
+            'build_extensions': {'.dart': '.out'}
+          },
+          {},
+        ),
         throwsA(
           isArgumentError.having(
             (e) => e.message,

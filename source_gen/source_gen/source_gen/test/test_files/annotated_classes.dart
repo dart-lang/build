@@ -29,8 +29,12 @@ class NonDefaultCtorNoParams {}
 @PublicAnnotationClass.withPositionalArgs(42, 'custom value')
 class NonDefaultCtorWithPositionalParams {}
 
-@PublicAnnotationClass.withPositionalArgs(43, 'another value',
-    boolArg: true, listArg: [5, 6, 7])
+@PublicAnnotationClass.withPositionalArgs(
+  43,
+  'another value',
+  boolArg: true,
+  listArg: [5, 6, 7],
+)
 class NonDefaultCtorWithPositionalAndNamedParams {}
 
 @PublicAnnotationClass.withKids()

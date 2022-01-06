@@ -36,8 +36,11 @@ void main() {
       yield '// ${element.name}';
     });
     final builder = LibraryBuilder(generator);
-    await testBuilder(builder, _inputMap, outputs: {
-      'a|lib/file.g.dart': r'''
+    await testBuilder(
+      builder,
+      _inputMap,
+      outputs: {
+        'a|lib/file.g.dart': r'''
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 // **************************************************************************
@@ -52,7 +55,8 @@ void main() {
 
 // baz
 '''
-    });
+      },
+    );
   });
 
   group('handles errors correctly', () {
@@ -92,23 +96,35 @@ void main() {
     final reader = InMemoryAssetReader(sourceAssets: assets);
     final resolver = _TestingResolver(assets);
 
-    await runBuilder(builder, [input], reader, InMemoryAssetWriter(),
-        _FixedResolvers(resolver));
+    await runBuilder(
+      builder,
+      [input],
+      reader,
+      InMemoryAssetWriter(),
+      _FixedResolvers(resolver),
+    );
 
     expect(resolver.parsedUnits, {input});
     expect(resolver.resolvedLibs, isEmpty);
   });
 
   test('applies to annotated libraries', () async {
-    final builder = LibraryBuilder(_StubGenerator<Deprecated>(
-        'Deprecated', (element) => '// ${element.displayName}'));
-    await testBuilder(builder, {
-      'a|lib/file.dart': '''
+    final builder = LibraryBuilder(
+      _StubGenerator<Deprecated>(
+        'Deprecated',
+        (element) => '// ${element.displayName}',
+      ),
+    );
+    await testBuilder(
+      builder,
+      {
+        'a|lib/file.dart': '''
       @deprecated
       library foo;
       '''
-    }, outputs: {
-      'a|lib/file.g.dart': '''
+      },
+      outputs: {
+        'a|lib/file.g.dart': '''
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 // **************************************************************************
@@ -117,7 +133,8 @@ void main() {
 
 // foo
 '''
-    });
+      },
+    );
   });
 }
 
@@ -129,7 +146,10 @@ class _StubGenerator<T> extends GeneratorForAnnotation<T> {
 
   @override
   Object? generateForAnnotatedElement(
-          Element element, ConstantReader annotation, BuildStep buildStep) =>
+    Element element,
+    ConstantReader annotation,
+    BuildStep buildStep,
+  ) =>
       _behavior(element);
 
   @override
@@ -157,8 +177,10 @@ class _TestingResolver implements ReleasableResolver {
   _TestingResolver(this.assets);
 
   @override
-  Future<CompilationUnit> compilationUnitFor(AssetId assetId,
-      {bool allowSyntaxErrors = false}) async {
+  Future<CompilationUnit> compilationUnitFor(
+    AssetId assetId, {
+    bool allowSyntaxErrors = false,
+  }) async {
     parsedUnits.add(assetId);
     return parseString(content: assets[assetId]!).unit;
   }
@@ -170,8 +192,10 @@ class _TestingResolver implements ReleasableResolver {
   }
 
   @override
-  Future<LibraryElement> libraryFor(AssetId assetId,
-      {bool allowSyntaxErrors = false}) async {
+  Future<LibraryElement> libraryFor(
+    AssetId assetId, {
+    bool allowSyntaxErrors = false,
+  }) async {
     resolvedLibs.add(assetId);
     return null as LibraryElement;
   }

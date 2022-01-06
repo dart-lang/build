@@ -33,5 +33,6 @@ Stream<String> normalizeGeneratorOutput(Object? value) {
 }
 
 ArgumentError _argError(Object value) => ArgumentError(
-    'Must be a String or be an Iterable/Stream containing String values. '
-    'Found `${Error.safeToString(value)}` (${value.runtimeType}).');
+      'Must be a String or be an Iterable/Stream containing String values. '
+      'Found `${Error.safeToString(value)}` (${value.runtimeType}).',
+    );

@@ -26,55 +26,71 @@ void main() {
   test('Bad generated source', () async {
     final srcs = _createPackageStub();
     final builder = PartBuilder(
-        [_StubGenerator('Bad', () => 'not valid code!')], '.foo.dart');
+      [_StubGenerator('Bad', () => 'not valid code!')],
+      '.foo.dart',
+    );
 
-    await testBuilder(builder, srcs, generateFor: {
-      '$_pkgName|lib/test_lib.dart'
-    }, outputs: {
-      '$_pkgName|lib/test_lib.foo.dart':
-          decodedMatches(contains('not valid code!')),
-    });
+    await testBuilder(
+      builder,
+      srcs,
+      generateFor: {'$_pkgName|lib/test_lib.dart'},
+      outputs: {
+        '$_pkgName|lib/test_lib.foo.dart':
+            decodedMatches(contains('not valid code!')),
+      },
+    );
   });
 
   test('Generate standalone output file', () async {
     final srcs = _createPackageStub();
     final builder = LibraryBuilder(const CommentGenerator());
-    await testBuilder(builder, srcs, generateFor: {
-      '$_pkgName|lib/test_lib.dart'
-    }, outputs: {
-      '$_pkgName|lib/test_lib.g.dart': _testGenStandaloneContent,
-    });
+    await testBuilder(
+      builder,
+      srcs,
+      generateFor: {'$_pkgName|lib/test_lib.dart'},
+      outputs: {
+        '$_pkgName|lib/test_lib.g.dart': _testGenStandaloneContent,
+      },
+    );
   });
 
   test('Generate standalone output file with custom header', () async {
     final srcs = _createPackageStub();
     final builder =
         LibraryBuilder(const CommentGenerator(), header: _customHeader);
-    await testBuilder(builder, srcs, generateFor: {
-      '$_pkgName|lib/test_lib.dart'
-    }, outputs: {
-      '$_pkgName|lib/test_lib.g.dart':
-          decodedMatches(startsWith('$_customHeader\n\n// ***'))
-    });
+    await testBuilder(
+      builder,
+      srcs,
+      generateFor: {'$_pkgName|lib/test_lib.dart'},
+      outputs: {
+        '$_pkgName|lib/test_lib.g.dart':
+            decodedMatches(startsWith('$_customHeader\n\n// ***'))
+      },
+    );
   });
 
   test('LibraryBuilder omits header if provided an empty String', () async {
     final srcs = _createPackageStub();
     final builder = LibraryBuilder(const CommentGenerator(), header: '');
-    await testBuilder(builder, srcs, generateFor: {
-      '$_pkgName|lib/test_lib.dart'
-    }, outputs: {
-      '$_pkgName|lib/test_lib.g.dart': decodedMatches(startsWith('// ***'))
-    });
+    await testBuilder(
+      builder,
+      srcs,
+      generateFor: {'$_pkgName|lib/test_lib.dart'},
+      outputs: {
+        '$_pkgName|lib/test_lib.g.dart': decodedMatches(startsWith('// ***'))
+      },
+    );
   });
 
   test('Expect no error when multiple generators used on nonstandalone builder',
       () async {
     expect(
-        () => PartBuilder(
-            [const CommentGenerator(), _StubGenerator('Null', () => null)],
-            '.foo.dart'),
-        returnsNormally);
+      () => PartBuilder(
+        [const CommentGenerator(), _StubGenerator('Null', () => null)],
+        '.foo.dart',
+      ),
+      returnsNormally,
+    );
   });
 
   test('Allow no "library"  by default', () async {
@@ -82,8 +98,11 @@ void main() {
         _createPackageStub(testLibContent: _testLibContentNoLibrary);
     final builder = PartBuilder([const CommentGenerator()], '.foo.dart');
 
-    await testBuilder(builder, sources,
-        outputs: {'$_pkgName|lib/test_lib.foo.dart': _testGenNoLibrary});
+    await testBuilder(
+      builder,
+      sources,
+      outputs: {'$_pkgName|lib/test_lib.foo.dart': _testGenNoLibrary},
+    );
   });
 
   test('Does not fail when there is no output', () async {
@@ -97,20 +116,28 @@ void main() {
     final sources =
         _createPackageStub(testLibContent: _testLibContentNoLibrary);
     final builder = PartBuilder([const CommentGenerator()], '.foo.dart');
-    await testBuilder(builder, sources,
-        outputs: {'$_pkgName|lib/test_lib.foo.dart': _testGenNoLibrary});
+    await testBuilder(
+      builder,
+      sources,
+      outputs: {'$_pkgName|lib/test_lib.foo.dart': _testGenNoLibrary},
+    );
   });
 
   test(
-      'Simple Generator test for library',
-      () => _generateTest(
-          const CommentGenerator(forClasses: false, forLibrary: true),
-          _testGenPartContentForLibrary));
+    'Simple Generator test for library',
+    () => _generateTest(
+      const CommentGenerator(forClasses: false, forLibrary: true),
+      _testGenPartContentForLibrary,
+    ),
+  );
 
   test(
-      'Simple Generator test for classes and library',
-      () => _generateTest(const CommentGenerator(forLibrary: true),
-          _testGenPartContentForClassesAndLibrary));
+    'Simple Generator test for classes and library',
+    () => _generateTest(
+      const CommentGenerator(forLibrary: true),
+      _testGenPartContentForClassesAndLibrary,
+    ),
+  );
 
   test('null result produces no generated parts', () async {
     final srcs = _createPackageStub();
@@ -160,8 +187,11 @@ void main() {
     final srcs = _createPackageStub(testLibContent: _testLibContentSyntaxError);
     final builder =
         LibraryBuilder(const CommentGenerator(), allowSyntaxErrors: true);
-    await testBuilder(builder, srcs,
-        generateFor: {'$_pkgName|lib/test_lib.dart'});
+    await testBuilder(
+      builder,
+      srcs,
+      generateFor: {'$_pkgName|lib/test_lib.dart'},
+    );
   });
 
   test('warns when a non-standalone builder does not see "part"', () async {
@@ -216,65 +246,65 @@ void main() {
   test('defaults to formatting generated code with the DartFormatter',
       () async {
     await testBuilder(
-        PartBuilder([const UnformattedCodeGenerator()], '.foo.dart'), {
-      '$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'
-    },
-        generateFor: {
-          '$_pkgName|lib/a.dart'
-        },
-        outputs: {
-          '$_pkgName|lib/a.foo.dart':
-              decodedMatches(contains(UnformattedCodeGenerator.formattedCode)),
-        });
+      PartBuilder([const UnformattedCodeGenerator()], '.foo.dart'),
+      {'$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'},
+      generateFor: {'$_pkgName|lib/a.dart'},
+      outputs: {
+        '$_pkgName|lib/a.foo.dart':
+            decodedMatches(contains(UnformattedCodeGenerator.formattedCode)),
+      },
+    );
   });
 
   group('PartBuilder', () {
     test('uses a custom header when provided', () async {
       await testBuilder(
-          PartBuilder([const UnformattedCodeGenerator()], '.foo.dart',
-              header: _customHeader),
-          {
-            '$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'
-          },
-          generateFor: {
-            '$_pkgName|lib/a.dart'
-          },
-          outputs: {
-            '$_pkgName|lib/a.foo.dart':
-                decodedMatches(startsWith('$_customHeader\n\npart of')),
-          });
+        PartBuilder(
+          [const UnformattedCodeGenerator()],
+          '.foo.dart',
+          header: _customHeader,
+        ),
+        {'$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'},
+        generateFor: {'$_pkgName|lib/a.dart'},
+        outputs: {
+          '$_pkgName|lib/a.foo.dart':
+              decodedMatches(startsWith('$_customHeader\n\npart of')),
+        },
+      );
     });
 
     test('includes no header when `header` is empty', () async {
       await testBuilder(
-          PartBuilder([const UnformattedCodeGenerator()], '.foo.dart',
-              header: ''),
-          {
-            '$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'
-          },
-          generateFor: {
-            '$_pkgName|lib/a.dart'
-          },
-          outputs: {
-            '$_pkgName|lib/a.foo.dart': decodedMatches(startsWith('part of')),
-          });
+        PartBuilder(
+          [const UnformattedCodeGenerator()],
+          '.foo.dart',
+          header: '',
+        ),
+        {'$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'},
+        generateFor: {'$_pkgName|lib/a.dart'},
+        outputs: {
+          '$_pkgName|lib/a.foo.dart': decodedMatches(startsWith('part of')),
+        },
+      );
     });
 
     test('includes matching language version in all parts', () async {
       await testBuilder(
-          PartBuilder([const UnformattedCodeGenerator()], '.foo.dart',
-              header: ''),
-          {
-            '$_pkgName|lib/a.dart': '''// @dart=2.9
+        PartBuilder(
+          [const UnformattedCodeGenerator()],
+          '.foo.dart',
+          header: '',
+        ),
+        {
+          '$_pkgName|lib/a.dart': '''// @dart=2.9
 part "a.foo.dart";'''
-          },
-          generateFor: {
-            '$_pkgName|lib/a.dart'
-          },
-          outputs: {
-            '$_pkgName|lib/a.foo.dart':
-                decodedMatches(startsWith('// @dart=2.9\n')),
-          });
+        },
+        generateFor: {'$_pkgName|lib/a.dart'},
+        outputs: {
+          '$_pkgName|lib/a.foo.dart':
+              decodedMatches(startsWith('// @dart=2.9\n')),
+        },
+      );
     });
 
     test('warns about missing part', () async {
@@ -297,12 +327,15 @@ part "a.foo.dart";'''
     group('with build_extensions', () {
       test('warns about missing part', () async {
         final srcs = _createPackageStub(testLibContent: _testLibContentNoPart);
-        final builder = PartBuilder([const CommentGenerator()], '.foo.dart',
-            options: const BuilderOptions({
-              'build_extensions': {
-                '^lib/{{}}.dart': 'lib/generated/{{}}.foo.dart'
-              }
-            }));
+        final builder = PartBuilder(
+          [const CommentGenerator()],
+          '.foo.dart',
+          options: const BuilderOptions({
+            'build_extensions': {
+              '^lib/{{}}.dart': 'lib/generated/{{}}.foo.dart'
+            }
+          }),
+        );
         final logs = <String>[];
         await testBuilder(
           builder,
@@ -320,26 +353,23 @@ part "a.foo.dart";'''
       test('generates relative `path of` for output in different directory',
           () async {
         await testBuilder(
-            PartBuilder(
-              [const UnformattedCodeGenerator()],
-              '.foo.dart',
-              header: '',
-              options: const BuilderOptions({
-                'build_extensions': {
-                  '^lib/{{}}.dart': 'lib/generated/{{}}.foo.dart'
-                }
-              }),
-            ),
-            {
-              '$_pkgName|lib/a.dart': 'part "generated/a.foo.dart";'
-            },
-            generateFor: {
-              '$_pkgName|lib/a.dart'
-            },
-            outputs: {
-              '$_pkgName|lib/generated/a.foo.dart':
-                  decodedMatches(startsWith("part of '../a.dart';")),
-            });
+          PartBuilder(
+            [const UnformattedCodeGenerator()],
+            '.foo.dart',
+            header: '',
+            options: const BuilderOptions({
+              'build_extensions': {
+                '^lib/{{}}.dart': 'lib/generated/{{}}.foo.dart'
+              }
+            }),
+          ),
+          {'$_pkgName|lib/a.dart': 'part "generated/a.foo.dart";'},
+          generateFor: {'$_pkgName|lib/a.dart'},
+          outputs: {
+            '$_pkgName|lib/generated/a.foo.dart':
+                decodedMatches(startsWith("part of '../a.dart';")),
+          },
+        );
       });
 
       test(
@@ -369,22 +399,21 @@ part "a.foo.dart";'''
     group('with build_extensions', () {
       test('outputs to the correct location', () async {
         await testBuilder(
-            LibraryBuilder(
-              const CommentGenerator(),
-              options: const BuilderOptions({
-                'build_extensions': {
-                  '^lib/{{}}.dart': 'lib/generated/{{}}.g.dart'
-                }
-              }),
-            ),
-            _createPackageStub(),
-            generateFor: {
-              '$_pkgName|lib/test_lib.dart'
-            },
-            outputs: {
-              '$_pkgName|lib/generated/test_lib.g.dart':
-                  _testGenStandaloneContent,
-            });
+          LibraryBuilder(
+            const CommentGenerator(),
+            options: const BuilderOptions({
+              'build_extensions': {
+                '^lib/{{}}.dart': 'lib/generated/{{}}.g.dart'
+              }
+            }),
+          ),
+          _createPackageStub(),
+          generateFor: {'$_pkgName|lib/test_lib.dart'},
+          outputs: {
+            '$_pkgName|lib/generated/test_lib.g.dart':
+                _testGenStandaloneContent,
+          },
+        );
       });
 
       test(
@@ -412,38 +441,33 @@ part "a.foo.dart";'''
   group('SharedPartBuilder', () {
     test('outputs <partId>.g.part files', () async {
       await testBuilder(
-          SharedPartBuilder(
-            [const UnformattedCodeGenerator()],
-            'foo',
+        SharedPartBuilder(
+          [const UnformattedCodeGenerator()],
+          'foo',
+        ),
+        {'$_pkgName|lib/a.dart': 'library a; part "a.g.dart";'},
+        generateFor: {'$_pkgName|lib/a.dart'},
+        outputs: {
+          '$_pkgName|lib/a.foo.g.part': decodedMatches(
+            contains(UnformattedCodeGenerator.formattedCode),
           ),
-          {
-            '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";'
-          },
-          generateFor: {
-            '$_pkgName|lib/a.dart'
-          },
-          outputs: {
-            '$_pkgName|lib/a.foo.g.part': decodedMatches(
-                contains(UnformattedCodeGenerator.formattedCode)),
-          });
+        },
+      );
     });
 
     test('does not output files which contain `part of`', () async {
       await testBuilder(
-          SharedPartBuilder(
-            [const UnformattedCodeGenerator()],
-            'foo',
-          ),
-          {
-            '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";'
-          },
-          generateFor: {
-            '$_pkgName|lib/a.dart'
-          },
-          outputs: {
-            '$_pkgName|lib/a.foo.g.part':
-                decodedMatches(isNot(contains('part of'))),
-          });
+        SharedPartBuilder(
+          [const UnformattedCodeGenerator()],
+          'foo',
+        ),
+        {'$_pkgName|lib/a.dart': 'library a; part "a.g.dart";'},
+        generateFor: {'$_pkgName|lib/a.dart'},
+        outputs: {
+          '$_pkgName|lib/a.foo.g.part':
+              decodedMatches(isNot(contains('part of'))),
+        },
+      );
     });
 
     group('constructor', () {
@@ -457,11 +481,12 @@ part "a.foo.dart";'''
       }.entries) {
         test('throws if the partId ${entry.key}', () async {
           expect(
-              () => SharedPartBuilder(
-                    [const UnformattedCodeGenerator()],
-                    entry.value,
-                  ),
-              throwsArgumentError);
+            () => SharedPartBuilder(
+              [const UnformattedCodeGenerator()],
+              entry.value,
+            ),
+            throwsArgumentError,
+          );
         });
       }
     });
@@ -469,30 +494,36 @@ part "a.foo.dart";'''
 
   group('CombiningBuilder', () {
     test('includes a generated code header', () async {
-      await testBuilder(const CombiningBuilder(), {
-        '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
-        '$_pkgName|lib/a.foo.g.part': 'some generated content'
-      }, generateFor: {
-        '$_pkgName|lib/a.dart'
-      }, outputs: {
-        '$_pkgName|lib/a.g.dart': decodedMatches(
-            startsWith('// GENERATED CODE - DO NOT MODIFY BY HAND')),
-      });
+      await testBuilder(
+        const CombiningBuilder(),
+        {
+          '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
+          '$_pkgName|lib/a.foo.g.part': 'some generated content'
+        },
+        generateFor: {'$_pkgName|lib/a.dart'},
+        outputs: {
+          '$_pkgName|lib/a.g.dart': decodedMatches(
+            startsWith('// GENERATED CODE - DO NOT MODIFY BY HAND'),
+          ),
+        },
+      );
     });
 
     test('includes matching language version in all parts', () async {
-      await testBuilder(const CombiningBuilder(), {
-        '$_pkgName|lib/a.dart': '''
+      await testBuilder(
+        const CombiningBuilder(),
+        {
+          '$_pkgName|lib/a.dart': '''
 // @dart=2.9
 library a;
 part "a.g.dart";
 ''',
-        '$_pkgName|lib/a.foo.g.part': 'some generated content'
-      }, generateFor: {
-        '$_pkgName|lib/a.dart'
-      }, outputs: {
-        '$_pkgName|lib/a.g.dart': decodedMatches(
-          '''
+          '$_pkgName|lib/a.foo.g.part': 'some generated content'
+        },
+        generateFor: {'$_pkgName|lib/a.dart'},
+        outputs: {
+          '$_pkgName|lib/a.g.dart': decodedMatches(
+            '''
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // @dart=2.9
 
@@ -500,107 +531,90 @@ part of a;
 
 some generated content
 ''',
-        ),
-      });
+          ),
+        },
+      );
     });
 
     test('outputs `.g.dart` files', () async {
-      await testBuilder(const CombiningBuilder(), {
-        '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
-        '$_pkgName|lib/a.foo.g.part': 'some generated content'
-      }, generateFor: {
-        '$_pkgName|lib/a.dart'
-      }, outputs: {
-        '$_pkgName|lib/a.g.dart':
-            decodedMatches(endsWith('some generated content\n')),
-      });
+      await testBuilder(
+        const CombiningBuilder(),
+        {
+          '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
+          '$_pkgName|lib/a.foo.g.part': 'some generated content'
+        },
+        generateFor: {'$_pkgName|lib/a.dart'},
+        outputs: {
+          '$_pkgName|lib/a.g.dart':
+              decodedMatches(endsWith('some generated content\n')),
+        },
+      );
     });
 
     test('outputs contain `part of`', () async {
-      await testBuilder(const CombiningBuilder(), {
-        '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
-        '$_pkgName|lib/a.foo.g.part': 'some generated content'
-      }, generateFor: {
-        '$_pkgName|lib/a.dart'
-      }, outputs: {
-        '$_pkgName|lib/a.g.dart': decodedMatches(contains('part of')),
-      });
+      await testBuilder(
+        const CombiningBuilder(),
+        {
+          '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
+          '$_pkgName|lib/a.foo.g.part': 'some generated content'
+        },
+        generateFor: {'$_pkgName|lib/a.dart'},
+        outputs: {
+          '$_pkgName|lib/a.g.dart': decodedMatches(contains('part of')),
+        },
+      );
     });
 
     test('joins part files', () async {
-      await testBuilder(const CombiningBuilder(), {
-        '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
-        '$_pkgName|lib/a.foo.g.part': 'foo generated content',
-        '$_pkgName|lib/a.bar.g.part': 'bar generated content',
-      }, generateFor: {
-        '$_pkgName|lib/a.dart'
-      }, outputs: {
-        '$_pkgName|lib/a.g.dart': decodedMatches(
-            endsWith('\n\nbar generated content\n\nfoo generated content\n')),
-      });
+      await testBuilder(
+        const CombiningBuilder(),
+        {
+          '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
+          '$_pkgName|lib/a.foo.g.part': 'foo generated content',
+          '$_pkgName|lib/a.bar.g.part': 'bar generated content',
+        },
+        generateFor: {'$_pkgName|lib/a.dart'},
+        outputs: {
+          '$_pkgName|lib/a.g.dart': decodedMatches(
+            endsWith('\n\nbar generated content\n\nfoo generated content\n'),
+          ),
+        },
+      );
     });
 
     test('joins only associated part files', () async {
-      await testBuilder(const CombiningBuilder(), {
-        '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
-        '$_pkgName|lib/a.foo.g.part': 'foo generated content',
-        '$_pkgName|lib/a.bar.g.part': 'bar generated content',
-        '$_pkgName|lib/a.bar.other.g.part': 'bar.other generated content',
-      }, generateFor: {
-        '$_pkgName|lib/a.dart'
-      }, outputs: {
-        '$_pkgName|lib/a.g.dart': decodedMatches(
-            endsWith('bar generated content\n\nfoo generated content\n')),
-      });
+      await testBuilder(
+        const CombiningBuilder(),
+        {
+          '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
+          '$_pkgName|lib/a.foo.g.part': 'foo generated content',
+          '$_pkgName|lib/a.bar.g.part': 'bar generated content',
+          '$_pkgName|lib/a.bar.other.g.part': 'bar.other generated content',
+        },
+        generateFor: {'$_pkgName|lib/a.dart'},
+        outputs: {
+          '$_pkgName|lib/a.g.dart': decodedMatches(
+            endsWith('bar generated content\n\nfoo generated content\n'),
+          ),
+        },
+      );
     });
 
     test('outputs nothing if no part files are found', () async {
-      await testBuilder(const CombiningBuilder(), {
-        '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
-      }, generateFor: {
-        '$_pkgName|lib/a.dart'
-      }, outputs: {});
+      await testBuilder(
+        const CombiningBuilder(),
+        {
+          '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
+        },
+        generateFor: {'$_pkgName|lib/a.dart'},
+        outputs: {},
+      );
     });
 
     test('trims part content and skips empty and whitespace-only parts',
         () async {
-      await testBuilder(const CombiningBuilder(), {
-        '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
-        '$_pkgName|lib/a.foo.g.part': '\n\nfoo generated content\n',
-        '$_pkgName|lib/a.only_whitespace.g.part': '\n\n\t  \n \n',
-        '$_pkgName|lib/a.bar.g.part': '\nbar generated content',
-      }, generateFor: {
-        '$_pkgName|lib/a.dart'
-      }, outputs: {
-        '$_pkgName|lib/a.g.dart': decodedMatches(
-            endsWith('\n\nbar generated content\n\nfoo generated content\n')),
-      });
-    });
-
-    test('includes part header if enabled', () async {
-      await testBuilder(const CombiningBuilder(includePartName: true), {
-        '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
-        '$_pkgName|lib/a.foo.g.part': '\n\nfoo generated content\n',
-        '$_pkgName|lib/a.only_whitespace.g.part': '\n\n\t  \n \n',
-        '$_pkgName|lib/a.bar.g.part': '\nbar generated content',
-      }, generateFor: {
-        '$_pkgName|lib/a.dart'
-      }, outputs: {
-        '$_pkgName|lib/a.g.dart': decodedMatches(endsWith('\n\n'
-            '// Part: a.bar.g.part\n'
-            'bar generated content\n\n'
-            '// Part: a.foo.g.part\n'
-            'foo generated content\n\n'
-            '// Part: a.only_whitespace.g.part\n\n')),
-      });
-    });
-
-    test('includes ignore for file if enabled', () async {
       await testBuilder(
-        const CombiningBuilder(ignoreForFile: {
-          'lines_longer_than_80_chars',
-          'prefer_expression_function_bodies',
-        }),
+        const CombiningBuilder(),
         {
           '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
           '$_pkgName|lib/a.foo.g.part': '\n\nfoo generated content\n',
@@ -609,7 +623,57 @@ some generated content
         },
         generateFor: {'$_pkgName|lib/a.dart'},
         outputs: {
-          '$_pkgName|lib/a.g.dart': decodedMatches(endsWith(r'''
+          '$_pkgName|lib/a.g.dart': decodedMatches(
+            endsWith('\n\nbar generated content\n\nfoo generated content\n'),
+          ),
+        },
+      );
+    });
+
+    test('includes part header if enabled', () async {
+      await testBuilder(
+        const CombiningBuilder(includePartName: true),
+        {
+          '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
+          '$_pkgName|lib/a.foo.g.part': '\n\nfoo generated content\n',
+          '$_pkgName|lib/a.only_whitespace.g.part': '\n\n\t  \n \n',
+          '$_pkgName|lib/a.bar.g.part': '\nbar generated content',
+        },
+        generateFor: {'$_pkgName|lib/a.dart'},
+        outputs: {
+          '$_pkgName|lib/a.g.dart': decodedMatches(
+            endsWith(
+              '\n\n'
+              '// Part: a.bar.g.part\n'
+              'bar generated content\n\n'
+              '// Part: a.foo.g.part\n'
+              'foo generated content\n\n'
+              '// Part: a.only_whitespace.g.part\n\n',
+            ),
+          ),
+        },
+      );
+    });
+
+    test('includes ignore for file if enabled', () async {
+      await testBuilder(
+        const CombiningBuilder(
+          ignoreForFile: {
+            'lines_longer_than_80_chars',
+            'prefer_expression_function_bodies',
+          },
+        ),
+        {
+          '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
+          '$_pkgName|lib/a.foo.g.part': '\n\nfoo generated content\n',
+          '$_pkgName|lib/a.only_whitespace.g.part': '\n\n\t  \n \n',
+          '$_pkgName|lib/a.bar.g.part': '\nbar generated content',
+        },
+        generateFor: {'$_pkgName|lib/a.dart'},
+        outputs: {
+          '$_pkgName|lib/a.g.dart': decodedMatches(
+            endsWith(
+              r'''
 // ignore_for_file: lines_longer_than_80_chars, prefer_expression_function_bodies
 
 part of a;
@@ -617,7 +681,9 @@ part of a;
 bar generated content
 
 foo generated content
-''')),
+''',
+            ),
+          ),
         },
       );
     });
@@ -648,9 +714,13 @@ foo generated content
       test('generates relative `path of` for output in different directory',
           () async {
         await testBuilder(
-          combiningBuilder(const BuilderOptions({
-            'build_extensions': {'^lib/{{}}.dart': 'lib/generated/{{}}.g.dart'}
-          })),
+          combiningBuilder(
+            const BuilderOptions({
+              'build_extensions': {
+                '^lib/{{}}.dart': 'lib/generated/{{}}.g.dart'
+              }
+            }),
+          ),
           {
             '$_pkgName|lib/a.dart': 'part "generated/a.g.dart";',
             '$_pkgName|lib/a.foo.g.part': '\n\nfoo generated content\n',
@@ -659,13 +729,17 @@ foo generated content
           },
           generateFor: {'$_pkgName|lib/a.dart'},
           outputs: {
-            '$_pkgName|lib/generated/a.g.dart': decodedMatches(endsWith(r'''
+            '$_pkgName|lib/generated/a.g.dart': decodedMatches(
+              endsWith(
+                r'''
 part of '../a.dart';
 
 bar generated content
 
 foo generated content
-''')),
+''',
+              ),
+            ),
           },
         );
       });
@@ -673,9 +747,13 @@ foo generated content
       test('warns about missing part statement', () async {
         final logs = <String>[];
         await testBuilder(
-          combiningBuilder(const BuilderOptions({
-            'build_extensions': {'^lib/{{}}.dart': 'lib/generated/{{}}.g.dart'}
-          })),
+          combiningBuilder(
+            const BuilderOptions({
+              'build_extensions': {
+                '^lib/{{}}.dart': 'lib/generated/{{}}.g.dart'
+              }
+            }),
+          ),
           {
             '$_pkgName|lib/a.dart': '',
             '$_pkgName|lib/a.foo.g.part': '// generated',
@@ -698,55 +776,62 @@ foo generated content
 
   test('can skip formatting with a trivial lambda', () async {
     await testBuilder(
-        PartBuilder([const UnformattedCodeGenerator()], '.foo.dart',
-            formatOutput: (s) => s),
-        {
-          '$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'
-        },
-        generateFor: {
-          '$_pkgName|lib/a.dart'
-        },
-        outputs: {
-          '$_pkgName|lib/a.foo.dart': decodedMatches(
-              contains(UnformattedCodeGenerator.unformattedCode)),
-        });
+      PartBuilder(
+        [const UnformattedCodeGenerator()],
+        '.foo.dart',
+        formatOutput: (s) => s,
+      ),
+      {'$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'},
+      generateFor: {'$_pkgName|lib/a.dart'},
+      outputs: {
+        '$_pkgName|lib/a.foo.dart': decodedMatches(
+          contains(UnformattedCodeGenerator.unformattedCode),
+        ),
+      },
+    );
   });
 
   test('can pass a custom formatter with formatOutput', () async {
     const customOutput = 'final String hello = "hello";';
     await testBuilder(
-        PartBuilder([const UnformattedCodeGenerator()], '.foo.dart',
-            formatOutput: (_) => customOutput),
-        {
-          '$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'
-        },
-        generateFor: {
-          '$_pkgName|lib/a.dart'
-        },
-        outputs: {
-          '$_pkgName|lib/a.foo.dart': decodedMatches(contains(customOutput)),
-        });
+      PartBuilder(
+        [const UnformattedCodeGenerator()],
+        '.foo.dart',
+        formatOutput: (_) => customOutput,
+      ),
+      {'$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'},
+      generateFor: {'$_pkgName|lib/a.dart'},
+      outputs: {
+        '$_pkgName|lib/a.foo.dart': decodedMatches(contains(customOutput)),
+      },
+    );
   });
 
   test('Should have a readable toString() message for builders', () {
     final builder = LibraryBuilder(_StubGenerator('Null', () => null));
     expect(builder.toString(), 'Generating .g.dart: Null');
 
-    final builders = PartBuilder([
-      _StubGenerator('Null', () => null),
-      _StubGenerator('Null', () => null),
-    ], '.foo.dart');
+    final builders = PartBuilder(
+      [
+        _StubGenerator('Null', () => null),
+        _StubGenerator('Null', () => null),
+      ],
+      '.foo.dart',
+    );
     expect(builders.toString(), 'Generating .foo.dart: Null, Null');
   });
 
   test('Searches in part files for annotations', () async {
-    final srcs = _createPackageStub(testLibContent: '''
+    final srcs = _createPackageStub(
+      testLibContent: '''
     part 'test_lib.foo.dart';
     part 'test_lib.g.dart';
-    ''', testLibPartContent: '''
+    ''',
+      testLibPartContent: '''
     @deprecated
     int x;
-    ''');
+    ''',
+    );
     final builder =
         PartBuilder([DeprecatedGeneratorForAnnotation()], '.g.dart');
 
@@ -795,17 +880,21 @@ Future _generateTest(CommentGenerator gen, String expectedContent) async {
   );
 }
 
-Map<String, String> _createPackageStub(
-        {String? testLibContent, String? testLibPartContent}) =>
+Map<String, String> _createPackageStub({
+  String? testLibContent,
+  String? testLibPartContent,
+}) =>
     {
       '$_pkgName|lib/test_lib.dart': testLibContent ?? _testLibContent,
       '$_pkgName|lib/test_lib.foo.dart':
           testLibPartContent ?? _testLibPartContent,
     };
 
-PartBuilder _unformattedLiteral([String? content]) =>
-    PartBuilder([_StubGenerator('Literal', () => content)], '.foo.dart',
-        formatOutput: (s) => s);
+PartBuilder _unformattedLiteral([String? content]) => PartBuilder(
+      [_StubGenerator('Literal', () => content)],
+      '.foo.dart',
+      formatOutput: (s) => s,
+    );
 
 class _StubGenerator implements Generator {
   final String _name;

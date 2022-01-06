@@ -21,15 +21,24 @@ void main() {
 
   setUpAll(() async {
     late LibraryReader thisTest;
-    await resolveSource(r'''
+    await resolveSource(
+      r'''
       export 'type_checker_test.dart' show NonPublic;
-    ''', (resolver) async {
-      thisTest = LibraryReader(await resolver.libraryFor(
-          AssetId('source_gen', 'test/external_only_type_checker_test.dart')));
-    }, inputId: AssetId('source_gen', 'test/example.dart'));
+    ''',
+      (resolver) async {
+        thisTest = LibraryReader(
+          await resolver.libraryFor(
+            AssetId('source_gen', 'test/external_only_type_checker_test.dart'),
+          ),
+        );
+      },
+      inputId: AssetId('source_gen', 'test/example.dart'),
+    );
 
     staticNonPublic = thisTest.findType('NonPublic')!.instantiate(
-        typeArguments: const [], nullabilitySuffix: NullabilitySuffix.none);
+      typeArguments: const [],
+      nullabilitySuffix: NullabilitySuffix.none,
+    );
     staticNonPublicChecker = TypeChecker.fromStatic(staticNonPublic);
   });
 
@@ -39,25 +48,35 @@ void main() {
   }) {
     group('NonPublic', () {
       test('should equal NonPublic', () {
-        expect(checkNonPublic().isExactlyType(staticNonPublic), isTrue,
-            reason: '${checkNonPublic()} != ${staticNonPublic.element.name}');
+        expect(
+          checkNonPublic().isExactlyType(staticNonPublic),
+          isTrue,
+          reason: '${checkNonPublic()} != ${staticNonPublic.element.name}',
+        );
       });
 
       test('should be assignable from NonPublic', () {
-        expect(checkNonPublic().isAssignableFromType(staticNonPublic), isTrue,
-            reason: '${checkNonPublic()} is not assignable from '
-                '${staticNonPublic.element.name}');
+        expect(
+          checkNonPublic().isAssignableFromType(staticNonPublic),
+          isTrue,
+          reason: '${checkNonPublic()} is not assignable from '
+              '${staticNonPublic.element.name}',
+        );
       });
     });
   }
 
-  group('TypeChecker.forRuntime', () {
-    commonTests(
-      checkNonPublic: () => const TypeChecker.fromRuntime(NonPublic),
-    );
-  }, onPlatform: const {
-    'windows': Skip('https://github.com/dart-lang/source_gen/issues/573')
-  });
+  group(
+    'TypeChecker.forRuntime',
+    () {
+      commonTests(
+        checkNonPublic: () => const TypeChecker.fromRuntime(NonPublic),
+      );
+    },
+    onPlatform: const {
+      'windows': Skip('https://github.com/dart-lang/source_gen/issues/573')
+    },
+  );
 
   group('TypeChecker.forStatic', () {
     commonTests(
@@ -68,7 +87,8 @@ void main() {
   group('TypeChecker.fromUrl', () {
     commonTests(
       checkNonPublic: () => const TypeChecker.fromUrl(
-          'asset:source_gen/test/external_only_type_checker_test.dart#NonPublic'),
+        'asset:source_gen/test/external_only_type_checker_test.dart#NonPublic',
+      ),
     );
   });
 }

@@ -96,6 +96,7 @@ linter:
     - prefer_void_to_null
     - provide_deprecation_message
     - recursive_getters
+    - require_trailing_commas
     - slash_for_doc_comments
     - sort_pub_dependencies
     - test_types_in_equals

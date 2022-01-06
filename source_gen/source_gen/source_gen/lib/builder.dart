@@ -83,14 +83,16 @@ class CombiningBuilder implements Builder {
 
     // Pattern used to ensure items are only considered if they match
     // [file name without extension].[valid part id].[part file extension]
-    final restrictedPattern = RegExp([
-      '^', // start of string
-      RegExp.escape(inputBaseName), // file name, without extension
-      '.', // `.` character
-      partIdRegExpLiteral, // A valid part ID
-      RegExp.escape(_partFiles), // the ending part extension
-      '\$', // end of string
-    ].join());
+    final restrictedPattern = RegExp(
+      [
+        '^', // start of string
+        RegExp.escape(inputBaseName), // file name, without extension
+        '.', // `.` character
+        partIdRegExpLiteral, // A valid part ID
+        RegExp.escape(_partFiles), // the ending part extension
+        '\$', // end of string
+      ].join(),
+    );
 
     final assetIds = await buildStep
         .findAssets(Glob(pattern))
@@ -119,8 +121,10 @@ class CombiningBuilder implements Builder {
         await buildStep.resolver.compilationUnitFor(buildStep.inputId);
     final part = computePartUrl(buildStep.inputId, outputId);
     if (!hasExpectedPartDirective(libraryUnit, part)) {
-      log.warning('$part must be included as a part directive in '
-          'the input library with:\n    part \'$part\';');
+      log.warning(
+        '$part must be included as a part directive in '
+        'the input library with:\n    part \'$part\';',
+      );
       return;
     }
 

@@ -34,26 +34,38 @@ void main() {
     late LibraryElement core;
     late LibraryElement collection;
     late LibraryReader sourceGen;
-    await resolveSource(r'''
+    await resolveSource(
+      r'''
       export 'package:source_gen/source_gen.dart';
       export 'type_checker_test.dart' show NonPublic;
-    ''', (resolver) async {
-      core = (await resolver.findLibraryByName('dart.core'))!;
-      collection = (await resolver.findLibraryByName('dart.collection'))!;
-      sourceGen = LibraryReader(await resolver
-          .libraryFor(AssetId('source_gen', 'lib/source_gen.dart')));
-    }, inputId: AssetId('source_gen', 'test/example.dart'));
+    ''',
+      (resolver) async {
+        core = (await resolver.findLibraryByName('dart.core'))!;
+        collection = (await resolver.findLibraryByName('dart.collection'))!;
+        sourceGen = LibraryReader(
+          await resolver
+              .libraryFor(AssetId('source_gen', 'lib/source_gen.dart')),
+        );
+      },
+      inputId: AssetId('source_gen', 'test/example.dart'),
+    );
 
     final staticIterable = core.getType('Iterable')!.instantiate(
-        typeArguments: [core.typeProvider.dynamicType],
-        nullabilitySuffix: NullabilitySuffix.none);
+      typeArguments: [core.typeProvider.dynamicType],
+      nullabilitySuffix: NullabilitySuffix.none,
+    );
     staticIterableChecker = TypeChecker.fromStatic(staticIterable);
     staticUri = core.getType('Uri')!.instantiate(
-        typeArguments: [], nullabilitySuffix: NullabilitySuffix.none);
-    staticMap = core.getType('Map')!.instantiate(typeArguments: [
-      core.typeProvider.dynamicType,
-      core.typeProvider.dynamicType
-    ], nullabilitySuffix: NullabilitySuffix.none);
+      typeArguments: [],
+      nullabilitySuffix: NullabilitySuffix.none,
+    );
+    staticMap = core.getType('Map')!.instantiate(
+      typeArguments: [
+        core.typeProvider.dynamicType,
+        core.typeProvider.dynamicType
+      ],
+      nullabilitySuffix: NullabilitySuffix.none,
+    );
     staticMapChecker = TypeChecker.fromStatic(staticMap);
 
     staticHashMap = collection.getType('HashMap')!.instantiate(
@@ -64,20 +76,22 @@ void main() {
       nullabilitySuffix: NullabilitySuffix.none,
     );
     staticHashMapChecker = TypeChecker.fromStatic(staticHashMap);
-    staticUnmodifiableListView = collection
-        .getType('UnmodifiableListView')!
-        .instantiate(
-            typeArguments: [core.typeProvider.dynamicType],
-            nullabilitySuffix: NullabilitySuffix.none);
+    staticUnmodifiableListView =
+        collection.getType('UnmodifiableListView')!.instantiate(
+      typeArguments: [core.typeProvider.dynamicType],
+      nullabilitySuffix: NullabilitySuffix.none,
+    );
 
     staticGenerator = sourceGen.findType('Generator')!.instantiate(
-        typeArguments: [], nullabilitySuffix: NullabilitySuffix.none);
+      typeArguments: [],
+      nullabilitySuffix: NullabilitySuffix.none,
+    );
     staticGeneratorChecker = TypeChecker.fromStatic(staticGenerator);
-    staticGeneratorForAnnotation = sourceGen
-        .findType('GeneratorForAnnotation')!
-        .instantiate(
-            typeArguments: [core.typeProvider.dynamicType],
-            nullabilitySuffix: NullabilitySuffix.none);
+    staticGeneratorForAnnotation =
+        sourceGen.findType('GeneratorForAnnotation')!.instantiate(
+      typeArguments: [core.typeProvider.dynamicType],
+      nullabilitySuffix: NullabilitySuffix.none,
+    );
     staticGeneratorForAnnotationChecker =
         TypeChecker.fromStatic(staticGeneratorForAnnotation);
   });
@@ -93,15 +107,20 @@ void main() {
     group('(Iterable)', () {
       test('should be assignable from dart:collection#UnmodifiableListView',
           () {
-        expect(checkIterable().isAssignableFromType(staticUnmodifiableListView),
-            true);
+        expect(
+          checkIterable().isAssignableFromType(staticUnmodifiableListView),
+          true,
+        );
       });
     });
 
     group('(Map)', () {
       test('should equal dart:core#Map', () {
-        expect(checkMap().isExactlyType(staticMap), isTrue,
-            reason: '${checkMap()} != ${staticMap.element.name}');
+        expect(
+          checkMap().isExactlyType(staticMap),
+          isTrue,
+          reason: '${checkMap()} != ${staticMap.element.name}',
+        );
       });
 
       test('should not be a super type of dart:core#Map', () {
@@ -109,8 +128,11 @@ void main() {
       });
 
       test('should not equal dart:core#HashMap', () {
-        expect(checkMap().isExactlyType(staticHashMap), isFalse,
-            reason: '${checkMap()} == $staticHashMapChecker');
+        expect(
+          checkMap().isExactlyType(staticHashMap),
+          isFalse,
+          reason: '${checkMap()} == $staticHashMapChecker',
+        );
       });
 
       test('should be a super type of dart:collection#HashMap', () {
@@ -134,8 +156,11 @@ void main() {
 
     group('(HashMap)', () {
       test('should equal dart:collection#HashMap', () {
-        expect(checkHashMap().isExactlyType(staticHashMap), isTrue,
-            reason: '${checkHashMap()} != $staticHashMapChecker');
+        expect(
+          checkHashMap().isExactlyType(staticHashMap),
+          isTrue,
+          reason: '${checkHashMap()} != $staticHashMapChecker',
+        );
       });
 
       test('should not be a super type of dart:core#Map', () {
@@ -149,29 +174,38 @@ void main() {
 
     group('(Generator)', () {
       test('should equal Generator', () {
-        expect(checkGenerator().isExactlyType(staticGenerator), isTrue,
-            reason: '${checkGenerator()} != ${staticGenerator.element.name}');
+        expect(
+          checkGenerator().isExactlyType(staticGenerator),
+          isTrue,
+          reason: '${checkGenerator()} != ${staticGenerator.element.name}',
+        );
       });
 
       test('should not be a super type of Generator', () {
-        expect(checkGenerator().isSuperTypeOf(staticGenerator), isFalse,
-            reason: '${checkGenerator()} is super of '
-                '${staticGenerator.element.name}');
+        expect(
+          checkGenerator().isSuperTypeOf(staticGenerator),
+          isFalse,
+          reason: '${checkGenerator()} is super of '
+              '${staticGenerator.element.name}',
+        );
       });
 
       test('should be a super type of GeneratorForAnnotation', () {
-        expect(checkGenerator().isSuperTypeOf(staticGeneratorForAnnotation),
-            isTrue,
-            reason: '${checkGenerator()} is not super of '
-                '${staticGeneratorForAnnotation.element.name}');
+        expect(
+          checkGenerator().isSuperTypeOf(staticGeneratorForAnnotation),
+          isTrue,
+          reason: '${checkGenerator()} is not super of '
+              '${staticGeneratorForAnnotation.element.name}',
+        );
       });
 
       test('should be assignable from GeneratorForAnnotation', () {
         expect(
-            checkGenerator().isAssignableFromType(staticGeneratorForAnnotation),
-            isTrue,
-            reason: '${checkGenerator()} is not assignable from '
-                '${staticGeneratorForAnnotation.element.name}');
+          checkGenerator().isAssignableFromType(staticGeneratorForAnnotation),
+          isTrue,
+          reason: '${checkGenerator()} is not assignable from '
+              '${staticGeneratorForAnnotation.element.name}',
+        );
       });
     });
   }
@@ -203,9 +237,11 @@ void main() {
       checkMap: () => const TypeChecker.fromUrl('dart:core#Map'),
       checkHashMap: () => const TypeChecker.fromUrl('dart:collection#HashMap'),
       checkGenerator: () => const TypeChecker.fromUrl(
-          'package:source_gen/src/generator.dart#Generator'),
+        'package:source_gen/src/generator.dart#Generator',
+      ),
       checkGeneratorForAnnotation: () => const TypeChecker.fromUrl(
-          'package:source_gen/src/generator_for_annotation.dart#GeneratorForAnnotation'),
+        'package:source_gen/src/generator_for_annotation.dart#GeneratorForAnnotation',
+      ),
     );
   });
 
@@ -290,12 +326,24 @@ void main() {
         (resolver) async => (await resolver.findLibraryByName('_test'))!,
       );
 
-      $A = TypeChecker.fromStatic(library.getType('A')!.instantiate(
-          typeArguments: [], nullabilitySuffix: NullabilitySuffix.none));
-      $B = TypeChecker.fromStatic(library.getType('B')!.instantiate(
-          typeArguments: [], nullabilitySuffix: NullabilitySuffix.none));
-      $C = TypeChecker.fromStatic(library.getType('C')!.instantiate(
-          typeArguments: [], nullabilitySuffix: NullabilitySuffix.none));
+      $A = TypeChecker.fromStatic(
+        library.getType('A')!.instantiate(
+          typeArguments: [],
+          nullabilitySuffix: NullabilitySuffix.none,
+        ),
+      );
+      $B = TypeChecker.fromStatic(
+        library.getType('B')!.instantiate(
+          typeArguments: [],
+          nullabilitySuffix: NullabilitySuffix.none,
+        ),
+      );
+      $C = TypeChecker.fromStatic(
+        library.getType('C')!.instantiate(
+          typeArguments: [],
+          nullabilitySuffix: NullabilitySuffix.none,
+        ),
+      );
       $ExampleOfA = library.getType('ExampleOfA')!;
       $ExampleOfMultiA = library.getType('ExampleOfMultiA')!;
       $ExampleOfAPlusB = library.getType('ExampleOfAPlusB')!;
@@ -359,8 +407,12 @@ void main() {
     ''',
         (resolver) async => (await resolver.findLibraryByName('_test'))!,
       );
-      $A = TypeChecker.fromStatic(library.getType('A')!.instantiate(
-          typeArguments: [], nullabilitySuffix: NullabilitySuffix.none));
+      $A = TypeChecker.fromStatic(
+        library.getType('A')!.instantiate(
+          typeArguments: [],
+          nullabilitySuffix: NullabilitySuffix.none,
+        ),
+      );
       $ExampleOfA = library.getType('ExampleOfA')!;
       $annotatedParameter = library.topLevelElements
           .whereType<FunctionElement>()
@@ -370,53 +422,74 @@ void main() {
     });
 
     test('should throw by default', () {
-      expect(() => $A.firstAnnotationOf($ExampleOfA),
-          throwsUnresolvedAnnotationException);
-      expect(() => $A.annotationsOf($ExampleOfA),
-          throwsUnresolvedAnnotationException);
-      expect(() => $A.firstAnnotationOfExact($ExampleOfA),
-          throwsUnresolvedAnnotationException);
-      expect(() => $A.annotationsOfExact($ExampleOfA),
-          throwsUnresolvedAnnotationException);
-      expect(() => $A.firstAnnotationOf($annotatedParameter),
-          throwsUnresolvedAnnotationException);
-      expect(() => $A.annotationsOf($annotatedParameter),
-          throwsUnresolvedAnnotationException);
-      expect(() => $A.firstAnnotationOfExact($annotatedParameter),
-          throwsUnresolvedAnnotationException);
-      expect(() => $A.annotationsOfExact($annotatedParameter),
-          throwsUnresolvedAnnotationException);
+      expect(
+        () => $A.firstAnnotationOf($ExampleOfA),
+        throwsUnresolvedAnnotationException,
+      );
+      expect(
+        () => $A.annotationsOf($ExampleOfA),
+        throwsUnresolvedAnnotationException,
+      );
+      expect(
+        () => $A.firstAnnotationOfExact($ExampleOfA),
+        throwsUnresolvedAnnotationException,
+      );
+      expect(
+        () => $A.annotationsOfExact($ExampleOfA),
+        throwsUnresolvedAnnotationException,
+      );
+      expect(
+        () => $A.firstAnnotationOf($annotatedParameter),
+        throwsUnresolvedAnnotationException,
+      );
+      expect(
+        () => $A.annotationsOf($annotatedParameter),
+        throwsUnresolvedAnnotationException,
+      );
+      expect(
+        () => $A.firstAnnotationOfExact($annotatedParameter),
+        throwsUnresolvedAnnotationException,
+      );
+      expect(
+        () => $A.annotationsOfExact($annotatedParameter),
+        throwsUnresolvedAnnotationException,
+      );
     });
 
     test('should not throw if `throwOnUnresolved` == false', () {
       expect(
-          $A
-              .firstAnnotationOf($ExampleOfA, throwOnUnresolved: false)!
-              .type!
-              .element!
-              .name,
-          'A');
+        $A
+            .firstAnnotationOf($ExampleOfA, throwOnUnresolved: false)!
+            .type!
+            .element!
+            .name,
+        'A',
+      );
       expect(
-          $A
-              .annotationsOf($ExampleOfA, throwOnUnresolved: false)
-              .map((a) => a.type!.element!.name),
-          ['A']);
+        $A
+            .annotationsOf($ExampleOfA, throwOnUnresolved: false)
+            .map((a) => a.type!.element!.name),
+        ['A'],
+      );
       expect(
-          $A
-              .firstAnnotationOfExact($ExampleOfA, throwOnUnresolved: false)!
-              .type!
-              .element!
-              .name,
-          'A');
+        $A
+            .firstAnnotationOfExact($ExampleOfA, throwOnUnresolved: false)!
+            .type!
+            .element!
+            .name,
+        'A',
+      );
       expect(
-          $A
-              .annotationsOfExact($ExampleOfA, throwOnUnresolved: false)
-              .map((a) => a.type!.element!.name),
-          ['A']);
+        $A
+            .annotationsOfExact($ExampleOfA, throwOnUnresolved: false)
+            .map((a) => a.type!.element!.name),
+        ['A'],
+      );
     });
   });
 }
 
 final throwsUnresolvedAnnotationException = throwsA(
-    const TypeMatcher<UnresolvedAnnotationException>()
-        .having((e) => e.annotationSource, 'annotationSource', isNotNull));
+  const TypeMatcher<UnresolvedAnnotationException>()
+      .having((e) => e.annotationSource, 'annotationSource', isNotNull),
+);

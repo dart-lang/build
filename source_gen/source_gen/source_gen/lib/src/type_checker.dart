@@ -316,7 +316,8 @@ class UnresolvedAnnotationException implements Exception {
         metadata = node.metadata;
       } else {
         throw StateError(
-            'Unhandled Annotated AST node type: ${node.runtimeType}');
+          'Unhandled Annotated AST node type: ${node.runtimeType}',
+        );
       }
       final annotation = metadata[annotationIndex];
       final start = annotation.offset;

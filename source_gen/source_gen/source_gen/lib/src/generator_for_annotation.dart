@@ -51,7 +51,10 @@ abstract class GeneratorForAnnotation<T> extends Generator {
 
     for (var annotatedElement in library.annotatedWith(typeChecker)) {
       final generatedValue = generateForAnnotatedElement(
-          annotatedElement.element, annotatedElement.annotation, buildStep);
+        annotatedElement.element,
+        annotatedElement.annotation,
+        buildStep,
+      );
       await for (var value in normalizeGeneratorOutput(generatedValue)) {
         assert(value.length == value.trim().length);
         values.add(value);
@@ -73,5 +76,8 @@ abstract class GeneratorForAnnotation<T> extends Generator {
   /// Implementations should return `null` when no content is generated. Empty
   /// or whitespace-only [String] instances are also ignored.
   dynamic generateForAnnotatedElement(
-      Element element, ConstantReader annotation, BuildStep buildStep);
+    Element element,
+    ConstantReader annotation,
+    BuildStep buildStep,
+  );
 }

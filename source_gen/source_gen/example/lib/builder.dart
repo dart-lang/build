@@ -20,9 +20,10 @@ import 'src/multiplier_generator.dart';
 import 'src/property_product_generator.dart';
 import 'src/property_sum_generator.dart';
 
-Builder metadataLibraryBuilder(BuilderOptions options) =>
-    LibraryBuilder(MemberCountLibraryGenerator(),
-        generatedExtension: '.info.dart');
+Builder metadataLibraryBuilder(BuilderOptions options) => LibraryBuilder(
+      MemberCountLibraryGenerator(),
+      generatedExtension: '.info.dart',
+    );
 
 Builder productBuilder(BuilderOptions options) =>
     SharedPartBuilder([PropertyProductGenerator()], 'product');

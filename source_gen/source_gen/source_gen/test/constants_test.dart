@@ -12,7 +12,8 @@ void main() {
     late List<ConstantReader> constants;
 
     setUpAll(() async {
-      final library = await resolveSource(r'''
+      final library = await resolveSource(
+        r'''
         library test_lib;
 
         const aString = 'Hello';
@@ -57,7 +58,9 @@ void main() {
         class Super extends Example {
           const Super() : super(aString: 'Super Hello');
         }
-      ''', (resolver) async => (await resolver.findLibraryByName('test_lib'))!);
+      ''',
+        (resolver) async => (await resolver.findLibraryByName('test_lib'))!,
+      );
       constants = library
           .getType('Example')!
           .metadata
@@ -117,17 +120,24 @@ void main() {
     test('should read a list', () {
       expect(constants[6].isList, isTrue, reason: '${constants[6]}');
       expect(constants[6].isLiteral, isTrue);
-      expect(constants[6].listValue.map((c) => ConstantReader(c).intValue),
-          [1, 2, 3]);
+      expect(
+        constants[6].listValue.map((c) => ConstantReader(c).intValue),
+        [1, 2, 3],
+      );
     });
 
     test('should read a map', () {
       expect(constants[7].isMap, isTrue, reason: '${constants[7]}');
       expect(constants[7].isLiteral, isTrue);
       expect(
-          constants[7].mapValue.map((k, v) => MapEntry(
-              ConstantReader(k!).intValue, ConstantReader(v!).stringValue)),
-          {1: 'A', 2: 'B'});
+        constants[7].mapValue.map(
+              (k, v) => MapEntry(
+                ConstantReader(k!).intValue,
+                ConstantReader(v!).stringValue,
+              ),
+            ),
+        {1: 'A', 2: 'B'},
+      );
     });
 
     test('should read a double', () {
