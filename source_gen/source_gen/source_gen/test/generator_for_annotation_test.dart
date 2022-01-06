@@ -85,7 +85,7 @@ void main() {
   test('Does not resolve the library if there are no top level annotations',
       () async {
     final builder =
-        LibraryBuilder(_StubGenerator<Deprecated>('Deprecated', (_) {}));
+        LibraryBuilder(_StubGenerator<Deprecated>('Deprecated', (_) => null));
     final input = AssetId('a', 'lib/a.dart');
     final assets = {input: 'main() {}'};
 

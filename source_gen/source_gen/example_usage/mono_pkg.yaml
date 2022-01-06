@@ -1,6 +1,6 @@
 # See https://github.com/google/mono_repo.dart for details
 sdk:
-- 2.12.0
+- 2.12.3
 - dev
 
 stages:

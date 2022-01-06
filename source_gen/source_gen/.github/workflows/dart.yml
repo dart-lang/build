@@ -37,22 +37,22 @@ jobs:
       - name: mono_repo self validate
         run: dart pub global run mono_repo generate --validate
   job_002:
-    name: "analyze_format; linux; Dart 2.12.0; PKG: source_gen; `dart analyze`"
+    name: "analyze_format; linux; Dart 2.12.3; PKG: source_gen; `dart analyze`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
         uses: actions/cache@v2.1.7
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:2.12.0;packages:source_gen;commands:analyze_1"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:2.12.3;packages:source_gen;commands:analyze_1"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:2.12.0;packages:source_gen
-            os:ubuntu-latest;pub-cache-hosted;sdk:2.12.0
+            os:ubuntu-latest;pub-cache-hosted;sdk:2.12.3;packages:source_gen
+            os:ubuntu-latest;pub-cache-hosted;sdk:2.12.3
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.3
         with:
-          sdk: "2.12.0"
+          sdk: "2.12.3"
       - id: checkout
         uses: actions/checkout@v2.4.0
       - id: source_gen_pub_upgrade
@@ -136,12 +136,12 @@ jobs:
         working-directory: source_gen
         run: dart analyze --fatal-infos .
   job_004:
-    name: "analyze_format; windows; Dart 2.12.0; PKG: source_gen; `dart analyze`"
+    name: "analyze_format; windows; Dart 2.12.3; PKG: source_gen; `dart analyze`"
     runs-on: windows-latest
     steps:
       - uses: dart-lang/setup-dart@v1.3
         with:
-          sdk: "2.12.0"
+          sdk: "2.12.3"
       - id: checkout
         uses: actions/checkout@v2.4.0
       - id: source_gen_pub_upgrade
@@ -176,22 +176,22 @@ jobs:
         working-directory: source_gen
         run: dart analyze --fatal-infos .
   job_006:
-    name: "unit_test; linux; Dart 2.12.0; PKG: example_usage; `dart test --run-skipped`"
+    name: "unit_test; linux; Dart 2.12.3; PKG: example_usage; `dart test --run-skipped`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
         uses: actions/cache@v2.1.7
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:2.12.0;packages:example_usage;commands:test_0"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:2.12.3;packages:example_usage;commands:test_0"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:2.12.0;packages:example_usage
-            os:ubuntu-latest;pub-cache-hosted;sdk:2.12.0
+            os:ubuntu-latest;pub-cache-hosted;sdk:2.12.3;packages:example_usage
+            os:ubuntu-latest;pub-cache-hosted;sdk:2.12.3
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.3
         with:
-          sdk: "2.12.0"
+          sdk: "2.12.3"
       - id: checkout
         uses: actions/checkout@v2.4.0
       - id: example_usage_pub_upgrade
@@ -210,22 +210,22 @@ jobs:
       - job_004
       - job_005
   job_007:
-    name: "unit_test; linux; Dart 2.12.0; PKG: source_gen; `dart test`"
+    name: "unit_test; linux; Dart 2.12.3; PKG: source_gen; `dart test`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
         uses: actions/cache@v2.1.7
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:2.12.0;packages:source_gen;commands:test_1"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:2.12.3;packages:source_gen;commands:test_1"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:2.12.0;packages:source_gen
-            os:ubuntu-latest;pub-cache-hosted;sdk:2.12.0
+            os:ubuntu-latest;pub-cache-hosted;sdk:2.12.3;packages:source_gen
+            os:ubuntu-latest;pub-cache-hosted;sdk:2.12.3
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - uses: dart-lang/setup-dart@v1.3
         with:
-          sdk: "2.12.0"
+          sdk: "2.12.3"
       - id: checkout
         uses: actions/checkout@v2.4.0
       - id: source_gen_pub_upgrade
@@ -312,12 +312,12 @@ jobs:
       - job_004
       - job_005
   job_010:
-    name: "unit_test; windows; Dart 2.12.0; PKG: source_gen; `dart test`"
+    name: "unit_test; windows; Dart 2.12.3; PKG: source_gen; `dart test`"
     runs-on: windows-latest
     steps:
       - uses: dart-lang/setup-dart@v1.3
         with:
-          sdk: "2.12.0"
+          sdk: "2.12.3"
       - id: checkout
         uses: actions/checkout@v2.4.0
       - id: source_gen_pub_upgrade
