@@ -12,7 +12,7 @@ build filters will be built, in addition to the inputs to those outputs.
 ## Command Line Usage
 
 Build filters are supplied using the `--build-filter` option, which accepts
-relative paths under the package as well as `package:` uris.
+relative paths under the root package as well as `package:` uris.
 
 Glob syntax is allowed in both package names and paths.
 
