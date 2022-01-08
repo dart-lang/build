@@ -7,7 +7,7 @@ A build filter is a combination of a package and a path, with glob syntax
 supported for each.
 
 Whenever a build filter is provided, only required outputs matching one of the
-build filters will be built, in addition to the inputs to those outputs.
+build filters will be built, in addition to any required files for those outputs.
 
 ## Command Line Usage
 
