@@ -83,6 +83,7 @@ class PerActionResolver implements ReleasableResolver {
     await for (final library in libraries) {
       if (library.name == libraryName) return library;
     }
+    return null;
   }
 
   @override
