@@ -217,7 +217,7 @@ class _SingleBuild {
         _logPerformanceDir = buildImpl._logPerformanceDir {
     hungActionsHeartbeat = HungActionsHeartbeat(() {
       final message = StringBuffer();
-      const actionsToLogMax = 5;
+      const actionsToLogMax = 100;
       final descriptions = pendingActions.values
           .expand((actions) => actions)
           .take(actionsToLogMax);

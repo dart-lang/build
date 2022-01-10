@@ -125,7 +125,7 @@ class HungActionsHeartbeat extends Heartbeat {
       {Duration checkInterval, Duration waitDuration})
       : super(
             checkInterval: checkInterval,
-            waitDuration: waitDuration ?? Duration(seconds: 15));
+            waitDuration: waitDuration ?? Duration(seconds: 3));
 
   @override
   void onTimeout(Duration elapsed) {
