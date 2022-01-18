@@ -20,9 +20,12 @@ import 'package:analyzer/dart/element/type.dart' as analyzer;
 import 'package:analyzer/dart/element/type_provider.dart';
 import 'package:analyzer/dart/element/type_system.dart';
 import 'package:analyzer/dart/element/visitor.dart';
+// ignore: implementation_imports
 import 'package:analyzer/src/dart/element/inheritance_manager3.dart'
     show InheritanceManager3;
+// ignore: implementation_imports
 import 'package:analyzer/src/dart/element/member.dart' show ExecutableMember;
+// ignore: implementation_imports
 import 'package:analyzer/src/dart/element/type_algebra.dart' show Substitution;
 import 'package:build/build.dart';
 // Do not expose [refer] in the default namespace.

@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// The API in this file includes functions that return `void`, but are intended
+// to be passed as arguments to method stubs, so they must be declared to return
+// `Null` in order to not trigger `use_of_void_result` warnings in user code.
+// ignore_for_file: prefer_void_to_null
+
 import 'dart:async';
 
 import 'package:meta/meta.dart';

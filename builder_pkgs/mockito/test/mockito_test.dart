@@ -215,11 +215,12 @@ void main() {
     // Error path tests.
     test('should throw if `when` is called while stubbing', () {
       expect(() {
-        var responseHelper = () {
+        _MockedClass responseHelper() {
           var mock2 = _MockedClass();
           when(mock2.getter).thenReturn('A');
           return mock2;
-        };
+        }
+
         when(mock.innerObj).thenReturn(responseHelper());
       }, throwsStateError);
     });
