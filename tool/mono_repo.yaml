@@ -1,0 +1,12 @@
+sdk:
+- dev
+
+stages:
+- analyze_and_format:
+  - group:
+    - format
+    - analyze: --fatal-infos .
+- unit_test:
+  - test: --test-randomize-ordering-seed=random
+    os:
+    - linux
