@@ -19,11 +19,11 @@ jobs:
         with:
           repository: simolus3/moor
           ref: latest-release
-          path: client_tests
+          path: client_tests/drift
       - run: |-
-          dart run tool/bin/patch_build_dependencies.dart client_tests/drift
-          cd client_tests/drift
+          dart run tool/bin/patch_build_dependencies.dart client_tests/drift/drift
+          cd client_tests/drift/drift
           git add pubspec.yaml
       - run: dart test --preset build_community_tests
         name: Drift community tests
-        working-directory: client_tests/drift
+        working-directory: client_tests/drift/drift
