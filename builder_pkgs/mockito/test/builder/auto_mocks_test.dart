@@ -2938,6 +2938,22 @@ void main() {
     );
   });
 
+  test('given a pre-non-nullable library, includes an opt-out comment',
+      () async {
+    await testPreNonNullable(
+      {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        abstract class Foo {
+          int f(int a);
+        }
+        '''),
+      },
+      outputs: {'foo|test/foo_test.mocks.dart': _containsAllOf('// @dart=2.9')},
+    );
+  });
+
   test('given a pre-non-nullable library, does not override any members',
       () async {
     await testPreNonNullable(

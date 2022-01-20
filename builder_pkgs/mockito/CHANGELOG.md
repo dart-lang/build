@@ -1,3 +1,8 @@
+## 5.0.18-dev
+
+* In creating mocks for a pre-null-safe library, opt out of null safety in the
+  generated code.
+
 ## 5.0.17
 
 * Report when a class cannot be mocked because an inherited method or property
