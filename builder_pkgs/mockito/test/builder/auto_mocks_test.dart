@@ -1291,6 +1291,127 @@ void main() {
     );
   });
 
+  test('widens the type of covariant parameters to be nullable', () async {
+    await expectSingleNonNullableOutput(
+      dedent('''
+        abstract class FooBase {
+          void m(num a);
+        }
+        abstract class Foo extends FooBase {
+          void m(covariant int a);
+        }
+        '''),
+      _containsAllOf(
+          'void m(num? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+    );
+  });
+
+  test(
+      'widens the type of covariant parameters with default values to be nullable',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent('''
+        abstract class FooBase {
+          void m([num a = 0]);
+        }
+        abstract class Foo extends FooBase {
+          void m([covariant int a = 0]);
+        }
+        '''),
+      _containsAllOf(
+          'void m([num? a = 0]) => super.noSuchMethod(Invocation.method(#m, [a])'),
+    );
+  });
+
+  test(
+      'widens the type of covariant parameters (declared covariant in a '
+      'superclass) to be nullable', () async {
+    await expectSingleNonNullableOutput(
+      dedent('''
+        abstract class FooBase {
+          void m(covariant num a);
+        }
+        abstract class Foo extends FooBase {
+          void m(int a);
+        }
+        '''),
+      _containsAllOf(
+          'void m(num? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+    );
+  });
+
+  test('widens the type of successively covariant parameters to be nullable',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent('''
+        abstract class FooBaseBase {
+          void m(Object a);
+        }
+        abstract class FooBase extends FooBaseBase {
+          void m(covariant num a);
+        }
+        abstract class Foo extends FooBase {
+          void m(covariant int a);
+        }
+        '''),
+      _containsAllOf(
+          'void m(Object? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+    );
+  }, solo: true);
+
+  test(
+      'widens the type of covariant parameters, overriding a mixin, to be nullable',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent('''
+        mixin FooMixin {
+          void m(num a);
+        }
+        abstract class Foo with FooMixin {
+          void m(covariant int a);
+        }
+        '''),
+      _containsAllOf(
+          'void m(num? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+    );
+  });
+
+  test(
+      "widens the type of covariant parameters, which don't have corresponding "
+      'parameters in all overridden methods, to be nullable', () async {
+    await expectSingleNonNullableOutput(
+      dedent('''
+        abstract class FooBaseBase {
+          void m();
+        }
+        abstract class FooBase extends FooBaseBase {
+          void m([num a]);
+        }
+        abstract class Foo extends FooBase {
+          void m([covariant int a]);
+        }
+        '''),
+      _containsAllOf(
+          'void m([num? a]) => super.noSuchMethod(Invocation.method(#m, [a])'),
+    );
+  });
+
+  test('widens the type of covariant named parameters to be nullable',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent('''
+        abstract class FooBase extends FooBaseBase {
+          void m({required num a});
+        }
+        abstract class Foo extends FooBase {
+          void m({required covariant int a});
+        }
+        '''),
+      _containsAllOf(
+          'void m({num? a}) => super.noSuchMethod(Invocation.method(#m, [], {#a: a})'),
+    );
+  });
+
   test('matches nullability of type arguments of a parameter', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''

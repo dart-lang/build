@@ -2,6 +2,8 @@
 
 * In creating mocks for a pre-null-safe library, opt out of null safety in the
   generated code.
+* Properly generate method overrides for methods with covariant parameters.
+  [#506](https://github.com/dart-lang/mockito/issues/506)
 
 ## 5.0.17
 

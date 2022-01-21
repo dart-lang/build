@@ -22,7 +22,7 @@ import 'package:analyzer/dart/element/type_system.dart';
 import 'package:analyzer/dart/element/visitor.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/element/inheritance_manager3.dart'
-    show InheritanceManager3;
+    show InheritanceManager3, Name;
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/element/member.dart' show ExecutableMember;
 // ignore: implementation_imports
@@ -989,20 +989,34 @@ class _MockClassInfo {
     final invocationPositionalArgs = <Expression>[];
     final invocationNamedArgs = <Expression, Expression>{};
 
+    var position = 0;
     for (final parameter in method.parameters) {
       if (parameter.isRequiredPositional) {
-        builder.requiredParameters
-            .add(_matchingParameter(parameter, forceNullable: true));
+        final superParameterType =
+            _escapeCovariance(parameter, position: position);
+        final matchingParameter = _matchingParameter(parameter,
+            superParameterType: superParameterType, forceNullable: true);
+        builder.requiredParameters.add(matchingParameter);
         invocationPositionalArgs.add(refer(parameter.displayName));
+        position++;
       } else if (parameter.isOptionalPositional) {
-        builder.optionalParameters
-            .add(_matchingParameter(parameter, forceNullable: true));
+        final superParameterType =
+            _escapeCovariance(parameter, position: position);
+        final matchingParameter = _matchingParameter(parameter,
+            superParameterType: superParameterType, forceNullable: true);
+        builder.optionalParameters.add(matchingParameter);
         invocationPositionalArgs.add(refer(parameter.displayName));
+        position++;
       } else if (parameter.isNamed) {
-        builder.optionalParameters
-            .add(_matchingParameter(parameter, forceNullable: true));
+        final superParameterType = _escapeCovariance(parameter, isNamed: true);
+        final matchingParameter = _matchingParameter(parameter,
+            superParameterType: superParameterType, forceNullable: true);
+        builder.optionalParameters.add(matchingParameter);
         invocationNamedArgs[refer('#${parameter.displayName}')] =
             refer(parameter.displayName);
+      } else {
+        throw StateError('Parameter ${parameter.name} on method ${method.name} '
+            'is not required-positional, nor optional-positional, nor named');
       }
     }
 
@@ -1144,19 +1158,23 @@ class _MockClassInfo {
     return Method((b) {
       // The positional parameters in a FunctionType have no names. This
       // counter lets us create unique dummy names.
-      var counter = 0;
+      var position = 0;
       b.types.addAll(type.typeFormals.map(_typeParameterReference));
       for (final parameter in type.parameters) {
         if (parameter.isRequiredPositional) {
-          b.requiredParameters
-              .add(_matchingParameter(parameter, defaultName: '__p$counter'));
-          counter++;
+          final matchingParameter = _matchingParameter(parameter,
+              superParameterType: parameter.type, defaultName: '__p$position');
+          b.requiredParameters.add(matchingParameter);
+          position++;
         } else if (parameter.isOptionalPositional) {
-          b.optionalParameters
-              .add(_matchingParameter(parameter, defaultName: '__p$counter'));
-          counter++;
+          final matchingParameter = _matchingParameter(parameter,
+              superParameterType: parameter.type, defaultName: '__p$position');
+          b.optionalParameters.add(matchingParameter);
+          position++;
         } else if (parameter.isNamed) {
-          b.optionalParameters.add(_matchingParameter(parameter));
+          final matchingParameter =
+              _matchingParameter(parameter, superParameterType: parameter.type);
+          b.optionalParameters.add(matchingParameter);
         }
       }
       if (type.returnType.isVoid) {
@@ -1228,17 +1246,20 @@ class _MockClassInfo {
   /// If the type needs to be nullable, rather than matching the nullability of
   /// [parameter], use [forceNullable].
   Parameter _matchingParameter(ParameterElement parameter,
-      {String? defaultName, bool forceNullable = false}) {
+      {required analyzer.DartType superParameterType,
+      String? defaultName,
+      bool forceNullable = false}) {
     assert(
         parameter.name.isNotEmpty || defaultName != null,
         'parameter must have a non-empty name, or non-null defaultName must be '
         'passed, but parameter name is "${parameter.name}" and defaultName is '
         '$defaultName');
-    var name = parameter.name.isEmpty ? defaultName! : parameter.name;
+    final name = parameter.name.isEmpty ? defaultName! : parameter.name;
     return Parameter((pBuilder) {
       pBuilder
         ..name = name
-        ..type = _typeReference(parameter.type, forceNullable: forceNullable);
+        ..type =
+            _typeReference(superParameterType, forceNullable: forceNullable);
       if (parameter.isNamed) pBuilder.named = true;
       if (parameter.defaultValueCode != null) {
         try {
@@ -1255,6 +1276,68 @@ class _MockClassInfo {
         }
       }
     });
+  }
+
+  /// Determines the most narrow legal type for a parameter which overrides
+  /// [parameter].
+  ///
+  /// Without covariant parameters, each parameter in a method which overrides
+  /// a super-method with a corresponding super-parameter must be the same type
+  /// or a supertype of the super-parameter's type, so a generated overriding
+  /// method can use the same type as the type of the corresponding parameter.
+  ///
+  /// However, if a parameter is covariant, the supertype relationship is no
+  /// longer guaranteed, and we must look around at the types of of the
+  /// corresponding parameters in all of the overridden methods in order to
+  /// determine a legal type for a generated overridding method.
+  analyzer.DartType _escapeCovariance(ParameterElement parameter,
+      {int? position, bool isNamed = false}) {
+    assert(position != null || isNamed);
+    assert(position == null || !isNamed);
+    var type = parameter.type;
+    if (!parameter.isCovariant) {
+      return type;
+    }
+    final method = parameter.enclosingElement as MethodElement;
+    final class_ = method.enclosingElement as ClassElement;
+    final name = Name(method.librarySource.uri, method.name);
+    final overriddenMethods = inheritanceManager.getOverridden2(class_, name);
+    if (overriddenMethods == null) {
+      return type;
+    }
+    final allOverriddenMethods = Queue.of(overriddenMethods);
+    while (allOverriddenMethods.isNotEmpty) {
+      final overriddenMethod = allOverriddenMethods.removeFirst();
+      final secondaryOverrides = inheritanceManager.getOverridden2(
+          overriddenMethod.enclosingElement as ClassElement, name);
+      if (secondaryOverrides != null) {
+        allOverriddenMethods.addAll(secondaryOverrides);
+      }
+      final parameters = overriddenMethod.parameters;
+      if (position != null) {
+        if (position >= parameters.length) {
+          // [parameter] has been _added_ in [method], and has no corresponding
+          // parameter in [overriddenMethod].
+          // TODO(srawlins): Assert that [parameter] is optional.
+          continue;
+        }
+        final overriddenParameter = parameters[position];
+        print('LUB of $type and ${overriddenParameter.type} is');
+        // TODO(srawlins): Assert that [overriddenParameter] is not named.
+        type = typeSystem.leastUpperBound(type, overriddenParameter.type);
+      } else {
+        final overriddenParameter =
+            parameters.firstWhereOrNull((p) => p.name == parameter.name);
+        if (overriddenParameter == null) {
+          // [parameter] has been _added_ in [method], and has no corresponding
+          // parameter in [overriddenMethod].
+          continue;
+        }
+        // TODO(srawlins): Assert that [overriddenParameter] is named.
+        type = typeSystem.leastUpperBound(type, overriddenParameter.type);
+      }
+    }
+    return type;
   }
 
   /// Creates a code_builder [Expression] from [object], a constant object from
