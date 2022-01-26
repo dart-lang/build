@@ -1322,7 +1322,6 @@ class _MockClassInfo {
           continue;
         }
         final overriddenParameter = parameters[position];
-        print('LUB of $type and ${overriddenParameter.type} is');
         // TODO(srawlins): Assert that [overriddenParameter] is not named.
         type = typeSystem.leastUpperBound(type, overriddenParameter.type);
       } else {
