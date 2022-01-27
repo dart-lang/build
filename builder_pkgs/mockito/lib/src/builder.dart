@@ -881,20 +881,29 @@ class _MockClassInfo {
         cBuilder.constructors.add(_constructorWithThrowOnMissingStub);
       }
 
-      // Only override members of a class declared in a library which uses the
-      // non-nullable type system.
-      if (!sourceLibIsNonNullable) {
-        return;
-      }
       final substitution = Substitution.fromInterfaceType(typeToMock);
       final members =
           inheritanceManager.getInterface(classToMock).map.values.map((member) {
         return ExecutableMember.from2(member, substitution);
       });
-      cBuilder.methods
-          .addAll(fieldOverrides(members.whereType<PropertyAccessorElement>()));
-      cBuilder.methods
-          .addAll(methodOverrides(members.whereType<MethodElement>()));
+
+      if (sourceLibIsNonNullable) {
+        cBuilder.methods.addAll(
+            fieldOverrides(members.whereType<PropertyAccessorElement>()));
+        cBuilder.methods
+            .addAll(methodOverrides(members.whereType<MethodElement>()));
+      } else {
+        // For a pre-null safe library, we do not need to re-implement any
+        // members for the purpose of expanding their parameter types. However,
+        // we may need to include an implementation of `toString()`, if the
+        // class-to-mock has added optional parameters.
+        var toStringMethod = members
+            .whereType<MethodElement>()
+            .firstWhereOrNull((m) => m.name == 'toString');
+        if (toStringMethod != null) {
+          cBuilder.methods.addAll(methodOverrides([toStringMethod]));
+        }
+      }
     });
   }
 

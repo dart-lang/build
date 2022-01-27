@@ -1357,7 +1357,7 @@ void main() {
       _containsAllOf(
           'void m(Object? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
     );
-  }, solo: true);
+  });
 
   test(
       'widens the type of covariant parameters, overriding a mixin, to be nullable',
@@ -3095,6 +3095,25 @@ void main() {
           }
         }
         '''))
+      },
+    );
+  });
+
+  test('given a pre-non-nullable library, overrides toString if necessary',
+      () async {
+    await testPreNonNullable(
+      {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+        abstract class Foo {
+          String toString({bool a = false});
+        }
+        '''),
+      },
+      outputs: {
+        'foo|test/foo_test.mocks.dart': _containsAllOf(
+            'String toString({bool a = false}) => super.toString();')
       },
     );
   });

@@ -4,6 +4,8 @@
   generated code.
 * Properly generate method overrides for methods with covariant parameters.
   [#506](https://github.com/dart-lang/mockito/issues/506)
+* Correctly generate a `toString` override method for pre-null safe libraries,
+  for which the class-to-mock implements `toString` with additional parameters.
 
 ## 5.0.17
 
