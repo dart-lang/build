@@ -232,7 +232,9 @@ class MissingStubError extends Error {
       'No stub was found which matches the arguments of this method call:\n'
       '${invocation.toPrettyString()}\n\n'
       "Add a stub for this method using Mockito's 'when' API, or generate the "
-      "mock for ${receiver.runtimeType} with 'returnNullOnMissingStub: true'.";
+      '${receiver.runtimeType} mock with a MockSpec with '
+      "'returnNullOnMissingStub: true' (see "
+      'https://pub.dev/documentation/mockito/latest/annotations/MockSpec-class.html).';
 }
 
 typedef _ReturnsCannedResponse = CallPair<dynamic> Function();

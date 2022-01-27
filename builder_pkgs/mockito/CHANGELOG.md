@@ -6,6 +6,7 @@
   [#506](https://github.com/dart-lang/mockito/issues/506)
 * Correctly generate a `toString` override method for pre-null safe libraries,
   for which the class-to-mock implements `toString` with additional parameters.
+* Improve messaging in a MissingStubError, directing to the docs for MockSpec.
 
 ## 5.0.17
 
