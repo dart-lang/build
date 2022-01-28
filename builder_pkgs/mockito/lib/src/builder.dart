@@ -639,7 +639,14 @@ class _MockTargetGatherer {
   /// - return type
   /// - parameter types
   /// - bounds of type parameters
-  /// - type arguments
+  /// - type arguments on types in the above three positions
+  ///
+  /// If any type in the above positions is private, [function] is un-stubbable.
+  /// If the return type is potentially non-nnullable,
+  /// [function] is un-stubbable, unless [isParamter] is true (indicating that
+  /// [function] is found in a parameter of a method-to-be-stubbed) or
+  /// [hasDummyCenerator] is true (indicating that a dummy generator, which can
+  /// return dummy values, has been provided).
   List<String> _checkFunction(
     analyzer.FunctionType function,
     Element enclosingElement, {
@@ -654,8 +661,9 @@ class _MockTargetGatherer {
             '${enclosingElement.fullName} features a private return type, and '
             'cannot be stubbed.');
       }
-      errorMessages.addAll(
-          _checkTypeArguments(returnType.typeArguments, enclosingElement));
+      errorMessages.addAll(_checkTypeArguments(
+          returnType.typeArguments, enclosingElement,
+          isParameter: isParameter));
     } else if (returnType is analyzer.FunctionType) {
       errorMessages.addAll(_checkFunction(returnType, enclosingElement));
     } else if (returnType is analyzer.TypeParameterType) {
@@ -681,8 +689,9 @@ class _MockTargetGatherer {
               '${enclosingElement.fullName} features a private parameter type, '
               "'${parameterTypeElement.name}', and cannot be stubbed.");
         }
-        errorMessages.addAll(
-            _checkTypeArguments(parameterType.typeArguments, enclosingElement));
+        errorMessages.addAll(_checkTypeArguments(
+            parameterType.typeArguments, enclosingElement,
+            isParameter: true));
       } else if (parameterType is analyzer.FunctionType) {
         errorMessages.addAll(
             _checkFunction(parameterType, enclosingElement, isParameter: true));
@@ -694,8 +703,8 @@ class _MockTargetGatherer {
 
     var aliasArguments = function.alias?.typeArguments;
     if (aliasArguments != null) {
-      errorMessages
-          .addAll(_checkTypeArguments(aliasArguments, enclosingElement));
+      errorMessages.addAll(_checkTypeArguments(aliasArguments, enclosingElement,
+          isParameter: isParameter));
     }
 
     return errorMessages;
@@ -726,7 +735,10 @@ class _MockTargetGatherer {
   /// See [_checkMethodsToStubAreValid] for what properties make a function
   /// un-stubbable.
   List<String> _checkTypeArguments(
-      List<analyzer.DartType> typeArguments, Element enclosingElement) {
+    List<analyzer.DartType> typeArguments,
+    Element enclosingElement, {
+    bool isParameter = false,
+  }) {
     var errorMessages = <String>[];
     for (var typeArgument in typeArguments) {
       if (typeArgument is analyzer.InterfaceType) {
@@ -736,7 +748,8 @@ class _MockTargetGatherer {
               'and cannot be stubbed.');
         }
       } else if (typeArgument is analyzer.FunctionType) {
-        errorMessages.addAll(_checkFunction(typeArgument, enclosingElement));
+        errorMessages.addAll(_checkFunction(typeArgument, enclosingElement,
+            isParameter: isParameter));
       }
     }
     return errorMessages;

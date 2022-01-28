@@ -539,6 +539,41 @@ void main() {
   });
 
   test(
+      'generates mock classes including a fallback generator for a generic '
+      'method with a parameter with a function-typed type argument with '
+      'unknown return type', () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent('''
+        abstract class Foo {
+          T m<T>({List<T Function()> a});
+        }
+        '''),
+      'foo|test/foo_test.dart': dedent('''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+
+        T mShim<T>({List<T Function()> a}) {
+          throw 'unknown';
+        }
+
+        @GenerateMocks(
+          [],
+          customMocks: [
+            MockSpec<Foo>(as: #MockFoo, fallbackGenerators: {#m: mShim}),
+          ],
+        )
+        void main() {}
+        ''')
+    });
+    expect(
+        mocksContent,
+        contains('T m<T>({List<T Function()>? a}) =>\n'
+            '      (super.noSuchMethod(Invocation.method(#m, [], {#a: a}),\n'
+            '          returnValue: _i3.mShim<T>(a: a)) as T);'));
+  });
+
+  test(
       'throws when GenerateMocks is given a class with a type parameter with a '
       'private bound', () async {
     _expectBuilderThrows(
