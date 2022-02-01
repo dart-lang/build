@@ -238,14 +238,13 @@ MetaModule _coarseModulesForLibraries(
   var librariesByDirectory = <String, Map<AssetId, ModuleLibrary>>{};
   for (var library in libraries) {
     final dir = _topLevelDir(library.id.path);
-    if (!librariesByDirectory.containsKey(dir)) {
-      librariesByDirectory[dir] = <AssetId, ModuleLibrary>{};
-    }
-    librariesByDirectory[dir]![library.id] = library;
+    (librariesByDirectory[dir] ??= {})[library.id] = library;
   }
-  final modules = librariesByDirectory.values
-      .expand((libs) => _computeModules(libs, platform))
-      .toList();
+
+  final modules = [
+    for (var libraries in librariesByDirectory.values)
+      ..._computeModules(libraries, platform)
+  ];
   _sortModules(modules);
   return MetaModule(modules);
 }
