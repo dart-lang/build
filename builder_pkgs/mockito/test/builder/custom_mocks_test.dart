@@ -37,11 +37,14 @@ class MockSpec<T> {
 
   final bool returnNullOnMissingStub;
 
+  final Set<Symbol> unsupportedMembers;
+
   final Map<Symbol, Function> fallbackGenerators;
 
   const MockSpec({
     Symbol? as,
     this.returnNullOnMissingStub = false,
+    this.unsupportedMembers = const {},
     this.fallbackGenerators = const {},
   }) : mockName = as;
 }
@@ -323,6 +326,69 @@ void main() {
         '''
     });
     expect(mocksContent, isNot(contains('throwOnMissingStub')));
+  });
+
+  test(
+      'generates mock methods with non-nullable unknown types, given '
+      'unsupportedMembers', () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        abstract class Foo {
+          T m<T>(T a);
+        }
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+
+        @GenerateMocks(
+          [],
+          customMocks: [
+            MockSpec<Foo>(unsupportedMembers: {#m}),
+          ],
+        )
+        void main() {}
+        '''
+    });
+    expect(
+        mocksContent,
+        contains('  T m<T>(T? a) => throw UnsupportedError(\n'
+            r"      '\'m\' cannot be used without a mockito fallback generator.');"));
+  });
+
+  test('generates mock classes including a fallback generator for a getter',
+      () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        abstract class Foo<T> {
+          T get f;
+        }
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+
+        T fShim<T>() {
+          throw 'unknown';
+        }
+
+        @GenerateMocks(
+          [],
+          customMocks: [
+            MockSpec<Foo>(fallbackGenerators: {#f: fShim}),
+          ],
+        )
+        void main() {}
+        '''
+    });
+    expect(
+      mocksContent,
+      contains('T get f =>\n'
+          '      (super.noSuchMethod(Invocation.getter(#f), returnValue: _i3.fShim())\n'
+          '          as T);'),
+    );
   });
 
   test(

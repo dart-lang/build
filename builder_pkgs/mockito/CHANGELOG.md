@@ -10,6 +10,10 @@
 * Fix incorrect error when trying to mock a method with a parameter with inner
   function types (like in type arguments) which are potentially non-nullable.
   [#476](https://github.com/dart-lang/mockito/issues/476)
+* Allow fallback generators to be applied for getters.
+* Support generating a mock class for a class with members with non-nullable
+  unknown return types via a new parameter on `MockSpec` called
+  `unsupportedMembers`. See [NULL_SAFETY_README][] for details.
 
 ## 5.0.17
 

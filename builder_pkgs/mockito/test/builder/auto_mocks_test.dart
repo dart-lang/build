@@ -38,7 +38,16 @@ class MockSpec<T> {
 
   final bool returnNullOnMissingStub;
 
-  const MockSpec({Symbol as, this.returnNullOnMissingStub = false})
+  final Set<Symbol> unsupportedMembers;
+
+  final Map<Symbol, Function> fallbackGenerators;
+
+  const MockSpec({
+    Symbol as,
+    this.returnNullOnMissingStub = false,
+    this.unsupportedMembers = const {},
+    this.fallbackGenerators = const {},
+  })
       : mockName = as;
 }
 '''
@@ -470,8 +479,8 @@ void main() {
       '''),
       },
       message: contains(
-          "Mockito cannot generate a valid stub for method 'Foo.m'; parameter "
-          "'a' causes a problem: default value has a private type: "
+          "Mockito cannot generate a valid override for method 'Foo.m'; "
+          "parameter 'a' causes a problem: default value has a private type: "
           'asset:foo/lib/foo.dart#_Bar'),
     );
   });
@@ -493,8 +502,8 @@ void main() {
         '''),
       },
       message: contains(
-          "Mockito cannot generate a valid stub for method 'Foo.m'; parameter "
-          "'a' causes a problem: default value has a private type: "
+          "Mockito cannot generate a valid override for method 'Foo.m'; "
+          "parameter 'a' causes a problem: default value has a private type: "
           'asset:foo/lib/foo.dart#Bar::_named'),
     );
   });
@@ -510,9 +519,9 @@ void main() {
         }
         '''),
       },
-      message: contains(
-          "Mockito cannot generate a valid stub for method 'Foo.m'; parameter "
-          "'a' causes a problem: default value is a Type: int"),
+      message: contains('Mockito cannot generate a valid override for method '
+          "'Foo.m'; parameter 'a' causes a problem: default value is a Type: "
+          'int'),
     );
   });
 
@@ -2814,6 +2823,25 @@ void main() {
       message: contains(
           "The method 'Foo.m' features a private type parameter bound, and "
           'cannot be stubbed.'),
+    );
+  });
+
+  test(
+      'throws when GenerateMocks is given a class with a getter with a '
+      'non-nullable class-declared type variable type', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent('''
+        abstract class Foo<T> {
+          T get f;
+        }
+        '''),
+      },
+      message: contains(
+          "The property accessor 'Foo.f' features a non-nullable unknown "
+          'return type, and cannot be stubbed'),
     );
   });
 

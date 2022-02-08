@@ -24,8 +24,9 @@ class Foo<T> {
 
 class Bar {}
 
-abstract class Baz {
+abstract class Baz<S> {
   T returnsTypeVariable<T>();
   T returnsBoundedTypeVariable<T extends num?>();
   T returnsTypeVariableFromTwo<T, U>();
+  S get typeVariableField;
 }

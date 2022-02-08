@@ -36,13 +36,11 @@ when(server.start(any)).thenReturn(uri);
 This code is, unfortunately, illegal under null safety in two ways. For details,
 see the section at the bottom, **Problems with typical mocking and stubbing**.
 
-## Solutions
-
 There are two ways to write a mock class that supports non-nullable types: we
 can use the [build_runner] package to _generate_ a mock class, or we can
 manually implement it, overriding specific methods to handle non-nullability.
 
-### Code generation
+## Solution 1: code generation
 
 Mockito provides a "one size fits all" code-generating solution for packages
 that use null safety which can generate a mock for any class. To direct Mockito
@@ -156,11 +154,11 @@ sense in the Null safety type system), for legacy code, use
 @GenerateMocks([], customMocks: [MockSpec<Foo>(returnNullOnMissingStub: true)])
 ```
 
-#### Fallback generators
+#### Mocking members with non-nullable type variable return types
 
-If a class has a method with a type variable as a return type (for example,
-`T get<T>();`), mockito cannot generate code which will internally return valid
-values. For example, given this class and test:
+If a class has a member with a type variable as a return type (for example,
+`T get<T>();`), mockito cannot generate code which will internally return a
+valid value. For example, given this class and test:
 
 ```dart
 abstract class Foo {
@@ -169,17 +167,36 @@ abstract class Foo {
 
 @GenerateMocks([], customMocks: [MockSpec<Foo>(as: #MockFoo)])
 void testFoo(Foo foo) {
-  when(   foo.m(7)   ).thenReturn(42);
-       // ^^^^^^^^
-       // mockito needs a valid value which this call to `foo.m` will return.
+  when(foo.m(7)).thenReturn(42);
 }
 ```
 
-In order to generate a mock for such a class, pass a `fallbackGenerators`
-argument. Specify a mapping from the method to a top level function with
-_almost_ the same signature as the method. The function must have the same
-return type as the method, and it must have the same positional and named
-parameters as the method, except that each parameter must be made nullable:
+Mockito needs a valid _value_ which the above call, `foo.m(7)`, will return.
+
+##### Overriding unsupported members
+
+One way to generate a mock class with such members is to use
+`unsupportedMembers`:
+
+```dart
+@GenerateMocks([], customMocks: [
+  MockSpec<Foo>(unsupportedMembers: {#method}),
+])
+```
+
+Mockito uses this instruction to generate an override, which simply throws an
+UnsupportedError, for each specified unsupported member. Such overrides are not
+useful at runtime, but their presence makes the mock class a valid
+implementation of the class-to-mock.
+
+##### Fallback generators
+
+In order to generate a mock class with a more useful implementation of a member
+which returns a non-nullable type variable, use MockSpec's `fallbackGenerators`
+parameter. Specify a mapping from the member to a top level function with
+_almost_ the same signature as the member. The function must have the same
+return type as the member, and it must have the same positional and named
+parameters as the member, except that each parameter must be made nullable:
 
 ```dart
 abstract class Foo {
@@ -196,11 +213,11 @@ T mShim<T>(T a, int? b) {
 ])
 ```
 
-The fallback values will never be returned from a real method call; these are
+The fallback values will never be returned from a real member call; these are
 not stub return values. They are only used internally by mockito as valid return
 values.
 
-### Manual mock implementaion
+## Solution 2: manual mock implementation
 
 **In the general case, we strongly recommend generating mocks with the above
 method.** However, there may be cases where a manual mock implementation is more
@@ -211,7 +228,7 @@ Perhaps we wish to mock just one class which has mostly nullable parameter types
 and return types. In this case, it may not be too onerous to implement the mock
 class manually.
 
-#### The general process
+### The general process
 
 Only public methods (including getters, setters, and operators) which either
 have a non-nullable return type, or a parameter with a non-nullable type, need
@@ -245,7 +262,7 @@ the `noSuchMethod` method found in the Mock class. Under null safety, we need to
 override that implementation for every method which has one or more non-nullable
 parameters, or which has a non-nullable return type.
 
-#### Manually override a method with a non-nullable parameter type.
+### Manually override a method with a non-nullable parameter type.
 
 First let's override `start` with an implementation that expands the single
 parameter's type to be nullable, and call `super.noSuchMethod` to handle the
@@ -279,7 +296,7 @@ That's it! The override implementation is all boilerplate. See the API for
 [Invocation] constructors to see how to implement an override for an operator or
 a setter.
 
-#### Manually override a method with a non-nullable return type.
+### Manually override a method with a non-nullable return type.
 
 Next let's override `get uri`. It would be illegal to override a getter which
 returns a non-nullable Uri with a getter which returns a _nullable_ Uri.

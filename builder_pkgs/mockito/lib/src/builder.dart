@@ -357,12 +357,15 @@ class _MockTarget {
 
   final bool returnNullOnMissingStub;
 
+  final Set<String> unsupportedMembers;
+
   final Map<String, ExecutableElement> fallbackGenerators;
 
   _MockTarget(
     this.classType,
     this.mockName, {
     required this.returnNullOnMissingStub,
+    required this.unsupportedMembers,
     required this.fallbackGenerators,
   });
 
@@ -438,8 +441,13 @@ class _MockTargetGatherer {
       final declarationType =
           (type.element.declaration as ClassElement).thisType;
       final mockName = 'Mock${declarationType.element.name}';
-      mockTargets.add(_MockTarget(declarationType, mockName,
-          returnNullOnMissingStub: false, fallbackGenerators: {}));
+      mockTargets.add(_MockTarget(
+        declarationType,
+        mockName,
+        returnNullOnMissingStub: false,
+        unsupportedMembers: {},
+        fallbackGenerators: {},
+      ));
     }
     final customMocksField = generateMocksValue.getField('customMocks');
     if (customMocksField != null && !customMocksField.isNull) {
@@ -465,12 +473,21 @@ class _MockTargetGatherer {
             'Mock${type.element.name}';
         final returnNullOnMissingStub =
             mockSpec.getField('returnNullOnMissingStub')!.toBoolValue()!;
+        final unsupportedMembers = {
+          for (final m
+              in mockSpec.getField('unsupportedMembers')!.toSetValue()!)
+            m.toSymbolValue()!,
+        };
         final fallbackGeneratorObjects =
             mockSpec.getField('fallbackGenerators')!.toMapValue()!;
-        mockTargets.add(_MockTarget(type, mockName,
-            returnNullOnMissingStub: returnNullOnMissingStub,
-            fallbackGenerators:
-                _extractFallbackGenerators(fallbackGeneratorObjects)));
+        mockTargets.add(_MockTarget(
+          type,
+          mockName,
+          returnNullOnMissingStub: returnNullOnMissingStub,
+          unsupportedMembers: unsupportedMembers,
+          fallbackGenerators:
+              _extractFallbackGenerators(fallbackGeneratorObjects),
+        ));
       }
     }
     return mockTargets;
@@ -614,9 +631,14 @@ class _MockTargetGatherer {
       if (_entryLib.typeSystem._returnTypeIsNonNullable(member) ||
           _entryLib.typeSystem._hasNonNullableParameter(member) ||
           _needsOverrideForVoidStub(member)) {
-        return _checkFunction(member.type, member,
-            hasDummyGenerator:
-                mockTarget.fallbackGenerators.containsKey(member.name));
+        return _checkFunction(
+          member.type,
+          member,
+          allowUnsupportedMember:
+              mockTarget.unsupportedMembers.contains(member.name),
+          hasDummyGenerator:
+              mockTarget.fallbackGenerators.containsKey(member.name),
+        );
       } else {
         // Mockito is not going to override this method, so the types do not
         // need to be checked.
@@ -642,15 +664,17 @@ class _MockTargetGatherer {
   /// - type arguments on types in the above three positions
   ///
   /// If any type in the above positions is private, [function] is un-stubbable.
-  /// If the return type is potentially non-nnullable,
-  /// [function] is un-stubbable, unless [isParamter] is true (indicating that
-  /// [function] is found in a parameter of a method-to-be-stubbed) or
-  /// [hasDummyCenerator] is true (indicating that a dummy generator, which can
-  /// return dummy values, has been provided).
+  /// If the return type is potentially non-nullable, [function] is
+  /// un-stubbable, unless [isParamter] is true (indicating that [function] is
+  /// found in a parameter of a method-to-be-stubbed) or
+  /// [allowUnsupportedMember] is true, or [hasDummyCenerator] is true
+  /// (indicating that a dummy generator, which can return dummy values, has
+  /// been provided).
   List<String> _checkFunction(
     analyzer.FunctionType function,
     Element enclosingElement, {
     bool isParameter = false,
+    bool allowUnsupportedMember = false,
     bool hasDummyGenerator = false,
   }) {
     final errorMessages = <String>[];
@@ -668,12 +692,14 @@ class _MockTargetGatherer {
       errorMessages.addAll(_checkFunction(returnType, enclosingElement));
     } else if (returnType is analyzer.TypeParameterType) {
       if (!isParameter &&
+          !allowUnsupportedMember &&
           !hasDummyGenerator &&
           _entryLib.typeSystem.isPotentiallyNonNullable(returnType)) {
-        errorMessages
-            .add('${enclosingElement.fullName} features a non-nullable unknown '
-                'return type, and cannot be stubbed without a dummy generator '
-                'specified on the MockSpec.');
+        errorMessages.add(
+            '${enclosingElement.fullName} features a non-nullable unknown '
+            'return type, and cannot be stubbed. Try generating this mock with '
+            "a MockSpec with 'unsupportedMembers' or a dummy generator (see "
+            'https://pub.dev/documentation/mockito/latest/annotations/MockSpec-class.html).');
       }
     }
 
@@ -1049,6 +1075,28 @@ class _MockClassInfo {
       return;
     }
 
+    final returnType = method.returnType;
+    final fallbackGenerator = fallbackGenerators[method.name];
+    if (typeSystem.isPotentiallyNonNullable(returnType) &&
+        returnType is analyzer.TypeParameterType &&
+        fallbackGenerator == null) {
+      if (!mockTarget.unsupportedMembers.contains(name)) {
+        // We shouldn't get here as this is guarded against in
+        // [_MockTargetGatherer._checkFunction].
+        throw InvalidMockitoAnnotationException(
+            "Mockito cannot generate a valid override for '$name', as it has a "
+            'non-nullable unknown return type.');
+      }
+      builder.body = refer('UnsupportedError')
+          .call([
+            literalString(
+                "'$name' cannot be used without a mockito fallback generator.")
+          ])
+          .thrown
+          .code;
+      return;
+    }
+
     final invocation = refer('Invocation').property('method').call([
       refer('#${method.displayName}'),
       literalList(invocationPositionalArgs),
@@ -1056,34 +1104,32 @@ class _MockClassInfo {
     ]);
 
     Expression? returnValueForMissingStub;
-    if (method.returnType.isVoid) {
+    if (returnType.isVoid) {
       returnValueForMissingStub = refer('null');
-    } else if (method.returnType.isFutureOfVoid) {
+    } else if (returnType.isFutureOfVoid) {
       returnValueForMissingStub =
           _futureReference(refer('void')).property('value').call([]);
     }
-    final fallbackGenerator = fallbackGenerators[method.name];
     final namedArgs = {
       if (fallbackGenerator != null)
         'returnValue': _fallbackGeneratorCode(method, fallbackGenerator)
       else if (typeSystem._returnTypeIsNonNullable(method))
-        'returnValue': _dummyValue(method.returnType),
+        'returnValue': _dummyValue(returnType),
       if (returnValueForMissingStub != null)
         'returnValueForMissingStub': returnValueForMissingStub,
     };
 
     var superNoSuchMethod =
         refer('super').property('noSuchMethod').call([invocation], namedArgs);
-    if (!method.returnType.isVoid && !method.returnType.isDynamic) {
-      superNoSuchMethod =
-          superNoSuchMethod.asA(_typeReference(method.returnType));
+    if (!returnType.isVoid && !returnType.isDynamic) {
+      superNoSuchMethod = superNoSuchMethod.asA(_typeReference(returnType));
     }
 
     builder.body = superNoSuchMethod.code;
   }
 
   Expression _fallbackGeneratorCode(
-      MethodElement method, ExecutableElement function) {
+      ExecutableElement method, ExecutableElement function) {
     final positionalArguments = <Expression>[];
     final namedArguments = <String, Expression>{};
     for (final parameter in method.parameters) {
@@ -1292,7 +1338,7 @@ class _MockClassInfo {
           final method = parameter.enclosingElement!;
           final clazz = method.enclosingElement!;
           throw InvalidMockitoAnnotationException(
-              'Mockito cannot generate a valid stub for method '
+              'Mockito cannot generate a valid override for method '
               "'${clazz.displayName}.${method.displayName}'; parameter "
               "'${parameter.displayName}' causes a problem: ${e.message}");
         }
@@ -1463,15 +1509,42 @@ class _MockClassInfo {
       ..type = MethodType.getter
       ..returns = _typeReference(getter.returnType);
 
+    final returnType = getter.returnType;
+    final fallbackGenerator = fallbackGenerators[getter.name];
+    if (typeSystem.isPotentiallyNonNullable(returnType) &&
+        returnType is analyzer.TypeParameterType &&
+        fallbackGenerator == null) {
+      if (!mockTarget.unsupportedMembers.contains(getter.name)) {
+        // We shouldn't get here as this is guarded against in
+        // [_MockTargetGatherer._checkFunction].
+        throw InvalidMockitoAnnotationException(
+            "Mockito cannot generate a valid override for '${getter.name}', as "
+            'it has a non-nullable unknown type.');
+      }
+      builder.body = refer('UnsupportedError')
+          .call([
+            literalString(
+                "'${getter.name}' cannot be used without a mockito fallback "
+                'generator.')
+          ])
+          .thrown
+          .code;
+      return;
+    }
+
     final invocation = refer('Invocation').property('getter').call([
       refer('#${getter.displayName}'),
     ]);
-    final namedArgs = {'returnValue': _dummyValue(getter.returnType)};
+    final namedArgs = {
+      if (fallbackGenerator != null)
+        'returnValue': _fallbackGeneratorCode(getter, fallbackGenerator)
+      else if (typeSystem._returnTypeIsNonNullable(getter))
+        'returnValue': _dummyValue(returnType),
+    };
     var superNoSuchMethod =
         refer('super').property('noSuchMethod').call([invocation], namedArgs);
-    if (!getter.returnType.isVoid && !getter.returnType.isDynamic) {
-      superNoSuchMethod =
-          superNoSuchMethod.asA(_typeReference(getter.returnType));
+    if (!returnType.isVoid && !returnType.isDynamic) {
+      superNoSuchMethod = superNoSuchMethod.asA(_typeReference(returnType));
     }
 
     builder.body = superNoSuchMethod.code;
