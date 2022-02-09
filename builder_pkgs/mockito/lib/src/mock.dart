@@ -892,6 +892,7 @@ typedef _InOrderVerification = List<VerificationResult> Function<T>(
 ///
 /// Mockito will pass the current test case, as `cat.eatFood` has not been
 /// called with `"chicken"`.
+@useResult
 Verification get verifyNever => _makeVerify(true);
 
 /// Verify that a method on a mock object was called with the given arguments.
@@ -921,6 +922,7 @@ Verification get verifyNever => _makeVerify(true);
 ///
 /// See also: [verifyNever], [verifyInOrder], [verifyZeroInteractions], and
 /// [verifyNoMoreInteractions].
+@useResult
 Verification get verify => _makeVerify(false);
 
 Verification _makeVerify(bool never) {
@@ -988,6 +990,7 @@ Verification _makeVerify(bool never) {
 /// given, but not that those were the only calls. In the example above, if
 /// other calls were made to `eatFood` or `sound` between the three given
 /// calls, or before or after them, the verification will still succeed.
+@useResult
 _InOrderVerification get verifyInOrder {
   if (_verifyCalls.isNotEmpty) {
     throw StateError(_verifyCalls.join());
@@ -1080,6 +1083,7 @@ typedef Expectation = PostExpectation<T> Function<T>(T x);
 /// The response generators include `thenReturn`, `thenAnswer`, and `thenThrow`.
 ///
 /// See the README for more information.
+@useResult
 Expectation get when {
   if (_whenCall != null) {
     throw StateError('Cannot call `when` within a stub response');
@@ -1106,6 +1110,7 @@ typedef InvocationLoader = Future<Invocation> Function<T>(T _);
 /// In the above example, the untilCalled(cat.chew()) will complete only when
 /// that method is called. If the given invocation has already been called, the
 /// future will return immediately.
+@useResult
 InvocationLoader get untilCalled {
   _untilCalledInProgress = true;
   return <T>(T _) {

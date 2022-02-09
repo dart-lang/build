@@ -14,6 +14,8 @@
 * Support generating a mock class for a class with members with non-nullable
   unknown return types via a new parameter on `MockSpec` called
   `unsupportedMembers`. See [NULL_SAFETY_README][] for details.
+* Mark `when`, `verify`, `verifyInOrder`, `verifyNever`, and `untilCalled` with
+  `@useResult` to encourage proper API use.
 
 ## 5.0.17
 
