@@ -1,4 +1,4 @@
-## 5.0.18-dev
+## 5.1.0-dev
 
 * In creating mocks for a pre-null-safe library, opt out of null safety in the
   generated code.
