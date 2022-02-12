@@ -30,25 +30,18 @@ Future<ProcessResult> runCommand(List<String> args) =>
 /// build to complete.
 ///
 /// To ensure a clean build, set [ensureCleanBuild] to `true`.
-///
-/// This expects the first build to complete successfully, but you can add extra
-/// expects that happen before that using [extraExpects]. All of these will be
-/// invoked and awaited before awaiting the next successful build.
-Future<void> startServer(
-        {bool? ensureCleanBuild,
-        List<Function>? extraExpects,
-        List<String>? buildArgs}) =>
+Future<void> startServer({bool? ensureCleanBuild, List<String>? buildArgs}) =>
     _startServer(
-        'dart',
-        [
-          '--packages=.packages',
-          p.join('..', 'build_runner', 'bin', 'build_runner.dart'),
-          'serve',
-          '--verbose',
-          if (buildArgs != null) ...buildArgs,
-        ],
-        ensureCleanBuild: ensureCleanBuild,
-        extraExpects: extraExpects);
+      'dart',
+      [
+        '--packages=.packages',
+        p.join('..', 'build_runner', 'bin', 'build_runner.dart'),
+        'serve',
+        '--verbose',
+        if (buildArgs != null) ...buildArgs,
+      ],
+      ensureCleanBuild: ensureCleanBuild,
+    );
 
 Future<ProcessResult> _runBuild(String command, List<String> args,
     {bool? ensureCleanBuild}) async {
@@ -66,9 +59,8 @@ Future<ProcessResult> _runBuild(String command, List<String> args,
 }
 
 Future<void> _startServer(String command, List<String> buildArgs,
-    {bool? ensureCleanBuild, List<Function>? extraExpects}) async {
+    {bool? ensureCleanBuild}) async {
   ensureCleanBuild ??= false;
-  extraExpects ??= [];
 
   // Make sure this is a clean build
   if (ensureCleanBuild && await _toolDir.exists()) {
@@ -89,8 +81,7 @@ Future<void> _startServer(String command, List<String> buildArgs,
   stdOutLines.listen((line) => printOnFailure('StdOut: $line'));
   stdErrLines.listen((line) => printOnFailure('StdErr: $line'));
 
-  extraExpects.add(() => nextSuccessfulBuild);
-  await Future.wait(extraExpects.map((cb) async => await cb()));
+  await nextSuccessfulBuild;
 }
 
 /// Kills the current build script.
