@@ -106,7 +106,7 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
   ]).create();
   await Future.wait(otherPackages.map((d) => d.create()));
   await pubGet('a');
-  return BuildTool._('pub', ['run', 'build_runner']);
+  return BuildTool._('dart', ['run', 'build_runner']);
 }
 
 /// Create a package in [d.sandbox] with a `tool/build.dart` script using

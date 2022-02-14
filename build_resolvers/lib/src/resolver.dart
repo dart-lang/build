@@ -472,7 +472,7 @@ https://github.com/dart-lang/sdk/issues/new with the title
     ''');
     } else {
       var upgradeCommand =
-          isFlutter ? 'flutter packages upgrade' : 'pub upgrade';
+          isFlutter ? 'flutter packages upgrade' : 'dart pub upgrade';
       log.warning('''
 Your current `analyzer` version may not fully support your current SDK version.
 
