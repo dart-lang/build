@@ -1,5 +1,7 @@
 ## 2.0.7-dev
 
+- Updated error messages to use `dart pub` instead of `pub`.
+
 ## 2.0.6
 
 - Allow the latest analyzer.

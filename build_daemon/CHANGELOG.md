@@ -1,3 +1,7 @@
+## 3.0.3-dev
+
+- Updated the example to use `dart pub` instead of `pub`.
+
 ## 3.0.2
 
 - Run `serveRequests` in an error zone and forward errors to the clients.

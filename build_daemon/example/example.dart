@@ -20,7 +20,7 @@ void main(List<String> args) async {
     client = await BuildDaemonClient.connect(
         workingDirectory,
         [
-          'pub',
+          'dart',
           'run',
           'build_runner',
           'daemon',

@@ -33,7 +33,7 @@ void main() {
     expect(_changedGeneratedFiles(), isEmpty);
 
     // 2 - run build - should be no output, since nothing should change
-    var result = _runProc('pub${Platform.isWindows ? '.bat' : ''}',
+    var result = _runProc('dart',
         ['run', 'build_runner', 'build', '--delete-conflicting-outputs']);
     expect(result,
         contains(RegExp(r'Succeeded after \S+( \S+)? with \d+ outputs')));
