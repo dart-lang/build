@@ -401,24 +401,28 @@ void main() {
       return resolveSources({
         'a|lib/a.dart': '''
               import 'b.dart';
+              import 'c.dart';
 
-              class SomeClass {}
-
-              main() {
-                SomeClass();
-              } ''',
+              @SomeClass()
+              main() {}
+              ''',
         'a|lib/b.dart': '''
+            class SomeClass {}
+              ''',
+        'a|lib/c.dart': '''
             class SomeClass {}
               ''',
       }, (resolver) async {
         var entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
-        var classDefinition = entry.importedLibraries
-            .map((l) => l.getType('SomeClass'))
-            .singleWhere((c) => c != null)!;
-        await expectLater(() => resolver.assetIdForElement(classDefinition),
+        final element = entry.topLevelElements
+            .firstWhere((e) => e is FunctionElement && e.name == 'main')
+            .metadata
+            .single
+            .element!;
+        await expectLater(() => resolver.assetIdForElement(element),
             throwsA(isA<UnresolvableAssetException>()));
       }, resolvers: AnalyzerResolvers());
-    }, skip: 'broken');
+    });
 
     test('Respects withEnabledExperiments', () async {
       Logger.root.level = Level.ALL;
