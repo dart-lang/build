@@ -397,25 +397,29 @@ void main() {
       }, resolvers: AnalyzerResolvers());
     });
 
-    test('assetIdForElement throws for ambigious elements', () {
+    test('assetIdForElement throws for ambiguous elements', () {
       return resolveSources({
         'a|lib/a.dart': '''
               import 'b.dart';
+              import 'c.dart';
 
-              class SomeClass {}
-
-              main() {
-                SomeClass();
-              } ''',
+              @SomeClass()
+              main() {}
+              ''',
         'a|lib/b.dart': '''
+            class SomeClass {}
+              ''',
+        'a|lib/c.dart': '''
             class SomeClass {}
               ''',
       }, (resolver) async {
         var entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
-        var classDefinition = entry.importedLibraries
-            .map((l) => l.getType('SomeClass'))
-            .singleWhere((c) => c != null)!;
-        expect(() => resolver.assetIdForElement(classDefinition),
+        final element = entry.topLevelElements
+            .firstWhere((e) => e is FunctionElement && e.name == 'main')
+            .metadata
+            .single
+            .element!;
+        await expectLater(() => resolver.assetIdForElement(element),
             throwsA(isA<UnresolvableAssetException>()));
       }, resolvers: AnalyzerResolvers());
     });
