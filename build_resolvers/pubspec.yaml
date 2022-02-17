@@ -24,3 +24,5 @@ dev_dependencies:
   lints: ^1.0.0
   test: ^1.16.0
   build_test: ^2.0.0
+  checks:
+    path: ../checks

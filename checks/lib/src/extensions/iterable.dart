@@ -1,0 +1,127 @@
+import 'package:checks/context.dart';
+
+import 'core.dart' show EqualityChecks;
+
+extension IterableChecks<T> on Check<Iterable<T>> {
+  void hasLength(int l) {
+    context.expect(() => ['has length ${literal(l)}'], (v) {
+      final actualLength = v.length;
+      if (actualLength == l) return null;
+      return Rejection(
+          actual: literal(v), which: 'has length ${literal(actualLength)}');
+    });
+  }
+
+  void isEmpty() {
+    context.expect(() => const ['is empty'], (l) {
+      if (l.isEmpty) return null;
+      return Rejection(actual: literal(l), which: 'is not empty');
+    });
+  }
+
+  void isNotEmpty() {
+    context.expect(() => const ['is not empty'], (l) {
+      if (l.isEmpty) return null;
+      return Rejection(actual: literal(l), which: 'is not empty');
+    });
+  }
+
+  void contains(void Function(Check<T>) elementCondition) {
+    context.expect(() {
+      final conditionDescription = describe(elementCondition);
+      assert(conditionDescription.isNotEmpty);
+      return [
+        'contains a value that:',
+        ...conditionDescription,
+      ];
+    }, (v) {
+      if (v.isEmpty) return Rejection(actual: 'an empty iterable');
+      for (var e in v) {
+        if (softCheck(e, elementCondition)) return null;
+      }
+      return Rejection(
+          actual: '${literal(v)}', which: 'Contains no matching element');
+    });
+  }
+
+  void unorderedEquals(Iterable<T> values) =>
+      unorderedMatches(values.map((v) => (check) => check.equals(v)));
+
+  void unorderedMatches(Iterable<void Function(Check<T>)> conditions) {
+    conditions = conditions.toList();
+    context.expect(() => ['matches conditions'], (actual) {
+      actual = actual.toList();
+      if (conditions.length > actual.length) {
+        return Rejection(
+            actual: literal(actual),
+            which:
+                'has too few elements (${actual.length} < ${conditions.length})');
+      } else if (conditions.length < actual.length) {
+        return Rejection(
+            actual: literal(actual),
+            which:
+                'has too many elements (${actual.length} > ${conditions.length})');
+      }
+
+      var edges = List.generate(actual.length, (_) => <int>[], growable: false);
+      for (var v = 0; v < actual.length; v++) {
+        for (var m = 0; m < conditions.length; m++) {
+          if (softCheck(actual.elementAt(v), conditions.elementAt(m))) {
+            edges[v].add(m);
+          }
+        }
+      }
+      // The index into `actual` matched with each matcher or `null` if no value
+      // has been matched yet.
+      var matched = List<int?>.filled(conditions.length, null);
+      for (var valueIndex = 0; valueIndex < actual.length; valueIndex++) {
+        _findPairing(edges, valueIndex, matched);
+      }
+      for (var matcherIndex = 0;
+          matcherIndex < conditions.length;
+          matcherIndex++) {
+        if (matched[matcherIndex] == null) {
+          var which = 'has no match for '
+              '${describe(conditions.elementAt(matcherIndex))} '
+              'at index $matcherIndex';
+          final remainingUnmatched =
+              matched.sublist(matcherIndex + 1).where((m) => m == null).length;
+          if (remainingUnmatched > 0) {
+            which = '$which along with $remainingUnmatched other unmatched';
+          }
+          return Rejection(actual: literal(actual), which: which);
+        }
+      }
+      return null;
+    });
+  }
+
+  /// Returns `true` if the value at [valueIndex] can be paired with some
+  /// unmatched matcher and updates the state of [matched].
+  ///
+  /// If there is a conflict where multiple values may match the same matcher
+  /// recursively looks for a new place to match the old value.
+  static bool _findPairing(
+          List<List<int>> edges, int valueIndex, List<int?> matched) =>
+      _findPairingInner(edges, valueIndex, matched, <int>{});
+
+  /// Implementation of [_findPairing], tracks [reserved] which are the
+  /// matchers that have been used _during_ this search.
+  static bool _findPairingInner(List<List<int>> edges, int valueIndex,
+      List<int?> matched, Set<int> reserved) {
+    final possiblePairings =
+        edges[valueIndex].where((m) => !reserved.contains(m));
+    for (final matcherIndex in possiblePairings) {
+      reserved.add(matcherIndex);
+      final previouslyMatched = matched[matcherIndex];
+      if (previouslyMatched == null ||
+          // If the matcher isn't already free, check whether the existing value
+          // occupying the matcher can be bumped to another one.
+          _findPairingInner(edges, matched[matcherIndex]!, matched, reserved)) {
+        matched[matcherIndex] = valueIndex;
+        return true;
+      }
+    }
+    return false;
+  }
+}
