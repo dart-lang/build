@@ -4,7 +4,6 @@
 
 import 'dart:async';
 
-import 'package:build/experiments.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:build_test/build_test.dart';
 import 'package:build_web_compilers/build_web_compilers.dart';
@@ -119,11 +118,11 @@ void main() {
     test('sound null safety is defaulted based on the entrypoint', () async {
       assets = {
         'a|lib/is_sound.dart': '''
-        // @dart=2.10
+        // @dart=2.12
         const unsoundMode = <int?>[] is List<int>;
         ''',
         'a|web/sound.dart': '''
-        // @dart=2.10
+        // @dart=2.12
         import 'package:a/is_sound.dart';
         void main() {
           print(unsoundMode);
@@ -138,34 +137,32 @@ void main() {
       ''',
       };
 
-      await withEnabledExperiments(() async {
-        // Set up all the other required inputs for this test.
-        await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
-        await testBuilderAndCollectAssets(MetaModuleBuilder(platform), assets);
-        await testBuilderAndCollectAssets(
-            MetaModuleCleanBuilder(platform), assets);
-        await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
-        // Check the inlined constant value for soundness
-        var expectedOutputs = {
-          'a|web/sound.dart.js': decodedMatches(allOf(
-              contains('NullSafetyMode.sound'),
-              isNot(contains('NullSafetyMode.unsound')))),
-          'a|web/sound.dart.js.map': anything,
-          'a|web/sound.dart.js.tar.gz': anything,
-          'a|web/unsound.dart.js': decodedMatches(allOf(
-              contains('NullSafetyMode.unsound'),
-              isNot(contains('NullSafetyMode.sound')))),
-          'a|web/unsound.dart.js.map': anything,
-          'a|web/unsound.dart.js.tar.gz': anything,
-        };
-        await testBuilder(
-            WebEntrypointBuilder(WebCompiler.Dart2Js,
-                soundNullSafetyOverride: null,
-                nullAssertions: false,
-                nativeNullAssertions: false),
-            assets,
-            outputs: expectedOutputs);
-      }, ['non-nullable']);
+      // Set up all the other required inputs for this test.
+      await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
+      await testBuilderAndCollectAssets(MetaModuleBuilder(platform), assets);
+      await testBuilderAndCollectAssets(
+          MetaModuleCleanBuilder(platform), assets);
+      await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
+      // Check the inlined constant value for soundness
+      var expectedOutputs = {
+        'a|web/sound.dart.js': decodedMatches(allOf(
+            contains('NullSafetyMode.sound'),
+            isNot(contains('NullSafetyMode.unsound')))),
+        'a|web/sound.dart.js.map': anything,
+        'a|web/sound.dart.js.tar.gz': anything,
+        'a|web/unsound.dart.js': decodedMatches(allOf(
+            contains('NullSafetyMode.unsound'),
+            isNot(contains('NullSafetyMode.sound')))),
+        'a|web/unsound.dart.js.map': anything,
+        'a|web/unsound.dart.js.tar.gz': anything,
+      };
+      await testBuilder(
+          WebEntrypointBuilder(WebCompiler.Dart2Js,
+              soundNullSafetyOverride: null,
+              nullAssertions: false,
+              nativeNullAssertions: false),
+          assets,
+          outputs: expectedOutputs);
     });
   });
 }
