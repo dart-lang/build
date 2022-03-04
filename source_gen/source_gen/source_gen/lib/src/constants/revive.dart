@@ -64,8 +64,7 @@ Revivable reviveInstance(DartObject object, [LibraryElement? origin]) {
     return !result.isPrivate;
   }
 
-  // ignore: deprecated_member_use
-  for (final type in origin!.definingCompilationUnit.types) {
+  for (final type in origin!.definingCompilationUnit.classes) {
     for (final e in type.fields
         .where((f) => f.isConst && f.computeConstantValue() == object)) {
       final result = Revivable._(

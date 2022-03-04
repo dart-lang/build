@@ -159,8 +159,8 @@ class LibraryReader {
   }
 
   /// All of the elements representing classes in this library.
-  // ignore: deprecated_member_use
-  Iterable<ClassElement> get classes => element.units.expand((cu) => cu.types);
+  Iterable<ClassElement> get classes =>
+      element.units.expand((cu) => cu.classes);
 
   /// All of the elements representing enums in this library.
   Iterable<ClassElement> get enums => element.units.expand((cu) => cu.enums);
