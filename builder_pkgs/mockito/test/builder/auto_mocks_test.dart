@@ -1446,6 +1446,22 @@ void main() {
   });
 
   test(
+      'matches nullability of return type of FutureOr<T> for potentially nullable T',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+        import 'dart:async';
+        abstract class Foo {
+          FutureOr<R> m<R>();
+        }
+        '''),
+      _containsAllOf(
+          '_i3.FutureOr<R> m<R>() => (super.noSuchMethod(Invocation.method(#m, []),',
+          '      returnValue: Future<R>.value(null)) as _i3.FutureOr<R>);'),
+    );
+  });
+
+  test(
       'matches nullability of parameter types within a generic function-typed '
       'parameter', () async {
     await expectSingleNonNullableOutput(

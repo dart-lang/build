@@ -16,6 +16,7 @@ import 'dart:collection';
 
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart' as analyzer;
 import 'package:analyzer/dart/element/type_provider.dart';
 import 'package:analyzer/dart/element/type_system.dart';
@@ -1609,7 +1610,8 @@ class _MockClassInfo {
       return TypeReference((b) {
         b
           ..symbol = type.element.name
-          ..isNullable = forceNullable || typeSystem.isPotentiallyNullable(type)
+          ..isNullable = forceNullable ||
+              type.nullabilitySuffix == NullabilitySuffix.question
           ..url = _typeImport(type.element)
           ..types.addAll(type.typeArguments.map(_typeReference));
       });

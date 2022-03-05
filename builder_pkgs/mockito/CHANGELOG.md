@@ -1,3 +1,8 @@
+## 5.1.1-dev
+
+* Fix generation of methods with return type of `FutureOr<T>` for generic,
+  potentially nullable `T`.
+
 ## 5.1.0
 
 * In creating mocks for a pre-null-safe library, opt out of null safety in the
