@@ -191,7 +191,6 @@ class BuildAssetUriResolver extends UriResolver {
   }
 
   @override
-  // ignore: override_on_non_overriding_member
   Uri pathToUri(String path) {
     var pathSegments = p.posix.split(path);
     var packageName = pathSegments[1];
@@ -206,11 +205,6 @@ class BuildAssetUriResolver extends UriResolver {
         pathSegments: [packageName].followedBy(pathSegments.skip(2)),
       );
     }
-  }
-
-  @override
-  Uri restoreAbsolute(Source source) {
-    return pathToUri(source.fullName);
   }
 }
 
