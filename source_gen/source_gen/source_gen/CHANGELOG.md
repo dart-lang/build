@@ -1,5 +1,9 @@
 ## 1.2.2-dev
 
+* Enable the fix for single cascade statements when formatting Dart code.
+  * Individual builders can opt out of this by providing a custom `formatOutput`
+    function to the `PartBuilder` or `LibraryBuilder` constructors.
+
 ## 1.2.1
 
 - Allow reviving constants which are static fields defined on the class which
