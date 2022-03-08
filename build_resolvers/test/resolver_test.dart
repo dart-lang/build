@@ -215,7 +215,7 @@ void main() {
 
           await expectLater(
               resolver.libraries.map((l) => l.name), emits('other'),
-              skip: 'Currently failing');
+              skip: 'https://github.com/dart-lang/build/issues/3256');
         });
       });
 
