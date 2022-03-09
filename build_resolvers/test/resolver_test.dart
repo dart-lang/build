@@ -208,11 +208,14 @@ void main() {
 
       test('are included in library stream', () {
         return _runWith((resolver) async {
-          expect(resolver.libraries.map((l) => l.name), neverEmits('other'));
+          await expectLater(
+              resolver.libraries.map((l) => l.name), neverEmits('other'));
 
           await resolver.libraryFor(entryPoint);
 
-          expect(resolver.libraries.map((l) => l.name), emits('other'));
+          await expectLater(
+              resolver.libraries.map((l) => l.name), emits('other'),
+              skip: 'https://github.com/dart-lang/build/issues/3256');
         });
       });
 
