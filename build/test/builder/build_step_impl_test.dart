@@ -10,7 +10,10 @@ import 'package:build/src/builder/build_step.dart';
 import 'package:build/src/builder/build_step_impl.dart';
 import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_test/build_test.dart';
-import 'package:test/test.dart';
+import 'package:checks/checks.dart';
+import 'package:test/scaffolding.dart';
+
+import 'check_extensions.dart';
 
 void main() {
   late ResourceManager resourceManager;
@@ -39,34 +42,35 @@ void main() {
 
     test('doesnt allow non-expected outputs', () {
       var id = makeAssetId();
-      expect(() => buildStep.writeAsString(id, '$id'),
-          throwsA(TypeMatcher<UnexpectedOutputException>()));
-      expect(() => buildStep.writeAsBytes(id, [0]),
-          throwsA(TypeMatcher<UnexpectedOutputException>()));
+      checkThat(() => buildStep.writeAsString(id, '$id'))
+          .throws<UnexpectedOutputException>();
+      checkThat(() => buildStep.writeAsBytes(id, [0]))
+          .throws<UnexpectedOutputException>();
     });
 
     test('reports allowed outputs', () {
-      expect(buildStep.allowedOutputs, outputs);
+      checkThat(buildStep.allowedOutputs).unorderedEquals(outputs);
     });
 
     test('fetchResource can fetch resources', () async {
       var expected = 1;
       var intResource = Resource(() => expected);
       var actual = await buildStep.fetchResource(intResource);
-      expect(actual, expected);
+      checkThat(actual).equals(expected);
     });
 
     test('does not allow multiple writes to the same output', () async {
       final id = outputs.first;
       await buildStep.writeAsString(id, 'foo');
 
-      final expectedException = isA<InvalidOutputException>()
-          .having((e) => e.assetId, 'assetId', id)
-          .having((e) => e.message, 'message', contains('already wrote to'));
-
-      expect(
-          () => buildStep.writeAsString(id, 'bar'), throwsA(expectedException));
-      expect(() => buildStep.writeAsBytes(id, []), throwsA(expectedException));
+      checkThat(() => buildStep.writeAsString(id, 'bar'))
+          .throws<InvalidOutputException>()
+        ..has((e) => e.assetId, 'assetId').equals(id)
+        ..has((e) => e.message, 'message').contains('already wrote to');
+      checkThat(() => buildStep.writeAsBytes(id, []))
+          .throws<InvalidOutputException>()
+        ..has((e) => e.assetId, 'assetId').equals(id)
+        ..has((e) => e.message, 'message').contains('already wrote to');
     });
   });
 
@@ -94,7 +98,7 @@ void main() {
       await buildStep.complete();
 
       // One output.
-      expect(writer.assets[outputId], decodedMatches('foo'));
+      checkThat(writer.assets[outputId]).isNotNull().decoded().equals('foo');
     });
 
     group('resolve', () {
@@ -117,15 +121,16 @@ void main() {
         var resolver = buildStep.resolver;
 
         var aLib = await resolver.libraryFor(primary);
-        expect(aLib.name, 'a');
-        expect(aLib.importedLibraries.length, 2);
-        expect(aLib.importedLibraries.any((library) => library.name == 'b'),
-            isTrue);
+        checkThat(aLib)
+          ..has((l) => l.name, 'name').equals('a')
+          ..has((l) => l.importedLibraries, 'importedLibrarys').that((i) => i
+            ..hasLength(2)
+            ..contains((l) => l.has((l) => l.name, 'name').equals('b')));
 
         var bLib = await resolver.findLibraryByName('b');
-        expect(bLib!.name, 'b');
-        expect(bLib.importedLibraries.length, 1);
-
+        checkThat(bLib).isNotNull()
+          ..has((b) => b.name, 'name').equals('b')
+          ..has((b) => b.importedLibraries, 'importedLibraries').hasLength(1);
         await buildStep.complete();
       });
     });
@@ -153,11 +158,13 @@ void main() {
         isComplete = true;
       }));
       await Future(() {});
-      expect(isComplete, false,
-          reason: 'File has not written, should not be complete');
+      // TODO add reason support
+      checkThat(isComplete).isFalse();
+      // reason: 'File has not written, should not be complete');
       assetWriter.finishWrite();
       await Future(() {});
-      expect(isComplete, true, reason: 'File is written, should be complete');
+      checkThat(isComplete).isTrue();
+      // reason: 'File is written, should be complete');
     });
 
     test('Completes only after async writes finish', () async {
@@ -168,15 +175,16 @@ void main() {
         isComplete = true;
       }));
       await Future(() {});
-      expect(isComplete, false,
-          reason: 'File has not resolved, should not be complete');
+      checkThat(isComplete).isFalse();
+      // reason: 'File has not resolved, should not be complete');
       outputCompleter.complete(outputContent);
       await Future(() {});
-      expect(isComplete, false,
-          reason: 'File has not written, should not be complete');
+      checkThat(isComplete).isFalse();
+      // reason: 'File has not written, should not be complete');
       assetWriter.finishWrite();
       await Future(() {});
-      expect(isComplete, true, reason: 'File is written, should be complete');
+      checkThat(isComplete).isTrue();
+      // reason: 'File is written, should be complete');
     });
   });
 
@@ -195,9 +203,9 @@ void main() {
           stageTracker: NoOpStageTracker.instance);
     });
 
-    test('Captures failed asynchronous writes', () {
-      buildStep.writeAsString(output, Future.error('error'));
-      expect(buildStep.complete(), throwsA('error'));
+    test('Captures failed asynchronous writes', () async {
+      unawaited(buildStep.writeAsString(output, Future.error('error')));
+      (await checkThat(buildStep.complete()).throws<String>()).equals('error');
     });
   });
 
@@ -214,7 +222,7 @@ void main() {
       makeAssetId(),
     ];
     buildStep.reportUnusedAssets(reported);
-    expect(unused, equals(reported));
+    checkThat(unused).unorderedEquals(reported);
   });
 }
 
