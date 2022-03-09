@@ -222,9 +222,8 @@ void main() {
 
           await resolver.libraryFor(otherId);
 
-          // TODO add emitsThrough
-          // await checkThat(StreamQueue(resolver.libraries)).emitsThrough(
-          //     (l) => l.has((l) => l.name, 'name', (n) => n.equals('other')));
+          await checkThat(StreamQueue(resolver.libraries)).emitsThrough(
+              (l) => l.has((l) => l.name, 'name').equals('other'));
         });
       });
 

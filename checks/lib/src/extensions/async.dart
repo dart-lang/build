@@ -58,6 +58,25 @@ extension StreamChecks<T> on Check<StreamQueue<T>> {
     });
   }
 
+  Future<void> emitsThrough(void Function(Check<T>) condition) async {
+    await context.expectAsync(
+        () => [
+              'Emits any values then a value that:',
+              ...indent(describe(condition))
+            ], (v) async {
+      var count = 0;
+      await for (var emitted in v.rest) {
+        if (softCheck(emitted, condition)) {
+          return null;
+        }
+        count++;
+      }
+      return Rejection(
+          actual: 'a stream',
+          which: 'ended after emitting $count elements with none matching');
+    });
+  }
+
   Future<void> neverEmits(void Function(Check<T>) condition) async {
     await context.expectAsync(
         () => ['Never emis a value that:', ...indent(describe(condition))],
