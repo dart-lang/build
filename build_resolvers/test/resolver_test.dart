@@ -195,13 +195,14 @@ void main() {
         }, test, resolvers: AnalyzerResolvers());
       }
 
+      final otherId = AssetId.parse('a|lib/other.dart');
+
       test('can be resolved', () {
         return _runWith((resolver) async {
           final main = await resolver.libraryFor(entryPoint);
           expect(main, isNotNull);
 
-          final other =
-              await resolver.libraryFor(AssetId.parse('a|lib/other.dart'));
+          final other = await resolver.libraryFor(otherId);
           expect(other.name, 'other');
         });
       });
@@ -211,19 +212,19 @@ void main() {
           await expectLater(
               resolver.libraries.map((l) => l.name), neverEmits('other'));
 
-          await resolver.libraryFor(entryPoint);
+          await resolver.libraryFor(otherId);
 
           await expectLater(
-              resolver.libraries.map((l) => l.name), emits('other'),
-              skip: 'https://github.com/dart-lang/build/issues/3256');
+              resolver.libraries.map((l) => l.name), emitsThrough('other'));
         });
       });
 
       test('can be found by name', () {
         return _runWith((resolver) async {
-          await resolver.libraryFor(entryPoint);
+          await resolver.libraryFor(otherId);
 
-          expect(resolver.findLibraryByName('other'), completion(isNotNull));
+          await expectLater(
+              resolver.findLibraryByName('other'), completion(isNotNull));
         });
       });
     });
