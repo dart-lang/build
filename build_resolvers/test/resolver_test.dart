@@ -203,13 +203,14 @@ void main() {
         }, test, resolvers: AnalyzerResolvers());
       }
 
+      final otherId = AssetId.parse('a|lib/other.dart');
+
       test('can be resolved', () {
         return _runWith((resolver) async {
           final main = await resolver.libraryFor(entryPoint);
           checkThat(main).isNotNull();
 
-          final other =
-              await resolver.libraryFor(AssetId.parse('a|lib/other.dart'));
+          final other = await resolver.libraryFor(otherId);
           checkThat(other.name).equals('other');
         });
       });
@@ -219,21 +220,21 @@ void main() {
           await checkThat(StreamQueue(resolver.libraries))
               .neverEmits((l) => l.has((l) => l.name, 'name').equals('other'));
 
-          await resolver.libraryFor(entryPoint);
+          await resolver.libraryFor(otherId);
 
-          // TODO - this is broken upstream but not failing
-          // await checkThat(StreamQueue(resolver.libraries)).emits(
+          // TODO add emitsThrough
+          // await checkThat(StreamQueue(resolver.libraries)).emitsThrough(
           //     (l) => l.has((l) => l.name, 'name', (n) => n.equals('other')));
         });
       });
 
       test('can be found by name', () {
         return _runWith((resolver) async {
-          await resolver.libraryFor(entryPoint);
+          await resolver.libraryFor(otherId);
 
-          // await checkThat(resolver.findLibraryByName('other'))
-          //     .completes()
-          //     .then((l) => l.isNotNull());
+          await checkThat(resolver.findLibraryByName('other'))
+              .completes()
+              .then((l) => l.isNotNull());
         });
       });
     });
