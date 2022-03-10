@@ -44,12 +44,46 @@ extension IterableChecks<T> on Check<Iterable<T>> {
     });
   }
 
+  void orderedEquals(Iterable<T> expected) =>
+      orderedMatches(expected.map((e) => (check) => check.equals(e)));
+
+  void orderedMatches(Iterable<void Function(Check<T>)> expected) {
+    context.expect(() => ['matches conditions in order'], (actual) {
+      var expectedIterator = expected.iterator;
+      var actualIterator = actual.iterator;
+      for (var index = 0;; index++) {
+        // Advance in lockstep.
+        var expectedNext = expectedIterator.moveNext();
+        var actualNext = actualIterator.moveNext();
+
+        // If we reached the end of both, we succeeded.
+        if (!expectedNext && !actualNext) return null;
+
+        // Fail if their lengths are different.
+        if (!expectedNext) {
+          return Rejection(
+              actual: literal(actual), which: 'is longer than expected');
+        }
+        if (!actualNext) {
+          return Rejection(
+              actual: literal(actual), which: 'is shorter than expected');
+        }
+        if (!softCheck(actualIterator.current, expectedIterator.current)) {
+          // TODO: return the Rejection from softCheck so this can be more
+          // detailed?
+          return Rejection(
+              actual: literal(actual), which: 'did not match at index $index');
+        }
+      }
+    });
+  }
+
   void unorderedEquals(Iterable<T> values) =>
       unorderedMatches(values.map((v) => (check) => check.equals(v)));
 
   void unorderedMatches(Iterable<void Function(Check<T>)> conditions) {
     conditions = conditions.toList();
-    context.expect(() => ['matches conditions'], (actual) {
+    context.expect(() => ['matches conditions ignoring order'], (actual) {
       actual = actual.toList();
       if (conditions.length > actual.length) {
         return Rejection(

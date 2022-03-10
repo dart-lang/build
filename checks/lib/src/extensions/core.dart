@@ -32,6 +32,18 @@ extension HasField<T> on Check<T> {
   void that(void Function(Check<T>) condition) {
     condition(this);
   }
+
+  void not(void Function(Check<T>) condition) {
+    context.expect(() {
+      return ['is not a value that:', ...indent(describe(condition))];
+    }, (v) {
+      if (softCheck(v, condition)) {
+        return Rejection(
+            // TODO improve multiline `which` arguments
+            actual: literal(v), which: describe(condition).join('\n'));
+      }
+    });
+  }
 }
 
 extension BoolChecks on Check<bool> {

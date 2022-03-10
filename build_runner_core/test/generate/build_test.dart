@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:_test_common/build_configs.dart';
+import 'package:_test_common/check_extensions.dart';
 import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
@@ -16,8 +17,9 @@ import 'package:build_runner_core/src/generate/options.dart'
     show defaultNonRootVisibleAssets;
 import 'package:build_runner_core/src/util/constants.dart';
 import 'package:build_test/build_test.dart';
+import 'package:checks/checks.dart';
 import 'package:glob/glob.dart';
-import 'package:test/test.dart';
+import 'package:test/scaffolding.dart';
 
 void main() {
   /// Basic phases/phase groups which get used in many tests
@@ -77,55 +79,50 @@ void main() {
       ], {}, packageGraph: packageGraph);
 
       // Once per package, including the SDK.
-      expect(invokedCount, 3);
+      checkThat(invokedCount).equals(3);
     });
 
     test('throws an error if the builderFactory fails', () async {
-      expect(
-          () async => await testBuilders(
-                [
-                  apply(
-                      '',
-                      [
-                        (_) {
-                          throw StateError('some error');
-                        }
-                      ],
-                      toRoot(),
-                      isOptional: true,
-                      hideOutput: false),
-                ],
-                {'a|web/a.txt': 'a'},
-              ),
-          throwsA(TypeMatcher<CannotBuildException>()));
+      await checkThat(testBuilders(
+        [
+          apply(
+              '',
+              [
+                (_) {
+                  throw StateError('some error');
+                }
+              ],
+              toRoot(),
+              isOptional: true,
+              hideOutput: false),
+        ],
+        {'a|web/a.txt': 'a'},
+      )).throws<CannotBuildException>();
     });
 
     test('throws an error if any output extensions match input extensions', () {
-      expect(
-          testBuilders(
-            [
-              apply(
-                  '',
-                  [
-                    expectAsync1((_) => TestBuilder(buildExtensions: {
-                          '.dart': ['.g.dart', '.json'],
-                          '.json': ['.dart']
-                        })),
-                  ],
-                  toRoot(),
-                  isOptional: false,
-                  hideOutput: false),
-            ],
-            {},
-            status: BuildStatus.failure,
-          ),
-          throwsA(isA<ArgumentError>()
-              .having((e) => e.name, 'name', 'TestBuilder.buildExtensions')
-              .having(
-                  (e) => e.message,
-                  'message',
-                  allOf(contains('.json'), contains('.dart'),
-                      isNot(contains('.g.dart'))))));
+      checkThat(testBuilders(
+        [
+          apply(
+              '',
+              [
+                checkThat((_) => TestBuilder(buildExtensions: {
+                      '.dart': ['.g.dart', '.json'],
+                      '.json': ['.dart']
+                    })).isCalled(),
+              ],
+              toRoot(),
+              isOptional: false,
+              hideOutput: false),
+        ],
+        {},
+        status: BuildStatus.failure,
+      )).throws<ArgumentError>().that((e) => e
+        ..has((e) => e.name, 'name').equals('TestBuilder.buildExtensions')
+        ..has((e) => e.message, 'message').isA<String>().that((m) => m
+          ..contains('.json')
+          ..contains('.dart')
+          ..not((m) => m.contains('.g.dart'))));
     });
 
     test('runs a max of 16 concurrent actions per phase', () async {
@@ -162,7 +159,7 @@ void main() {
           ],
           assets,
           outputs: {});
-      expect(maxConcurrentCount, buildPhasePoolSize);
+      checkThat(maxConcurrentCount).equals(buildPhasePoolSize);
     });
 
     group('with root package inputs', () {
@@ -469,26 +466,23 @@ void main() {
         }, writer: writer, deleteFilesByDefault: true);
 
         var graphId = makeAssetId('a|$assetGraphPath');
-        expect(writer.assets, contains(graphId));
+        checkThat(writer.assets).containsKey(graphId);
         var cachedGraph = AssetGraph.deserialize(writer.assets[graphId]!);
-        expect(
-            cachedGraph.allNodes.map((node) => node.id),
-            unorderedEquals([
-              makeAssetId('a|web/a.txt'),
-              makeAssetId('a|web/a.txt.copy'),
-              makeAssetId('a|web/a.txt.copy.clone'),
-              makeAssetId('a|Phase0.builderOptions'),
-              makeAssetId('a|Phase1.builderOptions'),
-              ...placeholders,
-              makeAssetId('a|.dart_tool/package_config.json'),
-            ]));
-        expect(cachedGraph.sources, [makeAssetId('a|web/a.txt')]);
-        expect(
-            cachedGraph.outputs,
-            unorderedEquals([
-              makeAssetId('a|web/a.txt.copy'),
-              makeAssetId('a|web/a.txt.copy.clone'),
-            ]));
+        checkThat(cachedGraph.allNodes.map((node) => node.id)).unorderedEquals([
+          makeAssetId('a|web/a.txt'),
+          makeAssetId('a|web/a.txt.copy'),
+          makeAssetId('a|web/a.txt.copy.clone'),
+          makeAssetId('a|Phase0.builderOptions'),
+          makeAssetId('a|Phase1.builderOptions'),
+          ...placeholders,
+          makeAssetId('a|.dart_tool/package_config.json'),
+        ]);
+        checkThat(cachedGraph.sources)
+            .orderedEquals([makeAssetId('a|web/a.txt')]);
+        checkThat(cachedGraph.outputs).unorderedEquals([
+          makeAssetId('a|web/a.txt.copy'),
+          makeAssetId('a|web/a.txt.copy.clone'),
+        ]);
       });
 
       test('in low resources mode', () async {
@@ -513,12 +507,12 @@ void main() {
         // Before the build starts we should still see the asset, we haven't
         // actually deleted it yet.
         var copyId = makeAssetId('a|web/a.txt.copy');
-        expect(writer.assets, contains(copyId));
+        checkThat(writer.assets).containsKey(copyId);
 
         // But we should delete it before actually running the builder.
         var inputId = makeAssetId('a|web/a.txt');
         await builder.buildInputs.firstWhere((id) => id == inputId);
-        expect(writer.assets, isNot(contains(copyId)));
+        checkThat(writer.assets).not((a) => a.containsKey(copyId));
 
         // Now let the build finish.
         blockingCompleter.complete();
@@ -564,15 +558,16 @@ void main() {
           buildExtensions: const {
             '.txt': ['.copy']
           },
-          build: (step, _) {
+          build: (step, _) async {
             final invalidInput = AssetId.parse('b|test/my_test.dart');
 
-            expect(step.canRead(invalidInput), completion(isFalse));
-            return expectLater(
-              () => step.readAsBytes(invalidInput),
-              throwsA(isA<InvalidInputException>().having((e) => e.allowedGlobs,
-                  'allowedGlobs', defaultNonRootVisibleAssets)),
-            );
+            await checkThat(step.canRead(invalidInput))
+                .completes()
+                .that((r) => r.isFalse());
+            checkThat(() => step.readAsBytes(invalidInput))
+                .throws<InvalidInputException>()
+                .has((e) => e.allowedGlobs, 'allowedGlobs')
+                .orderedEquals(defaultNonRootVisibleAssets);
           },
         );
 
@@ -598,11 +593,13 @@ void main() {
           buildExtensions: const {
             '.txt': ['.copy']
           },
-          build: (step, _) {
-            expect(step.canRead(AssetId('b', 'test/my_test.dart')),
-                completion(isFalse));
-            expect(step.canRead(AssetId('invalid', 'foo.dart')),
-                completion(isFalse));
+          build: (step, _) async {
+            await checkThat(step.canRead(AssetId('b', 'test/my_test.dart')))
+                .completes()
+                .that((c) => c.isFalse());
+            await checkThat(step.canRead(AssetId('invalid', 'foo.dart')))
+                .completes()
+                .that((c) => c.isFalse);
           },
         );
 
@@ -926,12 +923,15 @@ void main() {
         logPerformanceDir: 'perf',
       );
       var logs = await reader.findAssets(Glob('perf/**')).toList();
-      expect(logs.length, 1);
+      checkThat(logs).hasLength(1);
       var perf = BuildPerformance.fromJson(
           jsonDecode(await reader.readAsString(logs.first))
               as Map<String, dynamic>);
-      expect(perf.phases.length, 1);
-      expect(perf.phases.first.builderKeys, equals(['test_builder']));
+      checkThat(perf.phases).orderedMatches([
+        (phase) => phase
+            .has((p) => p.builderKeys, 'builderKeys')
+            .orderedEquals(['test_builder'])
+      ]);
     });
 
     group('buildFilters', () {
@@ -1031,7 +1031,7 @@ void main() {
     }, writer: writer);
 
     var graphId = makeAssetId('a|$assetGraphPath');
-    expect(writer.assets, contains(graphId));
+    checkThat(writer.assets).containsKey(graphId);
     var cachedGraph = AssetGraph.deserialize(writer.assets[graphId]!);
 
     var expectedGraph = await AssetGraph.build(
@@ -1140,8 +1140,8 @@ void main() {
 
     // TODO: We dont have a shared way of computing the combined input hashes
     // today, but eventually we should test those here too.
-    expect(cachedGraph,
-        equalsAssetGraph(expectedGraph, checkPreviousInputsDigest: false));
+    checkThat(cachedGraph)
+        .equalsAssetGraph(expectedGraph, checkPreviousInputsDigest: false);
   });
 
   test("builders reading their output don't cause self-referential nodes",
@@ -1177,7 +1177,8 @@ void main() {
     final outputId = AssetId('a', 'lib/a.txt.out');
 
     final outputNode = cachedGraph.get(outputId) as GeneratedAssetNode;
-    expect(outputNode.inputs, isNot(contains(outputId)));
+    checkThat(outputNode.inputs)
+        .not((o) => o.contains((e) => e.equals(outputId)));
   });
 
   test('outputs from previous full builds shouldn\'t be inputs to later ones',
@@ -1432,7 +1433,7 @@ void main() {
 
         var graph = AssetGraph.deserialize(
             writer.assets[makeAssetId('a|$assetGraphPath')]!);
-        expect(graph.get(makeAssetId('a|lib/a.txt.copy')), isNull);
+        checkThat(graph.get(makeAssetId('a|lib/a.txt.copy'))).isNull();
       });
     });
 
@@ -1475,12 +1476,14 @@ void main() {
       var aNodeId = makeAssetId('a|lib/a.txt');
       var aCopyNodeId = makeAssetId('a|lib/a.txt.copy');
       var aCloneNodeId = makeAssetId('a|lib/a.txt.copy.clone');
-      expect(newGraph.contains(aNodeId), isFalse);
-      expect(newGraph.contains(aCopyNodeId), isFalse);
-      expect(newGraph.contains(aCloneNodeId), isFalse);
-      expect(writer.assets.containsKey(aNodeId), isFalse);
-      expect(writer.assets.containsKey(aCopyNodeId), isFalse);
-      expect(writer.assets.containsKey(aCloneNodeId), isFalse);
+      checkThat(newGraph)
+        ..not((g) => g.contains(aNodeId))
+        ..not((g) => g.contains(aCopyNodeId))
+        ..not((g) => g.contains(aCloneNodeId));
+      checkThat(writer.assets)
+        ..not((a) => a.containsKey(aNodeId))
+        ..not((a) => a.containsKey(aCopyNodeId))
+        ..not((a) => a.containsKey(aCloneNodeId));
     });
 
     test('no outputs if no changed sources', () async {
@@ -1566,10 +1569,11 @@ void main() {
       var fileANode = graph.get(makeAssetId('a|lib/file.a'))!;
       var fileBNode = graph.get(makeAssetId('a|lib/file.b'))!;
       var fileCNode = graph.get(makeAssetId('a|lib/file.c'))!;
-      expect(outputNode.inputs, unorderedEquals([fileANode.id, fileCNode.id]));
-      expect(fileANode.outputs, contains(outputNode.id));
-      expect(fileBNode.outputs, isEmpty);
-      expect(fileCNode.outputs, unorderedEquals([outputNode.id]));
+      checkThat(outputNode.inputs)
+          .unorderedEquals([fileANode.id, fileCNode.id]);
+      checkThat(fileANode.outputs).contains((o) => o.equals(outputNode.id));
+      checkThat(fileBNode.outputs).isEmpty();
+      checkThat(fileCNode.outputs).unorderedEquals([outputNode.id]);
     });
 
     test('Ouputs aren\'t rebuilt if their inputs didn\'t change', () async {
@@ -1783,7 +1787,7 @@ void main() {
       for (var i = 1; i < 4; i++) {
         var node =
             finalGraph.get(AssetId('a', 'web/a.g$i')) as GeneratedAssetNode;
-        expect(node.isFailure, isTrue);
+        checkThat(node.isFailure).isTrue();
       }
     });
 

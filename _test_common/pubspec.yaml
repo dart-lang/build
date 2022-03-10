@@ -10,6 +10,8 @@ dependencies:
   build_config: any
   build_runner_core: any
   build_test: any
+  checks:
+    path: ../checks
   crypto: ^3.0.0
   logging: ^1.0.0
   package_config: ^2.0.0

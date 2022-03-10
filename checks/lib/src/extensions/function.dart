@@ -23,6 +23,27 @@ extension ExpectCalled2<R, A1, A2> on Check<R Function(A1, A2)> {
   }
 }
 
+extension ExpectCalled1<R, A1> on Check<R Function(A1)> {
+  R Function(A1) isCalled() {
+    final completer = Completer<void>();
+    R Function(A1)? boundFunction;
+    unawaited(context.expectAsync(() => ['is called'], (v) async {
+      boundFunction = v;
+      await completer.future;
+      return null; // Can only fail by never completing.
+    }));
+    return (a1) {
+      completer.complete();
+      // TODO - is there something weird about
+      // describe<int Function(int, int)>((c) {
+      //   var wrapped = c.isCalled();
+      //   // wrapped is unusable
+      // })
+      return boundFunction!.call(a1);
+    };
+  }
+}
+
 extension ThrowsCheck<T> on Check<T Function()> {
   // TODO - try to automatically handle async? Or maybe disallow async?
   Check<E> throws<E>() {

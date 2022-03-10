@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:async/async.dart';
 import 'package:checks/context.dart';
 
@@ -93,5 +95,11 @@ extension StreamChecks<T> on Check<StreamQueue<T>> {
       }
       return null;
     });
+  }
+}
+
+extension ChainAsync<T> on Future<Check<T>> {
+  Future<void> that(FutureOr<void> Function(Check<T>) condition) async {
+    await condition(await this);
   }
 }

@@ -10,14 +10,14 @@ class Check<T> {
 }
 
 Check<T> checkThat<T>(T value) => Check._(_TestContext._(
-    _Present(value), 'a $T', null, [], (m) => throw TestFailure(m)));
+    _Present(value), 'a $T', null, [], (m) => throw TestFailure(m), []));
 
 bool softCheck<T>(T value, void Function(Check<T>) condition) {
   var hasFailed = false;
   final check =
       Check._(_TestContext<T>._(_Present(value), 'a $T', null, [], (m) {
     hasFailed = true;
-  }));
+  }, []));
   // TODO - prevent async?
   condition(check);
   return !hasFailed;
@@ -26,7 +26,7 @@ bool softCheck<T>(T value, void Function(Check<T>) condition) {
 Iterable<String> describe<T>(void Function(Check<T>) condition) {
   final context = _TestContext<T>._(_Absent(), '', null, [], (m) {
     throw UnimplementedError();
-  });
+  }, []);
   condition(Check._(context));
   return context.expected.skip(1);
 }
@@ -61,7 +61,6 @@ class CheckResult<T> {
     return CheckResult(null, transform(value as T));
   }
 }
-
 
 abstract class _Value<T> {
   R? apply<R extends FutureOr<Rejection?>>(R Function(T) callback);
@@ -109,14 +108,15 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
   final _TestContext<dynamic>? _parent;
 
   final List<ClauseDescription> _clauses;
+  final List<_TestContext> _siblings;
 
   // The "a value" in "a value that:".
   final String _label;
 
   final void Function(String) _fail;
 
-  _TestContext._(
-      this._value, this._label, this._parent, this._clauses, this._fail);
+  _TestContext._(this._value, this._label, this._parent, this._clauses,
+      this._fail, this._siblings);
 
   @override
   void expect(
@@ -159,10 +159,12 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
     final value = result.value ?? _Absent<R>();
     final _TestContext<R> context;
     if (atSameLevel) {
-      context = _TestContext._(value, _label, _parent, _clauses, _fail);
+      context =
+          _TestContext._(value, _label, _parent, _clauses, _fail, _siblings);
+      _siblings.add(context);
       _clauses.add(StringClause(() => [label]));
     } else {
-      context = _TestContext._(value, label, this, [], _fail);
+      context = _TestContext._(value, label, this, [], _fail, []);
       _clauses.add(context);
     }
     return Check._(context);
@@ -180,7 +182,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
       _fail(_failure(rejection));
     }
     final value = result.value as _Value<R>;
-    final context = _TestContext<R>._(value, label, this, [], _fail);
+    final context = _TestContext<R>._(value, label, this, [], _fail, []);
     _clauses.add(context);
     return Check._(context);
   }
@@ -204,7 +206,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
 
   @override
   Iterable<String> actual(Rejection rejection, Context<dynamic> failedContext) {
-    if (identical(failedContext, this)) {
+    if (identical(failedContext, this) || _siblings.contains(failedContext)) {
       final which = rejection.which;
       return [
         if (_parent != null) '$_label that:',
