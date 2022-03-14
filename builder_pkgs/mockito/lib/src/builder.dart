@@ -396,13 +396,18 @@ class _MockTargetGatherer {
   ) {
     final mockTargets = <_MockTarget>{};
 
-    for (final element in entryLib.topLevelElements) {
+    final possiblyAnnotatedElements = [
+      ...entryLib.exports,
+      ...entryLib.imports,
+      ...entryLib.topLevelElements,
+    ];
+
+    for (final element in possiblyAnnotatedElements) {
       // TODO(srawlins): Re-think the idea of multiple @GenerateMocks
       // annotations, on one element or even on different elements in a library.
       for (final annotation in element.metadata) {
         if (annotation.element is! ConstructorElement) continue;
         final annotationClass = annotation.element!.enclosingElement!.name;
-        // TODO(srawlins): check library as well.
         if (annotationClass == 'GenerateMocks') {
           mockTargets
               .addAll(_mockTargetsFromGenerateMocks(annotation, entryLib));

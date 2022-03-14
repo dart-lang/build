@@ -2,6 +2,7 @@
 
 * Fix generation of methods with return type of `FutureOr<T>` for generic,
   potentially nullable `T`.
+* Support `@GenerateMocks` annotations on `import` and `export` directives.
 
 ## 5.1.0
 
