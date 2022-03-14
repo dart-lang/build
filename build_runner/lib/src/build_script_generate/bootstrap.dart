@@ -74,7 +74,7 @@ Future<int> generateAndRun(
     messagePort = ReceivePort();
     errorListener = errorPort.listen((e) {
       final error = e[0] as Object? ?? NullThrownError();
-      final trace = Trace.parse(e[1] as String).terse;
+      final trace = Trace.parse(e[1] as String? ?? '').terse;
 
       handleUncaughtError(error, trace);
       if (scriptExitCode == 0) scriptExitCode = 1;

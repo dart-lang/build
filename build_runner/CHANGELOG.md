@@ -1,4 +1,6 @@
-## 2.1.8-dev
+## 2.1.8
+
+- Support null stack traces coming from the build runner script isolate.
 
 ## 2.1.7
 
