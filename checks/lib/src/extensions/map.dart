@@ -5,7 +5,7 @@ extension MapChecks<K, V> on Check<Map<K, V>> {
     context.expect(() => ['contains key ${literal(key)}'], (v) {
       if (v.containsKey(key)) return null;
       return Rejection(
-          actual: literal(v), which: 'does not contain key ${literal(key)}');
+          actual: literal(v), which: ['does not contain key ${literal(key)}']);
     });
   }
 

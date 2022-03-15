@@ -211,7 +211,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
       return [
         if (_parent != null) '$_label that:',
         '${_parent != null ? 'Actual: ' : ''}${rejection.actual}',
-        if (which != null) 'Which: $which'
+        if (which != null && which.isNotEmpty) ..._prefixFirst('Which: ', which)
       ];
     } else {
       return [
@@ -244,7 +244,7 @@ class StringClause implements ClauseDescription {
 
 class Rejection {
   final String actual;
-  final String? which;
+  final Iterable<String>? which;
 
   Rejection({required this.actual, this.which});
 }

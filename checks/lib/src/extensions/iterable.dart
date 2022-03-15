@@ -8,21 +8,21 @@ extension IterableChecks<T> on Check<Iterable<T>> {
       final actualLength = v.length;
       if (actualLength == l) return null;
       return Rejection(
-          actual: literal(v), which: 'has length ${literal(actualLength)}');
+          actual: literal(v), which: ['has length ${literal(actualLength)}']);
     });
   }
 
   void isEmpty() {
     context.expect(() => const ['is empty'], (l) {
       if (l.isEmpty) return null;
-      return Rejection(actual: literal(l), which: 'is not empty');
+      return Rejection(actual: literal(l), which: ['is not empty']);
     });
   }
 
   void isNotEmpty() {
     context.expect(() => const ['is not empty'], (l) {
       if (l.isEmpty) return null;
-      return Rejection(actual: literal(l), which: 'is not empty');
+      return Rejection(actual: literal(l), which: ['is not empty']);
     });
   }
 
@@ -40,7 +40,7 @@ extension IterableChecks<T> on Check<Iterable<T>> {
         if (softCheck(e, elementCondition)) return null;
       }
       return Rejection(
-          actual: '${literal(v)}', which: 'Contains no matching element');
+          actual: '${literal(v)}', which: ['Contains no matching element']);
     });
   }
 
@@ -62,17 +62,18 @@ extension IterableChecks<T> on Check<Iterable<T>> {
         // Fail if their lengths are different.
         if (!expectedNext) {
           return Rejection(
-              actual: literal(actual), which: 'is longer than expected');
+              actual: literal(actual), which: ['is longer than expected']);
         }
         if (!actualNext) {
           return Rejection(
-              actual: literal(actual), which: 'is shorter than expected');
+              actual: literal(actual), which: ['is shorter than expected']);
         }
         if (!softCheck(actualIterator.current, expectedIterator.current)) {
           // TODO: return the Rejection from softCheck so this can be more
           // detailed?
           return Rejection(
-              actual: literal(actual), which: 'did not match at index $index');
+              actual: literal(actual),
+              which: ['did not match at index $index']);
         }
       }
     });
@@ -86,15 +87,13 @@ extension IterableChecks<T> on Check<Iterable<T>> {
     context.expect(() => ['matches conditions ignoring order'], (actual) {
       actual = actual.toList();
       if (conditions.length > actual.length) {
-        return Rejection(
-            actual: literal(actual),
-            which:
-                'has too few elements (${actual.length} < ${conditions.length})');
+        return Rejection(actual: literal(actual), which: [
+          'has too few elements (${actual.length} < ${conditions.length})'
+        ]);
       } else if (conditions.length < actual.length) {
-        return Rejection(
-            actual: literal(actual),
-            which:
-                'has too many elements (${actual.length} > ${conditions.length})');
+        return Rejection(actual: literal(actual), which: [
+          'has too many elements (${actual.length} > ${conditions.length})'
+        ]);
       }
 
       var edges = List.generate(actual.length, (_) => <int>[], growable: false);
@@ -115,13 +114,17 @@ extension IterableChecks<T> on Check<Iterable<T>> {
           matcherIndex < conditions.length;
           matcherIndex++) {
         if (matched[matcherIndex] == null) {
-          var which = 'has no match for '
-              '${describe(conditions.elementAt(matcherIndex))} '
-              'at index $matcherIndex';
+          var which = [
+            'has no match for the condition at index $matcherIndex:',
+            ...indent(describe(conditions.elementAt(matcherIndex)))
+          ];
           final remainingUnmatched =
               matched.sublist(matcherIndex + 1).where((m) => m == null).length;
           if (remainingUnmatched > 0) {
-            which = '$which along with $remainingUnmatched other unmatched';
+            which = [
+              ...which,
+              'along with $remainingUnmatched other unmatched elements'
+            ];
           }
           return Rejection(actual: literal(actual), which: which);
         }

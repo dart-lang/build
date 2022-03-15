@@ -14,7 +14,7 @@ extension AssetGraphChecks on Check<AssetGraph> {
       if (item.allNodes.length != expected.allNodes.length) {
         return Rejection(
             actual: 'a graph with ${item.allNodes.length} nodes',
-            which: 'does not have exactly ${expected.allNodes.length} nodes');
+            which: ['does not have exactly ${expected.allNodes.length} nodes']);
       }
       if (!softCheck<Map<String, LanguageVersion?>>(
           item.packageLanguageVersions,
@@ -22,8 +22,9 @@ extension AssetGraphChecks on Check<AssetGraph> {
         return Rejection(
             actual: 'a graph with language versions '
                 '${literal(item.packageLanguageVersions)}',
-            which: 'does not have expected language versions '
-                '${literal(expected.packageLanguageVersions)}');
+            which: [
+              'does not have expected language versions ${literal(expected.packageLanguageVersions)}'
+            ]);
       }
       final mismatches = <AssetId, List<String>>{};
       for (var node in item.allNodes) {
@@ -131,13 +132,11 @@ extension AssetGraphChecks on Check<AssetGraph> {
         }
       }
       if (mismatches.isNotEmpty) {
-        return Rejection(
-            actual: 'an asset graph',
-            which: [
-              'has incorrect node information:',
-              for (var id in mismatches.keys)
-                for (var line in mismatches[id]!) '$id $line'
-            ].join('\n'));
+        return Rejection(actual: 'an asset graph', which: [
+          'has incorrect node information:',
+          for (var id in mismatches.keys)
+            for (var line in mismatches[id]!) '  $id $line'
+        ]);
       }
       return null;
     });
@@ -146,7 +145,8 @@ extension AssetGraphChecks on Check<AssetGraph> {
   void contains(AssetId id) {
     context.expect(() => ['contains $id'], (v) {
       if (v.contains(id)) return null;
-      return Rejection(actual: 'an asset graph', which: 'is missing asset $id');
+      return Rejection(
+          actual: 'an asset graph', which: ['is missing asset $id']);
     });
   }
 }

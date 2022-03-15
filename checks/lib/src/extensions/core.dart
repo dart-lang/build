@@ -5,7 +5,7 @@ extension TypeChecks on Check<Object?> {
     return context.nest<T>('is a $T', (v) {
       if (v is! T) {
         return CheckResult(
-            Rejection(actual: literal(v), which: 'Is a ${v.runtimeType}'),
+            Rejection(actual: literal(v), which: ['Is a ${v.runtimeType}']),
             null);
       }
       return CheckResult(null, v);
@@ -22,7 +22,7 @@ extension HasField<T> on Check<T> {
         return CheckResult<R>(
             Rejection(
                 actual: literal(value),
-                which: 'threw while trying to read property'),
+                which: ['threw while trying to read property']),
             null);
       }
     });
@@ -37,11 +37,11 @@ extension HasField<T> on Check<T> {
     context.expect(() {
       return ['is not a value that:', ...indent(describe(condition))];
     }, (v) {
-      if (softCheck(v, condition)) {
-        return Rejection(
-            // TODO improve multiline `which` arguments
-            actual: literal(v), which: describe(condition).join('\n'));
-      }
+      if (!softCheck(v, condition)) return null;
+      return Rejection(
+          // TODO improve multiline `which` arguments
+          actual: literal(v),
+          which: ['is a value that: ', ...indent(describe(condition))]);
     });
   }
 }
@@ -66,14 +66,14 @@ extension EqualityChecks<T> on Check<T> {
   void equals(T other) {
     context.expect(() => ['equals ${literal(other)}'], (v) {
       if (v == other) return null;
-      return Rejection(actual: literal(v), which: 'is not equal');
+      return Rejection(actual: literal(v), which: ['is not equal']);
     });
   }
 
   void identicalTo(T other) {
     context.expect(() => ['is identical to ${literal(other)}'], (v) {
       if (identical(v, other)) return null;
-      return Rejection(actual: literal(v), which: 'is not identical');
+      return Rejection(actual: literal(v), which: ['is not identical']);
     });
   }
 }
@@ -98,7 +98,8 @@ extension StringChecks on Check<String> {
   void contains(Pattern pattern) {
     context.expect(() => ['contains $pattern'], (s) {
       if (s.contains(pattern)) return null;
-      return Rejection(actual: literal(s), which: 'Does not contain $pattern');
+      return Rejection(
+          actual: literal(s), which: ['Does not contain $pattern']);
     });
   }
 }

@@ -12,7 +12,7 @@ extension FutureChecks<T> on Check<Future<T>> {
         return CheckResult(
             Rejection(
                 actual: 'A future that completes to an error',
-                which: 'Threw ${literal(e)}'),
+                which: ['Threw ${literal(e)}']),
             null);
       }
     });
@@ -25,14 +25,14 @@ extension FutureChecks<T> on Check<Future<T>> {
         return CheckResult(
             Rejection(
                 actual: 'Completed to ${literal(await v)}',
-                which: 'Did not throw'),
+                which: ['Did not throw']),
             null);
       } catch (e) {
         if (e is E) return CheckResult(null, e as E);
         return CheckResult(
             Rejection(
                 actual: 'Completed to error ${literal(e)}',
-                which: 'Is not an $E'),
+                which: ['Is not an $E']),
             null);
       }
     });
@@ -45,7 +45,7 @@ extension StreamChecks<T> on Check<StreamQueue<T>> {
       if (!await v.hasNext) {
         return CheckResult(
             Rejection(
-                actual: 'an empty stream', which: 'did not emit any value'),
+                actual: 'an empty stream', which: ['did not emit any value']),
             null);
       }
       try {
@@ -54,7 +54,7 @@ extension StreamChecks<T> on Check<StreamQueue<T>> {
         return CheckResult(
             Rejection(
                 actual: 'A stream with error ${literal(e)}',
-                which: 'emittid an error instead of a value'),
+                which: ['emittid an error instead of a value']),
             null);
       }
     });
@@ -75,7 +75,7 @@ extension StreamChecks<T> on Check<StreamQueue<T>> {
       }
       return Rejection(
           actual: 'a stream',
-          which: 'ended after emitting $count elements with none matching');
+          which: ['ended after emitting $count elements with none matching']);
     });
   }
 
@@ -86,10 +86,10 @@ extension StreamChecks<T> on Check<StreamQueue<T>> {
       var count = 0;
       await for (var emitted in v.rest) {
         if (softCheck(emitted, condition)) {
-          return Rejection(
-              actual: 'a stream',
-              which: 'emitted ${literal(emitted)}'
-                  '${count > 0 ? ' following $count other items' : ''}');
+          return Rejection(actual: 'a stream', which: [
+            'emitted ${literal(emitted)}',
+            if (count > 0) 'following $count other items'
+          ]);
         }
         count++;
       }

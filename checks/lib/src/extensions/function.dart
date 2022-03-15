@@ -52,14 +52,14 @@ extension ThrowsCheck<T> on Check<T Function()> {
         final result = v();
         return CheckResult(
             Rejection(
-                actual: 'Returned ${literal(result)}', which: 'Did not throw'),
+                actual: 'Returned ${literal(result)}', which: ['Did not throw']),
             null);
       } catch (e) {
         if (e is E) return CheckResult(null, e as E);
         return CheckResult(
             Rejection(
                 actual: 'Completed to error ${literal(e)}',
-                which: 'Is not an $E'),
+                which: ['Is not an $E']),
             null);
       }
     });
