@@ -1,3 +1,8 @@
+## 2.1.9-dev
+
+- Fix up the formatting a bit for the error message that is logged when we get
+  errors from the directory watcher.
+
 ## 2.1.8
 
 - Support null stack traces coming from the build runner script isolate.
