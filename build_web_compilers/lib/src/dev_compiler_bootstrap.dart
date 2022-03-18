@@ -8,7 +8,8 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
-import 'package:path/path.dart' as _p; // ignore: library_prefixes
+// ignore: no_leading_underscores_for_library_prefixes
+import 'package:path/path.dart' as _p;
 import 'package:pool/pool.dart';
 
 import 'ddc_names.dart';

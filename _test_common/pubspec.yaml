@@ -19,7 +19,7 @@ dependencies:
   watcher: ^1.0.0
 
 dev_dependencies:
-  lints: ^1.0.0
+  lints: '>=1.0.0 <3.0.0'
 
 dependency_overrides:
   build:

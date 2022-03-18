@@ -260,7 +260,7 @@ Future<AssetId> _writeAsset(
       } else {
         await _writeAsBytes(outputDir, outputId, await reader.readAsBytes(id));
       }
-    } on AssetNotFoundException catch (e, __) {
+    } on AssetNotFoundException catch (e) {
       if (p.basename(id.path).startsWith('.')) {
         _logger.fine('Skipping missing hidden file ${id.path}');
       } else {

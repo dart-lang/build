@@ -1,3 +1,7 @@
+## 7.2.4-dev
+
+- Fix some new lints.
+
 ## 7.2.3
 
 - Allow the latest analyzer.

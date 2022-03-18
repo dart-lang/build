@@ -49,21 +49,22 @@ Future<String> _generateBuildScript() async {
       allocator: Allocator.simplePrefixing(),
       useNullSafetySyntax: info.canRunWithSoundNullSafety);
   try {
-    final preamble = StringBuffer();
+    final content = StringBuffer();
     if (!info.canRunWithSoundNullSafety) {
-      preamble.write('''
+      content.writeln('''
         // Ensure that the build script itself is not opted in to null safety,
         // instead of taking the language version from the current package.
         //
         // @dart=2.9
-        //
-      ''');
+        //''');
     }
-    preamble.write('// ignore_for_file: directives_ordering');
+    content
+      ..writeln('// ignore_for_file: directives_ordering')
+      ..writeln(
+          '// ignore_for_file: no_leading_underscores_for_library_prefixes')
+      ..writeln(library.accept(emitter));
 
-    return DartFormatter().format('''
-      $preamble
-      ${library.accept(emitter)}''');
+    return DartFormatter().format(content.toString());
   } on FormatterException {
     _log.severe('Generated build script could not be parsed.\n'
         'This is likely caused by a misconfigured builder definition.');
@@ -90,7 +91,7 @@ Future<Iterable<Expression>> findBuilderApplications({
   return info.builderApplications;
 }
 
-Future<_BuildScriptInfo> findBuildScriptOptions({
+Future<BuildScriptInfo> findBuildScriptOptions({
   PackageGraph? packageGraph,
   Map<String, BuildConfig>? buildConfigOverrides,
 }) async {
@@ -150,7 +151,7 @@ Future<_BuildScriptInfo> findBuildScriptOptions({
           .map((e) => e.import)
           .followedBy(postProcessBuilderDefinitions.map((e) => e.import)));
 
-  return _BuildScriptInfo(applications, canRunWithSoundNullSafety);
+  return BuildScriptInfo(applications, canRunWithSoundNullSafety);
 }
 
 Future<bool> _allMigratedToNullSafety(PackageGraph packageGraph,
@@ -207,11 +208,11 @@ Future<bool> _allMigratedToNullSafety(PackageGraph packageGraph,
   return true;
 }
 
-class _BuildScriptInfo {
+class BuildScriptInfo {
   final Iterable<Expression> builderApplications;
   final bool canRunWithSoundNullSafety;
 
-  _BuildScriptInfo(this.builderApplications, this.canRunWithSoundNullSafety);
+  BuildScriptInfo(this.builderApplications, this.canRunWithSoundNullSafety);
 }
 
 /// A method forwarding to `run`.

@@ -2,6 +2,8 @@
 
 - Fix up the formatting a bit for the error message that is logged when we get
   errors from the directory watcher.
+- Ignore the no_leading_underscores_for_library_prefixes lint in the generated
+  build script.
 
 ## 2.1.8
 

@@ -477,6 +477,7 @@ class _SingleBuild {
         var inputNode = _assetGraph.get(input)!;
         assert(
             inputNode.primaryOutputs.containsAll(builderOutputs),
+            // ignore: prefer_interpolation_to_compose_strings
             'input $input with builder $builder missing primary outputs: \n'
                     'Got ${inputNode.primaryOutputs.join(', ')} '
                     'which was missing:\n' +
