@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 // Uses `?` to ensure null safety is enabled
+// ignore: unnecessary_nullable_for_final_variable_declarations
 final String? message = 'hello';
 
 // Used in null assertion tests.

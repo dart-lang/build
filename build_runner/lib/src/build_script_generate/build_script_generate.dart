@@ -59,7 +59,10 @@ Future<String> _generateBuildScript() async {
         //
       ''');
     }
-    preamble.write('// ignore_for_file: directives_ordering');
+    preamble
+      ..write('// ignore_for_file: directives_ordering')
+      ..write(
+          '// ignore_for_file: no_leading_underscores_for_library_prefixes');
 
     return DartFormatter().format('''
       $preamble
@@ -90,7 +93,7 @@ Future<Iterable<Expression>> findBuilderApplications({
   return info.builderApplications;
 }
 
-Future<_BuildScriptInfo> findBuildScriptOptions({
+Future<BuildScriptInfo> findBuildScriptOptions({
   PackageGraph? packageGraph,
   Map<String, BuildConfig>? buildConfigOverrides,
 }) async {
@@ -150,7 +153,7 @@ Future<_BuildScriptInfo> findBuildScriptOptions({
           .map((e) => e.import)
           .followedBy(postProcessBuilderDefinitions.map((e) => e.import)));
 
-  return _BuildScriptInfo(applications, canRunWithSoundNullSafety);
+  return BuildScriptInfo(applications, canRunWithSoundNullSafety);
 }
 
 Future<bool> _allMigratedToNullSafety(PackageGraph packageGraph,
@@ -207,11 +210,11 @@ Future<bool> _allMigratedToNullSafety(PackageGraph packageGraph,
   return true;
 }
 
-class _BuildScriptInfo {
+class BuildScriptInfo {
   final Iterable<Expression> builderApplications;
   final bool canRunWithSoundNullSafety;
 
-  _BuildScriptInfo(this.builderApplications, this.canRunWithSoundNullSafety);
+  BuildScriptInfo(this.builderApplications, this.canRunWithSoundNullSafety);
 }
 
 /// A method forwarding to `run`.

@@ -14,7 +14,7 @@ dev_dependencies:
   build_runner: any
   build_runner_core: any
   build_test: any
-  lints: ^1.0.0
+  lints: ^2.0.0
   io: ^1.0.0
   path: ^1.8.0
   provides_builder:
