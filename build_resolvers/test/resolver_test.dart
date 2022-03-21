@@ -679,8 +679,10 @@ int? get x => 1;
                 "part of 'input.dart';");
             checkThat(isLibrary).isTrue();
           } else {
-            checkThat(isLibrary).isFalse();
-            // TODO - no way to provide a reason.
+            checkThat(isLibrary,
+                    reason: '${buildStep.inputId} should not '
+                        'be considered a library')
+                .isFalse();
           }
         });
     var resolvers = AnalyzerResolvers();

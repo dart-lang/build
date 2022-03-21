@@ -9,13 +9,19 @@ class Check<T> {
   Check._(this._context);
 }
 
-Check<T> checkThat<T>(T value) => Check._(_TestContext._(
-    _Present(value), 'a $T', null, [], (m) => throw TestFailure(m), []));
+Check<T> checkThat<T>(T value, {String? reason}) => Check._(_TestContext._(
+    _Present(value),
+    'a $T',
+    reason,
+    null,
+    [],
+    (m) => throw TestFailure(m),
+    []));
 
 bool softCheck<T>(T value, void Function(Check<T>) condition) {
   var hasFailed = false;
   final check =
-      Check._(_TestContext<T>._(_Present(value), 'a $T', null, [], (m) {
+      Check._(_TestContext<T>._(_Present(value), 'a $T', null, null, [], (m) {
     hasFailed = true;
   }, []));
   // TODO - prevent async?
@@ -24,7 +30,7 @@ bool softCheck<T>(T value, void Function(Check<T>) condition) {
 }
 
 Iterable<String> describe<T>(void Function(Check<T>) condition) {
-  final context = _TestContext<T>._(_Absent(), '', null, [], (m) {
+  final context = _TestContext<T>._(_Absent(), '', null, null, [], (m) {
     throw UnimplementedError();
   }, []);
   condition(Check._(context));
@@ -112,11 +118,12 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
 
   // The "a value" in "a value that:".
   final String _label;
+  final String? _reason;
 
   final void Function(String) _fail;
 
-  _TestContext._(this._value, this._label, this._parent, this._clauses,
-      this._fail, this._siblings);
+  _TestContext._(this._value, this._label, this._reason, this._parent,
+      this._clauses, this._fail, this._siblings);
 
   @override
   void expect(
@@ -144,6 +151,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
     return [
       ..._prefixFirst('Expected: ', root.expected),
       ..._prefixFirst('Actual: ', root.actual(rejection, this)),
+      if (_reason != null) 'Reason: $_reason',
     ].join('\n');
   }
 
@@ -159,12 +167,12 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
     final value = result.value ?? _Absent<R>();
     final _TestContext<R> context;
     if (atSameLevel) {
-      context =
-          _TestContext._(value, _label, _parent, _clauses, _fail, _siblings);
+      context = _TestContext._(
+          value, _label, null, _parent, _clauses, _fail, _siblings);
       _siblings.add(context);
       _clauses.add(StringClause(() => [label]));
     } else {
-      context = _TestContext._(value, label, this, [], _fail, []);
+      context = _TestContext._(value, label, null, this, [], _fail, []);
       _clauses.add(context);
     }
     return Check._(context);
@@ -182,7 +190,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
       _fail(_failure(rejection));
     }
     final value = result.value as _Value<R>;
-    final context = _TestContext<R>._(value, label, this, [], _fail, []);
+    final context = _TestContext<R>._(value, label, null, this, [], _fail, []);
     _clauses.add(context);
     return Check._(context);
   }

@@ -158,13 +158,13 @@ void main() {
         isComplete = true;
       }));
       await Future(() {});
-      // TODO add reason support
-      checkThat(isComplete).isFalse();
-      // reason: 'File has not written, should not be complete');
+      checkThat(isComplete,
+              reason: 'File has not written, should not be complete')
+          .isFalse();
       assetWriter.finishWrite();
       await Future(() {});
-      checkThat(isComplete).isTrue();
-      // reason: 'File is written, should be complete');
+      checkThat(isComplete, reason: 'File is written, should be complete')
+          .isTrue();
     });
 
     test('Completes only after async writes finish', () async {
@@ -175,16 +175,18 @@ void main() {
         isComplete = true;
       }));
       await Future(() {});
-      checkThat(isComplete).isFalse();
-      // reason: 'File has not resolved, should not be complete');
+      checkThat(isComplete,
+              reason: 'File has not resolved, should not be complete')
+          .isFalse();
       outputCompleter.complete(outputContent);
       await Future(() {});
-      checkThat(isComplete).isFalse();
-      // reason: 'File has not written, should not be complete');
+      checkThat(isComplete,
+              reason: 'File has not written, should not be complete')
+          .isFalse();
       assetWriter.finishWrite();
       await Future(() {});
-      checkThat(isComplete).isTrue();
-      // reason: 'File is written, should be complete');
+      checkThat(isComplete, reason: 'File is written, should be complete')
+          .isTrue();
     });
   });
 
