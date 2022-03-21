@@ -34,7 +34,7 @@ extension HasField<T> on Check<T> {
     context.expect(() {
       return ['is not a value that:', ...indent(describe(condition))];
     }, (v) {
-      if (!softCheck(v, condition)) return null;
+      if (softCheck(v, condition) != null) return null;
       return Rejection(
           // TODO improve multiline `which` arguments
           actual: literal(v),

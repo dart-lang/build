@@ -37,7 +37,7 @@ extension IterableChecks<T> on Check<Iterable<T>> {
     }, (v) {
       if (v.isEmpty) return Rejection(actual: 'an empty iterable');
       for (var e in v) {
-        if (softCheck(e, elementCondition)) return null;
+        if (softCheck(e, elementCondition) == null) return null;
       }
       return Rejection(
           actual: '${literal(v)}', which: ['Contains no matching element']);
@@ -68,12 +68,14 @@ extension IterableChecks<T> on Check<Iterable<T>> {
           return Rejection(
               actual: literal(actual), which: ['is shorter than expected']);
         }
-        if (!softCheck(actualIterator.current, expectedIterator.current)) {
-          // TODO: return the Rejection from softCheck so this can be more
-          // detailed?
-          return Rejection(
-              actual: literal(actual),
-              which: ['did not match at index $index']);
+        final rejection =
+            softCheck(actualIterator.current, expectedIterator.current);
+        if (rejection != null) {
+          final which = rejection.which;
+          return Rejection(actual: rejection.actual, which: [
+            if (which != null) ...['at index $index:', ...indent(which)] else
+              'did not match at index $index'
+          ]);
         }
       }
     });
@@ -99,7 +101,7 @@ extension IterableChecks<T> on Check<Iterable<T>> {
       var edges = List.generate(actual.length, (_) => <int>[], growable: false);
       for (var v = 0; v < actual.length; v++) {
         for (var m = 0; m < conditions.length; m++) {
-          if (softCheck(actual.elementAt(v), conditions.elementAt(m))) {
+          if (softCheck(actual.elementAt(v), conditions.elementAt(m)) == null) {
             edges[v].add(m);
           }
         }

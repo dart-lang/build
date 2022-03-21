@@ -15,22 +15,22 @@ Check<T> checkThat<T>(T value, {String? reason}) => Check._(_TestContext._(
     reason,
     null,
     [],
-    (m) => throw TestFailure(m),
+    (m, _) => throw TestFailure(m),
     []));
 
-bool softCheck<T>(T value, void Function(Check<T>) condition) {
-  var hasFailed = false;
-  final check =
-      Check._(_TestContext<T>._(_Present(value), 'a $T', null, null, [], (m) {
-    hasFailed = true;
+Rejection? softCheck<T>(T value, void Function(Check<T>) condition) {
+  Rejection? rejection;
+  final check = Check._(
+      _TestContext<T>._(_Present(value), 'a $T', null, null, [], (_, r) {
+    rejection = r;
   }, []));
   // TODO - prevent async?
   condition(check);
-  return !hasFailed;
+  return rejection;
 }
 
 Iterable<String> describe<T>(void Function(Check<T>) condition) {
-  final context = _TestContext<T>._(_Absent(), '', null, null, [], (m) {
+  final context = _TestContext<T>._(_Absent(), '', null, null, [], (_, __) {
     throw UnimplementedError();
   }, []);
   condition(Check._(context));
@@ -124,7 +124,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
   final String _label;
   final String? _reason;
 
-  final void Function(String) _fail;
+  final void Function(String, Rejection?) _fail;
 
   _TestContext._(this._value, this._label, this._reason, this._parent,
       this._clauses, this._fail, this._siblings);
@@ -135,7 +135,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
     _clauses.add(StringClause(clause));
     final rejection = _value.apply(predicate);
     if (rejection != null) {
-      _fail(_failure(rejection));
+      _fail(_failure(rejection), rejection);
     }
   }
 
@@ -147,7 +147,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
     final rejection = await _value.apply(predicate);
     outstandingWork.complete();
     if (rejection == null) return;
-    _fail(_failure(rejection));
+    _fail(_failure(rejection), rejection);
   }
 
   String _failure(Rejection rejection) {
@@ -166,7 +166,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
     final rejection = result.rejection;
     if (rejection != null) {
       _clauses.add(StringClause(() => [label]));
-      _fail(_failure(rejection));
+      _fail(_failure(rejection), rejection);
     }
     final value = result.value ?? _Absent<R>();
     final _TestContext<R> context;
@@ -191,7 +191,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
     final rejection = result.rejection;
     if (rejection != null) {
       _clauses.add(StringClause(() => [label]));
-      _fail(_failure(rejection));
+      _fail(_failure(rejection), rejection);
     }
     // TODO - does this need null fallback instead?
     final value = result.value as _Value<R>;

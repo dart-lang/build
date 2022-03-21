@@ -58,7 +58,7 @@ extension StreamChecks<T> on Check<StreamQueue<T>> {
             ], (v) async {
       var count = 0;
       await for (var emitted in v.rest) {
-        if (softCheck(emitted, condition)) {
+        if (softCheck(emitted, condition) == null) {
           return null;
         }
         count++;
@@ -75,7 +75,7 @@ extension StreamChecks<T> on Check<StreamQueue<T>> {
         (v) async {
       var count = 0;
       await for (var emitted in v.rest) {
-        if (softCheck(emitted, condition)) {
+        if (softCheck(emitted, condition) == null) {
           return Rejection(actual: 'a stream', which: [
             'emitted ${literal(emitted)}',
             if (count > 0) 'following $count other items'
