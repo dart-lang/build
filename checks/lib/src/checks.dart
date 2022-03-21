@@ -7,6 +7,11 @@ import 'describe.dart';
 class Check<T> {
   final Context<T> _context;
   Check._(this._context);
+
+  Check<T> skip(String message) {
+    TestHandle.current.markSkipped(message);
+    return Check._(_SkippedContext());
+  }
 }
 
 Check<T> checkThat<T>(T value, {String? reason}) => Check._(_TestContext._(
@@ -233,6 +238,32 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
           ...indent(clause.actual(rejection, failedContext))
       ];
     }
+  }
+}
+
+class _SkippedContext<T> implements Context<T> {
+  @override
+  void expect(
+      Iterable<String> Function() clause, Rejection? Function(T) predicate) {
+    // Ignore
+  }
+
+  @override
+  Future<void> expectAsync<R>(Iterable<String> Function() clause,
+      FutureOr<Rejection?> Function(T) predicate) async {
+    // Ignore
+  }
+
+  @override
+  Check<R> nest<R>(String label, Extracted<R> Function(T p1) extract,
+      {bool atSameLevel = false}) {
+    return Check._(_SkippedContext());
+  }
+
+  @override
+  Future<Check<R>> nestAsync<R>(
+      String label, FutureOr<Extracted<R>> Function(T p1) extract) async {
+    return Check._(_SkippedContext());
   }
 }
 

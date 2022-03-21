@@ -7,6 +7,7 @@ import 'dart:io' show Platform;
 import 'dart:isolate';
 
 import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/file_system/memory_file_system.dart';
@@ -793,9 +794,9 @@ int? get x => 1;
             .modifyFile('/a/web/main.dart', 'int x = 1;');
 
         // Validate that direct session usage would throw
-        // TODO - Support for skipping an individual check?
-        // checkThat(() => lib.session.getParsedLibraryByElement(x.library!))
-        //     .throws<InconsistentAnalysisException>();
+        checkThat(() => lib.session.getParsedLibraryByElement(x.library!))
+            .skip('https://github.com/dart-lang/build/issues/3202')
+            .throws<InconsistentAnalysisException>();
 
         var astNode = await resolver.astNodeFor(x);
         checkThat(astNode).isA<VariableDeclaration>().that((v) => v
@@ -818,10 +819,9 @@ int? get x => 1;
             .modifyFile('/a/web/main.dart', 'int x = 1;');
 
         // Validate that direct session usage would throw
-        // TODO skips
-        // checkThat(() => lib.session.getParsedLibraryByElement(x.library!))
-        //     .throws<InconsistentAnalysisException>();
-        //skip: 'https://github.com/dart-lang/build/issues/3202');
+        checkThat(() => lib.session.getParsedLibraryByElement(x.library!))
+            .skip('https://github.com/dart-lang/build/issues/3202')
+            .throws<InconsistentAnalysisException>();
 
         var astNode = await resolver.astNodeFor(x, resolve: true);
         checkThat(astNode).isA<VariableDeclaration>().that((v) => v
@@ -845,10 +845,9 @@ int? get x => 1;
             .modifyFile('/a/web/main.dart', 'int x = 1;');
 
         // Validate that direct session usage would throw
-        // TODO skips
-        // checkThat(() => lib.session.getResolvedLibrary(lib.source.fullName))
-        //     .throws<InconsistentAnalysisException>();
-        // skip: 'https://github.com/dart-lang/build/issues/3202');
+        checkThat(() => lib.session.getResolvedLibrary(lib.source.fullName))
+            .skip('https://github.com/dart-lang/build/issues/3202')
+            .throws<InconsistentAnalysisException>();
 
         var astNode = originalResult.getElementDeclaration(x)!.node;
         checkThat(astNode).isA<VariableDeclaration>().that((v) => v
