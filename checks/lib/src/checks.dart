@@ -51,28 +51,33 @@ abstract class Context<T> {
       Iterable<String> Function() clause, Rejection? Function(T) predicate);
   Future<void> expectAsync<R>(Iterable<String> Function() clause,
       FutureOr<Rejection?> Function(T) predicate);
-  Check<R> nest<R>(String label, CheckResult<R> Function(T) extract,
+  Check<R> nest<R>(String label, Extracted<R> Function(T) extract,
       {bool atSameLevel = false});
   Future<Check<R>> nestAsync<R>(
-      String label, FutureOr<CheckResult<R>> Function(T) extract);
+      String label, FutureOr<Extracted<R>> Function(T) extract);
 }
 
-class CheckResult<T> {
+class Extracted<T> {
   final Rejection? rejection;
   final T? value;
-  // TODO add CheckResult.rejection, CheckResult.succes constructors
-  CheckResult(this.rejection, this.value);
-  CheckResult<R> map<R>(R Function(T) transform) {
-    if (rejection != null) return CheckResult(rejection, null);
-    return CheckResult(null, transform(value as T));
+  Extracted.rejection({required String actual, Iterable<String>? which})
+      : this.rejection = Rejection(actual: actual, which: which),
+        this.value = null;
+  Extracted.value(this.value) : this.rejection = null;
+
+  Extracted._(this.rejection) : this.value = null;
+
+  Extracted<R> map<R>(R Function(T) transform) {
+    if (rejection != null) return Extracted._(rejection);
+    return Extracted.value(transform(value as T));
   }
 }
 
 abstract class _Value<T> {
   R? apply<R extends FutureOr<Rejection?>>(R Function(T) callback);
-  Future<CheckResult<_Value<R>>> mapAsync<R>(
-      FutureOr<CheckResult<R>> Function(T) transform);
-  CheckResult<_Value<R>> map<R>(CheckResult<R> Function(T) transform);
+  Future<Extracted<_Value<R>>> mapAsync<R>(
+      FutureOr<Extracted<R>> Function(T) transform);
+  Extracted<_Value<R>> map<R>(Extracted<R> Function(T) transform);
 }
 
 class _Present<T> implements _Value<T> {
@@ -83,14 +88,14 @@ class _Present<T> implements _Value<T> {
   R? apply<R extends FutureOr<Rejection?>>(R Function(T) c) => c(value);
 
   @override
-  Future<CheckResult<_Value<R>>> mapAsync<R>(
-      FutureOr<CheckResult<R>> Function(T) transform) async {
+  Future<Extracted<_Value<R>>> mapAsync<R>(
+      FutureOr<Extracted<R>> Function(T) transform) async {
     final transformed = await transform(value);
     return transformed.map((v) => _Present(v));
   }
 
   @override
-  CheckResult<_Value<R>> map<R>(CheckResult<R> Function(T) transform) =>
+  Extracted<_Value<R>> map<R>(Extracted<R> Function(T) transform) =>
       transform(value).map((v) => _Present(v));
 }
 
@@ -99,14 +104,13 @@ class _Absent<T> implements _Value<T> {
   R? apply<R extends FutureOr<Rejection?>>(R Function(T) c) => null;
 
   @override
-  Future<CheckResult<_Value<R>>> mapAsync<R>(
-          FutureOr<CheckResult<R>> Function(T) transform) async =>
-      CheckResult(null, _Absent<R>());
+  Future<Extracted<_Value<R>>> mapAsync<R>(
+          FutureOr<Extracted<R>> Function(T) transform) async =>
+      Extracted.value(_Absent<R>());
 
   @override
-  CheckResult<_Value<R>> map<R>(
-          FutureOr<CheckResult<R>> Function(T) transform) =>
-      CheckResult(null, _Absent<R>());
+  Extracted<_Value<R>> map<R>(FutureOr<Extracted<R>> Function(T) transform) =>
+      Extracted.value(_Absent<R>());
 }
 
 class _TestContext<T> implements Context<T>, ClauseDescription {
@@ -156,7 +160,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
   }
 
   @override
-  Check<R> nest<R>(String label, CheckResult<R> Function(T) extract,
+  Check<R> nest<R>(String label, Extracted<R> Function(T) extract,
       {bool atSameLevel = false}) {
     final result = _value.map(extract);
     final rejection = result.rejection;
@@ -180,7 +184,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
 
   @override
   Future<Check<R>> nestAsync<R>(
-      String label, FutureOr<CheckResult<R>> Function(T) extract) async {
+      String label, FutureOr<Extracted<R>> Function(T) extract) async {
     final outstandingWork = TestHandle.current.markPending();
     final result = await _value.mapAsync(extract);
     outstandingWork.complete();
@@ -189,6 +193,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
       _clauses.add(StringClause(() => [label]));
       _fail(_failure(rejection));
     }
+    // TODO - does this need null fallback instead?
     final value = result.value as _Value<R>;
     final context = _TestContext<R>._(value, label, null, this, [], _fail, []);
     _clauses.add(context);

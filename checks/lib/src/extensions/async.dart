@@ -7,13 +7,11 @@ extension FutureChecks<T> on Check<Future<T>> {
   Future<Check<T>> completes() async {
     return await context.nestAsync<T>('Completes to', (v) async {
       try {
-        return CheckResult(null, await v);
+        return Extracted.value(await v);
       } catch (e) {
-        return CheckResult(
-            Rejection(
-                actual: 'A future that completes to an error',
-                which: ['Threw ${literal(e)}']),
-            null);
+        return Extracted.rejection(
+            actual: 'A future that completes to an error',
+            which: ['Threw ${literal(e)}']);
       }
     });
   }
@@ -22,18 +20,14 @@ extension FutureChecks<T> on Check<Future<T>> {
     return await context.nestAsync<E>('Completes as an error of type $E',
         (v) async {
       try {
-        return CheckResult(
-            Rejection(
-                actual: 'Completed to ${literal(await v)}',
-                which: ['Did not throw']),
-            null);
+        return Extracted.rejection(
+            actual: 'Completed to ${literal(await v)}',
+            which: ['Did not throw']);
       } catch (e) {
-        if (e is E) return CheckResult(null, e as E);
-        return CheckResult(
-            Rejection(
-                actual: 'Completed to error ${literal(e)}',
-                which: ['Is not an $E']),
-            null);
+        if (e is E) return Extracted.value(e as E);
+        return Extracted.rejection(
+            actual: 'Completed to error ${literal(e)}',
+            which: ['Is not an $E']);
       }
     });
   }
@@ -43,19 +37,15 @@ extension StreamChecks<T> on Check<StreamQueue<T>> {
   Future<Check<T>> emits() async {
     return await context.nestAsync<T>('Emits a value', (v) async {
       if (!await v.hasNext) {
-        return CheckResult(
-            Rejection(
-                actual: 'an empty stream', which: ['did not emit any value']),
-            null);
+        return Extracted.rejection(
+            actual: 'an empty stream', which: ['did not emit any value']);
       }
       try {
-        return CheckResult(null, await v.next);
+        return Extracted.value(await v.next);
       } catch (e) {
-        return CheckResult(
-            Rejection(
-                actual: 'A stream with error ${literal(e)}',
-                which: ['emittid an error instead of a value']),
-            null);
+        return Extracted.rejection(
+            actual: 'A stream with error ${literal(e)}',
+            which: ['emittid an error instead of a value']);
       }
     });
   }

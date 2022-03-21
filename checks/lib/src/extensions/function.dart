@@ -50,17 +50,15 @@ extension ThrowsCheck<T> on Check<T Function()> {
     return context.nest<E>('Completes as an error of type $E', (v) {
       try {
         final result = v();
-        return CheckResult(
-            Rejection(
-                actual: 'Returned ${literal(result)}', which: ['Did not throw']),
-            null);
+        return Extracted.rejection(
+          actual: 'Returned ${literal(result)}',
+          which: ['Did not throw'],
+        );
       } catch (e) {
-        if (e is E) return CheckResult(null, e as E);
-        return CheckResult(
-            Rejection(
-                actual: 'Completed to error ${literal(e)}',
-                which: ['Is not an $E']),
-            null);
+        if (e is E) return Extracted.value(e as E);
+        return Extracted.rejection(
+            actual: 'Completed to error ${literal(e)}',
+            which: ['Is not an $E']);
       }
     });
   }

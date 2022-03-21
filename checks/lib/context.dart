@@ -2,7 +2,7 @@ export 'src/checks.dart'
     show
         Check,
         Context,
-        CheckResult,
+        Extracted,
         Rejection,
         describe,
         softCheck,

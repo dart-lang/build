@@ -4,11 +4,10 @@ extension TypeChecks on Check<Object?> {
   Check<T> isA<T>() {
     return context.nest<T>('is a $T', (v) {
       if (v is! T) {
-        return CheckResult(
-            Rejection(actual: literal(v), which: ['Is a ${v.runtimeType}']),
-            null);
+        return Extracted.rejection(
+            actual: literal(v), which: ['Is a ${v.runtimeType}']);
       }
-      return CheckResult(null, v);
+      return Extracted.value(v);
     }, atSameLevel: true);
   }
 }
@@ -17,13 +16,11 @@ extension HasField<T> on Check<T> {
   Check<R> has<R>(R Function(T) extract, String name) {
     return context.nest('has $name', (T value) {
       try {
-        return CheckResult(null, extract(value));
+        return Extracted.value(extract(value));
       } catch (_) {
-        return CheckResult<R>(
-            Rejection(
-                actual: literal(value),
-                which: ['threw while trying to read property']),
-            null);
+        return Extracted.rejection(
+            actual: literal(value),
+            which: ['threw while trying to read property']);
       }
     });
   }
@@ -81,8 +78,8 @@ extension EqualityChecks<T> on Check<T> {
 extension NullabilityChecks<T> on Check<T?> {
   Check<T> isNotNull() {
     return context.nest<T>('is not null', (v) {
-      if (v == null) return CheckResult(Rejection(actual: literal(v)), null);
-      return CheckResult(null, v);
+      if (v == null) return Extracted.rejection(actual: literal(v));
+      return Extracted.value(v);
     }, atSameLevel: true);
   }
 
