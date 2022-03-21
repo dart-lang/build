@@ -88,7 +88,7 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
   ///
   /// Returns `null` if the uri should be ignored, or throws an [ArgumentError]
   /// if the [uri] is not recognized.
-  static AssetId? _idForUri(Uri uri, String _rootPackage) {
+  static AssetId? _idForUri(Uri uri, String rootPackage) {
     switch (uri.scheme) {
       case 'dart':
         // TODO: check for sdk updates!
@@ -99,7 +99,7 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
             p.url.joinAll(['lib', ...parts.getRange(1, parts.length)]));
       case 'file':
         var relativePath = p.relative(uri.toFilePath(), from: p.current);
-        return AssetId(_rootPackage, relativePath);
+        return AssetId(rootPackage, relativePath);
       case 'data':
         // Test runner uses a `data` scheme, don't invalidate for those.
         if (uri.path.contains('package:test')) break;

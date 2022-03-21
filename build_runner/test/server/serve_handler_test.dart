@@ -75,7 +75,7 @@ void main() {
   });
 
   test('caching with etags takes into account injected JS', () async {
-    _addSource('a|web/some.js', entrypointExtensionMarker + '\nalert(1)');
+    _addSource('a|web/some.js', '$entrypointExtensionMarker\nalert(1)');
     var noReloadEtag = (await serveHandler.handlerFor('web',
                 buildUpdates: BuildUpdatesOption.none)(
             Request('GET', Uri.parse('http://server.com/some.js'))))
@@ -204,8 +204,7 @@ void main() {
             BuildUpdatesOption buildUpdates) =>
         group(groupName, () {
           test('injects client code if enabled', () async {
-            _addSource(
-                'a|web/some.js', entrypointExtensionMarker + '\nalert(1)');
+            _addSource('a|web/some.js', '$entrypointExtensionMarker\nalert(1)');
             var response = await serveHandler.handlerFor('web',
                     buildUpdates: buildUpdates)(
                 Request('GET', Uri.parse('http://server.com/some.js')));
@@ -213,8 +212,7 @@ void main() {
           });
 
           test('doesn\'t inject client code if disabled', () async {
-            _addSource(
-                'a|web/some.js', entrypointExtensionMarker + '\nalert(1)');
+            _addSource('a|web/some.js', '$entrypointExtensionMarker\nalert(1)');
             var response = await serveHandler.handlerFor('web')(
                 Request('GET', Uri.parse('http://server.com/some.js')));
             expect(await response.readAsString(),
@@ -223,7 +221,7 @@ void main() {
 
           test('doesn\'t inject client code in non-js files', () async {
             _addSource(
-                'a|web/some.html', entrypointExtensionMarker + '\n<br>some');
+                'a|web/some.html', '$entrypointExtensionMarker\n<br>some');
             var response = await serveHandler.handlerFor('web',
                     buildUpdates: buildUpdates)(
                 Request('GET', Uri.parse('http://server.com/some.html')));

@@ -175,8 +175,8 @@ class SyntaxErrorInAssetException implements Exception {
 
       // Output messages like "foo.dart:3:4: Expected a semicolon here."
       buffer.writeln(
-          '$sourceName:${position.lineNumber}:${position.columnNumber}: ' +
-              error.message);
+          '$sourceName:${position.lineNumber}:${position.columnNumber}: '
+          '${error.message}');
     }
 
     final additionalErrors = entries.length - _maxErrorsInToString;

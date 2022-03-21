@@ -11,6 +11,7 @@ const versionSkew = 'DIFFERENT RUNNING VERSION';
 const optionsSkew = 'DIFFERENT OPTIONS';
 
 const buildModeFlag = 'build-mode';
+
 enum BuildMode {
   // ignore: constant_identifier_names
   Manual,

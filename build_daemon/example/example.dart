@@ -12,7 +12,7 @@ import 'package:path/path.dart' as p;
 void main(List<String> args) async {
   BuildDaemonClient client;
   var workingDirectory =
-      p.normalize(p.join(Directory.current.path + '/../example'));
+      p.normalize(p.join('${Directory.current.path}/../example'));
 
   try {
     // First we connect to the daemon. This will start one if one is not

@@ -1,4 +1,13 @@
-## 2.1.8-dev
+## 2.1.9-dev
+
+- Fix up the formatting a bit for the error message that is logged when we get
+  errors from the directory watcher.
+- Ignore the no_leading_underscores_for_library_prefixes lint in the generated
+  build script.
+
+## 2.1.8
+
+- Support null stack traces coming from the build runner script isolate.
 
 ## 2.1.7
 
