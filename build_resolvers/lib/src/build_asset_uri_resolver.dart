@@ -80,6 +80,7 @@ class BuildAssetUriResolver extends UriResolver {
         driver.changeFile(state.path);
       }
     }
+    await driver.applyPendingFileChanges();
   }
 
   /// Updates the internal state for [id], if it has changed.
