@@ -25,10 +25,20 @@ extension HasField<T> on Check<T> {
     });
   }
 
-  // Help with nested castades.
-  void that(void Function(Check<T>) condition) {
-    condition(this);
-  }
+  /// Check [condition] against this value.
+  ///
+  /// Use this method when it would otherwise not be possible to check multiple
+  /// properties of this value due to cascade notation already being used in a
+  /// way that would conflict.
+  ///
+  /// ```
+  /// checkThat(something)
+  ///   ..has((s) => s.foo, 'foo').equals(expectedFoo)
+  ///   ..has((s) => s.bar, 'bar').that((b) => b
+  ///     ..isLessThan(10)
+  ///     ..isGreaterThan(0));
+  /// ```
+  R that<R>(R Function(Check<T>) condition) => condition(this);
 
   void not(void Function(Check<T>) condition) {
     context.expect(() {
