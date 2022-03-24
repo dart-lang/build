@@ -21,15 +21,15 @@ Check<T> checkThat<T>(T value, {String? reason}) => Check._(_TestContext._(
     null,
     [],
     (m, _) => throw TestFailure(m),
-    []));
+    [],
+    true));
 
 Rejection? softCheck<T>(T value, void Function(Check<T>) condition) {
   Rejection? rejection;
   final check = Check._(
       _TestContext<T>._(_Present(value), 'a $T', null, null, [], (_, r) {
     rejection = r;
-  }, []));
-  // TODO - prevent async?
+  }, [], false));
   condition(check);
   return rejection;
 }
@@ -37,7 +37,7 @@ Rejection? softCheck<T>(T value, void Function(Check<T>) condition) {
 Iterable<String> describe<T>(void Function(Check<T>) condition) {
   final context = _TestContext<T>._(_Absent(), '', null, null, [], (_, __) {
     throw UnimplementedError();
-  }, []);
+  }, [], true);
   condition(Check._(context));
   return context.expected.skip(1);
 }
@@ -131,8 +131,10 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
 
   final void Function(String, Rejection?) _fail;
 
+  final bool _allowAsync;
+
   _TestContext._(this._value, this._label, this._reason, this._parent,
-      this._clauses, this._fail, this._siblings);
+      this._clauses, this._fail, this._siblings, this._allowAsync);
 
   @override
   void expect(
@@ -147,6 +149,10 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
   @override
   Future<void> expectAsync<R>(Iterable<String> Function() clause,
       FutureOr<Rejection?> Function(T) predicate) async {
+    if (!_allowAsync) {
+      throw StateError(
+          'Async expectations cannot be used in a synchronous check');
+    }
     _clauses.add(StringClause(clause));
     final outstandingWork = TestHandle.current.markPending();
     final rejection = await _value.apply(predicate);
@@ -176,12 +182,13 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
     final value = result.value ?? _Absent<R>();
     final _TestContext<R> context;
     if (atSameLevel) {
-      context = _TestContext._(
-          value, _label, null, _parent, _clauses, _fail, _siblings);
+      context = _TestContext._(value, _label, null, _parent, _clauses, _fail,
+          _siblings, _allowAsync);
       _siblings.add(context);
       _clauses.add(StringClause(() => [label]));
     } else {
-      context = _TestContext._(value, label, null, this, [], _fail, []);
+      context =
+          _TestContext._(value, label, null, this, [], _fail, [], _allowAsync);
       _clauses.add(context);
     }
     return Check._(context);
@@ -190,6 +197,10 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
   @override
   Future<Check<R>> nestAsync<R>(
       String label, FutureOr<Extracted<R>> Function(T) extract) async {
+    if (!_allowAsync) {
+      throw StateError(
+          'Async expectations cannot be used in a synchronous check');
+    }
     final outstandingWork = TestHandle.current.markPending();
     final result = await _value.mapAsync(extract);
     outstandingWork.complete();
@@ -200,7 +211,8 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
     }
     // TODO - does this need null fallback instead?
     final value = result.value as _Value<R>;
-    final context = _TestContext<R>._(value, label, null, this, [], _fail, []);
+    final context =
+        _TestContext<R>._(value, label, null, this, [], _fail, [], _allowAsync);
     _clauses.add(context);
     return Check._(context);
   }
