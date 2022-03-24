@@ -44,6 +44,14 @@ extension IterableChecks<T> on Check<Iterable<T>> {
     });
   }
 
+  void containsAll(Iterable<T> expected) {
+    context.expect(() => ['contains all values in ${literal(expected)}'],
+        (actual) {
+      return _unorderedMatches(
+          actual, [for (var e in expected) (Check<T> c) => c.equals(e)], true);
+    });
+  }
+
   void orderedEquals(Iterable<T> expected) =>
       orderedMatches(expected.map((e) => (check) => check.equals(e)));
 
@@ -85,54 +93,58 @@ extension IterableChecks<T> on Check<Iterable<T>> {
       unorderedMatches(values.map((v) => (check) => check.equals(v)));
 
   void unorderedMatches(Iterable<void Function(Check<T>)> conditions) {
-    conditions = conditions.toList();
     context.expect(() => ['matches conditions ignoring order'], (actual) {
-      actual = actual.toList();
-      if (conditions.length > actual.length) {
-        return Rejection(actual: literal(actual), which: [
-          'has too few elements (${actual.length} < ${conditions.length})'
-        ]);
-      } else if (conditions.length < actual.length) {
-        return Rejection(actual: literal(actual), which: [
-          'has too many elements (${actual.length} > ${conditions.length})'
-        ]);
-      }
-
-      var edges = List.generate(actual.length, (_) => <int>[], growable: false);
-      for (var v = 0; v < actual.length; v++) {
-        for (var m = 0; m < conditions.length; m++) {
-          if (softCheck(actual.elementAt(v), conditions.elementAt(m)) == null) {
-            edges[v].add(m);
-          }
-        }
-      }
-      // The index into `actual` matched with each matcher or `null` if no value
-      // has been matched yet.
-      var matched = List<int?>.filled(conditions.length, null);
-      for (var valueIndex = 0; valueIndex < actual.length; valueIndex++) {
-        _findPairing(edges, valueIndex, matched);
-      }
-      for (var matcherIndex = 0;
-          matcherIndex < conditions.length;
-          matcherIndex++) {
-        if (matched[matcherIndex] == null) {
-          var which = [
-            'has no match for the condition at index $matcherIndex:',
-            ...indent(describe(conditions.elementAt(matcherIndex)))
-          ];
-          final remainingUnmatched =
-              matched.sublist(matcherIndex + 1).where((m) => m == null).length;
-          if (remainingUnmatched > 0) {
-            which = [
-              ...which,
-              'along with $remainingUnmatched other unmatched elements'
-            ];
-          }
-          return Rejection(actual: literal(actual), which: which);
-        }
-      }
-      return null;
+      return _unorderedMatches(actual, conditions.toList(), false);
     });
+  }
+
+  static Rejection? _unorderedMatches<T>(Iterable<T> actual,
+      List<void Function(Check<T>)> conditions, bool allowUnmatched) {
+    actual = actual.toList();
+    if (conditions.length > actual.length) {
+      return Rejection(actual: literal(actual), which: [
+        'has too few elements (${actual.length} < ${conditions.length})'
+      ]);
+    } else if (!allowUnmatched && conditions.length < actual.length) {
+      return Rejection(actual: literal(actual), which: [
+        'has too many elements (${actual.length} > ${conditions.length})'
+      ]);
+    }
+
+    var edges = List.generate(actual.length, (_) => <int>[], growable: false);
+    for (var v = 0; v < actual.length; v++) {
+      for (var m = 0; m < conditions.length; m++) {
+        if (softCheck(actual.elementAt(v), conditions.elementAt(m)) == null) {
+          edges[v].add(m);
+        }
+      }
+    }
+    // The index into `actual` matched with each matcher or `null` if no value
+    // has been matched yet.
+    var matched = List<int?>.filled(conditions.length, null);
+    for (var valueIndex = 0; valueIndex < actual.length; valueIndex++) {
+      _findPairing(edges, valueIndex, matched);
+    }
+    for (var matcherIndex = 0;
+        matcherIndex < conditions.length;
+        matcherIndex++) {
+      if (matched[matcherIndex] == null) {
+        var which = [
+          'has no match for the condition at index $matcherIndex:',
+          ...indent(describe(conditions.elementAt(matcherIndex)))
+        ];
+        final remainingUnmatched =
+            matched.sublist(matcherIndex + 1).where((m) => m == null).length;
+        if (remainingUnmatched > 0) {
+          which = [
+            ...which,
+            'along with $remainingUnmatched other unmatched elements'
+          ];
+        }
+        return Rejection(actual: literal(actual), which: which);
+      }
+    }
+    return null;
   }
 
   /// Returns `true` if the value at [valueIndex] can be paired with some

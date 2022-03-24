@@ -8,6 +8,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:async/async.dart';
 import 'package:build_daemon/data/build_request.dart';
 import 'package:build_daemon/data/build_target.dart';
 import 'package:build_daemon/data/build_target_request.dart';
@@ -16,7 +17,8 @@ import 'package:build_daemon/data/server_log.dart';
 import 'package:build_daemon/src/fakes/fake_change_provider.dart';
 import 'package:build_daemon/src/fakes/fake_test_builder.dart';
 import 'package:build_daemon/src/server.dart';
-import 'package:test/test.dart';
+import 'package:checks/checks.dart';
+import 'package:test/scaffolding.dart';
 import 'package:web_socket_channel/io.dart';
 
 void main() {
@@ -43,33 +45,25 @@ void main() {
       await server.stop();
       await client.sink.close();
       await logController.close();
-      await expectLater(server.onDone, completes);
+      await checkThat(server.onDone).completes();
     });
 
     test('can forward logs to the client', () async {
       // Setup listening for a completed build.
-      final buildCompleted = expectLater(
-          logs,
-          emits(_matchServerLog(
-            equals(Level.INFO),
-            equals(FakeTestDaemonBuilder.buildCompletedMessage),
-            equals(FakeTestDaemonBuilder.loggerName),
-          )));
+      final buildCompleted = checkThat(StreamQueue(logs)).emits().that((l) => l
+        ..level.equals(Level.INFO)
+        ..message.equals(FakeTestDaemonBuilder.buildCompletedMessage)
+        ..loggerName.equals(FakeTestDaemonBuilder.loggerName));
 
       // Build a target to register interested channels on the server.
       _requestBuild(client, webTarget);
       await buildCompleted;
 
       // Setup listening for forwarded logs.
-      final logsReceived = expectLater(
-          logs,
-          emits(_matchServerLog(
-            equals(Level.WARNING),
-            contains('bad request'),
-            equals(Server.loggerName),
-            isNotNull,
-            isNotNull,
-          )));
+      final logsReceived = checkThat(StreamQueue(logs)).emits().that((l) => l
+        ..level.equals(Level.WARNING)
+        ..message.contains('bad request')
+        ..loggerName.equals(Server.loggerName));
 
       // Send request that with throw an exception an will be logged.
       client.sink.add('bad request');
@@ -110,11 +104,8 @@ void _requestBuild(IOWebSocketChannel client, BuildTarget target) {
   );
 }
 
-Matcher _matchServerLog(Matcher level, Matcher message, Matcher loggerName,
-        [Matcher error = isNull, Matcher stackTrace = isNull]) =>
-    isA<ServerLog>()
-        .having((l) => l.level, 'level', level)
-        .having((l) => l.message, 'message', message)
-        .having((l) => l.loggerName, 'loggerName', loggerName)
-        .having((l) => l.error, 'error', error)
-        .having((l) => l.stackTrace, 'stackTrace', stackTrace);
+extension _ServerLogChecks on Check<ServerLog> {
+  Check<Level> get level => has((l) => l.level, 'level');
+  Check<String> get message => has((l) => l.message, 'message');
+  Check<String?> get loggerName => has((l) => l.loggerName, 'loggerName');
+}

@@ -13,7 +13,8 @@ import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/daemon.dart';
 import 'package:build_daemon/src/fakes/fake_builder.dart';
 import 'package:build_daemon/src/fakes/fake_change_provider.dart';
-import 'package:test/test.dart';
+import 'package:checks/checks.dart';
+import 'package:test/scaffolding.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 import 'package:uuid/uuid.dart';
 
@@ -49,7 +50,7 @@ void main() {
         FakeDaemonBuilder(),
         FakeChangeProvider(),
       );
-      expect(daemon.onDone, completes);
+      checkThat(daemon.onDone).completes().byEndOfTest();
       await daemon.stop();
     });
 
@@ -57,14 +58,14 @@ void main() {
       var workspace = uuid.v1();
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
-      expect(await _statusOf(daemon), 'RUNNING');
+      checkThat(await _statusOf(daemon)).equals('RUNNING');
     });
 
     test('shuts down if no client connects', () async {
       var workspace = uuid.v1();
       var daemon = await _runDaemon(workspace, timeout: 1);
       testDaemons.add(daemon);
-      expect(await daemon.exitCode, isNotNull);
+      checkThat(await daemon.exitCode).isNotNull();
     });
 
     test('can not run if another daemon is running in the same workspace',
@@ -72,10 +73,10 @@ void main() {
       var workspace = uuid.v1();
       testWorkspaces.add(workspace);
       var daemonOne = await _runDaemon(workspace);
-      expect(await _statusOf(daemonOne), 'RUNNING');
+      checkThat(await _statusOf(daemonOne)).equals('RUNNING');
       var daemonTwo = await _runDaemon(workspace);
       testDaemons.addAll([daemonOne, daemonTwo]);
-      expect(await _statusOf(daemonTwo), 'ALREADY RUNNING');
+      checkThat(await _statusOf(daemonTwo)).equals('ALREADY RUNNING');
     });
 
     test('can run if another daemon is running in a different workspace',
@@ -84,10 +85,10 @@ void main() {
       var workspace2 = uuid.v1();
       testWorkspaces.addAll([workspace1, workspace2]);
       var daemonOne = await _runDaemon(workspace1);
-      expect(await _statusOf(daemonOne), 'RUNNING');
+      checkThat(await _statusOf(daemonOne)).equals('RUNNING');
       var daemonTwo = await _runDaemon(workspace2);
       testDaemons.addAll([daemonOne, daemonTwo]);
-      expect(await _statusOf(daemonTwo), 'RUNNING');
+      checkThat(await _statusOf(daemonTwo)).equals('RUNNING');
     }, timeout: Timeout.factor(2));
 
     test('can start two daemons at the same time', () async {
@@ -95,8 +96,8 @@ void main() {
       testWorkspaces.add(workspace);
       var daemonOne = await _runDaemon(workspace);
       var daemonTwo = await _runDaemon(workspace);
-      expect([await _statusOf(daemonOne), await _statusOf(daemonTwo)],
-          containsAll(['RUNNING', 'ALREADY RUNNING']));
+      checkThat([await _statusOf(daemonOne), await _statusOf(daemonTwo)])
+          .containsAll(['Nope', 'ALREADY RUNNING']);
       testDaemons.addAll([daemonOne, daemonTwo]);
     }, timeout: Timeout.factor(2));
 
@@ -105,14 +106,15 @@ void main() {
       testWorkspaces.add(workspace);
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
-      expect(await _statusOf(daemon), 'RUNNING');
-      expect(await Daemon(workspace).runningVersion(), currentVersion);
+      checkThat(await _statusOf(daemon)).equals('RUNNING');
+      checkThat(await Daemon(workspace).runningVersion())
+          .equals(currentVersion);
     });
 
     test('does not set the current version if not running', () async {
       var workspace = uuid.v1();
       testWorkspaces.add(workspace);
-      expect(await Daemon(workspace).runningVersion(), null);
+      checkThat(await Daemon(workspace).runningVersion()).isNull();
     });
 
     test('logs the options when running', () async {
@@ -120,15 +122,15 @@ void main() {
       testWorkspaces.add(workspace);
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
-      expect(await _statusOf(daemon), 'RUNNING');
-      expect(
-          (await Daemon(workspace).currentOptions()).contains('foo'), isTrue);
+      checkThat(await _statusOf(daemon)).equals('RUNNING');
+      checkThat((await Daemon(workspace).currentOptions()).contains('foo'))
+          .isTrue();
     });
 
     test('does not log the options if not running', () async {
       var workspace = uuid.v1();
       testWorkspaces.add(workspace);
-      expect((await Daemon(workspace).currentOptions()).isEmpty, isTrue);
+      checkThat(await Daemon(workspace).currentOptions()).isEmpty();
     });
 
     test('cleans up after itself', () async {
@@ -136,12 +138,12 @@ void main() {
       testWorkspaces.add(workspace);
       var daemon = await _runDaemon(workspace);
       // Wait for the daemon to be running before checking the workspace exits.
-      expect(await _statusOf(daemon), 'RUNNING');
-      expect(Directory(daemonWorkspace(workspace)).existsSync(), isTrue);
+      checkThat(await _statusOf(daemon)).equals('RUNNING');
+      checkThat(Directory(daemonWorkspace(workspace)).existsSync()).isTrue();
       // Sending an interrupt signal will let the daemon gracefully exit.
       daemon.kill(ProcessSignal.sigint);
       await daemon.exitCode;
-      expect(Directory(daemonWorkspace(workspace)).existsSync(), isFalse);
+      checkThat(Directory(daemonWorkspace(workspace)).existsSync()).isFalse();
     });
   });
 }

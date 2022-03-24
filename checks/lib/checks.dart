@@ -1,5 +1,5 @@
 export 'src/checks.dart' show checkThat, Check;
-export 'src/extensions/async.dart' show ChainAsync, FutureChecks, StreamChecks;
+export 'src/extensions/async.dart' show ChainAsync, FutureChecks, StreamChecks, IgnoreAsync;
 export 'src/extensions/core.dart'
     show
         BoolChecks,

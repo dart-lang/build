@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:async/async.dart';
 import 'package:checks/context.dart';
+import 'package:test_api/hooks.dart';
 
 extension FutureChecks<T> on Check<Future<T>> {
   Future<Check<T>> completes() async {
@@ -91,5 +92,11 @@ extension StreamChecks<T> on Check<StreamQueue<T>> {
 extension ChainAsync<T> on Future<Check<T>> {
   Future<void> that(FutureOr<void> Function(Check<T>) condition) async {
     await condition(await this);
+  }
+}
+
+extension IgnoreAsync on Future {
+  void byEndOfTest() {
+    whenComplete(TestHandle.current.markPending().complete);
   }
 }
