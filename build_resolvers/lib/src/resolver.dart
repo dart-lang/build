@@ -402,10 +402,13 @@ Future<String> _defaultSdkSummaryGenerator() async {
     await summaryFile.create(recursive: true);
     final embedderYamlPath =
         isFlutter ? p.join(_dartUiPath, '_embedder.yaml') : null;
-    await summaryFile.writeAsBytes(buildSdkSummary(
+    await summaryFile.writeAsBytes(
+      await buildSdkSummary2(
         sdkPath: _runningDartSdkPath,
         resourceProvider: PhysicalResourceProvider.INSTANCE,
-        embedderYamlPath: embedderYamlPath));
+        embedderYamlPath: embedderYamlPath,
+      ),
+    );
 
     await _createDepsFile(depsFile, currentDeps);
     watch.stop();
