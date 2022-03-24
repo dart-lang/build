@@ -16,9 +16,9 @@ extension AssetGraphChecks on Check<AssetGraph> {
             actual: 'a graph with ${item.allNodes.length} nodes',
             which: ['does not have exactly ${expected.allNodes.length} nodes']);
       }
-      if (!softCheck<Map<String, LanguageVersion?>>(
-          item.packageLanguageVersions,
-          (l) => l.deepEquals(expected.packageLanguageVersions))) {
+      if (softCheck<Map<String, LanguageVersion?>>(item.packageLanguageVersions,
+              (l) => l.deepEquals(expected.packageLanguageVersions)) !=
+          null) {
         return Rejection(
             actual: 'a graph with language versions '
                 '${literal(item.packageLanguageVersions)}',
@@ -46,17 +46,20 @@ extension AssetGraphChecks on Check<AssetGraph> {
           fail('Runtime type', literal(node.runtimeType),
               literal(expectedNode.runtimeType));
         }
-        if (!softCheck<Set<AssetId>>(
-            node.outputs, (o) => o.unorderedEquals(expectedNode.outputs))) {
+        if (softCheck<Set<AssetId>>(
+                node.outputs, (o) => o.unorderedEquals(expectedNode.outputs)) !=
+            null) {
           fail('Outputs', literal(node.outputs), literal(expectedNode.outputs));
         }
-        if (!softCheck<Set<AssetId>>(node.primaryOutputs,
-            (o) => o.unorderedEquals(expectedNode.primaryOutputs))) {
+        if (softCheck<Set<AssetId>>(node.primaryOutputs,
+                (o) => o.unorderedEquals(expectedNode.primaryOutputs)) !=
+            null) {
           fail('Primary outputs', literal(node.primaryOutputs),
               literal(expectedNode.primaryOutputs));
         }
-        if (!softCheck<Set<AssetId>>(node.anchorOutputs,
-            (o) => o.unorderedEquals(expectedNode.anchorOutputs))) {
+        if (softCheck<Set<AssetId>>(node.anchorOutputs,
+                (o) => o.unorderedEquals(expectedNode.anchorOutputs)) !=
+            null) {
           fail('Anchor outputs', literal(node.anchorOutputs),
               literal(expectedNode.anchorOutputs));
         }
@@ -69,8 +72,9 @@ extension AssetGraphChecks on Check<AssetGraph> {
             if (node.state != expectedNode.state) {
               fail('State', literal(node.state), literal(expectedNode.state));
             }
-            if (!softCheck<Set<AssetId>>(
-                node.inputs, (i) => i.unorderedEquals(expectedNode.inputs))) {
+            if (softCheck<Set<AssetId>>(node.inputs,
+                    (i) => i.unorderedEquals(expectedNode.inputs)) !=
+                null) {
               fail(
                   'Inputs', literal(node.inputs), literal(expectedNode.inputs));
             }
@@ -98,8 +102,9 @@ extension AssetGraphChecks on Check<AssetGraph> {
             }
           } else if (node is GlobAssetNode) {
             if (expectedNode is GlobAssetNode) {
-              if (!softCheck<List<AssetId>>(node.results!,
-                  (r) => r.unorderedEquals(expectedNode.results!))) {
+              if (softCheck<List<AssetId>>(node.results!,
+                      (r) => r.unorderedEquals(expectedNode.results!)) !=
+                  null) {
                 fail('results', literal(node.results),
                     literal(expectedNode.results));
               }
