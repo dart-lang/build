@@ -117,11 +117,15 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       var mergedChanges = collectChanges([changes]);
       var result = await _builder.run(mergedChanges,
           buildDirs: buildDirs, buildFilters: buildFilters);
+      var interestedInOutputs =
+          targets.any((e) => e is DefaultBuildTarget && e.reportChangedAssets);
 
-      outputs = {
-        for (var change in changes) change.id,
-        ...result.outputs,
-      };
+      if (interestedInOutputs) {
+        outputs = {
+          for (var change in changes) change.id,
+          ...result.outputs,
+        };
+      }
 
       for (var target in targets) {
         if (result.status == core.BuildStatus.success) {
