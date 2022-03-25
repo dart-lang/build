@@ -45,7 +45,7 @@ abstract class DefaultBuildTarget
   /// - $target/**
   BuiltSet<String>? get buildFilters;
 
-  /// Whether the [BuildResult] events emitted for this target should report a
+  /// Whether the [BuildResults] events emitted for this target should report a
   /// list of assets invalidated in a build.
   ///
   /// This defaults to `false` to reduce the serialization overhead when this
