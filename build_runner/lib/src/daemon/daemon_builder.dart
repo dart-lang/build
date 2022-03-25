@@ -111,10 +111,18 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
               '${target.target}/**', _buildOptions.packageGraph.root.name));
       }
     }
+    Iterable<AssetId>? outputs;
+
     try {
       var mergedChanges = collectChanges([changes]);
       var result = await _builder.run(mergedChanges,
           buildDirs: buildDirs, buildFilters: buildFilters);
+
+      outputs = {
+        for (var change in changes) change.id,
+        ...result.outputs,
+      };
+
       for (var target in targets) {
         if (result.status == core.BuildStatus.success) {
           // TODO(grouma) - Can we notify if a target was cached?
@@ -140,7 +148,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       }
       _logMessage(Level.SEVERE, 'Build Failed:\n${e.toString()}');
     }
-    _signalEnd(results);
+    _signalEnd(results, outputs?.map((e) => e.uri));
   }
 
   @override
@@ -156,9 +164,16 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
           ..level = level,
       ));
 
-  void _signalEnd(Iterable<BuildResult> results) {
+  void _signalEnd(Iterable<BuildResult> results,
+      [Iterable<Uri>? changedAssets]) {
     _buildingCompleter!.complete();
-    _buildResults.add(BuildResults((b) => b..results.addAll(results)));
+    _buildResults.add(BuildResults((b) {
+      b.results.addAll(results);
+
+      if (changedAssets != null) {
+        b.changedAssets.addAll(changedAssets);
+      }
+    }));
   }
 
   void _signalStart(Iterable<String> targets) {

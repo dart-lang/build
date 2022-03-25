@@ -151,7 +151,15 @@ class _$BuildResultsSerializer implements StructuredSerializer<BuildResults> {
           specifiedType:
               const FullType(BuiltList, const [const FullType(BuildResult)])),
     ];
-
+    Object? value;
+    value = object.changedAssets;
+    if (value != null) {
+      result
+        ..add('changedAssets')
+        ..add(serializers.serialize(value,
+            specifiedType:
+                const FullType(BuiltList, const [const FullType(Uri)])));
+    }
     return result;
   }
 
@@ -171,6 +179,12 @@ class _$BuildResultsSerializer implements StructuredSerializer<BuildResults> {
           result.results.replace(serializers.deserialize(value,
                   specifiedType: const FullType(
                       BuiltList, const [const FullType(BuildResult)]))!
+              as BuiltList<Object?>);
+          break;
+        case 'changedAssets':
+          result.changedAssets.replace(serializers.deserialize(value,
+                  specifiedType:
+                      const FullType(BuiltList, const [const FullType(Uri)]))!
               as BuiltList<Object?>);
           break;
       }
@@ -320,11 +334,13 @@ class DefaultBuildResultBuilder
 class _$BuildResults extends BuildResults {
   @override
   final BuiltList<BuildResult> results;
+  @override
+  final BuiltList<Uri>? changedAssets;
 
   factory _$BuildResults([void Function(BuildResultsBuilder)? updates]) =>
       (new BuildResultsBuilder()..update(updates)).build();
 
-  _$BuildResults._({required this.results}) : super._() {
+  _$BuildResults._({required this.results, this.changedAssets}) : super._() {
     BuiltValueNullFieldError.checkNotNull(results, 'BuildResults', 'results');
   }
 
@@ -338,18 +354,21 @@ class _$BuildResults extends BuildResults {
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is BuildResults && results == other.results;
+    return other is BuildResults &&
+        results == other.results &&
+        changedAssets == other.changedAssets;
   }
 
   @override
   int get hashCode {
-    return $jf($jc(0, results.hashCode));
+    return $jf($jc($jc(0, results.hashCode), changedAssets.hashCode));
   }
 
   @override
   String toString() {
     return (newBuiltValueToStringHelper('BuildResults')
-          ..add('results', results))
+          ..add('results', results)
+          ..add('changedAssets', changedAssets))
         .toString();
   }
 }
@@ -363,12 +382,19 @@ class BuildResultsBuilder
       _$this._results ??= new ListBuilder<BuildResult>();
   set results(ListBuilder<BuildResult>? results) => _$this._results = results;
 
+  ListBuilder<Uri>? _changedAssets;
+  ListBuilder<Uri> get changedAssets =>
+      _$this._changedAssets ??= new ListBuilder<Uri>();
+  set changedAssets(ListBuilder<Uri>? changedAssets) =>
+      _$this._changedAssets = changedAssets;
+
   BuildResultsBuilder();
 
   BuildResultsBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
       _results = $v.results.toBuilder();
+      _changedAssets = $v.changedAssets?.toBuilder();
       _$v = null;
     }
     return this;
@@ -389,12 +415,16 @@ class BuildResultsBuilder
   _$BuildResults build() {
     _$BuildResults _$result;
     try {
-      _$result = _$v ?? new _$BuildResults._(results: results.build());
+      _$result = _$v ??
+          new _$BuildResults._(
+              results: results.build(), changedAssets: _changedAssets?.build());
     } catch (_) {
       late String _$failedField;
       try {
         _$failedField = 'results';
         results.build();
+        _$failedField = 'changedAssets';
+        _changedAssets?.build();
       } catch (e) {
         throw new BuiltValueNestedFieldError(
             'BuildResults', _$failedField, e.toString());

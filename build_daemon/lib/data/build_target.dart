@@ -2,6 +2,8 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
+import 'build_status.dart';
+
 part 'build_target.g.dart';
 
 /// The string representation of a build target, e.g. folder path.
@@ -15,6 +17,10 @@ abstract class DefaultBuildTarget
         Built<DefaultBuildTarget, DefaultBuildTargetBuilder> {
   static Serializer<DefaultBuildTarget> get serializer =>
       _$defaultBuildTargetSerializer;
+
+  @BuiltValueHook(initializeBuilder: true)
+  static void _setDefaults(DefaultBuildTargetBuilder b) =>
+      b.reportChangedAssets = false;
 
   factory DefaultBuildTarget([void Function(DefaultBuildTargetBuilder) b]) =
       _$DefaultBuildTarget;
@@ -38,6 +44,13 @@ abstract class DefaultBuildTarget
   /// - package:*/**
   /// - $target/**
   BuiltSet<String>? get buildFilters;
+
+  /// Whether the [BuildResult] events emitted for this target should report a
+  /// list of assets invalidated in a build.
+  ///
+  /// This defaults to `false` to reduce the serialization overhead when this
+  /// information is not required.
+  bool get reportChangedAssets;
 }
 
 /// The location to write the build outputs.

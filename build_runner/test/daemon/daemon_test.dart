@@ -24,7 +24,9 @@ void main() {
   Process? daemonProcess;
   Stream<String>? stdoutLines;
   String workspace() => p.join(d.sandbox, 'a');
-  final webTarget = DefaultBuildTarget((b) => b..target = 'web');
+  final webTarget = DefaultBuildTarget((b) => b
+    ..target = 'web'
+    ..reportChangedAssets = true);
   final testTarget = DefaultBuildTarget((b) => b..target = 'test');
   var clients = <BuildDaemonClient>[];
 
@@ -310,10 +312,17 @@ main() {
         ..registerBuildTarget(webTarget)
         ..startBuild();
       clients.add(client);
+
       expect(
-          client.buildResults,
-          emitsThrough((BuildResults b) =>
-              b.results.first.status == BuildStatus.succeeded));
+        client.buildResults,
+        emitsThrough(
+          isA<BuildResults>()
+              .having((e) => e.results.first.status, 'results.first.status',
+                  BuildStatus.succeeded)
+              .having((e) => e.changedAssets, 'changedAsssets',
+                  contains(Uri.parse('asset:a/web/main.dart.js'))),
+        ),
+      );
     });
 
     test('allows multiple clients to connect and build', () async {

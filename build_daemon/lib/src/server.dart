@@ -144,9 +144,27 @@ class Server {
         }
       }))
       ..add(_builder.builds.listen((status) {
-        var message = jsonEncode(_serializers.serialize(status));
+        // Don't serialize or send changed assets if the client isn't interested
+        // in them.
+        String? message, messageWithoutChangedAssets;
+
         for (var channel in _interestedChannels) {
-          channel.sink.add(message);
+          var targets = _buildTargetManager.targetsFor(channel);
+          var wantsChangedAssets = targets
+              .any((e) => e is DefaultBuildTarget && e.reportChangedAssets);
+
+          String messageForChannel;
+
+          if (wantsChangedAssets) {
+            messageForChannel =
+                message ??= jsonEncode(_serializers.serialize(status));
+          } else {
+            messageForChannel = messageWithoutChangedAssets ??= jsonEncode(
+                _serializers
+                    .serialize(status.rebuild((b) => b.changedAssets = null)));
+          }
+
+          channel.sink.add(messageForChannel);
         }
       }))
       ..add(_logs.listen((log) {
