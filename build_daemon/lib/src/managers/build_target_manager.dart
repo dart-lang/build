@@ -19,6 +19,7 @@ bool _shouldBuild(BuildTarget target, Iterable<WatchEvent> changes) =>
 /// the Dart Build Daemon.
 class BuildTargetManager {
   var _buildTargets = <BuildTarget, Set<WebSocketChannel>>{};
+  final _channelSubscriptions = <WebSocketChannel, Set<BuildTarget>>{};
 
   bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuild;
 
@@ -37,16 +38,24 @@ class BuildTargetManager {
   /// Adds a tracked build target with corresponding interested channel.
   void addBuildTarget(BuildTarget target, WebSocketChannel channel) {
     _buildTargets.putIfAbsent(target, () => <WebSocketChannel>{}).add(channel);
+    _channelSubscriptions.putIfAbsent(channel, () => {}).add(target);
   }
 
   /// Returns channels that are interested in the provided target.
   Set<WebSocketChannel> channels(BuildTarget target) =>
       _buildTargets[target] ?? <WebSocketChannel>{};
 
-  void removeChannel(WebSocketChannel channel) =>
-      _buildTargets = Map.fromEntries(_buildTargets.entries
-          .map((e) => MapEntry(e.key, e.value..remove(channel)))
-          .where((e) => e.value.isNotEmpty));
+  /// Returns build targets that the [channel] has added.
+  Iterable<BuildTarget> targetsFor(WebSocketChannel channel) {
+    return _channelSubscriptions[channel] ?? const Iterable.empty();
+  }
+
+  void removeChannel(WebSocketChannel channel) {
+    _buildTargets = Map.fromEntries(_buildTargets.entries
+        .map((e) => MapEntry(e.key, e.value..remove(channel)))
+        .where((e) => e.value.isNotEmpty));
+    _channelSubscriptions.remove(channel);
+  }
 
   Set<BuildTarget> targetsForChanges(List<WatchEvent> changes) =>
       targets.where((target) => shouldBuild(target, changes)).toSet();

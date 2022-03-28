@@ -4,6 +4,7 @@
   errors from the directory watcher.
 - Ignore the no_leading_underscores_for_library_prefixes lint in the generated
   build script.
+- Report changed assets when running as a deamon.
 
 ## 2.1.8
 

@@ -6,6 +6,8 @@ import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
+import 'build_target.dart';
+
 part 'build_status.g.dart';
 
 class BuildStatus extends EnumClass {
@@ -59,4 +61,16 @@ abstract class BuildResults
   BuildResults._();
 
   BuiltList<BuildResult> get results;
+
+  /// A list of asset URIs that were modified since the last build.
+  ///
+  /// This includes both sources that were updated and affected generated assets
+  /// that were rebuilt.
+  ///
+  /// To avoid communication overhead for clients not interested in this field,
+  /// it is not set by default. To enable it, register at least one target with
+  /// [DefaultBuildTarget.reportChangedAssets].
+  /// However, build implementations can unconditionally set this field as it
+  /// is stripped out in the daemon server implementation.
+  BuiltList<Uri>? get changedAssets;
 }

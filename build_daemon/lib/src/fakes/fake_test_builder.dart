@@ -15,6 +15,8 @@ class FakeTestDaemonBuilder implements DaemonBuilder {
   static final buildCompletedMessage = 'Build Completed';
 
   final _outputStreamController = StreamController<ServerLog>();
+  final _buildsController = StreamController<BuildResults>.broadcast();
+
   late final Stream<ServerLog> _logs;
 
   FakeTestDaemonBuilder() {
@@ -22,7 +24,7 @@ class FakeTestDaemonBuilder implements DaemonBuilder {
   }
 
   @override
-  Stream<BuildResults> get builds => Stream.empty();
+  Stream<BuildResults> get builds => _buildsController.stream;
 
   @override
   Stream<ServerLog> get logs => _logs;
@@ -34,8 +36,16 @@ class FakeTestDaemonBuilder implements DaemonBuilder {
       ..loggerName = loggerName
       ..level = Level.INFO
       ..message = buildCompletedMessage));
+
+    _buildsController.add(BuildResults(
+        (b) => b.changedAssets.add(Uri.parse('package:foo/bar.dart'))));
   }
 
   @override
-  Future<void> stop() => _outputStreamController.close();
+  Future<void> stop() {
+    return Future.wait([
+      _outputStreamController.close(),
+      _buildsController.close(),
+    ]);
+  }
 }

@@ -27,6 +27,9 @@ class _$DefaultBuildTargetSerializer
       serializers.serialize(object.blackListPatterns,
           specifiedType:
               const FullType(BuiltSet, const [const FullType(RegExp)])),
+      'reportChangedAssets',
+      serializers.serialize(object.reportChangedAssets,
+          specifiedType: const FullType(bool)),
       'target',
       serializers.serialize(object.target,
           specifiedType: const FullType(String)),
@@ -78,6 +81,10 @@ class _$DefaultBuildTargetSerializer
                   specifiedType:
                       const FullType(BuiltSet, const [const FullType(String)]))!
               as BuiltSet<Object?>);
+          break;
+        case 'reportChangedAssets':
+          result.reportChangedAssets = serializers.deserialize(value,
+              specifiedType: const FullType(bool)) as bool;
           break;
         case 'target':
           result.target = serializers.deserialize(value,
@@ -153,6 +160,8 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
   @override
   final BuiltSet<String>? buildFilters;
   @override
+  final bool reportChangedAssets;
+  @override
   final String target;
 
   factory _$DefaultBuildTarget(
@@ -163,10 +172,13 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
       {required this.blackListPatterns,
       this.outputLocation,
       this.buildFilters,
+      required this.reportChangedAssets,
       required this.target})
       : super._() {
     BuiltValueNullFieldError.checkNotNull(
         blackListPatterns, 'DefaultBuildTarget', 'blackListPatterns');
+    BuiltValueNullFieldError.checkNotNull(
+        reportChangedAssets, 'DefaultBuildTarget', 'reportChangedAssets');
     BuiltValueNullFieldError.checkNotNull(
         target, 'DefaultBuildTarget', 'target');
   }
@@ -187,14 +199,19 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
         blackListPatterns == other.blackListPatterns &&
         outputLocation == other.outputLocation &&
         buildFilters == other.buildFilters &&
+        reportChangedAssets == other.reportChangedAssets &&
         target == other.target;
   }
 
   @override
   int get hashCode {
     return $jf($jc(
-        $jc($jc($jc(0, blackListPatterns.hashCode), outputLocation.hashCode),
-            buildFilters.hashCode),
+        $jc(
+            $jc(
+                $jc($jc(0, blackListPatterns.hashCode),
+                    outputLocation.hashCode),
+                buildFilters.hashCode),
+            reportChangedAssets.hashCode),
         target.hashCode));
   }
 
@@ -204,6 +221,7 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
           ..add('blackListPatterns', blackListPatterns)
           ..add('outputLocation', outputLocation)
           ..add('buildFilters', buildFilters)
+          ..add('reportChangedAssets', reportChangedAssets)
           ..add('target', target))
         .toString();
   }
@@ -231,11 +249,18 @@ class DefaultBuildTargetBuilder
   set buildFilters(SetBuilder<String>? buildFilters) =>
       _$this._buildFilters = buildFilters;
 
+  bool? _reportChangedAssets;
+  bool? get reportChangedAssets => _$this._reportChangedAssets;
+  set reportChangedAssets(bool? reportChangedAssets) =>
+      _$this._reportChangedAssets = reportChangedAssets;
+
   String? _target;
   String? get target => _$this._target;
   set target(String? target) => _$this._target = target;
 
-  DefaultBuildTargetBuilder();
+  DefaultBuildTargetBuilder() {
+    DefaultBuildTarget._setDefaults(this);
+  }
 
   DefaultBuildTargetBuilder get _$this {
     final $v = _$v;
@@ -243,6 +268,7 @@ class DefaultBuildTargetBuilder
       _blackListPatterns = $v.blackListPatterns.toBuilder();
       _outputLocation = $v.outputLocation?.toBuilder();
       _buildFilters = $v.buildFilters?.toBuilder();
+      _reportChangedAssets = $v.reportChangedAssets;
       _target = $v.target;
       _$v = null;
     }
@@ -269,6 +295,10 @@ class DefaultBuildTargetBuilder
               blackListPatterns: blackListPatterns.build(),
               outputLocation: _outputLocation?.build(),
               buildFilters: _buildFilters?.build(),
+              reportChangedAssets: BuiltValueNullFieldError.checkNotNull(
+                  reportChangedAssets,
+                  'DefaultBuildTarget',
+                  'reportChangedAssets'),
               target: BuiltValueNullFieldError.checkNotNull(
                   target, 'DefaultBuildTarget', 'target'));
     } catch (_) {
