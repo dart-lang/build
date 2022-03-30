@@ -124,13 +124,15 @@ void main() {
         checkThat(aLib)
           ..has((l) => l.name, 'name').equals('a')
           ..has((l) => l.importedLibraries, 'importedLibrarys').that((i) => i
-            ..hasLength(2)
+            ..length.equals(2)
             ..contains((l) => l.has((l) => l.name, 'name').equals('b')));
 
         var bLib = await resolver.findLibraryByName('b');
         checkThat(bLib).isNotNull()
           ..has((b) => b.name, 'name').equals('b')
-          ..has((b) => b.importedLibraries, 'importedLibraries').hasLength(1);
+          ..has((b) => b.importedLibraries, 'importedLibraries')
+              .length
+              .equals(1);
         await buildStep.complete();
       });
     });

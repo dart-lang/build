@@ -1,16 +1,9 @@
 import 'package:checks/context.dart';
 
-import 'core.dart' show EqualityChecks;
+import 'core.dart' show EqualityChecks, HasField;
 
 extension IterableChecks<T> on Check<Iterable<T>> {
-  void hasLength(int l) {
-    context.expect(() => ['has length ${literal(l)}'], (v) {
-      final actualLength = v.length;
-      if (actualLength == l) return null;
-      return Rejection(
-          actual: literal(v), which: ['has length ${literal(actualLength)}']);
-    });
-  }
+  Check<int> get length => has((l) => l.length, 'length');
 
   void isEmpty() {
     context.expect(() => const ['is empty'], (l) {

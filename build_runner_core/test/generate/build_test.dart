@@ -923,7 +923,7 @@ void main() {
         logPerformanceDir: 'perf',
       );
       var logs = await reader.findAssets(Glob('perf/**')).toList();
-      checkThat(logs).hasLength(1);
+      checkThat(logs).length.equals(1);
       var perf = BuildPerformance.fromJson(
           jsonDecode(await reader.readAsString(logs.first))
               as Map<String, dynamic>);
