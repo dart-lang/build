@@ -88,11 +88,12 @@ class MockSpec<T> {
   /// override member, unless the member is specified in [unsupportedMembers],
   /// or a fallback implementation is given in [fallbackGenerators].
   ///
-  /// If [unsupportedMembers] contains the name of each such member, the mock
-  /// class is generated with an override, with throws an exception, for each
-  /// member with a non-nullable unknown return type. Such an override cannot be
-  /// used with the mockito stubbing and verification APIs, but makes the mock
-  /// class a valid implementation of the class-to-mock.
+  /// For each member M in [unsupportedMembers], the mock class will have an
+  /// override that throws, which may be useful if the return type T of M is
+  /// non-nullable and it's inconvenient to define a fallback generator for M,
+  /// e.g. if T is an unknown type variable. Such an override cannot be used
+  /// with the mockito stubbing and verification APIs, but makes the mock class
+  /// a valid implementation of the class-to-mock.
   ///
   /// Each entry in [fallbackGenerators] specifies a mapping from a method name
   /// to a function, with the same signature as the method. This function is
