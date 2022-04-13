@@ -1,6 +1,7 @@
-## 2.0.7-dev
+## 2.0.7
 
 - Updated error messages to use `dart pub` instead of `pub`.
+- Add performance tracking stages to all the per-action resolver calls.
 
 ## 2.0.6
 

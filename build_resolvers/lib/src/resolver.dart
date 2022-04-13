@@ -79,40 +79,50 @@ class PerActionResolver implements ReleasableResolver {
   }
 
   @override
-  Future<LibraryElement?> findLibraryByName(String libraryName) async {
-    await for (final library in libraries) {
-      if (library.name == libraryName) return library;
-    }
-    return null;
-  }
+  Future<LibraryElement?> findLibraryByName(String libraryName) =>
+      _step.trackStage('findLibraryByName $libraryName', () async {
+        await for (final library in libraries) {
+          if (library.name == libraryName) return library;
+        }
+        return null;
+      });
 
   @override
-  Future<bool> isLibrary(AssetId assetId) async {
-    if (!await _step.canRead(assetId)) return false;
-    await _resolveIfNecessary(assetId, transitive: false);
-    return _delegate.isLibrary(assetId);
-  }
+  Future<bool> isLibrary(AssetId assetId) =>
+      _step.trackStage('isLibrary $assetId', () async {
+        if (!await _step.canRead(assetId)) return false;
+        await _resolveIfNecessary(assetId, transitive: false);
+        return _delegate.isLibrary(assetId);
+      });
 
   @override
   Future<AstNode?> astNodeFor(Element element, {bool resolve = false}) =>
-      _delegate.astNodeFor(element, resolve: resolve);
+      _step.trackStage('astNodeFor $element',
+          () => _delegate.astNodeFor(element, resolve: resolve));
 
   @override
   Future<CompilationUnit> compilationUnitFor(AssetId assetId,
-      {bool allowSyntaxErrors = false}) async {
-    if (!await _step.canRead(assetId)) throw AssetNotFoundException(assetId);
-    await _resolveIfNecessary(assetId, transitive: false);
-    return _delegate.compilationUnitFor(assetId,
-        allowSyntaxErrors: allowSyntaxErrors);
-  }
+          {bool allowSyntaxErrors = false}) =>
+      _step.trackStage('compilationUnitFor $assetId', () async {
+        if (!await _step.canRead(assetId)) {
+          throw AssetNotFoundException(assetId);
+        }
+        await _resolveIfNecessary(assetId, transitive: false);
+        return _delegate.compilationUnitFor(assetId,
+            allowSyntaxErrors: allowSyntaxErrors);
+      });
 
   @override
   Future<LibraryElement> libraryFor(AssetId assetId,
-      {bool allowSyntaxErrors = false}) async {
-    if (!await _step.canRead(assetId)) throw AssetNotFoundException(assetId);
-    await _resolveIfNecessary(assetId, transitive: true);
-    return _delegate.libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
-  }
+          {bool allowSyntaxErrors = false}) =>
+      _step.trackStage('libraryFor $assetId', () async {
+        if (!await _step.canRead(assetId)) {
+          throw AssetNotFoundException(assetId);
+        }
+        await _resolveIfNecessary(assetId, transitive: true);
+        return _delegate.libraryFor(assetId,
+            allowSyntaxErrors: allowSyntaxErrors);
+      });
 
   // Ensures that we finish resolving one thing before attempting to resolve
   // another, otherwise there are race conditions with `_entryPoints` being
@@ -126,9 +136,11 @@ class PerActionResolver implements ReleasableResolver {
 
           // the resolver will only visit assets that haven't been resolved in this
           // step yet
-          await _delegate._uriResolver.performResolve(
-              _step, [id], _delegate._driver,
-              transitive: transitive);
+          await _step.trackStage(
+              'Resolving library $id',
+              () => _delegate._uriResolver.performResolve(
+                  _step, [id], _delegate._driver,
+                  transitive: transitive));
         }
       });
 
