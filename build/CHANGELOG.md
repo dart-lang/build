@@ -1,3 +1,7 @@
+## 2.2.2
+
+- Allow analyzer version 4.x.
+
 ## 2.2.1
 
 - Fix a bug where builders were allowed to write to the same asset multiple

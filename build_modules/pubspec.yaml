@@ -1,5 +1,5 @@
 name: build_modules
-version: 4.0.5-dev
+version: 4.0.5
 description: Builders for Dart modules
 repository: https://github.com/dart-lang/build/tree/master/build_modules
 
@@ -7,7 +7,7 @@ environment:
   sdk: ">=2.14.0 <3.0.0"
 
 dependencies:
-  analyzer: ">=3.4.1 <4.0.0"
+  analyzer: ">=3.4.1 <5.0.0"
   async: ^2.5.0
   bazel_worker: ^1.0.0
   build: ^2.0.0
@@ -33,3 +33,6 @@ dev_dependencies:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
+
+dependency_overrides:
+  analyzer: 4.0.0

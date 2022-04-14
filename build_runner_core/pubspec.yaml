@@ -27,7 +27,7 @@ dependencies:
   yaml: ^3.0.0
 
 dev_dependencies:
-  analyzer: ">=2.0.0 <4.0.0"
+  analyzer: ">=2.0.0 <5.0.0"
   build_runner: ^2.0.0
   build_test: ^2.0.0
   lints: '>=1.0.0 <3.0.0'
@@ -37,3 +37,6 @@ dev_dependencies:
   test_process: ^2.0.0
   _test_common:
     path: ../_test_common
+
+dependency_overrides:
+  analyzer: 4.0.0

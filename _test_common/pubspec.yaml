@@ -32,3 +32,4 @@ dependency_overrides:
     path: ../build_runner_core
   build_test:
     path: ../build_test
+  analyzer: 4.0.0

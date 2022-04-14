@@ -1,5 +1,5 @@
 name: build_vm_compilers
-version: 1.0.10
+version: 1.0.11
 description: Builder implementations wrapping Dart VM compilers.
 repository: https://github.com/dart-lang/build/tree/master/build_vm_compilers
 
@@ -7,7 +7,7 @@ environment:
   sdk: ">=2.12.0 <3.0.0"
 
 dependencies:
-  analyzer: ">=1.0.0 <4.0.0"
+  analyzer: ">=1.0.0 <5.0.0"
   build: ^2.0.0
   build_config: ^1.0.0
   build_modules: ^4.0.0
@@ -21,3 +21,6 @@ dev_dependencies:
   test_descriptor: ^2.0.0
   _test_common:
     path: ../_test_common
+
+dependency_overrides:
+  analyzer: 4.0.0
