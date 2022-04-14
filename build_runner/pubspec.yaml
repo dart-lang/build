@@ -56,4 +56,3 @@ dev_dependencies:
 dependency_overrides:
   build_daemon:
     path: ../build_daemon
-  analyzer: 4.0.0

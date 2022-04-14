@@ -19,4 +19,3 @@ dependency_overrides:
     path: ../build
   build_runner_core:
     path: ../build_runner_core
-  analyzer: 4.0.0
