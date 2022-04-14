@@ -1,4 +1,4 @@
-## 3.1.0-dev
+## 3.1.0
 
 - Add `BuildResults.changedAssets` containing asset URIs changed during a
   build.
