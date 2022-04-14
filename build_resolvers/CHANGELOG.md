@@ -1,3 +1,7 @@
+## 2.0.8
+
+- Allow analyzer version 4.x.
+
 ## 2.0.7
 
 - Updated error messages to use `dart pub` instead of `pub`.

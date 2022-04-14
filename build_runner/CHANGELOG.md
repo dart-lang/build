@@ -1,10 +1,11 @@
-## 2.1.9-dev
+## 2.1.9
 
 - Fix up the formatting a bit for the error message that is logged when we get
   errors from the directory watcher.
 - Ignore the no_leading_underscores_for_library_prefixes lint in the generated
   build script.
 - Report changed assets when running as a deamon.
+- Allow analyzer version 4.x.
 
 ## 2.1.8
 
