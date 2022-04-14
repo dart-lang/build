@@ -855,8 +855,7 @@ foo generated content
 }
 
 const _outdatedAnalyzerMessage =
-    'The latest `analyzer` version may not fully support your current '
-    'SDK version.';
+    '`analyzer` version may not fully support your current SDK version.';
 
 Future _generateTest(CommentGenerator gen, String expectedContent) async {
   final srcs = _createPackageStub();

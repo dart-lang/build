@@ -1,8 +1,9 @@
-## 1.2.2-dev
+## 1.2.2
 
 * Enable the fix for single cascade statements when formatting Dart code.
   * Individual builders can opt out of this by providing a custom `formatOutput`
     function to the `PartBuilder` or `LibraryBuilder` constructors.
+* Allow analyzer version 4.x.
 
 ## 1.2.1
 
