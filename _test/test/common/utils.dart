@@ -162,7 +162,7 @@ Future<TestProcess> _runTests(String executable, List<String> scriptArgs,
     List<String>? testArgs}) async {
   usePrecompiled ??= true;
   testArgs ??= [];
-  testArgs.addAll(['-p', 'chrome']);
+  testArgs.addAll(['-p', 'chrome', '-r', 'expanded']);
   if (usePrecompiled) {
     var args = scriptArgs.toList()
       ..add('test')
