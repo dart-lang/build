@@ -17,6 +17,24 @@ void main() {
     );
   });
 
+  test('^ matches only identical inputs', () {
+    _expectOutputs(
+      {
+        '^foo.txt': ['foo.txt.0']
+      },
+      _asset('foo.txt'),
+      [_asset('foo.txt.0')],
+    );
+
+    _expectOutputs(
+      {
+        '^foo.txt': ['foo.txt.0']
+      },
+      _asset('lib/foo.txt'),
+      [],
+    );
+  });
+
   test('outputs cannot be equal to inputs', () {
     expect(
       () => expectedOutputs(

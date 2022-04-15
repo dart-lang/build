@@ -22,12 +22,17 @@ extensions.
 
 Keys in `buildExtensions` match a suffix in the path of potential inputs. That
 is, a builder will run when an input ends with its input extension.
-Valid outputs are formed by replacing the matched suffix with values in that 
+Valid outputs are formed by replacing the matched suffix with values in that
 map. For instance, `{'.dart': ['.g.dart']}` matches all files ending with
 `.dart` and allows the builder to write a file  with the same name but with a
 `.g.dart` extension instead.
 A primary input `some_library.dart` would match the `.dart` suffix and expect
 an output `some_library.g.dart`.
+
+The input extensions (keys in the `buildExtensions` map) may also start with a
+`^`. In this case, the input extension changes from a suffix match to an exact
+path match. For example an input extension of `^pubspec.yaml` would only match
+the root pubspec file, and no other nested pubspecs.
 
 If a `Builder` has an empty string key in `buildExtensions` then every input
 will trigger a build step, and the expected output will have the extension
@@ -47,7 +52,7 @@ a top-level `proto/` folder, and that generated files should go to
 `lib/src/proto/`. This cannot be expressed with simple build extensions that
 may replace a suffix in the asset's path only.
 Using `{'proto/{{}}.proto': ['lib/src/proto/{{}}.dart']}` as a build extension
-lets the builder read files in `proto/` and emit Dart files in the desired 
+lets the builder read files in `proto/` and emit Dart files in the desired
 location. Here, the __`{{}}`__ is called a _capture group_. Capture groups have
 the following noteworthy properties:
 
@@ -67,7 +72,7 @@ the following noteworthy properties:
   expected output is `lib/src/proto/services/auth.dart`.
 - Build extensions using capture groups can start with `^` to enforce matches
   over the entire input (which is still technically a suffix).
-  In the example above, the builder would also run on 
+  In the example above, the builder would also run on
   `lib/src/proto/test.proto` (outputting `lib/src/lib/src/proto/test.dart`).
   If the builder had used `^proto/{{}}.proto` as an input, it would not have
   run on strict suffix matches.
@@ -75,7 +80,7 @@ the following noteworthy properties:
 #### Using multiple capture groups
 
 A builder may use multiple capture groups in an input. Groups must be given a
-name to distinguish them. For instance, `{{foo}}` declares a capture group 
+name to distinguish them. For instance, `{{foo}}` declares a capture group
 named `foo`. Names may consist of alphanumeric characters only. When using
 multiple capture groups, they must all have unique names. And once again, every
 output must refer to every capture group used in the input.
@@ -101,7 +106,7 @@ With two capture groups, `{{dir}}/{{file}}.dart` can be used as an input. As
 input extensions match suffixes, `{{file}}.dart` matches Dart files and assigns
 everything between the last slash and the `.dart` extension to a capture named
 `file`. Finally, `{{dir}}` captures the directory of the input.
-By using `{{dir}}/generated/{{file}}.api.dart` and 
+By using `{{dir}}/generated/{{file}}.api.dart` and
 `{{dir}}/generated/{{file}}.impl.dart` as output extensions, the builder may
 emit files in the desired directory.
 
