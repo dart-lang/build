@@ -1,3 +1,7 @@
+## 2.1.10
+
+- Allow build version 2.3.x.
+
 ## 2.1.9
 
 - Fix up the formatting a bit for the error message that is logged when we get
