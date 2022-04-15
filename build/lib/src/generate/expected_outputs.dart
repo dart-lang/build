@@ -21,6 +21,9 @@ Iterable<AssetId> expectedOutputs(Builder builder, AssetId input) sync* {
   }
 }
 
+// Regexp for capture groups.
+final RegExp _captureGroupRegexp = RegExp('{{(\\w*)}}');
+
 // We can safely cache parsed build extensions for each builder since build
 // extensions are required to not change for a builder.
 final _parsedInputs = Expando<List<_ParsedBuildOutputs>>();
@@ -52,31 +55,97 @@ extension on AssetId {
 }
 
 abstract class _ParsedBuildOutputs {
-  static final RegExp _captureGroup = RegExp('{{(\\w*)}}');
-
   _ParsedBuildOutputs();
 
   factory _ParsedBuildOutputs.parse(
       Builder builder, String input, List<String> outputs) {
-    final matches = _captureGroup.allMatches(input).toList();
-
-    if (matches.isEmpty) {
-      // The input does not contain a capture group, so we should simply match
-      // all assets whose paths ends with the desired input.
-      // Also, make sure that no outputs use capture groups.
-      for (final output in outputs) {
-        if (_captureGroup.hasMatch(output)) {
-          throw ArgumentError(
-            'The builder `$builder` declares an output "$output" using a '
-            'capture group. As its input "$input" does not use a capture '
-            'group, this is forbidden.',
-          );
-        }
-      }
-
-      return _SuffixBuildOutputs(input, outputs);
+    final matches = _captureGroupRegexp.allMatches(input).toList();
+    if (matches.isNotEmpty) {
+      return _CapturingBuildOutputs.parse(builder, input, outputs, matches);
     }
 
+    // Make sure that no outputs use capture groups, if they aren't used in
+    // inputs.
+    for (final output in outputs) {
+      if (_captureGroupRegexp.hasMatch(output)) {
+        throw ArgumentError(
+          'The builder `$builder` declares an output "$output" using a '
+          'capture group. As its input "$input" does not use a capture '
+          'group, this is forbidden.',
+        );
+      }
+    }
+
+    if (input.startsWith('^')) {
+      return _FullMatchBuildOutputs(input.substring(1), outputs);
+    } else {
+      return _SuffixBuildOutputs(input, outputs);
+    }
+  }
+
+  bool hasAnyOutputFor(AssetId input);
+  Iterable<AssetId> matchingOutputsFor(AssetId input);
+}
+
+/// A simple build input/output set that matches an entire path and doesn't use
+/// capture groups.
+class _FullMatchBuildOutputs extends _ParsedBuildOutputs {
+  final String inputExtension;
+  final List<String> outputExtensions;
+
+  _FullMatchBuildOutputs(this.inputExtension, this.outputExtensions);
+
+  @override
+  bool hasAnyOutputFor(AssetId input) => input.path == inputExtension;
+
+  @override
+  Iterable<AssetId> matchingOutputsFor(AssetId input) {
+    if (!hasAnyOutputFor(input)) return const Iterable.empty();
+
+    // If we expect an output, the asset's path ends with the input extension.
+    // Expected outputs just replace the matched suffix in the path.
+    return outputExtensions
+        .map((extension) => AssetId(input.package, extension));
+  }
+}
+
+/// A simple build input/output set which matches file suffixes and doesn't use
+/// capture groups.
+class _SuffixBuildOutputs extends _ParsedBuildOutputs {
+  final String inputExtension;
+  final List<String> outputExtensions;
+
+  _SuffixBuildOutputs(this.inputExtension, this.outputExtensions);
+
+  @override
+  bool hasAnyOutputFor(AssetId input) => input.path.endsWith(inputExtension);
+
+  @override
+  Iterable<AssetId> matchingOutputsFor(AssetId input) {
+    if (!hasAnyOutputFor(input)) return const Iterable.empty();
+
+    // If we expect an output, the asset's path ends with the input extension.
+    // Expected outputs just replace the matched suffix in the path.
+    return outputExtensions.map(
+        (extension) => input.replaceSuffix(inputExtension.length, extension));
+  }
+}
+
+/// A build input with a capture group `{{}}` that's referenced in the outputs.
+class _CapturingBuildOutputs extends _ParsedBuildOutputs {
+  final RegExp _pathMatcher;
+
+  /// The names of all capture groups used in the inputs.
+  ///
+  /// The [_pathMatcher] will always match the same amount of groups in the
+  /// same order.
+  final List<String> _groupNames;
+  final List<String> _outputs;
+
+  _CapturingBuildOutputs(this._pathMatcher, this._groupNames, this._outputs);
+
+  factory _CapturingBuildOutputs.parse(Builder builder, String input,
+      List<String> outputs, List<RegExpMatch> matches) {
     final regexBuffer = StringBuffer();
     var positionInInput = 0;
     if (input.startsWith('^')) {
@@ -124,7 +193,7 @@ abstract class _ParsedBuildOutputs {
 
       // Ensure that the output extension does not refer to unknown groups, and
       // that no group appears in the output multiple times.
-      for (final outputMatch in _captureGroup.allMatches(output)) {
+      for (final outputMatch in _captureGroupRegexp.allMatches(output)) {
         final outputName = outputMatch.group(1)!;
         if (!remainingNames.remove(outputName)) {
           throw ArgumentError(
@@ -151,44 +220,6 @@ abstract class _ParsedBuildOutputs {
         RegExp(regexBuffer.toString()), names, outputs);
   }
 
-  bool hasAnyOutputFor(AssetId input);
-  Iterable<AssetId> matchingOutputsFor(AssetId input);
-}
-
-/// A simple build input/output set that doesn't use capture groups.
-class _SuffixBuildOutputs extends _ParsedBuildOutputs {
-  final String inputExtension;
-  final List<String> outputExtensions;
-
-  _SuffixBuildOutputs(this.inputExtension, this.outputExtensions);
-
-  @override
-  bool hasAnyOutputFor(AssetId input) => input.path.endsWith(inputExtension);
-
-  @override
-  Iterable<AssetId> matchingOutputsFor(AssetId input) {
-    if (!hasAnyOutputFor(input)) return const Iterable.empty();
-
-    // If we expect an output, the asset's path ends with the input extension.
-    // Expected outputs just replace the matched suffix in the path.
-    return outputExtensions.map(
-        (extension) => input.replaceSuffix(inputExtension.length, extension));
-  }
-}
-
-/// A build input with a capture group `{{}}` that's referenced in the outputs.
-class _CapturingBuildOutputs extends _ParsedBuildOutputs {
-  final RegExp _pathMatcher;
-
-  /// The names of all capture groups used in the inputs.
-  ///
-  /// The [_pathMatcher] will always match the same amount of groups in the
-  /// same order.
-  final List<String> _groupNames;
-  final List<String> _outputs;
-
-  _CapturingBuildOutputs(this._pathMatcher, this._groupNames, this._outputs);
-
   @override
   bool hasAnyOutputFor(AssetId input) => _pathMatcher.hasMatch(input.path);
 
@@ -208,7 +239,7 @@ class _CapturingBuildOutputs extends _ParsedBuildOutputs {
 
     return _outputs.map((output) {
       final resolvedOutput = output.replaceAllMapped(
-        _ParsedBuildOutputs._captureGroup,
+        _captureGroupRegexp,
         (outputMatch) {
           final name = outputMatch.group(1)!;
           final index = _groupNames.indexOf(name);
