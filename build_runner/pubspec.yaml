@@ -1,5 +1,5 @@
 name: build_runner
-version: 2.1.9-dev
+version: 2.1.10
 description: A build system for Dart code generation and modular compilation.
 repository: https://github.com/dart-lang/build/tree/master/build_runner
 
@@ -9,10 +9,10 @@ environment:
 dependencies:
   args: ^2.0.0
   async: ^2.5.0
-  analyzer: ">=1.4.0 <4.0.0"
-  build: ">=2.1.0 <2.3.0"
+  analyzer: ">=1.4.0 <5.0.0"
+  build: ">=2.1.0 <2.4.0"
   build_config: ">=1.0.0 <1.1.0"
-  build_daemon: ^3.0.0
+  build_daemon: ^3.1.0
   build_resolvers: ^2.0.0
   build_runner_core: ^7.2.0
   code_builder: ^4.0.0

@@ -4,7 +4,7 @@ environment:
   sdk: ">=2.12.0 <3.0.0"
 
 dependencies:
-  analyzer: ">=2.0.0 <4.0.0"
+  analyzer: ">=2.0.0 <5.0.0"
   build: ^2.0.0
   # Not imported in code, but used to constrain `build.yaml` requirements
   build_config: ^1.0.0

@@ -104,7 +104,7 @@ Future<String?> _missingImportMessage(
     return id == missingId;
   });
   if (import == null) return null;
-  var lineInfo = parsed.lineInfo!.getLocation(import.offset);
+  var lineInfo = parsed.lineInfo.getLocation(import.offset);
   return '`$import` from $sourceId at $lineInfo';
 }
 

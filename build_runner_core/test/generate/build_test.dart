@@ -211,6 +211,25 @@ void main() {
         });
       });
 
+      test('outputs with ^', () async {
+        await testBuilders(
+          [
+            applyToRoot(
+              TestBuilder(buildExtensions: {
+                '^pubspec.yaml': ['pubspec.yaml.copy']
+              }),
+            )
+          ],
+          {
+            'a|pubspec.yaml': 'a',
+            'a|lib/pubspec.yaml': 'a',
+          },
+          outputs: {
+            'a|pubspec.yaml.copy': 'a',
+          },
+        );
+      });
+
       test('outputs with a capture group', () async {
         await testBuilders(
           [

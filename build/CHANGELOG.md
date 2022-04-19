@@ -1,3 +1,12 @@
+## 2.3.0
+
+- Support ^ in build extensions that don't use capture groups, which results
+  in full path matching instead of suffix matching.
+
+## 2.2.2
+
+- Allow analyzer version 4.x.
+
 ## 2.2.1
 
 - Fix a bug where builders were allowed to write to the same asset multiple

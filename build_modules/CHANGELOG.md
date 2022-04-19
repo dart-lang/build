@@ -1,4 +1,6 @@
-## 4.0.5-dev
+## 4.0.5
+
+* Allow analyzer verion 4.x.
 
 ## 4.0.4
 
