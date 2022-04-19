@@ -8,6 +8,22 @@ class Check<T> {
   final Context<T> _context;
   Check._(this._context);
 
+  /// Mark the currently running test as skipped and return a [Check] that will
+  /// ignore all expectations.
+  ///
+  /// Any conditions against the return value will not be checked and will not
+  /// be included in the "Expected" or "Actual" string representations of a
+  /// failure.
+  ///
+  /// ```dart
+  /// checkThat(something)
+  ///     ..stillChecked()
+  ///     ..skip('reason the condition is temporarily invalid').notChecked();
+  /// ```
+  ///
+  /// If `skip` is used in a callback passed to `softCheck` or `describe` it
+  /// will still mark the test as skipped, even though failing the condition
+  /// would not have otherwise caused the test to fail.
   Check<T> skip(String message) {
     TestHandle.current.markSkipped(message);
     return Check._(_SkippedContext());
