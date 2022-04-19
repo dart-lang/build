@@ -51,14 +51,11 @@ class Check<T> {
 /// checkThat(actual).equals(expected);
 /// ```
 Check<T> checkThat<T>(T value, {String? because}) => Check._(_TestContext._(
-    _Present(value),
-    'a $T',
-    because,
-    null,
-    [],
-    (m, _) => throw TestFailure(m),
-    [],
-    true));
+    value: _Present(value),
+    label: 'a $T',
+    reason: because,
+    fail: (m, _) => throw TestFailure(m),
+    allowAsync: true));
 
 /// Checks whether [value] satifies all expectations invoked in [condition].
 ///
@@ -69,19 +66,24 @@ Check<T> checkThat<T>(T value, {String? because}) => Check._(_TestContext._(
 /// runtime error if they are used.
 Rejection? softCheck<T>(T value, void Function(Check<T>) condition) {
   Rejection? rejection;
-  final check = Check._(
-      _TestContext<T>._(_Present(value), 'a $T', null, null, [], (_, r) {
-    rejection = r;
-  }, [], false));
+  final check = Check<T>._(_TestContext._(
+      value: _Present(value),
+      fail: (_, r) {
+        rejection = r;
+      },
+      allowAsync: false));
   condition(check);
   return rejection;
 }
 
 /// Return a String describing the expectations invoked in [condition].
 Iterable<String> describe<T>(void Function(Check<T>) condition) {
-  final context = _TestContext<T>._(_Absent(), '', null, null, [], (_, __) {
-    throw UnimplementedError();
-  }, [], true);
+  final context = _TestContext<T>._(
+      value: _Absent(),
+      fail: (_, __) {
+        throw UnimplementedError();
+      },
+      allowAsync: false);
   condition(Check._(context));
   return context.expected.skip(1);
 }
@@ -167,7 +169,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
   final _TestContext<dynamic>? _parent;
 
   final List<ClauseDescription> _clauses;
-  final List<_TestContext> _siblings;
+  final List<_TestContext> _aliases;
 
   // The "a value" in "a value that:".
   final String _label;
@@ -177,8 +179,39 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
 
   final bool _allowAsync;
 
-  _TestContext._(this._value, this._label, this._reason, this._parent,
-      this._clauses, this._fail, this._siblings, this._allowAsync);
+  _TestContext._({
+    required _Value<T> value,
+    required void Function(String, Rejection?) fail,
+    required bool allowAsync,
+    String? label,
+    String? reason,
+  })  : _value = value,
+        _label = label ?? '',
+        _reason = reason,
+        _fail = fail,
+        _allowAsync = allowAsync,
+        _parent = null,
+        _clauses = [],
+        _aliases = [];
+
+  _TestContext._alias(_TestContext original, this._value)
+      : _parent = original._parent,
+        _clauses = original._clauses,
+        _aliases = original._aliases,
+        _fail = original._fail,
+        _allowAsync = original._allowAsync,
+        // Properties that are never read from an aliased context
+        _label = '',
+        _reason = null;
+
+  _TestContext._child(this._value, this._label, _TestContext<dynamic> parent)
+      : _parent = parent,
+        _fail = parent._fail,
+        _allowAsync = parent._allowAsync,
+        _clauses = [],
+        _aliases = [],
+        // Properties that are never read from any context other than root
+        _reason = null;
 
   @override
   void expect(
@@ -226,13 +259,11 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
     final value = result.value ?? _Absent<R>();
     final _TestContext<R> context;
     if (atSameLevel) {
-      context = _TestContext._(value, _label, null, _parent, _clauses, _fail,
-          _siblings, _allowAsync);
-      _siblings.add(context);
+      context = _TestContext._alias(this, value);
+      _aliases.add(context);
       _clauses.add(StringClause(() => [label]));
     } else {
-      context =
-          _TestContext._(value, label, null, this, [], _fail, [], _allowAsync);
+      context = _TestContext._child(value, label, this);
       _clauses.add(context);
     }
     return Check._(context);
@@ -255,8 +286,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
     }
     // TODO - does this need null fallback instead?
     final value = result.value as _Value<R>;
-    final context =
-        _TestContext<R>._(value, label, null, this, [], _fail, [], _allowAsync);
+    final context = _TestContext<R>._child(value, label, this);
     _clauses.add(context);
     return Check._(context);
   }
@@ -280,7 +310,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
 
   @override
   Iterable<String> actual(Rejection rejection, Context<dynamic> failedContext) {
-    if (identical(failedContext, this) || _siblings.contains(failedContext)) {
+    if (identical(failedContext, this) || _aliases.contains(failedContext)) {
       final which = rejection.which;
       return [
         if (_parent != null) '$_label that:',
