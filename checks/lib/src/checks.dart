@@ -4,6 +4,15 @@ import 'package:test_api/hooks.dart';
 
 import 'describe.dart';
 
+/// A target for chaining conditions to be checked against a value in a test.
+///
+/// A Check my have a real value, in which case the conditions can be validated
+/// or rejected, or it may be a placeholder, in which case conditions describe
+/// what would be checked.
+///
+/// Conditions are defined as extension methods specialized on the generic [T].
+/// Conditions can use the [ContextExtension] to interact with the [Context] for
+/// this check.
 class Check<T> {
   final Context<T> _context;
   Check._(this._context);
@@ -16,9 +25,9 @@ class Check<T> {
   /// failure.
   ///
   /// ```dart
-  /// checkThat(something)
+  /// checkThat(actual)
   ///     ..stillChecked()
-  ///     ..skip('reason the condition is temporarily invalid').notChecked();
+  ///     ..skip('reason the condition is temporarily not met').notChecked();
   /// ```
   ///
   /// If `skip` is used in a callback passed to `softCheck` or `describe` it
@@ -30,16 +39,34 @@ class Check<T> {
   }
 }
 
-Check<T> checkThat<T>(T value, {String? reason}) => Check._(_TestContext._(
+/// Returns a [Check] that can be used to validate conditions against [value].
+///
+/// Conditions that are not satisfied throw a [TestFailure] to interrupt the
+/// currently running test and mark it as failed.
+///
+/// If [because] is passed it will be included as a "Reason:" line in failure
+/// messages.
+///
+/// ```dart
+/// checkThat(actual).equals(expected);
+/// ```
+Check<T> checkThat<T>(T value, {String? because}) => Check._(_TestContext._(
     _Present(value),
     'a $T',
-    reason,
+    because,
     null,
     [],
     (m, _) => throw TestFailure(m),
     [],
     true));
 
+/// Checks whether [value] satifies all expectations invoked in [condition].
+///
+/// Returns `null` if all expectations are satisfied, otherwise returns the
+/// [Rejection] for the first expectation that fails.
+///
+/// Asynchronous expectations are not allowed in [condition] and will cause a
+/// runtime error if they are used.
 Rejection? softCheck<T>(T value, void Function(Check<T>) condition) {
   Rejection? rejection;
   final check = Check._(
@@ -50,6 +77,7 @@ Rejection? softCheck<T>(T value, void Function(Check<T>) condition) {
   return rejection;
 }
 
+/// Return a String describing the expectations invoked in [condition].
 Iterable<String> describe<T>(void Function(Check<T>) condition) {
   final context = _TestContext<T>._(_Absent(), '', null, null, [], (_, __) {
     throw UnimplementedError();

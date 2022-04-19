@@ -27,7 +27,7 @@ extension HasField<T> on Check<T> {
 
 
 
-  /// Check [condition] against this value.
+  /// Check the expectations invoked in [condition] against this value.
   ///
   /// Use this method when it would otherwise not be possible to check multiple
   /// properties of this value due to cascade notation already being used in a
