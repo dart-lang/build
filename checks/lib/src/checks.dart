@@ -4,15 +4,15 @@ import 'package:test_api/hooks.dart';
 
 import 'describe.dart';
 
-/// A target for chaining conditions to be checked against a value in a test.
+/// A target for checking expectations against a value in a test.
 ///
-/// A Check my have a real value, in which case the conditions can be validated
-/// or rejected, or it may be a placeholder, in which case conditions describe
-/// what would be checked.
+/// A Check my have a real value, in which case the expectations can be
+/// validated or rejected; or it may be a placeholder, in which case
+/// expectations describe what would be checked but cannot be rejected.
 ///
-/// Conditions are defined as extension methods specialized on the generic [T].
-/// Conditions can use the [ContextExtension] to interact with the [Context] for
-/// this check.
+/// Expectations are defined as extension methods specialized on the generic
+/// [T]. Expectations can use the [ContextExtension] to interact with the
+/// [Context] for this check.
 class Check<T> {
   final Context<T> _context;
   Check._(this._context);
@@ -20,18 +20,18 @@ class Check<T> {
   /// Mark the currently running test as skipped and return a [Check] that will
   /// ignore all expectations.
   ///
-  /// Any conditions against the return value will not be checked and will not
+  /// Any expectations against the return value will not be checked and will not
   /// be included in the "Expected" or "Actual" string representations of a
   /// failure.
   ///
   /// ```dart
   /// checkThat(actual)
   ///     ..stillChecked()
-  ///     ..skip('reason the condition is temporarily not met').notChecked();
+  ///     ..skip('reason the expectation is temporarily not met').notChecked();
   /// ```
   ///
   /// If `skip` is used in a callback passed to `softCheck` or `describe` it
-  /// will still mark the test as skipped, even though failing the condition
+  /// will still mark the test as skipped, even though failing the expectation
   /// would not have otherwise caused the test to fail.
   Check<T> skip(String message) {
     TestHandle.current.markSkipped(message);
@@ -39,9 +39,9 @@ class Check<T> {
   }
 }
 
-/// Returns a [Check] that can be used to validate conditions against [value].
+/// Returns a [Check] that can be used to validate expectations against [value].
 ///
-/// Conditions that are not satisfied throw a [TestFailure] to interrupt the
+/// Expectations that are not satisfied throw a [TestFailure] to interrupt the
 /// currently running test and mark it as failed.
 ///
 /// If [because] is passed it will be included as a "Reason:" line in failure
@@ -76,7 +76,14 @@ Rejection? softCheck<T>(T value, void Function(Check<T>) condition) {
   return rejection;
 }
 
-/// Return a String describing the expectations invoked in [condition].
+/// Return a String describing the expectations checked by [condition].
+///
+/// Elements in the returned value are individual lines in the description. An
+/// expectation may be a single line, or multiple lines.
+///
+/// Matches the "Expected: " lines in the output of a failure message if a value
+/// did not meet the last expectation in [condition], without the first labeled
+/// line.
 Iterable<String> describe<T>(void Function(Check<T>) condition) {
   final context = _TestContext<T>._(
       value: _Absent(),
@@ -89,25 +96,84 @@ Iterable<String> describe<T>(void Function(Check<T>) condition) {
 }
 
 extension ContextExtension<T> on Check<T> {
+  /// The expectations and nesting context for this check.
   Context<T> get context => _context;
 }
 
-// How matcher extensions interact with this library.
-//
-// `expect` and `expectAsync` can test the value and optionally reject it.
-// `nest` and `nestAsync` can test the value, and also extract some other
-// property from it for further checking.
+/// The expectation and nesting context already applied to a [Check].
+///
+/// This is the surface of interaction for expectation extension method
+/// implementations.
+///
+/// `expect` and `expectAsync` can test the value and optionally reject it.
+/// `nest` and `nestAsync` can test the value, and also extract some other
+/// property from it for further checking.
 abstract class Context<T> {
+  /// Expect that [predicate] will not return a [Rejection] for the checked
+  /// value.
+  ///
+  /// The property that is asserted by this expectation is described by
+  /// [clause]. Often this is a single statement like "equals <1>" or "is
+  /// greather than 10", but it may be multiple lines such as describing that an
+  /// Iterable contains an element meeting a complex expectation. If any element
+  /// in the returned iterable contains a newline it may cause problems with
+  /// indentation in the output.
   void expect(
       Iterable<String> Function() clause, Rejection? Function(T) predicate);
+
+  /// Expect that [predicate] will not result in a [Rejection] for the checked
+  /// value.
+  ///
+  /// The property that is asserted by this expectation is described by
+  /// [clause]. Often this is a single statement like "equals <1>" or "is
+  /// greather than 10", but it may be multiple lines such as describing that an
+  /// Iterable contains an element meeting a complex expectation. If any element
+  /// in the returned iterable contains a newline it may cause problems with
+  /// indentation in the output.
+  ///
+  /// Some context may disallow asynchronous expectations, for instance in
+  /// [softCheck] which must synchronously check the value. In those contexts
+  /// this method will throw.
   Future<void> expectAsync<R>(Iterable<String> Function() clause,
       FutureOr<Rejection?> Function(T) predicate);
+
+  /// Extract a property from the value for further checking.
+  ///
+  /// If the property cannot be extracted, [extract] should return an
+  /// [Extracted.rejection] describing the problem. Otherwise it should return
+  /// an [Extracted.value].
+  ///
+  /// The [label] will be used preceding "that:" in a description. Expectations
+  /// applied to the returned [Check] will follow the label, indented by two
+  /// more spaces.
+  ///
+  /// If [atSameLevel] is true then [R] should be a subtype of [T], and a
+  /// returned [Extracted.value] should be the same instance as passed value.
+  /// This may be useful to refine the type for further checks. In this case the
+  /// label is used like a single line "clause" passed to [expect], and
+  /// expectations applied to the return [Check] will behave as if they were
+  /// applied to the Check for this context.
   Check<R> nest<R>(String label, Extracted<R> Function(T) extract,
       {bool atSameLevel = false});
+
+  /// Extract an asynchronous property from the value for further checking.
+  ///
+  /// If the property cannot be extracted, [extract] should return an
+  /// [Extracted.rejection] describing the problem. Otherwise it should return
+  /// an [Extracted.value].
+  ///
+  /// The [label] will be used preceding "that:" in a description. Expectations
+  /// applied to the returned [Check] will follow the label, indented by two
+  /// more spaces.
+  ///
+  /// Some context may disallow asynchronous expectations, for instance in
+  /// [softCheck] which must synchronously check the value. In those contexts
+  /// this method will throw.
   Future<Check<R>> nestAsync<R>(
       String label, FutureOr<Extracted<R>> Function(T) extract);
 }
 
+/// A property extracted from a value being checked, or a rejection.
 class Extracted<T> {
   final Rejection? rejection;
   final T? value;
@@ -118,7 +184,7 @@ class Extracted<T> {
 
   Extracted._(this.rejection) : this.value = null;
 
-  Extracted<R> map<R>(R Function(T) transform) {
+  Extracted<R> _map<R>(R Function(T) transform) {
     if (rejection != null) return Extracted._(rejection);
     return Extracted.value(transform(value as T));
   }
@@ -142,12 +208,12 @@ class _Present<T> implements _Value<T> {
   Future<Extracted<_Value<R>>> mapAsync<R>(
       FutureOr<Extracted<R>> Function(T) transform) async {
     final transformed = await transform(value);
-    return transformed.map((v) => _Present(v));
+    return transformed._map((v) => _Present(v));
   }
 
   @override
   Extracted<_Value<R>> map<R>(Extracted<R> Function(T) transform) =>
-      transform(value).map((v) => _Present(v));
+      transform(value)._map((v) => _Present(v));
 }
 
 class _Absent<T> implements _Value<T> {
@@ -164,11 +230,11 @@ class _Absent<T> implements _Value<T> {
       Extracted.value(_Absent<R>());
 }
 
-class _TestContext<T> implements Context<T>, ClauseDescription {
+class _TestContext<T> implements Context<T>, _ClauseDescription {
   final _Value<T> _value;
   final _TestContext<dynamic>? _parent;
 
-  final List<ClauseDescription> _clauses;
+  final List<_ClauseDescription> _clauses;
   final List<_TestContext> _aliases;
 
   // The "a value" in "a value that:".
@@ -216,7 +282,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
   @override
   void expect(
       Iterable<String> Function() clause, Rejection? Function(T) predicate) {
-    _clauses.add(StringClause(clause));
+    _clauses.add(_StringClause(clause));
     final rejection = _value.apply(predicate);
     if (rejection != null) {
       _fail(_failure(rejection), rejection);
@@ -230,7 +296,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
       throw StateError(
           'Async expectations cannot be used in a synchronous check');
     }
-    _clauses.add(StringClause(clause));
+    _clauses.add(_StringClause(clause));
     final outstandingWork = TestHandle.current.markPending();
     final rejection = await _value.apply(predicate);
     outstandingWork.complete();
@@ -253,7 +319,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
     final result = _value.map(extract);
     final rejection = result.rejection;
     if (rejection != null) {
-      _clauses.add(StringClause(() => [label]));
+      _clauses.add(_StringClause(() => [label]));
       _fail(_failure(rejection), rejection);
     }
     final value = result.value ?? _Absent<R>();
@@ -261,7 +327,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
     if (atSameLevel) {
       context = _TestContext._alias(this, value);
       _aliases.add(context);
-      _clauses.add(StringClause(() => [label]));
+      _clauses.add(_StringClause(() => [label]));
     } else {
       context = _TestContext._child(value, label, this);
       _clauses.add(context);
@@ -281,7 +347,7 @@ class _TestContext<T> implements Context<T>, ClauseDescription {
     outstandingWork.complete();
     final rejection = result.rejection;
     if (rejection != null) {
-      _clauses.add(StringClause(() => [label]));
+      _clauses.add(_StringClause(() => [label]));
       _fail(_failure(rejection), rejection);
     }
     // TODO - does this need null fallback instead?
@@ -353,16 +419,16 @@ class _SkippedContext<T> implements Context<T> {
   }
 }
 
-abstract class ClauseDescription {
+abstract class _ClauseDescription {
   Iterable<String> get expected;
   Iterable<String> actual(Rejection rejection, Context<dynamic> context);
 }
 
-class StringClause implements ClauseDescription {
+class _StringClause implements _ClauseDescription {
   final Iterable<String> Function() _expected;
   @override
   Iterable<String> get expected => _expected();
-  StringClause(this._expected);
+  _StringClause(this._expected);
   // Assumes this will never get called when it was this clause that failed
   // because the TestContext that fails never inspect it's clauses and just
   // prints the failed one.
@@ -372,8 +438,33 @@ class StringClause implements ClauseDescription {
       expected;
 }
 
+/// A description of a value that failed an expectation.
 class Rejection {
+  /// A description of the actual value as it relates to the expectation.
+  ///
+  /// This may use [literal] to show a String representation of the value, or it
+  /// may be a description of a specific aspect of the value. For instance an
+  /// expectation that a Future completes to a value may describe the actual as
+  /// "A Future that completes to an error".
+  ///
+  /// This is printed following an "Actual: " label in the output of a failure
+  /// message. The message will be indented to the level of the expectation in
+  /// the description, and printed following the descriptions of any
+  /// expectations that have already passed.
   final String actual;
+
+  /// A description of the way that [actual] failed to meet the expectation.
+  ///
+  /// An expectation can provide extra detail, or focus attention on a specific
+  /// part of the value. For instance when comparing multiple elements in a
+  /// collection, the rejection may describe that the value "has an unequal
+  /// value at index 3".
+  ///
+  /// Lines should be separate values in the iterable, if any element contains a
+  /// newline it may cause problems with indentation in the output.
+  ///
+  /// When provided, this is printed following a "Which: " label at the end of
+  /// the output for the failure message.
   final Iterable<String>? which;
 
   Rejection({required this.actual, this.which});
