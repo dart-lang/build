@@ -18,7 +18,9 @@ import 'package:build_daemon/data/server_log.dart';
 import 'package:build_daemon/src/fakes/fake_change_provider.dart';
 import 'package:build_daemon/src/fakes/fake_test_builder.dart';
 import 'package:build_daemon/src/server.dart';
+import 'package:built_collection/built_collection.dart';
 import 'package:checks/checks.dart';
+import 'package:checks/context.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:test/scaffolding.dart';
 import 'package:web_socket_channel/io.dart';
@@ -97,17 +99,15 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 500));
       client.sink.add(jsonEncode(serializers.serialize(BuildRequest())));
 
-      expect(
-        interestedEvents.stream,
-        emitsThrough(isA<BuildResults>()
-            .having((e) => e.changedAssets, 'changedAssets', isNotEmpty)),
-      );
+      await checkThat(StreamQueue(interestedEvents.stream)).emitsThrough((e) =>
+          e
+              .isA<BuildResults>()
+              .has((e) => e.changedAssets, 'changedAssets').isNotNull().isNotEmpty());
 
-      await expectLater(
-        controller.stream,
-        emitsThrough(isA<BuildResults>()
-            .having((e) => e.changedAssets, 'changedAssets', isNull)),
-      );
+      await checkThat(
+        StreamQueue(controller.stream)).
+        emitsThrough((e) => e.isA<BuildResults>()
+            .has((e) => e.changedAssets, 'changedAssets'). isNull());
     });
   });
 }
@@ -144,4 +144,13 @@ extension _ServerLogChecks on Check<ServerLog> {
   Check<Level> get level => has((l) => l.level, 'level');
   Check<String> get message => has((l) => l.message, 'message');
   Check<String?> get loggerName => has((l) => l.loggerName, 'loggerName');
+}
+
+extension _BuiltListChecks<T> on Check<BuiltList<T>> {
+  void isNotEmpty() {
+    context.expect(() => ['is not empty'], (actual) {
+      if (actual.isNotEmpty) return null;
+      return Rejection(actual: 'an empty BuiltList');
+    });
+  }
 }

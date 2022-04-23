@@ -22,4 +22,7 @@ dev_dependencies:
   lints: '>=1.0.0 <3.0.0'
   test: ^1.16.0
   checks:
-    path: ../checks
+    git:
+      url: git@github.com:dart-lang/test.git
+      path: pkgs/checks
+      ref: checks
