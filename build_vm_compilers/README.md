@@ -54,7 +54,7 @@ builder applications to what you already have, sometime after the
 `build_modules` builder applications:
 
 ```dart
-    apply('build_vm_compilers|entrypoint',
+    apply('build_vm_compilers:entrypoint',
         [vmKernelEntrypointBuilder], toRoot(),
         hideOutput: true,
         // These globs should match your entrypoints only.

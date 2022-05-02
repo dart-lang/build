@@ -14,7 +14,7 @@ builders:
     is_optional: True
     auto_apply: none
     required_inputs: [".dart", ".module.library"]
-    applies_builders: ["build_modules|module_cleanup"]
+    applies_builders: ["build_modules:module_cleanup"]
   vm:
     import: "package:build_vm_compilers/builders.dart"
     builder_factories:
@@ -28,7 +28,7 @@ builders:
       - .dart
       - .vm.module
     applies_builders:
-      - build_vm_compilers|modules
+      - build_vm_compilers:modules
   entrypoint:
     import: "package:build_vm_compilers/builders.dart"
     builder_factories:

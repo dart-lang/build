@@ -45,7 +45,7 @@ builders:
     is_optional: True
     auto_apply: none
     required_inputs: [".dart", ".module.library"]
-    applies_builders: ["build_modules|module_cleanup"]
+    applies_builders: ["build_modules:module_cleanup"]
   ddc_modules:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
@@ -61,7 +61,7 @@ builders:
     is_optional: True
     auto_apply: none
     required_inputs: [".dart", ".module.library"]
-    applies_builders: ["build_modules|module_cleanup"]
+    applies_builders: ["build_modules:module_cleanup"]
   ddc:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
@@ -90,11 +90,11 @@ builders:
     required_inputs:
       - .ddc.module
     applies_builders:
-      - build_web_compilers|ddc_modules
+      - build_web_compilers:ddc_modules
       # This isn't really the best place to apply these, but it is the only
       # place we can (its the only builder which runs on all packages).
-      - build_web_compilers|dart2js_modules
-      - build_web_compilers|dart_source_cleanup
+      - build_web_compilers:dart2js_modules
+      - build_web_compilers:dart_source_cleanup
   entrypoint:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
@@ -134,7 +134,7 @@ builders:
       release_options:
         compiler: dart2js
     applies_builders:
-      - build_web_compilers|dart2js_archive_extractor
+      - build_web_compilers:dart2js_archive_extractor
   _stack_trace_mapper_copy:
     import: "tool/copy_builder.dart"
     builder_factories:

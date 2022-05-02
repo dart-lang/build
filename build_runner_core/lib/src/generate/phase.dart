@@ -197,10 +197,10 @@ String _builderLabel(Object builder) {
   return label;
 }
 
-/// Change "angular|angular" to "angular".
+/// Change "angular:angular" to "angular".
 String _simpleBuilderKey(String builderKey) {
-  if (!builderKey.contains('|')) return builderKey;
-  var parts = builderKey.split('|');
+  if (!builderKey.contains(':')) return builderKey;
+  var parts = builderKey.split(':');
   if (parts[0] == parts[1]) return parts[0];
   return builderKey;
 }

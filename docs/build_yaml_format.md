@@ -126,5 +126,5 @@ default target in the current package (which has the same name as the package).
 An identifier for a `builder`. A builder has two parts, a `package` and a
 `name`.
 
-To construct a key, you join the package and name with a `|`, so for instance
-the `bar` builder in the `foo` package would be referenced like this `foo|bar`.
+To construct a key, you join the package and name with a `:`, so for instance
+the `bar` builder in the `foo` package would be referenced like this `foo:bar`.

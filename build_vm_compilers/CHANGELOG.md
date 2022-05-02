@@ -1,3 +1,5 @@
+## 1.0.12-dev
+
 ## 1.0.11
 
 - Allow the latest analyzer
