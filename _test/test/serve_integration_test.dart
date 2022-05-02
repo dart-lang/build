@@ -148,7 +148,7 @@ void main() {
       '--build-filter',
       'web/sub/main.dart.js',
       '--define',
-      'build_web_compilers|ddc=environment={"message": "goodbye"}',
+      'build_web_compilers:ddc=environment={"message": "goodbye"}',
     ]);
 
     addTearDown(() async {
@@ -177,7 +177,7 @@ void main() {
       'web/sub/main.dart.js',
       '--verbose',
       '--define',
-      'build_web_compilers|ddc=generate-full-dill=true',
+      'build_web_compilers:ddc=generate-full-dill=true',
     ]);
 
     addTearDown(() async {
