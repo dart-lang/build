@@ -39,7 +39,10 @@ will trigger a build step, and the expected output will have the extension
 appended. For example with the configuration `{'': ['.foo', '.bar']}` all files
 will be passed as a primary input, and each build step may produce two assets.
 For the primary input `some_file.txt` the allowed outputs are
-`some_file.txt.foo` and `some_file.txt.bar`.
+`some_file.txt.foo` and `some_file.txt.bar`. Note that you will also see the
+synthetic inputs when using this approach (`$package$` etc). You can detect
+synthetic inputs by doing a `buildStep.canRead(buildStep.inputId)` check, if
+you can't read it then you know it is not a normal file.
 
 ### Capture groups
 
