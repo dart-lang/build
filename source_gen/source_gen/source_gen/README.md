@@ -65,7 +65,9 @@ generated code to end up:
   `part` in the original source file, use `PartBuilder`. You should choose an
   extension unique to your package. Multiple `Generator`s may output to this
   file, but they will all come from your package and you will set up the entire
-  list when constructing the builder.
+  list when constructing the builder. Using the extension `.g.dart` may cause
+  conflicts with other projects that use `SharedPartBuilder` since outputs must
+  be unique.
 - If you want to write standalone Dart library which can be `import`ed use
   `LibraryBuilder`. Only a single `Generator` may be used as a `LibraryBuilder`.
 
@@ -90,7 +92,7 @@ builders:
     auto_apply: dependents
     build_to: cache
     # To copy the `.g.part` content into `.g.dart` in the source tree
-    applies_builders: ["source_gen|combining_builder"]
+    applies_builders: ["source_gen:combining_builder"]
 ```
 
 ### Configuring `combining_builder` `ignore_for_file`
@@ -107,7 +109,7 @@ _Example `build.yaml` configuration:_
 targets:
   $default:
     builders:
-      source_gen|combining_builder:
+      source_gen:combining_builder:
         options:
           ignore_for_file:
           - lint_alpha
@@ -138,7 +140,7 @@ targets:
   $default:
     builders:
       # A SharedPartBuilder which uses the combining builder
-      source_gen|combining_builder:
+      source_gen:combining_builder:
         options:
           build_extensions:
             '^lib/{{}}.dart': 'lib/generated/{{}}.g.dart'
