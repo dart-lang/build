@@ -1,3 +1,5 @@
+## 1.2.3-dev
+
 ## 1.2.2
 
 * Enable the fix for single cascade statements when formatting Dart code.
