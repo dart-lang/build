@@ -370,7 +370,7 @@ extension ConvertToExpression on Object? {
       return literalMap({
         for (final entry in $this.cast<Object?, Object?>().entries)
           entry.key.toExpression(): entry.value.toExpression()
-      }, refer('dynamic'), refer('dynamic'));
+      }, refer('String'), refer('dynamic'));
     } else if ($this is List) {
       return literalList(
           [for (final entry in $this.cast<Object?>()) entry.toExpression()],
