@@ -110,14 +110,14 @@ final _builders = <_i1.BuilderApplication>[
         r'test/**.node_test.dart',
         r'test/**.vm_test.dart'
       ]),
-      defaultOptions: const _i8.BuilderOptions({
-        r'dart2js_args': [r'--minify']
+      defaultOptions: const _i8.BuilderOptions(<dynamic, dynamic>{
+        r'dart2js_args': <dynamic>[r'--minify']
       }),
-      defaultDevOptions: const _i8.BuilderOptions({
-        r'dart2js_args': [r'--enable-asserts']
+      defaultDevOptions: const _i8.BuilderOptions(<dynamic, dynamic>{
+        r'dart2js_args': <dynamic>[r'--enable-asserts']
       }),
       defaultReleaseOptions:
-          const _i8.BuilderOptions({r'compiler': r'dart2js'}),
+          const _i8.BuilderOptions(<dynamic, dynamic>{r'compiler': r'dart2js'}),
       appliesBuilders: const [
         r'build_web_compilers:dart2js_archive_extractor'
       ]),
@@ -127,11 +127,12 @@ final _builders = <_i1.BuilderApplication>[
   _i1.applyPostProcess(r'build_modules:module_cleanup', _i5.moduleCleanup),
   _i1.applyPostProcess(r'build_web_compilers:dart2js_archive_extractor',
       _i7.dart2jsArchiveExtractor,
-      defaultReleaseOptions:
-          const _i8.BuilderOptions({r'filter_outputs': true})),
+      defaultReleaseOptions: const _i8.BuilderOptions(
+          <dynamic, dynamic>{r'filter_outputs': true})),
   _i1.applyPostProcess(
       r'build_web_compilers:dart_source_cleanup', _i7.dartSourceCleanup,
-      defaultReleaseOptions: const _i8.BuilderOptions({r'enabled': true})),
+      defaultReleaseOptions:
+          const _i8.BuilderOptions(<dynamic, dynamic>{r'enabled': true})),
   _i1.applyPostProcess(
       r'provides_builder:some_post_process_builder', _i4.somePostProcessBuilder)
 ];

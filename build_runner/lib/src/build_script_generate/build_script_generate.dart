@@ -312,7 +312,7 @@ Expression _applyPostProcessBuilder(PostProcessBuilderDefinition definition) {
 }
 
 Expression _rawStringList(List<String> strings) =>
-    strings.toExpression(constant: true);
+    literalConstList([for (var s in strings) literalString(s, raw: true)]);
 
 /// Returns the actual import to put in the generated script based on an import
 /// found in the build.yaml.
@@ -363,19 +363,18 @@ extension on LanguageVersion {
 /// This is similar to [literal] from `package:code_builder`, except that it
 /// always writes raw string literals.
 extension ConvertToExpression on Object? {
-  Expression toExpression({bool constant = false}) {
+  Expression toExpression() {
     final $this = this;
 
     if ($this is Map) {
-      final create = constant ? literalConstMap : literalMap;
-      return create({
+      return literalMap({
         for (final entry in $this.cast<Object?, Object?>().entries)
           entry.key.toExpression(): entry.value.toExpression()
-      });
+      }, refer('dynamic'), refer('dynamic'));
     } else if ($this is List) {
-      final create = constant ? literalConstList : literalList;
-      return create(
-          [for (final entry in $this.cast<Object?>()) entry.toExpression()]);
+      return literalList(
+          [for (final entry in $this.cast<Object?>()) entry.toExpression()],
+          refer('dynamic'));
     } else if ($this is String) {
       return literalString($this, raw: true);
     } else {
