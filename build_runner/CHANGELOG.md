@@ -1,3 +1,9 @@
+## 2.1.11-dev
+
+- Use an explicit `dynamic` generic type for collections in default builder
+  options to reduce behavior differences between reading default options and
+  user provided options.
+
 ## 2.1.10
 
 - Allow build version 2.3.x.
