@@ -1,5 +1,6 @@
-## 2.1.11-dev
+## 2.1.11
 
+- Stop reading or requiring `.packages` files.
 - Use an explicit `dynamic` generic type for collections in default builder
   options to reduce behavior differences between reading default options and
   user provided options.

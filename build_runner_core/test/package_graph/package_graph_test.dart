@@ -128,7 +128,7 @@ void main() {
           throwsA(anything));
     });
 
-    test('missing .packages file throws on create', () {
+    test('missing .dart_tool/package_config.json file throws on create', () {
       expect(
           () => PackageGraph.forPath(
               p.join('test', 'fixtures', 'no_packages_file')),

@@ -141,7 +141,8 @@ class RunCommand extends BuildRunnerCommand {
 
         // Find the path of the script to run.
         var scriptPath = p.join(tempPath, scriptName);
-        var packageConfigPath = p.join(tempPath, '.packages');
+        var packageConfigPath =
+            p.join(tempPath, '.dart_tool/package_config.json');
 
         onExit = ReceivePort();
         onError = ReceivePort();

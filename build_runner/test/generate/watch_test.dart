@@ -30,10 +30,6 @@ void main() {
 
   setUp(() async {
     writer = InMemoryRunnerAssetWriter();
-    await writer.writeAsString(makeAssetId('a|.packages'), '''
-# Fake packages file
-a:file://fake/pkg/path
-''');
     await writer.writeAsString(packageConfigId, jsonEncode(_packageConfig));
   });
 
@@ -362,30 +358,6 @@ a:file://fake/pkg/path
 
         result = await results.next;
         checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
-      });
-
-      test('edits to .packages prevent future builds and ask you to restart',
-          () async {
-        var logs = <LogRecord>[];
-        var buildState = await startWatch(
-            [copyABuildApplication], {'a|web/a.txt': 'a'}, writer,
-            logLevel: Level.SEVERE, onLog: logs.add);
-        var results = StreamQueue(buildState.buildResults);
-
-        var result = await results.next;
-        checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
-
-        await writer.writeAsString(AssetId('a', '.packages'), '''
-# Fake packages file
-a:file://different/fake/pkg/path
-''');
-
-        expect(await results.hasNext, isFalse);
-        expect(logs, hasLength(1));
-        expect(
-            logs.first.message,
-            contains('Terminating builds due to package graph update, '
-                'please restart the build.'));
       });
 
       test(

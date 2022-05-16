@@ -205,7 +205,6 @@ void main() {
         'packages/a/a.txt.copy': 'a',
         'packages/b/c.txt': 'c',
         'packages/b/c.txt.copy': 'c',
-        '.packages': 'a:packages/a/\r\nb:packages/b/\r\n\$sdk:packages/\$sdk/',
         '.dart_tool/package_config.json':
             _expectedPackageConfig('a', ['a', 'b']),
       };
@@ -290,7 +289,6 @@ void main() {
         'packages/a/a.txt': 'a',
         'packages/b/c.txt': 'c',
         'web/b.txt': 'b',
-        '.packages': 'a:packages/a/\r\nb:packages/b/\r\n\$sdk:packages/\$sdk/',
         '.dart_tool/package_config.json':
             _expectedPackageConfig('a', ['a', 'b'])
       };
@@ -477,7 +475,6 @@ void _expectAllFiles(Directory dir) {
     'packages/b/c.txt.copy': 'c',
     'web/b.txt': 'b',
     'web/b.txt.copy': 'b',
-    '.packages': 'a:packages/a/\r\nb:packages/b/\r\n\$sdk:packages/\$sdk/',
     '.dart_tool/package_config.json': _expectedPackageConfig('a', ['a', 'b'])
   };
   _expectFiles(expectedFiles, dir);

@@ -26,7 +26,7 @@ import 'watch_impl.dart' as watch_impl;
 /// A [packageGraph] may be supplied, otherwise one will be constructed using
 /// [PackageGraph.forThisPackage]. The default functionality assumes you are
 /// running in the root directory of a package, with both a `pubspec.yaml` and
-/// `.packages` file present.
+/// `.dart_tool/package_config.json` file present.
 ///
 /// A [reader] and [writer] may also be supplied, which can read/write assets
 /// to arbitrary locations or file systems. By default they will write directly

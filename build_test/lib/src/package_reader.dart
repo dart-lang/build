@@ -15,8 +15,8 @@ import 'package:stream_transform/stream_transform.dart';
 /// Resolves using a [PackageConfig] before reading from the file system.
 ///
 /// For a simple implementation that uses the current isolate's package
-/// resolution logic (i.e. whatever you have generated in `.packages` in most
-/// cases), use [currentIsolate]:
+/// resolution logic (i.e. whatever you have generated in
+/// `.dart_tool/package_config.json` in most cases), use [currentIsolate]:
 /// ```dart
 /// var assetReader = await PackageAssetReader.currentIsolate();
 /// ```
@@ -74,12 +74,12 @@ class PackageAssetReader extends AssetReader
   /// A [rootPackage] should be provided for full API compatibility.
   static Future<PackageAssetReader> currentIsolate(
       {String? rootPackage}) async {
-    final packageConfig = await Isolate.packageConfig ??
+    final packageConfigUri = await Isolate.packageConfig ??
         (throw UnsupportedError('No package config found'));
-    final configUri = await findPackageConfigUri(packageConfig) ??
+    final packageConfig = await findPackageConfigUri(packageConfigUri) ??
         (throw UnsupportedError('Package configuration file not found'));
 
-    return PackageAssetReader(configUri, rootPackage);
+    return PackageAssetReader(packageConfig, rootPackage);
   }
 
   File? _resolve(AssetId id) {
