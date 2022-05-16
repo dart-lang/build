@@ -1,8 +1,9 @@
-## 5.1.1-dev
+## 5.2.0
 
 * Fix generation of methods with return type of `FutureOr<T>` for generic,
   potentially nullable `T`.
 * Support `@GenerateMocks` annotations on `import` and `export` directives.
+* Support analyzer 4.x.
 
 ## 5.1.0
 
@@ -29,7 +30,7 @@
 * Do not needlessly implement `toString` unless the class-to-mock implements
   `toString` with additional parameters.
   [#461](https://github.com/dart-lang/mockito/issues/461)
-* Support analyzer 3.x
+* Support analyzer 3.x.
 
 ## 5.0.16
 
@@ -71,7 +72,7 @@
 * Override `toString` in a Fake implementation when the class-to-be-faked has
   a superclass which overrides `toString` with additional parameters.
   [#371](https://github.com/dart-lang/mockito/issues/371)
-* Support analyzer 2.0.0
+* Support analyzer 2.x.
 
 ## 5.0.11
 
