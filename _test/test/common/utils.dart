@@ -34,7 +34,7 @@ Future<void> startServer({bool? ensureCleanBuild, List<String>? buildArgs}) =>
     _startServer(
       'dart',
       [
-        '--packages=.packages',
+        '--packages=.dart_tool/package_config.json',
         p.join('..', 'build_runner', 'bin', 'build_runner.dart'),
         'serve',
         '--verbose',

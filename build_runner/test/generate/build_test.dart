@@ -21,10 +21,6 @@ void main() {
 
   setUp(() async {
     writer = InMemoryRunnerAssetWriter();
-    await writer.writeAsString(makeAssetId('a|.packages'), '''
-# Fake packages file
-a:file://fake/pkg/path
-''');
     await writer.writeAsString(packageConfigId, jsonEncode(_packageConfig));
   });
 

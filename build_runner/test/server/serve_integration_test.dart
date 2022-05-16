@@ -36,10 +36,6 @@ void main() {
       ..cacheStringAsset(AssetId('example', 'web/large.txt'),
           List.filled(10000, 'large').join(''))
       ..cacheStringAsset(
-          AssetId('example', '.packages'),
-          '# Fake packages file\n'
-          'example:file://fake/pkg/path')
-      ..cacheStringAsset(
           makeAssetId('example|.dart_tool/package_config.json'),
           jsonEncode({
             'configVersion': 2,

@@ -22,10 +22,6 @@ void main() {
     setUp(() async {
       _terminateServeController = StreamController();
       writer = InMemoryRunnerAssetWriter();
-      await writer.writeAsString(makeAssetId('a|.packages'), '''
-# Fake packages file
-a:file://fake/pkg/path
-''');
       await writer.writeAsString(
           makeAssetId('a|.dart_tool/package_config.json'),
           jsonEncode({

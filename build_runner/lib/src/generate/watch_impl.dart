@@ -255,9 +255,7 @@ class WatchImpl implements BuildState {
       _logger.info('Terminating. No further builds will be scheduled\n');
     });
 
-    Digest? originalRootPackagesDigest;
     Digest? originalRootPackageConfigDigest;
-    final rootPackagesId = AssetId(packageGraph.root.name, '.packages');
     final rootPackageConfigId =
         AssetId(packageGraph.root.name, '.dart_tool/package_config.json');
 
@@ -275,11 +273,8 @@ class WatchImpl implements BuildState {
         })
         .asyncMap<AssetChange>((change) {
           var id = change.id;
-          if (id == rootPackagesId || id == rootPackageConfigId) {
-            var digest = id == rootPackagesId
-                ? originalRootPackagesDigest
-                : originalRootPackageConfigDigest;
-            assert(digest != null);
+          if (id == rootPackageConfigId) {
+            var digest = originalRootPackageConfigDigest!;
             // Kill future builds if the root packages file changes.
             //
             // We retry the reads for a little bit to handle the case where a
@@ -337,8 +332,6 @@ class WatchImpl implements BuildState {
     () async {
       await logTimedAsync(_logger, 'Waiting for all file watchers to be ready',
           () => graphWatcher.ready);
-      originalRootPackagesDigest = md5
-          .convert(await watcherEnvironment.reader.readAsBytes(rootPackagesId));
       originalRootPackageConfigDigest = md5.convert(
           await watcherEnvironment.reader.readAsBytes(rootPackageConfigId));
 

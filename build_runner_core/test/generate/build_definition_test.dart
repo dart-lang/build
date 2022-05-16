@@ -77,7 +77,6 @@ void main() {
         'pkg_a',
         [
           await pubspec('a'),
-          d.file('.packages', '\na:./lib/\nb:../pkg_b/lib/'),
           d.file('pubspec.lock', 'packages: {}'),
           d.dir('.dart_tool', [
             d.dir('build', [
@@ -594,8 +593,6 @@ targets:
             'pubspec.yaml',
             (await readFile('pubspec.yaml'))
                 .replaceFirst('name: a', 'name: c'));
-        await modifyFile('.packages',
-            (await readFile('.packages')).replaceFirst('a:', 'c:'));
         await modifyFile(
             '.dart_tool/package_config.json',
             (await readFile('.dart_tool/package_config.json'))
