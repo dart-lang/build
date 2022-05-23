@@ -255,10 +255,10 @@ class AnalyzerResolver implements ReleasableResolver {
     final relevantResults = <ErrorsResult>[];
 
     for (final path in paths) {
-      final result =
-          await _driver.currentSession.getErrors(path) as ErrorsResult;
-      if (result.errors
-          .any((error) => error.errorCode.type == ErrorType.SYNTACTIC_ERROR)) {
+      final result = await _driver.currentSession.getErrors(path);
+      if (result is ErrorsResult &&
+          result.errors.any(
+              (error) => error.errorCode.type == ErrorType.SYNTACTIC_ERROR)) {
         relevantResults.add(result);
       }
     }
