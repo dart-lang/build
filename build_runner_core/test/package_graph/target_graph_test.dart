@@ -7,6 +7,8 @@ import 'package:_test_common/package_graphs.dart';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner_core/src/generate/options.dart'
+    show defaultNonRootVisibleAssets;
 import 'package:build_runner_core/src/package_graph/target_graph.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
@@ -80,6 +82,54 @@ void main() {
                         contains(r'lib/$lib$'),
                         isNot(contains(r'$package$')))),
           ]));
+    });
+
+    test('should combine default sources with included', () async {
+      var packageB = PackageNode(
+          'b', '/fakeB', DependencyType.path, LanguageVersion(0, 0));
+      var packageA = PackageNode(
+          'a', '/fakeA', DependencyType.path, LanguageVersion(0, 0),
+          isRoot: true)
+        ..dependencies.add(packageB);
+      var packageGraph = PackageGraph.fromRoot(packageA);
+
+      final defaultSources = ['d', 'f'];
+      final customSource1 = 'a';
+      final customSource2 = 'b';
+      final customSource3 = 'c';
+
+      final targetGraph = await TargetGraph.forPackageGraph(
+        packageGraph,
+        defaultRootPackageSources: defaultSources,
+        overrideBuildConfig: {
+          'a': BuildConfig.fromMap('a', [], {
+            'targets': {
+              r'$default': {
+                'sources': [
+                  customSource1,
+                  r'$defaults$',
+                  customSource2,
+                  r'$defaults$',
+                  customSource3,
+                ]
+              }
+            }
+          }),
+          'b': BuildConfig.fromMap('b', [], {
+            'targets': {
+              r'$default': {
+                'sources': [r'$defaults$', customSource1]
+              }
+            }
+          })
+        },
+      );
+
+      expect(targetGraph.rootPackageConfig.buildTargets['a:a']?.sources.include,
+          [customSource1, customSource2, customSource3, ...defaultSources]);
+
+      expect(targetGraph.allModules['b:b']?.target.sources.include,
+          [customSource1, ...defaultNonRootVisibleAssets]);
     });
   });
 

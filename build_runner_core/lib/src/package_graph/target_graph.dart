@@ -82,8 +82,14 @@ class TargetGraph {
         publicAssetsByPackage[package.name] =
             InputMatcher(const InputSet(), defaultInclude: defaultInclude);
       }
-      final nodes = config.buildTargets.values.map((target) =>
-          TargetNode(target, package, defaultInclude: defaultInclude));
+      final nodes = config.buildTargets.values.map((target) {
+        if (target.sources.include?.contains(r'$defaults$') == true) {
+          target.sources.include!.removeWhere((s) => s == r'$defaults$');
+          target.sources.include!.addAll(defaultInclude);
+        }
+
+        return TargetNode(target, package, defaultInclude: defaultInclude);
+      });
       if (package.name != r'$sdk') {
         var requiredPackagePaths =
             package.isRoot ? requiredRootSourcePaths : requiredSourcePaths;
