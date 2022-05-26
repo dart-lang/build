@@ -41,3 +41,6 @@ dev_dependencies:
 dependency_overrides:
   build:
     path: ../build
+  # Temporary
+  build_resolvers:
+    path: ../build_resolvers
