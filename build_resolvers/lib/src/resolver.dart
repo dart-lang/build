@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
@@ -40,11 +41,12 @@ Future<String> _packagePath(String package) async {
 /// down from entrypoints.
 class PerActionResolver implements ReleasableResolver {
   final AnalyzerResolver _delegate;
+  final Pool _driverPool;
   final BuildStep _step;
 
   final _entryPoints = <AssetId>{};
 
-  PerActionResolver(this._delegate, this._step);
+  PerActionResolver(this._delegate, this._driverPool, this._step);
 
   @override
   Stream<LibraryElement> get libraries async* {
@@ -124,22 +126,25 @@ class PerActionResolver implements ReleasableResolver {
             allowSyntaxErrors: allowSyntaxErrors);
       });
 
-  // Ensures that we finish resolving one thing before attempting to resolve
-  // another, otherwise there are race conditions with `_entryPoints` being
-  // updated before it is actually ready, or resolved more than once.
-  final _resolvePool = Pool(1);
+  // Ensures we only resolve one entrypoint at a time from the same build step,
+  // otherwise there are race conditions with `_entryPoints` being updated
+  // before it is actually ready, or resolving entrypoints more than once.
+  final Pool _perActionResolvePool = Pool(1);
   Future<void> _resolveIfNecessary(AssetId id, {required bool transitive}) =>
-      _resolvePool.withResource(() async {
+      _perActionResolvePool.withResource(() async {
         if (!_entryPoints.contains(id)) {
           // We only want transitively resolved ids in `_entrypoints`.
           if (transitive) _entryPoints.add(id);
 
-          // the resolver will only visit assets that haven't been resolved in this
-          // step yet
+          // the resolver will only visit assets that haven't been resolved in
+          // this step yet
           await _step.trackStage(
               'Resolving library $id',
               () => _delegate._uriResolver.performResolve(
-                  _step, [id], _delegate._driver,
+                  _step,
+                  [id],
+                  (withDriver) => _driverPool
+                      .withResource(() => withDriver(_delegate._driver)),
                   transitive: transitive));
         }
       });
@@ -158,21 +163,23 @@ class PerActionResolver implements ReleasableResolver {
 class AnalyzerResolver implements ReleasableResolver {
   final BuildAssetUriResolver _uriResolver;
   final AnalysisDriverForPackageBuild _driver;
+  final Pool _driverPool;
 
-  AnalyzerResolver(this._driver, this._uriResolver);
+  AnalyzerResolver(this._driver, this._driverPool, this._uriResolver);
 
   @override
   Future<bool> isLibrary(AssetId assetId) async {
     if (assetId.extension != '.dart') return false;
-    if (!_driver.isUriOfExistingFile(assetId.uri)) return false;
-    var result =
-        _driver.currentSession.getFile(assetPath(assetId)) as FileResult;
-    return !result.isPart;
+    return _driverPool.withResource(() {
+      if (!_driver.isUriOfExistingFile(assetId.uri)) return false;
+      var result =
+          _driver.currentSession.getFile(assetPath(assetId)) as FileResult;
+      return !result.isPart;
+    });
   }
 
   @override
   Future<AstNode?> astNodeFor(Element element, {bool resolve = false}) async {
-    var session = _driver.currentSession;
     final library = element.library;
     if (library == null) {
       // Invalid elements (e.g. an MultiplyDefinedElement) are not part of any
@@ -181,49 +188,58 @@ class AnalyzerResolver implements ReleasableResolver {
     }
     var path = library.source.fullName;
 
-    if (resolve) {
-      return (await session.getResolvedLibrary(path) as ResolvedLibraryResult)
-          .getElementDeclaration(element)
-          ?.node;
-    } else {
-      return (session.getParsedLibrary(path) as ParsedLibraryResult)
-          .getElementDeclaration(element)
-          ?.node;
-    }
+    return _driverPool.withResource(() async {
+      var session = _driver.currentSession;
+      if (resolve) {
+        return (await session.getResolvedLibrary(path) as ResolvedLibraryResult)
+            .getElementDeclaration(element)
+            ?.node;
+      } else {
+        return (session.getParsedLibrary(path) as ParsedLibraryResult)
+            .getElementDeclaration(element)
+            ?.node;
+      }
+    });
   }
 
   @override
   Future<CompilationUnit> compilationUnitFor(AssetId assetId,
-      {bool allowSyntaxErrors = false}) async {
-    if (!_driver.isUriOfExistingFile(assetId.uri)) {
-      throw AssetNotFoundException(assetId);
-    }
+      {bool allowSyntaxErrors = false}) {
+    return _driverPool.withResource(() async {
+      if (!_driver.isUriOfExistingFile(assetId.uri)) {
+        throw AssetNotFoundException(assetId);
+      }
 
-    var path = assetPath(assetId);
-    var parsedResult =
-        _driver.currentSession.getParsedUnit(path) as ParsedUnitResult;
-    if (!allowSyntaxErrors && parsedResult.errors.isNotEmpty) {
-      throw SyntaxErrorInAssetException(assetId, [parsedResult]);
-    }
-    return parsedResult.unit;
+      var path = assetPath(assetId);
+
+      var parsedResult =
+          _driver.currentSession.getParsedUnit(path) as ParsedUnitResult;
+      if (!allowSyntaxErrors && parsedResult.errors.isNotEmpty) {
+        throw SyntaxErrorInAssetException(assetId, [parsedResult]);
+      }
+      return parsedResult.unit;
+    });
   }
 
   @override
   Future<LibraryElement> libraryFor(AssetId assetId,
       {bool allowSyntaxErrors = false}) async {
-    var uri = assetId.uri;
-    if (!_driver.isUriOfExistingFile(uri)) {
-      throw AssetNotFoundException(assetId);
-    }
+    final library = await _driverPool.withResource(() async {
+      var uri = assetId.uri;
+      if (!_driver.isUriOfExistingFile(uri)) {
+        throw AssetNotFoundException(assetId);
+      }
 
-    var path = assetPath(assetId);
-    var parsedResult = _driver.currentSession.getParsedUnit(path);
-    if (parsedResult is! ParsedUnitResult || parsedResult.isPart) {
-      throw NonLibraryAssetException(assetId);
-    }
+      var path = assetPath(assetId);
+      var parsedResult = _driver.currentSession.getParsedUnit(path);
+      if (parsedResult is! ParsedUnitResult || parsedResult.isPart) {
+        throw NonLibraryAssetException(assetId);
+      }
 
-    final library = await _driver.currentSession.getLibraryByUri(uri.toString())
-        as LibraryElementResult;
+      return await _driver.currentSession.getLibraryByUri(uri.toString())
+          as LibraryElementResult;
+    });
+
     if (!allowSyntaxErrors) {
       final errors = await _syntacticErrorsFor(library.element);
       if (errors.isNotEmpty) {
@@ -254,14 +270,16 @@ class AnalyzerResolver implements ReleasableResolver {
 
     final relevantResults = <ErrorsResult>[];
 
-    for (final path in paths) {
-      final result = await _driver.currentSession.getErrors(path);
-      if (result is ErrorsResult &&
-          result.errors.any(
-              (error) => error.errorCode.type == ErrorType.SYNTACTIC_ERROR)) {
-        relevantResults.add(result);
+    await _driverPool.withResource(() async {
+      for (final path in paths) {
+        final result = await _driver.currentSession.getErrors(path);
+        if (result is ErrorsResult &&
+            result.errors.any(
+                (error) => error.errorCode.type == ErrorType.SYNTACTIC_ERROR)) {
+          relevantResults.add(result);
+        }
       }
-    }
+    });
 
     return relevantResults;
   }
@@ -303,6 +321,12 @@ class AnalyzerResolver implements ReleasableResolver {
 class AnalyzerResolvers implements Resolvers {
   /// Nullable, the default analysis options are used if not provided.
   final AnalysisOptions _analysisOptions;
+
+  /// Used to protect all usages of the analysis driver from
+  /// `InconsistentAnalysisException` errors, which might occur if we are in the
+  /// middle of some calls to `changeFile` but have not yet completed
+  /// `applyPendingFileChanges`.
+  final _driverPool = Pool(1);
 
   /// A function that returns the path to the SDK summary when invoked.
   ///
@@ -353,14 +377,14 @@ class AnalyzerResolvers implements Resolvers {
           await loadPackageConfigUri((await Isolate.packageConfig)!);
       var driver = await analysisDriver(uriResolver, _analysisOptions,
           await _sdkSummaryGenerator(), loadedConfig);
-      _resolver = AnalyzerResolver(driver, uriResolver);
+      _resolver = AnalyzerResolver(driver, _driverPool, uriResolver);
     }()));
   }
 
   @override
   Future<ReleasableResolver> get(BuildStep buildStep) async {
     await _ensureInitialized();
-    return PerActionResolver(_resolver, buildStep);
+    return PerActionResolver(_resolver, _driverPool, buildStep);
   }
 
   /// Must be called between each build.

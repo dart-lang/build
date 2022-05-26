@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:analyzer/dart/analysis/utilities.dart';
@@ -49,13 +50,17 @@ class BuildAssetUriResolver extends UriResolver {
   /// input, subsequent calls to a resolver, or a transitive import thereof.
   final _buildStepTransitivelyResolvedAssets = <BuildStep, HashSet<AssetId>>{};
 
-  /// Updates [resourceProvider] and [driver] with updated versions of
-  /// [entryPoints].
+  /// Updates [resourceProvider] and the analysis driver given by
+  /// `withDriverResource`  with updated versions of [entryPoints].
   ///
   /// If [transitive], then all the transitive imports from [entryPoints] are
   /// also updated.
-  Future<void> performResolve(BuildStep buildStep, List<AssetId> entryPoints,
-      AnalysisDriverForPackageBuild driver,
+  Future<void> performResolve(
+      BuildStep buildStep,
+      List<AssetId> entryPoints,
+      Future<void> Function(
+              FutureOr<void> Function(AnalysisDriverForPackageBuild))
+          withDriverResource,
       {required bool transitive}) async {
     final transitivelyResolved = _buildStepTransitivelyResolvedAssets
         .putIfAbsent(buildStep, () => HashSet());
@@ -74,13 +79,14 @@ class BuildAssetUriResolver extends UriResolver {
             for (final id in uncrawledIds)
               (await _updateCachedAssetState(id, buildStep))!
           ];
-
-    for (final state in assetStates) {
-      if (_needsChangeFile.remove(state.path)) {
-        driver.changeFile(state.path);
+    await withDriverResource((driver) async {
+      for (final state in assetStates) {
+        if (_needsChangeFile.remove(state.path)) {
+          driver.changeFile(state.path);
+        }
       }
-    }
-    await driver.applyPendingFileChanges();
+      await driver.applyPendingFileChanges();
+    });
   }
 
   /// Updates the internal state for [id], if it has changed.
