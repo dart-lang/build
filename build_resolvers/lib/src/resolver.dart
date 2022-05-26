@@ -30,12 +30,6 @@ import 'analysis_driver.dart';
 import 'build_asset_uri_resolver.dart';
 import 'human_readable_duration.dart';
 
-// Used to protect all usages of the analysis driver from
-// `InconsistentAnalysisException` errors, which might occur if we are in the
-// middle of some calls to `changeFile` but have not yet completed
-// `applyPendingFileChanges`.
-final _driverPool = Pool(1);
-
 final _logger = Logger('build_resolvers');
 
 Future<String> _packagePath(String package) async {
@@ -47,11 +41,12 @@ Future<String> _packagePath(String package) async {
 /// down from entrypoints.
 class PerActionResolver implements ReleasableResolver {
   final AnalyzerResolver _delegate;
+  final Pool _driverPool;
   final BuildStep _step;
 
   final _entryPoints = <AssetId>{};
 
-  PerActionResolver(this._delegate, this._step);
+  PerActionResolver(this._delegate, this._driverPool, this._step);
 
   @override
   Stream<LibraryElement> get libraries async* {
@@ -168,8 +163,9 @@ class PerActionResolver implements ReleasableResolver {
 class AnalyzerResolver implements ReleasableResolver {
   final BuildAssetUriResolver _uriResolver;
   final AnalysisDriverForPackageBuild _driver;
+  final Pool _driverPool;
 
-  AnalyzerResolver(this._driver, this._uriResolver);
+  AnalyzerResolver(this._driver, this._driverPool, this._uriResolver);
 
   @override
   Future<bool> isLibrary(AssetId assetId) async {
@@ -326,6 +322,12 @@ class AnalyzerResolvers implements Resolvers {
   /// Nullable, the default analysis options are used if not provided.
   final AnalysisOptions _analysisOptions;
 
+  /// Used to protect all usages of the analysis driver from
+  /// `InconsistentAnalysisException` errors, which might occur if we are in the
+  /// middle of some calls to `changeFile` but have not yet completed
+  /// `applyPendingFileChanges`.
+  final _driverPool = Pool(1);
+
   /// A function that returns the path to the SDK summary when invoked.
   ///
   /// Defaults to [_defaultSdkSummaryGenerator].
@@ -375,14 +377,14 @@ class AnalyzerResolvers implements Resolvers {
           await loadPackageConfigUri((await Isolate.packageConfig)!);
       var driver = await analysisDriver(uriResolver, _analysisOptions,
           await _sdkSummaryGenerator(), loadedConfig);
-      _resolver = AnalyzerResolver(driver, uriResolver);
+      _resolver = AnalyzerResolver(driver, _driverPool, uriResolver);
     }()));
   }
 
   @override
   Future<ReleasableResolver> get(BuildStep buildStep) async {
     await _ensureInitialized();
-    return PerActionResolver(_resolver, buildStep);
+    return PerActionResolver(_resolver, _driverPool, buildStep);
   }
 
   /// Must be called between each build.
