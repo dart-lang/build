@@ -227,8 +227,8 @@ class AnalyzerResolver implements ReleasableResolver {
 
   @override
   Future<LibraryElement> libraryFor(AssetId assetId,
-      {bool allowSyntaxErrors = false}) {
-    return _driverPool.withResource(() async {
+      {bool allowSyntaxErrors = false}) async {
+    final library = await _driverPool.withResource(() async {
       var uri = assetId.uri;
       if (!_driver.isUriOfExistingFile(uri)) {
         throw AssetNotFoundException(assetId);
@@ -240,17 +240,18 @@ class AnalyzerResolver implements ReleasableResolver {
         throw NonLibraryAssetException(assetId);
       }
 
-      final library = await _driver.currentSession
-          .getLibraryByUri(uri.toString()) as LibraryElementResult;
-      if (!allowSyntaxErrors) {
-        final errors = await _syntacticErrorsFor(library.element);
-        if (errors.isNotEmpty) {
-          throw SyntaxErrorInAssetException(assetId, errors);
-        }
-      }
-
-      return library.element;
+      return await _driver.currentSession.getLibraryByUri(uri.toString())
+          as LibraryElementResult;
     });
+
+    if (!allowSyntaxErrors) {
+      final errors = await _syntacticErrorsFor(library.element);
+      if (errors.isNotEmpty) {
+        throw SyntaxErrorInAssetException(assetId, errors);
+      }
+    }
+
+    return library.element;
   }
 
   /// Finds syntax errors in files related to the [element].
