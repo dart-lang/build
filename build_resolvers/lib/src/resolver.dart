@@ -143,7 +143,10 @@ class PerActionResolver implements ReleasableResolver {
           await _step.trackStage(
               'Resolving library $id',
               () => _delegate._uriResolver.performResolve(
-                  _step, [id], _delegate._driver,
+                  _step,
+                  [id],
+                  (withDriver) => _driverPool
+                      .withResource(() => withDriver(_delegate._driver)),
                   transitive: transitive));
         }
       });
