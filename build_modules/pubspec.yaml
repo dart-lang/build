@@ -33,8 +33,3 @@ dev_dependencies:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
-
-dependency_overrides:
-  # Temporary
-  build_resolvers:
-    path: ../build_resolvers
