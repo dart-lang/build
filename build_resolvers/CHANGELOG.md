@@ -1,4 +1,7 @@
-## 2.0.9-dev
+## 2.0.9
+
+- Fix a new case of `InconsistentAnalysisException` errors that can occur with
+  the newer analyzer.
 
 ## 2.0.8
 
