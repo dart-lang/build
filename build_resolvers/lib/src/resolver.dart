@@ -31,10 +31,9 @@ import 'build_asset_uri_resolver.dart';
 import 'human_readable_duration.dart';
 
 // Used to protect all usages of the analysis driver from
-// `InconsistentAnalysisException` errors, as well as ensuring we only resolve
-// one entrypoint at a time, otherwise there are race conditions with
-// `_entryPoints` being updated before it is actually ready, or resolved more
-// than once.
+// `InconsistentAnalysisException` errors, which might occur if we are in the
+// middle of some calls to `changeFile` but have not yet completed
+// `applyPendingFileChanges`.
 final _driverPool = Pool(1);
 
 final _logger = Logger('build_resolvers');
@@ -132,8 +131,12 @@ class PerActionResolver implements ReleasableResolver {
             allowSyntaxErrors: allowSyntaxErrors);
       });
 
+  // Ensures we only resolve one entrypoint at a time from the same build step,
+  // otherwise there are race conditions with `_entryPoints` being updated
+  // before it is actually ready, or resolving entrypoints more than once.
+  final Pool _perActionResolvePool = Pool(1);
   Future<void> _resolveIfNecessary(AssetId id, {required bool transitive}) =>
-      _driverPool.withResource(() async {
+      _perActionResolvePool.withResource(() async {
         if (!_entryPoints.contains(id)) {
           // We only want transitively resolved ids in `_entrypoints`.
           if (transitive) _entryPoints.add(id);
