@@ -188,14 +188,15 @@ targets:
       - $package$
 ```
 
-If you just would like to include your additional files with files which are included by default you will need to add the `$defaults$` source:
+If you just would like to include your additional files with files which are included by default you will need to enable the `include_defaults` in `sources`:
 
 ```yaml
 targets:
   $default:
     sources:
-      - $defaults$
-      - my_custom_sources/**
+      include_defaults: true
+      include:
+        - my_custom_sources/**
 ```
 
 ## Why do Builders need unique outputs?
