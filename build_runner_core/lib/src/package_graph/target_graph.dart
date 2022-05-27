@@ -61,7 +61,7 @@ class TargetGraph {
     final modulesByKey = <String, TargetNode>{};
     final publicAssetsByPackage = <String, InputMatcher>{};
     final modulesByPackage = <String, List<TargetNode>>{};
-    final includedSourceDefaults = <InputSet>{};
+    final sourcesWithIncludedDefaults = <InputSet>{};
     late BuildConfig rootPackageConfig;
     for (final package in packageGraph.allPackages.values) {
       final config = overrideBuildConfig[package.name] ??
@@ -85,8 +85,8 @@ class TargetGraph {
       }
       final nodes = config.buildTargets.values.map((target) {
         if (target.sources.includeDefaults &&
-            !includedSourceDefaults.contains(target.sources)) {
-          includedSourceDefaults.add(target.sources);
+            !sourcesWithIncludedDefaults.contains(target.sources)) {
+          sourcesWithIncludedDefaults.add(target.sources);
           target.sources.include!.addAll(defaultInclude);
         }
         return TargetNode(target, package, defaultInclude: defaultInclude);
