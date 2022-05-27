@@ -14,6 +14,8 @@ part 'input_set.g.dart';
 class InputSet {
   static const anything = InputSet();
 
+  final bool includeDefaults;
+
   /// The globs to include in the set.
   ///
   /// May be null or empty which means every possible path (like `'**'`).
@@ -24,7 +26,7 @@ class InputSet {
   /// May be null or empty which means every path in [include].
   final List<String>? exclude;
 
-  const InputSet({this.include, this.exclude});
+  const InputSet({this.include, this.exclude, this.includeDefaults = false});
 
   factory InputSet.fromJson(dynamic json) {
     if (json is List) {
@@ -38,7 +40,8 @@ class InputSet {
           'Expected a Map or a List but got a ${json.runtimeType}');
     }
     final parsed = _$InputSetFromJson(json as Map);
-    if (parsed.include != null && parsed.include!.any((s) => s.isEmpty)) {
+    if (parsed.include != null && parsed.include!.any((s) => s.isEmpty) ||
+        parsed.includeDefaults && parsed.include == null) {
       throw ArgumentError.value(
           parsed.include, 'include', 'Include globs must not be empty');
     }
@@ -56,6 +59,9 @@ class InputSet {
       result.write('any path');
     } else {
       result.write('paths matching $include');
+    }
+    if (includeDefaults) {
+      result.write(' with defaults');
     }
     if (exclude != null && exclude!.isNotEmpty) {
       result.write(' except $exclude');

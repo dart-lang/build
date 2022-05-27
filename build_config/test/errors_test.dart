@@ -138,6 +138,39 @@ targets:
   ╵'''),
         ));
   });
+
+  test('for null sources include globs if include_defaults is true', () {
+    var buildYaml = r'''
+targets:
+  $default:
+    sources:
+      include_defaults: true
+''';
+
+    _expectThrows(buildYaml, r'''
+line 4, column 7 of build.yaml: Unsupported value for "sources". Include globs must not be empty
+  ╷
+4 │       include_defaults: true
+  │       ^^^^^^^^^^^^^^^^^^^^^^
+  ╵''');
+  });
+
+  test('for null sources include globs if include_defaults is true', () {
+    var buildYaml = r'''
+targets:
+  $default:
+    sources:
+      include_defaults: true
+      include:
+''';
+
+    _expectThrows(buildYaml, r'''
+line 4, column 7 of build.yaml: Unsupported value for "sources". Include globs must not be empty
+  ╷
+4 │ ┌       include_defaults: true
+5 │ └       include:
+  ╵''');
+  });
 }
 
 void _expectThrows(String buildYaml, Object matcher) => expect(

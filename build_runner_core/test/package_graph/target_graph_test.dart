@@ -94,9 +94,7 @@ void main() {
       var packageGraph = PackageGraph.fromRoot(packageA);
 
       final defaultSources = ['d', 'f'];
-      final customSource1 = 'a';
-      final customSource2 = 'b';
-      final customSource3 = 'c';
+      final customSources = ['a', 'b'];
 
       final targetGraph = await TargetGraph.forPackageGraph(
         packageGraph,
@@ -105,20 +103,14 @@ void main() {
           'a': BuildConfig.fromMap('a', [], {
             'targets': {
               r'$default': {
-                'sources': [
-                  customSource1,
-                  r'$defaults$',
-                  customSource2,
-                  r'$defaults$',
-                  customSource3,
-                ]
+                'sources': {'include_defaults': true, 'include': customSources}
               }
             }
           }),
           'b': BuildConfig.fromMap('b', [], {
             'targets': {
               r'$default': {
-                'sources': [r'$defaults$', customSource1]
+                'sources': {'include_defaults': true, 'include': customSources}
               }
             }
           })
@@ -126,10 +118,10 @@ void main() {
       );
 
       expect(targetGraph.rootPackageConfig.buildTargets['a:a']?.sources.include,
-          [customSource1, customSource2, customSource3, ...defaultSources]);
+          [...customSources, ...defaultSources]);
 
       expect(targetGraph.allModules['b:b']?.target.sources.include,
-          [customSource1, ...defaultNonRootVisibleAssets]);
+          [...customSources, ...defaultNonRootVisibleAssets]);
     });
   });
 

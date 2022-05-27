@@ -12,14 +12,17 @@ InputSet _$InputSetFromJson(Map json) => $checkedCreate(
       ($checkedConvert) {
         $checkKeys(
           json,
-          allowedKeys: const ['include', 'exclude'],
+          allowedKeys: const ['include_defaults', 'include', 'exclude'],
         );
         final val = InputSet(
           include: $checkedConvert('include',
               (v) => (v as List<dynamic>?)?.map((e) => e as String).toList()),
           exclude: $checkedConvert('exclude',
               (v) => (v as List<dynamic>?)?.map((e) => e as String).toList()),
+          includeDefaults:
+              $checkedConvert('include_defaults', (v) => v as bool? ?? false),
         );
         return val;
       },
+      fieldKeyMap: const {'includeDefaults': 'include_defaults'},
     );
