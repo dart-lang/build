@@ -73,9 +73,8 @@ In order to generate a mock for the HttpServer class, we edit
 `http_server_test.dart`:
 
 1. import mockito's annotations library,
-2. annotate a top-level library member (like an import, or the main function)
-   with `@GenerateMocks`,
-3. import the generated mocks library,
+2. import the generated mocks library,
+3. annotate the import with `@GenerateMocks`,
 4. change `httpServer` from an HttpServer to the generated class,
    MockHttpServer.
 
@@ -84,9 +83,10 @@ In order to generate a mock for the HttpServer class, we edit
 import 'package:mockito/annotations.dart';
 import 'package:test/test.dart';
 import 'http_server.dart';
-import 'http_server_test.mocks.dart';
 
 @GenerateMocks([HttpServer])
+import 'http_server_test.mocks.dart';
+
 void main() {
   test('test', () {
     var httpServer = MockHttpServer();
@@ -161,11 +161,13 @@ If a class has a member with a type variable as a return type (for example,
 valid value. For example, given this class and test:
 
 ```dart
+@GenerateMocks([], customMocks: [MockSpec<Foo>(as: #MockFoo)])
+import 'foo_test.mocks.dart';
+
 abstract class Foo {
   T m<T>(T a, int b);
 }
 
-@GenerateMocks([], customMocks: [MockSpec<Foo>(as: #MockFoo)])
 void testFoo(Foo foo) {
   when(foo.m(7)).thenReturn(42);
 }
@@ -199,6 +201,11 @@ return type as the member, and it must have the same positional and named
 parameters as the member, except that each parameter must be made nullable:
 
 ```dart
+@GenerateMocks([], customMocks: [
+  MockSpec<Foo>(as: #MockFoo, fallbackGenerators: {#m: mShim})
+])
+import 'foo_test.mocks.dart';
+
 abstract class Foo {
   T m<T>(T a, int b);
 }
@@ -207,10 +214,6 @@ T mShim<T>(T a, int? b) {
   if (a is int) return 1;
   throw 'unknown';
 }
-
-@GenerateMocks([], customMocks: [
-  MockSpec<Foo>(as: #MockFoo, fallbackGenerators: {#m: mShim})
-])
 ```
 
 The fallback values will never be returned from a real member call; these are

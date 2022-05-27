@@ -91,10 +91,10 @@ This test runs asynchronously.
 
 ## Files
 
-* [iss.dart](https://raw.githubusercontent.com/dart-lang/mockito/master/example/iss/iss.dart)
+* [iss.dart](https://raw.githubusercontent.com/dart-lang/mockito/master/test/example/iss/iss.dart)
 : International space station API library
 
-* [iss_test.dart](https://raw.githubusercontent.com/dart-lang/mockito/master/example/iss/iss_test.dart)
+* [iss_test.dart](https://raw.githubusercontent.com/dart-lang/mockito/master/test/example/iss/iss_test.dart)
 : Unit tests for iss.dart library
 
 

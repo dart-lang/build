@@ -21,6 +21,9 @@ Let's start with a Dart library, `cat.dart`:
 ```dart
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
+
+// Annotation which generates the cat.mocks.dart library and the MockCat class.
+@GenerateMocks([Cat])
 import 'cat.mocks.dart';
 
 // Real class
@@ -34,17 +37,15 @@ class Cat {
   int lives = 9;
 }
 
-// Annotation which generates the cat.mocks.dart library and the MockCat class.
-@GenerateMocks([Cat])
 void main() {
   // Create mock object.
   var cat = MockCat();
 }
 ```
 
-By annotating a library element (such as a test file's `main` function, or a
-class) with `@GenerateMocks`, you are directing Mockito's code generation to
-write a mock class for each "real" class listed, in a new library.
+By annotating the import of a `.mocks.dart` library  with `@GenerateMocks`, you
+are directing Mockito's code generation to write a mock class for each "real"
+class listed, in a new library.
 
 The next step is to run `build_runner` in order to generate this new library:
 
