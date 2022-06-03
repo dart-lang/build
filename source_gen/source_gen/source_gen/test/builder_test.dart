@@ -296,13 +296,13 @@ void main() {
           header: '',
         ),
         {
-          '$_pkgName|lib/a.dart': '''// @dart=2.9
+          '$_pkgName|lib/a.dart': '''// @dart=2.12
 part "a.foo.dart";'''
         },
         generateFor: {'$_pkgName|lib/a.dart'},
         outputs: {
           '$_pkgName|lib/a.foo.dart':
-              decodedMatches(startsWith('// @dart=2.9\n')),
+              decodedMatches(startsWith('// @dart=2.12\n')),
         },
       );
     });
@@ -514,7 +514,7 @@ part "a.foo.dart";'''
         const CombiningBuilder(),
         {
           '$_pkgName|lib/a.dart': '''
-// @dart=2.9
+// @dart=2.12
 library a;
 part "a.g.dart";
 ''',
@@ -525,7 +525,7 @@ part "a.g.dart";
           '$_pkgName|lib/a.g.dart': decodedMatches(
             '''
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// @dart=2.9
+// @dart=2.12
 
 part of a;
 
