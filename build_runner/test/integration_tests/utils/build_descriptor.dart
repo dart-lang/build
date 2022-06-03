@@ -151,7 +151,6 @@ Future<BuildTool> packageWithBuildScript(
 String _buildersFile(
         Iterable<TestBuilderDefinition> builders, Uri callingScript) =>
     '''
-// @dart=2.9
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 
@@ -166,7 +165,6 @@ String _builderFactory(TestBuilderDefinition builder) =>
 String _buildToolFile(
         Iterable<TestBuilderDefinition> builders, Uri callingScript) =>
     '''
-// @dart=2.9
 import 'dart:io';
 
 import 'package:build/build.dart';
@@ -236,7 +234,7 @@ d.FileDescriptor _pubspec(String name,
   var buffer = StringBuffer()
     ..writeln('name: $name')
     ..writeln('environment:')
-    ..writeln('  sdk: ">=2.9.0 <3.0.0"');
+    ..writeln('  sdk: ">=2.12.0 <3.0.0"');
 
   void writeDeps(String group) {
     buffer.writeln(group);
