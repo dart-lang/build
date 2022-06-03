@@ -695,7 +695,9 @@ class _MockTargetGatherer {
           returnType.typeArguments, enclosingElement,
           isParameter: isParameter));
     } else if (returnType is analyzer.FunctionType) {
-      errorMessages.addAll(_checkFunction(returnType, enclosingElement));
+      errorMessages.addAll(_checkFunction(returnType, enclosingElement,
+          allowUnsupportedMember: allowUnsupportedMember,
+          hasDummyGenerator: hasDummyGenerator));
     } else if (returnType is analyzer.TypeParameterType) {
       if (!isParameter &&
           !allowUnsupportedMember &&

@@ -16,6 +16,8 @@ T returnsTypeVariableFromTwoShim<T, U>() => [1, 1.5].whereType<T>().first!;
 T typeVariableFieldShim<T>() =>
     throw UnsupportedError('typeVariableField cannot be used');
 
+T Function(T) returnsGenericFunctionShim<T>() => (T _) => null as T;
+
 @GenerateMocks([
   Foo,
   FooSub,
@@ -27,12 +29,14 @@ T typeVariableFieldShim<T>() =>
     #returnsTypeVariable,
     #returnsBoundedTypeVariable,
     #returnsTypeVariableFromTwo,
+    #returnsGenericFunction,
     #typeVariableField,
   }),
   MockSpec<Baz>(as: #MockBazWithFallbackGenerators, fallbackGenerators: {
     #returnsTypeVariable: returnsTypeVariableShim,
     #returnsBoundedTypeVariable: returnsBoundedTypeVariableShim,
     #returnsTypeVariableFromTwo: returnsTypeVariableFromTwoShim,
+    #returnsGenericFunction: returnsGenericFunctionShim,
     #typeVariableField: typeVariableFieldShim,
   }),
 ])
