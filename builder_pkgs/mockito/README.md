@@ -50,6 +50,8 @@ class listed, in a new library.
 The next step is to run `build_runner` in order to generate this new library:
 
 ```shell
+flutter pub run build_runner build
+# OR
 dart run build_runner build
 ```
 
@@ -189,7 +191,7 @@ verify(cat.lives=9);
 If an argument other than an ArgMatcher (like [`any`], [`anyNamed`],
 [`argThat`], [`captureThat`], etc.) is passed to a mock method, then the
 [`equals`] matcher is used for argument matching. If you need more strict
-matching, consider using `argThat(identical(arg))`.
+matching consider use `argThat(identical(arg))`.
 
 However, note that `null` cannot be used as an argument adjacent to ArgMatcher
 arguments, nor as an un-wrapped value passed as a named argument. For example:

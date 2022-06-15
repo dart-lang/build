@@ -101,7 +101,9 @@ under `dev_dependencies`: something like `build_runner: ^1.10.0`.
 The final step is to run build_runner in order to generate the new library:
 
 ```shell
-pub run build_runner build
+flutter pub run build_runner build
+# OR
+dart run build_runner build
 ```
 
 build_runner will generate the `http_server_test.mocks.dart` file which we
