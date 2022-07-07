@@ -108,8 +108,11 @@ class MockBuilder implements Builder {
       b.body.addAll(mockLibraryInfo.mockClasses);
     });
 
-    final emitter = DartEmitter.scoped(
-        orderDirectives: true, useNullSafetySyntax: sourceLibIsNonNullable);
+    final emitter = DartEmitter(
+        allocator: _AvoidConflictsAllocator(
+            coreConflicts: mockLibraryInfo.coreConflicts),
+        orderDirectives: true,
+        useNullSafetySyntax: sourceLibIsNonNullable);
     final rawOutput = mockLibrary.accept(emitter).toString();
     // The source lib may be pre-null-safety because of an explicit opt-out
     // (`// @dart=2.9`), as opposed to living in a pre-null-safety package. To
@@ -816,13 +819,22 @@ class _MockLibraryInfo {
   /// Asset-resolving while building the mock library.
   final Map<Element, String> assetUris;
 
+  final LibraryElement? dartCoreLibrary;
+
+  /// Names of overridden members which conflict with elements exported from
+  /// 'dart:core'.
+  ///
+  /// Each of these must be imported with a prefix to avoid the conflict.
+  final coreConflicts = <String>{};
+
   /// Build mock classes for [mockTargets].
   _MockLibraryInfo(
     Iterable<_MockTarget> mockTargets, {
     required this.assetUris,
     required LibraryElement entryLib,
     required InheritanceManager3 inheritanceManager,
-  }) {
+  }) : dartCoreLibrary = entryLib.importedLibraries
+            .firstWhereOrNull((library) => library.isDartCore) {
     for (final mockTarget in mockTargets) {
       final fallbackGenerators = mockTarget.fallbackGenerators;
       mockClasses.add(_MockClassInfo(
@@ -1013,8 +1025,15 @@ class _MockClassInfo {
       if (typeSystem._returnTypeIsNonNullable(method) ||
           typeSystem._hasNonNullableParameter(method) ||
           _needsOverrideForVoidStub(method)) {
+        _checkForConflictWithCore(method.name);
         yield Method((mBuilder) => _buildOverridingMethod(mBuilder, method));
       }
+    }
+  }
+
+  void _checkForConflictWithCore(String name) {
+    if (mockLibraryInfo.dartCoreLibrary?.exportNamespace.get(name) != null) {
+      mockLibraryInfo.coreConflicts.add(name);
     }
   }
 
@@ -1036,7 +1055,7 @@ class _MockClassInfo {
     if (method.isOperator) name = 'operator$name';
     builder
       ..name = name
-      ..annotations.addAll([refer('override')])
+      ..annotations.add(referImported('override', 'dart:core'))
       ..returns = _typeReference(method.returnType)
       ..types.addAll(method.typeParameters.map(_typeParameterReference));
 
@@ -1105,7 +1124,8 @@ class _MockClassInfo {
       return;
     }
 
-    final invocation = refer('Invocation').property('method').call([
+    final invocation =
+        referImported('Invocation', 'dart:core').property('method').call([
       refer('#${method.displayName}'),
       literalList(invocationPositionalArgs),
       if (invocationNamedArgs.isNotEmpty) literalMap(invocationNamedArgs),
@@ -1202,6 +1222,7 @@ class _MockClassInfo {
       return TypeReference((b) {
         b
           ..symbol = 'Stream'
+          ..url = 'dart:async'
           ..types.add(elementType);
       }).property('empty').call([]);
     } else if (type.isDartCoreString) {
@@ -1224,7 +1245,9 @@ class _MockClassInfo {
   /// Returns a reference to [Future], optionally with a type argument for the
   /// value of the Future.
   TypeReference _futureReference([Reference? valueType]) => TypeReference((b) {
-        b.symbol = 'Future';
+        b
+          ..symbol = 'Future'
+          ..url = 'dart:async';
         if (valueType != null) {
           b.types.add(valueType);
         }
@@ -1513,7 +1536,7 @@ class _MockClassInfo {
       MethodBuilder builder, PropertyAccessorElement getter) {
     builder
       ..name = getter.displayName
-      ..annotations.addAll([refer('override')])
+      ..annotations.add(referImported('override', 'dart:core'))
       ..type = MethodType.getter
       ..returns = _typeReference(getter.returnType);
 
@@ -1540,7 +1563,8 @@ class _MockClassInfo {
       return;
     }
 
-    final invocation = refer('Invocation').property('getter').call([
+    final invocation =
+        referImported('Invocation', 'dart:core').property('getter').call([
       refer('#${getter.displayName}'),
     ]);
     final namedArgs = {
@@ -1566,7 +1590,7 @@ class _MockClassInfo {
       MethodBuilder builder, PropertyAccessorElement setter) {
     builder
       ..name = setter.displayName
-      ..annotations.addAll([refer('override')])
+      ..annotations.add(referImported('override', 'dart:core'))
       ..type = MethodType.setter;
 
     assert(setter.parameters.length == 1);
@@ -1576,7 +1600,8 @@ class _MockClassInfo {
       ..type = _typeReference(parameter.type, forceNullable: true)));
     final invocationPositionalArg = refer(parameter.displayName);
 
-    final invocation = refer('Invocation').property('setter').call([
+    final invocation =
+        referImported('Invocation', 'dart:core').property('setter').call([
       refer('#${setter.displayName}'),
       invocationPositionalArg,
     ]);
@@ -1712,6 +1737,57 @@ class InvalidMockitoAnnotationException implements Exception {
 
   @override
   String toString() => 'Invalid @GenerateMocks annotation: $message';
+}
+
+/// An [Allocator] that avoids conflicts with elements exported from
+/// 'dart:core'.
+///
+/// This does not prefix _all_ 'dart:core' elements; instead it takes a set of
+/// names which conflict, and if that is non-empty, generates two import
+/// directives for 'dart:core':
+///
+/// * an unprefixed import with conflicting names enumerated in the 'hide'
+///   combinator,
+/// * a prefixed import which will be the way to reference the conflicting
+///   names.
+class _AvoidConflictsAllocator implements Allocator {
+  final _imports = <String, int>{};
+  var _keys = 1;
+
+  /// The collection of names of elements which conflict with elements exported
+  /// from 'dart:core'.
+  final Set<String> _coreConflicts;
+
+  _AvoidConflictsAllocator({required Set<String> coreConflicts})
+      : _coreConflicts = coreConflicts;
+
+  @override
+  String allocate(Reference reference) {
+    final symbol = reference.symbol!;
+    final url = reference.url;
+    if (url == null) {
+      return symbol;
+    }
+    if (url == 'dart:core' && !_coreConflicts.contains(symbol)) {
+      return symbol;
+    }
+    return '_i${_imports.putIfAbsent(url, _nextKey)}.$symbol';
+  }
+
+  int _nextKey() => _keys++;
+
+  @override
+  Iterable<Directive> get imports => [
+        if (_imports.containsKey('dart:core'))
+          // 'dart:core' is explicitly imported to avoid a conflict between an
+          // overriding member and an element exported by 'dart:core'. We must
+          // add another, unprefixed, import for 'dart:core' which hides the
+          // conflicting names.
+          Directive.import('dart:core', hide: _coreConflicts.toList()),
+        ..._imports.keys.map(
+          (u) => Directive.import(u, as: '_i${_imports[u]}'),
+        ),
+      ];
 }
 
 /// A [MockBuilder] instance for use by `build.yaml`.

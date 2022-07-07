@@ -534,8 +534,8 @@ void main() {
       '''),
       _containsAllOf(dedent2('''
       _i3.Future<void> m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: Future<void>.value(),
-          returnValueForMissingStub: Future<void>.value()) as _i3.Future<void>);
+          returnValue: _i3.Future<void>.value(),
+          returnValueForMissingStub: _i3.Future<void>.value()) as _i3.Future<void>);
       ''')),
     );
   });
@@ -549,7 +549,7 @@ void main() {
       '''),
       _containsAllOf(dedent2('''
       _i3.Stream<int> m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: Stream<int>.empty()) as _i3.Stream<int>);
+          returnValue: _i3.Stream<int>.empty()) as _i3.Stream<int>);
       ''')),
     );
   });
@@ -713,6 +713,25 @@ void main() {
       _containsAllOf(
           'void m(T? a) =>', 'super.noSuchMethod(Invocation.method(#m, [a])'),
     );
+  });
+
+  test('overrides methods, adjusting imports for names that conflict with core',
+      () async {
+    await expectSingleNonNullableOutput(
+        dedent('''
+      import 'dart:core' as core;
+      class Foo {
+        void List(core.int a) {}
+        core.List<core.String> m() => [];
+      }
+      '''),
+        _containsAllOf(
+          '  void List(int? a) => super.noSuchMethod(Invocation.method(#List, [a]),\n',
+          dedent2('''
+            _i3.List<String> m() =>
+                (super.noSuchMethod(Invocation.method(#m, []), returnValue: <String>[])
+                    as _i3.List<String>);'''),
+        ));
   });
 
   test(
@@ -1257,6 +1276,23 @@ void main() {
     expect(mocksContent, contains('m(_i3.Bar? a)'));
   });
 
+  test('imports dart:core with a prefix when members conflict with dart:core',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent('''
+      import 'dart:core' as core;
+      class Foo {
+        void List(int a) {}
+        core.List<String> m() => [];
+      }
+      '''),
+      _containsAllOf(
+        "import 'dart:core' hide List;",
+        "import 'dart:core' as _i3;",
+      ),
+    );
+  });
+
   test('prefixes parameter type on generic function-typed parameter', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
@@ -1492,7 +1528,7 @@ void main() {
         '''),
       _containsAllOf(
           '_i3.FutureOr<R> m<R>() => (super.noSuchMethod(Invocation.method(#m, []),',
-          '      returnValue: Future<R>.value(null)) as _i3.FutureOr<R>);'),
+          '      returnValue: _i3.Future<R>.value(null)) as _i3.FutureOr<R>);'),
     );
   });
 
@@ -2148,7 +2184,7 @@ void main() {
       '''),
       _containsAllOf(dedent2('''
       _i3.Future<bool> m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: Future<bool>.value(false)) as _i3.Future<bool>);
+          returnValue: _i3.Future<bool>.value(false)) as _i3.Future<bool>);
       ''')),
     );
   });
@@ -2164,7 +2200,7 @@ void main() {
       '''),
       _containsAllOf(dedent2('''
       _i3.Future<Function> m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: Future<Function>.value(() {})) as _i3.Future<Function>);
+          returnValue: _i3.Future<Function>.value(() {})) as _i3.Future<Function>);
       ''')),
     );
   });
@@ -2180,7 +2216,7 @@ void main() {
       '''),
       _containsAllOf(dedent2('''
       _i3.Future<_i2.Bar?> m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: Future<_i2.Bar?>.value()) as _i3.Future<_i2.Bar?>);
+          returnValue: _i3.Future<_i2.Bar?>.value()) as _i3.Future<_i2.Bar?>);
       ''')),
     );
   });
@@ -2198,7 +2234,7 @@ void main() {
       _containsAllOf(dedent2('''
       _i3.Future<_i4.Uint8List> m() =>
           (super.noSuchMethod(Invocation.method(#m, []),
-                  returnValue: Future<_i4.Uint8List>.value(_i4.Uint8List(0)))
+                  returnValue: _i3.Future<_i4.Uint8List>.value(_i4.Uint8List(0)))
               as _i3.Future<_i4.Uint8List>);
       ''')),
     );
@@ -2216,7 +2252,7 @@ void main() {
       _containsAllOf(dedent2('''
       _i3.Future<Iterable<bool>> m() =>
           (super.noSuchMethod(Invocation.method(#m, []),
-                  returnValue: Future<Iterable<bool>>.value(<bool>[]))
+                  returnValue: _i3.Future<Iterable<bool>>.value(<bool>[]))
               as _i3.Future<Iterable<bool>>);
       ''')),
     );
@@ -2231,7 +2267,7 @@ void main() {
       '''),
       _containsAllOf(dedent2('''
       _i3.Stream<int> m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: Stream<int>.empty()) as _i3.Stream<int>);
+          returnValue: _i3.Stream<int>.empty()) as _i3.Stream<int>);
       ''')),
     );
   });
