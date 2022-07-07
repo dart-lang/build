@@ -93,18 +93,6 @@ void main() {
     );
   });
 
-  test('Allow no "library"  by default', () async {
-    final sources =
-        _createPackageStub(testLibContent: _testLibContentNoLibrary);
-    final builder = PartBuilder([const CommentGenerator()], '.foo.dart');
-
-    await testBuilder(
-      builder,
-      sources,
-      outputs: {'$_pkgName|lib/test_lib.foo.dart': _testGenNoLibrary},
-    );
-  });
-
   test('Does not fail when there is no output', () async {
     final sources = _createPackageStub(testLibContent: 'class A {}');
     final builder =
@@ -113,8 +101,10 @@ void main() {
   });
 
   test('Use new part syntax when no library directive exists', () async {
-    final sources =
-        _createPackageStub(testLibContent: _testLibContentNoLibrary);
+    final sources = _createPackageStub(
+      testLibContent: _testLibContentNoLibrary,
+      testLibPartContent: _testLibPartContentNoLibrary,
+    );
     final builder = PartBuilder([const CommentGenerator()], '.foo.dart');
     await testBuilder(
       builder,
@@ -828,6 +818,7 @@ foo generated content
     part 'test_lib.g.dart';
     ''',
       testLibPartContent: '''
+    part of 'test_lib.dart';
     @deprecated
     int x;
     ''',
@@ -943,6 +934,12 @@ class MyGoodError { }
 
 const _testLibPartContent = r'''
 part of test_lib;
+final int bar = 42;
+class Customer { }
+''';
+
+const _testLibPartContentNoLibrary = r'''
+part of 'test_lib.dart';
 final int bar = 42;
 class Customer { }
 ''';
