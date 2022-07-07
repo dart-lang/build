@@ -788,6 +788,7 @@ void main() {
         part 'part.dart';
         ''',
       'foo|test/part.dart': '''
+        part of 'foo_test.dart';
         @GenerateMocks([Foo])
         void fooTests() {}
         '''
