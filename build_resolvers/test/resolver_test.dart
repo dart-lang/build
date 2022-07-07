@@ -239,7 +239,8 @@ void main() {
       }, (resolver) async {
         var lib = await resolver.libraryFor(entryPoint);
         expect(lib.imports.length, 2);
-        expect(lib.parts.length, 1);
+        // TODO(scheglov) Use `parts2` when it is available.
+        //expect(lib.parts2, isEmpty);
       }, resolvers: AnalyzerResolvers());
     });
 
