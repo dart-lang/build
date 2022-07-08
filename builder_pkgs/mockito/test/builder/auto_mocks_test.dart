@@ -486,6 +486,31 @@ void main() {
   });
 
   test(
+      'throws when given a parameter default value using a private type, and '
+      'refers to the class-to-mock', () {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': dedent(r'''
+      class FooBase {
+        void m([Bar a = const _Bar()]) {}
+      }
+      class Foo extends FooBase {}
+      class Bar {}
+      class _Bar implements Bar {
+        const _Bar();
+      }
+      '''),
+      },
+      message: contains(
+          "Mockito cannot generate a valid override for method 'Foo.m'; "
+          "parameter 'a' causes a problem: default value has a private type: "
+          'asset:foo/lib/foo.dart#_Bar'),
+    );
+  });
+
+  test(
       'throws when given a parameter default value using a private constructor',
       () {
     _expectBuilderThrows(

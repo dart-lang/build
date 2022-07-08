@@ -1367,11 +1367,11 @@ class _MockClassInfo {
               .code;
         } on _ReviveException catch (e) {
           final method = parameter.enclosingElement!;
-          final clazz = method.enclosingElement!;
           throw InvalidMockitoAnnotationException(
               'Mockito cannot generate a valid override for method '
-              "'${clazz.displayName}.${method.displayName}'; parameter "
-              "'${parameter.displayName}' causes a problem: ${e.message}");
+              "'${mockTarget.classElement.displayName}.${method.displayName}'; "
+              "parameter '${parameter.displayName}' causes a problem: "
+              '${e.message}');
         }
       }
     });
