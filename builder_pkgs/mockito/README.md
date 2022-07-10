@@ -189,7 +189,7 @@ verify(cat.lives=9);
 If an argument other than an ArgMatcher (like [`any`], [`anyNamed`],
 [`argThat`], [`captureThat`], etc.) is passed to a mock method, then the
 [`equals`] matcher is used for argument matching. If you need more strict
-matching consider use `argThat(identical(arg))`.
+matching, consider using `argThat(identical(arg))`.
 
 However, note that `null` cannot be used as an argument adjacent to ArgMatcher
 arguments, nor as an un-wrapped value passed as a named argument. For example:
