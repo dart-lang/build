@@ -1631,11 +1631,10 @@ jobs:
     name: "e2e_test; linux; Dart dev; PKG: _test_null_safety; `dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `dart run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
-      - id: chrome-checkout
-        uses: browser-actions/setup-chrome@latest
-        run: chrome --version
+      - uses: browser-actions/setup-chrome@latest
         with:
           chrome-version: stable
+      - run: chrome --version
       - name: Cache Pub hosted dependencies
         uses: actions/cache@4504faf7e9bcf8f3ed0bc863c4e1d21499ab8ef8
         with:
@@ -2222,11 +2221,10 @@ jobs:
     name: "e2e_test; windows; Dart dev; PKG: _test_null_safety; `dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `dart run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
-      - id: chrome-checkout
-        uses: browser-actions/setup-chrome@latest
-        run: chrome --version
+      - uses: browser-actions/setup-chrome@latest
         with:
           chrome-version: stable
+      - run: chrome --version
       - uses: dart-lang/setup-dart@6a218f2413a3e78e9087f638a238f6b40893203d
         with:
           sdk: dev
