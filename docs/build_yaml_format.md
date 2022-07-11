@@ -85,6 +85,7 @@ key             | value                             | default
 options         | [BuilderOptions](#builderoptions) | none
 dev_options     | [BuilderOptions](#builderoptions) | none
 release_options | [BuilderOptions](#builderoptions) | none
+runs_before     | List<[BuilderKey](#builderkey)>   | none
 
 ## BuilderOptions
 

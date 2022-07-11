@@ -12,12 +12,14 @@ import 'package:graphs/graphs.dart';
 /// Builders will be ordered such that their `required_inputs` and `runs_before`
 /// constraints are met, but the rest of the ordering is arbitrary.
 Iterable<BuilderDefinition> findBuilderOrder(
-    Iterable<BuilderDefinition> builders) {
+    Iterable<BuilderDefinition> builders,
+    Map<String, GlobalBuilderConfig> globalBuilderConfigs) {
   final consistentOrderBuilders = builders.toList()
     ..sort((a, b) => a.key.compareTo(b.key));
   Iterable<BuilderDefinition> dependencies(BuilderDefinition parent) =>
       consistentOrderBuilders.where((child) =>
-          _hasInputDependency(parent, child) || _mustRunBefore(parent, child));
+          _hasInputDependency(parent, child) ||
+          _mustRunBefore(parent, child, globalBuilderConfigs));
   var components = stronglyConnectedComponents<BuilderDefinition>(
     consistentOrderBuilders,
     dependencies,
@@ -41,5 +43,7 @@ bool _hasInputDependency(BuilderDefinition parent, BuilderDefinition child) {
 }
 
 /// Whether [child] specifies that it wants to run before [parent].
-bool _mustRunBefore(BuilderDefinition parent, BuilderDefinition child) =>
-    child.runsBefore.contains(parent.key);
+bool _mustRunBefore(BuilderDefinition parent, BuilderDefinition child,
+        Map<String, GlobalBuilderConfig?> globalBuilderConfigs) =>
+    child.runsBefore.contains(parent.key) ||
+    (globalBuilderConfigs[child.key]?.runsBefore.contains(parent.key) ?? false);

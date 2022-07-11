@@ -132,7 +132,10 @@ Future<BuildScriptInfo> findBuildScriptOptions({
       .expand((c) => c.builderDefinitions.values)
       .where(_isValidDefinition);
 
-  final orderedBuilders = findBuilderOrder(builderDefinitions).toList();
+  final rootBuildConfig = orderedConfigs.last;
+  final orderedBuilders =
+      findBuilderOrder(builderDefinitions, rootBuildConfig.globalOptions)
+          .toList();
 
   final postProcessBuilderDefinitions = orderedConfigs
       .expand((c) => c.postProcessBuilderDefinitions.values)

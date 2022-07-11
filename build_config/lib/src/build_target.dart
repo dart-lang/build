@@ -142,13 +142,29 @@ class GlobalBuilderConfig {
   /// Overrides for [options] in release mode.
   final Map<String, dynamic> releaseOptions;
 
+  /// Builder keys in `$package:$builder` format which should only be run after
+  /// this Builder.
+  ///
+  /// This allows the user to configure the ordering of particular builders as
+  /// necessary, but it is a global option.
+  ///
+  /// This config is merged with the `runsBefore` configuration of the builder
+  /// definition, and does not overwrite it.
+  final List<String> runsBefore;
+
   GlobalBuilderConfig({
     Map<String, dynamic>? options,
     Map<String, dynamic>? devOptions,
     Map<String, dynamic>? releaseOptions,
+    List<String>? runsBefore,
   })  : options = options ?? const {},
         devOptions = devOptions ?? const {},
-        releaseOptions = releaseOptions ?? const {};
+        releaseOptions = releaseOptions ?? const {},
+        runsBefore = runsBefore
+                ?.map((builder) =>
+                    normalizeBuilderKeyUsage(builder, currentPackage))
+                .toList() ??
+            const [];
 
   factory GlobalBuilderConfig.fromJson(Map json) {
     ArgumentError.checkNotNull(json);
