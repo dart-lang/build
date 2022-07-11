@@ -4,6 +4,7 @@
 
 // Disabling sound null safety is only supported on the web right now.
 @TestOn('browser')
+@Skip('https://github.com/dart-lang/build/issues/3332')
 import 'package:test/test.dart';
 
 const weakMode = <int?>[] is List<int>;

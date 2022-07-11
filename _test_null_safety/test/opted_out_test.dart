@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 //
 // @dart=2.7
+@Skip('https://github.com/dart-lang/build/issues/3332')
 import 'package:test/test.dart';
 
 import 'common/message.dart';
