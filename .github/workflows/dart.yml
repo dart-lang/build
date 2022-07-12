@@ -32,29 +32,7 @@ jobs:
             os:ubuntu-latest
       - uses: dart-lang/setup-dart@6a218f2413a3e78e9087f638a238f6b40893203d
         with:
-          sdk: dev
-      - id: checkout
-        uses: actions/checkout@d0651293c4a5a52e711f25b41b05b2212f385d28
-      - id: _test_null_safety_pub_upgrade
-        name: _test_null_safety; dart pub upgrade
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: dart pub upgrade
-      - name: "_test_null_safety; dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
-        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: "dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
-      - name: "_test_null_safety; dart run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
-        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: "dart run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
-  job_052:
-    name: "e2e_test; windows; Dart dev; PKG: _test_null_safety; `dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random`, `dart run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
-    steps:
-      - uses: dart-lang/setup-dart@6a218f2413a3e78e9087f638a238f6b40893203d
-        with:
-          sdk: dev
+          sdk: 2.18.0-238.0.dev
       - id: checkout
         uses: actions/checkout@d0651293c4a5a52e711f25b41b05b2212f385d28
       - id: _test_null_safety_pub_upgrade
