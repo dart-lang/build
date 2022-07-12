@@ -176,5 +176,6 @@ class GlobalBuilderConfig {
         'options': options,
         'devOptions': devOptions,
         'releaseOptions': releaseOptions,
+        'runsBefore': runsBefore,
       }.toString();
 }

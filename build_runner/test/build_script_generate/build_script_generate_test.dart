@@ -10,8 +10,8 @@ import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
 void main() {
-  group('Builder imports', () {
-    setUp(() async {
+  group('validation', () {
+    setUpAll(() async {
       await d.dir('a', [
         await pubspec('a', currentIsolateDependencies: [
           'build',
@@ -26,31 +26,79 @@ void main() {
       await runPub('a', 'get');
     });
 
-    test('warn about deprecated ../ style imports', () async {
-      await d.dir('a', [
-        d.file('build.yaml', '''
+    group('of builder imports', () {
+      test('warn about deprecated ../ style imports', () async {
+        await d.dir('a', [
+          d.file('build.yaml', '''
 builders:
   fake:
     import: "../../../tool/builder.dart"
     builder_factories: ["myFactory"]
     build_extensions: {"foo": ["bar"]}
 '''),
-      ]).create();
+        ]).create();
 
-      var result = await runPub('a', 'run', args: ['build_runner', 'build']);
-      expect(result.stderr, isEmpty);
-      expect(result.stdout,
-          contains('The `../` import syntax in build.yaml is now deprecated'));
-    });
+        var result = await runPub('a', 'run', args: ['build_runner', 'build']);
+        expect(result.stderr, isEmpty);
+        expect(
+            result.stdout,
+            contains(
+                'The `../` import syntax in build.yaml is now deprecated'));
+      });
 
-    test('support package relative imports', () async {
-      await d.dir('a', [
-        d.file('build.yaml', '''
+      test('support package relative imports', () async {
+        await d.dir('a', [
+          d.file('build.yaml', '''
 builders:
   fake:
     import: "tool/builder.dart"
     builder_factories: ["myFactory"]
     build_extensions: {"foo": ["bar"]}
+'''),
+        ]).create();
+
+        var result = await runPub('a', 'run', args: ['build_runner', 'build']);
+        expect(result.stderr, isEmpty);
+        expect(
+            result.stdout,
+            isNot(contains(
+                'The `../` import syntax in build.yaml is now deprecated')));
+
+        await d.dir('a', [
+          d.dir('.dart_tool', [
+            d.dir('build', [
+              d.dir('entrypoint', [
+                d.file('build.dart',
+                    contains("import '../../../tool/builder.dart'"))
+              ])
+            ])
+          ])
+        ]).validate();
+      });
+
+      test('warns for builder config that leaves unparseable Dart', () async {
+        await d.dir('a', [
+          d.file('build.yaml', '''
+builders:
+  fake:
+    import: "tool/builder.dart"
+    builder_factories: ["not an identifier"]
+    build_extensions: {"foo": ["bar"]}
+''')
+        ]).create();
+        var result = await runPub('a', 'run', args: ['build_runner', 'build']);
+        expect(result.stderr, isEmpty);
+        expect(result.stdout, contains('could not be parsed'));
+      });
+    });
+
+    test('checks builder keys in global_options', () async {
+      await d.dir('a', [
+        d.file('build.yaml', '''
+global_options:
+  a:a:
+    runs_before:
+      - b:b
 '''),
       ]).create();
 
@@ -58,34 +106,14 @@ builders:
       expect(result.stderr, isEmpty);
       expect(
           result.stdout,
-          isNot(contains(
-              'The `../` import syntax in build.yaml is now deprecated')));
-
-      await d.dir('a', [
-        d.dir('.dart_tool', [
-          d.dir('build', [
-            d.dir('entrypoint', [
-              d.file(
-                  'build.dart', contains("import '../../../tool/builder.dart'"))
-            ])
-          ])
-        ])
-      ]).validate();
-    });
-
-    test('warns for builder config that leaves unparseable Dart', () async {
-      await d.dir('a', [
-        d.file('build.yaml', '''
-builders:
-  fake:
-    import: "tool/builder.dart"
-    builder_factories: ["not an identifier"]
-    build_extensions: {"foo": ["bar"]}
-''')
-      ]).create();
-      var result = await runPub('a', 'run', args: ['build_runner', 'build']);
-      expect(result.stderr, isEmpty);
-      expect(result.stdout, contains('could not be parsed'));
+          allOf(
+            contains(
+                'Invalid builder key `a:a` found in global_options config of '
+                'build.yaml. This configuration will have no effect.'),
+            contains(
+                'Invalid builder key `b:b` found in global_options config of '
+                'build.yaml. This configuration will have no effect.'),
+          ));
     });
   });
 
