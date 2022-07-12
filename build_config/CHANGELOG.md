@@ -1,4 +1,4 @@
-## 1.1.0-dev
+## 1.1.0
 
 - Require Dart 2.14
 - Support `runsBefore` global configuration for builders. This allows users to

@@ -1,4 +1,4 @@
-## 2.2.0-dev
+## 2.2.0
 
 - Support global 'runs_before' configuration for builders. This allows users
   to influence the ordering of builders in their build.
