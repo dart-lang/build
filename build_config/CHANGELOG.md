@@ -1,6 +1,8 @@
-## 1.0.1-dev
+## 1.1.0
 
 - Require Dart 2.14
+- Support `runsBefore` global configuration for builders. This allows users to
+  have some control over builder ordering.
 
 ## 1.0.0
 

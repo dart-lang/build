@@ -3,35 +3,125 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:_test_common/build_configs.dart';
+import 'package:build_config/build_config.dart';
 import 'package:build_runner/src/build_script_generate/builder_ordering.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('Builder ordering', () {
-    test('orders builders with `runs_before`', () async {
+    test('orders builders with "runs_before"', () async {
       final buildConfigs = parseBuildConfigs({
         'a': {
           'builders': {
-            'runs_second': {
+            'a': {
               'builder_factories': ['createBuilder'],
               'build_extensions': <String, List<String>>{},
               'target': '',
               'import': '',
             },
-            'runs_first': {
+            'b': {
               'builder_factories': ['createBuilder'],
               'build_extensions': {},
               'target': '',
               'import': '',
-              'runs_before': [':runs_second'],
+              'runs_before': [':a'],
+            },
+            'c': {
+              'builder_factories': ['createBuilder'],
+              'build_extensions': {},
+              'target': '',
+              'import': '',
             },
           }
         }
       });
       final orderedBuilders = findBuilderOrder(
-          buildConfigs.values.expand((v) => v.builderDefinitions.values));
+          buildConfigs.values.expand((v) => v.builderDefinitions.values), {});
       final orderedKeys = orderedBuilders.map((b) => b.key);
-      expect(orderedKeys, ['a:runs_first', 'a:runs_second']);
+      expect(orderedKeys, ['a:b', 'a:a', 'a:c']);
+    });
+
+    test('orders builders with global "runs_before"', () {
+      runInBuildConfigZone(() {
+        final buildConfigs = parseBuildConfigs({
+          'a': {
+            'builders': {
+              'a': {
+                'builder_factories': ['createBuilder'],
+                'build_extensions': <String, List<String>>{},
+                'target': '',
+                'import': '',
+              },
+              'b': {
+                'builder_factories': ['createBuilder'],
+                'build_extensions': {},
+                'target': '',
+                'import': '',
+                'runs_before': [':a'],
+              },
+              'c': {
+                'builder_factories': ['createBuilder'],
+                'build_extensions': {},
+                'target': '',
+                'import': '',
+              },
+            }
+          }
+        });
+        final orderedBuilders = findBuilderOrder(
+            buildConfigs.values.expand((v) => v.builderDefinitions.values), {
+          'a:c': GlobalBuilderConfig.fromJson({
+            'runs_before': ['a:a'],
+          }),
+        });
+        final orderedKeys = orderedBuilders.map((b) => b.key);
+        expect(orderedKeys, [
+          'a:b',
+          'a:c',
+          'a:a',
+        ]);
+      }, 'a', []);
+    });
+
+    test('orders builders with global and local "runs_before"', () {
+      runInBuildConfigZone(() {
+        final buildConfigs = parseBuildConfigs({
+          'a': {
+            'builders': {
+              'a': {
+                'builder_factories': ['createBuilder'],
+                'build_extensions': <String, List<String>>{},
+                'target': '',
+                'import': '',
+              },
+              'b': {
+                'builder_factories': ['createBuilder'],
+                'build_extensions': {},
+                'target': '',
+                'import': '',
+              },
+              'c': {
+                'builder_factories': ['createBuilder'],
+                'build_extensions': {},
+                'target': '',
+                'import': '',
+              },
+            }
+          }
+        });
+        final orderedBuilders = findBuilderOrder(
+            buildConfigs.values.expand((v) => v.builderDefinitions.values), {
+          'a:b': GlobalBuilderConfig.fromJson({
+            'runs_before': ['a:a'],
+          }),
+        });
+        final orderedKeys = orderedBuilders.map((b) => b.key);
+        expect(orderedKeys, [
+          'a:b',
+          'a:a',
+          'a:c',
+        ]);
+      }, 'a', []);
     });
 
     test('orders builders with `required_inputs`', () async {
@@ -57,7 +147,7 @@ void main() {
         }
       });
       final orderedBuilders = findBuilderOrder(
-          buildConfigs.values.expand((v) => v.builderDefinitions.values));
+          buildConfigs.values.expand((v) => v.builderDefinitions.values), {});
       final orderedKeys = orderedBuilders.map((b) => b.key);
       expect(orderedKeys, ['a:runs_first', 'a:runs_second']);
     });
@@ -87,7 +177,8 @@ void main() {
       });
       expect(
           () => findBuilderOrder(
-              buildConfigs.values.expand((v) => v.builderDefinitions.values)),
+              buildConfigs.values.expand((v) => v.builderDefinitions.values),
+              {}),
           throwsA(anything));
     });
   });

@@ -88,7 +88,12 @@ GlobalBuilderConfig _$GlobalBuilderConfigFromJson(Map json) => $checkedCreate(
       ($checkedConvert) {
         $checkKeys(
           json,
-          allowedKeys: const ['options', 'dev_options', 'release_options'],
+          allowedKeys: const [
+            'options',
+            'dev_options',
+            'release_options',
+            'runs_before'
+          ],
         );
         final val = GlobalBuilderConfig(
           options: $checkedConvert(
@@ -106,11 +111,14 @@ GlobalBuilderConfig _$GlobalBuilderConfigFromJson(Map json) => $checkedCreate(
               (v) => (v as Map?)?.map(
                     (k, e) => MapEntry(k as String, e),
                   )),
+          runsBefore: $checkedConvert('runs_before',
+              (v) => (v as List<dynamic>?)?.map((e) => e as String).toList()),
         );
         return val;
       },
       fieldKeyMap: const {
         'devOptions': 'dev_options',
-        'releaseOptions': 'release_options'
+        'releaseOptions': 'release_options',
+        'runsBefore': 'runs_before'
       },
     );

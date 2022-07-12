@@ -361,3 +361,15 @@ a schema URL. The configuration should look similar to this:
 ![Schema configuration for IDEA based IDEs](images/idea_schema_config.png)
 
 [YAML extension]: https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml
+
+## How can I adjust builder ordering?
+
+You can configure certain builders to run before other builders globally, using the
+`global_options` configuration in your `build.yaml` file:
+
+```yaml
+global_options:
+  some_package:some_builder:
+    runs_before:
+      - some_other_package:some_other_builder
+```

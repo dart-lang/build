@@ -132,11 +132,29 @@ Future<BuildScriptInfo> findBuildScriptOptions({
       .expand((c) => c.builderDefinitions.values)
       .where(_isValidDefinition);
 
-  final orderedBuilders = findBuilderOrder(builderDefinitions).toList();
+  final rootBuildConfig = orderedConfigs.last;
+  final orderedBuilders =
+      findBuilderOrder(builderDefinitions, rootBuildConfig.globalOptions)
+          .toList();
 
   final postProcessBuilderDefinitions = orderedConfigs
       .expand((c) => c.postProcessBuilderDefinitions.values)
       .where(_isValidDefinition);
+
+  // Validate the builder keys in the global builder config, these should always
+  // refer to actual builders.
+  var allBuilderKeys = {for (var definition in orderedBuilders) definition.key};
+  for (var globalBuilderConfig in rootBuildConfig.globalOptions.entries) {
+    void _checkBuilderKey(String builderKey) {
+      if (allBuilderKeys.contains(builderKey)) return;
+      _log.warning(
+          'Invalid builder key `$builderKey` found in global_options config of '
+          'build.yaml. This configuration will have no effect.');
+    }
+
+    _checkBuilderKey(globalBuilderConfig.key);
+    globalBuilderConfig.value.runsBefore.forEach(_checkBuilderKey);
+  }
 
   final applications = [
     for (var builder in orderedBuilders) _applyBuilder(builder),
