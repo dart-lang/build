@@ -1231,7 +1231,7 @@ class _MockClassInfo {
       // These "List" types from dart:typed_data are "non-subtypeable", but they
       // have predicatble constructors; each has an unnamed constructor which
       // takes a single int argument.
-      return referImported(type.displayName, 'dart:typed_data')
+      return referImported(type.element.name, 'dart:typed_data')
           .call([literalNum(0)]);
       // TODO(srawlins): Do other types from typed_data have a "non-subtypeable"
       // restriction as well?
