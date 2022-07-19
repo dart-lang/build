@@ -69,6 +69,8 @@ class GenerateMocks {
 class MockSpec<T> {
   final Symbol? mockName;
 
+  final List<Type> mixins;
+
   final bool returnNullOnMissingStub;
 
   final Set<Symbol> unsupportedMembers;
@@ -103,8 +105,10 @@ class MockSpec<T> {
   /// as a legal return value.
   const MockSpec({
     Symbol? as,
+    List<Type> mixingIn = const [],
     this.returnNullOnMissingStub = false,
     this.unsupportedMembers = const {},
     this.fallbackGenerators = const {},
-  }) : mockName = as;
+  })  : mockName = as,
+        mixins = mixingIn;
 }

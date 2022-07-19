@@ -31,3 +31,18 @@ abstract class Baz<S> {
   S Function(S) returnsGenericFunction();
   S get typeVariableField;
 }
+
+class HasPrivate {
+  Object? _p;
+
+  Object? get p => _p;
+}
+
+void setPrivate(HasPrivate hasPrivate) {
+  hasPrivate._p = 7;
+}
+
+mixin HasPrivateMixin implements HasPrivate {
+  @override
+  Object? _p;
+}

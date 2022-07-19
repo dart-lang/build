@@ -153,13 +153,16 @@ $rawOutput
           .whereType<analyzer.InterfaceType>()
           .forEach(addTypesFrom);
       // For a type like `Foo extends Bar<Baz>`, add the `Baz`.
-      for (var supertype in type.allSupertypes) {
+      for (final supertype in type.allSupertypes) {
         addTypesFrom(supertype);
       }
     }
 
-    for (var mockTarget in mockTargets) {
+    for (final mockTarget in mockTargets) {
       addTypesFrom(mockTarget.classType);
+      for (final mixinTarget in mockTarget.mixins) {
+        addTypesFrom(mixinTarget);
+      }
     }
 
     final typeUris = <Element, String>{};
@@ -359,6 +362,8 @@ class _MockTarget {
   /// The desired name of the mock class.
   final String mockName;
 
+  final List<analyzer.InterfaceType> mixins;
+
   final bool returnNullOnMissingStub;
 
   final Set<String> unsupportedMembers;
@@ -368,6 +373,7 @@ class _MockTarget {
   _MockTarget(
     this.classType,
     this.mockName, {
+    required this.mixins,
     required this.returnNullOnMissingStub,
     required this.unsupportedMembers,
     required this.fallbackGenerators,
@@ -453,6 +459,7 @@ class _MockTargetGatherer {
       mockTargets.add(_MockTarget(
         declarationType,
         mockName,
+        mixins: [],
         returnNullOnMissingStub: false,
         unsupportedMembers: {},
         fallbackGenerators: {},
@@ -480,6 +487,27 @@ class _MockTargetGatherer {
         }
         final mockName = mockSpec.getField('mockName')!.toSymbolValue() ??
             'Mock${type.element.name}';
+        final mixins = <analyzer.InterfaceType>[];
+        for (final m in mockSpec.getField('mixins')!.toListValue()!) {
+          final typeToMixin = m.toTypeValue();
+          if (typeToMixin == null) {
+            throw InvalidMockitoAnnotationException(
+                'The "mixingIn" argument includes a non-type: $m');
+          }
+          if (typeToMixin.isDynamic) {
+            throw InvalidMockitoAnnotationException(
+                'Mockito cannot mix `dynamic` into a mock class');
+          }
+          final mixinInterfaceType =
+              _determineDartType(typeToMixin, entryLib.typeProvider);
+          if (!mixinInterfaceType.interfaces.contains(type)) {
+            throw InvalidMockitoAnnotationException('The "mixingIn" type, '
+                '${typeToMixin.getDisplayString(withNullability: false)}, must '
+                'implement the class to mock, ${typeToMock.getDisplayString(withNullability: false)}');
+          }
+          mixins.add(mixinInterfaceType);
+        }
+
         final returnNullOnMissingStub =
             mockSpec.getField('returnNullOnMissingStub')!.toBoolValue()!;
         final unsupportedMembers = {
@@ -492,6 +520,7 @@ class _MockTargetGatherer {
         mockTargets.add(_MockTarget(
           type,
           mockName,
+          mixins: mixins,
           returnNullOnMissingStub: returnNullOnMissingStub,
           unsupportedMembers: unsupportedMembers,
           fallbackGenerators:
@@ -929,6 +958,14 @@ class _MockClassInfo {
           cBuilder.types.add(_typeParameterReference(typeParameter));
           typeArguments.add(refer(typeParameter.name));
         }
+      }
+      for (final mixin in mockTarget.mixins) {
+        cBuilder.mixins.add(TypeReference((b) {
+          b
+            ..symbol = mixin.name
+            ..url = _typeImport(mixin.element)
+            ..types.addAll(mixin.typeArguments.map(_typeReference));
+        }));
       }
       cBuilder.implements.add(TypeReference((b) {
         b

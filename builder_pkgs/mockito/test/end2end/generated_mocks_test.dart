@@ -25,20 +25,27 @@ T Function(T) returnsGenericFunctionShim<T>() => (T _) => null as T;
 ], customMocks: [
   MockSpec<Foo>(as: #MockFooRelaxed, returnNullOnMissingStub: true),
   MockSpec<Bar>(as: #MockBarRelaxed, returnNullOnMissingStub: true),
-  MockSpec<Baz>(as: #MockBazWithUnsupportedMembers, unsupportedMembers: {
-    #returnsTypeVariable,
-    #returnsBoundedTypeVariable,
-    #returnsTypeVariableFromTwo,
-    #returnsGenericFunction,
-    #typeVariableField,
-  }),
-  MockSpec<Baz>(as: #MockBazWithFallbackGenerators, fallbackGenerators: {
-    #returnsTypeVariable: returnsTypeVariableShim,
-    #returnsBoundedTypeVariable: returnsBoundedTypeVariableShim,
-    #returnsTypeVariableFromTwo: returnsTypeVariableFromTwoShim,
-    #returnsGenericFunction: returnsGenericFunctionShim,
-    #typeVariableField: typeVariableFieldShim,
-  }),
+  MockSpec<Baz>(
+    as: #MockBazWithUnsupportedMembers,
+    unsupportedMembers: {
+      #returnsTypeVariable,
+      #returnsBoundedTypeVariable,
+      #returnsTypeVariableFromTwo,
+      #returnsGenericFunction,
+      #typeVariableField,
+    },
+  ),
+  MockSpec<Baz>(
+    as: #MockBazWithFallbackGenerators,
+    fallbackGenerators: {
+      #returnsTypeVariable: returnsTypeVariableShim,
+      #returnsBoundedTypeVariable: returnsBoundedTypeVariableShim,
+      #returnsTypeVariableFromTwo: returnsTypeVariableFromTwoShim,
+      #returnsGenericFunction: returnsGenericFunctionShim,
+      #typeVariableField: typeVariableFieldShim,
+    },
+  ),
+  MockSpec<HasPrivate>(mixingIn: [HasPrivateMixin]),
 ])
 void main() {
   group('for a generated mock,', () {
@@ -256,5 +263,12 @@ void main() {
     var bar = MockBarRelaxed();
     when(foo.methodWithBarArg(bar)).thenReturn('mocked result');
     expect(foo.methodWithBarArg(bar), equals('mocked result'));
+  });
+
+  test('a generated mock with a mixed in type can use mixed in members', () {
+    var hasPrivate = MockHasPrivate();
+    // This should not throw, when `setPrivate` accesses a private member on
+    // `hasPrivate`.
+    setPrivate(hasPrivate);
   });
 }
