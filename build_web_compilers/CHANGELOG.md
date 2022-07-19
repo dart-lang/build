@@ -1,4 +1,6 @@
-## 3.2.4-dev
+## 3.2.4
+
+- Use `dart compile js` instead of running dart2js from its sdk snapshot.
 
 ## 3.2.3
 
