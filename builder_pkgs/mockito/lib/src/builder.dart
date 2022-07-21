@@ -476,23 +476,23 @@ class _MockTargetGatherer {
     }
     final customMocksField = generateMocksValue.getField('customMocks');
     if (customMocksField != null && !customMocksField.isNull) {
-      mockTargets.addAll(customMocksField
-          .toListValue()!
-          .map((mockSpec) => _mockTargetFromMockSpec(mockSpec, entryLib)));
+      mockTargets.addAll(customMocksField.toListValue()!.mapIndexed(
+          (index, mockSpec) =>
+              _mockTargetFromMockSpec(mockSpec, entryLib, index)));
     }
     return mockTargets;
   }
 
   static _MockTarget _mockTargetFromMockSpec(
-      DartObject mockSpec, LibraryElement entryLib,
+      DartObject mockSpec, LibraryElement entryLib, int index,
       {bool nice = false}) {
     final mockSpecType = mockSpec.type as analyzer.InterfaceType;
     assert(mockSpecType.typeArguments.length == 1);
     final typeToMock = mockSpecType.typeArguments.single;
     if (typeToMock.isDynamic) {
       throw InvalidMockitoAnnotationException(
-          'Mockito cannot mock `dynamic`; be sure to declare type '
-          'arguments on MockSpec(), in @GenerateMocks.');
+          'Mockito cannot mock `dynamic`; be sure to declare a type argument '
+          'on the ${(index + 1).ordinal} MockSpec() in @GenerateMocks.');
     }
     var type = _determineDartType(typeToMock, entryLib.typeProvider);
 
@@ -590,8 +590,8 @@ class _MockTargetGatherer {
       throw InvalidMockitoAnnotationException(
           'The GenerateNiceMocks "mockSpecs" argument is missing');
     }
-    return mockSpecsField.toListValue()!.map(
-        (mockSpec) => _mockTargetFromMockSpec(mockSpec, entryLib, nice: true));
+    return mockSpecsField.toListValue()!.mapIndexed((index, mockSpec) =>
+        _mockTargetFromMockSpec(mockSpec, entryLib, index, nice: true));
   }
 
   static Map<String, ExecutableElement> _extractFallbackGenerators(
@@ -1996,6 +1996,22 @@ extension on TypeSystem {
   //     final c2 = C<int>(); // m's parameter's type is non-nullable.
   bool _hasNonNullableParameter(ExecutableElement method) =>
       method.parameters.any((p) => isPotentiallyNonNullable(p.type));
+}
+
+extension on int {
+  String get ordinal {
+    final remainder = this % 10;
+    switch (remainder) {
+      case (1):
+        return '${this}st';
+      case (2):
+        return '${this}nd';
+      case (3):
+        return '${this}rd';
+      default:
+        return '${this}th';
+    }
+  }
 }
 
 bool _needsOverrideForVoidStub(ExecutableElement method) =>
