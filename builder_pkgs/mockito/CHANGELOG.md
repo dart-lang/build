@@ -1,3 +1,16 @@
+## 5.3.0-dev
+
+* Introduce a new `MockSpec` parameter, `onMissingStub`, which allows
+  specifying three actions to take when a real call is made to a mock method
+  with no matching stub. The two existing behaviors are the default
+  behavior of throwing an exception, and the legacy behavior of returning
+  `null`. A new behavior is also introduced: returning a legal default value.
+  With this behavior, legal default values are returned for any given type.
+* Deprecate the `MockSpec` `returnNullOnMissingStub` parameter in favor of the
+  new `onMissingStub` parameter.
+* Introduce a new `@GenerateNiceMocks` annotation, that uses the new
+  "return a legal value" behavior for missing stubs.
+
 ## 5.2.0
 
 * Fix generation of methods with return type of `FutureOr<T>` for generic,

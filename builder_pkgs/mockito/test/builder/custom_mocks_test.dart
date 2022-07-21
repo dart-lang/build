@@ -32,12 +32,20 @@ class GenerateMocks {
   const GenerateMocks(this.classes, {this.customMocks = []});
 }
 
+class GenerateNiceMocks {
+  final List<MockSpec> mocks;
+
+  const GenerateNiceMocks(this.mocks);
+}
+
 class MockSpec<T> {
   final Symbol mockName;
 
   final List<Type> mixins;
 
   final bool returnNullOnMissingStub;
+
+  final OnMissingStub? onMissingStub;
 
   final Set<Symbol> unsupportedMembers;
 
@@ -47,11 +55,14 @@ class MockSpec<T> {
     Symbol? as,
     List<Type> mixingIn = const [],
     this.returnNullOnMissingStub = false,
+    this.onMissingStub,
     this.unsupportedMembers = const {},
     this.fallbackGenerators = const {},
   })  : mockName = as,
         mixins = mixingIn;
 }
+
+enum OnMissingStub { throwException, returnNull, returnDefault }
 '''
 };
 
@@ -427,6 +438,67 @@ void main() {
         mocksContent,
         contains('  T m<T>(T? a) => throw UnsupportedError(\n'
             r"      '\'m\' cannot be used without a mockito fallback generator.');"));
+  });
+
+  test(
+      'generates mock methods with non-nullable return types, specifying '
+      'legal default values for basic known types', () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        abstract class Foo {
+          int m();
+        }
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+
+        @GenerateMocks(
+          [],
+          customMocks: [
+            MockSpec<Foo>(onMissingStub: OnMissingStub.returnDefault),
+          ],
+        )
+        void main() {}
+        '''
+    });
+    expect(
+        mocksContent,
+        contains('  int m() => (super.noSuchMethod(Invocation.method(#m, []),\n'
+            '      returnValue: 0, returnValueForMissingStub: 0) as int);'));
+  });
+
+  test(
+      'generates mock methods with non-nullable return types, specifying '
+      'legal default values for unknown types', () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        abstract class Foo {
+          Bar m();
+        }
+        class Bar {}
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+
+        @GenerateMocks(
+          [],
+          customMocks: [
+            MockSpec<Foo>(onMissingStub: OnMissingStub.returnDefault),
+          ],
+        )
+        void main() {}
+        '''
+    });
+    expect(
+        mocksContent,
+        contains(
+            '  _i2.Bar m() => (super.noSuchMethod(Invocation.method(#m, []),\n'
+            '      returnValue: _FakeBar_0(),\n'
+            '      returnValueForMissingStub: _FakeBar_0()) as _i2.Bar);\n'));
   });
 
   test('generates mock classes including a fallback generator for a getter',
@@ -985,6 +1057,48 @@ void main() {
         '''))
       },
     );
+  });
+
+  test(
+      'generates a mock class which uses the new behavior of returning '
+      'a valid value for missing stubs, if GenerateNiceMocks were used',
+      () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        class Foo<T> {
+          int m();
+        }
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateNiceMocks([MockSpec<Foo>()])
+        void main() {}
+        '''
+    });
+    expect(mocksContent, isNot(contains('throwOnMissingStub')));
+    expect(mocksContent, contains('returnValueForMissingStub:'));
+  });
+
+  test('mixed GenerateMocks and GenerateNiceMocks annotations could be used',
+      () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        class Foo<T> {}
+        class Bar {}
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateNiceMocks([MockSpec<Foo>()])
+        @GenerateMocks([], customMocks: [MockSpec<Bar>()])
+        void main() {}
+        '''
+    });
+    expect(mocksContent, contains('class MockFoo'));
+    expect(mocksContent, contains('class MockBar'));
   });
 }
 

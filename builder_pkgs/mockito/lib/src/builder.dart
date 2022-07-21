@@ -38,6 +38,7 @@ import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart' hide refer;
 import 'package:collection/collection.dart';
 import 'package:dart_style/dart_style.dart';
+import 'package:mockito/annotations.dart';
 import 'package:mockito/src/version.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
@@ -103,7 +104,9 @@ class MockBuilder implements Builder {
       // The code_builder `asA` API unconditionally adds defensive parentheses.
       b.body.add(Code('// ignore_for_file: unnecessary_parenthesis\n'));
       // The generator appends a suffix to fake classes
-      b.body.add(Code('// ignore_for_file: camel_case_types\n\n'));
+      b.body.add(Code('// ignore_for_file: camel_case_types\n'));
+      // The generator has to occasionally implement sealed classes
+      b.body.add(Code('// ignore_for_file: subtype_of_sealed_class\n\n'));
       b.body.addAll(mockLibraryInfo.fakeClasses);
       b.body.addAll(mockLibraryInfo.mockClasses);
     });
@@ -364,7 +367,7 @@ class _MockTarget {
 
   final List<analyzer.InterfaceType> mixins;
 
-  final bool returnNullOnMissingStub;
+  final OnMissingStub onMissingStub;
 
   final Set<String> unsupportedMembers;
 
@@ -374,7 +377,7 @@ class _MockTarget {
     this.classType,
     this.mockName, {
     required this.mixins,
-    required this.returnNullOnMissingStub,
+    required this.onMissingStub,
     required this.unsupportedMembers,
     required this.fallbackGenerators,
   });
@@ -417,9 +420,15 @@ class _MockTargetGatherer {
       for (final annotation in element.metadata) {
         if (annotation.element is! ConstructorElement) continue;
         final annotationClass = annotation.element!.enclosingElement!.name;
-        if (annotationClass == 'GenerateMocks') {
-          mockTargets
-              .addAll(_mockTargetsFromGenerateMocks(annotation, entryLib));
+        switch (annotationClass) {
+          case 'GenerateMocks':
+            mockTargets
+                .addAll(_mockTargetsFromGenerateMocks(annotation, entryLib));
+            break;
+          case 'GenerateNiceMocks':
+            mockTargets.addAll(
+                _mockTargetsFromGenerateNiceMocks(annotation, entryLib));
+            break;
         }
       }
     }
@@ -460,75 +469,129 @@ class _MockTargetGatherer {
         declarationType,
         mockName,
         mixins: [],
-        returnNullOnMissingStub: false,
+        onMissingStub: OnMissingStub.throwException,
         unsupportedMembers: {},
         fallbackGenerators: {},
       ));
     }
     final customMocksField = generateMocksValue.getField('customMocks');
     if (customMocksField != null && !customMocksField.isNull) {
-      for (var mockSpec in customMocksField.toListValue()!) {
-        final mockSpecType = mockSpec.type as analyzer.InterfaceType;
-        assert(mockSpecType.typeArguments.length == 1);
-        final typeToMock = mockSpecType.typeArguments.single;
-        if (typeToMock.isDynamic) {
-          throw InvalidMockitoAnnotationException(
-              'Mockito cannot mock `dynamic`; be sure to declare type '
-              'arguments on MockSpec(), in @GenerateMocks.');
-        }
-        var type = _determineDartType(typeToMock, entryLib.typeProvider);
-
-        if (!type.hasExplicitTypeArguments) {
-          // We assume the type was given without explicit type arguments. In
-          // this case the type argument(s) on `type` have been instantiated to
-          // bounds. Switch to the declaration, which will be an uninstantiated
-          // type.
-          type = (type.element.declaration as ClassElement).thisType;
-        }
-        final mockName = mockSpec.getField('mockName')!.toSymbolValue() ??
-            'Mock${type.element.name}';
-        final mixins = <analyzer.InterfaceType>[];
-        for (final m in mockSpec.getField('mixins')!.toListValue()!) {
-          final typeToMixin = m.toTypeValue();
-          if (typeToMixin == null) {
-            throw InvalidMockitoAnnotationException(
-                'The "mixingIn" argument includes a non-type: $m');
-          }
-          if (typeToMixin.isDynamic) {
-            throw InvalidMockitoAnnotationException(
-                'Mockito cannot mix `dynamic` into a mock class');
-          }
-          final mixinInterfaceType =
-              _determineDartType(typeToMixin, entryLib.typeProvider);
-          if (!mixinInterfaceType.interfaces.contains(type)) {
-            throw InvalidMockitoAnnotationException('The "mixingIn" type, '
-                '${typeToMixin.getDisplayString(withNullability: false)}, must '
-                'implement the class to mock, ${typeToMock.getDisplayString(withNullability: false)}');
-          }
-          mixins.add(mixinInterfaceType);
-        }
-
-        final returnNullOnMissingStub =
-            mockSpec.getField('returnNullOnMissingStub')!.toBoolValue()!;
-        final unsupportedMembers = {
-          for (final m
-              in mockSpec.getField('unsupportedMembers')!.toSetValue()!)
-            m.toSymbolValue()!,
-        };
-        final fallbackGeneratorObjects =
-            mockSpec.getField('fallbackGenerators')!.toMapValue()!;
-        mockTargets.add(_MockTarget(
-          type,
-          mockName,
-          mixins: mixins,
-          returnNullOnMissingStub: returnNullOnMissingStub,
-          unsupportedMembers: unsupportedMembers,
-          fallbackGenerators:
-              _extractFallbackGenerators(fallbackGeneratorObjects),
-        ));
-      }
+      mockTargets.addAll(customMocksField
+          .toListValue()!
+          .map((mockSpec) => _mockTargetFromMockSpec(mockSpec, entryLib)));
     }
     return mockTargets;
+  }
+
+  static _MockTarget _mockTargetFromMockSpec(
+      DartObject mockSpec, LibraryElement entryLib,
+      {bool nice = false}) {
+    final mockSpecType = mockSpec.type as analyzer.InterfaceType;
+    assert(mockSpecType.typeArguments.length == 1);
+    final typeToMock = mockSpecType.typeArguments.single;
+    if (typeToMock.isDynamic) {
+      throw InvalidMockitoAnnotationException(
+          'Mockito cannot mock `dynamic`; be sure to declare type '
+          'arguments on MockSpec(), in @GenerateMocks.');
+    }
+    var type = _determineDartType(typeToMock, entryLib.typeProvider);
+
+    if (!type.hasExplicitTypeArguments) {
+      // We assume the type was given without explicit type arguments. In
+      // this case the type argument(s) on `type` have been instantiated to
+      // bounds. Switch to the declaration, which will be an uninstantiated
+      // type.
+      type = (type.element.declaration as ClassElement).thisType;
+    }
+    final mockName = mockSpec.getField('mockName')!.toSymbolValue() ??
+        'Mock${type.element.name}';
+    final mixins = <analyzer.InterfaceType>[];
+    for (final m in mockSpec.getField('mixins')!.toListValue()!) {
+      final typeToMixin = m.toTypeValue();
+      if (typeToMixin == null) {
+        throw InvalidMockitoAnnotationException(
+            'The "mixingIn" argument includes a non-type: $m');
+      }
+      if (typeToMixin.isDynamic) {
+        throw InvalidMockitoAnnotationException(
+            'Mockito cannot mix `dynamic` into a mock class');
+      }
+      final mixinInterfaceType =
+          _determineDartType(typeToMixin, entryLib.typeProvider);
+      if (!mixinInterfaceType.interfaces.contains(type)) {
+        throw InvalidMockitoAnnotationException('The "mixingIn" type, '
+            '${typeToMixin.getDisplayString(withNullability: false)}, must '
+            'implement the class to mock, ${typeToMock.getDisplayString(withNullability: false)}');
+      }
+      mixins.add(mixinInterfaceType);
+    }
+
+    final returnNullOnMissingStub =
+        mockSpec.getField('returnNullOnMissingStub')!.toBoolValue()!;
+    final onMissingStubValue = mockSpec.getField('onMissingStub')!;
+    final OnMissingStub onMissingStub;
+    if (nice) {
+      // The new @GenerateNiceMocks API. Don't allow `returnNullOnMissingStub`.
+      if (returnNullOnMissingStub) {
+        throw ArgumentError("'returnNullOnMissingStub' is not supported with "
+            '@GenerateNiceMocks');
+      }
+      if (onMissingStubValue.isNull) {
+        onMissingStub = OnMissingStub.returnDefault;
+      } else {
+        final onMissingStubIndex =
+            onMissingStubValue.getField('index')!.toIntValue()!;
+        onMissingStub = OnMissingStub.values[onMissingStubIndex];
+        if (onMissingStub == OnMissingStub.returnNull) {
+          throw ArgumentError(
+              "'OnMissingStub.returnNull' is not supported with "
+              '@GenerateNiceMocks');
+        }
+      }
+    } else {
+      if (onMissingStubValue.isNull) {
+        // No value was given for `onMissingStub`. But the behavior may
+        // be specified by `returnNullOnMissingStub`.
+        onMissingStub = returnNullOnMissingStub
+            ? OnMissingStub.returnNull
+            : OnMissingStub.throwException;
+      } else {
+        // A value was given for `onMissingStub`.
+        if (returnNullOnMissingStub) {
+          throw ArgumentError("Cannot specify 'returnNullOnMissingStub' and a "
+              "'onMissingStub' value at the same time.");
+        }
+        final onMissingStubIndex =
+            onMissingStubValue.getField('index')!.toIntValue()!;
+        onMissingStub = OnMissingStub.values[onMissingStubIndex];
+      }
+    }
+    final unsupportedMembers = {
+      for (final m in mockSpec.getField('unsupportedMembers')!.toSetValue()!)
+        m.toSymbolValue()!,
+    };
+    final fallbackGeneratorObjects =
+        mockSpec.getField('fallbackGenerators')!.toMapValue()!;
+    return _MockTarget(
+      type,
+      mockName,
+      mixins: mixins,
+      onMissingStub: onMissingStub,
+      unsupportedMembers: unsupportedMembers,
+      fallbackGenerators: _extractFallbackGenerators(fallbackGeneratorObjects),
+    );
+  }
+
+  static Iterable<_MockTarget> _mockTargetsFromGenerateNiceMocks(
+      ElementAnnotation annotation, LibraryElement entryLib) {
+    final generateNiceMocksValue = annotation.computeConstantValue()!;
+    final mockSpecsField = generateNiceMocksValue.getField('mocks')!;
+    if (mockSpecsField.isNull) {
+      throw InvalidMockitoAnnotationException(
+          'The GenerateNiceMocks "mockSpecs" argument is missing');
+    }
+    return mockSpecsField.toListValue()!.map(
+        (mockSpec) => _mockTargetFromMockSpec(mockSpec, entryLib, nice: true));
   }
 
   static Map<String, ExecutableElement> _extractFallbackGenerators(
@@ -973,7 +1036,7 @@ class _MockClassInfo {
           ..url = _typeImport(mockTarget.classElement)
           ..types.addAll(typeArguments);
       }));
-      if (!mockTarget.returnNullOnMissingStub) {
+      if (mockTarget.onMissingStub == OnMissingStub.throwException) {
         cBuilder.constructors.add(_constructorWithThrowOnMissingStub);
       }
 
@@ -1174,6 +1237,10 @@ class _MockClassInfo {
     } else if (returnType.isFutureOfVoid) {
       returnValueForMissingStub =
           _futureReference(refer('void')).property('value').call([]);
+    } else if (mockTarget.onMissingStub == OnMissingStub.returnDefault) {
+      // Return a legal default value if no stub is found which matches a real
+      // call.
+      returnValueForMissingStub = _dummyValue(returnType);
     }
     final namedArgs = {
       if (fallbackGenerator != null)
@@ -1211,6 +1278,11 @@ class _MockClassInfo {
   }
 
   Expression _dummyValue(analyzer.DartType type) {
+    // The type is nullable, just take a shortcut and return `null`.
+    if (typeSystem.isNullable(type)) {
+      return literalNull;
+    }
+
     if (type is analyzer.FunctionType) {
       return _dummyFunctionValue(type);
     }
@@ -1609,6 +1681,8 @@ class _MockClassInfo {
         'returnValue': _fallbackGeneratorCode(getter, fallbackGenerator)
       else if (typeSystem._returnTypeIsNonNullable(getter))
         'returnValue': _dummyValue(returnType),
+      if (mockTarget.onMissingStub == OnMissingStub.returnDefault)
+        'returnValueForMissingStub': _dummyValue(returnType),
     };
     var superNoSuchMethod =
         refer('super').property('noSuchMethod').call([invocation], namedArgs);

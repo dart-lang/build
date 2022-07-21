@@ -24,6 +24,10 @@ T Function(T) returnsGenericFunctionShim<T>() => (T _) => null as T;
   Bar
 ], customMocks: [
   MockSpec<Foo>(as: #MockFooRelaxed, returnNullOnMissingStub: true),
+  MockSpec<Foo>(
+    as: #MockFooWithDefaults,
+    onMissingStub: OnMissingStub.returnDefault,
+  ),
   MockSpec<Bar>(as: #MockBarRelaxed, returnNullOnMissingStub: true),
   MockSpec<Baz>(
     as: #MockBazWithUnsupportedMembers,
@@ -47,6 +51,7 @@ T Function(T) returnsGenericFunctionShim<T>() => (T _) => null as T;
   ),
   MockSpec<HasPrivate>(mixingIn: [HasPrivateMixin]),
 ])
+@GenerateNiceMocks([MockSpec<Foo>(as: #MockFooNice)])
 void main() {
   group('for a generated mock,', () {
     late MockFoo<Object> foo;
@@ -246,6 +251,40 @@ void main() {
 
     test('an unstubbed getter returning a nullable type returns null', () {
       expect(foo.nullableGetter, isNull);
+    });
+  });
+
+  group('for a generated mock using OnMissingStub.returnDefault,', () {
+    late Foo<Object> foo;
+
+    setUp(() {
+      foo = MockFooWithDefaults();
+    });
+
+    test('an unstubbed method returns a value', () {
+      when(foo.namedParameter(x: 42)).thenReturn('Stubbed');
+      expect(foo.namedParameter(x: 43), equals(''));
+    });
+
+    test('an unstubbed getter returns a value', () {
+      expect(foo.getter, equals(''));
+    });
+  });
+
+  group('for a generated nice mock', () {
+    late Foo<Object> foo;
+
+    setUp(() {
+      foo = MockFooNice();
+    });
+
+    test('an unstubbed method returns a value', () {
+      when(foo.namedParameter(x: 42)).thenReturn('Stubbed');
+      expect(foo.namedParameter(x: 43), equals(''));
+    });
+
+    test('an unstubbed getter returns a value', () {
+      expect(foo.getter, equals(''));
     });
   });
 

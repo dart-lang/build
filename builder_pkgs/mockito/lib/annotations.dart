@@ -39,6 +39,34 @@ class GenerateMocks {
   const GenerateMocks(this.classes, {this.customMocks = const []});
 }
 
+/// An annotation to direct Mockito to generate mock classes.
+///
+/// During [code generation][NULL_SAFETY_README], Mockito will generate a
+/// `Mock{Type} extends Mock` class for each class to be mocked, in
+/// `{name}.mocks.dart`, where `{name}` is the basename of the file in which
+/// `@GenerateNiceMocks` is used.
+///
+/// For example, if `@GenerateNiceMocks([MockSpec<Foo>()])` is found at
+/// the top-level of a Dart library, `foo_test.dart`, then Mockito will
+/// generate `class MockFoo extends Mock implements Foo` in a new library,
+/// `foo_test.mocks.dart`.
+///
+/// If the class-to-mock is generic, then the mock will be identically generic.
+/// For example, given the class `class Foo<T, U>`, Mockito will generate
+/// `class MockFoo<T, U> extends Mock implements Foo<T, U>`.
+///
+/// `@GenerateNiceMocks` is different from `@GenerateMocks` in two ways:
+///   - only `MockSpec`s are allowed in the argument list
+///   - generated mocks won't throw on unstubbed method calls by default,
+///     instead some value appropriate for the target type will be
+///     returned.
+///
+/// [NULL_SAFETY_README]: https://github.com/dart-lang/mockito/blob/master/NULL_SAFETY_README.md
+class GenerateNiceMocks {
+  final List<MockSpec> mocks;
+  const GenerateNiceMocks(this.mocks);
+}
+
 /// A specification of how to mock a specific class.
 ///
 /// The type argument `T` is the class-to-mock. If this class is generic, and no
@@ -71,7 +99,11 @@ class MockSpec<T> {
 
   final List<Type> mixins;
 
+  @Deprecated('Specify "missing stub" behavior with the [onMissingStub] '
+      'parameter.')
   final bool returnNullOnMissingStub;
+
+  final OnMissingStub? onMissingStub;
 
   final Set<Symbol> unsupportedMembers;
 
@@ -81,9 +113,15 @@ class MockSpec<T> {
   ///
   /// Specify a custom name with the [as] parameter.
   ///
-  /// If [returnNullOnMissingStub] is true, a real call to a mock method will
-  /// return `null` when no stub is found. This may result in a runtime error,
-  /// if the return type of the method is non-nullable.
+  /// If [onMissingStub] is specified as [OnMissingStub.returnNull],
+  /// (or if the deprecated parameter [returnNullOnMissingStub] is `true`), then
+  /// a real call to a mock method (or getter) will return `null` when no stub
+  /// is found. This may result in a runtime error, if the return type of the
+  /// method (or the getter) is non-nullable.
+  ///
+  /// If [onMissingStub] is specified as
+  /// [OnMissingStub.returnDefault], a real call to a mock method (or
+  /// getter) will return a legal value when no stub is found.
   ///
   /// If the class-to-mock has a member with a non-nullable unknown return type
   /// (such as a type variable, `T`), then mockito cannot generate a valid
@@ -106,9 +144,34 @@ class MockSpec<T> {
   const MockSpec({
     Symbol? as,
     List<Type> mixingIn = const [],
-    this.returnNullOnMissingStub = false,
+    @Deprecated('Specify "missing stub" behavior with the '
+        '[onMissingStub] parameter.')
+        this.returnNullOnMissingStub = false,
     this.unsupportedMembers = const {},
     this.fallbackGenerators = const {},
+    this.onMissingStub,
   })  : mockName = as,
         mixins = mixingIn;
+}
+
+/// Values indicating the action to perform when a real call is made to a mock
+/// method (or getter) when no stub is found.
+enum OnMissingStub {
+  /// An exception should be thrown.
+  throwException,
+
+  /// A `null` value should be returned.
+  ///
+  /// This is considered legacy behavior, as it may result in a runtime error,
+  /// if the return type of the method (or the getter) is non-nullable.
+  @Deprecated(
+      'This is legacy behavior, it may result in runtime errors. Consider using returnDefault instead')
+  returnNull,
+
+  /// A legal default value should be returned.
+  ///
+  /// For basic known types, like `int` and `Future<String>`, a simple value is
+  /// returned (like `0` and `Future.value('')`). For unknown user types, an
+  /// instance of a fake implementation is returned.
+  returnDefault;
 }
