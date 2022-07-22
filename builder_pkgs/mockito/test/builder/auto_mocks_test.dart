@@ -2309,9 +2309,8 @@ void main() {
       }
       '''),
       _containsAllOf(dedent2('''
-      _i2.Bar m() =>
-          (super.noSuchMethod(Invocation.method(#m, []), returnValue: _FakeBar_0())
-              as _i2.Bar);
+      _i2.Bar m() => (super.noSuchMethod(Invocation.method(#m, []),
+          returnValue: _FakeBar_0(this, Invocation.method(#m, []))) as _i2.Bar);
       ''')),
     );
   });
@@ -2326,7 +2325,8 @@ void main() {
       '''),
       _containsAllOf(dedent2('''
       _i2.Bar<int> m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: _FakeBar_0<int>()) as _i2.Bar<int>);
+              returnValue: _FakeBar_0<int>(this, Invocation.method(#m, [])))
+          as _i2.Bar<int>);
       ''')),
     );
   });
@@ -2395,9 +2395,11 @@ void main() {
         Foo Function() m() => () => Foo();
       }
       '''),
-      _containsAllOf(
-          '_i2.Foo Function() m() => (super.noSuchMethod(Invocation.method(#m, []),\n'
-          '      returnValue: () => _FakeFoo_0()) as _i2.Foo Function());'),
+      _containsAllOf(dedent2('''
+      _i2.Foo Function() m() => (super.noSuchMethod(Invocation.method(#m, []),
+              returnValue: () => _FakeFoo_0(this, Invocation.method(#m, [])))
+          as _i2.Foo Function());
+      ''')),
     );
   });
 
@@ -2411,9 +2413,11 @@ void main() {
         _Callback m() => () => Foo();
       }
       '''),
-      _containsAllOf(
-          '_i2.Foo Function() m() => (super.noSuchMethod(Invocation.method(#m, []),\n'
-          '      returnValue: () => _FakeFoo_0()) as _i2.Foo Function());'),
+      _containsAllOf(dedent2('''
+      _i2.Foo Function() m() => (super.noSuchMethod(Invocation.method(#m, []),
+              returnValue: () => _FakeFoo_0(this, Invocation.method(#m, [])))
+          as _i2.Foo Function());
+      ''')),
     );
   });
 
@@ -2479,7 +2483,8 @@ void main() {
       '''),
       _containsAllOf(dedent2('''
       _i2.File Function() m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: () => _FakeFile_0()) as _i2.File Function());
+              returnValue: () => _FakeFile_0(this, Invocation.method(#m, [])))
+          as _i2.File Function());
       ''')),
     );
   });
@@ -2492,7 +2497,11 @@ void main() {
       }
       class Bar {}
       '''),
-      _containsAllOf('class _FakeBar_0 extends _i1.Fake implements _i2.Bar {}'),
+      _containsAllOf(dedent('''
+      class _FakeBar_0 extends _i1.SmartFake implements _i2.Bar {
+        _FakeBar_0(Object parent, Invocation parentInvocation)
+            : super(parent, parentInvocation);
+      }''')),
     );
   });
 
@@ -2515,10 +2524,14 @@ void main() {
         class Bar {}
         ''',
     });
-    expect(mocksOutput,
-        contains('class _FakeBar_0 extends _i1.Fake implements _i2.Bar {}'));
-    expect(mocksOutput,
-        contains('class _FakeBar_1 extends _i1.Fake implements _i3.Bar {}'));
+    expect(
+        mocksOutput,
+        contains(
+            'class _FakeBar_0 extends _i1.SmartFake implements _i2.Bar {'));
+    expect(
+        mocksOutput,
+        contains(
+            'class _FakeBar_1 extends _i1.SmartFake implements _i3.Bar {'));
   });
 
   test('generates a fake generic class used in return values', () async {
@@ -2530,7 +2543,7 @@ void main() {
       class Bar<T, U> {}
       '''),
       _containsAllOf(
-          'class _FakeBar_0<T, U> extends _i1.Fake implements _i2.Bar<T, U> {}'),
+          'class _FakeBar_0<T, U> extends _i1.SmartFake implements _i2.Bar<T, U> {'),
     );
   });
 
@@ -2544,8 +2557,10 @@ void main() {
         Bar<Baz> m1() => Bar();
       }
       '''),
-      _containsAllOf(
-          'class _FakeBar_0<T extends _i1.Baz> extends _i2.Fake implements _i1.Bar<T> {}'),
+      _containsAllOf(dedent('''
+      class _FakeBar_0<T extends _i1.Baz> extends _i2.SmartFake
+          implements _i1.Bar<T> {
+      ''')),
     );
   });
 
@@ -2559,8 +2574,10 @@ void main() {
         BarOfBaz m1() => Bar();
       }
       '''),
-      _containsAllOf(
-          'class _FakeBar_0<T extends _i1.Baz> extends _i2.Fake implements _i1.Bar<T> {}'),
+      _containsAllOf(dedent('''
+      class _FakeBar_0<T extends _i1.Baz> extends _i2.SmartFake
+          implements _i1.Bar<T> {
+      ''')),
     );
   });
 
@@ -2576,7 +2593,7 @@ void main() {
       }
       '''),
       _containsAllOf(
-          'class _FakeBar_0<T> extends _i1.Fake implements _i2.Bar<T> {}'),
+          'class _FakeBar_0<T> extends _i1.SmartFake implements _i2.Bar<T> {'),
     );
   });
 
@@ -2592,7 +2609,10 @@ void main() {
       }
       '''),
       _containsAllOf(dedent('''
-      class _FakeBar_0 extends _i1.Fake implements _i2.Bar {
+      class _FakeBar_0 extends _i1.SmartFake implements _i2.Bar {
+        _FakeBar_0(Object parent, Invocation parentInvocation)
+            : super(parent, parentInvocation);
+
         @override
         String toString({bool? a = true}) => super.toString();
       }

@@ -10,6 +10,9 @@
   new `onMissingStub` parameter.
 * Introduce a new `@GenerateNiceMocks` annotation, that uses the new
   "return a legal value" behavior for missing stubs.
+* Add `SmartFake` class to be used as a return values for unstubbed
+  methods. It remembers where it was created and throws a descriptive error
+  in case the fake is later used.
 
 ## 5.2.0
 

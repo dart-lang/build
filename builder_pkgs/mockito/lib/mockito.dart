@@ -18,6 +18,7 @@ export 'package:test_api/fake.dart' show Fake;
 export 'src/mock.dart'
     show
         Mock,
+        SmartFake,
         named, // ignore: deprecated_member_use_from_same_package
 
         // -- setting behaviour
@@ -49,4 +50,5 @@ export 'src/mock.dart'
         resetMockitoState,
         logInvocations,
         untilCalled,
-        MissingStubError;
+        MissingStubError,
+        FakeUsedError;

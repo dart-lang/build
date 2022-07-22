@@ -20,9 +20,13 @@ class Foo<T> {
   void returnsVoid() {}
   Future<void> returnsFutureVoid() => Future.value();
   Future<void>? returnsNullableFutureVoid() => Future.value();
+  Bar returnsBar(int arg) => Bar();
 }
 
-class Bar {}
+class Bar {
+  int get x => 0;
+  int f() => 0;
+}
 
 abstract class Baz<S> {
   T returnsTypeVariable<T>();

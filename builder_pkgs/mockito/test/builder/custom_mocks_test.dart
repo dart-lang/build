@@ -497,8 +497,9 @@ void main() {
         mocksContent,
         contains(
             '  _i2.Bar m() => (super.noSuchMethod(Invocation.method(#m, []),\n'
-            '      returnValue: _FakeBar_0(),\n'
-            '      returnValueForMissingStub: _FakeBar_0()) as _i2.Bar);\n'));
+            '      returnValue: _FakeBar_0(this, Invocation.method(#m, [])),\n'
+            '      returnValueForMissingStub:\n'
+            '          _FakeBar_0(this, Invocation.method(#m, []))) as _i2.Bar);\n'));
   });
 
   test('generates mock classes including a fallback generator for a getter',

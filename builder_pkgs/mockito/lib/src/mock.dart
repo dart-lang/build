@@ -218,6 +218,47 @@ class Mock {
       _realCallsToString(_realCalls.where((call) => !call.verified));
 }
 
+/// A slightly smarter fake to be used for return value on missing stubs.
+/// Shows a more descriptive error message to the user that mentions not
+/// only a place where a fake was used but also why it was created
+/// (i.e. which stub needs to be added).
+///
+/// Inspired by Java's Mockito `SmartNull`.
+class SmartFake {
+  final Object _parent;
+  final Invocation _parentInvocation;
+  final StackTrace _createdStackTrace;
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw FakeUsedError(
+      _parentInvocation, invocation, _parent, _createdStackTrace);
+  SmartFake(this._parent, this._parentInvocation)
+      : _createdStackTrace = StackTrace.current;
+}
+
+class FakeUsedError extends Error {
+  final Invocation parentInvocation, invocation;
+  final Object receiver;
+  final StackTrace createdStackTrace;
+  final String _memberName;
+
+  FakeUsedError(this.parentInvocation, this.invocation, this.receiver,
+      this.createdStackTrace)
+      : _memberName = _symbolToString(parentInvocation.memberName);
+
+  @override
+  String toString() => "FakeUsedError: '$_memberName'\n"
+      'No stub was found which matches the argument of this method call:\n'
+      '${parentInvocation.toPrettyString()}\n\n'
+      'A fake object was created for this call, in the hope that it '
+      "won't be ever accessed.\n"
+      "Here is the stack trace where '$_memberName' was called:\n\n"
+      '${createdStackTrace.toString()}\n\n'
+      "However, member '${_symbolToString(invocation.memberName)}' of the "
+      'created fake object was accessed.\n'
+      'Add a stub for '
+      "${receiver.runtimeType}.$_memberName using Mockito's 'when' API.\n";
+}
+
 /// An error which is thrown when no stub is found which matches the arguments
 /// of a real method call on a mock object.
 class MissingStubError extends Error {
@@ -232,8 +273,8 @@ class MissingStubError extends Error {
       'No stub was found which matches the arguments of this method call:\n'
       '${invocation.toPrettyString()}\n\n'
       "Add a stub for this method using Mockito's 'when' API, or generate the "
-      '${receiver.runtimeType} mock with a MockSpec with '
-      "'returnNullOnMissingStub: true' (see "
+      '${receiver.runtimeType} mock with the @GenerateNiceMocks annotation '
+      '(see '
       'https://pub.dev/documentation/mockito/latest/annotations/MockSpec-class.html).';
 }
 

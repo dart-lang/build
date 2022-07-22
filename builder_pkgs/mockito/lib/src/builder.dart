@@ -1240,13 +1240,13 @@ class _MockClassInfo {
     } else if (mockTarget.onMissingStub == OnMissingStub.returnDefault) {
       // Return a legal default value if no stub is found which matches a real
       // call.
-      returnValueForMissingStub = _dummyValue(returnType);
+      returnValueForMissingStub = _dummyValue(returnType, invocation);
     }
     final namedArgs = {
       if (fallbackGenerator != null)
         'returnValue': _fallbackGeneratorCode(method, fallbackGenerator)
       else if (typeSystem._returnTypeIsNonNullable(method))
-        'returnValue': _dummyValue(returnType),
+        'returnValue': _dummyValue(returnType, invocation),
       if (returnValueForMissingStub != null)
         'returnValueForMissingStub': returnValueForMissingStub,
     };
@@ -1277,14 +1277,14 @@ class _MockClassInfo {
         [for (var t in method.typeParameters) refer(t.name)]);
   }
 
-  Expression _dummyValue(analyzer.DartType type) {
+  Expression _dummyValue(analyzer.DartType type, Expression invocation) {
     // The type is nullable, just take a shortcut and return `null`.
     if (typeSystem.isNullable(type)) {
       return literalNull;
     }
 
     if (type is analyzer.FunctionType) {
-      return _dummyFunctionValue(type);
+      return _dummyFunctionValue(type, invocation);
     }
 
     if (type is! analyzer.InterfaceType) {
@@ -1303,7 +1303,7 @@ class _MockClassInfo {
       final typeArgument = typeArguments.first;
       final futureValueArguments =
           typeSystem.isPotentiallyNonNullable(typeArgument)
-              ? [_dummyValue(typeArgument)]
+              ? [_dummyValue(typeArgument, invocation)]
               : <Expression>[];
       return _futureReference(_typeReference(typeArgument))
           .property('value')
@@ -1348,7 +1348,7 @@ class _MockClassInfo {
 
     // This class is unknown; we must likely generate a fake class, and return
     // an instance here.
-    return _dummyValueImplementing(type);
+    return _dummyValueImplementing(type, invocation);
   }
 
   /// Returns a reference to [Future], optionally with a type argument for the
@@ -1362,7 +1362,8 @@ class _MockClassInfo {
         }
       });
 
-  Expression _dummyFunctionValue(analyzer.FunctionType type) {
+  Expression _dummyFunctionValue(
+      analyzer.FunctionType type, Expression invocation) {
     return Method((b) {
       // The positional parameters in a FunctionType have no names. This
       // counter lets us create unique dummy names.
@@ -1388,12 +1389,13 @@ class _MockClassInfo {
       if (type.returnType.isVoid) {
         b.body = Code('');
       } else {
-        b.body = _dummyValue(type.returnType).code;
+        b.body = _dummyValue(type.returnType, invocation).code;
       }
     }).genericClosure;
   }
 
-  Expression _dummyValueImplementing(analyzer.InterfaceType dartType) {
+  Expression _dummyValueImplementing(
+      analyzer.InterfaceType dartType, Expression invocation) {
     final elementToFake = dartType.element;
     if (elementToFake.isEnum) {
       return _typeReference(dartType).property(
@@ -1409,7 +1411,7 @@ class _MockClassInfo {
         b
           ..symbol = fakeName
           ..types.addAll(typeArguments.map(_typeReference));
-      }).newInstance([]);
+      }).newInstance([refer('this'), invocation]);
     }
   }
 
@@ -1422,7 +1424,7 @@ class _MockClassInfo {
       final typeParameters = <Reference>[];
       cBuilder
         ..name = fakeName
-        ..extend = referImported('Fake', 'package:mockito/mockito.dart');
+        ..extend = referImported('SmartFake', 'package:mockito/mockito.dart');
       for (var typeParameter in elementToFake.typeParameters) {
         cBuilder.types.add(_typeParameterReference(typeParameter));
         typeParameters.add(refer(typeParameter.name));
@@ -1433,6 +1435,17 @@ class _MockClassInfo {
           ..url = _typeImport(elementToFake)
           ..types.addAll(typeParameters);
       }));
+      cBuilder.constructors.add(Constructor((constrBuilder) => constrBuilder
+        ..requiredParameters.addAll([
+          Parameter((pBuilder) => pBuilder
+            ..name = 'parent'
+            ..type = referImported('Object', 'dart:core')),
+          Parameter((pBuilder) => pBuilder
+            ..name = 'parentInvocation'
+            ..type = referImported('Invocation', 'dart:core'))
+        ])
+        ..initializers.add(refer('super')
+            .call([refer('parent'), refer('parentInvocation')]).code)));
 
       final toStringMethod =
           elementToFake.lookUpMethod('toString', elementToFake.library);
@@ -1680,9 +1693,9 @@ class _MockClassInfo {
       if (fallbackGenerator != null)
         'returnValue': _fallbackGeneratorCode(getter, fallbackGenerator)
       else if (typeSystem._returnTypeIsNonNullable(getter))
-        'returnValue': _dummyValue(returnType),
+        'returnValue': _dummyValue(returnType, invocation),
       if (mockTarget.onMissingStub == OnMissingStub.returnDefault)
-        'returnValueForMissingStub': _dummyValue(returnType),
+        'returnValueForMissingStub': _dummyValue(returnType, invocation),
     };
     var superNoSuchMethod =
         refer('super').property('noSuchMethod').call([invocation], namedArgs);

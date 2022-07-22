@@ -286,6 +286,29 @@ void main() {
     test('an unstubbed getter returns a value', () {
       expect(foo.getter, equals(''));
     });
+
+    test('an unstubbed method returning non-core type returns a fake', () {
+      when(foo.returnsBar(42)).thenReturn(Bar());
+      expect(foo.returnsBar(43), isA<SmartFake>());
+    });
+
+    test('a fake throws a FakeUsedError if a getter is called', () {
+      when(foo.returnsBar(42)).thenReturn(Bar());
+      final bar = foo.returnsBar(43);
+      expect(
+          () => bar.x,
+          throwsA(isA<FakeUsedError>().having(
+              (e) => e.toString(), 'toString()', contains('returnsBar(43)'))));
+    });
+
+    test('a fake throws a FakeUsedError if a method is called', () {
+      when(foo.returnsBar(42)).thenReturn(Bar());
+      final bar = foo.returnsBar(43);
+      expect(
+          () => bar.f(),
+          throwsA(isA<FakeUsedError>().having(
+              (e) => e.toString(), 'toString()', contains('returnsBar(43)'))));
+    });
   });
 
   test('a generated mock can be used as a stub argument', () {
