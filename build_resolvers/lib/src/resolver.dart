@@ -256,7 +256,7 @@ class AnalyzerResolver implements ReleasableResolver {
   Future<List<ErrorsResult>> _syntacticErrorsFor(LibraryElement element) async {
     final existingElements = [
       element,
-      for (final part in element.parts)
+      for (final part in element.parts2)
         // The source may be null if the part doesn't exist. That's not
         // important for us since we only care about syntax
         if (part.source.exists()) part,
