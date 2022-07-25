@@ -258,8 +258,8 @@ class AnalyzerResolver implements ReleasableResolver {
 
     for (final part in element.parts2) {
       var uri = part.uri;
-      // The source may be null if the part doesn't exist. That's not
-      // important for us since we only care about syntax
+      // There may be no source if the part doesn't exist. That's not important
+      // for us since we only care about existing file syntax.
       if (uri is! DirectiveUriWithSource) continue;
       existingSources.add(uri.source);
     }
