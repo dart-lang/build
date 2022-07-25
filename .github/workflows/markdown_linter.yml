@@ -13,3 +13,4 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - uses: gaurav-nelson/github-action-markdown-link-check@1.0.13
+        continue-on-error: true
