@@ -1,6 +1,8 @@
 ## 2.0.10-dev
 
 - Migrate from `LibraryElement#parts` to `LibraryElement#parts2`.
+- Update min sdk constraint to `2.15.0` since this is the minimum selectable
+  (and testable) sdk.
 
 ## 2.0.9
 
