@@ -254,17 +254,19 @@ class AnalyzerResolver implements ReleasableResolver {
   ///
   /// This includes the main library and existing part files.
   Future<List<ErrorsResult>> _syntacticErrorsFor(LibraryElement element) async {
-    final existingElements = [
-      element,
-      for (final part in element.parts)
-        // The source may be null if the part doesn't exist. That's not
-        // important for us since we only care about syntax
-        if (part.source.exists()) part,
-    ];
+    final existingSources = [element.source];
+
+    for (final part in element.parts2) {
+      var uri = part.uri;
+      // There may be no source if the part doesn't exist. That's not important
+      // for us since we only care about existing file syntax.
+      if (uri is! DirectiveUriWithSource) continue;
+      existingSources.add(uri.source);
+    }
 
     // Map from elements to absolute paths
-    final paths = existingElements
-        .map((part) => _uriResolver.lookupCachedAsset(part.source.uri))
+    final paths = existingSources
+        .map((source) => _uriResolver.lookupCachedAsset(source.uri))
         .whereType<AssetId>() // filter out nulls
         .map(assetPath);
 

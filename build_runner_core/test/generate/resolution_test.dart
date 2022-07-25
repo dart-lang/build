@@ -43,10 +43,7 @@ class ListClassesAndHierarchyBuilder implements Builder {
     }
     // Process both the main and part files of a given library.
     final library = await buildStep.inputLibrary;
-    final types = [
-      library.definingCompilationUnit.classes,
-      library.parts.map((p) => p.classes).expand((t) => t),
-    ].expand((t) => t);
+    final types = library.units.expand((element) => element.classes);
     final output = StringBuffer();
     final outputId = buildStep.inputId.changeExtension('.txt');
     for (final type in types) {

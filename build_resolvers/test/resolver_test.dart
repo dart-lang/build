@@ -238,9 +238,8 @@ void main() {
               } ''',
       }, (resolver) async {
         var lib = await resolver.libraryFor(entryPoint);
-        expect(lib.imports.length, 2);
-        // TODO(scheglov) Use `parts2` when it is available.
-        //expect(lib.parts2, isEmpty);
+        expect(lib.parts2.length, 1);
+        expect(lib.parts2.whereType<DirectiveUriWithSource>(), isEmpty);
       }, resolvers: AnalyzerResolvers());
     });
 

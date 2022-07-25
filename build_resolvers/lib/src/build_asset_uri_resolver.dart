@@ -63,7 +63,7 @@ class BuildAssetUriResolver extends UriResolver {
           withDriverResource,
       {required bool transitive}) async {
     final transitivelyResolved = _buildStepTransitivelyResolvedAssets
-        .putIfAbsent(buildStep, () => HashSet());
+        .putIfAbsent(buildStep, HashSet.new);
     bool notCrawled(AssetId asset) => !transitivelyResolved.contains(asset);
 
     final uncrawledIds = entryPoints.where(notCrawled);
