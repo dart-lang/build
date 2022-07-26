@@ -3,10 +3,8 @@
 - Add `BuildResults.changedAssets` containing asset URIs changed during a
   build.
 - Updated the example to use `dart pub` instead of `pub`.
-
-## 3.0.2
-
 - Run `serveRequests` in an error zone and forward errors to the clients.
+
 
 ## 3.0.1
 

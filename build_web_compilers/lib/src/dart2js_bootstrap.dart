@@ -99,12 +99,13 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
       ]);
   }
 
-  log.info('Running dart2js with ${args.join(' ')}\n');
+  log.info('Running `dart compile js` with ${args.join(' ')}\n');
   var result = await Process.run(
       p.join(sdkDir, 'bin', 'dart'),
       [
         ..._dart2jsVmArgs,
-        p.join(sdkDir, 'bin', 'snapshots', 'dart2js.dart.snapshot'),
+        'compile',
+        'js',
         ...args,
       ],
       workingDirectory: scratchSpace.tempDir.path);

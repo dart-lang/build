@@ -1,3 +1,10 @@
+## 2.0.10-dev
+
+- Migrate from `LibraryElement#parts` to `LibraryElement#parts2`.
+- Update min sdk constraint to `2.17.0` since this is the minimum selectable
+  (and testable) sdk.
+- Use a constructor tearoff since our min sdk now supports them.
+
 ## 2.0.9
 
 - Fix a new case of `InconsistentAnalysisException` errors that can occur with
