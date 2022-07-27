@@ -409,8 +409,8 @@ class _MockTargetGatherer {
     final mockTargets = <_MockTarget>{};
 
     final possiblyAnnotatedElements = [
-      ...entryLib.exports,
-      ...entryLib.imports,
+      ...entryLib.libraryExports,
+      ...entryLib.libraryImports,
       ...entryLib.topLevelElements,
     ];
 
@@ -419,7 +419,7 @@ class _MockTargetGatherer {
       // annotations, on one element or even on different elements in a library.
       for (final annotation in element.metadata) {
         if (annotation.element is! ConstructorElement) continue;
-        final annotationClass = annotation.element!.enclosingElement!.name;
+        final annotationClass = annotation.element!.enclosingElement2!.name;
         switch (annotationClass) {
           case 'GenerateMocks':
             mockTargets
@@ -766,9 +766,9 @@ class _MockTargetGatherer {
   ///
   /// If any type in the above positions is private, [function] is un-stubbable.
   /// If the return type is potentially non-nullable, [function] is
-  /// un-stubbable, unless [isParamter] is true (indicating that [function] is
+  /// un-stubbable, unless [isParameter] is true (indicating that [function] is
   /// found in a parameter of a method-to-be-stubbed) or
-  /// [allowUnsupportedMember] is true, or [hasDummyCenerator] is true
+  /// [allowUnsupportedMember] is true, or [hasDummyGenerator] is true
   /// (indicating that a dummy generator, which can return dummy values, has
   /// been provided).
   List<String> _checkFunction(
@@ -1025,7 +1025,7 @@ class _MockClassInfo {
       for (final mixin in mockTarget.mixins) {
         cBuilder.mixins.add(TypeReference((b) {
           b
-            ..symbol = mixin.name
+            ..symbol = mixin.element.name
             ..url = _typeImport(mixin.element)
             ..types.addAll(mixin.typeArguments.map(_typeReference));
         }));
@@ -1415,7 +1415,7 @@ class _MockClassInfo {
     }
   }
 
-  /// Adds a [Fake] implementation of [elementToFake], named [fakeName].
+  /// Adds a `Fake` implementation of [elementToFake], named [fakeName].
   void _addFakeClass(String fakeName, ClassElement elementToFake) {
     mockLibraryInfo.fakeClasses.add(Class((cBuilder) {
       // For each type parameter on [elementToFake], the Fake class needs a type
@@ -1488,7 +1488,7 @@ class _MockClassInfo {
                   parameter.computeConstantValue()!, parameter)
               .code;
         } on _ReviveException catch (e) {
-          final method = parameter.enclosingElement!;
+          final method = parameter.enclosingElement2!;
           throw InvalidMockitoAnnotationException(
               'Mockito cannot generate a valid override for method '
               "'${mockTarget.classElement.displayName}.${method.displayName}'; "
@@ -1519,8 +1519,8 @@ class _MockClassInfo {
     if (!parameter.isCovariant) {
       return type;
     }
-    final method = parameter.enclosingElement as MethodElement;
-    final class_ = method.enclosingElement as ClassElement;
+    final method = parameter.enclosingElement2 as MethodElement;
+    final class_ = method.enclosingElement2 as ClassElement;
     final name = Name(method.librarySource.uri, method.name);
     final overriddenMethods = inheritanceManager.getOverridden2(class_, name);
     if (overriddenMethods == null) {
@@ -1530,7 +1530,7 @@ class _MockClassInfo {
     while (allOverriddenMethods.isNotEmpty) {
       final overriddenMethod = allOverriddenMethods.removeFirst();
       final secondaryOverrides = inheritanceManager.getOverridden2(
-          overriddenMethod.enclosingElement as ClassElement, name);
+          overriddenMethod.enclosingElement2 as ClassElement, name);
       if (secondaryOverrides != null) {
         allOverriddenMethods.addAll(secondaryOverrides);
       }
@@ -1833,7 +1833,7 @@ class _MockClassInfo {
 
   /// Returns a [Reference] to [symbol] with [url].
   ///
-  /// This function overrides [code_builder.refer] so as to ensure that [url] is
+  /// This function overrides `code_builder.refer` so as to ensure that [url] is
   /// given.
   static Reference referImported(String symbol, String? url) =>
       Reference(symbol, url);
@@ -1923,10 +1923,10 @@ extension on Element {
     if (this is ClassElement) {
       return "The class '$name'";
     } else if (this is MethodElement) {
-      var className = enclosingElement!.name;
+      var className = enclosingElement2!.name;
       return "The method '$className.$name'";
     } else if (this is PropertyAccessorElement) {
-      var className = enclosingElement!.name;
+      var className = enclosingElement2!.name;
       return "The property accessor '$className.$name'";
     } else {
       return 'unknown element';
