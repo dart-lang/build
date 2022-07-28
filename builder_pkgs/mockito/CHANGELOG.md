@@ -1,4 +1,4 @@
-## 5.3.0-dev
+## 5.3.0
 
 * Introduce a new `MockSpec` parameter, `onMissingStub`, which allows
   specifying three actions to take when a real call is made to a mock method
