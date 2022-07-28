@@ -61,7 +61,10 @@ void main() {
 
     test('disallows empty options', () {
       expect(
-        () => validatedBuildExtensionsFrom({'build_extensions': {}}, {}),
+        () => validatedBuildExtensionsFrom(
+          {'build_extensions': <String, Object?>{}},
+          {},
+        ),
         throwsArgumentError,
       );
     });

@@ -49,7 +49,7 @@ void main() {
 
     _testFunction(
       'new Future.error',
-      () => Future.error(ArgumentError('Error message')),
+      () => Future<Never>.error(ArgumentError('Error message')),
       throwsArgumentError,
     );
 
@@ -61,7 +61,7 @@ void main() {
   });
 }
 
-void _testSimpleValue(String testName, Object? value, expected) {
+void _testSimpleValue(String testName, Object? value, Object? expected) {
   _testFunction(testName, value, expected);
 
   assert(value is! Future);
@@ -83,12 +83,12 @@ void _testSimpleValue(String testName, Object? value, expected) {
   }
 }
 
-void _testFunction(String testName, value, expected) {
+void _testFunction(String testName, Object? value, Object? expected) {
   test(testName, () async {
     if (expected is List) {
       expect(await normalizeGeneratorOutput(value).toList(), expected);
     } else {
-      expect(() => normalizeGeneratorOutput(value).drain(), expected);
+      expect(() => normalizeGeneratorOutput(value).drain<void>(), expected);
     }
   });
 }

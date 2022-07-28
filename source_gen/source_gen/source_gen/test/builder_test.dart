@@ -848,7 +848,7 @@ foo generated content
 const _outdatedAnalyzerMessage =
     '`analyzer` version may not fully support your current SDK version.';
 
-Future _generateTest(CommentGenerator gen, String expectedContent) async {
+Future<void> _generateTest(CommentGenerator gen, String expectedContent) async {
   final srcs = _createPackageStub();
   final builder = PartBuilder([gen], '.foo.dart');
 

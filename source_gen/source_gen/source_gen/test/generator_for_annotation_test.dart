@@ -18,7 +18,7 @@ void main() {
       '`null`': null,
       'empty string': '',
       'only whitespace': '\n \t',
-      'empty list': [],
+      'empty list': <Object>[],
       'list with null, empty, and whitespace items': [null, '', '\n \t']
     }.entries) {
       test(entry.key, () async {

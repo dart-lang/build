@@ -80,7 +80,7 @@ class _Builder extends Builder {
   }
 
   @override
-  Future build(BuildStep buildStep) async {
+  Future<void> build(BuildStep buildStep) async {
     final resolver = buildStep.resolver;
 
     if (!await resolver.isLibrary(buildStep.inputId)) return;
@@ -99,7 +99,7 @@ class _Builder extends Builder {
     await _generateForLibrary(lib, buildStep);
   }
 
-  Future _generateForLibrary(
+  Future<void> _generateForLibrary(
     LibraryElement library,
     BuildStep buildStep,
   ) async {

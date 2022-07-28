@@ -74,7 +74,7 @@ class CombiningBuilder implements Builder {
         _ignoreForFile = ignoreForFile ?? const <String>{};
 
   @override
-  Future build(BuildStep buildStep) async {
+  Future<void> build(BuildStep buildStep) async {
     // Pattern used for `findAssets`, which must be glob-compatible
     final pattern = buildStep.inputId.changeExtension('.*$_partFiles').path;
 
