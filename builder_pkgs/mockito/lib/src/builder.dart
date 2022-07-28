@@ -542,6 +542,7 @@ class _MockTargetGatherer {
         final onMissingStubIndex =
             onMissingStubValue.getField('index')!.toIntValue()!;
         onMissingStub = OnMissingStub.values[onMissingStubIndex];
+        // ignore: deprecated_member_use_from_same_package
         if (onMissingStub == OnMissingStub.returnNull) {
           throw ArgumentError(
               "'OnMissingStub.returnNull' is not supported with "
@@ -553,6 +554,7 @@ class _MockTargetGatherer {
         // No value was given for `onMissingStub`. But the behavior may
         // be specified by `returnNullOnMissingStub`.
         onMissingStub = returnNullOnMissingStub
+            // ignore: deprecated_member_use_from_same_package
             ? OnMissingStub.returnNull
             : OnMissingStub.throwException;
       } else {

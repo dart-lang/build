@@ -109,6 +109,10 @@ class MockSpec<T> {
 
   final Map<Symbol, Function> fallbackGenerators;
 
+  // This is here for the doc comment references to `returnNullOnMissingStub`.
+  // Remove when those are gone.
+  // ignore_for_file: deprecated_member_use_from_same_package
+
   /// Constructs a custom mock specification.
   ///
   /// Specify a custom name with the [as] parameter.
