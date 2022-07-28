@@ -755,7 +755,8 @@ void main() {
           dedent2('''
             _i3.List<String> m() =>
                 (super.noSuchMethod(Invocation.method(#m, []), returnValue: <String>[])
-                    as _i3.List<String>);'''),
+                    as _i3.List<String>);
+          '''),
         ));
   });
 
@@ -1595,6 +1596,20 @@ void main() {
       _containsAllOf(
           'void m(void Function(int?)? a, void Function(int)? b) =>'),
     );
+  });
+
+  test(
+      'matches requiredness of parameter types within a function-typed '
+      'parameter', () async {
+    await expectSingleNonNullableOutput(dedent('''
+      class Foo {
+        void m(void Function({required int p}) cb) {}
+      }
+      '''), _containsAllOf(dedent2('''
+        void m(void Function({required int p})? cb) =>
+            super.noSuchMethod(Invocation.method(#m, [cb]),
+                returnValueForMissingStub: null);
+        ''')));
   });
 
   test('matches nullability of a generic parameter', () async {

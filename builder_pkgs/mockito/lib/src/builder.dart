@@ -1787,8 +1787,14 @@ class _MockClassInfo {
                 .addAll(type.normalParameterTypes.map(_typeReference))
             ..optionalParameters
                 .addAll(type.optionalParameterTypes.map(_typeReference));
-          for (var parameter in type.namedParameterTypes.entries) {
-            b.namedParameters[parameter.key] = _typeReference(parameter.value);
+          for (var parameter
+              in type.parameters.where((p) => p.isOptionalNamed)) {
+            b.namedParameters[parameter.name] = _typeReference(parameter.type);
+          }
+          for (var parameter
+              in type.parameters.where((p) => p.isRequiredNamed)) {
+            b.namedRequiredParameters[parameter.name] =
+                _typeReference(parameter.type);
           }
           b.types.addAll(type.typeFormals.map(_typeParameterReference));
         });

@@ -13,6 +13,8 @@
 * Add `SmartFake` class to be used as a return values for unstubbed
   methods. It remembers where it was created and throws a descriptive error
   in case the fake is later used.
+* Include `required` keyword in function types to match overridden function
+  types.
 
 ## 5.2.0
 
