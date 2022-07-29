@@ -20,5 +20,6 @@ class ModuleCleanup implements PostProcessBuilder {
     '.meta_module.raw',
     '.meta_module.clean',
     '.module',
+    '.dill',
   ];
 }
