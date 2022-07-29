@@ -36,3 +36,18 @@ dependency_overrides:
     path: ../build_web_compilers
   scratch_space:
     path: ../scratch_space
+  test_api:
+    git:
+      url: https://github.com/dart-lang/test.git
+      path: pkgs/test_api
+      ref: chrome-logs
+  test_core:
+    git:
+      url: https://github.com/dart-lang/test.git
+      path: pkgs/test_core
+      ref: chrome-logs
+  test:
+    git:
+      url: https://github.com/dart-lang/test.git
+      path: pkgs/test
+      ref: chrome-logs
