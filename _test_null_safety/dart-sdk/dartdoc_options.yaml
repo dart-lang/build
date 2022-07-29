@@ -2,7 +2,7 @@ dartdoc:
   categoryOrder: ["Core", "VM", "Web"]
   linkToSource:
     root: '.'
-    uriTemplate: 'https://github.com/dart-lang/sdk/blob/be9f4cbddbcc971dfb426bcdbf5d22933afef7b8/sdk/%f%#L%l%'
+    uriTemplate: 'https://github.com/dart-lang/sdk/blob/95e8583346bbeb51a95cc4f5013ab9276a73de80/sdk/%f%#L%l%'
   errors:
     # Default errors of dartdoc:
     - duplicate-file
