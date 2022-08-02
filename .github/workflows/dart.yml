@@ -1649,14 +1649,10 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test_null_safety
         run: dart pub upgrade
-      - name: "_test_null_safety; dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+      - name: "_test_null_safety; dart run build_runner build"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
         run: "dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
-      - name: "_test_null_safety; dart run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
-        if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
-        working-directory: _test_null_safety
-        run: "dart run build_runner test --define=\"build_web_compilers:entrypoint=compiler=dart2js\" -- -p chrome --test-randomize-ordering-seed=random"
       - name: Archive null safe build outputs
         uses: actions/upload-artifact@v3
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
