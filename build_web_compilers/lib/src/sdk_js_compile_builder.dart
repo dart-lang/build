@@ -97,6 +97,7 @@ Future<void> _createDevCompilerModule(
   var driver = await buildStep.fetchResource(driverResource);
   WorkResponse response;
   try {
+    log.warning('Compile DDC SDK with args: ${request.arguments}');
     response = await driver.doWork(request,
         trackWork: (response) =>
             buildStep.trackStage('Compile', () => response, isExternal: true));

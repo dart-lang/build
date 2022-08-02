@@ -56,16 +56,18 @@ final int maxWorkersPerTask = () {
 /// Manages a shared set of persistent dartdevk workers.
 BazelWorkerDriver get _dartdevkDriver {
   _dartdevkWorkersAreDoneCompleter ??= Completer<void>();
-  return __dartdevkDriver ??= BazelWorkerDriver(
-      () => Process.start(
-          p.join(sdkDir, 'bin', 'dart'),
-          [
-            p.join(sdkDir, 'bin', 'snapshots', 'dartdevc.dart.snapshot'),
-            '--persistent_worker'
-          ],
-          mode: _processMode,
-          workingDirectory: scratchSpace.tempDir.path),
-      maxWorkers: maxWorkersPerTask);
+  return __dartdevkDriver ??= () {
+    var dart = p.join(sdkDir, 'bin', 'dart');
+    var arguments = [
+      p.join(sdkDir, 'bin', 'snapshots', 'dartdevc.dart.snapshot'),
+      '--persistent_worker'
+    ];
+    log.warning('Spawning DDC: $dart $arguments');
+    return BazelWorkerDriver(
+        () => Process.start(dart, arguments,
+            mode: _processMode, workingDirectory: scratchSpace.tempDir.path),
+        maxWorkers: maxWorkersPerTask);
+  }();
 }
 
 BazelWorkerDriver? __dartdevkDriver;
