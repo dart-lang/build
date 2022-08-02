@@ -30,4 +30,4 @@ jobs:
       - name: "_test_null_safety; compute diffs!"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: "./dart-sdk/bin/dart run build_runner build test -o build-gh && diff -r ./build ./build-gh"
+        run: "./dart-sdk/bin/dart run build_runner build test -o build-gh && diff -r ./build ./build-gh && ./dart-sdk/bin/dart run test --precompiled ./build-gh -p chrome"
