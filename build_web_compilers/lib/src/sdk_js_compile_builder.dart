@@ -82,33 +82,29 @@ Future<void> _createDevCompilerModule(
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
   var jsOutputFile = scratchSpace.fileFor(jsOutputId);
 
-  var request = WorkRequest()
-    ..arguments.addAll([
-      '--multi-root-scheme=org-dartlang-sdk',
-      '--modules=amd',
-      '--module-name=dart_sdk',
-      '--${soundNullSafety ? '' : 'no-'}sound-null-safety',
-      '-o',
-      jsOutputFile.path,
-      p.url.join(dartSdk, sdkKernelPath),
-    ]);
+  var arguments = [
+    p.join(sdkDir, 'bin', 'snapshots', 'dartdevc.dart.snapshot'),
+    '--multi-root-scheme=org-dartlang-sdk',
+    '--modules=amd',
+    '--module-name=dart_sdk',
+    '--${soundNullSafety ? '' : 'no-'}sound-null-safety',
+    '-o',
+    jsOutputFile.path,
+    p.url.join(dartSdk, sdkKernelPath),
+  ];
 
-  var driverResource = dartdevkDriverResource;
-  var driver = await buildStep.fetchResource(driverResource);
-  WorkResponse response;
+  ProcessResult result;
   try {
-    log.warning('Compile DDC SDK with args: ${request.arguments}');
-    response = await driver.doWork(request,
-        trackWork: (response) =>
-            buildStep.trackStage('Compile', () => response, isExternal: true));
+    log.warning('Compile DDC SDK with args: $arguments');
+    result = await Process.run(p.join(sdkDir, 'bin', 'dart'), arguments);
   } catch (e) {
     throw DartDevcCompilationException(jsOutputId, e.toString());
   }
 
-  var message = response.output
+  var message = (result.stdout as String)
       .replaceAll('${scratchSpace.tempDir.path}/', '')
       .replaceAll('org-dartlang-sdk:///', '');
-  if (response.exitCode != EXIT_CODE_OK ||
+  if (result.exitCode != EXIT_CODE_OK ||
       !jsOutputFile.existsSync() ||
       message.contains('Error:')) {
     throw DartDevcCompilationException(jsOutputId, message);
