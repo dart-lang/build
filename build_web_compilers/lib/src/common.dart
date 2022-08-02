@@ -17,7 +17,7 @@ String defaultAnalysisOptionsArg(ScratchSpace scratchSpace) =>
     '--options=${scratchSpace.fileFor(defaultAnalysisOptionsId).path}';
 
 String sdkDdcKernelPath(bool soundNullSafety) => p.url.join('lib', '_internal',
-    soundNullSafety ? 'ddc_outline_sound.dill' : 'ddc_sdk.dill');
+    soundNullSafety ? 'ddc_platform_sound.dill' : 'ddc_platform.dill');
 
 String soundnessExt(bool soundNullSafety) =>
     soundNullSafety ? '.sound' : '.unsound';
