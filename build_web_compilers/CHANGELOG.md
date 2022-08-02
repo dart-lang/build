@@ -1,3 +1,7 @@
+## 3.2.5
+
+- Use a standalone process to compile the ddc sdk.js file.
+
 ## 3.2.4
 
 - Use `dart compile js` instead of running dart2js from its sdk snapshot.
