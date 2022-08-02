@@ -46,17 +46,17 @@ class _$Class extends Class {
       required this.fields,
       required this.name})
       : super._() {
-    BuiltValueNullFieldError.checkNotNull(abstract, 'Class', 'abstract');
-    BuiltValueNullFieldError.checkNotNull(annotations, 'Class', 'annotations');
-    BuiltValueNullFieldError.checkNotNull(docs, 'Class', 'docs');
-    BuiltValueNullFieldError.checkNotNull(implements, 'Class', 'implements');
-    BuiltValueNullFieldError.checkNotNull(mixins, 'Class', 'mixins');
-    BuiltValueNullFieldError.checkNotNull(types, 'Class', 'types');
+    BuiltValueNullFieldError.checkNotNull(abstract, r'Class', 'abstract');
+    BuiltValueNullFieldError.checkNotNull(annotations, r'Class', 'annotations');
+    BuiltValueNullFieldError.checkNotNull(docs, r'Class', 'docs');
+    BuiltValueNullFieldError.checkNotNull(implements, r'Class', 'implements');
+    BuiltValueNullFieldError.checkNotNull(mixins, r'Class', 'mixins');
+    BuiltValueNullFieldError.checkNotNull(types, r'Class', 'types');
     BuiltValueNullFieldError.checkNotNull(
-        constructors, 'Class', 'constructors');
-    BuiltValueNullFieldError.checkNotNull(methods, 'Class', 'methods');
-    BuiltValueNullFieldError.checkNotNull(fields, 'Class', 'fields');
-    BuiltValueNullFieldError.checkNotNull(name, 'Class', 'name');
+        constructors, r'Class', 'constructors');
+    BuiltValueNullFieldError.checkNotNull(methods, r'Class', 'methods');
+    BuiltValueNullFieldError.checkNotNull(fields, r'Class', 'fields');
+    BuiltValueNullFieldError.checkNotNull(name, r'Class', 'name');
   }
 
   @override
@@ -109,7 +109,7 @@ class _$Class extends Class {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper('Class')
+    return (newBuiltValueToStringHelper(r'Class')
           ..add('abstract', abstract)
           ..add('annotations', annotations)
           ..add('docs', docs)
@@ -293,13 +293,15 @@ class _$ClassBuilder extends ClassBuilder {
   }
 
   @override
-  _$Class build() {
+  Class build() => _build();
+
+  _$Class _build() {
     _$Class _$result;
     try {
       _$result = _$v ??
           new _$Class._(
               abstract: BuiltValueNullFieldError.checkNotNull(
-                  abstract, 'Class', 'abstract'),
+                  abstract, r'Class', 'abstract'),
               annotations: annotations.build(),
               docs: docs.build(),
               extend: extend,
@@ -309,8 +311,8 @@ class _$ClassBuilder extends ClassBuilder {
               constructors: constructors.build(),
               methods: methods.build(),
               fields: fields.build(),
-              name:
-                  BuiltValueNullFieldError.checkNotNull(name, 'Class', 'name'));
+              name: BuiltValueNullFieldError.checkNotNull(
+                  name, r'Class', 'name'));
     } catch (_) {
       late String _$failedField;
       try {
@@ -333,7 +335,7 @@ class _$ClassBuilder extends ClassBuilder {
         fields.build();
       } catch (e) {
         throw new BuiltValueNestedFieldError(
-            'Class', _$failedField, e.toString());
+            r'Class', _$failedField, e.toString());
       }
       rethrow;
     }
@@ -342,4 +344,4 @@ class _$ClassBuilder extends ClassBuilder {
   }
 }
 
-// ignore_for_file: always_put_control_body_on_new_line,always_specify_types,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,lines_longer_than_80_chars,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new
+// ignore_for_file: always_put_control_body_on_new_line,always_specify_types,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,deprecated_member_use_from_same_package,lines_longer_than_80_chars,no_leading_underscores_for_local_identifiers,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new,unnecessary_lambdas

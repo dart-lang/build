@@ -58,7 +58,7 @@ class _Allocator implements Allocator {
   }
 
   @override
-  Iterable<Directive> get imports => _imports.map((u) => Directive.import(u));
+  Iterable<Directive> get imports => _imports.map(Directive.import);
 }
 
 class _NullAllocator implements Allocator {

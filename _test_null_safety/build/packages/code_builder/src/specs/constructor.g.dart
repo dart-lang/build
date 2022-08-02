@@ -50,17 +50,17 @@ class _$Constructor extends Constructor {
       this.redirect})
       : super._() {
     BuiltValueNullFieldError.checkNotNull(
-        annotations, 'Constructor', 'annotations');
-    BuiltValueNullFieldError.checkNotNull(docs, 'Constructor', 'docs');
+        annotations, r'Constructor', 'annotations');
+    BuiltValueNullFieldError.checkNotNull(docs, r'Constructor', 'docs');
     BuiltValueNullFieldError.checkNotNull(
-        optionalParameters, 'Constructor', 'optionalParameters');
+        optionalParameters, r'Constructor', 'optionalParameters');
     BuiltValueNullFieldError.checkNotNull(
-        requiredParameters, 'Constructor', 'requiredParameters');
+        requiredParameters, r'Constructor', 'requiredParameters');
     BuiltValueNullFieldError.checkNotNull(
-        initializers, 'Constructor', 'initializers');
-    BuiltValueNullFieldError.checkNotNull(external, 'Constructor', 'external');
-    BuiltValueNullFieldError.checkNotNull(constant, 'Constructor', 'constant');
-    BuiltValueNullFieldError.checkNotNull(factory, 'Constructor', 'factory');
+        initializers, r'Constructor', 'initializers');
+    BuiltValueNullFieldError.checkNotNull(external, r'Constructor', 'external');
+    BuiltValueNullFieldError.checkNotNull(constant, r'Constructor', 'constant');
+    BuiltValueNullFieldError.checkNotNull(factory, r'Constructor', 'factory');
   }
 
   @override
@@ -116,7 +116,7 @@ class _$Constructor extends Constructor {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper('Constructor')
+    return (newBuiltValueToStringHelper(r'Constructor')
           ..add('annotations', annotations)
           ..add('docs', docs)
           ..add('optionalParameters', optionalParameters)
@@ -314,7 +314,9 @@ class _$ConstructorBuilder extends ConstructorBuilder {
   }
 
   @override
-  _$Constructor build() {
+  Constructor build() => _build();
+
+  _$Constructor _build() {
     _$Constructor _$result;
     try {
       _$result = _$v ??
@@ -326,11 +328,11 @@ class _$ConstructorBuilder extends ConstructorBuilder {
               initializers: initializers.build(),
               body: body,
               external: BuiltValueNullFieldError.checkNotNull(
-                  external, 'Constructor', 'external'),
+                  external, r'Constructor', 'external'),
               constant: BuiltValueNullFieldError.checkNotNull(
-                  constant, 'Constructor', 'constant'),
+                  constant, r'Constructor', 'constant'),
               factory: BuiltValueNullFieldError.checkNotNull(
-                  factory, 'Constructor', 'factory'),
+                  factory, r'Constructor', 'factory'),
               lambda: lambda,
               name: name,
               redirect: redirect);
@@ -349,7 +351,7 @@ class _$ConstructorBuilder extends ConstructorBuilder {
         initializers.build();
       } catch (e) {
         throw new BuiltValueNestedFieldError(
-            'Constructor', _$failedField, e.toString());
+            r'Constructor', _$failedField, e.toString());
       }
       rethrow;
     }
@@ -358,4 +360,4 @@ class _$ConstructorBuilder extends ConstructorBuilder {
   }
 }
 
-// ignore_for_file: always_put_control_body_on_new_line,always_specify_types,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,lines_longer_than_80_chars,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new
+// ignore_for_file: always_put_control_body_on_new_line,always_specify_types,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,deprecated_member_use_from_same_package,lines_longer_than_80_chars,no_leading_underscores_for_local_identifiers,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new,unnecessary_lambdas

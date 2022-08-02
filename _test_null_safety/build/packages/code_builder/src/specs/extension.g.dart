@@ -35,11 +35,11 @@ class _$Extension extends Extension {
       this.name})
       : super._() {
     BuiltValueNullFieldError.checkNotNull(
-        annotations, 'Extension', 'annotations');
-    BuiltValueNullFieldError.checkNotNull(docs, 'Extension', 'docs');
-    BuiltValueNullFieldError.checkNotNull(types, 'Extension', 'types');
-    BuiltValueNullFieldError.checkNotNull(methods, 'Extension', 'methods');
-    BuiltValueNullFieldError.checkNotNull(fields, 'Extension', 'fields');
+        annotations, r'Extension', 'annotations');
+    BuiltValueNullFieldError.checkNotNull(docs, r'Extension', 'docs');
+    BuiltValueNullFieldError.checkNotNull(types, r'Extension', 'types');
+    BuiltValueNullFieldError.checkNotNull(methods, r'Extension', 'methods');
+    BuiltValueNullFieldError.checkNotNull(fields, r'Extension', 'fields');
   }
 
   @override
@@ -78,7 +78,7 @@ class _$Extension extends Extension {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper('Extension')
+    return (newBuiltValueToStringHelper(r'Extension')
           ..add('annotations', annotations)
           ..add('docs', docs)
           ..add('on', on)
@@ -206,7 +206,9 @@ class _$ExtensionBuilder extends ExtensionBuilder {
   }
 
   @override
-  _$Extension build() {
+  Extension build() => _build();
+
+  _$Extension _build() {
     _$Extension _$result;
     try {
       _$result = _$v ??
@@ -234,7 +236,7 @@ class _$ExtensionBuilder extends ExtensionBuilder {
         fields.build();
       } catch (e) {
         throw new BuiltValueNestedFieldError(
-            'Extension', _$failedField, e.toString());
+            r'Extension', _$failedField, e.toString());
       }
       rethrow;
     }
@@ -243,4 +245,4 @@ class _$ExtensionBuilder extends ExtensionBuilder {
   }
 }
 
-// ignore_for_file: always_put_control_body_on_new_line,always_specify_types,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,lines_longer_than_80_chars,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new
+// ignore_for_file: always_put_control_body_on_new_line,always_specify_types,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,deprecated_member_use_from_same_package,lines_longer_than_80_chars,no_leading_underscores_for_local_identifiers,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new,unnecessary_lambdas

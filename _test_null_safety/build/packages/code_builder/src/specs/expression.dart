@@ -179,21 +179,21 @@ abstract class Expression implements Spec {
         'await',
       );
 
-  /// Return `{other} = {this}`.
+  /// Return `{this} = {other}`.
   Expression assign(Expression other) => BinaryExpression._(
         this,
         other,
         '=',
       );
 
-  /// Return `{other} ?? {this}`.
+  /// Return `{this} ?? {other}`.
   Expression ifNullThen(Expression other) => BinaryExpression._(
         this,
         other,
         '??',
       );
 
-  /// Return `{other} ??= {this}`.
+  /// Return `{this} ??= {other}`.
   Expression assignNullAware(Expression other) => BinaryExpression._(
         this,
         other,
@@ -322,6 +322,46 @@ abstract class Expression implements Spec {
   @visibleForOverriding
   Expression get expression => this;
 }
+
+/// Declare a const variable named [variableName].
+///
+/// Returns `const {variableName}`, or `const {type} {variableName}`.
+Expression declareConst(String variableName, {Reference? type}) => type == null
+    ? LiteralExpression._('const $variableName')
+    : BinaryExpression._(
+        const LiteralExpression._('const'), _typedVar(variableName, type), '');
+
+/// Declare a final variable named [variableName].
+///
+/// Returns `final {variableName}`, or `final {type} {variableName}`.
+/// If [late] is true the declaration is prefixed with `late`.
+Expression declareFinal(String variableName,
+        {Reference? type, bool late = false}) =>
+    _late(
+        late,
+        type == null
+            ? LiteralExpression._('final $variableName')
+            : BinaryExpression._(const LiteralExpression._('final'),
+                _typedVar(variableName, type), ''));
+
+/// Declare a variable named [variableName].
+///
+/// Returns `var {variableName}`, or `{type} {variableName}`.
+/// If [late] is true the declaration is prefixed with `late`.
+Expression declareVar(String variableName,
+        {Reference? type, bool late = false}) =>
+    _late(
+        late,
+        type == null
+            ? LiteralExpression._('var $variableName')
+            : _typedVar(variableName, type));
+
+Expression _typedVar(String variableName, Reference type) =>
+    BinaryExpression._(type.expression, LiteralExpression._(variableName), '');
+
+Expression _late(bool late, Expression expression) => late
+    ? BinaryExpression._(const LiteralExpression._('late'), expression, '')
+    : expression;
 
 /// Creates `typedef {name} =`.
 Code createTypeDef(String name, FunctionType type) => BinaryExpression._(

@@ -28,8 +28,8 @@ class _$TypeReference extends TypeReference {
       required this.types,
       this.isNullable})
       : super._() {
-    BuiltValueNullFieldError.checkNotNull(symbol, 'TypeReference', 'symbol');
-    BuiltValueNullFieldError.checkNotNull(types, 'TypeReference', 'types');
+    BuiltValueNullFieldError.checkNotNull(symbol, r'TypeReference', 'symbol');
+    BuiltValueNullFieldError.checkNotNull(types, r'TypeReference', 'types');
   }
 
   @override
@@ -61,7 +61,7 @@ class _$TypeReference extends TypeReference {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper('TypeReference')
+    return (newBuiltValueToStringHelper(r'TypeReference')
           ..add('symbol', symbol)
           ..add('url', url)
           ..add('bound', bound)
@@ -161,13 +161,15 @@ class _$TypeReferenceBuilder extends TypeReferenceBuilder {
   }
 
   @override
-  _$TypeReference build() {
+  TypeReference build() => _build();
+
+  _$TypeReference _build() {
     _$TypeReference _$result;
     try {
       _$result = _$v ??
           new _$TypeReference._(
               symbol: BuiltValueNullFieldError.checkNotNull(
-                  symbol, 'TypeReference', 'symbol'),
+                  symbol, r'TypeReference', 'symbol'),
               url: url,
               bound: bound,
               types: types.build(),
@@ -179,7 +181,7 @@ class _$TypeReferenceBuilder extends TypeReferenceBuilder {
         types.build();
       } catch (e) {
         throw new BuiltValueNestedFieldError(
-            'TypeReference', _$failedField, e.toString());
+            r'TypeReference', _$failedField, e.toString());
       }
       rethrow;
     }
@@ -188,4 +190,4 @@ class _$TypeReferenceBuilder extends TypeReferenceBuilder {
   }
 }
 
-// ignore_for_file: always_put_control_body_on_new_line,always_specify_types,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,lines_longer_than_80_chars,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new
+// ignore_for_file: always_put_control_body_on_new_line,always_specify_types,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,deprecated_member_use_from_same_package,lines_longer_than_80_chars,no_leading_underscores_for_local_identifiers,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new,unnecessary_lambdas

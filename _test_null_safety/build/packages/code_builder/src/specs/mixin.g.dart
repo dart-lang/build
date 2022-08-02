@@ -37,13 +37,13 @@ class _$Mixin extends Mixin {
       required this.fields,
       required this.name})
       : super._() {
-    BuiltValueNullFieldError.checkNotNull(annotations, 'Mixin', 'annotations');
-    BuiltValueNullFieldError.checkNotNull(docs, 'Mixin', 'docs');
-    BuiltValueNullFieldError.checkNotNull(implements, 'Mixin', 'implements');
-    BuiltValueNullFieldError.checkNotNull(types, 'Mixin', 'types');
-    BuiltValueNullFieldError.checkNotNull(methods, 'Mixin', 'methods');
-    BuiltValueNullFieldError.checkNotNull(fields, 'Mixin', 'fields');
-    BuiltValueNullFieldError.checkNotNull(name, 'Mixin', 'name');
+    BuiltValueNullFieldError.checkNotNull(annotations, r'Mixin', 'annotations');
+    BuiltValueNullFieldError.checkNotNull(docs, r'Mixin', 'docs');
+    BuiltValueNullFieldError.checkNotNull(implements, r'Mixin', 'implements');
+    BuiltValueNullFieldError.checkNotNull(types, r'Mixin', 'types');
+    BuiltValueNullFieldError.checkNotNull(methods, r'Mixin', 'methods');
+    BuiltValueNullFieldError.checkNotNull(fields, r'Mixin', 'fields');
+    BuiltValueNullFieldError.checkNotNull(name, r'Mixin', 'name');
   }
 
   @override
@@ -85,7 +85,7 @@ class _$Mixin extends Mixin {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper('Mixin')
+    return (newBuiltValueToStringHelper(r'Mixin')
           ..add('annotations', annotations)
           ..add('docs', docs)
           ..add('on', on)
@@ -227,7 +227,9 @@ class _$MixinBuilder extends MixinBuilder {
   }
 
   @override
-  _$Mixin build() {
+  Mixin build() => _build();
+
+  _$Mixin _build() {
     _$Mixin _$result;
     try {
       _$result = _$v ??
@@ -239,8 +241,8 @@ class _$MixinBuilder extends MixinBuilder {
               types: types.build(),
               methods: methods.build(),
               fields: fields.build(),
-              name:
-                  BuiltValueNullFieldError.checkNotNull(name, 'Mixin', 'name'));
+              name: BuiltValueNullFieldError.checkNotNull(
+                  name, r'Mixin', 'name'));
     } catch (_) {
       late String _$failedField;
       try {
@@ -259,7 +261,7 @@ class _$MixinBuilder extends MixinBuilder {
         fields.build();
       } catch (e) {
         throw new BuiltValueNestedFieldError(
-            'Mixin', _$failedField, e.toString());
+            r'Mixin', _$failedField, e.toString());
       }
       rethrow;
     }
@@ -268,4 +270,4 @@ class _$MixinBuilder extends MixinBuilder {
   }
 }
 
-// ignore_for_file: always_put_control_body_on_new_line,always_specify_types,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,lines_longer_than_80_chars,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new
+// ignore_for_file: always_put_control_body_on_new_line,always_specify_types,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,deprecated_member_use_from_same_package,lines_longer_than_80_chars,no_leading_underscores_for_local_identifiers,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new,unnecessary_lambdas

@@ -180,6 +180,12 @@ abstract class Parameter extends Object
   /// This is only valid on constructors;
   bool get toThis;
 
+  /// Whether this parameter should be passed to super\
+  /// constructor (i.e. `super.`).
+  ///
+  /// This is only valid on constructors;
+  bool get toSuper;
+
   @override
   BuiltList<Expression> get annotations;
 
@@ -231,6 +237,12 @@ abstract class ParameterBuilder extends Object
   ///
   /// This is only valid on constructors;
   bool toThis = false;
+
+  /// Whether this parameter should be passed to super\
+  /// constructor (i.e. `super.`).
+  ///
+  /// This is only valid on constructors;
+  bool toSuper = false;
 
   @override
   ListBuilder<Expression> annotations = ListBuilder<Expression>();

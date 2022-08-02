@@ -109,7 +109,9 @@ class DartEmitter extends Object
   StringSink visitClass(Class spec, [StringSink? output]) {
     final out = output ??= StringBuffer();
     spec.docs.forEach(out.writeln);
-    spec.annotations.forEach((a) => visitAnnotation(a, out));
+    for (var a in spec.annotations) {
+      visitAnnotation(a, out);
+    }
     if (spec.abstract) {
       out.write('abstract ');
     }
@@ -132,21 +134,21 @@ class DartEmitter extends Object
             spec.implements.map<StringSink>((m) => m.type.accept(this)), ',');
     }
     out.write(' {');
-    spec.constructors.forEach((c) {
+    for (var c in spec.constructors) {
       visitConstructor(c, spec.name, out);
       out.writeln();
-    });
-    spec.fields.forEach((f) {
+    }
+    for (var f in spec.fields) {
       visitField(f, out);
       out.writeln();
-    });
-    spec.methods.forEach((m) {
+    }
+    for (var m in spec.methods) {
       visitMethod(m, out);
       if (_isLambdaMethod(m)) {
         out.write(';');
       }
       out.writeln();
-    });
+    }
     out.writeln(' }');
     return out;
   }
@@ -155,7 +157,9 @@ class DartEmitter extends Object
   StringSink visitMixin(Mixin spec, [StringSink? output]) {
     final out = output ??= StringBuffer();
     spec.docs.forEach(out.writeln);
-    spec.annotations.forEach((a) => visitAnnotation(a, out));
+    for (var a in spec.annotations) {
+      visitAnnotation(a, out);
+    }
 
     out.write('mixin ${spec.name}');
     visitTypeParameters(spec.types.map((r) => r.type), out);
@@ -170,17 +174,17 @@ class DartEmitter extends Object
             spec.implements.map<StringSink>((m) => m.type.accept(this)), ',');
     }
     out.write('  {');
-    spec.fields.forEach((f) {
+    for (var f in spec.fields) {
       visitField(f, out);
       out.writeln();
-    });
-    spec.methods.forEach((m) {
+    }
+    for (var m in spec.methods) {
       visitMethod(m, out);
       if (_isLambdaMethod(m)) {
         out.write(';');
       }
       out.writeln();
-    });
+    }
     out.write('  }');
     return out;
   }
@@ -190,7 +194,9 @@ class DartEmitter extends Object
       [StringSink? output]) {
     output ??= StringBuffer();
     spec.docs.forEach(output.writeln);
-    spec.annotations.forEach((a) => visitAnnotation(a, output));
+    for (var a in spec.annotations) {
+      visitAnnotation(a, output);
+    }
     if (spec.external) {
       output.write('external ');
     }
@@ -276,7 +282,9 @@ class DartEmitter extends Object
   StringSink visitExtension(Extension spec, [StringSink? output]) {
     final out = output ??= StringBuffer();
     spec.docs.forEach(out.writeln);
-    spec.annotations.forEach((a) => visitAnnotation(a, out));
+    for (var a in spec.annotations) {
+      visitAnnotation(a, out);
+    }
 
     out.write('extension');
     if (spec.name != null) {
@@ -288,17 +296,17 @@ class DartEmitter extends Object
       spec.on!.type.accept(this, out);
     }
     out.write(' {');
-    spec.fields.forEach((f) {
+    for (var f in spec.fields) {
       visitField(f, out);
       out.writeln();
-    });
-    spec.methods.forEach((m) {
+    }
+    for (var m in spec.methods) {
       visitMethod(m, out);
       if (_isLambdaMethod(m)) {
         out.write(';');
       }
       out.writeln();
-    });
+    }
     out.writeln(' }');
     return out;
   }
@@ -344,7 +352,9 @@ class DartEmitter extends Object
   StringSink visitField(Field spec, [StringSink? output]) {
     output ??= StringBuffer();
     spec.docs.forEach(output.writeln);
-    spec.annotations.forEach((a) => visitAnnotation(a, output));
+    for (var a in spec.annotations) {
+      visitAnnotation(a, output);
+    }
     if (spec.static) {
       output.write('static ');
     }
@@ -392,7 +402,9 @@ class DartEmitter extends Object
     }
 
     if (spec.name != null) {
-      spec.annotations.forEach((a) => visitAnnotation(a, output));
+      for (var a in spec.annotations) {
+        visitAnnotation(a, output);
+      }
       output.write('library ${spec.name!};');
     } else if (spec.annotations.isNotEmpty) {
       throw StateError('a library name is required for annotations');
@@ -405,6 +417,10 @@ class DartEmitter extends Object
     }
 
     Directive? previous;
+    if (directives.any((d) => d.as?.startsWith('_') ?? false)) {
+      output.writeln(
+          '// ignore_for_file: no_leading_underscores_for_library_prefixes');
+    }
     for (final directive in directives) {
       if (_newLineBetween(orderDirectives, previous, directive)) {
         // Note: dartfmt handles creating new lines between directives.
@@ -440,9 +456,10 @@ class DartEmitter extends Object
     visitAll<Reference>(spec.requiredParameters, out, (spec) {
       spec.accept(this, out);
     });
+    final hasNamedParameters = spec.namedRequiredParameters.isNotEmpty ||
+        spec.namedParameters.isNotEmpty;
     if (spec.requiredParameters.isNotEmpty &&
-        (spec.optionalParameters.isNotEmpty ||
-            spec.namedParameters.isNotEmpty)) {
+        (spec.optionalParameters.isNotEmpty || hasNamedParameters)) {
       out.write(', ');
     }
     if (spec.optionalParameters.isNotEmpty) {
@@ -451,8 +468,19 @@ class DartEmitter extends Object
         spec.accept(this, out);
       });
       out.write(']');
-    } else if (spec.namedParameters.isNotEmpty) {
+    } else if (hasNamedParameters) {
       out.write('{');
+      visitAll<String>(spec.namedRequiredParameters.keys, out, (name) {
+        out.write('required ');
+        spec.namedRequiredParameters[name]!.accept(this, out);
+        out
+          ..write(' ')
+          ..write(name);
+      });
+      if (spec.namedRequiredParameters.isNotEmpty &&
+          spec.namedParameters.isNotEmpty) {
+        out.write(', ');
+      }
       visitAll<String>(spec.namedParameters.keys, out, (name) {
         spec.namedParameters[name]!.accept(this, out);
         out
@@ -472,7 +500,9 @@ class DartEmitter extends Object
   StringSink visitMethod(Method spec, [StringSink? output]) {
     output ??= StringBuffer();
     spec.docs.forEach(output.writeln);
-    spec.annotations.forEach((a) => visitAnnotation(a, output));
+    for (var a in spec.annotations) {
+      visitAnnotation(a, output);
+    }
     if (spec.external) {
       output.write('external ');
     }
@@ -567,7 +597,9 @@ class DartEmitter extends Object
     bool named = false,
   }) {
     spec.docs.forEach(output.writeln);
-    spec.annotations.forEach((a) => visitAnnotation(a, output));
+    for (var a in spec.annotations) {
+      visitAnnotation(a, output);
+    }
     // The `required` keyword must precede the `covariant` keyword.
     if (spec.required) {
       output.write('required ');
@@ -581,6 +613,9 @@ class DartEmitter extends Object
     }
     if (spec.toThis) {
       output.write('this.');
+    }
+    if (spec.toSuper) {
+      output.write('super.');
     }
     output.write(spec.name);
     if (optional && spec.defaultTo != null) {
@@ -630,16 +665,20 @@ class DartEmitter extends Object
   StringSink visitEnum(Enum spec, [StringSink? output]) {
     final out = output ??= StringBuffer();
     spec.docs.forEach(out.writeln);
-    spec.annotations.forEach((a) => visitAnnotation(a, out));
+    for (var a in spec.annotations) {
+      visitAnnotation(a, out);
+    }
     out.writeln('enum ${spec.name} {');
-    spec.values.forEach((v) {
+    for (var v in spec.values) {
       v.docs.forEach(out.writeln);
-      v.annotations.forEach((a) => visitAnnotation(a, out));
+      for (var a in v.annotations) {
+        visitAnnotation(a, out);
+      }
       out.write(v.name);
       if (v != spec.values.last) {
         out.writeln(',');
       }
-    });
+    }
     out.writeln('}');
     return out;
   }

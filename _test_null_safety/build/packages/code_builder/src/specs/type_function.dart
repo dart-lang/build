@@ -38,14 +38,17 @@ abstract class FunctionType extends Expression
   @override
   BuiltList<Reference> get types;
 
-  /// Required positional arguments to this function type.
+  /// Required positional parameters of this function type.
   BuiltList<Reference> get requiredParameters;
 
-  /// Optional positional arguments to this function type.
+  /// Optional positional parameters of this function type.
   BuiltList<Reference> get optionalParameters;
 
-  /// Named optional arguments to this function type.
+  /// Named optional parameters of this function type.
   BuiltMap<String, Reference> get namedParameters;
+
+  /// Named required parameters of this function type.
+  BuiltMap<String, Reference> get namedRequiredParameters;
 
   @override
   String? get url => null;
@@ -117,6 +120,9 @@ abstract class FunctionTypeBuilder extends Object
   ListBuilder<Reference> optionalParameters = ListBuilder<Reference>();
 
   MapBuilder<String, Reference> namedParameters =
+      MapBuilder<String, Reference>();
+
+  MapBuilder<String, Reference> namedRequiredParameters =
       MapBuilder<String, Reference>();
 
   bool? isNullable;

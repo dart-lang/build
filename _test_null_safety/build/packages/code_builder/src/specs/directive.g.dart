@@ -31,11 +31,11 @@ class _$Directive extends Directive {
       required this.hide,
       required this.deferred})
       : super._() {
-    BuiltValueNullFieldError.checkNotNull(url, 'Directive', 'url');
-    BuiltValueNullFieldError.checkNotNull(type, 'Directive', 'type');
-    BuiltValueNullFieldError.checkNotNull(show, 'Directive', 'show');
-    BuiltValueNullFieldError.checkNotNull(hide, 'Directive', 'hide');
-    BuiltValueNullFieldError.checkNotNull(deferred, 'Directive', 'deferred');
+    BuiltValueNullFieldError.checkNotNull(url, r'Directive', 'url');
+    BuiltValueNullFieldError.checkNotNull(type, r'Directive', 'type');
+    BuiltValueNullFieldError.checkNotNull(show, r'Directive', 'show');
+    BuiltValueNullFieldError.checkNotNull(hide, r'Directive', 'hide');
+    BuiltValueNullFieldError.checkNotNull(deferred, r'Directive', 'deferred');
   }
 
   @override
@@ -69,7 +69,7 @@ class _$Directive extends Directive {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper('Directive')
+    return (newBuiltValueToStringHelper(r'Directive')
           ..add('as', as)
           ..add('url', url)
           ..add('type', type)
@@ -183,22 +183,25 @@ class _$DirectiveBuilder extends DirectiveBuilder {
   }
 
   @override
-  _$Directive build() {
+  Directive build() => _build();
+
+  _$Directive _build() {
     final _$result = _$v ??
         new _$Directive._(
             as: as,
-            url: BuiltValueNullFieldError.checkNotNull(url, 'Directive', 'url'),
+            url:
+                BuiltValueNullFieldError.checkNotNull(url, r'Directive', 'url'),
             type: BuiltValueNullFieldError.checkNotNull(
-                type, 'Directive', 'type'),
+                type, r'Directive', 'type'),
             show: BuiltValueNullFieldError.checkNotNull(
-                show, 'Directive', 'show'),
+                show, r'Directive', 'show'),
             hide: BuiltValueNullFieldError.checkNotNull(
-                hide, 'Directive', 'hide'),
+                hide, r'Directive', 'hide'),
             deferred: BuiltValueNullFieldError.checkNotNull(
-                deferred, 'Directive', 'deferred'));
+                deferred, r'Directive', 'deferred'));
     replace(_$result);
     return _$result;
   }
 }
 
-// ignore_for_file: always_put_control_body_on_new_line,always_specify_types,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,lines_longer_than_80_chars,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new
+// ignore_for_file: always_put_control_body_on_new_line,always_specify_types,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,deprecated_member_use_from_same_package,lines_longer_than_80_chars,no_leading_underscores_for_local_identifiers,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new,unnecessary_lambdas

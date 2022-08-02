@@ -37,12 +37,12 @@ class _$Field extends Field {
       this.type,
       required this.modifier})
       : super._() {
-    BuiltValueNullFieldError.checkNotNull(annotations, 'Field', 'annotations');
-    BuiltValueNullFieldError.checkNotNull(docs, 'Field', 'docs');
-    BuiltValueNullFieldError.checkNotNull(static, 'Field', 'static');
-    BuiltValueNullFieldError.checkNotNull(late, 'Field', 'late');
-    BuiltValueNullFieldError.checkNotNull(name, 'Field', 'name');
-    BuiltValueNullFieldError.checkNotNull(modifier, 'Field', 'modifier');
+    BuiltValueNullFieldError.checkNotNull(annotations, r'Field', 'annotations');
+    BuiltValueNullFieldError.checkNotNull(docs, r'Field', 'docs');
+    BuiltValueNullFieldError.checkNotNull(static, r'Field', 'static');
+    BuiltValueNullFieldError.checkNotNull(late, r'Field', 'late');
+    BuiltValueNullFieldError.checkNotNull(name, r'Field', 'name');
+    BuiltValueNullFieldError.checkNotNull(modifier, r'Field', 'modifier');
   }
 
   @override
@@ -84,7 +84,7 @@ class _$Field extends Field {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper('Field')
+    return (newBuiltValueToStringHelper(r'Field')
           ..add('annotations', annotations)
           ..add('docs', docs)
           ..add('assignment', assignment)
@@ -226,7 +226,9 @@ class _$FieldBuilder extends FieldBuilder {
   }
 
   @override
-  _$Field build() {
+  Field build() => _build();
+
+  _$Field _build() {
     _$Field _$result;
     try {
       _$result = _$v ??
@@ -235,14 +237,14 @@ class _$FieldBuilder extends FieldBuilder {
               docs: docs.build(),
               assignment: assignment,
               static: BuiltValueNullFieldError.checkNotNull(
-                  static, 'Field', 'static'),
+                  static, r'Field', 'static'),
               late:
-                  BuiltValueNullFieldError.checkNotNull(late, 'Field', 'late'),
+                  BuiltValueNullFieldError.checkNotNull(late, r'Field', 'late'),
               name:
-                  BuiltValueNullFieldError.checkNotNull(name, 'Field', 'name'),
+                  BuiltValueNullFieldError.checkNotNull(name, r'Field', 'name'),
               type: type,
               modifier: BuiltValueNullFieldError.checkNotNull(
-                  modifier, 'Field', 'modifier'));
+                  modifier, r'Field', 'modifier'));
     } catch (_) {
       late String _$failedField;
       try {
@@ -252,7 +254,7 @@ class _$FieldBuilder extends FieldBuilder {
         docs.build();
       } catch (e) {
         throw new BuiltValueNestedFieldError(
-            'Field', _$failedField, e.toString());
+            r'Field', _$failedField, e.toString());
       }
       rethrow;
     }
@@ -261,4 +263,4 @@ class _$FieldBuilder extends FieldBuilder {
   }
 }
 
-// ignore_for_file: always_put_control_body_on_new_line,always_specify_types,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,lines_longer_than_80_chars,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new
+// ignore_for_file: always_put_control_body_on_new_line,always_specify_types,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,deprecated_member_use_from_same_package,lines_longer_than_80_chars,no_leading_underscores_for_local_identifiers,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new,unnecessary_lambdas
