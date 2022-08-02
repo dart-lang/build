@@ -1,0 +1,1 @@
+{"version":"1.0.2","name":"packages/pool/pool","closureName":"load__packages__pool__pool","sourceMapUri":"packages/pool/pool.sound.ddc.js.map","moduleUri":"packages/pool/pool.sound.ddc.js","fullDillUri":null,"libraries":[{"name":"pool","importUri":"package:pool/pool.dart","fileUri":"/packages/pool/pool.dart","partUris":[]}],"soundNullSafety":true}

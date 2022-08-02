@@ -1,0 +1,1 @@
+{"version":"1.0.2","name":"packages/js/js_util","closureName":"load__packages__js__js_util","sourceMapUri":"packages/js/js_util.sound.ddc.js.map","moduleUri":"packages/js/js_util.sound.ddc.js","fullDillUri":null,"libraries":[{"name":"js_util","importUri":"package:js/js_util.dart","fileUri":"/packages/js/js_util.dart","partUris":[]}],"soundNullSafety":true}

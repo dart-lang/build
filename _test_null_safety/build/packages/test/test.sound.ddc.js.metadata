@@ -1,0 +1,1 @@
+{"version":"1.0.2","name":"packages/test/test","closureName":"load__packages__test__test","sourceMapUri":"packages/test/test.sound.ddc.js.map","moduleUri":"packages/test/test.sound.ddc.js","fullDillUri":null,"libraries":[{"name":"test","importUri":"package:test/test.dart","fileUri":"/packages/test/test.dart","partUris":[]}],"soundNullSafety":true}

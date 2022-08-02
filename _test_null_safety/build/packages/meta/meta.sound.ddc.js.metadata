@@ -1,0 +1,1 @@
+{"version":"1.0.2","name":"packages/meta/meta","closureName":"load__packages__meta__meta","sourceMapUri":"packages/meta/meta.sound.ddc.js.map","moduleUri":"packages/meta/meta.sound.ddc.js","fullDillUri":null,"libraries":[{"name":"meta","importUri":"package:meta/meta.dart","fileUri":"/packages/meta/meta.dart","partUris":[]}],"soundNullSafety":true}

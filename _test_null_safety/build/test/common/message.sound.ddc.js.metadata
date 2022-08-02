@@ -1,0 +1,1 @@
+{"version":"1.0.2","name":"test/common/message","closureName":"load__test__common__message","sourceMapUri":"test/common/message.sound.ddc.js.map","moduleUri":"test/common/message.sound.ddc.js","fullDillUri":null,"libraries":[{"name":"message","importUri":"org-dartlang-app:///test/common/message.dart","fileUri":"/test/common/message.dart","partUris":[]}],"soundNullSafety":true}

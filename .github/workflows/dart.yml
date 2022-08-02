@@ -17,7 +17,7 @@ permissions: read-all
 
 jobs:
   job_00:
-    name: "2.18.0-246.0.dev-with-624dd76b6f3af2ea84a0e5acfc5ec02f14b3f666"
+    name: "2.18.0-247.0.dev-with-precompiled-dir"
     runs-on: ubuntu-latest
     steps:
       - id: checkout
@@ -27,7 +27,7 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test_null_safety
         run: ./dart-sdk/bin/dart pub upgrade
-      - name: "_test_null_safety;  ./dart-sdk/bin/dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+      - name: "_test_null_safety;  ../dart-sdk/bin/dart run test --precompiled ./build -p chrome,vm --test-randomize-ordering-seed=random"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: "./dart-sdk/bin/dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random"
+        run: "./dart-sdk/bin/dart run test --precompiled ./build -p chrome,vm --test-randomize-ordering-seed=random"

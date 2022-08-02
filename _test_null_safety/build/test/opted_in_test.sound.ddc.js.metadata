@@ -1,0 +1,1 @@
+{"version":"1.0.2","name":"test/opted_in_test","closureName":"load__test__opted_in_test","sourceMapUri":"test/opted_in_test.sound.ddc.js.map","moduleUri":"test/opted_in_test.sound.ddc.js","fullDillUri":null,"libraries":[{"name":"opted_in_test","importUri":"org-dartlang-app:///test/opted_in_test.dart","fileUri":"/test/opted_in_test.dart","partUris":[]}],"soundNullSafety":true}

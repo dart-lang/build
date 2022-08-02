@@ -1,0 +1,1 @@
+{"version":"1.0.2","name":"packages/js/js","closureName":"load__packages__js__js","sourceMapUri":"packages/js/js.unsound.ddc.js.map","moduleUri":"packages/js/js.unsound.ddc.js","fullDillUri":null,"libraries":[{"name":"js","importUri":"package:js/js.dart","fileUri":"/packages/js/js.dart","partUris":[]}],"soundNullSafety":false}
