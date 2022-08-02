@@ -6,7 +6,6 @@
 // @dart=2.9
 
 // Null assertions are only supported on the web right now.
-@Skip('https://github.com/dart-lang/build/issues/3332')
 @TestOn('browser')
 import 'package:test/test.dart';
 
