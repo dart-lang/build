@@ -82,8 +82,12 @@ Future<void> _createDevCompilerModule(
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
   var jsOutputFile = scratchSpace.fileFor(jsOutputId);
 
-  var request = WorkRequest()
-    ..arguments.addAll([
+  ProcessResult result;
+  try {
+    // Use standalone process instead of the worker due to
+    // https://github.com/dart-lang/sdk/issues/49441
+    result = await Process.run(p.join(sdkDir, 'bin', 'dart'), [
+      p.join(sdkDir, 'bin', 'snapshots', 'dartdevc.dart.snapshot'),
       '--multi-root-scheme=org-dartlang-sdk',
       '--modules=amd',
       '--module-name=dart_sdk',
@@ -92,22 +96,14 @@ Future<void> _createDevCompilerModule(
       jsOutputFile.path,
       p.url.join(dartSdk, sdkKernelPath),
     ]);
-
-  var driverResource = dartdevkDriverResource;
-  var driver = await buildStep.fetchResource(driverResource);
-  WorkResponse response;
-  try {
-    response = await driver.doWork(request,
-        trackWork: (response) =>
-            buildStep.trackStage('Compile', () => response, isExternal: true));
   } catch (e) {
     throw DartDevcCompilationException(jsOutputId, e.toString());
   }
 
-  var message = response.output
+  var message = '${result.stdout}${result.stderr}'
       .replaceAll('${scratchSpace.tempDir.path}/', '')
       .replaceAll('org-dartlang-sdk:///', '');
-  if (response.exitCode != EXIT_CODE_OK ||
+  if (result.exitCode != EXIT_CODE_OK ||
       !jsOutputFile.existsSync() ||
       message.contains('Error:')) {
     throw DartDevcCompilationException(jsOutputId, message);
