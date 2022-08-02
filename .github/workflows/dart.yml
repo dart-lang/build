@@ -27,7 +27,7 @@ jobs:
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test_null_safety
         run: ./dart-sdk/bin/dart pub upgrade
-      - name: "_test_null_safety;  ../dart-sdk/bin/dart run test --precompiled ./build -p chrome,vm --test-randomize-ordering-seed=random"
+      - name: "_test_null_safety; compute diffs!"
         if: "always() && steps._test_null_safety_pub_upgrade.conclusion == 'success'"
         working-directory: _test_null_safety
-        run: "./dart-sdk/bin/dart run test --precompiled ./build -p chrome,vm --test-randomize-ordering-seed=random"
+        run: "./dart-sdk/bin/dart run build_runner build test -o build-gh && diff -r ./build ./build-gh"
