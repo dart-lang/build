@@ -60,8 +60,6 @@ Future<String> _generateBuildScript() async {
     }
     content
       ..writeln('// ignore_for_file: directives_ordering')
-      ..writeln(
-          '// ignore_for_file: no_leading_underscores_for_library_prefixes')
       ..writeln(library.accept(emitter));
 
     return DartFormatter().format(content.toString());
