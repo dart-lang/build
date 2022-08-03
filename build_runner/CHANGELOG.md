@@ -1,3 +1,8 @@
+## 2.2.1-dev
+
+- Stop ignoring the no_leading_underscores_for_library_prefixes lint in
+  generated build scripts, code_builder now does this for you.
+
 ## 2.2.0
 
 - Support global 'runs_before' configuration for builders. This allows users
