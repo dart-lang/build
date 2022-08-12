@@ -20,7 +20,7 @@ void main() {
 
         class Foo {}
       ''', (resolver) => resolver.findLibraryNotNull('example'));
-      expect(libExample.getType('Foo'), isNotNull);
+      expect(libExample.getClass('Foo'), isNotNull);
     });
 
     test('a simple dart file with dart: dependencies', () async {
@@ -31,7 +31,7 @@ void main() {
 
         abstract class Foo implements LinkedHashMap {}
       ''', (resolver) => resolver.findLibraryNotNull('example'));
-      var classFoo = libExample.getType('Foo')!;
+      var classFoo = libExample.getClass('Foo')!;
       expect(
         classFoo.allSupertypes.map(_toStringId),
         contains('dart:collection#LinkedHashMap'),
@@ -46,7 +46,7 @@ void main() {
 
         abstract class Foo implements Equality {}
       ''', (resolver) => resolver.findLibraryNotNull('example'));
-      var classFoo = libExample.getType('Foo')!;
+      var classFoo = libExample.getClass('Foo')!;
       expect(
         classFoo.allSupertypes.map(_toStringId),
         contains(endsWith(':collection#Equality')),
@@ -72,9 +72,9 @@ void main() {
         (resolver) => resolver.findLibraryNotNull('example'),
         resolverFor: mock,
       );
-      final type = library.getType('ExamplePrime');
+      final type = library.getClass('ExamplePrime');
       expect(type, isNotNull);
-      expect(type!.supertype!.element.name, 'Example');
+      expect(type!.supertype!.element2.name, 'Example');
     });
 
     test('waits for tearDown', () async {
@@ -91,7 +91,7 @@ void main() {
           true);
       var libExample = await resolver.findLibraryNotNull('example');
       resolverDone.complete();
-      var classFoo = libExample.getType('Foo')!;
+      var classFoo = libExample.getClass('Foo')!;
       expect(
         classFoo.allSupertypes.map(_toStringId),
         contains(endsWith(':collection#Equality')),
@@ -107,7 +107,7 @@ void main() {
         abstract class Foo implements Equality {}
       ''', (resolver) async {
         var libExample = await resolver.findLibraryNotNull('example');
-        var classFoo = libExample.getType('Foo')!;
+        var classFoo = libExample.getClass('Foo')!;
         expect(classFoo.allSupertypes.map(_toStringId),
             contains(endsWith(':collection#Equality')));
       });
@@ -140,7 +140,7 @@ void main() {
       var asset = AssetId('build_test', 'test/_files/example_lib.dart');
       var libExample = await resolveAsset(
           asset, (resolver) => resolver.findLibraryNotNull('example_lib'));
-      expect(libExample.getType('Example'), isNotNull);
+      expect(libExample.getClass('Example'), isNotNull);
     });
   });
 
@@ -158,7 +158,7 @@ void main() {
 }
 
 String _toStringId(InterfaceType t) =>
-    '${t.element.source.uri.toString().split('/').first}#${t.element.name}';
+    '${t.element2.source.uri.toString().split('/').first}#${t.element2.name}';
 
 extension on Resolver {
   Future<LibraryElement> findLibraryNotNull(String name) async {

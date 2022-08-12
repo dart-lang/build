@@ -46,7 +46,7 @@ void main() {
         var lib = await resolver.libraryFor(entryPoint);
         expect(lib.importedLibraries.length, 2);
         var libA = lib.importedLibraries.where((l) => l.name == 'a').single;
-        expect(libA.getType('Foo'), isNull);
+        expect(libA.getClass('Foo'), isNull);
       }, resolvers: AnalyzerResolvers());
     });
 
@@ -64,7 +64,7 @@ void main() {
         var lib = await resolver.libraryFor(entryPoint);
         expect(lib.importedLibraries.length, 2);
         var libB = lib.importedLibraries.where((l) => l.name == 'b').single;
-        expect(libB.getType('Foo'), isNull);
+        expect(libB.getClass('Foo'), isNull);
       }, resolvers: AnalyzerResolvers());
     });
 
@@ -253,7 +253,7 @@ void main() {
               ''',
       }, (resolver) async {
         var lib = await resolver.libraryFor(entryPoint);
-        var clazz = lib.getType('A');
+        var clazz = lib.getClass('A');
         expect(clazz, isNotNull);
         expect(clazz!.interfaces, isEmpty);
       }, resolvers: resolvers);
@@ -270,7 +270,7 @@ void main() {
               ''',
       }, (resolver) async {
         var lib = await resolver.libraryFor(entryPoint);
-        var clazz = lib.getType('A');
+        var clazz = lib.getClass('A');
         expect(clazz, isNotNull);
         expect(clazz!.interfaces, hasLength(1));
         expect(clazz.interfaces.first.getDisplayString(withNullability: false),
@@ -354,7 +354,7 @@ void main() {
               class Bar {}''',
       }, (resolver) async {
         var main = (await resolver.findLibraryByName('web.main'))!;
-        var meta = main.getType('Foo')!.supertype!.element.metadata[0];
+        var meta = main.getClass('Foo')!.supertype!.element2.metadata[0];
         expect(meta, isNotNull);
         expect(meta.computeConstantValue()?.toIntValue(), 0);
       }, resolvers: AnalyzerResolvers());
@@ -392,7 +392,7 @@ void main() {
       }, (resolver) async {
         var entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
         var classDefinition = entry.importedLibraries
-            .map((l) => l.getType('SomeClass'))
+            .map((l) => l.getClass('SomeClass'))
             .singleWhere((c) => c != null)!;
         expect(await resolver.assetIdForElement(classDefinition),
             AssetId('a', 'lib/b.dart'));
@@ -631,18 +631,18 @@ int? get x => 1;
               } ''',
       }, (resolver) async {
         var entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
-        var classDefinition = entry.getType('MyClass')!;
+        var classDefinition = entry.getClass('MyClass')!;
         var color = classDefinition.getField('color')!;
 
         if (isFlutter) {
-          expect(color.type.element!.name, equals('Color'));
-          expect(color.type.element!.library!.name, equals('dart.ui'));
+          expect(color.type.element2!.name, equals('Color'));
+          expect(color.type.element2!.library!.name, equals('dart.ui'));
           expect(
-              color.type.element!.library!.definingCompilationUnit.source.uri
+              color.type.element2!.library!.definingCompilationUnit.source.uri
                   .toString(),
               equals('dart:ui'));
         } else {
-          expect(color.type.element!.name, equals('dynamic'));
+          expect(color.type.element2!.name, equals('dynamic'));
         }
       }, resolvers: AnalyzerResolvers());
     });
@@ -733,7 +733,7 @@ int? get x => 1;
         expect(
             unit.declarations.first,
             isA<FunctionDeclaration>()
-                .having((d) => d.name.name, 'main', 'main'));
+                .having((d) => d.name2.lexeme, 'main', 'main'));
       }, resolvers: AnalyzerResolvers());
     });
   });
@@ -747,7 +747,7 @@ int? get x => 1;
         var unit = await resolver.astNodeFor(lib.topLevelElements.first);
         expect(unit, isA<FunctionDeclaration>());
         expect(unit!.toSource(), 'main() {}');
-        expect((unit as FunctionDeclaration).declaredElement, isNull);
+        expect((unit as FunctionDeclaration).declaredElement2, isNull);
       }, resolvers: AnalyzerResolvers());
     });
 
@@ -762,7 +762,8 @@ int? get x => 1;
           unit,
           isA<FunctionDeclaration>()
               .having((fd) => fd.toSource(), 'toSource()', 'main() {}')
-              .having((fd) => fd.declaredElement, 'declaredElement', isNotNull),
+              .having(
+                  (fd) => fd.declaredElement2, 'declaredElement', isNotNull),
         );
       }, resolvers: AnalyzerResolvers());
     });

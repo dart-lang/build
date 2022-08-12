@@ -22,8 +22,7 @@ void main() {
       var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
           defaultRootPackageSources: const ['**']);
       var builderApplications = [
-        apply('b:cool_builder', [(options) => CoolBuilder(options)],
-            toAllPackages())
+        apply('b:cool_builder', [CoolBuilder.new], toAllPackages())
       ];
       var phases = await createBuildPhases(
           targetGraph,
@@ -63,8 +62,7 @@ void main() {
         var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
             defaultRootPackageSources: ['**'], overrideBuildConfig: overrides);
         var builderApplications = [
-          apply('b:cool_builder', [(options) => CoolBuilder(options)],
-              toAllPackages())
+          apply('b:cool_builder', [CoolBuilder.new], toAllPackages())
         ];
         var phases = await createBuildPhases(
             targetGraph,
@@ -91,8 +89,7 @@ void main() {
       var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
           defaultRootPackageSources: ['**']);
       var builderApplications = [
-        apply('b:cool_builder', [(options) => CoolBuilder(options)],
-            toDependentsOf('b')),
+        apply('b:cool_builder', [CoolBuilder.new], toDependentsOf('b')),
       ];
       var phases =
           await createBuildPhases(targetGraph, builderApplications, {}, false);
@@ -108,8 +105,7 @@ void main() {
       var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
           defaultRootPackageSources: ['**']);
       var builderApplications = [
-        apply('b:cool_builder', [(options) => CoolBuilder(options)],
-            toDependentsOf('b'),
+        apply('b:cool_builder', [CoolBuilder.new], toDependentsOf('b'),
             appliesBuilders: ['b:not_by_default']),
         apply('b:not_by_default', [(_) => TestBuilder()], toNoneByDefault()),
       ];
@@ -131,8 +127,7 @@ void main() {
       var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
           defaultRootPackageSources: ['**']);
       var builderApplications = [
-        apply('c:cool_builder', [(options) => CoolBuilder(options)],
-            toDependentsOf('c'),
+        apply('c:cool_builder', [CoolBuilder.new], toDependentsOf('c'),
             hideOutput: false),
       ];
       var phases =
@@ -154,8 +149,7 @@ void main() {
       var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
           defaultRootPackageSources: ['**']);
       var builderApplications = [
-        apply('c:cool_builder', [(options) => CoolBuilder(options)],
-            toDependentsOf('c'),
+        apply('c:cool_builder', [CoolBuilder.new], toDependentsOf('c'),
             appliesBuilders: ['c:not_by_default']),
         apply('c:not_by_default', [(_) => TestBuilder()], toNoneByDefault(),
             hideOutput: false),
@@ -186,8 +180,7 @@ void main() {
         var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
             defaultRootPackageSources: ['**'], overrideBuildConfig: overrides);
         var builderApplications = [
-          apply('b:cool_builder', [(options) => CoolBuilder(options)],
-              toAllPackages()),
+          apply('b:cool_builder', [CoolBuilder.new], toAllPackages()),
         ];
         expect(
             () =>
@@ -218,11 +211,9 @@ void main() {
             'a',
             []);
         var builderApplications = [
-          apply('b:cool_builder', [(options) => CoolBuilder(options)],
-              toDependentsOf('b'),
+          apply('b:cool_builder', [CoolBuilder.new], toDependentsOf('b'),
               appliesBuilders: ['b:cool_builder_2']),
-          apply('b:cool_builder_2', [(options) => CoolBuilder(options)],
-              toDependentsOf('b')),
+          apply('b:cool_builder_2', [CoolBuilder.new], toDependentsOf('b')),
         ];
         return await createBuildPhases(
             targetGraph, builderApplications, {}, false);
