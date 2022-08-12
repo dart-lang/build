@@ -1,3 +1,5 @@
+## 3.2.6-dev
+
 ## 3.2.5
 
 - Use a standalone process to compile the ddc sdk.js file.
