@@ -26,8 +26,8 @@ class LibraryReader {
 
   /// Returns a top-level [ClassElement] publicly visible in by [name].
   ///
-  /// Unlike [LibraryElement.getType], this also correctly traverses identifiers
-  /// that are accessible via one or more `export` directives.
+  /// Unlike [LibraryElement.getClass], this also correctly traverses
+  /// identifiers that are accessible via one or more `export` directives.
   ClassElement? findType(String name) {
     final type = element.exportNamespace.get(name);
     return type is ClassElement ? type : null;
@@ -163,5 +163,5 @@ class LibraryReader {
       element.units.expand((cu) => cu.classes);
 
   /// All of the elements representing enums in this library.
-  Iterable<ClassElement> get enums => element.units.expand((cu) => cu.enums);
+  Iterable<EnumElement> get enums => element.units.expand((cu) => cu.enums2);
 }

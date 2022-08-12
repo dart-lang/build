@@ -24,7 +24,7 @@ Revivable reviveInstance(DartObject object, [LibraryElement? origin]) {
   Element? element = objectType!.alias?.element;
   if (element == null) {
     if (objectType is InterfaceType) {
-      element = objectType.element;
+      element = objectType.element2;
     } else {
       element = object.toFunctionValue();
     }
@@ -40,7 +40,7 @@ Revivable reviveInstance(DartObject object, [LibraryElement? origin]) {
   if (element is MethodElement && element.isStatic) {
     return Revivable._(
       source: url.removeFragment(),
-      accessor: '${element.enclosingElement2.name}.${element.name}',
+      accessor: '${element.enclosingElement3.name}.${element.name}',
     );
   }
 
@@ -78,7 +78,7 @@ Revivable reviveInstance(DartObject object, [LibraryElement? origin]) {
   }
   final i = (object as DartObjectImpl).getInvocation();
   if (i != null) {
-    url = Uri.parse(urlOfElement(i.constructor.enclosingElement2));
+    url = Uri.parse(urlOfElement(i.constructor.enclosingElement3));
     final result = Revivable._(
       source: url,
       accessor: i.constructor.name,

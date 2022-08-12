@@ -34,17 +34,17 @@ void main() {
     });
 
     test('should not throw when a class contains a field', () {
-      final $A = testLib.getType('A')!;
+      final $A = testLib.getClass('A')!;
       expect(() => assertHasField($A, 'a'), returnsNormally);
     });
 
     test('should not throw when a super class contains a field', () {
-      final $B = testLib.getType('B')!;
+      final $B = testLib.getClass('B')!;
       expect(() => assertHasField($B, 'a'), returnsNormally);
     });
 
     test('should throw when a class does not contain a field', () {
-      final $C = testLib.getType('C')!;
+      final $C = testLib.getClass('C')!;
       expect(() => assertHasField($C, 'a'), throwsFormatException);
     });
   });
@@ -83,7 +83,7 @@ void main() {
         (resolver) async => (await resolver.findLibraryByName('test_lib'))!,
       );
       objects = testLib
-          .getType('Example')!
+          .getClass('Example')!
           .metadata
           .map((e) => e.computeConstantValue()!)
           .toList();

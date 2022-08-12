@@ -7,18 +7,18 @@ import 'package:analyzer/dart/element/element.dart';
 
 /// Throws a [FormatException] if [root] does not have a given field [name].
 ///
-/// Super types [ClassElement.supertype] are also checked before throwing.
-void assertHasField(ClassElement root, String name) {
-  ClassElement? element = root;
+/// Super types [InterfaceElement.supertype] are also checked before throwing.
+void assertHasField(InterfaceElement root, String name) {
+  InterfaceElement? element = root;
   while (element != null) {
     final field = element.getField(name);
     if (field != null) {
       return;
     }
-    element = element.supertype?.element;
+    element = element.supertype?.element2;
   }
   final allFields = root.fields.toSet()
-    ..addAll(root.allSupertypes.expand((t) => t.element.fields));
+    ..addAll(root.allSupertypes.expand((t) => t.element2.fields));
   throw FormatException(
     'Class ${root.name} does not have field "$name".',
     'Fields: \n  - ${allFields.map((e) => e.name).join('\n  - ')}',

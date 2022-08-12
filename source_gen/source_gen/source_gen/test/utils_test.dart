@@ -28,7 +28,7 @@ void main() {
       source,
       (resolver) => resolver
           .findLibraryByName('example')
-          .then((e) => e!.getType('Example')!),
+          .then((e) => e!.getClass('Example')!),
     );
   });
 

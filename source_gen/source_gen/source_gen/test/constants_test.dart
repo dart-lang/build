@@ -62,7 +62,7 @@ void main() {
         (resolver) async => (await resolver.findLibraryByName('test_lib'))!,
       );
       constants = library
-          .getType('Example')!
+          .getClass('Example')!
           .metadata
           .map((e) => ConstantReader(e.computeConstantValue()!))
           .toList();
@@ -156,7 +156,7 @@ void main() {
 
     test('should read a Type', () {
       expect(constants[11].isType, isTrue);
-      expect(constants[11].typeValue.element!.name, 'DateTime');
+      expect(constants[11].typeValue.element2!.name, 'DateTime');
       expect(constants[11].isLiteral, isFalse);
       expect(() => constants[11].literalValue, throwsFormatException);
     });
@@ -301,7 +301,7 @@ void main() {
         (resolver) async => (await resolver.findLibraryByName('test_lib'))!,
       );
       constants = library
-          .getType('Example')!
+          .getClass('Example')!
           .metadata
           .map((e) => ConstantReader(e.computeConstantValue()))
           .toList();
