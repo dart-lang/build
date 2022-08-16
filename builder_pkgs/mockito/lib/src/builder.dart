@@ -446,16 +446,16 @@ class _MockTargetGatherer {
         entryLib, mockTargets.toList(), inheritanceManager);
   }
 
-  static bool _hasExplicitTypeArgs(ast.CollectionElement mockSpec) {
+  static ast.TypeArgumentList? _mockTypeArguments(
+      ast.CollectionElement mockSpec) {
     if (mockSpec is! ast.InstanceCreationExpression) {
       throw InvalidMockitoAnnotationException(
           'Mockspecs must be constructor calls inside the annotation, '
           'please inline them if you are using a variable');
     }
     return (mockSpec.constructorName.type2.typeArguments?.arguments.firstOrNull
-                as ast.NamedType?)
-            ?.typeArguments !=
-        null;
+            as ast.NamedType?)
+        ?.typeArguments;
   }
 
   static ast.ListLiteral? _customMocksAst(ast.Annotation annotation) =>
@@ -532,12 +532,31 @@ class _MockTargetGatherer {
     }
     var type = _determineDartType(typeToMock, entryLib.typeProvider);
 
-    if (!_hasExplicitTypeArgs(mockSpecAsts[index])) {
+    final mockTypeArguments = _mockTypeArguments(mockSpecAsts[index]);
+    if (mockTypeArguments == null) {
       // The type was given without explicit type arguments. In
       // this case the type argument(s) on `type` have been instantiated to
       // bounds. Switch to the declaration, which will be an uninstantiated
       // type.
-      type = (type.element2.declaration as ClassElement).thisType;
+      type = (type.element.declaration as ClassElement).thisType;
+    } else {
+      // Check explicit type arguments for unknown types that were
+      // turned into `dynamic` by the analyzer.
+      type.typeArguments.forEachIndexed((typeArgIdx, typeArgument) {
+        if (!typeArgument.isDynamic) return;
+        if (typeArgIdx >= mockTypeArguments.arguments.length) return;
+        final typeArgAst = mockTypeArguments.arguments[typeArgIdx];
+        if (typeArgAst is! ast.NamedType) {
+          // Is this even possible?
+          throw InvalidMockitoAnnotationException(
+              'Undefined type $typeArgAst passed as the ${(typeArgIdx + 1).ordinal} type argument for mocked type $type');
+        }
+        if (typeArgAst.name.name == 'dynamic') return;
+        throw InvalidMockitoAnnotationException(
+          'Undefined type $typeArgAst passed as the ${(typeArgIdx + 1).ordinal} type argument for mocked type $type. '
+          'Are you trying to pass to-be-generated mock class as a type argument? Mockito does not support that (yet).',
+        );
+      });
     }
     final mockName = mockSpec.getField('mockName')!.toSymbolValue() ??
         'Mock${type.element2.name}';
@@ -617,7 +636,7 @@ class _MockTargetGatherer {
       onMissingStub: onMissingStub,
       unsupportedMembers: unsupportedMembers,
       fallbackGenerators: _extractFallbackGenerators(fallbackGeneratorObjects),
-      hasExplicitTypeArguments: _hasExplicitTypeArgs(mockSpecAsts[index]),
+      hasExplicitTypeArguments: mockTypeArguments != null,
     );
   }
 

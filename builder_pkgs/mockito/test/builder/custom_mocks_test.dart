@@ -1030,6 +1030,25 @@ void main() {
     );
   });
 
+  test('throws when type argument is unknown type', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent('''
+        class Bar {}
+        class Foo<T> {}
+        '''),
+        'foo|test/foo_test.dart': dedent('''
+        import 'package:mockito/annotations.dart';
+        import 'package:foo/foo.dart';
+        @GenerateMocks([Bar], customMocks: [MockSpec<Foo<MockBar>>()])
+        void main() {}
+        '''),
+      },
+      message: contains('Undefined type MockBar'),
+    );
+  });
+
   test('given a pre-non-nullable library, does not override any members',
       () async {
     await testPreNonNullable(
