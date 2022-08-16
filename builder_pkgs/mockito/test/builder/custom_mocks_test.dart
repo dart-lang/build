@@ -199,6 +199,28 @@ void main() {
             'class MockFooOfIntBar extends _i1.Mock implements _i2.Foo<int, _i2.Bar>'));
   });
 
+  test('generates a generic mock class with lower bound type arguments',
+      () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        class Foo<T, U extends Bar> {}
+        class Bar {}
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks(
+            [], customMocks: [MockSpec<Foo<dynamic, Bar>>(as: #MockFoo)])
+        void main() {}
+        '''
+    });
+    expect(
+        mocksContent,
+        contains(
+            'class MockFoo extends _i1.Mock implements _i2.Foo<dynamic, _i2.Bar>'));
+  });
+
   test('generates a generic mock class with nullable type arguments', () async {
     var mocksContent = await buildWithNonNullable({
       ...annotationsAsset,

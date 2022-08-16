@@ -14,6 +14,7 @@
 
 import 'dart:collection';
 
+import 'package:analyzer/dart/ast/ast.dart' as ast;
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
@@ -21,6 +22,9 @@ import 'package:analyzer/dart/element/type.dart' as analyzer;
 import 'package:analyzer/dart/element/type_provider.dart';
 import 'package:analyzer/dart/element/type_system.dart';
 import 'package:analyzer/dart/element/visitor.dart';
+// ignore: implementation_imports
+import 'package:analyzer/src/dart/element/element.dart'
+    show ElementAnnotationImpl;
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/element/inheritance_manager3.dart'
     show InheritanceManager3, Name;
@@ -373,6 +377,10 @@ class _MockTarget {
 
   final Map<String, ExecutableElement> fallbackGenerators;
 
+  /// Instantiated mock was requested, i.e. `MockSpec<Foo<Bar>>`,
+  /// instead of `MockSpec<Foo>`.
+  final bool hasExplicitTypeArguments;
+
   _MockTarget(
     this.classType,
     this.mockName, {
@@ -380,6 +388,7 @@ class _MockTarget {
     required this.onMissingStub,
     required this.unsupportedMembers,
     required this.fallbackGenerators,
+    this.hasExplicitTypeArguments = false,
   });
 
   InterfaceElement get classElement => classType.element2;
@@ -437,6 +446,27 @@ class _MockTargetGatherer {
         entryLib, mockTargets.toList(), inheritanceManager);
   }
 
+  static bool _hasExplicitTypeArgs(ast.CollectionElement mockSpec) {
+    if (mockSpec is! ast.InstanceCreationExpression) {
+      throw InvalidMockitoAnnotationException(
+          'Mockspecs must be constructor calls inside the annotation, '
+          'please inline them if you are using a variable');
+    }
+    return (mockSpec.constructorName.type2.typeArguments?.arguments.firstOrNull
+                as ast.NamedType?)
+            ?.typeArguments !=
+        null;
+  }
+
+  static ast.ListLiteral? _customMocksAst(ast.Annotation annotation) =>
+      (annotation.arguments!.arguments
+                  .firstWhereOrNull((arg) => arg is ast.NamedExpression)
+              as ast.NamedExpression?)
+          ?.expression as ast.ListLiteral?;
+
+  static ast.ListLiteral _niceMocksAst(ast.Annotation annotation) =>
+      annotation.arguments!.arguments.first as ast.ListLiteral;
+
   static Iterable<_MockTarget> _mockTargetsFromGenerateMocks(
       ElementAnnotation annotation, LibraryElement entryLib) {
     final generateMocksValue = annotation.computeConstantValue()!;
@@ -476,15 +506,21 @@ class _MockTargetGatherer {
     }
     final customMocksField = generateMocksValue.getField('customMocks');
     if (customMocksField != null && !customMocksField.isNull) {
+      final customMocksAsts =
+          _customMocksAst(annotation.annotationAst)?.elements ??
+              <ast.CollectionElement>[];
       mockTargets.addAll(customMocksField.toListValue()!.mapIndexed(
-          (index, mockSpec) =>
-              _mockTargetFromMockSpec(mockSpec, entryLib, index)));
+          (index, mockSpec) => _mockTargetFromMockSpec(
+              mockSpec, entryLib, index, customMocksAsts.toList())));
     }
     return mockTargets;
   }
 
   static _MockTarget _mockTargetFromMockSpec(
-      DartObject mockSpec, LibraryElement entryLib, int index,
+      DartObject mockSpec,
+      LibraryElement entryLib,
+      int index,
+      List<ast.CollectionElement> mockSpecAsts,
       {bool nice = false}) {
     final mockSpecType = mockSpec.type as analyzer.InterfaceType;
     assert(mockSpecType.typeArguments.length == 1);
@@ -496,8 +532,8 @@ class _MockTargetGatherer {
     }
     var type = _determineDartType(typeToMock, entryLib.typeProvider);
 
-    if (!type.hasExplicitTypeArguments) {
-      // We assume the type was given without explicit type arguments. In
+    if (!_hasExplicitTypeArgs(mockSpecAsts[index])) {
+      // The type was given without explicit type arguments. In
       // this case the type argument(s) on `type` have been instantiated to
       // bounds. Switch to the declaration, which will be an uninstantiated
       // type.
@@ -581,6 +617,7 @@ class _MockTargetGatherer {
       onMissingStub: onMissingStub,
       unsupportedMembers: unsupportedMembers,
       fallbackGenerators: _extractFallbackGenerators(fallbackGeneratorObjects),
+      hasExplicitTypeArguments: _hasExplicitTypeArgs(mockSpecAsts[index]),
     );
   }
 
@@ -592,8 +629,11 @@ class _MockTargetGatherer {
       throw InvalidMockitoAnnotationException(
           'The GenerateNiceMocks "mockSpecs" argument is missing');
     }
+    final mockSpecAsts = _niceMocksAst(annotation.annotationAst).elements;
     return mockSpecsField.toListValue()!.mapIndexed((index, mockSpec) =>
-        _mockTargetFromMockSpec(mockSpec, entryLib, index, nice: true));
+        _mockTargetFromMockSpec(
+            mockSpec, entryLib, index, mockSpecAsts.toList(),
+            nice: true));
   }
 
   static Map<String, ExecutableElement> _extractFallbackGenerators(
@@ -1006,7 +1046,7 @@ class _MockClassInfo {
       // parameter with same type variables, and a mirrored type argument for
       // the "implements" clause.
       var typeArguments = <Reference>[];
-      if (typeToMock.hasExplicitTypeArguments) {
+      if (mockTarget.hasExplicitTypeArguments) {
         // [typeToMock] is a reference to a type with type arguments (for
         // example: `Foo<int>`). Generate a non-generic mock class which
         // implements the mock target with said type arguments. For example:
@@ -1968,38 +2008,6 @@ extension on analyzer.DartType {
   }
 }
 
-extension on analyzer.InterfaceType {
-  bool get hasExplicitTypeArguments {
-    // If it appears that one type argument was given, then they all were. This
-    // returns the wrong result when the type arguments given are all `dynamic`,
-    // or are each equal to the bound of the corresponding type parameter. There
-    // may not be a way to get around this.
-    for (var i = 0; i < typeArguments.length; i++) {
-      final typeArgument = typeArguments[i];
-      // If [typeArgument] is a type parameter, this indicates that no type
-      // arguments were passed. This likely came from the 'classes' argument of
-      // GenerateMocks, and [type] is the declaration type (`Foo<T>` vs
-      // `Foo<dynamic>`).
-      if (typeArgument is analyzer.TypeParameterType) return false;
-
-      // If [type] was given to @GenerateMocks as a Type, and no explicit type
-      // argument is given, [typeArgument] is `dynamic` (_not_ the bound, as one
-      // might think). We determine that an explicit type argument was given if
-      // it is not `dynamic`.
-      if (typeArgument.isDynamic) continue;
-
-      // If, on the other hand, [type] was given to @GenerateMock as a type
-      // argument to `MockSpec()`, and no type argument is given, [typeArgument]
-      // is the bound of the corresponding type paramter (`dynamic` or
-      // otherwise). We determine that an explicit type argument was given if
-      // [typeArgument] is not equal to [bound].
-      final bound = element2.typeParameters[i].bound;
-      if (!typeArgument.isDynamic && typeArgument != bound) return true;
-    }
-    return false;
-  }
-}
-
 extension on TypeSystem {
   bool _returnTypeIsNonNullable(ExecutableElement method) =>
       isPotentiallyNonNullable(method.returnType);
@@ -2037,3 +2045,11 @@ extension on int {
 
 bool _needsOverrideForVoidStub(ExecutableElement method) =>
     method.returnType.isVoid || method.returnType.isFutureOfVoid;
+
+/// This casts `ElementAnnotation` to the internal `ElementAnnotationImpl`
+/// class, since analyzer doesn't provide public interface to access
+/// the annotation AST currently.
+extension on ElementAnnotation {
+  ast.Annotation get annotationAst =>
+      (this as ElementAnnotationImpl).annotationAst;
+}
