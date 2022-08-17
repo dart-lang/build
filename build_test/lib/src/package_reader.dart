@@ -76,8 +76,7 @@ class PackageAssetReader extends AssetReader
       {String? rootPackage}) async {
     final packageConfigUri = await Isolate.packageConfig ??
         (throw UnsupportedError('No package config found'));
-    final packageConfig = await findPackageConfigUri(packageConfigUri) ??
-        (throw UnsupportedError('Package configuration file not found'));
+    final packageConfig = await loadPackageConfigUri(packageConfigUri);
 
     return PackageAssetReader(packageConfig, rootPackage);
   }

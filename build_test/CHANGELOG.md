@@ -1,5 +1,7 @@
 ## 2.1.6-dev
 
+- Fix bug in package config file loading.
+
 ## 2.1.5
 
 - Allow the latest analyzer.
