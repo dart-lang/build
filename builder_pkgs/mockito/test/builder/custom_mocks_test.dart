@@ -842,7 +842,23 @@ void main() {
         void main() {}
         '''),
       },
-      message: contains('Mockito cannot mock `dynamic`'),
+      message: contains(
+          'MockSpec requires a type argument to determine the class to mock'),
+    );
+  });
+
+  test('throws when MockSpec() is given an unknown type argument', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        'foo|test/foo_test.dart': dedent('''
+        import 'package:mockito/annotations.dart';
+        // Missing required type argument to MockSpec.
+        @GenerateMocks([], customMocks: [MockSpec<Unknown>()])
+        void main() {}
+        '''),
+      },
+      message: contains('Mockito cannot mock unknown type `Unknown`'),
     );
   });
 

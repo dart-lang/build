@@ -446,16 +446,14 @@ class _MockTargetGatherer {
         entryLib, mockTargets.toList(), inheritanceManager);
   }
 
-  static ast.TypeArgumentList? _mockTypeArguments(
-      ast.CollectionElement mockSpec) {
+  static ast.NamedType? _mockType(ast.CollectionElement mockSpec) {
     if (mockSpec is! ast.InstanceCreationExpression) {
       throw InvalidMockitoAnnotationException(
-          'Mockspecs must be constructor calls inside the annotation, '
+          'MockSpecs must be constructor calls inside the annotation, '
           'please inline them if you are using a variable');
     }
-    return (mockSpec.constructorName.type2.typeArguments?.arguments.firstOrNull
-            as ast.NamedType?)
-        ?.typeArguments;
+    return mockSpec.constructorName.type2.typeArguments?.arguments.firstOrNull
+        as ast.NamedType?;
   }
 
   static ast.ListLiteral? _customMocksAst(ast.Annotation annotation) =>
@@ -524,15 +522,24 @@ class _MockTargetGatherer {
       {bool nice = false}) {
     final mockSpecType = mockSpec.type as analyzer.InterfaceType;
     assert(mockSpecType.typeArguments.length == 1);
+    final mockType = _mockType(mockSpecAsts[index]);
     final typeToMock = mockSpecType.typeArguments.single;
     if (typeToMock.isDynamic) {
-      throw InvalidMockitoAnnotationException(
-          'Mockito cannot mock `dynamic`; be sure to declare a type argument '
-          'on the ${(index + 1).ordinal} MockSpec() in @GenerateMocks.');
+      final mockTypeName = mockType?.name.name;
+      if (mockTypeName == null) {
+        throw InvalidMockitoAnnotationException(
+            'MockSpec requires a type argument to determine the class to mock. '
+            'Be sure to declare a type argument on the ${(index + 1).ordinal} '
+            'MockSpec() in @GenerateMocks.');
+      } else {
+        throw InvalidMockitoAnnotationException(
+            'Mockito cannot mock unknown type `$mockTypeName`. Did you '
+            'misspell it or forget to add a dependency on it?');
+      }
     }
     var type = _determineDartType(typeToMock, entryLib.typeProvider);
 
-    final mockTypeArguments = _mockTypeArguments(mockSpecAsts[index]);
+    final mockTypeArguments = mockType?.typeArguments;
     if (mockTypeArguments == null) {
       // The type was given without explicit type arguments. In
       // this case the type argument(s) on `type` have been instantiated to
