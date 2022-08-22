@@ -452,7 +452,7 @@ class _MockTargetGatherer {
           'MockSpecs must be constructor calls inside the annotation, '
           'please inline them if you are using a variable');
     }
-    return mockSpec.constructorName.type2.typeArguments?.arguments.firstOrNull
+    return mockSpec.constructorName.type.typeArguments?.arguments.firstOrNull
         as ast.NamedType?;
   }
 
@@ -545,7 +545,7 @@ class _MockTargetGatherer {
       // this case the type argument(s) on `type` have been instantiated to
       // bounds. Switch to the declaration, which will be an uninstantiated
       // type.
-      type = (type.element.declaration as ClassElement).thisType;
+      type = (type.element2.declaration as ClassElement).thisType;
     } else {
       // Check explicit type arguments for unknown types that were
       // turned into `dynamic` by the analyzer.
