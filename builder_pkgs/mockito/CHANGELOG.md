@@ -1,4 +1,7 @@
-## 5.3.1-dev
+## 5.3.1
+
+* Fix analyzer and code_builder dependencies.
+* Reference `@GenerateNiceMocks` in documentation.
 
 ## 5.3.0
 

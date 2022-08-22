@@ -44,8 +44,8 @@ manually implement it, overriding specific methods to handle non-nullability.
 
 Mockito provides a "one size fits all" code-generating solution for packages
 that use null safety which can generate a mock for any class. To direct Mockito
-to generate mock classes, use the new `@GenerateMocks` annotation, and import
-the generated mocks library. Let's continue with the HTTP server example:
+to generate mock classes, use the new `@GenerateNiceMocks` annotation, and
+import the generated mocks library. Let's continue with the HTTP server example:
 
 ```dart
 // http_server.dart:
@@ -74,7 +74,7 @@ In order to generate a mock for the HttpServer class, we edit
 
 1. import mockito's annotations library,
 2. import the generated mocks library,
-3. annotate the import with `@GenerateMocks`,
+3. annotate the import with `@GenerateNiceMocks`,
 4. change `httpServer` from an HttpServer to the generated class,
    MockHttpServer.
 
@@ -84,7 +84,7 @@ import 'package:mockito/annotations.dart';
 import 'package:test/test.dart';
 import 'http_server.dart';
 
-@GenerateMocks([HttpServer])
+@GenerateNiceMocks([MockSpec<HttpServer>()])
 import 'http_server_test.mocks.dart';
 
 void main() {
@@ -108,17 +108,17 @@ dart run build_runner build
 
 build_runner will generate the `http_server_test.mocks.dart` file which we
 import in `http_server_test.dart`. The path is taken directly from the file in
-which `@GenerateMocks` was found, changing the `.dart` suffix to `.mocks.dart`.
-If we previously had a shared mocks file which declared mocks to be used by
-multiple tests, for example named `shared_mocks.dart`, we can edit that file to
-generate mocks, and then import `shared_mocks.mocks.dart` in the tests which
-previously imported `shared_mocks.dart`.
+which `@GenerateNiceMocks` was found, changing the `.dart` suffix to
+`.mocks.dart`. If we previously had a shared mocks file which declared mocks to
+be used by multiple tests, for example named `shared_mocks.dart`, we can edit
+that file to generate mocks, and then import `shared_mocks.mocks.dart` in the
+tests which previously imported `shared_mocks.dart`.
 
 ### Custom generated mocks
 
 Mockito might need some additional input in order to generate the right mock for
 certain use cases. We can generate custom mock classes by passing MockSpec
-objects to the `customMocks` list argument in `@GenerateMocks`.
+objects to the `customMocks` list argument in `@GenerateNiceMocks`.
 
 #### Mock with a custom name
 
@@ -126,7 +126,7 @@ Use MockSpec's constructor's `as` named parameter to use a non-standard name for
 the mock class. For example:
 
 ```dart
-@GenerateMocks([], customMocks: [MockSpec<Foo>(as: #BaseMockFoo)])
+@GenerateNiceMocks([MockSpec<Foo>(as: #BaseMockFoo)])
 ```
 
 Mockito will generate a mock class called `BaseMockFoo`, instead of the default,
@@ -139,22 +139,38 @@ To generate a mock class which extends a class with type arguments, specify
 them on MockSpec's type argument:
 
 ```dart
-@GenerateMocks([], customMocks: [MockSpec<Foo<int>>(as: #MockFooOfInt)])
+@GenerateNiceMocks([MockSpec<Foo<int>>(as: #MockFooOfInt)])
 ```
 
 Mockito will generate `class MockFooOfInt extends Mock implements Foo<int>`.
 
-#### Old "missing stub" behavior
+#### Classic "throw an exception" missing stub behavior
 
-When a method of a generated mock class is called, which does not match any
-method stub created with the `when` API, the call will throw an exception. To
-use the old default behavior of returning null (which doesn't make a lot of
+When a mock class generated with `@GenerateNiceMocks` receives a method call
+which does not match any method stub created with the `when` API, a simple,
+legal default value is returned. This is the default and recommended
+"missing stub" behavior.
+
+There is a "classic" "missing stub" behavior, which is to throw an exception
+when such a method call is received. To generate a mock class with this
+behavior, use `@GenerateMocks`:
+
+```dart
+@GenerateMocks([Foo])
+```
+
+#### Old "return null" missing stub behavior
+
+ To use the old default behavior of returning null (which doesn't make a lot of
 sense in the Null safety type system), for legacy code, use
 `returnNullOnMissingStub`:
 
 ```dart
 @GenerateMocks([], customMocks: [MockSpec<Foo>(returnNullOnMissingStub: true)])
 ```
+
+This option is soft-deprecated (no deprecation warning yet); it will be marked
+`@deprecated` in a future release, and removed in a later release.
 
 #### Mocking members with non-nullable type variable return types
 
@@ -163,7 +179,7 @@ If a class has a member with a type variable as a return type (for example,
 valid value. For example, given this class and test:
 
 ```dart
-@GenerateMocks([], customMocks: [MockSpec<Foo>(as: #MockFoo)])
+@GenerateNiceMocks([MockSpec<Foo>(as: #MockFoo)])
 import 'foo_test.mocks.dart';
 
 abstract class Foo {
@@ -183,7 +199,7 @@ One way to generate a mock class with such members is to use
 `unsupportedMembers`:
 
 ```dart
-@GenerateMocks([], customMocks: [
+@GenerateNiceMocks([
   MockSpec<Foo>(unsupportedMembers: {#method}),
 ])
 ```
@@ -203,7 +219,7 @@ return type as the member, and it must have the same positional and named
 parameters as the member, except that each parameter must be made nullable:
 
 ```dart
-@GenerateMocks([], customMocks: [
+@GenerateNiceMocks([
   MockSpec<Foo>(as: #MockFoo, fallbackGenerators: {#m: mShim})
 ])
 import 'foo_test.mocks.dart';

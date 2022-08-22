@@ -23,7 +23,7 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
 // Annotation which generates the cat.mocks.dart library and the MockCat class.
-@GenerateMocks([Cat])
+@GenerateNiceMocks([MockSpec<Cat>()])
 import 'cat.mocks.dart';
 
 // Real class
@@ -43,9 +43,9 @@ void main() {
 }
 ```
 
-By annotating the import of a `.mocks.dart` library  with `@GenerateMocks`, you
-are directing Mockito's code generation to write a mock class for each "real"
-class listed, in a new library.
+By annotating the import of a `.mocks.dart` library  with `@GenerateNiceMocks`,
+you are directing Mockito's code generation to write a mock class for each
+"real" class listed, in a new library.
 
 The next step is to run `build_runner` in order to generate this new library:
 
@@ -56,7 +56,7 @@ dart run build_runner build
 ```
 
 `build_runner` will generate a file with a name based on the file containing the
-`@GenerateMocks` annotation. In the above `cat.dart` example, we import the
+`@GenerateNiceMocks` annotation. In the above `cat.dart` example, we import the
 generated library as `cat.mocks.dart`.
 
 The generated mock class, `MockCat`, extends Mockito's Mock class and implements
@@ -314,6 +314,32 @@ await untilCalled(cat.chew()); // Completes when cat.chew() is called.
 cat.eatFood("Fish");
 await untilCalled(cat.eatFood(any)); // Completes immediately.
 ```
+
+## Nice mocks vs classic mocks
+
+Mockito provides two APIs for generating mocks, the `@GenerateNiceMocks`
+annotation and the `@GenerateMocks` annotation. **The recommended API is
+`@GenerateNiceMocks`.** The difference between these two APIs is in the behavior
+of a generated mock class when a method is called and no stub could be found.
+For example:
+
+```dart
+void main() {
+  var cat = MockCat();
+  cat.sound();
+}
+```
+
+The `Cat.sound` method retuns a non-nullable String, but no stub has been made
+with `when(cat.sound())`, so what should the code do? What is the "missing stub"
+behavior?
+
+* The "missing stub" behavior of a mock class generated with `@GenerateMocks` is
+  to throw an exception.
+* The "missing stub" behavior of a mock class generated with
+  `@GenerateNiceMocks` is to return a "simple" legal value (for example, a
+  non-`null` value for a non-nullable return type). The value should not be used
+  in any way; it is returned solely to avoid a runtime type exception.
 
 ## Writing a fake
 
