@@ -1,12 +1,9 @@
-## 2.2.1-1-dev
-
- - Added a flag to redirect all not found to a specific 
-  asset: not-found-defaults-to
-
 ## 2.2.1-dev
 
 - Stop ignoring the no_leading_underscores_for_library_prefixes lint in
   generated build scripts, code_builder now does this for you.
+- Added a flag to redirect all not found to a specific 
+  asset: ` not-found-defaults-to`
 
 ## 2.2.0
 
