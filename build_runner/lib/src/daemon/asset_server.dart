@@ -34,7 +34,7 @@ class AssetServer {
     var cascade = Cascade().add((_) async {
       await builder.building;
       return Response.notFound('');
-    }).add(AssetHandler(builder.reader, rootPackage).handle);
+    }).add(AssetHandler(builder.reader, rootPackage, null).handle);
 
     var pipeline = Pipeline();
     if (options.logRequests) {

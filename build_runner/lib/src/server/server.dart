@@ -49,8 +49,14 @@ ServeHandler createServeHandler(WatchImpl watch) {
   var assetHandlerCompleter = Completer<AssetHandler>();
 
   watch.reader.then((reader) async {
-    assetHandlerCompleter.complete(AssetHandler(reader, rootPackage,
-        notFoundDefaultsTo: watch.notFoundDefaultsTo));
+    final notFoundDefaultsToPath = watch.notFoundDefaultsTo;
+    final notFoundDefaultsTo =
+        notFoundDefaultsToPath != null && notFoundDefaultsToPath.isNotEmpty
+            ? AssetId(rootPackage, notFoundDefaultsToPath)
+            : null;
+
+    assetHandlerCompleter
+        .complete(AssetHandler(reader, rootPackage, notFoundDefaultsTo));
     assetGraphHanderCompleter
         .complete(AssetGraphHandler(reader, rootPackage, watch.assetGraph!));
   }).catchError((_) {}); // These errors are separately handled.
@@ -302,19 +308,11 @@ window.\$dartLoader.forceLoadModule('packages/build_runner/src/server/build_upda
 class AssetHandler {
   final FinalizedReader _reader;
   final String _rootPackage;
-  late final AssetId _notFoundDefaultsTo;
-  late final bool _redirectNotFound;
+  final AssetId? notFoundDefaultsTo;
 
   final _typeResolver = MimeTypeResolver();
 
-  AssetHandler(this._reader, this._rootPackage, {String? notFoundDefaultsTo}) {
-    _redirectNotFound =
-        notFoundDefaultsTo != null && notFoundDefaultsTo.isNotEmpty;
-
-    if (_redirectNotFound) {
-      _notFoundDefaultsTo = AssetId(_rootPackage, notFoundDefaultsTo!);
-    }
-  }
+  AssetHandler(this._reader, this._rootPackage, this.notFoundDefaultsTo);
 
   Future<shelf.Response> handle(shelf.Request request, {String rootDir = ''}) =>
       (request.url.path.endsWith('/') || request.url.path.isEmpty)
@@ -344,12 +342,14 @@ class AssetHandler {
                     await _findDirectoryList(assetId));
               }
 
-              if (_redirectNotFound) {
+              final notFoundDefaultsTo = this.notFoundDefaultsTo;
+
+              if (notFoundDefaultsTo != null) {
                 final pathSegments = assetId.pathSegments;
 
                 if (!pathSegments.contains('package') &&
                     !pathSegments.contains('lib')) {
-                  return _handle(request, _notFoundDefaultsTo);
+                  return _handle(request, notFoundDefaultsTo);
                 }
               }
 

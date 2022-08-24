@@ -300,7 +300,7 @@ class ServeOptions extends WatchOptions {
       required String? logPerformanceDir,
       required bool usePollingWatcher,
       required List<String> enableExperiments,
-      this.notFoundDefaultsTo})
+      required this.notFoundDefaultsTo})
       : super._(
             buildFilters: buildFilters,
             deleteFilesByDefault: deleteFilesByDefault,

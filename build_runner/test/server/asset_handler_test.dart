@@ -25,7 +25,7 @@ void main() {
         buildPackageGraph({rootPackage('foo'): []}), FakeAssetReader());
     delegate = InMemoryRunnerAssetReader();
     reader = FinalizedReader(delegate, graph, [], 'a');
-    handler = AssetHandler(reader, 'a');
+    handler = AssetHandler(reader, 'a', null);
   });
 
   void _addAsset(String id, String content, {bool deleted = false}) {
