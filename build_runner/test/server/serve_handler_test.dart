@@ -24,6 +24,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 void main() {
   late ServeHandler serveHandler;
+  late ServeHandler serveSpaHandler;
   late InMemoryRunnerAssetReader reader;
   late MockWatchImpl watchImpl;
   late AssetGraph assetGraph;
@@ -38,6 +39,9 @@ void main() {
         packageGraph,
         assetGraph);
     serveHandler = createServeHandler(watchImpl);
+
+    watchImpl.notFoundDefaultsTo = 'web/index.html';
+    serveSpaHandler = createServeHandler(watchImpl);
     watchImpl
         .addFutureResult(Future.value(BuildResult(BuildStatus.success, [])));
   });
@@ -55,6 +59,13 @@ void main() {
     _addSource('a|web/index.html', 'content');
     var response = await serveHandler.handlerFor('web')(
         Request('GET', Uri.parse('http://server.com/index.html')));
+    expect(await response.readAsString(), 'content');
+  });
+
+  test('retrieve default asset when not found', () async {
+    _addSource('a|web/index.html', 'content');
+    var response = await serveSpaHandler.handlerFor('web')(
+        Request('GET', Uri.parse('http://server.com/foo.html')));
     expect(await response.readAsString(), 'content');
   });
 
@@ -443,13 +454,16 @@ class MockWatchImpl implements WatchImpl {
   Future<BuildResult>? _currentBuild;
 
   @override
+  String? notFoundDefaultsTo;
+
+  @override
   Future<BuildResult>? get currentBuild => _currentBuild;
   @override
   set currentBuild(Future<BuildResult>? _) =>
       throw UnsupportedError('unsupported!');
 
   final _futureBuildResultsController = StreamController<Future<BuildResult>>();
-  final _buildResultsController = StreamController<BuildResult>();
+  final _buildResultsController = StreamController<BuildResult>.broadcast();
 
   @override
   Stream<BuildResult> get buildResults => _buildResultsController.stream;
@@ -467,7 +481,8 @@ class MockWatchImpl implements WatchImpl {
     _futureBuildResultsController.add(result);
   }
 
-  MockWatchImpl(this.reader, this.packageGraph, this.assetGraph) {
+  MockWatchImpl(this.reader, this.packageGraph, this.assetGraph,
+      {this.notFoundDefaultsTo}) {
     var firstBuild = Completer<BuildResult>();
     _currentBuild = firstBuild.future;
     _futureBuildResultsController.stream.listen((futureBuildResult) {

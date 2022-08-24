@@ -165,7 +165,8 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         bool? isReleaseBuild,
         Map<String, Map<String, dynamic>>? builderConfigOverrides,
         String? logPerformanceDir,
-        Set<BuildFilter>? buildFilters}) =>
+        Set<BuildFilter>? buildFilters,
+        String? notFoundDefaultsTo}) =>
     watch_impl.watch(
       builders,
       assumeTty: assumeTty,
@@ -190,4 +191,5 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
       isReleaseBuild: isReleaseBuild,
       logPerformanceDir: logPerformanceDir,
       buildFilters: buildFilters,
+      notFoundDefaultsTo: notFoundDefaultsTo
     );

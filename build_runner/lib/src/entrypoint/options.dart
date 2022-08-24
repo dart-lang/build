@@ -26,6 +26,7 @@ const liveReloadOption = 'live-reload';
 const logPerformanceOption = 'log-performance';
 const logRequestsOption = 'log-requests';
 const lowResourcesModeOption = 'low-resources-mode';
+const notFoundDefaultsToOption = 'not-found-defaults-to';
 const outputOption = 'output';
 const releaseOption = 'release';
 const trackPerformanceOption = 'track-performance';
@@ -276,41 +277,45 @@ class ServeOptions extends WatchOptions {
   final bool logRequests;
   final List<ServeTarget> serveTargets;
 
-  ServeOptions._({
-    required this.hostName,
-    required this.buildUpdates,
-    required this.logRequests,
-    required this.serveTargets,
-    required Set<BuildFilter> buildFilters,
-    required bool deleteFilesByDefault,
-    required bool enableLowResourcesMode,
-    required String? configKey,
-    required Set<BuildDirectory> buildDirs,
-    required bool outputSymlinksOnly,
-    required bool trackPerformance,
-    required bool skipBuildScriptCheck,
-    required bool verbose,
-    required Map<String, Map<String, dynamic>> builderConfigOverrides,
-    required bool isReleaseBuild,
-    required String? logPerformanceDir,
-    required bool usePollingWatcher,
-    required List<String> enableExperiments,
-  }) : super._(
-          buildFilters: buildFilters,
-          deleteFilesByDefault: deleteFilesByDefault,
-          enableLowResourcesMode: enableLowResourcesMode,
-          configKey: configKey,
-          buildDirs: buildDirs,
-          outputSymlinksOnly: outputSymlinksOnly,
-          trackPerformance: trackPerformance,
-          skipBuildScriptCheck: skipBuildScriptCheck,
-          verbose: verbose,
-          builderConfigOverrides: builderConfigOverrides,
-          isReleaseBuild: isReleaseBuild,
-          logPerformanceDir: logPerformanceDir,
-          usePollingWatcher: usePollingWatcher,
-          enableExperiments: enableExperiments,
-        );
+  // An [AssetId] path to redirect when the file is not found by
+  // the web server
+  final String? notFoundDefaultsTo;
+
+  ServeOptions._(
+      {required this.hostName,
+      required this.buildUpdates,
+      required this.logRequests,
+      required this.serveTargets,
+      required Set<BuildFilter> buildFilters,
+      required bool deleteFilesByDefault,
+      required bool enableLowResourcesMode,
+      required String? configKey,
+      required Set<BuildDirectory> buildDirs,
+      required bool outputSymlinksOnly,
+      required bool trackPerformance,
+      required bool skipBuildScriptCheck,
+      required bool verbose,
+      required Map<String, Map<String, dynamic>> builderConfigOverrides,
+      required bool isReleaseBuild,
+      required String? logPerformanceDir,
+      required bool usePollingWatcher,
+      required List<String> enableExperiments,
+      this.notFoundDefaultsTo})
+      : super._(
+            buildFilters: buildFilters,
+            deleteFilesByDefault: deleteFilesByDefault,
+            enableLowResourcesMode: enableLowResourcesMode,
+            configKey: configKey,
+            buildDirs: buildDirs,
+            outputSymlinksOnly: outputSymlinksOnly,
+            trackPerformance: trackPerformance,
+            skipBuildScriptCheck: skipBuildScriptCheck,
+            verbose: verbose,
+            builderConfigOverrides: builderConfigOverrides,
+            isReleaseBuild: isReleaseBuild,
+            logPerformanceDir: logPerformanceDir,
+            usePollingWatcher: usePollingWatcher,
+            enableExperiments: enableExperiments);
 
   factory ServeOptions.fromParsedArgs(ArgResults argResults,
       Iterable<String> positionalArgs, String rootPackage, Command command) {
@@ -381,6 +386,7 @@ class ServeOptions extends WatchOptions {
       logPerformanceDir: argResults[logPerformanceOption] as String?,
       usePollingWatcher: argResults[usePollingWatcherOption] as bool,
       enableExperiments: argResults[enableExperimentOption] as List<String>,
+      notFoundDefaultsTo: argResults[notFoundDefaultsToOption] as String?,
     );
   }
 }

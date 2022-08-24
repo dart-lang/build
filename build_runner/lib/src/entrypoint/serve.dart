@@ -31,7 +31,9 @@ class ServeCommand extends WatchCommand {
       ..addFlag(liveReloadOption,
           defaultsTo: false,
           negatable: false,
-          help: 'Enables automatic page reloading on rebuilds. ');
+          help: 'Enables automatic page reloading on rebuilds. ')
+      ..addOption(notFoundDefaultsToOption,
+          help: 'Redirect not found to a specific asset.');
   }
 
   @override
@@ -98,6 +100,7 @@ class ServeCommand extends WatchCommand {
       logPerformanceDir: options.logPerformanceDir,
       directoryWatcherFactory: options.directoryWatcherFactory,
       buildFilters: options.buildFilters,
+      notFoundDefaultsTo: options.notFoundDefaultsTo
     );
 
     servers.forEach((target, server) {
