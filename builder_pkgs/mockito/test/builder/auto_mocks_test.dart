@@ -212,8 +212,7 @@ void main() {
         void m(int a) {}
       }
       '''),
-      _containsAllOf(
-          'void m(int? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf('void m(int? a) => super.noSuchMethod('),
     );
   });
 
@@ -224,8 +223,13 @@ void main() {
         void m(int a, [int b, int c = 0]) {}
       }
       '''),
-      _containsAllOf('void m(int? a, [int? b, int? c = 0]) =>',
-          'super.noSuchMethod(Invocation.method(#m, [a, b, c])'),
+      _containsAllOf(dedent2('''
+        void m(
+          int? a, [
+          int? b,
+          int? c = 0,
+        ]) =>
+        ''')),
     );
   });
 
@@ -236,8 +240,13 @@ void main() {
         void m(int a, {int b, int c = 0}) {}
       }
       '''),
-      _containsAllOf('void m(int? a, {int? b, int? c = 0}) =>',
-          'super.noSuchMethod(Invocation.method(#m, [a], {#b: b, #c: c})'),
+      _containsAllOf(dedent2('''
+        void m(
+          int? a, {
+          int? b,
+          int? c = 0,
+        }) =>
+        ''')),
     );
   });
 
@@ -248,8 +257,11 @@ void main() {
         void m([int a, int b = 0]) {}
       }
       '''),
-      _containsAllOf('void m([int? a, int? b = 0]) =>',
-          'super.noSuchMethod(Invocation.method(#m, [a, b])'),
+      _containsAllOf(dedent2('''
+        void m([
+          int? a,
+          int? b = 0,
+        ]) =>''')),
     );
   });
 
@@ -260,8 +272,12 @@ void main() {
         void m([bool a = true, bool b = false]) {}
       }
       '''),
-      _containsAllOf('void m([bool? a = true, bool? b = false]) =>',
-          'super.noSuchMethod(Invocation.method(#m, [a, b])'),
+      _containsAllOf(dedent2('''
+        void m([
+          bool? a = true,
+          bool? b = false,
+        ]) =>
+        ''')),
     );
   });
 
@@ -272,8 +288,12 @@ void main() {
         void m([int a = 0, double b = 0.5]) {}
       }
       '''),
-      _containsAllOf('void m([int? a = 0, double? b = 0.5]) =>',
-          'super.noSuchMethod(Invocation.method(#m, [a, b])'),
+      _containsAllOf(dedent2('''
+        void m([
+          int? a = 0,
+          double? b = 0.5,
+        ]) =>
+        ''')),
     );
   });
 
@@ -284,9 +304,12 @@ void main() {
         void m([String a = 'Hello', String b = 'Hello ' r"World"]) {}
       }
       '''),
-      _containsAllOf(
-          "void m([String? a = r'Hello', String? b = r'Hello World']) =>",
-          'super.noSuchMethod(Invocation.method(#m, [a, b])'),
+      _containsAllOf(dedent2('''
+        void m([
+          String? a = r'Hello',
+          String? b = r'Hello World',
+        ]) =>
+        ''')),
     );
   });
 
@@ -297,9 +320,12 @@ void main() {
         void m([List<int> a = const [], Map<int, int> b = const {}]) {}
       }
       '''),
-      _containsAllOf(
-          'void m([List<int>? a = const [], Map<int, int>? b = const {}]) =>',
-          'super.noSuchMethod(Invocation.method(#m, [a, b])'),
+      _containsAllOf(dedent2('''
+        void m([
+          List<int>? a = const [],
+          Map<int, int>? b = const {},
+        ]) =>
+        ''')),
     );
   });
 
@@ -310,8 +336,14 @@ void main() {
         void m([List<int> a = const [1, 2, 3]]) {}
       }
       '''),
-      _containsAllOf('void m([List<int>? a = const [1, 2, 3]]) =>',
-          'super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf(dedent2('''
+        void m(
+                [List<int>? a = const [
+                  1,
+                  2,
+                  3,
+                ]]) =>
+        ''')),
     );
   });
 
@@ -322,9 +354,13 @@ void main() {
         void m([Map<int, String> a = const {1: 'a', 2: 'b'}]) {}
       }
       '''),
-      _containsAllOf(
-          "void m([Map<int, String>? a = const {1: r'a', 2: r'b'}]) =>",
-          'super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf(dedent2('''
+        void m(
+                [Map<int, String>? a = const {
+                  1: r'a',
+                  2: r'b',
+                }]) =>
+        ''')),
     );
   });
 
@@ -335,9 +371,13 @@ void main() {
         void m([Map<int, String> a = const {1: 'a', 2: 'b'}]) {}
       }
       '''),
-      _containsAllOf(
-          "void m([Map<int, String>? a = const {1: r'a', 2: r'b'}]) =>",
-          'super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf(dedent2('''
+        void m(
+                [Map<int, String>? a = const {
+                  1: r'a',
+                  2: r'b',
+                }]) =>
+        ''')),
     );
   });
 
@@ -352,8 +392,8 @@ void main() {
         const Bar();
       }
       '''),
-      _containsAllOf('void m([_i2.Bar? a = const _i2.Bar()]) =>',
-          'super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf(
+          'void m([_i2.Bar? a = const _i2.Bar()]) => super.noSuchMethod('),
     );
   });
 
@@ -365,8 +405,8 @@ void main() {
         void m([Duration a = const Duration(days: 1)]) {}
       }
       '''),
-      _containsAllOf('void m([Duration? a = const Duration(days: 1)]) =>',
-          'super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf(
+          'void m([Duration? a = const Duration(days: 1)]) => super.noSuchMethod('),
     );
   });
 
@@ -381,8 +421,8 @@ void main() {
         const Bar.named();
       }
       '''),
-      _containsAllOf('void m([_i2.Bar? a = const _i2.Bar.named()]) =>',
-          'super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf(
+          'void m([_i2.Bar? a = const _i2.Bar.named()]) => super.noSuchMethod('),
     );
   });
 
@@ -398,8 +438,8 @@ void main() {
         const Bar(this.i);
       }
       '''),
-      _containsAllOf('void m([_i2.Bar? a = const _i2.Bar(7)]) =>',
-          'super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf(
+          'void m([_i2.Bar? a = const _i2.Bar(7)]) => super.noSuchMethod('),
     );
   });
 
@@ -415,8 +455,8 @@ void main() {
         const Bar({this.i});
       }
       '''),
-      _containsAllOf('void m([_i2.Bar? a = const _i2.Bar(i: 7)]) =>',
-          'super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf(
+          'void m([_i2.Bar? a = const _i2.Bar(i: 7)]) => super.noSuchMethod('),
     );
   });
 
@@ -429,8 +469,7 @@ void main() {
       }
       const x = 1;
       '''),
-      _containsAllOf(
-          'void m([int? a = 1]) => super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf('void m([int? a = 1]) => super.noSuchMethod('),
     );
   });
 
@@ -444,8 +483,8 @@ void main() {
         void m([Callback a = defaultCallback]) {}
       }
       '''),
-      _containsAllOf('void m([_i2.Callback? a = _i2.defaultCallback]) =>',
-          'super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf(
+          'void m([_i2.Callback? a = _i2.defaultCallback]) => super.noSuchMethod('),
     );
   });
 
@@ -458,8 +497,7 @@ void main() {
         void m([int a = x]) {}
       }
       '''),
-      _containsAllOf(
-          'void m([int? a = 1]) => super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf('void m([int? a = 1]) => super.noSuchMethod('),
     );
   });
 
@@ -557,11 +595,7 @@ void main() {
         Future<void> m() async => print(s);
       }
       '''),
-      _containsAllOf(dedent2('''
-      _i3.Future<void> m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: _i3.Future<void>.value(),
-          returnValueForMissingStub: _i3.Future<void>.value()) as _i3.Future<void>);
-      ''')),
+      _containsAllOf('_i3.Future<void> m() => (super.noSuchMethod('),
     );
   });
 
@@ -572,10 +606,7 @@ void main() {
         Stream<int> m() async* { yield 7; }
       }
       '''),
-      _containsAllOf(dedent2('''
-      _i3.Stream<int> m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: _i3.Stream<int>.empty()) as _i3.Stream<int>);
-      ''')),
+      _containsAllOf('_i3.Stream<int> m() => (super.noSuchMethod('),
     );
   });
 
@@ -586,11 +617,7 @@ void main() {
         Iterable<int> m() sync* { yield 7; }
       }
       '''),
-      _containsAllOf(dedent2('''
-      Iterable<int> m() =>
-          (super.noSuchMethod(Invocation.method(#m, []), returnValue: <int>[])
-              as Iterable<int>);
-      ''')),
+      _containsAllOf('Iterable<int> m() => (super.noSuchMethod('),
     );
   });
 
@@ -602,8 +629,7 @@ void main() {
       }
       class Foo extends FooBase {}
       '''),
-      _containsAllOf(
-          'void m(int? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf('void m(int? a) => super.noSuchMethod('),
     );
   });
 
@@ -616,8 +642,7 @@ void main() {
       }
       class Foo extends FooBase<int> {}
       '''),
-      _containsAllOf(
-          'void m(int? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf('void m(int? a) => super.noSuchMethod('),
     );
   });
 
@@ -629,8 +654,7 @@ void main() {
       }
       class Foo with Mixin<int> {}
       '''),
-      _containsAllOf(
-          'void m(int? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf('void m(int? a) => super.noSuchMethod('),
     );
   });
 
@@ -643,8 +667,7 @@ void main() {
       class FooBase with Mixin {}
       class Foo extends FooBase {}
       '''),
-      _containsAllOf(
-          'void m(int? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf('void m(int? a) => super.noSuchMethod('),
     );
   });
 
@@ -662,8 +685,7 @@ void main() {
       }
       class Foo with MixinConstraint, Mixin {}
       '''),
-      _containsAllOf(
-          'void m(num? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf('void m(num? a) => super.noSuchMethod('),
     );
   });
 
@@ -675,8 +697,7 @@ void main() {
       }
       class Foo implements Interface<int> {}
       '''),
-      _containsAllOf(
-          'void m(int? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf('void m(int? a) => super.noSuchMethod('),
     );
   });
 
@@ -688,13 +709,10 @@ void main() {
       }
       class Foo implements Interface<int> {}
       '''),
-      _containsAllOf(dedent2('''
-      int get m =>
-          (super.noSuchMethod(Invocation.getter(#m), returnValue: 0) as int);
-      '''), dedent2('''
-      set m(int? _m) => super
-          .noSuchMethod(Invocation.setter(#m, _m), returnValueForMissingStub: null);
-      ''')),
+      _containsAllOf(
+        'int get m => (super.noSuchMethod(',
+        'set m(int? _m) => super.noSuchMethod(',
+      ),
     );
   });
 
@@ -709,8 +727,7 @@ void main() {
       class FooBase1<T> extends FooBase2<T> {}
       class Foo extends FooBase2<int> {}
       '''),
-      _containsAllOf(
-          'void m(int? a) =>', 'super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf('void m(int? a) => super.noSuchMethod('),
     );
   });
 
@@ -722,8 +739,7 @@ void main() {
       }
       class Foo extends FooBase<void> {}
       '''),
-      _containsAllOf('void m() => super',
-          '.noSuchMethod(Invocation.method(#m, []), returnValueForMissingStub: null);'),
+      _containsAllOf('void m() => super.noSuchMethod('),
     );
   });
 
@@ -735,8 +751,7 @@ void main() {
       }
       class Foo<T> extends FooBase<T> {}
       '''),
-      _containsAllOf(
-          'void m(T? a) =>', 'super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf('void m(T? a) => super.noSuchMethod('),
     );
   });
 
@@ -751,12 +766,8 @@ void main() {
       }
       '''),
         _containsAllOf(
-          '  void List(int? a) => super.noSuchMethod(Invocation.method(#List, [a]),\n',
-          dedent2('''
-            _i3.List<String> m() =>
-                (super.noSuchMethod(Invocation.method(#m, []), returnValue: <String>[])
-                    as _i3.List<String>);
-          '''),
+          '  void List(int? a) => super.noSuchMethod(\n',
+          '  _i3.List<String> m() => (super.noSuchMethod(\n',
         ));
   });
 
@@ -991,9 +1002,12 @@ void main() {
         void m(dynamic a, int b) {}
       }
       '''),
-      _containsAllOf(
-        'void m(dynamic a, int? b) => super.noSuchMethod(Invocation.method(#m, [a, b])',
-      ),
+      _containsAllOf(dedent2('''
+        void m(
+          dynamic a,
+          int? b,
+        ) =>
+        ''')),
     );
   });
 
@@ -1004,8 +1018,7 @@ void main() {
           void m<T>(T Function() a) {}
         }
         '''),
-      _containsAllOf(
-          'void m<T>(T Function()? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf('void m<T>(T Function()? a) => super.noSuchMethod('),
     );
   });
 
@@ -1016,9 +1029,7 @@ void main() {
           void m<T>(T a) {}
         }
         '''),
-      _containsAllOf(
-        'void m<T>(T? a) => super.noSuchMethod(Invocation.method(#m, [a])',
-      ),
+      _containsAllOf('void m<T>(T? a) => super.noSuchMethod('),
     );
   });
 
@@ -1327,8 +1338,8 @@ void main() {
         dynamic m(void Function(Foo f) a) {}
       }
       '''),
-      _containsAllOf('dynamic m(void Function(_i2.Foo)? a) =>',
-          'super.noSuchMethod(Invocation.method(#m, [a]));'),
+      _containsAllOf(
+          'dynamic m(void Function(_i2.Foo)? a) => super.noSuchMethod(Invocation.method('),
     );
   });
 
@@ -1340,8 +1351,7 @@ void main() {
         void m(Foo Function() a) {}
       }
       '''),
-      _containsAllOf('void m(_i2.Foo Function()? a) =>',
-          'super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf('void m(_i2.Foo Function()? a) => super.noSuchMethod('),
     );
   });
 
@@ -1353,8 +1363,8 @@ void main() {
         void m(void a(Foo f)) {}
       }
       '''),
-      _containsAllOf('void m(void Function(_i2.Foo)? a) =>',
-          'super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf(
+          'void m(void Function(_i2.Foo)? a) => super.noSuchMethod('),
     );
   });
 
@@ -1366,8 +1376,7 @@ void main() {
         void m(Foo a()) {}
       }
       '''),
-      _containsAllOf('void m(_i2.Foo Function()? a) =>',
-          'super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf('void m(_i2.Foo Function()? a) => super.noSuchMethod('),
     );
   });
 
@@ -1378,8 +1387,12 @@ void main() {
           void m(int? a, int b);
         }
         '''),
-      _containsAllOf(
-          'void m(int? a, int? b) => super.noSuchMethod(Invocation.method(#m, [a, b])'),
+      _containsAllOf(dedent2('''
+        void m(
+          int? a,
+          int? b,
+        ) =>
+        ''')),
     );
   });
 
@@ -1392,8 +1405,12 @@ void main() {
           void m(int? a, T b);
         }
         '''),
-      _containsAllOf(
-          'void m(int? a, T? b) => super.noSuchMethod(Invocation.method(#m, [a, b])'),
+      _containsAllOf(dedent2('''
+        void m(
+          int? a,
+          T? b,
+        ) =>
+        ''')),
     );
   });
 
@@ -1407,8 +1424,7 @@ void main() {
           void m(covariant int a);
         }
         '''),
-      _containsAllOf(
-          'void m(num? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf('void m(num? a) => super.noSuchMethod('),
     );
   });
 
@@ -1424,8 +1440,7 @@ void main() {
           void m([covariant int a = 0]);
         }
         '''),
-      _containsAllOf(
-          'void m([num? a = 0]) => super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf('void m([num? a = 0]) => super.noSuchMethod('),
     );
   });
 
@@ -1441,8 +1456,7 @@ void main() {
           void m(int a);
         }
         '''),
-      _containsAllOf(
-          'void m(num? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf('void m(num? a) => super.noSuchMethod('),
     );
   });
 
@@ -1460,8 +1474,7 @@ void main() {
           void m(covariant int a);
         }
         '''),
-      _containsAllOf(
-          'void m(Object? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf('void m(Object? a) => super.noSuchMethod('),
     );
   });
 
@@ -1477,8 +1490,7 @@ void main() {
           void m(covariant int a);
         }
         '''),
-      _containsAllOf(
-          'void m(num? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf('void m(num? a) => super.noSuchMethod('),
     );
   });
 
@@ -1497,8 +1509,7 @@ void main() {
           void m([covariant int a]);
         }
         '''),
-      _containsAllOf(
-          'void m([num? a]) => super.noSuchMethod(Invocation.method(#m, [a])'),
+      _containsAllOf('void m([num? a]) => super.noSuchMethod('),
     );
   });
 
@@ -1513,8 +1524,7 @@ void main() {
           void m({required covariant int a});
         }
         '''),
-      _containsAllOf(
-          'void m({num? a}) => super.noSuchMethod(Invocation.method(#m, [], {#a: a})'),
+      _containsAllOf('void m({num? a}) => super.noSuchMethod('),
     );
   });
 
@@ -1525,7 +1535,12 @@ void main() {
           void m(List<int?> a, List<int> b);
         }
         '''),
-      _containsAllOf('void m(List<int?>? a, List<int>? b) =>'),
+      _containsAllOf(dedent2('''
+        void m(
+          List<int?>? a,
+          List<int>? b,
+        ) =>
+        ''')),
     );
   });
 
@@ -1538,7 +1553,12 @@ void main() {
           void m(int? Function() a, int Function() b);
         }
         '''),
-      _containsAllOf('void m(int? Function()? a, int Function()? b) =>'),
+      _containsAllOf(dedent2('''
+        void m(
+          int? Function()? a,
+          int Function()? b,
+        ) =>
+        ''')),
     );
   });
 
@@ -1552,9 +1572,7 @@ void main() {
           FutureOr<R> m<R>();
         }
         '''),
-      _containsAllOf(
-          '_i3.FutureOr<R> m<R>() => (super.noSuchMethod(Invocation.method(#m, []),',
-          '      returnValue: _i3.Future<R>.value(null)) as _i3.FutureOr<R>);'),
+      _containsAllOf('_i3.FutureOr<R> m<R>() => (super.noSuchMethod('),
     );
   });
 
@@ -1567,8 +1585,12 @@ void main() {
           void m(void Function(int?) a, void Function(int) b);
         }
         '''),
-      _containsAllOf(
-          'void m(void Function(int?)? a, void Function(int)? b) =>'),
+      _containsAllOf(dedent2('''
+        void m(
+          void Function(int?)? a,
+          void Function(int)? b,
+        ) =>
+        ''')),
     );
   });
 
@@ -1580,7 +1602,12 @@ void main() {
           void m(int? a(), int b());
         }
         '''),
-      _containsAllOf('void m(int? Function()? a, int Function()? b) =>'),
+      _containsAllOf(dedent2('''
+        void m(
+          int? Function()? a,
+          int Function()? b,
+        ) =>
+        ''')),
     );
   });
 
@@ -1593,23 +1620,26 @@ void main() {
           void m(void a(int? x), void b(int x));
         }
         '''),
-      _containsAllOf(
-          'void m(void Function(int?)? a, void Function(int)? b) =>'),
+      _containsAllOf(dedent2('''
+        void m(
+          void Function(int?)? a,
+          void Function(int)? b,
+        ) =>
+        ''')),
     );
   });
 
   test(
       'matches requiredness of parameter types within a function-typed '
       'parameter', () async {
-    await expectSingleNonNullableOutput(dedent('''
+    await expectSingleNonNullableOutput(
+        dedent('''
       class Foo {
         void m(void Function({required int p}) cb) {}
       }
-      '''), _containsAllOf(dedent2('''
-        void m(void Function({required int p})? cb) =>
-            super.noSuchMethod(Invocation.method(#m, [cb]),
-                returnValueForMissingStub: null);
-        ''')));
+      '''),
+        _containsAllOf(
+            'void m(void Function({required int p})? cb) => super.noSuchMethod('));
   });
 
   test('matches nullability of a generic parameter', () async {
@@ -1619,7 +1649,12 @@ void main() {
           void m<T>(T? a, T b);
         }
         '''),
-      _containsAllOf('void m<T>(T? a, T? b) =>'),
+      _containsAllOf(dedent2('''
+        void m<T>(
+          T? a,
+          T? b,
+        ) => 
+        ''')),
     );
   });
 
@@ -1630,7 +1665,12 @@ void main() {
           void m(dynamic a, int b);
         }
         '''),
-      _containsAllOf('void m(dynamic a, int? b) =>'),
+      _containsAllOf(dedent2('''
+        void m(
+          dynamic a,
+          int? b,
+        ) =>
+        ''')),
     );
   });
 
@@ -1685,8 +1725,8 @@ void main() {
           m(int a);
         }
         '''),
-      _containsAllOf('dynamic m(int? a) =>',
-          'super.noSuchMethod(Invocation.method(#m, [a]));'),
+      _containsAllOf(
+          'dynamic m(int? a) => super.noSuchMethod(Invocation.method('),
     );
   });
 
@@ -1698,7 +1738,7 @@ void main() {
       }
       '''),
       _containsAllOf(
-          'dynamic f(int? a) => super.noSuchMethod(Invocation.method(#f, [a]));'),
+          'dynamic f(int? a) => super.noSuchMethod(Invocation.method('),
     );
   });
 
@@ -1809,9 +1849,14 @@ void main() {
         }
         '''),
       _containsAllOf(dedent2('''
-      int m() =>
-          (super.noSuchMethod(Invocation.method(#m, []), returnValue: 0) as int);
-      ''')),
+        int m() => (super.noSuchMethod(
+              Invocation.method(
+                #m,
+                [],
+              ),
+              returnValue: 0,
+            ) as int);
+        ''')),
     );
   });
 
@@ -1840,8 +1885,13 @@ void main() {
         '''),
       },
       outputs: {
-        'foo|test/foo_test.mocks.dart': _containsAllOf(
-            'void m(T? a) => super.noSuchMethod(Invocation.method(#m, [a])'),
+        'foo|test/foo_test.mocks.dart': _containsAllOf(dedent2('''
+          void m(T? a) => super.noSuchMethod(
+                Invocation.method(
+                  #m,
+                  [a],
+                ),
+          ''')),
       },
     );
   });
@@ -1865,9 +1915,11 @@ void main() {
       }
       '''),
       _containsAllOf(dedent2('''
-      int get m =>
-          (super.noSuchMethod(Invocation.getter(#m), returnValue: 0) as int);
-      ''')),
+        int get m => (super.noSuchMethod(
+              Invocation.getter(#m),
+              returnValue: 0,
+            ) as int);
+        ''')),
     );
   });
 
@@ -1889,9 +1941,11 @@ void main() {
       class Foo extends FooBase {}
       '''),
       _containsAllOf(dedent2('''
-      int get m =>
-          (super.noSuchMethod(Invocation.getter(#m), returnValue: 0) as int);
-      ''')),
+        int get m => (super.noSuchMethod(
+              Invocation.getter(#m),
+              returnValue: 0,
+            ) as int);
+        ''')),
     );
   });
 
@@ -1916,9 +1970,14 @@ void main() {
       }
       '''),
       _containsAllOf(dedent2('''
-      set m(int? a) => super
-          .noSuchMethod(Invocation.setter(#m, a), returnValueForMissingStub: null);
-      ''')),
+        set m(int? a) => super.noSuchMethod(
+              Invocation.setter(
+                #m,
+                a,
+              ),
+              returnValueForMissingStub: null,
+            );
+        ''')),
     );
   });
 
@@ -1930,9 +1989,14 @@ void main() {
       }
       '''),
       _containsAllOf(dedent2('''
-      set m(int? a) => super
-          .noSuchMethod(Invocation.setter(#m, a), returnValueForMissingStub: null);
-      ''')),
+        set m(int? a) => super.noSuchMethod(
+              Invocation.setter(
+                #m,
+                a,
+              ),
+              returnValueForMissingStub: null,
+            );
+        ''')),
     );
   });
 
@@ -1945,9 +2009,14 @@ void main() {
       class Foo extends FooBase {}
       '''),
       _containsAllOf(dedent2('''
-      set m(int? a) => super
-          .noSuchMethod(Invocation.setter(#m, a), returnValueForMissingStub: null);
-      ''')),
+        set m(int? a) => super.noSuchMethod(
+              Invocation.setter(
+                #m,
+                a,
+              ),
+              returnValueForMissingStub: null,
+            );
+        ''')),
     );
   });
 
@@ -1972,12 +2041,19 @@ void main() {
       }
       '''),
       _containsAllOf(dedent2('''
-      int get m =>
-          (super.noSuchMethod(Invocation.getter(#m), returnValue: 0) as int);
+        int get m => (super.noSuchMethod(
+              Invocation.getter(#m),
+              returnValue: 0,
+            ) as int);
       '''), dedent2('''
-      set m(int? _m) => super
-          .noSuchMethod(Invocation.setter(#m, _m), returnValueForMissingStub: null);
-      ''')),
+        set m(int? _m) => super.noSuchMethod(
+              Invocation.setter(
+                #m,
+                _m,
+              ),
+              returnValueForMissingStub: null,
+            );
+        ''')),
     );
   });
 
@@ -1990,12 +2066,19 @@ void main() {
       class Foo extends FooBase {}
       '''),
       _containsAllOf(dedent2('''
-      int get m =>
-          (super.noSuchMethod(Invocation.getter(#m), returnValue: 0) as int);
-      '''), dedent2('''
-      set m(int? _m) => super
-          .noSuchMethod(Invocation.setter(#m, _m), returnValueForMissingStub: null);
-      ''')),
+        int get m => (super.noSuchMethod(
+              Invocation.getter(#m),
+              returnValue: 0,
+            ) as int); 
+        '''), dedent2('''
+        set m(int? _m) => super.noSuchMethod(
+              Invocation.setter(
+                #m,
+                _m,
+              ),
+              returnValueForMissingStub: null,
+            );
+        ''')),
     );
   });
 
@@ -2024,8 +2107,10 @@ void main() {
       }
       '''),
       _containsAllOf(dedent2('''
-      int get m =>
-          (super.noSuchMethod(Invocation.getter(#m), returnValue: 0) as int);
+        int get m => (super.noSuchMethod(
+              Invocation.getter(#m),
+              returnValue: 0,
+            ) as int);
       ''')),
     );
   });
@@ -2065,9 +2150,13 @@ void main() {
       }
       '''),
       _containsAllOf(dedent2('''
-      int operator +(_i2.Foo? other) =>
-          (super.noSuchMethod(Invocation.method(#+, [other]), returnValue: 0)
-              as int);
+        int operator +(_i2.Foo? other) => (super.noSuchMethod(
+              Invocation.method(
+                #+,
+                [other],
+              ),
+              returnValue: 0,
+            ) as int); 
       ''')),
     );
   });
@@ -2080,8 +2169,13 @@ void main() {
       }
       '''),
       _containsAllOf(dedent2('''
-      int operator [](int? x) =>
-          (super.noSuchMethod(Invocation.method(#[], [x]), returnValue: 0) as int);
+        int operator [](int? x) => (super.noSuchMethod(
+              Invocation.method(
+                #[],
+                [x],
+              ),
+              returnValue: 0,
+            ) as int);
       ''')),
     );
   });
@@ -2094,8 +2188,13 @@ void main() {
       }
       '''),
       _containsAllOf(dedent2('''
-      int operator ~() =>
-          (super.noSuchMethod(Invocation.method(#~, []), returnValue: 0) as int);
+        int operator ~() => (super.noSuchMethod(
+              Invocation.method(
+                #~,
+                [],
+              ),
+              returnValue: 0,
+            ) as int);
       ''')),
     );
   });
@@ -2107,10 +2206,7 @@ void main() {
         bool m() => false;
       }
       '''),
-      _containsAllOf(dedent2('''
-      bool m() => (super.noSuchMethod(Invocation.method(#m, []), returnValue: false)
-          as bool);
-      ''')),
+      _containsAllOf('returnValue: false,'),
     );
   });
 
@@ -2121,10 +2217,7 @@ void main() {
         double m() => 3.14;
       }
       '''),
-      _containsAllOf(dedent2('''
-      double m() => (super.noSuchMethod(Invocation.method(#m, []), returnValue: 0.0)
-          as double);
-      ''')),
+      _containsAllOf('returnValue: 0.0,'),
     );
   });
 
@@ -2135,10 +2228,7 @@ void main() {
         int m() => 7;
       }
       '''),
-      _containsAllOf(dedent2('''
-      int m() =>
-          (super.noSuchMethod(Invocation.method(#m, []), returnValue: 0) as int);
-      ''')),
+      _containsAllOf('returnValue: 0,'),
     );
   });
 
@@ -2149,10 +2239,7 @@ void main() {
         String m() => "Hello";
       }
       '''),
-      _containsAllOf(dedent2('''
-      String m() => (super.noSuchMethod(Invocation.method(#m, []), returnValue: '')
-          as String);
-      ''')),
+      _containsAllOf("returnValue: '',"),
     );
   });
 
@@ -2163,11 +2250,7 @@ void main() {
         List<Foo> m() => [Foo()];
       }
       '''),
-      _containsAllOf(dedent2('''
-      List<_i2.Foo> m() =>
-          (super.noSuchMethod(Invocation.method(#m, []), returnValue: <_i2.Foo>[])
-              as List<_i2.Foo>);
-      ''')),
+      _containsAllOf('returnValue: <_i2.Foo>[],'),
     );
   });
 
@@ -2178,11 +2261,7 @@ void main() {
         Set<Foo> m() => {Foo()};
       }
       '''),
-      _containsAllOf(dedent2('''
-      Set<_i2.Foo> m() =>
-          (super.noSuchMethod(Invocation.method(#m, []), returnValue: <_i2.Foo>{})
-              as Set<_i2.Foo>);
-      ''')),
+      _containsAllOf('returnValue: <_i2.Foo>{},'),
     );
   });
 
@@ -2193,10 +2272,7 @@ void main() {
         Map<int, Foo> m() => {7: Foo()};
       }
       '''),
-      _containsAllOf(dedent2('''
-      Map<int, _i2.Foo> m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: <int, _i2.Foo>{}) as Map<int, _i2.Foo>);
-      ''')),
+      _containsAllOf('returnValue: <int, _i2.Foo>{},'),
     );
   });
 
@@ -2207,10 +2283,7 @@ void main() {
         Map m();
       }
       '''),
-      _containsAllOf(dedent2('''
-      Map<dynamic, dynamic> m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: <dynamic, dynamic>{}) as Map<dynamic, dynamic>);
-      ''')),
+      _containsAllOf('returnValue: <dynamic, dynamic>{},'),
     );
   });
 
@@ -2222,10 +2295,7 @@ void main() {
         Future<bool> m() async => false;
       }
       '''),
-      _containsAllOf(dedent2('''
-      _i3.Future<bool> m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: _i3.Future<bool>.value(false)) as _i3.Future<bool>);
-      ''')),
+      _containsAllOf('returnValue: _i3.Future<bool>.value(false),'),
     );
   });
 
@@ -2238,10 +2308,7 @@ void main() {
         Future<Function> m();
       }
       '''),
-      _containsAllOf(dedent2('''
-      _i3.Future<Function> m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: _i3.Future<Function>.value(() {})) as _i3.Future<Function>);
-      ''')),
+      _containsAllOf('returnValue: _i3.Future<Function>.value(() {}),'),
     );
   });
 
@@ -2254,10 +2321,7 @@ void main() {
         Future<Bar?> m() async => null;
       }
       '''),
-      _containsAllOf(dedent2('''
-      _i3.Future<_i2.Bar?> m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: _i3.Future<_i2.Bar?>.value()) as _i3.Future<_i2.Bar?>);
-      ''')),
+      _containsAllOf('returnValue: _i3.Future<_i2.Bar?>.value(),'),
     );
   });
 
@@ -2271,12 +2335,8 @@ void main() {
         Future<Uint8List> m() async => Uint8List(0);
       }
       '''),
-      _containsAllOf(dedent2('''
-      _i3.Future<_i4.Uint8List> m() =>
-          (super.noSuchMethod(Invocation.method(#m, []),
-                  returnValue: _i3.Future<_i4.Uint8List>.value(_i4.Uint8List(0)))
-              as _i3.Future<_i4.Uint8List>);
-      ''')),
+      _containsAllOf(
+          'returnValue: _i3.Future<_i4.Uint8List>.value(_i4.Uint8List(0)),'),
     );
   });
 
@@ -2289,12 +2349,8 @@ void main() {
         Future<Iterable<bool>> m() async => false;
       }
       '''),
-      _containsAllOf(dedent2('''
-      _i3.Future<Iterable<bool>> m() =>
-          (super.noSuchMethod(Invocation.method(#m, []),
-                  returnValue: _i3.Future<Iterable<bool>>.value(<bool>[]))
-              as _i3.Future<Iterable<bool>>);
-      ''')),
+      _containsAllOf(
+          'returnValue: _i3.Future<Iterable<bool>>.value(<bool>[]),'),
     );
   });
 
@@ -2305,10 +2361,7 @@ void main() {
         Stream<int> m();
       }
       '''),
-      _containsAllOf(dedent2('''
-      _i3.Stream<int> m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: _i3.Stream<int>.empty()) as _i3.Stream<int>);
-      ''')),
+      _containsAllOf('returnValue: _i3.Stream<int>.empty(),'),
     );
   });
 
@@ -2323,10 +2376,14 @@ void main() {
         Bar(this.name);
       }
       '''),
-      _containsAllOf(dedent2('''
-      _i2.Bar m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: _FakeBar_0(this, Invocation.method(#m, []))) as _i2.Bar);
-      ''')),
+      _containsAllOf('''
+        returnValue: _FakeBar_0(
+          this,
+          Invocation.method(
+            #m,
+            [],
+          ),
+        ),'''),
     );
   });
 
@@ -2338,11 +2395,14 @@ void main() {
       }
       class Bar<T> {}
       '''),
-      _containsAllOf(dedent2('''
-      _i2.Bar<int> m() => (super.noSuchMethod(Invocation.method(#m, []),
-              returnValue: _FakeBar_0<int>(this, Invocation.method(#m, [])))
-          as _i2.Bar<int>);
-      ''')),
+      _containsAllOf('''
+        returnValue: _FakeBar_0<int>(
+          this,
+          Invocation.method(
+            #m,
+            [],
+          ),
+        ),'''),
     );
   });
 
@@ -2357,11 +2417,7 @@ void main() {
         two,
       }
       '''),
-      _containsAllOf(dedent2('''
-      _i2.Bar m1() =>
-          (super.noSuchMethod(Invocation.method(#m1, []), returnValue: _i2.Bar.one)
-              as _i2.Bar);
-      ''')),
+      _containsAllOf('returnValue: _i2.Bar.one,'),
     );
   });
 
@@ -2374,12 +2430,11 @@ void main() {
         void Function(int, [String]) m() => (int i, [String s]) {};
       }
       '''),
-      _containsAllOf(dedent2('''
-      void Function(int, [String]) m() => (super.noSuchMethod(
-              Invocation.method(#m, []),
-              returnValue: (int __p0, [String __p1]) {})
-          as void Function(int, [String]));
-      ''')),
+      _containsAllOf('''
+        returnValue: (
+          int __p0, [
+          String __p1,
+        ]) {},'''),
     );
   });
 
@@ -2392,12 +2447,11 @@ void main() {
         void Function(Foo, {bool b}) m() => (Foo f, {bool b}) {};
       }
       '''),
-      _containsAllOf(dedent2('''
-      void Function(_i2.Foo, {bool b}) m() =>
-          (super.noSuchMethod(Invocation.method(#m, []),
-                  returnValue: (_i2.Foo __p0, {bool b}) {})
-              as void Function(_i2.Foo, {bool b}));
-      ''')),
+      _containsAllOf('''
+        returnValue: (
+          _i2.Foo __p0, {
+          bool b,
+        }) {},'''),
     );
   });
 
@@ -2410,11 +2464,14 @@ void main() {
         Foo Function() m() => () => Foo();
       }
       '''),
-      _containsAllOf(dedent2('''
-      _i2.Foo Function() m() => (super.noSuchMethod(Invocation.method(#m, []),
-              returnValue: () => _FakeFoo_0(this, Invocation.method(#m, [])))
-          as _i2.Foo Function());
-      ''')),
+      _containsAllOf('''
+        returnValue: () => _FakeFoo_0(
+          this,
+          Invocation.method(
+            #m,
+            [],
+          ),
+        ),'''),
     );
   });
 
@@ -2428,11 +2485,15 @@ void main() {
         _Callback m() => () => Foo();
       }
       '''),
-      _containsAllOf(dedent2('''
-      _i2.Foo Function() m() => (super.noSuchMethod(Invocation.method(#m, []),
-              returnValue: () => _FakeFoo_0(this, Invocation.method(#m, [])))
-          as _i2.Foo Function());
-      ''')),
+      _containsAllOf('''
+        returnValue: () => _FakeFoo_0(
+          this,
+          Invocation.method(
+            #m,
+            [],
+          ),
+        ),
+      '''),
     );
   });
 
@@ -2444,10 +2505,7 @@ void main() {
         T? Function<T>(T) m() => (int i, [String s]) {};
       }
       '''),
-      _containsAllOf(dedent2('''
-      T? Function<T>(T) m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: <T>(T __p0) => null) as T? Function<T>(T));
-      ''')),
+      _containsAllOf('returnValue: <T>(T __p0) => null,'),
     );
   });
 
@@ -2461,10 +2519,13 @@ void main() {
       }
       '''),
       _containsAllOf(dedent2('''
-      T? Function<T extends _i3.File>(T) m() =>
-          (super.noSuchMethod(Invocation.method(#m, []),
-                  returnValue: <T extends _i3.File>(T __p0) => null)
-              as T? Function<T extends _i3.File>(T));
+      T? Function<T extends _i3.File>(T) m() => (super.noSuchMethod(
+            Invocation.method(
+              #m,
+              [],
+            ),
+            returnValue: <T extends _i3.File>(T __p0) => null,
+          ) as T? Function<T extends _i3.File>(T));
       ''')),
     );
   });
@@ -2480,8 +2541,13 @@ void main() {
       }
       '''),
       _containsAllOf(dedent2('''
-      void Function(_i3.File) m() => (super.noSuchMethod(Invocation.method(#m, []),
-          returnValue: (_i3.File __p0) {}) as void Function(_i3.File));
+      void Function(_i3.File) m() => (super.noSuchMethod(
+            Invocation.method(
+              #m,
+              [],
+            ),
+            returnValue: (_i3.File __p0) {},
+          ) as void Function(_i3.File));
       ''')),
     );
   });
@@ -2497,9 +2563,19 @@ void main() {
       }
       '''),
       _containsAllOf(dedent2('''
-      _i2.File Function() m() => (super.noSuchMethod(Invocation.method(#m, []),
-              returnValue: () => _FakeFile_0(this, Invocation.method(#m, [])))
-          as _i2.File Function());
+      _i2.File Function() m() => (super.noSuchMethod(
+            Invocation.method(
+              #m,
+              [],
+            ),
+            returnValue: () => _FakeFile_0(
+              this,
+              Invocation.method(
+                #m,
+                [],
+              ),
+            ),
+          ) as _i2.File Function());
       ''')),
     );
   });
@@ -2514,8 +2590,13 @@ void main() {
       '''),
       _containsAllOf(dedent('''
       class _FakeBar_0 extends _i1.SmartFake implements _i2.Bar {
-        _FakeBar_0(Object parent, Invocation parentInvocation)
-            : super(parent, parentInvocation);
+        _FakeBar_0(
+          Object parent,
+          Invocation parentInvocation,
+        ) : super(
+                parent,
+                parentInvocation,
+              );
       }''')),
     );
   });
@@ -2625,8 +2706,13 @@ void main() {
       '''),
       _containsAllOf(dedent('''
       class _FakeBar_0 extends _i1.SmartFake implements _i2.Bar {
-        _FakeBar_0(Object parent, Invocation parentInvocation)
-            : super(parent, parentInvocation);
+        _FakeBar_0(
+          Object parent,
+          Invocation parentInvocation,
+        ) : super(
+                parent,
+                parentInvocation,
+              );
 
         @override
         String toString({bool? a = true}) => super.toString();

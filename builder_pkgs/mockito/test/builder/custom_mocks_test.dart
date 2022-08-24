@@ -485,10 +485,8 @@ void main() {
         void main() {}
         '''
     });
-    expect(
-        mocksContent,
-        contains('  int m() => (super.noSuchMethod(Invocation.method(#m, []),\n'
-            '      returnValue: 0, returnValueForMissingStub: 0) as int);'));
+    expect(mocksContent, contains('returnValue: 0,'));
+    expect(mocksContent, contains('returnValueForMissingStub: 0,'));
   });
 
   test(
@@ -515,13 +513,21 @@ void main() {
         void main() {}
         '''
     });
-    expect(
-        mocksContent,
-        contains(
-            '  _i2.Bar m() => (super.noSuchMethod(Invocation.method(#m, []),\n'
-            '      returnValue: _FakeBar_0(this, Invocation.method(#m, [])),\n'
-            '      returnValueForMissingStub:\n'
-            '          _FakeBar_0(this, Invocation.method(#m, []))) as _i2.Bar);\n'));
+    expect(mocksContent, contains('''
+        returnValue: _FakeBar_0(
+          this,
+          Invocation.method(
+            #m,
+            [],
+          ),
+        ),
+        returnValueForMissingStub: _FakeBar_0(
+          this,
+          Invocation.method(
+            #m,
+            [],
+          ),
+        ),'''));
   });
 
   test('generates mock classes including a fallback generator for a getter',
@@ -550,12 +556,7 @@ void main() {
         void main() {}
         '''
     });
-    expect(
-      mocksContent,
-      contains('T get f =>\n'
-          '      (super.noSuchMethod(Invocation.getter(#f), returnValue: _i3.fShim())\n'
-          '          as T);'),
-    );
+    expect(mocksContent, contains('returnValue: _i3.fShim(),'));
   });
 
   test(
@@ -586,11 +587,7 @@ void main() {
         void main() {}
         '''
     });
-    expect(
-        mocksContent,
-        contains(
-            'T m<T>(T? a) => (super.noSuchMethod(Invocation.method(#m, [a]),\n'
-            '      returnValue: _i3.mShim<T>(a)) as T)'));
+    expect(mocksContent, contains('returnValue: _i3.mShim<T>(a),'));
   });
 
   test(
@@ -622,11 +619,7 @@ void main() {
         void main() {}
         '''
     });
-    expect(
-        mocksContent,
-        contains(
-            'T m<T>(T? a) => (super.noSuchMethod(Invocation.method(#m, [a]),\n'
-            '      returnValue: _i3.mShim<T>(a)) as T)'));
+    expect(mocksContent, contains('returnValue: _i3.mShim<T>(a),'));
   });
 
   test('generates mock classes including two fallback generators', () async {
@@ -659,16 +652,8 @@ void main() {
         void main() {}
         '''
     });
-    expect(
-        mocksContent,
-        contains(
-            'T m<T>(T? a) => (super.noSuchMethod(Invocation.method(#m, [a]),\n'
-            '      returnValue: _i3.mShimA<T>(a)) as T)'));
-    expect(
-        mocksContent,
-        contains(
-            'T m<T>(T? a) => (super.noSuchMethod(Invocation.method(#m, [a]),\n'
-            '      returnValue: _i3.mShimB<T>(a)) as T)'));
+    expect(mocksContent, contains('returnValue: _i3.mShimA<T>(a),'));
+    expect(mocksContent, contains('returnValue: _i3.mShimB<T>(a),'));
   });
 
   test(
@@ -698,11 +683,7 @@ void main() {
         void main() {}
         '''
     });
-    expect(
-        mocksContent,
-        contains(
-            '_i3.Future<T> m<T>(T? a) => (super.noSuchMethod(Invocation.method(#m, [a]),\n'
-            '      returnValue: _i4.mShim<T>(a)) as _i3.Future<T>)'));
+    expect(mocksContent, contains('returnValue: _i4.mShim<T>(a),'));
   });
 
   test(
@@ -731,11 +712,7 @@ void main() {
         void main() {}
         '''
     });
-    expect(
-        mocksContent,
-        contains(
-            'T m<T>({T? a}) => (super.noSuchMethod(Invocation.method(#m, [], {#a: a}),\n'
-            '      returnValue: _i3.mShim<T>(a: a)) as T);'));
+    expect(mocksContent, contains('returnValue: _i3.mShim<T>(a: a),'));
   });
 
   test(
@@ -764,11 +741,7 @@ void main() {
         void main() {}
         '''
     });
-    expect(
-        mocksContent,
-        contains('T m<T extends num>({T? a}) =>\n'
-            '      (super.noSuchMethod(Invocation.method(#m, [], {#a: a}),\n'
-            '          returnValue: _i3.mShim<T>(a: a)) as T);'));
+    expect(mocksContent, contains('returnValue: _i3.mShim<T>(a: a),'));
   });
 
   test(
@@ -799,11 +772,7 @@ void main() {
         void main() {}
         ''')
     });
-    expect(
-        mocksContent,
-        contains('T m<T>({List<T Function()>? a}) =>\n'
-            '      (super.noSuchMethod(Invocation.method(#m, [], {#a: a}),\n'
-            '          returnValue: _i3.mShim<T>(a: a)) as T);'));
+    expect(mocksContent, contains('returnValue: _i3.mShim<T>(a: a),'));
   });
 
   test(
