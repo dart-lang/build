@@ -251,6 +251,12 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
   }
 
   @override
+  void visitEnumElement(EnumElement element) {
+    _elements.add(element);
+    super.visitEnumElement(element);
+  }
+
+  @override
   void visitFieldElement(FieldElement element) {
     _addType(element.type);
     super.visitFieldElement(element);
@@ -260,6 +266,12 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
   void visitMethodElement(MethodElement element) {
     _addType(element.returnType);
     super.visitMethodElement(element);
+  }
+
+  @override
+  void visitMixinElement(MixinElement element) {
+    _elements.add(element);
+    super.visitMixinElement(element);
   }
 
   @override
@@ -391,7 +403,7 @@ class _MockTarget {
     this.hasExplicitTypeArguments = false,
   });
 
-  InterfaceElement get classElement => classType.element2;
+  InterfaceElement get interfaceElement => classType.element2;
 }
 
 /// This class gathers and verifies mock targets referenced in `GenerateMocks`
@@ -491,7 +503,7 @@ class _MockTargetGatherer {
       // `type` have been instantiated to bounds here. Switch to the
       // declaration, which will be an uninstantiated type.
       final declarationType =
-          (type.element2.declaration as ClassElement).thisType;
+          (type.element2.declaration as InterfaceElement).thisType;
       final mockName = 'Mock${declarationType.element2.name}';
       mockTargets.add(_MockTarget(
         declarationType,
@@ -545,7 +557,7 @@ class _MockTargetGatherer {
       // this case the type argument(s) on `type` have been instantiated to
       // bounds. Switch to the declaration, which will be an uninstantiated
       // type.
-      type = (type.element2.declaration as ClassElement).thisType;
+      type = (type.element2.declaration as InterfaceElement).thisType;
     } else {
       // Check explicit type arguments for unknown types that were
       // turned into `dynamic` by the analyzer.
@@ -731,7 +743,7 @@ class _MockTargetGatherer {
 
   void _checkClassesToMockAreValid() {
     final classesInEntryLib =
-        _entryLib.topLevelElements.whereType<ClassElement>();
+        _entryLib.topLevelElements.whereType<InterfaceElement>();
     final classNamesToMock = <String, _MockTarget>{};
     final uniqueNameSuggestion =
         "use the 'customMocks' argument in @GenerateMocks to specify a unique "
@@ -739,13 +751,13 @@ class _MockTargetGatherer {
     for (final mockTarget in _mockTargets) {
       final name = mockTarget.mockName;
       if (classNamesToMock.containsKey(name)) {
-        final firstClass = classNamesToMock[name]!.classElement;
+        final firstClass = classNamesToMock[name]!.interfaceElement;
         final firstSource = firstClass.source.fullName;
-        final secondSource = mockTarget.classElement.source.fullName;
+        final secondSource = mockTarget.interfaceElement.source.fullName;
         throw InvalidMockitoAnnotationException(
             'Mockito cannot generate two mocks with the same name: $name (for '
             '${firstClass.name} declared in $firstSource, and for '
-            '${mockTarget.classElement.name} declared in $secondSource); '
+            '${mockTarget.interfaceElement.name} declared in $secondSource); '
             '$uniqueNameSuggestion.');
       }
       classNamesToMock[name] = mockTarget;
@@ -764,7 +776,7 @@ class _MockTargetGatherer {
       var preexistingMock = classesInEntryLib.firstWhereOrNull((c) =>
           c.interfaces
               .map((type) => type.element2)
-              .contains(mockTarget.classElement) &&
+              .contains(mockTarget.interfaceElement) &&
           _isMockClass(c.supertype!));
       if (preexistingMock != null) {
         throw InvalidMockitoAnnotationException(
@@ -787,11 +799,11 @@ class _MockTargetGatherer {
   ///   and no corresponding dummy generator. Mockito cannot generate its own
   ///   dummy return values for unknown types.
   void _checkMethodsToStubAreValid(_MockTarget mockTarget) {
-    final classElement = mockTarget.classElement;
-    final className = classElement.name;
+    final interfaceElement = mockTarget.interfaceElement;
+    final className = interfaceElement.name;
     final substitution = Substitution.fromInterfaceType(mockTarget.classType);
     final relevantMembers = _inheritanceManager
-        .getInterface(classElement)
+        .getInterface(interfaceElement)
         .map
         .values
         .where((m) => !m.isPrivate && !m.isStatic)
@@ -968,9 +980,9 @@ class _MockLibraryInfo {
   /// values.
   final fakeClasses = <Class>[];
 
-  /// [ClassElement]s which are used in non-nullable return types, for which
+  /// [InterfaceElement]s which are used in non-nullable return types, for which
   /// fake classes are added to the generated library.
-  final fakedClassElements = <InterfaceElement>[];
+  final fakedInterfaceElements = <InterfaceElement>[];
 
   /// A mapping of each necessary [Element] to a URI from which it can be
   /// imported.
@@ -1051,7 +1063,7 @@ class _MockClassInfo {
 
   Class _buildMockClass() {
     final typeToMock = mockTarget.classType;
-    final classToMock = mockTarget.classElement;
+    final classToMock = mockTarget.interfaceElement;
     final classIsImmutable = classToMock.metadata.any((it) => it.isImmutable);
     final className = classToMock.name;
 
@@ -1101,7 +1113,7 @@ class _MockClassInfo {
       cBuilder.implements.add(TypeReference((b) {
         b
           ..symbol = classToMock.name
-          ..url = _typeImport(mockTarget.classElement)
+          ..url = _typeImport(mockTarget.interfaceElement)
           ..types.addAll(typeArguments);
       }));
       if (mockTarget.onMissingStub == OnMissingStub.throwException) {
@@ -1471,7 +1483,7 @@ class _MockClassInfo {
     } else {
       final fakeName = mockLibraryInfo._fakeNameFor(elementToFake);
       // Only make one fake class for each class that needs to be faked.
-      if (!mockLibraryInfo.fakedClassElements.contains(elementToFake)) {
+      if (!mockLibraryInfo.fakedInterfaceElements.contains(elementToFake)) {
         _addFakeClass(fakeName, elementToFake);
       }
       final typeArguments = dartType.typeArguments;
@@ -1524,7 +1536,7 @@ class _MockClassInfo {
             (mBuilder) => _buildOverridingMethod(mBuilder, toStringMethod)));
       }
     }));
-    mockLibraryInfo.fakedClassElements.add(elementToFake);
+    mockLibraryInfo.fakedInterfaceElements.add(elementToFake);
   }
 
   /// Returns a [Parameter] which matches [parameter].
@@ -1559,7 +1571,7 @@ class _MockClassInfo {
           final method = parameter.enclosingElement3!;
           throw InvalidMockitoAnnotationException(
               'Mockito cannot generate a valid override for method '
-              "'${mockTarget.classElement.displayName}.${method.displayName}'; "
+              "'${mockTarget.interfaceElement.displayName}.${method.displayName}'; "
               "parameter '${parameter.displayName}' causes a problem: "
               '${e.message}');
         }
@@ -1588,7 +1600,7 @@ class _MockClassInfo {
       return type;
     }
     final method = parameter.enclosingElement3 as MethodElement;
-    final class_ = method.enclosingElement3 as ClassElement;
+    final class_ = method.enclosingElement3 as InterfaceElement;
     final name = Name(method.librarySource.uri, method.name);
     final overriddenMethods = inheritanceManager.getOverridden2(class_, name);
     if (overriddenMethods == null) {
@@ -1598,7 +1610,7 @@ class _MockClassInfo {
     while (allOverriddenMethods.isNotEmpty) {
       final overriddenMethod = allOverriddenMethods.removeFirst();
       final secondaryOverrides = inheritanceManager.getOverridden2(
-          overriddenMethod.enclosingElement3 as ClassElement, name);
+          overriddenMethod.enclosingElement3 as InterfaceElement, name);
       if (secondaryOverrides != null) {
         allOverriddenMethods.addAll(secondaryOverrides);
       }
@@ -1996,9 +2008,13 @@ extension on Element {
   String get fullName {
     if (this is ClassElement) {
       return "The class '$name'";
+    } else if (this is EnumElement) {
+      return "The enum '$name'";
     } else if (this is MethodElement) {
       var className = enclosingElement3!.name;
       return "The method '$className.$name'";
+    } else if (this is MixinElement) {
+      return "The mixin '$name'";
     } else if (this is PropertyAccessorElement) {
       var className = enclosingElement3!.name;
       return "The property accessor '$className.$name'";
