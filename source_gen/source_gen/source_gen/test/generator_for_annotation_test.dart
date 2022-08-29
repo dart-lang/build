@@ -197,7 +197,7 @@ class _TestingResolver implements ReleasableResolver {
     bool allowSyntaxErrors = false,
   }) async {
     resolvedLibs.add(assetId);
-    return null as LibraryElement;
+    throw StateError('This method intentionally throws');
   }
 
   @override

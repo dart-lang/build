@@ -44,7 +44,7 @@ Revivable reviveInstance(DartObject object, [LibraryElement? origin]) {
     );
   }
 
-  if (element is ClassElement) {
+  if (element is InterfaceElement) {
     for (final e in element.fields.where(
       (f) => f.isPublic && f.isConst && f.computeConstantValue() == object,
     )) {
