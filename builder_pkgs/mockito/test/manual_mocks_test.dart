@@ -95,9 +95,9 @@ void main() {
         'cannot operate on method with non-nullable params without a manual '
         'mock', () {
       // Normally this use of `any` would be a static error. To push forward to
-      // reveal the runtime error, we cast as int.
+      // reveal the runtime error, we cast as dynamic.
       expect(
-          () => when(mock.notMockedNonNullableParam(any as int))
+          () => when(mock.notMockedNonNullableParam((any as dynamic) as int))
               .thenReturn('Mock'),
           throwsA(TypeMatcher<TypeError>()));
     });
