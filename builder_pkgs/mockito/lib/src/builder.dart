@@ -836,13 +836,19 @@ class _MockTargetGatherer {
     }
   }
 
+  String get _tryUnsupportedMembersMessage => 'Try generating this mock with '
+      "a MockSpec with 'unsupportedMembers' or a dummy generator (see "
+      'https://pub.dev/documentation/mockito/latest/annotations/MockSpec-class.html).';
+
   /// Checks [function] for properties that would make it un-stubbable.
   ///
   /// Types are checked in the following positions:
   /// - return type
   /// - parameter types
   /// - bounds of type parameters
-  /// - type arguments on types in the above three positions
+  /// - recursively, written types on types in the above three positions
+  ///   (namely, type arguments, return types of function types, and parameter
+  ///   types of function types)
   ///
   /// If any type in the above positions is private, [function] is un-stubbable.
   /// If the return type is potentially non-nullable, [function] is
@@ -861,14 +867,19 @@ class _MockTargetGatherer {
     final errorMessages = <String>[];
     final returnType = function.returnType;
     if (returnType is analyzer.InterfaceType) {
-      if (returnType.element2.isPrivate) {
-        errorMessages.add(
-            '${enclosingElement.fullName} features a private return type, and '
-            'cannot be stubbed.');
+      if (returnType.containsPrivateName) {
+        if (!allowUnsupportedMember && !hasDummyGenerator) {
+          errorMessages.add(
+              '${enclosingElement.fullName} features a private return type, '
+              'and cannot be stubbed. $_tryUnsupportedMembersMessage');
+        }
       }
       errorMessages.addAll(_checkTypeArguments(
-          returnType.typeArguments, enclosingElement,
-          isParameter: isParameter));
+        returnType.typeArguments,
+        enclosingElement,
+        isParameter: isParameter,
+        allowUnsupportedMember: allowUnsupportedMember,
+      ));
     } else if (returnType is analyzer.FunctionType) {
       errorMessages.addAll(_checkFunction(returnType, enclosingElement,
           allowUnsupportedMember: allowUnsupportedMember,
@@ -878,11 +889,10 @@ class _MockTargetGatherer {
           !allowUnsupportedMember &&
           !hasDummyGenerator &&
           _entryLib.typeSystem.isPotentiallyNonNullable(returnType)) {
-        errorMessages.add(
-            '${enclosingElement.fullName} features a non-nullable unknown '
-            'return type, and cannot be stubbed. Try generating this mock with '
-            "a MockSpec with 'unsupportedMembers' or a dummy generator (see "
-            'https://pub.dev/documentation/mockito/latest/annotations/MockSpec-class.html).');
+        errorMessages
+            .add('${enclosingElement.fullName} features a non-nullable unknown '
+                'return type, and cannot be stubbed. '
+                '$_tryUnsupportedMembersMessage');
       }
     }
 
@@ -894,13 +904,19 @@ class _MockTargetGatherer {
           // Technically, we can expand the type in the mock to something like
           // `Object?`. However, until there is a decent use case, we will not
           // generate such a mock.
-          errorMessages.add(
-              '${enclosingElement.fullName} features a private parameter type, '
-              "'${parameterTypeElement.name}', and cannot be stubbed.");
+          if (!allowUnsupportedMember) {
+            errorMessages.add(
+                '${enclosingElement.fullName} features a private parameter '
+                "type, '${parameterTypeElement.name}', and cannot be stubbed. "
+                '$_tryUnsupportedMembersMessage');
+          }
         }
         errorMessages.addAll(_checkTypeArguments(
-            parameterType.typeArguments, enclosingElement,
-            isParameter: true));
+          parameterType.typeArguments,
+          enclosingElement,
+          isParameter: true,
+          allowUnsupportedMember: allowUnsupportedMember,
+        ));
       } else if (parameterType is analyzer.FunctionType) {
         errorMessages.addAll(
             _checkFunction(parameterType, enclosingElement, isParameter: true));
@@ -928,6 +944,8 @@ class _MockTargetGatherer {
       var typeParameter = element.bound;
       if (typeParameter == null) continue;
       if (typeParameter is analyzer.InterfaceType) {
+        // TODO(srawlins): Check for private names in bound; could be
+        // `List<_Bar>`.
         if (typeParameter.element2.isPrivate) {
           errorMessages.add(
               '${enclosingElement.fullName} features a private type parameter '
@@ -947,18 +965,23 @@ class _MockTargetGatherer {
     List<analyzer.DartType> typeArguments,
     Element enclosingElement, {
     bool isParameter = false,
+    bool allowUnsupportedMember = false,
   }) {
     var errorMessages = <String>[];
     for (var typeArgument in typeArguments) {
       if (typeArgument is analyzer.InterfaceType) {
-        if (typeArgument.element2.isPrivate) {
+        if (typeArgument.element2.isPrivate && !allowUnsupportedMember) {
           errorMessages.add(
               '${enclosingElement.fullName} features a private type argument, '
-              'and cannot be stubbed.');
+              'and cannot be stubbed. $_tryUnsupportedMembersMessage');
         }
       } else if (typeArgument is analyzer.FunctionType) {
-        errorMessages.addAll(_checkFunction(typeArgument, enclosingElement,
-            isParameter: isParameter));
+        errorMessages.addAll(_checkFunction(
+          typeArgument,
+          enclosingElement,
+          isParameter: isParameter,
+          allowUnsupportedMember: allowUnsupportedMember,
+        ));
       }
     }
     return errorMessages;
@@ -1233,11 +1256,16 @@ class _MockClassInfo {
   void _buildOverridingMethod(MethodBuilder builder, MethodElement method) {
     var name = method.displayName;
     if (method.isOperator) name = 'operator$name';
+    final returnType = method.returnType;
     builder
       ..name = name
       ..annotations.add(referImported('override', 'dart:core'))
-      ..returns = _typeReference(method.returnType)
       ..types.addAll(method.typeParameters.map(_typeParameterReference));
+    // We allow overriding a method with a private return type by omitting the
+    // return type (which is then inherited).
+    if (!returnType.containsPrivateName) {
+      builder.returns = _typeReference(returnType);
+    }
 
     // These two variables store the arguments that will be passed to the
     // [Invocation] built for `noSuchMethod`.
@@ -1246,20 +1274,16 @@ class _MockClassInfo {
 
     var position = 0;
     for (final parameter in method.parameters) {
-      if (parameter.isRequiredPositional) {
+      if (parameter.isRequiredPositional || parameter.isOptionalPositional) {
         final superParameterType =
             _escapeCovariance(parameter, position: position);
         final matchingParameter = _matchingParameter(parameter,
             superParameterType: superParameterType, forceNullable: true);
-        builder.requiredParameters.add(matchingParameter);
-        invocationPositionalArgs.add(refer(parameter.displayName));
-        position++;
-      } else if (parameter.isOptionalPositional) {
-        final superParameterType =
-            _escapeCovariance(parameter, position: position);
-        final matchingParameter = _matchingParameter(parameter,
-            superParameterType: superParameterType, forceNullable: true);
-        builder.optionalParameters.add(matchingParameter);
+        if (parameter.isRequiredPositional) {
+          builder.requiredParameters.add(matchingParameter);
+        } else {
+          builder.optionalParameters.add(matchingParameter);
+        }
         invocationPositionalArgs.add(refer(parameter.displayName));
         position++;
       } else if (parameter.isNamed) {
@@ -1282,11 +1306,18 @@ class _MockClassInfo {
       return;
     }
 
-    final returnType = method.returnType;
+    final returnTypeIsTypeVariable =
+        typeSystem.isPotentiallyNonNullable(returnType) &&
+            returnType is analyzer.TypeParameterType;
     final fallbackGenerator = fallbackGenerators[method.name];
-    if (typeSystem.isPotentiallyNonNullable(returnType) &&
-        returnType is analyzer.TypeParameterType &&
-        fallbackGenerator == null) {
+    final parametersContainPrivateName =
+        method.parameters.any((p) => p.type.containsPrivateName);
+    final throwsUnsupported = fallbackGenerator == null &&
+        (returnTypeIsTypeVariable ||
+            returnType.containsPrivateName ||
+            parametersContainPrivateName);
+
+    if (throwsUnsupported) {
       if (!mockTarget.unsupportedMembers.contains(name)) {
         // We shouldn't get here as this is guarded against in
         // [_MockTargetGatherer._checkFunction].
@@ -1557,10 +1588,11 @@ class _MockClassInfo {
         '$defaultName');
     final name = parameter.name.isEmpty ? defaultName! : parameter.name;
     return Parameter((pBuilder) {
-      pBuilder
-        ..name = name
-        ..type =
+      pBuilder.name = name;
+      if (!superParameterType.containsPrivateName) {
+        pBuilder.type =
             _typeReference(superParameterType, forceNullable: forceNullable);
+      }
       if (parameter.isNamed) pBuilder.named = true;
       if (parameter.defaultValueCode != null) {
         try {
@@ -2025,6 +2057,30 @@ extension on Element {
 }
 
 extension on analyzer.DartType {
+  /// Whether this type contains a private name, perhaps in a type argument or a
+  /// function type's parameters, etc.
+  bool get containsPrivateName {
+    final self = this;
+    if (self is analyzer.DynamicType) {
+      return false;
+    } else if (self is analyzer.InterfaceType) {
+      return self.element2.isPrivate ||
+          self.typeArguments.any((t) => t.containsPrivateName);
+    } else if (self is analyzer.FunctionType) {
+      return self.returnType.containsPrivateName ||
+          self.parameters.any((p) => p.type.containsPrivateName);
+    } else if (self is analyzer.NeverType) {
+      return false;
+    } else if (self is analyzer.TypeParameterType) {
+      return false;
+    } else if (self is analyzer.VoidType) {
+      return false;
+    } else {
+      assert(false, 'Unexpected subtype of DartType: ${self.runtimeType}');
+      return false;
+    }
+  }
+
   /// Returns whether this type is `Future<void>` or `Future<void>?`.
   bool get isFutureOfVoid =>
       isDartAsyncFuture &&

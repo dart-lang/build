@@ -463,6 +463,114 @@ void main() {
   });
 
   test(
+      'generates mock methods with private return types, given '
+      'unsupportedMembers', () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        abstract class Foo {
+          _Bar m();
+        }
+        class _Bar {}
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+
+        @GenerateNiceMocks([
+          MockSpec<Foo>(unsupportedMembers: {#m}),
+        ])
+        void main() {}
+        '''
+    });
+    expect(
+        mocksContent,
+        contains('  m() => throw UnsupportedError(\n'
+            r"      '\'m\' cannot be used without a mockito fallback generator.');"));
+  });
+
+  test(
+      'generates mock methods with return types with private names in type '
+      'arguments, given unsupportedMembers', () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        abstract class Foo {
+          List<_Bar> m();
+        }
+        class _Bar {}
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+
+        @GenerateNiceMocks([
+          MockSpec<Foo>(unsupportedMembers: {#m}),
+        ])
+        void main() {}
+        '''
+    });
+    expect(
+        mocksContent,
+        contains('  m() => throw UnsupportedError(\n'
+            r"      '\'m\' cannot be used without a mockito fallback generator.');"));
+  });
+
+  test(
+      'generates mock methods with return types with private names in function '
+      'types, given unsupportedMembers', () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        abstract class Foo {
+          void Function(_Bar) m();
+        }
+        class _Bar {}
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+
+        @GenerateNiceMocks([
+          MockSpec<Foo>(unsupportedMembers: {#m}),
+        ])
+        void main() {}
+        '''
+    });
+    expect(
+        mocksContent,
+        contains('  m() => throw UnsupportedError(\n'
+            r"      '\'m\' cannot be used without a mockito fallback generator.');"));
+  });
+
+  test(
+      'generates mock methods with private parameter types, given '
+      'unsupportedMembers', () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        abstract class Foo {
+          void m(_Bar b);
+        }
+        class _Bar {}
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+
+        @GenerateNiceMocks([
+          MockSpec<Foo>(unsupportedMembers: {#m}),
+        ])
+        void main() {}
+        '''
+    });
+    expect(
+        mocksContent,
+        contains('  void m(b) => throw UnsupportedError(\n'
+            r"      '\'m\' cannot be used without a mockito fallback generator.');"));
+  });
+
+  test(
       'generates mock methods with non-nullable return types, specifying '
       'legal default values for basic known types', () async {
     var mocksContent = await buildWithNonNullable({

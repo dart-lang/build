@@ -2,6 +2,9 @@
 
 * Fix analyzer and code_builder dependencies.
 * Reference `@GenerateNiceMocks` in documentation.
+* Allow generating a mock class which includes overriding members with private
+  types in their signature. Such members cannot be stubbed with mockito, and
+  will only be generated when specified in MockSpec `unsupportedMembers`.
 
 ## 5.3.0
 
