@@ -1323,7 +1323,8 @@ class _MockClassInfo {
         // [_MockTargetGatherer._checkFunction].
         throw InvalidMockitoAnnotationException(
             "Mockito cannot generate a valid override for '$name', as it has a "
-            'non-nullable unknown return type.');
+            'non-nullable unknown return type or a private type in its '
+            'signature.');
       }
       builder.body = refer('UnsupportedError')
           .call([
@@ -1771,20 +1772,26 @@ class _MockClassInfo {
     builder
       ..name = getter.displayName
       ..annotations.add(referImported('override', 'dart:core'))
-      ..type = MethodType.getter
-      ..returns = _typeReference(getter.returnType);
+      ..type = MethodType.getter;
+
+    if (!getter.returnType.containsPrivateName) {
+      builder.returns = _typeReference(getter.returnType);
+    }
 
     final returnType = getter.returnType;
     final fallbackGenerator = fallbackGenerators[getter.name];
-    if (typeSystem.isPotentiallyNonNullable(returnType) &&
-        returnType is analyzer.TypeParameterType &&
-        fallbackGenerator == null) {
+    final returnTypeIsTypeVariable =
+        typeSystem.isPotentiallyNonNullable(returnType) &&
+            returnType is analyzer.TypeParameterType;
+    final throwsUnsupported = fallbackGenerator == null &&
+        (returnTypeIsTypeVariable || getter.returnType.containsPrivateName);
+    if (throwsUnsupported) {
       if (!mockTarget.unsupportedMembers.contains(getter.name)) {
         // We shouldn't get here as this is guarded against in
         // [_MockTargetGatherer._checkFunction].
         throw InvalidMockitoAnnotationException(
             "Mockito cannot generate a valid override for '${getter.name}', as "
-            'it has a non-nullable unknown type.');
+            'it has a non-nullable unknown type or a private type.');
       }
       builder.body = refer('UnsupportedError')
           .call([
@@ -1824,22 +1831,45 @@ class _MockClassInfo {
   /// This new setter just calls `super.noSuchMethod`.
   void _buildOverridingSetter(
       MethodBuilder builder, PropertyAccessorElement setter) {
+    final nameWithEquals = setter.name;
+    final name = setter.displayName;
     builder
-      ..name = setter.displayName
+      ..name = name
       ..annotations.add(referImported('override', 'dart:core'))
       ..type = MethodType.setter;
 
     assert(setter.parameters.length == 1);
     final parameter = setter.parameters.single;
-    builder.requiredParameters.add(Parameter((pBuilder) => pBuilder
-      ..name = parameter.displayName
-      ..type = _typeReference(parameter.type, forceNullable: true)));
-    final invocationPositionalArg = refer(parameter.displayName);
+    builder.requiredParameters.add(Parameter((pBuilder) {
+      pBuilder.name = parameter.displayName;
+      if (!parameter.type.containsPrivateName) {
+        pBuilder.type = _typeReference(parameter.type, forceNullable: true);
+      }
+    }));
+
+    if (parameter.type.containsPrivateName) {
+      if (!mockTarget.unsupportedMembers.contains(nameWithEquals)) {
+        // We shouldn't get here as this is guarded against in
+        // [_MockTargetGatherer._checkFunction].
+        throw InvalidMockitoAnnotationException(
+            "Mockito cannot generate a valid override for '$nameWithEquals', "
+            'as it has a private parameter type.');
+      }
+      builder.body = refer('UnsupportedError')
+          .call([
+            literalString(
+                "'$nameWithEquals' cannot be used without a mockito fallback "
+                'generator.')
+          ])
+          .thrown
+          .code;
+      return;
+    }
 
     final invocation =
         referImported('Invocation', 'dart:core').property('setter').call([
-      refer('#${setter.displayName}'),
-      invocationPositionalArg,
+      refer('#$name'),
+      refer(parameter.displayName),
     ]);
     final returnNoSuchMethod = refer('super')
         .property('noSuchMethod')
