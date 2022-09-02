@@ -1492,11 +1492,7 @@ class _MockClassInfo {
               superParameterType: parameter.type, defaultName: '__p$position');
           b.optionalParameters.add(matchingParameter);
           position++;
-        } else if (parameter.isOptionalNamed) {
-          final matchingParameter =
-              _matchingParameter(parameter, superParameterType: parameter.type);
-          b.optionalParameters.add(matchingParameter);
-        } else if (parameter.isRequiredNamed) {
+        } else if (parameter.isNamed) {
           final matchingParameter =
               _matchingParameter(parameter, superParameterType: parameter.type);
           b.optionalParameters.add(matchingParameter);
@@ -1599,7 +1595,6 @@ class _MockClassInfo {
             _typeReference(superParameterType, forceNullable: forceNullable);
       }
       if (parameter.isNamed) pBuilder.named = true;
-      if (parameter.isRequiredNamed) pBuilder.required = true;
       if (parameter.defaultValueCode != null) {
         try {
           pBuilder.defaultTo = _expressionFromDartObject(
