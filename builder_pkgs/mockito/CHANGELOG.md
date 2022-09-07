@@ -5,6 +5,7 @@
 * Allow generating a mock class which includes overriding members with private
   types in their signature. Such members cannot be stubbed with mockito, and
   will only be generated when specified in MockSpec `unsupportedMembers`.
+* Include `required` keyword in functions used as default return values.
 
 ## 5.3.0
 

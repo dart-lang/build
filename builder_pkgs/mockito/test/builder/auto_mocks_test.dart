@@ -1524,7 +1524,7 @@ void main() {
           void m({required covariant int a});
         }
         '''),
-      _containsAllOf('void m({num? a}) => super.noSuchMethod('),
+      _containsAllOf('void m({required num? a}) => super.noSuchMethod('),
     );
   });
 
@@ -2451,6 +2451,23 @@ void main() {
         returnValue: (
           _i2.Foo __p0, {
           bool b,
+        }) {},'''),
+    );
+  });
+
+  test(
+      'creates a dummy non-null function-typed return value, with required '
+      'named parameters', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      abstract class Foo {
+        void Function(Foo, {required bool b}) m();
+      }
+      '''),
+      _containsAllOf('''
+        returnValue: (
+          _i2.Foo __p0, {
+          required bool b,
         }) {},'''),
     );
   });
