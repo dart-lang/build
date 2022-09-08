@@ -936,6 +936,39 @@ void main() {
   });
 
   test(
+      'generates mock classes including a fallback generator and '
+      'OnMissingStub.returnDefault', () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        abstract class Foo<T> {
+          T get f;
+        }
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+
+        T fShim<T>() {
+          throw 'unknown';
+        }
+
+        @GenerateMocks(
+          [],
+          customMocks: [
+            MockSpec<Foo>(
+                fallbackGenerators: {#f: fShim},
+                onMissingStub: OnMissingStub.returnDefault),
+          ],
+        )
+        void main() {}
+        '''
+    });
+    expect(mocksContent, contains('returnValue: _i3.fShim(),'));
+    expect(mocksContent, contains('returnValueForMissingStub: _i3.fShim(),'));
+  });
+
+  test(
       'throws when GenerateMocks is given a class with a type parameter with a '
       'private bound', () async {
     _expectBuilderThrows(
@@ -1265,7 +1298,36 @@ void main() {
         '''
     });
     expect(mocksContent, isNot(contains('throwOnMissingStub')));
-    expect(mocksContent, contains('returnValueForMissingStub:'));
+    expect(mocksContent, contains('returnValue: 0'));
+    expect(mocksContent, contains('returnValueForMissingStub: 0'));
+  });
+
+  test(
+      'generates a mock class which uses the new behavior of returning '
+      'a valid value for missing stubs, if GenerateNiceMocks and '
+      'fallbackGenerators were used', () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        class Foo<T> {
+          int m();
+        }
+        '''),
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+
+        int mShim() {
+          return 1;
+        }
+
+        @GenerateNiceMocks([MockSpec<Foo>(fallbackGenerators: {#m: mShim})])
+        void main() {}
+        '''
+    });
+    expect(mocksContent, isNot(contains('throwOnMissingStub')));
+    expect(mocksContent, contains('returnValue: _i3.mShim(),'));
+    expect(mocksContent, contains('returnValueForMissingStub: _i3.mShim(),'));
   });
 
   test('mixed GenerateMocks and GenerateNiceMocks annotations could be used',

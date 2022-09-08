@@ -1350,9 +1350,15 @@ class _MockClassInfo {
       returnValueForMissingStub =
           _futureReference(refer('void')).property('value').call([]);
     } else if (mockTarget.onMissingStub == OnMissingStub.returnDefault) {
-      // Return a legal default value if no stub is found which matches a real
-      // call.
-      returnValueForMissingStub = _dummyValue(returnType, invocation);
+      if (fallbackGenerator != null) {
+        // Re-use the fallback for missing stub.
+        returnValueForMissingStub =
+            _fallbackGeneratorCode(method, fallbackGenerator);
+      } else {
+        // Return a legal default value if no stub is found which matches a real
+        // call.
+        returnValueForMissingStub = _dummyValue(returnType, invocation);
+      }
     }
     final namedArgs = {
       if (fallbackGenerator != null)
@@ -1819,7 +1825,9 @@ class _MockClassInfo {
       else if (typeSystem._returnTypeIsNonNullable(getter))
         'returnValue': _dummyValue(returnType, invocation),
       if (mockTarget.onMissingStub == OnMissingStub.returnDefault)
-        'returnValueForMissingStub': _dummyValue(returnType, invocation),
+        'returnValueForMissingStub': (fallbackGenerator != null
+            ? _fallbackGeneratorCode(getter, fallbackGenerator)
+            : _dummyValue(returnType, invocation)),
     };
     var superNoSuchMethod =
         refer('super').property('noSuchMethod').call([invocation], namedArgs);
