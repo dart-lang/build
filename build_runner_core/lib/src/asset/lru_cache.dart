@@ -32,7 +32,7 @@ class LruCache<K, V> {
     if (entry.weight > _individualWeightMax) {
       return;
     }
-    
+
     if (_entries.containsKey(key)) {
       remove(key);
     }
