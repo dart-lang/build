@@ -1,6 +1,7 @@
 // Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+@Timeout(Duration(seconds: 10))
 
 import 'package:build_runner_core/src/asset/lru_cache.dart';
 import 'package:test/test.dart';
@@ -65,5 +66,56 @@ void main() {
     expect(cache['2'], maxIndividualWeight);
     expect(cache['3'], null);
     expect(cache['4'], null);
+  });
+
+  test('can update values', () {
+    cache['a'] = 1;
+    cache['b'] = 2;
+    expect(cache['a'], 1);
+    expect(cache['b'], 2);
+
+    cache['a'] = 3;
+    cache['b'] = 4;
+    expect(cache['a'], 3);
+    expect(cache['b'], 4);
+  });
+
+  test('removes least recently used or updated items when full', () {
+    // Populate the cache until full.
+    var total = 0;
+    var n = 0;
+    while (total + maxIndividualWeight <= maxTotalWeight) {
+      total += maxIndividualWeight;
+      cache['$n'] = maxIndividualWeight;
+      n++;
+    }
+    // Read all the items in order, the first is now the least recently used.
+    for (var i = 0; i < n; i++) {
+      expect(cache['$i'], maxIndividualWeight);
+    }
+
+    // Update the first item, then the second is now the least recently used.
+    cache['0'] = maxIndividualWeight;
+    // Add another item, the second item should now be removed.
+    cache['${n+1}'] = maxIndividualWeight;
+    expect(cache['1'], null);
+
+    // Read the first n-1 items, then the latest added item is now the least recently used.
+    for (var i = 0; i < n; i++) {
+      if (i != 1) {
+       expect(cache['$i'], maxIndividualWeight);
+      }
+    }
+
+    // Update all the items in order, the last added item should be removed
+    for (var i = 0; i < n; i++) {
+      cache['$i'] = maxIndividualWeight;
+    }
+    expect(cache['${n}'], null);
+
+    // Check the first n entries shouldn't be removed
+    for (var i = 0; i < n; i++) {
+      expect(cache['$i'], maxIndividualWeight);
+    }
   });
 }
