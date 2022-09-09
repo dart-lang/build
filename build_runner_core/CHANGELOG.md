@@ -1,6 +1,7 @@
 ## 7.2.4-dev
 
 - Fix some new lints.
+- Fix a bug in the LRU cache.
 
 ## 7.2.3
 
