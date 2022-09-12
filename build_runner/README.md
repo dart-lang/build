@@ -74,6 +74,7 @@ The available commands are `build`, `watch`, `serve`, and `test`.
 - `test`: Runs a single build, creates a merged output directory, and then runs
   `dart run test --precompiled <merged-output-dir>`. See below for instructions
   on passing custom args to the test command.
+- `build-filter`: Build filters allow you to choose explicitly which files to build instead of building entire directories.
 
 #### Command Line Options
 
@@ -88,7 +89,7 @@ All the above commands support the following arguments:
 
 Some commands also have additional options:
 
-##### serve
+### serve
 
 - `--hostname`: The host to run the server on.
 - `--live-reload`: Enables automatic page reloading on rebuilds.
@@ -99,13 +100,70 @@ directories are served, and on what ports.
 For example to serve the `example` and `web` directories on ports 8000 and 8001
 you would do `dart run build_runner serve example:8000 web:8001`.
 
-##### test
+### test
 
 The test command will forward any arguments after an empty `--` arg to the
 `dart run test` command.
 
 For example if you wanted to pass `-p chrome` you would do
 `dart run build_runner test -- -p chrome`.
+
+### build-filter
+Build filters allow you to choose explicitly which files to build instead of building entire directories.
+
+A build filter is a combination of a package and a path, with glob syntax supported for each.
+
+Whenever a build filter is provided, only required outputs matching one of the build filters will be built, in addition to the inputs to those outputs.
+
+##### Command Line Usage:
+
+Build filters are supplied using the new `--build-filter` option, which accepts relative paths under the package as well as `package:` uris.
+
+Glob syntax is allowed in both package names and paths.
+
+*Example*: The following would build and serve the JS output for an application, as well as copy over the required SDK resources for that app:
+
+```bash
+pub run build_runner serve \
+  --build-filter="web/main.dart.js" \
+  --build-filter="package:build_web_compilers/**/*.js"
+```
+
+##### Build Daemon Usage:
+
+The build daemon now accepts build filters when registering a build target. If no filters are supplied these default filters are used, which is designed to match the previous behavior as closely as possible:
+
+* <target-dir>/**
+* package:*/**
+
+*Note:* There is one small difference compared to the previous behavior, which is that build to source outputs from other top level directories in the root package will no longer be built when they would have before. This should have no meaningful impact other than being more efficient.
+
+##### Common Use Cases:
+
+*Note:* For all the listed use cases it is up to the user or tool the user is using to request all the required files for the desired task. This package only provides the core building blocks for these use cases.
+
+##### Testing:
+
+If you have a large number of tests but only want to run a single one you can now build just that test instead of all tests under the test directory.
+
+This can greatly speed up iteration times in packages with lots of tests.
+
+*Example:* This will build a single web test and run it:
+
+```bash
+pub run build_runner test \
+  --build-filter="test/my_test.dart.browser_test.dart.js" \
+  --build-filter="package:build_web_compilers/**/*.js" \
+  -- -p chrome test/my_test.dart
+```
+
+*Note:* If your test requires any other generated files (css, etc) you will need to add additional filters.
+
+##### Applications:
+
+This feature works as expected with the `--output <dir>` and the `serve` command. This means you can create an output directory for a single application in your package instead of all applications under the same directory.
+
+The serve command also uses the build filters to restrict what files are available, which means it ensures if something works in serve mode it will also work when you create an output directory.
 
 ### Inputs
 
