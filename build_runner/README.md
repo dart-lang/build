@@ -124,7 +124,7 @@ Glob syntax is allowed in both package names and paths.
 *Example*: The following would build and serve the JS output for an application, as well as copy over the required SDK resources for that app:
 
 ```bash
-pub run build_runner serve \
+dart run build_runner serve \
   --build-filter="web/main.dart.js" \
   --build-filter="package:build_web_compilers/**/*.js"
 ```
