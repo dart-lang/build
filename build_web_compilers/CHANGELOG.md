@@ -1,4 +1,6 @@
-## 3.2.6-dev
+## 3.2.6
+
+- Allow the latest `package:analyzer`.
 
 ## 3.2.5
 

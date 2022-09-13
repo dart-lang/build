@@ -1,4 +1,6 @@
-## 4.0.6-dev
+## 4.0.6
+
+- Allow the latest `package:analyzer`.
 
 ## 4.0.5
 

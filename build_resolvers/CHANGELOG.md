@@ -1,9 +1,10 @@
-## 2.0.10-dev
+## 2.0.10
 
 - Migrate from `LibraryElement#parts` to `LibraryElement#parts2`.
 - Update min sdk constraint to `2.17.0` since this is the minimum selectable
   (and testable) sdk.
 - Use a constructor tearoff since our min sdk now supports them.
+- Allow the latest `package:analyzer`.
 
 ## 2.0.9
 
