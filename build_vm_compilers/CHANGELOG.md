@@ -1,4 +1,6 @@
-## 1.0.12-dev
+## 1.0.12
+
+- Allow the latest `package:analyzer`.
 
 ## 1.0.11
 

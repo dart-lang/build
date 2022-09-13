@@ -1,3 +1,7 @@
+## 2.3.1
+
+- Allow the latest `package:analyzer`.
+
 ## 2.3.0
 
 - Support ^ in build extensions that don't use capture groups, which results
