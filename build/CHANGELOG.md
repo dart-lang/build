@@ -1,6 +1,7 @@
 ## 2.3.1
 
 - Allow the latest `package:analyzer`.
+- Bump min sdk to 2.17.0.
 
 ## 2.3.0
 
