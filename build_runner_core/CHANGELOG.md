@@ -1,7 +1,8 @@
-## 7.2.4-dev
+## 7.2.4
 
 - Fix some new lints.
 - Fix a bug in the LRU cache.
+- Fix a bug when manually deleting outputs of multiple output builders.
 
 ## 7.2.3
 
