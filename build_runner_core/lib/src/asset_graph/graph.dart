@@ -295,8 +295,9 @@ class AssetGraph {
     // `primaryOutputs`.
     var transitiveRemovedIds = <AssetId>{};
     void addTransitivePrimaryOutputs(AssetId id) {
-      transitiveRemovedIds.add(id);
-      get(id)!.primaryOutputs.forEach(addTransitivePrimaryOutputs);
+      if (transitiveRemovedIds.add(id)) {
+        get(id)!.primaryOutputs.forEach(addTransitivePrimaryOutputs);
+      }
     }
 
     removeIds

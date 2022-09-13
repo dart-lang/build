@@ -1277,6 +1277,44 @@ void main() {
           writer: writer);
     });
 
+    test('deleting only the second output of a builder causes it to rerun',
+        () async {
+      var builders = [
+        applyToRoot(TestBuilder(buildExtensions: {
+          '.txt': ['.txt.1', '.txt.2']
+        }))
+      ];
+
+      // Initial build.
+      var writer = InMemoryRunnerAssetWriter();
+      await testBuilders(
+          builders,
+          {
+            'a|lib/a.txt': 'a',
+          },
+          outputs: {
+            'a|lib/a.txt.1': 'a',
+            'a|lib/a.txt.2': 'a',
+          },
+          writer: writer);
+
+      // Followup build with the 2nd output missing.
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
+      writer.assets.clear();
+      await testBuilders(
+          builders,
+          {
+            'a|lib/a.txt': 'a',
+            'a|lib/a.txt.1': 'a',
+            'a|$assetGraphPath': serializedGraph,
+          },
+          outputs: {
+            'a|lib/a.txt.1': 'a',
+            'a|lib/a.txt.2': 'a',
+          },
+          writer: writer);
+    });
+
     group('reportUnusedAssets', () {
       test('removes input dependencies', () async {
         final builder = TestBuilder(
