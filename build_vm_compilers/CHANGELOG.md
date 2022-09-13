@@ -1,4 +1,6 @@
-## 1.0.12-dev
+## 1.0.12
+
+- Allow analyzer version 5.x.
 
 ## 1.0.11
 

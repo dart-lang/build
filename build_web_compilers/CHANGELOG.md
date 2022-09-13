@@ -1,4 +1,6 @@
-## 3.2.6-dev
+## 3.2.6
+
+- Allow analyzer version 5.x.
 
 ## 3.2.5
 

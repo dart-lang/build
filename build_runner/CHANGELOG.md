@@ -1,7 +1,8 @@
-## 2.2.1-dev
+## 2.2.1
 
 - Stop ignoring the no_leading_underscores_for_library_prefixes lint in
   generated build scripts, code_builder now does this for you.
+- Allow analyzer version 5.x.
 
 ## 2.2.0
 

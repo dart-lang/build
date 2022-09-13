@@ -1,8 +1,10 @@
-## 4.0.6-dev
+## 4.0.6
+
+- Allow analyzer version 5.x.
 
 ## 4.0.5
 
-* Allow analyzer verion 4.x.
+- Allow analyzer version 4.x.
 
 ## 4.0.4
 
