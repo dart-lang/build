@@ -34,6 +34,7 @@ abstract class Baz<S> {
   T returnsTypeVariableFromTwo<T, U>();
   S Function(S) returnsGenericFunction();
   S get typeVariableField;
+  T $hasDollarInName<T>();
 }
 
 class HasPrivate {

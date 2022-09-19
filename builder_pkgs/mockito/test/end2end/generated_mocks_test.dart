@@ -37,6 +37,7 @@ T Function(T) returnsGenericFunctionShim<T>() => (T _) => null as T;
       #returnsTypeVariableFromTwo,
       #returnsGenericFunction,
       #typeVariableField,
+      #$hasDollarInName,
     },
   ),
   MockSpec<Baz>(
@@ -47,6 +48,7 @@ T Function(T) returnsGenericFunctionShim<T>() => (T _) => null as T;
       #returnsTypeVariableFromTwo: returnsTypeVariableFromTwoShim,
       #returnsGenericFunction: returnsGenericFunctionShim,
       #typeVariableField: typeVariableFieldShim,
+      #$hasDollarInName: returnsTypeVariableShim,
     },
   ),
   MockSpec<HasPrivate>(mixingIn: [HasPrivateMixin]),
@@ -197,6 +199,10 @@ void main() {
 
     test('a real getter call (or field access) throws', () {
       expect(() => baz.typeVariableField, throwsUnsupportedError);
+    });
+
+    test('a real call to a method whose name has a \$ in it throws', () {
+      expect(() => baz.$hasDollarInName(), throwsUnsupportedError);
     });
   });
 

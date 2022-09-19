@@ -459,7 +459,7 @@ void main() {
     expect(
         mocksContent,
         contains('  T m<T>(T? a) => throw UnsupportedError(\n'
-            r"      '\'m\' cannot be used without a mockito fallback generator.');"));
+            '      r\'"m" cannot be used without a mockito fallback generator.\');'));
   });
 
   test(
@@ -486,7 +486,7 @@ void main() {
     expect(
         mocksContent,
         contains('  m() => throw UnsupportedError(\n'
-            r"      '\'m\' cannot be used without a mockito fallback generator.');"));
+            '      r\'"m" cannot be used without a mockito fallback generator.\');'));
   });
 
   test('generates mock getters with private types, given unsupportedMembers',
@@ -512,7 +512,7 @@ void main() {
     expect(
         mocksContent,
         contains('  get f => throw UnsupportedError(\n'
-            r"      '\'f\' cannot be used without a mockito fallback generator.');"));
+            '      r\'"f" cannot be used without a mockito fallback generator.\');'));
   });
 
   test('generates mock setters with private types, given unsupportedMembers',
@@ -538,7 +538,7 @@ void main() {
     expect(
         mocksContent,
         contains('  set f(value) => throw UnsupportedError(\n'
-            r"      '\'f=\' cannot be used without a mockito fallback generator.');"));
+            '      r\'"f=" cannot be used without a mockito fallback generator.\');'));
   });
 
   test(
@@ -565,7 +565,7 @@ void main() {
     expect(
         mocksContent,
         contains('  m() => throw UnsupportedError(\n'
-            r"      '\'m\' cannot be used without a mockito fallback generator.');"));
+            '      r\'"m" cannot be used without a mockito fallback generator.\');'));
   });
 
   test(
@@ -592,7 +592,7 @@ void main() {
     expect(
         mocksContent,
         contains('  m() => throw UnsupportedError(\n'
-            r"      '\'m\' cannot be used without a mockito fallback generator.');"));
+            '      r\'"m" cannot be used without a mockito fallback generator.\');'));
   });
 
   test(
@@ -619,7 +619,7 @@ void main() {
     expect(
         mocksContent,
         contains('  void m(b) => throw UnsupportedError(\n'
-            r"      '\'m\' cannot be used without a mockito fallback generator.');"));
+            '      r\'"m" cannot be used without a mockito fallback generator.\');'));
   });
 
   test(
