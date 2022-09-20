@@ -1,3 +1,7 @@
+## 1.2.5
+
+* Fix another issue with overly specific types.
+
 ## 1.2.4
 
 * Fix overly-specific cast.

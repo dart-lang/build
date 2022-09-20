@@ -17,8 +17,11 @@ void assertHasField(InterfaceElement root, String name) {
     }
     element = element.supertype?.element2;
   }
-  final allFields = root.fields.toSet()
-    ..addAll(root.allSupertypes.expand((t) => t.element2.fields));
+  final allFields = {
+    ...root.fields,
+    for (var t in root.allSupertypes) ...t.element2.fields,
+  };
+
   throw FormatException(
     'Class ${root.name} does not have field "$name".',
     'Fields: \n  - ${allFields.map((e) => e.name).join('\n  - ')}',
