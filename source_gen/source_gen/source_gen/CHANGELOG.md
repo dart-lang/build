@@ -1,3 +1,7 @@
+## 1.2.4
+
+* Fix overly-specific cast.
+
 ## 1.2.3
 
 * Require `analyzer: '>=4.6.0 <6.0.0'`
