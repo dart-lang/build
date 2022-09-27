@@ -1,3 +1,7 @@
+## 5.3.2
+
+* Support analyzer 5.0.0.
+
 ## 5.3.1
 
 * Fix analyzer and code_builder dependencies.
