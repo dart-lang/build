@@ -1456,8 +1456,9 @@ class _MockClassInfo {
       }).property('empty').call([]);
     } else if (type.isDartCoreString) {
       return literalString('');
-    } else if (type.isDartTypedDataList) {
-      // These "List" types from dart:typed_data are "non-subtypeable", but they
+    } else if (type.isDartTypedDataSealed) {
+      // These types (XXXList + ByteData) from dart:typed_data are
+      // sealed, e.g. "non-subtypeable", but they
       // have predicatble constructors; each has an unnamed constructor which
       // takes a single int argument.
       return referImported(type.element2.name, 'dart:typed_data')
@@ -2135,9 +2136,9 @@ extension on analyzer.DartType {
       isDartAsyncFuture &&
       (this as analyzer.InterfaceType).typeArguments.first.isVoid;
 
-  /// Returns whether this type is a "List" type from the dart:typed_data
+  /// Returns whether this type is a sealed type from the dart:typed_data
   /// library.
-  bool get isDartTypedDataList {
+  bool get isDartTypedDataSealed {
     if (element2!.library!.name != 'dart.typed_data') {
       return false;
     }
@@ -2151,7 +2152,8 @@ extension on analyzer.DartType {
         name == 'Uint8List' ||
         name == 'Uint16List' ||
         name == 'Uint32List' ||
-        name == 'Uint64List';
+        name == 'Uint64List' ||
+        name == 'ByteData';
   }
 }
 
