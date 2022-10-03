@@ -1,3 +1,7 @@
+## 2.0.11-dev
+
+- Migrate off deprecated analyzer apis.
+
 ## 2.0.10
 
 - Migrate from `LibraryElement#parts` to `LibraryElement#parts2`.

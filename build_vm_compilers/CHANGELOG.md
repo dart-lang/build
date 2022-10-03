@@ -1,3 +1,7 @@
+## 1.0.13-dev
+
+- Migrate off deprecated analyzer apis.
+
 ## 1.0.12
 
 - Allow the latest `package:analyzer`.

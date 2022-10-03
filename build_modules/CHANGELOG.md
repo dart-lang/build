@@ -1,3 +1,7 @@
+## 4.0.7-dev
+
+- Migrate off deprecated analyzer apis.
+
 ## 4.0.6
 
 - Allow the latest `package:analyzer`.

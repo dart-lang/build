@@ -733,7 +733,7 @@ int? get x => 1;
         expect(
             unit.declarations.first,
             isA<FunctionDeclaration>()
-                .having((d) => d.name2.lexeme, 'main', 'main'));
+                .having((d) => d.name.lexeme, 'main', 'main'));
       }, resolvers: AnalyzerResolvers());
     });
   });
@@ -747,7 +747,7 @@ int? get x => 1;
         var unit = await resolver.astNodeFor(lib.topLevelElements.first);
         expect(unit, isA<FunctionDeclaration>());
         expect(unit!.toSource(), 'main() {}');
-        expect((unit as FunctionDeclaration).declaredElement2, isNull);
+        expect((unit as FunctionDeclaration).declaredElement, isNull);
       }, resolvers: AnalyzerResolvers());
     });
 
@@ -762,8 +762,7 @@ int? get x => 1;
           unit,
           isA<FunctionDeclaration>()
               .having((fd) => fd.toSource(), 'toSource()', 'main() {}')
-              .having(
-                  (fd) => fd.declaredElement2, 'declaredElement', isNotNull),
+              .having((fd) => fd.declaredElement, 'declaredElement', isNotNull),
         );
       }, resolvers: AnalyzerResolvers());
     });
