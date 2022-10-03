@@ -4,7 +4,7 @@ description: Builders for Dart modules
 repository: https://github.com/dart-lang/build/tree/master/build_modules
 
 environment:
-  sdk: '>=2.14.0 <3.0.0'
+  sdk: '>=2.18.0 <3.0.0'
 
 dependencies:
   analyzer: '>=5.1.0 <6.0.0'

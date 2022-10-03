@@ -1,6 +1,7 @@
 ## 3.2.7-dev
 
 - Migrate off deprecated analyzer apis.
+- Update min sdk constraint to 2.18.0.
 
 ## 3.2.6
 
