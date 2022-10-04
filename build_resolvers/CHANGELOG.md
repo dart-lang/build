@@ -1,3 +1,8 @@
+## 2.0.11-dev
+
+- Migrate off deprecated analyzer apis.
+- Update min sdk constraint to 2.18.0.
+
 ## 2.0.10
 
 - Migrate from `LibraryElement#parts` to `LibraryElement#parts2`.

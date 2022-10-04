@@ -1,3 +1,8 @@
+## 1.0.13-dev
+
+- Migrate off deprecated analyzer apis.
+- Update min sdk constraint to 2.18.0.
+
 ## 1.0.12
 
 - Allow the latest `package:analyzer`.
