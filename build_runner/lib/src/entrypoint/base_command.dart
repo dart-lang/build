@@ -39,6 +39,7 @@ abstract class BuildRunnerCommand extends Command<int> {
               'Enabling this option skips the prompt and deletes the files. '
               'This should typically be used in continues integration servers '
               'and tests, but not otherwise.',
+          abbr: 'd',
           negatable: false,
           defaultsTo: false)
       ..addFlag(lowResourcesModeOption,
