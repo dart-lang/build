@@ -1,3 +1,7 @@
+## 2.3.0
+
+- Add `-d` as a shorthand for `--delete-conflicting-outputs`.
+
 ## 2.2.1
 
 - Allow the latest `package:analyzer`.
