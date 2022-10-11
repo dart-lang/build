@@ -1,3 +1,7 @@
+## 1.2.6
+
+* Add support for a `preamble` option to `combining_builder`.
+
 ## 1.2.5
 
 * Fix another issue with overly specific types.

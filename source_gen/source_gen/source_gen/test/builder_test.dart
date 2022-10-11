@@ -678,6 +678,41 @@ foo generated content
       );
     });
 
+    test('includes preamble if enabled', () async {
+      await testBuilder(
+        const CombiningBuilder(
+          preamble: '''
+// foo
+
+// bar''',
+        ),
+        {
+          '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
+          '$_pkgName|lib/a.foo.g.part': '\n\nfoo generated content\n',
+          '$_pkgName|lib/a.only_whitespace.g.part': '\n\n\t  \n \n',
+          '$_pkgName|lib/a.bar.g.part': '\nbar generated content',
+        },
+        generateFor: {'$_pkgName|lib/a.dart'},
+        outputs: {
+          '$_pkgName|lib/a.g.dart': decodedMatches(
+            endsWith(
+              r'''
+// foo
+
+// bar
+
+part of a;
+
+bar generated content
+
+foo generated content
+''',
+            ),
+          ),
+        },
+      );
+    });
+
     test('warns about missing part statement', () async {
       final logs = <String>[];
       await testBuilder(

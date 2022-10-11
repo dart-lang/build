@@ -32,12 +32,14 @@ Builder combiningBuilder([BuilderOptions options = BuilderOptions.empty]) {
   final ignoreForFile = Set<String>.from(
     optionsMap.remove('ignore_for_file') as List? ?? <String>[],
   );
+  final preamble = optionsMap.remove('preamble') as String? ?? '';
   final buildExtensions =
       validatedBuildExtensionsFrom(optionsMap, _defaultExtensions);
 
   final builder = CombiningBuilder(
     includePartName: includePartName,
     ignoreForFile: ignoreForFile,
+    preamble: preamble,
     buildExtensions: buildExtensions,
   );
 
@@ -58,6 +60,8 @@ class CombiningBuilder implements Builder {
 
   final Set<String> _ignoreForFile;
 
+  final String _preamble;
+
   @override
   final Map<String, List<String>> buildExtensions;
 
@@ -69,9 +73,11 @@ class CombiningBuilder implements Builder {
   const CombiningBuilder({
     bool? includePartName,
     Set<String>? ignoreForFile,
+    String? preamble,
     this.buildExtensions = _defaultExtensions,
   })  : _includePartName = includePartName ?? false,
-        _ignoreForFile = ignoreForFile ?? const <String>{};
+        _ignoreForFile = ignoreForFile ?? const <String>{},
+        _preamble = preamble ?? '';
 
   @override
   Future<void> build(BuildStep buildStep) async {
@@ -131,9 +137,12 @@ class CombiningBuilder implements Builder {
     final ignoreForFile = _ignoreForFile.isEmpty
         ? ''
         : '\n// ignore_for_file: ${_ignoreForFile.join(', ')}\n';
+
+    final preamble = _preamble.isEmpty ? '' : '\n$_preamble\n';
+
     final output = '''
 $defaultFileHeader
-${languageOverrideForLibrary(inputLibrary)}$ignoreForFile
+${languageOverrideForLibrary(inputLibrary)}$ignoreForFile$preamble
 part of $partOf;
 
 $assets

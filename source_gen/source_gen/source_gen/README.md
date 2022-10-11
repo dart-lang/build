@@ -95,7 +95,9 @@ builders:
     applies_builders: ["source_gen:combining_builder"]
 ```
 
-### Configuring `combining_builder` `ignore_for_file`
+### Configuring `combining_builder` 
+
+#### `ignore_for_file`
 
 Sometimes generated code does not support all of the
 [lints](https://dart-lang.github.io/linter/) specified in the target package.
@@ -116,8 +118,31 @@ targets:
           - lint_beta
 ```
 
+#### `preamble`
+
+When using a `Builder` based on `package:source_gen` which applies
+`combining_builder`, set the `preamble` option to a string you
+wish to be prepended to all generated libraries.
+
+_Example `build.yaml` configuration:_
+
+```yaml
+targets:
+  $default:
+    builders:
+      source_gen:combining_builder:
+        options:
+          preamble: |
+                // Foo
+                
+                // Bar
+```
+
+Hint: When both `ignore_for_file` and `preamble` are used the generated libraries will contain the lints of
+`ignore_for_file` on top of the `preamble`.
+
 If you provide a builder that uses `SharedPartBuilder` and `combining_builder`,
-you should document this feature for your users.
+you should document these features for your users.
 
 ### Generating files in different directories
 
