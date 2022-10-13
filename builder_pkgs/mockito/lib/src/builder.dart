@@ -1149,7 +1149,14 @@ class _MockClassInfo {
         return ExecutableMember.from2(member, substitution);
       });
 
-      if (sourceLibIsNonNullable) {
+      // The test can be pre-null-safety but if the class
+      // we want to mock is defined in a null safe library,
+      // we still need to override methods to get nice mocks.
+      final isNiceMockOfNullSafeClass = mockTarget.onMissingStub ==
+              OnMissingStub.returnDefault &&
+          typeToMock.element2.enclosingElement.library.isNonNullableByDefault;
+
+      if (sourceLibIsNonNullable || isNiceMockOfNullSafeClass) {
         cBuilder.methods.addAll(
             fieldOverrides(members.whereType<PropertyAccessorElement>()));
         cBuilder.methods
@@ -1193,10 +1200,21 @@ class _MockClassInfo {
       if (accessor.isGetter && typeSystem._returnTypeIsNonNullable(accessor)) {
         yield Method((mBuilder) => _buildOverridingGetter(mBuilder, accessor));
       }
-      if (accessor.isSetter) {
+      if (accessor.isSetter && sourceLibIsNonNullable) {
         yield Method((mBuilder) => _buildOverridingSetter(mBuilder, accessor));
       }
     }
+  }
+
+  bool _methodNeedsOverride(MethodElement method) {
+    if (!sourceLibIsNonNullable) {
+      // If we get here, we are adding overrides only to make
+      // nice mocks work. We only care about return types then.
+      return typeSystem._returnTypeIsNonNullable(method);
+    }
+    return typeSystem._returnTypeIsNonNullable(method) ||
+        typeSystem._hasNonNullableParameter(method) ||
+        _needsOverrideForVoidStub(method);
   }
 
   /// Yields all of the method overrides required for [methods].
@@ -1225,9 +1243,7 @@ class _MockClassInfo {
         // narrow the return type.
         continue;
       }
-      if (typeSystem._returnTypeIsNonNullable(method) ||
-          typeSystem._hasNonNullableParameter(method) ||
-          _needsOverrideForVoidStub(method)) {
+      if (_methodNeedsOverride(method)) {
         _checkForConflictWithCore(method.name);
         yield Method((mBuilder) => _buildOverridingMethod(mBuilder, method));
       }
@@ -1608,7 +1624,9 @@ class _MockClassInfo {
             _typeReference(superParameterType, forceNullable: forceNullable);
       }
       if (parameter.isNamed) pBuilder.named = true;
-      if (parameter.isRequiredNamed) pBuilder.required = true;
+      if (parameter.isRequiredNamed && sourceLibIsNonNullable) {
+        pBuilder.required = true;
+      }
       if (parameter.defaultValueCode != null) {
         try {
           pBuilder.defaultTo = _expressionFromDartObject(
