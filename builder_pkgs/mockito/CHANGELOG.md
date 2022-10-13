@@ -1,8 +1,3 @@
-## 5.3.3
-
-* Fix nice mocks generation in mixed mode (generated code is pre null-safety,
-  while mocked class is null-safe).
-
 ## 5.3.2
 
 * Support analyzer 5.0.0.
