@@ -1,6 +1,7 @@
 name: build_vm_compilers
-version: 1.0.13-dev
-description: Builder implementations wrapping Dart VM compilers.
+version: 1.0.13
+description: >-
+  Builder implementations wrapping Dart VM compilers for modules and programs.
 repository: https://github.com/dart-lang/build/tree/master/build_vm_compilers
 
 environment:

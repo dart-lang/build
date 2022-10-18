@@ -1,7 +1,8 @@
-## 1.0.13-dev
+## 1.0.13
 
 - Migrate off deprecated analyzer apis.
 - Update min sdk constraint to 2.18.0.
+- Expand the pubspec description.
 
 ## 1.0.12
 
