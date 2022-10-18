@@ -1,3 +1,7 @@
+## 2.3.2
+
+- Add supported platforms to pubspec.
+
 ## 2.3.1
 
 - Upgrade to `frontend_service_client` version 3.
