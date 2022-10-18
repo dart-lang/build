@@ -1,3 +1,7 @@
+## 1.1.1
+
+- Expand pubspec description to improve pub score.
+
 ## 1.1.0
 
 - Require Dart 2.14
