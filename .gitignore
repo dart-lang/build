@@ -8,8 +8,8 @@ pubspec.lock
 /*/build/
 
 # Include .packages files from tests which are hand coded
-!build_runner_core/test/fixtures/**/.packages
-!build_runner_core/test/fixtures/**/pubspec.lock
+!*/test/fixtures/**/.packages
+!*/test/fixtures/**/pubspec.lock
 
 # Extra files from dart2js that we don't want
 build_runner/lib/src/server/graph_viz_main.dart.js.deps
