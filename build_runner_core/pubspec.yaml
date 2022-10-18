@@ -6,6 +6,11 @@ repository: https://github.com/dart-lang/build/tree/master/build_runner_core
 environment:
   sdk: ">=2.17.0 <3.0.0"
 
+platforms:
+  linux:
+  windows:
+  macos:
+
 dependencies:
   async: ^2.5.0
   build: ^2.1.0

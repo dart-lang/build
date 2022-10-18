@@ -1,6 +1,7 @@
 ## 7.2.5
 
 - Expand pubspec description.
+- Add supported platforms to pubspec.
 
 ## 7.2.4
 
