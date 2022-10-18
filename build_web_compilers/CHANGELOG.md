@@ -1,7 +1,8 @@
-## 3.2.7-dev
+## 3.2.7
 
 - Migrate off deprecated analyzer apis.
 - Update min sdk constraint to 2.18.0.
+- Expand the pubspec description.
 
 ## 3.2.6
 
