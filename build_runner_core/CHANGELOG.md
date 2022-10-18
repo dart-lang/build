@@ -1,3 +1,7 @@
+## 7.2.5
+
+- Expand pubspec description.
+
 ## 7.2.4
 
 - Fix some new lints.
