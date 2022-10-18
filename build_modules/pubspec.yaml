@@ -1,6 +1,8 @@
 name: build_modules
-version: 4.0.7-dev
-description: Builders for Dart modules
+version: 4.0.7
+description: >-
+  Builders to analyze and split Dart code into individually compilable modules
+  based on imports.
 repository: https://github.com/dart-lang/build/tree/master/build_modules
 
 environment:
