@@ -165,13 +165,11 @@ Future<int> _createKernelIfNeeded(Logger logger) async {
     await logTimedAsync(logger, 'Precompiling build script...', () async {
       try {
         final result = await client.compile();
-        hadErrors = result == null ||
-            result.errorCount > 0 ||
-            !(await kernelCacheFile.exists());
+        hadErrors = result.errorCount > 0 || !(await kernelCacheFile.exists());
 
         // Note: We're logging all output with a single log call to keep
         // annotated source spans intact.
-        final logOutput = result?.compilerOutputLines.join('\n');
+        final logOutput = result.compilerOutputLines.join('\n');
         if (logOutput != null && logOutput.isNotEmpty) {
           hadOutput = true;
           if (hadErrors) {

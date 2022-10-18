@@ -1,3 +1,7 @@
+## 2.3.1
+
+- Upgrade to `frontend_service_client` version 3.
+
 ## 2.3.0
 
 - Add `-d` as a shorthand for `--delete-conflicting-outputs`.
