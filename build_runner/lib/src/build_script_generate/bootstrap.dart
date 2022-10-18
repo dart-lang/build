@@ -170,7 +170,7 @@ Future<int> _createKernelIfNeeded(Logger logger) async {
         // Note: We're logging all output with a single log call to keep
         // annotated source spans intact.
         final logOutput = result.compilerOutputLines.join('\n');
-        if (logOutput != null && logOutput.isNotEmpty) {
+        if (logOutput.isNotEmpty) {
           hadOutput = true;
           if (hadErrors) {
             // Always show compiler output if there were errors
