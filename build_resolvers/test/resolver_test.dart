@@ -618,6 +618,28 @@ int? get x => 1;
     );
   });
 
+  test('Can resolve sdk libraries that are not imported', () async {
+    await resolveSources({
+      'a|lib/a.dart': '',
+    }, (resolver) async {
+      var convert = await resolver.findLibraryByName('dart.convert');
+      expect(convert, isNotNull);
+      expect(convert!.getClass('Codec'), isNotNull);
+      var allLibraries = await resolver.libraries.toList();
+      expect(
+          allLibraries.map((e) => e.source.uri.toString()),
+          containsAll([
+            'dart:async',
+            'dart:collection',
+            'dart:convert',
+            'dart:core',
+            'dart:math',
+            'dart:typed_data',
+            if (isFlutter) 'dart:ui',
+          ]));
+    }, resolvers: AnalyzerResolvers());
+  });
+
   group('The ${isFlutter ? 'flutter' : 'dart'} sdk', () {
     test('can${isFlutter ? '' : ' not'} resolve types from dart:ui', () async {
       return resolveSources({
