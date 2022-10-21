@@ -659,6 +659,21 @@ int? get x => 1;
     }, resolvers: AnalyzerResolvers());
   });
 
+  test('can resolve sdk libraries without seeing anything else', () async {
+    await resolveSources({
+      'a|lib/not_dart.txt': '',
+    }, (resolver) async {
+      var allLibraries = await resolver.libraries.toList();
+
+      expect(allLibraries.map((e) => e.source.uri.toString()),
+          containsAll(['dart:io', 'dart:core', 'dart:html']));
+      expect(
+          allLibraries,
+          everyElement(isA<LibraryElement>()
+              .having((e) => e.isInSdk, 'isInSdk', isTrue)));
+    }, resolvers: AnalyzerResolvers());
+  });
+
   group('The ${isFlutter ? 'flutter' : 'dart'} sdk', () {
     test('can${isFlutter ? '' : ' not'} resolve types from dart:ui', () async {
       return resolveSources({
