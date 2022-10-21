@@ -17,6 +17,8 @@ import 'package:analyzer/error/error.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
+// ignore: implementation_imports
+import 'package:analyzer/src/dart/sdk/sdk.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
@@ -48,8 +50,7 @@ class PerActionResolver implements ReleasableResolver {
 
   PerActionResolver(this._delegate, this._driverPool, this._step);
 
-  @override
-  Stream<LibraryElement> get libraries async* {
+  Stream<LibraryElement> get _librariesFromEntrypoints async* {
     await _resolveIfNecessary(_step.inputId, transitive: true);
 
     final seen = <LibraryElement>{};
@@ -78,6 +79,12 @@ class PerActionResolver implements ReleasableResolver {
       toVisit.addAll(toCrawl);
       seen.addAll(toCrawl);
     }
+  }
+
+  @override
+  Stream<LibraryElement> get libraries async* {
+    yield* _delegate.sdkLibraries;
+    yield* _librariesFromEntrypoints.where((library) => !library.isInSdk);
   }
 
   @override
@@ -165,7 +172,10 @@ class AnalyzerResolver implements ReleasableResolver {
   final AnalysisDriverForPackageBuild _driver;
   final Pool _driverPool;
 
-  AnalyzerResolver(this._driver, this._driverPool, this._uriResolver);
+  final List<Uri> _sdkUris;
+
+  AnalyzerResolver(
+      this._driver, this._driverPool, this._uriResolver, this._sdkUris);
 
   @override
   Future<bool> isLibrary(AssetId assetId) async {
@@ -297,6 +307,16 @@ class AnalyzerResolver implements ReleasableResolver {
     throw UnimplementedError();
   }
 
+  Stream<LibraryElement> get sdkLibraries {
+    return Stream.fromFutures(_sdkUris.map((uri) {
+      return _driverPool.withResource(() async {
+        final result = await _driver.currentSession
+            .getLibraryByUri(uri.toString()) as LibraryElementResult;
+        return result.element;
+      });
+    }));
+  }
+
   @override
   Future<LibraryElement> findLibraryByName(String libraryName) {
     // We don't know what libraries to expose without leaking libraries written
@@ -379,7 +399,17 @@ class AnalyzerResolvers implements Resolvers {
           await loadPackageConfigUri((await Isolate.packageConfig)!);
       var driver = await analysisDriver(uriResolver, _analysisOptions,
           await _sdkSummaryGenerator(), loadedConfig);
-      _resolver = AnalyzerResolver(driver, _driverPool, uriResolver);
+
+      var sdkForUris = FolderBasedDartSdk(
+        PhysicalResourceProvider.INSTANCE,
+        PhysicalResourceProvider.INSTANCE.getFolder(_runningDartSdkPath),
+      );
+      var publicSdkLibraries = sdkForUris.uris.map(Uri.parse).where((uri) {
+        return !uri.path.startsWith('_');
+      });
+
+      _resolver = AnalyzerResolver(
+          driver, _driverPool, uriResolver, publicSdkLibraries.toList());
     }()));
   }
 

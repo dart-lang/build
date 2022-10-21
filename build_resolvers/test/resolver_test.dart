@@ -85,6 +85,23 @@ void main() {
       }, resolvers: AnalyzerResolvers());
     });
 
+    test(
+        'calling isLibrary does not include that library in the libraries stream',
+        () {
+      return resolveSources({
+        'a|web/main.dart': '',
+        'b|lib/b.dart': '''
+              library b;
+              ''',
+      }, (resolver) async {
+        await resolver.isLibrary(AssetId('b', 'lib/b.dart'));
+        await expectLater(
+          resolver.libraries,
+          neverEmits(isA<LibraryElement>().having((e) => e.name, 'name', 'b')),
+        );
+      }, resolvers: AnalyzerResolvers());
+    });
+
     test('should still crawl transitively after a call to compilationUnitFor',
         () {
       return resolveSources({
@@ -635,6 +652,8 @@ int? get x => 1;
             'dart:core',
             'dart:math',
             'dart:typed_data',
+            'dart:io',
+            'dart:html',
             if (isFlutter) 'dart:ui',
           ]));
     }, resolvers: AnalyzerResolvers());
