@@ -543,6 +543,45 @@ void main() {
         blockingCompleter.complete();
         await done;
       });
+
+      test('does not build hidden non-lib assets by default', () async {
+        final writer = InMemoryRunnerAssetWriter();
+        final result = await testBuilders(
+          [applyToRoot(testBuilder, hideOutput: true)],
+          {'a|example/a.txt': 'a', 'a|lib/b.txt': 'b'},
+          checkBuildStatus: false,
+          buildDirs: {BuildDirectory('web')},
+          writer: writer,
+        );
+
+        checkBuild(result,
+            writer: writer, outputs: {r'$$a|lib/b.txt.copy': 'b'});
+      });
+
+      test('builds hidden asset forming a custom public source', () async {
+        final writer = InMemoryRunnerAssetWriter();
+        final result = await testBuilders(
+          [applyToRoot(testBuilder, hideOutput: true)],
+          {'a|include/a.txt': 'a', 'a|lib/b.txt': 'b'},
+          checkBuildStatus: false,
+          buildDirs: {BuildDirectory('web')},
+          writer: writer,
+          overrideBuildConfig: {
+            'a': BuildConfig.fromMap('a', const [], {
+              'additional_public_assets': ['include/**']
+            }),
+          },
+        );
+
+        checkBuild(
+          result,
+          writer: writer,
+          outputs: {
+            r'$$a|include/a.txt.copy': 'a',
+            r'$$a|lib/b.txt.copy': 'b',
+          },
+        );
+      });
     });
 
     group('reading assets outside of the root package', () {

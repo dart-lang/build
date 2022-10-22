@@ -1,3 +1,8 @@
+## 7.2.7-dev
+
+- Handle generation of hidden assets in a way consistent with the definition of
+  public assets used in other parts of the build system.
+
 ## 7.2.6
 
 - Add supported platforms to pubspec.

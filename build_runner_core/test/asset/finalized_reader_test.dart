@@ -8,7 +8,9 @@ import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/generate/options.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
+import 'package:build_runner_core/src/package_graph/target_graph.dart';
 import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
 import 'package:test/fake.dart';
@@ -18,8 +20,13 @@ void main() {
   group('FinalizedReader', () {
     FinalizedReader reader;
     late AssetGraph graph;
+    late TargetGraph targetGraph;
 
     setUp(() async {
+      final packageGraph = buildPackageGraph({rootPackage('foo'): []});
+      targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+          defaultRootPackageSources: defaultNonRootVisibleAssets);
+
       graph = await AssetGraph.build([], <AssetId>{}, <AssetId>{},
           buildPackageGraph({rootPackage('foo'): []}), _FakeAssetReader());
     });
@@ -38,7 +45,7 @@ void main() {
       var delegate = InMemoryAssetReader();
       delegate.assets.addAll({notDeleted.id: [], deleted.id: []});
 
-      reader = FinalizedReader(delegate, graph, [], 'a');
+      reader = FinalizedReader(delegate, graph, targetGraph, [], 'a');
       expect(await reader.canRead(notDeleted.id), true);
       expect(await reader.canRead(deleted.id), false);
     });
@@ -56,7 +63,7 @@ void main() {
       graph.add(node);
       var delegate = InMemoryAssetReader();
       delegate.assets.addAll({id: []});
-      reader = FinalizedReader(delegate, graph,
+      reader = FinalizedReader(delegate, graph, targetGraph,
           [InBuildPhase(TestBuilder(), 'a', isOptional: false)], 'a')
         ..reset({'web'}, {});
       expect(await reader.unreadableReason(id), UnreadableReason.failed,

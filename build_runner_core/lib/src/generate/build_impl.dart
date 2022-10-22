@@ -124,6 +124,7 @@ class BuildImpl {
     var finalizedReader = FinalizedReader(
         singleStepReader,
         buildDefinition.assetGraph,
+        buildDefinition.targetGraph,
         buildPhases,
         options.packageGraph.root.name);
     var build =
@@ -233,8 +234,8 @@ class _SingleBuild {
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     var watch = Stopwatch()..start();
     var result = await _safeBuild(updates);
-    var optionalOutputTracker = OptionalOutputTracker(
-        _assetGraph, _buildPaths(_buildDirs), _buildFilters, _buildPhases);
+    var optionalOutputTracker = OptionalOutputTracker(_assetGraph, _targetGraph,
+        _buildPaths(_buildDirs), _buildFilters, _buildPhases);
     if (result.status == BuildStatus.success) {
       final failures = _assetGraph.failedOutputs
           .where((n) => optionalOutputTracker.isRequired(n.id));
@@ -374,8 +375,11 @@ class _SingleBuild {
 
     await Future.wait(
         _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
-      if (!shouldBuildForDirs(
-          node.id, _buildPaths(_buildDirs), _buildFilters, phase)) {
+      if (!shouldBuildForDirs(node.id,
+          buildDirs: _buildPaths(_buildDirs),
+          buildFilters: _buildFilters,
+          phase: phase,
+          targetGraph: _targetGraph)) {
         return;
       }
 
