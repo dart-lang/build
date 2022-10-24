@@ -23,12 +23,12 @@ void main() {
     late TargetGraph targetGraph;
 
     setUp(() async {
-      final packageGraph = buildPackageGraph({rootPackage('foo'): []});
+      final packageGraph = buildPackageGraph({rootPackage('a'): []});
       targetGraph = await TargetGraph.forPackageGraph(packageGraph,
           defaultRootPackageSources: defaultNonRootVisibleAssets);
 
       graph = await AssetGraph.build([], <AssetId>{}, <AssetId>{},
-          buildPackageGraph({rootPackage('foo'): []}), _FakeAssetReader());
+          buildPackageGraph({rootPackage('a'): []}), _FakeAssetReader());
     });
 
     test('can not read deleted files', () async {

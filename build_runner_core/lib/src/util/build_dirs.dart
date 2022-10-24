@@ -28,17 +28,22 @@ bool shouldBuildForDirs(
   Set<BuildFilter> buildFilters = const {},
 }) {
   if (buildFilters.isEmpty) {
-    // Build non-hidden and public assets
-    if (!phase.hideOutput) return true;
-
-    if (targetGraph.isPublicAsset(id)) return true;
+    // Build asset if: It's built to source, it's public or if it's matched by
+    // a build directory.
+    return !phase.hideOutput ||
+        buildDirs.isEmpty ||
+        buildDirs.any(id.path.startsWith) ||
+        targetGraph.isPublicAsset(id);
   } else {
+    // Don't build assets not matched by build filters
     if (!buildFilters.any((f) => f.matches(id))) {
       return false;
     }
-  }
 
-  return buildDirs.isEmpty ||
-      targetGraph.isPublicAsset(id) ||
-      buildDirs.any(id.path.startsWith);
+    // In filtered assets, build the public ones or those inside a build
+    // directory.
+    return buildDirs.isEmpty ||
+        buildDirs.any(id.path.startsWith) ||
+        targetGraph.isPublicAsset(id);
+  }
 }
