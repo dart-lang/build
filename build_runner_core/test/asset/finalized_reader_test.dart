@@ -27,8 +27,8 @@ void main() {
       targetGraph = await TargetGraph.forPackageGraph(packageGraph,
           defaultRootPackageSources: defaultNonRootVisibleAssets);
 
-      graph = await AssetGraph.build([], <AssetId>{}, <AssetId>{},
-          buildPackageGraph({rootPackage('a'): []}), _FakeAssetReader());
+      graph = await AssetGraph.build(
+          [], <AssetId>{}, <AssetId>{}, packageGraph, _FakeAssetReader());
     });
 
     test('can not read deleted files', () async {
