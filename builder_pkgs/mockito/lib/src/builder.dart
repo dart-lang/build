@@ -143,7 +143,10 @@ $rawOutput
       List<_MockTarget> mockTargets,
       String entryAssetPath,
       LibraryElement entryLib) async {
-    final typeVisitor = _TypeVisitor();
+    // We pass in the `Future<dynamic>` type so that an asset URI is known for
+    // `Future`, which is needed when overriding some methods which return
+    // `FutureOr`.
+    final typeVisitor = _TypeVisitor(entryLib.typeProvider.futureDynamicType);
     final seenTypes = <analyzer.InterfaceType>{};
     final librariesWithTypes = <LibraryElement>{};
 
@@ -244,6 +247,10 @@ $rawOutput
 class _TypeVisitor extends RecursiveElementVisitor<void> {
   final _elements = <Element>{};
 
+  final analyzer.DartType _futureType;
+
+  _TypeVisitor(this._futureType);
+
   @override
   void visitClassElement(ClassElement element) {
     _elements.add(element);
@@ -314,6 +321,11 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
             }
           }
         }
+      }
+      if (type.isDartAsyncFutureOr) {
+        // For some methods which return `FutureOr`, we need a dummy `Future`
+        // subclass and value.
+        _addType(_futureType);
       }
     } else if (type is analyzer.FunctionType) {
       _addType(type.returnType);
@@ -1421,13 +1433,24 @@ class _MockClassInfo {
       return refer('() {}');
     } else if (type.isDartAsyncFuture || type.isDartAsyncFutureOr) {
       final typeArgument = typeArguments.first;
-      final futureValueArguments =
-          typeSystem.isPotentiallyNonNullable(typeArgument)
-              ? [_dummyValue(typeArgument, invocation)]
-              : <Expression>[];
-      return _futureReference(_typeReference(typeArgument))
-          .property('value')
-          .call(futureValueArguments);
+      final typeArgumentIsPotentiallyNonNullable =
+          typeSystem.isPotentiallyNonNullable(typeArgument);
+      if (typeArgument is analyzer.TypeParameterType &&
+          typeArgumentIsPotentiallyNonNullable) {
+        // We cannot create a valid Future for this unknown, potentially
+        // non-nullable type, so we'll use a `_FakeFuture`, which will throw
+        // if awaited.
+        var futureType = typeProvider.futureType(typeArguments.first);
+        return _dummyValueImplementing(futureType, invocation);
+      } else {
+        // Create a real Future with a legal value, via [Future.value].
+        final futureValueArguments = typeArgumentIsPotentiallyNonNullable
+            ? [_dummyValue(typeArgument, invocation)]
+            : <Expression>[];
+        return _futureReference(_typeReference(typeArgument))
+            .property('value')
+            .call(futureValueArguments);
+      }
     } else if (type.isDartCoreInt) {
       return literalNum(0);
     } else if (type.isDartCoreIterable || type.isDartCoreList) {

@@ -1572,7 +1572,7 @@ void main() {
           FutureOr<R> m<R>();
         }
         '''),
-      _containsAllOf('_i3.FutureOr<R> m<R>() => (super.noSuchMethod('),
+      _containsAllOf('_i2.FutureOr<R> m<R>() => (super.noSuchMethod('),
     );
   });
 
@@ -2287,8 +2287,7 @@ void main() {
     );
   });
 
-  test('creates dummy non-null return values for Futures of known core classes',
-      () async {
+  test('creates dummy non-null return values for Futures', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
       class Foo {
@@ -2299,58 +2298,15 @@ void main() {
     );
   });
 
-  test(
-      'creates dummy non-null return values for Futures of core Function class',
+  test('creates dummy non-null return values for Futures of unknown types',
       () async {
-    await expectSingleNonNullableOutput(
-      dedent('''
-      abstract class Foo {
-        Future<Function> m();
-      }
-      '''),
-      _containsAllOf('returnValue: _i3.Future<Function>.value(() {}),'),
-    );
-  });
-
-  test('creates dummy non-null return values for Futures of nullable types',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent('''
-      class Bar {}
-      class Foo {
-        Future<Bar?> m() async => null;
-      }
-      '''),
-      _containsAllOf('returnValue: _i3.Future<_i2.Bar?>.value(),'),
-    );
-  });
-
-  test(
-      'creates dummy non-null return values for Futures of known typed_data classes',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent('''
-      import 'dart:typed_data';
-      class Foo {
-        Future<Uint8List> m() async => Uint8List(0);
-      }
-      '''),
-      _containsAllOf(
-          'returnValue: _i3.Future<_i4.Uint8List>.value(_i4.Uint8List(0)),'),
-    );
-  });
-
-  test(
-      'creates dummy non-null return values for Futures of known generic core '
-      'classes', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
       class Foo {
-        Future<Iterable<bool>> m() async => false;
+        Future<T> m<T>() async => false;
       }
       '''),
-      _containsAllOf(
-          'returnValue: _i3.Future<Iterable<bool>>.value(<bool>[]),'),
+      _containsAllOf('returnValue: _FakeFuture_0<T>('),
     );
   });
 
