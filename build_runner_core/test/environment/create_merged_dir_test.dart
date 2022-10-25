@@ -13,7 +13,9 @@ import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/asset_graph/optional_output_tracker.dart';
 import 'package:build_runner_core/src/environment/create_merged_dir.dart';
+import 'package:build_runner_core/src/generate/options.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
+import 'package:build_runner_core/src/package_graph/target_graph.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -55,6 +57,7 @@ void main() {
       rootPackage('a'): ['b'],
       package('b'): []
     });
+    late TargetGraph targetGraph;
     late Directory tmpDir;
     late Directory anotherTmpDir;
     late TestBuildEnvironment environment;
@@ -67,7 +70,10 @@ void main() {
       environment = TestBuildEnvironment(reader: assetReader);
       graph = await AssetGraph.build(
           phases, sources.keys.toSet(), <AssetId>{}, packageGraph, assetReader);
-      optionalOutputTracker = OptionalOutputTracker(graph, {}, {}, phases);
+      targetGraph = await TargetGraph.forPackageGraph(packageGraph,
+          defaultRootPackageSources: defaultNonRootVisibleAssets);
+      optionalOutputTracker =
+          OptionalOutputTracker(graph, targetGraph, {}, {}, phases);
       finalizedAssetsView =
           FinalizedAssetsView(graph, packageGraph, optionalOutputTracker);
       for (var id in graph.outputs) {
@@ -271,7 +277,8 @@ void main() {
     });
 
     test('doesnt always write files not matching outputDirs', () async {
-      optionalOutputTracker = OptionalOutputTracker(graph, {'foo'}, {}, phases);
+      optionalOutputTracker =
+          OptionalOutputTracker(graph, targetGraph, {'foo'}, {}, phases);
       finalizedAssetsView =
           FinalizedAssetsView(graph, packageGraph, optionalOutputTracker);
       var success = await createMergedOutputDirectories(
