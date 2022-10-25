@@ -1,4 +1,4 @@
-## 7.2.7-dev
+## 7.2.7
 
 - Handle generation of hidden assets in a way consistent with the definition of
   public assets used in other parts of the build system.
