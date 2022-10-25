@@ -1,3 +1,7 @@
+## 5.3.3-dev
+
+Require analyzer 5.2.0.
+
 ## 5.3.2
 
 * Support analyzer 5.0.0.
