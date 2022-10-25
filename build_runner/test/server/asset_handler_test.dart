@@ -10,6 +10,8 @@ import 'package:build_runner/src/server/server.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/generate/options.dart';
+import 'package:build_runner_core/src/package_graph/target_graph.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/fake.dart';
 import 'package:test/test.dart';
@@ -22,9 +24,16 @@ void main() {
 
   setUp(() async {
     graph = await AssetGraph.build([], <AssetId>{}, <AssetId>{},
-        buildPackageGraph({rootPackage('foo'): []}), FakeAssetReader());
+        buildPackageGraph({rootPackage('a'): []}), FakeAssetReader());
     delegate = InMemoryRunnerAssetReader();
-    reader = FinalizedReader(delegate, graph, [], 'a');
+    final packageGraph = buildPackageGraph({rootPackage('a'): []});
+    reader = FinalizedReader(
+        delegate,
+        graph,
+        await TargetGraph.forPackageGraph(packageGraph,
+            defaultRootPackageSources: defaultRootPackageSources),
+        [],
+        'a');
     handler = AssetHandler(reader, 'a');
   });
 
