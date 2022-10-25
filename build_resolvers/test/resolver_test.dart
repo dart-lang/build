@@ -663,14 +663,6 @@ int? get x => 1;
         everyElement(isA<LibraryElement>()
             .having((e) => e.isPrivate, 'isPrivate', isFalse)),
       );
-      expect(
-        allLibraries,
-        everyElement(isA<LibraryElement>().having(
-          (e) => e.source.uri.path,
-          'source.uri.path',
-          isNot(startsWith('_')),
-        )),
-      );
     }, resolvers: AnalyzerResolvers());
   });
 
