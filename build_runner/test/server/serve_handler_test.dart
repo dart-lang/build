@@ -14,7 +14,9 @@ import 'package:build_runner/src/server/server.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_runner_core/src/generate/options.dart';
 import 'package:build_runner_core/src/generate/performance_tracker.dart';
+import 'package:build_runner_core/src/package_graph/target_graph.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:stream_channel/stream_channel.dart';
@@ -34,7 +36,13 @@ void main() {
     assetGraph = await AssetGraph.build(
         [], <AssetId>{}, <AssetId>{}, packageGraph, reader);
     watchImpl = MockWatchImpl(
-        Future.value(FinalizedReader(reader, assetGraph, [], 'a')),
+        Future.value(FinalizedReader(
+            reader,
+            assetGraph,
+            await TargetGraph.forPackageGraph(packageGraph,
+                defaultRootPackageSources: defaultRootPackageSources),
+            [],
+            'a')),
         packageGraph,
         assetGraph);
     serveHandler = createServeHandler(watchImpl);
