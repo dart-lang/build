@@ -2,6 +2,8 @@
 
 - Migrate off deprecated analyzer apis.
 - Update min sdk constraint to 2.18.0.
+- Return all SDK libraries in `Resolver.libraries`, making the implementation
+  consistent with the documentation.
 
 ## 2.0.10
 

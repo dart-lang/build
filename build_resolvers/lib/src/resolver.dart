@@ -17,8 +17,6 @@ import 'package:analyzer/error/error.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
-// ignore: implementation_imports
-import 'package:analyzer/src/dart/sdk/sdk.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
@@ -172,10 +170,7 @@ class AnalyzerResolver implements ReleasableResolver {
   final AnalysisDriverForPackageBuild _driver;
   final Pool _driverPool;
 
-  final List<Uri> _sdkUris;
-
-  AnalyzerResolver(
-      this._driver, this._driverPool, this._uriResolver, this._sdkUris);
+  AnalyzerResolver(this._driver, this._driverPool, this._uriResolver);
 
   @override
   Future<bool> isLibrary(AssetId assetId) async {
@@ -308,7 +303,10 @@ class AnalyzerResolver implements ReleasableResolver {
   }
 
   Stream<LibraryElement> get sdkLibraries {
-    return Stream.fromFutures(_sdkUris.map((uri) {
+    final publicSdkUris =
+        _driver.sdkLibraryUris.where((e) => !e.path.startsWith('_'));
+
+    return Stream.fromFutures(publicSdkUris.map((uri) {
       return _driverPool.withResource(() async {
         final result = await _driver.currentSession
             .getLibraryByUri(uri.toString()) as LibraryElementResult;
@@ -400,16 +398,7 @@ class AnalyzerResolvers implements Resolvers {
       var driver = await analysisDriver(uriResolver, _analysisOptions,
           await _sdkSummaryGenerator(), loadedConfig);
 
-      var sdkForUris = FolderBasedDartSdk(
-        PhysicalResourceProvider.INSTANCE,
-        PhysicalResourceProvider.INSTANCE.getFolder(_runningDartSdkPath),
-      );
-      var publicSdkLibraries = sdkForUris.uris.map(Uri.parse).where((uri) {
-        return !uri.path.startsWith('_');
-      });
-
-      _resolver = AnalyzerResolver(
-          driver, _driverPool, uriResolver, publicSdkLibraries.toList());
+      _resolver = AnalyzerResolver(driver, _driverPool, uriResolver);
     }()));
   }
 

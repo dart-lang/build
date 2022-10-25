@@ -656,6 +656,21 @@ int? get x => 1;
             'dart:html',
             if (isFlutter) 'dart:ui',
           ]));
+
+      // Only public libraries should be reported
+      expect(
+        allLibraries,
+        everyElement(isA<LibraryElement>()
+            .having((e) => e.isPrivate, 'isPrivate', isFalse)),
+      );
+      expect(
+        allLibraries,
+        everyElement(isA<LibraryElement>().having(
+          (e) => e.source.uri.path,
+          'source.uri.path',
+          isNot(startsWith('_')),
+        )),
+      );
     }, resolvers: AnalyzerResolvers());
   });
 
