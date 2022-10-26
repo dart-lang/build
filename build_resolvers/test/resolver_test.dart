@@ -681,6 +681,33 @@ int? get x => 1;
     }, resolvers: AnalyzerResolvers());
   });
 
+  test('sdk libraries can still be resolved after seeing new assets', () async {
+    final resolvers = AnalyzerResolvers();
+    final builder = TestBuilder(
+      buildExtensions: {
+        '.dart': ['.txt']
+      },
+      build: (buildStep, buildExtensions) async {
+        await buildStep.inputLibrary;
+
+        final allLibraries = await buildStep.resolver.libraries.toList();
+        expect(allLibraries.map((e) => e.source.uri.toString()),
+            containsAll(['dart:io', 'dart:core', 'dart:html']));
+      },
+    );
+
+    final writer = InMemoryAssetWriter();
+    final reader = InMemoryAssetReader.shareAssetCache(writer.assets);
+
+    writer.assets[makeAssetId('a|lib/a.dart')] = utf8.encode('');
+    await runBuilder(
+        builder, [makeAssetId('a|lib/a.dart')], reader, writer, resolvers);
+
+    writer.assets[makeAssetId('a|lib/b.dart')] = utf8.encode('');
+    await runBuilder(
+        builder, [makeAssetId('a|lib/b.dart')], reader, writer, resolvers);
+  });
+
   group('The ${isFlutter ? 'flutter' : 'dart'} sdk', () {
     test('can${isFlutter ? '' : ' not'} resolve types from dart:ui', () async {
       return resolveSources({

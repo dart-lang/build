@@ -170,6 +170,8 @@ class AnalyzerResolver implements ReleasableResolver {
   final AnalysisDriverForPackageBuild _driver;
   final Pool _driverPool;
 
+  Future<List<LibraryElement>>? _sdkLibraries;
+
   AnalyzerResolver(this._driver, this._driverPool, this._uriResolver);
 
   @override
@@ -303,16 +305,20 @@ class AnalyzerResolver implements ReleasableResolver {
   }
 
   Stream<LibraryElement> get sdkLibraries {
-    final publicSdkUris =
-        _driver.sdkLibraryUris.where((e) => !e.path.startsWith('_'));
+    final loadLibraries = _sdkLibraries ??= Future.sync(() {
+      final publicSdkUris =
+          _driver.sdkLibraryUris.where((e) => !e.path.startsWith('_'));
 
-    return Stream.fromFutures(publicSdkUris.map((uri) {
-      return _driverPool.withResource(() async {
-        final result = await _driver.currentSession
-            .getLibraryByUri(uri.toString()) as LibraryElementResult;
-        return result.element;
-      });
-    }));
+      return Future.wait(publicSdkUris.map((uri) {
+        return _driverPool.withResource(() async {
+          final result = await _driver.currentSession
+              .getLibraryByUri(uri.toString()) as LibraryElementResult;
+          return result.element;
+        });
+      }));
+    });
+
+    return Stream.fromFuture(loadLibraries).expand((libraries) => libraries);
   }
 
   @override
