@@ -1,3 +1,7 @@
+## 7.2.8-dev
+
+- Raise the minimum SDK constraint to 2.18.
+
 ## 7.2.7
 
 - Handle generation of hidden assets in a way consistent with the definition of
