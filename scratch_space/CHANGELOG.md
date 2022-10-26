@@ -1,6 +1,6 @@
 ## 1.0.2-dev
 
-- Require Dart >=2.17.0
+- Require Dart >=2.18.0
 
 ## 1.0.1
 
