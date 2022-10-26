@@ -7,7 +7,7 @@ environment:
   sdk: '>=2.18.0 <3.0.0'
 
 dependencies:
-  analyzer: '>=5.1.0 <6.0.0'
+  analyzer: ^5.2.0
   async: ^2.5.0
   build: ^2.0.0
   crypto: ^3.0.0

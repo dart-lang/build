@@ -255,8 +255,8 @@ void main() {
               } ''',
       }, (resolver) async {
         var lib = await resolver.libraryFor(entryPoint);
-        expect(lib.parts2.length, 1);
-        expect(lib.parts2.whereType<DirectiveUriWithSource>(), isEmpty);
+        expect(lib.parts.length, 1);
+        expect(lib.parts.whereType<DirectiveUriWithSource>(), isEmpty);
       }, resolvers: AnalyzerResolvers());
     });
 
@@ -371,7 +371,7 @@ void main() {
               class Bar {}''',
       }, (resolver) async {
         var main = (await resolver.findLibraryByName('web.main'))!;
-        var meta = main.getClass('Foo')!.supertype!.element2.metadata[0];
+        var meta = main.getClass('Foo')!.supertype!.element.metadata[0];
         expect(meta, isNotNull);
         expect(meta.computeConstantValue()?.toIntValue(), 0);
       }, resolvers: AnalyzerResolvers());
@@ -698,14 +698,14 @@ int? get x => 1;
         var color = classDefinition.getField('color')!;
 
         if (isFlutter) {
-          expect(color.type.element2!.name, equals('Color'));
-          expect(color.type.element2!.library!.name, equals('dart.ui'));
+          expect(color.type.element!.name, equals('Color'));
+          expect(color.type.element!.library!.name, equals('dart.ui'));
           expect(
-              color.type.element2!.library!.definingCompilationUnit.source.uri
+              color.type.element!.library!.definingCompilationUnit.source.uri
                   .toString(),
               equals('dart:ui'));
         } else {
-          expect(color.type.element2!.name, equals('dynamic'));
+          expect(color.type.element!.name, equals('dynamic'));
         }
       }, resolvers: AnalyzerResolvers());
     });

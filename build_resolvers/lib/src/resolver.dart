@@ -261,7 +261,7 @@ class AnalyzerResolver implements ReleasableResolver {
   Future<List<ErrorsResult>> _syntacticErrorsFor(LibraryElement element) async {
     final existingSources = [element.source];
 
-    for (final part in element.parts2) {
+    for (final part in element.parts) {
       var uri = part.uri;
       // There may be no source if the part doesn't exist. That's not important
       // for us since we only care about existing file syntax.
@@ -460,7 +460,7 @@ Future<String> _defaultSdkSummaryGenerator() async {
     final embedderYamlPath =
         isFlutter ? p.join(_dartUiPath, '_embedder.yaml') : null;
     await summaryFile.writeAsBytes(
-      await buildSdkSummary2(
+      await buildSdkSummary(
         sdkPath: _runningDartSdkPath,
         resourceProvider: PhysicalResourceProvider.INSTANCE,
         embedderYamlPath: embedderYamlPath,
