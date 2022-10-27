@@ -1,3 +1,7 @@
+## 1.2.7
+
+* Require Dart SDK version `2.18`.
+
 ## 1.2.6
 
 * Add support for a `preamble` option to `combining_builder`.

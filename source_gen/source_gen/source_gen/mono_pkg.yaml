@@ -1,6 +1,6 @@
 # See https://github.com/google/mono_repo.dart for details
 sdk:
-- 2.17.6
+- pubspec
 - dev
 
 os:
@@ -15,7 +15,7 @@ stages:
     sdk: dev
   - group:
     - analyze
-    sdk: 2.17.6
+    sdk: pubspec
 - unit_test:
   - test
 

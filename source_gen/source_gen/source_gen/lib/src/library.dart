@@ -163,5 +163,5 @@ class LibraryReader {
       element.units.expand((cu) => cu.classes);
 
   /// All of the elements representing enums in this library.
-  Iterable<EnumElement> get enums => element.units.expand((cu) => cu.enums2);
+  Iterable<EnumElement> get enums => element.units.expand((cu) => cu.enums);
 }

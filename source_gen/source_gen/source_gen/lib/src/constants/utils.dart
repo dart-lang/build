@@ -15,11 +15,11 @@ void assertHasField(InterfaceElement root, String name) {
     if (field != null) {
       return;
     }
-    element = element.supertype?.element2;
+    element = element.supertype?.element;
   }
   final allFields = {
     ...root.fields,
-    for (var t in root.allSupertypes) ...t.element2.fields,
+    for (var t in root.allSupertypes) ...t.element.fields,
   };
 
   throw FormatException(
