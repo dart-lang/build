@@ -1,5 +1,6 @@
 ## 1.2.7
 
+* Update the value of the pubspec `repository` field.
 * Require Dart SDK version `2.18`.
 
 ## 1.2.6
