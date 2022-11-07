@@ -2,6 +2,7 @@
 
 * Update the value of the pubspec `repository` field.
 * Require Dart SDK version `2.18`.
+* Fix type-checking mixin elements with `TypeChecker`.
 
 ## 1.2.6
 

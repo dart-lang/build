@@ -20,9 +20,12 @@ void main() {
   late InterfaceType staticMap;
   late InterfaceType staticHashMap;
   late InterfaceType staticUnmodifiableListView;
+  late InterfaceType staticEnum;
   late TypeChecker staticIterableChecker;
   late TypeChecker staticMapChecker;
+  late TypeChecker staticMapMixinChecker;
   late TypeChecker staticHashMapChecker;
+  late TypeChecker staticEnumChecker;
 
   // Resolved top-level types from package:source_gen.
   late InterfaceType staticGenerator;
@@ -30,10 +33,15 @@ void main() {
   late TypeChecker staticGeneratorChecker;
   late TypeChecker staticGeneratorForAnnotationChecker;
 
+  // Resolved top-level types from this file
+  late InterfaceType staticMapMixin;
+  late InterfaceType staticMyEnum;
+
   setUpAll(() async {
     late LibraryElement core;
     late LibraryElement collection;
     late LibraryReader sourceGen;
+    late LibraryElement testSource;
     await resolveSource(
       r'''
       export 'package:source_gen/source_gen.dart';
@@ -46,6 +54,8 @@ void main() {
           await resolver
               .libraryFor(AssetId('source_gen', 'lib/source_gen.dart')),
         );
+        testSource = await resolver
+            .libraryFor(AssetId('source_gen', 'test/type_checker_test.dart'));
       },
       inputId: AssetId('source_gen', 'test/example.dart'),
     );
@@ -67,6 +77,24 @@ void main() {
       nullabilitySuffix: NullabilitySuffix.none,
     );
     staticMapChecker = TypeChecker.fromStatic(staticMap);
+    staticEnum = core.getClass('Enum')!.instantiate(
+      typeArguments: [],
+      nullabilitySuffix: NullabilitySuffix.none,
+    );
+    staticEnumChecker = TypeChecker.fromStatic(staticEnum);
+    staticMapMixin =
+        (testSource.exportNamespace.get('MyMapMixin')! as InterfaceElement)
+            .instantiate(
+      typeArguments: [],
+      nullabilitySuffix: NullabilitySuffix.none,
+    );
+    staticMapMixinChecker = TypeChecker.fromStatic(staticMapMixin);
+    staticMyEnum =
+        (testSource.exportNamespace.get('MyEnum')! as InterfaceElement)
+            .instantiate(
+      typeArguments: [],
+      nullabilitySuffix: NullabilitySuffix.none,
+    );
 
     staticHashMap = collection.getClass('HashMap')!.instantiate(
       typeArguments: [
@@ -99,7 +127,9 @@ void main() {
   // Run a common set of type comparison checks with various implementations.
   void commonTests({
     required TypeChecker Function() checkIterable,
+    required TypeChecker Function() checkEnum,
     required TypeChecker Function() checkMap,
+    required TypeChecker Function() checkMapMixin,
     required TypeChecker Function() checkHashMap,
     required TypeChecker Function() checkGenerator,
     required TypeChecker Function() checkGeneratorForAnnotation,
@@ -113,6 +143,25 @@ void main() {
         );
       });
     });
+
+    group('(Enum)', () {
+      test('should be supertype of enum classes', () {
+        expect(checkEnum().isSuperTypeOf(staticMyEnum), isTrue);
+      });
+    });
+
+    group(
+      '(MapMixin',
+      () {
+        test('should equal MapMixin class', () {
+          expect(checkMapMixin().isExactlyType(staticMapMixin), isTrue);
+          expect(checkMapMixin().isExactly(staticMapMixin.element), isTrue);
+        });
+      },
+      onPlatform: const {
+        'windows': Skip('https://github.com/dart-lang/source_gen/issues/573'),
+      },
+    );
 
     group('(Map)', () {
       test('should equal dart:core#Map', () {
@@ -141,6 +190,10 @@ void main() {
 
       test('should be assignable from dart:collection#HashMap', () {
         expect(checkMap().isAssignableFromType(staticHashMap), isTrue);
+      });
+
+      test('should be assignable from dart:collection#MapMixin', () {
+        expect(checkMap().isAssignableFromType(staticMapMixin), isTrue);
       });
 
       // Ensure we're consistent WRT generic types
@@ -213,7 +266,9 @@ void main() {
   group('TypeChecker.forRuntime', () {
     commonTests(
       checkIterable: () => const TypeChecker.fromRuntime(Iterable),
+      checkEnum: () => const TypeChecker.fromRuntime(Enum),
       checkMap: () => const TypeChecker.fromRuntime(Map),
+      checkMapMixin: () => const TypeChecker.fromRuntime(MyMapMixin),
       checkHashMap: () => const TypeChecker.fromRuntime(HashMap),
       checkGenerator: () => const TypeChecker.fromRuntime(Generator),
       checkGeneratorForAnnotation: () =>
@@ -224,7 +279,9 @@ void main() {
   group('TypeChecker.forStatic', () {
     commonTests(
       checkIterable: () => staticIterableChecker,
+      checkEnum: () => staticEnumChecker,
       checkMap: () => staticMapChecker,
+      checkMapMixin: () => staticMapMixinChecker,
       checkHashMap: () => staticHashMapChecker,
       checkGenerator: () => staticGeneratorChecker,
       checkGeneratorForAnnotation: () => staticGeneratorForAnnotationChecker,
@@ -234,7 +291,11 @@ void main() {
   group('TypeChecker.fromUrl', () {
     commonTests(
       checkIterable: () => const TypeChecker.fromUrl('dart:core#Iterable'),
+      checkEnum: () => const TypeChecker.fromUrl('dart:core#Enum'),
       checkMap: () => const TypeChecker.fromUrl('dart:core#Map'),
+      checkMapMixin: () => const TypeChecker.fromUrl(
+        'asset:source_gen/test/type_checker_test.dart#MyMapMixin',
+      ),
       checkHashMap: () => const TypeChecker.fromUrl('dart:collection#HashMap'),
       checkGenerator: () => const TypeChecker.fromUrl(
         'package:source_gen/src/generator.dart#Generator',
@@ -493,3 +554,9 @@ final throwsUnresolvedAnnotationException = throwsA(
   const TypeMatcher<UnresolvedAnnotationException>()
       .having((e) => e.annotationSource, 'annotationSource', isNotNull),
 );
+
+// Not using `dart.collection#MapMixin` because we want to test elements
+// actually declared as a `mixin`.
+mixin MyMapMixin on Map<dynamic, dynamic> {}
+
+enum MyEnum { foo, bar }

@@ -164,7 +164,7 @@ abstract class TypeChecker {
   /// Returns `true` if the type of [element] can be assigned to this type.
   bool isAssignableFrom(Element element) =>
       isExactly(element) ||
-      (element is ClassElement && element.allSupertypes.any(isExactlyType));
+      (element is InterfaceElement && element.allSupertypes.any(isExactlyType));
 
   /// Returns `true` if [staticType] can be assigned to this type.
   bool isAssignableFromType(DartType staticType) =>
@@ -181,7 +181,7 @@ abstract class TypeChecker {
   /// This check only takes into account the *extends* hierarchy. If you wish
   /// to check mixins and interfaces, use [isAssignableFrom].
   bool isSuperOf(Element element) {
-    if (element is ClassElement) {
+    if (element is InterfaceElement) {
       var theSuper = element.supertype;
 
       do {
@@ -211,7 +211,7 @@ class _LibraryTypeChecker extends TypeChecker {
 
   @override
   bool isExactly(Element element) =>
-      element is ClassElement && element == _type.element;
+      element is InterfaceElement && element == _type.element;
 
   @override
   String toString() => urlOfElement(_type.element!);
