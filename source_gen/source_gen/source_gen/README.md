@@ -1,14 +1,10 @@
-<p align="center">
-  <a href="https://travis-ci.org/dart-lang/source_gen">
-    <img src="https://travis-ci.org/dart-lang/source_gen.svg?branch=master" alt="Build Status" />
-  </a>
-  <a href="https://pub.dev/packages/source_gen">
-    <img src="https://img.shields.io/pub/v/source_gen.svg" alt="Pub Package Version" />
-  </a>
-  <a href="https://gitter.im/dart-lang/build">
-    <img src="https://badges.gitter.im/dart-lang/build.svg" alt="Join the chat on Gitter" />
-  </a>
-</p>
+[![Dart CI](https://github.com/dart-lang/source_gen/actions/workflows/dart.yml/badge.svg)](https://github.com/dart-lang/source_gen/actions/workflows/dart.yml)
+<a href="https://pub.dev/packages/source_gen">
+  <img src="https://img.shields.io/pub/v/source_gen.svg" alt="Pub Package Version" />
+</a>
+<a href="https://gitter.im/dart-lang/build">
+  <img src="https://badges.gitter.im/dart-lang/build.svg" alt="Join the chat on Gitter" />
+</a>
 
 ## Overview
 
