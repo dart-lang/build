@@ -23,7 +23,7 @@ jobs:
         sdk: [dev]
     steps:
       - uses: actions/checkout@v3
-      - uses: dart-lang/setup-dart@v1.0
+      - uses: dart-lang/setup-dart@v1.3
         with:
           sdk: ${{ matrix.sdk }}
       - id: install
@@ -49,7 +49,7 @@ jobs:
         sdk: [dev]
     steps:
       - uses: actions/checkout@v3
-      - uses: dart-lang/setup-dart@v1.0
+      - uses: dart-lang/setup-dart@v1.3
         with:
           sdk: ${{ matrix.sdk }}
       - id: install
@@ -73,7 +73,7 @@ jobs:
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v3
-      - uses: dart-lang/setup-dart@v1.0
+      - uses: dart-lang/setup-dart@v1.3
         with:
           sdk: dev
       - id: install
