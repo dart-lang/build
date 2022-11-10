@@ -10,12 +10,12 @@ jobs:
     name: "Tests for pkg:drift"
     runs-on: ubuntu-latest
     steps:
-      - uses: dart-lang/setup-dart@v1.3
-      - uses: actions/checkout@v2
+      - uses: dart-lang/setup-dart@6a218f2413a3e78e9087f638a238f6b40893203d
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
       - run: dart pub get
         working-directory: tool
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
         with:
           repository: simolus3/moor
           ref: latest-release
