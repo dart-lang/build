@@ -23,6 +23,9 @@ Future<AnalysisDriverForPackageBuild> analysisDriver(
   String sdkSummaryPath,
   PackageConfig packageConfig,
 ) async {
+  final cachePath = p.join('.dart_tool', 'build_resolvers', 'cache');
+  await Directory(cachePath).create(recursive: true);
+
   return createAnalysisDriver(
     analysisOptions: analysisOptions,
     packages: _buildAnalyzerPackages(
@@ -31,6 +34,11 @@ Future<AnalysisDriverForPackageBuild> analysisDriver(
     ),
     resourceProvider: buildAssetUriResolver.resourceProvider,
     sdkSummaryBytes: File(sdkSummaryPath).readAsBytesSync(),
+    byteStore: createByteStore(
+      directory: cachePath,
+      maxFileSize: 1024 * 1024 * 1024, // 1 GiB
+      memoryCacheSize: 1024 * 1024 * 128, // 128 MiB
+    ),
     uriResolvers: [
       buildAssetUriResolver,
     ],
