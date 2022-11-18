@@ -1,3 +1,5 @@
+## 2.3.2-dev
+
 ## 2.3.1
 
 - Allow the latest `package:analyzer`.
