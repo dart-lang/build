@@ -416,11 +416,12 @@ class AnalyzerResolvers implements Resolvers {
           await loadPackageConfigUri((await Isolate.packageConfig)!);
 
       try {
+        log.fine('Restoring analyzer cache from previous builds');
         if (await _cacheFile.exists()) {
           await _byteStore.readFromFile(_cacheFile);
         }
       } catch (e, s) {
-        log.fine('Could not restore analyzer cache', e, s);
+        log.warning('Could not restore analyzer cache', e, s);
       }
 
       var driver = await analysisDriver(uriResolver, _analysisOptions,
@@ -443,6 +444,8 @@ class AnalyzerResolvers implements Resolvers {
   }
 
   Future<void> _persistState() async {
+    log.fine('Storing analyzer cache');
+
     final parent = _cacheFile.parent;
     if (!await parent.exists()) {
       await parent.create(recursive: true);
