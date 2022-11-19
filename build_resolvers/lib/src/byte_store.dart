@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
+import 'package:collection/collection.dart';
 import 'package:tar/tar.dart';
 
 class BuildResolversByteStore implements ByteStore {
@@ -21,7 +22,20 @@ class BuildResolversByteStore implements ByteStore {
 
   /// Serializes the in-memory entries of this byte store into a tar archive.
   Future<void> writeToFile(File file) {
-    return Stream.fromIterable(_loadedEntries.entries)
+    const maxSize = 1024 * 1024 * 512; // 512 MiB
+    var size = 0;
+
+    // Persist the last recently used entries until we reach the maximum file
+    // size.
+    final entries = _loadedEntries.entries
+        .sortedBy<DateTime>((e) => e.value.lastAccess)
+        .reversed
+        .takeWhile((entry) {
+      size += entry.value.data.length;
+      return size < maxSize;
+    });
+
+    return Stream.fromIterable(entries)
         .map<TarEntry>(
             (e) => TarEntry.data(TarHeader(name: e.key), e.value.data))
         .transform(tarWriter)
@@ -31,7 +45,13 @@ class BuildResolversByteStore implements ByteStore {
 
   @override
   Uint8List? get(String key) {
-    return _loadedEntries[key]?.data;
+    final entry = _loadedEntries[key];
+    if (entry != null) {
+      entry.lastAccess = DateTime.now();
+      return entry.data;
+    } else {
+      return null;
+    }
   }
 
   @override
@@ -41,21 +61,13 @@ class BuildResolversByteStore implements ByteStore {
   }
 
   @override
-  void release(Iterable<String> keys) {
-    for (final key in keys) {
-      final entry = _loadedEntries[key];
-      if (entry == null) continue;
-
-      if (--entry.refCount == 0) {
-        _loadedEntries.remove(key);
-      }
-    }
-  }
+  void release(Iterable<String> keys) {}
 }
 
 class _ByteStoreEntry {
-  int refCount = 1;
-  final Uint8List data;
+  DateTime lastAccess = DateTime.now();
+
+  Uint8List data;
 
   _ByteStoreEntry(this.data);
 }

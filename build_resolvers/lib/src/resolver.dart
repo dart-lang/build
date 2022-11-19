@@ -33,7 +33,7 @@ import 'human_readable_duration.dart';
 
 final _logger = Logger('build_resolvers');
 final _cacheFile =
-    File(p.join('.dart_tool', 'build_resolvers', 'cache.tar.gz'));
+    File(p.join('.dart_tool', 'build_resolvers', 'analyzer_cache.tar.gz'));
 
 Future<String> _packagePath(String package) async {
   var libRoot = await Isolate.resolvePackageUri(Uri.parse('package:$package/'));
