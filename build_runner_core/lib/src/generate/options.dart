@@ -142,6 +142,7 @@ class BuildOptions {
 
   final PackageGraph packageGraph;
   final Resolvers resolvers;
+  final ResourceManager resourceManager;
   final TargetGraph targetGraph;
   final bool trackPerformance;
 
@@ -157,6 +158,7 @@ class BuildOptions {
     required this.enableLowResourcesMode,
     required this.logListener,
     required this.packageGraph,
+    required this.resourceManager,
     required this.skipBuildScriptCheck,
     required this.trackPerformance,
     required this.targetGraph,
@@ -208,7 +210,8 @@ feature, you may need to run `dart run build_runner clean` and then rebuild.
       }
       trackPerformance = true;
     }
-    resolvers ??= AnalyzerResolvers();
+    final resourceManager = ResourceManager();
+    resolvers ??= AnalyzerResolvers(null, null, null, resourceManager);
 
     return BuildOptions._(
       debounceDelay: debounceDelay,
@@ -221,6 +224,7 @@ feature, you may need to run `dart run build_runner clean` and then rebuild.
       targetGraph: targetGraph,
       logPerformanceDir: logPerformanceDir,
       resolvers: resolvers,
+      resourceManager: resourceManager,
     );
   }
 }

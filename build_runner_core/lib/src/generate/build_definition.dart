@@ -291,7 +291,7 @@ class _Loader {
         _wrapWriter(_environment.writer, assetGraph!),
         _options.packageGraph,
         _options.deleteFilesByDefault,
-        ResourceManager(),
+        _options.resourceManager,
         buildScriptUpdates,
         _options.enableLowResourcesMode,
         _environment);

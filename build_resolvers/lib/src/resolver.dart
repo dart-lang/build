@@ -28,9 +28,12 @@ import 'package:yaml/yaml.dart';
 
 import 'analysis_driver.dart';
 import 'build_asset_uri_resolver.dart';
+import 'byte_store.dart';
 import 'human_readable_duration.dart';
 
 final _logger = Logger('build_resolvers');
+final _cacheFile =
+    File(p.join('.dart_tool', 'build_resolvers', 'cache.tar.gz'));
 
 Future<String> _packagePath(String package) async {
   var libRoot = await Isolate.resolvePackageUri(Uri.parse('package:$package/'));
@@ -366,6 +369,8 @@ class AnalyzerResolvers implements Resolvers {
   /// Nullable, should not be accessed outside of [_ensureInitialized].
   Future<Result<void>>? _initialized;
 
+  final BuildResolversByteStore _byteStore = BuildResolversByteStore();
+
   PackageConfig? _packageConfig;
 
   /// Lazily creates and manages a single [AnalysisDriverForPackageBuild],that
@@ -382,16 +387,24 @@ class AnalyzerResolvers implements Resolvers {
   /// **NOTE**: The [_packageConfig] is not used for path resolution, it is
   /// primarily used to get the language versions. Any other data (including
   /// extra data), may be passed to the analyzer on an as needed basis.
-  AnalyzerResolvers(
-      [AnalysisOptions? analysisOptions,
-      Future<String> Function()? sdkSummaryGenerator,
-      this._packageConfig])
-      : _analysisOptions = analysisOptions ??
+  AnalyzerResolvers([
+    AnalysisOptions? analysisOptions,
+    Future<String> Function()? sdkSummaryGenerator,
+    this._packageConfig,
+    ResourceManager? resourceManager,
+  ])  : _analysisOptions = analysisOptions ??
             (AnalysisOptionsImpl()
               ..contextFeatures =
                   _featureSet(enableExperiments: enabledExperiments)),
         _sdkSummaryGenerator =
-            sdkSummaryGenerator ?? _defaultSdkSummaryGenerator;
+            sdkSummaryGenerator ?? _defaultSdkSummaryGenerator {
+    if (resourceManager != null) {
+      resourceManager.fetch(Resource(
+        () => null,
+        beforeExit: _persistState,
+      ));
+    }
+  }
 
   /// Create a Resolvers backed by an `AnalysisContext` using options
   /// [_analysisOptions].
@@ -401,8 +414,17 @@ class AnalyzerResolvers implements Resolvers {
       final uriResolver = _uriResolver = BuildAssetUriResolver();
       final loadedConfig = _packageConfig ??=
           await loadPackageConfigUri((await Isolate.packageConfig)!);
+
+      try {
+        if (await _cacheFile.exists()) {
+          await _byteStore.readFromFile(_cacheFile);
+        }
+      } catch (e, s) {
+        log.fine('Could not restore analyzer cache', e, s);
+      }
+
       var driver = await analysisDriver(uriResolver, _analysisOptions,
-          await _sdkSummaryGenerator(), loadedConfig);
+          await _sdkSummaryGenerator(), loadedConfig, _byteStore);
 
       _resolver = AnalyzerResolver(driver, _driverPool, uriResolver);
     }()));
@@ -418,6 +440,15 @@ class AnalyzerResolvers implements Resolvers {
   @override
   void reset() {
     _uriResolver?.reset();
+  }
+
+  Future<void> _persistState() async {
+    final parent = _cacheFile.parent;
+    if (!await parent.exists()) {
+      await parent.create(recursive: true);
+    }
+
+    await _byteStore.writeToFile(_cacheFile);
   }
 }
 
