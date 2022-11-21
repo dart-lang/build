@@ -12,6 +12,12 @@ const optionsSkew = 'DIFFERENT OPTIONS';
 
 const buildModeFlag = 'build-mode';
 
+/// Daemon shuts down after this timeout if there is no active connection.
+const defaultIdleTimeout = Duration(seconds: 30);
+
+const fileChangeEventErrorCode = 1;
+const fileChangeStreamClosedErrorCode = 2;
+
 enum BuildMode {
   // ignore: constant_identifier_names
   Manual,

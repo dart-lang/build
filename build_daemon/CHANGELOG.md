@@ -1,3 +1,8 @@
+## 3.1.1-dev
+
+- Report file watching errors and stop the daemon.
+
+
 ## 3.1.0
 
 - Add `BuildResults.changedAssets` containing asset URIs changed during a
