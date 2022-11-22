@@ -25,7 +25,7 @@ import 'src/server.dart';
 class Daemon {
   final String _workingDirectory;
   final RandomAccessFile? _lock;
-  final _doneCompleter = Completer();
+  final _doneCompleter = Completer<int>();
 
   Server? _server;
   StreamSubscription? _sub;
@@ -34,7 +34,8 @@ class Daemon {
       : _workingDirectory = workingDirectory,
         _lock = _tryGetLock(workingDirectory);
 
-  Future<void> get onDone => _doneCompleter.future;
+  /// Returns exit code.
+  Future<int> get onDone => _doneCompleter.future;
 
   Future<void> stop({String message = '', int failureType = 0}) =>
       _server!.stop(message: message, failureType: failureType);
@@ -65,7 +66,7 @@ class Daemon {
     ChangeProvider changeProvider, {
     Serializers? serializersOverride,
     bool Function(BuildTarget, Iterable<WatchEvent>)? shouldBuild,
-    Duration timeout = const Duration(seconds: 30),
+    Duration timeout = defaultIdleTimeout,
   }) async {
     if (_server != null || _lock == null) return;
     _handleGracefulExit();
@@ -83,12 +84,12 @@ class Daemon {
     var port = await server.listen();
     _createPortFile(port);
 
-    unawaited(server.onDone.then((_) async {
-      await _cleanUp();
+    unawaited(server.onDone.then((exitCode) async {
+      await _cleanUp(exitCode);
     }));
   }
 
-  Future<void> _cleanUp() async {
+  Future<void> _cleanUp(int exitCode) async {
     await _server?.stop();
     await _sub?.cancel();
     // We need to close the lock prior to deleting the file.
@@ -97,7 +98,7 @@ class Daemon {
     if (workspace.existsSync()) {
       workspace.deleteSync(recursive: true);
     }
-    if (!_doneCompleter.isCompleted) _doneCompleter.complete();
+    if (!_doneCompleter.isCompleted) _doneCompleter.complete(exitCode);
   }
 
   void _createPortFile(int port) =>
