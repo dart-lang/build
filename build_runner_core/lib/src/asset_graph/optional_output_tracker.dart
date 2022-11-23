@@ -6,6 +6,7 @@ import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 
 import '../generate/phase.dart';
+import '../package_graph/target_graph.dart';
 import '../util/build_dirs.dart';
 import 'graph.dart';
 import 'node.dart';
@@ -31,12 +32,13 @@ import 'node.dart';
 class OptionalOutputTracker {
   final _checkedOutputs = <AssetId, bool>{};
   final AssetGraph _assetGraph;
+  final TargetGraph _targetGraph;
   final Set<String> _buildDirs;
   final Set<BuildFilter> _buildFilters;
   final List<BuildPhase> _buildPhases;
 
-  OptionalOutputTracker(
-      this._assetGraph, this._buildDirs, this._buildFilters, this._buildPhases);
+  OptionalOutputTracker(this._assetGraph, this._targetGraph, this._buildDirs,
+      this._buildFilters, this._buildPhases);
 
   /// Returns whether [output] is required.
   ///
@@ -53,7 +55,11 @@ class OptionalOutputTracker {
     if (node is! GeneratedAssetNode) return true;
     final phase = _buildPhases[node.phaseNumber];
     if (!phase.isOptional &&
-        shouldBuildForDirs(output, _buildDirs, _buildFilters, phase)) {
+        shouldBuildForDirs(output,
+            buildDirs: _buildDirs,
+            buildFilters: _buildFilters,
+            phase: phase,
+            targetGraph: _targetGraph)) {
       return true;
     }
     return _checkedOutputs.putIfAbsent(

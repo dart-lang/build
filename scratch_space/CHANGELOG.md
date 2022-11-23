@@ -1,3 +1,7 @@
+## 1.0.2-dev
+
+- Require Dart >=2.18.0
+
 ## 1.0.1
 
 - Drop package:pedantic dependency and replace it with package:lints.

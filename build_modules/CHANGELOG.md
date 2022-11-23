@@ -1,4 +1,12 @@
-## 4.0.6-dev
+## 4.0.7
+
+- Migrate off deprecated analyzer apis.
+- Update min sdk constraint to 2.18.0.
+- Expand pubspec description.
+
+## 4.0.6
+
+- Allow the latest `package:analyzer`.
 
 ## 4.0.5
 

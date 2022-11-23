@@ -48,8 +48,7 @@ class PerActionResolver implements ReleasableResolver {
 
   PerActionResolver(this._delegate, this._driverPool, this._step);
 
-  @override
-  Stream<LibraryElement> get libraries async* {
+  Stream<LibraryElement> get _librariesFromEntrypoints async* {
     await _resolveIfNecessary(_step.inputId, transitive: true);
 
     final seen = <LibraryElement>{};
@@ -78,6 +77,12 @@ class PerActionResolver implements ReleasableResolver {
       toVisit.addAll(toCrawl);
       seen.addAll(toCrawl);
     }
+  }
+
+  @override
+  Stream<LibraryElement> get libraries async* {
+    yield* _delegate.sdkLibraries;
+    yield* _librariesFromEntrypoints.where((library) => !library.isInSdk);
   }
 
   @override
@@ -164,6 +169,8 @@ class AnalyzerResolver implements ReleasableResolver {
   final BuildAssetUriResolver _uriResolver;
   final AnalysisDriverForPackageBuild _driver;
   final Pool _driverPool;
+
+  Future<List<LibraryElement>>? _sdkLibraries;
 
   AnalyzerResolver(this._driver, this._driverPool, this._uriResolver);
 
@@ -256,7 +263,7 @@ class AnalyzerResolver implements ReleasableResolver {
   Future<List<ErrorsResult>> _syntacticErrorsFor(LibraryElement element) async {
     final existingSources = [element.source];
 
-    for (final part in element.parts2) {
+    for (final part in element.parts) {
       var uri = part.uri;
       // There may be no source if the part doesn't exist. That's not important
       // for us since we only care about existing file syntax.
@@ -295,6 +302,23 @@ class AnalyzerResolver implements ReleasableResolver {
     // We don't know what libraries to expose without leaking libraries written
     // by later phases.
     throw UnimplementedError();
+  }
+
+  Stream<LibraryElement> get sdkLibraries {
+    final loadLibraries = _sdkLibraries ??= Future.sync(() {
+      final publicSdkUris =
+          _driver.sdkLibraryUris.where((e) => !e.path.startsWith('_'));
+
+      return Future.wait(publicSdkUris.map((uri) {
+        return _driverPool.withResource(() async {
+          final result = await _driver.currentSession
+              .getLibraryByUri(uri.toString()) as LibraryElementResult;
+          return result.element;
+        });
+      }));
+    });
+
+    return Stream.fromFuture(loadLibraries).expand((libraries) => libraries);
   }
 
   @override
@@ -379,6 +403,7 @@ class AnalyzerResolvers implements Resolvers {
           await loadPackageConfigUri((await Isolate.packageConfig)!);
       var driver = await analysisDriver(uriResolver, _analysisOptions,
           await _sdkSummaryGenerator(), loadedConfig);
+
       _resolver = AnalyzerResolver(driver, _driverPool, uriResolver);
     }()));
   }
@@ -441,7 +466,7 @@ Future<String> _defaultSdkSummaryGenerator() async {
     final embedderYamlPath =
         isFlutter ? p.join(_dartUiPath, '_embedder.yaml') : null;
     await summaryFile.writeAsBytes(
-      await buildSdkSummary2(
+      await buildSdkSummary(
         sdkPath: _runningDartSdkPath,
         resourceProvider: PhysicalResourceProvider.INSTANCE,
         embedderYamlPath: embedderYamlPath,

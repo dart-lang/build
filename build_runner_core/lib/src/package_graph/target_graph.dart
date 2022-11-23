@@ -67,7 +67,10 @@ class TargetGraph {
           await _packageBuildConfig(package);
       List<String> defaultInclude;
       if (package.isRoot) {
-        defaultInclude = defaultRootPackageSources;
+        defaultInclude = [
+          ...defaultRootPackageSources,
+          ...config.additionalPublicAssets,
+        ];
         rootPackageConfig = config;
       } else if (package.name == r'$sdk') {
         defaultInclude = const [
@@ -79,9 +82,14 @@ class TargetGraph {
           ...defaultNonRootVisibleAssets,
           ...config.additionalPublicAssets
         ];
-        publicAssetsByPackage[package.name] =
-            InputMatcher(const InputSet(), defaultInclude: defaultInclude);
       }
+      publicAssetsByPackage[package.name] = InputMatcher(
+        const InputSet(),
+        defaultInclude: [
+          ...defaultNonRootVisibleAssets, // public by default
+          ...config.additionalPublicAssets // user-defined public assets
+        ],
+      );
       final nodes = config.buildTargets.values.map((target) =>
           TargetNode(target, package, defaultInclude: defaultInclude));
       if (package.name != r'$sdk') {
@@ -153,6 +161,25 @@ class TargetGraph {
 
     // For other packages, the asset must be marked as public
     return _matcherForNonRoot(enclosingPackage).matches(id);
+  }
+
+  /// Whether [id] is considered to be semantically public.
+  ///
+  /// By default, files in [defaultNonRootVisibleAssets] are considered public
+  /// assets as they are interesting for dependent Dart packages.
+  ///
+  /// However, a package can add additional sources that it considers to be
+  /// public (see [BuildConfig.additionalPublicAssets]). This is not typically
+  /// necessary, but may be helpful to embed non-Dart packages into the Dart
+  /// package ecosystem. For instance, a C library built with `build_runner` may
+  /// choose to include `include/**` as a public asset.
+  ///
+  /// Public assets are added as default sources to the default target. They are
+  /// also not considered optional outputs for hidden build phases.
+  bool isPublicAsset(AssetId id) {
+    final filter =
+        _publicAssetsByPackage[id.package] ?? _defaultMatcherForNonRoot;
+    return filter.matches(id);
   }
 
   InputMatcher _matcherForNonRoot(PackageNode node) {

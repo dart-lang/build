@@ -1,5 +1,20 @@
-## 2.2.1-dev
+## 2.3.3-dev
 
+## 2.3.2
+
+- Add supported platforms to pubspec.
+
+## 2.3.1
+
+- Upgrade to `frontend_service_client` version 3.
+
+## 2.3.0
+
+- Add `-d` as a shorthand for `--delete-conflicting-outputs`.
+
+## 2.2.1
+
+- Allow the latest `package:analyzer`.
 - Stop ignoring the no_leading_underscores_for_library_prefixes lint in
   generated build scripts, code_builder now does this for you.
 - Added a flag to redirect all not found to a specific 

@@ -37,11 +37,11 @@ Future<String> _generateBuildScript() async {
   final info = await findBuildScriptOptions();
   final builders = info.builderApplications;
   final library = Library((b) => b.body.addAll([
-        literalList(
+        declareFinal('_builders')
+            .assign(literalList(
                 builders,
                 refer('BuilderApplication',
-                    'package:build_runner_core/build_runner_core.dart'))
-            .assignFinal('_builders')
+                    'package:build_runner_core/build_runner_core.dart')))
             .statement,
         _main()
       ]));
@@ -248,10 +248,9 @@ Method _main() => Method((b) => b
       ..url = 'dart:isolate'
       ..isNullable = true)))
   ..body = Block.of([
-    refer('run', 'package:build_runner/build_runner.dart')
-        .call([refer('args'), refer('_builders')])
-        .awaited
-        .assignVar('result')
+    declareVar('result')
+        .assign(refer('run', 'package:build_runner/build_runner.dart')
+            .call([refer('args'), refer('_builders')]).awaited)
         .statement,
     refer('sendPort')
         .nullSafeProperty('send')

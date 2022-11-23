@@ -1,6 +1,25 @@
-## 7.2.4-dev
+## 7.2.8-dev
+
+- Raise the minimum SDK constraint to 2.18.
+
+## 7.2.7
+
+- Handle generation of hidden assets in a way consistent with the definition of
+  public assets used in other parts of the build system.
+
+## 7.2.6
+
+- Add supported platforms to pubspec.
+
+## 7.2.5
+
+- Expand pubspec description.
+
+## 7.2.4
 
 - Fix some new lints.
+- Fix a bug in the LRU cache.
+- Fix a bug when manually deleting outputs of multiple output builders.
 
 ## 7.2.3
 

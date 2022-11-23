@@ -124,6 +124,7 @@ class BuildImpl {
     var finalizedReader = FinalizedReader(
         singleStepReader,
         buildDefinition.assetGraph,
+        buildDefinition.targetGraph,
         buildPhases,
         options.packageGraph.root.name);
     var build =
@@ -233,8 +234,8 @@ class _SingleBuild {
   Future<BuildResult> run(Map<AssetId, ChangeType> updates) async {
     var watch = Stopwatch()..start();
     var result = await _safeBuild(updates);
-    var optionalOutputTracker = OptionalOutputTracker(
-        _assetGraph, _buildPaths(_buildDirs), _buildFilters, _buildPhases);
+    var optionalOutputTracker = OptionalOutputTracker(_assetGraph, _targetGraph,
+        _buildPaths(_buildDirs), _buildFilters, _buildPhases);
     if (result.status == BuildStatus.success) {
       final failures = _assetGraph.failedOutputs
           .where((n) => optionalOutputTracker.isRequired(n.id));
@@ -374,8 +375,11 @@ class _SingleBuild {
 
     await Future.wait(
         _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
-      if (!shouldBuildForDirs(
-          node.id, _buildPaths(_buildDirs), _buildFilters, phase)) {
+      if (!shouldBuildForDirs(node.id,
+          buildDirs: _buildPaths(_buildDirs),
+          buildFilters: _buildFilters,
+          phase: phase,
+          targetGraph: _targetGraph)) {
         return;
       }
 
@@ -680,28 +684,36 @@ class _SingleBuild {
         '${outputs.where((o) => !_assetGraph.contains(o)).toList()}');
     assert(outputs.isNotEmpty, 'Can\'t run a build with no outputs');
 
-    // We only check the first output, because all outputs share the same inputs
-    // and invalidation state.
-    var firstOutput = outputs.first;
-    var node = _assetGraph.get(firstOutput) as GeneratedAssetNode;
+    // We check if any output definitely needs an update - its possible during
+    // manual deletions that only one of the outputs would be marked.
+    for (var output in outputs.skip(1)) {
+      if ((_assetGraph.get(output) as GeneratedAssetNode).state ==
+          NodeState.definitelyNeedsUpdate) {
+        return true;
+      }
+    }
+
+    // Otherwise, we only check the first output, because all outputs share the
+    // same inputs and invalidation state.
+    var firstNode = _assetGraph.get(outputs.first) as GeneratedAssetNode;
     assert(
         outputs.skip(1).every((output) =>
             (_assetGraph.get(output) as GeneratedAssetNode)
                 .inputs
-                .difference(node.inputs)
+                .difference(firstNode.inputs)
                 .isEmpty),
         'All outputs of a build action should share the same inputs.');
 
     // No need to build an up to date output
-    if (node.state == NodeState.upToDate) return false;
+    if (firstNode.state == NodeState.upToDate) return false;
     // Early bail out condition, this is a forced update.
-    if (node.state == NodeState.definitelyNeedsUpdate) return true;
+    if (firstNode.state == NodeState.definitelyNeedsUpdate) return true;
     // This is a fresh build or the first time we've seen this output.
-    if (node.previousInputsDigest == null) return true;
+    if (firstNode.previousInputsDigest == null) return true;
 
     var digest = await _computeCombinedDigest(
-        node.inputs, node.builderOptionsId, reader);
-    if (digest != node.previousInputsDigest) {
+        firstNode.inputs, firstNode.builderOptionsId, reader);
+    if (digest != firstNode.previousInputsDigest) {
       return true;
     } else {
       // Make sure to update the `state` field for all outputs.

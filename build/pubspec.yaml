@@ -1,13 +1,13 @@
 name: build
-version: 2.3.0
+version: 2.3.2-dev
 description: A package for authoring build_runner compatible code generators.
 repository: https://github.com/dart-lang/build/tree/master/build
 
 environment:
-  sdk: ">=2.14.0 <3.0.0"
+  sdk: ">=2.18.0 <3.0.0"
 
 dependencies:
-  analyzer: ">=1.5.0 <5.0.0"
+  analyzer: ">=1.5.0 <6.0.0"
   async: ^2.5.0
   convert: ^3.0.0
   crypto: ^3.0.0

@@ -54,6 +54,7 @@ class BuilderOptions {
   ///
   /// The `isRoot` value will also be overridden to value from [other].
   BuilderOptions overrideWith(BuilderOptions? other) {
+    // ignore: avoid_returning_this
     if (other == null) return this;
     return BuilderOptions(
         {}

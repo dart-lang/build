@@ -543,6 +543,45 @@ void main() {
         blockingCompleter.complete();
         await done;
       });
+
+      test('does not build hidden non-lib assets by default', () async {
+        final writer = InMemoryRunnerAssetWriter();
+        final result = await testBuilders(
+          [applyToRoot(testBuilder, hideOutput: true)],
+          {'a|example/a.txt': 'a', 'a|lib/b.txt': 'b'},
+          checkBuildStatus: false,
+          buildDirs: {BuildDirectory('web')},
+          writer: writer,
+        );
+
+        checkBuild(result,
+            writer: writer, outputs: {r'$$a|lib/b.txt.copy': 'b'});
+      });
+
+      test('builds hidden asset forming a custom public source', () async {
+        final writer = InMemoryRunnerAssetWriter();
+        final result = await testBuilders(
+          [applyToRoot(testBuilder, hideOutput: true)],
+          {'a|include/a.txt': 'a', 'a|lib/b.txt': 'b'},
+          checkBuildStatus: false,
+          buildDirs: {BuildDirectory('web')},
+          writer: writer,
+          overrideBuildConfig: {
+            'a': BuildConfig.fromMap('a', const [], {
+              'additional_public_assets': ['include/**']
+            }),
+          },
+        );
+
+        checkBuild(
+          result,
+          writer: writer,
+          outputs: {
+            r'$$a|include/a.txt.copy': 'a',
+            r'$$a|lib/b.txt.copy': 'b',
+          },
+        );
+      });
     });
 
     group('reading assets outside of the root package', () {
@@ -1273,6 +1312,44 @@ void main() {
           outputs: {
             'a|web/a.txt.copy': 'a2',
             'a|lib/c.txt.copy': 'c',
+          },
+          writer: writer);
+    });
+
+    test('deleting only the second output of a builder causes it to rerun',
+        () async {
+      var builders = [
+        applyToRoot(TestBuilder(buildExtensions: {
+          '.txt': ['.txt.1', '.txt.2']
+        }))
+      ];
+
+      // Initial build.
+      var writer = InMemoryRunnerAssetWriter();
+      await testBuilders(
+          builders,
+          {
+            'a|lib/a.txt': 'a',
+          },
+          outputs: {
+            'a|lib/a.txt.1': 'a',
+            'a|lib/a.txt.2': 'a',
+          },
+          writer: writer);
+
+      // Followup build with the 2nd output missing.
+      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
+      writer.assets.clear();
+      await testBuilders(
+          builders,
+          {
+            'a|lib/a.txt': 'a',
+            'a|lib/a.txt.1': 'a',
+            'a|$assetGraphPath': serializedGraph,
+          },
+          outputs: {
+            'a|lib/a.txt.1': 'a',
+            'a|lib/a.txt.2': 'a',
           },
           writer: writer);
     });

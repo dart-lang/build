@@ -238,6 +238,6 @@ bool _isPart(CompilationUnit dart) =>
 // but has a part that does, or it exports a `main` from another library.
 bool _hasMainMethod(CompilationUnit dart) => dart.declarations.any((node) =>
     node is FunctionDeclaration &&
-    node.name2.lexeme == 'main' &&
+    node.name.lexeme == 'main' &&
     node.functionExpression.parameters != null &&
     node.functionExpression.parameters!.parameters.length <= 2);

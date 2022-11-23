@@ -18,10 +18,15 @@ abstract class Resolver {
   /// or is a `part of` file (not a standalone Dart library).
   Future<bool> isLibrary(AssetId assetId);
 
-  /// All libraries recursively accessible from the entry point or subsequent
-  /// calls to [libraryFor] and [isLibrary].
+  /// All libraries resolved by this resolver.
   ///
-  /// **NOTE**: This includes all Dart SDK libraries as well.
+  /// This includes the following libraries:
+  ///  - The primary input of this resolver (in other words, the
+  ///   [BuildStep.inputId] of a build step).
+  ///  - Libraries resolved with a direct [libraryFor] call.
+  ///  - Every public `dart:` library part of the SDK.
+  ///  - All libraries recursively accessible from the mentioned sources, for
+  ///    instance because due to imports or exports.
   Stream<LibraryElement> get libraries;
 
   /// Returns the parsed [AstNode] for [Element].
@@ -58,8 +63,9 @@ abstract class Resolver {
   /// Returns the first resolved library identified by [libraryName].
   ///
   /// A library is resolved if it's recursively accessible from the entry point
-  /// or subsequent calls to [libraryFor] and [isLibrary]. If no library can be
-  /// found, returns `null`.
+  /// or subsequent calls to [libraryFor]. In other words, this searches for
+  /// libraries in [libraries].
+  /// If no library can be found, returns `null`.
   ///
   /// **NOTE**: In general, its recommended to use [libraryFor] with an absolute
   /// asset id instead of a named identifier that has the possibility of not
