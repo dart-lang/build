@@ -8,17 +8,16 @@
 
 - Upgrade to `frontend_service_client` version 3.
 
-## 2.3.0
-
+## 2.3.3-dev
 - Add `-d` as a shorthand for `--delete-conflicting-outputs`.
+- Added a flag to redirect all not found to a specific 
+  asset: ` not-found-defaults-to`
 
 ## 2.2.1
 
 - Allow the latest `package:analyzer`.
 - Stop ignoring the no_leading_underscores_for_library_prefixes lint in
   generated build scripts, code_builder now does this for you.
-- Added a flag to redirect all not found to a specific 
-  asset: ` not-found-defaults-to`
 
 ## 2.2.0
 
