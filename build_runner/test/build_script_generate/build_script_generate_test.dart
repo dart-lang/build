@@ -39,7 +39,8 @@ builders:
         ]).create();
 
         var result = await runPub('a', 'run', args: ['build_runner', 'build']);
-        expect(result.stderr, isEmpty);
+        expect(result.stderr, isEmpty,
+            skip: 'https://github.com/dart-lang/sdk/issues/50592');
         expect(
             result.stdout,
             contains(
@@ -58,7 +59,8 @@ builders:
         ]).create();
 
         var result = await runPub('a', 'run', args: ['build_runner', 'build']);
-        expect(result.stderr, isEmpty);
+        expect(result.stderr, isEmpty,
+            skip: 'https://github.com/dart-lang/sdk/issues/50592');
         expect(
             result.stdout,
             isNot(contains(
@@ -87,7 +89,8 @@ builders:
 ''')
         ]).create();
         var result = await runPub('a', 'run', args: ['build_runner', 'build']);
-        expect(result.stderr, isEmpty);
+        expect(result.stderr, isEmpty,
+            skip: 'https://github.com/dart-lang/sdk/issues/50592');
         expect(result.stdout, contains('could not be parsed'));
       });
     });
@@ -103,7 +106,8 @@ global_options:
       ]).create();
 
       var result = await runPub('a', 'run', args: ['build_runner', 'build']);
-      expect(result.stderr, isEmpty);
+      expect(result.stderr, isEmpty,
+          skip: 'https://github.com/dart-lang/sdk/issues/50592');
       expect(
           result.stdout,
           allOf(
