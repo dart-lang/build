@@ -181,7 +181,6 @@ Future<Process> _runDaemon(String workspace,
     int closeChangeProviderAfterNSeconds = -1}) async {
   timeout = timeout > 0 ? timeout : defaultIdleTimeoutSec;
   await d.file('test.dart', '''
-    // @dart=2.9
     import 'package:build_daemon/daemon.dart';
     import 'package:build_daemon/daemon_builder.dart';
     import 'package:build_daemon/client.dart';
