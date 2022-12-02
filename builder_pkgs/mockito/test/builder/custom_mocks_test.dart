@@ -651,6 +651,34 @@ void main() {
 
   test(
       'generates mock methods with non-nullable return types, specifying '
+      'legal default values for basic known types, in mixed mode', () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+        abstract class Foo {
+          int m({required int x, double? y});
+        }
+        '''),
+      'foo|test/foo_test.dart': '''
+        // @dart=2.9
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+
+        @GenerateMocks(
+          [],
+          customMocks: [
+            MockSpec<Foo>(onMissingStub: OnMissingStub.returnDefault),
+          ],
+        )
+        void main() {}
+        '''
+    });
+    expect(mocksContent, contains('returnValue: 0,'));
+    expect(mocksContent, contains('returnValueForMissingStub: 0,'));
+  });
+
+  test(
+      'generates mock methods with non-nullable return types, specifying '
       'legal default values for unknown types', () async {
     var mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
