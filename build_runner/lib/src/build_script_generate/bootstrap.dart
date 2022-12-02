@@ -73,7 +73,7 @@ Future<int> generateAndRun(
     errorPort = ReceivePort();
     messagePort = ReceivePort();
     errorListener = errorPort.listen((e) {
-      final error = e[0] as Object? ?? NullThrownError();
+      final error = e[0] as Object? ?? TypeError();
       final trace = Trace.parse(e[1] as String? ?? '').terse;
 
       handleUncaughtError(error, trace);
