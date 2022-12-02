@@ -74,12 +74,12 @@ void main() {
         var error = nextStdOutLine('Error compiling dartdevc module:'
             '_test|test/common/message.sound.ddc.js');
         var nextBuild = nextFailedBuild;
-        await replaceAllInFile(path, "'Hello World!'", '1');
+        await replaceAllInFile(path, "'Hello World!';", '1;');
         await error;
         await nextBuild;
 
         nextBuild = nextSuccessfulBuild;
-        await replaceAllInFile(path, '1', "'Hello World!'");
+        await replaceAllInFile(path, '1;', "'Hello World!';");
         await nextBuild;
         await expectTestsPass();
       });
