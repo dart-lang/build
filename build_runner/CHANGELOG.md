@@ -1,4 +1,8 @@
-## 2.3.3-dev
+## 2.4.0-dev
+
+- Add `--delay-writes` option to delay all writes to the end of a build. As no
+  intermediate build state is visible on the file system, this may improve
+  performance of third-party tools like the analysis server.
 
 ## 2.3.2
 

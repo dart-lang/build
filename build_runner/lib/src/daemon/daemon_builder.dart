@@ -220,6 +220,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       logSubscription,
       packageGraph: packageGraph,
       deleteFilesByDefault: daemonOptions.deleteFilesByDefault,
+      delayWrites: daemonOptions.delayAssetWrites,
       overrideBuildConfig: overrideBuildConfig,
       skipBuildScriptCheck: daemonOptions.skipBuildScriptCheck,
       enableLowResourcesMode: daemonOptions.enableLowResourcesMode,

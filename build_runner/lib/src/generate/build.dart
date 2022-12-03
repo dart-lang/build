@@ -12,9 +12,9 @@ import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:watcher/watcher.dart';
 
-import '../logging/std_io_logging.dart';
 import '../package_graph/build_config_overrides.dart';
 import '../server/server.dart';
+import 'environment.dart';
 import 'watch_impl.dart' as watch_impl;
 
 /// Runs all of the BuilderApplications in [builders] once.
@@ -68,7 +68,8 @@ Future<BuildResult> build(List<BuilderApplication> builders,
     bool? isReleaseBuild,
     Map<String, Map<String, dynamic>>? builderConfigOverrides,
     String? logPerformanceDir,
-    Set<BuildFilter>? buildFilters}) async {
+    Set<BuildFilter>? buildFilters,
+    bool? delayAssetWrites}) async {
   builderConfigOverrides ??= const {};
   buildDirs ??= <BuildDirectory>{};
   buildFilters ??= <BuildFilter>{};
@@ -80,20 +81,24 @@ Future<BuildResult> build(List<BuilderApplication> builders,
   skipBuildScriptCheck ??= false;
   trackPerformance ??= false;
   verbose ??= false;
-  var environment = OverrideableEnvironment(
-      IOEnvironment(
-        packageGraph,
-        assumeTty: assumeTty,
-        outputSymlinksOnly: outputSymlinksOnly,
-      ),
-      reader: reader,
-      writer: writer,
-      onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose));
+
+  final environment = createEnvironment(
+    packageGraph: packageGraph,
+    assumeTty: assumeTty,
+    outputSymlinksOnly: outputSymlinksOnly,
+    reader: reader,
+    writer: writer,
+    delayAssetWrites: delayAssetWrites,
+    onLog: onLog,
+    verbose: verbose,
+  );
+
   var logSubscription =
       LogSubscription(environment, verbose: verbose, logLevel: logLevel);
   var options = await BuildOptions.create(
     logSubscription,
     deleteFilesByDefault: deleteFilesByDefault,
+    delayWrites: delayAssetWrites == true,
     packageGraph: packageGraph,
     skipBuildScriptCheck: skipBuildScriptCheck,
     overrideBuildConfig: await findBuildConfigOverrides(
@@ -165,7 +170,8 @@ Future<ServeHandler> watch(List<BuilderApplication> builders,
         bool? isReleaseBuild,
         Map<String, Map<String, dynamic>>? builderConfigOverrides,
         String? logPerformanceDir,
-        Set<BuildFilter>? buildFilters}) =>
+        Set<BuildFilter>? buildFilters,
+        bool? delayAssetWrites}) =>
     watch_impl.watch(
       builders,
       assumeTty: assumeTty,

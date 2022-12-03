@@ -33,6 +33,7 @@ const skipBuildScriptCheckOption = 'skip-build-script-check';
 const symlinkOption = 'symlink';
 const usePollingWatcherOption = 'use-polling-watcher';
 const verboseOption = 'verbose';
+const delayWritesOption = 'delay-writes';
 
 enum BuildUpdatesOption { none, liveReload }
 
@@ -67,6 +68,9 @@ class SharedOptions {
   /// Enables performance tracking and the `/$perf` page.
   final bool trackPerformance;
 
+  /// Delay asset writes until the end of a build.
+  final bool delayAssetWrites;
+
   /// A directory to log performance information to.
   String? logPerformanceDir;
 
@@ -100,6 +104,7 @@ class SharedOptions {
     required this.isReleaseBuild,
     required this.logPerformanceDir,
     required this.enableExperiments,
+    required this.delayAssetWrites,
   });
 
   SharedOptions.fromParsedArgs(ArgResults argResults,
@@ -122,6 +127,7 @@ class SharedOptions {
           isReleaseBuild: argResults[releaseOption] as bool,
           logPerformanceDir: argResults[logPerformanceOption] as String?,
           enableExperiments: argResults[enableExperimentOption] as List<String>,
+          delayAssetWrites: argResults[delayWritesOption] as bool,
         );
 }
 
@@ -147,6 +153,7 @@ class DaemonOptions extends WatchOptions {
     required String? logPerformanceDir,
     required bool usePollingWatcher,
     required List<String> enableExperiments,
+    required super.delayAssetWrites,
   }) : super._(
           buildFilters: buildFilters,
           deleteFilesByDefault: deleteFilesByDefault,
@@ -202,6 +209,7 @@ class DaemonOptions extends WatchOptions {
       logPerformanceDir: argResults[logPerformanceOption] as String?,
       usePollingWatcher: argResults[usePollingWatcherOption] as bool,
       enableExperiments: argResults[enableExperimentOption] as List<String>,
+      delayAssetWrites: argResults[delayWritesOption] as bool,
     );
   }
 }
@@ -229,6 +237,7 @@ class WatchOptions extends SharedOptions {
     required bool isReleaseBuild,
     required String? logPerformanceDir,
     required List<String> enableExperiments,
+    required super.delayAssetWrites,
   }) : super._(
           buildFilters: buildFilters,
           deleteFilesByDefault: deleteFilesByDefault,
@@ -266,6 +275,7 @@ class WatchOptions extends SharedOptions {
           logPerformanceDir: argResults[logPerformanceOption] as String?,
           usePollingWatcher: argResults[usePollingWatcherOption] as bool,
           enableExperiments: argResults[enableExperimentOption] as List<String>,
+          delayAssetWrites: argResults[delayWritesOption] as bool,
         );
 }
 
@@ -295,6 +305,7 @@ class ServeOptions extends WatchOptions {
     required String? logPerformanceDir,
     required bool usePollingWatcher,
     required List<String> enableExperiments,
+    required super.delayAssetWrites,
   }) : super._(
           buildFilters: buildFilters,
           deleteFilesByDefault: deleteFilesByDefault,
@@ -381,6 +392,7 @@ class ServeOptions extends WatchOptions {
       logPerformanceDir: argResults[logPerformanceOption] as String?,
       usePollingWatcher: argResults[usePollingWatcherOption] as bool,
       enableExperiments: argResults[enableExperimentOption] as List<String>,
+      delayAssetWrites: argResults[delayWritesOption] as bool,
     );
   }
 }

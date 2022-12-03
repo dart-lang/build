@@ -38,4 +38,7 @@ class InMemoryRunnerAssetWriter extends InMemoryAssetWriter
     FakeWatcher.notifyWatchers(
         WatchEvent(ChangeType.REMOVE, p.absolute(id.package, id.path)));
   }
+
+  @override
+  void onBuildComplete() {}
 }

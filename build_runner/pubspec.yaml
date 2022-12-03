@@ -1,10 +1,10 @@
 name: build_runner
-version: 2.3.3-dev
+version: 2.4.0-dev
 description: A build system for Dart code generation and modular compilation.
 repository: https://github.com/dart-lang/build/tree/master/build_runner
 
 environment:
-  sdk: ">=2.14.0 <3.0.0"
+  sdk: ">=2.17.0 <3.0.0"
 
 platforms:
   linux:
@@ -19,7 +19,7 @@ dependencies:
   build_config: ">=1.1.0 <1.2.0"
   build_daemon: ^3.1.0
   build_resolvers: ^2.0.0
-  build_runner_core: ^7.2.0
+  build_runner_core: ^8.0.0-dev
   code_builder: ^4.2.0
   collection: ^1.15.0
   crypto: ^3.0.0
@@ -57,3 +57,7 @@ dev_dependencies:
   test_process: ^2.0.0
   _test_common:
     path: ../_test_common
+
+dependency_overrides:
+  build_runner_core:
+    path: ../build_runner_core/

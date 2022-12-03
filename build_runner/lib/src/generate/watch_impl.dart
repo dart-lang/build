@@ -24,8 +24,8 @@ import 'package:logging/logging.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
-import '../logging/std_io_logging.dart';
 import '../server/server.dart';
+import 'environment.dart';
 import 'terminator.dart';
 
 final _logger = Logger('Watch');
@@ -55,6 +55,7 @@ Future<ServeHandler> watch(
   bool? isReleaseBuild,
   String? logPerformanceDir,
   Set<BuildFilter>? buildFilters,
+  bool? delayAssetWrites,
 }) async {
   builderConfigOverrides ??= const {};
   buildDirs ??= <BuildDirectory>{};
@@ -68,12 +69,16 @@ Future<ServeHandler> watch(
   trackPerformance ??= false;
   verbose ??= false;
 
-  var environment = OverrideableEnvironment(
-      IOEnvironment(packageGraph,
-          assumeTty: assumeTty, outputSymlinksOnly: outputSymlinksOnly),
-      reader: reader,
-      writer: writer,
-      onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose));
+  final environment = createEnvironment(
+    packageGraph: packageGraph,
+    assumeTty: assumeTty,
+    outputSymlinksOnly: outputSymlinksOnly,
+    reader: reader,
+    writer: writer,
+    delayAssetWrites: delayAssetWrites,
+    onLog: onLog,
+    verbose: verbose,
+  );
   var logSubscription =
       LogSubscription(environment, verbose: verbose, logLevel: logLevel);
   overrideBuildConfig ??= await findBuildConfigOverrides(
@@ -82,6 +87,7 @@ Future<ServeHandler> watch(
   var options = await BuildOptions.create(
     logSubscription,
     deleteFilesByDefault: deleteFilesByDefault,
+    delayWrites: delayAssetWrites == true,
     packageGraph: packageGraph,
     overrideBuildConfig: overrideBuildConfig,
     debounceDelay: debounceDelay,

@@ -47,6 +47,7 @@ class BuildCommand extends BuildRunnerCommand {
       trackPerformance: options.trackPerformance,
       skipBuildScriptCheck: options.skipBuildScriptCheck,
       logPerformanceDir: options.logPerformanceDir,
+      delayAssetWrites: options.delayAssetWrites,
     );
     if (result.status == BuildStatus.success) {
       return ExitCode.success.code;

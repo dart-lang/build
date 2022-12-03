@@ -20,4 +20,7 @@ class RunnerAssetWriterSpy extends AssetWriterSpy implements RunnerAssetWriter {
     _assetsDeleted.add(id);
     return _delegate.delete(id);
   }
+
+  @override
+  FutureOr<void> onBuildComplete() => _delegate.onBuildComplete();
 }

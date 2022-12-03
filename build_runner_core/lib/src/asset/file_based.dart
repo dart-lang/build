@@ -107,6 +107,11 @@ class FileBasedAssetWriter implements RunnerAssetWriter {
       }
     });
   }
+
+  @override
+  void onBuildComplete() {
+    // Nothing to do here
+  }
 }
 
 /// Returns the path to [id] for a given [packageGraph].

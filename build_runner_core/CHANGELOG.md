@@ -1,5 +1,8 @@
-## 7.2.8-dev
+## 8.0.0-dev
 
+- __Breaking__: Add `onBuildComplete` to `RunnerAssetWriter`.
+- Add `DelayedAssetWriter`, a writer implementation delaying all writes until
+ `onBuildComplete` is called.
 - Raise the minimum SDK constraint to 2.18.
 
 ## 7.2.7

@@ -14,6 +14,9 @@ import '../generate/build_result.dart';
 import '../generate/finalized_assets_view.dart';
 import 'build_environment.dart';
 
+typedef BuildFinalizer = Future<BuildResult> Function(
+    BuildResult, FinalizedAssetsView, AssetReader, Set<BuildDirectory>);
+
 /// A [BuildEnvironment] which can have individual features overridden.
 class OverrideableEnvironment implements BuildEnvironment {
   final BuildEnvironment _default;
@@ -32,9 +35,7 @@ class OverrideableEnvironment implements BuildEnvironment {
     RunnerAssetReader? reader,
     RunnerAssetWriter? writer,
     void Function(LogRecord)? onLog,
-    Future<BuildResult> Function(
-            BuildResult, FinalizedAssetsView, AssetReader, Set<BuildDirectory>)?
-        finalizeBuild,
+    BuildFinalizer? finalizeBuild,
   })  : _reader = reader,
         _writer = writer,
         _onLog = onLog,
@@ -61,4 +62,21 @@ class OverrideableEnvironment implements BuildEnvironment {
   @override
   Future<int> prompt(String message, List<String> choices) =>
       _default.prompt(message, choices);
+}
+
+extension OverrideEnvironment on BuildEnvironment {
+  BuildEnvironment change({
+    RunnerAssetReader? reader,
+    RunnerAssetWriter? writer,
+    void Function(LogRecord)? onLog,
+    BuildFinalizer? finalizeBuild,
+  }) {
+    return OverrideableEnvironment(
+      this,
+      reader: reader,
+      writer: writer,
+      onLog: onLog,
+      finalizeBuild: finalizeBuild,
+    );
+  }
 }

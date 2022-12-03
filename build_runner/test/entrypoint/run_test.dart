@@ -105,6 +105,16 @@ main() {
       });
     }
 
+    void testBasicBuildCommandWithDelayedWrites(String command) {
+      test('is supported by the $command command', () async {
+        var args = ['build_runner', command, 'web', '--delayed-writes'];
+        expect(await runSingleBuild(command, args), ExitCode.success.code);
+        expectOutput('web/main.dart.js', exists: true);
+        expectOutput('test/hello_test.dart.browser_test.dart.js',
+            exists: false);
+      });
+    }
+
     void testBuildCommandWithOutput(String command) {
       test('works with -o and the $command command', () async {
         var outputDirName = 'foo';
@@ -126,6 +136,7 @@ main() {
 
     for (var command in ['build', 'serve', 'watch']) {
       testBasicBuildCommand(command);
+      testBasicBuildCommandWithDelayedWrites(command);
       testBuildCommandWithOutput(command);
     }
 

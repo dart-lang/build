@@ -97,7 +97,12 @@ abstract class BuildRunnerCommand extends Command<int> {
               'If multiple filters are applied then outputs matching any filter '
               'will be built (they do not need to match all filters).')
       ..addMultiOption(enableExperimentOption,
-          help: 'A list of dart language experiments to enable.');
+          help: 'A list of dart language experiments to enable.')
+      ..addFlag(
+        delayWritesOption,
+        help: 'Delays all file system interactions until the end of a build, '
+            'potentially reducing load on tools like the analysis server.',
+      );
   }
 
   /// Must be called inside [run] so that [argResults] is non-null.

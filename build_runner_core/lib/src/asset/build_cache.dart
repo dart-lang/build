@@ -84,6 +84,9 @@ class BuildCacheWriter implements RunnerAssetWriter {
   @override
   Future delete(AssetId id) =>
       _delegate.delete(_cacheLocation(id, _assetGraph, _rootPackage));
+
+  @override
+  FutureOr<void> onBuildComplete() => _delegate.onBuildComplete();
 }
 
 AssetId _cacheLocation(AssetId id, AssetGraph assetGraph, String rootPackage) {

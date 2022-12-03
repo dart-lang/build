@@ -246,6 +246,15 @@ class _SingleBuild {
       }
     }
     await _resourceManager.disposeAll();
+
+    try {
+      await _environment.writer.onBuildComplete();
+    } catch (e, s) {
+      _logger.severe('Assets could not be written', e, s);
+      result = BuildResult(BuildStatus.failure, result.outputs,
+          performance: result.performance);
+    }
+
     result = await _environment.finalizeBuild(
         result,
         FinalizedAssetsView(_assetGraph, _packageGraph, optionalOutputTracker),
