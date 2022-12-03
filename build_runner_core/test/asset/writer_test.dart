@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:_test_common/common.dart';
 import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
+import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -86,6 +87,24 @@ void main() {
 
         expect(await reader.readAsString(asset), 'contents');
         expect(await reader.readAsBytes(asset), decodedMatches('contents'));
+      });
+
+      test('finding right assets', () async {
+        final a = makeAssetId('a|lib/a.dart');
+        final b = makeAssetId('a|lib/b.dart');
+        final glob = Glob('**');
+        underlyingWriter.assets[a] = [1, 2, 3];
+
+        final writer = DelayedAssetWriter(underlyingWriter);
+        final reader = writer.reader(underlyingReader, rootPackage);
+
+        expect(await reader.findAssets(glob).toSet(), {a});
+        await writer.writeAsString(b, 'b');
+        expect(await reader.findAssets(glob).toSet(), {a, b});
+        await writer.delete(a);
+        expect(await reader.findAssets(glob).toSet(), {b});
+        await writer.delete(b);
+        expect(await reader.findAssets(glob).toSet(), isEmpty);
       });
     });
   });
