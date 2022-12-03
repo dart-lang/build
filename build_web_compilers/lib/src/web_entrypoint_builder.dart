@@ -99,8 +99,11 @@ class WebEntrypointBuilder implements Builder {
     }
 
     if (options.config[_dart2jsArgsOption] is! List) {
-      throw ArgumentError.value(options.config[_dart2jsArgsOption],
-          _dart2jsArgsOption, 'Expected a list for $_dart2jsArgsOption.');
+      var message = options.config[_dart2jsArgsOption] is String
+          ? 'There may have been a failure decoding as JSON, expected a list'
+          : 'Expected a list';
+      throw ArgumentError.value(
+          options.config[_dart2jsArgsOption], _dart2jsArgsOption, message);
     }
     var dart2JsArgs = (options.config[_dart2jsArgsOption] as List?)
             ?.map((arg) => '$arg')
