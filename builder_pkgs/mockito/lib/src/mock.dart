@@ -228,6 +228,13 @@ class SmartFake {
   final Object _parent;
   final Invocation _parentInvocation;
   final StackTrace _createdStackTrace;
+
+  // Override [Object.operator==] to accept `Object?`. This is needed to
+  // make Analyzer happy, if we fake classes that override `==` to
+  // accept `Object?` or `dynamic` (most notably [Interceptor]).
+  @override
+  bool operator ==(Object? other) => identical(this, other);
+
   @override
   dynamic noSuchMethod(Invocation invocation) => throw FakeUsedError(
       _parentInvocation, invocation, _parent, _createdStackTrace);
