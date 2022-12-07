@@ -543,15 +543,8 @@ class _Loader {
     var done = false;
     while (!done) {
       try {
-        int choice;
-
-        if (_options.delayWrites) {
-          choice = await _environment.prompt('Overwrite these files?',
-              ['Overwrite', 'Cancel build', 'List conflicts']);
-        } else {
-          choice = await _environment.prompt('Delete these files?',
-              ['Delete', 'Cancel build', 'List conflicts']);
-        }
+        final choice = await _environment.prompt('Delete these files?',
+            ['Delete', 'Cancel build', 'List conflicts']);
 
         switch (choice) {
           case 0:

@@ -12,6 +12,7 @@ import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart' hide OutputLocation;
 import 'package:build_daemon/data/server_log.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
+import 'package:build_runner/src/generate/environment.dart';
 import 'package:build_runner/src/package_graph/build_config_overrides.dart';
 import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:build_runner/src/watcher/change_filter.dart';
@@ -199,13 +200,17 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     var expectedDeletes = <AssetId>{};
     var outputStreamController = StreamController<ServerLog>();
 
-    var environment = OverrideableEnvironment(
-        IOEnvironment(packageGraph,
-            outputSymlinksOnly: daemonOptions.outputSymlinksOnly),
-        onLog: (record) {
-      outputStreamController.add(ServerLog.fromLogRecord(record));
-    });
-
+    var environment = createDefaultEnvironment(
+      packageGraph: packageGraph,
+      assumeTty: null,
+      outputSymlinksOnly: daemonOptions.outputSymlinksOnly,
+      reader: null,
+      writer: null,
+      delayAssetWrites: daemonOptions.delayAssetWrites,
+      onLog: (record) =>
+          outputStreamController.add(ServerLog.fromLogRecord(record)),
+      verbose: true,
+    );
     var daemonEnvironment = OverrideableEnvironment(environment,
         writer: OnDeleteWriter(environment.writer, expectedDeletes.add));
 
@@ -220,7 +225,6 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
       logSubscription,
       packageGraph: packageGraph,
       deleteFilesByDefault: daemonOptions.deleteFilesByDefault,
-      delayWrites: daemonOptions.delayAssetWrites,
       overrideBuildConfig: overrideBuildConfig,
       skipBuildScriptCheck: daemonOptions.skipBuildScriptCheck,
       enableLowResourcesMode: daemonOptions.enableLowResourcesMode,

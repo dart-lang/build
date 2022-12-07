@@ -82,7 +82,7 @@ Future<BuildResult> build(List<BuilderApplication> builders,
   trackPerformance ??= false;
   verbose ??= false;
 
-  final environment = createEnvironment(
+  final environment = createDefaultEnvironment(
     packageGraph: packageGraph,
     assumeTty: assumeTty,
     outputSymlinksOnly: outputSymlinksOnly,
@@ -98,7 +98,6 @@ Future<BuildResult> build(List<BuilderApplication> builders,
   var options = await BuildOptions.create(
     logSubscription,
     deleteFilesByDefault: deleteFilesByDefault,
-    delayWrites: delayAssetWrites == true,
     packageGraph: packageGraph,
     skipBuildScriptCheck: skipBuildScriptCheck,
     overrideBuildConfig: await findBuildConfigOverrides(

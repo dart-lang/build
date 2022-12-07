@@ -250,7 +250,12 @@ class _SingleBuild {
     try {
       await _environment.writer.onBuildComplete();
     } catch (e, s) {
-      _logger.severe('Assets could not be written', e, s);
+      _logger.severe(
+        'Could not complete writes for this build.\n'
+        'The current state of the file system may not be valid.',
+        e,
+        s,
+      );
       result = BuildResult(BuildStatus.failure, result.outputs,
           performance: result.performance);
     }

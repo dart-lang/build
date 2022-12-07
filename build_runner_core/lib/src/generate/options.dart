@@ -134,7 +134,6 @@ class BuildFilter {
 /// Manages setting up consistent defaults for all options and build modes.
 class BuildOptions {
   final bool deleteFilesByDefault;
-  final bool delayWrites;
   final bool enableLowResourcesMode;
   final StreamSubscription logListener;
 
@@ -155,7 +154,6 @@ class BuildOptions {
   BuildOptions._({
     required this.debounceDelay,
     required this.deleteFilesByDefault,
-    required this.delayWrites,
     required this.enableLowResourcesMode,
     required this.logListener,
     required this.packageGraph,
@@ -174,7 +172,6 @@ class BuildOptions {
     LogSubscription logSubscription, {
     Duration debounceDelay = const Duration(milliseconds: 250),
     bool deleteFilesByDefault = false,
-    bool delayWrites = false,
     bool enableLowResourcesMode = false,
     required PackageGraph packageGraph,
     Map<String, BuildConfig> overrideBuildConfig = const {},
@@ -216,7 +213,6 @@ feature, you may need to run `dart run build_runner clean` and then rebuild.
     return BuildOptions._(
       debounceDelay: debounceDelay,
       deleteFilesByDefault: deleteFilesByDefault,
-      delayWrites: delayWrites,
       enableLowResourcesMode: enableLowResourcesMode,
       logListener: logSubscription.logListener,
       packageGraph: packageGraph,

@@ -5,6 +5,8 @@ import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
+import 'package:path/path.dart' as p;
+import 'package:watcher/watcher.dart';
 
 void main() {
   late InMemoryRunnerAssetReader underlyingReader;
@@ -36,7 +38,7 @@ void main() {
       expect(underlyingWriter.assets, {a: decodedMatches('a')});
     });
 
-    test('does not write twice', () async {
+    test('does not write data that has already been written', () async {
       final writer = DelayedAssetWriter(underlyingWriter);
       final asset = makeAssetId('a|lib/a.dart');
 
@@ -47,6 +49,25 @@ void main() {
       await writer.onBuildComplete(); // New build, no write to asset
 
       expect(underlyingWriter.assets, isEmpty);
+    });
+
+    test('avoids duplicate writes on the same asset', () async {
+      final writer = DelayedAssetWriter(underlyingWriter);
+      final asset = makeAssetId('a|lib/a.dart');
+
+      expect(
+          FakeWatcher(p.absolute('a')).events,
+          emitsInOrder([
+            isA<WatchEvent>().having(
+                (e) => e.path, 'path', p.absolute('a', 'lib', 'a.dart')),
+            isA<WatchEvent>().having(
+                (e) => e.path, 'path', p.absolute('a', 'lib', 'a.dart.copy')),
+          ]));
+
+      await writer.writeAsString(asset, 'old content');
+      await writer.writeAsString(asset, 'new content');
+      await writer.writeAsString(asset.addExtension('.copy'), 'new content');
+      await writer.onBuildComplete();
     });
 
     group('has consistent reader', () {
@@ -87,6 +108,22 @@ void main() {
 
         expect(await reader.readAsString(asset), 'contents');
         expect(await reader.readAsBytes(asset), decodedMatches('contents'));
+      });
+
+      test('does not use overlay after flush', () async {
+        final asset = makeAssetId('a|lib/a.dart');
+        underlyingWriter.assets[asset] = [1, 2, 3];
+
+        final writer = DelayedAssetWriter(underlyingWriter);
+        final reader = writer.reader(underlyingReader, rootPackage);
+
+        await writer.writeAsString(asset, 'contents');
+        await writer.onBuildComplete();
+        // "contents" should have been written, but there may be another tool
+        // overwriting the file afterwards.
+        underlyingWriter.assets[asset] = [4, 5, 6];
+
+        expect(await reader.readAsBytes(asset), [4, 5, 6]);
       });
 
       test('finding right assets', () async {

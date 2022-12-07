@@ -3,7 +3,7 @@ import 'package:logging/logging.dart';
 
 import '../logging/std_io_logging.dart';
 
-BuildEnvironment createEnvironment({
+BuildEnvironment createDefaultEnvironment({
   required PackageGraph packageGraph,
   required bool? assumeTty,
   required bool outputSymlinksOnly,

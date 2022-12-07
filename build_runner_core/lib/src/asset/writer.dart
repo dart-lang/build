@@ -7,6 +7,7 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
+import 'package:meta/meta.dart';
 
 import 'reader.dart';
 
@@ -19,7 +20,8 @@ abstract class RunnerAssetWriter implements AssetWriter {
   /// Potentially runs pending work that needs to happen just before the build
   /// completes, after all other interactions with this [AssetWriter] have
   /// already been completed.
-  FutureOr<void> onBuildComplete() {}
+  @mustCallSuper
+  FutureOr<void> onBuildComplete();
 }
 
 /// A [RunnerAssetWriter] implementation that performs all writes at once in
@@ -30,8 +32,12 @@ abstract class RunnerAssetWriter implements AssetWriter {
 class DelayedAssetWriter implements RunnerAssetWriter {
   final RunnerAssetWriter _delegate;
 
+  /// A map of asset ids to content that has been written with the [AssetWriter]
+  /// API but not yet been flushed to the underlying delegate (in [onBuildComplete]).
+  ///
+  /// The values are non-null if the contents of the file have been overwritten,
+  /// or null if the asset has been deleted.
   final Map<AssetId, List<int>?> overlay = {};
-  final List<Future Function()> _work = [];
 
   DelayedAssetWriter(this._delegate);
 
@@ -44,22 +50,26 @@ class DelayedAssetWriter implements RunnerAssetWriter {
   @override
   Future delete(AssetId id) async {
     overlay[id] = null;
-    _work.add(() => _delegate.delete(id));
   }
 
   @override
   Future<void> onBuildComplete() async {
-    final todos = _work.toList();
-    _work.clear();
+    await Future.wait(overlay.entries.map((entry) {
+      final value = entry.value;
+      if (value == null) {
+        return _delegate.delete(entry.key);
+      } else {
+        return _delegate.writeAsBytes(entry.key, value);
+      }
+    }));
 
-    await Future.wait([for (final unit in todos) unit()]);
     await _delegate.onBuildComplete();
+    overlay.clear();
   }
 
   @override
   Future<void> writeAsBytes(AssetId id, List<int> bytes) async {
     overlay[id] = bytes;
-    _work.add(() => _delegate.writeAsBytes(id, bytes));
   }
 
   @override
