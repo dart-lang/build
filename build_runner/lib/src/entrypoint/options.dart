@@ -104,8 +104,11 @@ class SharedOptions {
     required this.isReleaseBuild,
     required this.logPerformanceDir,
     required this.enableExperiments,
-    required this.delayAssetWrites,
-  });
+    bool? delayAssetWrites,
+  }) :
+        // Delayed asset writes should be enabled by default if we're not in the
+        // low-resources mode.
+        delayAssetWrites = delayAssetWrites ?? !enableLowResourcesMode;
 
   SharedOptions.fromParsedArgs(ArgResults argResults,
       Iterable<String> positionalArgs, String rootPackage, Command command)
@@ -127,7 +130,7 @@ class SharedOptions {
           isReleaseBuild: argResults[releaseOption] as bool,
           logPerformanceDir: argResults[logPerformanceOption] as String?,
           enableExperiments: argResults[enableExperimentOption] as List<String>,
-          delayAssetWrites: argResults[delayWritesOption] as bool,
+          delayAssetWrites: argResults[delayWritesOption] as bool?,
         );
 }
 
@@ -209,7 +212,7 @@ class DaemonOptions extends WatchOptions {
       logPerformanceDir: argResults[logPerformanceOption] as String?,
       usePollingWatcher: argResults[usePollingWatcherOption] as bool,
       enableExperiments: argResults[enableExperimentOption] as List<String>,
-      delayAssetWrites: argResults[delayWritesOption] as bool,
+      delayAssetWrites: argResults[delayWritesOption] as bool?,
     );
   }
 }
@@ -275,7 +278,7 @@ class WatchOptions extends SharedOptions {
           logPerformanceDir: argResults[logPerformanceOption] as String?,
           usePollingWatcher: argResults[usePollingWatcherOption] as bool,
           enableExperiments: argResults[enableExperimentOption] as List<String>,
-          delayAssetWrites: argResults[delayWritesOption] as bool,
+          delayAssetWrites: argResults[delayWritesOption] as bool?,
         );
 }
 
@@ -392,7 +395,7 @@ class ServeOptions extends WatchOptions {
       logPerformanceDir: argResults[logPerformanceOption] as String?,
       usePollingWatcher: argResults[usePollingWatcherOption] as bool,
       enableExperiments: argResults[enableExperimentOption] as List<String>,
-      delayAssetWrites: argResults[delayWritesOption] as bool,
+      delayAssetWrites: argResults[delayWritesOption] as bool?,
     );
   }
 }

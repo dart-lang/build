@@ -102,7 +102,7 @@ abstract class BuildRunnerCommand extends Command<int> {
         delayWritesOption,
         help: 'Delays all file system interactions until the end of a build, '
             'potentially reducing load on tools like the analysis server.',
-        defaultsTo: true,
+        defaultsTo: null,
       );
   }
 
