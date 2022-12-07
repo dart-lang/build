@@ -543,7 +543,7 @@ class _Loader {
     var done = false;
     while (!done) {
       try {
-        final choice = await _environment.prompt('Delete these files?',
+        var choice = await _environment.prompt('Delete these files?',
             ['Delete', 'Cancel build', 'List conflicts']);
 
         switch (choice) {

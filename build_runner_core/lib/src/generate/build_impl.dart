@@ -252,7 +252,8 @@ class _SingleBuild {
     } catch (e, s) {
       _logger.severe(
         'Could not complete writes for this build.\n'
-        'The current state of the file system may not be valid.',
+        'The current state of the file system may not reflect the expected '
+        'build outputs.',
         e,
         s,
       );
