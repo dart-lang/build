@@ -108,7 +108,10 @@ class _DelayAwareReader extends AssetReader implements RunnerAssetReader {
     }
 
     for (final entry in _delayed.overlay.entries) {
-      if (entry.key.package == package && entry.value != null) {
+      final assetId = entry.key;
+      if (assetId.package == package &&
+          glob.matches(assetId.path) &&
+          entry.value != null) {
         yield entry.key;
       }
     }

@@ -129,17 +129,27 @@ void main() {
       test('finding right assets', () async {
         final a = makeAssetId('a|lib/a.dart');
         final b = makeAssetId('a|lib/b.dart');
-        final glob = Glob('**');
-        underlyingWriter.assets[a] = [1, 2, 3];
+        final c = makeAssetId('a|pubspec.yaml');
+
+        final glob = Glob('**/*.dart');
+        underlyingWriter
+          ..assets[a] = [1, 2, 3]
+          ..assets[c] = [4, 5, 6];
 
         final writer = DelayedAssetWriter(underlyingWriter);
         final reader = writer.reader(underlyingReader, rootPackage);
 
         expect(await reader.findAssets(glob).toSet(), {a});
+
         await writer.writeAsString(b, 'b');
         expect(await reader.findAssets(glob).toSet(), {a, b});
+
+        await writer.writeAsString(c, 'not dart');
+        expect(await reader.findAssets(glob).toSet(), {a, b});
+
         await writer.delete(a);
         expect(await reader.findAssets(glob).toSet(), {b});
+
         await writer.delete(b);
         expect(await reader.findAssets(glob).toSet(), isEmpty);
       });
