@@ -1166,7 +1166,7 @@ class _MockClassInfo {
       // we still need to override methods to get nice mocks.
       final isNiceMockOfNullSafeClass = mockTarget.onMissingStub ==
               OnMissingStub.returnDefault &&
-          typeToMock.element2.enclosingElement.library.isNonNullableByDefault;
+          typeToMock.element.enclosingElement.library.isNonNullableByDefault;
 
       if (sourceLibIsNonNullable || isNiceMockOfNullSafeClass) {
         cBuilder.methods.addAll(
