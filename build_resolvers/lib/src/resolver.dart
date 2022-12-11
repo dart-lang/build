@@ -424,7 +424,7 @@ class AnalyzerResolvers implements Resolvers {
         log.warning('Could not restore analyzer cache', e, s);
       }
 
-      var driver = await analysisDriver(uriResolver, _analysisOptions,
+      var driver = analysisDriver(uriResolver, _analysisOptions,
           await _sdkSummaryGenerator(), loadedConfig, _byteStore);
 
       _resolver = AnalyzerResolver(driver, _driverPool, uriResolver);

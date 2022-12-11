@@ -17,16 +17,13 @@ import 'build_asset_uri_resolver.dart';
 /// Builds an [AnalysisDriverForPackageBuild] backed by a summary SDK.
 ///
 /// Any code must be resolvable through [buildAssetUriResolver].
-Future<AnalysisDriverForPackageBuild> analysisDriver(
+AnalysisDriverForPackageBuild analysisDriver(
   BuildAssetUriResolver buildAssetUriResolver,
   AnalysisOptions analysisOptions,
   String sdkSummaryPath,
   PackageConfig packageConfig,
   ByteStore? byteStore,
-) async {
-  final cachePath = p.join('.dart_tool', 'build_resolvers', 'cache');
-  await Directory(cachePath).create(recursive: true);
-
+) {
   return createAnalysisDriver(
     analysisOptions: analysisOptions,
     packages: _buildAnalyzerPackages(
