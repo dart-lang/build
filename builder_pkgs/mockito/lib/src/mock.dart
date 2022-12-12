@@ -228,6 +228,7 @@ class SmartFake {
   final Object _parent;
   final Invocation _parentInvocation;
   final StackTrace _createdStackTrace;
+  late final StackTrace _toStringFirstCalled = StackTrace.current;
 
   // Override [Object.operator==] to accept `Object?`. This is needed to
   // make Analyzer happy, if we fake classes that override `==` to
@@ -240,6 +241,26 @@ class SmartFake {
       _parentInvocation, invocation, _parent, _createdStackTrace);
   SmartFake(this._parent, this._parentInvocation)
       : _createdStackTrace = StackTrace.current;
+
+  @override
+  String toString() {
+    final memberName = _symbolToString(_parentInvocation.memberName);
+    return '''Fake object created as a result of calling unstubbed member
+$memberName of a mock.
+
+Here is the stack trace where $memberName was called:
+
+$_createdStackTrace
+
+Normally you would never see this message, if it breaks your test,
+consider adding a stub for ${_parent.runtimeType}.$memberName using Mockito's
+'when' API.
+
+Here is the stack trace where toString() was first called:
+
+$_toStringFirstCalled
+''';
+  }
 }
 
 class FakeUsedError extends Error {
