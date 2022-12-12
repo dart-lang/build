@@ -140,32 +140,39 @@ environment:
         buildYaml,
         d.dir('lib', [d.file('builder.dart', '')]),
       ]).create();
-      await runPub('a', 'get');
+      var pubGetResult = await runPub('a', 'get');
+      expect(pubGetResult.exitCode, 0,
+          reason: 'stdout: ${pubGetResult.stdout}\n\n'
+              'stderr: ${pubGetResult.stderr}');
 
       final options = await findBuildScriptOptions(
           packageGraph: await PackageGraph.forPath('${d.sandbox}/a'));
       expect(options.canRunWithSoundNullSafety, isTrue);
     });
 
-    test('when the root package opts out', () async {
-      await d.dir('a', [
-        d.file('pubspec.yaml', '''
+    if (supportsUnsoundNullSafety) {
+      test('when the root package opts out', () async {
+        await d.dir('a', [
+          d.file('pubspec.yaml', '''
 name: a
 environment:
   sdk: '>=2.9.0 <3.0.0'
       '''),
-        d.dir('lib', [d.file('builder.dart', '')]),
-      ]).create();
-      await runPub('a', 'get');
+          d.dir('lib', [d.file('builder.dart', '')]),
+        ]).create();
+        var pubGetResult = await runPub('a', 'get');
+        expect(pubGetResult.exitCode, 0,
+            reason: 'stdout: ${pubGetResult.stdout}\n\n'
+                'stderr: ${pubGetResult.stderr}');
 
-      final options = await findBuildScriptOptions(
-          packageGraph: await PackageGraph.forPath('${d.sandbox}/a'));
-      expect(options.canRunWithSoundNullSafety, isFalse);
-    });
+        final options = await findBuildScriptOptions(
+            packageGraph: await PackageGraph.forPath('${d.sandbox}/a'));
+        expect(options.canRunWithSoundNullSafety, isFalse);
+      });
 
-    test('when a builder-defining package opts out', () async {
-      await d.dir('a', [
-        d.file('pubspec.yaml', '''
+      test('when a builder-defining package opts out', () async {
+        await d.dir('a', [
+          d.file('pubspec.yaml', '''
 name: a
 environment:
   sdk: '>=2.12.0 <3.0.0'
@@ -173,24 +180,29 @@ dependencies:
   b:
     path: ../b/
       '''),
-      ]).create();
-      await d.dir('b', [
-        d.file('pubspec.yaml', '''
+        ]).create();
+        await d.dir('b', [
+          d.file('pubspec.yaml', '''
 name: b
 environment:
   sdk: '>=2.9.0 <3.0.0'
       '''),
-        buildYaml,
-        d.dir('lib', [
-          d.file('builder.dart', ''),
-        ]),
-      ]).create();
-      await runPub('a', 'get');
+          buildYaml,
+          d.dir('lib', [
+            d.file('builder.dart', ''),
+          ]),
+        ]).create();
+        await runPub('a', 'get');
+        var pubGetResult = await runPub('a', 'get');
+        expect(pubGetResult.exitCode, 0,
+            reason: 'stdout: ${pubGetResult.stdout}\n\n'
+                'stderr: ${pubGetResult.stderr}');
 
-      final options = await findBuildScriptOptions(
-          packageGraph: await PackageGraph.forPath('${d.sandbox}/a'));
-      expect(options.canRunWithSoundNullSafety, isFalse);
-    });
+        final options = await findBuildScriptOptions(
+            packageGraph: await PackageGraph.forPath('${d.sandbox}/a'));
+        expect(options.canRunWithSoundNullSafety, isFalse);
+      });
+    }
 
     test('when a builder-defining library ops out', () async {
       await d.dir('a', [
@@ -203,6 +215,10 @@ environment:
         d.dir('lib', [d.file('builder.dart', '// @dart=2.9')]),
       ]).create();
       await runPub('a', 'get');
+      var pubGetResult = await runPub('a', 'get');
+      expect(pubGetResult.exitCode, 0,
+          reason: 'stdout: ${pubGetResult.stdout}\n\n'
+              'stderr: ${pubGetResult.stderr}');
 
       final options = await findBuildScriptOptions(
           packageGraph: await PackageGraph.forPath('${d.sandbox}/a'));
@@ -227,6 +243,10 @@ builders:
         d.dir('tool', [d.file('builder.dart', '//@dart=2.9')]),
       ]).create();
       await runPub('a', 'get');
+      var pubGetResult = await runPub('a', 'get');
+      expect(pubGetResult.exitCode, 0,
+          reason: 'stdout: ${pubGetResult.stdout}\n\n'
+              'stderr: ${pubGetResult.stderr}');
 
       final options = await findBuildScriptOptions(
           packageGraph: await PackageGraph.forPath('${d.sandbox}/a'));
@@ -251,6 +271,10 @@ builders:
         d.dir('tool', [d.file('builder.dart', '')]),
       ]).create();
       await runPub('a', 'get');
+      var pubGetResult = await runPub('a', 'get');
+      expect(pubGetResult.exitCode, 0,
+          reason: 'stdout: ${pubGetResult.stdout}\n\n'
+              'stderr: ${pubGetResult.stderr}');
 
       final options = await findBuildScriptOptions(
           packageGraph: await PackageGraph.forPath('${d.sandbox}/a'));

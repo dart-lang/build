@@ -84,12 +84,12 @@ for PKG in ${PKGS}; do
         dart run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       command_2)
-        echo 'dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random'
-        dart run build_runner test -- -p chrome,vm --test-randomize-ordering-seed=random || EXIT_CODE=$?
-        ;;
-      command_3)
         echo 'dart run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random'
         dart run build_runner test --define="build_web_compilers:entrypoint=compiler=dart2js" -- -p chrome --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        ;;
+      command_3)
+        echo 'dart run build_runner test -- -p vm --test-randomize-ordering-seed=random'
+        dart run build_runner test -- -p vm --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       format)
         echo 'dart format --output=none --set-exit-if-changed .'
