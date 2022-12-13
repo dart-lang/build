@@ -17,6 +17,3 @@ targets:
           - test/other_test.dart.browser_test.dart
           - test/sub-dir/subdir_test.dart
           - test/sub-dir/subdir_test.dart.browser_test.dart
-      build_vm_compilers:entrypoint:
-        generate_for:
-          - test/help_test.dart.vm_test.dart

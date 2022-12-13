@@ -299,8 +299,8 @@ Future<void> _createDevCompilerModule(
 /// Returns the `--summary=` argument for a dependency.
 String _summaryArg(Module module) {
   final kernelAsset = module.primarySource.changeExtension(ddcKernelExtension);
-  final moduleName = ddcModuleName(
-      module.primarySource.changeExtension(jsModuleExtension));
+  final moduleName =
+      ddcModuleName(module.primarySource.changeExtension(jsModuleExtension));
   return '--summary=${scratchSpace.fileFor(kernelAsset).path}=$moduleName';
 }
 
