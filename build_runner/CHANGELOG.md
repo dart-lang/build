@@ -1,4 +1,6 @@
-## 2.3.3-dev
+## 2.4.0-dev
+
+- Require Dart 3.0, drop support for unsound build scripts.
 
 ## 2.3.2
 

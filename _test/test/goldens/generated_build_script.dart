@@ -5,7 +5,6 @@ import 'package:build_test/builder.dart' as _i2;
 import 'package:build_config/build_config.dart' as _i3;
 import 'package:provides_builder/builders.dart' as _i4;
 import 'package:build_modules/builders.dart' as _i5;
-import 'package:build_vm_compilers/builders.dart' as _i6;
 import 'package:build_web_compilers/builders.dart' as _i7;
 import 'package:build/build.dart' as _i8;
 import 'dart:isolate' as _i9;
@@ -49,39 +48,6 @@ final _builders = <_i1.BuilderApplication>[
     appliesBuilders: const [r'build_modules:module_cleanup'],
   ),
   _i1.apply(
-    r'build_vm_compilers:modules',
-    [
-      _i6.metaModuleBuilder,
-      _i6.metaModuleCleanBuilder,
-      _i6.moduleBuilder,
-    ],
-    _i1.toNoneByDefault(),
-    isOptional: true,
-    hideOutput: true,
-    appliesBuilders: const [r'build_modules:module_cleanup'],
-  ),
-  _i1.apply(
-    r'build_vm_compilers:vm',
-    [_i6.vmKernelModuleBuilder],
-    _i1.toAllPackages(),
-    isOptional: true,
-    hideOutput: true,
-    appliesBuilders: const [r'build_vm_compilers:modules'],
-  ),
-  _i1.apply(
-    r'build_vm_compilers:entrypoint',
-    [_i6.vmKernelEntrypointBuilder],
-    _i1.toRoot(),
-    hideOutput: true,
-    defaultGenerateFor: const _i3.InputSet(include: [
-      r'bin/**',
-      r'tool/**',
-      r'test/**.dart.vm_test.dart',
-      r'example/**',
-      r'benchmark/**',
-    ]),
-  ),
-  _i1.apply(
     r'build_web_compilers:dart2js_modules',
     [
       _i7.dart2jsMetaModuleBuilder,
@@ -108,10 +74,8 @@ final _builders = <_i1.BuilderApplication>[
   _i1.apply(
     r'build_web_compilers:ddc',
     [
-      _i7.ddcKernelBuilderUnsound,
-      _i7.ddcBuilderUnsound,
-      _i7.ddcKernelBuilderSound,
-      _i7.ddcBuilderSound,
+      _i7.ddcKernelBuilder,
+      _i7.ddcBuilder,
     ],
     _i1.toAllPackages(),
     isOptional: true,
@@ -125,8 +89,7 @@ final _builders = <_i1.BuilderApplication>[
   _i1.apply(
     r'build_web_compilers:sdk_js',
     [
-      _i7.sdkJsCompileUnsound,
-      _i7.sdkJsCompileSound,
+      _i7.sdkJsCompile,
       _i7.sdkJsCopyRequirejs,
     ],
     _i1.toNoneByDefault(),
