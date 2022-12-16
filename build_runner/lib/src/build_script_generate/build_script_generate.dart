@@ -127,7 +127,8 @@ Future<BuildScriptInfo> findBuildScriptOptions({
       if (packageGraph?.allPackages.containsKey(pkg) ?? true) {
         return true;
       }
-      _log.warning('Could not load imported package "$pkg" for definition "${definition.key}".');
+      _log.warning(
+          'Could not load imported package "$pkg" for definition "${definition.key}".');
       return false;
     }
     return definition.package == packageGraph!.root.name;
