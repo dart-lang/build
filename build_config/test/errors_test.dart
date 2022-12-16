@@ -97,7 +97,7 @@ line 7, column 11 of build.yaml: Unsupported value for "exclude". type 'Null' is
 7 │           -
   │           ^
   ╵''');
-  });
+  }, skip: 'https://github.com/dart-lang/build/issues/3428');
 
   test('for empty exclude globs', () {
     var buildYaml = r'''
