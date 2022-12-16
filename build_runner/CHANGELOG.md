@@ -1,3 +1,8 @@
+## 2.3.4-dev
+
+- Warn if a `package:` builder import cannot be resolved and skip it,
+  instead of creating an invalid build script or failing in other obscure ways.
+
 ## 2.3.3
 
 - Remove references to `NullThrownError`.

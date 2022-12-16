@@ -93,6 +93,25 @@ builders:
             skip: 'https://github.com/dart-lang/sdk/issues/50592');
         expect(result.stdout, contains('could not be parsed'));
       });
+
+      test('warn when import not present in packageGraph', () async {
+        await d.dir('a', [
+          d.file('build.yaml', '''
+builders:
+  fake:
+    import: "package:unknown_package/import.dart"
+    builder_factories: ["myFactory"]
+    build_extensions: {"foo": ["bar"]}
+''')
+        ]).create();
+        var result = await runPub('a', 'run', args: ['build_runner', 'build']);
+        expect(result.stderr, isEmpty,
+            skip: 'https://github.com/dart-lang/sdk/issues/50592');
+        expect(
+            result.stdout,
+            contains('Could not load imported package "unknown_package" '
+                'for definition "a:fake".'));
+      });
     });
 
     test('checks builder keys in global_options', () async {
