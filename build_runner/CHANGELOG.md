@@ -1,4 +1,6 @@
-## 2.3.3-dev
+## 2.3.3
+
+- Remove references to `NullThrownError`.
 
 ## 2.3.2
 
