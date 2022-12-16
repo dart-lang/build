@@ -109,8 +109,7 @@ builders:
             skip: 'https://github.com/dart-lang/sdk/issues/50592');
         expect(
             result.stdout,
-            contains(
-                'Could not load imported package "unknown_package" '
+            contains('Could not load imported package "unknown_package" '
                 'for definition "a:fake".'));
       });
     });
