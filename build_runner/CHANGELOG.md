@@ -3,6 +3,12 @@
 - Add `--delay-writes` option to delay all writes to the end of a build. As no
   intermediate build state is visible on the file system, this may improve
   performance of third-party tools like the analysis server.
+- Warn if a `package:` builder import cannot be resolved and skip it,
+  instead of creating an invalid build script or failing in other obscure ways.
+
+## 2.3.3
+
+- Remove references to `NullThrownError`.
 
 ## 2.3.2
 

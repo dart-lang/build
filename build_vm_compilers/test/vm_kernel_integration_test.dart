@@ -9,7 +9,9 @@ import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
 void main() {
-  group('without null safety', () => _runTests(false));
+  if (supportsUnsoundNullSafety) {
+    group('without null safety', () => _runTests(false));
+  }
   group('with null safety', () => _runTests(true));
 }
 

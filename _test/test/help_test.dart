@@ -53,7 +53,9 @@ Future<void> _testHelpCommand(List<String> args, {String? checkContent}) async {
   var result = await asyncResult;
   expect(result.exitCode, equals(0),
       reason: 'should give a successful exit code');
-  expect(result.stderr, isEmpty, reason: 'Should output nothing on stderr');
+  expect(result.stderr, isEmpty,
+      reason: 'Should output nothing on stderr',
+      skip: 'https://github.com/dart-lang/sdk/issues/50592');
   expect(result.stdout, isNot(contains('"Unhandled exception"')),
       reason: 'Should not print an unhandled exception');
   if (checkContent != null) {

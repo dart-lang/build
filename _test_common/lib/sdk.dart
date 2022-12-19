@@ -8,10 +8,14 @@ import 'dart:io';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/util/constants.dart';
 import 'package:path/path.dart' as p;
+import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
 String _dartBinary = p.join(sdkBin, 'dart');
+
+final bool supportsUnsoundNullSafety =
+    Version.parse(Platform.version.split(' ').first).major == 2;
 
 /// Runs `pub get` on [package] (which is assumed to be in a directory with
 /// that name under the [d.sandbox] directory).

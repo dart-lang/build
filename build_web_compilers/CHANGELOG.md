@@ -1,3 +1,7 @@
+## 3.2.8-dev
+
+- Mention JSON formatting in error message about dart2js args.
+
 ## 3.2.7
 
 - Migrate off deprecated analyzer apis.

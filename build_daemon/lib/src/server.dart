@@ -1,7 +1,6 @@
 // Copyright (c) 2019, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -17,6 +16,7 @@ import 'package:watcher/watcher.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../change_provider.dart';
+import '../constants.dart';
 import '../daemon_builder.dart';
 import '../data/build_request.dart';
 import '../data/build_target.dart';
@@ -31,24 +31,19 @@ import 'managers/build_target_manager.dart';
 /// Note the server will only notify clients of pertinent events.
 class Server {
   static final loggerName = 'BuildDaemonServer';
-
-  final _isDoneCompleter = Completer();
+  final _isDoneCompleter = Completer<int>();
   final BuildTargetManager _buildTargetManager;
   final _pool = Pool(1);
   final Serializers _serializers;
   final ChangeProvider _changeProvider;
   late final Timer _timeout;
-
   HttpServer? _server;
   final DaemonBuilder _builder;
   // Channels that are interested in the current build.
   var _interestedChannels = <WebSocketChannel>{};
-
   final _subs = <StreamSubscription>[];
-
   final _outputStreamController = StreamController<ServerLog>();
   late final Stream<ServerLog> _logs;
-
   Server(
     this._builder,
     Duration timeout,
@@ -61,9 +56,7 @@ class Server {
             BuildTargetManager(shouldBuildOverride: shouldBuild) {
     _logs = _outputStreamController.stream;
     _forwardData();
-
     _handleChanges(changeProvider.changes);
-
     // Stop the server if nobody connects.
     _timeout = Timer(timeout, () async {
       if (_buildTargetManager.isEmpty) {
@@ -72,7 +65,8 @@ class Server {
     });
   }
 
-  Future<void> get onDone => _isDoneCompleter.future;
+  /// Returns exit code.
+  Future<int> get onDone => _isDoneCompleter.future;
 
   /// Starts listening for build daemon clients.
   Future<int> listen() async {
@@ -98,7 +92,6 @@ class Server {
         _removeChannel(channel);
       });
     });
-
     var server = _server = await HttpMultiServer.loopback(0);
     // Serve requests in an error zone to prevent failures
     // when running from another error zone.
@@ -124,7 +117,7 @@ class Server {
       await sub.cancel();
     }
     await _outputStreamController.close();
-    if (!_isDoneCompleter.isCompleted) _isDoneCompleter.complete();
+    if (!_isDoneCompleter.isCompleted) _isDoneCompleter.complete(failureType);
   }
 
   Future<void> _build(
@@ -134,7 +127,6 @@ class Server {
             buildTargets.expand(_buildTargetManager.channels).toSet();
         return _builder.build(buildTargets, changes);
       });
-
   void _forwardData() {
     _subs
       ..add(_builder.logs.listen((log) {
@@ -147,14 +139,11 @@ class Server {
         // Don't serialize or send changed assets if the client isn't interested
         // in them.
         String? message, messageWithoutChangedAssets;
-
         for (var channel in _interestedChannels) {
           var targets = _buildTargetManager.targetsFor(channel);
           var wantsChangedAssets = targets
               .any((e) => e is DefaultBuildTarget && e.reportChangedAssets);
-
           String messageForChannel;
-
           if (wantsChangedAssets) {
             messageForChannel =
                 message ??= jsonEncode(_serializers.serialize(status));
@@ -163,7 +152,6 @@ class Server {
                 _serializers
                     .serialize(status.rebuild((b) => b.changedAssets = null)));
           }
-
           channel.sink.add(messageForChannel);
         }
       }))
@@ -183,7 +171,15 @@ class Server {
       var buildTargets = _buildTargetManager.targetsForChanges(changes);
       if (buildTargets.isEmpty) return;
       await _build(buildTargets, changes);
-    }).listen((_) {}));
+    }).listen((_) {}, onError: (e) {
+      stop(
+          message: 'Error in file change event: $e',
+          failureType: fileChangeEventErrorCode);
+    }, onDone: () {
+      stop(
+          message: 'File change stream closed',
+          failureType: fileChangeStreamClosedErrorCode);
+    }));
   }
 
   void _removeChannel(WebSocketChannel channel) async {
