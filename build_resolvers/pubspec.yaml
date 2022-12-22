@@ -10,6 +10,7 @@ dependencies:
   analyzer: ^5.2.0
   async: ^2.5.0
   build: ^2.0.0
+  collection: ^1.17.0
   crypto: ^3.0.0
   graphs: '>=1.0.0 <3.0.0'
   logging: ^1.0.0

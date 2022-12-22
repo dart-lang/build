@@ -856,6 +856,27 @@ int? get x => 1;
         );
       }, resolvers: AnalyzerResolvers());
     });
+
+    test('can return a resolved compilation unit', () {
+      return resolveSources({
+        'a|web/main.dart': 'main() {}',
+      }, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        var unit = await resolver.astNodeFor(lib.definingCompilationUnit,
+            resolve: true);
+        expect(
+          unit,
+          isA<CompilationUnit>().having(
+              (unit) => unit.declarations, 'declarations', hasLength(1)),
+        );
+        expect(
+          (unit as CompilationUnit).declarations.single,
+          isA<FunctionDeclaration>()
+              .having((fd) => fd.toSource(), 'toSource()', 'main() {}')
+              .having((fd) => fd.declaredElement, 'declaredElement', isNotNull),
+        );
+      });
+    });
   });
 }
 
