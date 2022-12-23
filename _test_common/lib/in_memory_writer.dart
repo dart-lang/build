@@ -14,15 +14,12 @@ class InMemoryRunnerAssetWriter extends InMemoryAssetWriter
     implements RunnerAssetWriter {
   void Function(AssetId)? onDelete;
 
-  String _assetPath(AssetId id) {
-    return p.absolute(p.joinAll([id.package, ...id.pathSegments]));
-  }
-
   @override
   Future writeAsBytes(AssetId id, List<int> bytes) async {
     var type = assets.containsKey(id) ? ChangeType.MODIFY : ChangeType.ADD;
     await super.writeAsBytes(id, bytes);
-    FakeWatcher.notifyWatchers(WatchEvent(type, _assetPath(id)));
+    FakeWatcher.notifyWatchers(
+        WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))));
   }
 
   @override
@@ -30,14 +27,16 @@ class InMemoryRunnerAssetWriter extends InMemoryAssetWriter
       {Encoding encoding = utf8}) async {
     var type = assets.containsKey(id) ? ChangeType.MODIFY : ChangeType.ADD;
     await super.writeAsString(id, contents, encoding: encoding);
-    FakeWatcher.notifyWatchers(WatchEvent(type, _assetPath(id)));
+    FakeWatcher.notifyWatchers(
+        WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))));
   }
 
   @override
   Future delete(AssetId id) async {
     onDelete?.call(id);
     assets.remove(id);
-    FakeWatcher.notifyWatchers(WatchEvent(ChangeType.REMOVE, _assetPath(id)));
+    FakeWatcher.notifyWatchers(WatchEvent(
+        ChangeType.REMOVE, p.absolute(id.package, p.fromUri(id.path))));
   }
 
   @override
