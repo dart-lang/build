@@ -44,17 +44,7 @@ class DelayedAssetWriter implements RunnerAssetWriter {
   /// Obtain a [RunnerAssetReader] capable of reading pending writes of this
   /// writer (before they are persisted with [onBuildComplete]).
   RunnerAssetReader reader(RunnerAssetReader delegate, String rootPackage) {
-    final reader = _DelayAwareReader(delegate, this, rootPackage);
-
-    if (delegate is PathProvidingAssetReader) {
-      // `createMergedOutputDirectories` needs a path providing asset reader, so
-      // keep that interface intact if we're wrapping a reader capable of doing
-      // that.
-      return _PathProvidingDelayAwareReader(
-          reader, delegate as PathProvidingAssetReader);
-    } else {
-      return reader;
-    }
+    return _DelayAwareReader(delegate, this, rootPackage);
   }
 
   @override
@@ -144,39 +134,5 @@ class _DelayAwareReader extends AssetReader implements RunnerAssetReader {
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
     return encoding.decode(await readAsBytes(id));
-  }
-}
-
-class _PathProvidingDelayAwareReader extends AssetReader
-    with RunnerAssetReader
-    implements PathProvidingAssetReader {
-  final _DelayAwareReader _reader;
-  final PathProvidingAssetReader _original;
-
-  _PathProvidingDelayAwareReader(this._reader, this._original);
-
-  @override
-  Future<bool> canRead(AssetId id) {
-    return _reader.canRead(id);
-  }
-
-  @override
-  Stream<AssetId> findAssets(Glob glob, {String? package}) {
-    return _reader.findAssets(glob, package: package);
-  }
-
-  @override
-  String pathTo(AssetId id) {
-    return _original.pathTo(id);
-  }
-
-  @override
-  Future<List<int>> readAsBytes(AssetId id) {
-    return _reader.readAsBytes(id);
-  }
-
-  @override
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
-    return _reader.readAsString(id, encoding: encoding);
   }
 }
