@@ -20,6 +20,7 @@ import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
@@ -198,13 +199,21 @@ class AnalyzerResolver implements ReleasableResolver {
     return _driverPool.withResource(() async {
       var session = _driver.currentSession;
       if (resolve) {
-        return (await session.getResolvedLibrary(path) as ResolvedLibraryResult)
-            .getElementDeclaration(element)
-            ?.node;
+        final result =
+            await session.getResolvedLibrary(path) as ResolvedLibraryResult;
+        if (element is CompilationUnitElement) {
+          return result.unitWithPath(element.source.fullName)?.unit;
+        }
+        return result.getElementDeclaration(element)?.node;
       } else {
-        return (session.getParsedLibrary(path) as ParsedLibraryResult)
-            .getElementDeclaration(element)
-            ?.node;
+        final result = session.getParsedLibrary(path) as ParsedLibraryResult;
+        if (element is CompilationUnitElement) {
+          final unitPath = element.source.fullName;
+          return result.units
+              .firstWhereOrNull((unit) => unit.path == unitPath)
+              ?.unit;
+        }
+        return result.getElementDeclaration(element)?.node;
       }
     });
   }
