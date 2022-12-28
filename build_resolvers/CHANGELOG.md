@@ -1,3 +1,7 @@
+## 2.2.0
+
+- Add support for `CompilationUnitElement` to `AnalysisResolver.astNodeFor()`.
+
 ## 2.1.0
 
 - Migrate off deprecated analyzer apis.
