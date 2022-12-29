@@ -28,7 +28,6 @@ import 'analysis_driver.dart';
 import 'build_asset_uri_resolver.dart';
 import 'sdk_summary.dart';
 
-
 /// Implements [Resolver.libraries] and [Resolver.findLibraryByName] by crawling
 /// down from entrypoints.
 class PerActionResolver implements ReleasableResolver {
