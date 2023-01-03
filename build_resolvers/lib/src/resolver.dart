@@ -12,16 +12,13 @@ import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer/dart/sdk/build_sdk_summary.dart';
 import 'package:analyzer/error/error.dart';
-import 'package:analyzer/file_system/physical_file_system.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:collection/collection.dart' show IterableExtension;
-import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
@@ -29,14 +26,7 @@ import 'package:yaml/yaml.dart';
 
 import 'analysis_driver.dart';
 import 'build_asset_uri_resolver.dart';
-import 'human_readable_duration.dart';
-
-final _logger = Logger('build_resolvers');
-
-Future<String> _packagePath(String package) async {
-  var libRoot = await Isolate.resolvePackageUri(Uri.parse('package:$package/'));
-  return p.dirname(p.fromUri(libRoot));
-}
+import 'sdk_summary.dart';
 
 /// Implements [Resolver.libraries] and [Resolver.findLibraryByName] by crawling
 /// down from entrypoints.
@@ -365,7 +355,7 @@ class AnalyzerResolvers implements Resolvers {
 
   /// A function that returns the path to the SDK summary when invoked.
   ///
-  /// Defaults to [_defaultSdkSummaryGenerator].
+  /// Defaults to [defaultSdkSummaryGenerator].
   final Future<String> Function() _sdkSummaryGenerator;
 
   // Lazy, all access must be preceded by a call to `_ensureInitialized`.
@@ -400,7 +390,7 @@ class AnalyzerResolvers implements Resolvers {
               ..contextFeatures =
                   _featureSet(enableExperiments: enabledExperiments)),
         _sdkSummaryGenerator =
-            sdkSummaryGenerator ?? _defaultSdkSummaryGenerator;
+            sdkSummaryGenerator ?? defaultSdkSummaryGenerator;
 
   /// Create a Resolvers backed by an `AnalysisContext` using options
   /// [_analysisOptions].
@@ -430,89 +420,6 @@ class AnalyzerResolvers implements Resolvers {
   }
 }
 
-/// Lazily creates a summary of the users SDK and caches it under
-/// `.dart_tool/build_resolvers`.
-///
-/// This is only intended for use in typical dart packages, which must
-/// have an already existing `.dart_tool` directory (this is how we
-/// validate we are running under a typical dart package and not a custom
-/// environment).
-Future<String> _defaultSdkSummaryGenerator() async {
-  var dartToolPath = '.dart_tool';
-  if (!await Directory(dartToolPath).exists()) {
-    throw StateError(
-        'The default analyzer resolver can only be used when the current '
-        'working directory is a standard pub package.');
-  }
-
-  var cacheDir = p.join(dartToolPath, 'build_resolvers');
-  var summaryPath = p.join(cacheDir, 'sdk.sum');
-  var depsFile = File('$summaryPath.deps');
-  var summaryFile = File(summaryPath);
-
-  var currentDeps = {
-    'sdk': Platform.version,
-    for (var package in _packageDepsToCheck)
-      package: await _packagePath(package),
-  };
-
-  // Invalidate existing summary/version/analyzer files if present.
-  if (await depsFile.exists()) {
-    if (!await _checkDeps(depsFile, currentDeps)) {
-      await depsFile.delete();
-      if (await summaryFile.exists()) await summaryFile.delete();
-    }
-  } else if (await summaryFile.exists()) {
-    // Fallback for cases where we could not do a proper version check.
-    await summaryFile.delete();
-  }
-
-  // Generate the summary and version files if necessary.
-  if (!await summaryFile.exists()) {
-    var watch = Stopwatch()..start();
-    _logger.info('Generating SDK summary...');
-    await summaryFile.create(recursive: true);
-    final embedderYamlPath =
-        isFlutter ? p.join(_dartUiPath, '_embedder.yaml') : null;
-    await summaryFile.writeAsBytes(
-      await buildSdkSummary(
-        sdkPath: _runningDartSdkPath,
-        resourceProvider: PhysicalResourceProvider.INSTANCE,
-        embedderYamlPath: embedderYamlPath,
-      ),
-    );
-
-    await _createDepsFile(depsFile, currentDeps);
-    watch.stop();
-    _logger.info('Generating SDK summary completed, took '
-        '${humanReadable(watch.elapsed)}\n');
-  }
-
-  return p.absolute(summaryPath);
-}
-
-final _packageDepsToCheck = ['analyzer', 'build_resolvers'];
-
-Future<bool> _checkDeps(
-    File versionsFile, Map<String, Object?> currentDeps) async {
-  var previous =
-      jsonDecode(await versionsFile.readAsString()) as Map<String, Object?>;
-
-  if (previous.keys.length != currentDeps.keys.length) return false;
-
-  for (var entry in previous.entries) {
-    if (entry.value != currentDeps[entry.key]) return false;
-  }
-
-  return true;
-}
-
-Future<void> _createDepsFile(
-    File depsFile, Map<String, Object?> currentDeps) async {
-  await depsFile.create(recursive: true);
-  await depsFile.writeAsString(jsonEncode(currentDeps));
-}
-
 /// Checks that the current analyzer version supports the current language
 /// version.
 void _warnOnLanguageVersionMismatch() async {
@@ -528,7 +435,7 @@ void _warnOnLanguageVersionMismatch() async {
     var json = jsonDecode(content.toString());
     var latestAnalyzer = json['latest']['version'];
     var analyzerPubspecPath =
-        p.join(await _packagePath('analyzer'), 'pubspec.yaml');
+        p.join(await packagePath('analyzer'), 'pubspec.yaml');
     var currentAnalyzer =
         loadYaml(await File(analyzerPubspecPath).readAsString())['version'];
 
@@ -580,11 +487,6 @@ https://pub.dev/packages/analyzer.
   }
 }
 
-/// Path where the dart:ui package will be found, if executing via the dart
-/// binary provided by the Flutter SDK.
-final _dartUiPath =
-    p.normalize(p.join(_runningDartSdkPath, '..', 'pkg', 'sky_engine', 'lib'));
-
 /// The current feature set based on the current sdk version and enabled
 /// experiments.
 FeatureSet _featureSet({List<String> enableExperiments = const []}) {
@@ -609,10 +511,3 @@ current version by running `pub deps`.
   return FeatureSet.fromEnableFlags2(
       sdkLanguageVersion: sdkLanguageVersion, flags: enableExperiments);
 }
-
-/// Path to the running dart's SDK root.
-final _runningDartSdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
-
-/// `true` if the currently running dart was provided by the Flutter SDK.
-final isFlutter =
-    Platform.version.contains('flutter') || Directory(_dartUiPath).existsSync();
