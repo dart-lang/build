@@ -105,7 +105,17 @@ Future<BuildScriptInfo> findBuildScriptOptions({
   bool _isValidDefinition(dynamic definition) {
     // Filter out builderDefinitions with relative imports that aren't
     // from the root package, because they will never work.
-    if (definition.import.startsWith('package:') as bool) return true;
+    if (definition.import.startsWith('package:') as bool) {
+      // Make sure package is known in packageGraph (when present),
+      // otherwise PackageNotFoundException will be thrown down the road
+      final pkg = AssetId.resolve(Uri.parse('${definition.import}')).package;
+      if (packageGraph?.allPackages.containsKey(pkg) ?? true) {
+        return true;
+      }
+      _log.warning(
+          'Could not load imported package "$pkg" for definition "${definition.key}".');
+      return false;
+    }
     return definition.package == packageGraph!.root.name;
   }
 

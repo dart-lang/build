@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:collection';
+import 'dart:isolate';
 
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
@@ -217,6 +218,11 @@ class BuildAssetUriResolver extends UriResolver {
 
 String assetPath(AssetId assetId) =>
     p.posix.join('/${assetId.package}', assetId.path);
+
+Future<String> packagePath(String package) async {
+  var libRoot = await Isolate.resolvePackageUri(Uri.parse('package:$package/'));
+  return p.dirname(p.fromUri(libRoot));
+}
 
 /// Returns all the directives from a Dart library that can be resolved to an
 /// [AssetId].
