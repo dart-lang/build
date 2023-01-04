@@ -4,7 +4,7 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart' show BuilderOptions;
+import 'package:build/build.dart' show BuilderOptions, AssetId;
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:code_builder/code_builder.dart';
