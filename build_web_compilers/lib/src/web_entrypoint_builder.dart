@@ -136,8 +136,7 @@ class WebEntrypointBuilder implements Builder {
     var dartEntrypointId = buildStep.inputId;
     var isAppEntrypoint = await _isAppEntryPoint(dartEntrypointId, buildStep);
     if (!isAppEntrypoint) return;
-    var soundNullSafety = soundNullSafetyOverride ??
-        await _supportsNullSafety(buildStep, buildStep.inputId);
+    var soundNullSafety = soundNullSafetyOverride ?? false;
     var nullAssertions = !soundNullSafety && this.nullAssertions;
     switch (webCompiler) {
       case WebCompiler.DartDevc:
