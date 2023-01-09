@@ -415,6 +415,29 @@ void main() {
     );
   });
 
+  test('generates a mock class with a marker mixin', () async {
+    var mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': '''
+        class Foo {}
+        class FooMarkerMixin {}
+        ''',
+      'foo|test/foo_test.dart': '''
+        import 'package:foo/foo.dart';
+        import 'package:mockito/annotations.dart';
+        @GenerateMocks([], customMocks: [
+          MockSpec<Foo>(mixingIn: [FooMarkerMixin])
+        ])
+        void main() {}
+        '''
+    });
+    expect(
+      mocksContent,
+      contains(
+          'class MockFoo extends _i1.Mock with _i2.FooMarkerMixin implements _i2.Foo {'),
+    );
+  });
+
   test(
       'generates a mock class which uses the old behavior of returning null on '
       'missing stubs', () async {
@@ -1212,27 +1235,6 @@ void main() {
         '''),
       },
       message: contains('Mockito cannot mock a private type: _FooMixin'),
-    );
-  });
-
-  test('throws when MockSpec mixes in a non-mixinable type', () async {
-    _expectBuilderThrows(
-      assets: {
-        ...annotationsAsset,
-        'foo|lib/foo.dart': dedent('''
-        class Foo {}
-        '''),
-        'foo|test/foo_test.dart': dedent('''
-        import 'package:mockito/annotations.dart';
-        import 'package:foo/foo.dart';
-        @GenerateMocks([], customMocks: [MockSpec<Foo>(mixingIn: [FooMixin])])
-        void main() {}
-
-        mixin FooMixin {}
-        '''),
-      },
-      message: contains(
-          'The "mixingIn" type, FooMixin, must implement the class to mock, Foo'),
     );
   });
 

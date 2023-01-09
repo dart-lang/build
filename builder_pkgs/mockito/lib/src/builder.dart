@@ -618,11 +618,6 @@ class _MockTargetGatherer {
       }
       final mixinInterfaceType =
           _determineDartType(typeToMixin, entryLib.typeProvider);
-      if (!mixinInterfaceType.interfaces.contains(type)) {
-        throw InvalidMockitoAnnotationException('The "mixingIn" type, '
-            '${typeToMixin.getDisplayString(withNullability: false)}, must '
-            'implement the class to mock, ${typeToMock.getDisplayString(withNullability: false)}');
-      }
       mixins.add(mixinInterfaceType);
     }
 
