@@ -1,4 +1,4 @@
-# Created with package:mono_repo v6.4.2
+# Created with package:mono_repo v6.4.3
 name: Dart CI
 on:
   push:
@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7
+        uses: actions/cache@4723a57e26efda3a62cbde1812113b730952852d
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;sdk:stable"
@@ -34,9 +34,9 @@ jobs:
           sdk: stable
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b
       - name: mono_repo self validate
-        run: dart pub global activate mono_repo 6.4.2
+        run: dart pub global activate mono_repo 6.4.3
       - name: mono_repo self validate
         run: dart pub global run mono_repo generate --validate
   job_002:
@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7
+        uses: actions/cache@4723a57e26efda3a62cbde1812113b730952852d
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;sdk:2.18.0;packages:source_gen;commands:analyze_1"
@@ -59,7 +59,7 @@ jobs:
           sdk: "2.18.0"
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b
       - id: source_gen_pub_upgrade
         name: source_gen; dart pub upgrade
         run: dart pub upgrade
@@ -74,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7
+        uses: actions/cache@4723a57e26efda3a62cbde1812113b730952852d
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:_test_annotations-example-example_usage-source_gen;commands:format-analyze_0"
@@ -89,7 +89,7 @@ jobs:
           sdk: dev
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b
       - id: _test_annotations_pub_upgrade
         name: _test_annotations; dart pub upgrade
         run: dart pub upgrade
@@ -152,7 +152,7 @@ jobs:
           sdk: "2.18.0"
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b
       - id: source_gen_pub_upgrade
         name: source_gen; dart pub upgrade
         run: dart pub upgrade
@@ -172,7 +172,7 @@ jobs:
           sdk: dev
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b
       - id: source_gen_pub_upgrade
         name: source_gen; dart pub upgrade
         run: dart pub upgrade
@@ -191,7 +191,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7
+        uses: actions/cache@4723a57e26efda3a62cbde1812113b730952852d
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;sdk:2.18.0;packages:example_usage;commands:test_0"
@@ -206,7 +206,7 @@ jobs:
           sdk: "2.18.0"
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b
       - id: example_usage_pub_upgrade
         name: example_usage; dart pub upgrade
         run: dart pub upgrade
@@ -227,7 +227,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7
+        uses: actions/cache@4723a57e26efda3a62cbde1812113b730952852d
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;sdk:2.18.0;packages:source_gen;commands:test_1"
@@ -242,7 +242,7 @@ jobs:
           sdk: "2.18.0"
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b
       - id: source_gen_pub_upgrade
         name: source_gen; dart pub upgrade
         run: dart pub upgrade
@@ -263,7 +263,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7
+        uses: actions/cache@4723a57e26efda3a62cbde1812113b730952852d
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:example_usage;commands:test_0"
@@ -278,7 +278,7 @@ jobs:
           sdk: dev
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b
       - id: example_usage_pub_upgrade
         name: example_usage; dart pub upgrade
         run: dart pub upgrade
@@ -299,7 +299,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
-        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7
+        uses: actions/cache@4723a57e26efda3a62cbde1812113b730952852d
         with:
           path: "~/.pub-cache/hosted"
           key: "os:ubuntu-latest;pub-cache-hosted;sdk:dev;packages:source_gen;commands:test_1"
@@ -314,7 +314,7 @@ jobs:
           sdk: dev
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b
       - id: source_gen_pub_upgrade
         name: source_gen; dart pub upgrade
         run: dart pub upgrade
@@ -340,7 +340,7 @@ jobs:
           sdk: "2.18.0"
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b
       - id: source_gen_pub_upgrade
         name: source_gen; dart pub upgrade
         run: dart pub upgrade
@@ -366,7 +366,7 @@ jobs:
           sdk: dev
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b
       - id: source_gen_pub_upgrade
         name: source_gen; dart pub upgrade
         run: dart pub upgrade
