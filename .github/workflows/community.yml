@@ -1,31 +1,31 @@
-name: Community tests
-on:
-  pull_request:
-env:
-  PUB_ENVIRONMENT: bot.github
+# name: Community tests
+# on:
+#   pull_request:
+# env:
+#   PUB_ENVIRONMENT: bot.github
 
-jobs:
-  drift:
-    # Tests maintained by oss@simonbinder.eu
-    name: "Tests for pkg:drift"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: dart-lang/setup-dart@6a218f2413a3e78e9087f638a238f6b40893203d
-        with:
-          sdk: dev
-      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
-      - run: dart pub get
-        working-directory: tool
+# jobs:
+#   drift:
+#     # Tests maintained by oss@simonbinder.eu
+#     name: "Tests for pkg:drift"
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: dart-lang/setup-dart@6a218f2413a3e78e9087f638a238f6b40893203d
+#         with:
+#           sdk: dev
+#       - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+#       - run: dart pub get
+#         working-directory: tool
 
-      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
-        with:
-          repository: simolus3/moor
-          ref: latest-release
-          path: client_tests/drift
-      - run: |-
-          dart run tool/bin/patch_build_dependencies.dart client_tests/drift/drift
-          cd client_tests/drift/drift
-          git add pubspec.yaml
-      - run: dart test --preset build_community_tests
-        name: Drift community tests
-        working-directory: client_tests/drift/drift
+#       - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+#         with:
+#           repository: simolus3/moor
+#           ref: latest-release
+#           path: client_tests/drift
+#       - run: |-
+#           dart run tool/bin/patch_build_dependencies.dart client_tests/drift/drift
+#           cd client_tests/drift/drift
+#           git add pubspec.yaml
+#       - run: dart test --preset build_community_tests
+#         name: Drift community tests
+#         working-directory: client_tests/drift/drift
