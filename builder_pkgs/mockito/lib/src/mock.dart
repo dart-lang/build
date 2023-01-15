@@ -18,6 +18,7 @@
 // ignore_for_file: prefer_void_to_null
 
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:meta/meta.dart';
 import 'package:mockito/src/call_pair.dart';
@@ -501,15 +502,33 @@ class PostExpectation<T> {
   /// Note: [expected] cannot be a Future or Stream, due to Zone considerations.
   /// To return a Future or Stream from a method stub, use [thenAnswer].
   void thenReturn(T expected) {
-    if (expected is Future) {
-      throw ArgumentError('`thenReturn` should not be used to return a Future. '
-          'Instead, use `thenAnswer((_) => future)`.');
-    }
-    if (expected is Stream) {
-      throw ArgumentError('`thenReturn` should not be used to return a Stream. '
-          'Instead, use `thenAnswer((_) => stream)`.');
-    }
+    _throwIfInvalid(expected);
     return _completeWhen((_) => expected);
+  }
+
+  /// Store a sequence of canned responses for this method stub.
+  ///
+  /// Note: [expects] cannot contain a Future or Stream, due to Zone considerations.
+  /// To return a Future or Stream from a method stub, use [thenAnswer].
+  ///
+  /// Note: when the method stub is called more times than there are responses
+  /// in [expects], it will throw an StateError in the missing case.
+  void thenReturnInOrder(List<T> expects) {
+    if (expects.isEmpty) {
+      throw ArgumentError('thenReturnInOrder expects should not be empty');
+    }
+
+    expects.forEach(_throwIfInvalid);
+
+    final answers = Queue.of(expects);
+
+    thenAnswer((_) {
+      if (answers.isEmpty) {
+        throw StateError('thenReturnInOrder does not have enough answers');
+      }
+
+      return answers.removeFirst();
+    });
   }
 
   /// Store an exception to throw when this method stub is called.
@@ -535,6 +554,17 @@ class PostExpectation<T> {
     _whenCall!._setExpected<T>(answer);
     _whenCall = null;
     _whenInProgress = false;
+  }
+
+  void _throwIfInvalid(T expected) {
+    if (expected is Future) {
+      throw ArgumentError('`thenReturn` should not be used to return a Future. '
+          'Instead, use `thenAnswer((_) => future)`.');
+    }
+    if (expected is Stream) {
+      throw ArgumentError('`thenReturn` should not be used to return a Stream. '
+          'Instead, use `thenAnswer((_) => stream)`.');
+    }
   }
 }
 

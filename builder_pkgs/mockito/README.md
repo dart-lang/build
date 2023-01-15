@@ -103,6 +103,12 @@ var responses = ["Purr", "Meow"];
 when(cat.sound()).thenAnswer((_) => responses.removeAt(0));
 expect(cat.sound(), "Purr");
 expect(cat.sound(), "Meow");
+
+// We can stub a method with multiple calls that happened in a particular order.
+when(cat.sound()).thenReturnInOrder(["Purr", "Meow"]);
+expect(cat.sound(), "Purr");
+expect(cat.sound(), "Meow");
+expect(() => cat.sound(), throwsA(isA<StateError>()));
 ```
 
 The [`when`], [`thenReturn`], [`thenAnswer`], and [`thenThrow`] APIs provide a
