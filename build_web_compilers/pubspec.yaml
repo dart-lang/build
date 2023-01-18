@@ -4,7 +4,7 @@ description: Builder implementations wrapping the dart2js and DDC compilers.
 repository: https://github.com/dart-lang/build/tree/master/build_web_compilers
 
 environment:
-  sdk: '>=3.0.0-dev <3.1.0'
+  sdk: '>=3.0.0-134.0.dev <3.1.0'
 
 dependencies:
   analyzer: '>=5.1.0 <6.0.0'
