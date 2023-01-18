@@ -20,7 +20,7 @@ class SdkJsCopyBuilder implements Builder {
 
   /// Path to the require.js file that should be used for all ddc web apps.
   final _sdkRequireJsLocation =
-      p.join(sdkDir, 'lib', 'dev_compiler', 'kernel', 'amd', 'require.js');
+      p.join(sdkDir, 'lib', 'dev_compiler', 'amd', 'require.js');
 
   @override
   FutureOr<void> build(BuildStep buildStep) async {
