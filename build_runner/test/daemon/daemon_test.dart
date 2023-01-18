@@ -149,7 +149,7 @@ main() {
           ])
         ])
       ]).create();
-    });
+    }, skip: 'https://github.com/dart-lang/build/issues/3438');
 
     test('supports --enable-experiment option', () async {
       await _startDaemon(options: ['--enable-experiment=fake-experiment']);
