@@ -1,7 +1,8 @@
-## 2.3.4-dev
+## 2.4.0-dev
 
 - Warn if a `package:` builder import cannot be resolved and skip it,
   instead of creating an invalid build script or failing in other obscure ways.
+- Require Dart 3.0, drop support for unsound build scripts.
 
 ## 2.3.3
 

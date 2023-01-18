@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
+import 'package:test/test.dart';
 
 /// Forwards to [testBuilder], and adds all output assets to [assets].
 Future<void> testBuilderAndCollectAssets(
@@ -17,6 +18,7 @@ Future<void> testBuilderAndCollectAssets(
     void Function(AssetId, Iterable<AssetId>)?
         reportUnusedAssetsForInput}) async {
   var writer = InMemoryAssetWriter();
+  onLog ??= (log) => printOnFailure('${log.level}: ${log.message}');
   await testBuilder(builder, assets,
       generateFor: generateFor,
       outputs: outputs,

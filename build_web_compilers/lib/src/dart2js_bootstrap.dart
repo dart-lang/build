@@ -25,20 +25,14 @@ Future<void> bootstrapDart2Js(
   BuildStep buildStep,
   List<String> dart2JsArgs, {
   required bool nativeNullAssertions,
-  required bool nullAssertions,
-  required bool soundNullSafety,
 }) =>
     _resourcePool.withResource(() => _bootstrapDart2Js(buildStep, dart2JsArgs,
-        nativeNullAssertions: nativeNullAssertions,
-        nullAssertions: nullAssertions,
-        soundNullSafety: soundNullSafety));
+        nativeNullAssertions: nativeNullAssertions));
 
 Future<void> _bootstrapDart2Js(
   BuildStep buildStep,
   List<String> dart2JsArgs, {
   required bool nativeNullAssertions,
-  required bool nullAssertions,
-  required bool soundNullSafety,
 }) async {
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
@@ -92,8 +86,6 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
         for (var experiment in enabledExperiments)
           '--enable-experiment=$experiment',
         '--${nativeNullAssertions ? '' : 'no-'}native-null-assertions',
-        if (nullAssertions) '--null-assertions',
-        '--${soundNullSafety ? '' : 'no-'}sound-null-safety',
         '-o$jsOutputPath',
         '$dartUri',
       ]);
@@ -175,21 +167,11 @@ final _dart2jsVmArgs = () {
 /// want you to configure in a different way.
 void _validateUserArgs(List<String> args) {
   for (var arg in args) {
-    if (arg.endsWith('sound-null-safety')) {
-      log.warning(
-          'Detected a manual sound null safety dart2js argument `$arg`, '
-          'this should be configured using the `sound_null_safety` option on '
-          'the build_web_compilers:entrypoint builder instead.');
-    } else if (arg.endsWith('native-null-assertions')) {
+    if (arg.endsWith('native-null-assertions')) {
       log.warning(
           'Detected a manual native null assertions dart2js argument `$arg`, '
           'this should be configured using the `native_null_assertions` '
           'option on the build_web_compilers:entrypoint builder instead.');
-    } else if (arg.endsWith('null-assertions')) {
-      log.warning(
-          'Detected a manual null assertions dart2js argument `$arg`, this '
-          'should be configured using the `null_assertions` option on the '
-          'build_web_compilers:entrypoint builder instead.');
     } else if (arg.startsWith('--enable-experiment')) {
       log.warning(
           'Detected a manual enable experiment dart2js argument `$arg`, '

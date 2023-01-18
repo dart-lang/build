@@ -9,7 +9,6 @@ dev_dependencies:
   build: any
   build_config: any
   build_modules: any
-  build_vm_compilers: any
   build_web_compilers: any
   build_runner: any
   build_runner_core: any
@@ -39,8 +38,6 @@ dependency_overrides:
     path: ../build_runner_core
   build_test:
     path: ../build_test
-  build_vm_compilers:
-    path: ../build_vm_compilers
   build_web_compilers:
     path: ../build_web_compilers
   scratch_space:

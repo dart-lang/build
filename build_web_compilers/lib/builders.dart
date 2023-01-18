@@ -21,59 +21,40 @@ Builder ddcMetaModuleBuilder(BuilderOptions options) =>
 Builder ddcMetaModuleCleanBuilder(_) => MetaModuleCleanBuilder(ddcPlatform);
 Builder ddcModuleBuilder([_]) => ModuleBuilder(ddcPlatform);
 
-Builder ddcBuilderSound(BuilderOptions options) =>
-    ddcBuilder(options, soundNullSafety: true);
-Builder ddcBuilderUnsound(BuilderOptions options) =>
-    ddcBuilder(options, soundNullSafety: false);
-
-Builder ddcBuilder(BuilderOptions options, {bool soundNullSafety = false}) {
-  validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc',
-      deprecatedOptions: _deprecatedOptions);
+Builder ddcBuilder(BuilderOptions options) {
+  validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
   _ensureSameDdcOptions(options);
 
   return DevCompilerBuilder(
     useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
     generateFullDill: _readGenerateFullDillOption(options),
     emitDebugSymbols: _readEmitDebugSymbolsOption(options),
+    sdkKernelPath: sdkDdcKernelPath,
     trackUnusedInputs: _readTrackInputsCompilerOption(options),
     platform: ddcPlatform,
     environment: _readEnvironmentOption(options),
-    soundNullSafety: soundNullSafety,
   );
 }
 
-String ddcKernelExtension(bool soundNullSafety) =>
-    '${soundnessExt(soundNullSafety)}.ddc.dill';
-Builder ddcKernelBuilderUnsound(BuilderOptions options) =>
-    ddcKernelBuilder(options, soundNullSafety: false);
-Builder ddcKernelBuilderSound(BuilderOptions options) =>
-    ddcKernelBuilder(options, soundNullSafety: true);
+final ddcKernelExtension = '.ddc.dill';
 
-Builder ddcKernelBuilder(BuilderOptions options,
-    {bool soundNullSafety = false}) {
-  validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc',
-      deprecatedOptions: _deprecatedOptions);
+Builder ddcKernelBuilder(BuilderOptions options) {
+  validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
   _ensureSameDdcOptions(options);
 
   return KernelBuilder(
       summaryOnly: true,
-      sdkKernelPath: sdkDdcKernelPath(soundNullSafety),
-      outputExtension: ddcKernelExtension(soundNullSafety),
+      sdkKernelPath: sdkDdcKernelPath,
+      outputExtension: ddcKernelExtension,
       platform: ddcPlatform,
       useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
-      trackUnusedInputs: _readTrackInputsCompilerOption(options),
-      soundNullSafety: soundNullSafety);
+      trackUnusedInputs: _readTrackInputsCompilerOption(options));
 }
 
 Builder sdkJsCopyRequirejs(_) => SdkJsCopyBuilder();
-Builder sdkJsCompileSound(_) => SdkJsCompileBuilder(
-    sdkKernelPath: 'lib/_internal/ddc_platform_sound.dill',
-    outputPath: 'lib/src/dev_compiler/dart_sdk.sound.js',
-    soundNullSafety: true);
-Builder sdkJsCompileUnsound(_) => SdkJsCompileBuilder(
+Builder sdkJsCompile(_) => SdkJsCompileBuilder(
     sdkKernelPath: 'lib/_internal/ddc_platform.dill',
-    outputPath: 'lib/src/dev_compiler/dart_sdk.js',
-    soundNullSafety: false);
+    outputPath: 'lib/src/dev_compiler/dart_sdk.js');
 
 // Dart2js related builders
 Builder dart2jsMetaModuleBuilder(BuilderOptions options) =>
@@ -136,10 +117,7 @@ const _generateFullDillOption = 'generate-full-dill';
 const _emitDebugSymbolsOption = 'emit-debug-symbols';
 const _trackUnusedInputsCompilerOption = 'track-unused-inputs';
 const _environmentOption = 'environment';
-const _experimentOption = 'experiments';
-const _deprecatedOptions = [
-  _experimentOption,
-];
+
 const _supportedOptions = [
   _environmentOption,
   _useIncrementalCompilerOption,

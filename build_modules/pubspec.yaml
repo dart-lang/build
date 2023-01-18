@@ -1,12 +1,12 @@
 name: build_modules
-version: 4.0.7
+version: 5.0.0-dev
 description: >-
   Builders to analyze and split Dart code into individually compilable modules
   based on imports.
 repository: https://github.com/dart-lang/build/tree/master/build_modules
 
 environment:
-  sdk: '>=2.18.0 <3.0.0'
+  sdk: '>=3.0.0-134.0.dev <3.0.0'
 
 dependencies:
   analyzer: '>=5.1.0 <6.0.0'
@@ -35,3 +35,7 @@ dev_dependencies:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
+
+dependency_overrides:
+  build_runner:
+    path: ../build_runner

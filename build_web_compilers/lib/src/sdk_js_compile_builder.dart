@@ -18,8 +18,7 @@ const _jsSourceMapExtension = '.js.map';
 
 /// A builder which can compile the SDK to JS from kernel.
 class SdkJsCompileBuilder implements Builder {
-  /// The SDK kernel file for the current sdk and configuration (sound vs
-  /// unsound, etc).
+  /// The SDK kernel file for the current sdk.
   ///
   /// This is exactly what will be compiled into the resulting JS file.
   final String sdkKernelPath;
@@ -41,12 +40,9 @@ class SdkJsCompileBuilder implements Builder {
   /// The final destination for the compiled JS file.
   final AssetId jsOutputId;
 
-  final bool soundNullSafety;
-
   SdkJsCompileBuilder({
     required this.sdkKernelPath,
     required String outputPath,
-    required this.soundNullSafety,
     String? librariesPath,
     String? platformSdk,
   })  : platformSdk = platformSdk ?? sdkDir,
@@ -65,8 +61,8 @@ class SdkJsCompileBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    await _createDevCompilerModule(buildStep, platformSdk, sdkKernelPath,
-        librariesPath, jsOutputId, soundNullSafety);
+    await _createDevCompilerModule(
+        buildStep, platformSdk, sdkKernelPath, librariesPath, jsOutputId);
   }
 }
 
@@ -77,7 +73,6 @@ Future<void> _createDevCompilerModule(
   String sdkKernelPath,
   String librariesPath,
   AssetId jsOutputId,
-  bool soundNullSafety,
 ) async {
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
   var jsOutputFile = scratchSpace.fileFor(jsOutputId);
@@ -91,7 +86,6 @@ Future<void> _createDevCompilerModule(
       '--multi-root-scheme=org-dartlang-sdk',
       '--modules=amd',
       '--module-name=dart_sdk',
-      '--${soundNullSafety ? '' : 'no-'}sound-null-safety',
       '-o',
       jsOutputFile.path,
       p.url.join(dartSdk, sdkKernelPath),

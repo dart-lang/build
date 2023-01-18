@@ -11,7 +11,3 @@ targets:
           - test/hello_world_custom_html_test.dart.browser_test.dart
           - test/other_test.dart.browser_test.dart
           - test/sub-dir/subdir_test.dart.browser_test.dart
-      build_vm_compilers:entrypoint:
-        generate_for:
-          - test/configurable_uri_test.dart.vm_test.dart
-          - test/help_test.dart.vm_test.dart
