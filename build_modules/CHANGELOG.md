@@ -1,4 +1,4 @@
-## 5.0.0-dev
+## 5.0.0
 
 - Require Dart 3.0.
   - Drop support for unsound null safety.
