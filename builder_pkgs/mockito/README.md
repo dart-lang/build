@@ -1,9 +1,8 @@
-# mockito
+[![Dart CI](https://github.com/dart-lang/mockito/actions/workflows/test-package.yml/badge.svg)](https://github.com/dart-lang/mockito/actions/workflows/test-package.yml)
+[![Pub](https://img.shields.io/pub/v/mockito.svg)](https://pub.dev/packages/mockito)
+[![package publisher](https://img.shields.io/pub/publisher/mockito.svg)](https://pub.dev/packages/mockito/publisher)
 
 Mock library for Dart inspired by [Mockito](https://github.com/mockito/mockito).
-
-[![Pub](https://img.shields.io/pub/v/mockito.svg)](https://pub.dev/packages/mockito)
-[![Build Status](https://travis-ci.org/dart-lang/mockito.svg?branch=master)](https://travis-ci.org/dart-lang/mockito)
 
 ## Let's create mocks
 
@@ -330,7 +329,7 @@ void main() {
 }
 ```
 
-The `Cat.sound` method retuns a non-nullable String, but no stub has been made
+The `Cat.sound` method returns a non-nullable String, but no stub has been made
 with `when(cat.sound())`, so what should the code do? What is the "missing stub"
 behavior?
 

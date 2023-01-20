@@ -1137,7 +1137,7 @@ void main() {
     );
   });
 
-  test('throws when MockSpec references a typedef', () async {
+  test('throws when MockSpec references a function typedef', () async {
     _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
@@ -1146,7 +1146,7 @@ void main() {
         typedef Foo = void Function();
         '''),
       },
-      message: 'Mockito cannot mock a typedef: Foo',
+      message: 'Mockito cannot mock a non-class: Foo',
     );
   });
 
@@ -1376,6 +1376,299 @@ void main() {
     });
     expect(mocksContent, contains('class MockFoo'));
     expect(mocksContent, contains('class MockBar'));
+  });
+
+  group('typedef mocks', () {
+    group('are generated properly', () {
+      test('when all aliased type parameters are instantiated', () async {
+        final mocksContent = await buildWithNonNullable({
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            class Foo<A, B, C> {}
+            typedef Bar = Foo<int, bool, String>;
+          '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+            @GenerateNiceMocks([
+              MockSpec<Bar>(),
+            ])
+            void main() {}
+          '''
+        });
+
+        expect(mocksContent, contains('class MockBar extends _i1.Mock'));
+        expect(mocksContent, contains('implements _i2.Bar'));
+      });
+
+      test('when no aliased type parameters are instantiated', () async {
+        final mocksContent = await buildWithNonNullable({
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            class Foo<T> {}
+            typedef Bar = Foo;
+          '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+            @GenerateNiceMocks([
+              MockSpec<Bar>(),
+            ])
+            void main() {}
+          '''
+        });
+
+        expect(mocksContent, contains('class MockBar extends _i1.Mock'));
+        expect(mocksContent, contains('implements _i2.Bar'));
+      });
+
+      test(
+          'when the typedef defines a type and it corresponds to a different '
+          'index of the aliased type', () async {
+        final mocksContent = await buildWithNonNullable({
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            class Foo<A> {}
+            typedef Bar<X> = Foo<num, X>;
+          '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+            @GenerateNiceMocks([
+              MockSpec<Bar<int>>(),
+            ])
+            void main() {}
+          '''
+        });
+
+        expect(mocksContent, contains('class MockBar extends _i1.Mock'));
+        expect(mocksContent, contains('implements _i2.Bar<int>'));
+      });
+
+      test('when the aliased type has no type parameters', () async {
+        final mocksContent = await buildWithNonNullable({
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            class Foo {}
+            typedef Bar = Foo;
+          '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+            @GenerateNiceMocks([
+              MockSpec<Bar>(),
+            ])
+            void main() {}
+          '''
+        });
+
+        expect(mocksContent, contains('class MockBar extends _i1.Mock'));
+        expect(mocksContent, contains('implements _i2.Bar'));
+      });
+
+      test('when the mock instantiates another typedef', () async {
+        final mocksContent = await buildWithNonNullable({
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            class Foo<A> {}
+            typedef Bar<B> = Foo<B>;
+
+            class Baz<X> {}
+            typedef Qux<Y> = Baz<Y>;
+          '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+            @GenerateNiceMocks([
+              MockSpec<Qux<Bar<int>>>(),
+            ])
+            void main() {}
+          '''
+        });
+
+        expect(mocksContent, contains('class MockQux extends _i1.Mock'));
+        expect(mocksContent, contains('implements _i2.Qux<_i2.Foo<int>>'));
+      });
+
+      test(
+          'when the typedef defines a bounded class type and it is NOT '
+          'instantiated', () async {
+        final mocksContent = await buildWithNonNullable({
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            class Foo<A> {}
+            class Bar {}
+            typedef Baz<X extends Bar> = Foo<X>;
+          '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+            @GenerateNiceMocks([
+              MockSpec<Baz>(),
+            ])
+            void main() {}
+          '''
+        });
+
+        expect(mocksContent,
+            contains('class MockBaz<X extends _i1.Bar> extends _i2.Mock'));
+        expect(mocksContent, contains('implements _i1.Baz<X>'));
+      });
+
+      test(
+          'when the typedef defines a bounded type and the mock instantiates '
+          'it', () async {
+        final mocksContent = await buildWithNonNullable({
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            class Foo<A> {}
+            typedef Bar<X extends num> = Foo<X>;
+          '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+            @GenerateNiceMocks([
+              MockSpec<Bar<int>>(),
+            ])
+            void main() {}
+          '''
+        });
+
+        expect(mocksContent, contains('class MockBar extends _i1.Mock'));
+        expect(mocksContent, contains('implements _i2.Bar<int>'));
+      });
+
+      test('when the aliased type has a parameterized method', () async {
+        final mocksContent = await buildWithNonNullable({
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            class Foo<A> {
+              A get value;
+            }
+          '''),
+          'bar|lib/bar.dart': dedent(r'''
+            import 'package:foo/foo.dart';
+            typedef Bar = Foo<String>;
+          '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:bar/bar.dart';
+            import 'package:mockito/annotations.dart';
+            @GenerateNiceMocks([
+              MockSpec<Bar>(),
+            ])
+            void main() {}
+          '''
+        });
+
+        expect(mocksContent, contains('String get value'));
+      });
+
+      test(
+          'when the typedef is parameterized and the aliased type has a '
+          'parameterized method', () async {
+        final mocksContent = await buildWithNonNullable({
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            class Foo<A> {
+              A get value;
+            }
+          '''),
+          'bar|lib/bar.dart': dedent(r'''
+            import 'package:foo/foo.dart';
+            typedef Bar<T> = Foo<T>;
+          '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:bar/bar.dart';
+            import 'package:mockito/annotations.dart';
+
+            X fallbackGenerator<X>() {
+              throw 'unknown';
+            }
+
+            @GenerateNiceMocks([
+              MockSpec<Bar>(fallbackGenerators: {#value: fallbackGenerator}),
+            ])
+            void main() {}
+          '''
+        });
+
+        expect(mocksContent, contains('T get value'));
+      });
+
+      test('when the aliased type is a mixin', () async {
+        final mocksContent = await buildWithNonNullable({
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            mixin Foo {
+              String get value;
+            }
+
+             typedef Bar = Foo<String>;
+          '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+
+            @GenerateNiceMocks([
+              MockSpec<Bar>(),
+            ])
+            void main() {}
+          '''
+        });
+
+        expect(mocksContent, contains('class MockBar extends _i1.Mock'));
+        expect(mocksContent, contains('implements _i2.Bar'));
+        expect(mocksContent, contains('String get value'));
+      });
+
+      test('when the aliased type is another typedef', () async {
+        final mocksContent = await buildWithNonNullable({
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            class Foo {}
+
+            typedef Bar = Foo;
+            typedef Baz = Bar;
+        '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+
+            @GenerateNiceMocks([
+              MockSpec<Baz>(),
+            ])
+            void main() {}
+          '''
+        });
+
+        expect(mocksContent, contains('class MockBaz extends _i1.Mock'));
+        expect(mocksContent, contains('implements _i2.Baz'));
+      });
+    });
+
+    test('generation throws when the aliased type is nullable', () {
+      _expectBuilderThrows(
+        assets: {
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            class Foo {
+              T get value;
+            }
+
+            typedef Bar = Foo?;
+          '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+
+            @GenerateNiceMocks([MockSpec<Bar>()])
+            void main() {}
+          '''
+        },
+        message:
+            contains('Mockito cannot mock a type-aliased nullable type: Bar'),
+      );
+    });
   });
 }
 

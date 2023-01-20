@@ -234,6 +234,7 @@ class SmartFake {
   // make Analyzer happy, if we fake classes that override `==` to
   // accept `Object?` or `dynamic` (most notably [Interceptor]).
   @override
+  // ignore: non_nullable_equals_parameter
   bool operator ==(Object? other) => identical(this, other);
 
   @override

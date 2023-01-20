@@ -158,6 +158,7 @@ $rawOutput
       seenTypes.add(type);
       librariesWithTypes.add(type.element.library);
       type.element.accept(typeVisitor);
+      if (type.alias != null) type.alias!.element.accept(typeVisitor);
       // For a type like `Foo<Bar>`, add the `Bar`.
       type.typeArguments
           .whereType<analyzer.InterfaceType>()
@@ -296,6 +297,12 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
     super.visitTypeParameterElement(element);
   }
 
+  @override
+  void visitTypeAliasElement(TypeAliasElement element) {
+    _elements.add(element);
+    super.visitTypeAliasElement(element);
+  }
+
   /// Adds [type] to the collected [_elements].
   void _addType(analyzer.DartType? type) {
     if (type == null) return;
@@ -406,14 +413,15 @@ class _MockTarget {
   final bool hasExplicitTypeArguments;
 
   _MockTarget(
-    this.classType,
-    this.mockName, {
+    this.classType, {
     required this.mixins,
     required this.onMissingStub,
     required this.unsupportedMembers,
     required this.fallbackGenerators,
     this.hasExplicitTypeArguments = false,
-  });
+    String? mockName,
+  }) : mockName = mockName ??
+            'Mock${classType.alias?.element.name ?? classType.element.name}';
 
   InterfaceElement get interfaceElement => classType.element;
 }
@@ -509,17 +517,17 @@ class _MockTargetGatherer {
         throw InvalidMockitoAnnotationException(
             'Mockito cannot mock `dynamic`');
       }
-      final type = _determineDartType(typeToMock, entryLib.typeProvider);
-      // For a generic class like `Foo<T>` or `Foo<T extends num>`, a type
-      // literal (`Foo`) cannot express type arguments. The type argument(s) on
-      // `type` have been instantiated to bounds here. Switch to the
-      // declaration, which will be an uninstantiated type.
-      final declarationType =
-          (type.element.declaration as InterfaceElement).thisType;
-      final mockName = 'Mock${declarationType.element.name}';
+      var type = _determineDartType(typeToMock, entryLib.typeProvider);
+      if (type.alias == null) {
+        // For a generic class without an alias like `Foo<T>` or
+        // `Foo<T extends num>`, a type literal (`Foo`) cannot express type
+        // arguments. The type argument(s) on `type` have been instantiated to
+        // bounds here. Switch to the declaration, which will be an
+        // uninstantiated type.
+        type = (type.element.declaration as InterfaceElement).thisType;
+      }
       mockTargets.add(_MockTarget(
-        declarationType,
-        mockName,
+        type,
         mixins: [],
         onMissingStub: OnMissingStub.throwException,
         unsupportedMembers: {},
@@ -562,35 +570,41 @@ class _MockTargetGatherer {
       }
     }
     var type = _determineDartType(typeToMock, entryLib.typeProvider);
-
     final mockTypeArguments = mockType?.typeArguments;
-    if (mockTypeArguments == null) {
-      // The type was given without explicit type arguments. In
-      // this case the type argument(s) on `type` have been instantiated to
-      // bounds. Switch to the declaration, which will be an uninstantiated
-      // type.
-      type = (type.element.declaration as InterfaceElement).thisType;
-    } else {
+    if (mockTypeArguments != null) {
+      final typeName =
+          type.alias?.element.getDisplayString(withNullability: false) ??
+              'type $type';
+      final typeArguments = type.alias?.typeArguments ?? type.typeArguments;
       // Check explicit type arguments for unknown types that were
       // turned into `dynamic` by the analyzer.
-      type.typeArguments.forEachIndexed((typeArgIdx, typeArgument) {
+      typeArguments.forEachIndexed((typeArgIdx, typeArgument) {
         if (!typeArgument.isDynamic) return;
         if (typeArgIdx >= mockTypeArguments.arguments.length) return;
         final typeArgAst = mockTypeArguments.arguments[typeArgIdx];
         if (typeArgAst is! ast.NamedType) {
           // Is this even possible?
           throw InvalidMockitoAnnotationException(
-              'Undefined type $typeArgAst passed as the ${(typeArgIdx + 1).ordinal} type argument for mocked type $type');
+              'Undefined type $typeArgAst passed as the '
+              '${(typeArgIdx + 1).ordinal} type argument for mocked '
+              '$typeName.');
         }
         if (typeArgAst.name.name == 'dynamic') return;
         throw InvalidMockitoAnnotationException(
-          'Undefined type $typeArgAst passed as the ${(typeArgIdx + 1).ordinal} type argument for mocked type $type. '
-          'Are you trying to pass to-be-generated mock class as a type argument? Mockito does not support that (yet).',
+          'Undefined type $typeArgAst passed as the '
+          '${(typeArgIdx + 1).ordinal} type argument for mocked $typeName. Are '
+          'you trying to pass to-be-generated mock class as a type argument? '
+          'Mockito does not support that (yet).',
         );
       });
+    } else if (type.alias == null) {
+      // The mock type was given without explicit type arguments. In this case
+      // the type argument(s) on `type` have been instantiated to bounds if this
+      // isn't a type alias. Switch to the declaration, which will be an
+      // uninstantiated type.
+      type = (type.element.declaration as InterfaceElement).thisType;
     }
-    final mockName = mockSpec.getField('mockName')!.toSymbolValue() ??
-        'Mock${type.element.name}';
+    final mockName = mockSpec.getField('mockName')!.toSymbolValue();
     final mixins = <analyzer.InterfaceType>[];
     for (final m in mockSpec.getField('mixins')!.toListValue()!) {
       final typeToMixin = m.toTypeValue();
@@ -662,7 +676,7 @@ class _MockTargetGatherer {
         mockSpec.getField('fallbackGenerators')!.toMapValue()!;
     return _MockTarget(
       type,
-      mockName,
+      mockName: mockName,
       mixins: mixins,
       onMissingStub: onMissingStub,
       unsupportedMembers: unsupportedMembers,
@@ -740,17 +754,17 @@ class _MockTargetGatherer {
             "'${elementToMock.displayName}' for the following reasons:\n"
             '$joinedMessages');
       }
+      if (typeToMock.alias != null &&
+          typeToMock.nullabilitySuffix == NullabilitySuffix.question) {
+        throw InvalidMockitoAnnotationException(
+            'Mockito cannot mock a type-aliased nullable type: '
+            '${typeToMock.alias!.element.name}');
+      }
       return typeToMock;
     }
 
-    var aliasElement = typeToMock.alias?.element;
-    if (aliasElement != null) {
-      throw InvalidMockitoAnnotationException('Mockito cannot mock a typedef: '
-          '${aliasElement.displayName}');
-    } else {
-      throw InvalidMockitoAnnotationException(
-          'Mockito cannot mock a non-class: $typeToMock');
-    }
+    throw InvalidMockitoAnnotationException('Mockito cannot mock a non-class: '
+        '${typeToMock.alias?.element.name ?? typeToMock.toString()}');
   }
 
   void _checkClassesToMockAreValid() {
@@ -1097,10 +1111,14 @@ class _MockClassInfo {
   });
 
   Class _buildMockClass() {
-    final typeToMock = mockTarget.classType;
+    final typeAlias = mockTarget.classType.alias;
+    final aliasedElement = typeAlias?.element;
+    final aliasedType =
+        typeAlias?.element.aliasedType as analyzer.InterfaceType?;
+    final typeToMock = aliasedType ?? mockTarget.classType;
     final classToMock = mockTarget.interfaceElement;
     final classIsImmutable = classToMock.metadata.any((it) => it.isImmutable);
-    final className = classToMock.name;
+    final className = aliasedElement?.name ?? classToMock.name;
 
     return Class((cBuilder) {
       cBuilder
@@ -1118,25 +1136,32 @@ class _MockClassInfo {
       // For each type parameter on [classToMock], the Mock class needs a type
       // parameter with same type variables, and a mirrored type argument for
       // the "implements" clause.
-      var typeArguments = <Reference>[];
+      final typeReferences = <Reference>[];
+
+      final typeParameters =
+          aliasedElement?.typeParameters ?? classToMock.typeParameters;
+      final typeArguments =
+          typeAlias?.typeArguments ?? typeToMock.typeArguments;
+
       if (mockTarget.hasExplicitTypeArguments) {
         // [typeToMock] is a reference to a type with type arguments (for
         // example: `Foo<int>`). Generate a non-generic mock class which
         // implements the mock target with said type arguments. For example:
         // `class MockFoo extends Mock implements Foo<int> {}`
-        for (var typeArgument in typeToMock.typeArguments) {
-          typeArguments.add(_typeReference(typeArgument));
+        for (var typeArgument in typeArguments) {
+          typeReferences.add(_typeReference(typeArgument));
         }
       } else {
         // [typeToMock] is a simple reference to a generic type (for example:
         // `Foo`, a reference to `class Foo<T> {}`). Generate a generic mock
         // class which perfectly mirrors the type parameters on [typeToMock],
         // forwarding them to the "implements" clause.
-        for (var typeParameter in classToMock.typeParameters) {
+        for (var typeParameter in typeParameters) {
           cBuilder.types.add(_typeParameterReference(typeParameter));
-          typeArguments.add(refer(typeParameter.name));
+          typeReferences.add(refer(typeParameter.name));
         }
       }
+
       for (final mixin in mockTarget.mixins) {
         cBuilder.mixins.add(TypeReference((b) {
           b
@@ -1147,15 +1172,21 @@ class _MockClassInfo {
       }
       cBuilder.implements.add(TypeReference((b) {
         b
-          ..symbol = classToMock.name
-          ..url = _typeImport(mockTarget.interfaceElement)
-          ..types.addAll(typeArguments);
+          ..symbol = className
+          ..url = _typeImport(aliasedElement ?? classToMock)
+          ..types.addAll(typeReferences);
       }));
       if (mockTarget.onMissingStub == OnMissingStub.throwException) {
         cBuilder.constructors.add(_constructorWithThrowOnMissingStub);
       }
 
-      final substitution = Substitution.fromInterfaceType(typeToMock);
+      final substitution = Substitution.fromPairs([
+        ...classToMock.typeParameters,
+        ...?aliasedElement?.typeParameters,
+      ], [
+        ...typeToMock.typeArguments,
+        ...?typeAlias?.typeArguments,
+      ]);
       final members =
           inheritanceManager.getInterface(classToMock).map.values.map((member) {
         return ExecutableMember.from2(member, substitution);

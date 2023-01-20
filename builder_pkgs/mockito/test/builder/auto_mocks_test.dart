@@ -118,11 +118,15 @@ void main() {
     var packageConfig = PackageConfig([
       Package('foo', Uri.file('/foo/'),
           packageUriRoot: Uri.file('/foo/lib/'),
-          languageVersion: LanguageVersion(2, 12))
+          languageVersion: LanguageVersion(2, 13))
     ]);
 
-    await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
-        writer: writer, packageConfig: packageConfig);
+    await withEnabledExperiments(
+      () async => await testBuilder(
+          buildMocks(BuilderOptions({})), sourceAssets,
+          writer: writer, packageConfig: packageConfig),
+      ['nonfunction-type-aliases'],
+    );
     var mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
     return utf8.decode(writer.assets[mocksAsset]!);
   }
@@ -1653,7 +1657,7 @@ void main() {
         void m<T>(
           T? a,
           T? b,
-        ) => 
+        ) =>
         ''')),
     );
   });
@@ -2069,7 +2073,7 @@ void main() {
         int get m => (super.noSuchMethod(
               Invocation.getter(#m),
               returnValue: 0,
-            ) as int); 
+            ) as int);
         '''), dedent2('''
         set m(int? _m) => super.noSuchMethod(
               Invocation.setter(
@@ -2156,7 +2160,7 @@ void main() {
                 [other],
               ),
               returnValue: 0,
-            ) as int); 
+            ) as int);
       ''')),
     );
   });
@@ -3240,7 +3244,7 @@ void main() {
     );
   });
 
-  test('throws when GenerateMocks references a typedef', () async {
+  test('throws when GenerateMocks references a function typedef', () async {
     _expectBuilderThrows(
       assets: {
         ...annotationsAsset,
@@ -3249,7 +3253,7 @@ void main() {
         typedef Foo = void Function();
         '''),
       },
-      message: 'Mockito cannot mock a typedef: Foo',
+      message: 'Mockito cannot mock a non-class: Foo',
     );
   });
 
@@ -3366,6 +3370,178 @@ void main() {
       _containsAllOf('// ignore: must_be_immutable\nclass MockFoo'),
     );
   });
+
+  group('typedef mocks', () {
+    group('are generated properly', () {
+      test('when aliased type parameters are instantiated', () async {
+        final mocksContent = await buildWithNonNullable({
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            class Foo<T> {}
+            typedef Bar = Foo<int>;
+          '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+            @GenerateMocks([Bar])
+            void main() {}
+          '''
+        });
+
+        expect(mocksContent, contains('class MockBar extends _i1.Mock'));
+        expect(mocksContent, contains('implements _i2.Bar'));
+      });
+
+      test('when no aliased type parameters are instantiated', () async {
+        final mocksContent = await buildWithNonNullable({
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            class Foo<T> {}
+            typedef Bar = Foo;
+          '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+            @GenerateMocks([Bar])
+            void main() {}
+          '''
+        });
+
+        expect(mocksContent, contains('class MockBar extends _i1.Mock'));
+        expect(mocksContent, contains('implements _i2.Bar'));
+      });
+
+      test('when the aliased type has no type parameters', () async {
+        final mocksContent = await buildWithNonNullable({
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            class Foo {}
+            typedef Bar = Foo;
+          '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+            @GenerateMocks([Bar])
+            void main() {}
+          '''
+        });
+
+        expect(mocksContent, contains('class MockBar extends _i1.Mock'));
+        expect(mocksContent, contains('implements _i2.Bar'));
+      });
+
+      test('when the typedef defines a type', () async {
+        final mocksContent = await buildWithNonNullable({
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            class Foo<A, B> {}
+            typedef Bar<X> = Foo<int, X>;
+          '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+            @GenerateMocks([Bar])
+            void main() {}
+          '''
+        });
+
+        expect(mocksContent, contains('class MockBar<X> extends _i1.Mock'));
+        expect(mocksContent, contains('implements _i2.Bar<X>'));
+      });
+
+      test('when the typedef defines a bounded type', () async {
+        final mocksContent = await buildWithNonNullable({
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            class Foo<A> {}
+            typedef Bar<X extends num> = Foo<X>;
+          '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+            @GenerateMocks([Bar])
+            void main() {}
+          '''
+        });
+
+        expect(mocksContent,
+            contains('class MockBar<X extends num> extends _i1.Mock'));
+        expect(mocksContent, contains('implements _i2.Bar<X>'));
+      });
+
+      test('when the aliased type is a mixin', () async {
+        final mocksContent = await buildWithNonNullable({
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            mixin Foo {
+              String get value;
+            }
+
+            typedef Bar = Foo;
+          '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+
+            @GenerateMocks([Bar])
+            void main() {}
+          '''
+        });
+
+        expect(mocksContent, contains('class MockBar extends _i1.Mock'));
+        expect(mocksContent, contains('implements _i2.Bar'));
+        expect(mocksContent, contains('String get value'));
+      });
+
+      test('when the aliased type is another typedef', () async {
+        final mocksContent = await buildWithNonNullable({
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            class Foo {}
+
+            typedef Bar = Foo;
+            typedef Baz = Bar;
+          '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+
+            @GenerateMocks([Baz])
+            void main() {}
+          '''
+        });
+
+        expect(mocksContent, contains('class MockBaz extends _i1.Mock'));
+        expect(mocksContent, contains('implements _i2.Baz'));
+      });
+    });
+
+    test('generation throws when the aliased type is nullable', () {
+      _expectBuilderThrows(
+        assets: {
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+          class Foo {
+            T get value;
+          }
+
+          typedef Bar = Foo?;
+        '''),
+          'foo|test/foo_test.dart': '''
+          import 'package:foo/foo.dart';
+          import 'package:mockito/annotations.dart';
+
+          @GenerateMocks([Bar])
+          void main() {}
+        '''
+        },
+        message:
+            contains('Mockito cannot mock a type-aliased nullable type: Bar'),
+        enabledExperiments: ['nonfunction-type-aliases'],
+        languageVersion: LanguageVersion(2, 13),
+      );
+    });
+  });
 }
 
 TypeMatcher<List<int>> _containsAllOf(a, [b]) => decodedMatches(
@@ -3377,16 +3553,24 @@ TypeMatcher<List<int>> _containsAllOf(a, [b]) => decodedMatches(
 void _expectBuilderThrows({
   required Map<String, String> assets,
   required dynamic /*String|Matcher<List<int>>*/ message,
+  List<String> enabledExperiments = const [],
+  LanguageVersion? languageVersion,
 }) {
   var packageConfig = PackageConfig([
     Package('foo', Uri.file('/foo/'),
         packageUriRoot: Uri.file('/foo/lib/'),
-        languageVersion: LanguageVersion(2, 12))
+        languageVersion: languageVersion ?? LanguageVersion(2, 12))
   ]);
 
   expect(
-      () async => await testBuilder(buildMocks(BuilderOptions({})), assets,
-          packageConfig: packageConfig),
+      () => withEnabledExperiments(
+            () => testBuilder(
+              buildMocks(BuilderOptions({})),
+              assets,
+              packageConfig: packageConfig,
+            ),
+            enabledExperiments,
+          ),
       throwsA(TypeMatcher<InvalidMockitoAnnotationException>()
           .having((e) => e.message, 'message', message)));
 }
