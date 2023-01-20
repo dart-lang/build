@@ -12,15 +12,16 @@ on:
 env:
   PUB_ENVIRONMENT: bot.github
 
+permissions: read-all
+
 jobs:
-  # Check code formatting and static analysis on a single OS (linux)
-  # against Dart dev.
+  # Check code formatting and static analysis against stable and dev SDKs.
   analyze:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        sdk: [dev]
+        sdk: [stable, dev]
     steps:
       - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
       - uses: dart-lang/setup-dart@6a218f2413a3e78e9087f638a238f6b40893203d
@@ -31,14 +32,12 @@ jobs:
         run: dart pub get
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed .
-        if: always() && steps.install.outcome == 'success'
+      - name: Build generated artifacts
+        run: dart pub run build_runner build
       - name: Analyze code
-        run: dart analyze lib
-        if: always() && steps.install.outcome == 'success'
+        run: dart analyze
 
-  # Run tests on a matrix consisting of two dimensions:
-  # 1. OS: ubuntu-latest, (macos-latest, windows-latest)
-  # 2. release channel: dev
+  # Run tests against stable and dev SDKs.
   test:
     needs: analyze
     runs-on: ${{ matrix.os }}
@@ -46,7 +45,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        sdk: [dev]
+        sdk: [stable, dev]
     steps:
       - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
       - uses: dart-lang/setup-dart@6a218f2413a3e78e9087f638a238f6b40893203d
@@ -64,6 +63,7 @@ jobs:
       - name: Run DDC tests
         run: dart run build_runner test -- --platform chrome
         if: always() && steps.install.outcome == 'success'
+
   document:
     needs: analyze
     runs-on: ${{ matrix.os }}
