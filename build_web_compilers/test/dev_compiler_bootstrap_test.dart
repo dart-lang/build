@@ -42,10 +42,10 @@ void main() {
         'a|web/index.dart.ddc_merged_metadata': isNotEmpty,
         'a|web/index.dart.bootstrap.js': decodedMatches(allOf([
           // Maps non-lib modules to remove the top level dir.
-          contains('"web/index": "index.unsound.ddc"'),
+          contains('"web/index": "index.ddc"'),
           // Maps lib modules to packages path
-          contains('"packages/a/a": "packages/a/a.unsound.ddc"'),
-          contains('"packages/b/b": "packages/b/b.unsound.ddc"'),
+          contains('"packages/a/a": "packages/a/a.ddc"'),
+          contains('"packages/b/b": "packages/b/b.ddc"'),
           // Requires the top level module and dart sdk.
           contains('define("index.dart.bootstrap", ["web/index", "dart_sdk"]'),
           // Calls main on the top level module.
@@ -55,8 +55,6 @@ void main() {
       };
       await testBuilder(
           WebEntrypointBuilder(WebCompiler.DartDevc,
-              soundNullSafetyOverride: null,
-              nullAssertions: false,
               nativeNullAssertions: false),
           assets,
           outputs: expectedOutputs);
@@ -83,7 +81,7 @@ void main() {
       var expectedOutputs = {
         'a|web/b.dart.bootstrap.js': decodedMatches(allOf([
           // Confirm that `a.dart` is the actual primary source.
-          contains('"web/a": "a.unsound.ddc"'),
+          contains('"web/a": "a.ddc"'),
           // And `b.dart` is the application, but its module is `web/a`.
           contains('define("b.dart.bootstrap", ["web/a", "dart_sdk"]'),
           // Calls main on the `b.dart` library, not the `a.dart` library.
@@ -96,8 +94,6 @@ void main() {
       };
       await testBuilder(
           WebEntrypointBuilder(WebCompiler.DartDevc,
-              soundNullSafetyOverride: null,
-              nullAssertions: false,
               nativeNullAssertions: false),
           assets,
           outputs: expectedOutputs);
@@ -121,8 +117,6 @@ void main() {
       };
       await testBuilder(
           WebEntrypointBuilder(WebCompiler.DartDevc,
-              soundNullSafetyOverride: null,
-              nullAssertions: false,
               nativeNullAssertions: false),
           assets,
           outputs: expectedOutputs);
@@ -138,8 +132,7 @@ Future<void> runPrerequisites(Map<String, Object> assets) async {
   // package exists.
   var sdkAssets = <String, Object>{'build_web_compilers|fake.txt': ''};
   await testBuilderAndCollectAssets(sdkJsCopyRequirejs(null), sdkAssets);
-  await testBuilderAndCollectAssets(sdkJsCompileUnsound(null), sdkAssets);
-  await testBuilderAndCollectAssets(sdkJsCompileSound(null), sdkAssets);
+  await testBuilderAndCollectAssets(sdkJsCompile(null), sdkAssets);
   assets.addAll(sdkAssets);
 
   await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);

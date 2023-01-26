@@ -1,3 +1,10 @@
+## 4.0.0
+
+- Require Dart 3.0.
+  - Drop support for unsound null safety.
+  - Drop support for null asserts (irrelevant with sound null safety).
+- Mention JSON formatting in error message about dart2js args.
+
 ## 3.2.7
 
 - Migrate off deprecated analyzer apis.

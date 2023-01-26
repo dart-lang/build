@@ -1,3 +1,9 @@
+## 5.0.0
+
+- Require Dart 3.0.
+  - Drop support for unsound null safety.
+  - Drop support for null asserts (irrelevant with sound null safety).
+
 ## 4.0.7
 
 - Migrate off deprecated analyzer apis.

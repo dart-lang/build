@@ -57,7 +57,7 @@ void main() {
       logLevel: Level.ALL,
       onLog: (record) => printOnFailure('[${record.level}] '
           '${record.loggerName}: ${record.message}'),
-      directoryWatcherFactory: (path) => FakeWatcher(path),
+      directoryWatcherFactory: FakeWatcher.new,
       terminateEventStream: terminateController.stream,
       skipBuildScriptCheck: true,
     );

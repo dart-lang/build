@@ -68,6 +68,9 @@ Future<void> _startServer(String command, List<String> buildArgs,
   }
 
   final proc = _process = await Process.start(command, buildArgs);
+  unawaited(proc.exitCode.then((_) {
+    if (_process != null) _process = null;
+  }));
   final stdOutLines = _stdOutLines = proc.stdout
       .transform(utf8.decoder)
       .transform(const LineSplitter())
@@ -92,8 +95,9 @@ Future<void> stopServer({bool? cleanUp}) async {
   final process = _process;
   if (process != null) {
     expect(process.kill(), true);
-    await process.exitCode;
+    var exitCode = process.exitCode;
     _process = null;
+    await exitCode;
   }
   _stdOutLines = null;
 

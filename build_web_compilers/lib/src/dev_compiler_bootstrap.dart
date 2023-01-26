@@ -20,8 +20,7 @@ import 'web_entrypoint_builder.dart';
 /// Alias `_p.url` to `p`.
 _p.Context get _context => _p.url;
 
-String _modulePartialExtension(bool soundNullSafety) =>
-    _context.withoutExtension(jsModuleExtension(soundNullSafety));
+final _modulePartialExtension = _context.withoutExtension(jsModuleExtension);
 
 /// Bootstraps a ddc application, creating the main entrypoint as well as the
 /// bootstrap and digest entrypoints.
@@ -32,9 +31,7 @@ Future<void> bootstrapDdc(
   BuildStep buildStep, {
   DartPlatform? platform,
   Iterable<AssetId> requiredAssets = const [],
-  required bool soundNullSafety,
   required bool nativeNullAssertions,
-  required bool nullAssertions,
 }) async {
   platform = ddcPlatform;
   // Ensures that the sdk resources are built and available.
@@ -48,8 +45,7 @@ Future<void> bootstrapDdc(
   // First, ensure all transitive modules are built.
   List<AssetId> transitiveJsModules;
   try {
-    transitiveJsModules = await _ensureTransitiveJsModules(module, buildStep,
-        soundNullSafety: soundNullSafety);
+    transitiveJsModules = await _ensureTransitiveJsModules(module, buildStep);
   } on UnsupportedModules catch (e) {
     var librariesString = (await e.exactLibraries(buildStep).toList())
         .map((lib) => AssetId(lib.id.package,
@@ -65,9 +61,8 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
 ''');
     return;
   }
-  var jsId =
-      module.primarySource.changeExtension(jsModuleExtension(soundNullSafety));
-  var appModuleName = ddcModuleName(jsId, soundNullSafety);
+  var jsId = module.primarySource.changeExtension(jsModuleExtension);
+  var appModuleName = ddcModuleName(jsId);
   var appDigestsOutput =
       dartEntrypointId.changeExtension(digestsEntrypointExtension);
   var mergedMetadataOutput =
@@ -91,18 +86,16 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
       pathToJSIdentifier(_context.withoutExtension(buildStep.inputId.path));
 
   // Map from module name to module path for custom modules.
-  var modulePaths = SplayTreeMap.of({
-    'dart_sdk': r'packages/build_web_compilers/src/dev_compiler/dart_sdk'
-        '${soundNullSafety ? '.sound' : ''}'
-  });
+  var modulePaths = SplayTreeMap.of(
+      {'dart_sdk': r'packages/build_web_compilers/src/dev_compiler/dart_sdk'});
   for (var jsId in transitiveJsModules) {
     // Strip out the top level dir from the path for any module, and set it to
     // `packages/` for lib modules. We set baseUrl to `/` to simplify things,
     // and we only allow you to serve top level directories.
-    var moduleName = ddcModuleName(jsId, soundNullSafety);
+    var moduleName = ddcModuleName(jsId);
     modulePaths[moduleName] = _context.withoutExtension(
         jsId.path.startsWith('lib')
-            ? '$moduleName${jsModuleExtension(soundNullSafety)}'
+            ? '$moduleName$jsModuleExtension'
             : _context.joinAll(_context.split(jsId.path).skip(1)));
   }
 
@@ -125,16 +118,14 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
         ..write(_dartLoaderSetup(
             modulePaths,
             _p.url.relative(appDigestsOutput.path,
-                from: _p.url.dirname(bootstrapId.path)),
-            soundNullSafety))
-        ..write(_requireJsConfig(soundNullSafety))
+                from: _p.url.dirname(bootstrapId.path))))
+        ..write(_requireJsConfig)
         ..write(_appBootstrap(
             bootstrapModuleName: bootstrapModuleName,
             entrypointLibraryName: entrypointLibraryName,
             moduleName: appModuleName,
             moduleScope: appModuleScope,
             nativeNullAssertions: nativeNullAssertions,
-            nullAssertions: nullAssertions,
             oldModuleScope: oldAppModuleScope));
 
   await buildStep.writeAsString(bootstrapId, bootstrapContent.toString());
@@ -151,16 +142,15 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
   for (var jsId in transitiveJsModules) {
     mergedMetadataContent.writeln(
         await buildStep.readAsString(jsId.changeExtension('.js.metadata')));
-    moduleDigests[_moduleDigestKey(jsId, soundNullSafety)] =
-        '${await buildStep.digest(jsId)}';
+    moduleDigests[_moduleDigestKey(jsId)] = '${await buildStep.digest(jsId)}';
   }
   await buildStep.writeAsString(appDigestsOutput, jsonEncode(moduleDigests));
   await buildStep.writeAsString(
       mergedMetadataOutput, mergedMetadataContent.toString());
 }
 
-String _moduleDigestKey(AssetId jsId, bool soundNullSafety) =>
-    '${ddcModuleName(jsId, soundNullSafety)}${jsModuleExtension(soundNullSafety)}';
+String _moduleDigestKey(AssetId jsId) =>
+    '${ddcModuleName(jsId)}$jsModuleExtension';
 
 final _lazyBuildPool = Pool(16);
 
@@ -169,16 +159,15 @@ final _lazyBuildPool = Pool(16);
 /// Throws an [UnsupportedModules] exception if there are any
 /// unsupported modules.
 Future<List<AssetId>> _ensureTransitiveJsModules(
-    Module module, BuildStep buildStep,
-    {required bool soundNullSafety}) async {
+    Module module, BuildStep buildStep) async {
   // Collect all the modules this module depends on, plus this module.
   var transitiveDeps = await module.computeTransitiveDependencies(buildStep,
       throwIfUnsupported: true);
 
   var jsModules = [
-    module.primarySource.changeExtension(jsModuleExtension(soundNullSafety)),
+    module.primarySource.changeExtension(jsModuleExtension),
     for (var dep in transitiveDeps)
-      dep.primarySource.changeExtension(jsModuleExtension(soundNullSafety)),
+      dep.primarySource.changeExtension(jsModuleExtension),
   ];
   // Check that each module is readable, and warn otherwise.
   await Future.wait(jsModules.map((jsId) async {
@@ -204,13 +193,11 @@ String _appBootstrap({
   required String moduleScope,
   required String entrypointLibraryName,
   required String oldModuleScope,
-  required bool nullAssertions,
   required bool nativeNullAssertions,
 }) =>
     '''
 define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_sdk) {
   dart_sdk.dart.setStartAsyncSynchronously(true);
-  dart_sdk.dart.nonNullAsserts($nullAssertions);
   dart_sdk.dart.nativeNonNullAsserts($nativeNullAssertions);
   dart_sdk._isolate_helper.startRootIsolate(() => {}, []);
   $_initializeTools
@@ -315,8 +302,7 @@ var _currentDirectory = (function () {
 ''';
 
 /// Sets up `window.$dartLoader` based on [modulePaths].
-String _dartLoaderSetup(Map<String, String> modulePaths, String appDigests,
-        bool soundNullSafety) =>
+String _dartLoaderSetup(Map<String, String> modulePaths, String appDigests) =>
     '''
 $_currentDirectoryScript
 $_baseUrlScript
@@ -333,8 +319,8 @@ if(!window.\$dartLoader) {
      forceLoadModule: function (moduleName, callback, onError) {
        // dartdevc only strips the final extension when adding modules to source
        // maps, so we need to do the same.
-       if (moduleName.endsWith('${_modulePartialExtension(soundNullSafety)}')) {
-         moduleName = moduleName.substring(0, moduleName.length - ${_modulePartialExtension(soundNullSafety).length});
+       if (moduleName.endsWith('$_modulePartialExtension')) {
+         moduleName = moduleName.substring(0, moduleName.length - ${_modulePartialExtension.length});
        }
        if (typeof onError != 'undefined') {
          var errorCallbacks = \$dartLoader.moduleLoadingErrorCallbacks;
@@ -407,7 +393,7 @@ $_baseUrlScript
 ///
 /// Adds error handler code for require.js which requests a `.errors` file for
 /// any failed module, and logs it to the console.
-String _requireJsConfig(bool soundNullSafety) => '''
+final _requireJsConfig = '''
 // Whenever we fail to load a JS module, try to request the corresponding
 // `.errors` file, and log it to the console.
 (function() {
@@ -463,8 +449,8 @@ require.config({
 
 const modulesGraph = new Map();
 function getRegisteredModuleName(moduleMap) {
-  if (\$dartLoader.moduleIdToUrl.has(moduleMap.name + '${_modulePartialExtension(soundNullSafety)}')) {
-    return moduleMap.name + '${_modulePartialExtension(soundNullSafety)}';
+  if (\$dartLoader.moduleIdToUrl.has(moduleMap.name + '$_modulePartialExtension')) {
+    return moduleMap.name + '$_modulePartialExtension';
   }
   return moduleMap.name;
 }

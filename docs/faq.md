@@ -251,12 +251,12 @@ These generally come up in the context of a multi-platform package (generally
 due to a mixture of vm and web tests), and look something like this:
 
 ```text
-[WARNING] build_vm_compilers:entrypoint on example|test/my_test.dart:
+[WARNING] build_web_compilers:entrypoint on example|test/my_test.dart:
 
-Skipping compiling example|test/my_test.dart for the vm because some of its
+Skipping compiling example|test/my_test.dart for the web because some of its
 transitive libraries have sdk dependencies that not supported on this platform:
 
-example|test/imports_dart_html.dart
+example|test/imports_dart_io.dart
 ```
 
 While we are smart enough not to attempt to compile your web tests for the vm,
@@ -279,11 +279,6 @@ targets:
         - test/multiplatform/**_test.dart
         - test/web/**_test.dart
         - web/**.dart
-      build_vm_compilers:entrypoint:
-        generate_for:
-        - test/multiplatform/**_test.dart
-        - test/vm/**_test.dart
-        - bin/**.dart
 ```
 
 ## Why can't I see a file I know exists?

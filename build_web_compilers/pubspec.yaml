@@ -1,10 +1,10 @@
 name: build_web_compilers
-version: 3.2.7
+version: 4.0.0
 description: Builder implementations wrapping the dart2js and DDC compilers.
 repository: https://github.com/dart-lang/build/tree/master/build_web_compilers
 
 environment:
-  sdk: '>=2.18.0 <3.0.0'
+  sdk: '>=3.0.0-134.0.dev <3.1.0'
 
 dependencies:
   analyzer: '>=5.1.0 <6.0.0'
@@ -12,7 +12,7 @@ dependencies:
   bazel_worker: ^1.0.0
   build: ^2.0.0
   build_config: ^1.0.0
-  build_modules: ^4.0.0
+  build_modules: ^5.0.0
   collection: ^1.15.0
   glob: ^2.0.0
   js: ^0.6.3
@@ -33,3 +33,7 @@ dev_dependencies:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
+
+dependency_overrides:
+  build_modules:
+    path: ../build_modules

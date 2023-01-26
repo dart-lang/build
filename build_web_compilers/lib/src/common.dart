@@ -16,11 +16,8 @@ final sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
 String defaultAnalysisOptionsArg(ScratchSpace scratchSpace) =>
     '--options=${scratchSpace.fileFor(defaultAnalysisOptionsId).path}';
 
-String sdkDdcKernelPath(bool soundNullSafety) => p.url.join('lib', '_internal',
-    soundNullSafety ? 'ddc_outline_sound.dill' : 'ddc_sdk.dill');
-
-String soundnessExt(bool soundNullSafety) =>
-    soundNullSafety ? '.sound' : '.unsound';
+String get sdkDdcKernelPath =>
+    p.url.join('lib', '_internal', 'ddc_outline.dill');
 
 /// Validates that [config] only has the top level keys [supportedOptions].
 ///
