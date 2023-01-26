@@ -1,10 +1,10 @@
 name: build_modules
-version: 4.0.6
+version: 4.0.6+1
 description: Builders for Dart modules
 repository: https://github.com/dart-lang/build/tree/master/build_modules
 
 environment:
-  sdk: ">=2.14.0 <3.0.0"
+  sdk: ">=2.19.0 <3.0.0"
 
 dependencies:
   analyzer: '>=4.4.0 <6.0.0'

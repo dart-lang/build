@@ -1,3 +1,8 @@
+## 4.0.6+1
+
+- Update language version to `2.19` to avoid inference error, while maintaining
+  compatibility with older versions of `package:analyzer`.
+
 ## 4.0.6
 
 - Allow the latest `package:analyzer`.
