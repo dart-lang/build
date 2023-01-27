@@ -1,3 +1,7 @@
+## 1.1.2-dev
+
+- Stop using deprecated `JsonKey.ignore`.
+
 ## 1.1.1
 
 - Expand pubspec description to improve pub score.
