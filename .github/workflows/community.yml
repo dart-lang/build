@@ -24,11 +24,11 @@ jobs:
           path: client_tests/drift
       - run: |-
           cat << DRIFTDEPS >> client_tests/drift/drift/pubspec.yaml
-            dependency_overrides:
-              drift_dev:
-                path: ../drift_dev
-              sqlparser:
-                path: ../sqlparser
+          dependency_overrides:
+            drift_dev:
+              path: ../drift_dev
+            sqlparser:
+              path: ../sqlparser
           DRIFTDEPS
           dart run tool/bin/patch_build_dependencies.dart client_tests/drift/drift
           cd client_tests/drift/drift
