@@ -99,7 +99,8 @@ void main() async {
     });
 
     test('can read from the SDK', () async {
-      expect(await reader.canRead(makeAssetId(r'$sdk|bin/dart')), true);
+      expect(
+          await reader.canRead(makeAssetId(r'$sdk|lib/libraries.json')), true);
     });
   });
 
