@@ -332,7 +332,7 @@ class UnresolvedAnnotationException implements Exception {
       // Trying to get more information on https://github.com/dart-lang/sdk/issues/45127
       log.warning(
         '''
-An unexpected error was thrown trying to get location information on `$annotatedElement` (${annotatedElement.runtimeType}). 
+An unexpected error was thrown trying to get location information on `$annotatedElement` (${annotatedElement.runtimeType}).
 
 Please file an issue at https://github.com/dart-lang/source_gen/issues/new
 Include the contents of this warning and the stack trace along with
