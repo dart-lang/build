@@ -947,9 +947,6 @@ typedef Answering<T> = T Function(Invocation realInvocation);
 
 typedef Verification = VerificationResult Function<T>(T matchingInvocations);
 
-typedef _InOrderVerification = List<VerificationResult> Function<T>(
-    List<T> recordedInvocations);
-
 /// Verify that a method on a mock object was never called with the given
 /// arguments.
 ///
@@ -1058,7 +1055,8 @@ Verification _makeVerify(bool never) {
 /// given, but not that those were the only calls. In the example above, if
 /// other calls were made to `eatFood` or `sound` between the three given
 /// calls, or before or after them, the verification will still succeed.
-_InOrderVerification get verifyInOrder {
+List<VerificationResult> Function<T>(List<T> recordedInvocations)
+    get verifyInOrder {
   if (_verifyCalls.isNotEmpty) {
     throw StateError(_verifyCalls.join());
   }
@@ -1113,7 +1111,7 @@ void verifyNoMoreInteractions(var mock) {
   if (mock is Mock) {
     var unverified = mock._realCalls.where((inv) => !inv.verified).toList();
     if (unverified.isNotEmpty) {
-      fail('No more calls expected, but following found: ' + unverified.join());
+      fail('No more calls expected, but following found: ${unverified.join()}');
     }
   } else {
     _throwMockArgumentError('verifyNoMoreInteractions', mock);
@@ -1123,8 +1121,8 @@ void verifyNoMoreInteractions(var mock) {
 void verifyZeroInteractions(var mock) {
   if (mock is Mock) {
     if (mock._realCalls.isNotEmpty) {
-      fail('No interaction expected, but following found: ' +
-          mock._realCalls.join());
+      fail(
+          'No interaction expected, but following found: ${mock._realCalls.join()}');
     }
   } else {
     _throwMockArgumentError('verifyZeroInteractions', mock);
@@ -1189,9 +1187,9 @@ void logInvocations(List<Mock> mocks) {
   var allInvocations =
       mocks.expand((m) => m._realCalls).toList(growable: false);
   allInvocations.sort((inv1, inv2) => inv1.timeStamp.compareTo(inv2.timeStamp));
-  allInvocations.forEach((inv) {
+  for (var inv in allInvocations) {
     print(inv.toString());
-  });
+  }
 }
 
 /// Reset the state of Mockito, typically for use between tests.
@@ -1227,10 +1225,8 @@ extension on Invocation {
     if (args.any((arg) => arg.contains('\n'))) {
       // As one or more arg contains newlines, put each on its own line, and
       // indent each, for better readability.
-      argString = '\n' +
-          args
-              .map((arg) => arg.splitMapJoin('\n', onNonMatch: (m) => '    $m'))
-              .join(',\n');
+      argString =
+          '\n${args.map((arg) => arg.splitMapJoin('\n', onNonMatch: (m) => '    $m')).join(',\n')}';
     } else {
       // A compact String should be perfect.
       argString = args.join(', ');
@@ -1255,7 +1251,7 @@ extension on Invocation {
     if (isMethod) {
       method = '$method($argString)';
     } else if (isGetter) {
-      method = '$method';
+      method = method;
     } else if (isSetter) {
       method = '$method=$argString';
     } else {

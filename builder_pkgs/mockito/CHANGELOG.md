@@ -3,7 +3,7 @@
 * Require analyzer 5.2.0.
 * Fix nice mocks generation in mixed mode (generated code is pre null-safety,
   while mocked class is null-safe).
-* Require Dart >= 2.17.0.
+* Require Dart >= 2.18.0.
 * Support typedef-aliased classes in `@GenerateMocks` and `@GenerateNiceMocks`
 
 ## 5.3.2
