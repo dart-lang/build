@@ -4,6 +4,8 @@
 
 // The first test that runs `testBuilder` takes a LOT longer than the rest.
 @Timeout.factor(3)
+library test;
+
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';

@@ -7,6 +7,8 @@
 
 // Increase timeouts on this test which resolves source code and can be slow.
 @Timeout.factor(2.0)
+library test;
+
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';

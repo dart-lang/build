@@ -143,50 +143,6 @@ jobs:
         if: "always() && steps.source_gen_pub_upgrade.conclusion == 'success'"
         working-directory: source_gen
   job_004:
-    name: "analyze_format; windows; Dart 2.18.0; PKG: source_gen; `dart analyze`"
-    runs-on: windows-latest
-    steps:
-      - name: Setup Dart SDK
-        uses: dart-lang/setup-dart@6a218f2413a3e78e9087f638a238f6b40893203d
-        with:
-          sdk: "2.18.0"
-      - id: checkout
-        name: Checkout repository
-        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b
-      - id: source_gen_pub_upgrade
-        name: source_gen; dart pub upgrade
-        run: dart pub upgrade
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: source_gen
-      - name: source_gen; dart analyze
-        run: dart analyze
-        if: "always() && steps.source_gen_pub_upgrade.conclusion == 'success'"
-        working-directory: source_gen
-  job_005:
-    name: "analyze_format; windows; Dart dev; PKG: source_gen; `dart format --output=none --set-exit-if-changed .`, `dart analyze --fatal-infos .`"
-    runs-on: windows-latest
-    steps:
-      - name: Setup Dart SDK
-        uses: dart-lang/setup-dart@6a218f2413a3e78e9087f638a238f6b40893203d
-        with:
-          sdk: dev
-      - id: checkout
-        name: Checkout repository
-        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b
-      - id: source_gen_pub_upgrade
-        name: source_gen; dart pub upgrade
-        run: dart pub upgrade
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: source_gen
-      - name: "source_gen; dart format --output=none --set-exit-if-changed ."
-        run: "dart format --output=none --set-exit-if-changed ."
-        if: "always() && steps.source_gen_pub_upgrade.conclusion == 'success'"
-        working-directory: source_gen
-      - name: "source_gen; dart analyze --fatal-infos ."
-        run: dart analyze --fatal-infos .
-        if: "always() && steps.source_gen_pub_upgrade.conclusion == 'success'"
-        working-directory: source_gen
-  job_006:
     name: "unit_test; linux; Dart 2.18.0; PKG: example_usage; `dart test --run-skipped`"
     runs-on: ubuntu-latest
     steps:
@@ -220,9 +176,7 @@ jobs:
       - job_001
       - job_002
       - job_003
-      - job_004
-      - job_005
-  job_007:
+  job_005:
     name: "unit_test; linux; Dart 2.18.0; PKG: source_gen; `dart test`"
     runs-on: ubuntu-latest
     steps:
@@ -256,9 +210,7 @@ jobs:
       - job_001
       - job_002
       - job_003
-      - job_004
-      - job_005
-  job_008:
+  job_006:
     name: "unit_test; linux; Dart dev; PKG: example_usage; `dart test --run-skipped`"
     runs-on: ubuntu-latest
     steps:
@@ -292,9 +244,7 @@ jobs:
       - job_001
       - job_002
       - job_003
-      - job_004
-      - job_005
-  job_009:
+  job_007:
     name: "unit_test; linux; Dart dev; PKG: source_gen; `dart test`"
     runs-on: ubuntu-latest
     steps:
@@ -328,9 +278,7 @@ jobs:
       - job_001
       - job_002
       - job_003
-      - job_004
-      - job_005
-  job_010:
+  job_008:
     name: "unit_test; windows; Dart 2.18.0; PKG: source_gen; `dart test`"
     runs-on: windows-latest
     steps:
@@ -354,9 +302,7 @@ jobs:
       - job_001
       - job_002
       - job_003
-      - job_004
-      - job_005
-  job_011:
+  job_009:
     name: "unit_test; windows; Dart dev; PKG: source_gen; `dart test`"
     runs-on: windows-latest
     steps:
@@ -380,5 +326,3 @@ jobs:
       - job_001
       - job_002
       - job_003
-      - job_004
-      - job_005

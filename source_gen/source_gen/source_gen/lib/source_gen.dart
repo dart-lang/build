@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 export 'src/builder.dart'
-    show defaultFileHeader, LibraryBuilder, PartBuilder, SharedPartBuilder;
+    show LibraryBuilder, PartBuilder, SharedPartBuilder, defaultFileHeader;
 export 'src/constants/reader.dart' show ConstantReader;
 export 'src/constants/revive.dart' show Revivable;
 export 'src/generator.dart' show Generator, InvalidGenerationSourceError;

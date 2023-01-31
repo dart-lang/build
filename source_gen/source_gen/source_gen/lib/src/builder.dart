@@ -2,6 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+//TODO(kevmoo): https://github.com/dart-lang/linter/issues/3563
+// ignore_for_file: use_super_parameters
+
 import 'dart:convert';
 
 import 'package:analyzer/dart/ast/ast.dart';

@@ -22,9 +22,14 @@ linter:
     - avoid_void_async
     - cancel_subscriptions
     - cascade_invocations
+    - collection_methods_unrelated_type
+    - combinators_ordering
     - comment_references
+    - dangling_library_doc_comments
     - directives_ordering
+    - implicit_call_tearoffs
     - join_return_with_assignment
+    - library_annotations
     - lines_longer_than_80_chars
     - literal_only_boolean_expressions
     - missing_whitespace_between_adjacent_strings
@@ -40,6 +45,7 @@ linter:
     - prefer_relative_imports
     - prefer_single_quotes
     - require_trailing_commas
+    - sort_child_properties_last
     - sort_pub_dependencies
     - test_types_in_equals
     - throw_in_finally
@@ -47,7 +53,13 @@ linter:
     - unawaited_futures
     - unnecessary_await_in_return
     - unnecessary_lambdas
+    - unnecessary_library_directive
     - unnecessary_parenthesis
     - unnecessary_statements
+    - unreachable_from_main
+    - unsafe_html
+    - use_full_hex_values_for_flutter_colors
     - use_is_even_rather_than_modulo
     - use_string_buffers
+    - use_string_in_part_of_directives
+    - use_super_parameters

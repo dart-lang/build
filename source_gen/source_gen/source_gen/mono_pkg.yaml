@@ -3,10 +3,6 @@ sdk:
 - pubspec
 - dev
 
-os:
-- linux
-- windows
-
 stages:
 - analyze_format:
   - group:
@@ -17,7 +13,11 @@ stages:
     - analyze
     sdk: pubspec
 - unit_test:
-  - test
+  - group:
+      - test
+    os:
+    - linux
+    - windows
 
 cache:
   directories:
