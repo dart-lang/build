@@ -85,6 +85,9 @@ All the above commands support the following arguments:
   be provided.
 - `--[no-]fail-on-severe`: Whether to consider the build a failure on an error
   logged. By default this is false.
+- `--build-filter`: Build filters allow you to choose explicitly which files to
+  build instead of building entire directories. See further documentation on
+  this feature [here](../docs/partial_builds.md).
 
 Some commands also have additional options:
 
