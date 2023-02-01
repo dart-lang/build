@@ -1,4 +1,5 @@
 name: source_gen_example_usage
+publish_to: none
 
 environment:
   sdk: '>=2.18.0 <3.0.0'

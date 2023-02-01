@@ -216,3 +216,8 @@ wraps a single Generator to make a `Builder` which creates Dart library files.
 [Full example package]: https://github.com/dart-lang/source_gen/tree/master/example
 [example usage]: https://github.com/dart-lang/source_gen/tree/master/example_usage
 [outputs]: https://github.com/dart-lang/build/blob/master/docs/writing_a_builder.md#configuring-outputs
+
+## Publishing automation
+
+For information about our publishing automation and release process, see
+https://github.com/dart-lang/ecosystem/wiki/Publishing-automation.
