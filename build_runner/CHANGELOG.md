@@ -1,6 +1,6 @@
 ## 2.4.1-dev
 
-- Mention --build-filters option in the README.
+- Mention --build-filter option in the README.
 
 ## 2.4.0
 
