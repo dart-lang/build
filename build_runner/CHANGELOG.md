@@ -1,3 +1,7 @@
+## 2.4.1-dev
+
+- Mention --build-filter option in the README.
+
 ## 2.4.0
 
 - Warn if a `package:` builder import cannot be resolved and skip it,
