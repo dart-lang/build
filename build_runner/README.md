@@ -87,7 +87,7 @@ All the above commands support the following arguments:
   logged. By default this is false.
 - `--build-filter`: Build filters allow you to choose explicitly which files to
   build instead of building entire directories. See further documentation on
-  this feature [here](../docs/partial_builds.md).
+  this feature [here](#partial_builds).
 
 Some commands also have additional options:
 
@@ -233,6 +233,7 @@ $ dart run test
 [run_fn]: https://pub.dev/documentation/build_runner/latest/build_runner/run.html
 [builder_application]: https://pub.dev/documentation/build_runner/latest/build_runner/BuilderApplication-class.html
 [build_extensions]: https://pub.dev/documentation/build/latest/build/Builder/buildExtensions.html
+[partial_builds]: https://github.com/dart-lang/build/blob/master/docs/partial_builds.md
 
 [dev_sdk]: https://dart.dev/get-dart
 [dev_dependencies]: https://dart.dev/tools/pub/dependencies#dev-dependencies
