@@ -2252,11 +2252,11 @@ extension on int {
   String get ordinal {
     final remainder = this % 10;
     switch (remainder) {
-      case (1):
+      case 1:
         return '${this}st';
-      case (2):
+      case 2:
         return '${this}nd';
-      case (3):
+      case 3:
         return '${this}rd';
       default:
         return '${this}th';
