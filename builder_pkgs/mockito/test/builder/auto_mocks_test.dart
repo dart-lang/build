@@ -3542,6 +3542,24 @@ void main() {
       );
     });
   });
+  test('Void in argument type gets overriden to dynamic', () async {
+    final mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+      class Foo {
+        void m(void x) {}
+      }
+      '''),
+      'foo|test/foo_test.dart': dedent(r'''
+      import 'package:foo/foo.dart';
+      import 'package:mockito/annotations.dart';
+
+      @GenerateMocks([Foo])
+      void main() {}
+      '''),
+    });
+    expect(mocksContent, contains('void m(dynamic x)'));
+  });
 }
 
 TypeMatcher<List<int>> _containsAllOf(a, [b]) => decodedMatches(

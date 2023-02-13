@@ -110,9 +110,7 @@ class MockBuilder implements Builder {
       // The generator appends a suffix to fake classes
       b.body.add(Code('// ignore_for_file: camel_case_types\n'));
       // The generator has to occasionally implement sealed classes
-      b.body.add(Code('// ignore_for_file: subtype_of_sealed_class\n'));
-      // The generator has to use `void`-typed arguments.
-      b.body.add(Code('// ignore_for_file: use_of_void_result\n\n'));
+      b.body.add(Code('// ignore_for_file: subtype_of_sealed_class\n\n'));
       b.body.addAll(mockLibraryInfo.fakeClasses);
       b.body.addAll(mockLibraryInfo.mockClasses);
     });
@@ -1676,8 +1674,8 @@ class _MockClassInfo {
     return Parameter((pBuilder) {
       pBuilder.name = name;
       if (!superParameterType.containsPrivateName) {
-        pBuilder.type =
-            _typeReference(superParameterType, forceNullable: forceNullable);
+        pBuilder.type = _typeReference(superParameterType,
+            forceNullable: forceNullable, overrideVoid: true);
       }
       if (parameter.isNamed) pBuilder.named = true;
       if (parameter.isRequiredNamed && sourceLibIsNonNullable) {
@@ -1935,7 +1933,8 @@ class _MockClassInfo {
     builder.requiredParameters.add(Parameter((pBuilder) {
       pBuilder.name = parameter.displayName;
       if (!parameter.type.containsPrivateName) {
-        pBuilder.type = _typeReference(parameter.type, forceNullable: true);
+        pBuilder.type = _typeReference(parameter.type,
+            forceNullable: true, overrideVoid: true);
       }
     }));
 
@@ -1997,7 +1996,10 @@ class _MockClassInfo {
   // TODO(srawlins): Contribute this back to a common location, like
   // package:source_gen?
   Reference _typeReference(analyzer.DartType type,
-      {bool forceNullable = false}) {
+      {bool forceNullable = false, bool overrideVoid = false}) {
+    if (overrideVoid && type.isVoid) {
+      return TypeReference((b) => b..symbol = 'dynamic');
+    }
     if (type is analyzer.InterfaceType) {
       return TypeReference((b) {
         b

@@ -1670,6 +1670,24 @@ void main() {
       );
     });
   });
+  test('Void in argument type coming from type arg becomes dynamic', () async {
+    final mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+      class Foo<T> {
+        T m(T x) => x;
+      }
+      '''),
+      'foo|test/foo_test.dart': dedent(r'''
+      import 'package:foo/foo.dart';
+      import 'package:mockito/annotations.dart';
+
+      @GenerateMocks([], customMocks: [MockSpec<Foo<void>>()])
+      void main() {}
+      '''),
+    });
+    expect(mocksContent, contains('void m(dynamic x)'));
+  });
 }
 
 TypeMatcher<List<int>> _containsAllOf(a, [b]) => decodedMatches(
