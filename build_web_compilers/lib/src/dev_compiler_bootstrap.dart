@@ -31,7 +31,7 @@ Future<void> bootstrapDdc(
   BuildStep buildStep, {
   DartPlatform? platform,
   Iterable<AssetId> requiredAssets = const [],
-  required bool nativeNullAssertions,
+  required bool? nativeNullAssertions,
 }) async {
   platform = ddcPlatform;
   // Ensures that the sdk resources are built and available.
@@ -193,12 +193,15 @@ String _appBootstrap({
   required String moduleScope,
   required String entrypointLibraryName,
   required String oldModuleScope,
-  required bool nativeNullAssertions,
-}) =>
-    '''
+  required bool? nativeNullAssertions,
+}) {
+  var nativeAssertsCode = nativeNullAssertions == null
+      ? ''
+      : 'dart_sdk.dart.nativeNonNullAsserts($nativeNullAssertions);';
+  return '''
 define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_sdk) {
   dart_sdk.dart.setStartAsyncSynchronously(true);
-  dart_sdk.dart.nativeNonNullAsserts($nativeNullAssertions);
+  $nativeAssertsCode
   dart_sdk._isolate_helper.startRootIsolate(() => {}, []);
   $_initializeTools
   $_mainExtensionMarker
@@ -231,6 +234,7 @@ define("$bootstrapModuleName", ["$moduleName", "dart_sdk"], function(app, dart_s
 });
 })();
 ''';
+}
 
 /// The actual entrypoint JS file which injects all the necessary scripts to
 /// run the app.

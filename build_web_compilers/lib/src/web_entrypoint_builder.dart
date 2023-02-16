@@ -55,7 +55,10 @@ class WebEntrypointBuilder implements Builder {
 
   /// Whether or not to enable runtime non-null assertions for values returned
   /// from browser apis.
-  final bool nativeNullAssertions;
+  ///
+  /// If `null` then no flag will be provided to the compiler, and the default
+  /// will be used.
+  final bool? nativeNullAssertions;
 
   const WebEntrypointBuilder(
     this.webCompiler, {
@@ -97,7 +100,7 @@ class WebEntrypointBuilder implements Builder {
     return WebEntrypointBuilder(compiler,
         dart2JsArgs: dart2JsArgs,
         nativeNullAssertions:
-            options.config[_nativeNullAssertionsOption] as bool? ?? true);
+            options.config[_nativeNullAssertionsOption] as bool?);
   }
 
   @override
