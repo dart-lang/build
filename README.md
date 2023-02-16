@@ -75,3 +75,8 @@ into both the source tree and a hidden generated directory. Try a build with
 `dart run build_runner build -o web:deploy` to see what the output looks like.
 
 Most projects should not need custom builders.
+
+## Publishing automation
+
+For information about our publishing automation and release process, see
+https://github.com/dart-lang/ecosystem/wiki/Publishing-automation.
