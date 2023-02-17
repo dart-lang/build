@@ -1,3 +1,7 @@
+## 4.0.1
+
+- Add support for `dart:js_interop`.
+
 ## 4.0.0
 
 - Require Dart 3.0.

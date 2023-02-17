@@ -4,7 +4,8 @@
 
 import 'package:build_modules/build_modules.dart';
 
-final ddcPlatform = DartPlatform.register('ddc', [
+const _libraries = [
+  '_internal',
   'async',
   'collection',
   'convert',
@@ -14,6 +15,7 @@ final ddcPlatform = DartPlatform.register('ddc', [
   'html_common',
   'indexed_db',
   'js',
+  'js_interop',
   'js_util',
   'math',
   'svg',
@@ -21,25 +23,8 @@ final ddcPlatform = DartPlatform.register('ddc', [
   'web_audio',
   'web_gl',
   'web_sql',
-  '_internal',
-]);
+];
 
-final dart2jsPlatform = DartPlatform.register('dart2js', [
-  'async',
-  'collection',
-  'convert',
-  'core',
-  'developer',
-  'html',
-  'html_common',
-  'indexed_db',
-  'js',
-  'js_util',
-  'math',
-  'svg',
-  'typed_data',
-  'web_audio',
-  'web_gl',
-  'web_sql',
-  '_internal',
-]);
+final ddcPlatform = DartPlatform.register('ddc', _libraries);
+
+final dart2jsPlatform = DartPlatform.register('dart2js', _libraries);
