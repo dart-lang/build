@@ -12,3 +12,5 @@ jobs:
   publish:
     if: ${{ github.repository_owner == 'dart-lang' }}
     uses: dart-lang/ecosystem/.github/workflows/publish.yaml@main
+    with:
+      sdk: beta
