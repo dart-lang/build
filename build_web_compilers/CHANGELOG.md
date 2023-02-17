@@ -1,7 +1,11 @@
-## 4.0.1
+## 4.0.2
 
 - Allow the compiler to choose the default for the native null assertions
   option when one is not explicitly provided.
+
+## 4.0.1
+
+- Add support for `dart:js_interop`.
 
 ## 4.0.0
 
