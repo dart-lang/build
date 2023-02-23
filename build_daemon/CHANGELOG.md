@@ -1,4 +1,4 @@
-## 3.1.1-dev
+## 3.1.1
 
 - Report file watching errors and stop the daemon.
 - Change `Level` to implement `Comparable` instead of using it as a mixin.
