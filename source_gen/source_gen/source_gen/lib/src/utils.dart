@@ -176,7 +176,11 @@ Map<String, List<String>> validatedBuildExtensionsFrom(
   Map<String, List<String>> defaultExtensions,
 ) {
   final extensionsOption = optionsMap?.remove('build_extensions');
-  if (extensionsOption == null) return defaultExtensions;
+  if (extensionsOption == null) {
+    // defaultExtensions are provided by the builder author, not the end user.
+    // It should be safe to skip validation.
+    return defaultExtensions;
+  }
 
   if (extensionsOption is! Map) {
     throw ArgumentError(
@@ -195,15 +199,19 @@ Map<String, List<String>> validatedBuildExtensionsFrom(
       );
     }
 
-    final output = entry.value;
-    if (output is! String || !output.endsWith('.dart')) {
-      throw ArgumentError(
-        'Invalid output extension `$output`. It should be a '
-        'string ending with `.dart`',
-      );
+    final output = (entry.value is List) ? entry.value as List : [entry.value];
+
+    for (var i = 0; i < output.length; i++) {
+      final o = output[i];
+      if (o is! String || (i == 0 && !o.endsWith('.dart'))) {
+        throw ArgumentError(
+          'Invalid output extension `${entry.value}`. It should be a string '
+          'or a list of strings with the first ending with `.dart`',
+        );
+      }
     }
 
-    result[input] = [output];
+    result[input] = output.cast<String>().toList();
   }
 
   if (result.isEmpty) {
