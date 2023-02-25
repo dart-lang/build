@@ -4,7 +4,6 @@
 
 import 'dart:async';
 
-import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
@@ -35,15 +34,11 @@ const _supportedOptions = [
   _compilerOption,
   _dart2jsArgsOption,
   _nativeNullAssertionsOption,
-  _nullAssertionsOption,
-  _soundNullSafetyOption,
 ];
 
 const _compilerOption = 'compiler';
 const _dart2jsArgsOption = 'dart2js_args';
 const _nativeNullAssertionsOption = 'native_null_assertions';
-const _nullAssertionsOption = 'null_assertions';
-const _soundNullSafetyOption = 'sound_null_safety';
 
 /// The deprecated keys for the `options` config for the [WebEntrypointBuilder].
 const _deprecatedOptions = [
@@ -58,24 +53,16 @@ class WebEntrypointBuilder implements Builder {
   final WebCompiler webCompiler;
   final List<String> dart2JsArgs;
 
-  /// Explicit configuration from the user to enable or disable sound null
-  /// safety if provided, otherwise `null`.
-  final bool? soundNullSafetyOverride;
-
-  /// Whether or not to enable runtime null assertions in unsound mode.
-  ///
-  /// This options can only be enabled in weak mode.
-  final bool nullAssertions;
-
   /// Whether or not to enable runtime non-null assertions for values returned
   /// from browser apis.
-  final bool nativeNullAssertions;
+  ///
+  /// If `null` then no flag will be provided to the compiler, and the default
+  /// will be used.
+  final bool? nativeNullAssertions;
 
   const WebEntrypointBuilder(
     this.webCompiler, {
     this.dart2JsArgs = const [],
-    required this.nullAssertions,
-    required this.soundNullSafetyOverride,
     required this.nativeNullAssertions,
   });
 
@@ -113,10 +100,7 @@ class WebEntrypointBuilder implements Builder {
     return WebEntrypointBuilder(compiler,
         dart2JsArgs: dart2JsArgs,
         nativeNullAssertions:
-            options.config[_nativeNullAssertionsOption] as bool? ?? true,
-        nullAssertions: options.config[_nullAssertionsOption] as bool? ?? false,
-        soundNullSafetyOverride:
-            options.config[_soundNullSafetyOption] as bool?);
+            options.config[_nativeNullAssertionsOption] as bool?);
   }
 
   @override
@@ -136,36 +120,22 @@ class WebEntrypointBuilder implements Builder {
     var dartEntrypointId = buildStep.inputId;
     var isAppEntrypoint = await _isAppEntryPoint(dartEntrypointId, buildStep);
     if (!isAppEntrypoint) return;
-    var soundNullSafety = soundNullSafetyOverride ??
-        await _supportsNullSafety(buildStep, buildStep.inputId);
-    var nullAssertions = !soundNullSafety && this.nullAssertions;
     switch (webCompiler) {
       case WebCompiler.DartDevc:
         try {
           await bootstrapDdc(buildStep,
               nativeNullAssertions: nativeNullAssertions,
-              nullAssertions: nullAssertions,
-              requiredAssets:
-                  _ddcSdkResources(soundNullSafety: soundNullSafety),
-              soundNullSafety: soundNullSafety);
+              requiredAssets: _ddcSdkResources);
         } on MissingModulesException catch (e) {
           log.severe('$e');
         }
         break;
       case WebCompiler.Dart2Js:
         await bootstrapDart2Js(buildStep, dart2JsArgs,
-            nativeNullAssertions: nativeNullAssertions,
-            nullAssertions: nullAssertions,
-            soundNullSafety: soundNullSafety);
+            nativeNullAssertions: nativeNullAssertions);
         break;
     }
   }
-}
-
-/// Returns whether [assetId] supports the non-nullable language feature.
-Future<bool> _supportsNullSafety(BuildStep buildStep, AssetId assetId) async {
-  var unit = await buildStep.resolver.compilationUnitFor(assetId);
-  return unit.featureSet.isEnabled(Feature.non_nullable);
 }
 
 /// Returns whether or not [dartId] is an app entrypoint (basically, whether
@@ -192,8 +162,7 @@ Future<bool> _isAppEntryPoint(AssetId dartId, AssetReader reader) async {
 
 /// Files copied from the SDK that are required at runtime to run a DDC
 /// application.
-List<AssetId> _ddcSdkResources({required bool soundNullSafety}) => [
-      AssetId('build_web_compilers',
-          'lib/src/dev_compiler/dart_sdk${soundNullSafety ? '.sound' : ''}.js'),
-      AssetId('build_web_compilers', 'lib/src/dev_compiler/require.js')
-    ];
+final _ddcSdkResources = [
+  AssetId('build_web_compilers', 'lib/src/dev_compiler/dart_sdk.js'),
+  AssetId('build_web_compilers', 'lib/src/dev_compiler/require.js')
+];

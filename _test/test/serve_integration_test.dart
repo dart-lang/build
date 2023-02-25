@@ -45,8 +45,7 @@ void main() {
     });
 
     test('Doesn\'t compile submodules into the root module', () {
-      expect(
-          readGeneratedFileAsString('_test/test/hello_world_test.sound.ddc.js'),
+      expect(readGeneratedFileAsString('_test/test/hello_world_test.ddc.js'),
           isNot(contains('Hello World!')));
     });
 
@@ -72,7 +71,7 @@ void main() {
       test('ddc errors can be fixed', () async {
         var path = p.join('test', 'common', 'message.dart');
         var error = nextStdOutLine('Error compiling dartdevc module:'
-            '_test|test/common/message.sound.ddc.js');
+            '_test|test/common/message.ddc.js');
         var nextBuild = nextFailedBuild;
         await replaceAllInFile(path, "'Hello World!';", '1;');
         await error;
@@ -165,8 +164,7 @@ void main() {
     expect(badResponse.statusCode, HttpStatus.notFound);
 
     var ddcFileResponse =
-        await (await httpClient.get('localhost', 8080, 'main.sound.ddc.js'))
-            .close();
+        await (await httpClient.get('localhost', 8080, 'main.ddc.js')).close();
     expect(await utf8.decodeStream(ddcFileResponse), contains('"goodbye"'));
   });
 
@@ -205,14 +203,14 @@ void main() {
 
     const n = 1000;
     var futures = [
-      for (var i = 0; i < n; i++) read('main.sound.ddc.js'),
-      for (var i = 0; i < n; i++) read('main.sound.ddc.js.map'),
-      for (var i = 0; i < n; i++) read('main.sound.ddc.dill'),
-      for (var i = 0; i < n; i++) read('main.sound.ddc.full.dill'),
-      for (var i = 0; i < n; i++) read('sub/message.sound.ddc.js'),
-      for (var i = 0; i < n; i++) read('sub/message.sound.ddc.js.map'),
-      for (var i = 0; i < n; i++) read('sub/message.sound.ddc.dill'),
-      for (var i = 0; i < n; i++) read('sub/message.sound.ddc.full.dill'),
+      for (var i = 0; i < n; i++) read('main.ddc.js'),
+      for (var i = 0; i < n; i++) read('main.ddc.js.map'),
+      for (var i = 0; i < n; i++) read('main.ddc.dill'),
+      for (var i = 0; i < n; i++) read('main.ddc.full.dill'),
+      for (var i = 0; i < n; i++) read('sub/message.ddc.js'),
+      for (var i = 0; i < n; i++) read('sub/message.ddc.js.map'),
+      for (var i = 0; i < n; i++) read('sub/message.ddc.dill'),
+      for (var i = 0; i < n; i++) read('sub/message.ddc.full.dill'),
     ];
     await Future.wait(futures);
   });

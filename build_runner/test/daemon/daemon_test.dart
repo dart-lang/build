@@ -149,7 +149,7 @@ main() {
           ])
         ])
       ]).create();
-    });
+    }, skip: 'https://github.com/dart-lang/build/issues/3438');
 
     test('supports --enable-experiment option', () async {
       await _startDaemon(options: ['--enable-experiment=fake-experiment']);
@@ -259,7 +259,7 @@ main() {
       var succeededResult = await client.buildResults.first;
       expect(succeededResult.results.first.status, BuildStatus.succeeded);
       var ddcContent = await File(p.join(d.sandbox, 'a', '.dart_tool', 'build',
-              'generated', 'a', 'web', 'main.sound.ddc.js'))
+              'generated', 'a', 'web', 'main.ddc.js'))
           .readAsString();
       expect(ddcContent, contains('goodbye world'));
     });

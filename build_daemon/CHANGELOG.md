@@ -1,7 +1,7 @@
-## 3.1.1-dev
+## 3.1.1
 
 - Report file watching errors and stop the daemon.
-
+- Change `Level` to implement `Comparable` instead of using it as a mixin.
 
 ## 3.1.0
 
@@ -9,7 +9,6 @@
   build.
 - Updated the example to use `dart pub` instead of `pub`.
 - Run `serveRequests` in an error zone and forward errors to the clients.
-
 
 ## 3.0.1
 

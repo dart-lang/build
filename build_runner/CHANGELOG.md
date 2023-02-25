@@ -1,10 +1,15 @@
-## 2.4.0-dev
+## 2.4.1-dev
+
+- Mention --build-filter option in the README.
+
+## 2.4.0
 
 - Add `--delay-writes` option to delay all writes to the end of a build. As no
   intermediate build state is visible on the file system, this may improve
   performance of third-party tools like the analysis server.
 - Warn if a `package:` builder import cannot be resolved and skip it,
   instead of creating an invalid build script or failing in other obscure ways.
+- Require Dart 3.0, drop support for unsound build scripts.
 
 ## 2.3.3
 

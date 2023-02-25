@@ -13,6 +13,7 @@ import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_resolvers/src/analysis_driver.dart';
 import 'package:build_resolvers/src/resolver.dart';
+import 'package:build_resolvers/src/sdk_summary.dart';
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
@@ -855,6 +856,27 @@ int? get x => 1;
               .having((fd) => fd.declaredElement, 'declaredElement', isNotNull),
         );
       }, resolvers: AnalyzerResolvers());
+    });
+
+    test('can return a resolved compilation unit', () {
+      return resolveSources({
+        'a|web/main.dart': 'main() {}',
+      }, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        var unit = await resolver.astNodeFor(lib.definingCompilationUnit,
+            resolve: true);
+        expect(
+          unit,
+          isA<CompilationUnit>().having(
+              (unit) => unit.declarations, 'declarations', hasLength(1)),
+        );
+        expect(
+          (unit as CompilationUnit).declarations.single,
+          isA<FunctionDeclaration>()
+              .having((fd) => fd.toSource(), 'toSource()', 'main() {}')
+              .having((fd) => fd.declaredElement, 'declaredElement', isNotNull),
+        );
+      });
     });
   });
 }

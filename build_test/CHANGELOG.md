@@ -1,4 +1,4 @@
-## 2.1.6-dev
+## 2.1.6
 
 - Fix bug in package config file loading.
 - Raise the minimum SDK constraint to 2.18.
