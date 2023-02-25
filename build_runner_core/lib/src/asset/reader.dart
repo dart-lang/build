@@ -15,11 +15,16 @@ import '../asset_graph/node.dart';
 import '../util/async.dart';
 
 /// A [RunnerAssetReader] must implement [MultiPackageAssetReader].
-abstract class RunnerAssetReader implements MultiPackageAssetReader {}
+abstract class RunnerAssetReader implements MultiPackageAssetReader {
+  /// Whether this reader supports [pathTo] operations.
+  bool get supportsFindingAssetPaths => false;
 
-/// An [AssetReader] that can provide actual paths to assets on disk.
-abstract class PathProvidingAssetReader implements AssetReader {
-  String pathTo(AssetId id);
+  /// Finds the path on the disk for a file-based asset [id].
+  ///
+  /// Throws [UnsupportedError] for readers that can't map assets to files.
+  String pathTo(AssetId id) {
+    throw UnsupportedError('Path for asset id');
+  }
 }
 
 /// Describes if and how a [SingleStepReader] should read an [AssetId].

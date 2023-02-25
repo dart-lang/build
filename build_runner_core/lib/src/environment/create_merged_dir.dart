@@ -36,7 +36,8 @@ Future<bool> createMergedOutputDirectories(
     AssetReader reader,
     FinalizedAssetsView finalizedAssetsView,
     bool outputSymlinksOnly) async {
-  if (outputSymlinksOnly && reader is! PathProvidingAssetReader) {
+  if (outputSymlinksOnly &&
+      !(reader is RunnerAssetReader && reader.supportsFindingAssetPaths)) {
     _logger.severe(
         'The current environment does not support symlinks, but symlinks were '
         'requested.');
@@ -254,8 +255,8 @@ Future<AssetId> _writeAsset(
       if (symlinkOnly) {
         await Link(_filePathFor(outputDir, outputId)).create(
             // We assert at the top of `createMergedOutputDirectories` that the
-            // reader implements this type when requesting symlinks.
-            (reader as PathProvidingAssetReader).pathTo(id),
+            // reader supports pathTo when requesting symlinks.
+            (reader as RunnerAssetReader).pathTo(id),
             recursive: true);
       } else {
         await _writeAsBytes(outputDir, outputId, await reader.readAsBytes(id));

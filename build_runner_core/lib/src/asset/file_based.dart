@@ -20,11 +20,13 @@ final _descriptorPool = Pool(32);
 
 /// Basic [AssetReader] which uses a [PackageGraph] to look up where to read
 /// files from disk.
-class FileBasedAssetReader extends AssetReader
-    implements RunnerAssetReader, PathProvidingAssetReader {
+class FileBasedAssetReader extends AssetReader implements RunnerAssetReader {
   final PackageGraph packageGraph;
 
   FileBasedAssetReader(this.packageGraph);
+
+  @override
+  bool get supportsFindingAssetPaths => true;
 
   @override
   Future<bool> canRead(AssetId id) =>

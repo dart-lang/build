@@ -18,7 +18,7 @@ import 'reader.dart';
 /// Assets are cached until [invalidate] is invoked.
 ///
 /// Does not implement [findAssets].
-class CachingAssetReader implements AssetReader {
+class CachingAssetReader implements RunnerAssetReader {
   /// Cached results of [readAsBytes].
   final _bytesContentCache = LruCache<AssetId, List<int>>(
       1024 * 1024,
@@ -46,12 +46,13 @@ class CachingAssetReader implements AssetReader {
 
   final AssetReader _delegate;
 
-  CachingAssetReader._(this._delegate);
+  CachingAssetReader(this._delegate);
 
-  factory CachingAssetReader(AssetReader delegate) =>
-      delegate is PathProvidingAssetReader
-          ? _PathProvidingCachingAssetReader._(delegate)
-          : CachingAssetReader._(delegate);
+  @override
+  bool get supportsFindingAssetPaths {
+    final delegate = _delegate;
+    return delegate is RunnerAssetReader && delegate.supportsFindingAssetPaths;
+  }
 
   @override
   Future<bool> canRead(AssetId id) =>
@@ -61,8 +62,18 @@ class CachingAssetReader implements AssetReader {
   Future<Digest> digest(AssetId id) => _delegate.digest(id);
 
   @override
-  Stream<AssetId> findAssets(Glob glob) =>
+  Stream<AssetId> findAssets(Glob glob, {String? package}) =>
       throw UnimplementedError('unimplemented!');
+
+  @override
+  String pathTo(AssetId id) {
+    final delegate = _delegate;
+    if (delegate is RunnerAssetReader) {
+      return delegate.pathTo(id);
+    } else {
+      throw UnsupportedError('Path to asset');
+    }
+  }
 
   @override
   Future<List<int>> readAsBytes(AssetId id, {bool cache = true}) {
@@ -110,18 +121,4 @@ class CachingAssetReader implements AssetReader {
       _pendingStringContentCache.remove(id);
     }
   }
-}
-
-/// A version of a [CachingAssetReader] that implements
-/// [PathProvidingAssetReader].
-class _PathProvidingCachingAssetReader extends CachingAssetReader
-    implements PathProvidingAssetReader {
-  @override
-  PathProvidingAssetReader get _delegate =>
-      super._delegate as PathProvidingAssetReader;
-
-  _PathProvidingCachingAssetReader._(AssetReader delegate) : super._(delegate);
-
-  @override
-  String pathTo(AssetId id) => _delegate.pathTo(id);
 }

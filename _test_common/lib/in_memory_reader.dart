@@ -15,9 +15,17 @@ class InMemoryRunnerAssetReader extends InMemoryAssetReader
   Stream<AssetId> get onCanRead => _onCanReadController.stream;
 
   @override
+  bool get supportsFindingAssetPaths => false;
+
+  @override
   Future<bool> canRead(AssetId id) {
     _onCanReadController.add(id);
     return super.canRead(id);
+  }
+
+  @override
+  String pathTo(AssetId id) {
+    throw UnsupportedError('Path for asset id $id');
   }
 
   InMemoryRunnerAssetReader(

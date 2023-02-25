@@ -13,18 +13,18 @@ import 'writer.dart';
 
 /// Wraps an [AssetReader] and translates reads for generated files into reads
 /// from the build cache directory
-class BuildCacheReader implements AssetReader {
+class BuildCacheReader implements RunnerAssetReader {
   final AssetGraph _assetGraph;
   final AssetReader _delegate;
   final String _rootPackage;
 
-  BuildCacheReader._(this._delegate, this._assetGraph, this._rootPackage);
+  BuildCacheReader(this._delegate, this._assetGraph, this._rootPackage);
 
-  factory BuildCacheReader(
-          AssetReader delegate, AssetGraph assetGraph, String rootPackage) =>
-      delegate is PathProvidingAssetReader
-          ? _PathProvidingBuildCacheReader._(delegate, assetGraph, rootPackage)
-          : BuildCacheReader._(delegate, assetGraph, rootPackage);
+  @override
+  bool get supportsFindingAssetPaths {
+    final delegate = _delegate;
+    return delegate is RunnerAssetReader && delegate.supportsFindingAssetPaths;
+  }
 
   @override
   Future<bool> canRead(AssetId id) =>
@@ -44,23 +44,20 @@ class BuildCacheReader implements AssetReader {
           encoding: encoding);
 
   @override
-  Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError(
-      'Asset globbing should be done per phase with the AssetGraph');
-}
-
-class _PathProvidingBuildCacheReader extends BuildCacheReader
-    implements PathProvidingAssetReader {
-  @override
-  PathProvidingAssetReader get _delegate =>
-      super._delegate as PathProvidingAssetReader;
-
-  _PathProvidingBuildCacheReader._(PathProvidingAssetReader delegate,
-      AssetGraph assetGraph, String rootPackage)
-      : super._(delegate, assetGraph, rootPackage);
+  Stream<AssetId> findAssets(Glob glob, {String? package}) {
+    throw UnimplementedError(
+        'Asset globbing should be done per phase with the AssetGraph');
+  }
 
   @override
-  String pathTo(AssetId id) =>
-      _delegate.pathTo(_cacheLocation(id, _assetGraph, _rootPackage));
+  String pathTo(AssetId id) {
+    final delegate = _delegate;
+    if (delegate is RunnerAssetReader) {
+      return delegate.pathTo(_cacheLocation(id, _assetGraph, _rootPackage));
+    } else {
+      throw UnsupportedError('Cannot find path to $id');
+    }
+  }
 }
 
 class BuildCacheWriter implements RunnerAssetWriter {

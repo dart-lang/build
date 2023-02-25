@@ -88,6 +88,9 @@ class _DelayAwareReader extends AssetReader implements RunnerAssetReader {
   _DelayAwareReader(this._delegate, this._delayed, this._rootPackage);
 
   @override
+  bool get supportsFindingAssetPaths => _delegate.supportsFindingAssetPaths;
+
+  @override
   Future<bool> canRead(AssetId id) async {
     if (_delayed.overlay.containsKey(id)) {
       return _delayed.overlay[id] != null;
@@ -134,5 +137,10 @@ class _DelayAwareReader extends AssetReader implements RunnerAssetReader {
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
     return encoding.decode(await readAsBytes(id));
+  }
+
+  @override
+  String pathTo(AssetId id) {
+    return _delegate.pathTo(id);
   }
 }
