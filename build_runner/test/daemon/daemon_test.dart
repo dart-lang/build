@@ -101,7 +101,8 @@ main() {
 
   Future<void> _startDaemon(
       {BuildMode buildMode = BuildMode.Auto,
-      List<String> options = const []}) async {
+      List<String> options = const [],
+      bool expectFailure = false}) async {
     var args = [
       'build_runner',
       'daemon',
@@ -126,7 +127,11 @@ main() {
     unawaited(daemon.exitCode.then((exitCode) {
       printOnFailure('GOT EXIT CODE: $exitCode');
     }));
-    expect(await stdoutLines!.contains(readyToConnectLog), isTrue);
+    if (expectFailure) {
+      expect(await daemon.exitCode, isNot(0));
+    } else {
+      expect(await stdoutLines!.contains(readyToConnectLog), isTrue);
+    }
   }
 
   group('Build Daemon', () {
@@ -152,17 +157,10 @@ main() {
     }, skip: 'https://github.com/dart-lang/build/issues/3438');
 
     test('supports --enable-experiment option', () async {
-      await _startDaemon(options: ['--enable-experiment=fake-experiment']);
-      var client =
-          await _startClient(options: ['--enable-experiment=fake-experiment'])
-            ..registerBuildTarget(webTarget)
-            ..startBuild();
-      clients.add(client);
-      await expectLater(
-          client.buildResults,
-          // TODO: Check for specific message about a bad experiment
-          emitsThrough((BuildResults b) =>
-              b.results.first.status == BuildStatus.failed));
+      // TODO: Check for specific message about a bad experiment
+      await _startDaemon(
+          options: ['--enable-experiment=fake-experiment'],
+          expectFailure: true);
     });
 
     test('does not shut down down on build script change when configured',
