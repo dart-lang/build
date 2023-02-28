@@ -96,7 +96,7 @@ Future<void> main(List<String> args) async {
     exitCode = await commandRunner.runCommand(parsedArgs) ?? 1;
   } else {
     var experiments =
-        (parsedArgs.command!)['enable-experiment'] as List<String>?;
+        parsedArgs.command!['enable-experiment'] as List<String>?;
     while ((exitCode = await generateAndRun(args, experiments: experiments)) ==
         ExitCode.tempFail.code) {}
   }
