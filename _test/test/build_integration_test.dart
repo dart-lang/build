@@ -63,7 +63,7 @@ void main() {
       ]);
 
       expect(result.exitCode, isNot(0));
-      expect(result.stdout, contains('Unknown experiment: fake-experiment'));
+      expect(result.stderr, contains('Unknown experiment: fake-experiment'));
     });
   });
 
