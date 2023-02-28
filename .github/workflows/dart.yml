@@ -1603,7 +1603,7 @@ jobs:
       - job_007
       - job_008
   job_043:
-    name: "e2e_test; linux; Dart dev; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
+    name: "e2e_test; linux; Dart dev; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -1628,8 +1628,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces"
-        run: "dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1"
+        run: "dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
     needs:
@@ -1676,7 +1676,7 @@ jobs:
       - job_041
       - job_042
   job_044:
-    name: "e2e_test; linux; Dart dev; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
+    name: "e2e_test; linux; Dart dev; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -1701,8 +1701,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces"
-        run: "dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1"
+        run: "dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
     needs:
@@ -1749,7 +1749,7 @@ jobs:
       - job_041
       - job_042
   job_045:
-    name: "e2e_test; linux; Dart dev; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
+    name: "e2e_test; linux; Dart dev; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -1774,8 +1774,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces"
-        run: "dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1"
+        run: "dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
     needs:
@@ -1822,7 +1822,7 @@ jobs:
       - job_041
       - job_042
   job_046:
-    name: "e2e_test; linux; Dart dev; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
+    name: "e2e_test; linux; Dart dev; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -1847,8 +1847,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces"
-        run: "dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1"
+        run: "dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
     needs:
@@ -1895,7 +1895,7 @@ jobs:
       - job_041
       - job_042
   job_047:
-    name: "e2e_test; linux; Dart dev; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
+    name: "e2e_test; linux; Dart dev; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -1920,8 +1920,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces"
-        run: "dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1"
+        run: "dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
     needs:
@@ -2187,7 +2187,7 @@ jobs:
       - job_041
       - job_042
   job_051:
-    name: "e2e_test; linux; Dart main; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
+    name: "e2e_test; linux; Dart main; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -2212,8 +2212,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces"
-        run: "dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1"
+        run: "dart test -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
     needs:
@@ -2260,7 +2260,7 @@ jobs:
       - job_041
       - job_042
   job_052:
-    name: "e2e_test; linux; Dart main; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
+    name: "e2e_test; linux; Dart main; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -2285,8 +2285,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces"
-        run: "dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1"
+        run: "dart test -t integration --total-shards 5 --shard-index 1 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
     needs:
@@ -2333,7 +2333,7 @@ jobs:
       - job_041
       - job_042
   job_053:
-    name: "e2e_test; linux; Dart main; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
+    name: "e2e_test; linux; Dart main; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -2358,8 +2358,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces"
-        run: "dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1"
+        run: "dart test -t integration --total-shards 5 --shard-index 2 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
     needs:
@@ -2406,7 +2406,7 @@ jobs:
       - job_041
       - job_042
   job_054:
-    name: "e2e_test; linux; Dart main; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
+    name: "e2e_test; linux; Dart main; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -2431,8 +2431,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces"
-        run: "dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1"
+        run: "dart test -t integration --total-shards 5 --shard-index 3 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
     needs:
@@ -2479,7 +2479,7 @@ jobs:
       - job_041
       - job_042
   job_055:
-    name: "e2e_test; linux; Dart main; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces`"
+    name: "e2e_test; linux; Dart main; PKG: build_runner; `dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -2504,8 +2504,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces"
-        run: "dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1"
+        run: "dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
     needs:
