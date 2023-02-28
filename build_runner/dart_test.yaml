@@ -1,3 +1,10 @@
+presets:
+  experiments:
+    include_tags: experiments
+
 tags:
   integration:
     timeout: 16x
+  experiments:
+    skip: 'Only ran if `-P experiments` is passed'
+    presets: {experiments: {skip: false}}

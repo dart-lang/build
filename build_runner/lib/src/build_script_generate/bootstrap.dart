@@ -28,11 +28,13 @@ final _logger = Logger('Bootstrap');
 /// If an exit code of 75 is returned, this function should be re-ran.
 Future<int> generateAndRun(
   List<String> args, {
+  List<String>? experiments,
   Logger? logger,
   Future<String> Function() generateBuildScript = generateBuildScript,
   void Function(Object error, StackTrace stackTrace) handleUncaughtError =
       _defaultHandleUncaughtError,
 }) async {
+  experiments ??= [];
   logger ??= _logger;
   ReceivePort? exitPort;
   ReceivePort? errorPort;
@@ -66,7 +68,7 @@ Future<int> generateAndRun(
       return ExitCode.config.code;
     }
 
-    scriptExitCode = await _createKernelIfNeeded(logger);
+    scriptExitCode = await _createKernelIfNeeded(logger, experiments);
     if (scriptExitCode != 0) return scriptExitCode!;
 
     exitPort = ReceivePort();
@@ -133,7 +135,8 @@ Future<int> generateAndRun(
 ///
 /// Returns zero for success or a number for failure which should be set to the
 /// exit code.
-Future<int> _createKernelIfNeeded(Logger logger) async {
+Future<int> _createKernelIfNeeded(
+    Logger logger, List<String> experiments) async {
   var assetGraphFile = File(assetGraphPathFor(scriptKernelLocation));
   var kernelFile = File(scriptKernelLocation);
   var kernelCacheFile = File(scriptKernelCachedLocation);
@@ -145,7 +148,7 @@ Future<int> _createKernelIfNeeded(Logger logger) async {
       await kernelFile.rename(scriptKernelCachedLocation);
       logger.warning(
           'Invalidated precompiled build script due to missing asset graph.');
-    } else if (!await _checkImportantPackageDeps()) {
+    } else if (!await _checkImportantPackageDepsAndExperiments(experiments)) {
       await kernelFile.rename(scriptKernelCachedLocation);
       logger.warning(
           'Invalidated precompiled build script due to core package update');
@@ -157,6 +160,7 @@ Future<int> _createKernelIfNeeded(Logger logger) async {
       scriptLocation,
       scriptKernelCachedLocation,
       'lib/_internal/vm_platform_strong.dill',
+      enabledExperiments: experiments,
       printIncrementalDependencies: false,
     );
 
@@ -209,7 +213,7 @@ This is likely caused by a misconfigured builder definition.
       return ExitCode.config.code;
     }
     // Create _previousLocationsFile.
-    await _checkImportantPackageDeps();
+    await _checkImportantPackageDepsAndExperiments(experiments);
   }
   return 0;
 }
@@ -222,28 +226,30 @@ final _previousLocationsFile =
     File(p.url.join(p.url.dirname(scriptKernelLocation), '.packageLocations'));
 
 /// Returns whether the [_importantPackages] are all pointing at same locations
-/// from the previous run.
+/// from the previous run, and [experiments] are the same as the last run.
 ///
 /// Also updates the [_previousLocationsFile] with the new locations if not.
 ///
 /// This is used to detect potential changes to the user facing api and
 /// pre-emptively resolve them by precompiling the build script again, see
 /// https://github.com/dart-lang/build/issues/1929.
-Future<bool> _checkImportantPackageDeps() async {
+Future<bool> _checkImportantPackageDepsAndExperiments(
+    List<String> experiments) async {
   var currentLocations = await Future.wait(_importantPackages.map((pkg) =>
       Isolate.resolvePackageUri(
           Uri(scheme: 'package', path: '$pkg/fake.dart'))));
-  var currentLocationsContent = currentLocations.join('\n');
+  var fileContents =
+      currentLocations.map((uri) => '$uri').followedBy(experiments).join('\n');
 
   if (!_previousLocationsFile.existsSync()) {
     _logger.fine('Core package locations file does not exist');
-    _previousLocationsFile.writeAsStringSync(currentLocationsContent);
+    _previousLocationsFile.writeAsStringSync(fileContents);
     return false;
   }
 
-  if (currentLocationsContent != _previousLocationsFile.readAsStringSync()) {
+  if (fileContents != _previousLocationsFile.readAsStringSync()) {
     _logger.fine('Core packages locations have changed');
-    _previousLocationsFile.writeAsStringSync(currentLocationsContent);
+    _previousLocationsFile.writeAsStringSync(fileContents);
     return false;
   }
 
