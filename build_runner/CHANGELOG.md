@@ -1,6 +1,7 @@
-## 2.4.1-dev
+## 2.4.1
 
 - Mention --build-filter option in the README.
+- Support enabling experiments in build scripts.
 
 ## 2.4.0
 
