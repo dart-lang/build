@@ -10,7 +10,7 @@ jobs:
     name: "Tests for pkg:drift"
     runs-on: ubuntu-latest
     steps:
-      - uses: dart-lang/setup-dart@6a218f2413a3e78e9087f638a238f6b40893203d
+      - uses: dart-lang/setup-dart@929ed5f8bae55086c6fac456ba5acb9763c9e3e2
         with:
           sdk: dev
       - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
