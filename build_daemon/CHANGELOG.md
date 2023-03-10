@@ -1,3 +1,8 @@
+## 4.0.0-dev
+
+- **Breaking**: Remove methods from ChangeProvider, and extract them into
+  explicit AutoChangeProvider and ManualChangeProvider types.
+
 ## 3.1.1
 
 - Report file watching errors and stop the daemon.

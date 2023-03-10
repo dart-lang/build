@@ -1,6 +1,7 @@
 ## 2.4.1
 
 - Mention --build-filter option in the README.
+- Update to build_daemon 4.0.
 - Support enabling experiments in build scripts.
 
 ## 2.4.0
