@@ -17,11 +17,11 @@ const _maxWait = Duration(seconds: 5);
 Future<bool> waitForFile(File file) async {
   final end = DateTime.now().add(_maxWait);
   while (!DateTime.now().isAfter(end)) {
-    print('waiting for port file $file');
+    print('${DateTime.now()}: waiting for port file $file');
     if (file.existsSync()) return true;
     await Future.delayed(_readDelay);
   }
   var result = file.existsSync();
-  print('port file exists? $result');
+  print('${DateTime.now()}: port file exists? $result');
   return result;
 }

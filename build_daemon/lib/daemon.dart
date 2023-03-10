@@ -103,9 +103,9 @@ class Daemon {
 
   void _createPortFile(int port) {
     var path = portFilePath(_workingDirectory);
-    print('creating port file $path');
+    print('${DateTime.now()}: creating port file $path');
     File(path).writeAsStringSync('$port');
-    print('created? ${File(path).existsSync()}');
+    print('${DateTime.now()}: created? ${File(path).existsSync()}');
   }
 
   void _createVersionFile() => File(versionFilePath(_workingDirectory))
