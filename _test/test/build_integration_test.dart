@@ -63,7 +63,9 @@ void main() {
       ]);
 
       expect(result.exitCode, isNot(0));
-      expect(result.stdout, contains('Unknown experiment: fake-experiment'));
+      expect(result.stdout, contains('Failed to precompile build script'));
+      expect(result.stdout, contains('Unknown experiment: fake-experiment'),
+          skip: 'https://github.com/dart-lang/webdev/issues/2003');
     });
   });
 
