@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:build_daemon/change_provider.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/asset_graph/graph.dart';
@@ -11,25 +13,20 @@ import 'package:watcher/watcher.dart' show WatchEvent;
 
 /// Continually updates the [changes] stream as watch events are seen on the
 /// input stream.
-///
-/// The [collectChanges] method is a no-op for this implementation.
-class AutoChangeProvider implements ChangeProvider {
+class AutoChangeProviderImpl implements AutoChangeProvider {
   @override
   final Stream<List<WatchEvent>> changes;
 
-  AutoChangeProvider(this.changes);
-
-  @override
-  Future<List<WatchEvent>> collectChanges() async => [];
+  AutoChangeProviderImpl(this.changes);
 }
 
 /// Computes changes with a file scan when requested by a call to
 /// [collectChanges].
-class ManualChangeProvider implements ChangeProvider {
+class ManualChangeProviderImpl implements ManualChangeProvider {
   final AssetGraph _assetGraph;
   final AssetTracker _assetTracker;
 
-  ManualChangeProvider(this._assetTracker, this._assetGraph);
+  ManualChangeProviderImpl(this._assetTracker, this._assetGraph);
 
   @override
   Future<List<WatchEvent>> collectChanges() async {
@@ -37,7 +34,4 @@ class ManualChangeProvider implements ChangeProvider {
     return List.of(updates.entries
         .map((entry) => WatchEvent(entry.value, '${entry.key}')));
   }
-
-  @override
-  Stream<List<WatchEvent>> get changes => Stream.empty();
 }
