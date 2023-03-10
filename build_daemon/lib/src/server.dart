@@ -11,6 +11,7 @@ import 'package:http_multi_server/http_multi_server.dart';
 import 'package:pool/pool.dart';
 import 'package:shelf/shelf_io.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
+import 'package:stack_trace/stack_trace.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -107,6 +108,8 @@ class Server {
   }
 
   Future<void> stop({String message = '', int failureType = 0}) async {
+    print(
+        '${DateTime.now()}: Stopping server, stack trace:\n${StackTrace.current}');
     if (message.isNotEmpty && failureType != 0) {
       for (var connection in _buildTargetManager.allChannels) {
         connection.sink
