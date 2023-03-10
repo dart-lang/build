@@ -1,4 +1,4 @@
-## 2.4.1
+## 2.4.1-dev
 
 - Mention --build-filter option in the README.
 - Update to build_daemon 4.0.
