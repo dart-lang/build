@@ -106,6 +106,7 @@ class Daemon {
     print('${DateTime.now()}: creating port file $path');
     File(path).writeAsStringSync('$port');
     print('${DateTime.now()}: created? ${File(path).existsSync()}');
+    print(Process.runSync('ln', ['-l', path]));
   }
 
   void _createVersionFile() => File(versionFilePath(_workingDirectory))
