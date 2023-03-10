@@ -96,6 +96,7 @@ class Daemon {
     _lock?.closeSync();
     var workspace = Directory(daemonWorkspace(_workingDirectory));
     if (workspace.existsSync()) {
+      print('${DateTime.now()}: Deleting workspace dir ${workspace.path}');
       workspace.deleteSync(recursive: true);
     }
     if (!_doneCompleter.isCompleted) _doneCompleter.complete(exitCode);
