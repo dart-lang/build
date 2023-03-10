@@ -58,8 +58,11 @@ class Server {
     _forwardData();
     _handleChanges(changeProvider.changes);
     // Stop the server if nobody connects.
+    print('${DateTime.now()}: Setting up timeout for $timeout');
     _timeout = Timer(timeout, () async {
       if (_buildTargetManager.isEmpty) {
+        print(
+            '${DateTime.now()}: Stopping server due to no build targets after $timeout');
         await stop();
       }
     });
@@ -71,6 +74,7 @@ class Server {
   /// Starts listening for build daemon clients.
   Future<int> listen() async {
     var handler = webSocketHandler((WebSocketChannel channel) async {
+      print('${DateTime.now()}: connected to web socket channel');
       channel.stream.listen((message) async {
         dynamic request;
         try {
@@ -89,6 +93,7 @@ class Server {
           await _build(targets, changes);
         }
       }, onDone: () {
+        print('${DateTime.now()}: closing web socket channel');
         _removeChannel(channel);
       });
     });
