@@ -101,8 +101,10 @@ class Daemon {
     if (!_doneCompleter.isCompleted) _doneCompleter.complete(exitCode);
   }
 
-  void _createPortFile(int port) =>
-      File(portFilePath(_workingDirectory)).writeAsStringSync('$port');
+  void _createPortFile(int port) {
+    var path = portFilePath(_workingDirectory);
+    File(path).writeAsStringSync('$port');
+  }
 
   void _createVersionFile() => File(versionFilePath(_workingDirectory))
       .writeAsStringSync(currentVersion);
