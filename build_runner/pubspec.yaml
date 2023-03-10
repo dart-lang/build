@@ -59,6 +59,8 @@ dev_dependencies:
     path: ../_test_common
 
 dependency_overrides:
+  build_daemon:
+    path: ../build_daemon
   build_modules:
     path: ../build_modules
   build_web_compilers:
