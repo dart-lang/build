@@ -86,8 +86,10 @@ class Server {
         } else if (request is BuildRequest) {
           // We can only get explicit build requests if we have a manual change
           // provider.
-          var changeProvider = _changeProvider as ManualChangeProvider;
-          var changes = await changeProvider.collectChanges();
+          var changeProvider = _changeProvider;
+          var changes = changeProvider is ManualChangeProvider
+              ? await changeProvider.collectChanges()
+              : <WatchEvent>[];
           var targets = changes.isEmpty
               ? _buildTargetManager.targets
               : _buildTargetManager.targetsForChanges(changes);
