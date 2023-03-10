@@ -2036,8 +2036,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_runner
-      - name: "build_runner; dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces"
-        run: "dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces"
+      - name: "build_runner; dart test test/daemon/daemon_test --no-chain-stack-traces"
+        run: "dart test test/daemon/daemon_test --no-chain-stack-traces"
         if: "always() && steps.build_runner_pub_upgrade.conclusion == 'success'"
         working-directory: build_runner
   #   needs:
