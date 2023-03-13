@@ -1,4 +1,4 @@
-## 4.0.0-dev
+## 4.0.0
 
 - **Breaking**: Remove methods from ChangeProvider, and extract them into
   explicit AutoChangeProvider and ManualChangeProvider types.
