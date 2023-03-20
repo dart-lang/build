@@ -210,13 +210,13 @@ and _all_ of the following checks must pass for _each_ package.
 Ensure code passes all our [analyzer checks][analysis_options]:
 
 ```sh
-$ dartanalyzer .
+$ dart analyze .
 ```
 
 Ensure all code is formatted with the latest [dev-channel SDK][dev_sdk].
 
 ```sh
-$ dartfmt -w .
+$ dart format .
 ```
 
 Run all of our unit tests:
