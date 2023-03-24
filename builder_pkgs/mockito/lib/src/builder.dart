@@ -1999,8 +1999,9 @@ class _MockClassInfo {
       return TypeReference((b) {
         b
           ..symbol = type.element.name
-          ..isNullable = forceNullable ||
-              type.nullabilitySuffix == NullabilitySuffix.question
+          ..isNullable = !type.isDartCoreNull &&
+              (forceNullable ||
+                  type.nullabilitySuffix == NullabilitySuffix.question)
           ..url = _typeImport(type.element)
           ..types.addAll(type.typeArguments.map(_typeReference));
       });

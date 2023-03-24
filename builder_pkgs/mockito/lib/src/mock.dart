@@ -338,7 +338,8 @@ class _InvocationForMatchedArguments extends Invocation {
   factory _InvocationForMatchedArguments(Invocation invocation) {
     if (_storedArgs.isEmpty && _storedNamedArgs.isEmpty) {
       throw StateError(
-          '_InvocationForMatchedArguments called when no ArgMatchers have been saved.');
+          '_InvocationForMatchedArguments called when no ArgMatchers have been '
+          'saved.');
     }
 
     // Handle named arguments first, so that we can provide useful errors for
@@ -854,9 +855,9 @@ Null _registerMatcher(Matcher matcher, bool capture,
     _storedNamedArgs.clear();
     throw ArgumentError(
         'The "$argumentMatcher" argument matcher is used outside of method '
-        'stubbing (via `when`) or verification (via `verify` or `untilCalled`). '
-        'This is invalid, and results in bad behavior during the next stubbing '
-        'or verification.');
+        'stubbing (via `when`) or verification (via `verify` or '
+        '`untilCalled`). This is invalid, and results in bad behavior during '
+        'the next stubbing or verification.');
   }
   var argMatcher = ArgMatcher(matcher, capture);
   if (named == null) {
@@ -1121,8 +1122,8 @@ void verifyNoMoreInteractions(var mock) {
 void verifyZeroInteractions(var mock) {
   if (mock is Mock) {
     if (mock._realCalls.isNotEmpty) {
-      fail(
-          'No interaction expected, but following found: ${mock._realCalls.join()}');
+      fail('No interaction expected, but following found: '
+          '${mock._realCalls.join()}');
     }
   } else {
     _throwMockArgumentError('verifyZeroInteractions', mock);
@@ -1225,8 +1226,9 @@ extension on Invocation {
     if (args.any((arg) => arg.contains('\n'))) {
       // As one or more arg contains newlines, put each on its own line, and
       // indent each, for better readability.
-      argString =
-          '\n${args.map((arg) => arg.splitMapJoin('\n', onNonMatch: (m) => '    $m')).join(',\n')}';
+      var indentedArgs = args
+          .map((arg) => arg.splitMapJoin('\n', onNonMatch: (m) => '    $m'));
+      argString = '\n${indentedArgs.join(',\n')}';
     } else {
       // A compact String should be perfect.
       argString = args.join(', ');

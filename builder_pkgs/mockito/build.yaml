@@ -13,3 +13,5 @@ builders:
     build_extensions: {".dart": [".mocks.dart"]}
     build_to: source
     auto_apply: dependents
+    defaults:
+      generate_for: ['test/**']

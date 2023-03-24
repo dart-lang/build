@@ -1,10 +1,13 @@
-## 5.3.3-dev
+## 5.4.0-dev
 
-* Require analyzer 5.2.0.
 * Fix nice mocks generation in mixed mode (generated code is pre null-safety,
   while mocked class is null-safe).
-* Require Dart >= 2.18.0.
 * Support typedef-aliased classes in `@GenerateMocks` and `@GenerateNiceMocks`
+* **Breaking** Default `generate_for` to `test/**`. Projects that are generating
+  mocks for libraries outside of the `test/` directory should add an explicit
+  `generate_for` argument to include files with mock generating annotations.
+* Require Dart >= 2.17.0.
+* Require analyzer 5.2.0.
 
 ## 5.3.2
 
