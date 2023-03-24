@@ -1,4 +1,4 @@
-## 5.4.0-dev
+## 5.4.0
 
 * Fix nice mocks generation in mixed mode (generated code is pre null-safety,
   while mocked class is null-safe).
