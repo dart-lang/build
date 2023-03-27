@@ -1,3 +1,7 @@
+## 2.1.7
+
+- Allow the latest test_core (version 5.x).
+
 ## 2.1.6
 
 - Fix bug in package config file loading.
