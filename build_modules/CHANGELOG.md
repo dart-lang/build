@@ -1,4 +1,4 @@
-## 5.0.1-dev
+## 5.0.1
 
 - Delete the long deprecated `dart2JsWorkerResource` api and associated code.
   - This should have landed in 5.0.0 but in practice doesn't work in Dart 3 any
