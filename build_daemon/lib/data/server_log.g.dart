@@ -117,17 +117,17 @@ class _$ServerLogSerializer implements StructuredSerializer<ServerLog> {
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
-      final key = iterator.current as String;
+      final key = iterator.current! as String;
       iterator.moveNext();
       final Object? value = iterator.current;
       switch (key) {
         case 'level':
           result.level = serializers.deserialize(value,
-              specifiedType: const FullType(Level)) as Level;
+              specifiedType: const FullType(Level))! as Level;
           break;
         case 'message':
           result.message = serializers.deserialize(value,
-              specifiedType: const FullType(String)) as String;
+              specifiedType: const FullType(String))! as String;
           break;
         case 'loggerName':
           result.loggerName = serializers.deserialize(value,
@@ -161,7 +161,7 @@ class _$ServerLog extends ServerLog {
   final String? stackTrace;
 
   factory _$ServerLog([void Function(ServerLogBuilder)? updates]) =>
-      (new ServerLogBuilder()..update(updates)).build();
+      (new ServerLogBuilder()..update(updates))._build();
 
   _$ServerLog._(
       {required this.level,
@@ -170,8 +170,8 @@ class _$ServerLog extends ServerLog {
       this.error,
       this.stackTrace})
       : super._() {
-    BuiltValueNullFieldError.checkNotNull(level, 'ServerLog', 'level');
-    BuiltValueNullFieldError.checkNotNull(message, 'ServerLog', 'message');
+    BuiltValueNullFieldError.checkNotNull(level, r'ServerLog', 'level');
+    BuiltValueNullFieldError.checkNotNull(message, r'ServerLog', 'message');
   }
 
   @override
@@ -194,17 +194,19 @@ class _$ServerLog extends ServerLog {
 
   @override
   int get hashCode {
-    return $jf($jc(
-        $jc(
-            $jc($jc($jc(0, level.hashCode), message.hashCode),
-                loggerName.hashCode),
-            error.hashCode),
-        stackTrace.hashCode));
+    var _$hash = 0;
+    _$hash = $jc(_$hash, level.hashCode);
+    _$hash = $jc(_$hash, message.hashCode);
+    _$hash = $jc(_$hash, loggerName.hashCode);
+    _$hash = $jc(_$hash, error.hashCode);
+    _$hash = $jc(_$hash, stackTrace.hashCode);
+    _$hash = $jf(_$hash);
+    return _$hash;
   }
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper('ServerLog')
+    return (newBuiltValueToStringHelper(r'ServerLog')
           ..add('level', level)
           ..add('message', message)
           ..add('loggerName', loggerName)
@@ -264,13 +266,15 @@ class ServerLogBuilder implements Builder<ServerLog, ServerLogBuilder> {
   }
 
   @override
-  _$ServerLog build() {
+  ServerLog build() => _build();
+
+  _$ServerLog _build() {
     final _$result = _$v ??
         new _$ServerLog._(
             level: BuiltValueNullFieldError.checkNotNull(
-                level, 'ServerLog', 'level'),
+                level, r'ServerLog', 'level'),
             message: BuiltValueNullFieldError.checkNotNull(
-                message, 'ServerLog', 'message'),
+                message, r'ServerLog', 'message'),
             loggerName: loggerName,
             error: error,
             stackTrace: stackTrace);
@@ -279,4 +283,4 @@ class ServerLogBuilder implements Builder<ServerLog, ServerLogBuilder> {
   }
 }
 
-// ignore_for_file: always_put_control_body_on_new_line,always_specify_types,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,deprecated_member_use_from_same_package,lines_longer_than_80_chars,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new
+// ignore_for_file: deprecated_member_use_from_same_package,type=lint
