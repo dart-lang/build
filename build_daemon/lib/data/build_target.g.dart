@@ -61,7 +61,7 @@ class _$DefaultBuildTargetSerializer
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
-      final key = iterator.current as String;
+      final key = iterator.current! as String;
       iterator.moveNext();
       final Object? value = iterator.current;
       switch (key) {
@@ -84,11 +84,11 @@ class _$DefaultBuildTargetSerializer
           break;
         case 'reportChangedAssets':
           result.reportChangedAssets = serializers.deserialize(value,
-              specifiedType: const FullType(bool)) as bool;
+              specifiedType: const FullType(bool))! as bool;
           break;
         case 'target':
           result.target = serializers.deserialize(value,
-              specifiedType: const FullType(String)) as String;
+              specifiedType: const FullType(String))! as String;
           break;
       }
     }
@@ -129,21 +129,21 @@ class _$OutputLocationSerializer
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
-      final key = iterator.current as String;
+      final key = iterator.current! as String;
       iterator.moveNext();
       final Object? value = iterator.current;
       switch (key) {
         case 'output':
           result.output = serializers.deserialize(value,
-              specifiedType: const FullType(String)) as String;
+              specifiedType: const FullType(String))! as String;
           break;
         case 'useSymlinks':
           result.useSymlinks = serializers.deserialize(value,
-              specifiedType: const FullType(bool)) as bool;
+              specifiedType: const FullType(bool))! as bool;
           break;
         case 'hoist':
           result.hoist = serializers.deserialize(value,
-              specifiedType: const FullType(bool)) as bool;
+              specifiedType: const FullType(bool))! as bool;
           break;
       }
     }
@@ -166,7 +166,7 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
 
   factory _$DefaultBuildTarget(
           [void Function(DefaultBuildTargetBuilder)? updates]) =>
-      (new DefaultBuildTargetBuilder()..update(updates)).build();
+      (new DefaultBuildTargetBuilder()..update(updates))._build();
 
   _$DefaultBuildTarget._(
       {required this.blackListPatterns,
@@ -176,11 +176,11 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
       required this.target})
       : super._() {
     BuiltValueNullFieldError.checkNotNull(
-        blackListPatterns, 'DefaultBuildTarget', 'blackListPatterns');
+        blackListPatterns, r'DefaultBuildTarget', 'blackListPatterns');
     BuiltValueNullFieldError.checkNotNull(
-        reportChangedAssets, 'DefaultBuildTarget', 'reportChangedAssets');
+        reportChangedAssets, r'DefaultBuildTarget', 'reportChangedAssets');
     BuiltValueNullFieldError.checkNotNull(
-        target, 'DefaultBuildTarget', 'target');
+        target, r'DefaultBuildTarget', 'target');
   }
 
   @override
@@ -205,19 +205,19 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
 
   @override
   int get hashCode {
-    return $jf($jc(
-        $jc(
-            $jc(
-                $jc($jc(0, blackListPatterns.hashCode),
-                    outputLocation.hashCode),
-                buildFilters.hashCode),
-            reportChangedAssets.hashCode),
-        target.hashCode));
+    var _$hash = 0;
+    _$hash = $jc(_$hash, blackListPatterns.hashCode);
+    _$hash = $jc(_$hash, outputLocation.hashCode);
+    _$hash = $jc(_$hash, buildFilters.hashCode);
+    _$hash = $jc(_$hash, reportChangedAssets.hashCode);
+    _$hash = $jc(_$hash, target.hashCode);
+    _$hash = $jf(_$hash);
+    return _$hash;
   }
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper('DefaultBuildTarget')
+    return (newBuiltValueToStringHelper(r'DefaultBuildTarget')
           ..add('blackListPatterns', blackListPatterns)
           ..add('outputLocation', outputLocation)
           ..add('buildFilters', buildFilters)
@@ -287,7 +287,9 @@ class DefaultBuildTargetBuilder
   }
 
   @override
-  _$DefaultBuildTarget build() {
+  DefaultBuildTarget build() => _build();
+
+  _$DefaultBuildTarget _build() {
     _$DefaultBuildTarget _$result;
     try {
       _$result = _$v ??
@@ -297,10 +299,10 @@ class DefaultBuildTargetBuilder
               buildFilters: _buildFilters?.build(),
               reportChangedAssets: BuiltValueNullFieldError.checkNotNull(
                   reportChangedAssets,
-                  'DefaultBuildTarget',
+                  r'DefaultBuildTarget',
                   'reportChangedAssets'),
               target: BuiltValueNullFieldError.checkNotNull(
-                  target, 'DefaultBuildTarget', 'target'));
+                  target, r'DefaultBuildTarget', 'target'));
     } catch (_) {
       late String _$failedField;
       try {
@@ -312,7 +314,7 @@ class DefaultBuildTargetBuilder
         _buildFilters?.build();
       } catch (e) {
         throw new BuiltValueNestedFieldError(
-            'DefaultBuildTarget', _$failedField, e.toString());
+            r'DefaultBuildTarget', _$failedField, e.toString());
       }
       rethrow;
     }
@@ -330,15 +332,15 @@ class _$OutputLocation extends OutputLocation {
   final bool hoist;
 
   factory _$OutputLocation([void Function(OutputLocationBuilder)? updates]) =>
-      (new OutputLocationBuilder()..update(updates)).build();
+      (new OutputLocationBuilder()..update(updates))._build();
 
   _$OutputLocation._(
       {required this.output, required this.useSymlinks, required this.hoist})
       : super._() {
-    BuiltValueNullFieldError.checkNotNull(output, 'OutputLocation', 'output');
+    BuiltValueNullFieldError.checkNotNull(output, r'OutputLocation', 'output');
     BuiltValueNullFieldError.checkNotNull(
-        useSymlinks, 'OutputLocation', 'useSymlinks');
-    BuiltValueNullFieldError.checkNotNull(hoist, 'OutputLocation', 'hoist');
+        useSymlinks, r'OutputLocation', 'useSymlinks');
+    BuiltValueNullFieldError.checkNotNull(hoist, r'OutputLocation', 'hoist');
   }
 
   @override
@@ -360,13 +362,17 @@ class _$OutputLocation extends OutputLocation {
 
   @override
   int get hashCode {
-    return $jf($jc(
-        $jc($jc(0, output.hashCode), useSymlinks.hashCode), hoist.hashCode));
+    var _$hash = 0;
+    _$hash = $jc(_$hash, output.hashCode);
+    _$hash = $jc(_$hash, useSymlinks.hashCode);
+    _$hash = $jc(_$hash, hoist.hashCode);
+    _$hash = $jf(_$hash);
+    return _$hash;
   }
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper('OutputLocation')
+    return (newBuiltValueToStringHelper(r'OutputLocation')
           ..add('output', output)
           ..add('useSymlinks', useSymlinks)
           ..add('hoist', hoist))
@@ -415,18 +421,20 @@ class OutputLocationBuilder
   }
 
   @override
-  _$OutputLocation build() {
+  OutputLocation build() => _build();
+
+  _$OutputLocation _build() {
     final _$result = _$v ??
         new _$OutputLocation._(
             output: BuiltValueNullFieldError.checkNotNull(
-                output, 'OutputLocation', 'output'),
+                output, r'OutputLocation', 'output'),
             useSymlinks: BuiltValueNullFieldError.checkNotNull(
-                useSymlinks, 'OutputLocation', 'useSymlinks'),
+                useSymlinks, r'OutputLocation', 'useSymlinks'),
             hoist: BuiltValueNullFieldError.checkNotNull(
-                hoist, 'OutputLocation', 'hoist'));
+                hoist, r'OutputLocation', 'hoist'));
     replace(_$result);
     return _$result;
   }
 }
 
-// ignore_for_file: always_put_control_body_on_new_line,always_specify_types,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,deprecated_member_use_from_same_package,lines_longer_than_80_chars,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new
+// ignore_for_file: deprecated_member_use_from_same_package,type=lint
