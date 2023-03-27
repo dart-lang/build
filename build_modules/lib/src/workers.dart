@@ -121,6 +121,7 @@ Dart2JsBatchWorkerPool get _dart2jsWorkerPool {
         ..._dart2jsVmArgs,
         p.join(sdkDir, 'bin', 'snapshots', 'dart2js.dart.snapshot'),
         '--libraries-spec=$librariesSpec',
+        '--invoker=build_web_compilers',
         '--batch',
       ],
       mode: _processMode,
