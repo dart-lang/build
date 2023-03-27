@@ -427,45 +427,6 @@ jobs:
         if: "always() && steps.build_web_compilers_pub_upgrade.conclusion == 'success'"
         working-directory: build_web_compilers
   job_009:
-    name: "unit_test; linux; Dart 2.17.0; PKG: build_daemon; `dart test --test-randomize-ordering-seed=random`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:2.17.0;packages:build_daemon;commands:test_04"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:2.17.0;packages:build_daemon
-            os:ubuntu-latest;pub-cache-hosted;sdk:2.17.0
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - name: Setup Dart SDK
-        uses: dart-lang/setup-dart@6a218f2413a3e78e9087f638a238f6b40893203d
-        with:
-          sdk: "2.17.0"
-      - id: checkout
-        name: Checkout repository
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
-      - id: build_daemon_pub_upgrade
-        name: build_daemon; dart pub upgrade
-        run: dart pub upgrade
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_daemon
-      - name: "build_daemon; dart test --test-randomize-ordering-seed=random"
-        run: "dart test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_daemon_pub_upgrade.conclusion == 'success'"
-        working-directory: build_daemon
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_010:
     name: "unit_test; linux; Dart 2.18.0; PKG: build; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -495,6 +456,45 @@ jobs:
         run: "dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_pub_upgrade.conclusion == 'success'"
         working-directory: build
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_010:
+    name: "unit_test; linux; Dart 2.18.0; PKG: build_daemon; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:2.18.0;packages:build_daemon;commands:test_04"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;sdk:2.18.0;packages:build_daemon
+            os:ubuntu-latest;pub-cache-hosted;sdk:2.18.0
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@6a218f2413a3e78e9087f638a238f6b40893203d
+        with:
+          sdk: "2.18.0"
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+      - id: build_daemon_pub_upgrade
+        name: build_daemon; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_daemon
+      - name: "build_daemon; dart test --test-randomize-ordering-seed=random"
+        run: "dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_daemon_pub_upgrade.conclusion == 'success'"
+        working-directory: build_daemon
     needs:
       - job_001
       - job_002
@@ -1207,35 +1207,6 @@ jobs:
       - job_007
       - job_008
   job_029:
-    name: "unit_test; windows; Dart 2.17.0; PKG: build_daemon; `dart test --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
-    steps:
-      - name: Setup Dart SDK
-        uses: dart-lang/setup-dart@6a218f2413a3e78e9087f638a238f6b40893203d
-        with:
-          sdk: "2.17.0"
-      - id: checkout
-        name: Checkout repository
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
-      - id: build_daemon_pub_upgrade
-        name: build_daemon; dart pub upgrade
-        run: dart pub upgrade
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_daemon
-      - name: "build_daemon; dart test --test-randomize-ordering-seed=random"
-        run: "dart test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_daemon_pub_upgrade.conclusion == 'success'"
-        working-directory: build_daemon
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-  job_030:
     name: "unit_test; windows; Dart 2.18.0; PKG: build; `dart test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -1255,6 +1226,35 @@ jobs:
         run: "dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_pub_upgrade.conclusion == 'success'"
         working-directory: build
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+  job_030:
+    name: "unit_test; windows; Dart 2.18.0; PKG: build_daemon; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
+    steps:
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@6a218f2413a3e78e9087f638a238f6b40893203d
+        with:
+          sdk: "2.18.0"
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+      - id: build_daemon_pub_upgrade
+        name: build_daemon; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_daemon
+      - name: "build_daemon; dart test --test-randomize-ordering-seed=random"
+        run: "dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_daemon_pub_upgrade.conclusion == 'success'"
+        working-directory: build_daemon
     needs:
       - job_001
       - job_002
