@@ -105,17 +105,17 @@ class _$DefaultBuildResultSerializer
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
-      final key = iterator.current as String;
+      final key = iterator.current! as String;
       iterator.moveNext();
       final Object? value = iterator.current;
       switch (key) {
         case 'status':
           result.status = serializers.deserialize(value,
-              specifiedType: const FullType(BuildStatus)) as BuildStatus;
+              specifiedType: const FullType(BuildStatus))! as BuildStatus;
           break;
         case 'target':
           result.target = serializers.deserialize(value,
-              specifiedType: const FullType(String)) as String;
+              specifiedType: const FullType(String))! as String;
           break;
         case 'buildId':
           result.buildId = serializers.deserialize(value,
@@ -171,7 +171,7 @@ class _$BuildResultsSerializer implements StructuredSerializer<BuildResults> {
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
-      final key = iterator.current as String;
+      final key = iterator.current! as String;
       iterator.moveNext();
       final Object? value = iterator.current;
       switch (key) {
@@ -208,7 +208,7 @@ class _$DefaultBuildResult extends DefaultBuildResult {
 
   factory _$DefaultBuildResult(
           [void Function(DefaultBuildResultBuilder)? updates]) =>
-      (new DefaultBuildResultBuilder()..update(updates)).build();
+      (new DefaultBuildResultBuilder()..update(updates))._build();
 
   _$DefaultBuildResult._(
       {required this.status,
@@ -218,9 +218,9 @@ class _$DefaultBuildResult extends DefaultBuildResult {
       this.isCached})
       : super._() {
     BuiltValueNullFieldError.checkNotNull(
-        status, 'DefaultBuildResult', 'status');
+        status, r'DefaultBuildResult', 'status');
     BuiltValueNullFieldError.checkNotNull(
-        target, 'DefaultBuildResult', 'target');
+        target, r'DefaultBuildResult', 'target');
   }
 
   @override
@@ -245,17 +245,19 @@ class _$DefaultBuildResult extends DefaultBuildResult {
 
   @override
   int get hashCode {
-    return $jf($jc(
-        $jc(
-            $jc($jc($jc(0, status.hashCode), target.hashCode),
-                buildId.hashCode),
-            error.hashCode),
-        isCached.hashCode));
+    var _$hash = 0;
+    _$hash = $jc(_$hash, status.hashCode);
+    _$hash = $jc(_$hash, target.hashCode);
+    _$hash = $jc(_$hash, buildId.hashCode);
+    _$hash = $jc(_$hash, error.hashCode);
+    _$hash = $jc(_$hash, isCached.hashCode);
+    _$hash = $jf(_$hash);
+    return _$hash;
   }
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper('DefaultBuildResult')
+    return (newBuiltValueToStringHelper(r'DefaultBuildResult')
           ..add('status', status)
           ..add('target', target)
           ..add('buildId', buildId)
@@ -316,13 +318,15 @@ class DefaultBuildResultBuilder
   }
 
   @override
-  _$DefaultBuildResult build() {
+  DefaultBuildResult build() => _build();
+
+  _$DefaultBuildResult _build() {
     final _$result = _$v ??
         new _$DefaultBuildResult._(
             status: BuiltValueNullFieldError.checkNotNull(
-                status, 'DefaultBuildResult', 'status'),
+                status, r'DefaultBuildResult', 'status'),
             target: BuiltValueNullFieldError.checkNotNull(
-                target, 'DefaultBuildResult', 'target'),
+                target, r'DefaultBuildResult', 'target'),
             buildId: buildId,
             error: error,
             isCached: isCached);
@@ -338,10 +342,10 @@ class _$BuildResults extends BuildResults {
   final BuiltList<Uri>? changedAssets;
 
   factory _$BuildResults([void Function(BuildResultsBuilder)? updates]) =>
-      (new BuildResultsBuilder()..update(updates)).build();
+      (new BuildResultsBuilder()..update(updates))._build();
 
   _$BuildResults._({required this.results, this.changedAssets}) : super._() {
-    BuiltValueNullFieldError.checkNotNull(results, 'BuildResults', 'results');
+    BuiltValueNullFieldError.checkNotNull(results, r'BuildResults', 'results');
   }
 
   @override
@@ -361,12 +365,16 @@ class _$BuildResults extends BuildResults {
 
   @override
   int get hashCode {
-    return $jf($jc($jc(0, results.hashCode), changedAssets.hashCode));
+    var _$hash = 0;
+    _$hash = $jc(_$hash, results.hashCode);
+    _$hash = $jc(_$hash, changedAssets.hashCode);
+    _$hash = $jf(_$hash);
+    return _$hash;
   }
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper('BuildResults')
+    return (newBuiltValueToStringHelper(r'BuildResults')
           ..add('results', results)
           ..add('changedAssets', changedAssets))
         .toString();
@@ -412,7 +420,9 @@ class BuildResultsBuilder
   }
 
   @override
-  _$BuildResults build() {
+  BuildResults build() => _build();
+
+  _$BuildResults _build() {
     _$BuildResults _$result;
     try {
       _$result = _$v ??
@@ -427,7 +437,7 @@ class BuildResultsBuilder
         _changedAssets?.build();
       } catch (e) {
         throw new BuiltValueNestedFieldError(
-            'BuildResults', _$failedField, e.toString());
+            r'BuildResults', _$failedField, e.toString());
       }
       rethrow;
     }
@@ -436,4 +446,4 @@ class BuildResultsBuilder
   }
 }
 
-// ignore_for_file: always_put_control_body_on_new_line,always_specify_types,annotate_overrides,avoid_annotating_with_dynamic,avoid_as,avoid_catches_without_on_clauses,avoid_returning_this,deprecated_member_use_from_same_package,lines_longer_than_80_chars,omit_local_variable_types,prefer_expression_function_bodies,sort_constructors_first,test_types_in_equals,unnecessary_const,unnecessary_new
+// ignore_for_file: deprecated_member_use_from_same_package,type=lint
