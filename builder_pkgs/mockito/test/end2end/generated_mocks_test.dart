@@ -164,7 +164,7 @@ void main() {
     test('a method with a non-nullable parameter can capture an argument', () {
       when(foo.positionalParameter(any)).thenReturn('Stubbed');
       foo.positionalParameter(42);
-      var captured = verify(foo.positionalParameter(captureAny)).captured;
+      final captured = verify(foo.positionalParameter(captureAny)).captured;
       expect(captured[0], equals(42));
     });
 
@@ -318,8 +318,8 @@ void main() {
   });
 
   test('a generated mock can be used as a stub argument', () {
-    var foo = MockFoo();
-    var bar = MockBar();
+    final foo = MockFoo();
+    final bar = MockBar();
     when(foo.methodWithBarArg(bar)).thenReturn('mocked result');
     expect(foo.methodWithBarArg(bar), equals('mocked result'));
   });
@@ -327,14 +327,14 @@ void main() {
   test(
       'a generated mock which returns null on missing stubs can be used as a '
       'stub argument', () {
-    var foo = MockFooRelaxed();
-    var bar = MockBarRelaxed();
+    final foo = MockFooRelaxed();
+    final bar = MockBarRelaxed();
     when(foo.methodWithBarArg(bar)).thenReturn('mocked result');
     expect(foo.methodWithBarArg(bar), equals('mocked result'));
   });
 
   test('a generated mock with a mixed in type can use mixed in members', () {
-    var hasPrivate = MockHasPrivate();
+    final hasPrivate = MockHasPrivate();
     // This should not throw, when `setPrivate` accesses a private member on
     // `hasPrivate`.
     setPrivate(hasPrivate);

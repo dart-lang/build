@@ -76,7 +76,7 @@ void main() {
 
   group('mixin support', () {
     test('should work', () {
-      var foo = _MockFoo();
+      final foo = _MockFoo();
       when(foo.baz()).thenReturn('baz');
       expect(foo.bar(), 'baz');
     });
@@ -95,7 +95,7 @@ void main() {
     });
 
     test('should mock method with mock args', () {
-      var m1 = _MockedClass();
+      final m1 = _MockedClass();
       when(mock.methodWithObjArgs(m1)).thenReturn('Ultimate Answer');
       expect(mock.methodWithObjArgs(_MockedClass()), isNull);
       expect(mock.methodWithObjArgs(m1), equals('Ultimate Answer'));
@@ -177,7 +177,7 @@ void main() {
     });
 
     test('should use identical equality between it is not mocked', () {
-      var anotherMock = _MockedClass();
+      final anotherMock = _MockedClass();
       expect(mock == anotherMock, isFalse);
       expect(mock == mock, isTrue);
     });
@@ -195,7 +195,7 @@ void main() {
     });
 
     test('should return mock to make simple oneline mocks', () {
-      _RealClass mockWithSetup = _MockedClass();
+      final _RealClass mockWithSetup = _MockedClass();
       when(mockWithSetup.methodWithoutArgs()).thenReturn('oneline');
       expect(mockWithSetup.methodWithoutArgs(), equals('oneline'));
     });
@@ -216,7 +216,7 @@ void main() {
     test('should throw if `when` is called while stubbing', () {
       expect(() {
         _MockedClass responseHelper() {
-          var mock2 = _MockedClass();
+          final mock2 = _MockedClass();
           when(mock2.getter).thenReturn('A');
           return mock2;
         }
@@ -261,7 +261,7 @@ void main() {
     });
 
     test('should throw if attempting to stub a real method', () {
-      var foo = _MockFoo();
+      final foo = _MockFoo();
       expect(() {
         when(foo.quux()).thenReturn('Stub');
       }, throwsStateError);

@@ -179,10 +179,10 @@ class Mock {
       }
       _realCalls.add(RealCall(this, invocation));
       _invocationStreamController.add(invocation);
-      var cannedResponse = _responses.lastWhere(
+      final cannedResponse = _responses.lastWhere(
           (cr) => cr.call.matches(invocation, {}),
           orElse: defaultResponse);
-      var response = cannedResponse.response(invocation);
+      final response = cannedResponse.response(invocation);
       return response;
     }
   }
@@ -202,7 +202,7 @@ class Mock {
   String toString() => _givenName ?? runtimeType.toString();
 
   String _realCallsToString([Iterable<RealCall>? realCalls]) {
-    var stringRepresentations =
+    final stringRepresentations =
         (realCalls ?? _realCalls).map((call) => call.toString());
     if (stringRepresentations.any((s) => s.contains('\n'))) {
       // As each call contains newlines, put each on its own line, for better
@@ -346,8 +346,8 @@ class _InvocationForMatchedArguments extends Invocation {
     // the various bad states. If all is well with the named arguments, then we
     // can process the positional arguments, and resort to more general errors
     // if the state is still bad.
-    var namedArguments = _reconstituteNamedArgs(invocation);
-    var positionalArguments = _reconstitutePositionalArgs(invocation);
+    final namedArguments = _reconstituteNamedArgs(invocation);
+    final positionalArguments = _reconstitutePositionalArgs(invocation);
 
     _storedArgs.clear();
     _storedNamedArgs.clear();
@@ -390,7 +390,7 @@ class _InvocationForMatchedArguments extends Invocation {
     // Iterate through the stored named args, validate them, and add them to
     // the return map.
     _storedNamedArgs.forEach((name, arg) {
-      var nameSymbol = Symbol(name);
+      final nameSymbol = Symbol(name);
       if (!invocation.namedArguments.containsKey(nameSymbol)) {
         // Clear things out for the next call.
         _storedArgs.clear();
@@ -449,7 +449,7 @@ class _InvocationForMatchedArguments extends Invocation {
     var positionalIndex = 0;
     while (storedIndex < _storedArgs.length &&
         positionalIndex < invocation.positionalArguments.length) {
-      var arg = _storedArgs[storedIndex];
+      final arg = _storedArgs[storedIndex];
       if (invocation.positionalArguments[positionalIndex] == null) {
         // Add the [ArgMatcher] given to the argument matching helper.
         positionalArguments.add(arg);
@@ -544,7 +544,7 @@ class InvocationMatcher {
   InvocationMatcher(this.roleInvocation);
 
   bool matches(Invocation invocation) {
-    var isMatching =
+    final isMatching =
         _isMethodMatches(invocation) && _isArgumentsMatches(invocation);
     if (isMatching) {
       _captureArguments(invocation);
@@ -566,16 +566,16 @@ class InvocationMatcher {
 
   void _captureArguments(Invocation invocation) {
     var index = 0;
-    for (var roleArg in roleInvocation.positionalArguments) {
-      var actArg = invocation.positionalArguments[index];
+    for (final roleArg in roleInvocation.positionalArguments) {
+      final actArg = invocation.positionalArguments[index];
       if (roleArg is ArgMatcher && roleArg._capture) {
         _capturedArgs.add(actArg);
       }
       index++;
     }
-    for (var roleKey in roleInvocation.namedArguments.keys) {
-      var roleArg = roleInvocation.namedArguments[roleKey];
-      var actArg = invocation.namedArguments[roleKey];
+    for (final roleKey in roleInvocation.namedArguments.keys) {
+      final roleArg = roleInvocation.namedArguments[roleKey];
+      final actArg = invocation.namedArguments[roleKey];
       if (roleArg is ArgMatcher && roleArg._capture) {
         _capturedArgs.add(actArg);
       }
@@ -592,22 +592,22 @@ class InvocationMatcher {
       return false;
     }
     var index = 0;
-    for (var roleArg in roleInvocation.positionalArguments) {
-      var actArg = invocation.positionalArguments[index];
+    for (final roleArg in roleInvocation.positionalArguments) {
+      final actArg = invocation.positionalArguments[index];
       if (!isMatchingArg(roleArg, actArg)) {
         return false;
       }
       index++;
     }
-    Set roleKeys = roleInvocation.namedArguments.keys.toSet();
-    Set actKeys = invocation.namedArguments.keys.toSet();
+    final Set roleKeys = roleInvocation.namedArguments.keys.toSet();
+    final Set actKeys = invocation.namedArguments.keys.toSet();
     if (roleKeys.difference(actKeys).isNotEmpty ||
         actKeys.difference(roleKeys).isNotEmpty) {
       return false;
     }
-    for (var roleKey in roleInvocation.namedArguments.keys) {
-      var roleArg = roleInvocation.namedArguments[roleKey];
-      var actArg = invocation.namedArguments[roleKey];
+    for (final roleKey in roleInvocation.namedArguments.keys) {
+      final roleArg = roleInvocation.namedArguments[roleKey];
+      final actArg = invocation.namedArguments[roleKey];
       if (!isMatchingArg(roleArg, actArg)) {
         return false;
       }
@@ -647,7 +647,7 @@ class RealCall {
 
   @override
   String toString() {
-    var verifiedText = verified ? '[VERIFIED] ' : '';
+    final verifiedText = verified ? '[VERIFIED] ' : '';
     return '$verifiedText$mock.${invocation.toPrettyString()}';
   }
 }
@@ -703,9 +703,9 @@ class _VerifyCall {
   final List<Object?> matchingCapturedArgs;
 
   factory _VerifyCall(Mock mock, Invocation verifyInvocation) {
-    var expectedMatcher = InvocationMatcher(verifyInvocation);
-    var matchingInvocations = <_RealCallWithCapturedArgs>[];
-    for (var realCall in mock._realCalls) {
+    final expectedMatcher = InvocationMatcher(verifyInvocation);
+    final matchingInvocations = <_RealCallWithCapturedArgs>[];
+    for (final realCall in mock._realCalls) {
       if (!realCall.verified && expectedMatcher.matches(realCall.invocation)) {
         // [Invocation.matcher] collects captured arguments if
         // [verifyInvocation] included capturing matchers.
@@ -715,7 +715,7 @@ class _VerifyCall {
       }
     }
 
-    var matchingCapturedArgs = [
+    final matchingCapturedArgs = [
       for (var invocation in matchingInvocations) ...invocation.capturedArgs,
     ];
 
@@ -738,7 +738,7 @@ class _VerifyCall {
       if (mock._realCalls.isEmpty) {
         message = 'No matching calls (actually, no calls at all).';
       } else {
-        var otherCalls = mock._realCallsToString();
+        final otherCalls = mock._realCallsToString();
         message = 'No matching calls. All calls: $otherCalls';
       }
       fail('$message\n'
@@ -746,10 +746,10 @@ class _VerifyCall {
           '`verifyNever(...);`.)');
     }
     if (never && matchingInvocations.isNotEmpty) {
-      var calls = mock._unverifiedCallsToString();
+      final calls = mock._unverifiedCallsToString();
       fail('Unexpected calls: $calls');
     }
-    for (var invocation in matchingInvocations) {
+    for (final invocation in matchingInvocations) {
       invocation.realCall.verified = true;
     }
   }
@@ -859,7 +859,7 @@ Null _registerMatcher(Matcher matcher, bool capture,
         '`untilCalled`). This is invalid, and results in bad behavior during '
         'the next stubbing or verification.');
   }
-  var argMatcher = ArgMatcher(matcher, capture);
+  final argMatcher = ArgMatcher(matcher, capture);
   if (named == null) {
     _storedArgs.add(argMatcher);
   } else {
@@ -1012,8 +1012,8 @@ Verification _makeVerify(bool never) {
   return <T>(T mock) {
     _verificationInProgress = false;
     if (_verifyCalls.length == 1) {
-      var verifyCall = _verifyCalls.removeLast();
-      var result = VerificationResult._(verifyCall.matchingInvocations.length,
+      final verifyCall = _verifyCalls.removeLast();
+      final result = VerificationResult._(verifyCall.matchingInvocations.length,
           verifyCall.matchingCapturedArgs);
       verifyCall._checkWith(never);
       return result;
@@ -1069,20 +1069,20 @@ List<VerificationResult> Function<T>(List<T> recordedInvocations)
           'were stored: $_verifyCalls');
     }
     _verificationInProgress = false;
-    var verificationResults = <VerificationResult>[];
+    final verificationResults = <VerificationResult>[];
     var time = DateTime.fromMillisecondsSinceEpoch(0);
-    var tmpVerifyCalls = List<_VerifyCall>.from(_verifyCalls);
+    final tmpVerifyCalls = List<_VerifyCall>.from(_verifyCalls);
     _verifyCalls.clear();
-    var matchedCalls = <RealCall>[];
-    for (var verifyCall in tmpVerifyCalls) {
+    final matchedCalls = <RealCall>[];
+    for (final verifyCall in tmpVerifyCalls) {
       try {
-        var matched = verifyCall._findAfter(time);
+        final matched = verifyCall._findAfter(time);
         matchedCalls.add(matched.realCall);
         verificationResults.add(VerificationResult._(1, matched.capturedArgs));
         time = matched.realCall.timeStamp;
       } on StateError {
-        var mocks = tmpVerifyCalls.map((vc) => vc.mock).toSet();
-        var allInvocations =
+        final mocks = tmpVerifyCalls.map((vc) => vc.mock).toSet();
+        final allInvocations =
             mocks.expand((m) => m._realCalls).toList(growable: false);
         allInvocations
             .sort((inv1, inv2) => inv1.timeStamp.compareTo(inv2.timeStamp));
@@ -1094,7 +1094,7 @@ List<VerificationResult> Function<T>(List<T> recordedInvocations)
             'not found.$otherCalls');
       }
     }
-    for (var call in matchedCalls) {
+    for (final call in matchedCalls) {
       call.verified = true;
     }
     return verificationResults;
@@ -1110,7 +1110,7 @@ void _throwMockArgumentError(String method, var nonMockInstance) {
 
 void verifyNoMoreInteractions(var mock) {
   if (mock is Mock) {
-    var unverified = mock._realCalls.where((inv) => !inv.verified).toList();
+    final unverified = mock._realCalls.where((inv) => !inv.verified).toList();
     if (unverified.isNotEmpty) {
       fail('No more calls expected, but following found: ${unverified.join()}');
     }
@@ -1185,10 +1185,10 @@ InvocationLoader get untilCalled {
 
 /// Print all collected invocations of any mock methods of [mocks].
 void logInvocations(List<Mock> mocks) {
-  var allInvocations =
+  final allInvocations =
       mocks.expand((m) => m._realCalls).toList(growable: false);
   allInvocations.sort((inv1, inv2) => inv1.timeStamp.compareTo(inv2.timeStamp));
-  for (var inv in allInvocations) {
+  for (final inv in allInvocations) {
     print(inv.toString());
   }
 }
@@ -1222,11 +1222,11 @@ extension on Invocation {
     String argString;
     // Add quotes around strings to clarify the type of the argument to the user
     // and so the empty string is represented.
-    var args = positionalArguments.map((v) => v is String ? "'$v'" : '$v');
+    final args = positionalArguments.map((v) => v is String ? "'$v'" : '$v');
     if (args.any((arg) => arg.contains('\n'))) {
       // As one or more arg contains newlines, put each on its own line, and
       // indent each, for better readability.
-      var indentedArgs = args
+      final indentedArgs = args
           .map((arg) => arg.splitMapJoin('\n', onNonMatch: (m) => '    $m'));
       argString = '\n${indentedArgs.join(',\n')}';
     } else {

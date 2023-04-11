@@ -177,7 +177,7 @@ void main() {
       final expectedMessage = RegExp.escape('No matching calls. '
           'All calls: _MockedClass.setter==\'A\'\n$noMatchingCallsFooter');
       // RegExp needed because of https://github.com/dart-lang/sdk/issues/33565
-      var expectedPattern = RegExp(expectedMessage.replaceFirst('==', '=?='));
+      final expectedPattern = RegExp(expectedMessage.replaceFirst('==', '=?='));
 
       expectFail(expectedPattern, () => verify(mock.setter = 'B'));
       verify(mock.setter = 'A');
@@ -516,7 +516,7 @@ void main() {
       mock.methodWithNormalArgs(1);
       mock.methodWithoutArgs();
       mock.methodWithNormalArgs(2);
-      var captured = verifyInOrder([
+      final captured = verifyInOrder([
         mock.methodWithNormalArgs(captureAny),
         mock.methodWithoutArgs(),
         mock.methodWithNormalArgs(captureAny)

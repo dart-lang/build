@@ -80,7 +80,7 @@ void main() {
     expect(() => cat.lives, throwsRangeError);
 
     // We can calculate a response at call time.
-    var responses = ['Purr', 'Meow'];
+    final responses = ['Purr', 'Meow'];
     when(cat.sound()).thenAnswer((_) => responses.removeAt(0));
     expect(cat.sound(), 'Purr');
     expect(cat.sound(), 'Meow');
@@ -208,7 +208,7 @@ void main() {
 
   test('Fake class', () {
     // Create a new fake Cat at runtime.
-    var cat = FakeCat();
+    final cat = FakeCat();
 
     cat.eatFood('Milk'); // Prints 'Fake eat Milk'.
     expect(() => cat.sleep(), throwsUnimplementedError);
@@ -216,7 +216,7 @@ void main() {
 
   test('Relaxed mock class', () {
     // Create a new mock Cat at runtime.
-    var cat = MockCatRelaxed();
+    final cat = MockCatRelaxed();
 
     // You can call it without stubbing.
     cat.sleep();

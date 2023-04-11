@@ -87,7 +87,7 @@ void main() {
   /// Test [MockBuilder] in a package which has not opted into null safety.
   Future<void> testPreNonNullable(Map<String, String> sourceAssets,
       {Map<String, /*String|Matcher<String>*/ Object>? outputs}) async {
-    var packageConfig = PackageConfig([
+    final packageConfig = PackageConfig([
       Package('foo', Uri.file('/foo/'),
           packageUriRoot: Uri.file('/foo/lib/'),
           languageVersion: LanguageVersion(2, 7))
@@ -99,7 +99,7 @@ void main() {
   /// Test [MockBuilder] in a package which has opted into null safety.
   Future<void> testWithNonNullable(Map<String, String> sourceAssets,
       {Map<String, /*String|Matcher<List<int>>*/ Object>? outputs}) async {
-    var packageConfig = PackageConfig([
+    final packageConfig = PackageConfig([
       Package('foo', Uri.file('/foo/'),
           packageUriRoot: Uri.file('/foo/lib/'),
           languageVersion: LanguageVersion(2, 13))
@@ -115,7 +115,7 @@ void main() {
   /// Builds with [MockBuilder] in a package which has opted into null safety,
   /// returning the content of the generated mocks library.
   Future<String> buildWithNonNullable(Map<String, String> sourceAssets) async {
-    var packageConfig = PackageConfig([
+    final packageConfig = PackageConfig([
       Package('foo', Uri.file('/foo/'),
           packageUriRoot: Uri.file('/foo/lib/'),
           languageVersion: LanguageVersion(2, 13))
@@ -127,7 +127,7 @@ void main() {
           writer: writer, packageConfig: packageConfig),
       ['nonfunction-type-aliases'],
     );
-    var mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
+    final mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
     return utf8.decode(writer.assets[mocksAsset]!);
   }
 
@@ -155,7 +155,7 @@ void main() {
       ...simpleTestAsset,
       'foo|lib/foo.dart': sourceAssetText,
     });
-    var mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
+    final mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
     return utf8.decode(writer.assets[mocksAsset]!);
   }
 
@@ -166,7 +166,7 @@ void main() {
   test(
       'generates a mock class but does not override methods w/ zero parameters',
       () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo {
         dynamic method1() => 7;
       }
@@ -178,7 +178,7 @@ void main() {
 
   test('generates a mock class but does not override private methods',
       () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo {
         int _method1(int x) => 8;
       }
@@ -189,7 +189,7 @@ void main() {
   });
 
   test('generates a mock class but does not override static methods', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo {
         static int method1(int y) => 9;
       }
@@ -199,7 +199,7 @@ void main() {
 
   test('generates a mock class but does not override any extension methods',
       () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       extension X on Foo {
         dynamic x(int m, String n) => n + 1;
       }
@@ -791,7 +791,7 @@ void main() {
   test(
       'does not override `toString` if the class does not override `toString` '
       'with additional parameters', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent('''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent('''
       abstract class Foo {
         String toString() => 'Foo';
       }
@@ -818,7 +818,7 @@ void main() {
 
   test('does not override `operator==`, even if the class overrides it',
       () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent('''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent('''
       class Foo {
         bool operator==(Object? other);
       }
@@ -828,7 +828,7 @@ void main() {
 
   test('does not override `hashCode`, even if the class overrides it',
       () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent('''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent('''
       class Foo {
         final int hashCode = 7;
       }
@@ -837,7 +837,7 @@ void main() {
   });
 
   test('generates mock classes from part files', () async {
-    var mocksOutput = await buildWithNonNullable({
+    final mocksOutput = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo {}
@@ -871,7 +871,7 @@ void main() {
 
   test('generates mock classes from an annotation on an import directive',
       () async {
-    var mocksOutput = await buildWithNonNullable({
+    final mocksOutput = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'class Foo {} class Bar {}'),
       'foo|test/foo_test.dart': '''
@@ -886,7 +886,7 @@ void main() {
 
   test('generates mock classes from an annotation on an export directive',
       () async {
-    var mocksOutput = await buildWithNonNullable({
+    final mocksOutput = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo {}
@@ -904,7 +904,7 @@ void main() {
   });
 
   test('generates multiple mock classes', () async {
-    var mocksOutput = await buildWithNonNullable({
+    final mocksOutput = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo {}
@@ -924,7 +924,7 @@ void main() {
   });
 
   test('generates mock classes from multiple annotations', () async {
-    var mocksOutput = await buildWithNonNullable({
+    final mocksOutput = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo {}
@@ -947,7 +947,7 @@ void main() {
 
   test('generates mock classes from multiple annotations on a single element',
       () async {
-    var mocksOutput = await buildWithNonNullable({
+    final mocksOutput = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo {}
@@ -968,7 +968,7 @@ void main() {
   });
 
   test('generates generic mock classes', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo<T, U> {}
       '''));
     expect(
@@ -978,7 +978,7 @@ void main() {
   });
 
   test('generates generic mock classes with type bounds', () async {
-    var mocksOutput = await buildWithNonNullable({
+    final mocksOutput = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo {}
@@ -1038,7 +1038,7 @@ void main() {
   });
 
   test('imports libraries for external class types', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
         import 'dart:async';
         class Foo {
           dynamic f(List<Foo> list) {}
@@ -1051,7 +1051,7 @@ void main() {
 
   test('imports libraries for external class types declared in parts',
       () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         part 'foo_part.dart';
@@ -1075,7 +1075,7 @@ void main() {
   test(
       'imports libraries for external class types found in a method return '
       'type', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       import 'dart:async';
       class Foo {
         Future<void> f() async {}
@@ -1087,7 +1087,7 @@ void main() {
 
   test('imports libraries for external class types found in a type argument',
       () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       import 'dart:async';
       class Foo {
         List<Future> f() => [];
@@ -1100,7 +1100,7 @@ void main() {
   test(
       'imports libraries for external class types found in the return type of '
       'a function-typed parameter', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       import 'dart:async';
       class Foo {
         void f(Future<void> a()) {}
@@ -1113,7 +1113,7 @@ void main() {
   test(
       'imports libraries for external class types found in a parameter type of '
       'a function-typed parameter', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       import 'dart:async';
       class Foo {
         void f(void a(Future<int> b)) {}
@@ -1126,7 +1126,7 @@ void main() {
   test(
       'imports libraries for external class types found in a function-typed '
       'parameter', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
         import 'dart:async';
         class Foo {
           void f(Future<void> a()) {}
@@ -1139,7 +1139,7 @@ void main() {
   test(
       'imports libraries for external class types found in a FunctionType '
       'parameter', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
         import 'dart:async';
         class Foo {
           void f(Future<void> Function() a) {}
@@ -1152,7 +1152,7 @@ void main() {
   test(
       'imports libraries for external class types found nested in a '
       'function-typed parameter', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
         import 'dart:async';
         class Foo {
           void f(void a(Future<void> b)) {}
@@ -1165,7 +1165,7 @@ void main() {
   test(
       'imports libraries for external class types found in the bound of a '
       'type parameter of a method', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
         import 'dart:async';
         class Foo {
           void f<T extends Future>(T a) {}
@@ -1178,7 +1178,7 @@ void main() {
   test(
       'imports libraries for external class types found in the default value '
       'of a parameter', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       import 'dart:convert';
       class Foo {
         void f([Object a = utf8]) {}
@@ -1205,8 +1205,8 @@ void main() {
         }
         ''',
     });
-    var mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
-    var mocksContent = utf8.decode(writer.assets[mocksAsset]!);
+    final mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
+    final mocksContent = utf8.decode(writer.assets[mocksAsset]!);
     expect(mocksContent, contains("import 'dart:async' as _i3;"));
     expect(mocksContent, contains('m(_i3.Future<void>? a)'));
   });
@@ -1228,14 +1228,14 @@ void main() {
         }
         ''',
     });
-    var mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
-    var mocksContent = utf8.decode(writer.assets[mocksAsset]!);
+    final mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
+    final mocksContent = utf8.decode(writer.assets[mocksAsset]!);
     expect(mocksContent, contains("import 'dart:async' as _i3;"));
     expect(mocksContent, contains('m(_i3.Future<void>? a)'));
   });
 
   test('imports libraries for type aliases with external types', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
         import 'dart:async';
         typedef Callback = void Function();
         typedef void Callback2();
@@ -1255,7 +1255,7 @@ void main() {
 
   test('imports libraries for types declared in private SDK libraries',
       () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent('''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent('''
         import 'dart:io';
         abstract class Foo {
           HttpClient f() {}
@@ -1268,7 +1268,7 @@ void main() {
   test(
       'imports libraries for types declared in private SDK libraries exported '
       'in dart:io', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent('''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent('''
         import 'dart:io';
         abstract class Foo {
           HttpStatus f() {}
@@ -1281,7 +1281,7 @@ void main() {
   test(
       'imports libraries for types declared in private SDK libraries exported '
       'in dart:html', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent('''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent('''
         import 'dart:html';
         abstract class Foo {
           HttpStatus f() {}
@@ -1747,7 +1747,7 @@ void main() {
   });
 
   test('does not override methods with all nullable parameters', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo {
         int? method1(int? p) => null;
       }
@@ -1757,7 +1757,7 @@ void main() {
 
   test('does not override methods with all nullable parameters (dynamic)',
       () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo {
         int? method1(dynamic p) => null;
       }
@@ -1767,7 +1767,7 @@ void main() {
 
   test('does not override methods with all nullable parameters (var untyped)',
       () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo {
         int? method1(var p) => null;
       }
@@ -1777,7 +1777,7 @@ void main() {
 
   test('does not override methods with all nullable parameters (final untyped)',
       () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo {
         int? method1(final p) => null;
       }
@@ -1787,7 +1787,7 @@ void main() {
 
   test('does not override methods with all nullable parameters (type variable)',
       () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo<T> {
         int? method1(T? p) => null;
       }
@@ -1798,7 +1798,7 @@ void main() {
   test(
       'does not override methods with all nullable parameters (function-typed)',
       () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo {
         int? method1(int Function()? p) => null;
       }
@@ -1808,7 +1808,7 @@ void main() {
 
   test('does not override methods with an implicit dynamic return type',
       () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       abstract class Foo {
         method1();
       }
@@ -1818,7 +1818,7 @@ void main() {
 
   test('does not override methods with an explicit dynamic return type',
       () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       abstract class Foo {
         dynamic method1();
       }
@@ -1827,7 +1827,7 @@ void main() {
   });
 
   test('does not override methods with a nullable return type', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       abstract class Foo {
         int? method1();
       }
@@ -1837,7 +1837,7 @@ void main() {
 
   test('does not override methods with a nullable return type (type variable)',
       () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       abstract class Foo<T> {
         T? method1();
       }
@@ -1865,7 +1865,7 @@ void main() {
   });
 
   test('overrides inherited methods with a non-nullable return type', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
         class FooBase {
           num m() => 7;
         }
@@ -1901,7 +1901,7 @@ void main() {
   });
 
   test('overrides generic methods', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
         class Foo {
           dynamic f<T>(int a) {}
           dynamic g<T extends Foo>(int a) {}
@@ -1928,7 +1928,7 @@ void main() {
   });
 
   test('does not override nullable instance getters', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo {
         int? get getter1 => 7;
       }
@@ -1954,7 +1954,7 @@ void main() {
   });
 
   test('overrides inherited instance getters only once', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent('''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent('''
       class FooBase {
         num get m => 7;
       }
@@ -2025,7 +2025,7 @@ void main() {
   });
 
   test('overrides inherited non-nullable instance setters only once', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent('''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent('''
       class FooBase {
         set m(int a) {}
       }
@@ -2087,7 +2087,7 @@ void main() {
   });
 
   test('overrides inherited non-nullable fields only once', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent('''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent('''
       class FooBase {
         num m;
       }
@@ -2120,7 +2120,7 @@ void main() {
   });
 
   test('does not override getters for nullable fields', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo {
         int? field1;
       }
@@ -2129,7 +2129,7 @@ void main() {
   });
 
   test('does not override private fields', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo {
         int _field1;
       }
@@ -2138,7 +2138,7 @@ void main() {
   });
 
   test('does not override static fields', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo {
         static int field1;
       }
@@ -2714,7 +2714,7 @@ void main() {
   });
 
   test('deduplicates fake classes', () async {
-    var mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
       class Foo {
         Bar m1() => Bar('name1');
         Bar m2() => Bar('name2');
@@ -2724,7 +2724,7 @@ void main() {
         Bar(this.name);
       }
       '''));
-    var mocksContentLines = mocksContent.split('\n');
+    final mocksContentLines = mocksContent.split('\n');
     // The _FakeBar_0 class should be generated exactly once.
     expect(mocksContentLines.where((line) => line.contains('class _FakeBar_0')),
         hasLength(1));
@@ -3574,7 +3574,7 @@ void _expectBuilderThrows({
   List<String> enabledExperiments = const [],
   LanguageVersion? languageVersion,
 }) {
-  var packageConfig = PackageConfig([
+  final packageConfig = PackageConfig([
     Package('foo', Uri.file('/foo/'),
         packageUriRoot: Uri.file('/foo/lib/'),
         languageVersion: languageVersion ?? LanguageVersion(2, 12))

@@ -95,7 +95,7 @@ void main() {
   /// Test [MockBuilder] in a package which has not opted into null safety.
   Future<void> testPreNonNullable(Map<String, String> sourceAssets,
       {Map<String, /*String|Matcher<String>*/ Object>? outputs}) async {
-    var packageConfig = PackageConfig([
+    final packageConfig = PackageConfig([
       Package('foo', Uri.file('/foo/'),
           packageUriRoot: Uri.file('/foo/lib/'),
           languageVersion: LanguageVersion(2, 7))
@@ -107,14 +107,14 @@ void main() {
   /// Builds with [MockBuilder] in a package which has opted into null safety,
   /// returning the content of the generated mocks library.
   Future<String> buildWithNonNullable(Map<String, String> sourceAssets) async {
-    var packageConfig = PackageConfig([
+    final packageConfig = PackageConfig([
       Package('foo', Uri.file('/foo/'),
           packageUriRoot: Uri.file('/foo/lib/'),
           languageVersion: LanguageVersion(2, 15))
     ]);
     await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
         writer: writer, packageConfig: packageConfig);
-    var mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
+    final mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
     return utf8.decode(writer.assets[mocksAsset]!);
   }
 
@@ -123,7 +123,7 @@ void main() {
   });
 
   test('generates a generic mock class without type arguments', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo<T> {}
@@ -140,7 +140,7 @@ void main() {
   });
 
   test('without type arguments, generates generic method types', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo<T> {
@@ -158,7 +158,7 @@ void main() {
   });
 
   test('generates a generic mock class with deep type arguments', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo<T> {}
@@ -179,7 +179,7 @@ void main() {
   });
 
   test('generates a generic mock class with type arguments', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo<T, U> {}
@@ -201,7 +201,7 @@ void main() {
 
   test('generates a generic mock class with lower bound type arguments',
       () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo<T, U extends Bar> {}
@@ -222,7 +222,7 @@ void main() {
   });
 
   test('generates a generic mock class with nullable type arguments', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo<T, U> {}
@@ -243,7 +243,7 @@ void main() {
   });
 
   test('generates a generic mock class with nested type arguments', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo<T> {}
@@ -264,7 +264,7 @@ void main() {
 
   test('generates a generic mock class with type arguments but no name',
       () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo<T> {}
@@ -282,7 +282,7 @@ void main() {
 
   test('generates a generic, bounded mock class without type arguments',
       () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo<T extends Object> {}
@@ -301,7 +301,7 @@ void main() {
   });
 
   test('generates mock classes from multiple annotations', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo {}
@@ -324,7 +324,7 @@ void main() {
 
   test('generates mock classes from multiple annotations on a single element',
       () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/a.dart': dedent(r'''
         class Foo {}
@@ -348,7 +348,7 @@ void main() {
   });
 
   test('generates a mock class with a declared mixin', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent('''
         class Foo {}
@@ -370,7 +370,7 @@ void main() {
   });
 
   test('generates a mock class with multiple declared mixins', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent('''
         class Foo {}
@@ -394,7 +394,7 @@ void main() {
 
   test('generates a mock class with a declared mixin with a type arg',
       () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent('''
         class Foo<T> {}
@@ -416,7 +416,7 @@ void main() {
   });
 
   test('generates a mock class with a marker mixin', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': '''
         class Foo {}
@@ -441,7 +441,7 @@ void main() {
   test(
       'generates a mock class which uses the old behavior of returning null on '
       'missing stubs', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo<T> {}
@@ -459,7 +459,7 @@ void main() {
   test(
       'generates mock methods with non-nullable unknown types, given '
       'unsupportedMembers', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         abstract class Foo {
@@ -488,7 +488,7 @@ void main() {
   test(
       'generates mock methods with private return types, given '
       'unsupportedMembers', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         abstract class Foo {
@@ -514,7 +514,7 @@ void main() {
 
   test('generates mock getters with private types, given unsupportedMembers',
       () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent('''
         abstract class Foo {
@@ -540,7 +540,7 @@ void main() {
 
   test('generates mock setters with private types, given unsupportedMembers',
       () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent('''
         abstract class Foo {
@@ -567,7 +567,7 @@ void main() {
   test(
       'generates mock methods with return types with private names in type '
       'arguments, given unsupportedMembers', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         abstract class Foo {
@@ -594,7 +594,7 @@ void main() {
   test(
       'generates mock methods with return types with private names in function '
       'types, given unsupportedMembers', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         abstract class Foo {
@@ -621,7 +621,7 @@ void main() {
   test(
       'generates mock methods with private parameter types, given '
       'unsupportedMembers', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         abstract class Foo {
@@ -648,7 +648,7 @@ void main() {
   test(
       'generates mock methods with non-nullable return types, specifying '
       'legal default values for basic known types', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         abstract class Foo {
@@ -675,7 +675,7 @@ void main() {
   test(
       'generates mock methods with non-nullable return types, specifying '
       'legal default values for basic known types, in mixed mode', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         abstract class Foo {
@@ -703,7 +703,7 @@ void main() {
   test(
       'generates mock methods with non-nullable return types, specifying '
       'legal default values for unknown types', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         abstract class Foo {
@@ -743,7 +743,7 @@ void main() {
 
   test('generates mock classes including a fallback generator for a getter',
       () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         abstract class Foo<T> {
@@ -773,7 +773,7 @@ void main() {
   test(
       'generates mock classes including a fallback generator for a generic '
       'method with positional parameters', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         abstract class Foo {
@@ -804,7 +804,7 @@ void main() {
   test(
       'generates mock classes including a fallback generator for a generic '
       'method on a super class', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent('''
         abstract class FooBase {
@@ -834,7 +834,7 @@ void main() {
   });
 
   test('generates mock classes including two fallback generators', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent('''
         abstract class Foo<S> {
@@ -871,7 +871,7 @@ void main() {
       'generates mock classes including a fallback generator for a generic '
       'method with positional parameters returning a Future of the generic',
       () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         abstract class Foo {
@@ -900,7 +900,7 @@ void main() {
   test(
       'generates mock classes including a fallback generator for a generic '
       'method with named parameters', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         abstract class Foo {
@@ -929,7 +929,7 @@ void main() {
   test(
       'generates mock classes including a fallback generator for a bounded '
       'generic method with named parameters', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         abstract class Foo {
@@ -959,7 +959,7 @@ void main() {
       'generates mock classes including a fallback generator for a generic '
       'method with a parameter with a function-typed type argument with '
       'unknown return type', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent('''
         abstract class Foo {
@@ -989,7 +989,7 @@ void main() {
   test(
       'generates mock classes including a fallback generator and '
       'OnMissingStub.returnDefault', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         abstract class Foo<T> {
@@ -1313,7 +1313,7 @@ void main() {
       'generates a mock class which uses the new behavior of returning '
       'a valid value for missing stubs, if GenerateNiceMocks were used',
       () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo<T> {
@@ -1336,7 +1336,7 @@ void main() {
       'generates a mock class which uses the new behavior of returning '
       'a valid value for missing stubs, if GenerateNiceMocks and '
       'fallbackGenerators were used', () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo<T> {
@@ -1362,7 +1362,7 @@ void main() {
 
   test('mixed GenerateMocks and GenerateNiceMocks annotations could be used',
       () async {
-    var mocksContent = await buildWithNonNullable({
+    final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
         class Foo<T> {}

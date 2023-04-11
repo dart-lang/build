@@ -72,7 +72,7 @@ class MockBuilder implements Builder {
     final mockTargetGatherer =
         _MockTargetGatherer(entryLib, inheritanceManager);
 
-    var entryAssetId = await buildStep.resolver.assetIdForElement(entryLib);
+    final entryAssetId = await buildStep.resolver.assetIdForElement(entryLib);
     final assetUris = await _resolveAssetUris(buildStep.resolver,
         mockTargetGatherer._mockTargets, entryAssetId.path, entryLib);
 
@@ -340,13 +340,13 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
       // [RecursiveElementVisitor] does not "step out of" the element model,
       // into types, while traversing, so we must explicitly traverse [type]
       // here, in order to visit contained elements.
-      for (var typeParameter in type.typeFormals) {
+      for (final typeParameter in type.typeFormals) {
         typeParameter.accept(this);
       }
-      for (var parameter in type.parameters) {
+      for (final parameter in type.parameters) {
         parameter.accept(this);
       }
-      var aliasElement = type.alias?.element;
+      final aliasElement = type.alias?.element;
       if (aliasElement != null) {
         _elements.add(aliasElement);
       }
@@ -364,15 +364,15 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
       // No types to add from a literal.
       return;
     } else if (constant.isList) {
-      for (var element in constant.listValue) {
+      for (final element in constant.listValue) {
         _addTypesFromConstant(element);
       }
     } else if (constant.isSet) {
-      for (var element in constant.setValue) {
+      for (final element in constant.setValue) {
         _addTypesFromConstant(element);
       }
     } else if (constant.isMap) {
-      for (var pair in constant.mapValue.entries) {
+      for (final pair in constant.mapValue.entries) {
         _addTypesFromConstant(pair.key!);
         _addTypesFromConstant(pair.value!);
       }
@@ -381,11 +381,11 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
     } else {
       // If [constant] is not null, a literal, or a type, then it must be an
       // object constructed with `const`. Revive it.
-      var revivable = constant.revive();
-      for (var argument in revivable.positionalArguments) {
+      final revivable = constant.revive();
+      for (final argument in revivable.positionalArguments) {
         _addTypesFromConstant(argument);
       }
-      for (var pair in revivable.namedArguments.entries) {
+      for (final pair in revivable.namedArguments.entries) {
         _addTypesFromConstant(pair.value);
       }
       _addType(object.type);
@@ -507,7 +507,7 @@ class _MockTargetGatherer {
           'unknown type, or includes an extension');
     }
     final mockTargets = <_MockTarget>[];
-    for (var objectToMock in classesField.toListValue()!) {
+    for (final objectToMock in classesField.toListValue()!) {
       final typeToMock = objectToMock.toTypeValue();
       if (typeToMock == null) {
         throw InvalidMockitoAnnotationException(
@@ -739,10 +739,10 @@ class _MockTargetGatherer {
             'Mockito cannot mock a private type: '
             '${elementToMock.displayName}.');
       }
-      var typeParameterErrors =
+      final typeParameterErrors =
           _checkTypeParameters(elementToMock.typeParameters, elementToMock);
       if (typeParameterErrors.isNotEmpty) {
-        var joinedMessages =
+        final joinedMessages =
             typeParameterErrors.map((m) => '    $m').join('\n');
         throw InvalidMockitoAnnotationException(
             'Mockito cannot generate a valid mock class which implements '
@@ -785,7 +785,7 @@ class _MockTargetGatherer {
     }
 
     classNamesToMock.forEach((name, mockTarget) {
-      var conflictingClass =
+      final conflictingClass =
           classesInEntryLib.firstWhereOrNull((c) => c.name == name);
       if (conflictingClass != null) {
         throw InvalidMockitoAnnotationException(
@@ -794,7 +794,7 @@ class _MockTargetGatherer {
             '$uniqueNameSuggestion.');
       }
 
-      var preexistingMock = classesInEntryLib.firstWhereOrNull((c) =>
+      final preexistingMock = classesInEntryLib.firstWhereOrNull((c) =>
           c.interfaces
               .map((type) => type.element)
               .contains(mockTarget.interfaceElement) &&
@@ -917,10 +917,10 @@ class _MockTargetGatherer {
       }
     }
 
-    for (var parameter in function.parameters) {
-      var parameterType = parameter.type;
+    for (final parameter in function.parameters) {
+      final parameterType = parameter.type;
       if (parameterType is analyzer.InterfaceType) {
-        var parameterTypeElement = parameterType.element;
+        final parameterTypeElement = parameterType.element;
         if (parameterTypeElement.isPrivate) {
           // Technically, we can expand the type in the mock to something like
           // `Object?`. However, until there is a decent use case, we will not
@@ -947,7 +947,7 @@ class _MockTargetGatherer {
     errorMessages
         .addAll(_checkTypeParameters(function.typeFormals, enclosingElement));
 
-    var aliasArguments = function.alias?.typeArguments;
+    final aliasArguments = function.alias?.typeArguments;
     if (aliasArguments != null) {
       errorMessages.addAll(_checkTypeArguments(aliasArguments, enclosingElement,
           isParameter: isParameter));
@@ -960,9 +960,9 @@ class _MockTargetGatherer {
   /// enclosing method un-stubbable.
   static List<String> _checkTypeParameters(
       List<TypeParameterElement> typeParameters, Element enclosingElement) {
-    var errorMessages = <String>[];
-    for (var element in typeParameters) {
-      var typeParameter = element.bound;
+    final errorMessages = <String>[];
+    for (final element in typeParameters) {
+      final typeParameter = element.bound;
       if (typeParameter == null) continue;
       if (typeParameter is analyzer.InterfaceType) {
         // TODO(srawlins): Check for private names in bound; could be
@@ -988,8 +988,8 @@ class _MockTargetGatherer {
     bool isParameter = false,
     bool allowUnsupportedMember = false,
   }) {
-    var errorMessages = <String>[];
-    for (var typeArgument in typeArguments) {
+    final errorMessages = <String>[];
+    for (final typeArgument in typeArguments) {
       if (typeArgument is analyzer.InterfaceType) {
         if (typeArgument.element.isPrivate && !allowUnsupportedMember) {
           errorMessages.add(
@@ -1143,7 +1143,7 @@ class _MockClassInfo {
         // example: `Foo<int>`). Generate a non-generic mock class which
         // implements the mock target with said type arguments. For example:
         // `class MockFoo extends Mock implements Foo<int> {}`
-        for (var typeArgument in typeArguments) {
+        for (final typeArgument in typeArguments) {
           typeReferences.add(_typeReference(typeArgument));
         }
       } else {
@@ -1151,7 +1151,7 @@ class _MockClassInfo {
         // `Foo`, a reference to `class Foo<T> {}`). Generate a generic mock
         // class which perfectly mirrors the type parameters on [typeToMock],
         // forwarding them to the "implements" clause.
-        for (var typeParameter in typeParameters) {
+        for (final typeParameter in typeParameters) {
           cBuilder.types.add(_typeParameterReference(typeParameter));
           typeReferences.add(refer(typeParameter.name));
         }
@@ -1204,7 +1204,7 @@ class _MockClassInfo {
         // members for the purpose of expanding their parameter types. However,
         // we may need to include an implementation of `toString()`, if the
         // class-to-mock has added optional parameters.
-        var toStringMethod = members
+        final toStringMethod = members
             .whereType<MethodElement>()
             .firstWhereOrNull((m) => m.name == 'toString');
         if (toStringMethod != null) {
@@ -1466,7 +1466,7 @@ class _MockClassInfo {
       return literalNull;
     }
 
-    var typeArguments = type.typeArguments;
+    final typeArguments = type.typeArguments;
     if (type.isDartCoreBool) {
       return literalFalse;
     } else if (type.isDartCoreDouble) {
@@ -1482,7 +1482,7 @@ class _MockClassInfo {
         // We cannot create a valid Future for this unknown, potentially
         // non-nullable type, so we'll use a `_FakeFuture`, which will throw
         // if awaited.
-        var futureType = typeProvider.futureType(typeArguments.first);
+        final futureType = typeProvider.futureType(typeArguments.first);
         return _dummyValueImplementing(futureType, invocation);
       } else {
         // Create a real Future with a legal value, via [Future.value].
@@ -1615,7 +1615,7 @@ class _MockClassInfo {
       cBuilder
         ..name = fakeName
         ..extend = referImported('SmartFake', 'package:mockito/mockito.dart');
-      for (var typeParameter in elementToFake.typeParameters) {
+      for (final typeParameter in elementToFake.typeParameters) {
         cBuilder.types.add(_typeParameterReference(typeParameter));
         typeParameters.add(refer(typeParameter.name));
       }
@@ -1792,13 +1792,13 @@ class _MockClassInfo {
     } else if (constant.isType) {
       // TODO(srawlins): It seems like this might be revivable, but Angular
       // does not revive Types; we should investigate this if users request it.
-      var type = object.toTypeValue()!;
-      var typeStr = type.getDisplayString(withNullability: false);
+      final type = object.toTypeValue()!;
+      final typeStr = type.getDisplayString(withNullability: false);
       throw _ReviveException('default value is a Type: $typeStr.');
     } else {
       // If [constant] is not null, a literal, or a type, then it must be an
       // object constructed with `const`. Revive it.
-      var revivable = constant.revive();
+      final revivable = constant.revive();
       if (revivable.isPrivate) {
         final privateReference = revivable.accessor.isNotEmpty
             ? '${revivable.source}::${revivable.accessor}'
@@ -1809,7 +1809,7 @@ class _MockClassInfo {
       if (object.toFunctionValue() != null) {
         // A top-level function, like `void f() {}` must be referenced by its
         // identifier, rather than a revived value.
-        var element = object.toFunctionValue();
+        final element = object.toFunctionValue();
         return referImported(revivable.accessor, _typeImport(element));
       } else if (revivable.source.fragment.isEmpty) {
         // We can create this invocation by referring to a const field or
@@ -2019,11 +2019,11 @@ class _MockClassInfo {
                 .addAll(type.normalParameterTypes.map(_typeReference))
             ..optionalParameters
                 .addAll(type.optionalParameterTypes.map(_typeReference));
-          for (var parameter
+          for (final parameter
               in type.parameters.where((p) => p.isOptionalNamed)) {
             b.namedParameters[parameter.name] = _typeReference(parameter.type);
           }
-          for (var parameter
+          for (final parameter
               in type.parameters.where((p) => p.isRequiredNamed)) {
             b.namedRequiredParameters[parameter.name] =
                 _typeReference(parameter.type);
@@ -2036,7 +2036,7 @@ class _MockClassInfo {
           ..symbol = alias.element.name
           ..url = _typeImport(alias.element)
           ..isNullable = forceNullable || typeSystem.isNullable(type);
-        for (var typeArgument in alias.typeArguments) {
+        for (final typeArgument in alias.typeArguments) {
           b.types.add(_typeReference(typeArgument));
         }
       });
@@ -2165,12 +2165,12 @@ extension on Element {
     } else if (this is EnumElement) {
       return "The enum '$name'";
     } else if (this is MethodElement) {
-      var className = enclosingElement!.name;
+      final className = enclosingElement!.name;
       return "The method '$className.$name'";
     } else if (this is MixinElement) {
       return "The mixin '$name'";
     } else if (this is PropertyAccessorElement) {
-      var className = enclosingElement!.name;
+      final className = enclosingElement!.name;
       return "The property accessor '$className.$name'";
     } else {
       return 'unknown element';
