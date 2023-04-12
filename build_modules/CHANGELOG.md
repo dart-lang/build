@@ -1,3 +1,7 @@
+## 5.0.2
+
+- Support Dart version 3.1.
+
 ## 5.0.1
 
 - Delete the long deprecated `dart2JsWorkerResource` api and associated code.
