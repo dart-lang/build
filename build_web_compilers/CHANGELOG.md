@@ -1,3 +1,7 @@
+## 4.0.3
+
+- Support Dart 3.1 releases.
+
 ## 4.0.2
 
 - Allow the compiler to choose the default for the native null assertions
