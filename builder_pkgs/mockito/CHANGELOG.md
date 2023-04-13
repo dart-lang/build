@@ -1,3 +1,8 @@
+## 5.4.1-dev
+
+* Deprecate the `mixingIn` argument to `MockSpec`. Best practice is to avoid
+  any concrete implementation in classes which extend `Mock`.
+
 ## 5.4.0
 
 * Fix nice mocks generation in mixed mode (generated code is pre null-safety,
