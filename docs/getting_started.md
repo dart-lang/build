@@ -3,7 +3,7 @@
 To use `build_runner`, you need a 2.x version of the Dart SDK.
 
 *   [Automated installers](https://dart.dev/get-dart#install)
-*   [Direct downloads](https://dart.dev/tools/sdk/archive#dev-channel)
+*   [Direct downloads](https://dart.dev/get-dart/archive#dev-channel)
 
 If you have issues using `build_runner`, see the
 [Troubleshooting section](#troubleshooting), below.
@@ -23,16 +23,14 @@ If you have issues using `build_runner`, see the
 1.  Edit your package's **pubspec.yaml** file, adding dev dependencies on
     **build_runner** and **build_web_compilers**:
 
-    ```yaml
-    dev_dependencies:
-      build_runner: ^2.0.0
-      build_web_compilers: ^3.0.0
+    ```sh
+    dart pub add dev:build_runner dev:build_web_compilers
     ```
 
 2.  Get package dependencies:
 
     ```sh
-    pub get
+    dart pub get
     ```
 
 3.  Start the server:
