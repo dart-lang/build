@@ -39,8 +39,8 @@ For example:
 ```dart
 // In lib/builder.dart
 PostProcessBuilder temporaryFileCleanup(BuilderOptions options) =>
-    const FileDeletingBuilder(const ['.used_during_build'],
-        isEnabled: options.config['enabled'] as bool ?? false);
+    FileDeletingBuilder(const ['.used_during_build'],
+        isEnabled: options.config['enabled'] as bool? ?? false);
 Builder writesTemporary([_]) => ...
 Builder readsTemporaryWritesPermanent([_]) => ...
 ```

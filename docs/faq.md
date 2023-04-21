@@ -201,7 +201,7 @@ you can:
 -   Contact the author of the Builder and ask that a more unique output
     extension is chosen.
 -   Contact the author of the Builder and ask that a more unique input extension
-    is chose, for example only generating for files that end in
+    is chosen, for example only generating for files that end in
     `_something.dart` rather than all files that end in `.dart`.
 
 ## How can I use my own development server to serve generated files?

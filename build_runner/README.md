@@ -16,9 +16,8 @@
 </p>
 
 The `build_runner` package provides a concrete way of generating files using
-Dart code, outside of tools like `pub`. Unlike `pub serve/build`, files are
-always generated directly on disk, and rebuilds are _incremental_ - inspired by
-tools such as [Bazel][].
+Dart code. Files are always generated directly on disk, and
+rebuilds are _incremental_ - inspired by tools such as [Bazel][].
 
 > **NOTE**: Are you a user of this package? You may be interested in
 > simplified user-facing documentation, such as our
