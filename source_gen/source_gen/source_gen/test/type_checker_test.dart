@@ -31,6 +31,7 @@ void main() {
   late TypeChecker staticMapMixinChecker;
   late TypeChecker staticHashMapChecker;
   late TypeChecker staticEnumChecker;
+  late LibraryElement core;
 
   // Resolved top-level types from package:source_gen.
   late InterfaceType staticGenerator;
@@ -45,7 +46,6 @@ void main() {
   late InterfaceType staticMyEnumWithMixin;
 
   setUpAll(() async {
-    late LibraryElement core;
     late LibraryElement collection;
     late LibraryReader sourceGen;
     late LibraryElement testSource;
@@ -183,6 +183,17 @@ void main() {
         },
       );
     });
+
+    group(
+      'isExactlyType',
+      () {
+        test('should not crash with null element', () {
+          final voidType = core.typeProvider.voidType;
+          expect(voidType.element, isNull);
+          expect(checkMapMixin().isExactlyType(voidType), isFalse);
+        });
+      },
+    );
 
     group(
       '(MapMixin',

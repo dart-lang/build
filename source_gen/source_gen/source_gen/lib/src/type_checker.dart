@@ -174,7 +174,17 @@ abstract class TypeChecker {
   bool isExactly(Element element);
 
   /// Returns `true` if representing the exact same type as [staticType].
-  bool isExactlyType(DartType staticType) => isExactly(staticType.element!);
+  ///
+  /// This will always return false for types without a backingclass such as
+  /// `void` or function types.
+  bool isExactlyType(DartType staticType) {
+    final element = staticType.element;
+    if (element != null) {
+      return isExactly(element);
+    } else {
+      return false;
+    }
+  }
 
   /// Returns `true` if representing a super class of [element].
   ///
