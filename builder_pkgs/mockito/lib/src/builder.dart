@@ -518,7 +518,6 @@ class _MockTargetGatherer {
         throw InvalidMockitoAnnotationException(
             'Mockito cannot mock `dynamic`');
       }
-      final typeToMockElement = typeToMock.element;
       var type = _determineDartType(typeToMock, entryLib.typeProvider);
       if (type.alias == null) {
         // For a generic class without an alias like `Foo<T>` or
