@@ -2,6 +2,8 @@
 
 * Deprecate the `mixingIn` argument to `MockSpec`. Best practice is to avoid
   any concrete implementation in classes which extend `Mock`.
+* Fixed generation for clashing type variable names.
+* Require analyzer 5.11.0.
 
 ## 5.4.0
 

@@ -1690,6 +1690,118 @@ void main() {
     });
     expect(mocksContent, contains('void m(dynamic x)'));
   });
+  test('We rename clashing type variables', () async {
+    final mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+            abstract class Foo<E> {
+              Iterable<T> map<T>(T Function(E) f);
+            }
+
+            abstract class Bar<T> extends Foo<T> {}
+        '''),
+      'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+
+            @GenerateNiceMocks([
+              MockSpec<Bar>(),
+            ])
+            void main() {}
+          '''
+    });
+    expect(mocksContent, contains('Iterable<T1> map<T1>(T1 Function(T)? f)'));
+  });
+  test('We rename clashing type variables in type aliases', () async {
+    final mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+            abstract class Foo<E> {
+              Iterable<T> map<T>(T Function(E) f);
+            }
+
+            typedef Bar<T> = Foo<T>;
+        '''),
+      'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+
+            @GenerateNiceMocks([
+              MockSpec<Bar>(),
+            ])
+            void main() {}
+          '''
+    });
+    expect(mocksContent, contains('Iterable<T1> map<T1>(T1 Function(T)? f)'));
+  });
+  test('We rename clashing type variables in function literals', () async {
+    final mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+            typedef Fun<E> = List<E> Function<T>(T);
+            abstract class Foo<T> {
+              Fun<T> m();
+            }
+        '''),
+      'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+
+            @GenerateNiceMocks([
+              MockSpec<Foo>(),
+            ])
+            void main() {}
+          '''
+    });
+    expect(mocksContent, contains('returnValue: <T1>(T1 __p0) => <T>[]'));
+  });
+  // Here rename in not needed, but the code does it.
+  test('We rename obscure type variables', () async {
+    final mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+            abstract class Foo<T> {
+              Iterable<T> m<T>(T Function() f);
+            }
+        '''),
+      'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+
+            @GenerateNiceMocks([
+              MockSpec<Foo>(),
+            ])
+            void main() {}
+          '''
+    });
+    expect(mocksContent, contains('Iterable<T1> m<T1>(T1 Function()? f)'));
+  });
+  test('We do not rename unrelated type variables', () async {
+    final mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+            class Foo<T> {}
+            abstract class Bar<T> {
+              Iterable<X> m1<X>(X Function(T) f);
+              Iterable<X?> m2<X>(X Function(T) f);
+            }
+            abstract class FooBar<X> extends Bar<X> {}
+        '''),
+      'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+
+            @GenerateNiceMocks([
+              MockSpec<Foo>(), MockSpec<Bar>(), MockSpec<FooBar>()
+            ])
+            void main() {}
+          '''
+    });
+    expect(mocksContent, contains('class MockBar<T>'));
+    expect(mocksContent, contains('class MockFooBar<X>'));
+    expect(mocksContent, contains('Iterable<X1> m1<X1>(X1 Function(X)? f)'));
+    expect(mocksContent, contains('Iterable<X1?> m2<X1>(X1 Function(X)? f)'));
+  });
 }
 
 TypeMatcher<List<int>> _containsAllOf(a, [b]) => decodedMatches(
