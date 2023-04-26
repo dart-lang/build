@@ -1086,7 +1086,7 @@ void main() {
         class _Foo {}
         '''),
       },
-      message: contains('Mockito cannot mock a private type: _Foo.'),
+      message: contains("Mockito cannot mock a private type: '_Foo'."),
     );
   });
 
@@ -1182,7 +1182,7 @@ void main() {
         enum Foo {}
         '''),
       },
-      message: 'Mockito cannot mock an enum: Foo',
+      message: "Mockito cannot mock an enum: 'Foo'",
     );
   });
 
@@ -1196,7 +1196,73 @@ void main() {
         void main() {}
         '''),
       },
-      message: contains('Mockito cannot mock a non-subtypable type: int'),
+      message: contains("Mockito cannot mock a non-subtypable type: 'int'"),
+    );
+  });
+
+  test('throws when GenerateMocks references a sealed class', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        'foo|test/foo_test.dart': dedent('''
+        // @dart=3.0
+        import 'package:mockito/annotations.dart';
+        sealed class Foo {}
+        @GenerateMocks([], customMocks: [MockSpec<Foo>()])
+        void main() {}
+        '''),
+      },
+      message: contains("Mockito cannot mock a sealed class 'Foo'"),
+    );
+  });
+
+  test('throws when GenerateMocks references sealed a class via typedef',
+      () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        'foo|test/foo_test.dart': dedent('''
+        // @dart=3.0
+        import 'package:mockito/annotations.dart';
+        sealed class Foo {}
+        typedef Bar = Foo;
+        @GenerateMocks([], customMocks: [MockSpec<Bar>()])
+        void main() {}
+        '''),
+      },
+      message: contains("Mockito cannot mock a sealed class 'Foo'"),
+    );
+  });
+
+  test('throws when GenerateMocks references a base class', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        'foo|test/foo_test.dart': dedent('''
+        // @dart=3.0
+        import 'package:mockito/annotations.dart';
+        base class Foo {}
+        @GenerateMocks([], customMocks: [MockSpec<Foo>()])
+        void main() {}
+        '''),
+      },
+      message: contains("Mockito cannot mock a base class 'Foo'"),
+    );
+  });
+
+  test('throws when GenerateMocks references a final class', () async {
+    _expectBuilderThrows(
+      assets: {
+        ...annotationsAsset,
+        'foo|test/foo_test.dart': dedent('''
+        // @dart=3.0
+        import 'package:mockito/annotations.dart';
+        final class Foo {}
+        @GenerateMocks([], customMocks: [MockSpec<Foo>()])
+        void main() {}
+        '''),
+      },
+      message: contains("Mockito cannot mock a final class 'Foo'"),
     );
   });
 
@@ -1234,7 +1300,7 @@ void main() {
         mixin _FooMixin implements Foo {}
         '''),
       },
-      message: contains('Mockito cannot mock a private type: _FooMixin'),
+      message: contains("Mockito cannot mock a private type: '_FooMixin'"),
     );
   });
 

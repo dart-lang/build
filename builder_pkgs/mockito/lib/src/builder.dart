@@ -518,6 +518,7 @@ class _MockTargetGatherer {
         throw InvalidMockitoAnnotationException(
             'Mockito cannot mock `dynamic`');
       }
+      final typeToMockElement = typeToMock.element;
       var type = _determineDartType(typeToMock, entryLib.typeProvider);
       if (type.alias == null) {
         // For a generic class without an alias like `Foo<T>` or
@@ -725,20 +726,35 @@ class _MockTargetGatherer {
       analyzer.DartType typeToMock, TypeProvider typeProvider) {
     if (typeToMock is analyzer.InterfaceType) {
       final elementToMock = typeToMock.element;
+      final displayName = "'${elementToMock.displayName}'";
       if (elementToMock is EnumElement) {
         throw InvalidMockitoAnnotationException(
-            'Mockito cannot mock an enum: ${elementToMock.displayName}');
+            'Mockito cannot mock an enum: $displayName');
       }
       if (typeProvider.isNonSubtypableClass(elementToMock)) {
         throw InvalidMockitoAnnotationException(
             'Mockito cannot mock a non-subtypable type: '
-            '${elementToMock.displayName}. It is illegal to subtype this '
+            '$displayName. It is illegal to subtype this '
             'type.');
+      }
+      if (elementToMock is ClassElement) {
+        if (elementToMock.isSealed) {
+          throw InvalidMockitoAnnotationException(
+              'Mockito cannot mock a sealed class $displayName, '
+              'try mocking one of the variants instead.');
+        }
+        if (elementToMock.isBase) {
+          throw InvalidMockitoAnnotationException(
+              'Mockito cannot mock a base class $displayName.');
+        }
+        if (elementToMock.isFinal) {
+          throw InvalidMockitoAnnotationException(
+              'Mockito cannot mock a final class $displayName.');
+        }
       }
       if (elementToMock.isPrivate) {
         throw InvalidMockitoAnnotationException(
-            'Mockito cannot mock a private type: '
-            '${elementToMock.displayName}.');
+            'Mockito cannot mock a private type: $displayName.');
       }
       final typeParameterErrors =
           _checkTypeParameters(elementToMock.typeParameters, elementToMock);
@@ -747,7 +763,7 @@ class _MockTargetGatherer {
             typeParameterErrors.map((m) => '    $m').join('\n');
         throw InvalidMockitoAnnotationException(
             'Mockito cannot generate a valid mock class which implements '
-            "'${elementToMock.displayName}' for the following reasons:\n"
+            '$displayName for the following reasons:\n'
             '$joinedMessages');
       }
       if (typeToMock.alias != null &&

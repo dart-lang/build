@@ -4,6 +4,7 @@
   any concrete implementation in classes which extend `Mock`.
 * Fixed generation for clashing type variable names.
 * Require analyzer 5.11.0.
+* Fail to generate mocks of `sealed`/`base`/`final` classes.
 
 ## 5.4.0
 
