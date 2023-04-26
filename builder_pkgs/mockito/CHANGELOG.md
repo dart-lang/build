@@ -3,6 +3,7 @@
 * Deprecate the `mixingIn` argument to `MockSpec`. Best practice is to avoid
   any concrete implementation in classes which extend `Mock`.
 * Fixed generation for clashing type variable names.
+* Require Dart >= 2.19.0.
 * Require analyzer 5.11.0.
 * Fail to generate mocks of `sealed`/`base`/`final` classes.
 
