@@ -1,4 +1,4 @@
-## 5.4.1-dev
+## 5.4.1-wip
 
 * Deprecate the `mixingIn` argument to `MockSpec`. Best practice is to avoid
   any concrete implementation in classes which extend `Mock`.

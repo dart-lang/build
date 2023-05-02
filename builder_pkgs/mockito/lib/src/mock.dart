@@ -19,13 +19,12 @@
 
 import 'dart:async';
 
+import 'package:matcher/expect.dart';
 import 'package:meta/meta.dart';
 import 'package:mockito/src/call_pair.dart';
 import 'package:mockito/src/invocation_matcher.dart';
 // ignore: deprecated_member_use
 import 'package:test_api/fake.dart';
-// ignore: deprecated_member_use
-import 'package:test_api/test_api.dart';
 
 /// Whether a [when] call is "in progress."
 ///
