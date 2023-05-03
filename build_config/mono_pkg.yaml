@@ -1,4 +1,5 @@
 sdk:
+- beta
 - dev
 
 stages:
