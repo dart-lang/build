@@ -1,3 +1,7 @@
+## 2.2.0-wip
+
+- Forward logs from `testBuilder` to `printOnFailure` by default.
+
 ## 2.1.7
 
 - Allow the latest test_core (version 5.x).

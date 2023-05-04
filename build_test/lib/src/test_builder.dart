@@ -135,6 +135,7 @@ Future testBuilder(
     void Function(LogRecord log)? onLog,
     void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput,
     PackageConfig? packageConfig}) async {
+  onLog ??= (log) => printOnFailure('$log');
   writer ??= InMemoryAssetWriter();
 
   var inputIds = {
