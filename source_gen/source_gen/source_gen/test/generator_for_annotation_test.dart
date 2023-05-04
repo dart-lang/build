@@ -138,6 +138,46 @@ void main() {
       },
     );
   });
+
+  test('applies to annotated directives', () async {
+    final builder = LibraryBuilder(
+      _StubGenerator<Deprecated>(
+        'Deprecated',
+        (element) => '// ${element.runtimeType}',
+      ),
+    );
+    await testBuilder(
+      builder,
+      {
+        'a|lib/imported.dart': '',
+        'a|lib/part.dart': 'part of \'file.dart\';',
+        'a|lib/file.dart': '''
+      library;
+      @deprecated
+      import 'imported.dart';
+      @deprecated
+      export 'imported.dart';
+      @deprecated
+      part 'part.dart';
+      '''
+      },
+      outputs: {
+        'a|lib/file.g.dart': '''
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+// **************************************************************************
+// Generator: Deprecated
+// **************************************************************************
+
+// LibraryImportElementImpl
+
+// LibraryExportElementImpl
+
+// PartElementImpl
+'''
+      },
+    );
+  });
 }
 
 class _StubGenerator<T> extends GeneratorForAnnotation<T> {

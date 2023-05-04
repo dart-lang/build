@@ -5,6 +5,8 @@
   `build_extensions: { '.dart': ['.stub.dart', '.web.dart', '.vm.dart'] }`
 * Avoid throwing when a type without a backing class is checked with
   `TypeChecker`.
+* Include imports, exports, and part directives in `LibraryReader.allElements`.
+  This allows `GeneratorForAnnotation` to target annotated directives.
 
 ## 1.2.7
 
