@@ -95,13 +95,15 @@ Future<void> runBuilder(
 }
 
 extension on Package {
+  static final _lib = Uri.parse('lib/');
+
   Package transformToAssetUris() {
     return Package(
       name,
       Uri(scheme: 'asset', pathSegments: [name, '']),
-      packageUriRoot: Uri(scheme: 'asset', pathSegments: [name, 'lib', '']),
-      relativeRoot: false,
+      packageUriRoot: _lib,
       extraData: extraData,
+      languageVersion: languageVersion,
     );
   }
 }
