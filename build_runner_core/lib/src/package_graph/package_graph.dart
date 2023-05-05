@@ -28,8 +28,12 @@ class PackageGraph {
   /// All [PackageNode]s indexed by package name.
   final Map<String, PackageNode> allPackages;
 
+  /// A [PackageConfig] representation of this package graph.
+  final PackageConfig asPackageConfig;
+
   PackageGraph._(this.root, Map<String, PackageNode> allPackages)
-      : allPackages = Map.unmodifiable(
+      : asPackageConfig = _packagesToConfig(allPackages.values),
+        allPackages = Map.unmodifiable(
             Map<String, PackageNode>.from(allPackages)
               ..putIfAbsent(r'$sdk', () => _sdkPackageNode)) {
     if (!root.isRoot) {
@@ -112,6 +116,22 @@ class PackageGraph {
   /// running.
   static Future<PackageGraph> forThisPackage() =>
       PackageGraph.forPath(p.current);
+
+  static PackageConfig _packagesToConfig(Iterable<PackageNode> packages) {
+    final relativeLib = Uri.parse('lib/');
+
+    return PackageConfig([
+      for (final package in packages)
+        if (package.name != _sdkPackageNode.name)
+          Package(
+            package.name,
+            Uri.file(
+                package.path.endsWith('/') ? package.path : '${package.path}/'),
+            languageVersion: package.languageVersion,
+            packageUriRoot: relativeLib,
+          ),
+    ]);
+  }
 
   /// Shorthand to get a package by name.
   PackageNode? operator [](String packageName) => allPackages[packageName];
