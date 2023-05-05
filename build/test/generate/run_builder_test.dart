@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
+import 'package:package_config/package_config_types.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -65,6 +66,41 @@ void main() {
 
     test('disposes the default resource manager', () async {
       expect(resourceDisposed, true);
+    });
+  });
+
+  group('can resolve package config', () {
+    setUp(() {
+      writer.assets[makeAssetId('build|lib/foo.txt')] = [1, 2, 3];
+
+      builder = TestBuilder(extraWork: (buildStep, __) async {
+        final config = await buildStep.packageConfig;
+
+        final buildPackage =
+            config.packages.singleWhere((p) => p.name == 'build');
+        expect(buildPackage.root, Uri.parse('asset:build/'));
+        expect(buildPackage.packageUriRoot, Uri.parse('asset:build/lib/'));
+
+        final resolvedBuildUri =
+            config.resolve(Uri.parse('package:build/foo.txt'))!;
+        expect(
+            await buildStep.canRead(AssetId.resolve(resolvedBuildUri)), isTrue);
+      });
+    });
+
+    test('from default', () async {
+      await runBuilder(builder, inputs.keys, reader, writer, null);
+    });
+
+    test('when provided', () async {
+      await runBuilder(
+        builder,
+        inputs.keys,
+        reader,
+        writer,
+        null,
+        packageConfig: PackageConfig([Package('build', Uri.file('/foo/bar/'))]),
+      );
     });
   });
 }
