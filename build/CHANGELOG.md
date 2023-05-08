@@ -1,4 +1,4 @@
-## 2.4.0-dev
+## 2.4.0
 
 - Add `BuildStep.packageConfig` getter to resolve a package config of all
   packages involved in the current build.

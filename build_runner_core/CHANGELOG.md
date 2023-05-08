@@ -1,4 +1,4 @@
-## 7.2.8-dev
+## 7.2.8
 
 - Raise the minimum SDK constraint to 2.18.
 - Optimize `BuildStep.packageConfig`
