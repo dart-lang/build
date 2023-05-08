@@ -432,8 +432,8 @@ void _warnOnLanguageVersionMismatch() async {
     var response = await request.close();
     var content = StringBuffer();
     await response.transform(utf8.decoder).listen(content.write).asFuture();
-    var json = jsonDecode(content.toString()) as Map<String, Object>;
-    var latestAnalyzer = (json['latest'] as Map<String, Object>)['version'];
+    var json = jsonDecode(content.toString()) as Map<String, Object?>;
+    var latestAnalyzer = (json['latest'] as Map<String, Object?>)['version'];
     var analyzerPubspecPath =
         p.join(await packagePath('analyzer'), 'pubspec.yaml');
     var currentAnalyzer =
