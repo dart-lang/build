@@ -536,6 +536,7 @@ class _SingleBuild {
                   stageTracker: tracker,
                   reportUnusedAssetsForInput: (_, assets) =>
                       unusedAssets.addAll(assets),
+                  packageConfig: _packageGraph.asPackageConfig,
                 ).catchError((void _) {
                   // Errors tracked through the logger
                 }));

@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:meta/meta.dart';
+import 'package:package_config/package_config_types.dart';
 
 import '../analyzer/resolver.dart';
 import '../asset/id.dart';
@@ -118,6 +119,17 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// `InvalidOutputException` when attempting to write an asset not part of
   /// the [allowedOutputs].
   Iterable<AssetId> get allowedOutputs;
+
+  /// Returns a [PackageConfig] resolvable from this build step.
+  ///
+  /// The package config contains all packages involved in the build. Typically,
+  /// this is the package config taken from the current isolate.
+  ///
+  /// The returned package config does not use `file:/`-based URIs and can't be
+  /// used to access package contents with `dart:io`. Instead, packages resolve
+  /// to `asset:/` URIs that can be parsed with [AssetId.resolve] and read with
+  /// [readAsBytes] or [readAsString].
+  Future<PackageConfig> get packageConfig;
 }
 
 abstract class StageTracker {

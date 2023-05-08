@@ -10,6 +10,7 @@ import 'package:build/src/builder/build_step.dart';
 import 'package:build/src/builder/build_step_impl.dart';
 import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_test/build_test.dart';
+import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -34,7 +35,7 @@ void main() {
       primary = makeAssetId();
       outputs = List.generate(5, (index) => makeAssetId());
       buildStep = BuildStepImpl(primary, outputs, reader, writer,
-          AnalyzerResolvers(), resourceManager);
+          AnalyzerResolvers(), resourceManager, _unsupported);
     });
 
     test('doesnt allow non-expected outputs', () {
@@ -87,8 +88,15 @@ void main() {
       };
       addAssets(inputs, writer);
       var outputId = AssetId.parse('$primary.copy');
-      var buildStep = BuildStepImpl(primary, [outputId], reader, writer,
-          AnalyzerResolvers(), resourceManager);
+      var buildStep = BuildStepImpl(
+        primary,
+        [outputId],
+        reader,
+        writer,
+        AnalyzerResolvers(),
+        resourceManager,
+        _unsupported,
+      );
 
       await builder.build(buildStep);
       await buildStep.complete();
@@ -112,8 +120,8 @@ void main() {
         addAssets(inputs, writer);
 
         var primary = makeAssetId('a|web/a.dart');
-        var buildStep = BuildStepImpl(
-            primary, [], reader, writer, AnalyzerResolvers(), resourceManager);
+        var buildStep = BuildStepImpl(primary, [], reader, writer,
+            AnalyzerResolvers(), resourceManager, _unsupported);
         var resolver = buildStep.resolver;
 
         var aLib = await resolver.libraryFor(primary);
@@ -143,7 +151,7 @@ void main() {
       outputId = makeAssetId('a|test.txt');
       outputContent = '$outputId';
       buildStep = BuildStepImpl(primary, [outputId], StubAssetReader(),
-          assetWriter, AnalyzerResolvers(), resourceManager);
+          assetWriter, AnalyzerResolvers(), resourceManager, _unsupported);
     });
 
     test('Completes only after writes finish', () async {
@@ -191,7 +199,7 @@ void main() {
       primary = makeAssetId();
       output = makeAssetId();
       buildStep = BuildStepImpl(primary, [output], reader, writer,
-          AnalyzerResolvers(), resourceManager,
+          AnalyzerResolvers(), resourceManager, _unsupported,
           stageTracker: NoOpStageTracker.instance);
     });
 
@@ -205,8 +213,8 @@ void main() {
     var reader = StubAssetReader();
     var writer = StubAssetWriter();
     var unused = <AssetId>{};
-    var buildStep = BuildStepImpl(
-        makeAssetId(), [], reader, writer, AnalyzerResolvers(), resourceManager,
+    var buildStep = BuildStepImpl(makeAssetId(), [], reader, writer,
+        AnalyzerResolvers(), resourceManager, _unsupported,
         reportUnusedAssets: unused.addAll);
     var reported = [
       makeAssetId(),
@@ -233,4 +241,8 @@ class SlowAssetWriter implements AssetWriter {
   Future<void> writeAsString(AssetId id, FutureOr<String> contents,
           {Encoding encoding = utf8}) =>
       _writeCompleter.future;
+}
+
+Future<PackageConfig> _unsupported() {
+  return Future.error(UnsupportedError('stub'));
 }
