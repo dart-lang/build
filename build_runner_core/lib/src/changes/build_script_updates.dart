@@ -66,7 +66,8 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
           graph.get(id)!.lastKnownDigest ??= await reader.digest(id);
         }
       }
-    } on ArgumentError catch (_) {
+    } on ArgumentError // ignore: avoid_catching_errors
+    catch (_) {
       supportsIncrementalRebuilds = false;
       allSources = <AssetId>{};
     }

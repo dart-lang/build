@@ -34,7 +34,8 @@ Future<d.FileDescriptor> pubspec(
     ..writeln('  sdk: "$sdkEnvironment"')
     ..writeln('dependencies:');
 
-  // Add all deps as `any` deps, real versions are set in dependency_overrides below.
+  // Add all deps as `any` deps, real versions are set in dependency_overrides
+  // below.
   var allPackages = [
     ...currentIsolateDependencies,
     ...pathDependencies.keys,

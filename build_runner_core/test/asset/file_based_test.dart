@@ -90,8 +90,8 @@ void main() async {
     });
 
     test(
-        'digests are different for identical file contents and different assets',
-        () async {
+        'digests are different for identical file contents and different '
+        'assets', () async {
       var helloDigest =
           await reader.digest(makeAssetId('basic_pkg|lib/hello.txt'));
       var aDigest = await reader.digest(makeAssetId('basic_pkg|web/hello.txt'));

@@ -71,8 +71,8 @@ void main() {
 
       reader.reset({'web'}, {BuildFilter(Glob('b'), Glob('foo'))});
       expect(await reader.unreadableReason(id), UnreadableReason.notOutput,
-          reason:
-              'Should report as not output if it doesn\'t match requested build filters');
+          reason: 'Should report as not output if it doesn\'t match requested '
+              'build filters');
     });
   });
 }

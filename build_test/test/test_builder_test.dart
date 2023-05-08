@@ -173,9 +173,8 @@ void main() {
               throwsA(isA<SyntaxErrorInAssetException>().having(
                   (e) => e.syntaxErrors.first.message,
                   'message',
-                  contains(
-                      'This requires the \'extension-methods\' language feature to be '
-                      'enabled.'))));
+                  contains('This requires the \'extension-methods\' language '
+                      'feature to be enabled.'))));
         },
       ),
       {

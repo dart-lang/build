@@ -1,0 +1,23 @@
+include: package:dart_flutter_team_lints/analysis_options.yaml
+analyzer:
+  language:
+    strict-casts: true
+  errors:
+    unused_import: error
+    unused_local_variable: error
+    dead_code: error
+    todo: ignore
+    deprecated_member_use_from_same_package: ignore
+  exclude:
+    # Prevents extra work during some e2e test runs.
+    - "dart2js_test/**"
+    # Common top level directories containing generated files in any package.
+    - "build/**"
+    - ".dart_tool/**"
+
+linter:
+  rules:
+    # TODO: Remove this once we can use unnamed libraries.
+    library_annotations: false
+    # TODO: https://github.com/google/json_serializable.dart/issues/1313
+    use_string_in_part_of_directives: false

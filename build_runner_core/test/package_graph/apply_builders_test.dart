@@ -191,7 +191,7 @@ void main() {
     });
 
     group('autoApplyBuilders', () {
-      Future<List<BuildPhase>> _createPhases(
+      Future<List<BuildPhase>> createPhases(
           {Map<String, TargetBuilderConfig>? builderConfigs}) async {
         var packageGraph = buildPackageGraph({
           rootPackage('a'): ['b'],
@@ -220,12 +220,12 @@ void main() {
       }
 
       test('can be disabled for a target', () async {
-        var phases = await _createPhases();
+        var phases = await createPhases();
         expect(phases, isEmpty);
       });
 
       test('individual builders can still be enabled', () async {
-        var phases = await _createPhases(builderConfigs: {
+        var phases = await createPhases(builderConfigs: {
           'b:cool_builder_2': TargetBuilderConfig(isEnabled: true)
         });
         expect(phases, hasLength(1));
@@ -237,7 +237,7 @@ void main() {
 
       test('enabling a builder also enables other builders it applies',
           () async {
-        var phases = await _createPhases(builderConfigs: {
+        var phases = await createPhases(builderConfigs: {
           'b:cool_builder': TargetBuilderConfig(isEnabled: true)
         });
         expect(phases, hasLength(2));

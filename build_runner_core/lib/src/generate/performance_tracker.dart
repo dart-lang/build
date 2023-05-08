@@ -271,8 +271,8 @@ class _BuilderActionTrackerImpl extends SimpleAsyncTimeTracker
 }
 
 /// No-op instance of [BuilderActionTracker] which does nothing and throws an
-/// unimplemented error for everything but [trackStage], which delegates directly to
-/// the wrapped function.
+/// unimplemented error for everything but [trackStage], which delegates
+/// directly to the wrapped function.
 ///
 /// Use the [BuilderActionTracker.noOp] factory to get an instance.
 class _NoOpBuilderActionTracker extends NoOpTimeTracker

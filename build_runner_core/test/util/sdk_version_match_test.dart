@@ -16,8 +16,8 @@ void main() {
       expect(isSameSdkVersion('random_string', 'random_string'), isTrue);
     });
     test(
-        'should return true if versions are same but version strings are different',
-        () async {
+        'should return true if versions are same but version strings are '
+        'different', () async {
       expect(isSameSdkVersion('2.0.0-dev30.0 11', '2.0.0-dev30.0'), isTrue);
       expect(
           isSameSdkVersion('2.0.0-dev30.0 (unknown_timestamp) "linux_x64"',

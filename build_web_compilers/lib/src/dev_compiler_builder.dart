@@ -232,8 +232,8 @@ Future<void> _createDevCompilerModule(
             buildStep.trackStage('Compile', () => response, isExternal: true));
 
     // TODO(jakemac53): Fix the ddc worker mode so it always sends back a bad
-    // status code if something failed. Today we just make sure there is an output
-    // JS file to verify it was successful.
+    // status code if something failed. Today we just make sure there is an
+    // output JS file to verify it was successful.
     var message = response.output
         .replaceAll('${scratchSpace.tempDir.path}/', '')
         .replaceAll('$multiRootScheme:///', '');
@@ -263,7 +263,7 @@ Future<void> _createDevCompilerModule(
           module.primarySource.changeExtension(jsSourceMapExtension);
       var file = scratchSpace.fileFor(sourceMapId);
       var content = await file.readAsString();
-      var json = jsonDecode(content);
+      var json = jsonDecode(content) as Map<String, Object?>;
       json['sources'] = fixSourceMapSources((json['sources'] as List).cast());
       await buildStep.writeAsString(sourceMapId, jsonEncode(json));
 
@@ -272,9 +272,8 @@ Future<void> _createDevCompilerModule(
       var metadataId = module.primarySource.changeExtension(metadataExtension);
       file = scratchSpace.fileFor(metadataId);
       content = await file.readAsString();
-      json = jsonDecode(content);
-      _fixMetadataSources(
-          json as Map<String, dynamic>, scratchSpace.tempDir.uri);
+      json = jsonDecode(content) as Map<String, Object?>;
+      _fixMetadataSources(json, scratchSpace.tempDir.uri);
       await buildStep.writeAsString(metadataId, jsonEncode(json));
 
       // Copy the symbols output, modifying its contents to remove the temp

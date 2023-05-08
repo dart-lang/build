@@ -4,12 +4,12 @@
 
 export 'src/build_config.dart' show BuildConfig;
 export 'src/build_target.dart'
-    show BuildTarget, TargetBuilderConfig, GlobalBuilderConfig;
+    show BuildTarget, GlobalBuilderConfig, TargetBuilderConfig;
 export 'src/builder_definition.dart'
     show
-        BuilderDefinition,
         AutoApply,
         BuildTo,
+        BuilderDefinition,
         PostProcessBuilderDefinition,
         TargetBuilderConfigDefaults;
 export 'src/common.dart' show runInBuildConfigZone;

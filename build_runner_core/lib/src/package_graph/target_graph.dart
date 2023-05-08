@@ -214,7 +214,8 @@ Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
   try {
     return await BuildConfig.fromBuildConfigDir(
         package.name, dependencyNames, package.path);
-  } on ArgumentError catch (e) {
+  } on ArgumentError // ignore: avoid_catching_errors
+  catch (e) {
     throw BuildConfigParseException(package.name, e);
   }
 }

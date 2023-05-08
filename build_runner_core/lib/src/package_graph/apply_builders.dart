@@ -402,6 +402,8 @@ BuilderOptions _options(Map<String, dynamic>? options) =>
 void _validateBuilder(Builder builder) {
   var inputExtensions = builder.buildExtensions.keys.toSet();
   var matching = inputExtensions.intersection(
+      // https://github.com/dart-lang/linter/issues/4336
+      // ignore: collection_methods_unrelated_type
       {for (var outputs in builder.buildExtensions.values) ...outputs});
   if (matching.isNotEmpty) {
     var mapDescription = builder.buildExtensions.entries

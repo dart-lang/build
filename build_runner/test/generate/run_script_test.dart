@@ -108,7 +108,8 @@ main(List<String> args) async {
       expect(
           result.stdout,
           contains(
-              'Could not spawn isolate. Ensure that your file is in a valid directory'));
+              'Could not spawn isolate. Ensure that your file is in a valid '
+              'directory'));
     });
 
     test('runs the built version of the desired script', () async {

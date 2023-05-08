@@ -3,4 +3,4 @@
 // BSD-style license that can be found in the LICENSE file.
 
 export 'src/scratch_space.dart'
-    show ScratchSpace, canonicalUriFor, EmptyOutputException;
+    show EmptyOutputException, ScratchSpace, canonicalUriFor;

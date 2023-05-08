@@ -25,7 +25,7 @@ class EncodedMetaModuleMatcher extends Matcher {
   EncodedMetaModuleMatcher(this.expected);
 
   @override
-  bool matches(actual, description) {
+  bool matches(dynamic actual, Map<dynamic, dynamic> description) {
     if (actual is List<int>) {
       actual = utf8.decode(actual);
     }
@@ -37,8 +37,8 @@ class EncodedMetaModuleMatcher extends Matcher {
   }
 
   @override
-  Description describeMismatch(
-      item, Description mismatchDescription, Map matchState, bool verbose) {
+  Description describeMismatch(dynamic item, Description mismatchDescription,
+      Map matchState, bool verbose) {
     try {
       if (item is List<int>) {
         item = utf8.decode(item);
@@ -63,7 +63,7 @@ class ModuleMatcher extends Matcher {
   ModuleMatcher(this.expected);
 
   @override
-  bool matches(actual, description) {
+  bool matches(dynamic actual, Map<dynamic, dynamic> description) {
     if (actual is! Module) return false;
     return actual.primarySource == expected.primarySource &&
         unorderedEquals(expected.sources)
@@ -84,7 +84,7 @@ class EncodedModuleMatcher extends Matcher {
   EncodedModuleMatcher(this.expected);
 
   @override
-  bool matches(actual, description) {
+  bool matches(dynamic actual, Map<dynamic, dynamic> description) {
     if (actual is List<int>) {
       actual = utf8.decode(actual);
     }

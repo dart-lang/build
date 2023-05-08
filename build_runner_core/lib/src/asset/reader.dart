@@ -118,17 +118,17 @@ class SingleStepReader implements AssetReader {
         doAfter(_isReadable(id, catchInvalidInputs: true), (bool isReadable) {
       if (!isReadable) return false;
       var node = _assetGraph.get(id);
-      FutureOr<bool> _canRead() {
+      FutureOr<bool> canRead() {
         if (node is GeneratedAssetNode) {
-          // Short circut, we know this file exists because its readable and it was
-          // output.
+          // Short circut, we know this file exists because its readable and it
+          // was output.
           return true;
         } else {
           return _delegate.canRead(id);
         }
       }
 
-      return doAfter(_canRead(), (bool canRead) {
+      return doAfter(canRead(), (bool canRead) {
         if (!canRead) return false;
         return doAfter(_ensureDigest(id), (_) => true);
       });

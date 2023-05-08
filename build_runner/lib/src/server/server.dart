@@ -337,7 +337,8 @@ class AssetHandler {
               return shelf.Response.notFound('Not Found');
           }
         }
-      } on ArgumentError catch (_) {
+      } on ArgumentError // ignore: avoid_catching_errors
+      catch (_) {
         return shelf.Response.notFound('Not Found');
       }
 
@@ -419,12 +420,14 @@ String _renderPerformance(
           '<p><b>Input:</b> ${action.primaryInput}</p>'
           '<p><b>Stage:</b> ${stage.label}</p>'
           '<p><b>Stage time:</b> '
+          // ignore: lines_longer_than_80_chars
           '${stage.startTime.difference(performance.startTime).inMilliseconds / 1000}s - '
           '${stage.stopTime.difference(performance.startTime).inMilliseconds / 1000}s</p>'
           '<p><b>Stage real duration:</b> ${stage.duration.inMilliseconds / 1000} seconds</p>'
           '<p><b>Stage user duration:</b> ${stage.innerDuration.inMilliseconds / 1000} seconds</p>';
       if (slice != stage) {
         tooltip += '<p><b>Slice time:</b> '
+            // ignore: lines_longer_than_80_chars
             '${slice.startTime.difference(performance.startTime).inMilliseconds / 1000}s - '
             '${slice.stopTime.difference(performance.startTime).inMilliseconds / 1000}s</p>'
             '<p><b>Slice duration:</b> ${slice.duration.inMilliseconds / 1000} seconds</p>';
@@ -439,7 +442,8 @@ String _renderPerformance(
       if (max < end) max = end;
 
       rows.writeln(
-          '          ["$actionKey", "${stage.label}", "$tooltip", $start, $end],');
+          '          ["$actionKey", "${stage.label}", "$tooltip", $start, '
+          '$end],');
       ++count;
     }
 
@@ -629,9 +633,11 @@ String _renderPerformance(
     </body>
   </html>
   ''';
-  } on UnimplementedError catch (_) {
+  } on UnimplementedError // ignore: avoid_catching_errors
+  catch (_) {
     return _enablePerformanceTracking;
-  } on UnsupportedError catch (_) {
+  } on UnsupportedError // ignore: avoid_catching_errors
+  catch (_) {
     return _enablePerformanceTracking;
   }
 }

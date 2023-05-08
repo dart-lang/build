@@ -156,7 +156,7 @@ builders:
   });
 }
 
-var buildYaml = r'''
+String buildYaml = r'''
 global_options:
   ":h":
     options:
@@ -237,7 +237,7 @@ additional_public_assets:
   - "test/**"
 ''';
 
-var buildYamlNoTargets = '''
+String buildYamlNoTargets = '''
 builders:
   a:
     builder_factories: ["createBuilder"]
