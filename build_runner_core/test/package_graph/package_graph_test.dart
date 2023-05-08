@@ -25,7 +25,7 @@ void main() {
         final buildRunner =
             config.packages.singleWhere((p) => p.name == 'build_runner_core');
 
-        expect(buildRunner.languageVersion, LanguageVersion(2, 18));
+        expect(buildRunner.languageVersion, LanguageVersion(2, 19));
       });
     });
 

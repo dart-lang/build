@@ -104,7 +104,7 @@ void main() {
           Package(
             'build',
             Uri.file('/foo/bar/'),
-            languageVersion: LanguageVersion(2, 18),
+            languageVersion: LanguageVersion(2, 19),
           ),
         ]),
       );
