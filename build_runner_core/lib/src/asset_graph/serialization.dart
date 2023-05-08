@@ -371,7 +371,7 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
   }
 
   @override
-  operator []=(void _, void __) =>
+  void operator []=(void _, void __) =>
       throw UnsupportedError('[]= not supported for WrappedAssetNode');
 }
 

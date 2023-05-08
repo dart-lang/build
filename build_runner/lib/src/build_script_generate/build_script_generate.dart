@@ -4,7 +4,7 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart' show BuilderOptions, AssetId;
+import 'package:build/build.dart' show AssetId, BuilderOptions;
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:code_builder/code_builder.dart';
@@ -88,42 +88,49 @@ Future<BuildScriptInfo> findBuildScriptOptions({
   var reader = FileBasedAssetReader(packageGraph);
   var overrides = buildConfigOverrides ??=
       await findBuildConfigOverrides(packageGraph, reader);
-  Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
+  Future<BuildConfig> packageBuildConfig(PackageNode package) async {
     if (overrides.containsKey(package.name)) {
       return overrides[package.name]!;
     }
     try {
       return await BuildConfig.fromBuildConfigDir(
           package.name, package.dependencies.map((n) => n.name), package.path);
-    } on ArgumentError catch (_) {
+    } on ArgumentError // ignore: avoid_catching_errors
+    catch (_) {
       // During the build an error will be logged.
       return BuildConfig.useDefault(
           package.name, package.dependencies.map((n) => n.name));
     }
   }
 
-  bool _isValidDefinition(dynamic definition) {
+  // TODO: Remove the dynamic calls here. We don't have a shared interface
+  // today and rely on dynamic calls instead which is bad.
+  bool isValidDefinition(dynamic definition) {
     // Filter out builderDefinitions with relative imports that aren't
     // from the root package, because they will never work.
-    if (definition.import.startsWith('package:') as bool) {
+    // ignore: avoid_dynamic_calls
+    final import = definition.import as String;
+    if (import.startsWith('package:')) {
       // Make sure package is known in packageGraph (when present),
       // otherwise PackageNotFoundException will be thrown down the road
-      final pkg = AssetId.resolve(Uri.parse('${definition.import}')).package;
+      final pkg = AssetId.resolve(Uri.parse(import)).package;
       if (packageGraph?.allPackages.containsKey(pkg) ?? true) {
         return true;
       }
-      _log.warning(
-          'Could not load imported package "$pkg" for definition "${definition.key}".');
+      _log.warning('Could not load imported package "$pkg" for definition '
+          // ignore: avoid_dynamic_calls
+          '"${definition.key}".');
       return false;
     }
+    // ignore: avoid_dynamic_calls
     return definition.package == packageGraph!.root.name;
   }
 
   final orderedConfigs =
-      await Future.wait(orderedPackages.map(_packageBuildConfig));
+      await Future.wait(orderedPackages.map(packageBuildConfig));
   final builderDefinitions = orderedConfigs
       .expand((c) => c.builderDefinitions.values)
-      .where(_isValidDefinition);
+      .where(isValidDefinition);
 
   final rootBuildConfig = orderedConfigs.last;
   final orderedBuilders =
@@ -132,21 +139,21 @@ Future<BuildScriptInfo> findBuildScriptOptions({
 
   final postProcessBuilderDefinitions = orderedConfigs
       .expand((c) => c.postProcessBuilderDefinitions.values)
-      .where(_isValidDefinition);
+      .where(isValidDefinition);
 
   // Validate the builder keys in the global builder config, these should always
   // refer to actual builders.
   var allBuilderKeys = {for (var definition in orderedBuilders) definition.key};
   for (var globalBuilderConfig in rootBuildConfig.globalOptions.entries) {
-    void _checkBuilderKey(String builderKey) {
+    void checkBuilderKey(String builderKey) {
       if (allBuilderKeys.contains(builderKey)) return;
       _log.warning(
           'Invalid builder key `$builderKey` found in global_options config of '
           'build.yaml. This configuration will have no effect.');
     }
 
-    _checkBuilderKey(globalBuilderConfig.key);
-    globalBuilderConfig.value.runsBefore.forEach(_checkBuilderKey);
+    checkBuilderKey(globalBuilderConfig.key);
+    globalBuilderConfig.value.runsBefore.forEach(checkBuilderKey);
   }
 
   final applications = [

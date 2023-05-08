@@ -1,5 +1,5 @@
 name: build_modules
-version: 5.0.2
+version: 5.0.3-wip
 description: >-
   Builders to analyze and split Dart code into individually compilable modules
   based on imports.
@@ -25,13 +25,13 @@ dependencies:
   stream_transform: ^2.0.0
 
 dev_dependencies:
-  # Used inside tests
-  build_runner: ^2.0.0
-  build_test: ^2.0.0
-  lints: '>=1.0.0 <3.0.0'
-  json_serializable: ^6.0.0
-  test: ^1.16.0
   a:
     path: test/fixtures/a
   b:
     path: test/fixtures/b
+  # Used inside tests
+  build_runner: ^2.0.0
+  build_test: ^2.0.0
+  dart_flutter_team_lints: ^1.0.0
+  json_serializable: ^6.0.0
+  test: ^1.16.0

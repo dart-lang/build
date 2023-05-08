@@ -129,8 +129,8 @@ targets:
     _expectThrows(
         buildYaml,
         allOf(
-          contains(
-              'line 4, column 7 of build.yaml: Unsupported value for "builders".'),
+          contains('line 4, column 7 of build.yaml: Unsupported value for '
+              '"builders".'),
           contains(r'''
   ╷
 4 │       not:defined:

@@ -80,7 +80,7 @@ void main() {
             config.packages.singleWhere((p) => p.name == 'build');
         expect(buildPackage.root, Uri.parse('asset:build/'));
         expect(buildPackage.packageUriRoot, Uri.parse('asset:build/lib/'));
-        expect(buildPackage.languageVersion, LanguageVersion(2, 18));
+        expect(buildPackage.languageVersion, LanguageVersion(2, 19));
 
         final resolvedBuildUri =
             config.resolve(Uri.parse('package:build/foo.txt'))!;
@@ -104,7 +104,7 @@ void main() {
           Package(
             'build',
             Uri.file('/foo/bar/'),
-            languageVersion: LanguageVersion(2, 18),
+            languageVersion: LanguageVersion(2, 19),
           ),
         ]),
       );

@@ -196,8 +196,9 @@ Map<String, DependencyType> _parseDependencyTypes(String rootPackagePath) {
   }
   final dependencyTypes = <String, DependencyType>{};
   final dependencies = loadYaml(pubspecLock.readAsStringSync()) as YamlMap;
-  for (final packageName in dependencies['packages'].keys as Iterable) {
-    final source = dependencies['packages'][packageName]['source'];
+  final packages = dependencies['packages'] as YamlMap;
+  for (final packageName in packages.keys) {
+    final source = (packages[packageName] as YamlMap)['source'];
     dependencyTypes[packageName as String] =
         _dependencyTypeFromSource(source as String);
   }

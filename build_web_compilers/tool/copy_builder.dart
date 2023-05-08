@@ -17,8 +17,8 @@ class _CopyBuilder extends Builder {
   @override
   void build(BuildStep buildStep) {
     if (buildStep.inputId != _stackTraceMapperJs) {
-      throw StateError(
-          'Unexpected input for `CopyBuilder` expected only $_stackTraceMapperJs');
+      throw StateError('Unexpected input for `CopyBuilder` expected only '
+          '$_stackTraceMapperJs');
     }
     buildStep.writeAsString(
         _stackTraceMapperCopyJs, buildStep.readAsString(_stackTraceMapperJs));

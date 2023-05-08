@@ -4,7 +4,7 @@ version: 2.2.0-wip
 repository: https://github.com/dart-lang/build/tree/master/build_test
 
 environment:
-  sdk: '>=2.18.0 <3.0.0'
+  sdk: '>=2.19.0 <3.0.0'
 
 dependencies:
   async: ^2.5.0
@@ -26,4 +26,4 @@ dependencies:
 dev_dependencies:
   analyzer: ^5.2.0
   collection: ^1.15.0
-  lints: '>=1.0.0 <3.0.0'
+  dart_flutter_team_lints: ^1.0.0

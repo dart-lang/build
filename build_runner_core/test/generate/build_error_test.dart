@@ -137,8 +137,8 @@ void main() {
         applyToRoot(TestBuilder(
             buildExtensions: replaceExtension('.txt', '.success'),
             build: expectAsync2((buildStep, __) async {
-              // Attempts to read the file that came from a failing build step and
-              // hides exception
+              // Attempts to read the file that came from a failing build step
+              // and hides the exception.
               var failedFile = buildStep.inputId.changeExtension('.failed');
               await expectLater(
                   buildStep.readAsString(failedFile), throwsA(anything));

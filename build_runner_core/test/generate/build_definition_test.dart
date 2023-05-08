@@ -377,8 +377,8 @@ targets:
     group('invalidation', () {
       var logs = <LogRecord>[];
       setUp(() async {
-        // Gets rid of console spam during tests, we are setting up a new options
-        // object.
+        // Gets rid of console spam during tests, we are setting up a new
+        // options object.
         await options.logListener.cancel();
         logs.clear();
         environment = OverrideableEnvironment(environment, onLog: logs.add);
@@ -452,7 +452,8 @@ targets:
             <AssetId>{}, <AssetId>{}, aPackageGraph, environment.reader);
 
         var bytes = originalAssetGraph.serialize();
-        var serialized = json.decode(utf8.decode(bytes));
+        var serialized =
+            json.decode(utf8.decode(bytes)) as Map<String, dynamic>;
         serialized['dart_version'] = 'some_fake_version';
         var encoded = utf8.encode(json.encode(serialized));
         await createFile(assetGraphPath, encoded);

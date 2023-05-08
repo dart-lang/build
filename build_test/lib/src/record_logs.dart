@@ -85,7 +85,7 @@ class _LogRecordMatcher extends Matcher {
   }
 
   @override
-  bool matches(item, _) =>
+  bool matches(dynamic item, _) =>
       item is LogRecord &&
       _level.matches(item.level, {}) &&
       _message.matches(item.message, {});

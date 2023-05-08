@@ -362,9 +362,9 @@ class _Loader {
             enabledExperimentsChanged) {
           if (buildPhasesChanged) {
             _logger.warning(
-                'Throwing away cached asset graph because the build phases have '
-                'changed. This most commonly would happen as a result of adding a '
-                'new dependency or updating your dependencies.');
+                'Throwing away cached asset graph because the build phases '
+                'have changed. This most commonly would happen as a result of '
+                'adding a new dependency or updating your dependencies.');
           }
           if (pkgVersionsChanged) {
             _logger.warning(

@@ -90,7 +90,8 @@ class TestCommand extends BuildRunnerCommand {
       options = readOptions();
       return withEnabledExperiments(
           () => _run(options, tempPath), options.enableExperiments);
-    } on _BuildTestDependencyError catch (e) {
+    } on _BuildTestDependencyError // ignore: avoid_catching_errors
+    catch (e) {
       stdout.writeln(e);
       return ExitCode.config.code;
     } finally {

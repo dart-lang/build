@@ -1358,7 +1358,8 @@ void main() {
       test('removes input dependencies', () async {
         final builder = TestBuilder(
             buildExtensions: appendExtension('.copy', from: '.txt'),
-            // Add two extra deps, but remove one since we decided not to use it.
+            // Add two extra deps, but remove one since we decided not to use
+            // it.
             build: (BuildStep buildStep, _) async {
               var usedId = buildStep.inputId.addExtension('.used');
 
@@ -1440,7 +1441,8 @@ void main() {
       test('allows marking the primary input as unused', () async {
         final builder = TestBuilder(
             buildExtensions: appendExtension('.copy', from: '.txt'),
-            // Add two extra deps, but remove one since we decided not to use it.
+            // Add two extra deps, but remove one since we decided not to use
+            // it.
             extraWork: (BuildStep buildStep, _) async {
               buildStep.reportUnusedAssets([buildStep.inputId]);
               var usedId = buildStep.inputId.addExtension('.used');
@@ -1496,7 +1498,8 @@ void main() {
           () async {
         final builder = TestBuilder(
             buildExtensions: appendExtension('.copy', from: '.txt'),
-            // Add two extra deps, but remove one since we decided not to use it.
+            // Add two extra deps, but remove one since we decided not to use
+            // it.
             extraWork: (BuildStep buildStep, _) async {
               buildStep.reportUnusedAssets([buildStep.inputId]);
             });
@@ -1742,8 +1745,8 @@ void main() {
 
   group('regression tests', () {
     test(
-        'a failed output on a primary input which is not output in later builds',
-        () async {
+        'a failed output on a primary input which is not output in later '
+        'builds', () async {
       var builders = [
         applyToRoot(TestBuilder(
             buildExtensions: replaceExtension('.source', '.g1'),

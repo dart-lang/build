@@ -54,14 +54,15 @@ class DoctorCommand extends BuildRunnerCommand {
     final packageGraph = await PackageGraph.forThisPackage();
     final buildConfigOverrides = await findBuildConfigOverrides(
         packageGraph, FileBasedAssetReader(packageGraph));
-    Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
+    Future<BuildConfig> packageBuildConfig(PackageNode package) async {
       if (buildConfigOverrides.containsKey(package.name)) {
         return buildConfigOverrides[package.name]!;
       }
       try {
         return await BuildConfig.fromBuildConfigDir(package.name,
             package.dependencies.map((n) => n.name), package.path);
-      } on ArgumentError catch (e) {
+      } on ArgumentError // ignore: avoid_catching_errors
+      catch (e) {
         logger.severe(
             'Failed to parse a `build.yaml` file for ${package.name}', e);
         return BuildConfig.useDefault(
@@ -70,7 +71,7 @@ class DoctorCommand extends BuildRunnerCommand {
     }
 
     final allConfig = await Future.wait(
-        packageGraph.allPackages.values.map(_packageBuildConfig));
+        packageGraph.allPackages.values.map(packageBuildConfig));
     final allBuilders = <String, BuilderDefinition>{};
     for (final config in allConfig) {
       allBuilders.addAll(config.builderDefinitions);

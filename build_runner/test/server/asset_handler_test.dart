@@ -37,7 +37,7 @@ void main() {
     handler = AssetHandler(reader, 'a');
   });
 
-  void _addAsset(String id, String content, {bool deleted = false}) {
+  void addAsset(String id, String content, {bool deleted = false}) {
     var node = makeAssetNode(id, [], computeDigest(AssetId.parse(id), 'a'));
     if (deleted) {
       node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
@@ -47,7 +47,7 @@ void main() {
   }
 
   test('can not read deleted nodes', () async {
-    _addAsset('a|web/index.html', 'content', deleted: true);
+    addAsset('a|web/index.html', 'content', deleted: true);
     var response = await handler.handle(
         Request('GET', Uri.parse('http://server.com/index.html')),
         rootDir: 'web');
@@ -56,7 +56,7 @@ void main() {
   });
 
   test('can read from the root package', () async {
-    _addAsset('a|web/index.html', 'content');
+    addAsset('a|web/index.html', 'content');
     var response = await handler.handle(
         Request('GET', Uri.parse('http://server.com/index.html')),
         rootDir: 'web');
@@ -64,7 +64,7 @@ void main() {
   });
 
   test('can read from dependencies', () async {
-    _addAsset('b|lib/b.dart', 'content');
+    addAsset('b|lib/b.dart', 'content');
     var response = await handler.handle(
         Request('GET', Uri.parse('http://server.com/packages/b/b.dart')),
         rootDir: 'web');
@@ -72,7 +72,7 @@ void main() {
   });
 
   test('properly sets charset for dart content', () async {
-    _addAsset('b|lib/b.dart', 'content');
+    addAsset('b|lib/b.dart', 'content');
     var response = await handler.handle(
         Request('GET', Uri.parse('http://server.com/packages/b/b.dart')),
         rootDir: 'web');
@@ -80,7 +80,7 @@ void main() {
   });
 
   test('can read from dependencies nested under top-level dir', () async {
-    _addAsset('b|lib/b.dart', 'content');
+    addAsset('b|lib/b.dart', 'content');
     var response = await handler.handle(
         Request('GET', Uri.parse('http://server.com/packages/b/b.dart')),
         rootDir: 'web');
@@ -88,7 +88,7 @@ void main() {
   });
 
   test('defaults to index.html if path is empty', () async {
-    _addAsset('a|web/index.html', 'content');
+    addAsset('a|web/index.html', 'content');
     var response = await handler.handle(
         Request('GET', Uri.parse('http://server.com/')),
         rootDir: 'web');
@@ -96,7 +96,7 @@ void main() {
   });
 
   test('defaults to index.html if URI ends with slash', () async {
-    _addAsset('a|web/sub/index.html', 'content');
+    addAsset('a|web/sub/index.html', 'content');
     var response = await handler.handle(
         Request('GET', Uri.parse('http://server.com/sub/')),
         rootDir: 'web');
@@ -104,7 +104,7 @@ void main() {
   });
 
   test('does not default to index.html if URI does not end in slash', () async {
-    _addAsset('a|web/sub/index.html', 'content');
+    addAsset('a|web/sub/index.html', 'content');
     var response = await handler.handle(
         Request('GET', Uri.parse('http://server.com/sub')),
         rootDir: 'web');
@@ -129,7 +129,7 @@ void main() {
   });
 
   test('Supports HEAD requests', () async {
-    _addAsset('a|web/index.html', 'content');
+    addAsset('a|web/index.html', 'content');
     var response = await handler.handle(
         Request('HEAD', Uri.parse('http://server.com/index.html')),
         rootDir: 'web');

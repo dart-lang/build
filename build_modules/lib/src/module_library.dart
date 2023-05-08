@@ -172,7 +172,7 @@ class ModuleLibrary {
   /// Importable libraries can be round tripped to a String. Non-importable
   /// libraries should not be printed or parsed.
   factory ModuleLibrary.deserialize(AssetId id, String encoded) {
-    var json = jsonDecode(encoded);
+    var json = jsonDecode(encoded) as Map<String, Object?>;
 
     return ModuleLibrary._(id,
         isEntryPoint: json['isEntrypoint'] as bool,

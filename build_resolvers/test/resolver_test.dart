@@ -87,8 +87,8 @@ void main() {
     });
 
     test(
-        'calling isLibrary does not include that library in the libraries stream',
-        () {
+        'calling isLibrary does not include that library in the libraries '
+        'stream', () {
       return resolveSources({
         'a|web/main.dart': '',
         'b|lib/b.dart': '''
@@ -200,7 +200,7 @@ void main() {
     });
 
     group('assets that aren\'t a transitive import of input', () {
-      Future _runWith(Future Function(Resolver) test) {
+      Future runWith(Future Function(Resolver) test) {
         return resolveSources({
           'a|web/main.dart': '''
           main() {}
@@ -214,7 +214,7 @@ void main() {
       final otherId = AssetId.parse('a|lib/other.dart');
 
       test('can be resolved', () {
-        return _runWith((resolver) async {
+        return runWith((resolver) async {
           final main = await resolver.libraryFor(entryPoint);
           expect(main, isNotNull);
 
@@ -224,7 +224,7 @@ void main() {
       });
 
       test('are included in library stream', () {
-        return _runWith((resolver) async {
+        return runWith((resolver) async {
           await expectLater(
               resolver.libraries.map((l) => l.name), neverEmits('other'));
 
@@ -236,7 +236,7 @@ void main() {
       });
 
       test('can be found by name', () {
-        return _runWith((resolver) async {
+        return runWith((resolver) async {
           await resolver.libraryFor(otherId);
 
           await expectLater(

@@ -1,3 +1,5 @@
+## 2.4.1-wip
+
 ## 2.4.0
 
 - Add `BuildStep.packageConfig` getter to resolve a package config of all

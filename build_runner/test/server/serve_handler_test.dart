@@ -50,7 +50,7 @@ void main() {
         .addFutureResult(Future.value(BuildResult(BuildStatus.success, [])));
   });
 
-  void _addSource(String id, String content, {bool deleted = false}) {
+  void addSource(String id, String content, {bool deleted = false}) {
     var node = makeAssetNode(id, [], computeDigest(AssetId.parse(id), 'a'));
     if (deleted) {
       node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
@@ -60,14 +60,14 @@ void main() {
   }
 
   test('can get handlers for a subdirectory', () async {
-    _addSource('a|web/index.html', 'content');
+    addSource('a|web/index.html', 'content');
     var response = await serveHandler.handlerFor('web')(
         Request('GET', Uri.parse('http://server.com/index.html')));
     expect(await response.readAsString(), 'content');
   });
 
   test('caching with etags works', () async {
-    _addSource('a|web/index.html', 'content');
+    addSource('a|web/index.html', 'content');
     var handler = serveHandler.handlerFor('web');
     var requestUri = Uri.parse('http://server.com/index.html');
     var firstResponse = await handler(Request('GET', requestUri));
@@ -83,7 +83,7 @@ void main() {
   });
 
   test('caching with etags takes into account injected JS', () async {
-    _addSource('a|web/some.js', '$entrypointExtensionMarker\nalert(1)');
+    addSource('a|web/some.js', '$entrypointExtensionMarker\nalert(1)');
     var noReloadEtag = (await serveHandler.handlerFor('web',
                 buildUpdates: BuildUpdatesOption.none)(
             Request('GET', Uri.parse('http://server.com/some.js'))))
@@ -102,7 +102,7 @@ void main() {
 
   group('build failures', () {
     setUp(() async {
-      _addSource('a|web/index.html', '');
+      addSource('a|web/index.html', '');
       assetGraph.add(GeneratedAssetNode(
         AssetId('a', 'web/main.ddc.js'),
         builderOptionsId: AssetId('_\$fake', 'options_id'),
@@ -143,7 +143,7 @@ void main() {
   });
 
   test('logs requests if you ask it to', () async {
-    _addSource('a|web/index.html', 'content');
+    addSource('a|web/index.html', 'content');
     expect(
         Logger.root.onRecord,
         emitsThrough(predicate<LogRecord>((record) =>
@@ -188,9 +188,9 @@ void main() {
   });
 
   test('serve asset digests', () async {
-    _addSource('a|web/index.html', 'content1');
-    _addSource('a|lib/some.dart.js', 'content2');
-    _addSource('a|lib/another.dart.js', 'content3');
+    addSource('a|web/index.html', 'content1');
+    addSource('a|lib/some.dart.js', 'content2');
+    addSource('a|lib/another.dart.js', 'content3');
     var response = await serveHandler.handlerFor('web')(Request(
         'GET', Uri.parse('http://server.com/\$assetDigests'),
         body: jsonEncode([
@@ -212,7 +212,7 @@ void main() {
             BuildUpdatesOption buildUpdates) =>
         group(groupName, () {
           test('injects client code if enabled', () async {
-            _addSource('a|web/some.js', '$entrypointExtensionMarker\nalert(1)');
+            addSource('a|web/some.js', '$entrypointExtensionMarker\nalert(1)');
             var response = await serveHandler.handlerFor('web',
                     buildUpdates: buildUpdates)(
                 Request('GET', Uri.parse('http://server.com/some.js')));
@@ -220,7 +220,7 @@ void main() {
           });
 
           test('doesn\'t inject client code if disabled', () async {
-            _addSource('a|web/some.js', '$entrypointExtensionMarker\nalert(1)');
+            addSource('a|web/some.js', '$entrypointExtensionMarker\nalert(1)');
             var response = await serveHandler.handlerFor('web')(
                 Request('GET', Uri.parse('http://server.com/some.js')));
             expect(await response.readAsString(),
@@ -228,7 +228,7 @@ void main() {
           });
 
           test('doesn\'t inject client code in non-js files', () async {
-            _addSource(
+            addSource(
                 'a|web/some.html', '$entrypointExtensionMarker\n<br>some');
             var response = await serveHandler.handlerFor('web',
                     buildUpdates: buildUpdates)(
@@ -238,7 +238,7 @@ void main() {
           });
 
           test('doesn\'t inject client code in non-marked files', () async {
-            _addSource('a|web/some.js', 'alert(1)');
+            addSource('a|web/some.js', 'alert(1)');
             var response = await serveHandler.handlerFor('web',
                     buildUpdates: buildUpdates)(
                 Request('GET', Uri.parse('http://server.com/some.js')));
@@ -247,7 +247,7 @@ void main() {
           });
 
           test('expect websocket connection if enabled', () async {
-            _addSource('a|web/index.html', 'content');
+            addSource('a|web/index.html', 'content');
             var uri = Uri.parse('ws://server.com/');
             expect(
                 serveHandler.handlerFor('web', buildUpdates: buildUpdates)(
@@ -267,7 +267,7 @@ void main() {
         'live-reload', 'live_reload_client', BuildUpdatesOption.liveReload);
 
     test('reject websocket connection if disabled', () async {
-      _addSource('a|web/index.html', 'content');
+      addSource('a|web/index.html', 'content');
       var response = await serveHandler.handlerFor('web')(
           Request('GET', Uri.parse('ws://server.com/'), headers: {
         'Connection': 'Upgrade',
@@ -305,7 +305,8 @@ void main() {
             (WebSocketChannel serverChannel, String rootDir) async {
           var mockResponse =
               await handler.createHandlerByRootDir(rootDir)(FakeRequest());
-          var onConnect = mockResponse.context['onConnect'] as Function;
+          var onConnect = mockResponse.context['onConnect'] as void Function(
+              WebSocketChannel, String);
           onConnect(serverChannel, '');
         };
 
@@ -373,8 +374,8 @@ void main() {
       });
 
       test('emmits build results digests', () async {
-        _addSource('a|web/index.html', 'content1');
-        _addSource('a|lib/some.dart.js', 'content2');
+        addSource('a|web/index.html', 'content1');
+        addSource('a|lib/some.dart.js', 'content2');
         var indexHash =
             computeDigest(AssetId('a', 'web/index.html'), 'content1')
                 .toString();
@@ -402,9 +403,9 @@ void main() {
       });
 
       test('works for different root dirs', () async {
-        _addSource('a|web1/index.html', 'content1');
-        _addSource('a|web2/index.html', 'content2');
-        _addSource('a|lib/some.dart.js', 'content3');
+        addSource('a|web1/index.html', 'content1');
+        addSource('a|web2/index.html', 'content2');
+        addSource('a|lib/some.dart.js', 'content3');
         var someDartHash =
             computeDigest(AssetId('a', 'lib/some.dart.js'), 'content3')
                 .toString();

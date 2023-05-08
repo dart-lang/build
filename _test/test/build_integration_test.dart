@@ -91,8 +91,8 @@ void main() {
     });
 
     test(
-        'Restores previously deleted outputs if they are not deleted in subsequent builds',
-        () async {
+        'Restores previously deleted outputs if they are not deleted in '
+        'subsequent builds', () async {
       final dartSource =
           File(p.join('build', 'web', 'packages', '_test', 'app.dart'));
       await runBuild(trailingArgs: [
@@ -112,11 +112,12 @@ void main() {
 
       var nextBuild = await runBuild();
       expect(
-          nextBuild.stdout.split('\n'),
+          (nextBuild.stdout as String).split('\n'),
           containsAllInOrder([
             contains('Generating build script'),
             contains(
-                'Invalidated precompiled build script due to missing asset graph.'),
+                'Invalidated precompiled build script due to missing asset '
+                'graph.'),
             contains('Precompiling build script'),
             contains('Building new asset graph.'),
             contains('Succeeded after'),

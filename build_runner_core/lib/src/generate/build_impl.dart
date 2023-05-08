@@ -509,8 +509,8 @@ class _SingleBuild {
         await _cleanUpStaleOutputs(builderOutputs);
         await FailureReporter.clean(phaseNumber, input);
 
-        // We may have read some inputs in the call to `_buildShouldRun`, we want
-        // to remove those.
+        // We may have read some inputs in the call to `_buildShouldRun`, we
+        // want to remove those.
         wrappedReader.assetsRead.clear();
 
         var actionDescription =
@@ -809,7 +809,7 @@ class _SingleBuild {
   Future<Digest> _computeCombinedDigest(Iterable<AssetId> ids,
       AssetId builderOptionsId, AssetReader reader) async {
     var combinedBytes = Uint8List.fromList(List.filled(16, 0));
-    void _combine(Uint8List other) {
+    void combine(Uint8List other) {
       assert(other.length == 16);
       for (var i = 0; i < 16; i++) {
         combinedBytes[i] ^= other[i];
@@ -817,7 +817,7 @@ class _SingleBuild {
     }
 
     var builderOptionsNode = _assetGraph.get(builderOptionsId)!;
-    _combine(builderOptionsNode.lastKnownDigest!.bytes as Uint8List);
+    combine(builderOptionsNode.lastKnownDigest!.bytes as Uint8List);
 
     // Limit the total number of digests we are computing at a time. Otherwise
     // this can overload the event queue.
@@ -830,12 +830,12 @@ class _SingleBuild {
         // different from no input at all.
         //
         // This needs to be unique per input so we use the md5 hash of the id.
-        _combine(md5.convert(id.toString().codeUnits).bytes as Uint8List);
+        combine(md5.convert(id.toString().codeUnits).bytes as Uint8List);
         return;
       } else {
         node.lastKnownDigest ??= await reader.digest(id);
       }
-      _combine(node.lastKnownDigest!.bytes as Uint8List);
+      combine(node.lastKnownDigest!.bytes as Uint8List);
     }));
 
     return Digest(combinedBytes);

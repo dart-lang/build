@@ -57,7 +57,7 @@ class DartPlatform {
   int get hashCode => name.hashCode;
 
   @override
-  bool operator ==(other) => other is DartPlatform && other.name == name;
+  bool operator ==(Object other) => other is DartPlatform && other.name == name;
 }
 
 class DartPlatformAlreadyRegistered implements Exception {

@@ -114,7 +114,7 @@ Future<void> _createDevCompilerModule(
   var sourceMapId = jsOutputId.changeExtension(_jsSourceMapExtension);
   var file = scratchSpace.fileFor(sourceMapId);
   var content = await file.readAsString();
-  var json = jsonDecode(content);
+  var json = jsonDecode(content) as Map<String, Object?>;
   json['sources'] = fixSourceMapSources((json['sources'] as List).cast());
   await buildStep.writeAsString(sourceMapId, jsonEncode(json));
 }

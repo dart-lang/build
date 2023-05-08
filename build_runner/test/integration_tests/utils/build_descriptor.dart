@@ -14,7 +14,7 @@ import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:stack_trace/stack_trace.dart';
 import 'package:test/test.dart'
-    show expect, expectLater, emitsThrough, contains;
+    show contains, emitsThrough, expect, expectLater;
 import 'package:test_descriptor/test_descriptor.dart' as d;
 import 'package:test_process/test_process.dart';
 
@@ -42,8 +42,8 @@ TestBuilderDefinition builder(String key, Builder builder,
         {bool isOptional = false, List<String> requiredInputs = const []}) =>
     TestBuilderDefinition(key, isOptional, builder, requiredInputs);
 
-/// Create a package in [d.sandbox] with a `build.yaml` file exporting [builders]
-/// and auto applying them to dependents.
+/// Create a package in [d.sandbox] with a `build.yaml` file exporting
+/// [builders] and auto applying them to dependents.
 ///
 /// The content in between `test-package-start/end` comments of the script that
 /// this function is called from will be copied into 'lib/builders.dart'. It

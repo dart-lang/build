@@ -94,7 +94,7 @@ class _IgnoringNewlinesAndWhitespaceMatcher extends Matcher {
   Description describe(Description description) => description;
 
   @override
-  bool matches(item, Map matchState) {
+  bool matches(dynamic item, Map matchState) {
     if (item is! String) return false;
     return _stripWhitespaceAndNewlines(item) == _expected;
   }
