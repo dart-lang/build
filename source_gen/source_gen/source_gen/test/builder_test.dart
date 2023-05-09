@@ -519,7 +519,7 @@ part "a.g.dart";
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // @dart=2.12
 
-part of a;
+part of 'a.dart';
 
 some generated content
 ''',
@@ -668,7 +668,7 @@ some generated content
               r'''
 // ignore_for_file: lines_longer_than_80_chars, prefer_expression_function_bodies
 
-part of a;
+part of 'a.dart';
 
 bar generated content
 
@@ -703,7 +703,7 @@ foo generated content
 
 // bar
 
-part of a;
+part of 'a.dart';
 
 bar generated content
 
@@ -970,7 +970,7 @@ class MyGoodError { }
 ''';
 
 const _testLibPartContent = r'''
-part of test_lib;
+part of 'test_lib.dart';
 final int bar = 42;
 class Customer { }
 ''';
@@ -987,7 +987,7 @@ final int foo = 42
 
 const _testGenPartContent = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of test_lib;
+part of 'test_lib.dart';
 
 // **************************************************************************
 // CommentGenerator
@@ -1000,7 +1000,7 @@ part of test_lib;
 const _testGenPartContentForLibrary =
     r'''// GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of test_lib;
+part of 'test_lib.dart';
 
 // **************************************************************************
 // CommentGenerator
@@ -1022,7 +1022,7 @@ const _testGenStandaloneContent = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
 const _testGenPartContentForClassesAndLibrary =
     r'''// GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of test_lib;
+part of 'test_lib.dart';
 
 // **************************************************************************
 // CommentGenerator
@@ -1047,7 +1047,7 @@ part of 'test_lib.dart';
 
 const _whitespaceTrimmed = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of test_lib;
+part of 'test_lib.dart';
 
 // **************************************************************************
 // Generator: Literal

@@ -124,13 +124,13 @@ class _Builder extends Builder {
 
     if (!_isLibraryBuilder) {
       final asset = buildStep.inputId;
-      final name = nameOfPartial(library, asset, outputId);
+      final partOfUri = uriOfPartial(library, asset, outputId);
       contentBuffer.writeln();
 
       if (this is PartBuilder) {
         contentBuffer
           ..write(languageOverrideForLibrary(library))
-          ..writeln('part of $name;');
+          ..writeln('part of \'$partOfUri\';');
         final part = computePartUrl(buildStep.inputId, outputId);
 
         final libraryUnit =

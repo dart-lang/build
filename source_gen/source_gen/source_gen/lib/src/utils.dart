@@ -43,29 +43,10 @@ bool hasExpectedPartDirective(CompilationUnit unit, String part) =>
         .whereType<PartDirective>()
         .any((e) => e.uri.stringValue == part);
 
-/// Returns a name suitable for `part of "..."` when pointing to [element].
-String nameOfPartial(LibraryElement element, AssetId source, AssetId output) {
-  if (element.name.isNotEmpty) {
-    return element.name;
-  }
-
+/// Returns a uri suitable for `part of "..."` when pointing to [element].
+String uriOfPartial(LibraryElement element, AssetId source, AssetId output) {
   assert(source.package == output.package);
-  final relativeSourceUri =
-      p.url.relative(source.path, from: p.url.dirname(output.path));
-  return '\'$relativeSourceUri\'';
-}
-
-/// Returns a suggested library identifier based on [source] path and package.
-String suggestLibraryName(AssetId source) {
-  // lib/test.dart --> [lib/test.dart]
-  final parts = source.path.split('/');
-  // [lib/test.dart] --> [lib/test]
-  parts[parts.length - 1] = parts.last.split('.').first;
-  // [lib/test] --> [test]
-  if (parts.first == 'lib') {
-    parts.removeAt(0);
-  }
-  return '${source.package}.${parts.join('.')}';
+  return p.url.relative(source.path, from: p.url.dirname(output.path));
 }
 
 /// Returns what 'part "..."' URL is needed to import [output] from [input].

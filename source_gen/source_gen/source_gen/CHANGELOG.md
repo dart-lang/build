@@ -1,3 +1,8 @@
+## 1.3.1
+
+* Always use a Uri in `part of` directives (previously a name would be used if
+  the library had a non-empty one).
+
 ## 1.3.0
 
 * Add support for `build_extensions` configuration of builders producing
