@@ -1,3 +1,7 @@
+## 1.3.2
+
+* Make `TypeChecker.isAssignableFromType()` null safe.
+
 ## 1.3.1
 
 * Always use a Uri in `part of` directives (previously a name would be used if
