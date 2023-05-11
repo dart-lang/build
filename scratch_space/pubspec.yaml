@@ -5,6 +5,7 @@ repository: https://github.com/dart-lang/build/tree/master/scratch_space
 
 topics:
   - build-runner
+  - codegen
 
 environment:
   sdk: ">=2.19.0 <3.0.0"
