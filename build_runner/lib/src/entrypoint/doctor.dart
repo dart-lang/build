@@ -22,9 +22,6 @@ class DoctorCommand extends BuildRunnerCommand {
   String get name => 'doctor';
 
   @override
-  bool get hidden => true;
-
-  @override
   String get description => 'Check for misconfiguration of the build.';
 
   @override

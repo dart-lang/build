@@ -1,3 +1,7 @@
+## 2.4.3
+
+- Make the `doctor` command visible.
+
 ## 2.4.2
 
 - Support package:build version 2.4.x.
