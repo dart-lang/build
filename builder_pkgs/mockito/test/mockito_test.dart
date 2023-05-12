@@ -168,6 +168,24 @@ void main() {
       expect(mock.getter, equals('A'));
     });
 
+    test('throws an exception if not enough answers were provided', () {
+      when(mock.methodWithNormalArgs(any)).thenReturnInOrder(['One', 'Two']);
+
+      expect(mock.methodWithNormalArgs(100), equals('One'));
+      expect(mock.methodWithNormalArgs(100), equals('Two'));
+
+      expect(
+        () => mock.methodWithNormalArgs(100),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains('thenReturnInOrder does not have enough answers'),
+          ),
+        ),
+      );
+    });
+
     test('should have hashCode when it is not mocked', () {
       expect(mock.hashCode, isNotNull);
     });
@@ -236,6 +254,11 @@ void main() {
       expect(
           () => when(mock.methodReturningStream())
               .thenReturn(Stream.fromIterable(['stub'])),
+          throwsArgumentError);
+    });
+
+    test('thenReturn throws if provided expects are empty for inOrder', () {
+      expect(() => when(mock.methodReturningStream()).thenReturnInOrder([]),
           throwsArgumentError);
     });
 
