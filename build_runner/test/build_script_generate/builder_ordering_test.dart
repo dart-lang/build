@@ -18,6 +18,7 @@ void main() {
               'build_extensions': <String, List<String>>{},
               'target': '',
               'import': '',
+              'runs_before': [':c'],
             },
             'b': {
               'builder_factories': ['createBuilder'],
@@ -57,7 +58,6 @@ void main() {
                 'build_extensions': {},
                 'target': '',
                 'import': '',
-                'runs_before': [':a'],
               },
               'c': {
                 'builder_factories': ['createBuilder'],
@@ -70,15 +70,18 @@ void main() {
         });
         final orderedBuilders = findBuilderOrder(
             buildConfigs.values.expand((v) => v.builderDefinitions.values), {
-          'a:c': GlobalBuilderConfig.fromJson({
+          'a:b': GlobalBuilderConfig.fromJson({
             'runs_before': ['a:a'],
+          }),
+          'a:a': GlobalBuilderConfig.fromJson({
+            'runs_before': ['a:c'],
           }),
         });
         final orderedKeys = orderedBuilders.map((b) => b.key);
         expect(orderedKeys, [
           'a:b',
-          'a:c',
           'a:a',
+          'a:c',
         ]);
       }, 'a', []);
     });
@@ -99,6 +102,7 @@ void main() {
                 'build_extensions': {},
                 'target': '',
                 'import': '',
+                'runs_before': [':a'],
               },
               'c': {
                 'builder_factories': ['createBuilder'],
@@ -111,8 +115,8 @@ void main() {
         });
         final orderedBuilders = findBuilderOrder(
             buildConfigs.values.expand((v) => v.builderDefinitions.values), {
-          'a:b': GlobalBuilderConfig.fromJson({
-            'runs_before': ['a:a'],
+          'a:a': GlobalBuilderConfig.fromJson({
+            'runs_before': ['a:c'],
           }),
         });
         final orderedKeys = orderedBuilders.map((b) => b.key);
