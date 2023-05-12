@@ -11,7 +11,7 @@ stages:
   - test: -x integration --test-randomize-ordering-seed=random
   - test: -P experiments --test-randomize-ordering-seed=random
     sdk:
-    - 3.0.0-277.0.dev
+    - dev
 - e2e_test:
   # TODO: enable stack trace chaining https://github.com/dart-lang/build/issues/2894
   - test: -t integration --total-shards 5 --shard-index 0 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1
