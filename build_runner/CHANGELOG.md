@@ -1,4 +1,4 @@
-## 2.4.4-wip
+## 2.4.4
 
 - Use a stable order for builders without an order defined by dependencies.
 
