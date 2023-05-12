@@ -1,3 +1,7 @@
+## 2.4.4-wip
+
+- Use a stable order for builders without and order defined by dependencies.
+
 ## 2.4.3
 
 - Make the `doctor` command visible.

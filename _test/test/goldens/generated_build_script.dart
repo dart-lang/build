@@ -64,18 +64,6 @@ final _builders = <_i1.BuilderApplication>[
     appliesBuilders: const [r'build_modules:module_cleanup'],
   ),
   _i1.apply(
-    r'build_web_compilers:dart2js_modules',
-    [
-      _i3.dart2jsMetaModuleBuilder,
-      _i3.dart2jsMetaModuleCleanBuilder,
-      _i3.dart2jsModuleBuilder,
-    ],
-    _i1.toNoneByDefault(),
-    isOptional: true,
-    hideOutput: true,
-    appliesBuilders: const [r'build_modules:module_cleanup'],
-  ),
-  _i1.apply(
     r'build_web_compilers:ddc_modules',
     [
       _i3.ddcMetaModuleBuilder,
@@ -101,6 +89,18 @@ final _builders = <_i1.BuilderApplication>[
       r'build_web_compilers:dart2js_modules',
       r'build_web_compilers:dart_source_cleanup',
     ],
+  ),
+  _i1.apply(
+    r'build_web_compilers:dart2js_modules',
+    [
+      _i3.dart2jsMetaModuleBuilder,
+      _i3.dart2jsMetaModuleCleanBuilder,
+      _i3.dart2jsModuleBuilder,
+    ],
+    _i1.toNoneByDefault(),
+    isOptional: true,
+    hideOutput: true,
+    appliesBuilders: const [r'build_modules:module_cleanup'],
   ),
   _i1.apply(
     r'build_web_compilers:entrypoint',
