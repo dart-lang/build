@@ -1,4 +1,6 @@
-## 2.4.3-wip
+## 2.4.3
+
+- Make the `doctor` command visible.
 
 ## 2.4.2
 
