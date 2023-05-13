@@ -1,3 +1,7 @@
+## 2.4.4
+
+- Use a stable order for builders without an order defined by dependencies.
+
 ## 2.4.3
 
 - Make the `doctor` command visible.

@@ -20,18 +20,17 @@ Iterable<BuilderDefinition> findBuilderOrder(
       consistentOrderBuilders.where((child) =>
           _hasInputDependency(parent, child) ||
           _mustRunBefore(parent, child, globalBuilderConfigs));
-  var components = stronglyConnectedComponents<BuilderDefinition>(
-    consistentOrderBuilders,
-    dependencies,
-    equals: (a, b) => a.key == b.key,
-    hashCode: (b) => b.key.hashCode,
-  );
-  return components.map((component) {
-    if (component.length > 1) {
-      throw ArgumentError('Required input cycle for ${component.toList()}');
-    }
-    return component.single;
-  }).toList();
+  try {
+    return topologicalSort<BuilderDefinition>(
+      consistentOrderBuilders,
+      dependencies,
+      equals: (a, b) => a.key == b.key,
+      hashCode: (b) => b.key.hashCode,
+      secondarySort: (a, b) => a.key.compareTo(b.key),
+    ).reversed;
+  } on CycleException<BuilderDefinition> catch (e) {
+    throw ArgumentError('Required input cycle for ${e.cycle}');
+  }
 }
 
 /// Whether [parent] has a `required_input` that wants to read outputs produced
