@@ -2046,6 +2046,9 @@ class _MockClassInfo {
     if (overrideVoid && type.isVoid) {
       return TypeReference((b) => b..symbol = 'dynamic');
     }
+    if (type is analyzer.InvalidType) {
+      return TypeReference((b) => b..symbol = 'dynamic');
+    }
     if (type is analyzer.InterfaceType) {
       return TypeReference((b) {
         b
@@ -2237,6 +2240,8 @@ extension on analyzer.DartType {
   bool get containsPrivateName {
     final self = this;
     if (self is analyzer.DynamicType) {
+      return false;
+    } else if (self is analyzer.InvalidType) {
       return false;
     } else if (self is analyzer.InterfaceType) {
       return self.element.isPrivate ||
