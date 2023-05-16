@@ -55,6 +55,7 @@ Future<ServeHandler> watch(
   bool? isReleaseBuild,
   String? logPerformanceDir,
   Set<BuildFilter>? buildFilters,
+  String? notFoundDefaultsTo
 }) async {
   builderConfigOverrides ??= const {};
   buildDirs ??= <BuildDirectory>{};
@@ -105,7 +106,8 @@ Future<ServeHandler> watch(
           .any((target) => target.outputLocation?.path.isNotEmpty ?? false),
       buildDirs,
       buildFilters,
-      isReleaseMode: isReleaseBuild ?? false);
+      isReleaseMode: isReleaseBuild ?? false,
+      notFoundDefaultsTo: notFoundDefaultsTo);
 
   unawaited(watch.buildResults.drain().then((_) async {
     await terminator.cancel();
@@ -134,7 +136,8 @@ WatchImpl _runWatch(
         bool willCreateOutputDirs,
         Set<BuildDirectory> buildDirs,
         Set<BuildFilter> buildFilters,
-        {bool isReleaseMode = false}) =>
+        {bool isReleaseMode = false,
+        String? notFoundDefaultsTo}) =>
     WatchImpl(
         options,
         environment,
@@ -146,7 +149,8 @@ WatchImpl _runWatch(
         willCreateOutputDirs,
         buildDirs,
         buildFilters,
-        isReleaseMode: isReleaseMode);
+        isReleaseMode: isReleaseMode,
+        notFoundDefaultsTo: notFoundDefaultsTo);
 
 class WatchImpl implements BuildState {
   BuildImpl? _build;
@@ -171,6 +175,9 @@ class WatchImpl implements BuildState {
 
   /// The [PackageGraph] for the current program.
   final PackageGraph packageGraph;
+
+  // An asset path to redirect when the file is not found by the web server
+  final String? notFoundDefaultsTo;
 
   /// The directories to build upon file changes and where to output them.
   final Set<BuildDirectory> _buildDirs;
@@ -200,7 +207,7 @@ class WatchImpl implements BuildState {
       this._willCreateOutputDirs,
       this._buildDirs,
       this._buildFilters,
-      {bool isReleaseMode = false})
+      {bool isReleaseMode = false, this.notFoundDefaultsTo})
       : _debounceDelay = options.debounceDelay,
         packageGraph = options.packageGraph {
     buildResults = _run(

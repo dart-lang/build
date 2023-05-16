@@ -34,9 +34,10 @@
 
 - Upgrade to `frontend_service_client` version 3.
 
-## 2.3.0
-
+## 2.3.3-dev
 - Add `-d` as a shorthand for `--delete-conflicting-outputs`.
+- Added a flag to redirect all not found to a specific 
+  asset: ` not-found-defaults-to`
 
 ## 2.2.1
 
