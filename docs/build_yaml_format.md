@@ -95,14 +95,12 @@ for guidance.
 
 ## AutoApply
 
-| value        | meaning                                                     |
-| ------------ | ----------------------------------------------------------- |
-| none         | Doesn't apply by default to any package, must be explicitly |
-:              : enabled.                                                    :
-| dependents   | Applies to all packages with a direct dependency on this    |
-:              : package.                                                    :
-| all_packages | Applies to all packages in the graph.                       |
-| root_package | Applies to only the root (application) package.             |
+value        | meaning                                                               |
+------------ | --------------------------------------------------------------------- |
+none         | Doesn't apply by default to any package, must be explicitly enabled.  |
+dependents   | Applies to all packages with a direct dependency on this package.     |
+all_packages | Applies to all packages in the graph.                                 |
+root_package | Applies to only the root (application) package.                       |
 
 ## BuildTo
 
