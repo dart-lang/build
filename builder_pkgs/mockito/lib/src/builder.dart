@@ -1474,8 +1474,13 @@ class _MockClassInfo {
     }
 
     if (type is! analyzer.InterfaceType) {
-      // TODO(srawlins): This case is not known.
-      return literalNull;
+      if (type.isBottom || type is analyzer.InvalidType) {
+        // Not sure what could be done here...
+        return literalNull;
+      }
+      // As a last resort, try looking for the correct value at run-time.
+      return referImported('dummyValue', 'package:mockito/src/dummies.dart')
+          .call([refer('this'), invocation], {}, [_typeReference(type)]);
     }
 
     final typeArguments = type.typeArguments;

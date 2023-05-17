@@ -7,6 +7,8 @@
 * Require analyzer 5.11.0.
 * Fail to generate mocks of `sealed`/`base`/`final` classes.
 * Add new `thenReturnInOrder` method to mock multiple calls to a single method in order.
+* Add `provideDummy`/`provideDummyBuilder` functions for users to supply dummy
+  values to Mockito, to cover cases where codegen can't create one.
 
 ## 5.4.0
 

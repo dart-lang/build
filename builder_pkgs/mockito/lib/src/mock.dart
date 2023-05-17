@@ -23,6 +23,7 @@ import 'dart:collection';
 import 'package:matcher/expect.dart';
 import 'package:meta/meta.dart';
 import 'package:mockito/src/call_pair.dart';
+import 'package:mockito/src/dummies.dart' show resetDummyBuilders;
 import 'package:mockito/src/invocation_matcher.dart';
 // ignore: deprecated_member_use
 import 'package:test_api/fake.dart';
@@ -284,6 +285,29 @@ class FakeUsedError extends Error {
       '${createdStackTrace.toString()}\n\n'
       "However, member '${_symbolToString(invocation.memberName)}' of the "
       'created fake object was accessed.\n'
+      'Add a stub for '
+      "${receiver.runtimeType}.$_memberName using Mockito's 'when' API.\n";
+}
+
+class FakeFunctionUsedError extends Error {
+  final Invocation parentInvocation;
+  final Object receiver;
+  final StackTrace createdStackTrace;
+  final String _memberName;
+
+  FakeFunctionUsedError(
+      this.parentInvocation, this.receiver, this.createdStackTrace)
+      : _memberName = _symbolToString(parentInvocation.memberName);
+
+  @override
+  String toString() => "FakeFunctionUsedError: '$_memberName'\n"
+      'No stub was found which matches the argument of this method call:\n'
+      '${parentInvocation.toPrettyString()}\n\n'
+      'A fake function was created for this call, in the hope that it '
+      "won't be ever called.\n"
+      "Here is the stack trace where '$_memberName' was called:\n\n"
+      '${createdStackTrace.toString()}\n\n'
+      'However, the fake function was called.\n'
       'Add a stub for '
       "${receiver.runtimeType}.$_memberName using Mockito's 'when' API.\n";
 }
@@ -1231,6 +1255,8 @@ void logInvocations(List<Mock> mocks) {
 ///
 /// In these cases, [resetMockitoState] might be called at the end of `setUp`,
 /// or in `tearDown`.
+///
+/// This also clears all user-provided dummy builders.
 void resetMockitoState() {
   _whenInProgress = false;
   _untilCalledInProgress = false;
@@ -1241,6 +1267,7 @@ void resetMockitoState() {
   _capturedArgs.clear();
   _storedArgs.clear();
   _storedNamedArgs.clear();
+  resetDummyBuilders();
 }
 
 extension on Invocation {
