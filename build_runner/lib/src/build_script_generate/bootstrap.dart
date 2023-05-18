@@ -158,6 +158,7 @@ Future<int> _createKernelIfNeeded(Logger logger) async {
       scriptKernelCachedLocation,
       'lib/_internal/vm_platform_strong.dill',
       printIncrementalDependencies: false,
+      enabledExperiments: ['records', 'patterns', 'inline-class']
     );
 
     var hadOutput = false;
