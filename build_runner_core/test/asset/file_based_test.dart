@@ -100,9 +100,7 @@ void main() async {
 
     test('can read from the SDK', () async {
       expect(
-          await reader.canRead(
-              makeAssetId(r'$sdk|lib/dev_compiler/kernel/amd/dart_sdk.js')),
-          true);
+          await reader.canRead(makeAssetId(r'$sdk|lib/libraries.json')), true);
     });
   });
 
