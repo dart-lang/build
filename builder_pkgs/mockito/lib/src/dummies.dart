@@ -125,7 +125,7 @@ List<Object?> _defaultDummies = [
   Stream<Never>.empty(),
 ];
 
-T dummyValue<T>(Object parent, Invocation invocation) {
+T? dummyValueOrNull<T>(Object parent, Invocation invocation) {
   if (null is T) return null as T;
   final dummyBuilder = _dummyBuilders[T] ?? _defaultDummyBuilders[T];
   if (dummyBuilder != null) {
@@ -135,6 +135,12 @@ T dummyValue<T>(Object parent, Invocation invocation) {
     if (value is DummyBuilder) value = value(parent, invocation);
     if (value is T) return value;
   }
+  return null;
+}
+
+T dummyValue<T>(Object parent, Invocation invocation) {
+  final value = dummyValueOrNull<T>(parent, invocation);
+  if (value is T) return value;
   throw MissingDummyValueError(T);
 }
 
@@ -153,3 +159,7 @@ void provideDummy<T>(T dummy) =>
 void resetDummyBuilders() {
   _dummyBuilders.clear();
 }
+
+// Helper function.
+R? ifNotNull<T, R>(T? value, R Function(T) action) =>
+    value != null ? action(value) : null;

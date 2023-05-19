@@ -1497,10 +1497,23 @@ class _MockClassInfo {
       if (typeArgument is analyzer.TypeParameterType &&
           typeArgumentIsPotentiallyNonNullable) {
         // We cannot create a valid Future for this unknown, potentially
-        // non-nullable type, so we'll use a `_FakeFuture`, which will throw
+        // non-nullable type, so try creating a value at run-time and if
+        // that fails, we'll use a `_FakeFuture`, which will throw
         // if awaited.
         final futureType = typeProvider.futureType(typeArguments.first);
-        return _dummyValueImplementing(futureType, invocation);
+        return referImported('ifNotNull', 'package:mockito/src/dummies.dart')
+            .call([
+          referImported('dummyValueOrNull', 'package:mockito/src/dummies.dart')
+              .call([refer('this'), invocation], {},
+                  [_typeReference(typeArgument)]),
+          Method((b) => b
+            ..requiredParameters.add(Parameter((p) => p
+              ..type = _typeReference(typeArgument)
+              ..name = 'v'))
+            ..body = _futureReference(_typeReference(typeArgument))
+                .property('value')
+                .call([refer('v')]).code).closure
+        ]).ifNullThen(_dummyValueImplementing(futureType, invocation));
       } else {
         // Create a real Future with a legal value, via [Future.value].
         final futureValueArguments = typeArgumentIsPotentiallyNonNullable

@@ -2310,7 +2310,7 @@ void main() {
         Future<T> m<T>() async => false;
       }
       '''),
-      _containsAllOf('returnValue: _FakeFuture_0<T>('),
+      _containsAllOf('dummyValueOrNull<T>(', '_FakeFuture_0<T>('),
     );
   });
 

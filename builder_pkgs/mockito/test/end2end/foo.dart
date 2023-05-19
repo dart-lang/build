@@ -20,6 +20,7 @@ class Foo<T> {
   void returnsVoid() {}
   Future<void> returnsFutureVoid() => Future.value();
   Future<void>? returnsNullableFutureVoid() => Future.value();
+  Future<T> returnsFuture(T x) => Future.value(x);
   Bar returnsBar(int arg) => Bar();
 }
 

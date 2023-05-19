@@ -184,6 +184,11 @@ void main() {
             .having((e) => e.toString(), 'toString()', contains('getter'))),
       );
     });
+
+    test('a method returning Future<T> can be stubbed', () async {
+      when(foo.returnsFuture(any)).thenAnswer((_) async => 1);
+      expect(await foo.returnsFuture(0), 1);
+    });
   });
 
   group('for a generated mock using unsupportedMembers', () {
@@ -278,7 +283,7 @@ void main() {
   });
 
   group('for a generated nice mock', () {
-    late Foo<Object> foo;
+    late Foo<Bar> foo;
 
     setUp(() {
       foo = MockFooNice();
@@ -314,6 +319,28 @@ void main() {
           () => bar.f(),
           throwsA(isA<FakeUsedError>().having(
               (e) => e.toString(), 'toString()', contains('returnsBar(43)'))));
+    });
+    group('a method returning Future<T>', () {
+      final bar = Bar();
+      tearDown(() {
+        resetMockitoState();
+      });
+      test('returns a fake future if unstubbed', () {
+        expect(foo.returnsFuture(bar), isA<SmartFake>());
+      });
+      test('returned fake future cannot be awaited', () async {
+        try {
+          await foo.returnsFuture(bar);
+          // Expect it to throw.
+          expect('This code should not be reached', false);
+        } catch (e) {
+          expect(e, isA<FakeUsedError>());
+        }
+      });
+      test('with provideDummy returned value can be awaited', () async {
+        provideDummy<Bar>(bar);
+        expect(await foo.returnsFuture(MockBar()), bar);
+      });
     });
   });
 
