@@ -29,13 +29,20 @@ class Bar {
   int f() => 0;
 }
 
+class _Private {}
+
+final private = _Private();
+
 abstract class Baz<S> {
   T returnsTypeVariable<T>();
   T returnsBoundedTypeVariable<T extends num?>();
   T returnsTypeVariableFromTwo<T, U>();
   S Function(S) returnsGenericFunction();
   S get typeVariableField;
-  T $hasDollarInName<T>();
+  _Private returnsPrivate();
+  _Private get privateTypeField;
+  void privateArg(_Private arg);
+  _Private $hasDollarInName();
 }
 
 class HasPrivate {

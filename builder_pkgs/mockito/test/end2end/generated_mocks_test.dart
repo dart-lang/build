@@ -6,18 +6,6 @@ import 'foo.dart';
 import 'foo_sub.dart';
 import 'generated_mocks_test.mocks.dart';
 
-T returnsTypeVariableShim<T>() => [1, 1.5].whereType<T>().first!;
-
-T returnsBoundedTypeVariableShim<T extends num?>() =>
-    [1, 1.5].whereType<T>().first!;
-
-T returnsTypeVariableFromTwoShim<T, U>() => [1, 1.5].whereType<T>().first!;
-
-T typeVariableFieldShim<T>() =>
-    throw UnsupportedError('typeVariableField cannot be used');
-
-T Function(T) returnsGenericFunctionShim<T>() => (T _) => null as T;
-
 @GenerateMocks([
   Foo,
   FooSub,
@@ -32,23 +20,10 @@ T Function(T) returnsGenericFunctionShim<T>() => (T _) => null as T;
   MockSpec<Baz>(
     as: #MockBazWithUnsupportedMembers,
     unsupportedMembers: {
-      #returnsTypeVariable,
-      #returnsBoundedTypeVariable,
-      #returnsTypeVariableFromTwo,
-      #returnsGenericFunction,
-      #typeVariableField,
+      #returnsPrivate,
+      #privateArg,
+      #privateTypeField,
       #$hasDollarInName,
-    },
-  ),
-  MockSpec<Baz>(
-    as: #MockBazWithFallbackGenerators,
-    fallbackGenerators: {
-      #returnsTypeVariable: returnsTypeVariableShim,
-      #returnsBoundedTypeVariable: returnsBoundedTypeVariableShim,
-      #returnsTypeVariableFromTwo: returnsTypeVariableFromTwoShim,
-      #returnsGenericFunction: returnsGenericFunctionShim,
-      #typeVariableField: typeVariableFieldShim,
-      #$hasDollarInName: returnsTypeVariableShim,
     },
   ),
   MockSpec<HasPrivate>(mixingIn: [HasPrivateMixin]),
@@ -192,30 +167,28 @@ void main() {
   });
 
   group('for a generated mock using unsupportedMembers', () {
-    late Baz baz;
+    late MockBazWithUnsupportedMembers<Bar> baz;
 
     setUp(() {
-      baz = MockBazWithUnsupportedMembers();
+      baz = MockBazWithUnsupportedMembers<Bar>();
     });
 
-    test('a real method call throws', () {
-      expect(() => baz.returnsTypeVariable(), throwsUnsupportedError);
+    tearDown(() => resetMockitoState());
+
+    test('a real method call that returns private type throws', () {
+      expect(() => baz.returnsPrivate(), throwsUnsupportedError);
+    });
+
+    test('a real method call that accepts private type throws', () {
+      expect(() => baz.privateArg(private), throwsUnsupportedError);
     });
 
     test('a real getter call (or field access) throws', () {
-      expect(() => baz.typeVariableField, throwsUnsupportedError);
+      expect(() => baz.privateTypeField, throwsUnsupportedError);
     });
 
     test('a real call to a method whose name has a \$ in it throws', () {
       expect(() => baz.$hasDollarInName(), throwsUnsupportedError);
-    });
-  });
-
-  group('for a generated mock using fallbackGenerators,', () {
-    late Baz baz;
-
-    setUp(() {
-      baz = MockBazWithFallbackGenerators();
     });
 
     test('a method with a type variable return type can be called', () {
@@ -231,8 +204,24 @@ void main() {
     test(
         'a method with multiple type parameters and a type variable return '
         'type can be called', () {
-      when(baz.returnsTypeVariable()).thenReturn(3);
-      baz.returnsTypeVariable();
+      when(baz.returnsTypeVariableFromTwo()).thenReturn(3);
+      baz.returnsTypeVariableFromTwo();
+    });
+
+    test(
+        'a getter with a type variable return type throws if there is no '
+        'dummy value', () {
+      expect(() => when(baz.typeVariableField).thenReturn(Bar()),
+          throwsA(isA<MissingDummyValueError>()));
+    });
+
+    test(
+        'a getter with a type variable return type can be called if dummy '
+        'value was provided', () {
+      provideDummy<Bar>(Bar());
+      final bar = Bar();
+      when(baz.typeVariableField).thenReturn(bar);
+      expect(baz.typeVariableField, bar);
     });
   });
 

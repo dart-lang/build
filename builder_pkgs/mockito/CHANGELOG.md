@@ -9,6 +9,8 @@
 * Add new `thenReturnInOrder` method to mock multiple calls to a single method in order.
 * Add `provideDummy`/`provideDummyBuilder` functions for users to supply dummy
   values to Mockito, to cover cases where codegen can't create one.
+* Allow generating mocks for classes with methods/getters returning non-nullable
+  unknown types.
 
 ## 5.4.0
 

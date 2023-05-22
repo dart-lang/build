@@ -457,35 +457,6 @@ void main() {
   });
 
   test(
-      'generates mock methods with non-nullable unknown types, given '
-      'unsupportedMembers', () async {
-    final mocksContent = await buildWithNonNullable({
-      ...annotationsAsset,
-      'foo|lib/foo.dart': dedent(r'''
-        abstract class Foo {
-          T m<T>(T a);
-        }
-        '''),
-      'foo|test/foo_test.dart': '''
-        import 'package:foo/foo.dart';
-        import 'package:mockito/annotations.dart';
-
-        @GenerateMocks(
-          [],
-          customMocks: [
-            MockSpec<Foo>(unsupportedMembers: {#m}),
-          ],
-        )
-        void main() {}
-        '''
-    });
-    expect(
-        mocksContent,
-        contains('  T m<T>(T? a) => throw UnsupportedError(\n'
-            '      r\'"m" cannot be used without a mockito fallback generator.\');'));
-  });
-
-  test(
       'generates mock methods with private return types, given '
       'unsupportedMembers', () async {
     final mocksContent = await buildWithNonNullable({

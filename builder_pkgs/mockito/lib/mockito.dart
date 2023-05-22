@@ -53,4 +53,5 @@ export 'src/mock.dart'
         MissingStubError,
         FakeUsedError,
         FakeFunctionUsedError;
-export 'src/dummies.dart' show provideDummy, provideDummyBuilder;
+export 'src/dummies.dart'
+    show provideDummy, provideDummyBuilder, MissingDummyValueError;

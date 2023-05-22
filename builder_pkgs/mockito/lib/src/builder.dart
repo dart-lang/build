@@ -832,9 +832,6 @@ class _MockTargetGatherer {
   /// A method is not valid for stubbing if:
   /// - It has a private type anywhere in its signature; Mockito cannot override
   ///   such a method.
-  /// - It has a non-nullable type variable return type, for example `T m<T>()`,
-  ///   and no corresponding dummy generator. Mockito cannot generate its own
-  ///   dummy return values for unknown types.
   void _checkMethodsToStubAreValid(_MockTarget mockTarget) {
     final interfaceElement = mockTarget.interfaceElement;
     final className = interfaceElement.name;
@@ -921,16 +918,6 @@ class _MockTargetGatherer {
       errorMessages.addAll(_checkFunction(returnType, enclosingElement,
           allowUnsupportedMember: allowUnsupportedMember,
           hasDummyGenerator: hasDummyGenerator));
-    } else if (returnType is analyzer.TypeParameterType) {
-      if (!isParameter &&
-          !allowUnsupportedMember &&
-          !hasDummyGenerator &&
-          _entryLib.typeSystem.isPotentiallyNonNullable(returnType)) {
-        errorMessages
-            .add('${enclosingElement.fullName} features a non-nullable unknown '
-                'return type, and cannot be stubbed. '
-                '$_tryUnsupportedMembersMessage');
-      }
     }
 
     for (final parameter in function.parameters) {
@@ -1369,25 +1356,19 @@ class _MockClassInfo {
         return;
       }
 
-      final returnTypeIsTypeVariable =
-          typeSystem.isPotentiallyNonNullable(returnType) &&
-              returnType is analyzer.TypeParameterType;
       final fallbackGenerator = fallbackGenerators[method.name];
       final parametersContainPrivateName =
           method.parameters.any((p) => p.type.containsPrivateName);
       final throwsUnsupported = fallbackGenerator == null &&
-          (returnTypeIsTypeVariable ||
-              returnType.containsPrivateName ||
-              parametersContainPrivateName);
+          (returnType.containsPrivateName || parametersContainPrivateName);
 
       if (throwsUnsupported) {
         if (!mockTarget.unsupportedMembers.contains(name)) {
           // We shouldn't get here as this is guarded against in
           // [_MockTargetGatherer._checkFunction].
           throw InvalidMockitoAnnotationException(
-              "Mockito cannot generate a valid override for '$name', as it has a "
-              'non-nullable unknown return type or a private type in its '
-              'signature.');
+              "Mockito cannot generate a valid override for '$name', as it has "
+              'a private type in its signature.');
         }
         builder.body = refer('UnsupportedError')
             .call([
@@ -1894,18 +1875,15 @@ class _MockClassInfo {
 
     final returnType = getter.returnType;
     final fallbackGenerator = fallbackGenerators[getter.name];
-    final returnTypeIsTypeVariable =
-        typeSystem.isPotentiallyNonNullable(returnType) &&
-            returnType is analyzer.TypeParameterType;
-    final throwsUnsupported = fallbackGenerator == null &&
-        (returnTypeIsTypeVariable || getter.returnType.containsPrivateName);
+    final throwsUnsupported =
+        fallbackGenerator == null && (getter.returnType.containsPrivateName);
     if (throwsUnsupported) {
       if (!mockTarget.unsupportedMembers.contains(getter.name)) {
         // We shouldn't get here as this is guarded against in
         // [_MockTargetGatherer._checkFunction].
         throw InvalidMockitoAnnotationException(
             "Mockito cannot generate a valid override for '${getter.name}', as "
-            'it has a non-nullable unknown type or a private type.');
+            'it has a private type.');
       }
       builder.body = refer('UnsupportedError')
           .call([
