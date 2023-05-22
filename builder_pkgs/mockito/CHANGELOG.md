@@ -1,4 +1,4 @@
-## 5.4.1-wip
+## 5.4.1
 
 * Deprecate the `mixingIn` argument to `MockSpec`. Best practice is to avoid
   any concrete implementation in classes which extend `Mock`.
@@ -6,7 +6,8 @@
 * Require Dart >= 2.19.0.
 * Require analyzer 5.11.0.
 * Fail to generate mocks of `sealed`/`base`/`final` classes.
-* Add new `thenReturnInOrder` method to mock multiple calls to a single method in order.
+* Add new `thenReturnInOrder` method to mock multiple calls to a single method
+  in order.
 * Add `provideDummy`/`provideDummyBuilder` functions for users to supply dummy
   values to Mockito, to cover cases where codegen can't create one.
 * Allow generating mocks for classes with methods/getters returning non-nullable
