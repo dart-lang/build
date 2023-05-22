@@ -9,6 +9,7 @@ import 'dart:isolate';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_resolvers/src/analysis_driver.dart';
@@ -733,7 +734,7 @@ int? get x => 1;
                   .toString(),
               equals('dart:ui'));
         } else {
-          expect(color.type.element!.name, equals('dynamic'));
+          expect(color.type, isA<InvalidType>());
         }
       }, resolvers: AnalyzerResolvers());
     });
