@@ -102,14 +102,10 @@ void main() {
     final packageConfig = PackageConfig([
       Package('foo', Uri.file('/foo/'),
           packageUriRoot: Uri.file('/foo/lib/'),
-          languageVersion: LanguageVersion(2, 13))
+          languageVersion: LanguageVersion(3, 0))
     ]);
-    await withEnabledExperiments(
-      () async => await testBuilder(
-          buildMocks(BuilderOptions({})), sourceAssets,
-          writer: writer, outputs: outputs, packageConfig: packageConfig),
-      ['nonfunction-type-aliases'],
-    );
+    await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
+        writer: writer, outputs: outputs, packageConfig: packageConfig);
   }
 
   /// Builds with [MockBuilder] in a package which has opted into null safety,
@@ -118,15 +114,11 @@ void main() {
     final packageConfig = PackageConfig([
       Package('foo', Uri.file('/foo/'),
           packageUriRoot: Uri.file('/foo/lib/'),
-          languageVersion: LanguageVersion(2, 13))
+          languageVersion: LanguageVersion(3, 0))
     ]);
 
-    await withEnabledExperiments(
-      () async => await testBuilder(
-          buildMocks(BuilderOptions({})), sourceAssets,
-          writer: writer, packageConfig: packageConfig),
-      ['nonfunction-type-aliases'],
-    );
+    await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
+        writer: writer, packageConfig: packageConfig);
     final mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
     return utf8.decode(writer.assets[mocksAsset]!);
   }
@@ -2728,6 +2720,33 @@ void main() {
     // The _FakeBar_0 class should be generated exactly once.
     expect(mocksContentLines.where((line) => line.contains('class _FakeBar_0')),
         hasLength(1));
+  });
+
+  test('does not try to generate a fake for a final class', () async {
+    await expectSingleNonNullableOutput(dedent(r'''
+      class Foo {
+        Bar m1() => Bar();
+      }
+      final class Bar {}
+      '''), _containsAllOf('dummyValue<_i2.Bar>('));
+  });
+
+  test('does not try to generate a fake for a base class', () async {
+    await expectSingleNonNullableOutput(dedent(r'''
+      class Foo {
+        Bar m1() => Bar();
+      }
+      base class Bar {}
+      '''), _containsAllOf('dummyValue<_i2.Bar>('));
+  });
+
+  test('does not try to generate a fake for a sealed class', () async {
+    await expectSingleNonNullableOutput(dedent(r'''
+      class Foo {
+        Bar m1() => Bar();
+      }
+      sealed class Bar {}
+      '''), _containsAllOf('dummyValue<_i2.Bar>('));
   });
 
   test('throws when GenerateMocks is given a class multiple times', () async {

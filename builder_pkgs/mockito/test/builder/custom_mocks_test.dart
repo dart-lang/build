@@ -110,7 +110,7 @@ void main() {
     final packageConfig = PackageConfig([
       Package('foo', Uri.file('/foo/'),
           packageUriRoot: Uri.file('/foo/lib/'),
-          languageVersion: LanguageVersion(2, 15))
+          languageVersion: LanguageVersion(3, 0))
     ]);
     await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
         writer: writer, packageConfig: packageConfig);

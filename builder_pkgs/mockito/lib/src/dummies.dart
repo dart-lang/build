@@ -13,8 +13,11 @@
 // limitations under the License.
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:typed_data';
 import 'mock.dart' show FakeFunctionUsedError;
+import 'platform_dummies_js.dart'
+    if (dart.library.io) 'platform_dummies_vm.dart';
 
 // TODO(yanok): try to change these to _unreasonable_ values, for example,
 // String could totally contain an explanation.
@@ -111,6 +114,7 @@ Map<Type, DummyBuilder> _defaultDummyBuilders = {
   Float32List: (_, _i) => Float32List(0),
   Float64List: (_, _i) => Float64List(0),
   ByteData: (_, _i) => ByteData(0),
+  ...platformDummies,
 };
 
 List<Object?> _defaultDummies = [
@@ -123,6 +127,8 @@ List<Object?> _defaultDummies = [
   <Never>{},
   <Never, Never>{},
   Stream<Never>.empty(),
+  SplayTreeSet<Never>(),
+  SplayTreeMap<Never, Never>(),
 ];
 
 T? dummyValueOrNull<T>(Object parent, Invocation invocation) {
