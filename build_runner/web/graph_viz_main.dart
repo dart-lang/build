@@ -7,7 +7,7 @@ import 'dart:convert';
 import 'dart:html';
 import 'dart:js' as js;
 
-final _graphReference = js.context[r'$build']!;
+final _graphReference = js.context[r'$build']! as js.JsObject;
 final _details = document.getElementById('details')!;
 
 void main() async {
@@ -60,7 +60,7 @@ Future _focus(String query, {String? filter}) async {
 
   var graphData = {'edges': nodeInfo['edges'], 'nodes': nodeInfo['nodes']};
   _graphReference.callMethod('setData', [js.JsObject.jsify(graphData)]);
-  var primaryNode = nodeInfo['primary'];
+  var primaryNode = nodeInfo['primary'] as Map<String, Object?>;
   _details.innerHtml = '<strong>ID:</strong> ${primaryNode['id']} <br />'
       '<strong>Type:</strong> ${primaryNode['type']}<br />'
       '<strong>Hidden:</strong> ${primaryNode['hidden']} <br />'

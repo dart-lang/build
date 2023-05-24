@@ -249,8 +249,8 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
         .debounceBuffer(buildOptions.debounceDelay);
 
     var changeProvider = daemonOptions.buildMode == BuildMode.Auto
-        ? AutoChangeProvider(graphEvents())
-        : ManualChangeProvider(
+        ? AutoChangeProviderImpl(graphEvents())
+        : ManualChangeProviderImpl(
             AssetTracker(daemonEnvironment.reader, buildOptions.targetGraph),
             builder.assetGraph);
 

@@ -74,7 +74,7 @@ void main() {
       );
       final type = library.getClass('ExamplePrime');
       expect(type, isNotNull);
-      expect(type!.supertype!.element2.name, 'Example');
+      expect(type!.supertype!.element.name, 'Example');
     });
 
     test('waits for tearDown', () async {
@@ -158,7 +158,7 @@ void main() {
 }
 
 String _toStringId(InterfaceType t) =>
-    '${t.element2.source.uri.toString().split('/').first}#${t.element2.name}';
+    '${t.element.source.uri.toString().split('/').first}#${t.element.name}';
 
 extension on Resolver {
   Future<LibraryElement> findLibraryNotNull(String name) async {

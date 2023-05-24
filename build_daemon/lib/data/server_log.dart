@@ -11,7 +11,7 @@ part 'server_log.g.dart';
 
 /// Logging levels, these have a 1:1 mapping with the levels from
 /// `package:logging`.
-class Level extends EnumClass with Comparable<Level> {
+class Level extends EnumClass implements Comparable<Level> {
   static Serializer<Level> get serializer => _$levelSerializer;
 
   // ignore: constant_identifier_names

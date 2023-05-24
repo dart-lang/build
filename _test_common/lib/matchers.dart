@@ -196,10 +196,13 @@ class _AssetGraphMatcher extends Matcher {
       description.addDescriptionOf(_expected);
 
   @override
-  Description describeMismatch(
-      item, Description mismatchDescription, Map matchState, bool verbose) {
-    matchState.forEach((k, v) =>
-        mismatchDescription.add('$k: got ${v[0]} but expected ${v[1]}'));
+  Description describeMismatch(dynamic item, Description mismatchDescription,
+      Map matchState, bool verbose) {
+    matchState.forEach((k, v) {
+      v = v as List;
+      mismatchDescription.add('$k: got ${v[0]} but expected ${v[1]}');
+    });
+
     return mismatchDescription;
   }
 }

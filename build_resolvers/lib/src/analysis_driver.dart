@@ -48,8 +48,8 @@ Packages _buildAnalyzerPackages(
               : Version(package.languageVersion!.major,
                   package.languageVersion!.minor, 0),
           // Analyzer does not see the original file paths at all, we need to
-          // make them match the paths that we give it, so we use the `assetPath`
-          // function to create those.
+          // make them match the paths that we give it, so we use the
+          // `assetPath` function to create those.
           rootFolder: resourceProvider
               .getFolder(p.url.normalize(assetPath(AssetId(package.name, '')))),
           libFolder: resourceProvider.getFolder(

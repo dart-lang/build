@@ -17,7 +17,6 @@ const _buildPackages = [
   'build_runner',
   'build_runner_core',
   'build_test',
-  'build_vm_compilers',
   'build_web_compilers',
   'scratch_space',
 ];

@@ -4,19 +4,14 @@
 
 import 'dart:async';
 
-import 'package:analyzer/dart/analysis/features.dart';
-import 'package:analyzer/dart/analysis/utilities.dart';
-import 'package:build/build.dart'
-    show AssetId, AssetNotFoundException, AssetReader, BuilderOptions;
+import 'package:build/build.dart' show AssetId, BuilderOptions;
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:graphs/graphs.dart';
 import 'package:logging/logging.dart';
-import 'package:package_config/package_config.dart' show LanguageVersion;
 import 'package:path/path.dart' as p;
-import 'package:pub_semver/pub_semver.dart';
 
 import '../package_graph/build_config_overrides.dart';
 import 'builder_ordering.dart';
@@ -46,19 +41,9 @@ Future<String> _generateBuildScript() async {
         _main()
       ]));
   final emitter = DartEmitter(
-      allocator: Allocator.simplePrefixing(),
-      useNullSafetySyntax: info.canRunWithSoundNullSafety);
+      allocator: Allocator.simplePrefixing(), useNullSafetySyntax: true);
   try {
-    final content = StringBuffer();
-    if (!info.canRunWithSoundNullSafety) {
-      content.writeln('''
-        // Ensure that the build script itself is not opted in to null safety,
-        // instead of taking the language version from the current package.
-        //
-        // @dart=2.9
-        //''');
-    }
-    content
+    final content = StringBuffer()
       ..writeln('// ignore_for_file: directives_ordering')
       ..writeln(library.accept(emitter));
 
@@ -103,32 +88,49 @@ Future<BuildScriptInfo> findBuildScriptOptions({
   var reader = FileBasedAssetReader(packageGraph);
   var overrides = buildConfigOverrides ??=
       await findBuildConfigOverrides(packageGraph, reader);
-  Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
+  Future<BuildConfig> packageBuildConfig(PackageNode package) async {
     if (overrides.containsKey(package.name)) {
       return overrides[package.name]!;
     }
     try {
       return await BuildConfig.fromBuildConfigDir(
           package.name, package.dependencies.map((n) => n.name), package.path);
-    } on ArgumentError catch (_) {
+    } on ArgumentError // ignore: avoid_catching_errors
+    catch (_) {
       // During the build an error will be logged.
       return BuildConfig.useDefault(
           package.name, package.dependencies.map((n) => n.name));
     }
   }
 
-  bool _isValidDefinition(dynamic definition) {
+  // TODO: Remove the dynamic calls here. We don't have a shared interface
+  // today and rely on dynamic calls instead which is bad.
+  bool isValidDefinition(dynamic definition) {
     // Filter out builderDefinitions with relative imports that aren't
     // from the root package, because they will never work.
-    if (definition.import.startsWith('package:') as bool) return true;
+    // ignore: avoid_dynamic_calls
+    final import = definition.import as String;
+    if (import.startsWith('package:')) {
+      // Make sure package is known in packageGraph (when present),
+      // otherwise PackageNotFoundException will be thrown down the road
+      final pkg = AssetId.resolve(Uri.parse(import)).package;
+      if (packageGraph?.allPackages.containsKey(pkg) ?? true) {
+        return true;
+      }
+      _log.warning('Could not load imported package "$pkg" for definition '
+          // ignore: avoid_dynamic_calls
+          '"${definition.key}".');
+      return false;
+    }
+    // ignore: avoid_dynamic_calls
     return definition.package == packageGraph!.root.name;
   }
 
   final orderedConfigs =
-      await Future.wait(orderedPackages.map(_packageBuildConfig));
+      await Future.wait(orderedPackages.map(packageBuildConfig));
   final builderDefinitions = orderedConfigs
       .expand((c) => c.builderDefinitions.values)
-      .where(_isValidDefinition);
+      .where(isValidDefinition);
 
   final rootBuildConfig = orderedConfigs.last;
   final orderedBuilders =
@@ -137,21 +139,21 @@ Future<BuildScriptInfo> findBuildScriptOptions({
 
   final postProcessBuilderDefinitions = orderedConfigs
       .expand((c) => c.postProcessBuilderDefinitions.values)
-      .where(_isValidDefinition);
+      .where(isValidDefinition);
 
   // Validate the builder keys in the global builder config, these should always
   // refer to actual builders.
   var allBuilderKeys = {for (var definition in orderedBuilders) definition.key};
   for (var globalBuilderConfig in rootBuildConfig.globalOptions.entries) {
-    void _checkBuilderKey(String builderKey) {
+    void checkBuilderKey(String builderKey) {
       if (allBuilderKeys.contains(builderKey)) return;
       _log.warning(
           'Invalid builder key `$builderKey` found in global_options config of '
           'build.yaml. This configuration will have no effect.');
     }
 
-    _checkBuilderKey(globalBuilderConfig.key);
-    globalBuilderConfig.value.runsBefore.forEach(_checkBuilderKey);
+    checkBuilderKey(globalBuilderConfig.key);
+    globalBuilderConfig.value.runsBefore.forEach(checkBuilderKey);
   }
 
   final applications = [
@@ -160,75 +162,13 @@ Future<BuildScriptInfo> findBuildScriptOptions({
       _applyPostProcessBuilder(builder)
   ];
 
-  final canRunWithSoundNullSafety = await _allMigratedToNullSafety(
-      packageGraph,
-      reader,
-      orderedBuilders
-          .map((e) => e.import)
-          .followedBy(postProcessBuilderDefinitions.map((e) => e.import)));
-
-  return BuildScriptInfo(applications, canRunWithSoundNullSafety);
-}
-
-Future<bool> _allMigratedToNullSafety(PackageGraph packageGraph,
-    AssetReader reader, Iterable<String> imports) async {
-  final baseForRelative = AssetId(packageGraph.root.name, scriptLocation);
-
-  // Regardless of imports, the root package must have support for null safety
-  // since the build script will run in its context.
-  final rootPackageVersion = packageGraph.root.languageVersion;
-  if (rootPackageVersion == null) return false;
-  final rootPackageFeatures = FeatureSet.fromEnableFlags2(
-      sdkLanguageVersion: rootPackageVersion.asVersion, flags: const []);
-  if (!rootPackageFeatures.isEnabled(Feature.non_nullable)) {
-    return false;
-  }
-
-  for (final import in imports.toSet()) {
-    final id = AssetId.resolve(Uri.parse(_buildScriptImport(import)),
-        from: baseForRelative);
-    String content;
-    try {
-      content = await reader.readAsString(id);
-    } on AssetNotFoundException {
-      // Build is likely to be invalid, so the language version shouldn't
-      // matter. Still, don't assume null safety.
-      return false;
-    }
-
-    final version =
-        packageGraph.allPackages[id.package]?.languageVersion?.asVersion;
-    if (version == null) {
-      // Can't determine language version of import, bail out
-      return false;
-    }
-
-    final parsedFile = parseString(
-      content: content,
-      featureSet: FeatureSet.fromEnableFlags2(
-          sdkLanguageVersion: version, flags: const []),
-      throwIfDiagnostics: false,
-    );
-    if (parsedFile.errors.isNotEmpty) {
-      // Don't try to assume a language version if the imported file is invalid
-      return false;
-    }
-
-    if (!parsedFile.unit.featureSet.isEnabled(Feature.non_nullable)) {
-      // An import does not support null-safety, so the build script can't opt
-      // in either.
-      return false;
-    }
-  }
-
-  return true;
+  return BuildScriptInfo(applications);
 }
 
 class BuildScriptInfo {
   final Iterable<Expression> builderApplications;
-  final bool canRunWithSoundNullSafety;
 
-  BuildScriptInfo(this.builderApplications, this.canRunWithSoundNullSafety);
+  BuildScriptInfo(this.builderApplications);
 }
 
 /// A method forwarding to `run`.
@@ -368,10 +308,6 @@ Expression _findToExpression(BuilderDefinition definition) {
 Expression _constructBuilderOptions(Map<String, dynamic> options) =>
     refer('BuilderOptions', 'package:build/build.dart')
         .constInstance([options.toExpression()]);
-
-extension on LanguageVersion {
-  Version get asVersion => Version(major, minor, 0);
-}
 
 /// Converts a Dart object to a source code representation.
 ///

@@ -1,3 +1,10 @@
+## 2.4.1-wip
+
+## 2.4.0
+
+- Add `BuildStep.packageConfig` getter to resolve a package config of all
+  packages involved in the current build.
+
 ## 2.3.1
 
 - Allow the latest `package:analyzer`.

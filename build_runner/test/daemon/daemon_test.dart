@@ -85,7 +85,7 @@ main() {
     });
   });
 
-  Future<BuildDaemonClient> _startClient(
+  Future<BuildDaemonClient> startClient(
       {BuildMode buildMode = BuildMode.Auto, List<String> options = const []}) {
     var args = ['run', 'build_runner', 'daemon', ...options];
     printOnFailure('Starting client in: ${workspace()}');
@@ -99,9 +99,10 @@ main() {
         buildMode: buildMode);
   }
 
-  Future<void> _startDaemon(
+  Future<void> startDaemon(
       {BuildMode buildMode = BuildMode.Auto,
-      List<String> options = const []}) async {
+      List<String> options = const [],
+      bool expectFailure = false}) async {
     var args = [
       'build_runner',
       'daemon',
@@ -126,17 +127,21 @@ main() {
     unawaited(daemon.exitCode.then((exitCode) {
       printOnFailure('GOT EXIT CODE: $exitCode');
     }));
-    expect(await stdoutLines!.contains(readyToConnectLog), isTrue);
+    if (expectFailure) {
+      expect(await daemon.exitCode, isNot(0));
+    } else {
+      expect(await stdoutLines!.contains(readyToConnectLog), isTrue);
+    }
   }
 
   group('Build Daemon', () {
     test('successfully starts', () async {
-      await _startDaemon();
+      await startDaemon();
     });
 
     test('shuts down on build script change', () async {
-      await _startDaemon();
-      var client = await _startClient()
+      await startDaemon();
+      var client = await startClient()
         ..registerBuildTarget(webTarget)
         ..startBuild();
       // We need to add a listener otherwise we won't get the event.
@@ -149,26 +154,19 @@ main() {
           ])
         ])
       ]).create();
-    });
+    }, skip: 'https://github.com/dart-lang/build/issues/3438');
 
     test('supports --enable-experiment option', () async {
-      await _startDaemon(options: ['--enable-experiment=fake-experiment']);
-      var client =
-          await _startClient(options: ['--enable-experiment=fake-experiment'])
-            ..registerBuildTarget(webTarget)
-            ..startBuild();
-      clients.add(client);
-      await expectLater(
-          client.buildResults,
-          // TODO: Check for specific message about a bad experiment
-          emitsThrough((BuildResults b) =>
-              b.results.first.status == BuildStatus.failed));
+      // TODO: Check for specific message about a bad experiment
+      await startDaemon(
+          options: ['--enable-experiment=fake-experiment'],
+          expectFailure: true);
     });
 
     test('does not shut down down on build script change when configured',
         () async {
-      await _startDaemon(options: ['--skip-build-script-check']);
-      var client = await _startClient(options: ['--skip-build-script-check'])
+      await startDaemon(options: ['--skip-build-script-check']);
+      var client = await startClient(options: ['--skip-build-script-check'])
         ..registerBuildTarget(webTarget)
         ..startBuild();
       clients.add(client);
@@ -190,14 +188,14 @@ main() {
     });
 
     test('errors if build modes conflict', () async {
-      await _startDaemon();
-      expect(_startClient(buildMode: BuildMode.Manual),
+      await startDaemon();
+      expect(startClient(buildMode: BuildMode.Manual),
           throwsA(TypeMatcher<OptionsSkew>()));
     });
 
     test('can build in manual mode', () async {
-      await _startDaemon(buildMode: BuildMode.Manual);
-      var client = await _startClient(buildMode: BuildMode.Manual)
+      await startDaemon(buildMode: BuildMode.Manual);
+      var client = await startClient(buildMode: BuildMode.Manual)
         ..registerBuildTarget(webTarget)
         ..startBuild();
       clients.add(client);
@@ -208,8 +206,8 @@ main() {
     });
 
     test('auto build mode automatically builds on file change', () async {
-      await _startDaemon();
-      var client = await _startClient()
+      await startDaemon();
+      var client = await startClient()
         ..registerBuildTarget(webTarget);
       clients.add(client);
       // Let the target request propagate.
@@ -231,8 +229,8 @@ main() {
 
     test('manual build mode does not automatically build on file change',
         () async {
-      await _startDaemon(buildMode: BuildMode.Manual);
-      var client = await _startClient(buildMode: BuildMode.Manual)
+      await startDaemon(buildMode: BuildMode.Manual);
+      var client = await startClient(buildMode: BuildMode.Manual)
         ..registerBuildTarget(webTarget);
       clients.add(client);
       // Let the target request propagate.
@@ -259,7 +257,7 @@ main() {
       var succeededResult = await client.buildResults.first;
       expect(succeededResult.results.first.status, BuildStatus.succeeded);
       var ddcContent = await File(p.join(d.sandbox, 'a', '.dart_tool', 'build',
-              'generated', 'a', 'web', 'main.sound.ddc.js'))
+              'generated', 'a', 'web', 'main.ddc.js'))
           .readAsString();
       expect(ddcContent, contains('goodbye world'));
     });
@@ -267,10 +265,10 @@ main() {
     test('can build to outputs', () async {
       var outputDir = Directory(p.join(d.sandbox, 'a', 'deploy'));
       expect(outputDir.existsSync(), isFalse);
-      await _startDaemon();
+      await startDaemon();
       // Start the client with the same options to prevent OptionSkew.
       // In the future this should be an option on the target.
-      var client = await _startClient()
+      var client = await startClient()
         ..registerBuildTarget(DefaultBuildTarget((b) => b
           ..target = 'web'
           ..outputLocation = OutputLocation((b) => b
@@ -285,13 +283,13 @@ main() {
     });
 
     test('writes the asset server port', () async {
-      await _startDaemon();
+      await startDaemon();
       expect(File(assetServerPortFilePath(workspace())).existsSync(), isTrue);
     });
 
     test('notifies upon build start', () async {
-      await _startDaemon();
-      var client = await _startClient()
+      await startDaemon();
+      var client = await startClient()
         ..registerBuildTarget(webTarget)
         ..startBuild();
       clients.add(client);
@@ -307,8 +305,8 @@ main() {
     });
 
     test('can complete builds', () async {
-      await _startDaemon();
-      var client = await _startClient()
+      await startDaemon();
+      var client = await startClient()
         ..registerBuildTarget(webTarget)
         ..startBuild();
       clients.add(client);
@@ -326,13 +324,13 @@ main() {
     });
 
     test('allows multiple clients to connect and build', () async {
-      await _startDaemon();
+      await startDaemon();
 
-      var clientA = await _startClient();
+      var clientA = await startClient();
       clientA.registerBuildTarget(webTarget);
       clients.add(clientA);
 
-      var clientB = await _startClient()
+      var clientB = await startClient()
         ..registerBuildTarget(testTarget)
         ..startBuild();
       clients.add(clientB);
@@ -360,8 +358,8 @@ main() {
       });
 
       test('can build specific outputs', () async {
-        await _startDaemon(buildMode: BuildMode.Manual);
-        var client = await _startClient(buildMode: BuildMode.Manual)
+        await startDaemon(buildMode: BuildMode.Manual);
+        var client = await startClient(buildMode: BuildMode.Manual)
           ..registerBuildTarget(DefaultBuildTarget((b) => b
             ..target = 'web'
             ..buildFilters.add('web/other.dart.js')))

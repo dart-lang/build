@@ -106,15 +106,15 @@ void main() {
                 phaseNumber: phaseNum,
                 primaryInput: node.id,
                 state: NodeState.values[g % NodeState.values.length],
-                wasOutput: g % 2 == 0,
-                isFailure: phaseNum % 2 == 0,
+                wasOutput: g.isEven,
+                isFailure: phaseNum.isEven,
                 builderOptionsId: builderOptionsNode.id,
                 isHidden: g % 3 == 0);
             node.outputs.add(generatedNode.id);
             node.primaryOutputs.add(generatedNode.id);
             globNode.outputs.add(generatedNode.id);
             builderOptionsNode.outputs.add(generatedNode.id);
-            if (g % 2 == 0) {
+            if (g.isEven) {
               node.deletedBy.add(anchorNode.id);
             }
 
@@ -123,7 +123,7 @@ void main() {
 
             generatedNode.inputs
                 .addAll([node.id, syntheticNode.id, globNode.id]);
-            if (g % 2 == 1) {
+            if (g.isOdd) {
               // Fake a digest using the id, we just care that this gets
               // serialized/deserialized properly.
               generatedNode.previousInputsDigest =
@@ -146,7 +146,8 @@ void main() {
       test('Throws an AssetGraphCorruptedException if versions dont match up',
           () {
         var bytes = graph.serialize();
-        var serialized = json.decode(utf8.decode(bytes));
+        var serialized =
+            json.decode(utf8.decode(bytes)) as Map<String, dynamic>;
         serialized['version'] = -1;
         var encoded = utf8.encode(json.encode(serialized));
         expect(() => AssetGraph.deserialize(encoded), throwsCorruptedException);

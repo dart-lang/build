@@ -17,18 +17,12 @@ import '../builders.dart';
 import 'common.dart';
 import 'errors.dart';
 
-String jsModuleErrorsExtension(bool soundNullSafety) =>
-    '${soundnessExt(soundNullSafety)}.ddc.js.errors';
-String jsModuleExtension(bool soundNullSafety) =>
-    '${soundnessExt(soundNullSafety)}.ddc.js';
-String jsSourceMapExtension(bool soundNullSafety) =>
-    '${soundnessExt(soundNullSafety)}.ddc.js.map';
-String metadataExtension(bool soundNullSafety) =>
-    '${soundnessExt(soundNullSafety)}.ddc.js.metadata';
-String symbolsExtension(bool soundNullSafety) =>
-    '${soundnessExt(soundNullSafety)}.ddc.js.symbols';
-String fullKernelExtension(bool soundNullSafety) =>
-    '${soundnessExt(soundNullSafety)}.ddc.full.dill';
+final jsModuleErrorsExtension = '.ddc.js.errors';
+final jsModuleExtension = '.ddc.js';
+final jsSourceMapExtension = '.ddc.js.map';
+final metadataExtension = '.ddc.js.metadata';
+final symbolsExtension = '.ddc.js.symbols';
+final fullKernelExtension = '.ddc.full.dill';
 
 /// A builder which can output ddc modules!
 class DevCompilerBuilder implements Builder {
@@ -77,9 +71,6 @@ class DevCompilerBuilder implements Builder {
   /// Environment defines to pass to ddc (as -D variables).
   final Map<String, String> environment;
 
-  /// Whether or not strong null safety should be enabled.
-  final bool soundNullSafety;
-
   DevCompilerBuilder(
       {this.useIncrementalCompiler = true,
       this.generateFullDill = false,
@@ -89,22 +80,21 @@ class DevCompilerBuilder implements Builder {
       String? sdkKernelPath,
       String? librariesPath,
       String? platformSdk,
-      this.environment = const {},
-      this.soundNullSafety = false})
+      this.environment = const {}})
       : platformSdk = platformSdk ?? sdkDir,
         librariesPath = librariesPath ??
             p.join(platformSdk ?? sdkDir, 'lib', 'libraries.json'),
         buildExtensions = {
           moduleExtension(platform): [
-            jsModuleExtension(soundNullSafety),
-            jsModuleErrorsExtension(soundNullSafety),
-            jsSourceMapExtension(soundNullSafety),
-            metadataExtension(soundNullSafety),
-            symbolsExtension(soundNullSafety),
-            fullKernelExtension(soundNullSafety),
+            jsModuleExtension,
+            jsModuleErrorsExtension,
+            jsSourceMapExtension,
+            metadataExtension,
+            symbolsExtension,
+            fullKernelExtension,
           ],
         },
-        sdkKernelPath = sdkKernelPath ?? sdkDdcKernelPath(soundNullSafety);
+        sdkKernelPath = sdkKernelPath ?? sdkDdcKernelPath;
 
   @override
   final Map<String, List<String>> buildExtensions;
@@ -123,9 +113,7 @@ class DevCompilerBuilder implements Builder {
 
     Future<void> handleError(e) async {
       await buildStep.writeAsString(
-          module.primarySource
-              .changeExtension(jsModuleErrorsExtension(soundNullSafety)),
-          '$e');
+          module.primarySource.changeExtension(jsModuleErrorsExtension), '$e');
       log.severe('$e');
     }
 
@@ -140,8 +128,7 @@ class DevCompilerBuilder implements Builder {
           platformSdk,
           sdkKernelPath,
           librariesPath,
-          environment,
-          soundNullSafety);
+          environment);
     } on DartDevcCompilationException catch (e) {
       await handleError(e);
     } on MissingModulesException catch (e) {
@@ -162,21 +149,19 @@ Future<void> _createDevCompilerModule(
     String sdkKernelPath,
     String librariesPath,
     Map<String, String> environment,
-    bool soundNullSafety,
     {bool debugMode = true}) async {
   var transitiveDeps = await buildStep.trackStage('CollectTransitiveDeps',
       () => module.computeTransitiveDependencies(buildStep));
   var transitiveKernelDeps = [
     for (var dep in transitiveDeps)
-      dep.primarySource.changeExtension(ddcKernelExtension(soundNullSafety)),
+      dep.primarySource.changeExtension(ddcKernelExtension),
   ];
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
 
   var allAssetIds = <AssetId>{...module.sources, ...transitiveKernelDeps};
   await buildStep.trackStage(
       'EnsureAssets', () => scratchSpace.ensureAssets(allAssetIds, buildStep));
-  var jsId =
-      module.primarySource.changeExtension(jsModuleExtension(soundNullSafety));
+  var jsId = module.primarySource.changeExtension(jsModuleExtension);
   var jsOutputFile = scratchSpace.fileFor(jsId);
   var sdkSummary = p.url.join(dartSdk, sdkKernelPath);
 
@@ -206,9 +191,9 @@ Future<void> _createDevCompilerModule(
       '-o',
       jsOutputFile.path,
       debugMode ? '--source-map' : '--no-source-map',
-      for (var dep in transitiveDeps) _summaryArg(dep, soundNullSafety),
+      for (var dep in transitiveDeps) _summaryArg(dep),
       '--packages=$multiRootScheme:///.dart_tool/package_config.json',
-      '--module-name=${ddcModuleName(jsId, soundNullSafety)}',
+      '--module-name=${ddcModuleName(jsId)}',
       '--multi-root-scheme=$multiRootScheme',
       '--multi-root=.',
       '--track-widget-creation',
@@ -225,7 +210,6 @@ Future<void> _createDevCompilerModule(
       for (var define in environment.entries) '-D${define.key}=${define.value}',
       for (var experiment in enabledExperiments)
         '--enable-experiment=$experiment',
-      '--${soundNullSafety ? '' : 'no-'}sound-null-safety',
     ])
     ..inputs.add(Input()
       ..path = sdkSummary
@@ -248,8 +232,8 @@ Future<void> _createDevCompilerModule(
             buildStep.trackStage('Compile', () => response, isExternal: true));
 
     // TODO(jakemac53): Fix the ddc worker mode so it always sends back a bad
-    // status code if something failed. Today we just make sure there is an output
-    // JS file to verify it was successful.
+    // status code if something failed. Today we just make sure there is an
+    // output JS file to verify it was successful.
     var message = response.output
         .replaceAll('${scratchSpace.tempDir.path}/', '')
         .replaceAll('$multiRootScheme:///', '');
@@ -267,38 +251,35 @@ Future<void> _createDevCompilerModule(
     await scratchSpace.copyOutput(jsId, buildStep);
 
     if (generateFullDill) {
-      var currentFullKernelId = module.primarySource
-          .changeExtension(fullKernelExtension(soundNullSafety));
+      var currentFullKernelId =
+          module.primarySource.changeExtension(fullKernelExtension);
       await scratchSpace.copyOutput(currentFullKernelId, buildStep);
     }
 
     if (debugMode) {
       // We need to modify the sources in the sourcemap to remove the custom
       // `multiRootScheme` that we use.
-      var sourceMapId = module.primarySource
-          .changeExtension(jsSourceMapExtension(soundNullSafety));
+      var sourceMapId =
+          module.primarySource.changeExtension(jsSourceMapExtension);
       var file = scratchSpace.fileFor(sourceMapId);
       var content = await file.readAsString();
-      var json = jsonDecode(content);
+      var json = jsonDecode(content) as Map<String, Object?>;
       json['sources'] = fixSourceMapSources((json['sources'] as List).cast());
       await buildStep.writeAsString(sourceMapId, jsonEncode(json));
 
       // Copy the metadata output, modifying its contents to remove the temp
       // directory from paths
-      var metadataId = module.primarySource
-          .changeExtension(metadataExtension(soundNullSafety));
+      var metadataId = module.primarySource.changeExtension(metadataExtension);
       file = scratchSpace.fileFor(metadataId);
       content = await file.readAsString();
-      json = jsonDecode(content);
-      _fixMetadataSources(
-          json as Map<String, dynamic>, scratchSpace.tempDir.uri);
+      json = jsonDecode(content) as Map<String, Object?>;
+      _fixMetadataSources(json, scratchSpace.tempDir.uri);
       await buildStep.writeAsString(metadataId, jsonEncode(json));
 
       // Copy the symbols output, modifying its contents to remove the temp
       // directory from paths
       if (emitDebugSymbols) {
-        var symbolsId = module.primarySource
-            .changeExtension(symbolsExtension(soundNullSafety));
+        var symbolsId = module.primarySource.changeExtension(symbolsExtension);
         await scratchSpace.copyOutput(symbolsId, buildStep);
       }
     }
@@ -315,12 +296,10 @@ Future<void> _createDevCompilerModule(
 }
 
 /// Returns the `--summary=` argument for a dependency.
-String _summaryArg(Module module, bool soundNullSafety) {
-  final kernelAsset =
-      module.primarySource.changeExtension(ddcKernelExtension(soundNullSafety));
-  final moduleName = ddcModuleName(
-      module.primarySource.changeExtension(jsModuleExtension(soundNullSafety)),
-      soundNullSafety);
+String _summaryArg(Module module) {
+  final kernelAsset = module.primarySource.changeExtension(ddcKernelExtension);
+  final moduleName =
+      ddcModuleName(module.primarySource.changeExtension(jsModuleExtension));
   return '--summary=${scratchSpace.fileFor(kernelAsset).path}=$moduleName';
 }
 
@@ -335,12 +314,11 @@ String _sourceArg(AssetId id) {
 
 /// The module name according to ddc for [jsId] which represents the real js
 /// module file.
-String ddcModuleName(AssetId jsId, bool soundNullSafety) {
+String ddcModuleName(AssetId jsId) {
   var jsPath = jsId.path.startsWith('lib/')
       ? jsId.path.replaceFirst('lib/', 'packages/${jsId.package}/')
       : jsId.path;
-  return jsPath.substring(
-      0, jsPath.length - jsModuleExtension(soundNullSafety).length);
+  return jsPath.substring(0, jsPath.length - jsModuleExtension.length);
 }
 
 void _fixMetadataSources(Map<String, dynamic> json, Uri scratchUri) {

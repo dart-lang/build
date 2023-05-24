@@ -155,6 +155,7 @@ class RunCommand extends BuildRunnerCommand {
 
         // On an error, kill the isolate, and log the error.
         onError.listen((e) {
+          e = e as List<Object?>;
           onExit?.close();
           onError?.close();
           logger.severe('Unhandled error from script: $scriptName', e[0],
@@ -175,7 +176,8 @@ class RunCommand extends BuildRunnerCommand {
         return await exitCodeCompleter.future;
       } on IsolateSpawnException catch (e) {
         logger.severe(
-            'Could not spawn isolate. Ensure that your file is in a valid directory (i.e. "bin", "benchmark", "example", "test", "tool").',
+            'Could not spawn isolate. Ensure that your file is in a valid '
+            'directory (i.e. "bin", "benchmark", "example", "test", "tool").',
             e);
         return ExitCode.ioError.code;
       } finally {

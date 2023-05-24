@@ -1,0 +1,8 @@
+# This file only exists to enable the top level shared analysis_options.yaml
+# file to import package:lints.
+name: _for_analysis_options_only
+publish_to: none
+environment:
+  sdk: ">=2.12.0 <4.0.0"
+dev_dependencies:
+  dart_flutter_team_lints: any

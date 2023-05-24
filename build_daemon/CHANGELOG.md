@@ -1,10 +1,21 @@
+## 4.0.1-dev
+
+## 4.0.0
+
+- **Breaking**: Remove methods from ChangeProvider, and extract them into
+  explicit AutoChangeProvider and ManualChangeProvider types.
+
+## 3.1.1
+
+- Report file watching errors and stop the daemon.
+- Change `Level` to implement `Comparable` instead of using it as a mixin.
+
 ## 3.1.0
 
 - Add `BuildResults.changedAssets` containing asset URIs changed during a
   build.
 - Updated the example to use `dart pub` instead of `pub`.
 - Run `serveRequests` in an error zone and forward errors to the clients.
-
 
 ## 3.0.1
 

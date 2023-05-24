@@ -20,7 +20,7 @@ Glob syntax is allowed in both package names and paths.
 application, as well as copy over the required SDK resources for that app:
 
 ```
-pub run build_runner serve \
+dart run build_runner serve \
   --build-filter="web/main.dart.js" \
   --build-filter="package:build_web_compilers/**/*.js"
 ```
@@ -41,7 +41,7 @@ This can greatly speed up iteration times in packages with lots of tests.
 **Example**: This will build a single web test and run it:
 
 ```
-pub run build_runner test \
+dart run build_runner test \
   --build-filter="test/my_test.dart.browser_test.dart.js" \
   --build-filter="package:build_web_compilers/**/*.js" \
   -- -p chrome test/my_test.dart
@@ -64,7 +64,7 @@ also work when you create an output directory.
 **Example**: This will build a single web app and serve it:
 
 ```
-pub run build_runner serve \
+dart run build_runner serve \
   --build-filter="web/my_app.dart.js" \
   --build-filter="package:build_web_compilers/**/*.js"
 ```

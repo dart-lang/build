@@ -1,6 +1,15 @@
-## 2.1.6-dev
+## 2.2.0-wip
+
+- Forward logs from `testBuilder` to `printOnFailure` by default.
+
+## 2.1.7
+
+- Allow the latest test_core (version 5.x).
+
+## 2.1.6
 
 - Fix bug in package config file loading.
+- Raise the minimum SDK constraint to 2.18.
 
 ## 2.1.5
 

@@ -1,3 +1,31 @@
+## 2.4.4
+
+- Use a stable order for builders without an order defined by dependencies.
+
+## 2.4.3
+
+- Make the `doctor` command visible.
+
+## 2.4.2
+
+- Support package:build version 2.4.x.
+
+## 2.4.1
+
+- Mention --build-filter option in the README.
+- Update to build_daemon 4.0.
+- Support enabling experiments in build scripts.
+
+## 2.4.0
+
+- Warn if a `package:` builder import cannot be resolved and skip it,
+  instead of creating an invalid build script or failing in other obscure ways.
+- Require Dart 3.0, drop support for unsound build scripts.
+
+## 2.3.3
+
+- Remove references to `NullThrownError`.
+
 ## 2.3.2
 
 - Add supported platforms to pubspec.

@@ -2,19 +2,18 @@ name: _test
 publish_to: none
 
 environment:
-  sdk: ">=2.12.0 <3.0.0"
+  sdk: ">=2.15.0 <3.0.0"
 
 dev_dependencies:
   analyzer: ">=1.0.0 <6.0.0"
   build: any
   build_config: any
   build_modules: any
-  build_vm_compilers: any
-  build_web_compilers: any
   build_runner: any
   build_runner_core: any
   build_test: any
-  lints: '>=1.0.0 <3.0.0'
+  build_web_compilers: any
+  dart_flutter_team_lints: ^1.0.0
   io: ^1.0.0
   path: ^1.8.0
   provides_builder:
@@ -39,8 +38,6 @@ dependency_overrides:
     path: ../build_runner_core
   build_test:
     path: ../build_test
-  build_vm_compilers:
-    path: ../build_vm_compilers
   build_web_compilers:
     path: ../build_web_compilers
   scratch_space:

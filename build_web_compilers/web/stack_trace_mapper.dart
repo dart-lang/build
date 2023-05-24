@@ -51,8 +51,6 @@ List<String> fixSourceMapSources(List<String> uris) {
   }).toList();
 }
 
-typedef ReadyCallback = void Function();
-
 /// Global object DDC uses to see if a stack trace utility has been registered.
 @JS(r'$dartStackTraceUtility')
 external set dartStackTraceUtility(DartStackTraceUtility value);

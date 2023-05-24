@@ -10,6 +10,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:async/async.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
+import 'package:package_config/package_config_types.dart';
 
 import '../analyzer/resolver.dart';
 import '../asset/exceptions.dart';
@@ -60,13 +61,30 @@ class BuildStepImpl implements BuildStep {
 
   final void Function(Iterable<AssetId>)? _reportUnusedAssets;
 
-  BuildStepImpl(this.inputId, Iterable<AssetId> expectedOutputs, this._reader,
-      this._writer, this._resolvers, this._resourceManager,
+  final Future<PackageConfig> Function() _resolvePackageConfig;
+  Future<Result<PackageConfig>>? _resolvedPackageConfig;
+
+  BuildStepImpl(
+      this.inputId,
+      Iterable<AssetId> expectedOutputs,
+      this._reader,
+      this._writer,
+      this._resolvers,
+      this._resourceManager,
+      this._resolvePackageConfig,
       {StageTracker? stageTracker,
       void Function(Iterable<AssetId>)? reportUnusedAssets})
       : allowedOutputs = UnmodifiableSetView(expectedOutputs.toSet()),
         _stageTracker = stageTracker ?? NoOpStageTracker.instance,
         _reportUnusedAssets = reportUnusedAssets;
+
+  @override
+  Future<PackageConfig> get packageConfig async {
+    final resolved =
+        _resolvedPackageConfig ??= Result.capture(_resolvePackageConfig());
+
+    return (await resolved).asFuture;
+  }
 
   @override
   Resolver get resolver {

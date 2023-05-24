@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-export 'package:build/build.dart' show PostProcessBuilder, PostProcessBuildStep;
+export 'package:build/build.dart' show PostProcessBuildStep, PostProcessBuilder;
 
 export 'src/asset/file_based.dart';
 export 'src/asset/finalized_reader.dart';
@@ -23,7 +23,7 @@ export 'src/generate/finalized_assets_view.dart' show FinalizedAssetsView;
 export 'src/generate/options.dart'
     show BuildFilter, BuildOptions, LogSubscription;
 export 'src/generate/performance_tracker.dart'
-    show BuildPerformance, BuilderActionPerformance, BuildPhasePerformance;
+    show BuildPerformance, BuildPhasePerformance, BuilderActionPerformance;
 export 'src/logging/human_readable_duration.dart';
 export 'src/logging/logging.dart';
 export 'src/package_graph/apply_builders.dart'

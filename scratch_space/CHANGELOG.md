@@ -1,6 +1,7 @@
-## 1.0.2-dev
+## 1.0.2
 
-- Require Dart >=2.17.0
+- Added package topics to the pubspec file.
+- Require Dart >=2.18.0.
 
 ## 1.0.1
 

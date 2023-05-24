@@ -1,3 +1,25 @@
+## 4.0.4-wip
+
+## 4.0.3
+
+- Support Dart 3.1 releases.
+
+## 4.0.2
+
+- Allow the compiler to choose the default for the native null assertions
+  option when one is not explicitly provided.
+
+## 4.0.1
+
+- Add support for `dart:js_interop`.
+
+## 4.0.0
+
+- Require Dart 3.0.
+  - Drop support for unsound null safety.
+  - Drop support for null asserts (irrelevant with sound null safety).
+- Mention JSON formatting in error message about dart2js args.
+
 ## 3.2.7
 
 - Migrate off deprecated analyzer apis.

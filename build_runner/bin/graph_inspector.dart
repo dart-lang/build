@@ -93,7 +93,8 @@ class InspectNodeCommand extends Command<bool> {
 
   @override
   String get description =>
-      'Lists all the information about an asset using a relative or package: uri';
+      'Lists all the information about an asset using a relative or package: '
+      'uri';
 
   @override
   String get invocation => '${super.invocation} <dart-uri>';
@@ -132,22 +133,22 @@ class InspectNodeCommand extends Command<bool> {
           ..writeln('  isFailure: ${node.isFailure}');
       }
 
-      void _printAsset(AssetId asset) =>
+      void printAsset(AssetId asset) =>
           _listAsset(asset, description, indentation: '    ');
 
       if (argResults['verbose'] == true) {
         description.writeln('  primary outputs:');
-        node.primaryOutputs.forEach(_printAsset);
+        node.primaryOutputs.forEach(printAsset);
 
         description.writeln('  secondary outputs:');
-        node.outputs.difference(node.primaryOutputs).forEach(_printAsset);
+        node.outputs.difference(node.primaryOutputs).forEach(printAsset);
 
         if (node is NodeWithInputs) {
           description.writeln('  inputs:');
           assetGraph.allNodes
               .where((n) => n.outputs.contains(node.id))
               .map((n) => n.id)
-              .forEach(_printAsset);
+              .forEach(printAsset);
         }
       }
 

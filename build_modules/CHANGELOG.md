@@ -1,3 +1,21 @@
+## 5.0.3-wip
+
+## 5.0.2
+
+- Support Dart version 3.1.
+
+## 5.0.1
+
+- Delete the long deprecated `dart2JsWorkerResource` api and associated code.
+  - This should have landed in 5.0.0 but in practice doesn't work in Dart 3 any
+    longer anyways, and has been officially deprecated for a long time.
+
+## 5.0.0
+
+- Require Dart 3.0.
+  - Drop support for unsound null safety.
+  - Drop support for null asserts (irrelevant with sound null safety).
+
 ## 4.0.7
 
 - Migrate off deprecated analyzer apis.

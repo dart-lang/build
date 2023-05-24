@@ -90,8 +90,8 @@ void main() async {
     });
 
     test(
-        'digests are different for identical file contents and different assets',
-        () async {
+        'digests are different for identical file contents and different '
+        'assets', () async {
       var helloDigest =
           await reader.digest(makeAssetId('basic_pkg|lib/hello.txt'));
       var aDigest = await reader.digest(makeAssetId('basic_pkg|web/hello.txt'));
@@ -100,9 +100,7 @@ void main() async {
 
     test('can read from the SDK', () async {
       expect(
-          await reader.canRead(
-              makeAssetId(r'$sdk|lib/dev_compiler/kernel/amd/dart_sdk.js')),
-          true);
+          await reader.canRead(makeAssetId(r'$sdk|lib/libraries.json')), true);
     });
   });
 

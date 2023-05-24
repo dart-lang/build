@@ -1,7 +1,15 @@
-## 2.0.11-dev
+## 2.2.1-wip
+
+## 2.2.0
+
+- Add support for `CompilationUnitElement` to `AnalysisResolver.astNodeFor()`.
+
+## 2.1.0
 
 - Migrate off deprecated analyzer apis.
 - Update min sdk constraint to 2.18.0.
+- Return all SDK libraries in `Resolver.libraries`, making the implementation
+  consistent with the documentation.
 
 ## 2.0.10
 

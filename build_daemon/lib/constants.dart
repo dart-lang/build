@@ -12,6 +12,12 @@ const optionsSkew = 'DIFFERENT OPTIONS';
 
 const buildModeFlag = 'build-mode';
 
+/// Daemon shuts down after this timeout if there is no active connection.
+const defaultIdleTimeout = Duration(seconds: 30);
+
+const fileChangeEventErrorCode = 101;
+const fileChangeStreamClosedErrorCode = 102;
+
 enum BuildMode {
   // ignore: constant_identifier_names
   Manual,
@@ -30,7 +36,7 @@ const logStartMarker = 'BUILD DAEMON LOG START';
 const logEndMarker = 'BUILD DAEMON LOG END';
 
 // TODO(grouma) - use pubspec version when this is open sourced.
-const currentVersion = '8';
+const currentVersion = '9';
 
 var _username = Platform.environment['USER'] ?? '';
 String daemonWorkspace(String workingDirectory) {

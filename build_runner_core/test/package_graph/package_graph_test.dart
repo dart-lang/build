@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 @TestOn('vm')
 import 'package:build_runner_core/build_runner_core.dart';
+import 'package:package_config/package_config_types.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -17,6 +18,14 @@ void main() {
 
       test('root', () {
         expectPkg(graph.root, 'build_runner_core', '', DependencyType.path);
+      });
+
+      test('asPackageConfig', () {
+        final config = graph.asPackageConfig;
+        final buildRunner =
+            config.packages.singleWhere((p) => p.name == 'build_runner_core');
+
+        expect(buildRunner.languageVersion, LanguageVersion(2, 19));
       });
     });
 
@@ -48,6 +57,14 @@ void main() {
       test('dependency', () {
         expectPkg(graph['a']!, 'a', '$basicPkgPath/pkg/a',
             DependencyType.hosted, [graph['b']!, graph['c']!]);
+      });
+
+      test('asPackageConfig', () {
+        final config = graph.asPackageConfig;
+        final names = config.packages.map((e) => e.name);
+
+        expect(names, isNot(contains(r'$sdk')));
+        expect(names, containsAll(['a', 'b', 'c', 'd', 'basic_pkg']));
       });
     });
 

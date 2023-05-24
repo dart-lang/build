@@ -9,10 +9,12 @@ import 'dart:isolate';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_resolvers/src/analysis_driver.dart';
 import 'package:build_resolvers/src/resolver.dart';
+import 'package:build_resolvers/src/sdk_summary.dart';
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
@@ -82,6 +84,23 @@ void main() {
         await resolver.isLibrary(entryPoint);
         var libs = await resolver.libraries.toList();
         expect(libs, contains(predicate((LibraryElement l) => l.name == 'b')));
+      }, resolvers: AnalyzerResolvers());
+    });
+
+    test(
+        'calling isLibrary does not include that library in the libraries '
+        'stream', () {
+      return resolveSources({
+        'a|web/main.dart': '',
+        'b|lib/b.dart': '''
+              library b;
+              ''',
+      }, (resolver) async {
+        await resolver.isLibrary(AssetId('b', 'lib/b.dart'));
+        await expectLater(
+          resolver.libraries,
+          neverEmits(isA<LibraryElement>().having((e) => e.name, 'name', 'b')),
+        );
       }, resolvers: AnalyzerResolvers());
     });
 
@@ -182,7 +201,7 @@ void main() {
     });
 
     group('assets that aren\'t a transitive import of input', () {
-      Future _runWith(Future Function(Resolver) test) {
+      Future runWith(Future Function(Resolver) test) {
         return resolveSources({
           'a|web/main.dart': '''
           main() {}
@@ -196,7 +215,7 @@ void main() {
       final otherId = AssetId.parse('a|lib/other.dart');
 
       test('can be resolved', () {
-        return _runWith((resolver) async {
+        return runWith((resolver) async {
           final main = await resolver.libraryFor(entryPoint);
           expect(main, isNotNull);
 
@@ -206,7 +225,7 @@ void main() {
       });
 
       test('are included in library stream', () {
-        return _runWith((resolver) async {
+        return runWith((resolver) async {
           await expectLater(
               resolver.libraries.map((l) => l.name), neverEmits('other'));
 
@@ -218,7 +237,7 @@ void main() {
       });
 
       test('can be found by name', () {
-        return _runWith((resolver) async {
+        return runWith((resolver) async {
           await resolver.libraryFor(otherId);
 
           await expectLater(
@@ -238,8 +257,8 @@ void main() {
               } ''',
       }, (resolver) async {
         var lib = await resolver.libraryFor(entryPoint);
-        expect(lib.parts2.length, 1);
-        expect(lib.parts2.whereType<DirectiveUriWithSource>(), isEmpty);
+        expect(lib.parts.length, 1);
+        expect(lib.parts.whereType<DirectiveUriWithSource>(), isEmpty);
       }, resolvers: AnalyzerResolvers());
     });
 
@@ -354,7 +373,7 @@ void main() {
               class Bar {}''',
       }, (resolver) async {
         var main = (await resolver.findLibraryByName('web.main'))!;
-        var meta = main.getClass('Foo')!.supertype!.element2.metadata[0];
+        var meta = main.getClass('Foo')!.supertype!.element.metadata[0];
         expect(meta, isNotNull);
         expect(meta.computeConstantValue()?.toIntValue(), 0);
       }, resolvers: AnalyzerResolvers());
@@ -635,9 +654,60 @@ int? get x => 1;
             'dart:core',
             'dart:math',
             'dart:typed_data',
+            'dart:io',
+            'dart:html',
             if (isFlutter) 'dart:ui',
           ]));
+
+      // Only public libraries should be reported
+      expect(
+        allLibraries,
+        everyElement(isA<LibraryElement>()
+            .having((e) => e.isPrivate, 'isPrivate', isFalse)),
+      );
     }, resolvers: AnalyzerResolvers());
+  });
+
+  test('can resolve sdk libraries without seeing anything else', () async {
+    await resolveSources({
+      'a|lib/not_dart.txt': '',
+    }, (resolver) async {
+      var allLibraries = await resolver.libraries.toList();
+
+      expect(allLibraries.map((e) => e.source.uri.toString()),
+          containsAll(['dart:io', 'dart:core', 'dart:html']));
+      expect(
+          allLibraries,
+          everyElement(isA<LibraryElement>()
+              .having((e) => e.isInSdk, 'isInSdk', isTrue)));
+    }, resolvers: AnalyzerResolvers());
+  });
+
+  test('sdk libraries can still be resolved after seeing new assets', () async {
+    final resolvers = AnalyzerResolvers();
+    final builder = TestBuilder(
+      buildExtensions: {
+        '.dart': ['.txt']
+      },
+      build: (buildStep, buildExtensions) async {
+        await buildStep.inputLibrary;
+
+        final allLibraries = await buildStep.resolver.libraries.toList();
+        expect(allLibraries.map((e) => e.source.uri.toString()),
+            containsAll(['dart:io', 'dart:core', 'dart:html']));
+      },
+    );
+
+    final writer = InMemoryAssetWriter();
+    final reader = InMemoryAssetReader.shareAssetCache(writer.assets);
+
+    writer.assets[makeAssetId('a|lib/a.dart')] = utf8.encode('');
+    await runBuilder(
+        builder, [makeAssetId('a|lib/a.dart')], reader, writer, resolvers);
+
+    writer.assets[makeAssetId('a|lib/b.dart')] = utf8.encode('');
+    await runBuilder(
+        builder, [makeAssetId('a|lib/b.dart')], reader, writer, resolvers);
   });
 
   group('The ${isFlutter ? 'flutter' : 'dart'} sdk', () {
@@ -657,14 +727,14 @@ int? get x => 1;
         var color = classDefinition.getField('color')!;
 
         if (isFlutter) {
-          expect(color.type.element2!.name, equals('Color'));
-          expect(color.type.element2!.library!.name, equals('dart.ui'));
+          expect(color.type.element!.name, equals('Color'));
+          expect(color.type.element!.library!.name, equals('dart.ui'));
           expect(
-              color.type.element2!.library!.definingCompilationUnit.source.uri
+              color.type.element!.library!.definingCompilationUnit.source.uri
                   .toString(),
               equals('dart:ui'));
         } else {
-          expect(color.type.element2!.name, equals('dynamic'));
+          expect(color.type, isA<InvalidType>());
         }
       }, resolvers: AnalyzerResolvers());
     });
@@ -787,6 +857,27 @@ int? get x => 1;
               .having((fd) => fd.declaredElement, 'declaredElement', isNotNull),
         );
       }, resolvers: AnalyzerResolvers());
+    });
+
+    test('can return a resolved compilation unit', () {
+      return resolveSources({
+        'a|web/main.dart': 'main() {}',
+      }, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        var unit = await resolver.astNodeFor(lib.definingCompilationUnit,
+            resolve: true);
+        expect(
+          unit,
+          isA<CompilationUnit>().having(
+              (unit) => unit.declarations, 'declarations', hasLength(1)),
+        );
+        expect(
+          (unit as CompilationUnit).declarations.single,
+          isA<FunctionDeclaration>()
+              .having((fd) => fd.toSource(), 'toSource()', 'main() {}')
+              .having((fd) => fd.declaredElement, 'declaredElement', isNotNull),
+        );
+      });
     });
   });
 }

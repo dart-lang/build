@@ -16,9 +16,8 @@
 </p>
 
 The `build_runner` package provides a concrete way of generating files using
-Dart code, outside of tools like `pub`. Unlike `pub serve/build`, files are
-always generated directly on disk, and rebuilds are _incremental_ - inspired by
-tools such as [Bazel][].
+Dart code. Files are always generated directly on disk, and
+rebuilds are _incremental_ - inspired by tools such as [Bazel][].
 
 > **NOTE**: Are you a user of this package? You may be interested in
 > simplified user-facing documentation, such as our
@@ -85,6 +84,9 @@ All the above commands support the following arguments:
   be provided.
 - `--[no-]fail-on-severe`: Whether to consider the build a failure on an error
   logged. By default this is false.
+- `--build-filter`: Build filters allow you to choose explicitly which files to
+  build instead of building entire directories. See further documentation on
+  this feature [here](#partial_builds).
 
 Some commands also have additional options:
 
@@ -207,13 +209,13 @@ and _all_ of the following checks must pass for _each_ package.
 Ensure code passes all our [analyzer checks][analysis_options]:
 
 ```sh
-$ dartanalyzer .
+$ dart analyze .
 ```
 
 Ensure all code is formatted with the latest [dev-channel SDK][dev_sdk].
 
 ```sh
-$ dartfmt -w .
+$ dart format .
 ```
 
 Run all of our unit tests:
@@ -230,6 +232,7 @@ $ dart run test
 [run_fn]: https://pub.dev/documentation/build_runner/latest/build_runner/run.html
 [builder_application]: https://pub.dev/documentation/build_runner/latest/build_runner/BuilderApplication-class.html
 [build_extensions]: https://pub.dev/documentation/build/latest/build/Builder/buildExtensions.html
+[partial_builds]: https://github.com/dart-lang/build/blob/master/docs/partial_builds.md
 
 [dev_sdk]: https://dart.dev/get-dart
 [dev_dependencies]: https://dart.dev/tools/pub/dependencies#dev-dependencies

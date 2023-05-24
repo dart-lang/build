@@ -51,7 +51,7 @@ void main() {
           platform: platform,
           outputExtension: kernelOutputExtension,
           summaryOnly: true,
-          sdkKernelPath: p.url.join('lib', '_internal', 'ddc_sdk.dill'),
+          sdkKernelPath: p.url.join('lib', '_internal', 'ddc_outline.dill'),
           useIncrementalCompiler: trackUnusedInputs,
           trackUnusedInputs: trackUnusedInputs,
         );

@@ -1,7 +1,15 @@
+## 7.2.9
+
+- Fix compatibility with `package:logging` version `1.2.0`.
+
+## 7.2.8
+
+- Raise the minimum SDK constraint to 2.18.
+- Optimize `BuildStep.packageConfig`
+
 ## 7.2.7+1
 
 - Backport the fix for package:logging version 1.2.0.
-
 ## 7.2.7
 
 - Handle generation of hidden assets in a way consistent with the definition of

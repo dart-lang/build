@@ -28,8 +28,12 @@ class PackageGraph {
   /// All [PackageNode]s indexed by package name.
   final Map<String, PackageNode> allPackages;
 
+  /// A [PackageConfig] representation of this package graph.
+  final PackageConfig asPackageConfig;
+
   PackageGraph._(this.root, Map<String, PackageNode> allPackages)
-      : allPackages = Map.unmodifiable(
+      : asPackageConfig = _packagesToConfig(allPackages.values),
+        allPackages = Map.unmodifiable(
             Map<String, PackageNode>.from(allPackages)
               ..putIfAbsent(r'$sdk', () => _sdkPackageNode)) {
     if (!root.isRoot) {
@@ -113,6 +117,22 @@ class PackageGraph {
   static Future<PackageGraph> forThisPackage() =>
       PackageGraph.forPath(p.current);
 
+  static PackageConfig _packagesToConfig(Iterable<PackageNode> packages) {
+    final relativeLib = Uri.parse('lib/');
+
+    return PackageConfig([
+      for (final package in packages)
+        if (package.name != _sdkPackageNode.name)
+          Package(
+            package.name,
+            Uri.file(
+                package.path.endsWith('/') ? package.path : '${package.path}/'),
+            languageVersion: package.languageVersion,
+            packageUriRoot: relativeLib,
+          ),
+    ]);
+  }
+
   /// Shorthand to get a package by name.
   PackageNode? operator [](String packageName) => allPackages[packageName];
 
@@ -176,8 +196,9 @@ Map<String, DependencyType> _parseDependencyTypes(String rootPackagePath) {
   }
   final dependencyTypes = <String, DependencyType>{};
   final dependencies = loadYaml(pubspecLock.readAsStringSync()) as YamlMap;
-  for (final packageName in dependencies['packages'].keys as Iterable) {
-    final source = dependencies['packages'][packageName]['source'];
+  final packages = dependencies['packages'] as YamlMap;
+  for (final packageName in packages.keys) {
+    final source = (packages[packageName] as YamlMap)['source'];
     dependencyTypes[packageName as String] =
         _dependencyTypeFromSource(source as String);
   }
