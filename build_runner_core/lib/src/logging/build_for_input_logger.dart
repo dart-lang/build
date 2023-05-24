@@ -88,4 +88,7 @@ class BuildForInputLogger implements Logger {
   @override
   void warning(Object? message, [Object? error, StackTrace? stackTrace]) =>
       _delegate.warning(message, error, stackTrace);
+
+  @override
+  Stream<Level?> get onLevelChanged => _delegate.onLevelChanged;
 }
