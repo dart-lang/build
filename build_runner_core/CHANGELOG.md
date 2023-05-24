@@ -1,4 +1,6 @@
-## 7.2.9-wip
+## 7.2.9
+
+- Fix compatibility with `package:logging` version `1.2.0`.
 
 ## 7.2.8
 
