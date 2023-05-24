@@ -769,7 +769,7 @@ class _VerifyCall {
     }
 
     final matchingCapturedArgs = [
-      for (var invocation in matchingInvocations) ...invocation.capturedArgs,
+      for (final invocation in matchingInvocations) ...invocation.capturedArgs,
     ];
 
     return _VerifyCall._(

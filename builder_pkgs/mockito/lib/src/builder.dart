@@ -1438,7 +1438,7 @@ class _MockClassInfo {
     final functionReference =
         referImported(function.name, _typeImport(function));
     return functionReference.call(positionalArguments, namedArguments, [
-      for (var t in method.typeParameters)
+      for (final t in method.typeParameters)
         _typeParameterReference(t, withBound: false)
     ]);
   }
@@ -1815,18 +1815,18 @@ class _MockClassInfo {
       return literalString(constant.stringValue, raw: true);
     } else if (constant.isList) {
       return literalConstList([
-        for (var element in constant.listValue)
+        for (final element in constant.listValue)
           _expressionFromDartObject(element)
       ]);
     } else if (constant.isMap) {
       return literalConstMap({
-        for (var pair in constant.mapValue.entries)
+        for (final pair in constant.mapValue.entries)
           _expressionFromDartObject(pair.key!):
               _expressionFromDartObject(pair.value!)
       });
     } else if (constant.isSet) {
       return literalConstSet({
-        for (var element in constant.setValue)
+        for (final element in constant.setValue)
           _expressionFromDartObject(element)
       });
     } else if (constant.isType) {
@@ -1860,11 +1860,11 @@ class _MockClassInfo {
 
       final name = revivable.source.fragment;
       final positionalArgs = [
-        for (var argument in revivable.positionalArguments)
+        for (final argument in revivable.positionalArguments)
           _expressionFromDartObject(argument)
       ];
       final namedArgs = {
-        for (var pair in revivable.namedArguments.entries)
+        for (final pair in revivable.namedArguments.entries)
           pair.key: _expressionFromDartObject(pair.value)
       };
       final element = parameter != null && name != object.type!.element!.name
