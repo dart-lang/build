@@ -10,6 +10,7 @@
 ## 7.2.7+1
 
 - Backport the fix for package:logging version 1.2.0.
+
 ## 7.2.7
 
 - Handle generation of hidden assets in a way consistent with the definition of
