@@ -564,7 +564,7 @@ class _MockTargetGatherer {
     final mockType = _mockType(mockSpecAsts[index]);
     final typeToMock = mockSpecType.typeArguments.single;
     if (typeToMock.isDynamic) {
-      final mockTypeName = mockType?.name.name;
+      final mockTypeName = mockType?.qualifiedName;
       if (mockTypeName == null) {
         throw InvalidMockitoAnnotationException(
             'MockSpec requires a type argument to determine the class to mock. '
@@ -596,7 +596,7 @@ class _MockTargetGatherer {
               '${(typeArgIdx + 1).ordinal} type argument for mocked '
               '$typeName.');
         }
-        if (typeArgAst.name.name == 'dynamic') return;
+        if (typeArgAst.qualifiedName == 'dynamic') return;
         throw InvalidMockitoAnnotationException(
           'Undefined type $typeArgAst passed as the '
           '${(typeArgIdx + 1).ordinal} type argument for mocked $typeName. Are '
@@ -2386,4 +2386,14 @@ bool _needsOverrideForVoidStub(ExecutableElement method) =>
 extension on ElementAnnotation {
   ast.Annotation get annotationAst =>
       (this as ElementAnnotationImpl).annotationAst;
+}
+
+extension NamedTypeExtension on ast.NamedType {
+  String get qualifiedName {
+    final importPrefix = this.importPrefix;
+    if (importPrefix != null) {
+      return '${importPrefix.name.lexeme}.${name2.lexeme}';
+    }
+    return name2.lexeme;
+  }
 }
