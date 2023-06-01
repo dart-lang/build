@@ -1,3 +1,8 @@
+## 5.4.2-wip
+
+* Require code_builder 4.5.0.
+* Add support for records.
+
 ## 5.4.1
 
 * Deprecate the `mixingIn` argument to `MockSpec`. Best practice is to avoid

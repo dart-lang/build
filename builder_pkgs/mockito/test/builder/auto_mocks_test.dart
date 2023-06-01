@@ -3609,6 +3609,28 @@ void main() {
     });
     expect(mocksContent, contains('void m(dynamic x)'));
   });
+  group('Record types', () {
+    test('are supported as arguments', () async {
+      await expectSingleNonNullableOutput(dedent('''
+        abstract class Foo {
+          int m((int, {Foo foo}) a);
+        }
+        '''), _containsAllOf('int m((int, {_i2.Foo foo})? a)'));
+    });
+    test('are supported as return types', () async {
+      await expectSingleNonNullableOutput(
+          dedent('''
+        class Bar {}
+        abstract class Foo {
+          Future<(int, {Bar bar})> get v;
+        }
+        '''),
+          decodedMatches(allOf(
+              contains('Future<(int, {_i2.Bar bar})> get v'),
+              contains('returnValue: _i3.Future<(int, {_i2.Bar bar})>.value('),
+              contains('bar: _FakeBar_0('))));
+    });
+  });
 }
 
 TypeMatcher<List<int>> _containsAllOf(a, [b]) => decodedMatches(

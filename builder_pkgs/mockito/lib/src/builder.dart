@@ -350,6 +350,13 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
       if (aliasElement != null) {
         _elements.add(aliasElement);
       }
+    } else if (type is analyzer.RecordType) {
+      for (final f in type.positionalFields) {
+        _addType(f.type);
+      }
+      for (final f in type.namedFields) {
+        _addType(f.type);
+      }
     }
   }
 
@@ -1458,6 +1465,10 @@ class _MockClassInfo {
       return _dummyFunctionValue(type, invocation);
     }
 
+    if (type is analyzer.RecordType) {
+      return _dummyRecordValue(type, invocation);
+    }
+
     if (type is! analyzer.InterfaceType) {
       if (type.isBottom || type is analyzer.InvalidType) {
         // Not sure what could be done here...
@@ -1601,6 +1612,18 @@ class _MockClassInfo {
       });
     }).genericClosure;
   }
+
+  Expression _dummyRecordValue(
+          analyzer.RecordType type, Expression invocation) =>
+      literalRecord(
+        [
+          for (final f in type.positionalFields) _dummyValue(f.type, invocation)
+        ],
+        {
+          for (final f in type.namedFields)
+            f.name: _dummyValue(f.type, invocation)
+        },
+      );
 
   Expression _dummyFakedValue(
       analyzer.InterfaceType dartType, Expression invocation) {
@@ -2124,6 +2147,13 @@ class _MockClassInfo {
           ..symbol = _lookupTypeParameter(type.element)
           ..isNullable = forceNullable || typeSystem.isNullable(type);
       });
+    } else if (type is analyzer.RecordType) {
+      return RecordType((b) => b
+        ..positionalFieldTypes.addAll(
+            [for (final f in type.positionalFields) _typeReference(f.type)])
+        ..namedFieldTypes.addAll(
+            {for (final f in type.namedFields) f.name: _typeReference(f.type)})
+        ..isNullable = forceNullable || typeSystem.isNullable(type));
     } else {
       return referImported(
         type.getDisplayString(withNullability: false),
@@ -2277,6 +2307,9 @@ extension on analyzer.DartType {
       return false;
     } else if (self is analyzer.VoidType) {
       return false;
+    } else if (self is analyzer.RecordType) {
+      return self.positionalFields.any((f) => f.type.containsPrivateName) ||
+          self.namedFields.any((f) => f.type.containsPrivateName);
     } else {
       assert(false, 'Unexpected subtype of DartType: ${self.runtimeType}');
       return false;
