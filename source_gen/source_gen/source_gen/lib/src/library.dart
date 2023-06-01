@@ -98,10 +98,7 @@ class LibraryReader {
   /// * `asset`
   ///
   /// May throw [ArgumentError] if it is not possible to resolve a path.
-  Uri pathToUrl(dynamic toUrlOrString) {
-    if (toUrlOrString == null) {
-      throw ArgumentError.notNull('toUrlOrString');
-    }
+  Uri pathToUrl(Object toUrlOrString) {
     final to = toUrlOrString is Uri
         ? toUrlOrString
         : Uri.parse(toUrlOrString as String);
