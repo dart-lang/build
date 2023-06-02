@@ -2,6 +2,7 @@
 
 * Require code_builder 4.5.0.
 * Add support for records.
+* Fixed the bug with missing imports for unused type alias arguments.
 
 ## 5.4.1
 

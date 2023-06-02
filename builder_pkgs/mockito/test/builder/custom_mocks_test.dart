@@ -1353,8 +1353,10 @@ void main() {
     final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent(r'''
-        class Foo<T> {
+        class Bar {}
+        abstract class Foo<T> {
           int m();
+          Bar get f;
         }
         '''),
       'foo|test/foo_test.dart': '''
@@ -1367,6 +1369,8 @@ void main() {
     expect(mocksContent, isNot(contains('throwOnMissingStub')));
     expect(mocksContent, contains('returnValue: 0'));
     expect(mocksContent, contains('returnValueForMissingStub: 0'));
+    expect(mocksContent, contains('returnValue: _FakeBar_0('));
+    expect(mocksContent, contains('returnValueForMissingStub: _FakeBar_0('));
   });
 
   test(

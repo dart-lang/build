@@ -1245,6 +1245,22 @@ void main() {
     expect(mocksContent, contains('_i2.Callback3<_i2.Foo>? c'));
   });
 
+  test('imports libraries for type aliases with external types 2', () async {
+    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+        import 'dart:async';
+        typedef Ignore<T> = String Function(int);
+        class Foo {
+          dynamic f(Ignore<Future<int>> c) {}
+          dynamic g(Ignore<Future> c) {}
+        }
+        '''));
+    expect(mocksContent, contains("import 'package:foo/foo.dart' as _i2;"));
+    expect(mocksContent, contains("import 'dart:async' as _i3;"));
+    expect(mocksContent, contains('implements _i2.Foo'));
+    expect(mocksContent, contains('_i2.Ignore<_i3.Future<int>>? c'));
+    expect(mocksContent, contains('_i2.Ignore<_i3.Future<dynamic>>? c'));
+  });
+
   test('imports libraries for types declared in private SDK libraries',
       () async {
     final mocksContent = await buildWithSingleNonNullableSource(dedent('''

@@ -307,6 +307,8 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
   void _addType(analyzer.DartType? type) {
     if (type == null) return;
 
+    type.alias?.typeArguments.forEach(_addType);
+
     if (type is analyzer.InterfaceType) {
       final alreadyVisitedElement = _elements.contains(type.element);
       _elements.add(type.element);
