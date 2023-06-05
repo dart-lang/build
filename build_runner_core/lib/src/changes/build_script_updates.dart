@@ -105,8 +105,9 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
               'package graph. Do you have a dependency on the package '
               'containing this uri?');
         }
-        var relativePath =
-            p.relative(uri.toFilePath(), from: package.root.toFilePath());
+        // We always want a URI style relative path and not a windows one.
+        var relativePath = p.relative(uri.toFilePath(windows: false),
+            from: package.root.toFilePath(windows: false));
         return AssetId(package.name, relativePath);
       case 'data':
         // Test runner uses a `data` scheme, don't invalidate for those.
