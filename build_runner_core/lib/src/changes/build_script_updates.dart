@@ -98,7 +98,8 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
         return AssetId(parts[0],
             p.url.joinAll(['lib', ...parts.getRange(1, parts.length)]));
       case 'file':
-        final package = packageGraph.asPackageConfig.packageOf(uri);
+        final package = packageGraph.asPackageConfig
+            .packageOf(Uri.file(p.canonicalize(uri.toFilePath())));
         if (package == null) {
           throw ArgumentError(
               'The uri $uri could not be resolved to a package in the current '
