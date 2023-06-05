@@ -45,12 +45,11 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
   static Future<BuildScriptUpdates> create(RunnerAssetReader reader,
       PackageGraph packageGraph, AssetGraph graph) async {
     var supportsIncrementalRebuilds = true;
-    var rootPackage = packageGraph.root.name;
     Set<AssetId> allSources;
     var logger = Logger('BuildScriptUpdates');
     try {
       allSources = _urisForThisScript
-          .map((id) => _idForUri(id, rootPackage))
+          .map((id) => _idForUri(id, packageGraph))
           .whereNotNull()
           .toSet();
       var missing = allSources.firstWhereOrNull((id) => !graph.contains(id));
@@ -89,7 +88,7 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
   ///
   /// Returns `null` if the uri should be ignored, or throws an [ArgumentError]
   /// if the [uri] is not recognized.
-  static AssetId? _idForUri(Uri uri, String rootPackage) {
+  static AssetId? _idForUri(Uri uri, PackageGraph packageGraph) {
     switch (uri.scheme) {
       case 'dart':
         // TODO: check for sdk updates!
@@ -99,8 +98,16 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
         return AssetId(parts[0],
             p.url.joinAll(['lib', ...parts.getRange(1, parts.length)]));
       case 'file':
-        var relativePath = p.relative(uri.toFilePath(), from: p.current);
-        return AssetId(rootPackage, relativePath);
+        final package = packageGraph.asPackageConfig.packageOf(uri);
+        if (package == null) {
+          throw ArgumentError(
+              'The uri $uri could not be resolved to a package in the current '
+              'package graph. Do you have a dependency on the package '
+              'containing this uri?');
+        }
+        var relativePath =
+            p.relative(uri.toFilePath(), from: package.root.toFilePath());
+        return AssetId(package.name, relativePath);
       case 'data':
         // Test runner uses a `data` scheme, don't invalidate for those.
         if (uri.path.contains('package:test')) break;
