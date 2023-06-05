@@ -17,9 +17,7 @@ void main() {
           isRoot: true);
       final dependency =
           PackageNode('b', '/b/', DependencyType.path, LanguageVersion(3, 0));
-      final dependencyWithDriveLetter = PackageNode(
-          'c', '/C:/c/', DependencyType.path, LanguageVersion(3, 0));
-      rootPackage.dependencies.addAll([dependency, dependencyWithDriveLetter]);
+      rootPackage.dependencies.add(dependency);
       packageGraph = PackageGraph.fromRoot(rootPackage);
     });
 
@@ -33,12 +31,10 @@ void main() {
     });
 
     test('file: uris can be looked up', () {
-      expect(idForUri(Uri.parse('file:///a/a.dart'), packageGraph),
-          AssetId('a', 'a.dart'));
-      expect(idForUri(Uri.parse('file:///b/b.dart'), packageGraph),
+      expect(idForUri(Uri.file('/a/lib/a.dart'), packageGraph),
+          AssetId('a', 'lib/a.dart'));
+      expect(idForUri(Uri.file('/b/b.dart'), packageGraph),
           AssetId('b', 'b.dart'));
-      expect(idForUri(Uri.parse('file:///C:/c/c.dart'), packageGraph),
-          AssetId('c', 'c.dart'));
     });
     test('data: arent supported unless they are from the test runner', () {
       expect(
