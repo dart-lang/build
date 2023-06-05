@@ -1,3 +1,8 @@
+## 7.2.10
+
+- Fix build script invalidation check for custom build scripts from other
+  packages.
+
 ## 7.2.9
 
 - Fix compatibility with `package:logging` version `1.2.0`.

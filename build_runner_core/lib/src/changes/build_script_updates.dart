@@ -8,6 +8,7 @@ import 'dart:mirrors';
 import 'package:build/build.dart';
 import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 import '../asset/reader.dart';
@@ -45,12 +46,11 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
   static Future<BuildScriptUpdates> create(RunnerAssetReader reader,
       PackageGraph packageGraph, AssetGraph graph) async {
     var supportsIncrementalRebuilds = true;
-    var rootPackage = packageGraph.root.name;
     Set<AssetId> allSources;
     var logger = Logger('BuildScriptUpdates');
     try {
       allSources = _urisForThisScript
-          .map((id) => _idForUri(id, rootPackage))
+          .map((id) => idForUri(id, packageGraph))
           .whereNotNull()
           .toSet();
       var missing = allSources.firstWhereOrNull((id) => !graph.contains(id));
@@ -84,39 +84,6 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
     if (!_supportsIncrementalRebuilds) return true;
     return updatedIds.intersection(_allSources).isNotEmpty;
   }
-
-  /// Attempts to return an [AssetId] for [uri].
-  ///
-  /// Returns `null` if the uri should be ignored, or throws an [ArgumentError]
-  /// if the [uri] is not recognized.
-  static AssetId? _idForUri(Uri uri, String rootPackage) {
-    switch (uri.scheme) {
-      case 'dart':
-        // TODO: check for sdk updates!
-        break;
-      case 'package':
-        var parts = uri.pathSegments;
-        return AssetId(parts[0],
-            p.url.joinAll(['lib', ...parts.getRange(1, parts.length)]));
-      case 'file':
-        var relativePath = p.relative(uri.toFilePath(), from: p.current);
-        return AssetId(rootPackage, relativePath);
-      case 'data':
-        // Test runner uses a `data` scheme, don't invalidate for those.
-        if (uri.path.contains('package:test')) break;
-        continue unsupported;
-      case 'http':
-        continue unsupported;
-      unsupported:
-      default:
-        throw ArgumentError('Unsupported uri scheme `${uri.scheme}` found for '
-            'library in build script.\n'
-            'This probably means you are running in an unsupported '
-            'context, such as in an isolate or via `dart run`.\n'
-            'Full uri was: $uri.');
-    }
-    return null;
-  }
 }
 
 /// Always returns false for [hasBeenUpdated], used when we want to skip
@@ -124,4 +91,48 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
 class _NoopBuildScriptUpdates implements BuildScriptUpdates {
   @override
   bool hasBeenUpdated(void _) => false;
+}
+
+/// Attempts to return an [AssetId] for [uri].
+///
+/// Returns `null` if the uri should be ignored, or throws an [ArgumentError]
+/// if the [uri] is not recognized.
+@visibleForTesting
+AssetId? idForUri(Uri uri, PackageGraph packageGraph) {
+  switch (uri.scheme) {
+    case 'dart':
+      // TODO: check for sdk updates!
+      break;
+    case 'package':
+      var parts = uri.pathSegments;
+      return AssetId(
+          parts[0], p.url.joinAll(['lib', ...parts.getRange(1, parts.length)]));
+    case 'file':
+      final package = packageGraph.asPackageConfig
+          .packageOf(Uri.file(p.canonicalize(uri.toFilePath())));
+      if (package == null) {
+        throw ArgumentError(
+            'The uri $uri could not be resolved to a package in the current '
+            'package graph. Do you have a dependency on the package '
+            'containing this uri?');
+      }
+      // The `AssetId` constructor normalizes this path to a URI style.
+      var relativePath =
+          p.relative(uri.toFilePath(), from: package.root.toFilePath());
+      return AssetId(package.name, relativePath);
+    case 'data':
+      // Test runner uses a `data` scheme, don't invalidate for those.
+      if (uri.path.contains('package:test')) break;
+      continue unsupported;
+    case 'http':
+      continue unsupported;
+    unsupported:
+    default:
+      throw ArgumentError('Unsupported uri scheme `${uri.scheme}` found for '
+          'library in build script.\n'
+          'This probably means you are running in an unsupported '
+          'context, such as in an isolate or via `dart run`.\n'
+          'Full uri was: $uri.');
+  }
+  return null;
 }
