@@ -192,7 +192,10 @@ void main() {
           'builders': {
             'self_cycle': {
               'builder_factories': ['createBuilder'],
-              'build_extensions': {'.in': ['.out'], '.out': ['.another']},
+              'build_extensions': {
+                '.in': ['.out'],
+                '.out': ['.another']
+              },
               'target': '',
               'import': '',
               'required_inputs': ['.out'],
