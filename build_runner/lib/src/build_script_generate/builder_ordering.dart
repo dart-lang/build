@@ -18,8 +18,9 @@ Iterable<BuilderDefinition> findBuilderOrder(
     ..sort((a, b) => a.key.compareTo(b.key));
   Iterable<BuilderDefinition> dependencies(BuilderDefinition parent) =>
       consistentOrderBuilders.where((child) =>
-          _hasInputDependency(parent, child) ||
-          _mustRunBefore(parent, child, globalBuilderConfigs));
+          parent != child &&
+          (_hasInputDependency(parent, child) ||
+              _mustRunBefore(parent, child, globalBuilderConfigs)));
   try {
     return topologicalSort<BuilderDefinition>(
       consistentOrderBuilders,

@@ -1,3 +1,8 @@
+## 2.4.5
+
+- Fix a bug handling a builder which has a `required_input` that matches it's
+  own output.
+
 ## 2.4.4
 
 - Use a stable order for builders without an order defined by dependencies.

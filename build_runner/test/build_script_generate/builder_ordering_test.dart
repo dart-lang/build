@@ -185,5 +185,25 @@ void main() {
               {}),
           throwsA(anything));
     });
+
+    test('allows self cycles with `required_inputs`', () async {
+      final buildConfigs = parseBuildConfigs({
+        'a': {
+          'builders': {
+            'self_cycle': {
+              'builder_factories': ['createBuilder'],
+              'build_extensions': {'.in': ['.out'], '.out': ['.another']},
+              'target': '',
+              'import': '',
+              'required_inputs': ['.out'],
+            },
+          }
+        }
+      });
+      final orderedBuilders = findBuilderOrder(
+          buildConfigs.values.expand((v) => v.builderDefinitions.values), {});
+      final orderedKeys = orderedBuilders.map((b) => b.key);
+      expect(orderedKeys, ['a:self_cycle']);
+    });
   });
 }
