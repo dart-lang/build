@@ -1,4 +1,4 @@
-## 5.4.2-wip
+## 5.4.2
 
 * Require code_builder 4.5.0.
 * Add support for records.

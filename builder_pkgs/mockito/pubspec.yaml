@@ -1,12 +1,12 @@
 name: mockito
-version: 5.4.2-wip
+version: 5.4.2
 description: >-
   A mock framework inspired by Mockito with APIs for Fakes, Mocks,
   behavior verification, and stubbing.
 repository: https://github.com/dart-lang/mockito
 
 environment:
-  sdk: '>=2.19.0 <3.0.0'
+  sdk: '>=2.19.0 <4.0.0'
 
 dependencies:
   analyzer: '>=5.11.0 <6.0.0'
