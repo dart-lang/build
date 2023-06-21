@@ -76,7 +76,7 @@ void main() {
       );
     },
     onPlatform: const {
-      'windows': Skip('https://github.com/dart-lang/source_gen/issues/573')
+      'windows': Skip('https://github.com/dart-lang/source_gen/issues/573'),
     },
   );
 

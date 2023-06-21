@@ -66,7 +66,7 @@ void main() {
       generateFor: {'$_pkgName|lib/test_lib.dart'},
       outputs: {
         '$_pkgName|lib/test_lib.g.dart':
-            decodedMatches(startsWith('$_customHeader\n\n// ***'))
+            decodedMatches(startsWith('$_customHeader\n\n// ***')),
       },
     );
   });
@@ -79,7 +79,7 @@ void main() {
       srcs,
       generateFor: {'$_pkgName|lib/test_lib.dart'},
       outputs: {
-        '$_pkgName|lib/test_lib.g.dart': decodedMatches(startsWith('// ***'))
+        '$_pkgName|lib/test_lib.g.dart': decodedMatches(startsWith('// ***')),
       },
     );
   });
@@ -289,7 +289,7 @@ void main() {
         ),
         {
           '$_pkgName|lib/a.dart': '''// @dart=2.12
-part "a.foo.dart";'''
+part "a.foo.dart";''',
         },
         generateFor: {'$_pkgName|lib/a.dart'},
         outputs: {
@@ -324,8 +324,8 @@ part "a.foo.dart";'''
           '.foo.dart',
           options: const BuilderOptions({
             'build_extensions': {
-              '^lib/{{}}.dart': 'lib/generated/{{}}.foo.dart'
-            }
+              '^lib/{{}}.dart': 'lib/generated/{{}}.foo.dart',
+            },
           }),
         );
         final logs = <String>[];
@@ -351,8 +351,8 @@ part "a.foo.dart";'''
             header: '',
             options: const BuilderOptions({
               'build_extensions': {
-                '^lib/{{}}.dart': 'lib/generated/{{}}.foo.dart'
-              }
+                '^lib/{{}}.dart': 'lib/generated/{{}}.foo.dart',
+              },
             }),
           ),
           {'$_pkgName|lib/a.dart': 'part "generated/a.foo.dart";'},
@@ -375,8 +375,8 @@ part "a.foo.dart";'''
               additionalOutputExtensions: ['.bar.dart'],
               options: const BuilderOptions({
                 'build_extensions': {
-                  '^lib/{{}}.dart': 'lib/generated/{{}}.foo.dart'
-                }
+                  '^lib/{{}}.dart': 'lib/generated/{{}}.foo.dart',
+                },
               }),
             ),
             {'$_pkgName|lib/a.dart': 'part "generated/a.foo.dart";'},
@@ -395,8 +395,8 @@ part "a.foo.dart";'''
             const CommentGenerator(),
             options: const BuilderOptions({
               'build_extensions': {
-                '^lib/{{}}.dart': 'lib/generated/{{}}.g.dart'
-              }
+                '^lib/{{}}.dart': 'lib/generated/{{}}.g.dart',
+              },
             }),
           ),
           _createPackageStub(),
@@ -418,8 +418,8 @@ part "a.foo.dart";'''
               additionalOutputExtensions: ['.foo.dart'],
               options: const BuilderOptions({
                 'build_extensions': {
-                  '^lib/{{}}.dart': 'lib/generated/{{}}.foo.dart'
-                }
+                  '^lib/{{}}.dart': 'lib/generated/{{}}.foo.dart',
+                },
               }),
             ),
             {'$_pkgName|lib/a.dart': 'part "generated/a.foo.dart";'},
@@ -469,7 +469,7 @@ part "a.foo.dart";'''
         'is empty': '',
         'contains whitespace': 'coo bob',
         'contains symbols': '%oops',
-        'contains . in the middle': 'cool.thing'
+        'contains . in the middle': 'cool.thing',
       }.entries) {
         test('throws if the partId ${entry.key}', () async {
           expect(
@@ -490,7 +490,7 @@ part "a.foo.dart";'''
         const CombiningBuilder(),
         {
           '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
-          '$_pkgName|lib/a.foo.g.part': 'some generated content'
+          '$_pkgName|lib/a.foo.g.part': 'some generated content',
         },
         generateFor: {'$_pkgName|lib/a.dart'},
         outputs: {
@@ -510,7 +510,7 @@ part "a.foo.dart";'''
 library a;
 part "a.g.dart";
 ''',
-          '$_pkgName|lib/a.foo.g.part': 'some generated content'
+          '$_pkgName|lib/a.foo.g.part': 'some generated content',
         },
         generateFor: {'$_pkgName|lib/a.dart'},
         outputs: {
@@ -533,7 +533,7 @@ some generated content
         const CombiningBuilder(),
         {
           '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
-          '$_pkgName|lib/a.foo.g.part': 'some generated content'
+          '$_pkgName|lib/a.foo.g.part': 'some generated content',
         },
         generateFor: {'$_pkgName|lib/a.dart'},
         outputs: {
@@ -548,7 +548,7 @@ some generated content
         const CombiningBuilder(),
         {
           '$_pkgName|lib/a.dart': 'library a; part "a.g.dart";',
-          '$_pkgName|lib/a.foo.g.part': 'some generated content'
+          '$_pkgName|lib/a.foo.g.part': 'some generated content',
         },
         generateFor: {'$_pkgName|lib/a.dart'},
         outputs: {
@@ -744,8 +744,8 @@ foo generated content
           combiningBuilder(
             const BuilderOptions({
               'build_extensions': {
-                '^lib/{{}}.dart': 'lib/generated/{{}}.g.dart'
-              }
+                '^lib/{{}}.dart': 'lib/generated/{{}}.g.dart',
+              },
             }),
           ),
           {
@@ -777,8 +777,8 @@ foo generated content
           combiningBuilder(
             const BuilderOptions({
               'build_extensions': {
-                '^lib/{{}}.dart': 'lib/generated/{{}}.g.dart'
-              }
+                '^lib/{{}}.dart': 'lib/generated/{{}}.g.dart',
+              },
             }),
           ),
           {

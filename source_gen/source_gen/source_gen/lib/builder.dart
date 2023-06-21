@@ -22,7 +22,7 @@ import 'src/utils.dart';
 const _outputExtensions = '.g.dart';
 const _partFiles = '.g.part';
 const _defaultExtensions = {
-  '.dart': [_outputExtensions]
+  '.dart': [_outputExtensions],
 };
 
 Builder combiningBuilder([BuilderOptions options = BuilderOptions.empty]) {

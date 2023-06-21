@@ -72,5 +72,5 @@ const objectAnnotation = {
   'String': 'a string',
   'core type': bool,
   'imported sdk type': collection.Queue,
-  'non-core type': OtherPublicAnnotationClass
+  'non-core type': OtherPublicAnnotationClass,
 };

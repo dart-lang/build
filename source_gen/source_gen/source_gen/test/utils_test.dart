@@ -58,8 +58,8 @@ void main() {
       final buildExtensions = validatedBuildExtensionsFrom(
         {
           'build_extensions': {
-            '.dart': ['.g.dart', '.h.dart']
-          }
+            '.dart': ['.g.dart', '.h.dart'],
+          },
         },
         {},
       );
@@ -72,8 +72,8 @@ void main() {
       final buildExtensions = validatedBuildExtensionsFrom(
         {
           'build_extensions': {
-            '.dart': ['.g.dart', '.swagger.json']
-          }
+            '.dart': ['.g.dart', '.swagger.json'],
+          },
         },
         {},
       );
@@ -104,8 +104,8 @@ void main() {
         () => validatedBuildExtensionsFrom(
           {
             'build_extensions': {
-              '.txt': ['.dart']
-            }
+              '.txt': ['.dart'],
+            },
           },
           {},
         ),
@@ -124,7 +124,7 @@ void main() {
       expect(
         () => validatedBuildExtensionsFrom(
           {
-            'build_extensions': {'.dart': '.out'}
+            'build_extensions': {'.dart': '.out'},
           },
           {},
         ),
@@ -142,8 +142,8 @@ void main() {
         () => validatedBuildExtensionsFrom(
           {
             'build_extensions': {
-              '.dart': ['.out', '.g.dart']
-            }
+              '.dart': ['.out', '.g.dart'],
+            },
           },
           {},
         ),

@@ -21,7 +21,7 @@ void main() {
       'empty string': '',
       'only whitespace': '\n \t',
       'empty list': <Object>[],
-      'list with null, empty, and whitespace items': [null, '', '\n \t']
+      'list with null, empty, and whitespace items': [null, '', '\n \t'],
     }.entries) {
       test(entry.key, () async {
         final generator =
@@ -56,7 +56,7 @@ void main() {
 // bar
 
 // baz
-'''
+''',
       },
     );
   });
@@ -69,7 +69,7 @@ void main() {
       'from iterable': _StubGenerator<Deprecated>('FailingIterable', (_) sync* {
         yield '// There are deprecated values in this library!';
         throw StateError('not supported!');
-      })
+      }),
     }.entries) {
       test(entry.key, () async {
         final builder = LibraryBuilder(entry.value);
@@ -123,7 +123,7 @@ void main() {
         'a|lib/file.dart': '''
       @deprecated
       library foo;
-      '''
+      ''',
       },
       outputs: {
         'a|lib/file.g.dart': '''
@@ -134,7 +134,7 @@ void main() {
 // **************************************************************************
 
 // foo
-'''
+''',
       },
     );
   });
@@ -159,7 +159,7 @@ void main() {
       export 'imported.dart';
       @deprecated
       part 'part.dart';
-      '''
+      ''',
       },
       outputs: {
         'a|lib/file.g.dart': '''
@@ -174,7 +174,7 @@ void main() {
 // LibraryExportElementImpl
 
 // PartElementImpl
-'''
+''',
       },
     );
   });
@@ -208,7 +208,7 @@ const _inputMap = {
 
      @deprecated
      final baz = 'baz';
-     '''
+     ''',
 };
 
 class _TestingResolver implements ReleasableResolver {

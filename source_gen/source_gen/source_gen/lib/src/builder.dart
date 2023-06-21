@@ -58,7 +58,7 @@ class _Builder extends Builder {
           '.dart': [
             generatedExtension,
             ...additionalOutputExtensions,
-          ]
+          ],
         }),
         formatOutput = formatOutput ?? _formatter.format,
         _header = (header ?? defaultFileHeader).trim() {

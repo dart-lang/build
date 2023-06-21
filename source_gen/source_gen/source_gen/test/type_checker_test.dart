@@ -79,7 +79,7 @@ void main() {
     staticMap = core.getClass('Map')!.instantiate(
       typeArguments: [
         core.typeProvider.dynamicType,
-        core.typeProvider.dynamicType
+        core.typeProvider.dynamicType,
       ],
       nullabilitySuffix: NullabilitySuffix.none,
     );
@@ -119,7 +119,7 @@ void main() {
     staticHashMap = collection.getClass('HashMap')!.instantiate(
       typeArguments: [
         core.typeProvider.dynamicType,
-        core.typeProvider.dynamicType
+        core.typeProvider.dynamicType,
       ],
       nullabilitySuffix: NullabilitySuffix.none,
     );
