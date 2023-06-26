@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 
@@ -41,18 +42,30 @@ class InvalidGenerationSourceError extends Error {
 
   /// The code element associated with this error.
   ///
-  /// May be `null` if the error had no associated element.
+  /// May be `null` if the error had no associated element, or if the location
+  /// was passed with [node].
   final Element? element;
 
-  InvalidGenerationSourceError(this.message, {this.todo = '', this.element});
+  /// The AST Node associated with this error.
+  ///
+  /// May be `null` if the error has no associated node in the input source
+  /// code, or if the location was passed with [element].
+  final AstNode? node;
+
+  InvalidGenerationSourceError(
+    this.message, {
+    this.todo = '',
+    this.element,
+    this.node,
+  });
 
   @override
   String toString() {
     final buffer = StringBuffer(message);
 
-    if (element != null) {
+    if (element case final element?) {
       try {
-        final span = spanForElement(element!);
+        final span = spanForElement(element);
         buffer
           ..writeln()
           ..writeln(span.start.toolString)
@@ -63,6 +76,20 @@ class InvalidGenerationSourceError extends Error {
         buffer
           ..writeln()
           ..writeln('Cause: $element');
+      }
+    }
+
+    if (node case final node?) {
+      try {
+        final span = spanForNode(node);
+        buffer
+          ..writeln()
+          ..writeln(span.start.toolString)
+          ..write(span.highlight());
+      } catch (_) {
+        buffer
+          ..writeln()
+          ..writeln('Cause: $node');
       }
     }
 

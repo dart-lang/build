@@ -5,13 +5,14 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:source_gen/source_gen.dart';
+import 'package:source_gen/src/span_for_element.dart';
 import 'package:term_glyph/term_glyph.dart' as glyph;
 import 'package:test/test.dart';
 
 void main() {
   glyph.ascii = true;
   late LibraryElement library;
+  late Resolver resolver;
 
   setUpAll(() async {
     library = await resolveSource(
@@ -28,7 +29,10 @@ abstract class Example implements List {
   }
 }
 ''',
-      (resolver) async => (await resolver.findLibraryByName('test_lib'))!,
+      (r) async {
+        resolver = r;
+        return (await resolver.findLibraryByName('test_lib'))!;
+      },
       inputId: AssetId('test_lib', 'lib/test_lib.dart'),
     );
   });
@@ -93,6 +97,20 @@ line 7, column 11 of package:test_lib/test_lib.dart: Here it is
   ,
 7 |   int get fieldProp => field;
   |           ^^^^^^^^^
+  '""",
+    );
+  });
+
+  test('highlights based on AstNode source location', () async {
+    final element = library.getClass('Example')!.getField('field')!.declaration;
+    final node = (await resolver.astNodeFor(element, resolve: true))!;
+    expect(
+      spanForNode(node).message('Here it is'),
+      r"""
+line 6, column 7 of package:test_lib/test_lib.dart: Here it is
+  ,
+6 |   int field;
+  |       ^^^^^
   '""",
     );
   });

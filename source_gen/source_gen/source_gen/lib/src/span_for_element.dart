@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:source_span/source_span.dart';
 
@@ -50,4 +51,14 @@ SourceSpan spanForElement(Element element, [SourceFile? file]) {
   }
 
   return file.span(element.nameOffset, element.nameOffset + element.nameLength);
+}
+
+/// Returns a source span that spans the location where [node] is written.
+SourceSpan spanForNode(AstNode node) {
+  final unit = node.thisOrAncestorOfType<CompilationUnit>()!;
+  final element = unit.declaredElement!;
+  final contents = element.source.contents.data;
+  final url = assetToPackageUrl(element.source.uri);
+  final file = SourceFile.fromString(contents, url: url);
+  return file.span(node.offset, node.offset + node.length);
 }

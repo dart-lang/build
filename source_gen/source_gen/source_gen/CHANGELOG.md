@@ -1,6 +1,8 @@
-## 1.3.3-wip
+## 1.4.0-wip
 
 - Require Dart 3.0
+- Add a `node` argument to `InvalidGenerationSourceError` to allow finding the
+  source location from an `AstNode` over an `Element`.
 
 ## 1.3.2
 
