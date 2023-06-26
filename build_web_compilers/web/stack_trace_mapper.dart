@@ -81,6 +81,7 @@ class LazyMapping extends Mapping {
 
   LazyMapping(this._provider);
 
+  // ignore: unreachable_from_main
   List toJson() => _bundle.toJson();
 
   @override

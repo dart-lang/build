@@ -47,6 +47,9 @@ class DevCompilerBuilder implements Builder {
   /// watch, expression evaluation, and variable inspection windows.
   final bool emitDebugSymbols;
 
+  /// Enables canary features in DDC.
+  final bool canaryFeatures;
+
   final bool trackUnusedInputs;
 
   final DartPlatform platform;
@@ -75,6 +78,7 @@ class DevCompilerBuilder implements Builder {
       {this.useIncrementalCompiler = true,
       this.generateFullDill = false,
       this.emitDebugSymbols = false,
+      this.canaryFeatures = false,
       this.trackUnusedInputs = false,
       required this.platform,
       String? sdkKernelPath,
@@ -124,6 +128,7 @@ class DevCompilerBuilder implements Builder {
           useIncrementalCompiler,
           generateFullDill,
           emitDebugSymbols,
+          canaryFeatures,
           trackUnusedInputs,
           platformSdk,
           sdkKernelPath,
@@ -144,6 +149,7 @@ Future<void> _createDevCompilerModule(
     bool useIncrementalCompiler,
     bool generateFullDill,
     bool emitDebugSymbols,
+    bool canaryFeatures,
     bool trackUnusedInputs,
     String dartSdk,
     String sdkKernelPath,
@@ -188,6 +194,7 @@ Future<void> _createDevCompilerModule(
       '--no-summarize',
       if (generateFullDill) '--experimental-output-compiled-kernel',
       if (emitDebugSymbols) '--emit-debug-symbols',
+      if (canaryFeatures) '--canary',
       '-o',
       jsOutputFile.path,
       debugMode ? '--source-map' : '--no-source-map',

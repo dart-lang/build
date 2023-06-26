@@ -108,6 +108,44 @@ void main() {
           outputs: expectedOutputs);
     });
 
+    test('can enable DDC canary features', () async {
+      var expectedOutputs = {
+        'b|lib/b$jsModuleExtension': isNotEmpty,
+        'b|lib/b$jsSourceMapExtension': isNotEmpty,
+        'b|lib/b$metadataExtension': isNotEmpty,
+        'a|lib/a$jsModuleExtension': decodedMatches(contains('canary')),
+        'a|lib/a$jsSourceMapExtension': isNotEmpty,
+        'a|lib/a$metadataExtension': isNotEmpty,
+        'a|web/index$jsModuleExtension': isNotEmpty,
+        'a|web/index$jsSourceMapExtension': isNotEmpty,
+        'a|web/index$metadataExtension': isNotEmpty,
+      };
+      await testBuilder(
+        DevCompilerBuilder(platform: ddcPlatform, canaryFeatures: true),
+        assets,
+        outputs: expectedOutputs,
+      );
+    });
+
+    test('does not enable DDC canary features by default', () async {
+      var expectedOutputs = {
+        'b|lib/b$jsModuleExtension': isNotEmpty,
+        'b|lib/b$jsSourceMapExtension': isNotEmpty,
+        'b|lib/b$metadataExtension': isNotEmpty,
+        'a|lib/a$jsModuleExtension': decodedMatches(isNot(contains('canary'))),
+        'a|lib/a$jsSourceMapExtension': isNotEmpty,
+        'a|lib/a$metadataExtension': isNotEmpty,
+        'a|web/index$jsModuleExtension': isNotEmpty,
+        'a|web/index$jsSourceMapExtension': isNotEmpty,
+        'a|web/index$metadataExtension': isNotEmpty,
+      };
+      await testBuilder(
+        DevCompilerBuilder(platform: ddcPlatform),
+        assets,
+        outputs: expectedOutputs,
+      );
+    });
+
     test('generates full dill when enabled', () async {
       var expectedOutputs = {
         'b|lib/b$jsModuleExtension': isNotEmpty,
