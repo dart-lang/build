@@ -522,7 +522,8 @@ class _MockTargetGatherer {
         throw InvalidMockitoAnnotationException(
             'The "classes" argument includes a non-type: $objectToMock');
       }
-      if (typeToMock.isDynamic) {
+      if (typeToMock is analyzer.DynamicType ||
+          typeToMock is analyzer.InvalidType) {
         throw InvalidMockitoAnnotationException(
             'Mockito cannot mock `dynamic`');
       }
@@ -565,7 +566,8 @@ class _MockTargetGatherer {
     assert(mockSpecType.typeArguments.length == 1);
     final mockType = _mockType(mockSpecAsts[index]);
     final typeToMock = mockSpecType.typeArguments.single;
-    if (typeToMock.isDynamic) {
+    if (typeToMock is analyzer.DynamicType ||
+        typeToMock is analyzer.InvalidType) {
       final mockTypeName = mockType?.qualifiedName;
       if (mockTypeName == null) {
         throw InvalidMockitoAnnotationException(
@@ -588,7 +590,8 @@ class _MockTargetGatherer {
       // Check explicit type arguments for unknown types that were
       // turned into `dynamic` by the analyzer.
       typeArguments.forEachIndexed((typeArgIdx, typeArgument) {
-        if (!typeArgument.isDynamic) return;
+        if (!(typeArgument is analyzer.DynamicType ||
+            typeArgument is analyzer.InvalidType)) return;
         if (typeArgIdx >= mockTypeArguments.arguments.length) return;
         final typeArgAst = mockTypeArguments.arguments[typeArgIdx];
         if (typeArgAst is! ast.NamedType) {
@@ -621,7 +624,8 @@ class _MockTargetGatherer {
         throw InvalidMockitoAnnotationException(
             'The "mixingIn" argument includes a non-type: $m');
       }
-      if (typeToMixin.isDynamic) {
+      if (typeToMixin is analyzer.DynamicType ||
+          typeToMixin is analyzer.InvalidType) {
         throw InvalidMockitoAnnotationException(
             'Mockito cannot mix `dynamic` into a mock class');
       }
@@ -1398,7 +1402,7 @@ class _MockClassInfo {
       ]);
 
       Expression? returnValueForMissingStub;
-      if (returnType.isVoid) {
+      if (returnType is analyzer.VoidType) {
         returnValueForMissingStub = refer('null');
       } else if (returnType.isFutureOfVoid) {
         returnValueForMissingStub =
@@ -1425,7 +1429,9 @@ class _MockClassInfo {
 
       var superNoSuchMethod =
           refer('super').property('noSuchMethod').call([invocation], namedArgs);
-      if (!returnType.isVoid && !returnType.isDynamic) {
+      if (returnType is! analyzer.VoidType &&
+          returnType is! analyzer.DynamicType &&
+          returnType is! analyzer.InvalidType) {
         superNoSuchMethod = superNoSuchMethod.asA(_typeReference(returnType));
       }
 
@@ -1606,7 +1612,7 @@ class _MockClassInfo {
             b.optionalParameters.add(matchingParameter);
           }
         }
-        if (type.returnType.isVoid) {
+        if (type.returnType is analyzer.VoidType) {
           b.body = Code('');
         } else {
           b.body = _dummyValue(type.returnType, invocation).code;
@@ -1965,7 +1971,9 @@ class _MockClassInfo {
     };
     var superNoSuchMethod =
         refer('super').property('noSuchMethod').call([invocation], namedArgs);
-    if (!returnType.isVoid && !returnType.isDynamic) {
+    if (returnType is! analyzer.VoidType &&
+        returnType is! analyzer.DynamicType &&
+        returnType is! analyzer.InvalidType) {
       superNoSuchMethod = superNoSuchMethod.asA(_typeReference(returnType));
     }
 
@@ -2090,7 +2098,7 @@ class _MockClassInfo {
   // package:source_gen?
   Reference _typeReference(analyzer.DartType type,
       {bool forceNullable = false, bool overrideVoid = false}) {
-    if (overrideVoid && type.isVoid) {
+    if (overrideVoid && type is analyzer.VoidType) {
       return TypeReference((b) => b..symbol = 'dynamic');
     }
     if (type is analyzer.InvalidType) {
@@ -2321,7 +2329,7 @@ extension on analyzer.DartType {
   /// Returns whether this type is `Future<void>` or `Future<void>?`.
   bool get isFutureOfVoid =>
       isDartAsyncFuture &&
-      (this as analyzer.InterfaceType).typeArguments.first.isVoid;
+      (this as analyzer.InterfaceType).typeArguments.first is analyzer.VoidType;
 
   /// Returns whether this type is a sealed type from the dart:typed_data
   /// library.
@@ -2380,7 +2388,7 @@ extension on int {
 }
 
 bool _needsOverrideForVoidStub(ExecutableElement method) =>
-    method.returnType.isVoid || method.returnType.isFutureOfVoid;
+    method.returnType is analyzer.VoidType || method.returnType.isFutureOfVoid;
 
 /// This casts `ElementAnnotation` to the internal `ElementAnnotationImpl`
 /// class, since analyzer doesn't provide public interface to access
