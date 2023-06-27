@@ -1,4 +1,4 @@
-## 4.0.4-wip
+## 4.0.4
 
 - Add the `canary` option for `build_web_compilers:ddc` and
   `build_web_compilers:sdk_js`builders to enable canary features
