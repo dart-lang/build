@@ -1,4 +1,19 @@
-## 4.0.4-wip
+## 4.0.4
+
+- Add the `canary` option for `build_web_compilers:ddc` and
+  `build_web_compilers:sdk_js`builders to enable canary features
+  in DDC. This setting is disabled by default but can be enabled
+  by setting it to `true` globally:
+
+```yaml
+global_options:
+  build_web_compilers:ddc:
+    options:
+      canary: true
+  build_web_compilers:sdk_js:
+    options:
+      canary: true
+```
 
 ## 4.0.3
 
