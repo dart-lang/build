@@ -1,6 +1,7 @@
-## 1.4.0-wip
+## 1.4.0
 
 - Require Dart 3.0
+- Support the latest `package:analyzer`.
 - Add a `node` argument to `InvalidGenerationSourceError` to allow finding the
   source location from an `AstNode` over an `Element`.
 

@@ -1,5 +1,5 @@
 name: source_gen
-version: 1.4.0-wip
+version: 1.4.0
 description: >-
   Source code generation builders and utilities for the Dart build system
 repository: https://github.com/dart-lang/source_gen/tree/master/source_gen
@@ -8,7 +8,7 @@ environment:
   sdk: ^3.0.0
 
 dependencies:
-  analyzer: ^5.2.0
+  analyzer: '>=5.2.0 <7.0.0'
   async: ^2.5.0
   build: ^2.1.0
   dart_style: ^2.0.0
