@@ -9,3 +9,41 @@ updates:
       interval: monthly
     labels:
       - autosubmit
+
+  # Check daily for major version dependency updates for packages which depend
+  # on package:analyzer.
+  - package-ecosystem: "pub"
+    directory: "build"
+    schedule:
+      interval: "daily"
+    versioning-strategy: increase-if-necessary
+    reviewers:
+      - "jakemac53"
+  - package-ecosystem: "pub"
+    directory: "build_modules"
+    schedule:
+      interval: "daily"
+    versioning-strategy: increase-if-necessary
+    reviewers:
+      - "jakemac53"
+  - package-ecosystem: "pub"
+    directory: "build_resolvers"
+    schedule:
+      interval: "daily"
+    versioning-strategy: increase-if-necessary
+    reviewers:
+      - "jakemac53"
+  - package-ecosystem: "pub"
+    directory: "build_runner"
+    schedule:
+      interval: "daily"
+    versioning-strategy: increase-if-necessary
+    reviewers:
+      - "jakemac53"
+  - package-ecosystem: "pub"
+    directory: "build_web_compilers"
+    schedule:
+      interval: "daily"
+    versioning-strategy: increase-if-necessary
+    reviewers:
+      - "jakemac53"
