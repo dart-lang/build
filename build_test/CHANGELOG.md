@@ -1,4 +1,4 @@
-## 2.2.0-wip
+## 2.2.0
 
 - Forward logs from `testBuilder` to `printOnFailure` by default.
 

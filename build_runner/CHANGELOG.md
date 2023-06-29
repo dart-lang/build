@@ -1,3 +1,7 @@
+## 2.4.6
+
+- Allow the latest analyzer (6.x.x).
+
 ## 2.4.5
 
 - Fix a bug handling a builder which has a `required_input` that matches it's

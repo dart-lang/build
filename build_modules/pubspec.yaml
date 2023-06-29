@@ -1,5 +1,5 @@
 name: build_modules
-version: 5.0.3-wip
+version: 5.0.3
 description: >-
   Builders to analyze and split Dart code into individually compilable modules
   based on imports.
@@ -9,7 +9,7 @@ environment:
   sdk: '>=3.0.0-134.0.dev <3.2.0'
 
 dependencies:
-  analyzer: '>=5.1.0 <6.0.0'
+  analyzer: '>=5.1.0 <7.0.0'
   async: ^2.5.0
   bazel_worker: ^1.0.0
   build: ^2.0.0

@@ -1,4 +1,6 @@
-## 5.0.3-wip
+## 5.0.3
+
+- Allow the latest analyzer (6.x.x).
 
 ## 5.0.2
 

@@ -1,3 +1,7 @@
+## 4.0.5
+
+- Allow the latest analyzer (6.x.x).
+
 ## 4.0.4
 
 - Add the `canary` option for `build_web_compilers:ddc` and

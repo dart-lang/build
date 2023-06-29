@@ -1,4 +1,6 @@
-## 2.2.1-wip
+## 2.2.1
+
+- Allow the latest analyzer (6.x.x).
 
 ## 2.2.0
 
