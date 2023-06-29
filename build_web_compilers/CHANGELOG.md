@@ -1,5 +1,6 @@
 ## 4.0.4
 
+- Allow the latest analyzer (6.x.x).
 - Add the `canary` option for `build_web_compilers:ddc` and
   `build_web_compilers:sdk_js`builders to enable canary features
   in DDC. This setting is disabled by default but can be enabled
