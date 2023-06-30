@@ -58,6 +58,10 @@ dart run build_runner build
 `@GenerateNiceMocks` annotation. In the above `cat.dart` example, we import the
 generated library as `cat.mocks.dart`.
 
+**NOTE**: by default only annotations in files under `test/` are processed, if
+you want to add Mockito annotations in other places, you will need to add a
+`build.yaml` file to your project, see [this SO answer](https://stackoverflow.com/questions/68275811/is-there-a-way-to-let-mockito-generate-mocks-for-integration-tests-in-a-flutter).
+
 The generated mock class, `MockCat`, extends Mockito's Mock class and implements
 the Cat class, giving us a class which supports stubbing and verifying.
 
