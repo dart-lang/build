@@ -1,3 +1,7 @@
+## 5.4.3-wip
+
+* Require analyzer 5.12.0.
+
 ## 5.4.2
 
 * Require code_builder 4.5.0.
