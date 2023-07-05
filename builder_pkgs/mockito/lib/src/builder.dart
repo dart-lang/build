@@ -1315,8 +1315,8 @@ class _MockClassInfo {
   void _buildOverridingMethod(MethodBuilder builder, MethodElement method) {
     var name = method.displayName;
     if (method.isOperator) name = 'operator$name';
-    final returnType = method.type.returnType;
-    _withTypeParameters(method.type.typeFormals, (typeParamsWithBounds, _) {
+    final returnType = method.returnType;
+    _withTypeParameters(method.typeParameters, (typeParamsWithBounds, _) {
       builder
         ..name = name
         ..annotations.add(referImported('override', 'dart:core'))
@@ -1333,7 +1333,7 @@ class _MockClassInfo {
       final invocationNamedArgs = <Expression, Expression>{};
 
       var position = 0;
-      for (final parameter in method.type.parameters) {
+      for (final parameter in method.parameters) {
         if (parameter.isRequiredPositional || parameter.isOptionalPositional) {
           final superParameterType =
               _escapeCovariance(parameter, position: position);
@@ -1370,7 +1370,7 @@ class _MockClassInfo {
 
       final fallbackGenerator = fallbackGenerators[method.name];
       final parametersContainPrivateName =
-          method.type.parameters.any((p) => p.type.containsPrivateName);
+          method.parameters.any((p) => p.type.containsPrivateName);
       final throwsUnsupported = fallbackGenerator == null &&
           (returnType.containsPrivateName || parametersContainPrivateName);
 
@@ -1443,7 +1443,7 @@ class _MockClassInfo {
       ExecutableElement method, ExecutableElement function) {
     final positionalArguments = <Expression>[];
     final namedArguments = <String, Expression>{};
-    for (final parameter in method.type.parameters) {
+    for (final parameter in method.parameters) {
       if (parameter.isPositional) {
         positionalArguments.add(refer(parameter.name));
       } else if (parameter.isNamed) {
@@ -1453,7 +1453,7 @@ class _MockClassInfo {
     final functionReference =
         referImported(function.name, _typeImport(function));
     return functionReference.call(positionalArguments, namedArguments, [
-      for (final t in method.type.typeFormals)
+      for (final t in method.typeParameters)
         _typeParameterReference(t, withBound: false)
     ]);
   }
