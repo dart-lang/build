@@ -1843,6 +1843,29 @@ void main() {
     expect(mocksContent, contains('Iterable<X1> m1<X1>(X1 Function(X)? f)'));
     expect(mocksContent, contains('Iterable<X1?> m2<X1>(X1 Function(X)? f)'));
   });
+  test('We preserve nested generic bounded type arguments', () async {
+    final mocksContent = await buildWithNonNullable({
+      ...annotationsAsset,
+      'foo|lib/foo.dart': dedent(r'''
+            class Foo<A, B> {}
+            abstract class Bar<T> {
+              X m1<X extends Foo<Foo<X, T>, X>>(X Function(T)? f);
+            }
+            abstract class FooBar<X> extends Bar<X> {}
+        '''),
+      'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+
+            @GenerateMocks([FooBar])
+            void main() {}
+          '''
+    });
+    expect(
+        mocksContent,
+        contains(
+            'X1 m1<X1 extends _i2.Foo<_i2.Foo<X1, X>, X1>>(X1 Function(X)? f)'));
+  });
 }
 
 TypeMatcher<List<int>> _containsAllOf(a, [b]) => decodedMatches(
