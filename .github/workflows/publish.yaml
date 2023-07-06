@@ -10,8 +10,17 @@ on:
     tags: [ '[A-z]+-v[0-9]+.[0-9]+.[0-9]+*' ]
 
 jobs:
-  publish:
-    if: ${{ github.repository_owner == 'dart-lang' }}
+  validate:
+    if: ${{ github.repository_owner == 'dart-lang' && github.event_name == 'pull_request' }}
     uses: dart-lang/ecosystem/.github/workflows/publish.yaml@main
     with:
       sdk: dev
+  publish:
+    if: ${{ github.repository_owner == 'dart-lang' && github.event_name == 'push' }}
+    uses: dart-lang/ecosystem/.github/workflows/publish.yaml@main
+    with:
+      # Protected github deployment environment, requires approval to run.
+      environment: pub.dev
+      sdk: dev
+    permissions:
+      id-token: write # Required for authentication using OIDC
