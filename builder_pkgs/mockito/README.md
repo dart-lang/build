@@ -350,6 +350,27 @@ behavior?
   non-`null` value for a non-nullable return type). The value should not be used
   in any way; it is returned solely to avoid a runtime type exception.
 
+## Mocking a Function type
+
+To create mocks for Function objects, write an `abstract class` with a method
+for each function type signature that needs to be mocked. The methods can be
+torn off and individually stubbed and verified.
+
+```dart
+@GenerateMocks([Cat, Callbacks])
+import 'cat_test.mocks.dart'
+
+abstract class Callbacks {
+  Cat findCat(String name);
+}
+
+void main() {
+  var mockCat = MockCat();
+  var findCatCallback = MockCallbacks().findCat;
+  when(findCatCallback('Pete')).thenReturn(mockCat);
+}
+```
+
 ## Writing a fake
 
 You can also write a simple fake class that implements a real class, by

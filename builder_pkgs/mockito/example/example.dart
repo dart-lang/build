@@ -26,8 +26,14 @@ class FakeCat extends Fake implements Cat {
   }
 }
 
+abstract class Callbacks {
+  Cat findCat(String name);
+  String? makeSound();
+}
+
 @GenerateMocks([
-  Cat
+  Cat,
+  Callbacks,
 ], customMocks: [
   MockSpec<Cat>(as: #MockCatRelaxed, returnNullOnMissingStub: true),
 ])
@@ -204,6 +210,18 @@ void main() {
     // Waiting for a call that has already happened.
     cat.eatFood('Fish');
     await untilCalled(cat.eatFood(any)); // This completes immediately.
+  });
+
+  test('Mocked callbacks', () {
+    final makeSoundCallback = MockCallbacks().makeSound;
+    when(makeSoundCallback()).thenReturn('woof');
+    expect(makeSoundCallback(), 'woof');
+
+    final findCatCallback = MockCallbacks().findCat;
+    final mockCat = MockCat();
+    when(findCatCallback('Pete')).thenReturn(mockCat);
+    when(mockCat.sound()).thenReturn('meow');
+    expect(findCatCallback('Pete').sound(), 'meow');
   });
 
   test('Fake class', () {

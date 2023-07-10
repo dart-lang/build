@@ -1,6 +1,7 @@
 ## 5.4.3-wip
 
 * Require analyzer 5.12.0.
+* Add example of writing a class to mock function objects.
 
 ## 5.4.2
 
