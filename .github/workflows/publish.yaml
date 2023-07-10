@@ -19,3 +19,4 @@ jobs:
       sdk: dev
     permissions:
       id-token: write # Required for authentication using OIDC
+      pull-requests: write # Enables the validate job to comment on PRs.
