@@ -1316,7 +1316,8 @@ class _MockClassInfo {
     var name = method.displayName;
     if (method.isOperator) name = 'operator$name';
     final returnType = method.returnType;
-    _withTypeParameters(method.typeParameters, (typeParamsWithBounds, _) {
+    _withTypeParameters(method.typeParameters,
+        typeFormalsHack: method.type.typeFormals, (typeParamsWithBounds, _) {
       builder
         ..name = name
         ..annotations.add(referImported('override', 'dart:core'))
@@ -2057,17 +2058,43 @@ class _MockClassInfo {
     }
   }
 
+  /// Creates fresh type parameter names for [typeParameters] and runs [body]
+  /// in the extended type parameter scope, passing type references for
+  /// [typeParameters] (both with and without bound) as arguments.
+  /// If [typeFormalsHack] is not `null`, it will be used to build the
+  /// type references instead of [typeParameters]. This is needed while
+  /// building method overrides, since sometimes
+  /// [ExecutableMember.typeParameters] can contain inconsistency if a type
+  /// parameter refers to itself in its bound. See
+  /// https://github.com/dart-lang/mockito/issues/658. So we have to
+  /// pass `ExecutableMember.type.typeFormals` instead, that seem to be
+  /// always correct. Unfortunately we can't just use the latter everywhere,
+  /// since `type.typeFormals` don't contain default arguments' values
+  /// and we need that for code generation.
   T _withTypeParameters<T>(Iterable<TypeParameterElement> typeParameters,
-      T Function(Iterable<TypeReference>, Iterable<TypeReference>) body) {
-    final typeVars = {for (final t in typeParameters) t: _newTypeVar(t)};
-    _typeVariableScopes.add(typeVars);
+      T Function(Iterable<TypeReference>, Iterable<TypeReference>) body,
+      {Iterable<TypeParameterElement>? typeFormalsHack}) {
+    final typeVars = [for (final t in typeParameters) _newTypeVar(t)];
+    final scope = Map.fromIterables(typeParameters, typeVars);
+    _typeVariableScopes.add(scope);
+    if (typeFormalsHack != null) {
+      // add an additional scope based on [type.typeFormals] just to make
+      // type parameters references.
+      _typeVariableScopes.add(Map.fromIterables(typeFormalsHack, typeVars));
+      // use typeFormals instead of typeParameters to create refs.
+      typeParameters = typeFormalsHack;
+    }
     final typeRefsWithBounds = typeParameters.map(_typeParameterReference);
     final typeRefs =
         typeParameters.map((t) => _typeParameterReference(t, withBound: false));
 
     final result = body(typeRefsWithBounds, typeRefs);
     _typeVariableScopes.removeLast();
-    _usedTypeVariables.removeAll(typeVars.values);
+    if (typeFormalsHack != null) {
+      // remove the additional scope too.
+      _typeVariableScopes.removeLast();
+    }
+    _usedTypeVariables.removeAll(typeVars);
     return result;
   }
 

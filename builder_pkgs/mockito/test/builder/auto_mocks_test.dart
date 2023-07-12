@@ -1540,6 +1540,21 @@ void main() {
     );
   });
 
+  test('widens the type of covariant generic parameters to be nullable',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent('''
+        abstract class FooBase<T extends Object> {
+          void m(Object a);
+        }
+        abstract class Foo<T extends Object> extends FooBase<T> {
+          void m(covariant T a);
+        }
+        '''),
+      _containsAllOf('void m(Object? a) => super.noSuchMethod('),
+    );
+  });
+
   test('matches nullability of type arguments of a parameter', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
