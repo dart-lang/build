@@ -97,6 +97,10 @@ class MockBuilder implements Builder {
       b.body.add(Code('// ignore_for_file: avoid_setters_without_getters\n'));
       // We don't properly prefix imported class names in doc comments.
       b.body.add(Code('// ignore_for_file: comment_references\n'));
+      // We might import a deprecated library, or implement a deprecated class.
+      b.body.add(Code('// ignore_for_file: deprecated_member_use\n'));
+      b.body.add(Code(
+          '// ignore_for_file: deprecated_member_use_from_same_package\n'));
       // We might import a package's 'src' directory.
       b.body.add(Code('// ignore_for_file: implementation_imports\n'));
       // `Mock.noSuchMethod` is `@visibleForTesting`, but the generated code is
