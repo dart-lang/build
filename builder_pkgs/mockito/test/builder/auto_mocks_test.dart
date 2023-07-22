@@ -30,11 +30,11 @@ class GenerateMocks {
   final List<Type> classes;
   final List<MockSpec> customMocks;
 
-  const GenerateMocks(this.classes, {this.customMocks = []});
+  const GenerateMocks(this.classes, {this.customMocks = const []});
 }
 
 class MockSpec<T> {
-  final Symbol mockName;
+  final Symbol? mockName;
 
   final bool returnNullOnMissingStub;
 
@@ -43,7 +43,7 @@ class MockSpec<T> {
   final Map<Symbol, Function> fallbackGenerators;
 
   const MockSpec({
-    Symbol as,
+    Symbol? as,
     this.returnNullOnMissingStub = false,
     this.unsupportedMembers = const {},
     this.fallbackGenerators = const {},

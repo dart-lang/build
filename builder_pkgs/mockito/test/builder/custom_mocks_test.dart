@@ -39,7 +39,7 @@ class GenerateNiceMocks {
 }
 
 class MockSpec<T> {
-  final Symbol mockName;
+  final Symbol? mockName;
 
   final List<Type> mixins;
 

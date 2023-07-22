@@ -512,9 +512,9 @@ class _MockTargetGatherer {
 
   static Iterable<_MockTarget> _mockTargetsFromGenerateMocks(
       ElementAnnotation annotation, LibraryElement entryLib) {
-    final generateMocksValue = annotation.computeConstantValue()!;
-    final classesField = generateMocksValue.getField('classes')!;
-    if (classesField.isNull) {
+    final generateMocksValue = annotation.computeConstantValue();
+    final classesField = generateMocksValue?.getField('classes');
+    if (classesField == null || classesField.isNull) {
       throw InvalidMockitoAnnotationException(
           'The GenerateMocks "classes" argument is missing, includes an '
           'unknown type, or includes an extension');
@@ -548,7 +548,7 @@ class _MockTargetGatherer {
         fallbackGenerators: {},
       ));
     }
-    final customMocksField = generateMocksValue.getField('customMocks');
+    final customMocksField = generateMocksValue?.getField('customMocks');
     if (customMocksField != null && !customMocksField.isNull) {
       final customMocksAsts =
           _customMocksAst(annotation.annotationAst)?.elements ??
