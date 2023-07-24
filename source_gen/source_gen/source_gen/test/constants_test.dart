@@ -35,7 +35,6 @@ void main() {
           aString: aString,
           aInt: aInt,
           aBool: aBool,
-          aNull: aNull,
           nested: const Example(),
         )
         @Super()    // [5]
@@ -47,10 +46,10 @@ void main() {
         @aType      // [11]
         @aSet       // [12]
         class Example {
-          final String aString;
-          final int aInt;
-          final bool aBool;
-          final Example nested;
+          final String? aString;
+          final int? aInt;
+          final bool? aBool;
+          final Example? nested;
 
           const Example({this.aString, this.aInt, this.aBool, this.nested});
         }
