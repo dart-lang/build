@@ -1,3 +1,7 @@
+## 4.0.5
+
+- Allow version 3.2.x of the Dart SDK.
+
 ## 4.0.4
 
 - Allow the latest analyzer (6.x.x).
