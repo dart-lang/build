@@ -1,3 +1,7 @@
+## 2.4.7-dev
+
+- Fix broken link in README.md.
+
 ## 2.4.6
 
 - Allow the latest analyzer (6.x.x).
