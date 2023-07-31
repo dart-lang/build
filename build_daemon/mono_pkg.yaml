@@ -1,5 +1,5 @@
 sdk:
-- dev
+- beta
 - pubspec
 
 stages:
@@ -8,7 +8,7 @@ stages:
     - format
     - analyze: --fatal-infos .
     sdk:
-    - dev
+    - beta
 - unit_test:
   - test: --test-randomize-ordering-seed=random
     os:

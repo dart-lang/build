@@ -1,13 +1,13 @@
 sdk:
 - pubspec
-- dev
+- beta
 
 stages:
 - analyze_and_format:
   - group:
     - format
     - analyze: --fatal-infos .
-    sdk: dev
+    sdk: beta
 - unit_test:
   - test: --test-randomize-ordering-seed=random
     os:
