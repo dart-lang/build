@@ -1,5 +1,8 @@
 ## 7.2.11-dev
 
+- Add better error messages for incomplete package configs when creating a
+  package graph.
+
 ## 7.2.10
 
 - Fix build script invalidation check for custom build scripts from other
