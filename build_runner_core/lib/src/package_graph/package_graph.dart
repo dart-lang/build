@@ -72,13 +72,17 @@ class PackageGraph {
           'This program must be ran from the root directory of your package.');
     }
     final rootPubspec = _pubspecForPath(packagePath);
-    final rootPackageName = rootPubspec['name'] as String;
+    final rootPackageName = rootPubspec['name'] as String?;
+    if (rootPackageName == null) {
+      throw StateError('The current package has no name, please add one to the '
+          'pubspec.yaml.');
+    }
 
     final packageConfig =
         await findPackageConfig(Directory(packagePath), recurse: false);
     if (packageConfig == null) {
       throw StateError(
-          'Unable to find package config for package at $packagePath');
+          'Unable to find package config for package at $packagePath.');
     }
 
     final dependencyTypes = _parseDependencyTypes(packagePath);
@@ -98,16 +102,27 @@ class PackageGraph {
           package.languageVersion,
           isRoot: isRoot);
     }
-    final rootNode = nodes[rootPackageName]!;
-    rootNode.dependencies
-        .addAll(_depsFromYaml(rootPubspec, isRoot: true).map((n) => nodes[n]!));
+    PackageNode packageNode(String package, {String? parent}) {
+      final node = nodes[package];
+      if (node == null) {
+        throw StateError(
+            'Dependency $package ${parent != null ? 'of $parent ' : ''}not '
+            'present, please run `dart pub get` or `flutter pub get` to fetch '
+            'dependencies.');
+      }
+      return node;
+    }
+
+    final rootNode = packageNode(rootPackageName);
+    rootNode.dependencies.addAll(_depsFromYaml(rootPubspec, isRoot: true)
+        .map((n) => packageNode(n, parent: rootPackageName)));
 
     final packageDependencies = _parsePackageDependencies(
         packageConfig.packages.where((p) => p.name != rootPackageName));
     for (final packageName in packageDependencies.keys) {
-      nodes[packageName]!
-          .dependencies
-          .addAll(packageDependencies[packageName]!.map((n) => nodes[n]!));
+      packageNode(packageName).dependencies.addAll(
+          packageDependencies[packageName]!
+              .map((n) => packageNode(n, parent: packageName)));
     }
     return PackageGraph._(rootNode, nodes);
   }
