@@ -17,13 +17,16 @@ class _TransitiveDigestsBuilder extends Builder {
     final byteSink = md5.startChunkedConversion(digestSink);
     while (queue.isNotEmpty) {
       final next = queue.removeLast();
+
+      // If we have a transitive digest ID available, just add that digest.
       final transitiveDigestId = next.addExtension(transitiveDigestExtension);
       if (await buildStep.canRead(transitiveDigestId)) {
-        byteSink.add(await buildStep.readAsBytes(transitiveDigestId));
+        byteSink.add((await buildStep.digest(transitiveDigestId)).bytes);
         continue;
       }
-      byteSink.add(await buildStep.readAsBytes(next));
-      final deps = parseDependencies(await buildStep.readAsString(next), next);
+      byteSink.add((await buildStep.digest(next)).bytes);
+      final deps = await (await buildStep.fetchResource(depsResource))
+          .readDeps(buildStep, next);
       for (final dep in deps) {
         if (!seen.add(dep)) continue;
         queue.add(dep);
@@ -43,3 +46,15 @@ class _TransitiveDigestsBuilder extends Builder {
 }
 
 const transitiveDigestExtension = '.transitive_digest';
+
+final depsResource = Resource<_ParsedDepsCache>(_ParsedDepsCache.new,
+    dispose: (cache) => cache._cachedDeps.clear());
+
+class _ParsedDepsCache {
+  final _cachedDeps = <AssetId, Set<AssetId>>{};
+
+  Future<Set<AssetId>> readDeps(BuildStep buildStep, AssetId id) async {
+    return _cachedDeps[id] ??=
+        parseDependencies(await buildStep.readAsString(id), id);
+  }
+}
