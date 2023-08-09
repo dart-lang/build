@@ -1,0 +1,12 @@
+builders:
+  transitive_digests:
+    import: "package:build_resolvers/builder.dart"
+    builder_factories:
+      - transitiveDigestsBuilder
+    build_extensions:
+      .dart:
+        - .dart.transitive_digests
+    auto_apply: all_packages
+    is_optional: True
+    required_inputs: [".dart"]
+    build_to: cache

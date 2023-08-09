@@ -17,6 +17,8 @@ import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 import 'package:stream_transform/stream_transform.dart';
 
+import '../builder.dart';
+
 const _ignoredSchemes = ['dart', 'dart-ext'];
 
 class BuildAssetUriResolver extends UriResolver {
@@ -121,6 +123,11 @@ class BuildAssetUriResolver extends UriResolver {
     globallySeenAssets.add(id);
     transitivelyResolved?.add(id);
     final digest = await buildStep.digest(id);
+
+    // Establishes a dependency on the transitive deps digest.
+    final hasTransitiveDigestAsset =
+        await buildStep.canRead(id.addExtension(transitiveDigestExtension));
+
     if (_cachedAssetDigests[id] == digest) {
       return _AssetState(path, _cachedAssetDependencies[id]!);
     } else {
@@ -137,9 +144,18 @@ class BuildAssetUriResolver extends UriResolver {
       }
       _cachedAssetDigests[id] = digest;
       _needsChangeFile.add(path);
-      final dependencies =
-          _cachedAssetDependencies[id] = _parseDirectives(content, id);
-      return _AssetState(path, dependencies);
+      final dependencies = parseDependencies(content, id);
+      final dependenciesToCheck =
+          _cachedAssetDependencies[id] = hasTransitiveDigestAsset
+              ? {
+                  // Only return as dependencies the ones that we haven't ever
+                  // seen, this ensures they are in fact loaded into the
+                  // resource Provider.
+                  for (final dep in dependencies)
+                    if (!_cachedAssetDigests.containsKey(dep)) dep,
+                }
+              : dependencies;
+      return _AssetState(path, dependenciesToCheck);
     }
   }
 
@@ -226,7 +242,7 @@ Future<String> packagePath(String package) async {
 
 /// Returns all the directives from a Dart library that can be resolved to an
 /// [AssetId].
-Set<AssetId> _parseDirectives(String content, AssetId from) => HashSet.of(
+Set<AssetId> parseDependencies(String content, AssetId from) => HashSet.of(
       parseString(content: content, throwIfDiagnostics: false)
           .unit
           .directives
