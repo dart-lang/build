@@ -11,7 +11,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/file_system/memory_file_system.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
-import 'package:build/build.dart' show AssetId, BuildStep;
+import 'package:build/build.dart' show AssetId, BuildStep, Resource;
+import 'package:collection/collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
@@ -26,7 +27,7 @@ class BuildAssetUriResolver extends UriResolver {
   ///
   /// This is stored across builds and is only invalidated if we read a file and
   /// see that it's content is different from what it was last time it was read.
-  final _cachedAssetDependencies = <AssetId, Set<AssetId>>{};
+  final _cachedAssetState = <AssetId, _AssetState>{};
 
   /// A cache of the digest for each Dart asset.
   ///
@@ -51,7 +52,12 @@ class BuildAssetUriResolver extends UriResolver {
 
   /// The assets which have been resolved from a [BuildStep], either as an
   /// input, subsequent calls to a resolver, or a transitive import thereof.
-  final _buildStepTransitivelyResolvedAssets = <BuildStep, HashSet<AssetId>>{};
+  final _buildStepTransitivelyResolvedAssets = Expando<HashSet<AssetId>>();
+
+  /// Use the [instance] getter to get an instance.
+  BuildAssetUriResolver._();
+
+  static final BuildAssetUriResolver instance = BuildAssetUriResolver._();
 
   /// Updates [resourceProvider] and the analysis driver given by
   /// `withDriverResource`  with updated versions of [entryPoints].
@@ -65,8 +71,8 @@ class BuildAssetUriResolver extends UriResolver {
               FutureOr<void> Function(AnalysisDriverForPackageBuild))
           withDriverResource,
       {required bool transitive}) async {
-    final transitivelyResolved = _buildStepTransitivelyResolvedAssets
-        .putIfAbsent(buildStep, HashSet.new);
+    final transitivelyResolved =
+        _buildStepTransitivelyResolvedAssets[buildStep] ??= HashSet();
     bool notCrawled(AssetId asset) => !transitivelyResolved.contains(asset);
 
     final uncrawledIds = entryPoints.where(notCrawled);
@@ -74,9 +80,17 @@ class BuildAssetUriResolver extends UriResolver {
         ? await crawlAsync<AssetId, _AssetState?>(
             uncrawledIds,
             (id) => _updateCachedAssetState(id, buildStep,
-                transitivelyResolved: transitivelyResolved), (id, state) {
+                transitivelyResolved: transitivelyResolved), (id, state) async {
             if (state == null) return const [];
-            return state.dependencies.where(notCrawled);
+            // Establishes a dependency on the transitive deps digest.
+            final hasTransitiveDigestAsset = await buildStep
+                .canRead(id.addExtension(transitiveDigestExtension));
+            return hasTransitiveDigestAsset
+                // Only crawl assets that we haven't yet loaded into the
+                // analyzer if we are using transitive digests for invalidation.
+                ? state.dependencies.whereNot(_cachedAssetDigests.containsKey)
+                // Otherwise fall back on crawling all source deps.
+                : state.dependencies.where(notCrawled);
           }).whereType<_AssetState>().toList()
         : [
             for (final id in uncrawledIds)
@@ -105,7 +119,7 @@ class BuildAssetUriResolver extends UriResolver {
   /// non-null).
   Future<_AssetState?> _updateCachedAssetState(AssetId id, BuildStep buildStep,
       {Set<AssetId>? transitivelyResolved}) async {
-    final path = assetPath(id);
+    late final path = assetPath(id);
     if (!await buildStep.canRead(id)) {
       if (globallySeenAssets.contains(id)) {
         // ignore from this graph, some later build step may still be using it
@@ -113,29 +127,26 @@ class BuildAssetUriResolver extends UriResolver {
         // don't care about it's transitive imports.
         return null;
       }
-      _cachedAssetDependencies.remove(id);
+      _cachedAssetState.remove(id);
       _cachedAssetDigests.remove(id);
       if (resourceProvider.getFile(path).exists) {
         resourceProvider.deleteFile(path);
       }
-      return _AssetState(path, const []);
+      return _AssetState(path, const {});
     }
     globallySeenAssets.add(id);
     transitivelyResolved?.add(id);
     final digest = await buildStep.digest(id);
 
-    // Establishes a dependency on the transitive deps digest.
-    final hasTransitiveDigestAsset =
-        await buildStep.canRead(id.addExtension(transitiveDigestExtension));
-
-    if (_cachedAssetDigests[id] == digest) {
-      return _AssetState(path, _cachedAssetDependencies[id]!);
+    final cachedAsset = _cachedAssetDigests[id];
+    if (cachedAsset == digest) {
+      return _cachedAssetState[id];
     } else {
-      final isChange = _cachedAssetDigests.containsKey(id);
+      final isChange = cachedAsset != null;
       final content = await buildStep.readAsString(id);
       if (_cachedAssetDigests[id] == digest) {
         // Cache may have been updated while reading asset content
-        return _AssetState(path, _cachedAssetDependencies[id]!);
+        return _cachedAssetState[id];
       }
       if (isChange) {
         resourceProvider.modifyFile(path, content);
@@ -144,18 +155,8 @@ class BuildAssetUriResolver extends UriResolver {
       }
       _cachedAssetDigests[id] = digest;
       _needsChangeFile.add(path);
-      final dependencies = parseDependencies(content, id);
-      final dependenciesToCheck =
-          _cachedAssetDependencies[id] = hasTransitiveDigestAsset
-              ? {
-                  // Only return as dependencies the ones that we haven't ever
-                  // seen, this ensures they are in fact loaded into the
-                  // resource Provider.
-                  for (final dep in dependencies)
-                    if (!_cachedAssetDigests.containsKey(dep)) dep,
-                }
-              : dependencies;
-      return _AssetState(path, dependenciesToCheck);
+      return _cachedAssetState[id] =
+          _AssetState(path, parseDependencies(content, id));
     }
   }
 
@@ -192,14 +193,8 @@ class BuildAssetUriResolver extends UriResolver {
     return assetId;
   }
 
-  void notifyComplete(BuildStep step) {
-    _buildStepTransitivelyResolvedAssets.remove(step);
-  }
-
   /// Clear cached information specific to an individual build.
   void reset() {
-    assert(_buildStepTransitivelyResolvedAssets.isEmpty,
-        'Reset was called before all build steps completed');
     globallySeenAssets.clear();
     _needsChangeFile.clear();
   }
@@ -256,9 +251,17 @@ Set<AssetId> parseDependencies(String content, AssetId from) => HashSet.of(
           .map((content) => AssetId.resolve(Uri.parse(content), from: from)),
     );
 
+/// A resource which gives access to the cached dependencies of assets based on
+/// parsing the directives.
+final dependenciesResource = Resource<
+        Future<Iterable<AssetId>?> Function(AssetId id, BuildStep buildStep)>(
+    () => (AssetId id, BuildStep buildStep) => BuildAssetUriResolver.instance
+        ._updateCachedAssetState(id, buildStep)
+        .then((state) => state?.dependencies));
+
 class _AssetState {
   final String path;
-  final Iterable<AssetId> dependencies;
+  final Set<AssetId> dependencies;
 
   _AssetState(this.path, this.dependencies);
 }

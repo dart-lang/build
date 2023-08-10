@@ -147,7 +147,6 @@ class PerActionResolver implements ReleasableResolver {
 
   @override
   void release() {
-    _delegate._uriResolver.notifyComplete(_step);
     _delegate.release();
   }
 
@@ -397,7 +396,7 @@ class AnalyzerResolvers implements Resolvers {
   Future<void> _ensureInitialized() {
     return Result.release(_initialized ??= Result.capture(() async {
       _warnOnLanguageVersionMismatch();
-      final uriResolver = _uriResolver = BuildAssetUriResolver();
+      final uriResolver = _uriResolver = BuildAssetUriResolver.instance;
       final loadedConfig = _packageConfig ??=
           await loadPackageConfigUri((await Isolate.packageConfig)!);
       var driver = await analysisDriver(uriResolver, _analysisOptions,
