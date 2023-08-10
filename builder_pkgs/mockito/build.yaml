@@ -5,6 +5,13 @@ targets:
         generate_for:
           - example/**.dart
           - test/end2end/*.dart
+        options:
+          # build_extensions takes a source pattern and if it matches it will transform the output
+          # to your desired path. The default behaviour is to the .mocks.dart file to be in the same
+          # directory as the source .dart file. As seen below this is customizable, but the generated
+          # file must always end in `.mocks.dart`.
+          build_extensions:
+            '^example/build_extensions/{{}}.dart' : 'example/build_extensions/mocks/{{}}.mocks.dart'
 
 builders:
   mockBuilder:

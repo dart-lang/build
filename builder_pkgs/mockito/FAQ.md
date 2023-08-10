@@ -167,3 +167,37 @@ it's done.  It's very straightforward.
 
 [`verify`]: https://pub.dev/documentation/mockito/latest/mockito/verify.html
 [`verifyInOrder`]: https://pub.dev/documentation/mockito/latest/mockito/verifyInOrder.html
+
+
+### How can I customize where Mockito outputs its mocks?
+
+Mockito supports configuration of outputs by the configuration provided by the `build`
+package by creating (if it doesn't exist already) the `build.yaml` at the root folder
+of the project.
+
+It uses the `build_extensions` option, which can be used to alter not only the output directory but you
+can also do other filename manipulation, eg.: append/prepend strings to the filename or add another extension
+to the filename.
+
+To use `build_extensions` you can use `^` on the input string to match on the project root, and `{{}}` to capture the remaining path/filename.
+
+You can also have multiple build_extensions options, but they can't conflict with each other.
+For consistency, the output pattern must always end with `.mocks.dart` and the input pattern must always end with `.dart`
+
+```yaml
+targets:
+  $default:
+    builders:
+      mockito|mockBuilder:
+        generate_for:
+        options:
+          # build_extensions takes a source pattern and if it matches it will transform the output
+          # to your desired path. The default behaviour is to the .mocks.dart file to be in the same
+          # directory as the source .dart file. As seen below this is customizable, but the generated
+          # file must always end in `.mocks.dart`. 
+          build_extensions:
+            '^tests/{{}}.dart' : 'tests/mocks/{{}}.mocks.dart' 
+            '^integration-tests/{{}}.dart' : 'integration-tests/{{}}.mocks.dart' 
+```
+
+Also, you can also check out the example configuration in the Mockito repository. 

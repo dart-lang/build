@@ -22,8 +22,6 @@ import 'package:mockito/src/builder.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
-Builder buildMocks(BuilderOptions options) => MockBuilder();
-
 const annotationsAsset = {
   'mockito|lib/annotations.dart': '''
 class GenerateMocks {
@@ -86,25 +84,27 @@ void main() {
 
   /// Test [MockBuilder] in a package which has not opted into null safety.
   Future<void> testPreNonNullable(Map<String, String> sourceAssets,
-      {Map<String, /*String|Matcher<String>*/ Object>? outputs}) async {
+      {Map<String, /*String|Matcher<String>*/ Object>? outputs,
+      Map<String, dynamic> config = const <String, dynamic>{}}) async {
     final packageConfig = PackageConfig([
       Package('foo', Uri.file('/foo/'),
           packageUriRoot: Uri.file('/foo/lib/'),
           languageVersion: LanguageVersion(2, 7))
     ]);
-    await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
+    await testBuilder(buildMocks(BuilderOptions(config)), sourceAssets,
         writer: writer, outputs: outputs, packageConfig: packageConfig);
   }
 
   /// Test [MockBuilder] in a package which has opted into null safety.
   Future<void> testWithNonNullable(Map<String, String> sourceAssets,
-      {Map<String, /*String|Matcher<List<int>>*/ Object>? outputs}) async {
+      {Map<String, /*String|Matcher<List<int>>*/ Object>? outputs,
+      Map<String, dynamic> config = const <String, dynamic>{}}) async {
     final packageConfig = PackageConfig([
       Package('foo', Uri.file('/foo/'),
           packageUriRoot: Uri.file('/foo/lib/'),
           languageVersion: LanguageVersion(3, 0))
     ]);
-    await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
+    await testBuilder(buildMocks(BuilderOptions(config)), sourceAssets,
         writer: writer, outputs: outputs, packageConfig: packageConfig);
   }
 
@@ -3660,6 +3660,114 @@ void main() {
               contains('Future<(int, {_i2.Bar bar})> get v'),
               contains('returnValue: _i3.Future<(int, {_i2.Bar bar})>.value('),
               contains('bar: _FakeBar_0('))));
+    });
+  });
+
+  group('build_extensions support', () {
+    test('should export mocks to different directory', () async {
+      await testWithNonNullable({
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': '''
+        import 'bar.dart';
+        class Foo extends Bar {}
+        ''',
+        'foo|lib/bar.dart': '''
+        import 'dart:async';
+        class Bar {
+          m(Future<void> a) {}
+        }
+        ''',
+      }, config: {
+        "build_extensions": {"^test/{{}}.dart": "test/mocks/{{}}.mocks.dart"}
+      });
+      final mocksAsset = AssetId('foo', 'test/mocks/foo_test.mocks.dart');
+      final mocksContent = utf8.decode(writer.assets[mocksAsset]!);
+      expect(mocksContent, contains("import 'dart:async' as _i3;"));
+      expect(mocksContent, contains('m(_i3.Future<void>? a)'));
+    });
+
+    test('should throw if it has confilicting outputs', () async {
+      await expectLater(
+          testWithNonNullable({
+            ...annotationsAsset,
+            ...simpleTestAsset,
+            'foo|lib/foo.dart': '''
+        import 'bar.dart';
+        class Foo extends Bar {}
+        ''',
+            'foo|lib/bar.dart': '''
+        import 'dart:async';
+        class Bar {
+          m(Future<void> a) {}
+        }
+        ''',
+          }, config: {
+            "build_extensions": {
+              "^test/{{}}.dart": "test/mocks/{{}}.mocks.dart",
+              "test/{{}}.dart": "test/{{}}.something.mocks.dart"
+            }
+          }),
+          throwsArgumentError);
+      final mocksAsset = AssetId('foo', 'test/mocks/foo_test.mocks.dart');
+      final otherMocksAsset = AssetId('foo', 'test/mocks/foo_test.mocks.dart');
+      final somethingMocksAsset =
+          AssetId('foo', 'test/mocks/foo_test.something.mocks.dart');
+
+      expect(writer.assets.containsKey(mocksAsset), false);
+      expect(writer.assets.containsKey(otherMocksAsset), false);
+      expect(writer.assets.containsKey(somethingMocksAsset), false);
+    });
+
+    test('should throw if input is in incorrect format', () async {
+      await expectLater(
+          testWithNonNullable({
+            ...annotationsAsset,
+            ...simpleTestAsset,
+            'foo|lib/foo.dart': '''
+        import 'bar.dart';
+        class Foo extends Bar {}
+        ''',
+            'foo|lib/bar.dart': '''
+        import 'dart:async';
+        class Bar {
+          m(Future<void> a) {}
+        }
+        ''',
+          }, config: {
+            "build_extensions": {"^test/{{}}": "test/mocks/{{}}.mocks.dart"}
+          }),
+          throwsArgumentError);
+      final mocksAsset = AssetId('foo', 'test/mocks/foo_test.mocks.dart');
+      final mocksAssetOriginal = AssetId('foo', 'test/foo_test.mocks.dart');
+
+      expect(writer.assets.containsKey(mocksAsset), false);
+      expect(writer.assets.containsKey(mocksAssetOriginal), false);
+    });
+
+    test('should throw if output is in incorrect format', () async {
+      await expectLater(
+          testWithNonNullable({
+            ...annotationsAsset,
+            ...simpleTestAsset,
+            'foo|lib/foo.dart': '''
+        import 'bar.dart';
+        class Foo extends Bar {}
+        ''',
+            'foo|lib/bar.dart': '''
+        import 'dart:async';
+        class Bar {
+          m(Future<void> a) {}
+        }
+        ''',
+          }, config: {
+            "build_extensions": {"^test/{{}}.dart": "test/mocks/{{}}.g.dart"}
+          }),
+          throwsArgumentError);
+      final mocksAsset = AssetId('foo', 'test/mocks/foo_test.mocks.dart');
+      final mocksAssetOriginal = AssetId('foo', 'test/foo_test.mocks.dart');
+      expect(writer.assets.containsKey(mocksAsset), false);
+      expect(writer.assets.containsKey(mocksAssetOriginal), false);
     });
   });
 }
