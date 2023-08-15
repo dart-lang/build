@@ -1,5 +1,3 @@
-// ignore_for_file: sdk_version_async_exported_from_core
-// ignore_for_file: unawaited_futures
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
@@ -35,7 +33,10 @@ abstract class Callbacks {
   Cat,
   Callbacks,
 ], customMocks: [
-  MockSpec<Cat>(as: #MockCatRelaxed, returnNullOnMissingStub: true),
+  MockSpec<Cat>(
+    as: #MockCatRelaxed,
+    onMissingStub: OnMissingStub.returnDefault,
+  ),
 ])
 void main() {
   late Cat cat;
@@ -57,14 +58,8 @@ void main() {
   });
 
   test('How about some stubbing?', () {
-    try {
-      cat.sound();
-    } on MissingStubError {
-      // Unstubbed methods throw MissingStubError.
-    }
-
-    // Unstubbed methods return null.
-    expect(cat.sound(), null);
+    // Unstubbed methods throw MissingStubError.
+    expect(() => cat.sound(), throwsA(isA<MissingStubError>()));
 
     // Stub a method before interacting with it.
     when(cat.sound()).thenReturn('Purr');
@@ -102,7 +97,7 @@ void main() {
     // ... or matchers
     when(cat.eatFood(argThat(startsWith('dry')))).thenReturn(false);
 
-    // ... or mix aguments with matchers
+    // ... or mix arguments with matchers
     when(cat.eatFood(argThat(startsWith('dry')), hungry: true))
         .thenReturn(true);
     expect(cat.eatFood('fish'), isTrue);
@@ -239,7 +234,12 @@ void main() {
     // You can call it without stubbing.
     cat.sleep();
 
-    // Returns null unless you stub it.
+    // Non-null properties and function return values
+    // default to reasonable defaults.
+    expect(cat.lives, 0);
+
+    // Nullable properties and function return values
+    // default to null unless you stub them.
     expect(cat.sound(), null);
     expect(cat.eatFood('Milk'), null);
 
