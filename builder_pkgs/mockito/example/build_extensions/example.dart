@@ -21,7 +21,7 @@ import 'package:test_api/scaffolding.dart';
 import 'mocks/example.mocks.dart';
 
 class Dog {
-  String sound() => "bark";
+  String sound() => 'bark';
   bool? eatFood(String? food) => true;
   Future<void> chew() async => print('Chewing...');
   int? walk(List<String>? places) => 1;
@@ -29,11 +29,11 @@ class Dog {
 
 @GenerateNiceMocks([MockSpec<Dog>()])
 void main() {
-  test("Verify some dog behaviour", () async {
+  test('Verify some dog behaviour', () async {
     MockDog mockDog = MockDog();
     when(mockDog.eatFood(any));
 
-    mockDog.eatFood("biscuits");
+    mockDog.eatFood('biscuits');
 
     verify(mockDog.eatFood(any)).called(1);
   });

@@ -3679,7 +3679,7 @@ void main() {
         }
         ''',
       }, config: {
-        "build_extensions": {"^test/{{}}.dart": "test/mocks/{{}}.mocks.dart"}
+        'build_extensions': {'^test/{{}}.dart': 'test/mocks/{{}}.mocks.dart'}
       });
       final mocksAsset = AssetId('foo', 'test/mocks/foo_test.mocks.dart');
       final mocksContent = utf8.decode(writer.assets[mocksAsset]!);
@@ -3703,9 +3703,9 @@ void main() {
         }
         ''',
           }, config: {
-            "build_extensions": {
-              "^test/{{}}.dart": "test/mocks/{{}}.mocks.dart",
-              "test/{{}}.dart": "test/{{}}.something.mocks.dart"
+            'build_extensions': {
+              '^test/{{}}.dart': 'test/mocks/{{}}.mocks.dart',
+              'test/{{}}.dart': 'test/{{}}.something.mocks.dart'
             }
           }),
           throwsArgumentError);
@@ -3735,7 +3735,7 @@ void main() {
         }
         ''',
           }, config: {
-            "build_extensions": {"^test/{{}}": "test/mocks/{{}}.mocks.dart"}
+            'build_extensions': {'^test/{{}}': 'test/mocks/{{}}.mocks.dart'}
           }),
           throwsArgumentError);
       final mocksAsset = AssetId('foo', 'test/mocks/foo_test.mocks.dart');
@@ -3761,7 +3761,7 @@ void main() {
         }
         ''',
           }, config: {
-            "build_extensions": {"^test/{{}}.dart": "test/mocks/{{}}.g.dart"}
+            'build_extensions': {'^test/{{}}.dart': 'test/mocks/{{}}.g.dart'}
           }),
           throwsArgumentError);
       final mocksAsset = AssetId('foo', 'test/mocks/foo_test.mocks.dart');
