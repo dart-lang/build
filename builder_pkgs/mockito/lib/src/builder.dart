@@ -2337,7 +2337,7 @@ Builder buildMocks(BuilderOptions options) {
           'should be a string ending with `.dart`');
     }
     if (output is! String || !output.endsWith('.mocks.dart')) {
-      throw ArgumentError('Invalid key in build_extensions `$output`, it '
+      throw ArgumentError('Invalid value in build_extensions `$output`, it '
           'should be a string ending with `mocks.dart`');
     }
     result[input] = [output];
