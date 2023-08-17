@@ -63,13 +63,12 @@ import 'package:source_gen/source_gen.dart';
 /// 'foo.mocks.dart' will be created.
 class MockBuilder implements Builder {
   @override
-  final Map<String, List<String>> buildExtensions = {
-    '.dart': ['.mocks.dart']
-  };
+  final Map<String, List<String>> buildExtensions;
 
-  MockBuilder({Map<String, List<String>>? buildExtensions}) {
-    this.buildExtensions.addAll(buildExtensions ?? {});
-  }
+  const MockBuilder(
+      {this.buildExtensions = const {
+        '.dart': ['.mocks.dart']
+      }});
 
   @override
   Future<void> build(BuildStep buildStep) async {
@@ -77,20 +76,13 @@ class MockBuilder implements Builder {
     final entryLib = await buildStep.inputLibrary;
     final sourceLibIsNonNullable = entryLib.isNonNullableByDefault;
 
-    // While it can be acceptable that we get more than 2 allowedOutputs,
-    // because it's the general one and the user defined one. Having
-    // more, means that user has conflicting patterns so we should throw.
-    if (buildStep.allowedOutputs.length > 2) {
+    if (buildStep.allowedOutputs.length > 1) {
       throw ArgumentError('Build_extensions has conflicting outputs on file '
           '`${buildStep.inputId.path}`, it usually caused by missconfiguration '
           'on your `build.yaml` file');
     }
-    // if not single, we always choose the user defined one.
-    final mockLibraryAsset = buildStep.allowedOutputs.singleOrNull ??
-        buildStep.allowedOutputs
-            .where((element) =>
-                element != buildStep.inputId.changeExtension('.mocks.dart'))
-            .single;
+    final mockLibraryAsset = buildStep.allowedOutputs.single;
+
     final inheritanceManager = InheritanceManager3();
     final mockTargetGatherer =
         _MockTargetGatherer(entryLib, inheritanceManager);

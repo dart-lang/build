@@ -182,7 +182,9 @@ to the filename.
 To use `build_extensions` you can use `^` on the input string to match on the project root, and `{{}}` to capture the remaining path/filename.
 
 You can also have multiple build_extensions options, but they can't conflict with each other.
-For consistency, the output pattern must always end with `.mocks.dart` and the input pattern must always end with `.dart`
+For consistency, the output pattern must always end with `.mocks.dart` and the input pattern must always end with `.dart`.
+
+If you specify a build extension, you **MUST** ensure that your patterns cover all input files that you want generate mocks from. Failing to do so will lead to the unmatched file from not being generated at all.
 
 ```yaml
 targets:
