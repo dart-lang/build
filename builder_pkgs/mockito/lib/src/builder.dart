@@ -76,12 +76,12 @@ class MockBuilder implements Builder {
     final entryLib = await buildStep.inputLibrary;
     final sourceLibIsNonNullable = entryLib.isNonNullableByDefault;
 
-    if (buildStep.allowedOutputs.length > 1) {
-      throw ArgumentError('Build_extensions has conflicting outputs on file '
-          '`${buildStep.inputId.path}`, it usually caused by missconfiguration '
-          'on your `build.yaml` file');
+    final mockLibraryAsset = buildStep.allowedOutputs.singleOrNull;
+    if (mockLibraryAsset == null) {
+      throw ArgumentError('Build_extensions has missing or conflicting outputs for '
+          '`${buildStep.inputId.path}`, this is usually caused by a misconfigured '
+          'build extension override in `build.yaml`');
     }
-    final mockLibraryAsset = buildStep.allowedOutputs.single;
 
     final inheritanceManager = InheritanceManager3();
     final mockTargetGatherer =
