@@ -78,7 +78,8 @@ class MockBuilder implements Builder {
 
     final mockLibraryAsset = buildStep.allowedOutputs.singleOrNull;
     if (mockLibraryAsset == null) {
-      throw ArgumentError('Build_extensions has missing or conflicting outputs for '
+      throw ArgumentError(
+          'Build_extensions has missing or conflicting outputs for '
           '`${buildStep.inputId.path}`, this is usually caused by a misconfigured '
           'build extension override in `build.yaml`');
     }
