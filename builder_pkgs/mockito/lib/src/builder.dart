@@ -63,18 +63,33 @@ import 'package:source_gen/source_gen.dart';
 /// 'foo.mocks.dart' will be created.
 class MockBuilder implements Builder {
   @override
+  final Map<String, List<String>> buildExtensions;
+
+  const MockBuilder(
+      {this.buildExtensions = const {
+        '.dart': ['.mocks.dart']
+      }});
+
+  @override
   Future<void> build(BuildStep buildStep) async {
     if (!await buildStep.resolver.isLibrary(buildStep.inputId)) return;
     final entryLib = await buildStep.inputLibrary;
     final sourceLibIsNonNullable = entryLib.isNonNullableByDefault;
-    final mockLibraryAsset = buildStep.inputId.changeExtension('.mocks.dart');
+
+    final mockLibraryAsset = buildStep.allowedOutputs.singleOrNull;
+    if (mockLibraryAsset == null) {
+      throw ArgumentError(
+          'Build_extensions has missing or conflicting outputs for '
+          '`${buildStep.inputId.path}`, this is usually caused by a misconfigured '
+          'build extension override in `build.yaml`');
+    }
+
     final inheritanceManager = InheritanceManager3();
     final mockTargetGatherer =
         _MockTargetGatherer(entryLib, inheritanceManager);
 
-    final entryAssetId = await buildStep.resolver.assetIdForElement(entryLib);
     final assetUris = await _resolveAssetUris(buildStep.resolver,
-        mockTargetGatherer._mockTargets, entryAssetId.path, entryLib);
+        mockTargetGatherer._mockTargets, mockLibraryAsset.path, entryLib);
 
     final mockLibraryInfo = _MockLibraryInfo(mockTargetGatherer._mockTargets,
         assetUris: assetUris,
@@ -240,11 +255,6 @@ $rawOutput
     }
     return element.library!;
   }
-
-  @override
-  final buildExtensions = const {
-    '.dart': ['.mocks.dart']
-  };
 }
 
 /// An [Element] visitor which collects the elements of all of the
@@ -2304,7 +2314,29 @@ class _AvoidConflictsAllocator implements Allocator {
 }
 
 /// A [MockBuilder] instance for use by `build.yaml`.
-Builder buildMocks(BuilderOptions options) => MockBuilder();
+Builder buildMocks(BuilderOptions options) {
+  final buildExtensions = options.config['build_extensions'];
+  if (buildExtensions == null) return MockBuilder();
+  if (buildExtensions is! Map) {
+    throw ArgumentError(
+        'build_extensions should be a map from inputs to outputs');
+  }
+  final result = <String, List<String>>{};
+  for (final entry in buildExtensions.entries) {
+    final input = entry.key;
+    final output = entry.value;
+    if (input is! String || !input.endsWith('.dart')) {
+      throw ArgumentError('Invalid key in build_extensions `$input`, it '
+          'should be a string ending with `.dart`');
+    }
+    if (output is! String || !output.endsWith('.mocks.dart')) {
+      throw ArgumentError('Invalid value in build_extensions `$output`, it '
+          'should be a string ending with `mocks.dart`');
+    }
+    result[input] = [output];
+  }
+  return MockBuilder(buildExtensions: result);
+}
 
 extension on Element {
   /// Returns the "full name" of a class or method element.
