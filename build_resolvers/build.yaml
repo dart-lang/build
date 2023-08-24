@@ -5,7 +5,7 @@ builders:
       - transitiveDigestsBuilder
     build_extensions:
       .dart:
-        - .dart.transitive_digests
+        - .dart.transitive_digest
     auto_apply: all_packages
     is_optional: True
     required_inputs: [".dart"]

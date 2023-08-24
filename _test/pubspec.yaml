@@ -9,6 +9,7 @@ dev_dependencies:
   build: any
   build_config: any
   build_modules: any
+  build_resolvers: any
   build_runner: any
   build_runner_core: any
   build_test: any
