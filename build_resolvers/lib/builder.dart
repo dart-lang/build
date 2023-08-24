@@ -45,8 +45,13 @@ class _TransitiveDigestsBuilder extends Builder {
       byteSink.add((await buildStep.digest(next)).bytes);
       final deps = await dependenciesOf(next, buildStep);
       if (deps == null) {
-        throw StateError(
-            'Unable to read asset, could not compute transitive deps: $next');
+        // We warn here but do not fail, the downside is slower builds.
+        log.warning('''
+Unable to read asset, could not compute transitive deps: $next
+
+This may cause less efficient builds, see the following doc for help:
+https://github.com/dart-lang/build/blob/master/docs/faq.md#unable-to-read-asset-could-not-compute-transitive-deps''');
+        return;
       }
 
       // Add all previously unseen deps to the queue.
