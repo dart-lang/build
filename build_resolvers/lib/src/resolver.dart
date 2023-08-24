@@ -147,6 +147,7 @@ class PerActionResolver implements ReleasableResolver {
 
   @override
   void release() {
+    _delegate._uriResolver.notifyComplete(_step);
     _delegate.release();
   }
 

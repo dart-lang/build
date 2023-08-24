@@ -368,3 +368,30 @@ global_options:
     runs_before:
       - some_other_package:some_other_builder
 ```
+
+## Unable to read asset, could not compute transitive deps
+
+If you see this error, it means that we tried to compute the transitive
+dependencies of a library, but some of those dependencies did not (yet) exist.
+
+Typically this would be caused by having multiple `target` definitions in your
+`build.yaml` file, but not setting up the proper `dependencies` between them.
+
+For example, lets say you have 2 targets "a" and "b". Target "b" does some code
+generation, and target "a" imports some of those generate files. You will need
+to add a dependency on the "b" target from the "a" target like so:
+
+```yaml
+targets:
+  a:
+    sources:
+      - lib/a.dart
+    dependencies:
+      - :b
+  b:
+    sources:
+      - lib/b.dart // Assume some builder generates lib/b.g.dart in this target.
+```
+
+If you are still having problems, you can file an issue on this repo and ask for
+help.

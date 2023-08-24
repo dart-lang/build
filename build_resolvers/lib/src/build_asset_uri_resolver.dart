@@ -18,9 +18,9 @@ import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 import 'package:stream_transform/stream_transform.dart';
 
-import '../builder.dart';
-
 const _ignoredSchemes = ['dart', 'dart-ext'];
+
+const transitiveDigestExtension = '.transitive_digest';
 
 class BuildAssetUriResolver extends UriResolver {
   /// A cache of the directives for each Dart library.
@@ -52,7 +52,7 @@ class BuildAssetUriResolver extends UriResolver {
 
   /// The assets which have been resolved from a [BuildStep], either as an
   /// input, subsequent calls to a resolver, or a transitive import thereof.
-  final _buildStepTransitivelyResolvedAssets = Expando<HashSet<AssetId>>();
+  final _buildStepTransitivelyResolvedAssets = <BuildStep, HashSet<AssetId>>{};
 
   /// Use the [instance] getter to get an instance.
   BuildAssetUriResolver._();
@@ -71,8 +71,8 @@ class BuildAssetUriResolver extends UriResolver {
               FutureOr<void> Function(AnalysisDriverForPackageBuild))
           withDriverResource,
       {required bool transitive}) async {
-    final transitivelyResolved =
-        _buildStepTransitivelyResolvedAssets[buildStep] ??= HashSet();
+    final transitivelyResolved = _buildStepTransitivelyResolvedAssets
+        .putIfAbsent(buildStep, HashSet.new);
     bool notCrawled(AssetId asset) => !transitivelyResolved.contains(asset);
 
     final uncrawledIds = entryPoints.where(notCrawled);
@@ -193,8 +193,14 @@ class BuildAssetUriResolver extends UriResolver {
     return assetId;
   }
 
+  void notifyComplete(BuildStep step) {
+    _buildStepTransitivelyResolvedAssets.remove(step);
+  }
+
   /// Clear cached information specific to an individual build.
   void reset() {
+    assert(_buildStepTransitivelyResolvedAssets.isEmpty,
+        'Reset was called before all build steps completed');
     globallySeenAssets.clear();
     _needsChangeFile.clear();
   }
