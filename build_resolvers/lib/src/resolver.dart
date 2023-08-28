@@ -33,11 +33,13 @@ import 'sdk_summary.dart';
 class PerActionResolver implements ReleasableResolver {
   final AnalyzerResolver _delegate;
   final Pool _driverPool;
+  final Pool _readAndWritePool;
   final BuildStep _step;
 
   final _entryPoints = <AssetId>{};
 
-  PerActionResolver(this._delegate, this._driverPool, this._step);
+  PerActionResolver(
+      this._delegate, this._driverPool, this._readAndWritePool, this._step);
 
   Stream<LibraryElement> get _librariesFromEntrypoints async* {
     await _resolveIfNecessary(_step.inputId, transitive: true);
@@ -132,16 +134,19 @@ class PerActionResolver implements ReleasableResolver {
           // We only want transitively resolved ids in `_entrypoints`.
           if (transitive) _entryPoints.add(id);
 
-          // the resolver will only visit assets that haven't been resolved in
-          // this step yet
-          await _step.trackStage(
-              'Resolving library $id',
-              () => _delegate._uriResolver.performResolve(
-                  _step,
-                  [id],
-                  (withDriver) => _driverPool
-                      .withResource(() => withDriver(_delegate._driver)),
-                  transitive: transitive));
+          // Performing a resolve is a "write" - it will result in `changeFile`
+          // calls in the analysis driver.
+          await _readAndWritePool.withResource(() =>
+              // The resolver will only visit assets that haven't been resolved
+              // in this step yet.
+              _step.trackStage(
+                  'Resolving library $id',
+                  () => _delegate._uriResolver.performResolve(
+                      _step,
+                      [id],
+                      (withDriver) => _driverPool
+                          .withResource(() => withDriver(_delegate._driver)),
+                      transitive: transitive)));
         }
       });
 
@@ -160,10 +165,12 @@ class AnalyzerResolver implements ReleasableResolver {
   final BuildAssetUriResolver _uriResolver;
   final AnalysisDriverForPackageBuild _driver;
   final Pool _driverPool;
+  final Pool _readAndWritePool;
 
   Future<List<LibraryElement>>? _sdkLibraries;
 
-  AnalyzerResolver(this._driver, this._driverPool, this._uriResolver);
+  AnalyzerResolver(this._driver, this._driverPool, this._readAndWritePool,
+      this._uriResolver);
 
   @override
   Future<bool> isLibrary(AssetId assetId) async {
@@ -230,21 +237,23 @@ class AnalyzerResolver implements ReleasableResolver {
   @override
   Future<LibraryElement> libraryFor(AssetId assetId,
       {bool allowSyntaxErrors = false}) async {
-    final library = await _driverPool.withResource(() async {
-      var uri = assetId.uri;
-      if (!_driver.isUriOfExistingFile(uri)) {
-        throw AssetNotFoundException(assetId);
-      }
+    // TODO: Are we sure this can't deadlock?
+    final library = await _readAndWritePool
+        .withResource(() => _driverPool.withResource(() async {
+              var uri = assetId.uri;
+              if (!_driver.isUriOfExistingFile(uri)) {
+                throw AssetNotFoundException(assetId);
+              }
 
-      var path = assetPath(assetId);
-      var parsedResult = _driver.currentSession.getParsedUnit(path);
-      if (parsedResult is! ParsedUnitResult || parsedResult.isPart) {
-        throw NonLibraryAssetException(assetId);
-      }
+              var path = assetPath(assetId);
+              var parsedResult = _driver.currentSession.getParsedUnit(path);
+              if (parsedResult is! ParsedUnitResult || parsedResult.isPart) {
+                throw NonLibraryAssetException(assetId);
+              }
 
-      return await _driver.currentSession.getLibraryByUri(uri.toString())
-          as LibraryElementResult;
-    });
+              return await _driver.currentSession
+                  .getLibraryByUri(uri.toString()) as LibraryElementResult;
+            }));
 
     if (!allowSyntaxErrors) {
       final errors = await _syntacticErrorsFor(library.element);
@@ -353,6 +362,10 @@ class AnalyzerResolvers implements Resolvers {
   /// `applyPendingFileChanges`.
   final _driverPool = Pool(1);
 
+  /// Used to prevent `changeFile` calls (writes) from happening concurrently
+  /// while we are asking to resolve a library element (reads).
+  final _readAndWritePool = Pool(1);
+
   /// A function that returns the path to the SDK summary when invoked.
   ///
   /// Defaults to [defaultSdkSummaryGenerator].
@@ -403,14 +416,16 @@ class AnalyzerResolvers implements Resolvers {
       var driver = await analysisDriver(uriResolver, _analysisOptions,
           await _sdkSummaryGenerator(), loadedConfig);
 
-      _resolver = AnalyzerResolver(driver, _driverPool, uriResolver);
+      _resolver =
+          AnalyzerResolver(driver, _driverPool, _readAndWritePool, uriResolver);
     }()));
   }
 
   @override
   Future<ReleasableResolver> get(BuildStep buildStep) async {
     await _ensureInitialized();
-    return PerActionResolver(_resolver, _driverPool, buildStep);
+    return PerActionResolver(
+        _resolver, _driverPool, _readAndWritePool, buildStep);
   }
 
   /// Must be called between each build.
