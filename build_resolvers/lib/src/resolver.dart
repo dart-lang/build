@@ -27,13 +27,14 @@ import 'package:yaml/yaml.dart';
 import 'analysis_driver.dart';
 import 'build_asset_uri_resolver.dart';
 import 'sdk_summary.dart';
+import 'shared_resource_pool.dart';
 
 /// Implements [Resolver.libraries] and [Resolver.findLibraryByName] by crawling
 /// down from entrypoints.
 class PerActionResolver implements ReleasableResolver {
   final AnalyzerResolver _delegate;
   final Pool _driverPool;
-  final Pool _readAndWritePool;
+  final SharedResourcePool _readAndWritePool;
   final BuildStep _step;
 
   final _entryPoints = <AssetId>{};
@@ -143,6 +144,10 @@ class PerActionResolver implements ReleasableResolver {
                   [id],
                   // This does a "write" - it will result in
                   // `changeFile` calls in the analysis driver.
+                  //
+                  // It can't use the shared resource since it is a "write"
+                  // operation.
+                  //
                   // TODO: Better abstraction here? We are relying on
                   // implementation details (knowing this calls changeFile).
                   (withDriver) => _readAndWritePool.withResource(() =>
@@ -167,7 +172,7 @@ class AnalyzerResolver implements ReleasableResolver {
   final BuildAssetUriResolver _uriResolver;
   final AnalysisDriverForPackageBuild _driver;
   final Pool _driverPool;
-  final Pool _readAndWritePool;
+  final SharedResourcePool _readAndWritePool;
 
   Future<List<LibraryElement>>? _sdkLibraries;
 
@@ -239,10 +244,10 @@ class AnalyzerResolver implements ReleasableResolver {
   @override
   Future<LibraryElement> libraryFor(AssetId assetId,
       {bool allowSyntaxErrors = false}) async {
-    // TODO: Are we sure this can't deadlock?
-    // Since this calls `getLibraryByUri` it is a "read".
+    // Since this calls `getLibraryByUri` it is a "read", and can use the shared
+    // resource to allow concurrent reads.
     final library = await _readAndWritePool
-        .withResource(() => _driverPool.withResource(() async {
+        .withSharedResource(() => _driverPool.withResource(() async {
               var uri = assetId.uri;
               if (!_driver.isUriOfExistingFile(uri)) {
                 throw AssetNotFoundException(assetId);
@@ -367,7 +372,7 @@ class AnalyzerResolvers implements Resolvers {
 
   /// Used to prevent `changeFile` calls (writes) from happening concurrently
   /// while we are asking to resolve a library element (reads).
-  final _readAndWritePool = Pool(1);
+  final _readAndWritePool = SharedResourcePool();
 
   /// A function that returns the path to the SDK summary when invoked.
   ///
