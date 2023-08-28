@@ -433,13 +433,14 @@ throwOnMissingStub(cat);
 
 Testing with real objects is preferred over testing with mocks - if you can
 construct a real instance for your tests, you should! If there are no calls to
-[`verify`] in your test, it is a strong signal that you may not need mocks at all,
-though it's also OK to use a `Mock` like a stub. When it's not possible to use
-the real object, a tested implementation of a fake is the next best thing - it's
-more likely to behave similarly to the real class than responses stubbed out in
-tests. Finally an object which `extends Fake` using manually overridden methods
-is preferred over an object which `extends Mock` used as either a stub or a
-mock.
+[`verify`] in your test, it is a strong signal that you may not need mocks at
+all, though it's also OK to use a `Mock` like a stub. Data models never need to
+be mocked if they can be constructed with stubbed data. When it's not possible
+to use the real object, a tested implementation of a fake is the next best
+thing; it's more likely to behave similarly to the real class than responses
+stubbed out in tests. Finally an object which `extends Fake` using manually
+overridden methods is preferred over an object which `extends Mock` used as
+either a stub or a mock.
 
 A class which `extends Mock` should _never_ stub out its own responses with
 `when` in its constructor or anywhere else. Stubbed responses should be defined
