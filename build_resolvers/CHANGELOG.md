@@ -1,3 +1,8 @@
+## 2.3.0
+
+- Improve performance for resolves by adding a builder which serializes
+  transitive digests to disk.
+
 ## 2.2.1
 
 - Allow the latest analyzer (6.x.x).
