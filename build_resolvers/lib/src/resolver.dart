@@ -134,19 +134,21 @@ class PerActionResolver implements ReleasableResolver {
           // We only want transitively resolved ids in `_entrypoints`.
           if (transitive) _entryPoints.add(id);
 
-          // Performing a resolve is a "write" - it will result in `changeFile`
-          // calls in the analysis driver.
-          await _readAndWritePool.withResource(() =>
-              // The resolver will only visit assets that haven't been resolved
-              // in this step yet.
-              _step.trackStage(
-                  'Resolving library $id',
-                  () => _delegate._uriResolver.performResolve(
-                      _step,
-                      [id],
-                      (withDriver) => _driverPool
-                          .withResource(() => withDriver(_delegate._driver)),
-                      transitive: transitive)));
+          // The resolver will only visit assets that haven't been resolved
+          // in this step yet.
+          await _step.trackStage(
+              'Resolving library $id',
+              () => _delegate._uriResolver.performResolve(
+                  _step,
+                  [id],
+                  // This does a "write" - it will result in
+                  // `changeFile` calls in the analysis driver.
+                  // TODO: Better abstraction here? We are relying on
+                  // implementation details (knowing this calls changeFile).
+                  (withDriver) => _readAndWritePool.withResource(() =>
+                      _driverPool
+                          .withResource(() => withDriver(_delegate._driver))),
+                  transitive: transitive));
         }
       });
 
@@ -238,6 +240,7 @@ class AnalyzerResolver implements ReleasableResolver {
   Future<LibraryElement> libraryFor(AssetId assetId,
       {bool allowSyntaxErrors = false}) async {
     // TODO: Are we sure this can't deadlock?
+    // Since this calls `getLibraryByUri` it is a "read".
     final library = await _readAndWritePool
         .withResource(() => _driverPool.withResource(() async {
               var uri = assetId.uri;
