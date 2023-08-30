@@ -12,6 +12,7 @@ import 'package:analyzer/file_system/memory_file_system.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart' show AssetId, BuildStep;
+import 'package:collection/collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
@@ -19,12 +20,14 @@ import 'package:stream_transform/stream_transform.dart';
 
 const _ignoredSchemes = ['dart', 'dart-ext'];
 
+const transitiveDigestExtension = '.transitive_digest';
+
 class BuildAssetUriResolver extends UriResolver {
   /// A cache of the directives for each Dart library.
   ///
   /// This is stored across builds and is only invalidated if we read a file and
   /// see that it's content is different from what it was last time it was read.
-  final _cachedAssetDependencies = <AssetId, Set<AssetId>>{};
+  final _cachedAssetState = <AssetId, _AssetState>{};
 
   /// A cache of the digest for each Dart asset.
   ///
@@ -51,6 +54,11 @@ class BuildAssetUriResolver extends UriResolver {
   /// input, subsequent calls to a resolver, or a transitive import thereof.
   final _buildStepTransitivelyResolvedAssets = <BuildStep, HashSet<AssetId>>{};
 
+  /// Use the [instance] getter to get an instance.
+  BuildAssetUriResolver._();
+
+  static final BuildAssetUriResolver instance = BuildAssetUriResolver._();
+
   /// Updates [resourceProvider] and the analysis driver given by
   /// `withDriverResource`  with updated versions of [entryPoints].
   ///
@@ -72,9 +80,17 @@ class BuildAssetUriResolver extends UriResolver {
         ? await crawlAsync<AssetId, _AssetState?>(
             uncrawledIds,
             (id) => _updateCachedAssetState(id, buildStep,
-                transitivelyResolved: transitivelyResolved), (id, state) {
+                transitivelyResolved: transitivelyResolved), (id, state) async {
             if (state == null) return const [];
-            return state.dependencies.where(notCrawled);
+            // Establishes a dependency on the transitive deps digest.
+            final hasTransitiveDigestAsset = await buildStep
+                .canRead(id.addExtension(transitiveDigestExtension));
+            return hasTransitiveDigestAsset
+                // Only crawl assets that we haven't yet loaded into the
+                // analyzer if we are using transitive digests for invalidation.
+                ? state.dependencies.whereNot(_cachedAssetDigests.containsKey)
+                // Otherwise fall back on crawling all source deps.
+                : state.dependencies.where(notCrawled);
           }).whereType<_AssetState>().toList()
         : [
             for (final id in uncrawledIds)
@@ -103,7 +119,7 @@ class BuildAssetUriResolver extends UriResolver {
   /// non-null).
   Future<_AssetState?> _updateCachedAssetState(AssetId id, BuildStep buildStep,
       {Set<AssetId>? transitivelyResolved}) async {
-    final path = assetPath(id);
+    late final path = assetPath(id);
     if (!await buildStep.canRead(id)) {
       if (globallySeenAssets.contains(id)) {
         // ignore from this graph, some later build step may still be using it
@@ -111,24 +127,26 @@ class BuildAssetUriResolver extends UriResolver {
         // don't care about it's transitive imports.
         return null;
       }
-      _cachedAssetDependencies.remove(id);
+      _cachedAssetState.remove(id);
       _cachedAssetDigests.remove(id);
       if (resourceProvider.getFile(path).exists) {
         resourceProvider.deleteFile(path);
       }
-      return _AssetState(path, const []);
+      return _AssetState(path, const {});
     }
     globallySeenAssets.add(id);
     transitivelyResolved?.add(id);
     final digest = await buildStep.digest(id);
-    if (_cachedAssetDigests[id] == digest) {
-      return _AssetState(path, _cachedAssetDependencies[id]!);
+
+    final cachedAsset = _cachedAssetDigests[id];
+    if (cachedAsset == digest) {
+      return _cachedAssetState[id];
     } else {
-      final isChange = _cachedAssetDigests.containsKey(id);
+      final isChange = cachedAsset != null;
       final content = await buildStep.readAsString(id);
       if (_cachedAssetDigests[id] == digest) {
         // Cache may have been updated while reading asset content
-        return _AssetState(path, _cachedAssetDependencies[id]!);
+        return _cachedAssetState[id];
       }
       if (isChange) {
         resourceProvider.modifyFile(path, content);
@@ -137,9 +155,8 @@ class BuildAssetUriResolver extends UriResolver {
       }
       _cachedAssetDigests[id] = digest;
       _needsChangeFile.add(path);
-      final dependencies =
-          _cachedAssetDependencies[id] = _parseDirectives(content, id);
-      return _AssetState(path, dependencies);
+      return _cachedAssetState[id] =
+          _AssetState(path, _parseDependencies(content, id));
     }
   }
 
@@ -226,7 +243,7 @@ Future<String> packagePath(String package) async {
 
 /// Returns all the directives from a Dart library that can be resolved to an
 /// [AssetId].
-Set<AssetId> _parseDirectives(String content, AssetId from) => HashSet.of(
+Set<AssetId> _parseDependencies(String content, AssetId from) => HashSet.of(
       parseString(content: content, throwIfDiagnostics: false)
           .unit
           .directives
@@ -240,9 +257,17 @@ Set<AssetId> _parseDirectives(String content, AssetId from) => HashSet.of(
           .map((content) => AssetId.resolve(Uri.parse(content), from: from)),
     );
 
+/// Read the (potentially) cached dependencies of [id] based on parsing the
+/// directives, and cache the results if they weren't already cached.
+Future<Iterable<AssetId>?> dependenciesOf(
+        AssetId id, BuildStep buildStep) async =>
+    (await BuildAssetUriResolver.instance
+            ._updateCachedAssetState(id, buildStep))
+        ?.dependencies;
+
 class _AssetState {
   final String path;
-  final Iterable<AssetId> dependencies;
+  final Set<AssetId> dependencies;
 
   _AssetState(this.path, this.dependencies);
 }
