@@ -26,10 +26,6 @@ class _TransitiveDigestsBuilder extends Builder {
     final digestSink = AccumulatorSink<Digest>();
     final byteSink = md5.startChunkedConversion(digestSink);
 
-    /// This gives us access to the resolvers cache of library dependencies,
-    /// which helps us to avoid duplicate parsing of libraries.
-    final dependenciesOf = await buildStep.fetchResource(dependenciesResource);
-
     while (queue.isNotEmpty) {
       final next = queue.removeLast();
 

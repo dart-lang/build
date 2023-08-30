@@ -11,7 +11,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/file_system/memory_file_system.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
-import 'package:build/build.dart' show AssetId, BuildStep, Resource;
+import 'package:build/build.dart' show AssetId, BuildStep;
 import 'package:collection/collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:graphs/graphs.dart';
@@ -156,7 +156,7 @@ class BuildAssetUriResolver extends UriResolver {
       _cachedAssetDigests[id] = digest;
       _needsChangeFile.add(path);
       return _cachedAssetState[id] =
-          _AssetState(path, parseDependencies(content, id));
+          _AssetState(path, _parseDependencies(content, id));
     }
   }
 
@@ -243,7 +243,7 @@ Future<String> packagePath(String package) async {
 
 /// Returns all the directives from a Dart library that can be resolved to an
 /// [AssetId].
-Set<AssetId> parseDependencies(String content, AssetId from) => HashSet.of(
+Set<AssetId> _parseDependencies(String content, AssetId from) => HashSet.of(
       parseString(content: content, throwIfDiagnostics: false)
           .unit
           .directives
@@ -257,13 +257,13 @@ Set<AssetId> parseDependencies(String content, AssetId from) => HashSet.of(
           .map((content) => AssetId.resolve(Uri.parse(content), from: from)),
     );
 
-/// A resource which gives access to the cached dependencies of assets based on
-/// parsing the directives.
-final dependenciesResource = Resource<
-        Future<Iterable<AssetId>?> Function(AssetId id, BuildStep buildStep)>(
-    () => (AssetId id, BuildStep buildStep) => BuildAssetUriResolver.instance
-        ._updateCachedAssetState(id, buildStep)
-        .then((state) => state?.dependencies));
+/// Read the (potentially) cached dependencies of [id] based on parsing the
+/// directives, and cache the results if they weren't already cached.
+Future<Iterable<AssetId>?> dependenciesOf(
+        AssetId id, BuildStep buildStep) async =>
+    (await BuildAssetUriResolver.instance
+            ._updateCachedAssetState(id, buildStep))
+        ?.dependencies;
 
 class _AssetState {
   final String path;
