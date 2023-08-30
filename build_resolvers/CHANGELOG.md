@@ -1,3 +1,8 @@
+## 2.3.1
+
+- Fix a bug in the transitive digest builder, ensure we check if assets are
+  readable before asking for their digest.
+
 ## 2.3.0
 
 - Improve performance for resolves by adding a builder which serializes
