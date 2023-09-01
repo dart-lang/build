@@ -14,6 +14,24 @@ of the code. **This is always safe**, but may place limitations on the end user.
 Any outputs which are used _during_ a build to produce other outputs, but don't
 need to be compiled or seen by the user, should also be built to `cache`.
 
+## How expensive is it to get a resolved library (ex: buildStep.inputLibrary)
+
+This can be a very expensive operation, depending on a number of factors.
+
+The first time this is done in the build process, all transitive imports of the
+file have to be parsed and analyzed, and even the entire SDK may have to be
+analyzed.
+
+We have some optimizations to make this cheaper for subsequent builders, but
+they can be circumvented by certain package structures. You should assume the
+cost will be at least on the order of the number of all transitive imports.
+
+The build step will also be invalidated if any transitive import of the resolved
+library changes, even in the best case scenarios.
+
+You should only use a resolved library if you absolutely need on. If you can
+use simply a parsed compilation unit instead, you should consider using that.
+
 ## How can I have temporary outputs only used during the Build?
 
 Due to build restrictions - namely that a builder can't read the outputs
