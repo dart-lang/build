@@ -27,11 +27,6 @@ abstract class DefaultBuildTarget
 
   DefaultBuildTarget._();
 
-  /// A set of file path patterns to match changes against.
-  ///
-  /// If a change matches a pattern this target will not be built.
-  BuiltSet<RegExp> get blackListPatterns;
-
   OutputLocation? get outputLocation;
 
   /// A set of globs patterns for files to build.

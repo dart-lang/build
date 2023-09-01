@@ -7,13 +7,8 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../data/build_target.dart';
 
-bool _isBlacklistedPath(String filePath, Set<RegExp> blackListedPatterns) =>
-    blackListedPatterns.any((pattern) => filePath.contains(pattern));
-
 bool _shouldBuild(BuildTarget target, Iterable<WatchEvent> changes) =>
-    target is DefaultBuildTarget &&
-    changes.any((change) =>
-        !_isBlacklistedPath(change.path, target.blackListPatterns.toSet()));
+    target is DefaultBuildTarget;
 
 /// Manages the set of build targets, and corresponding listeners, tracked by
 /// the Dart Build Daemon.
