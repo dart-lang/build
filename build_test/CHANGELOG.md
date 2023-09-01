@@ -1,3 +1,7 @@
+## 2.2.1-dev
+
+- Avoid passing a nullable value to `Future.value`.
+
 ## 2.2.0
 
 - Forward logs from `testBuilder` to `printOnFailure` by default.
