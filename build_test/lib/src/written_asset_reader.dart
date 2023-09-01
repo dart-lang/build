@@ -51,7 +51,7 @@ class WrittenAssetReader extends MultiPackageAssetReader {
     if (!source.assets.containsKey(id)) {
       throw AssetNotFoundException(id);
     }
-    return Future.value(source.assets[id]);
+    return Future.value(source.assets[id]!);
   }
 
   @override
