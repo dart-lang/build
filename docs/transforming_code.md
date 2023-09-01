@@ -1,11 +1,9 @@
 # Transforming code with `build` and `build_runner`
 
-Unlike the [old `barback` and `pub`][pub] asset systems, it's not permitted to
+Unlike the old `barback` and `pub` asset systems, it's not permitted to
 overwrite or otherwise transform existing on-disk files as part of the build
 process, and our newer build tools and packages will throw exceptions if this is
 attempted.
-
-[pub]: https://dart.dev/tools/pub/obsolete
 
 ## Examples
 
