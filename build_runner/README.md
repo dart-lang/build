@@ -226,7 +226,7 @@ $ dart run test
 
 [Bazel]: https://bazel.build/
 [`package:build`]: https://pub.dev/packages/build
-[analysis_options]: https://github.com/dart-lang/build/blob/master/analysis_options.yaml
+[analysis_options]: https://github.com/dart-lang/build/blob/master/analysis/analysis_options.yaml
 
 [builder]: https://pub.dev/documentation/build/latest/build/Builder-class.html
 [run_fn]: https://pub.dev/documentation/build_runner/latest/build_runner/run.html
