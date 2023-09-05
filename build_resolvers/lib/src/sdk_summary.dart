@@ -53,19 +53,12 @@ Future<String> defaultSdkSummaryGenerator() async {
       package: await packagePath(package),
   };
 
-  // Invalidate existing summary/version/analyzer files if present.
-  if (await depsFile.exists()) {
-    if (!await _checkDeps(depsFile, currentDeps)) {
-      await depsFile.delete();
-      if (await summaryFile.exists()) await summaryFile.delete();
-    }
-  } else if (await summaryFile.exists()) {
-    // Fallback for cases where we could not do a proper version check.
-    await summaryFile.delete();
-  }
+  final needsRebuild = !await summaryFile.exists() ||
+      !await depsFile.exists() ||
+      !await _checkDeps(depsFile, currentDeps);
 
   // Generate the summary and version files if necessary.
-  if (!await summaryFile.exists()) {
+  if (needsRebuild) {
     var watch = Stopwatch()..start();
     _logger.info('Generating SDK summary...');
     await summaryFile.create(recursive: true);
