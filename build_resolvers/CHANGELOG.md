@@ -1,3 +1,9 @@
+## 2.3.2
+
+- Skip file delete for SDK summary and deps file. This will only impact behavior
+  for usage in `build_test` where there may be multiple resolvers used
+  concurrently.
+
 ## 2.3.1
 
 - Fix a bug in the transitive digest builder, ensure we check if assets are
