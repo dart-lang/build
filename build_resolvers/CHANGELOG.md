@@ -1,4 +1,4 @@
-## 3.3.2
+## 2.3.2
 
 - Skip file delete for SDK summary and deps file. This will only impact behavior
   for usage in `build_test` where there may be multiple resolvers used
