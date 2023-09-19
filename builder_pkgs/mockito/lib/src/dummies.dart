@@ -15,6 +15,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:typed_data';
+
 import 'mock.dart' show FakeFunctionUsedError;
 import 'platform_dummies_js.dart'
     if (dart.library.io) 'platform_dummies_vm.dart';
@@ -99,6 +100,7 @@ typedef DummyBuilder<T> = T Function(Object parent, Invocation invocation);
 Map<Type, DummyBuilder> _dummyBuilders = {};
 
 Map<Type, DummyBuilder> _defaultDummyBuilders = {
+  bool: (_, _i) => false,
   int: (_, _i) => _dummyInt,
   num: (_, _i) => _dummyInt,
   double: (_, _i) => _dummyDouble,
