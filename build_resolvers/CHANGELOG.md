@@ -1,3 +1,11 @@
+## 2.4.0-wip
+
+- Deprecate the unnamed `AnalyzerResolvers` constructor, an replace it with the
+  `AnalyzerResolvers.sharedInstance` getter and `AnalyzerResolvers.custom`
+  constructor. These new apis enforce a 1:1 relationship between the
+  `BuildAssetUriResolver` instances and `AnalyzerResolvers` instances, which is
+  necessary to ensure correct builds in the presence of multiple resolvers.
+
 ## 2.3.2
 
 - Skip file delete for SDK summary and deps file. This will only impact behavior

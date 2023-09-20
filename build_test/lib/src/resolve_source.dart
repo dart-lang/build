@@ -15,8 +15,6 @@ import 'in_memory_writer.dart';
 import 'multi_asset_reader.dart';
 import 'package_reader.dart';
 
-final defaultResolvers = AnalyzerResolvers();
-
 /// Marker constant that may be used in combination with [resolveSources].
 ///
 /// Use of this string means instead of using the contents of the string as the
@@ -199,8 +197,8 @@ Future<T> _resolveAssets<T>(
   // Use the default resolver if no experiments are enabled. This is much
   // faster.
   resolvers ??= packageConfig == null && enabledExperiments.isEmpty
-      ? defaultResolvers
-      : AnalyzerResolvers(null, null, resolvedConfig);
+      ? AnalyzerResolvers.sharedInstance
+      : AnalyzerResolvers.custom(packageConfig: resolvedConfig);
 
   // We don't care about the results of this build, but we also can't await
   // it because that would block on the `tearDown` of the `resolveBuilder`.

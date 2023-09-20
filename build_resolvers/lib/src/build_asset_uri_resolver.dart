@@ -54,10 +54,16 @@ class BuildAssetUriResolver extends UriResolver {
   /// input, subsequent calls to a resolver, or a transitive import thereof.
   final _buildStepTransitivelyResolvedAssets = <BuildStep, HashSet<AssetId>>{};
 
-  /// Use the [instance] getter to get an instance.
-  BuildAssetUriResolver._();
+  /// Use the [sharedInstance] getter to get the shared instance, which is what
+  /// real builds should do. There should always be a 1:1 relationship between
+  /// [BuildAssetUriResolver]s and `AnalyzerResolvers`.
+  BuildAssetUriResolver();
 
-  static final BuildAssetUriResolver instance = BuildAssetUriResolver._();
+  /// The instance used by the shared `AnalyzerResolvers` instance, which is
+  /// what should be used by normal builds.
+  ///
+  /// This is not used within testing contexts or similar custom contexts.
+  static final BuildAssetUriResolver sharedInstance = BuildAssetUriResolver();
 
   /// Updates [resourceProvider] and the analysis driver given by
   /// `withDriverResource`  with updated versions of [entryPoints].
@@ -261,7 +267,7 @@ Set<AssetId> _parseDependencies(String content, AssetId from) => HashSet.of(
 /// directives, and cache the results if they weren't already cached.
 Future<Iterable<AssetId>?> dependenciesOf(
         AssetId id, BuildStep buildStep) async =>
-    (await BuildAssetUriResolver.instance
+    (await BuildAssetUriResolver.sharedInstance
             ._updateCachedAssetState(id, buildStep))
         ?.dependencies;
 

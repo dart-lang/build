@@ -208,7 +208,7 @@ feature, you may need to run `dart run build_runner clean` and then rebuild.
       }
       trackPerformance = true;
     }
-    resolvers ??= AnalyzerResolvers();
+    resolvers ??= AnalyzerResolvers.sharedInstance;
 
     return BuildOptions._(
       debounceDelay: debounceDelay,

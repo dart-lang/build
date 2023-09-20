@@ -1,5 +1,5 @@
 name: build_runner_core
-version: 7.2.11-dev
+version: 7.2.11-wip
 description: Core tools to organize the structure of a build and run Builders.
 repository: https://github.com/dart-lang/build/tree/master/build_runner_core
 
@@ -15,7 +15,7 @@ dependencies:
   async: ^2.5.0
   build: ^2.4.0
   build_config: ^1.0.0
-  build_resolvers: ^2.0.0
+  build_resolvers: ^2.4.0
   collection: ^1.15.0
   convert: ^3.0.0
   crypto: ^3.0.0
