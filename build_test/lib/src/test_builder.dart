@@ -14,7 +14,6 @@ import 'assets.dart';
 import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
 import 'multi_asset_reader.dart';
-import 'resolve_source.dart';
 import 'written_asset_reader.dart';
 
 AssetId _passThrough(AssetId id) => id;
@@ -171,8 +170,8 @@ Future testBuilder(
   var logger = Logger('testBuilder');
   var logSubscription = logger.onRecord.listen(onLog);
   var resolvers = packageConfig == null && enabledExperiments.isEmpty
-      ? defaultResolvers
-      : AnalyzerResolvers(null, null, packageConfig);
+      ? AnalyzerResolvers.sharedInstance
+      : AnalyzerResolvers.custom(packageConfig: packageConfig);
 
   for (var input in inputIds) {
     // create another writer spy and reader for each input. This prevents writes

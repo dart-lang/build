@@ -381,7 +381,8 @@ class AnalyzerResolvers implements Resolvers {
 
   // Lazy, all access must be preceded by a call to `_ensureInitialized`.
   late final AnalyzerResolver _resolver;
-  BuildAssetUriResolver? _uriResolver;
+
+  final BuildAssetUriResolver _uriResolver;
 
   /// Nullable, should not be accessed outside of [_ensureInitialized].
   Future<Result<void>>? _initialized;
@@ -402,30 +403,65 @@ class AnalyzerResolvers implements Resolvers {
   /// **NOTE**: The [_packageConfig] is not used for path resolution, it is
   /// primarily used to get the language versions. Any other data (including
   /// extra data), may be passed to the analyzer on an as needed basis.
-  AnalyzerResolvers(
-      [AnalysisOptions? analysisOptions,
-      Future<String> Function()? sdkSummaryGenerator,
-      this._packageConfig])
-      : _analysisOptions = analysisOptions ??
+  factory AnalyzerResolvers.custom({
+    AnalysisOptions? analysisOptions,
+    Future<String> Function()? sdkSummaryGenerator,
+    PackageConfig? packageConfig,
+  }) =>
+      AnalyzerResolvers._(
+          analysisOptions: analysisOptions,
+          sdkSummaryGenerator: sdkSummaryGenerator,
+          packageConfig: packageConfig,
+          // Custom resolvers get their own asset uri resolver, as there should
+          // always be a 1:1 relationship between them.
+          uriResolver: BuildAssetUriResolver());
+
+  /// See [AnalyzerResolvers.custom] for docs.
+  @Deprecated('Use either the AnalyzerResolvers.custom constructor or the '
+      'AnalyzerResolvers.sharedInstance static getter to get an instance.')
+  factory AnalyzerResolvers([
+    AnalysisOptions? analysisOptions,
+    Future<String> Function()? sdkSummaryGenerator,
+    PackageConfig? packageConfig,
+  ]) =>
+      AnalyzerResolvers._(
+          analysisOptions: analysisOptions,
+          sdkSummaryGenerator: sdkSummaryGenerator,
+          packageConfig: packageConfig,
+          // For backwards compatibility we use the shared instance here.
+          uriResolver: BuildAssetUriResolver.sharedInstance);
+
+  /// See [AnalyzerResolvers.custom] for docs.
+  AnalyzerResolvers._({
+    AnalysisOptions? analysisOptions,
+    PackageConfig? packageConfig,
+    Future<String> Function()? sdkSummaryGenerator,
+    required BuildAssetUriResolver uriResolver,
+  })  : _analysisOptions = analysisOptions ??
             (AnalysisOptionsImpl()
               ..contextFeatures =
                   _featureSet(enableExperiments: enabledExperiments)),
+        _packageConfig = packageConfig,
         _sdkSummaryGenerator =
-            sdkSummaryGenerator ?? defaultSdkSummaryGenerator;
+            sdkSummaryGenerator ?? defaultSdkSummaryGenerator,
+        _uriResolver = uriResolver;
+
+  /// The instance that most real build systems should use.
+  static final AnalyzerResolvers sharedInstance =
+      AnalyzerResolvers._(uriResolver: BuildAssetUriResolver.sharedInstance);
 
   /// Create a Resolvers backed by an `AnalysisContext` using options
   /// [_analysisOptions].
   Future<void> _ensureInitialized() {
     return Result.release(_initialized ??= Result.capture(() async {
       _warnOnLanguageVersionMismatch();
-      final uriResolver = _uriResolver = BuildAssetUriResolver.instance;
       final loadedConfig = _packageConfig ??=
           await loadPackageConfigUri((await Isolate.packageConfig)!);
-      var driver = await analysisDriver(uriResolver, _analysisOptions,
+      var driver = await analysisDriver(_uriResolver, _analysisOptions,
           await _sdkSummaryGenerator(), loadedConfig);
 
-      _resolver =
-          AnalyzerResolver(driver, _driverPool, _readAndWritePool, uriResolver);
+      _resolver = AnalyzerResolver(
+          driver, _driverPool, _readAndWritePool, _uriResolver);
     }()));
   }
 
@@ -439,7 +475,7 @@ class AnalyzerResolvers implements Resolvers {
   /// Must be called between each build.
   @override
   void reset() {
-    _uriResolver?.reset();
+    _uriResolver.reset();
   }
 }
 

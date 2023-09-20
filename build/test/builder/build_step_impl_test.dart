@@ -35,7 +35,7 @@ void main() {
       primary = makeAssetId();
       outputs = List.generate(5, (index) => makeAssetId());
       buildStep = BuildStepImpl(primary, outputs, reader, writer,
-          AnalyzerResolvers(), resourceManager, _unsupported);
+          AnalyzerResolvers.custom(), resourceManager, _unsupported);
     });
 
     test('doesnt allow non-expected outputs', () {
@@ -93,7 +93,7 @@ void main() {
         [outputId],
         reader,
         writer,
-        AnalyzerResolvers(),
+        AnalyzerResolvers.custom(),
         resourceManager,
         _unsupported,
       );
@@ -121,7 +121,7 @@ void main() {
 
         var primary = makeAssetId('a|web/a.dart');
         var buildStep = BuildStepImpl(primary, [], reader, writer,
-            AnalyzerResolvers(), resourceManager, _unsupported);
+            AnalyzerResolvers.custom(), resourceManager, _unsupported);
         var resolver = buildStep.resolver;
 
         var aLib = await resolver.libraryFor(primary);
@@ -150,8 +150,14 @@ void main() {
       assetWriter = SlowAssetWriter();
       outputId = makeAssetId('a|test.txt');
       outputContent = '$outputId';
-      buildStep = BuildStepImpl(primary, [outputId], StubAssetReader(),
-          assetWriter, AnalyzerResolvers(), resourceManager, _unsupported);
+      buildStep = BuildStepImpl(
+          primary,
+          [outputId],
+          StubAssetReader(),
+          assetWriter,
+          AnalyzerResolvers.custom(),
+          resourceManager,
+          _unsupported);
     });
 
     test('Completes only after writes finish', () async {
@@ -199,7 +205,7 @@ void main() {
       primary = makeAssetId();
       output = makeAssetId();
       buildStep = BuildStepImpl(primary, [output], reader, writer,
-          AnalyzerResolvers(), resourceManager, _unsupported,
+          AnalyzerResolvers.custom(), resourceManager, _unsupported,
           stageTracker: NoOpStageTracker.instance);
     });
 
@@ -214,7 +220,7 @@ void main() {
     var writer = StubAssetWriter();
     var unused = <AssetId>{};
     var buildStep = BuildStepImpl(makeAssetId(), [], reader, writer,
-        AnalyzerResolvers(), resourceManager, _unsupported,
+        AnalyzerResolvers.custom(), resourceManager, _unsupported,
         reportUnusedAssets: unused.addAll);
     var reported = [
       makeAssetId(),
