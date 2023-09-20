@@ -2,7 +2,7 @@
 
 - Add better error messages for incomplete package configs when creating a
   package graph.
-- Update to build_resolvers 2.3.3 and use the shared analyzer resolvers
+- Update to build_resolvers 2.4.0 and use the shared analyzer resolvers
   instance.
 
 ## 7.2.10
