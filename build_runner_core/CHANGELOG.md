@@ -1,4 +1,4 @@
-## 7.2.11-wip
+## 7.2.11
 
 - Add better error messages for incomplete package configs when creating a
   package graph.
