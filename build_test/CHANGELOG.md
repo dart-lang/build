@@ -3,6 +3,7 @@
 - Avoid passing a nullable value to `Future.value`.
 - Update to build_resolvers 2.4.0, which resolves some race conditions when
   using multiple resolvers instances.
+- Bump the min sdk to 3.0.0.
 
 ## 2.2.0
 

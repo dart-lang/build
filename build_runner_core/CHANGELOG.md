@@ -4,6 +4,7 @@
   package graph.
 - Update to build_resolvers 2.4.0 and use the shared analyzer resolvers
   instance.
+- Bump the min sdk to 3.0.0.
 
 ## 7.2.10
 

@@ -1,5 +1,7 @@
 ## 1.0.3-wip
 
+- Bump the min sdk to 3.0.0.
+
 ## 1.0.2
 
 - Added package topics to the pubspec file.

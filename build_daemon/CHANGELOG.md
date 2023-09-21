@@ -1,5 +1,7 @@
 ## 4.0.1-wip
 
+- Bump the min sdk to 3.0.0.
+
 ## 4.0.0
 
 - **Breaking**: Remove methods from ChangeProvider, and extract them into

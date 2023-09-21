@@ -15,7 +15,7 @@ void main() {
       '''
 name: test
 environment:
-  sdk: ^2.12.0
+  sdk: ^3.0.0
 
 dependencies:
   foo: ^1.0.0
@@ -26,7 +26,7 @@ dev_dependencies:
       '''
 name: test
 environment:
-  sdk: ^2.12.0
+  sdk: ^3.0.0
 
 dependencies:
   foo: ^1.0.0
@@ -43,7 +43,7 @@ dependency_overrides: {build: {path: ${_packagePath('build')}}, build_config: {p
       '''
 name: test
 environment:
-  sdk: ^2.12.0
+  sdk: ^3.0.0
 
 dependencies:
   foo: ^1.0.0
@@ -58,7 +58,7 @@ dependency_overrides:
       '''
 name: test
 environment:
-  sdk: ^2.12.0
+  sdk: ^3.0.0
 
 dependencies:
   foo: ^1.0.0
@@ -68,25 +68,25 @@ dev_dependencies:
 
 dependency_overrides:
   unrelated: ^1.0.0
-  build_runner: 
+  build_runner:
     path: ${_packagePath('build_runner')}
-  build: 
+  build:
     path: ${_packagePath('build')}
-  build_config: 
+  build_config:
     path: ${_packagePath('build_config')}
-  build_daemon: 
+  build_daemon:
     path: ${_packagePath('build_daemon')}
-  build_modules: 
+  build_modules:
     path: ${_packagePath('build_modules')}
-  build_resolvers: 
+  build_resolvers:
     path: ${_packagePath('build_resolvers')}
-  build_runner_core: 
+  build_runner_core:
     path: ${_packagePath('build_runner_core')}
-  build_test: 
+  build_test:
     path: ${_packagePath('build_test')}
-  build_web_compilers: 
+  build_web_compilers:
     path: ${_packagePath('build_web_compilers')}
-  scratch_space: 
+  scratch_space:
     path: ${_packagePath('scratch_space')}
 ''',
     );
