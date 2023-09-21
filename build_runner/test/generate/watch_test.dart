@@ -390,7 +390,8 @@ void main() {
         var buildState = await startWatch(
             [copyABuildApplication], {'a|web/a.txt': 'a'}, writer,
             logLevel: Level.SEVERE, onLog: logs.add);
-        buildState.buildResults.handleError((e, s) => print('$e\n$s'));
+        buildState.buildResults
+            .handleError((Object e, StackTrace s) => print('$e\n$s'));
         buildState.buildResults.listen(print);
         var results = StreamQueue(buildState.buildResults);
 
@@ -404,7 +405,7 @@ void main() {
             .onCanRead
             .where((id) => id == packageConfigId)
             .take(2)
-            .drain();
+            .drain<void>();
 
         var newConfig = Map.of(_packageConfig);
         newConfig['extra'] = 'stuff';
@@ -784,7 +785,7 @@ void main() {
   });
 }
 
-final _debounceDelay = Duration(milliseconds: 10);
+final _debounceDelay = const Duration(milliseconds: 10);
 StreamController<ProcessSignal>? _terminateWatchController;
 
 /// Start watching files and running builds.

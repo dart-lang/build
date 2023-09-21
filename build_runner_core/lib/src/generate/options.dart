@@ -194,7 +194,7 @@ Failed to parse `build.yaml` for ${e.packageName}.
 If you believe you have gotten this message in error, especially if using a new
 feature, you may need to run `dart run build_runner clean` and then rebuild.
 ''', e.exception, s);
-      throw CannotBuildException();
+      throw const CannotBuildException();
     }
 
     /// Set up other defaults.
@@ -204,7 +204,7 @@ feature, you may need to run `dart run build_runner clean` and then rebuild.
       if (!p.isWithin(p.current, logPerformanceDir)) {
         _logger.severe('Performance logs may only be output under the root '
             'package, but got `$logPerformanceDir` which is not.');
-        throw CannotBuildException();
+        throw const CannotBuildException();
       }
       trackPerformance = true;
     }

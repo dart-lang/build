@@ -280,7 +280,7 @@ targets:
         // Same as before, but change the `BuilderOptions` for the first phase.
         var newBuildPhases = [
           InBuildPhase(TestBuilder(), 'a',
-              builderOptions: BuilderOptions({'test': 'option'}),
+              builderOptions: const BuilderOptions({'test': 'option'}),
               targetSources: inputSources,
               hideOutput: false),
           InBuildPhase(
@@ -481,7 +481,7 @@ targets:
           InBuildPhase(TestBuilder(), 'a',
               builderKey: 'testbuilder',
               hideOutput: true,
-              builderOptions: BuilderOptions({'foo': 'bar'}))
+              builderOptions: const BuilderOptions({'foo': 'bar'}))
         ];
 
         var originalAssetGraph = await AssetGraph.build(buildPhases,
@@ -493,7 +493,7 @@ targets:
           InBuildPhase(DelegatingBuilder(TestBuilder()), 'a',
               builderKey: 'testbuilder',
               hideOutput: true,
-              builderOptions: BuilderOptions({'baz': 'zap'}))
+              builderOptions: const BuilderOptions({'baz': 'zap'}))
         ];
         logs.clear();
 
@@ -515,7 +515,8 @@ targets:
           () async {
         var buildPhases = [
           InBuildPhase(TestBuilder(), 'a',
-              hideOutput: true, builderOptions: BuilderOptions({'foo': 'bar'}))
+              hideOutput: true,
+              builderOptions: const BuilderOptions({'foo': 'bar'}))
         ];
 
         var originalAssetGraph = await AssetGraph.build(buildPhases,
@@ -525,7 +526,8 @@ targets:
 
         buildPhases = [
           InBuildPhase(TestBuilder(), 'a',
-              hideOutput: true, builderOptions: BuilderOptions({'baz': 'zap'}))
+              hideOutput: true,
+              builderOptions: const BuilderOptions({'baz': 'zap'}))
         ];
         logs.clear();
 

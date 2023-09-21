@@ -33,8 +33,7 @@ class AnalyzerSummaryException extends _WorkerException {
   @override
   final String message = 'Error creating summary for module';
 
-  AnalyzerSummaryException(AssetId summaryId, String error)
-      : super(summaryId, error);
+  AnalyzerSummaryException(super.summaryId, super.error);
 }
 
 /// An [Exception] that is thrown when the common frontend fails to create a
@@ -43,7 +42,7 @@ class KernelException extends _WorkerException {
   @override
   final String message = 'Error creating kernel summary for module';
 
-  KernelException(AssetId summaryId, String error) : super(summaryId, error);
+  KernelException(super.summaryId, super.error);
 }
 
 /// An [Exception] that is thrown when there are some missing modules.

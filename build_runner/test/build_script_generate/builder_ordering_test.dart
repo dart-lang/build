@@ -22,14 +22,14 @@ void main() {
             },
             'b': {
               'builder_factories': ['createBuilder'],
-              'build_extensions': {},
+              'build_extensions': <String, List<String>>{},
               'target': '',
               'import': '',
               'runs_before': [':a'],
             },
             'c': {
               'builder_factories': ['createBuilder'],
-              'build_extensions': {},
+              'build_extensions': <String, List<String>>{},
               'target': '',
               'import': '',
             },
@@ -55,13 +55,13 @@ void main() {
               },
               'b': {
                 'builder_factories': ['createBuilder'],
-                'build_extensions': {},
+                'build_extensions': <String, List<String>>{},
                 'target': '',
                 'import': '',
               },
               'c': {
                 'builder_factories': ['createBuilder'],
-                'build_extensions': {},
+                'build_extensions': <String, List<String>>{},
                 'target': '',
                 'import': '',
               },
@@ -99,14 +99,14 @@ void main() {
               },
               'b': {
                 'builder_factories': ['createBuilder'],
-                'build_extensions': {},
+                'build_extensions': <String, List<String>>{},
                 'target': '',
                 'import': '',
                 'runs_before': [':a'],
               },
               'c': {
                 'builder_factories': ['createBuilder'],
-                'build_extensions': {},
+                'build_extensions': <String, List<String>>{},
                 'target': '',
                 'import': '',
               },
@@ -134,7 +134,7 @@ void main() {
           'builders': {
             'runs_second': {
               'builder_factories': ['createBuilder'],
-              'build_extensions': {},
+              'build_extensions': <String, List<String>>{},
               'target': '',
               'import': '',
               'required_inputs': ['.first_output'],
@@ -162,7 +162,7 @@ void main() {
           'builders': {
             'builder_a': {
               'builder_factories': ['createBuilder'],
-              'build_extensions': {},
+              'build_extensions': <String, List<String>>{},
               'target': '',
               'import': '',
               'required_inputs': ['.output_b'],

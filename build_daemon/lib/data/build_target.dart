@@ -59,7 +59,7 @@ abstract class OutputLocation
   static Serializer<OutputLocation> get serializer =>
       _$outputLocationSerializer;
 
-  factory OutputLocation([Function(OutputLocationBuilder b) updates]) =
+  factory OutputLocation([void Function(OutputLocationBuilder b) updates]) =
       _$OutputLocation;
 
   OutputLocation._();

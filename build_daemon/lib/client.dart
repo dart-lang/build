@@ -6,13 +6,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:build_daemon/data/build_target.dart';
 import 'package:built_value/serializer.dart';
 import 'package:web_socket_channel/io.dart';
 
 import 'constants.dart';
 import 'data/build_request.dart';
 import 'data/build_status.dart';
+import 'data/build_target.dart';
 import 'data/build_target_request.dart';
 import 'data/serializers.dart';
 import 'data/server_log.dart';

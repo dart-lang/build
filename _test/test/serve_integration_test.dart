@@ -26,8 +26,8 @@ void main() {
     // too many connections.
     httpClient = HttpClient()
       ..maxConnectionsPerHost = 200
-      ..idleTimeout = Duration(seconds: 30)
-      ..connectionTimeout = Duration(seconds: 30);
+      ..idleTimeout = const Duration(seconds: 30)
+      ..connectionTimeout = const Duration(seconds: 30);
   });
 
   tearDownAll(() {
@@ -197,7 +197,7 @@ void main() {
         fail('Error reading $path: $e:$s');
       } finally {
         request?.abort();
-        await response?.drain().catchError((_) {});
+        await response?.drain<void>().catchError((_) {});
       }
     }
 

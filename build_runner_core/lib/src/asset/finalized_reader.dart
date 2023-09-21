@@ -6,14 +6,14 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:build_runner_core/build_runner_core.dart';
-import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
+import '../../build_runner_core.dart';
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../asset_graph/optional_output_tracker.dart';
+import '../generate/phase.dart';
 import '../package_graph/target_graph.dart';
 
 /// An [AssetReader] which ignores deleted files.

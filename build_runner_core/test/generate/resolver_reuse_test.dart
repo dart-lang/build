@@ -51,9 +51,9 @@ void main() {
       await testBuilders([
         applyToRoot(optionalWithResolver, isOptional: true),
         applyToRoot(nonOptionalWritesImportedFile,
-            generateFor: InputSet(include: ['lib/file.dart'])),
+            generateFor: const InputSet(include: ['lib/file.dart'])),
         applyToRoot(nonOptionalResolveImportedFile,
-            generateFor: InputSet(include: ['lib/file.dart'])),
+            generateFor: const InputSet(include: ['lib/file.dart'])),
       ], {
         'a|lib/file.dart': 'import "file.imported.dart";',
       }, outputs: {
@@ -76,7 +76,7 @@ void main() {
                       buildStep.inputId.changeExtension('.g1.dart'),
                       'class Annotation {const Annotation();}');
                 }),
-            generateFor: InputSet(include: ['lib/a.dart'])),
+            generateFor: const InputSet(include: ['lib/a.dart'])),
         applyToRoot(
             TestBuilder(
                 buildExtensions: replaceExtension('.dart', '.g2.dart'),
@@ -91,7 +91,7 @@ void main() {
                   slowBuilderCompleter.complete();
                 }),
             isOptional: true,
-            generateFor: InputSet(include: ['lib/a.dart'])),
+            generateFor: const InputSet(include: ['lib/a.dart'])),
         applyToRoot(
             TestBuilder(
                 buildExtensions: replaceExtension('.dart', '.slow.dart'),
@@ -101,14 +101,14 @@ void main() {
                       buildStep.inputId.changeExtension('.slow.dart'), '');
                 }),
             isOptional: true,
-            generateFor: InputSet(include: ['lib/b.dart'])),
+            generateFor: const InputSet(include: ['lib/b.dart'])),
         applyToRoot(
             TestBuilder(
                 buildExtensions: replaceExtension('.dart', '.root'),
                 build: (buildStep, _) async {
                   await buildStep.inputLibrary;
                 }),
-            generateFor: InputSet(include: ['lib/b.dart'])),
+            generateFor: const InputSet(include: ['lib/b.dart'])),
       ];
       await testBuilders(builders, {
         'a|lib/a.dart': '''

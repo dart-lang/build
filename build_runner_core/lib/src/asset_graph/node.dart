@@ -94,8 +94,7 @@ class InternalAssetNode extends AssetNode {
   @override
   bool get isValidInput => false;
 
-  InternalAssetNode(AssetId id, {Digest? lastKnownDigest})
-      : super(id, lastKnownDigest: lastKnownDigest);
+  InternalAssetNode(super.id, {super.lastKnownDigest});
 
   @override
   String toString() => 'InternalAssetNode: $id';
@@ -103,8 +102,7 @@ class InternalAssetNode extends AssetNode {
 
 /// A node which is an original source asset (not generated).
 class SourceAssetNode extends AssetNode {
-  SourceAssetNode(AssetId id, {Digest? lastKnownDigest})
-      : super(id, lastKnownDigest: lastKnownDigest);
+  SourceAssetNode(super.id, {super.lastKnownDigest});
 
   @override
   String toString() => 'SourceAssetNode: $id';
@@ -163,8 +161,8 @@ class GeneratedAssetNode extends AssetNode implements NodeWithInputs {
   final bool isHidden;
 
   GeneratedAssetNode(
-    AssetId id, {
-    Digest? lastKnownDigest,
+    super.id, {
+    super.lastKnownDigest,
     Iterable<AssetId>? inputs,
     this.previousInputsDigest,
     required this.isHidden,
@@ -174,8 +172,7 @@ class GeneratedAssetNode extends AssetNode implements NodeWithInputs {
     required this.isFailure,
     required this.primaryInput,
     required this.builderOptionsId,
-  })  : inputs = inputs != null ? HashSet.from(inputs) : HashSet(),
-        super(id, lastKnownDigest: lastKnownDigest);
+  }) : inputs = inputs != null ? HashSet.from(inputs) : HashSet();
 
   @override
   String toString() =>
@@ -199,7 +196,7 @@ abstract class _SyntheticAssetNode implements AssetNode {
 /// don't exist in the graph. We still need to set up proper dependencies so
 /// that if that asset gets added later the outputs are properly invalidated.
 class SyntheticSourceAssetNode extends AssetNode with _SyntheticAssetNode {
-  SyntheticSourceAssetNode(AssetId id) : super._forMixins(id);
+  SyntheticSourceAssetNode(super.id) : super._forMixins();
 }
 
 /// A [_SyntheticAssetNode] which represents an individual [BuilderOptions]
@@ -209,8 +206,8 @@ class SyntheticSourceAssetNode extends AssetNode with _SyntheticAssetNode {
 /// [GeneratedAssetNode]s should depend on one of these nodes, which represents
 /// their configuration.
 class BuilderOptionsAssetNode extends AssetNode with _SyntheticAssetNode {
-  BuilderOptionsAssetNode(AssetId id, Digest lastKnownDigest)
-      : super._forMixinsWithDigest(id, lastKnownDigest);
+  BuilderOptionsAssetNode(super.id, Digest super.lastKnownDigest)
+      : super._forMixinsWithDigest();
 
   @override
   String toString() => 'BuildOptionsAssetNode: $id';
@@ -222,7 +219,7 @@ class PlaceHolderAssetNode extends AssetNode with _SyntheticAssetNode {
   @override
   bool get isValidInput => true;
 
-  PlaceHolderAssetNode(AssetId id) : super._forMixins(id);
+  PlaceHolderAssetNode(super.id) : super._forMixins();
 
   @override
   String toString() => 'PlaceHolderAssetNode: $id';
@@ -240,9 +237,9 @@ class PostProcessAnchorNode extends AssetNode with _SyntheticAssetNode {
   Digest? previousInputsDigest;
 
   PostProcessAnchorNode(
-      AssetId id, this.primaryInput, this.actionNumber, this.builderOptionsId,
+      super.id, this.primaryInput, this.actionNumber, this.builderOptionsId,
       {this.previousInputsDigest})
-      : super._forMixins(id);
+      : super._forMixins();
 
   PostProcessAnchorNode.forInputAndAction(
       AssetId primaryInput, int actionNumber, AssetId builderOptionsId)
@@ -277,10 +274,9 @@ class GlobAssetNode extends InternalAssetNode implements NodeWithInputs {
   @override
   NodeState state;
 
-  GlobAssetNode(AssetId id, this.glob, this.phaseNumber, this.state,
-      {HashSet<AssetId>? inputs, Digest? lastKnownDigest, this.results})
-      : inputs = inputs ?? HashSet(),
-        super(id, lastKnownDigest: lastKnownDigest);
+  GlobAssetNode(super.id, this.glob, this.phaseNumber, this.state,
+      {HashSet<AssetId>? inputs, super.lastKnownDigest, this.results})
+      : inputs = inputs ?? HashSet();
 
   static AssetId createId(String package, Glob glob, int phaseNum) => AssetId(
       package, 'glob.$phaseNum.${base64.encode(utf8.encode(glob.pattern))}');

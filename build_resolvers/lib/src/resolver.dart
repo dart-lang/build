@@ -490,7 +490,10 @@ void _warnOnLanguageVersionMismatch() async {
         .getUrl(Uri.https('pub.dartlang.org', 'api/packages/analyzer'));
     var response = await request.close();
     var content = StringBuffer();
-    await response.transform(utf8.decoder).listen(content.write).asFuture();
+    await response
+        .transform(utf8.decoder)
+        .listen(content.write)
+        .asFuture<void>();
     var json = jsonDecode(content.toString()) as Map<String, Object?>;
     var latestAnalyzer = (json['latest'] as Map<String, Object?>)['version'];
     var analyzerPubspecPath =

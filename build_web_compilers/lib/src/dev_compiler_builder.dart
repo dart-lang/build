@@ -115,7 +115,7 @@ class DevCompilerBuilder implements Builder {
       return;
     }
 
-    Future<void> handleError(e) async {
+    Future<void> handleError(Object e) async {
       await buildStep.writeAsString(
           module.primarySource.changeExtension(jsModuleErrorsExtension), '$e');
       log.severe('$e');

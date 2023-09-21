@@ -31,7 +31,7 @@ class Level extends EnumClass implements Comparable<Level> {
   // ignore: constant_identifier_names
   static const Level SHOUT = _$shout;
 
-  const Level._(String name) : super(name);
+  const Level._(super.name);
 
   static BuiltSet<Level> get values => _$values;
   static Level valueOf(String name) => _$valueOf(name);
@@ -70,7 +70,7 @@ logging.Level toLoggingLevel(Level level) =>
 abstract class ServerLog implements Built<ServerLog, ServerLogBuilder> {
   static Serializer<ServerLog> get serializer => _$serverLogSerializer;
 
-  factory ServerLog([Function(ServerLogBuilder b) updates]) = _$ServerLog;
+  factory ServerLog([void Function(ServerLogBuilder b) updates]) = _$ServerLog;
 
   factory ServerLog.fromLogRecord(logging.LogRecord record) =>
       ServerLog((b) => b

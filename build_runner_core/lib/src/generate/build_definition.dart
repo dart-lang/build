@@ -164,7 +164,7 @@ class AssetTracker {
 
   Stream<AssetId> _listAssetIds(TargetNode targetNode) {
     return targetNode.sourceIncludes.isEmpty
-        ? Stream<AssetId>.empty()
+        ? const Stream<AssetId>.empty()
         : StreamGroup.merge(targetNode.sourceIncludes.map((glob) =>
             _listIdsSafe(glob, package: targetNode.package.name)
                 .where((id) =>
@@ -236,7 +236,7 @@ class _Loader {
 
         if (_runningFromSnapshot) {
           // We have to be regenerated if running from a snapshot.
-          throw BuildScriptChangedException();
+          throw const BuildScriptChangedException();
         }
 
         inputSources.removeAll(deletedSourceOutputs);
@@ -254,7 +254,7 @@ class _Loader {
               internalSources, _options.packageGraph, _environment.reader);
         } on DuplicateAssetNodeException catch (e, st) {
           _logger.severe('Conflicting outputs', e, st);
-          throw CannotBuildException();
+          throw const CannotBuildException();
         }
         buildScriptUpdates = await BuildScriptUpdates.create(
             _environment.reader, _options.packageGraph, assetGraph!,
@@ -273,7 +273,7 @@ class _Loader {
               'with files that a Builder may produce. These must be removed or '
               'the Builders disabled before a build can continue: '
               '${conflictsInDeps.map((a) => a.uri).join('\n')}');
-          throw CannotBuildException();
+          throw const CannotBuildException();
         }
       });
 
@@ -318,7 +318,7 @@ class _Loader {
               'or\n'
               '  new BuilderApplication(..., hideOutput: true)\n'
               '... instead?');
-          throw CannotBuildException();
+          throw const CannotBuildException();
         }
       }
     }
@@ -386,7 +386,7 @@ class _Loader {
             FailureReporter.cleanErrorCache(),
           ]);
           if (_runningFromSnapshot) {
-            throw BuildScriptChangedException();
+            throw const BuildScriptChangedException();
           }
           return null;
         }
@@ -399,7 +399,7 @@ class _Loader {
             FailureReporter.cleanErrorCache(),
           ]);
           if (_runningFromSnapshot) {
-            throw BuildScriptChangedException();
+            throw const BuildScriptChangedException();
           }
           return null;
         }
@@ -556,7 +556,7 @@ class _Loader {
                 'conflicting assets are removed or the Builders which may '
                 'output them are disabled. The outputs are: '
                 '${conflictingAssets.map((a) => a.path).join('\n')}');
-            throw CannotBuildException();
+            throw const CannotBuildException();
           case 2:
             _logger.info('Conflicts:\n${conflictingAssets.join('\n')}');
             // Logging should be sync :(
@@ -568,7 +568,7 @@ class _Loader {
             'These outputs must be removed manually or the build can be '
             'run with `--delete-conflicting-outputs`. The outputs are: '
             '${conflictingAssets.map((a) => a.path).join('\n')}');
-        throw CannotBuildException();
+        throw const CannotBuildException();
       }
     }
   }

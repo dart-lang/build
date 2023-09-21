@@ -11,14 +11,6 @@ import 'package:build_daemon/daemon_builder.dart';
 import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart' hide OutputLocation;
 import 'package:build_daemon/data/server_log.dart';
-import 'package:build_runner/src/entrypoint/options.dart';
-import 'package:build_runner/src/package_graph/build_config_overrides.dart';
-import 'package:build_runner/src/watcher/asset_change.dart';
-import 'package:build_runner/src/watcher/change_filter.dart';
-import 'package:build_runner/src/watcher/collect_changes.dart';
-import 'package:build_runner/src/watcher/delete_writer.dart';
-import 'package:build_runner/src/watcher/graph_watcher.dart';
-import 'package:build_runner/src/watcher/node_watcher.dart';
 import 'package:build_runner_core/build_runner_core.dart'
     hide BuildResult, BuildStatus;
 import 'package:build_runner_core/build_runner_core.dart' as core
@@ -30,6 +22,14 @@ import 'package:build_runner_core/src/generate/build_impl.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
+import '../entrypoint/options.dart';
+import '../package_graph/build_config_overrides.dart';
+import '../watcher/asset_change.dart';
+import '../watcher/change_filter.dart';
+import '../watcher/collect_changes.dart';
+import '../watcher/delete_writer.dart';
+import '../watcher/graph_watcher.dart';
+import '../watcher/node_watcher.dart';
 import 'change_providers.dart';
 
 /// A Daemon Builder that uses build_runner_core for building.
@@ -62,7 +62,7 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
   FinalizedReader get reader => _builder.finalizedReader;
 
-  final _buildScriptUpdateCompleter = Completer();
+  final _buildScriptUpdateCompleter = Completer<void>();
   Future<void> get buildScriptUpdated => _buildScriptUpdateCompleter.future;
 
   @override

@@ -5,12 +5,12 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:http_multi_server/http_multi_server.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 
+import '../entrypoint/options.dart';
 import '../server/server.dart';
 import 'daemon_builder.dart';
 
@@ -36,7 +36,7 @@ class AssetServer {
       return Response.notFound('');
     }).add(AssetHandler(builder.reader, rootPackage).handle);
 
-    var pipeline = Pipeline();
+    var pipeline = const Pipeline();
     if (options.logRequests) {
       pipeline = pipeline.addMiddleware(
           logRequests(logger: (message, isError) => _logger.finest(message)));

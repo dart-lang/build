@@ -10,13 +10,13 @@ import 'dart:io';
 import 'package:bazel_worker/bazel_worker.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
-import 'package:build_modules/build_modules.dart';
 import 'package:crypto/crypto.dart';
 import 'package:graphs/graphs.dart' show crawlAsync;
 import 'package:path/path.dart' as p;
 import 'package:scratch_space/scratch_space.dart';
 import 'package:stream_transform/stream_transform.dart';
 
+import '../build_modules.dart';
 import 'errors.dart';
 import 'module_cache.dart';
 import 'workers.dart';

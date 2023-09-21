@@ -179,7 +179,7 @@ class BuilderApplication {
         final logger = Logger(builderKey);
         final builder =
             _scopeLogSync(() => builderFactory(optionsWithDefaults), logger);
-        if (builder == null) throw CannotBuildException();
+        if (builder == null) throw const CannotBuildException();
         _validateBuilder(builder);
         return InBuildPhase(builder, package.name,
             builderKey: builderKey,
@@ -220,7 +220,7 @@ class BuilderApplication {
       final logger = Logger(builderKey);
       final builder =
           _scopeLogSync(() => builderFactory(optionsWithDefaults), logger);
-      if (builder == null) throw CannotBuildException();
+      if (builder == null) throw const CannotBuildException();
       _validatePostProcessBuilder(builder);
       var builderAction = PostBuildAction(builder, package.name,
           builderOptions: optionsWithDefaults,
@@ -272,7 +272,7 @@ Future<List<BuildPhase>> createBuildPhases(
             if (!targetGraph.allModules.containsKey(key)) {
               _logger.severe('${node.target.key} declares a dependency on $key '
                   'but it does not exist');
-              throw CannotBuildException();
+              throw const CannotBuildException();
             }
             return targetGraph.allModules[key]!;
           }),

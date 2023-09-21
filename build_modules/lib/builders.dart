@@ -3,9 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_modules/build_modules.dart';
-import 'package:build_modules/src/module_cleanup.dart';
-import 'package:build_modules/src/module_library_builder.dart';
+import 'build_modules.dart';
+import 'src/module_cleanup.dart';
+import 'src/module_library_builder.dart';
 
 Builder moduleLibraryBuilder(_) => const ModuleLibraryBuilder();
 

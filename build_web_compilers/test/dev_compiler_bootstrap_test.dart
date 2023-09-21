@@ -54,7 +54,7 @@ void main() {
         ])),
       };
       await testBuilder(
-          WebEntrypointBuilder(WebCompiler.DartDevc,
+          const WebEntrypointBuilder(WebCompiler.DartDevc,
               nativeNullAssertions: false),
           assets,
           outputs: expectedOutputs);
@@ -93,7 +93,7 @@ void main() {
         'a|web/b.dart.js': isNotEmpty,
       };
       await testBuilder(
-          WebEntrypointBuilder(WebCompiler.DartDevc,
+          const WebEntrypointBuilder(WebCompiler.DartDevc,
               nativeNullAssertions: false),
           assets,
           outputs: expectedOutputs);
@@ -116,7 +116,7 @@ void main() {
         'a|lib/app.dart.js': isNotEmpty,
       };
       await testBuilder(
-          WebEntrypointBuilder(WebCompiler.DartDevc,
+          const WebEntrypointBuilder(WebCompiler.DartDevc,
               nativeNullAssertions: false),
           assets,
           outputs: expectedOutputs);
@@ -125,7 +125,7 @@ void main() {
     test('can enable canary features for SDK', () async {
       var sdkAssets = <String, Object>{'build_web_compilers|fake.txt': ''};
       await testBuilderAndCollectAssets(
-          sdkJsCompile(BuilderOptions({'canary': true})), sdkAssets);
+          sdkJsCompile(const BuilderOptions({'canary': true})), sdkAssets);
 
       var expectedOutputs = {
         'build_web_compilers|fake.txt': isEmpty,
@@ -139,7 +139,7 @@ void main() {
     test('does not enable canary features for SDK by default', () async {
       var sdkAssets = <String, Object>{'build_web_compilers|fake.txt': ''};
       await testBuilderAndCollectAssets(
-          sdkJsCompile(BuilderOptions({})), sdkAssets);
+          sdkJsCompile(const BuilderOptions({})), sdkAssets);
 
       var expectedOutputs = {
         'build_web_compilers|fake.txt': isEmpty,
@@ -161,7 +161,7 @@ Future<void> runPrerequisites(Map<String, Object> assets) async {
   var sdkAssets = <String, Object>{'build_web_compilers|fake.txt': ''};
   await testBuilderAndCollectAssets(sdkJsCopyRequirejs(null), sdkAssets);
   await testBuilderAndCollectAssets(
-      sdkJsCompile(BuilderOptions({})), sdkAssets);
+      sdkJsCompile(const BuilderOptions({})), sdkAssets);
   assets.addAll(sdkAssets);
 
   await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
@@ -170,7 +170,7 @@ Future<void> runPrerequisites(Map<String, Object> assets) async {
       MetaModuleCleanBuilder(ddcPlatform), assets);
   await testBuilderAndCollectAssets(ModuleBuilder(ddcPlatform), assets);
   await testBuilderAndCollectAssets(
-      ddcKernelBuilder(BuilderOptions({})), assets);
+      ddcKernelBuilder(const BuilderOptions({})), assets);
   await testBuilderAndCollectAssets(
       DevCompilerBuilder(platform: ddcPlatform), assets);
 }

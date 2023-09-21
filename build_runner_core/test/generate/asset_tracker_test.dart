@@ -28,7 +28,7 @@ void main() {
         ]),
         d.dir('.dart_tool', [
           d.file('package_config.json',
-              jsonEncode({'configVersion': 2, 'packages': []})),
+              jsonEncode({'configVersion': 2, 'packages': <Object>[]})),
         ]),
       ]).create();
       var packageGraph = PackageGraph.fromRoot(PackageNode('a',

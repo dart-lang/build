@@ -21,7 +21,7 @@ final defaultIdleTimeoutSec = defaultIdleTimeout.inSeconds;
 void main() {
   var testDaemons = <Process>[];
   var testWorkspaces = <String>[];
-  var uuid = Uuid();
+  var uuid = const Uuid();
   group('Daemon', () {
     setUp(() {
       testDaemons.clear();
@@ -72,7 +72,7 @@ void main() {
       var daemonTwo = await _runDaemon(workspace);
       testDaemons.addAll([daemonOne, daemonTwo]);
       expect(await _statusOf(daemonTwo, logPrefix: 'two'), 'ALREADY RUNNING');
-    }, timeout: Timeout.factor(2));
+    }, timeout: const Timeout.factor(2));
     test('can run if another daemon is running in a different workspace',
         () async {
       var workspace1 = uuid.v1();
@@ -83,7 +83,7 @@ void main() {
       var daemonTwo = await _runDaemon(workspace2);
       testDaemons.addAll([daemonOne, daemonTwo]);
       expect(await _statusOf(daemonTwo), 'RUNNING');
-    }, timeout: Timeout.factor(2));
+    }, timeout: const Timeout.factor(2));
     test('can start two daemons at the same time', () async {
       var workspace = uuid.v1();
       testWorkspaces.add(workspace);
@@ -92,7 +92,7 @@ void main() {
       var daemonTwo = await _runDaemon(workspace);
       expect(await _statusOf(daemonTwo), 'ALREADY RUNNING');
       testDaemons.addAll([daemonOne, daemonTwo]);
-    }, timeout: Timeout.factor(2));
+    }, timeout: const Timeout.factor(2));
     test('logs the version when running', () async {
       var workspace = uuid.v1();
       testWorkspaces.add(workspace);

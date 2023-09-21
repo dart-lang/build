@@ -4,18 +4,19 @@
 
 import 'dart:async';
 
-import 'package:build_daemon/daemon_builder.dart';
-import 'package:build_daemon/data/build_status.dart';
-import 'package:build_daemon/data/build_target.dart';
-import 'package:build_daemon/data/server_log.dart';
 import 'package:watcher/watcher.dart' show WatchEvent;
+
+import '../../daemon_builder.dart';
+import '../../data/build_status.dart';
+import '../../data/build_target.dart';
+import '../../data/server_log.dart';
 
 class FakeDaemonBuilder implements DaemonBuilder {
   @override
-  Stream<BuildResults> get builds => Stream.empty();
+  Stream<BuildResults> get builds => const Stream.empty();
 
   @override
-  Stream<ServerLog> get logs => Stream.empty();
+  Stream<ServerLog> get logs => const Stream.empty();
 
   @override
   Future<void> build(

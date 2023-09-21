@@ -317,7 +317,7 @@ class BuildServer {
     final request = await _client.get('localhost', 8080, path);
     final response = await request.close();
     expect(response.statusCode, 404);
-    await response.drain();
+    await response.drain<void>();
   }
 
   /// Request [path] from the default server and expect it returns a 200

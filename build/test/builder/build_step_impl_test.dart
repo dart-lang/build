@@ -31,7 +31,7 @@ void main() {
 
     setUp(() {
       var reader = StubAssetReader();
-      var writer = StubAssetWriter();
+      var writer = const StubAssetWriter();
       primary = makeAssetId();
       outputs = List.generate(5, (index) => makeAssetId());
       buildStep = BuildStepImpl(primary, outputs, reader, writer,
@@ -41,9 +41,9 @@ void main() {
     test('doesnt allow non-expected outputs', () {
       var id = makeAssetId();
       expect(() => buildStep.writeAsString(id, '$id'),
-          throwsA(TypeMatcher<UnexpectedOutputException>()));
+          throwsA(const TypeMatcher<UnexpectedOutputException>()));
       expect(() => buildStep.writeAsBytes(id, [0]),
-          throwsA(TypeMatcher<UnexpectedOutputException>()));
+          throwsA(const TypeMatcher<UnexpectedOutputException>()));
     });
 
     test('reports allowed outputs', () {
@@ -201,7 +201,7 @@ void main() {
 
     setUp(() {
       var reader = StubAssetReader();
-      var writer = StubAssetWriter();
+      var writer = const StubAssetWriter();
       primary = makeAssetId();
       output = makeAssetId();
       buildStep = BuildStepImpl(primary, [output], reader, writer,
@@ -217,7 +217,7 @@ void main() {
 
   test('reportUnusedAssets forwards calls if provided', () {
     var reader = StubAssetReader();
-    var writer = StubAssetWriter();
+    var writer = const StubAssetWriter();
     var unused = <AssetId>{};
     var buildStep = BuildStepImpl(makeAssetId(), [], reader, writer,
         AnalyzerResolvers.custom(), resourceManager, _unsupported,

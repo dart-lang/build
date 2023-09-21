@@ -6,13 +6,14 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:build_runner/src/build_script_generate/build_script_generate.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:frontend_server_client/frontend_server_client.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:stack_trace/stack_trace.dart';
+
+import 'build_script_generate.dart';
 
 final _logger = Logger('Bootstrap');
 
@@ -257,7 +258,7 @@ Future<bool> _checkImportantPackageDepsAndExperiments(
   return true;
 }
 
-void _defaultHandleUncaughtError(error, stackTrace) {
+void _defaultHandleUncaughtError(Object error, StackTrace stackTrace) {
   stderr
     ..writeln('\n\nYou have hit a bug in build_runner')
     ..writeln('Please file an issue with reproduction steps at '

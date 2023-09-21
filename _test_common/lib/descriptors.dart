@@ -52,7 +52,7 @@ Future<d.FileDescriptor> pubspec(
   var packageConfig =
       await loadPackageConfigUri((await Isolate.packageConfig)!);
 
-  void addPathDep(package, path) {
+  void addPathDep(String package, String path) {
     buffer
       ..writeln('  $package:')
       ..writeln('    path: $path');

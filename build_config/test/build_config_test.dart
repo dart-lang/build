@@ -15,7 +15,8 @@ void main() {
         key: 'example:a',
         builders: {
           'b:b': TargetBuilderConfig(
-              isEnabled: true, generateFor: InputSet(include: ['lib/a.dart'])),
+              isEnabled: true,
+              generateFor: const InputSet(include: ['lib/a.dart'])),
           'c:c': TargetBuilderConfig(isEnabled: false),
           'example:h':
               TargetBuilderConfig(isEnabled: true, options: {'foo': 'bar'}),
@@ -24,18 +25,18 @@ void main() {
         },
         // Expecting $default => example:example
         dependencies: ['example:example', 'b:b', 'c:d'],
-        sources: InputSet(include: ['lib/a.dart', 'lib/src/a/**']),
+        sources: const InputSet(include: ['lib/a.dart', 'lib/src/a/**']),
       ),
       'example:example': createBuildTarget(
         'example',
         dependencies: ['f:f', 'example:a'],
-        sources: InputSet(
+        sources: const InputSet(
             include: ['lib/e.dart', 'lib/src/e/**'],
             exclude: ['lib/src/e/g.dart']),
       ),
       'example:b': createBuildTarget(
         'example',
-        sources: InputSet(include: ['lib/b.dart']),
+        sources: const InputSet(include: ['lib/b.dart']),
         dependencies: [],
         autoApplyBuilders: false,
         builders: {
@@ -61,10 +62,10 @@ void main() {
         requiredInputs: ['.dart'],
         runsBefore: {'foo_builder:foo_builder'},
         appliesBuilders: {'foo_builder:foo_builder'},
-        defaults: TargetBuilderConfigDefaults(
-          generateFor: const InputSet(include: ['lib/**']),
-          options: const {'foo': 'bar'},
-          releaseOptions: const {'baz': 'bop'},
+        defaults: const TargetBuilderConfigDefaults(
+          generateFor: InputSet(include: ['lib/**']),
+          options: {'foo': 'bar'},
+          releaseOptions: {'baz': 'bop'},
         ),
       ),
     });
@@ -75,10 +76,10 @@ void main() {
         key: 'example:p',
         builderFactory: 'createPostProcessBuilder',
         import: 'package:example/p.dart',
-        defaults: TargetBuilderConfigDefaults(
-          generateFor: const InputSet(include: ['web/**']),
-          options: const {'foo': 'bar'},
-          releaseOptions: const {'baz': 'bop'},
+        defaults: const TargetBuilderConfigDefaults(
+          generateFor: InputSet(include: ['web/**']),
+          options: {'foo': 'bar'},
+          releaseOptions: {'baz': 'bop'},
         ),
       ),
     });
@@ -99,7 +100,7 @@ void main() {
       'example:example': createBuildTarget(
         'example',
         dependencies: {'a:a', 'b:b'},
-        sources: InputSet(),
+        sources: const InputSet(),
       ),
     });
     expectBuilderDefinitions(buildConfig.builderDefinitions, {
@@ -130,7 +131,7 @@ void main() {
       'example:example': createBuildTarget(
         'example',
         dependencies: {'a:a', 'b:b'},
-        sources: InputSet(),
+        sources: const InputSet(),
       ),
     });
     expectBuilderDefinitions(buildConfig.builderDefinitions, {});
@@ -270,29 +271,29 @@ void expectGlobalOptions(Map<String, GlobalBuilderConfig> actual,
   }
 }
 
-Matcher _matchesBuilderDefinition(BuilderDefinition definition) => TypeMatcher<
-        BuilderDefinition>()
-    .having((d) => d.builderFactories, 'builderFactories',
-        definition.builderFactories)
-    .having(
-        (d) => d.buildExtensions, 'buildExtensions', definition.buildExtensions)
-    .having(
-        (d) => d.requiredInputs, 'requiredInputs', definition.requiredInputs)
-    .having((d) => d.runsBefore, 'runsBefore', definition.runsBefore)
-    .having(
-        (d) => d.appliesBuilders, 'appliesBuilders', definition.appliesBuilders)
-    .having((d) => d.defaults, 'defaults',
-        _matchesBuilderConfigDefaults(definition.defaults))
-    .having((d) => d.autoApply, 'autoApply', definition.autoApply)
-    .having((d) => d.isOptional, 'isOptional', definition.isOptional)
-    .having((d) => d.buildTo, 'buildTo', definition.buildTo)
-    .having((d) => d.import, 'import', definition.import)
-    .having((d) => d.key, 'key', definition.key)
-    .having((d) => d.package, 'package', definition.package);
+Matcher _matchesBuilderDefinition(BuilderDefinition definition) =>
+    const TypeMatcher<BuilderDefinition>()
+        .having((d) => d.builderFactories, 'builderFactories',
+            definition.builderFactories)
+        .having((d) => d.buildExtensions, 'buildExtensions',
+            definition.buildExtensions)
+        .having((d) => d.requiredInputs, 'requiredInputs',
+            definition.requiredInputs)
+        .having((d) => d.runsBefore, 'runsBefore', definition.runsBefore)
+        .having((d) => d.appliesBuilders, 'appliesBuilders',
+            definition.appliesBuilders)
+        .having((d) => d.defaults, 'defaults',
+            _matchesBuilderConfigDefaults(definition.defaults))
+        .having((d) => d.autoApply, 'autoApply', definition.autoApply)
+        .having((d) => d.isOptional, 'isOptional', definition.isOptional)
+        .having((d) => d.buildTo, 'buildTo', definition.buildTo)
+        .having((d) => d.import, 'import', definition.import)
+        .having((d) => d.key, 'key', definition.key)
+        .having((d) => d.package, 'package', definition.package);
 
 Matcher _matchesPostProcessBuilderDefinition(
         PostProcessBuilderDefinition definition) =>
-    TypeMatcher<PostProcessBuilderDefinition>()
+    const TypeMatcher<PostProcessBuilderDefinition>()
         .having((d) => d.builderFactory, 'builderFactory',
             definition.builderFactory)
         .having((d) => d.defaults, 'defaults',
@@ -302,14 +303,14 @@ Matcher _matchesPostProcessBuilderDefinition(
         .having((d) => d.package, 'package', definition.package);
 
 Matcher _matchesGlobalBuilderConfig(GlobalBuilderConfig config) =>
-    TypeMatcher<GlobalBuilderConfig>()
+    const TypeMatcher<GlobalBuilderConfig>()
         .having((c) => c.options, 'options', config.options)
         .having((c) => c.devOptions, 'devOptions', config.devOptions)
         .having(
             (c) => c.releaseOptions, 'releaseOptions', config.releaseOptions);
 
 Matcher _matchesBuilderConfigDefaults(TargetBuilderConfigDefaults defaults) =>
-    TypeMatcher<TargetBuilderConfigDefaults>()
+    const TypeMatcher<TargetBuilderConfigDefaults>()
         .having((d) => d.generateFor.include, 'generateFor.include',
             defaults.generateFor.include)
         .having((d) => d.generateFor.exclude, 'generateFor.exclude',
@@ -327,21 +328,24 @@ void expectBuildTargets(
   }
 }
 
-Matcher _matchesBuildTarget(BuildTarget target) => TypeMatcher<BuildTarget>()
-    .having((t) => t.package, 'package', target.package)
-    .having(
-        (t) => t.builders, 'builders', _matchesBuilderConfigs(target.builders))
-    .having((t) => t.dependencies, 'dependencies', target.dependencies)
-    .having((t) => t.sources.include, 'sources.include', target.sources.include)
-    .having((t) => t.sources.exclude, 'sources.exclude', target.sources.exclude)
-    .having((t) => t.autoApplyBuilders, 'autoApplyBuilders',
-        target.autoApplyBuilders);
+Matcher _matchesBuildTarget(BuildTarget target) =>
+    const TypeMatcher<BuildTarget>()
+        .having((t) => t.package, 'package', target.package)
+        .having((t) => t.builders, 'builders',
+            _matchesBuilderConfigs(target.builders))
+        .having((t) => t.dependencies, 'dependencies', target.dependencies)
+        .having(
+            (t) => t.sources.include, 'sources.include', target.sources.include)
+        .having(
+            (t) => t.sources.exclude, 'sources.exclude', target.sources.exclude)
+        .having((t) => t.autoApplyBuilders, 'autoApplyBuilders',
+            target.autoApplyBuilders);
 
 Matcher _matchesBuilderConfigs(Map<String, TargetBuilderConfig> configs) =>
     equals(configs.map((k, v) => MapEntry(k, _matchesBuilderConfig(v))));
 
 Matcher _matchesBuilderConfig(TargetBuilderConfig expected) =>
-    TypeMatcher<TargetBuilderConfig>()
+    const TypeMatcher<TargetBuilderConfig>()
         .having((c) => c.isEnabled, 'isEnabled', expected.isEnabled)
         .having((c) => c.options, 'options', expected.options)
         .having((c) => c.devOptions, 'devOptions', expected.devOptions)

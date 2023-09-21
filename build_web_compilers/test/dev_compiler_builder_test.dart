@@ -46,7 +46,7 @@ void main() {
           MetaModuleCleanBuilder(ddcPlatform), assets);
       await testBuilderAndCollectAssets(ModuleBuilder(ddcPlatform), assets);
       await testBuilderAndCollectAssets(
-          ddcKernelBuilder(BuilderOptions({})), assets);
+          ddcKernelBuilder(const BuilderOptions({})), assets);
     });
 
     for (var trackUnusedInputs in [true, false]) {
@@ -254,7 +254,7 @@ void main() {
             MetaModuleCleanBuilder(ddcPlatform), assets);
         await testBuilderAndCollectAssets(ModuleBuilder(ddcPlatform), assets);
         await testBuilderAndCollectAssets(
-            ddcKernelBuilder(BuilderOptions({})), assets);
+            ddcKernelBuilder(const BuilderOptions({})), assets);
       });
 
       test('reports useful messages', () async {

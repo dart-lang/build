@@ -109,7 +109,7 @@ void main() {
   });
 }
 
-final _debounceDelay = Duration(milliseconds: 10);
+final _debounceDelay = const Duration(milliseconds: 10);
 StreamController<ProcessSignal>? _terminateServeController;
 
 /// Start serving files and running builds.
