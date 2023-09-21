@@ -182,7 +182,7 @@ class GeneratedAssetNode extends AssetNode implements NodeWithInputs {
 /// A node which is not a generated or source asset.
 ///
 /// These are typically not readable or valid as inputs.
-abstract class _SyntheticAssetNode implements AssetNode {
+mixin _SyntheticAssetNode implements AssetNode {
   @override
   bool get isReadable => false;
 
