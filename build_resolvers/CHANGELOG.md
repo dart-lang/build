@@ -1,4 +1,4 @@
-## 2.4.0-wip
+## 2.4.0
 
 - Deprecate the unnamed `AnalyzerResolvers` constructor, an replace it with the
   `AnalyzerResolvers.sharedInstance` getter and `AnalyzerResolvers.custom`
