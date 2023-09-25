@@ -66,7 +66,7 @@ void _testSimpleValue(String testName, Object? value, Object? expected) {
 
   assert(value is! Future);
 
-  _testFunction('Future<$testName>', Future.value(value), expected);
+  _testFunction('Future<$testName>', Future<Object?>.value(value), expected);
 
   if (value is Iterable) {
     _testFunction(
