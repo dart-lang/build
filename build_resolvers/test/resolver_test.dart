@@ -297,7 +297,7 @@ void main() {
       }, resolvers: resolvers);
     });
 
-    test('handles removing deleted missing parts', () async {
+    test('handles removing deleted parts', () async {
       var resolvers = AnalyzerResolvers();
       await resolveSources({
         'a|web/main.dart': '''
