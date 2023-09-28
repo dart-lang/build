@@ -297,6 +297,52 @@ void main() {
       }, resolvers: resolvers);
     });
 
+    test('handles removing deleted parts', () async {
+      var resolvers = AnalyzerResolvers();
+      await resolveSources({
+        'a|web/main.dart': '''
+              part 'main.g.dart';
+
+              class A implements B {}
+              ''',
+        'a|web/main.g.dart': '''
+              part of 'main.dart';
+              class B {}
+              ''',
+      }, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        var clazz = lib.getClass('A');
+        expect(clazz, isNotNull);
+        expect(clazz!.interfaces, hasLength(1));
+        expect(clazz.interfaces.first.getDisplayString(withNullability: false),
+            'B');
+      }, resolvers: resolvers);
+
+      // `resolveSources` actually completes prior to the build step being
+      // done, which causes this `reset` call to fail. After a few microtasks
+      // it succeeds though.
+      var tries = 0;
+      while (tries++ < 5) {
+        await Future.value(null);
+        try {
+          resolvers.reset();
+        } catch (_) {}
+      }
+
+      await resolveSources({
+        'a|web/main.dart': '''
+              part 'main.g.dart';
+
+              class A implements B {}
+              ''',
+      }, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        var clazz = lib.getClass('A');
+        expect(clazz, isNotNull);
+        expect(clazz!.interfaces, isEmpty);
+      }, resolvers: resolvers);
+    });
+
     test('should list all libraries', () {
       return resolveSources({
         'a|web/main.dart': '''
