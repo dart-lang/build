@@ -1,5 +1,6 @@
 ## 2.4.7-wip
 
+- Print stack traces for `Error` subtype exceptions in non-verbose mode.
 - Fix broken link in README.md.
 - Bump the min sdk to 3.0.0.
 
