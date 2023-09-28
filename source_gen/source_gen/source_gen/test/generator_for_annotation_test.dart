@@ -178,13 +178,60 @@ void main() {
       },
     );
   });
+
+  group('Unresolved annotations', () {
+    test('cause an error by default', () async {
+      final builder = LibraryBuilder(
+        _StubGenerator<Deprecated>(
+          'Deprecated',
+          (element) => '// ${element.displayName}',
+        ),
+      );
+      expect(
+        testBuilder(
+          builder,
+          {
+            'a|lib/file.dart': '''
+      @doesNotExist
+      library foo;
+      ''',
+          },
+          outputs: {},
+        ),
+        throwsA(isA<UnresolvedAnnotationException>()),
+      );
+    });
+
+    test('do not cause an error if disabled', () async {
+      final builder = LibraryBuilder(
+        _StubGenerator<Deprecated>(
+          'Deprecated',
+          (element) => '// ${element.displayName}',
+          throwOnUnresolved: false,
+        ),
+      );
+      expect(
+        testBuilder(
+          builder,
+          {
+            'a|lib/file.dart': '''
+      @doesNotExist
+      library foo;
+      ''',
+          },
+          outputs: {},
+        ),
+        completes,
+      );
+    });
+  });
 }
 
 class _StubGenerator<T> extends GeneratorForAnnotation<T> {
   final String _name;
   final Object? Function(Element) _behavior;
 
-  const _StubGenerator(this._name, this._behavior);
+  const _StubGenerator(this._name, this._behavior, {super.throwOnUnresolved});
 
   @override
   Object? generateForAnnotatedElement(

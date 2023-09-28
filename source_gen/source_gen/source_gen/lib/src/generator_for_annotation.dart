@@ -41,7 +41,12 @@ import 'type_checker.dart';
 /// [T] and use the [Element] to iterate over fields. The [TypeChecker] utility
 /// may be helpful to check which elements have a given annotation.
 abstract class GeneratorForAnnotation<T> extends Generator {
-  const GeneratorForAnnotation();
+  final bool throwOnUnresolved;
+
+  /// By default, this generator will throw if it encounters unresolved
+  /// annotations. You can override this by setting [throwOnUnresolved] to
+  /// `false`.
+  const GeneratorForAnnotation({this.throwOnUnresolved = true});
 
   TypeChecker get typeChecker => TypeChecker.fromRuntime(T);
 
@@ -49,7 +54,10 @@ abstract class GeneratorForAnnotation<T> extends Generator {
   FutureOr<String> generate(LibraryReader library, BuildStep buildStep) async {
     final values = <String>{};
 
-    for (var annotatedElement in library.annotatedWith(typeChecker)) {
+    for (var annotatedElement in library.annotatedWith(
+      typeChecker,
+      throwOnUnresolved: throwOnUnresolved,
+    )) {
       final generatedValue = generateForAnnotatedElement(
         annotatedElement.element,
         annotatedElement.annotation,

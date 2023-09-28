@@ -1,4 +1,7 @@
-## 1.4.1-wip
+## 1.5.0-wip
+
+- Add `throwOnUnresolved` configuration to the `GeneratorForAnnotation`
+  constructor.
 
 ## 1.4.0
 
