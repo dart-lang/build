@@ -1,5 +1,7 @@
 ## 2.4.1-wip
 
+- Bump the min sdk to 3.0.0.
+
 ## 2.4.0
 
 - Deprecate the unnamed `AnalyzerResolvers` constructor, an replace it with the
@@ -7,7 +9,6 @@
   constructor. These new apis enforce a 1:1 relationship between the
   `BuildAssetUriResolver` instances and `AnalyzerResolvers` instances, which is
   necessary to ensure correct builds in the presence of multiple resolvers.
-- Bump the min sdk to 3.0.0.
 
 ## 2.3.2
 
