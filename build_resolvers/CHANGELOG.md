@@ -1,3 +1,8 @@
+## 2.4.1-wip
+
+- Fix an issue where deleted files were not removed from the analysis engine,
+  and were still accessible via the analyzer apis.
+
 ## 2.4.0
 
 - Deprecate the unnamed `AnalyzerResolvers` constructor, an replace it with the
