@@ -278,7 +278,7 @@ class _SingleBuild {
 
     var heartbeat = HeartbeatLogger(
         transformLog: (original) => '$original, ${_buildProgress()}',
-        waitDuration: Duration(seconds: 1))
+        waitDuration: const Duration(seconds: 1))
       ..start();
     hungActionsHeartbeat.start();
     done.future.whenComplete(() {

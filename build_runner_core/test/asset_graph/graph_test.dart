@@ -222,7 +222,7 @@ void main() {
         expect(excludedNode!.lastKnownDigest, isNull,
             reason: 'Nodes with no output shouldn\'t get an eager digest.');
 
-        expect(graph.get(internalId), TypeMatcher<InternalAssetNode>());
+        expect(graph.get(internalId), const TypeMatcher<InternalAssetNode>());
 
         var primaryOutputNode =
             graph.get(primaryOutputId) as GeneratedAssetNode;
@@ -297,15 +297,16 @@ void main() {
               buildPhases, changes, 'foo', (_) async {}, digestReader);
 
           expect(graph.contains(syntheticId), isTrue);
-          expect(graph.get(syntheticId), TypeMatcher<SourceAssetNode>());
+          expect(graph.get(syntheticId), const TypeMatcher<SourceAssetNode>());
           expect(graph.contains(syntheticOutputId), isTrue);
-          expect(
-              graph.get(syntheticOutputId), TypeMatcher<GeneratedAssetNode>());
+          expect(graph.get(syntheticOutputId),
+              const TypeMatcher<GeneratedAssetNode>());
 
           var newAnchor = PostProcessAnchorNode.forInputAndAction(
               syntheticId, 0, AssetId('foo', '\$builder_options'));
           expect(graph.contains(newAnchor.id), isTrue);
-          expect(graph.get(newAnchor.id), TypeMatcher<PostProcessAnchorNode>());
+          expect(graph.get(newAnchor.id),
+              const TypeMatcher<PostProcessAnchorNode>());
         });
 
         test('add new generated asset which replaces a synthetic node',
@@ -319,8 +320,8 @@ void main() {
               buildPhases, changes, 'foo', (_) async {}, digestReader);
 
           expect(graph.contains(syntheticOutputId), isTrue);
-          expect(
-              graph.get(syntheticOutputId), TypeMatcher<GeneratedAssetNode>());
+          expect(graph.get(syntheticOutputId),
+              const TypeMatcher<GeneratedAssetNode>());
           expect(graph.contains(syntheticOutputId), isTrue);
         });
 
@@ -466,7 +467,7 @@ void main() {
           InBuildPhase(
               TestBuilder(buildExtensions: appendExtension('.2', from: '.1')),
               'foo',
-              targetSources: InputSet(include: ['lib/*.txt'])),
+              targetSources: const InputSet(include: ['lib/*.txt'])),
         ], {
           makeAssetId('foo|lib/1.txt')
         }, <AssetId>{}, fooPackageGraph, digestReader);

@@ -11,10 +11,10 @@ import 'package:build_daemon/constants.dart';
 import 'package:build_daemon/daemon.dart';
 import 'package:build_daemon/data/serializers.dart';
 import 'package:build_daemon/data/server_log.dart';
-import 'package:build_runner/src/daemon/constants.dart';
 import 'package:logging/logging.dart' hide Level;
 
 import '../daemon/asset_server.dart';
+import '../daemon/constants.dart';
 import '../daemon/daemon_builder.dart';
 import 'options.dart';
 import 'watch.dart';
@@ -118,7 +118,7 @@ $logEndMarker'''));
             failureType: 75);
       }));
       await daemon.start(requestedOptions, builder, builder.changeProvider,
-          timeout: Duration(seconds: 60));
+          timeout: const Duration(seconds: 60));
       stdout.writeln(readyToConnectLog);
       await logSub.cancel();
       await daemon.onDone.whenComplete(() async {

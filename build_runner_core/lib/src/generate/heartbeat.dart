@@ -85,10 +85,10 @@ class HeartbeatLogger extends Heartbeat {
   final String Function(String original)? transformLog;
 
   HeartbeatLogger({
-    Duration checkInterval = const Duration(milliseconds: 100),
-    Duration waitDuration = const Duration(seconds: 5),
+    super.checkInterval,
+    super.waitDuration,
     this.transformLog,
-  }) : super(checkInterval: checkInterval, waitDuration: waitDuration);
+  });
 
   /// Start listening to logs.
   @override
@@ -126,9 +126,9 @@ class HungActionsHeartbeat extends Heartbeat {
 
   HungActionsHeartbeat(
     this.listActions, {
-    Duration checkInterval = const Duration(milliseconds: 100),
-    Duration waitDuration = const Duration(seconds: 15),
-  }) : super(checkInterval: checkInterval, waitDuration: waitDuration);
+    super.checkInterval,
+    super.waitDuration = const Duration(seconds: 15),
+  });
 
   @override
   void onTimeout(Duration elapsed) {

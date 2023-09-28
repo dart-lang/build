@@ -53,7 +53,7 @@ void main() {
     test('can asynchronously dispose resources', () async {
       var disposed = false;
       var intResource = Resource(() => 0, dispose: (_) async {
-        await Future<void>.delayed(Duration(milliseconds: 20));
+        await Future<void>.delayed(const Duration(milliseconds: 20));
         disposed = true;
       });
       await resourceManager.fetch(intResource);

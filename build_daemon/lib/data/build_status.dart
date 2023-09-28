@@ -17,7 +17,7 @@ class BuildStatus extends EnumClass {
 
   static Serializer<BuildStatus> get serializer => _$buildStatusSerializer;
 
-  const BuildStatus._(String name) : super(name);
+  const BuildStatus._(super.name);
   static BuildStatus valueOf(String name) => _$valueOf(name);
   static BuiltSet<BuildStatus> get values => _$values;
 }
@@ -55,7 +55,7 @@ abstract class BuildResults
     implements Built<BuildResults, BuildResultsBuilder> {
   static Serializer<BuildResults> get serializer => _$buildResultsSerializer;
 
-  factory BuildResults([Function(BuildResultsBuilder b) updates]) =
+  factory BuildResults([void Function(BuildResultsBuilder b) updates]) =
       _$BuildResults;
 
   BuildResults._();

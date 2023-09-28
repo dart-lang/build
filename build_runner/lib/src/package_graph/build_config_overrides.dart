@@ -42,7 +42,7 @@ Future<Map<String, BuildConfig>> findBuildConfigOverrides(
     final id = AssetId(packageGraph.root.name, 'build.$configKey.yaml');
     if (!await reader.canRead(id)) {
       _log.warning('Cannot find ${id.path} for specified config.');
-      throw CannotBuildException();
+      throw const CannotBuildException();
     }
     final yaml = await reader.readAsString(id);
     final config = BuildConfig.parse(

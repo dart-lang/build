@@ -8,13 +8,13 @@ import 'dart:isolate';
 
 import 'package:args/command_runner.dart';
 import 'package:build/experiments.dart';
-import 'package:build_runner/src/logging/std_io_logging.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
 import '../generate/build.dart';
+import '../logging/std_io_logging.dart';
 import 'base_command.dart';
 import 'options.dart';
 

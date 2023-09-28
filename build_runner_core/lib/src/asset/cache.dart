@@ -120,7 +120,7 @@ class _PathProvidingCachingAssetReader extends CachingAssetReader
   PathProvidingAssetReader get _delegate =>
       super._delegate as PathProvidingAssetReader;
 
-  _PathProvidingCachingAssetReader._(AssetReader delegate) : super._(delegate);
+  _PathProvidingCachingAssetReader._(super.delegate) : super._();
 
   @override
   String pathTo(AssetId id) => _delegate.pathTo(id);

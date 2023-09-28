@@ -7,13 +7,6 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
-import 'package:build_runner/src/package_graph/build_config_overrides.dart';
-import 'package:build_runner/src/watcher/asset_change.dart';
-import 'package:build_runner/src/watcher/change_filter.dart';
-import 'package:build_runner/src/watcher/collect_changes.dart';
-import 'package:build_runner/src/watcher/delete_writer.dart';
-import 'package:build_runner/src/watcher/graph_watcher.dart';
-import 'package:build_runner/src/watcher/node_watcher.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/asset_graph/graph.dart';
@@ -25,7 +18,14 @@ import 'package:stream_transform/stream_transform.dart';
 import 'package:watcher/watcher.dart';
 
 import '../logging/std_io_logging.dart';
+import '../package_graph/build_config_overrides.dart';
 import '../server/server.dart';
+import '../watcher/asset_change.dart';
+import '../watcher/change_filter.dart';
+import '../watcher/collect_changes.dart';
+import '../watcher/delete_writer.dart';
+import '../watcher/graph_watcher.dart';
+import '../watcher/node_watcher.dart';
 import 'terminator.dart';
 
 final _logger = Logger('Watch');
@@ -107,7 +107,7 @@ Future<ServeHandler> watch(
       buildFilters,
       isReleaseMode: isReleaseBuild ?? false);
 
-  unawaited(watch.buildResults.drain().then((_) async {
+  unawaited(watch.buildResults.drain<void>().then((_) async {
     await terminator.cancel();
     await options.logListener.cancel();
   }));
@@ -391,7 +391,7 @@ Future<List<int>> _readOnceExists(AssetId id, AssetReader reader) async {
       return reader.readAsBytes(id);
     }
     tryAgain = watch.elapsedMilliseconds < 1000;
-    await Future.delayed(Duration(milliseconds: 100));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
   }
   throw AssetNotFoundException(id);
 }

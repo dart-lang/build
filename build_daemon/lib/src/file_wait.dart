@@ -18,7 +18,7 @@ Future<bool> waitForFile(File file) async {
   final end = DateTime.now().add(_maxWait);
   while (!DateTime.now().isAfter(end)) {
     if (file.existsSync()) return true;
-    await Future.delayed(_readDelay);
+    await Future<void>.delayed(_readDelay);
   }
   return file.existsSync();
 }

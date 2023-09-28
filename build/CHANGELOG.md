@@ -1,5 +1,7 @@
 ## 2.4.2-wip
 
+- Bump the min sdk to 3.0.0.
+
 ## 2.4.1
 
 - Allow the latest analyzer (6.x.x).

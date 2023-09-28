@@ -100,7 +100,7 @@ void main() {
 
       // Request a build. As there is no ordering guarantee between the two
       // sockets, wait a bit first
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future<void>.delayed(const Duration(milliseconds: 500));
       client.sink.add(jsonEncode(serializers.serialize(BuildRequest())));
 
       expect(

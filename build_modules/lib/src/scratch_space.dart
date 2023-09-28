@@ -68,7 +68,7 @@ final scratchSpaceResource = Resource<ScratchSpace>(() {
       var delayMs = math.pow(10, numTries).floor();
       _logger.info('Failed to delete temp dir ${scratchSpace.tempDir.path}, '
           'retrying in ${delayMs}ms');
-      await Future.delayed(Duration(milliseconds: delayMs));
+      await Future<void>.delayed(Duration(milliseconds: delayMs));
     }
   }
 });

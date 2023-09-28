@@ -15,7 +15,7 @@ import 'in_memory_reader.dart';
 import 'in_memory_writer.dart';
 import 'package_graphs.dart';
 
-Future wait(int milliseconds) =>
+Future<void> wait(int milliseconds) =>
     Future.delayed(Duration(milliseconds: milliseconds));
 
 void _printOnFailure(LogRecord record) {
@@ -78,7 +78,7 @@ Future<BuildResult> testBuilders(
   InMemoryRunnerAssetWriter? writer,
   Level? logLevel,
   // A better way to "silence" logging than setting logLevel to OFF.
-  Function(LogRecord record) onLog = _printOnFailure,
+  void Function(LogRecord record) onLog = _printOnFailure,
   bool checkBuildStatus = true,
   bool deleteFilesByDefault = true,
   bool enableLowResourcesMode = false,

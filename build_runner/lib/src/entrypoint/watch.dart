@@ -5,12 +5,12 @@
 import 'dart:async';
 
 import 'package:build/experiments.dart';
-import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 
 import '../generate/build.dart';
 import 'base_command.dart';
+import 'options.dart';
 
 /// A command that watches the file system for updates and rebuilds as
 /// appropriate.
@@ -77,13 +77,13 @@ class WatchCommand extends BuildRunnerCommand {
       if (completer.isCompleted) return;
       if (result.status == BuildStatus.failure) {
         if (result.failureType == FailureType.buildScriptChanged) {
-          completer.completeError(BuildScriptChangedException());
+          completer.completeError(const BuildScriptChangedException());
         } else if (result.failureType == FailureType.buildConfigChanged) {
-          completer.completeError(BuildConfigChangedException());
+          completer.completeError(const BuildConfigChangedException());
         }
       }
     });
-    await subscription.asFuture();
+    await subscription.asFuture<void>();
     if (!completer.isCompleted) completer.complete(ExitCode.success.code);
   }
 }

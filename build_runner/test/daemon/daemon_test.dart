@@ -112,15 +112,15 @@ main() {
     printOnFailure('Starting daemon in: ${workspace()}');
     var daemon = daemonProcess = await startPub('a', 'run', args: args);
     stdoutLines = daemon.stdout
-        .transform(Utf8Decoder())
-        .transform(LineSplitter())
+        .transform(const Utf8Decoder())
+        .transform(const LineSplitter())
         .asBroadcastStream()
       ..listen((line) {
         printOnFailure('Daemon: $line');
       });
     daemon.stderr
-        .transform(Utf8Decoder())
-        .transform(LineSplitter())
+        .transform(const Utf8Decoder())
+        .transform(const LineSplitter())
         .listen((line) {
       printOnFailure('Daemon Error: $line');
     });
@@ -183,14 +183,14 @@ main() {
         ])
       ]).create();
       // Give time for the notification to propogate if there was one.
-      await Future<void>.delayed(Duration(seconds: 4));
+      await Future<void>.delayed(const Duration(seconds: 4));
       expect(notification, isNull);
     });
 
     test('errors if build modes conflict', () async {
       await startDaemon();
       expect(startClient(buildMode: BuildMode.Manual),
-          throwsA(TypeMatcher<OptionsSkew>()));
+          throwsA(const TypeMatcher<OptionsSkew>()));
     });
 
     test('can build in manual mode', () async {
@@ -211,7 +211,7 @@ main() {
         ..registerBuildTarget(webTarget);
       clients.add(client);
       // Let the target request propagate.
-      await Future<void>.delayed(Duration(seconds: 2));
+      await Future<void>.delayed(const Duration(seconds: 2));
       // Trigger a file change.
       await d.dir('a', [
         d.dir('web', [
@@ -234,7 +234,7 @@ main() {
         ..registerBuildTarget(webTarget);
       clients.add(client);
       // Let the target request propagate.
-      await Future<void>.delayed(Duration(seconds: 2));
+      await Future<void>.delayed(const Duration(seconds: 2));
       // Trigger a file change.
       await d.dir('a', [
         d.dir('web', [
@@ -248,7 +248,7 @@ main() {
       // There shouldn't be any build results.
       var buildResults = await client.buildResults.first
           .then<BuildResults?>((r) => r)
-          .timeout(Duration(seconds: 2), onTimeout: () => null);
+          .timeout(const Duration(seconds: 2), onTimeout: () => null);
       expect(buildResults, isNull);
       client.startBuild();
       var startedResult = await client.buildResults.first;

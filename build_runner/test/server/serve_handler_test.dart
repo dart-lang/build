@@ -259,7 +259,7 @@ void main() {
                           'Sec-WebSocket-Key': 'abc',
                         },
                         onHijack: (f) {})),
-                throwsA(TypeMatcher<HijackException>()));
+                throwsA(const TypeMatcher<HijackException>()));
           });
         });
 

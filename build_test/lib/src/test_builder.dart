@@ -41,7 +41,7 @@ void checkOutputs(
     Iterable<AssetId> actualAssets,
     RecordingAssetWriter writer,
     {AssetId Function(AssetId id) mapAssetIds = _passThrough}) {
-  var modifiableActualAssets = Set.from(actualAssets);
+  var modifiableActualAssets = Set.of(actualAssets);
   if (outputs != null) {
     outputs.forEach((serializedId, contentsMatcher) {
       assert(contentsMatcher is String ||

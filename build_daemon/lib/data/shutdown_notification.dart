@@ -14,7 +14,7 @@ abstract class ShutdownNotification
       _$shutdownNotificationSerializer;
 
   factory ShutdownNotification(
-          [Function(ShutdownNotificationBuilder b) updates]) =
+          [void Function(ShutdownNotificationBuilder b) updates]) =
       _$ShutdownNotification;
 
   String get message;

@@ -1,3 +1,7 @@
+## 7.2.12-wip
+
+- Bump the min sdk to 3.0.0.
+
 ## 7.2.11
 
 - Add better error messages for incomplete package configs when creating a

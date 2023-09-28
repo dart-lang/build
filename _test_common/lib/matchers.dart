@@ -8,12 +8,13 @@ import 'package:build_runner_core/src/asset_graph/exceptions.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:package_config/package_config_types.dart';
 import 'package:test/test.dart';
 
 final Matcher throwsCorruptedException =
-    throwsA(TypeMatcher<AssetGraphCorruptedException>());
+    throwsA(const TypeMatcher<AssetGraphCorruptedException>());
 final Matcher duplicateAssetNodeException =
-    TypeMatcher<DuplicateAssetNodeException>();
+    const TypeMatcher<DuplicateAssetNodeException>();
 
 Matcher equalsAssetGraph(AssetGraph expected,
         {bool checkPreviousInputsDigest = true}) =>
@@ -185,7 +186,7 @@ class _AssetGraphMatcher extends Matcher {
     }
     if (!equals(_expected.packageLanguageVersions).matches(
         item.packageLanguageVersions,
-        matchState['packageLanguageVersions'] = {})) {
+        matchState['packageLanguageVersions'] = <String, LanguageVersion?>{})) {
       matches = false;
     }
     return matches;

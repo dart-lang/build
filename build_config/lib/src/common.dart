@@ -4,8 +4,9 @@
 
 import 'dart:async';
 
-final _defaultDependenciesZoneKey = Symbol('buildConfigDefaultDependencies');
-final _packageZoneKey = Symbol('buildConfigPackage');
+final _defaultDependenciesZoneKey =
+    const Symbol('buildConfigDefaultDependencies');
+final _packageZoneKey = const Symbol('buildConfigPackage');
 
 T runInBuildConfigZone<T>(
         T Function() fn, String package, List<String> defaultDependencies) =>

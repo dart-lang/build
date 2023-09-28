@@ -80,7 +80,8 @@ PostProcessBuilder dartSourceCleanup(BuilderOptions options) =>
 /// Throws if it is ever given different options.
 void _ensureSameDdcOptions(BuilderOptions options) {
   if (_previousDdcConfig != null) {
-    if (!const MapEquality().equals(_previousDdcConfig, options.config)) {
+    if (!const MapEquality<String, Object?>()
+        .equals(_previousDdcConfig, options.config)) {
       throw ArgumentError(
           'The build_web_compilers:ddc builder must have the same '
           'configuration in all packages. Saw $_previousDdcConfig and '

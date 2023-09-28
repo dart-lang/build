@@ -51,7 +51,7 @@ Future<String> _generateBuildScript() async {
   } on FormatterException {
     _log.severe('Generated build script could not be parsed.\n'
         'This is likely caused by a misconfigured builder definition.');
-    throw CannotBuildException();
+    throw const CannotBuildException();
   }
 }
 

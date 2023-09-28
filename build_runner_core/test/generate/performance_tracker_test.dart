@@ -62,8 +62,8 @@ void main() {
               millis + startTime.millisecondsSinceEpoch));
       expect(times, orderedEquals(expectedTimes));
 
-      var total = tracker.phases
-          .fold(Duration(), (Duration total, phase) => phase.duration + total);
+      var total = tracker.phases.fold(
+          const Duration(), (Duration total, phase) => phase.duration + total);
       expect(total, const Duration(seconds: 15));
     });
 
@@ -86,7 +86,7 @@ void main() {
           var allPhases = action.stages.toList();
           for (var p = 0; p < 3; p++) {
             var phase = allPhases[p];
-            expect(phase.duration, Duration(seconds: 1));
+            expect(phase.duration, const Duration(seconds: 1));
             expect(
                 phase.startTime,
                 startTime
@@ -100,8 +100,8 @@ void main() {
           }
         }
 
-        var total = performance.actions.fold(
-            Duration(), (Duration total, action) => action.duration + total);
+        var total = performance.actions.fold(const Duration(),
+            (Duration total, action) => action.duration + total);
         expect(total, Duration(seconds: inputs.length * 3));
       }
 

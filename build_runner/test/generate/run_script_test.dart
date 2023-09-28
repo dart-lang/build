@@ -117,7 +117,7 @@ main(List<String> args) async {
       var result = await runDart('a', 'tool/build.dart',
           args: ['run', 'bin/main.copy.dart', '--output', 'build']);
       var lastLine =
-          LineSplitter().convert(result.stdout as String).last.trim();
+          const LineSplitter().convert(result.stdout as String).last.trim();
       expect(result.exitCode, 0, reason: result.stderr as String);
       expect(lastLine, 'it works!', reason: result.stderr as String);
     });
@@ -127,7 +127,7 @@ main(List<String> args) async {
       var result = await runDart('a', 'tool/build.dart',
           args: ['run', 'bin/main.copy.dart']);
       var lastLine =
-          LineSplitter().convert(result.stdout as String).last.trim();
+          const LineSplitter().convert(result.stdout as String).last.trim();
       expect(result.exitCode, 0, reason: result.stderr as String);
       expect(lastLine, 'it works!', reason: result.stderr as String);
     });
@@ -145,7 +145,7 @@ main(List<String> args) async {
         'c'
       ]);
       var lastLine =
-          LineSplitter().convert(result.stdout as String).last.trim();
+          const LineSplitter().convert(result.stdout as String).last.trim();
       expect(result.exitCode, 0, reason: result.stderr as String);
       expect(lastLine, 'a;b;c', reason: result.stderr as String);
     });

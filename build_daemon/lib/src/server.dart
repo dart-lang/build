@@ -5,7 +5,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:build_daemon/data/server_log.dart';
 import 'package:built_value/serializer.dart';
 import 'package:http_multi_server/http_multi_server.dart';
 import 'package:pool/pool.dart';
@@ -22,6 +21,7 @@ import '../data/build_request.dart';
 import '../data/build_target.dart';
 import '../data/build_target_request.dart';
 import '../data/serializers.dart';
+import '../data/server_log.dart';
 import '../data/shutdown_notification.dart';
 import 'managers/build_target_manager.dart';
 
@@ -178,7 +178,7 @@ class Server {
       var buildTargets = _buildTargetManager.targetsForChanges(changes);
       if (buildTargets.isEmpty) return;
       await _build(buildTargets, changes);
-    }).listen((_) {}, onError: (e) {
+    }).listen((_) {}, onError: (Object? e) {
       stop(
           message: 'Error in file change event: $e',
           failureType: fileChangeEventErrorCode);

@@ -3,7 +3,7 @@ publish_to: none
 description: Test infra for writing build tests. Is not published.
 
 environment:
-  sdk: ">=2.12.0 <4.0.0"
+  sdk: ^3.0.0
 
 dependencies:
   build: any
@@ -20,7 +20,7 @@ dependencies:
   watcher: ^1.0.0
 
 dev_dependencies:
-  dart_flutter_team_lints: ^1.0.0
+  dart_flutter_team_lints: ^2.0.0
 
 dependency_overrides:
   build:

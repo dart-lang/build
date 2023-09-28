@@ -6,7 +6,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/generate/performance_tracker.dart';
@@ -20,6 +19,7 @@ import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:timing/timing.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../entrypoint/options.dart';
 import '../generate/watch_impl.dart';
 import 'asset_graph_handler.dart';
 import 'path_to_asset_id.dart';
@@ -117,7 +117,7 @@ class ServeHandler implements BuildState {
       var assetHandler = await _assetHandler;
       return assetHandler.handle(request, rootDir: rootDir);
     });
-    var pipeline = shelf.Pipeline();
+    var pipeline = const shelf.Pipeline();
     if (logRequests) {
       pipeline = pipeline.addMiddleware(_logRequests);
     }
@@ -242,7 +242,7 @@ class BuildUpdatesWebSocketHandler {
       WebSocketChannel webSocket, String protocol, String rootDir) async {
     var connections = connectionsByRootDir.putIfAbsent(rootDir, () => [])
       ..add(webSocket);
-    await webSocket.stream.drain();
+    await webSocket.stream.drain<void>();
     connections.remove(webSocket);
     if (connections.isEmpty) {
       connectionsByRootDir.remove(rootDir);

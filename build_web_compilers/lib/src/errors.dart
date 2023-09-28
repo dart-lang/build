@@ -24,5 +24,5 @@ class DartDevcCompilationException extends _WorkerException {
   @override
   final String message = 'Error compiling dartdevc module';
 
-  DartDevcCompilationException(AssetId jsId, String error) : super(jsId, error);
+  DartDevcCompilationException(super.jsId, super.error);
 }

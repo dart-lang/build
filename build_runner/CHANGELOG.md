@@ -1,6 +1,7 @@
-## 2.4.7-dev
+## 2.4.7-wip
 
 - Fix broken link in README.md.
+- Bump the min sdk to 3.0.0.
 
 ## 2.4.6
 

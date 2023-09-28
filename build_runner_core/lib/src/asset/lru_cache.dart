@@ -4,8 +4,8 @@
 
 /// A basic LRU Cache.
 class LruCache<K, V> {
-  _Link<K, V>? _head;
-  _Link<K, V>? _tail;
+  _Entry<K, V>? _head;
+  _Entry<K, V>? _tail;
 
   final int Function(V) _computeWeight;
 
@@ -13,7 +13,7 @@ class LruCache<K, V> {
   final int _individualWeightMax;
   final int _totalWeightMax;
 
-  final _entries = <K, _Link<K, V>>{};
+  final _entries = <K, _Entry<K, V>>{};
 
   LruCache(
       this._individualWeightMax, this._totalWeightMax, this._computeWeight);
@@ -28,7 +28,7 @@ class LruCache<K, V> {
 
   void operator []=(K key, V value) {
     remove(key);
-    var entry = _Link(key, value, _computeWeight(value));
+    var entry = _Entry(key, value, _computeWeight(value));
     // Don't cache at all if above the individual weight max.
     if (entry.weight > _individualWeightMax) {
       return;
@@ -65,7 +65,7 @@ class LruCache<K, V> {
   }
 
   /// Moves [link] to the [_head] of the list.
-  void _promote(_Link<K, V> link) {
+  void _promote(_Entry<K, V> link) {
     if (link == _head) return;
 
     if (link == _tail) {
@@ -87,18 +87,16 @@ class LruCache<K, V> {
   }
 }
 
-/// A [MapEntry] which is also a part of a doubly linked list.
-class _Link<K, V> implements MapEntry<K, V> {
-  _Link<K, V>? next;
-  _Link<K, V>? previous;
+/// An entry in an [LruCache] which is also a part of a doubly linked list.
+class _Entry<K, V> {
+  _Entry<K, V>? next;
+  _Entry<K, V>? previous;
 
   final int weight;
 
-  @override
   final K key;
 
-  @override
   final V value;
 
-  _Link(this.key, this.value, this.weight);
+  _Entry(this.key, this.value, this.weight);
 }

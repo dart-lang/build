@@ -114,7 +114,7 @@ void main() {
       expect(phases, hasLength(2));
       expect(
           phases,
-          everyElement(TypeMatcher<InBuildPhase>()
+          everyElement(const TypeMatcher<InBuildPhase>()
               .having((p) => p.package, 'package', 'a')));
     });
 
@@ -135,7 +135,7 @@ void main() {
       expect(phases, hasLength(1));
       expect(
           phases,
-          everyElement(TypeMatcher<InBuildPhase>()
+          everyElement(const TypeMatcher<InBuildPhase>()
               .having((p) => p.package, 'package', 'a')));
     });
 
@@ -159,7 +159,7 @@ void main() {
       expect(phases, hasLength(2));
       expect(
           phases,
-          everyElement(TypeMatcher<InBuildPhase>()
+          everyElement(const TypeMatcher<InBuildPhase>()
               .having((p) => p.package, 'package', 'a')));
     });
 
@@ -185,7 +185,7 @@ void main() {
         expect(
             () =>
                 createBuildPhases(targetGraph, builderApplications, {}, false),
-            throwsA(TypeMatcher<CannotBuildException>()));
+            throwsA(const TypeMatcher<CannotBuildException>()));
       }, packageGraph.root.name,
           packageGraph.root.dependencies.map((node) => node.name).toList());
     });

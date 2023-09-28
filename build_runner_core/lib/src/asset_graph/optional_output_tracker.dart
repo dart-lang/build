@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_runner_core/build_runner_core.dart';
+import '../../build_runner_core.dart';
 
 import '../generate/phase.dart';
 import '../package_graph/target_graph.dart';

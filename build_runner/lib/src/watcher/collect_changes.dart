@@ -3,8 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_runner/src/watcher/asset_change.dart';
 import 'package:watcher/watcher.dart';
+
+import 'asset_change.dart';
 
 /// Merges [AssetChange] events.
 ///

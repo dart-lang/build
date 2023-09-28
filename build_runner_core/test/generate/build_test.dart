@@ -97,7 +97,7 @@ void main() {
                 ],
                 {'a|web/a.txt': 'a'},
               ),
-          throwsA(TypeMatcher<CannotBuildException>()));
+          throwsA(const TypeMatcher<CannotBuildException>()));
     });
 
     test('throws an error if any output extensions match input extensions', () {
@@ -148,7 +148,8 @@ void main() {
                           math.max(concurrentCount, maxConcurrentCount);
                       if (concurrentCount >= buildPhasePoolSize &&
                           !reachedMax.isCompleted) {
-                        await Future<void>.delayed(Duration(milliseconds: 100));
+                        await Future<void>.delayed(
+                            const Duration(milliseconds: 100));
                         if (!reachedMax.isCompleted) reachedMax.complete(null);
                       }
                       await reachedMax.future;
@@ -928,7 +929,8 @@ void main() {
     test('can build files from one dir when building another dir', () async {
       await testBuilders([
         applyToRoot(TestBuilder(),
-            generateFor: InputSet(include: ['test/*.txt']), hideOutput: true),
+            generateFor: const InputSet(include: ['test/*.txt']),
+            hideOutput: true),
         applyToRoot(
             TestBuilder(
                 buildExtensions: appendExtension('.copy', from: '.txt'),
@@ -938,7 +940,7 @@ void main() {
                   // Should trigger b.txt.copy to be built.
                   await buildStep.readAsString(AssetId('a', 'test/b.txt.copy'));
                 }),
-            generateFor: InputSet(include: ['web/*.txt']),
+            generateFor: const InputSet(include: ['web/*.txt']),
             hideOutput: true),
       ], {
         'a|test/a.txt': 'a',
@@ -956,7 +958,8 @@ void main() {
         () async {
       await testBuilders([
         applyToRoot(TestBuilder(),
-            generateFor: InputSet(include: ['**/*.txt']), hideOutput: false),
+            generateFor: const InputSet(include: ['**/*.txt']),
+            hideOutput: false),
       ], {
         'a|test/a.txt': 'a',
         'a|web/a.txt': 'a',
@@ -1001,7 +1004,7 @@ void main() {
       test('explicit files by uri and path', () async {
         await testBuilders([
           apply('', [(_) => TestBuilder()], toAllPackages(),
-              defaultGenerateFor: InputSet(include: ['**/*.txt'])),
+              defaultGenerateFor: const InputSet(include: ['**/*.txt'])),
         ], {
           'a|lib/a.txt': '',
           'a|web/a.txt': '',
@@ -1022,7 +1025,7 @@ void main() {
       test('with package globs', () async {
         await testBuilders([
           apply('', [(_) => TestBuilder()], toAllPackages(),
-              defaultGenerateFor: InputSet(include: ['**/*.txt'])),
+              defaultGenerateFor: const InputSet(include: ['**/*.txt'])),
         ], {
           'a|lib/a.txt': '',
           'b|lib/a.txt': '',
@@ -1037,7 +1040,7 @@ void main() {
       test('with path globs', () async {
         await testBuilders([
           apply('', [(_) => TestBuilder()], toAllPackages(),
-              defaultGenerateFor: InputSet(include: ['**/*.txt'])),
+              defaultGenerateFor: const InputSet(include: ['**/*.txt'])),
         ], {
           'a|lib/a.txt': '',
           'a|lib/a0.txt': '',
@@ -1059,7 +1062,7 @@ void main() {
       test('with package and path globs', () async {
         await testBuilders([
           apply('', [(_) => TestBuilder()], toAllPackages(),
-              defaultGenerateFor: InputSet(include: ['**/*.txt'])),
+              defaultGenerateFor: const InputSet(include: ['**/*.txt'])),
         ], {
           'a|lib/a.txt': '',
           'b|lib/b.txt': '',
@@ -1273,7 +1276,7 @@ void main() {
     var done = testBuilders([copyABuilderApplication], inputs,
         outputs: outputs, writer: writer);
     // Should block on user input.
-    await Future<void>.delayed(Duration(seconds: 1));
+    await Future<void>.delayed(const Duration(seconds: 1));
     // Now it should complete!
     await done;
   });

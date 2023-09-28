@@ -67,8 +67,8 @@ main() {
       {StreamSink<String>? stdoutSink}) async {
     var process = await startPub('a', 'run', args: args);
     var stdoutLines = process.stdout
-        .transform(Utf8Decoder())
-        .transform(LineSplitter())
+        .transform(const Utf8Decoder())
+        .transform(const LineSplitter())
         .asBroadcastStream()
       ..listen((line) {
         stdoutSink?.add(line);

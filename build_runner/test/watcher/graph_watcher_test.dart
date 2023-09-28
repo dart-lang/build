@@ -160,5 +160,5 @@ class _FakeWatcher implements Watcher {
 
   @override
   Future get ready => _readyCompleter.future;
-  final _readyCompleter = Completer();
+  final _readyCompleter = Completer<void>();
 }

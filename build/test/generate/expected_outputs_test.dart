@@ -193,7 +193,7 @@ void main() {
 }
 
 void _expectOutputs(
-    Map<String, List<String>> extensions, AssetId input, dynamic expected) {
+    Map<String, List<String>> extensions, AssetId input, Object? expected) {
   expect(expectedOutputs(TestBuilder(buildExtensions: extensions), input),
       expected);
 }

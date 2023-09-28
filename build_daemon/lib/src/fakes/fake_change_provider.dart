@@ -3,8 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:async';
 
-import 'package:build_daemon/change_provider.dart';
 import 'package:watcher/watcher.dart' show WatchEvent;
+
+import '../../change_provider.dart';
 
 class FakeChangeProvider implements AutoChangeProvider, ManualChangeProvider {
   final changeStreamController = StreamController<List<WatchEvent>>();

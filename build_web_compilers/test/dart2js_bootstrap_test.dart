@@ -59,7 +59,7 @@ void main() {
         'a|web/index.dart.js.tar.gz': anything,
       };
       await testBuilder(
-          WebEntrypointBuilder(WebCompiler.Dart2Js,
+          const WebEntrypointBuilder(WebCompiler.Dart2Js,
               nativeNullAssertions: false),
           assets,
           outputs: expectedOutputs);
@@ -71,7 +71,7 @@ void main() {
         'a|web/index.dart.js.tar.gz': anything,
       };
       await testBuilder(
-          WebEntrypointBuilder(WebCompiler.Dart2Js,
+          const WebEntrypointBuilder(WebCompiler.Dart2Js,
               dart2JsArgs: ['--no-source-maps'], nativeNullAssertions: false),
           assets,
           outputs: expectedOutputs);
@@ -101,7 +101,8 @@ void main() {
       'a|lib/index.dart.js.tar.gz': anything,
     };
     await testBuilder(
-        WebEntrypointBuilder(WebCompiler.Dart2Js, nativeNullAssertions: false),
+        const WebEntrypointBuilder(WebCompiler.Dart2Js,
+            nativeNullAssertions: false),
         assets,
         outputs: expectedOutputs);
   });

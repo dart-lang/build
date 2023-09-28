@@ -54,9 +54,9 @@ class _PathProvidingBuildCacheReader extends BuildCacheReader
   PathProvidingAssetReader get _delegate =>
       super._delegate as PathProvidingAssetReader;
 
-  _PathProvidingBuildCacheReader._(PathProvidingAssetReader delegate,
-      AssetGraph assetGraph, String rootPackage)
-      : super._(delegate, assetGraph, rootPackage);
+  _PathProvidingBuildCacheReader._(PathProvidingAssetReader super.delegate,
+      super.assetGraph, super.rootPackage)
+      : super._();
 
   @override
   String pathTo(AssetId id) =>
