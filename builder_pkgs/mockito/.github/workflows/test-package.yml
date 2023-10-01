@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
       - uses: dart-lang/setup-dart@d6a63dab3335f427404425de0fbfed4686d93c4f
         with:
           sdk: 2.19.0
@@ -39,7 +39,7 @@ jobs:
       matrix:
         sdk: [2.19.0, dev]
     steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
       - uses: dart-lang/setup-dart@d6a63dab3335f427404425de0fbfed4686d93c4f
         with:
           sdk: ${{ matrix.sdk }}
@@ -61,7 +61,7 @@ jobs:
         os: [ubuntu-latest]
         sdk: [2.19.0, dev]
     steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
       - uses: dart-lang/setup-dart@d6a63dab3335f427404425de0fbfed4686d93c4f
         with:
           sdk: ${{ matrix.sdk }}
@@ -86,7 +86,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
       - uses: dart-lang/setup-dart@d6a63dab3335f427404425de0fbfed4686d93c4f
         with:
           sdk: dev
