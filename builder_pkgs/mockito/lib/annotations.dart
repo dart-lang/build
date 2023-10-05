@@ -149,10 +149,10 @@ class MockSpec<T> {
     Symbol? as,
     @Deprecated('Avoid adding concrete implementation to mock classes. '
         'Use a manual implementation of the class without `Mock`')
-        List<Type> mixingIn = const [],
+    List<Type> mixingIn = const [],
     @Deprecated('Specify "missing stub" behavior with the '
         '[onMissingStub] parameter.')
-        this.returnNullOnMissingStub = false,
+    this.returnNullOnMissingStub = false,
     this.unsupportedMembers = const {},
     this.fallbackGenerators = const {},
     this.onMissingStub,
