@@ -6,7 +6,8 @@ export 'src/builder.dart'
     show LibraryBuilder, PartBuilder, SharedPartBuilder, defaultFileHeader;
 export 'src/constants/reader.dart' show ConstantReader;
 export 'src/constants/revive.dart' show Revivable;
-export 'src/generator.dart' show Generator, InvalidGenerationSourceError;
+export 'src/generator.dart'
+    show Generator, InvalidGenerationSource, InvalidGenerationSourceError;
 export 'src/generator_for_annotation.dart' show GeneratorForAnnotation;
 export 'src/library.dart' show AnnotatedElement, LibraryReader;
 export 'src/span_for_element.dart' show spanForElement;
