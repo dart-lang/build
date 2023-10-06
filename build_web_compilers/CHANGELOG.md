@@ -1,4 +1,6 @@
-## 4.0.6-wip
+## 4.0.6
+
+- Allow version 3.3.x of the Dart SDK.
 
 ## 4.0.5
 
