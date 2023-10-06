@@ -171,6 +171,11 @@ class _MatcherEquality extends DeepCollectionEquality /* <Matcher | E> */ {
     if (e2 is Matcher && e1 is! Matcher) {
       return e2.matches(e1, {});
     }
+    // If one thing is a `SmartFake` but not the other, always fail.
+    // Otherwise the real thing might try calling private members on
+    // fake, and that fails at runtime with confusing errors.
+    if ((e1 is SmartFake) ^ (e2 is SmartFake)) return false;
+
     return super.equals(e1, e2);
   }
 
