@@ -6,7 +6,6 @@ import 'package:build_daemon/data/build_target.dart';
 import 'package:build_daemon/src/managers/build_target_manager.dart';
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
-import 'package:watcher/watcher.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 void main() {
