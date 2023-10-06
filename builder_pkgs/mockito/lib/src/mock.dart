@@ -123,7 +123,7 @@ void throwOnMissingStub(
 /// be generated. As such, [Mock] should strictly _not_ be used in any
 /// production code, especially if used within the context of Dart for Web
 /// (dart2js, DDC) and Dart for Mobile (Flutter).
-class Mock {
+mixin class Mock {
   static Null _answerNull(_) => null;
 
   static const _nullResponse = CallPair<Null>.allInvocations(_answerNull);
@@ -1270,7 +1270,7 @@ void resetMockitoState() {
   resetDummyBuilders();
 }
 
-extension on Invocation {
+extension PrettyString on Invocation {
   /// Returns a pretty String representing a method (or getter or setter) call
   /// including its arguments, separating elements with newlines when it should
   /// improve readability.

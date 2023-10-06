@@ -263,11 +263,19 @@ void main() {
 
     test('an unstubbed method returns a value', () {
       when(foo.namedParameter(x: 42)).thenReturn('Stubbed');
-      expect(foo.namedParameter(x: 43), equals(''));
+      expect(
+          foo.namedParameter(x: 43),
+          contains(Uri.encodeComponent(
+              'Dummy String created while calling namedParameter({x: 43})'
+                  .replaceAll(' ', '_'))));
     });
 
     test('an unstubbed getter returns a value', () {
-      expect(foo.getter, equals(''));
+      expect(
+          foo.getter,
+          contains(Uri.encodeComponent(
+              'Dummy String created while calling getter'
+                  .replaceAll(' ', '_'))));
     });
   });
 
@@ -280,11 +288,19 @@ void main() {
 
     test('an unstubbed method returns a value', () {
       when(foo.namedParameter(x: 42)).thenReturn('Stubbed');
-      expect(foo.namedParameter(x: 43), equals(''));
+      expect(
+          foo.namedParameter(x: 43),
+          contains(Uri.encodeComponent(
+              'Dummy String created while calling namedParameter({x: 43})'
+                  .replaceAll(' ', '_'))));
     });
 
     test('an unstubbed getter returns a value', () {
-      expect(foo.getter, equals(''));
+      expect(
+          foo.getter,
+          contains(Uri.encodeComponent(
+              'Dummy String created while calling getter'
+                  .replaceAll(' ', '_'))));
     });
 
     test('an unstubbed method returning non-core type returns a fake', () {

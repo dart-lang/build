@@ -1567,8 +1567,6 @@ class _MockClassInfo {
           ..url = 'dart:async'
           ..types.add(elementType);
       }).property('empty').call([]);
-    } else if (type.isDartCoreString) {
-      return literalString('');
     } else if (type.isDartTypedDataSealed) {
       // These types (XXXList + ByteData) from dart:typed_data are
       // sealed, e.g. "non-subtypeable", but they

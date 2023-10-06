@@ -16,7 +16,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:typed_data';
 
-import 'mock.dart' show FakeFunctionUsedError;
+import 'mock.dart' show FakeFunctionUsedError, PrettyString;
 import 'platform_dummies_js.dart'
     if (dart.library.io) 'platform_dummies_vm.dart';
 
@@ -24,7 +24,11 @@ import 'platform_dummies_js.dart'
 // String could totally contain an explanation.
 const int _dummyInt = 0;
 const double _dummyDouble = 0.0;
-const String _dummyString = '';
+
+// Create a dummy String with info on why it was created.
+String _dummyString(Object o, Invocation i) => Uri.encodeComponent(
+    'Dummy String created while calling ${i.toPrettyString()} on $o.'
+        .replaceAll(' ', '_'));
 
 // This covers functions with up to 20 positional arguments, for more arguments,
 // type arguments or named arguments, users would have to provide a dummy
@@ -104,7 +108,7 @@ Map<Type, DummyBuilder> _defaultDummyBuilders = {
   int: (_, _i) => _dummyInt,
   num: (_, _i) => _dummyInt,
   double: (_, _i) => _dummyDouble,
-  String: (_, _i) => _dummyString,
+  String: _dummyString,
   Int8List: (_, _i) => Int8List(0),
   Int16List: (_, _i) => Int16List(0),
   Int32List: (_, _i) => Int32List(0),

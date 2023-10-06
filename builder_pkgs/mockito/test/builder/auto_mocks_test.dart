@@ -2259,14 +2259,15 @@ void main() {
     );
   });
 
-  test('creates dummy non-null String return value', () async {
+  test('calls dummyValue to get a dummy non-null String return value',
+      () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
       class Foo {
         String m() => "Hello";
       }
       '''),
-      _containsAllOf("returnValue: '',"),
+      _containsAllOf('returnValue: _i3.dummyValue<String>('),
     );
   });
 
