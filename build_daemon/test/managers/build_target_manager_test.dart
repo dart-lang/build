@@ -77,17 +77,12 @@ void main() {
     expect(manager.targets.isEmpty, isTrue);
   });
 
-  test(
-      'a build target will be reused if the target is the same', () {
+  test('a build target will be reused if the target is the same', () {
     var manager = BuildTargetManager();
     var channelA = DummyChannel();
     var channelB = DummyChannel();
-    var targetA = DefaultBuildTarget((b) => b
-      ..target = 'foo'
-      );
-    var targetB = DefaultBuildTarget((b) => b
-      ..target = 'foo'
-      );
+    var targetA = DefaultBuildTarget((b) => b..target = 'foo');
+    var targetB = DefaultBuildTarget((b) => b..target = 'foo');
     manager
       ..addBuildTarget(targetA, channelA)
       ..addBuildTarget(targetB, channelB);
