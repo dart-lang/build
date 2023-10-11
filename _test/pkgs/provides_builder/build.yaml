@@ -15,6 +15,10 @@ builders:
     builder_factories: ["throwingBuilder"]
     build_extensions: {".fail": [".fail.message"]}
     auto_apply: dependents
+  not_enabled_builder:
+    import: "package:provides_builder/builders.dart"
+    builder_factories: [ "notEnabledBuilder" ]
+    build_extensions: { ".not.enabled": [ ".not.enabled.message" ] }
 post_process_builders:
   some_post_process_builder:
     target: "provides_builder"
