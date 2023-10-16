@@ -10,7 +10,7 @@ dependencies:
   source_gen: any
 
 dev_dependencies:
-  dart_flutter_team_lints: ^1.0.0
+  dart_flutter_team_lints: ^2.0.0
 
 dependency_overrides:
   source_gen:
