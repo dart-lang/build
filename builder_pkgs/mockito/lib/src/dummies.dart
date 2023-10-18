@@ -174,4 +174,4 @@ void resetDummyBuilders() {
 
 // Helper function.
 R? ifNotNull<T, R>(T? value, R Function(T) action) =>
-    value != null ? action(value) : null;
+    value is T ? action(value) : null;
