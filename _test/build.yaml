@@ -11,3 +11,9 @@ targets:
           - test/hello_world_custom_html_test.dart.browser_test.dart
           - test/other_test.dart.browser_test.dart
           - test/sub-dir/subdir_test.dart.browser_test.dart
+      # HELP: the settings below won't have any effect on the builders applied in `build.dart`
+      provides_builder|not_enabled_builder:
+        enabled: false
+      # HELP: Only when adding (even an empty) `other_builder.build.yaml` file, the builder won't show up in `build.dart`
+      other_builder|other_builder:
+        enabled: false

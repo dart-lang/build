@@ -1,0 +1,5 @@
+#---
+## disable all inherited "provides_builder" builders...
+#targets:
+#  $default:
+#    auto_apply_builders: false
