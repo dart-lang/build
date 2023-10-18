@@ -38,12 +38,11 @@ rebuilds are _incremental_ - inspired by tools such as [Bazel][].
 ## Installation
 
 This package is intended to support development of Dart projects with
-[`package:build`][]. In general, put it under [dev_dependencies][], in your
-[`pubspec.yaml`][pubspec].
+[`package:build`][]. In general, add it to your [`pubspec.yaml`][pubspec] 
+as a [dev_dependencies][] by running the following command.
 
-```yaml
-dev_dependencies:
-  build_runner:
+```console
+$ dart pub add dev:build_runner
 ```
 
 ## Usage
