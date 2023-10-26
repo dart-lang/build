@@ -34,15 +34,12 @@ class GenerateMocks {
 class MockSpec<T> {
   final Symbol? mockName;
 
-  final bool returnNullOnMissingStub;
-
   final Set<Symbol> unsupportedMembers;
 
   final Map<Symbol, Function> fallbackGenerators;
 
   const MockSpec({
     Symbol? as,
-    this.returnNullOnMissingStub = false,
     this.unsupportedMembers = const {},
     this.fallbackGenerators = const {},
   })

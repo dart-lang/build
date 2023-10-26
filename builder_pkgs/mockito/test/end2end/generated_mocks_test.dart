@@ -11,12 +11,10 @@ import 'generated_mocks_test.mocks.dart';
   FooSub,
   Bar
 ], customMocks: [
-  MockSpec<Foo>(as: #MockFooRelaxed, returnNullOnMissingStub: true),
   MockSpec<Foo>(
     as: #MockFooWithDefaults,
     onMissingStub: OnMissingStub.returnDefault,
   ),
-  MockSpec<Bar>(as: #MockBarRelaxed, returnNullOnMissingStub: true),
   MockSpec<Baz>(
     as: #MockBazWithUnsupportedMembers,
     unsupportedMembers: {
@@ -28,7 +26,8 @@ import 'generated_mocks_test.mocks.dart';
   ),
   MockSpec<HasPrivate>(mixingIn: [HasPrivateMixin]),
 ])
-@GenerateNiceMocks([MockSpec<Foo>(as: #MockFooNice)])
+@GenerateNiceMocks(
+    [MockSpec<Foo>(as: #MockFooNice), MockSpec<Bar>(as: #MockBarNice)])
 void main() {
   group('for a generated mock,', () {
     late MockFoo<Object> foo;
@@ -225,35 +224,6 @@ void main() {
     });
   });
 
-  group('for a generated mock using returnNullOnMissingStub,', () {
-    late Foo<Object> foo;
-
-    setUp(() {
-      foo = MockFooRelaxed();
-    });
-
-    test('an unstubbed method returning a non-nullable type throws a TypeError',
-        () {
-      when(foo.namedParameter(x: 42)).thenReturn('Stubbed');
-      expect(
-          () => foo.namedParameter(x: 43), throwsA(TypeMatcher<TypeError>()));
-    });
-
-    test('an unstubbed getter returning a non-nullable type throws a TypeError',
-        () {
-      expect(() => foo.getter, throwsA(TypeMatcher<TypeError>()));
-    });
-
-    test('an unstubbed method returning a nullable type returns null', () {
-      when(foo.nullableMethod(42)).thenReturn('Stubbed');
-      expect(foo.nullableMethod(43), isNull);
-    });
-
-    test('an unstubbed getter returning a nullable type returns null', () {
-      expect(foo.nullableGetter, isNull);
-    });
-  });
-
   group('for a generated mock using OnMissingStub.returnDefault,', () {
     late Foo<Object> foo;
 
@@ -356,11 +326,9 @@ void main() {
     expect(foo.methodWithBarArg(bar), equals('mocked result'));
   });
 
-  test(
-      'a generated mock which returns null on missing stubs can be used as a '
-      'stub argument', () {
-    final foo = MockFooRelaxed();
-    final bar = MockBarRelaxed();
+  test('a generated nice mock can be used as a stub argument', () {
+    final foo = MockFoo();
+    final bar = MockBarNice();
     when(foo.methodWithBarArg(bar)).thenReturn('mocked result');
     expect(foo.methodWithBarArg(bar), equals('mocked result'));
   });

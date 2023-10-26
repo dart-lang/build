@@ -78,9 +78,6 @@ class GenerateNiceMocks {
 /// The name of the mock class is either specified with the `as` named argument,
 /// or is the name of the class being mocked, prefixed with 'Mock'.
 ///
-/// To use the legacy behavior of returning null for unstubbed methods, use
-/// `returnNullOnMissingStub: true`.
-///
 /// For example, given the generic class, `class Foo<T>`, then this
 /// annotation:
 ///
@@ -99,10 +96,6 @@ class MockSpec<T> {
 
   final List<Type> mixins;
 
-  @Deprecated('Specify "missing stub" behavior with the [onMissingStub] '
-      'parameter.')
-  final bool returnNullOnMissingStub;
-
   final OnMissingStub? onMissingStub;
 
   final Set<Symbol> unsupportedMembers;
@@ -116,12 +109,6 @@ class MockSpec<T> {
   /// Constructs a custom mock specification.
   ///
   /// Specify a custom name with the [as] parameter.
-  ///
-  /// If [onMissingStub] is specified as [OnMissingStub.returnNull],
-  /// (or if the deprecated parameter [returnNullOnMissingStub] is `true`), then
-  /// a real call to a mock method (or getter) will return `null` when no stub
-  /// is found. This may result in a runtime error, if the return type of the
-  /// method (or the getter) is non-nullable.
   ///
   /// If [onMissingStub] is specified as
   /// [OnMissingStub.returnDefault], a real call to a mock method (or
@@ -149,10 +136,7 @@ class MockSpec<T> {
     Symbol? as,
     @Deprecated('Avoid adding concrete implementation to mock classes. '
         'Use a manual implementation of the class without `Mock`')
-        List<Type> mixingIn = const [],
-    @Deprecated('Specify "missing stub" behavior with the '
-        '[onMissingStub] parameter.')
-        this.returnNullOnMissingStub = false,
+    List<Type> mixingIn = const [],
     this.unsupportedMembers = const {},
     this.fallbackGenerators = const {},
     this.onMissingStub,
@@ -165,14 +149,6 @@ class MockSpec<T> {
 enum OnMissingStub {
   /// An exception should be thrown.
   throwException,
-
-  /// A `null` value should be returned.
-  ///
-  /// This is considered legacy behavior, as it may result in a runtime error,
-  /// if the return type of the method (or the getter) is non-nullable.
-  @Deprecated(
-      'This is legacy behavior, it may result in runtime errors. Consider using returnDefault instead')
-  returnNull,
 
   /// A legal default value should be returned.
   ///

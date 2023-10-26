@@ -43,8 +43,6 @@ class MockSpec<T> {
 
   final List<Type> mixins;
 
-  final bool returnNullOnMissingStub;
-
   final OnMissingStub? onMissingStub;
 
   final Set<Symbol> unsupportedMembers;
@@ -54,7 +52,6 @@ class MockSpec<T> {
   const MockSpec({
     Symbol? as,
     List<Type> mixingIn = const [],
-    this.returnNullOnMissingStub = false,
     this.onMissingStub,
     this.unsupportedMembers = const {},
     this.fallbackGenerators = const {},
@@ -62,7 +59,7 @@ class MockSpec<T> {
         mixins = mixingIn;
 }
 
-enum OnMissingStub { throwException, returnNull, returnDefault }
+enum OnMissingStub { throwException, returnDefault }
 '''
 };
 
@@ -436,24 +433,6 @@ void main() {
       contains(
           'class MockFoo extends _i1.Mock with _i2.FooMarkerMixin implements _i2.Foo {'),
     );
-  });
-
-  test(
-      'generates a mock class which uses the old behavior of returning null on '
-      'missing stubs', () async {
-    final mocksContent = await buildWithNonNullable({
-      ...annotationsAsset,
-      'foo|lib/foo.dart': dedent(r'''
-        class Foo<T> {}
-        '''),
-      'foo|test/foo_test.dart': '''
-        import 'package:foo/foo.dart';
-        import 'package:mockito/annotations.dart';
-        @GenerateMocks([], customMocks: [MockSpec<Foo>(as: #MockFoo, returnNullOnMissingStub: true)])
-        void main() {}
-        '''
-    });
-    expect(mocksContent, isNot(contains('throwOnMissingStub')));
   });
 
   test(

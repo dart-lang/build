@@ -7,6 +7,8 @@
 * **Potentially breaking** Changed default `String` value returned by nice
   mocks' unstubbed method to include some useful info. This could break the
   tests that relied on getting an empty `String` from unstubbed methods.
+* Remove deprecated `returnNullOnMissingStub` and `OnMissingStub.returnNull`
+  `MockSpec` options.
 
 ## 5.4.2
 

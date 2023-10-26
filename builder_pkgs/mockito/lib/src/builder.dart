@@ -648,47 +648,15 @@ class _MockTargetGatherer {
       mixins.add(mixinInterfaceType);
     }
 
-    final returnNullOnMissingStub =
-        mockSpec.getField('returnNullOnMissingStub')!.toBoolValue()!;
     final onMissingStubValue = mockSpec.getField('onMissingStub')!;
     final OnMissingStub onMissingStub;
-    if (nice) {
-      // The new @GenerateNiceMocks API. Don't allow `returnNullOnMissingStub`.
-      if (returnNullOnMissingStub) {
-        throw ArgumentError("'returnNullOnMissingStub' is not supported with "
-            '@GenerateNiceMocks');
-      }
-      if (onMissingStubValue.isNull) {
-        onMissingStub = OnMissingStub.returnDefault;
-      } else {
-        final onMissingStubIndex =
-            onMissingStubValue.getField('index')!.toIntValue()!;
-        onMissingStub = OnMissingStub.values[onMissingStubIndex];
-        // ignore: deprecated_member_use_from_same_package
-        if (onMissingStub == OnMissingStub.returnNull) {
-          throw ArgumentError(
-              "'OnMissingStub.returnNull' is not supported with "
-              '@GenerateNiceMocks');
-        }
-      }
+    if (onMissingStubValue.isNull) {
+      onMissingStub =
+          nice ? OnMissingStub.returnDefault : OnMissingStub.throwException;
     } else {
-      if (onMissingStubValue.isNull) {
-        // No value was given for `onMissingStub`. But the behavior may
-        // be specified by `returnNullOnMissingStub`.
-        onMissingStub = returnNullOnMissingStub
-            // ignore: deprecated_member_use_from_same_package
-            ? OnMissingStub.returnNull
-            : OnMissingStub.throwException;
-      } else {
-        // A value was given for `onMissingStub`.
-        if (returnNullOnMissingStub) {
-          throw ArgumentError("Cannot specify 'returnNullOnMissingStub' and a "
-              "'onMissingStub' value at the same time.");
-        }
-        final onMissingStubIndex =
-            onMissingStubValue.getField('index')!.toIntValue()!;
-        onMissingStub = OnMissingStub.values[onMissingStubIndex];
-      }
+      final onMissingStubIndex =
+          onMissingStubValue.getField('index')!.toIntValue()!;
+      onMissingStub = OnMissingStub.values[onMissingStubIndex];
     }
     final unsupportedMembers = {
       for (final m in mockSpec.getField('unsupportedMembers')!.toSetValue()!)

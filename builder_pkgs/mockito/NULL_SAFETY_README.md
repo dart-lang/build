@@ -159,19 +159,6 @@ behavior, use `@GenerateMocks`:
 @GenerateMocks([Foo])
 ```
 
-#### Old "return null" missing stub behavior
-
- To use the old default behavior of returning null (which doesn't make a lot of
-sense in the Null safety type system), for legacy code, use
-`returnNullOnMissingStub`:
-
-```dart
-@GenerateMocks([], customMocks: [MockSpec<Foo>(returnNullOnMissingStub: true)])
-```
-
-This option is soft-deprecated (no deprecation warning yet); it will be marked
-`@deprecated` in a future release, and removed in a later release.
-
 #### Mocking members with non-nullable type variable return types
 
 If a class has a member with a type variable as a return type (for example,
