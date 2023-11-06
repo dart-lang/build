@@ -1,6 +1,5 @@
 sdk:
-- dev
-- pubspec
+- beta
 
 stages:
 - analyze_and_format:
