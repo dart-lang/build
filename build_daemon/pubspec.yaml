@@ -9,6 +9,7 @@ environment:
 dependencies:
   built_collection: ^5.0.0
   built_value: ^8.1.0
+  crypto: ^3.0.3
   http_multi_server: ^3.0.0
   logging: ^1.0.0
   path: ^1.8.0
