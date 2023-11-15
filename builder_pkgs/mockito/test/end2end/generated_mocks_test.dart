@@ -163,6 +163,22 @@ void main() {
       when(foo.returnsFuture(any)).thenAnswer((_) async => 1);
       expect(await foo.returnsFuture(0), 1);
     });
+
+    test(
+        'a method returning a function with optional non-nullable argument '
+        'can be stubbed', () {
+      when(foo.returnsFunction()).thenReturn((x, [s = 'x']) => s + s);
+      expect(foo.returnsFunction()(1), equals('xx'));
+      expect(foo.returnsFunction()(1, 'y'), equals('yy'));
+    });
+
+    test(
+        'a method returning a function with named optional non-nullable '
+        'argument can be stubbed', () {
+      when(foo.returnsFunctionNamed()).thenReturn((x, {s = 'x'}) => s + s);
+      expect(foo.returnsFunctionNamed()(1), equals('xx'));
+      expect(foo.returnsFunctionNamed()(1, s: 'y'), equals('yy'));
+    });
   });
 
   group('for a generated mock using unsupportedMembers', () {

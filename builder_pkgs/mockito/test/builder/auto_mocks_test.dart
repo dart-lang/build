@@ -2414,7 +2414,7 @@ void main() {
       _containsAllOf('''
         returnValue: (
           int __p0, [
-          String __p1,
+          String? __p1,
         ]) {},'''),
     );
   });
@@ -2431,7 +2431,7 @@ void main() {
       _containsAllOf('''
         returnValue: (
           _i2.Foo __p0, {
-          bool b,
+          bool? b,
         }) {},'''),
     );
   });

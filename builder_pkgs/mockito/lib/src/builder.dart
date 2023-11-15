@@ -1580,12 +1580,13 @@ class _MockClassInfo {
           } else if (parameter.isOptionalPositional) {
             final matchingParameter = _matchingParameter(parameter,
                 superParameterType: parameter.type,
-                defaultName: '__p$position');
+                defaultName: '__p$position',
+                forceNullable: true);
             b.optionalParameters.add(matchingParameter);
             position++;
           } else if (parameter.isOptionalNamed) {
             final matchingParameter = _matchingParameter(parameter,
-                superParameterType: parameter.type);
+                superParameterType: parameter.type, forceNullable: true);
             b.optionalParameters.add(matchingParameter);
           } else if (parameter.isRequiredNamed) {
             final matchingParameter = _matchingParameter(parameter,

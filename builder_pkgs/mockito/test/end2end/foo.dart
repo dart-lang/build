@@ -22,6 +22,9 @@ class Foo<T> {
   Future<void>? returnsNullableFutureVoid() => Future.value();
   Future<T> returnsFuture(T x) => Future.value(x);
   Bar returnsBar(int arg) => Bar();
+  String Function(int x, [String s]) returnsFunction() => (x, [s = '']) => '';
+  String Function(int x, {String s}) returnsFunctionNamed() =>
+      (x, {s = ''}) => '';
 }
 
 class Bar {
