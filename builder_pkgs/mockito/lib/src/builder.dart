@@ -488,11 +488,9 @@ class _MockTargetGatherer {
           case 'GenerateMocks':
             mockTargets
                 .addAll(_mockTargetsFromGenerateMocks(annotation, entryLib));
-            break;
           case 'GenerateNiceMocks':
             mockTargets.addAll(
                 _mockTargetsFromGenerateNiceMocks(annotation, entryLib));
-            break;
         }
       }
     }
@@ -2404,16 +2402,12 @@ extension on TypeSystem {
 extension on int {
   String get ordinal {
     final remainder = this % 10;
-    switch (remainder) {
-      case 1:
-        return '${this}st';
-      case 2:
-        return '${this}nd';
-      case 3:
-        return '${this}rd';
-      default:
-        return '${this}th';
-    }
+    return switch (remainder) {
+      1 => '${this}st',
+      2 => '${this}nd',
+      3 => '${this}rd',
+      _ => '${this}th'
+    };
   }
 }
 
