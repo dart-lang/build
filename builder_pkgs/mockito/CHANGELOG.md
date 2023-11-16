@@ -1,9 +1,9 @@
-## 5.4.3-wip
+## 5.4.3
 
 * Require analyzer 5.12.0, allow analyzer version 6.x;
 * Add example of writing a class to mock function objects.
 * Add support for the `build_extensions` build.yaml option
-* Require Dart >= 3.0.0.
+* Require Dart >=3.1.0.
 * **Potentially breaking** Changed default `String` value returned by nice
   mocks' unstubbed method to include some useful info. This could break the
   tests that relied on getting an empty `String` from unstubbed methods.

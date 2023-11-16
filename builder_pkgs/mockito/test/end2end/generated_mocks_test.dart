@@ -24,6 +24,7 @@ import 'generated_mocks_test.mocks.dart';
       #$hasDollarInName,
     },
   ),
+  // ignore: deprecated_member_use_from_same_package
   MockSpec<HasPrivate>(mixingIn: [HasPrivateMixin]),
 ])
 @GenerateNiceMocks(
