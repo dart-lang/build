@@ -1,5 +1,5 @@
 name: mockito
-version: 5.4.3
+version: 5.4.3-wip
 description: >-
   A mock framework inspired by Mockito with APIs for Fakes, Mocks,
   behavior verification, and stubbing.
