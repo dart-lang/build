@@ -72,18 +72,12 @@ class WebEntrypointBuilder implements Builder {
         deprecatedOptions: _deprecatedOptions);
     var compilerOption =
         options.config[_compilerOption] as String? ?? 'dartdevc';
-    WebCompiler compiler;
-    switch (compilerOption) {
-      case 'dartdevc':
-        compiler = WebCompiler.DartDevc;
-        break;
-      case 'dart2js':
-        compiler = WebCompiler.Dart2Js;
-        break;
-      default:
-        throw ArgumentError.value(compilerOption, _compilerOption,
-            'Only `dartdevc` and `dart2js` are supported.');
-    }
+    var compiler = switch (compilerOption) {
+      'dartdevc' => WebCompiler.DartDevc,
+      'dart2js' => WebCompiler.Dart2Js,
+      _ => throw ArgumentError.value(compilerOption, _compilerOption,
+          'Only `dartdevc` and `dart2js` are supported.')
+    };
 
     if (options.config[_dart2jsArgsOption] is! List) {
       var message = options.config[_dart2jsArgsOption] is String

@@ -16,6 +16,7 @@ const _libraries = [
   'indexed_db',
   'js',
   'js_interop',
+  'js_interop_unsafe',
   'js_util',
   'math',
   'svg',
