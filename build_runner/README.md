@@ -21,9 +21,11 @@ rebuilds are _incremental_ - inspired by tools such as [Bazel][].
 
 > **NOTE**: Are you a user of this package? You may be interested in
 > simplified user-facing documentation, such as our
-> [getting started guide][getting-started-link].
+> [getting started guide][getting-started-link] and [faq][faq-link].
 
-[getting-started-link]: https://goo.gl/b9o2j6
+[getting-started-link]: https://github.com/dart-lang/build/blob/master/docs/getting_started.md
+[faq-link]: https://github.com/dart-lang/build/blob/master/docs/faq.md
+[other-docs-link]: https://github.com/dart-lang/build/tree/master/docs
 
 * [Installation](#installation)
 * [Usage](#usage)
@@ -32,13 +34,14 @@ rebuilds are _incremental_ - inspired by tools such as [Bazel][].
   * [Outputs](#outputs)
   * [Source control](#source-control)
   * [Publishing packages](#publishing-packages)
+* [Docs](#docs)
 * [Contributing](#contributing)
   * [Testing](#testing)
 
 ## Installation
 
 This package is intended to support development of Dart projects with
-[`package:build`][]. In general, add it to your [`pubspec.yaml`][pubspec] 
+[`package:build`][]. In general, add it to your [`pubspec.yaml`][pubspec]
 as a [dev_dependencies][] by running the following command.
 
 ```console
@@ -55,6 +58,12 @@ also provide a `build.yaml` with the configuration. See the
 `package:build_config` README for more information on this file.
 
 To have web code compiled to js add a `dev_dependency` on `build_web_compilers`.
+
+## Docs
+
+More comprehensive documentation is stored in this repository, under the
+[docs][other-docs-link] directory. If you find something is undocumented, please
+file an issue.
 
 ### Built-in Commands
 
