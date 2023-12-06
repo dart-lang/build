@@ -220,8 +220,8 @@ $rawOutput
         if (typeAssetId.path.startsWith('lib/')) {
           typeUris[element] = typeAssetId.uri.toString();
         } else {
-          typeUris[element] =
-              p.relative(typeAssetId.path, from: p.dirname(entryAssetPath));
+          typeUris[element] = p.posix.relative(typeAssetId.path,
+              from: p.posix.dirname(entryAssetPath));
         }
       } on UnresolvableAssetException {
         // Asset may be in a summary.
