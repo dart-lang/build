@@ -125,10 +125,10 @@ void main() {
     group('language versioning', () {
       test('gives a correct languageVersion based on comments', () async {
         await resolveSources({
-          'a|web/main.dart': '// @dart=2.1\n\nmain() {}',
+          'a|web/main.dart': '// @dart=3.1\n\nmain() {}',
         }, (resolver) async {
           var lib = await resolver.libraryFor(entryPoint);
-          expect(lib.languageVersion.effective.major, 2);
+          expect(lib.languageVersion.effective.major, 3);
           expect(lib.languageVersion.effective.minor, 1);
         }, resolvers: AnalyzerResolvers());
       });
