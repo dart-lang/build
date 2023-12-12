@@ -79,19 +79,6 @@ void main() {}
 void main() {
   late InMemoryAssetWriter writer;
 
-  /// Test [MockBuilder] in a package which has not opted into null safety.
-  Future<void> testPreNonNullable(Map<String, String> sourceAssets,
-      {Map<String, /*String|Matcher<String>*/ Object>? outputs,
-      Map<String, dynamic> config = const <String, dynamic>{}}) async {
-    final packageConfig = PackageConfig([
-      Package('foo', Uri.file('/foo/'),
-          packageUriRoot: Uri.file('/foo/lib/'),
-          languageVersion: LanguageVersion(2, 7))
-    ]);
-    await testBuilder(buildMocks(BuilderOptions(config)), sourceAssets,
-        writer: writer, outputs: outputs, packageConfig: packageConfig);
-  }
-
   /// Test [MockBuilder] in a package which has opted into null safety.
   Future<void> testWithNonNullable(Map<String, String> sourceAssets,
       {Map<String, /*String|Matcher<List<int>>*/ Object>? outputs,
@@ -3372,65 +3359,6 @@ void main() {
         '''),
       },
       message: contains("Mockito cannot mock a final class 'Foo'"),
-    );
-  });
-
-  test('given a pre-non-nullable library, includes an opt-out comment',
-      () async {
-    await testPreNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        abstract class Foo {
-          int f(int a);
-        }
-        '''),
-      },
-      outputs: {'foo|test/foo_test.mocks.dart': _containsAllOf('// @dart=2.9')},
-    );
-  });
-
-  test('given a pre-non-nullable library, does not override any members',
-      () async {
-    await testPreNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        abstract class Foo {
-          int f(int a);
-        }
-        '''),
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': _containsAllOf(dedent('''
-        class MockFoo extends _i1.Mock implements _i2.Foo {
-          MockFoo() {
-            _i1.throwOnMissingStub(this);
-          }
-        }
-        '''))
-      },
-    );
-  });
-
-  test('given a pre-non-nullable library, overrides toString if necessary',
-      () async {
-    await testPreNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        abstract class Foo {
-          String toString({bool a = false});
-        }
-        '''),
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': _containsAllOf(
-            'String toString({bool a = false}) => super.toString();')
-      },
     );
   });
 

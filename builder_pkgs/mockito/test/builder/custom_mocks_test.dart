@@ -89,18 +89,6 @@ MockFoo() {
 void main() {
   late InMemoryAssetWriter writer;
 
-  /// Test [MockBuilder] in a package which has not opted into null safety.
-  Future<void> testPreNonNullable(Map<String, String> sourceAssets,
-      {Map<String, /*String|Matcher<String>*/ Object>? outputs}) async {
-    final packageConfig = PackageConfig([
-      Package('foo', Uri.file('/foo/'),
-          packageUriRoot: Uri.file('/foo/lib/'),
-          languageVersion: LanguageVersion(2, 7))
-    ]);
-    await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
-        outputs: outputs, packageConfig: packageConfig);
-  }
-
   /// Builds with [MockBuilder] in a package which has opted into null safety,
   /// returning the content of the generated mocks library.
   Future<String> buildWithNonNullable(Map<String, String> sourceAssets) async {
@@ -606,34 +594,6 @@ void main() {
         }
         '''),
       'foo|test/foo_test.dart': '''
-        import 'package:foo/foo.dart';
-        import 'package:mockito/annotations.dart';
-
-        @GenerateMocks(
-          [],
-          customMocks: [
-            MockSpec<Foo>(onMissingStub: OnMissingStub.returnDefault),
-          ],
-        )
-        void main() {}
-        '''
-    });
-    expect(mocksContent, contains('returnValue: 0,'));
-    expect(mocksContent, contains('returnValueForMissingStub: 0,'));
-  });
-
-  test(
-      'generates mock methods with non-nullable return types, specifying '
-      'legal default values for basic known types, in mixed mode', () async {
-    final mocksContent = await buildWithNonNullable({
-      ...annotationsAsset,
-      'foo|lib/foo.dart': dedent(r'''
-        abstract class Foo {
-          int m({required int x, double? y});
-        }
-        '''),
-      'foo|test/foo_test.dart': '''
-        // @dart=2.9
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
 
@@ -1270,58 +1230,6 @@ void main() {
         '''),
       },
       message: contains('Undefined type MockBar'),
-    );
-  });
-
-  test('given a pre-non-nullable library, does not override any members',
-      () async {
-    await testPreNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
-        abstract class Foo {
-          int f(int a);
-        }
-        '''),
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': _containsAllOf(dedent('''
-        class MockFoo extends _i1.Mock implements _i2.Foo {
-          $_constructorWithThrowOnMissingStub
-        }
-        '''))
-      },
-    );
-  });
-
-  test(
-      'given a pre-non-nullable safe library, does not write "?" on interface '
-      'types', () async {
-    await testPreNonNullable(
-      {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent('''
-        abstract class Foo<T> {
-          int f(int a);
-        }
-        '''),
-        'foo|test/foo_test.dart': dedent('''
-        import 'package:foo/foo.dart';
-        import 'package:mockito/annotations.dart';
-        @GenerateMocks(
-            [], customMocks: [MockSpec<Foo<int>>(as: #MockFoo)])
-        void main() {}
-        '''),
-      },
-      outputs: {
-        'foo|test/foo_test.mocks.dart': _containsAllOf(dedent('''
-        class MockFoo extends _i1.Mock implements _i2.Foo<int> {
-          $_constructorWithThrowOnMissingStub
-        }
-        '''))
-      },
     );
   });
 
