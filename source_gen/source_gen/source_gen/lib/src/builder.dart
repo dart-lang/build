@@ -2,9 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-//TODO(kevmoo): https://github.com/dart-lang/linter/issues/3563
-// ignore_for_file: use_super_parameters
-
 import 'dart:convert';
 
 import 'package:analyzer/dart/ast/ast.dart';
@@ -219,18 +216,14 @@ class SharedPartBuilder extends _Builder {
   /// [allowSyntaxErrors] indicates whether to allow syntax errors in input
   /// libraries.
   SharedPartBuilder(
-    List<Generator> generators,
+    super.generators,
     String partId, {
-    String Function(String code)? formatOutput,
-    List<String> additionalOutputExtensions = const [],
-    bool allowSyntaxErrors = false,
+    super.formatOutput,
+    super.additionalOutputExtensions,
+    super.allowSyntaxErrors,
   }) : super(
-          generators,
-          formatOutput: formatOutput,
           generatedExtension: '.$partId.g.part',
-          additionalOutputExtensions: additionalOutputExtensions,
           header: '',
-          allowSyntaxErrors: allowSyntaxErrors,
         ) {
     if (!_partIdRegExp.hasMatch(partId)) {
       throw ArgumentError.value(
@@ -278,21 +271,15 @@ class PartBuilder extends _Builder {
   /// If available, the `build_extensions` option will be extracted from
   /// [options] to allow output files to be generated into a different directory
   PartBuilder(
-    List<Generator> generators,
+    super.generators,
     String generatedExtension, {
-    String Function(String code)? formatOutput,
-    List<String> additionalOutputExtensions = const [],
-    String? header,
-    bool allowSyntaxErrors = false,
-    BuilderOptions? options,
+    super.formatOutput,
+    super.additionalOutputExtensions,
+    super.header,
+    super.allowSyntaxErrors,
+    super.options,
   }) : super(
-          generators,
-          formatOutput: formatOutput,
           generatedExtension: generatedExtension,
-          additionalOutputExtensions: additionalOutputExtensions,
-          header: header,
-          allowSyntaxErrors: allowSyntaxErrors,
-          options: options,
         );
 }
 
