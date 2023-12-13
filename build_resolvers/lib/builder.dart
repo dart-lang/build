@@ -12,6 +12,10 @@ import 'src/build_asset_uri_resolver.dart';
 
 Builder transitiveDigestsBuilder(_) => _TransitiveDigestsBuilder();
 
+PostProcessBuilder transitiveDigestCleanup(BuilderOptions options) =>
+    FileDeletingBuilder([transitiveDigestExtension],
+        isEnabled: options.config['enabled'] as bool? ?? true);
+
 /// Computes a digest comprised of the current libraries digest as well as its
 /// transitive dependency digests, and writes it to a file next to the library.
 ///
