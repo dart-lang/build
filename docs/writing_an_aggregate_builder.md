@@ -48,8 +48,6 @@ currently support the following synthetic files for this purpose:
 
 *   `lib/$lib$`
 *   `$package$`
-*   `test/$test$` (deprecated)
-*   `web/$web$` (deprecated)
 
 When choosing whether to use `$package$` or `lib/$lib$`, there are two primary
 considerations.
@@ -151,8 +149,8 @@ class ListAllFilesBuilder implements Builder {
 ## Using a `Resolver`
 
 Since the input of aggregate builders isn't a real asset that could be read, we
-also can't use `buildStep.inputLibrary` to resolve it. However, recent versions
-of the build system allow us to resolve any asset our builder can read.
+also can't use `buildStep.inputLibrary` to resolve it. However some methods,
+such as `libraryFor`, allow resolving any asset the builder can read.
 
 For instance, we could adapt the `ListAllFilesBuilder` from before to instead
 list the names of all classes defined in `lib/`:
@@ -197,24 +195,15 @@ As the resolver has no single entry point in aggregate builders, be aware that
 [`findLibraryByName`][findLibraryByName] and [`libraries`][libraries] can only
 find libraries that have been discovered through `libraryFor` or `isLibrary`.
 
-Note that older versions of the build `Resolver` only picked up libraries based
-on the builder's input. As the synthetic input asset of an aggregate builder
-isn't readable, the `Resolver` wasn't available for aggregate builders in older
-versions of the build system.
+### Improving invalidation
 
-To ensure your builder only runs in an environment where this is supported, you
-can set the minimum version in your `pubspec.yaml`:
+If the builder uses a `Resolver` the output will be invalidated, and the builder
+will be rerun, any time there is a change in any resolved library _or any of
+it's transitive imports_. If the builder output only depends on limited
+information from the resolved libraries, it may be possible to invalidate the
+output only when a library changes in a way that is meaningful to the builder.
 
-```yaml
-dependencies:
-  build_resolvers: ^1.3.0
-  # ...
-```
-
-### Workaround for older versions
-
-If you want to support older versions of the build system as well, you can split
-your aggregate builder into two steps:
+Split the process across two builders:
 
 1.  A `Builder` with `buildExtensions` of `{'.dart': ['.some_name.info']}`. Use
     the `Resolver` to find the information about the code that will be necessary
@@ -232,10 +221,6 @@ by the order of the `builder_factories` in the config. In the separate builder
 definition case ordering should be handled by configuring the second step to
 have a `required_inputs: ['.some_name.info']` based on the build extensions of
 the first step.
-
-This strategy has the benefit of improved invalidation - only the files that
-_need_ to be re-read with the `Resolver` will be invalidated, the rest of the
-`.info` files will be retained as-is.
 
 [findLibraryByName]: https://pub.dev/documentation/build/latest/build/Resolver/findLibraryByName.html
 [libraries]: https://pub.dev/documentation/build/latest/build/Resolver/libraries.html

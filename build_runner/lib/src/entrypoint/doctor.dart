@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
@@ -11,6 +12,7 @@ import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 
 import '../logging/std_io_logging.dart';
 import '../package_graph/build_config_overrides.dart';
@@ -38,6 +40,14 @@ class DoctorCommand extends BuildRunnerCommand {
     for (final builderApplication in builderApplications) {
       final builderOk = _checkBuildExtensions(builderApplication, config);
       isOk = isOk && builderOk;
+    }
+
+    if (File(p.join(p.current, 'build.yml')).existsSync() &&
+        !File(p.join(p.current, 'build.yaml')).existsSync()) {
+      logger.warning(
+          'Found a `build.yml` file but no `build.yaml` file, rename it with '
+          'the `.yaml` extension for it to take effect.');
+      isOk = false;
     }
 
     if (isOk) {

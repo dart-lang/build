@@ -10,3 +10,9 @@ builders:
     is_optional: True
     required_inputs: [".dart"]
     build_to: cache
+    applies_builders:
+      - :transitive_digest_cleanup
+post_process_builders:
+  transitive_digest_cleanup:
+    import: "package:build_resolvers/builder.dart"
+    builder_factory: transitiveDigestCleanup

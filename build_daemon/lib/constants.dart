@@ -2,8 +2,10 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
 const readyToConnectLog = 'READY TO CONNECT';
@@ -42,10 +44,9 @@ var _username = Platform.environment['USER'] ?? '';
 String daemonWorkspace(String workingDirectory) {
   var segments = [Directory.systemTemp.path];
   if (_username.isNotEmpty) segments.add(_username);
-  segments.add(workingDirectory
-      .replaceAll('/', '_')
-      .replaceAll(':', '_')
-      .replaceAll('\\', '_'));
+  final workingDirHash =
+      base64UrlEncode(md5.convert(workingDirectory.codeUnits).bytes);
+  segments.add(workingDirHash);
   return p.joinAll(segments);
 }
 

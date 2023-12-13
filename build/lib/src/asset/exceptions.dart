@@ -70,7 +70,7 @@ class InvalidInputException implements Exception {
 class BuildStepCompletedException implements Exception {
   @override
   String toString() => 'BuildStepCompletedException: '
-      'Attempt to use a BuildStep after is has completed';
+      'Attempt to use a BuildStep after it has completed';
 }
 
 class UnresolvableAssetException implements Exception {

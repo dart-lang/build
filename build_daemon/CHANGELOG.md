@@ -1,5 +1,7 @@
-## 4.0.1-wip
+## 4.0.1
 
+- Use a hash of the working dir to create the unique workspace dir. This
+  resolves an issue when file names become too long.
 - Bump the min sdk to 3.0.0.
 
 ## 4.0.0

@@ -136,10 +136,15 @@ final _builders = <_i1.BuilderApplication>[
     _i1.toAllPackages(),
     isOptional: true,
     hideOutput: true,
+    appliesBuilders: const [r'build_resolvers:transitive_digest_cleanup'],
   ),
   _i1.applyPostProcess(
     r'build_modules:module_cleanup',
     _i6.moduleCleanup,
+  ),
+  _i1.applyPostProcess(
+    r'build_resolvers:transitive_digest_cleanup',
+    _i8.transitiveDigestCleanup,
   ),
   _i1.applyPostProcess(
     r'build_web_compilers:dart2js_archive_extractor',

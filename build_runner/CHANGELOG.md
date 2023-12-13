@@ -1,8 +1,14 @@
-## 2.4.7-wip
+## 2.4.8-wip
 
+- Update README.md to point to the FAQ and other docs.
 - Print stack traces for `Error` subtype exceptions in non-verbose mode.
+
+## 2.4.7
+
 - Fix broken link in README.md.
 - Bump the min sdk to 3.0.0.
+- Add a warning to the `doctor` command if a `build.yml` file is found (instead
+  of a `build.yaml` file).
 
 ## 2.4.6
 

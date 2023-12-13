@@ -1,4 +1,8 @@
-## 2.4.1-wip
+## 2.4.2
+
+- Add a builder to clean up transitive digest files from the build output.
+
+## 2.4.1
 
 - Fix an issue where deleted files were not removed from the analysis engine,
   and were still accessible via the analyzer apis.

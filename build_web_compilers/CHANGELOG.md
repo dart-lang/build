@@ -1,4 +1,11 @@
-## 4.0.6-wip
+## 4.0.7
+
+- Support `dart:js_interop_unsafe`.
+- Require Dart 3.1 or greater.
+
+## 4.0.6
+
+- Allow version 3.3.x of the Dart SDK.
 
 ## 4.0.5
 
