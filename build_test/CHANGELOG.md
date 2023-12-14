@@ -1,6 +1,7 @@
-## 2.2.2-wip
+## 2.2.2
 
 - Bump the min sdk to 3.0.0.
+- Support the latest version of `package:test_core`.
 
 ## 2.2.1
 
