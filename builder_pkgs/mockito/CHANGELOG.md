@@ -1,3 +1,8 @@
+## 5.4.4
+
+* Use `posix` style for local imports.
+* Allow test_api ^0.7.0.
+
 ## 5.4.3
 
 * Require analyzer 5.12.0, allow analyzer version 6.x;
