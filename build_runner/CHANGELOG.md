@@ -1,6 +1,7 @@
 ## 2.4.8-wip
 
 - Update README.md to point to the FAQ and other docs.
+- Print stack traces for `Error` subtype exceptions in non-verbose mode.
 
 ## 2.4.7
 

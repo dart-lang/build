@@ -33,7 +33,7 @@ StringBuffer colorLog(LogRecord record, {required bool verbose}) {
     lines.add(record.error!);
   }
 
-  if (record.stackTrace != null && verbose) {
+  if (record.stackTrace != null && (verbose || record.error is Error)) {
     var trace = Trace.from(record.stackTrace!);
     const buildSystem = {'build_runner', 'build_runner_core', 'build'};
     if (trace.frames.isNotEmpty &&
