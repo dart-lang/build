@@ -1,3 +1,8 @@
+## 1.5.1-wip
+
+- Document deduplication behavior for the output of
+  `GeneratorForAnnotation.generateForAnnotatedElement`.
+
 ## 1.5.0
 
 - Add `throwOnUnresolved` configuration to the `GeneratorForAnnotation`
