@@ -52,7 +52,7 @@ class BuildConfig {
     }
   }
 
-  @JsonKey(includeFromJson: true, includeToJson: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   final String packageName;
 
   /// All the `builders` defined in a `build.yaml` file.
