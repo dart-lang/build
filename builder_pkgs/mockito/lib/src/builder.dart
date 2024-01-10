@@ -123,6 +123,7 @@ class MockBuilder implements Builder {
       // example.
       b.body.add(Code(
           '// ignore_for_file: invalid_use_of_visible_for_testing_member\n'));
+      b.body.add(Code('// ignore_for_file: must_be_immutable\n'));
       b.body.add(Code('// ignore_for_file: prefer_const_constructors\n'));
       // The code_builder `asA` API unconditionally adds defensive parentheses.
       b.body.add(Code('// ignore_for_file: unnecessary_parenthesis\n'));

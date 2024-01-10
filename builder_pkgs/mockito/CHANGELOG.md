@@ -1,3 +1,9 @@
+## 5.4.5-wip
+
+* Ignore "must_be_immutable" warning in generated files. Mocks cannot be made
+  immutable anyway, but this way users aren't prevented from using generated
+  mocks altogether.
+
 ## 5.4.4
 
 * Use `posix` style for local imports.
