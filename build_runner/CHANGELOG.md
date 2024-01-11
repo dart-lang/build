@@ -1,7 +1,8 @@
-## 2.4.8-wip
+## 2.4.8
 
 - Update README.md to point to the FAQ and other docs.
 - Print stack traces for `Error` subtype exceptions in non-verbose mode.
+- Support latest version of `package:js`.
 
 ## 2.4.7
 
