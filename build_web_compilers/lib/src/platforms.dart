@@ -6,6 +6,7 @@ import 'package:build_modules/build_modules.dart';
 
 const _libraries = [
   '_internal',
+  '_js_annotations',
   'async',
   'collection',
   'convert',
