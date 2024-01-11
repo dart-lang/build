@@ -155,7 +155,8 @@ class ModuleLibrary {
     if (parsed.directives.any((d) =>
         d is UriBasedDirective &&
         d.uri.stringValue?.startsWith('dart:_') == true &&
-        id.package != 'dart_internal')) {
+        id.package != 'dart_internal' &&
+        id.package != 'js')) {
       return ModuleLibrary._nonImportable(id);
     }
     if (_isPart(parsed)) {

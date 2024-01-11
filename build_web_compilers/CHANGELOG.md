@@ -1,6 +1,7 @@
 ## 4.0.9
 
 - Support latest version of `package:js`.
+- Allow `dart:_js_annotations` on web platforms.
 
 ## 4.0.8
 

@@ -1,3 +1,7 @@
+## 5.0.7
+
+- Fixes to support package:js version 0.7.0.
+
 ## 5.0.6
 
 - Allow version 3.4.x of the Dart SDK.
