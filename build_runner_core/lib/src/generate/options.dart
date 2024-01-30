@@ -42,6 +42,7 @@ const List<String> defaultRootPackageSources = [
   'example/**',
   'lib/**',
   'test/**',
+  'integration_test/**',
   'tool/**',
   'web/**',
   'node/**',
