@@ -1,6 +1,7 @@
-## 7.2.12-wip
+## 7.3.0
 
 - Bump the min sdk to 3.0.0.
+- Add `integration_test` as a default top level directory for sources.
 
 ## 7.2.11
 
