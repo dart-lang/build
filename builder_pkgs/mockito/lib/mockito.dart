@@ -15,6 +15,8 @@
 // ignore: deprecated_member_use
 export 'package:test_api/fake.dart' show Fake;
 
+export 'src/dummies.dart'
+    show provideDummy, provideDummyBuilder, MissingDummyValueError;
 export 'src/mock.dart'
     show
         Mock,
@@ -53,5 +55,3 @@ export 'src/mock.dart'
         MissingStubError,
         FakeUsedError,
         FakeFunctionUsedError;
-export 'src/dummies.dart'
-    show provideDummy, provideDummyBuilder, MissingDummyValueError;
