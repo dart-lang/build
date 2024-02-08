@@ -11,7 +11,7 @@ builders:
   resolvingBuilder:
     import: "package:example/builder.dart"
     builder_factories: ["resolvingBuilder"]
-    build_extensions: {".dart": [".dart.info.json"]}
+    build_extensions: {".dart": [".dart.info"]}
     build_to: source
     auto_apply: root_package
     defaults:
