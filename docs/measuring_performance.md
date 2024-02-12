@@ -59,7 +59,7 @@ the slice.
 **Slice duration**: The total time spent on the current slice.
 
 **User time**: The actual time spent synchronously performing actions related to
-the current stage. This does not count time spent waiting for asynchronous taks.
+the current stage. This does not count time spent waiting for asynchronous tasks.
 This is generally the most relevant time, because asynchronous reads of assets
 as an example may require actually building those files.
 
