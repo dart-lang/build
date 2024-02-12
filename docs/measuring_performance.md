@@ -48,7 +48,7 @@ async work.
 ### Stage time, slice time, user time, and real time
 
 Within each action (row), you can hover over one of the active time slices,
-which will show you three time metrics, described as follows:
+which will show you three several metrics, described as follows:
 
 **Stage time**: The start and end time (relative to the start of the build) for
 the stage of the time slice you are currently hovering over.
