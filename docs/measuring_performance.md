@@ -34,18 +34,29 @@ If the builder uses a `Resolver`, you will also see a breakdown of time spent
 getting the resolver. This will appear below the `build` time since it overlaps
 with it.
 
-### Stage time, Slice time, User time, and Real time
+### Slices
+
+A "slice" is a piece of actual synchronous work, up to the granularity of the
+[slices resolution](#slices-resolution) configuration, visualized as a
+horizontal bar in a row in the graph. It does not include asynchronous work
+(unless it is less than the slice resolution).
+
+If [show async slices](#show-async-slices) is disabled, the granularity is
+infinite, so a slice is just the entire time spent in a stage, including all
+async work.
+
+### Stage time, slice time, user time, and real time
 
 Within each action (row), you can hover over one of the active time slices,
 which will show you three time metrics, described as follows:
 
-**Stage Time**: The start and end time (relative to the start of the build) for
+**Stage time**: The start and end time (relative to the start of the build) for
 the stage of the time slice you are currently hovering over.
 
-**Slice Time**: The total time spent on the current "slice", if
-[show async slices](#show-async-slices) is enabled. These are actual slices of
-synchronous work, up to the granularity of the
-[slices resolution](#slices-resolution) configuration.
+**Slice time**: The start and end time (relative to the start of the build) for
+the slice.
+
+**Slice duration**: The total time spent on the current slice.
 
 **User time**: The actual time spent synchronously performing actions related to
 the current stage. This does not count time spent waiting for asynchronous taks.
