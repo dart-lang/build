@@ -14,7 +14,7 @@ Note that for larger builds it may take a while to load the timeline.
 
 ## Understanding the performance timeline
 
-Each line in the timeline corresponds to a single "action" in the build, which
+Each row in the timeline corresponds to a single "action" in the build, which
 is a single `Builder` being applied to a single primary input file.
 
 In the left hand column is the name of the builder, followed by a colon, and
@@ -33,3 +33,56 @@ The time for each action is split into at 3 primary pieces:
 If the builder uses a `Resolver`, you will also see a breakdown of time spent
 getting the resolver. This will appear below the `build` time since it overlaps
 with it.
+
+### Stage time, Slice time, User time, and Real time
+
+Within each action (row), you can hover over one of the active time slices,
+which will show you three time metrics, described as follows:
+
+**Stage Time**: The start and end time (relative to the start of the build) for
+the stage of the time slice you are currently hovering over.
+
+**Slice Time**: The total time spent on the current "slice", if
+[show async slices](#show-async-slices) is enabled. These are actual slices of
+synchronous work, up to the granularity of the
+[slices resolution](#slices-resolution) configuration.
+
+**User time**: The actual time spent synchronously performing actions related to
+the current stage. This does not count time spent waiting for asynchronous taks.
+This is generally the most relevant time, because asynchronous reads of assets
+as an example may require actually building those files.
+
+**Real time**: The total time between the start and end time of this stage. This
+includes time waiting for asynchronous tasks.
+
+## Configuring the timeline
+
+### Hide skipped actions
+
+Many actions in a build are "optional", which means they only run if some other
+action asks to read their output. This setting toggles whether those rows
+should be hidden or not.
+
+### Show async slices
+
+Off by default for performance reasons, this shows the actual synchronous points
+in time during which the action was running, not including the time it spent
+waiting for other async tasks.
+
+This shows you visually how much time it spent waiting for other async tasks,
+typically other build actions or a resolver.
+
+### Slices resolution
+
+For performance reasons, when show async slices is enabled, the actual slices
+are grouped together if they occur within a certain amount of time from each
+other. This setting configures that granularity, and is measured in
+milliseconds.
+
+Larger numbers will give less accurate but faster loads, smaller numbers are more
+accurate but will slow down the performance of the visualization.
+
+### Filter
+
+This filters rows from the visualization based on a regex of the value in the
+first column. This allows you to filter based on builder name or primary input.
