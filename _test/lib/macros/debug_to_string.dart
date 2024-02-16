@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+// ignore: implementation_imports
 import 'package:_fe_analyzer_shared/src/macros/api.dart';
 
 macro class DebugToString implements ClassDeclarationsMacro {
