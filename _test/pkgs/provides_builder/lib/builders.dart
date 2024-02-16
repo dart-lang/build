@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 
 class _SomeBuilder implements Builder {
@@ -60,9 +61,33 @@ class _ThrowingBuilder extends Builder {
   }
 }
 
+class _HasDebugToStringBuilder extends Builder {
+  @override
+  final buildExtensions = {
+    '.dart': ['.hasDebugToString']
+  };
+
+  @override
+  Future<void> build(BuildStep buildStep) async {
+    final library = await buildStep.inputLibrary;
+    final buffer = StringBuffer()..writeln('classes:');
+    for (var element in library.topLevelElements) {
+      if (element is! ClassElement) continue;
+      var debugToString = element.getMethod('debugToString') ??
+          element.augmentation?.getMethod('debugToString');
+      buffer.writeln('  ${element.name}:');
+      buffer.writeln('    hasDebugToString: ${debugToString != null}');
+    }
+    await buildStep.writeAsString(
+        buildStep.inputId.changeExtension('.hasDebugToString'),
+        buffer.toString());
+  }
+}
+
 Builder someBuilder(BuilderOptions options) =>
     _SomeBuilder.fromOptions(options);
 Builder notApplied(BuilderOptions options) => _SomeBuilder.fromOptions(options);
 PostProcessBuilder somePostProcessBuilder(BuilderOptions options) =>
     _SomePostProcessBuilder.fromOptions(options);
 Builder throwingBuilder(_) => _ThrowingBuilder();
+Builder hasDebugToStringBuilder(_) => _HasDebugToStringBuilder();
