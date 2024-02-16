@@ -8,6 +8,7 @@ targets:
           - --enable-asserts
         generate_for:
           - web/main.dart
+          - web/macros/main.dart
           - web/sub/main.dart
           - test/configurable_uri_test.dart
           - test/configurable_uri_test.dart.browser_test.dart

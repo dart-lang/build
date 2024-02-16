@@ -2,9 +2,10 @@ name: _test
 publish_to: none
 
 environment:
-  sdk: ^3.0.0
+  sdk: ^3.3.0-0
 
 dev_dependencies:
+  _fe_analyzer_shared: any
   analyzer: any
   build: any
   build_config: any
@@ -23,6 +24,14 @@ dev_dependencies:
   test_process: ^2.0.0
 
 dependency_overrides:
+  _fe_analyzer_shared:
+    path: ../../dart-lang-sdk/sdk/pkg/_fe_analyzer_shared
+  _js_interop_checks:
+    path: ../../dart-lang-sdk/sdk/pkg/_js_interop_checks
+  analyzer:
+    path: ../../dart-lang-sdk/sdk/pkg/analyzer
+  build_integration:
+    path: ../../dart-lang-sdk/sdk/pkg/build_integration
   build:
     path: ../build
   build_config:
@@ -41,5 +50,35 @@ dependency_overrides:
     path: ../build_test
   build_web_compilers:
     path: ../build_web_compilers
+  compiler:
+    path: ../../dart-lang-sdk/sdk/pkg/compiler
+  dart2js_info:
+    path: ../../dart-lang-sdk/sdk/pkg/dart2js_info
+  dart2wasm:
+    path: ../../dart-lang-sdk/sdk/pkg/dart2wasm
+  dev_compiler:
+    path: ../../dart-lang-sdk/sdk/pkg/dev_compiler
+  dart_style:
+    path: ../../dart-lang-sdk/sdk/third_party/pkg/dart_style
+  front_end:
+    path: ../../dart-lang-sdk/sdk/pkg/front_end
+  frontend_server:
+    path: ../../dart-lang-sdk/sdk/pkg/frontend_server
+  js_ast:
+    path: ../../dart-lang-sdk/sdk/pkg/js_ast
+  js_runtime:
+    path: ../../dart-lang-sdk/sdk/pkg/js_runtime
+  js_shared:
+    path: ../../dart-lang-sdk/sdk/pkg/js_shared
+  kernel:
+    path: ../../dart-lang-sdk/sdk/pkg/kernel
+  meta:
+    path: ../../dart-lang-sdk/sdk/pkg/meta
+  mmap:
+    path: ../../dart-lang-sdk/sdk/pkg/mmap
   scratch_space:
     path: ../scratch_space
+  vm:
+    path: ../../dart-lang-sdk/sdk/pkg/vm
+  wasm_builder:
+    path: ../../dart-lang-sdk/sdk/pkg/wasm_builder
