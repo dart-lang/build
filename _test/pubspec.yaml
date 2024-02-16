@@ -4,8 +4,10 @@ publish_to: none
 environment:
   sdk: ^3.3.0-0
 
-dev_dependencies:
+dependencies:
   _fe_analyzer_shared: any
+
+dev_dependencies:
   analyzer: any
   build: any
   build_config: any
@@ -30,14 +32,14 @@ dependency_overrides:
     path: ../../dart-lang-sdk/sdk/pkg/_js_interop_checks
   analyzer:
     path: ../../dart-lang-sdk/sdk/pkg/analyzer
-  build_integration:
-    path: ../../dart-lang-sdk/sdk/pkg/build_integration
   build:
     path: ../build
   build_config:
     path: ../build_config
   build_daemon:
     path: ../build_daemon
+  build_integration:
+    path: ../../dart-lang-sdk/sdk/pkg/build_integration
   build_modules:
     path: ../build_modules
   build_resolvers:
@@ -56,10 +58,10 @@ dependency_overrides:
     path: ../../dart-lang-sdk/sdk/pkg/dart2js_info
   dart2wasm:
     path: ../../dart-lang-sdk/sdk/pkg/dart2wasm
-  dev_compiler:
-    path: ../../dart-lang-sdk/sdk/pkg/dev_compiler
   dart_style:
     path: ../../dart-lang-sdk/sdk/third_party/pkg/dart_style
+  dev_compiler:
+    path: ../../dart-lang-sdk/sdk/pkg/dev_compiler
   front_end:
     path: ../../dart-lang-sdk/sdk/pkg/front_end
   frontend_server:
