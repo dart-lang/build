@@ -49,13 +49,18 @@ class ModuleLibrary {
   /// Whether this library has a `main` function.
   final bool hasMain;
 
+  /// A map of the macro class names defined in this library, to the names of
+  /// the public constructors for those classes.
+  final Map<String, List<String>> macroConstructors;
+
   ModuleLibrary._(this.id,
       {required this.isEntryPoint,
       required Set<AssetId> deps,
       required this.parts,
       required this.conditionalDeps,
       required this.sdkDeps,
-      required this.hasMain})
+      required this.hasMain,
+      required this.macroConstructors})
       : _deps = deps,
         isImportable = true;
 
@@ -66,7 +71,8 @@ class ModuleLibrary {
         parts = const {},
         conditionalDeps = const [],
         sdkDeps = const {},
-        hasMain = false;
+        hasMain = false,
+        macroConstructors = const {};
 
   factory ModuleLibrary._fromCompilationUnit(
       AssetId id, bool isEntryPoint, CompilationUnit parsed) {
@@ -120,13 +126,31 @@ class ModuleLibrary {
         deps.add(linkedId);
       }
     }
+
+    // Find all macros and record their constructors.
+    var macroConstructors = <String, List<String>>{};
+    for (var declaration in parsed.declarations) {
+      if (declaration is ClassDeclaration && declaration.macroKeyword != null) {
+        for (var member in declaration.members) {
+          if (member is ConstructorDeclaration &&
+              member.constKeyword != null &&
+              member.name?.lexeme.startsWith('_') != true) {
+            macroConstructors
+                .putIfAbsent(declaration.name.lexeme, () => [])
+                .add(member.name?.lexeme ?? '');
+          }
+        }
+      }
+    }
+
     return ModuleLibrary._(id,
         isEntryPoint: isEntryPoint,
         deps: deps,
         parts: parts,
         sdkDeps: sdkDeps,
         conditionalDeps: conditionalDeps,
-        hasMain: _hasMainMethod(parsed));
+        hasMain: _hasMainMethod(parsed),
+        macroConstructors: macroConstructors);
   }
 
   static void _checkValidConditionalImport(
@@ -185,7 +209,12 @@ class ModuleLibrary {
           return Map.of((conditions as Map<String, dynamic>)
               .map((k, v) => MapEntry(k, AssetId.parse(v as String))));
         }).toList(),
-        hasMain: json['hasMain'] as bool);
+        hasMain: json['hasMain'] as bool,
+        macroConstructors: {
+          for (var entry
+              in (json['macroConstructors'] as Map<String, Object?>).entries)
+            entry.key: List.from(entry.value as List<Object?>, growable: false)
+        });
   }
 
   String serialize() => jsonEncode({
@@ -198,6 +227,7 @@ class ModuleLibrary {
             .toList(),
         'sdkDeps': sdkDeps.toList(),
         'hasMain': hasMain,
+        'macroConstructors': macroConstructors,
       });
 
   List<AssetId> depsForPlatform(DartPlatform platform) {
