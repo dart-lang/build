@@ -1,12 +1,7 @@
 {
-    "httpHeaders": [
+    "ignorePatterns": [
         {
-            "urls": [
-                "https://stackoverflow.com"
-            ],
-            "headers": {
-                "User-Agent": "dart-lang/build Link Checker"
-            }
+            "pattern": "^https://stackoverflow.com"
         }
     ]
 }
