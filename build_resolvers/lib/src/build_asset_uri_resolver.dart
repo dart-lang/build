@@ -261,7 +261,20 @@ Set<AssetId> _parseDependencies(String content, AssetId from) => HashSet.of(
           .whereType<String>()
           .where((uriContent) =>
               !_ignoredSchemes.any(Uri.parse(uriContent).isScheme))
-          .map((content) => AssetId.resolve(Uri.parse(content), from: from)),
+          .map((content) => AssetId.resolve(Uri.parse(content), from: from))
+          // TODO: Something better here? We assume anything depending on the
+          // macro APIs is a macro, and the bootstrap program we create for
+          // those libraries will require the macro implementations, but there
+          // is no transitive dependency exposed.
+          .followedBy(
+              from == AssetId('_fe_analyzer_shared', 'lib/src/macros/api.dart')
+                  ? [
+                      AssetId('_fe_analyzer_shared',
+                          'lib/src/macros/executor/client.dart'),
+                      AssetId('_fe_analyzer_shared',
+                          'lib/src/macros/executor/serialization.dart'),
+                    ]
+                  : const []),
     );
 
 /// Read the (potentially) cached dependencies of [id] based on parsing the
