@@ -1,0 +1,12 @@
+{
+    "httpHeaders": [
+        {
+            "urls": [
+                "https://stackoverflow.com"
+            ],
+            "headers": {
+                "User-Agent": "dart-lang/build Link Checker"
+            }
+        }
+    ]
+}
