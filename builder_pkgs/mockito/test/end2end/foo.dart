@@ -64,3 +64,14 @@ mixin HasPrivateMixin implements HasPrivate {
   @override
   Object? _p;
 }
+
+extension type Ext(int x) {}
+
+extension type ExtOfPrivate(_Private private) {}
+
+class UsesExtTypes {
+  bool extTypeArg(Ext _) => true;
+  Ext extTypeReturn(int _) => Ext(42);
+  bool privateExtTypeArg(ExtOfPrivate _) => true;
+  ExtOfPrivate privateExtTypeReturn(int _) => ExtOfPrivate(private);
+}

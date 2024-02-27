@@ -86,7 +86,7 @@ void main() {
     final packageConfig = PackageConfig([
       Package('foo', Uri.file('/foo/'),
           packageUriRoot: Uri.file('/foo/lib/'),
-          languageVersion: LanguageVersion(3, 0))
+          languageVersion: LanguageVersion(3, 3))
     ]);
     await testBuilder(buildMocks(BuilderOptions(config)), sourceAssets,
         writer: writer, outputs: outputs, packageConfig: packageConfig);
@@ -98,7 +98,7 @@ void main() {
     final packageConfig = PackageConfig([
       Package('foo', Uri.file('/foo/'),
           packageUriRoot: Uri.file('/foo/lib/'),
-          languageVersion: LanguageVersion(3, 0))
+          languageVersion: LanguageVersion(3, 3))
     ]);
 
     await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
@@ -3589,6 +3589,28 @@ void main() {
     });
   });
 
+  group('Extension types', () {
+    test('are supported as arguments', () async {
+      await expectSingleNonNullableOutput(dedent('''
+        extension type E(int v) {}
+        class Foo {
+          int m(E e);
+        }
+        '''), _containsAllOf('int m(_i2.E? e)'));
+    });
+
+    test('are supported as return types', () async {
+      await expectSingleNonNullableOutput(
+          dedent('''
+        extension type E(int v) {}
+        class Foo {
+          E get v;
+        }
+        '''),
+          decodedMatches(
+              allOf(contains('E get v'), contains('returnValue: 0'))));
+    });
+  });
   group('build_extensions support', () {
     test('should export mocks to different directory', () async {
       await testWithNonNullable({

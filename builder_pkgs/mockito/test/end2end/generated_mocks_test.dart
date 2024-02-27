@@ -27,8 +27,11 @@ import 'generated_mocks_test.mocks.dart';
   // ignore: deprecated_member_use_from_same_package
   MockSpec<HasPrivate>(mixingIn: [HasPrivateMixin]),
 ])
-@GenerateNiceMocks(
-    [MockSpec<Foo>(as: #MockFooNice), MockSpec<Bar>(as: #MockBarNice)])
+@GenerateNiceMocks([
+  MockSpec<Foo>(as: #MockFooNice),
+  MockSpec<Bar>(as: #MockBarNice),
+  MockSpec<UsesExtTypes>()
+])
 void main() {
   group('for a generated mock,', () {
     late MockFoo<Object> foo;
@@ -332,6 +335,35 @@ void main() {
       test('with provideDummy returned value can be awaited', () async {
         provideDummy<Bar>(bar);
         expect(await foo.returnsFuture(MockBar()), bar);
+      });
+    });
+
+    group('for a class using extension types', () {
+      late MockUsesExtTypes usesExtTypes;
+
+      setUp(() {
+        usesExtTypes = MockUsesExtTypes();
+      });
+
+      test(
+          'a method using extension type as an argument can be stubbed with any',
+          () {
+        when(usesExtTypes.extTypeArg(any)).thenReturn(true);
+        expect(usesExtTypes.extTypeArg(Ext(42)), isTrue);
+      });
+
+      test(
+          'a method using extension type as an argument can be stubbed with a '
+          'specific value', () {
+        when(usesExtTypes.extTypeArg(Ext(42))).thenReturn(true);
+        expect(usesExtTypes.extTypeArg(Ext(0)), isFalse);
+        expect(usesExtTypes.extTypeArg(Ext(42)), isTrue);
+      });
+
+      test('a method using extension type as a return type can be stubbed', () {
+        when(usesExtTypes.extTypeReturn(2)).thenReturn(Ext(42));
+        expect(usesExtTypes.extTypeReturn(2), equals(Ext(42)));
+        expect(usesExtTypes.extTypeReturn(42), equals(Ext(0)));
       });
     });
   });

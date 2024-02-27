@@ -1631,32 +1631,33 @@ class _MockClassInfo {
   }
 
   Expression _dummyValueImplementing(
-      analyzer.InterfaceType dartType, Expression invocation) {
-    final elementToFake = dartType.element;
-    if (elementToFake is EnumElement) {
-      return _typeReference(dartType).property(
-          elementToFake.fields.firstWhere((f) => f.isEnumConstant).name);
-    } else if (elementToFake is ClassElement) {
-      if (elementToFake.isBase ||
-          elementToFake.isFinal ||
-          elementToFake.isSealed) {
-        // This class can't be faked, so try to call `dummyValue` to get
-        // a dummy value at run time.
-        // TODO(yanok): Consider checking subtypes, maybe some of them are
-        // implementable.
-        return _dummyValueFallbackToRuntime(dartType, invocation);
-      }
-      return _dummyFakedValue(dartType, invocation);
-    } else if (elementToFake is MixinElement) {
-      // This is a mixin and not a class. This should not happen in Dart 3,
-      // since it is not possible to have a value of mixin type. But we
-      // have to support this for reverse comptatibility.
-      return _dummyFakedValue(dartType, invocation);
-    } else {
-      throw StateError("Interface type '$dartType' which is nether an enum, "
-          'nor a class, nor a mixin. This case is unknown, please report a bug.');
-    }
-  }
+          analyzer.InterfaceType dartType, Expression invocation) =>
+      switch (dartType.element) {
+        EnumElement(:final fields) => _typeReference(dartType)
+            .property(fields.firstWhere((f) => f.isEnumConstant).name),
+        ClassElement() && final element
+            when element.isBase || element.isFinal || element.isSealed =>
+          // This class can't be faked, so try to call `dummyValue` to get
+          // a dummy value at run time.
+          // TODO(yanok): Consider checking subtypes, maybe some of them are
+          // implementable.
+          _dummyValueFallbackToRuntime(dartType, invocation),
+        ClassElement() => _dummyFakedValue(dartType, invocation),
+        MixinElement() =>
+          // This is a mixin and not a class. This should not happen in Dart 3,
+          // since it is not possible to have a value of mixin type. But we
+          // have to support this for reverse comptatibility.
+          _dummyFakedValue(dartType, invocation),
+        ExtensionTypeElement(:final typeErasure)
+            when !typeErasure.containsPrivateName =>
+          _dummyValue(typeErasure, invocation),
+        ExtensionTypeElement() =>
+          _dummyValueFallbackToRuntime(dartType, invocation),
+        _ => throw StateError(
+            "Interface type '$dartType' which is neither an enum, "
+            'nor a class, nor a mixin, nor an extension type. This case is '
+            'unknown, please report a bug.')
+      };
 
   /// Adds a `Fake` implementation of [elementToFake], named [fakeName].
   void _addFakeClass(String fakeName, InterfaceElement elementToFake) {
