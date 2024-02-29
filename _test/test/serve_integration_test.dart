@@ -49,9 +49,11 @@ void main() {
           isNot(contains('Hello World!')));
     });
 
-    test('Can run passing tests with --pub-serve', () async {
+    test('Can run passing tests with --pub-serve',
+        skip: 'TODO: Get non-custom html tests passing with pub serve',
+        () async {
       await expectTestsPass(usePrecompiled: false);
-    }, skip: 'TODO: Get non-custom html tests passing with pub serve');
+    });
 
     test('Serves a directory list when it fails to fallback on index.html',
         () async {

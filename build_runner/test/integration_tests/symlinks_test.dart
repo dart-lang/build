@@ -72,7 +72,9 @@ void main() {
   });
 
   group('serve', () {
-    test('watches a linked file', () async {
+    test('watches a linked file',
+        skip: 'Watcher package does not support watching symlink targets',
+        () async {
       var server = await buildTool.serve();
       await server.nextSuccessfulBuild;
       await expectGeneratedContent('linked');
@@ -80,6 +82,6 @@ void main() {
       await updateLinkContent('new content');
       await server.nextSuccessfulBuild;
       await expectGeneratedContent('new content');
-    }, skip: 'Watcher package does not support watching symlink targets');
+    });
   });
 }

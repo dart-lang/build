@@ -23,7 +23,7 @@ void main() {
     expect(document.body!.text, contains(message));
   });
 
-  test('failing test', () {
+  test('failing test', skip: 'Expected failure', () {
     expect(true, isFalse);
-  }, skip: 'Expected failure');
+  });
 }

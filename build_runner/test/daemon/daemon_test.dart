@@ -139,7 +139,8 @@ main() {
       await startDaemon();
     });
 
-    test('shuts down on build script change', () async {
+    test('shuts down on build script change',
+        skip: 'https://github.com/dart-lang/build/issues/3438', () async {
       await startDaemon();
       var client = await startClient()
         ..registerBuildTarget(webTarget)
@@ -154,7 +155,7 @@ main() {
           ])
         ])
       ]).create();
-    }, skip: 'https://github.com/dart-lang/build/issues/3438');
+    });
 
     test('supports --enable-experiment option', () async {
       // TODO: Check for specific message about a bad experiment
