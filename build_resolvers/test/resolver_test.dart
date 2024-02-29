@@ -182,7 +182,7 @@ void main() {
       });
 
       test('allows a version of analyzer compatibile with the current sdk',
-          () async {
+          skip: _skipOnPreRelease, () async {
         var originalLevel = Logger.root.level;
         Logger.root.level = Level.WARNING;
         var listener = Logger.root.onRecord.listen((record) {
@@ -197,7 +197,7 @@ void main() {
         }, (resolver) async {
           await resolver.libraryFor(entryPoint);
         }, resolvers: AnalyzerResolvers());
-      }, skip: _skipOnPreRelease);
+      });
     });
 
     group('assets that aren\'t a transitive import of input', () {
@@ -491,7 +491,7 @@ void main() {
       }, resolvers: AnalyzerResolvers());
     });
 
-    test('Respects withEnabledExperiments', () async {
+    test('Respects withEnabledExperiments', skip: _skipOnPreRelease, () async {
       Logger.root.level = Level.ALL;
       Logger.root.onRecord.listen(print);
       await withEnabledExperiments(
@@ -511,7 +511,7 @@ int? get x => 1;
                 expect(errors.errors, isEmpty);
               }, resolvers: AnalyzerResolvers()),
           ['non-nullable']);
-    }, skip: _skipOnPreRelease);
+    });
 
     test('can get a new analysis session after resolving additional assets',
         () async {
