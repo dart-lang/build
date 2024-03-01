@@ -6,7 +6,6 @@ import 'package:build_daemon/data/build_target.dart';
 import 'package:build_daemon/src/managers/build_target_manager.dart';
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
-import 'package:watcher/watcher.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 void main() {
@@ -78,53 +77,16 @@ void main() {
     expect(manager.targets.isEmpty, isTrue);
   });
 
-  test(
-      'a build target will be reused if the target and the blackListPattern '
-      'is the same', () {
-    var manager = BuildTargetManager();
-    var channelA = DummyChannel();
-    var channelB = DummyChannel();
-    var targetA = DefaultBuildTarget((b) => b
-      ..target = 'foo'
-      ..blackListPatterns.replace([RegExp('bar')]));
-    var targetB = DefaultBuildTarget((b) => b
-      ..target = 'foo'
-      ..blackListPatterns.replace([RegExp('bar')]));
-    manager
-      ..addBuildTarget(targetA, channelA)
-      ..addBuildTarget(targetB, channelB);
-    expect(manager.targets.length, 1);
-  });
-
-  test('different blackListPatterns result in different build targets', () {
+  test('a build target will be reused if the target is the same', () {
     var manager = BuildTargetManager();
     var channelA = DummyChannel();
     var channelB = DummyChannel();
     var targetA = DefaultBuildTarget((b) => b..target = 'foo');
-    var targetB = DefaultBuildTarget((b) => b
-      ..target = 'foo'
-      ..blackListPatterns.replace([RegExp('bar')]));
+    var targetB = DefaultBuildTarget((b) => b..target = 'foo');
     manager
       ..addBuildTarget(targetA, channelA)
       ..addBuildTarget(targetB, channelB);
-    expect(manager.targets.length, 2);
-  });
-
-  test(
-      'correctly uses the blackListPattern to filter build targets for changes',
-      () {
-    var manager = BuildTargetManager();
-    var channel = DummyChannel();
-    var target = DefaultBuildTarget((b) => b
-      ..target = 'foo'
-      ..blackListPatterns.replace([RegExp(r'.*_test\.dart$')]));
-    manager.addBuildTarget(target, channel);
-    var targets = manager.targetsForChanges(
-        [WatchEvent(ChangeType.ADD, 'foo/bar/blah/some_file.dart')]);
-    expect(targets.map((target) => target.target), contains('foo'));
-    targets = manager.targetsForChanges(
-        [WatchEvent(ChangeType.ADD, 'foo/bar/blah/some_test.dart')]);
-    expect(targets.isEmpty, isTrue);
+    expect(manager.targets.length, 1);
   });
 }
 
