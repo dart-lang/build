@@ -16,6 +16,8 @@ dev_dependencies:
   build_web_compilers: any
   dart_flutter_team_lints: ^2.0.0
   io: ^1.0.0
+  other_builder:
+    path: pkgs/other_builder/
   path: ^1.8.0
   provides_builder:
     path: pkgs/provides_builder/
