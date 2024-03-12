@@ -2,6 +2,7 @@
 
 - Document deduplication behavior for the output of
   `GeneratorForAnnotation.generateForAnnotatedElement`.
+- Support all the glob quotes.
 
 ## 1.5.0
 
