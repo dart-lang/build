@@ -1,3 +1,7 @@
+## 4.0.10
+
+- Allow version 3.5.x of the Dart SDK.
+
 ## 4.0.9
 
 - Support latest version of `package:js`.
