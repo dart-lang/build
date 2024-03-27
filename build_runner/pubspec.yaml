@@ -24,7 +24,7 @@ dependencies:
   collection: ^1.15.0
   crypto: ^3.0.0
   dart_style: ^2.0.0
-  frontend_server_client: ^3.0.0
+  frontend_server_client: ^4.0.0
   glob: ^2.0.0
   graphs: ^2.2.0
   http_multi_server: ^3.0.0
