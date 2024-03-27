@@ -1,5 +1,7 @@
 ## 2.4.9-wip
 
+- Update the `package:frontend_server_client` constraint to `>=3.0.0 <5.0.0`.
+
 ## 2.4.8
 
 - Update README.md to point to the FAQ and other docs.
