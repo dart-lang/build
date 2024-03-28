@@ -1,4 +1,4 @@
-## 2.4.9-wip
+## 2.4.9
 
 - Update the `package:frontend_server_client` constraint to `>=3.0.0 <5.0.0`.
 
