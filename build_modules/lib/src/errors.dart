@@ -63,6 +63,8 @@ needs to move to a real dependency), or a build failure (if importing a
 generated file).
 
 Please check the following imports:\n
+
+$missingSources\n
 ''');
 
     var checkedSourceDependencies = <AssetId, Set<AssetId>>{};
@@ -72,10 +74,7 @@ Please check the following imports:\n
         var checkedAlready =
             checkedSourceDependencies.putIfAbsent(missingId, () => <AssetId>{});
         for (var sourceId in module.sources) {
-          if (checkedAlready.contains(sourceId)) {
-            continue;
-          }
-          checkedAlready.add(sourceId);
+          if (!checkedAlready.add(sourceId)) continue;
           var message =
               await _missingImportMessage(sourceId, missingId, reader);
           if (message != null) buffer.writeln(message);

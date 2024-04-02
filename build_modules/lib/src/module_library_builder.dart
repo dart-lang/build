@@ -29,8 +29,10 @@ class ModuleLibraryBuilder implements Builder {
 
   @override
   Future build(BuildStep buildStep) async {
-    final library = ModuleLibrary.fromSource(
-        buildStep.inputId, await buildStep.readAsString(buildStep.inputId));
+    final library = ModuleLibrary.fromParsed(
+        buildStep.inputId,
+        await buildStep.resolver
+            .compilationUnitFor(buildStep.inputId, allowSyntaxErrors: true));
     if (!library.isImportable) return;
     await buildStep.writeAsString(
         buildStep.inputId.changeExtension(moduleLibraryExtension),

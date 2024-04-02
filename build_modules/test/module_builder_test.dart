@@ -12,6 +12,7 @@ import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
 import 'matchers.dart';
+import 'util.dart';
 
 void main() {
   final platform = DartPlatform.register('test', ['dart:async']);
@@ -22,10 +23,11 @@ void main() {
     var assetC = AssetId('a', 'lib/c.dart');
     var assetD = AssetId('a', 'lib/d.dart');
     var assetE = AssetId('a', 'lib/e.dart');
-    var moduleA = Module(assetA, [assetA], <AssetId>[], platform, true);
-    var moduleB = Module(assetB, [assetB, assetC], <AssetId>[], platform, true);
+    var moduleA = Module(assetA, [assetA], <AssetId>[], platform, true, false);
+    var moduleB =
+        Module(assetB, [assetB, assetC], <AssetId>[], platform, true, false);
     var moduleD =
-        Module(assetD, [assetD, assetE], <AssetId>[], platform, false);
+        Module(assetD, [assetD, assetE], <AssetId>[], platform, false, false);
     var metaModule = MetaModule([moduleA, moduleB, moduleD]);
     await testBuilder(ModuleBuilder(platform), {
       'a|lib/a.dart': '',
@@ -36,9 +38,9 @@ void main() {
       'a|lib/${metaModuleCleanExtension(platform)}':
           jsonEncode(metaModule.toJson()),
       'a|lib/c$moduleLibraryExtension':
-          ModuleLibrary.fromSource(assetC, '').serialize(),
+          ModuleLibrary.fromParsed(assetC, parse('')).serialize(),
       'a|lib/e$moduleLibraryExtension':
-          ModuleLibrary.fromSource(assetE, '').serialize(),
+          ModuleLibrary.fromParsed(assetE, parse('')).serialize(),
     }, outputs: {
       'a|lib/a${moduleExtension(platform)}': encodedMatchesModule(moduleA),
       'a|lib/b${moduleExtension(platform)}': encodedMatchesModule(moduleB),

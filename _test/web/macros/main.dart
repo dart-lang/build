@@ -7,7 +7,9 @@ import 'dart:html';
 import 'package:_test/macros/debug_to_string.dart';
 
 void main() {
-  document.body!.text = User('Jill', 25).debugToString();
+  var user = User('Jill', 25);
+  var text = user.debugToString();
+  document.body!.text = text;
 }
 
 @DebugToString()

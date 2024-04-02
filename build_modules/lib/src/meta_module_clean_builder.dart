@@ -53,7 +53,7 @@ class MetaModuleCleanBuilder implements Builder {
         modules,
         (m) => m.directDependencies.map((d) =>
             assetToModule[d] ??
-            Module(d, [d], [], _platform, false, isMissing: true)),
+            Module(d, [d], [], _platform, false, false, isMissing: true)),
         equals: (a, b) => a.primarySource == b.primarySource,
         hashCode: (m) => m.primarySource.hashCode);
     Module merge(List<Module> c) =>
@@ -143,9 +143,11 @@ Module _mergeComponent(List<Module> connectedComponent,
         ..addAll(connectedComponent);
   var primarySource = components.first.primarySource;
   var isSupported = true;
+  var containsMacros = false;
   for (var module in connectedComponent) {
     sources.addAll(module.sources);
     isSupported = isSupported && module.isSupported;
+    containsMacros = containsMacros || module.containsMacros;
     for (var dep in module.directDependencies) {
       var primaryDep = assetToPrimary[dep];
       if (primaryDep == null) continue;
@@ -158,8 +160,8 @@ Module _mergeComponent(List<Module> connectedComponent,
     }
   }
   // Update map so that sources now point to the merged module.
-  var mergedModule =
-      Module(primarySource, sources, deps, platform, isSupported);
+  var mergedModule = Module(
+      primarySource, sources, deps, platform, isSupported, containsMacros);
   for (var source in mergedModule.sources) {
     assetToPrimary[source] = mergedModule.primarySource;
   }

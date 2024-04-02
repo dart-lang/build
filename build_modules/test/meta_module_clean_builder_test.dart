@@ -19,8 +19,8 @@ void main() {
   final platform = DartPlatform.register('test', ['dart:async']);
 
   test('unconnected components stay disjoint', () async {
-    var moduleA = Module(assetA, [assetA], [], platform, true);
-    var moduleB = Module(assetB, [assetB], [], platform, true);
+    var moduleA = Module(assetA, [assetA], [], platform, true, false);
+    var moduleB = Module(assetB, [assetB], [], platform, true, false);
 
     var metaA = MetaModule([moduleA]);
     var metaB = MetaModule([moduleB]);
@@ -39,13 +39,13 @@ void main() {
   });
 
   test('can handle cycles', () async {
-    var moduleA = Module(assetA, [assetA], [assetB], platform, true);
-    var moduleB = Module(assetB, [assetB], [assetA], platform, true);
+    var moduleA = Module(assetA, [assetA], [assetB], platform, true, false);
+    var moduleB = Module(assetB, [assetB], [assetA], platform, true, false);
 
     var metaA = MetaModule([moduleA]);
     var metaB = MetaModule([moduleB]);
     var clean = MetaModule([
-      Module(assetA, [assetA, assetB], [], platform, true)
+      Module(assetA, [assetA, assetB], [], platform, true, false)
     ]);
 
     await testBuilder(MetaModuleCleanBuilder(platform), {
@@ -63,7 +63,7 @@ void main() {
 
   test('Warns about missing .meta_module.raw files from dependencies',
       () async {
-    var moduleA = Module(assetA, [assetA], [assetB], platform, true);
+    var moduleA = Module(assetA, [assetA], [assetB], platform, true, false);
     var metaA = MetaModule([moduleA]);
     var logs = <LogRecord>[];
     await testBuilder(MetaModuleCleanBuilder(platform), {

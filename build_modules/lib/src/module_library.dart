@@ -4,7 +4,6 @@
 
 import 'dart:convert';
 
-import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
 
@@ -131,14 +130,19 @@ class ModuleLibrary {
     var macroConstructors = <String, List<String>>{};
     for (var declaration in parsed.declarations) {
       if (declaration is ClassDeclaration && declaration.macroKeyword != null) {
+        var constructors =
+            macroConstructors.putIfAbsent(declaration.name.lexeme, () => []);
         for (var member in declaration.members) {
           if (member is ConstructorDeclaration &&
               member.constKeyword != null &&
               member.name?.lexeme.startsWith('_') != true) {
-            macroConstructors
-                .putIfAbsent(declaration.name.lexeme, () => [])
-                .add(member.name?.lexeme ?? '');
+            constructors.add(member.name?.lexeme ?? '');
           }
+        }
+        if (constructors.isEmpty) {
+          log.severe('No const constructors found for macro '
+              '${declaration.name.stringValue} in $id, all macros must have '
+              'at least one const constructor.');
         }
       }
     }
@@ -170,26 +174,26 @@ class ModuleLibrary {
     }
   }
 
-  /// Parse the directives from [source] and compute the library information.
-  static ModuleLibrary fromSource(AssetId id, String source) {
+  /// Compute the library information from the parsed [source] unit.
+  static ModuleLibrary fromParsed(AssetId id, CompilationUnit source) {
     final isLibDir = id.path.startsWith('lib/');
-    final parsed = parseString(content: source, throwIfDiagnostics: false).unit;
     // Packages within the SDK but published might have libraries that can't be
     // used outside the SDK.
-    if (parsed.directives.any((d) =>
+    if (source.directives.any((d) =>
         d is UriBasedDirective &&
         d.uri.stringValue?.startsWith('dart:_') == true &&
         id.package != 'dart_internal' &&
         id.package != 'js')) {
       return ModuleLibrary._nonImportable(id);
     }
-    if (_isPart(parsed)) {
+    if (_isPart(source)) {
       return ModuleLibrary._nonImportable(id);
     }
 
-    final isEntryPoint =
-        (isLibDir && !id.path.startsWith('lib/src/')) || _hasMainMethod(parsed);
-    return ModuleLibrary._fromCompilationUnit(id, isEntryPoint, parsed);
+    final isEntryPoint = (isLibDir && !id.path.startsWith('lib/src/')) ||
+        _hasMainMethod(source) ||
+        _definesMacro(source);
+    return ModuleLibrary._fromCompilationUnit(id, isEntryPoint, source);
   }
 
   /// Parses the output of [serialize] back into a [ModuleLibrary].
@@ -272,3 +276,7 @@ bool _hasMainMethod(CompilationUnit dart) => dart.declarations.any((node) =>
     node.name.lexeme == 'main' &&
     node.functionExpression.parameters != null &&
     node.functionExpression.parameters!.parameters.length <= 2);
+
+/// Checks for any macro definitions in this compilation [unit].
+bool _definesMacro(CompilationUnit unit) => unit.declarations
+    .any((node) => node is ClassDeclaration && node.macroKeyword != null);

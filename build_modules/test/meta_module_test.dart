@@ -13,6 +13,7 @@ import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
 import 'matchers.dart';
+import 'util.dart';
 
 void main() {
   late InMemoryAssetReader reader;
@@ -35,8 +36,8 @@ void main() {
     platform ??= defaultPlatform;
     final libraries = (await Future.wait(sources
             .where((s) => s.package != r'$sdk')
-            .map((s) async =>
-                ModuleLibrary.fromSource(s, await reader.readAsString(s)))))
+            .map((s) async => ModuleLibrary.fromParsed(
+                s, parse(await reader.readAsString(s))))))
         .where((l) => l.isImportable);
     for (final library in libraries) {
       reader.cacheStringAsset(
@@ -73,9 +74,9 @@ void main() {
     var d = AssetId('myapp', 'lib/src/d.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a], [b, c], defaultPlatform, true)),
-      matchesModule(Module(b, [b], [c], defaultPlatform, true)),
-      matchesModule(Module(c, [c, d], [], defaultPlatform, true)),
+      matchesModule(Module(a, [a], [b, c], defaultPlatform, true, false)),
+      matchesModule(Module(b, [b], [c], defaultPlatform, true, false)),
+      matchesModule(Module(c, [c, d], [], defaultPlatform, true, false)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -101,7 +102,7 @@ void main() {
     var c = AssetId('myapp', 'lib/src/c.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a, b, c], [], defaultPlatform, true))
+      matchesModule(Module(a, [a, b, c], [], defaultPlatform, true, false))
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -145,9 +146,9 @@ void main() {
     var f = AssetId('myapp', 'lib/src/f.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a, c], [g, e], defaultPlatform, true)),
-      matchesModule(Module(b, [b, d], [c, e, g], defaultPlatform, true)),
-      matchesModule(Module(e, [e, g, f], [], defaultPlatform, true)),
+      matchesModule(Module(a, [a, c], [g, e], defaultPlatform, true, false)),
+      matchesModule(Module(b, [b, d], [c, e, g], defaultPlatform, true, false)),
+      matchesModule(Module(e, [e, g, f], [], defaultPlatform, true, false)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -165,7 +166,7 @@ void main() {
     var b = AssetId('b', 'lib/b.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a], [b], defaultPlatform, true)),
+      matchesModule(Module(a, [a], [b], defaultPlatform, true, false)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -193,8 +194,8 @@ void main() {
     var d = AssetId('myapp', 'lib/src/d.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a, c, d], [b], defaultPlatform, true)),
-      matchesModule(Module(b, [b], [], defaultPlatform, true)),
+      matchesModule(Module(a, [a, c, d], [b], defaultPlatform, true, false)),
+      matchesModule(Module(b, [b], [], defaultPlatform, true, false)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -234,12 +235,12 @@ void main() {
     var f = AssetId('myapp', 'lib/src/f.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a], [d, e, f], defaultPlatform, true)),
-      matchesModule(Module(b, [b], [d, e], defaultPlatform, true)),
-      matchesModule(Module(c, [c], [d, f], defaultPlatform, true)),
-      matchesModule(Module(d, [d], [], defaultPlatform, true)),
-      matchesModule(Module(e, [e], [d], defaultPlatform, true)),
-      matchesModule(Module(f, [f], [d], defaultPlatform, true)),
+      matchesModule(Module(a, [a], [d, e, f], defaultPlatform, true, false)),
+      matchesModule(Module(b, [b], [d, e], defaultPlatform, true, false)),
+      matchesModule(Module(c, [c], [d, f], defaultPlatform, true, false)),
+      matchesModule(Module(d, [d], [], defaultPlatform, true, false)),
+      matchesModule(Module(e, [e], [d], defaultPlatform, true, false)),
+      matchesModule(Module(f, [f], [d], defaultPlatform, true, false)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -267,7 +268,7 @@ void main() {
     var sap = AssetId('myapp', 'lib/src/a.part.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a, ap, sap], [], defaultPlatform, true)),
+      matchesModule(Module(a, [a, ap, sap], [], defaultPlatform, true, false)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -295,9 +296,9 @@ void main() {
     var c = AssetId('myapp', 'lib/src/c.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a], [], defaultPlatform, true)),
-      matchesModule(Module(b, [b, c], [], defaultPlatform, true)),
-      matchesModule(Module(sa, [sa], [c], defaultPlatform, true)),
+      matchesModule(Module(a, [a], [], defaultPlatform, true, false)),
+      matchesModule(Module(b, [b, c], [], defaultPlatform, true, false)),
+      matchesModule(Module(sa, [sa], [c], defaultPlatform, true, false)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -329,9 +330,9 @@ void main() {
     var d = AssetId('myapp', 'web/d.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a], [b, c], defaultPlatform, true)),
-      matchesModule(Module(b, [b], [c], defaultPlatform, true)),
-      matchesModule(Module(c, [c, d], [], defaultPlatform, true)),
+      matchesModule(Module(a, [a], [b, c], defaultPlatform, true, false)),
+      matchesModule(Module(b, [b], [c], defaultPlatform, true, false)),
+      matchesModule(Module(c, [c, d], [], defaultPlatform, true, false)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -370,9 +371,9 @@ void main() {
     var e = AssetId('myapp', 'web/e.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a, b], [c], defaultPlatform, true)),
-      matchesModule(Module(c, [c, d], [], defaultPlatform, true)),
-      matchesModule(Module(e, [e], [d], defaultPlatform, true)),
+      matchesModule(Module(a, [a, b], [c], defaultPlatform, true, false)),
+      matchesModule(Module(c, [c, d], [], defaultPlatform, true, false)),
+      matchesModule(Module(e, [e], [d], defaultPlatform, true, false)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);
@@ -413,26 +414,31 @@ void main() {
 
     var expectedModulesForPlatform = {
       htmlPlatform: [
+        matchesModule(Module(
+            primaryId, [primaryId], [htmlId], htmlPlatform, true, false)),
         matchesModule(
-            Module(primaryId, [primaryId], [htmlId], htmlPlatform, true)),
-        matchesModule(Module(defaultId, [defaultId], [], htmlPlatform, true)),
-        matchesModule(Module(htmlId, [htmlId], [], htmlPlatform, true)),
-        matchesModule(Module(ioId, [ioId], [], htmlPlatform, false)),
-        matchesModule(Module(uiId, [uiId], [], htmlPlatform, false)),
+            Module(defaultId, [defaultId], [], htmlPlatform, true, false)),
+        matchesModule(Module(htmlId, [htmlId], [], htmlPlatform, true, false)),
+        matchesModule(Module(ioId, [ioId], [], htmlPlatform, false, false)),
+        matchesModule(Module(uiId, [uiId], [], htmlPlatform, false, false)),
       ],
       ioPlatform: [
-        matchesModule(Module(primaryId, [primaryId], [ioId], ioPlatform, true)),
-        matchesModule(Module(defaultId, [defaultId], [], ioPlatform, true)),
-        matchesModule(Module(htmlId, [htmlId], [], ioPlatform, false)),
-        matchesModule(Module(ioId, [ioId], [], ioPlatform, true)),
-        matchesModule(Module(uiId, [uiId], [], ioPlatform, false)),
+        matchesModule(
+            Module(primaryId, [primaryId], [ioId], ioPlatform, true, false)),
+        matchesModule(
+            Module(defaultId, [defaultId], [], ioPlatform, true, false)),
+        matchesModule(Module(htmlId, [htmlId], [], ioPlatform, false, false)),
+        matchesModule(Module(ioId, [ioId], [], ioPlatform, true, false)),
+        matchesModule(Module(uiId, [uiId], [], ioPlatform, false, false)),
       ],
       uiPlatform: [
-        matchesModule(Module(primaryId, [primaryId], [uiId], uiPlatform, true)),
-        matchesModule(Module(defaultId, [defaultId], [], uiPlatform, true)),
-        matchesModule(Module(htmlId, [htmlId], [], uiPlatform, false)),
-        matchesModule(Module(ioId, [ioId], [], uiPlatform, false)),
-        matchesModule(Module(uiId, [uiId], [], uiPlatform, true)),
+        matchesModule(
+            Module(primaryId, [primaryId], [uiId], uiPlatform, true, false)),
+        matchesModule(
+            Module(defaultId, [defaultId], [], uiPlatform, true, false)),
+        matchesModule(Module(htmlId, [htmlId], [], uiPlatform, false, false)),
+        matchesModule(Module(ioId, [ioId], [], uiPlatform, false, false)),
+        matchesModule(Module(uiId, [uiId], [], uiPlatform, true, false)),
       ],
     };
 
@@ -455,7 +461,7 @@ void main() {
     var a = AssetId('myapp', 'lib/a.dart');
 
     var expectedModules = [
-      matchesModule(Module(a, [a], [], defaultPlatform, true)),
+      matchesModule(Module(a, [a], [], defaultPlatform, true, false)),
     ];
 
     var meta = await metaModuleFromSources(reader, assets);

@@ -10,17 +10,19 @@ import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
 import 'matchers.dart';
+import 'util.dart';
 
 void main() {
   var testPlatform = DartPlatform.register('test', ['dart:async']);
 
   test('can serialize meta modules', () async {
     var assetA = AssetId('a', 'lib/a.dart');
-    var moduleA = Module(assetA, [assetA], <AssetId>[], testPlatform, true);
+    var moduleA =
+        Module(assetA, [assetA], <AssetId>[], testPlatform, true, false);
     var metaA = MetaModule([moduleA]);
     await testBuilder(MetaModuleBuilder(testPlatform), {
       'a|lib/a.module.library':
-          ModuleLibrary.fromSource(assetA, '').serialize(),
+          ModuleLibrary.fromParsed(assetA, parse('')).serialize(),
     }, outputs: {
       'a|lib/${metaModuleExtension(testPlatform)}':
           encodedMatchesMetaModule(metaA),
@@ -31,14 +33,17 @@ void main() {
     test('is false for libraries that import dart:io on web', () async {
       var assetA = AssetId('a', 'lib/a.dart');
       var assetB = AssetId('a', 'lib/b.dart');
-      var moduleA = Module(assetA, [assetA], <AssetId>[], testPlatform, true);
-      var moduleB = Module(assetB, [assetB], <AssetId>[], testPlatform, false);
+      var moduleA =
+          Module(assetA, [assetA], <AssetId>[], testPlatform, true, false);
+      var moduleB =
+          Module(assetB, [assetB], <AssetId>[], testPlatform, false, false);
       var metaA = MetaModule([moduleA, moduleB]);
       await testBuilder(MetaModuleBuilder(testPlatform), {
         'a|lib/a.module.library':
-            ModuleLibrary.fromSource(assetA, '').serialize(),
+            ModuleLibrary.fromParsed(assetA, parse('')).serialize(),
         'a|lib/b.module.library':
-            ModuleLibrary.fromSource(assetB, "import 'dart:io';").serialize(),
+            ModuleLibrary.fromParsed(assetB, parse("import 'dart:io';"))
+                .serialize(),
       }, outputs: {
         'a|lib/${metaModuleExtension(testPlatform)}':
             encodedMatchesMetaModule(metaA),
@@ -49,14 +54,15 @@ void main() {
         () async {
       var assetA = AssetId('a', 'lib/a.dart');
       var assetB = AssetId('a', 'lib/b.dart');
-      var moduleA =
-          Module(assetA, [assetA, assetB], <AssetId>[], testPlatform, false);
+      var moduleA = Module(
+          assetA, [assetA, assetB], <AssetId>[], testPlatform, false, false);
       var metaA = MetaModule([moduleA]);
       await testBuilder(MetaModuleBuilder(testPlatform), {
         'a|lib/a.module.library':
-            ModuleLibrary.fromSource(assetA, "import 'b.dart';").serialize(),
-        'a|lib/b.module.library': ModuleLibrary.fromSource(
-                assetB, "import 'dart:io';import 'a.dart';")
+            ModuleLibrary.fromParsed(assetA, parse("import 'b.dart';"))
+                .serialize(),
+        'a|lib/b.module.library': ModuleLibrary.fromParsed(
+                assetB, parse("import 'dart:io';import 'a.dart';"))
             .serialize(),
       }, outputs: {
         'a|lib/${metaModuleExtension(testPlatform)}':
@@ -67,15 +73,16 @@ void main() {
     test('is false for coarse modules that import dart:io on web', () async {
       var assetA = AssetId('a', 'lib/a.dart');
       var assetB = AssetId('a', 'lib/src/b.dart');
-      var moduleA =
-          Module(assetA, [assetA, assetB], <AssetId>[], testPlatform, false);
+      var moduleA = Module(
+          assetA, [assetA, assetB], <AssetId>[], testPlatform, false, false);
       var metaA = MetaModule([moduleA]);
       await testBuilder(MetaModuleBuilder(testPlatform), {
         'a|lib/a.module.library':
-            ModuleLibrary.fromSource(assetA, "import 'src/b.dart';")
+            ModuleLibrary.fromParsed(assetA, parse("import 'src/b.dart';"))
                 .serialize(),
         'a|lib/src/b.module.library':
-            ModuleLibrary.fromSource(assetB, "import 'dart:io';").serialize(),
+            ModuleLibrary.fromParsed(assetB, parse("import 'dart:io';"))
+                .serialize(),
       }, outputs: {
         'a|lib/${metaModuleExtension(testPlatform)}':
             encodedMatchesMetaModule(metaA),
@@ -85,15 +92,18 @@ void main() {
     test('does not look at dependencies', () async {
       var assetA = AssetId('a', 'lib/a.dart');
       var assetB = AssetId('a', 'lib/b.dart');
-      var moduleA =
-          Module(assetA, [assetA], <AssetId>[assetB], testPlatform, true);
-      var moduleB = Module(assetB, [assetB], <AssetId>[], testPlatform, false);
+      var moduleA = Module(
+          assetA, [assetA], <AssetId>[assetB], testPlatform, true, false);
+      var moduleB =
+          Module(assetB, [assetB], <AssetId>[], testPlatform, false, false);
       var metaA = MetaModule([moduleA, moduleB]);
       await testBuilder(MetaModuleBuilder(testPlatform), {
         'a|lib/a.module.library':
-            ModuleLibrary.fromSource(assetA, "import 'b.dart';").serialize(),
+            ModuleLibrary.fromParsed(assetA, parse("import 'b.dart';"))
+                .serialize(),
         'a|lib/b.module.library':
-            ModuleLibrary.fromSource(assetB, "import 'dart:io';").serialize(),
+            ModuleLibrary.fromParsed(assetB, parse("import 'dart:io';"))
+                .serialize(),
       }, outputs: {
         'a|lib/${metaModuleExtension(testPlatform)}':
             encodedMatchesMetaModule(metaA),

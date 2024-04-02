@@ -17,13 +17,14 @@ void main() {
     final directDepId = AssetId('a', 'lib/src/dep.dart');
     final transitiveDepId = AssetId('b', 'lib/b.dart');
     final deepTransitiveDepId = AssetId('b', 'lib/src/dep.dart');
-    final rootModule = Module(rootId, [rootId], [directDepId], platform, true);
-    final directDepModule =
-        Module(directDepId, [directDepId], [transitiveDepId], platform, true);
+    final rootModule =
+        Module(rootId, [rootId], [directDepId], platform, true, false);
+    final directDepModule = Module(
+        directDepId, [directDepId], [transitiveDepId], platform, true, false);
     final transitiveDepModule = Module(transitiveDepId, [transitiveDepId],
-        [deepTransitiveDepId], platform, true);
-    final deepTransitiveDepModule =
-        Module(deepTransitiveDepId, [deepTransitiveDepId], [], platform, true);
+        [deepTransitiveDepId], platform, true, false);
+    final deepTransitiveDepModule = Module(
+        deepTransitiveDepId, [deepTransitiveDepId], [], platform, true, false);
 
     test('finds transitive deps', () async {
       await testBuilder(
@@ -101,7 +102,7 @@ Please check the following imports:
     group('unsupported modules', () {
       test('are not allowed as the root', () async {
         final unsupportedRootModule =
-            Module(rootId, [rootId], [directDepId], platform, false);
+            Module(rootId, [rootId], [directDepId], platform, false, false);
 
         await testBuilder(
             TestBuilder(
@@ -131,8 +132,8 @@ Please check the following imports:
       });
 
       test('are not allowed in immediate deps', () async {
-        final unsupportedDirectDepModule = Module(
-            directDepId, [directDepId], [transitiveDepId], platform, false);
+        final unsupportedDirectDepModule = Module(directDepId, [directDepId],
+            [transitiveDepId], platform, false, false);
 
         await testBuilder(
             TestBuilder(
@@ -163,7 +164,7 @@ Please check the following imports:
 
       test('are not allowed in transitive deps', () async {
         final unsupportedTransitiveDepDepModule = Module(transitiveDepId,
-            [transitiveDepId], [deepTransitiveDepId], platform, false);
+            [transitiveDepId], [deepTransitiveDepId], platform, false, false);
 
         await testBuilder(
             TestBuilder(

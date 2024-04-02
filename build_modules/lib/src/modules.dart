@@ -50,8 +50,9 @@ class Module {
         allSources.reduce((a, b) => a.compareTo(b) < 0 ? a : b);
     final isMissing = modules.any((m) => m.isMissing);
     final isSupported = modules.every((m) => m.isSupported);
+    final containsMacros = modules.any((m) => m.containsMacros);
     return Module(primarySource, allSources, allDependencies,
-        modules.first.platform, isSupported,
+        modules.first.platform, isSupported, containsMacros,
         isMissing: isMissing);
   }
 
@@ -116,8 +117,16 @@ class Module {
   @JsonKey(name: 'pf')
   final DartPlatform platform;
 
-  Module(this.primarySource, Iterable<AssetId> sources,
-      Iterable<AssetId> directDependencies, this.platform, this.isSupported,
+  @JsonKey(name: 'cm')
+  final bool containsMacros;
+
+  Module(
+      this.primarySource,
+      Iterable<AssetId> sources,
+      Iterable<AssetId> directDependencies,
+      this.platform,
+      this.isSupported,
+      this.containsMacros,
       {this.isMissing = false})
       : sources = UnmodifiableSetView(HashSet.of(sources)),
         directDependencies =

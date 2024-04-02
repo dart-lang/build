@@ -14,6 +14,7 @@ Module _$ModuleFromJson(Map<String, dynamic> json) => Module(
           .map((e) => const _AssetIdConverter().fromJson(e as List)),
       const _DartPlatformConverter().fromJson(json['pf'] as String),
       json['is'] as bool,
+      json['cm'] as bool,
       isMissing: json['m'] as bool? ?? false,
     );
 
@@ -24,4 +25,5 @@ Map<String, dynamic> _$ModuleToJson(Module instance) => <String, dynamic>{
       'm': instance.isMissing,
       'is': instance.isSupported,
       'pf': const _DartPlatformConverter().toJson(instance.platform),
+      'cm': instance.containsMacros,
     };

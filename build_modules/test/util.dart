@@ -4,6 +4,8 @@
 
 import 'dart:async';
 
+import 'package:analyzer/dart/analysis/utilities.dart';
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
@@ -29,3 +31,6 @@ Future<void> testBuilderAndCollectAssets(
     assets['${id.package}|${id.path}'] = value;
   });
 }
+
+CompilationUnit parse(String source) =>
+    parseString(content: source, throwIfDiagnostics: false).unit;

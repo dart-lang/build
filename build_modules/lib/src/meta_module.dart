@@ -52,7 +52,10 @@ Module _moduleForComponent(
   var isSupported = componentLibraries
       .expand((l) => l.sdkDeps)
       .every(platform.supportsLibrary);
-  return Module(primaryId, sources, directDependencies, platform, isSupported);
+  var containsMacros =
+      componentLibraries.any((l) => l.macroConstructors.isNotEmpty);
+  return Module(primaryId, sources, directDependencies, platform, isSupported,
+      containsMacros);
 }
 
 /// Gets the local (same top level dir of the same package) transitive deps of
@@ -157,8 +160,13 @@ List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
   ];
 }
 
-Module _withConsistentPrimarySource(Module m) => Module(m.sources.reduce(_min),
-    m.sources, m.directDependencies, m.platform, m.isSupported);
+Module _withConsistentPrimarySource(Module m) => Module(
+    m.sources.reduce(_min),
+    m.sources,
+    m.directDependencies,
+    m.platform,
+    m.isSupported,
+    m.containsMacros);
 
 T _min<T extends Comparable<T>>(T a, T b) => a.compareTo(b) < 0 ? a : b;
 
@@ -258,7 +266,8 @@ MetaModule _fineModulesForLibraries(
           [...library.parts, library.id],
           library.depsForPlatform(platform),
           platform,
-          library.sdkDeps.every(platform.supportsLibrary))
+          library.sdkDeps.every(platform.supportsLibrary),
+          library.macroConstructors.isNotEmpty)
   ];
   _sortModules(modules);
   return MetaModule(modules);
