@@ -1,10 +1,9 @@
 #!/bin/bash
-# Created with package:mono_repo v6.6.1
+# Created with package:mono_repo v6.6.0
 
 # Support built in commands on windows out of the box.
-
 # When it is a flutter repo (check the pubspec.yaml for "sdk: flutter")
-# then "flutter pub" is called instead of "dart pub".
+# then "flutter" is called instead of "pub".
 # This assumes that the Flutter SDK has been installed in a previous step.
 function pub() {
   if grep -Fq "sdk: flutter" "${PWD}/pubspec.yaml"; then
@@ -13,13 +12,18 @@ function pub() {
     command dart pub "$@"
   fi
 }
-
-function format() {
-  command dart format "$@"
-}
-
 # When it is a flutter repo (check the pubspec.yaml for "sdk: flutter")
-# then "flutter analyze" is called instead of "dart analyze".
+# then "flutter" is called instead of "pub".
+# This assumes that the Flutter SDK has been installed in a previous step.
+function format() {
+  if grep -Fq "sdk: flutter" "${PWD}/pubspec.yaml"; then
+    command flutter format "$@"
+  else
+    command dart format "$@"
+  fi
+}
+# When it is a flutter repo (check the pubspec.yaml for "sdk: flutter")
+# then "flutter" is called instead of "pub".
 # This assumes that the Flutter SDK has been installed in a previous step.
 function analyze() {
   if grep -Fq "sdk: flutter" "${PWD}/pubspec.yaml"; then
@@ -68,28 +72,28 @@ for PKG in ${PKGS}; do
         dart analyze --fatal-infos . || EXIT_CODE=$?
         ;;
       command_0)
-        echo 'dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random'
-        dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        echo 'dart run build_runner test --enable-experiment=macros -- -p chrome --test-randomize-ordering-seed=random'
+        dart run build_runner test --enable-experiment=macros -- -p chrome --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       command_1)
-        echo 'dart run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random'
-        dart run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        echo 'dart run build_runner test --enable-experiment=macros -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random'
+        dart run build_runner test --enable-experiment=macros -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       format)
         echo 'dart format --output=none --set-exit-if-changed .'
         dart format --output=none --set-exit-if-changed . || EXIT_CODE=$?
         ;;
       test_00)
-        echo 'dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random'
-        dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        echo 'dart test --enable-experiment=macros --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random'
+        dart test --enable-experiment=macros --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       test_01)
-        echo 'dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random'
-        dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        echo 'dart test --enable-experiment=macros --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random'
+        dart test --enable-experiment=macros --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       test_02)
-        echo 'dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random'
-        dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random || EXIT_CODE=$?
+        echo 'dart test --enable-experiment=macros --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random'
+        dart test --enable-experiment=macros --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       test_03)
         echo 'dart test'

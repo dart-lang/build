@@ -1,4 +1,4 @@
-# Created with package:mono_repo v6.6.1
+# Created with package:mono_repo v6.6.0
 name: Dart CI
 on:
   push:
@@ -36,7 +36,7 @@ jobs:
         name: Checkout repository
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
       - name: mono_repo self validate
-        run: dart pub global activate mono_repo 6.6.1
+        run: dart pub global activate mono_repo 6.6.0
       - name: mono_repo self validate
         run: dart pub global run mono_repo generate --validate
   job_002:
@@ -1012,7 +1012,7 @@ jobs:
       - job_007
       - job_008
   job_024:
-    name: "unit_test; linux; Dart main; PKG: _test; `dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random`"
+    name: "unit_test; linux; Dart main; PKG: _test; `dart run build_runner test --enable-experiment=macros -- -p chrome --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -1037,8 +1037,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-      - name: "_test; dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random"
-        run: "dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random"
+      - name: "_test; dart run build_runner test --enable-experiment=macros -- -p chrome --test-randomize-ordering-seed=random"
+        run: "dart run build_runner test --enable-experiment=macros -- -p chrome --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
     needs:
@@ -1051,7 +1051,7 @@ jobs:
       - job_007
       - job_008
   job_025:
-    name: "unit_test; linux; Dart main; PKG: _test; `dart run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random`"
+    name: "unit_test; linux; Dart main; PKG: _test; `dart run build_runner test --enable-experiment=macros -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -1076,8 +1076,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-      - name: "_test; dart run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random"
-        run: "dart run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random"
+      - name: "_test; dart run build_runner test --enable-experiment=macros -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random"
+        run: "dart run build_runner test --enable-experiment=macros -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
     needs:
@@ -1584,7 +1584,7 @@ jobs:
       - job_007
       - job_008
   job_042:
-    name: "unit_test; windows; Dart main; PKG: _test; `dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random`"
+    name: "unit_test; windows; Dart main; PKG: _test; `dart run build_runner test --enable-experiment=macros -- -p chrome --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
       - name: Setup Dart SDK
@@ -1599,8 +1599,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-      - name: "_test; dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random"
-        run: "dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random"
+      - name: "_test; dart run build_runner test --enable-experiment=macros -- -p chrome --test-randomize-ordering-seed=random"
+        run: "dart run build_runner test --enable-experiment=macros -- -p chrome --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
     needs:
@@ -2046,7 +2046,7 @@ jobs:
       - job_043
       - job_044
   job_050:
-    name: "e2e_test; linux; Dart main; PKG: _test; `dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random`"
+    name: "e2e_test; linux; Dart main; PKG: _test; `dart test --enable-experiment=macros --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -2071,8 +2071,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-      - name: "_test; dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random"
-        run: "dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random"
+      - name: "_test; dart test --enable-experiment=macros --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random"
+        run: "dart test --enable-experiment=macros --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
     needs:
@@ -2121,7 +2121,7 @@ jobs:
       - job_043
       - job_044
   job_051:
-    name: "e2e_test; linux; Dart main; PKG: _test; `dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random`"
+    name: "e2e_test; linux; Dart main; PKG: _test; `dart test --enable-experiment=macros --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -2146,8 +2146,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-      - name: "_test; dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random"
-        run: "dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random"
+      - name: "_test; dart test --enable-experiment=macros --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random"
+        run: "dart test --enable-experiment=macros --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
     needs:
@@ -2196,7 +2196,7 @@ jobs:
       - job_043
       - job_044
   job_052:
-    name: "e2e_test; linux; Dart main; PKG: _test; `dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random`"
+    name: "e2e_test; linux; Dart main; PKG: _test; `dart test --enable-experiment=macros --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -2221,8 +2221,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-      - name: "_test; dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random"
-        run: "dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random"
+      - name: "_test; dart test --enable-experiment=macros --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random"
+        run: "dart test --enable-experiment=macros --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
     needs:
@@ -2646,7 +2646,7 @@ jobs:
       - job_043
       - job_044
   job_058:
-    name: "e2e_test; windows; Dart main; PKG: _test; `dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random`"
+    name: "e2e_test; windows; Dart main; PKG: _test; `dart test --enable-experiment=macros --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
       - name: Setup Dart SDK
@@ -2661,8 +2661,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-      - name: "_test; dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random"
-        run: "dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random"
+      - name: "_test; dart test --enable-experiment=macros --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random"
+        run: "dart test --enable-experiment=macros --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
     needs:
@@ -2711,7 +2711,7 @@ jobs:
       - job_043
       - job_044
   job_059:
-    name: "e2e_test; windows; Dart main; PKG: _test; `dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random`"
+    name: "e2e_test; windows; Dart main; PKG: _test; `dart test --enable-experiment=macros --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
       - name: Setup Dart SDK
@@ -2726,8 +2726,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-      - name: "_test; dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random"
-        run: "dart test --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random"
+      - name: "_test; dart test --enable-experiment=macros --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random"
+        run: "dart test --enable-experiment=macros --total-shards 3 --shard-index 1 --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
     needs:
@@ -2776,7 +2776,7 @@ jobs:
       - job_043
       - job_044
   job_060:
-    name: "e2e_test; windows; Dart main; PKG: _test; `dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random`"
+    name: "e2e_test; windows; Dart main; PKG: _test; `dart test --enable-experiment=macros --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
       - name: Setup Dart SDK
@@ -2791,8 +2791,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-      - name: "_test; dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random"
-        run: "dart test --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random"
+      - name: "_test; dart test --enable-experiment=macros --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random"
+        run: "dart test --enable-experiment=macros --total-shards 3 --shard-index 2 --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
     needs:
