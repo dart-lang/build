@@ -46,5 +46,7 @@ dependency_overrides:
     path: ../build_web_compilers
   macros:
     path: ../../dart-lang-sdk/sdk/pkg/macros
+  package_config:
+    path: ../../package_config
   scratch_space:
     path: ../scratch_space

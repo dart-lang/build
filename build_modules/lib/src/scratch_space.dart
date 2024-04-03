@@ -100,7 +100,7 @@ String _scratchSpacePackageConfig(String rootConfig, Uri packageConfigUri) {
       assert(!foundRoot);
       foundRoot = true;
       package['rootUri'] = '../';
-      package['packageUri'] = '../packages/${package['name']}/';
+      package['packageUri'] = 'packages/${package['name']}/';
     } else {
       package['rootUri'] = '../packages/${package['name']}/';
       package.remove('packageUri');

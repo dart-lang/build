@@ -162,9 +162,18 @@ Future<void> _createDevCompilerModule(
     for (var dep in transitiveDeps)
       dep.primarySource.changeExtension(ddcKernelExtension),
   ];
+  var transitiveMacroDeps = [
+    for (var dep in transitiveDeps)
+      if (dep.containsMacros)
+        dep.primarySource.changeExtension(macroBinaryExtension),
+  ];
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
 
-  var allAssetIds = <AssetId>{...module.sources, ...transitiveKernelDeps};
+  var allAssetIds = <AssetId>{
+    ...module.sources,
+    ...transitiveKernelDeps,
+    ...transitiveMacroDeps,
+  };
   await buildStep.trackStage(
       'EnsureAssets', () => scratchSpace.ensureAssets(allAssetIds, buildStep));
   var jsId = module.primarySource.changeExtension(jsModuleExtension);
@@ -217,6 +226,11 @@ Future<void> _createDevCompilerModule(
       for (var define in environment.entries) '-D${define.key}=${define.value}',
       for (var experiment in enabledExperiments)
         '--enable-experiment=$experiment',
+      for (var m in transitiveMacroDeps)
+        '--precompiled-macro=${scratchSpace.fileFor(m).path};'
+            // TODO: what if the macro isn't the primary source?
+            // TODO: support macros not under lib/
+            '${m.uri.toString().replaceFirst(macroBinaryExtension, '.dart')}'
     ])
     ..inputs.add(Input()
       ..path = sdkSummary

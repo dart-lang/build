@@ -13,5 +13,7 @@ dependency_overrides:
     path: ../build_runner_core
   build_test:
     path: ../build_test
+  macros:
+    path: ../../dart-lang-sdk/sdk/pkg/macros
   scratch_space:
     path: ../scratch_space

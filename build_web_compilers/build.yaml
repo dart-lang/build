@@ -77,7 +77,9 @@ builders:
     auto_apply: all_packages
     required_inputs:
       - .ddc.module
+      - .macro.exe
     applies_builders:
+      - build_modules:macro_bootstrap
       - build_web_compilers:ddc_modules
       # This isn't really the best place to apply these, but it is the only
       # place we can (its the only builder which runs on all packages).

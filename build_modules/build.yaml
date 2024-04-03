@@ -10,7 +10,35 @@ builders:
     auto_apply: all_packages
     is_optional: True
     required_inputs: [".dart"]
-    applies_builders: ["|module_cleanup"]
+    applies_builders: [":module_cleanup"]
+  macro_modules:
+    import: "package:build_modules/builders.dart"
+    builder_factories:
+      - macroMetaModuleBuilder
+      - macroMetaModuleCleanBuilder
+      - macroModuleBuilder
+    build_extensions:
+      $lib$:
+        - .macro.meta_module.raw
+        - .macro.meta_module.clean
+      .dart:
+        - .macro.module
+    is_optional: True
+    auto_apply: none
+    required_inputs: [".dart", ".module.library"]
+    applies_builders: [":module_cleanup"]
+  macro_bootstrap:
+    import: "package:build_modules/builders.dart"
+    builder_factories:
+      - macroBootstrapBuilder
+    build_extensions:
+      .macro.module:
+        - .macro.exe
+    auto_apply: none
+    is_optional: True
+    required_inputs:
+      - .macro.module
+    applies_builders: [":macro_modules"]
 post_process_builders:
   module_cleanup:
     import: "package:build_modules/builders.dart"

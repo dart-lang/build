@@ -2,7 +2,7 @@ builders:
   has_debug_to_string_builder:
     import: "package:provides_builder/builders.dart"
     builder_factories: ["hasDebugToStringBuilder"]
-    build_extensions: {".fail": [".hasDebugToString"]}
+    build_extensions: {".dart": [".hasDebugToString"]}
     auto_apply: dependents
   some_builder:
     import: "package:provides_builder/builders.dart"

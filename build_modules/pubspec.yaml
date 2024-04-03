@@ -20,6 +20,7 @@ dependencies:
   graphs: ^2.0.0
   json_annotation: ^4.3.0
   logging: ^1.0.0
+  macros: '>=0.1.0 <0.1.1'
   path: ^1.8.0
   scratch_space: ^1.0.0
   stream_transform: ^2.0.0
