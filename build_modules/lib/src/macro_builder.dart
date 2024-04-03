@@ -155,8 +155,10 @@ final macroPlatform = DartPlatform.register('macro', const [
   'collection',
   'convert',
   'core',
-  'io',
-  'isolate',
   'math',
   'typed_data',
+  // TODO: These are required for the bootstrap script, but technically we
+  // are not supposed to allow them for macros.
+  'io',
+  'isolate',
 ]);

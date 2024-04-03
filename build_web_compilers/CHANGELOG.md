@@ -1,3 +1,8 @@
+## 4.1.0-wip
+
+- Support consuming pre-compiled macro programs and passing them to DDC compile
+  steps.
+
 ## 4.0.10
 
 - Allow version 3.5.x of the Dart SDK.

@@ -1,3 +1,8 @@
+## 5.1.0-wip
+
+- Support pre-compiling macro executables, which can be passed to modular build
+  actions.
+
 ## 5.0.8
 
 - Allow version 3.5.x of the Dart SDK.

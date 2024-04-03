@@ -63,8 +63,6 @@ needs to move to a real dependency), or a build failure (if importing a
 generated file).
 
 Please check the following imports:\n
-
-$missingSources\n
 ''');
 
     var checkedSourceDependencies = <AssetId, Set<AssetId>>{};
