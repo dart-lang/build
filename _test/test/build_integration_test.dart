@@ -15,8 +15,8 @@ import 'common/utils.dart';
 void main() {
   setUp(() async {
     ensureCleanGitClient();
-    // Run a regular build in known clean state to speed up these tests.
-    await runBuild();
+    // TODO: Remove this once macros ship
+    await runBuild(trailingArgs: ['--enable-experiment', 'macros']);
   });
 
   group('PostProcessBuilder', () {
@@ -25,6 +25,13 @@ void main() {
           await readGeneratedFileAsString('_test/lib/hello.txt.post');
       var original = await File('lib/hello.txt').readAsString();
       expect(generated, equals(original));
+
+      var hasDebugToString = await readGeneratedFileAsString(
+          '_test/test/macro_test.hasDebugToString');
+      expect(hasDebugToString, equals('''
+classes:
+  User:
+    hasDebugToString: true'''));
     });
 
     test('can be configured with build.yaml', () async {
