@@ -13,6 +13,8 @@ targets:
           - test/hello_world_test.dart.browser_test.dart
           - test/hello_world_deferred_test.dart
           - test/hello_world_deferred_test.dart.browser_test.dart
+          - test/macro_test.dart
+          - test/macro_test.dart.browser_test.dart
           - test/hello_world_custom_html_test.dart
           - test/hello_world_custom_html_test.dart.browser_test.dart
           - test/other_test.dart.browser_test.dart

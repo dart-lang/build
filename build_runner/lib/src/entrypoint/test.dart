@@ -141,6 +141,8 @@ class TestCommand extends BuildRunnerCommand {
         dartBinary,
         [
           'run',
+          for (var experiment in enabledExperiments)
+            '--enable-experiment=$experiment',
           'test',
           '--precompiled',
           precompiledPath,
