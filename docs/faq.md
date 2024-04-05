@@ -248,7 +248,10 @@ next build.
 ## How can I resolve "Skipped compiling" warnings?
 
 These generally come up in the context of a multi-platform package (generally
-due to a mixture of vm and web tests), and look something like this:
+due to a mixture of vm and web tests). It can also happen if you have imports
+to the `lib/src` directory of any package, even your own.
+
+The errors tend to look like this:
 
 ```text
 [WARNING] build_web_compilers:entrypoint on example|test/my_test.dart:
@@ -258,6 +261,8 @@ transitive libraries have sdk dependencies that not supported on this platform:
 
 example|test/imports_dart_io.dart
 ```
+
+### Multi-platform packages
 
 While we are smart enough not to attempt to compile your web tests for the vm,
 it is slow for us to figure that out so we print this warning to encourage you
@@ -280,6 +285,58 @@ targets:
         - test/web/**_test.dart
         - web/**.dart
 ```
+
+### Imports of "private" libraries under lib/src
+
+We group libraries together into "modules" to optimize compilation, and that
+grouping is based on the public imports of the package, as well as things like
+any file containing a main function gets its own module.
+
+This means any time you have a package import that starts with `src/` in the
+path, you might end up actually pulling in a module which contains additional
+libraries which were not depended on by the actual library you imported.
+
+This can be very confusing, because tools that search for transitive imports
+will not find the libraries that the error is complaining about not being
+supported on the current platform.
+
+The best solution to this problem, is to import only public libraries. If you
+cannot do that, you can opt out of this module grouping, by using the `fine`
+module strategy, but this will come with a compile cost.
+
+If the import is in your own package, you can add this to your build.yaml:
+
+```yaml
+targets:
+  $default:
+    builders:
+      build_web_compilers:ddc_modules:
+        options:
+          strategy: fine
+      build_web_compilers:dart2js_modules:
+        options:
+          strategy: fine
+```
+
+If it is to another package, you will need to do this as either a global
+override (which will likely have a large negative effect on build times):
+
+```yaml
+global_options:
+  builders:
+    build_web_compilers:ddc_modules:
+      options:
+        strategy: fine
+    build_web_compilers:dart2js_modules:
+      options:
+        strategy: fine
+```
+
+Or, override the entire `build.yaml` file for the package you depend on.
+This would look like the local package override, but would go in a
+`<package-name>.build.yaml` file. If that package has its own build.yaml file
+already, you will need to copy over its contents before adding the additional
+configuration.
 
 ## Why can't I see a file I know exists?
 
