@@ -88,8 +88,11 @@ void main() {
   });
 
   test('Argument matchers', () {
-    // You can use plain arguments themselves
-    when(cat.eatFood('fish')).thenReturn(true);
+    // You can use `any`
+    when(cat.eatFood(any)).thenReturn(false);
+
+    // ... or plain arguments themselves
+    when(cat.eatFood("fish")).thenReturn(true);
 
     // ... including collections
     when(cat.walk(['roof', 'tree'])).thenReturn(2);

@@ -170,7 +170,10 @@ In most cases, both plain arguments and argument matchers can be passed into
 mock methods:
 
 ```dart
-// You can use plain arguments themselves
+// You can use `any`
+when(cat.eatFood(any)).thenReturn(false);
+
+// ... or plain arguments themselves
 when(cat.eatFood("fish")).thenReturn(true);
 
 // ... including collections
@@ -178,7 +181,6 @@ when(cat.walk(["roof","tree"])).thenReturn(2);
 
 // ... or matchers
 when(cat.eatFood(argThat(startsWith("dry")))).thenReturn(false);
-when(cat.eatFood(any)).thenReturn(false);
 
 // ... or mix arguments with matchers
 when(cat.eatFood(argThat(startsWith("dry")), hungry: true)).thenReturn(true);
