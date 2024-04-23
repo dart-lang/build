@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:analyzer/file_system/file_system.dart' show ResourceProvider;
@@ -23,6 +24,24 @@ Future<AnalysisDriverForPackageBuild> analysisDriver(
   String sdkSummaryPath,
   PackageConfig packageConfig,
 ) async {
+  // TODO: Necessary for kernel compilation of macros. Should the analyzer
+  // provide this implicitly based on its Packages instance?
+  buildAssetUriResolver.resourceProvider.newFile(
+      '/.dart_tool/package_config.json',
+      jsonEncode({
+        'configVersion': 2,
+        'packages': [
+          for (var package in packageConfig.packages)
+            {
+              'name': package.name,
+              'rootUri': 'file:///${package.name}',
+              'packageUri': 'lib/',
+              if (package.languageVersion != null)
+                'languageVersion': '${package.languageVersion!.major}.'
+                    '${package.languageVersion!.minor}',
+            },
+        ],
+      }));
   return createAnalysisDriver(
     analysisOptions: analysisOptions,
     packages: _buildAnalyzerPackages(
