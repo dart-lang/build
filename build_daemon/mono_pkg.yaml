@@ -1,6 +1,5 @@
 sdk:
-- dev
-- pubspec
+- beta
 
 stages:
 - analyze_and_format:
@@ -8,7 +7,7 @@ stages:
     - format
     - analyze: --fatal-infos .
     sdk:
-    - dev
+      - beta
 - unit_test:
   - test: --test-randomize-ordering-seed=random
     os:
