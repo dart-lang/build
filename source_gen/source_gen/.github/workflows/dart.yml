@@ -34,7 +34,7 @@ jobs:
           sdk: stable
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
       - name: mono_repo self validate
         run: dart pub global activate mono_repo 6.5.7
       - name: mono_repo self validate
@@ -59,7 +59,7 @@ jobs:
           sdk: "3.0.0"
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
       - id: source_gen_pub_upgrade
         name: source_gen; dart pub upgrade
         run: dart pub upgrade
@@ -89,7 +89,7 @@ jobs:
           sdk: dev
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
       - id: _test_annotations_pub_upgrade
         name: _test_annotations; dart pub upgrade
         run: dart pub upgrade
@@ -162,7 +162,7 @@ jobs:
           sdk: "3.0.0"
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
       - id: example_usage_pub_upgrade
         name: example_usage; dart pub upgrade
         run: dart pub upgrade
@@ -196,7 +196,7 @@ jobs:
           sdk: "3.0.0"
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
       - id: source_gen_pub_upgrade
         name: source_gen; dart pub upgrade
         run: dart pub upgrade
@@ -230,7 +230,7 @@ jobs:
           sdk: dev
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
       - id: example_usage_pub_upgrade
         name: example_usage; dart pub upgrade
         run: dart pub upgrade
@@ -264,7 +264,7 @@ jobs:
           sdk: dev
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
       - id: source_gen_pub_upgrade
         name: source_gen; dart pub upgrade
         run: dart pub upgrade
@@ -288,7 +288,7 @@ jobs:
           sdk: "3.0.0"
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
       - id: source_gen_pub_upgrade
         name: source_gen; dart pub upgrade
         run: dart pub upgrade
@@ -312,7 +312,7 @@ jobs:
           sdk: dev
       - id: checkout
         name: Checkout repository
-        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
       - id: source_gen_pub_upgrade
         name: source_gen; dart pub upgrade
         run: dart pub upgrade
