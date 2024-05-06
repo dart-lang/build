@@ -9,6 +9,10 @@ updates:
       interval: monthly
     labels:
       - autosubmit
+    groups:
+      github-actions:
+        patterns:
+          - "*"
 
   # Check daily for major version dependency updates for packages which depend
   # on package:analyzer.
