@@ -78,14 +78,31 @@ class PackageGraph {
           'pubspec.yaml.');
     }
 
-    final packageConfig =
-        await findPackageConfig(Directory(packagePath), recurse: false);
+    // The path of the directory that contains .dart_tool/package_config.json.
+    //
+    // Should also contain `pubspec.lock`.
+    var rootDir = packagePath;
+    PackageConfig? packageConfig;
+    while (true) {
+      final packageConfigCandidate =
+          File(p.join(rootDir, '.dart_tool', 'package_config.json'));
+      if (packageConfigCandidate.existsSync()) {
+        packageConfig = await loadPackageConfig(packageConfigCandidate);
+        break;
+      }
+      final next = p.dirname(rootDir);
+      if (next == rootDir) {
+        break;
+      }
+      rootDir = next;
+    }
+
     if (packageConfig == null) {
       throw StateError(
           'Unable to find package config for package at $packagePath.');
     }
 
-    final dependencyTypes = _parseDependencyTypes(packagePath);
+    final dependencyTypes = _parseDependencyTypes(rootDir);
 
     final nodes = <String, PackageNode>{};
     // A consistent package order _should_ mean a consistent order of build

@@ -164,6 +164,7 @@ Future<int> _createKernelIfNeeded(
       'lib/_internal/vm_platform_strong.dill',
       enabledExperiments: experiments,
       printIncrementalDependencies: false,
+      packagesJson: (await Isolate.packageConfig)!.toFilePath(),
     );
 
     var hadOutput = false;
