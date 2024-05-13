@@ -3,22 +3,21 @@
 name: flutter_gallery
 dependencies:
   collection: '>=1.9.1 <2.0.0'
-  intl: '>=0.14.0 <0.15.0'
-  string_scanner: ^1.0.0
-
   flutter:
-    sdk: flutter
-
+    sdk:
+      flutter
   # Also update dev/benchmarks/complex_layout/pubspec.yaml
   flutter_gallery_assets:
     git:
       url: https://flutter.googlesource.com/gallery-assets
       ref: ef928550119411358b8b25e16aecde6ace513526
+  intl: '>=0.14.0 <0.15.0'
+  string_scanner: ^1.0.0
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
   flutter_driver:
+    sdk: flutter
+  flutter_test:
     sdk: flutter
 
 flutter:
