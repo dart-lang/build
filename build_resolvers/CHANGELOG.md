@@ -1,5 +1,8 @@
 ## 2.4.3-wip
 
+- Require the latest analyzer, and stop passing the `withNullability`
+  parameter which was previously required and is now deprecated.
+
 ## 2.4.2
 
 - Add a builder to clean up transitive digest files from the build output.

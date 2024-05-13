@@ -1,24 +1,23 @@
 # Copied from flutter/flutter/master/examples/flutter_gallery/pubspec.yaml
 # Commit: 1bdf351.
 name: flutter_gallery
+environment:
+  sdk: ^3.4.0
 dependencies:
   collection: '>=1.9.1 <2.0.0'
-  intl: '>=0.14.0 <0.15.0'
-  string_scanner: ^1.0.0
-
   flutter:
     sdk: flutter
-
-  # Also update dev/benchmarks/complex_layout/pubspec.yaml
   flutter_gallery_assets:
     git:
       url: https://flutter.googlesource.com/gallery-assets
       ref: ef928550119411358b8b25e16aecde6ace513526
+  intl: '>=0.14.0 <0.15.0'
+  string_scanner: ^1.0.0
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
   flutter_driver:
+    sdk: flutter
+  flutter_test:
     sdk: flutter
 
 flutter:
