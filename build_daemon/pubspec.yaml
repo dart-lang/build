@@ -1,5 +1,5 @@
 name: build_daemon
-version:  4.0.1
+version:  4.0.2-wip
 description: A daemon for running Dart builds.
 repository: https://github.com/dart-lang/build/tree/master/build_daemon
 
@@ -15,10 +15,10 @@ dependencies:
   path: ^1.8.0
   pool: ^1.5.0
   shelf: ^1.0.0
-  shelf_web_socket: ^1.0.0
+  shelf_web_socket: ">=1.0.0 <3.0.0"
   stream_transform: ^2.0.0
   watcher: ^1.0.0
-  web_socket_channel: ^2.0.0
+  web_socket_channel: ">=2.0.0 <4.0.0"
 
 dev_dependencies:
   analyzer: '>=3.4.0 <7.0.0'
@@ -27,7 +27,7 @@ dev_dependencies:
   built_value_generator: ^8.1.0
   dart_flutter_team_lints: ^2.0.0
   mockito: ^5.0.0
-  test: ^1.16.0
+  test: ^1.25.5
   test_descriptor: ^2.0.0
   uuid: ^3.0.0
 

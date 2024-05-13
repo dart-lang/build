@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:_test_common/common.dart';
+import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner/src/generate/watch_impl.dart';
@@ -23,6 +24,76 @@ import 'package:stream_channel/stream_channel.dart';
 import 'package:test/fake.dart';
 import 'package:test/test.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+
+class FakeSink extends DelegatingStreamSink implements WebSocketSink {
+  FakeWebSocketChannel _channel;
+
+  FakeSink(this._channel) : super(_channel._controller.sink);
+
+  @override
+  Future close([int? closeCode, String? closeReason]) async {
+    await super.close();
+    _channel._isClosed = true;
+    _channel._closeCode = closeCode;
+    _channel._closeReason = closeReason;
+    await _channel._closed(closeCode, closeReason);
+  }
+}
+
+class FakeWebSocketChannel extends StreamChannelMixin
+    implements WebSocketChannel {
+  final StreamChannel _controller;
+  final Future Function(int? closeCode, String? closeReason) _closed;
+
+  bool _isClosed = false;
+  int? _closeCode;
+  String? _closeReason;
+
+  FakeWebSocketChannel(this._controller, this._closed);
+
+  @override
+  int? get closeCode => _closeCode;
+
+  @override
+  String? get closeReason => _closeReason;
+
+  @override
+  String? get protocol => throw UnimplementedError();
+
+  @override
+  Future<void> get ready => Future.value();
+
+  @override
+  WebSocketSink get sink => FakeSink(this);
+
+  @override
+  Stream get stream => _controller.stream;
+
+  Future _remoteClosed(int closeCode, String? closeReason) async {
+    if (!_isClosed) {
+      await sink.close(closeCode, closeReason);
+    }
+  }
+}
+
+(WebSocketChannel, WebSocketChannel) createFakes() {
+  final peer1Write = StreamController<dynamic>();
+  final peer2Write = StreamController<dynamic>();
+
+  late FakeWebSocketChannel foreign;
+  late FakeWebSocketChannel local;
+
+  foreign = FakeWebSocketChannel(
+      StreamChannel(peer2Write.stream, peer1Write.sink),
+      (closeCode, closeReason) =>
+          local._remoteClosed(closeCode ?? 1005, closeReason));
+  local = FakeWebSocketChannel(
+      StreamChannel(peer1Write.stream, peer2Write.sink),
+      (closeCode, closeReason) =>
+          foreign._remoteClosed(closeCode ?? 1005, closeReason));
+
+  return (foreign, local);
+}
 
 void main() {
   late ServeHandler serveHandler;
@@ -283,13 +354,6 @@ void main() {
       late BuildUpdatesWebSocketHandler handler;
       late Future<void> Function(WebSocketChannel, String) createMockConnection;
 
-      // client to server stream controlllers
-      late StreamController<List<int>> c2sController1;
-      late StreamController<List<int>> c2sController2;
-      // server to client stream controlllers
-      late StreamController<List<int>> s2cController1;
-      late StreamController<List<int>> s2cController2;
-
       late WebSocketChannel clientChannel1;
       late WebSocketChannel clientChannel2;
       late WebSocketChannel serverChannel1;
@@ -312,30 +376,15 @@ void main() {
 
         handler = BuildUpdatesWebSocketHandler(watchImpl, mockHandlerFactory);
 
-        c2sController1 = StreamController<List<int>>();
-        s2cController1 = StreamController<List<int>>();
-        serverChannel1 = WebSocketChannel(
-            StreamChannel(c2sController1.stream, s2cController1.sink),
-            serverSide: true);
-        clientChannel1 = WebSocketChannel(
-            StreamChannel(s2cController1.stream, c2sController1.sink),
-            serverSide: false);
-
-        c2sController2 = StreamController<List<int>>();
-        s2cController2 = StreamController<List<int>>();
-        serverChannel2 = WebSocketChannel(
-            StreamChannel(c2sController2.stream, s2cController2.sink),
-            serverSide: true);
-        clientChannel2 = WebSocketChannel(
-            StreamChannel(s2cController2.stream, c2sController2.sink),
-            serverSide: false);
+        (serverChannel1, clientChannel1) = createFakes();
+        (serverChannel2, clientChannel2) = createFakes();
       });
 
       tearDown(() {
-        c2sController1.close();
-        s2cController1.close();
-        c2sController2.close();
-        s2cController2.close();
+        serverChannel1.sink.close();
+        clientChannel1.sink.close();
+        serverChannel2.sink.close();
+        clientChannel2.sink.close();
       });
 
       test('emmits a message to all listners', () async {

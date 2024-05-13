@@ -1,3 +1,8 @@
+## 4.0.2-wip
+
+- Support version `1.x` and `2.x` of `shelf_web_socket` and `2.x` and `3.x`
+- of `web_socket_channel`.
+
 ## 4.0.1
 
 - Use a hash of the working dir to create the unique workspace dir. This
