@@ -3,6 +3,6 @@
 name: _for_analysis_options_only
 publish_to: none
 environment:
-  sdk: ^3.0.0
+  sdk: ^3.3.0
 dev_dependencies:
   dart_flutter_team_lints: ^2.0.0

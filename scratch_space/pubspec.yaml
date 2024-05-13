@@ -8,7 +8,7 @@ topics:
   - codegen
 
 environment:
-  sdk: ^3.0.0
+  sdk: ^3.3.0
 
 dependencies:
   build: ^2.0.0
