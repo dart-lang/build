@@ -2,7 +2,7 @@
 
 - Require the latest analyzer, and stop passing the `withNullability`
   parameter which was previously required and is now deprecated.
-- Bump the min sdk to 3.3.0.
+- Bump the min sdk to 3.4.0.
 
 ## 2.4.2
 

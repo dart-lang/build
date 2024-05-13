@@ -4,7 +4,7 @@ description: A build system for Dart code generation and modular compilation.
 repository: https://github.com/dart-lang/build/tree/master/build_runner
 
 environment:
-  sdk: ^3.3.0
+  sdk: ^3.4.0
 
 platforms:
   linux:

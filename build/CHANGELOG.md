@@ -1,6 +1,6 @@
 ## 2.4.2-wip
 
-- Bump the min sdk to 3.3.0.
+- Bump the min sdk to 3.4.0.
 
 ## 2.4.1
 
