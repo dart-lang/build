@@ -1,3 +1,4 @@
+// ignore: unnecessary_library_name
 library a_imports_b_no_cycle;
 
 // ignore_for_file: unused_import
