@@ -1,7 +1,8 @@
 ## 4.0.2
 
 - Support version `1.x` and `2.x` of `shelf_web_socket` and `2.x` and `3.x`
-- of `web_socket_channel`.
+  of `web_socket_channel`.
+- Bump the min sdk to 3.4.0.
 
 ## 4.0.1
 

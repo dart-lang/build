@@ -1,6 +1,8 @@
 ## 2.4.2-wip
 
-- Bump the min sdk to 3.0.0.
+- Bump the min sdk to 3.4.0.
+- Remove some unnecessary casts and non-null assertions now that we have private
+  field promotion.
 
 ## 2.4.1
 

@@ -3,7 +3,7 @@ name: build_development_tools
 description: Collection of scripts used during development of build packages.
 
 environment:
-  sdk: ^3.0.0
+  sdk: ^3.4.0
 
 dependencies:
   path: ^1.8.0
