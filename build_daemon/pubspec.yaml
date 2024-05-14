@@ -34,3 +34,6 @@ dev_dependencies:
 dependency_overrides:
   build_runner:
     path: ../build_runner
+
+topics:
+ - build-runner
