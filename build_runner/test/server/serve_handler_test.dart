@@ -26,7 +26,7 @@ import 'package:test/test.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class FakeSink extends DelegatingStreamSink implements WebSocketSink {
-  FakeWebSocketChannel _channel;
+  final FakeWebSocketChannel _channel;
 
   FakeSink(this._channel) : super(_channel._controller.sink);
 
