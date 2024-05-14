@@ -1,4 +1,4 @@
-## 4.0.2-wip
+## 4.0.2
 
 - Support version `1.x` and `2.x` of `shelf_web_socket` and `2.x` and `3.x`
 - of `web_socket_channel`.
