@@ -1,3 +1,7 @@
+## 4.0.11-wip
+
+- Bump the min sdk to 3.4.0.
+
 ## 4.0.10
 
 - Allow version 3.5.x of the Dart SDK.

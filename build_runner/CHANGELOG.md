@@ -1,3 +1,7 @@
+## 2.4.10-wip
+
+- Bump the min sdk to 3.4.0.
+
 ## 2.4.9
 
 - Update the `package:frontend_server_client` constraint to `>=3.0.0 <5.0.0`.

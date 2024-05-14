@@ -1,7 +1,7 @@
 name: example
 publish_to: none
 environment:
-  sdk: ^3.0.0
+  sdk: ^3.4.0
 
 dependencies:
   analyzer: ">=5.0.0 <7.0.0"

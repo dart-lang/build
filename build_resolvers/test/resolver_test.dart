@@ -292,8 +292,7 @@ void main() {
         var clazz = lib.getClass('A');
         expect(clazz, isNotNull);
         expect(clazz!.interfaces, hasLength(1));
-        expect(clazz.interfaces.first.getDisplayString(withNullability: false),
-            'B');
+        expect(clazz.interfaces.first.getDisplayString(), 'B');
       }, resolvers: resolvers);
     });
 
@@ -314,8 +313,7 @@ void main() {
         var clazz = lib.getClass('A');
         expect(clazz, isNotNull);
         expect(clazz!.interfaces, hasLength(1));
-        expect(clazz.interfaces.first.getDisplayString(withNullability: false),
-            'B');
+        expect(clazz.interfaces.first.getDisplayString(), 'B');
       }, resolvers: resolvers);
 
       // `resolveSources` actually completes prior to the build step being
