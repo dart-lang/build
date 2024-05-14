@@ -266,7 +266,7 @@ class _SingleBuild {
       var invalidated = await _assetGraph.updateAndInvalidate(
           _buildPhases, updates, _packageGraph.root.name, _delete, _reader);
       if (_reader is CachingAssetReader) {
-        (_reader as CachingAssetReader).invalidate(invalidated);
+        _reader.invalidate(invalidated);
       }
     });
   }
@@ -306,7 +306,7 @@ class _SingleBuild {
         assert(result.performance != null);
         var now = DateTime.now();
         var logPath = p.join(
-            _logPerformanceDir!,
+            _logPerformanceDir,
             '${now.year}-${_twoDigits(now.month)}-${_twoDigits(now.day)}'
             '_${_twoDigits(now.hour)}-${_twoDigits(now.minute)}-'
             '${_twoDigits(now.second)}');
