@@ -25,3 +25,5 @@ dev_dependencies:
 
 topics:
  - build-runner
+ - codegen
+ - build
