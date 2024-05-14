@@ -20,3 +20,6 @@ dev_dependencies:
   json_serializable: ^6.0.0
   term_glyph: ^1.2.0
   test: ^1.16.0
+
+topics:
+ - build-runner
