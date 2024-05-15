@@ -20,7 +20,7 @@
 /// of the application is compiled with DDC or could be compiled with DDC.
 
 @JS()
-library stack_trace_mapper;
+library;
 
 import 'dart:convert';
 
