@@ -83,15 +83,19 @@ class PackageGraph {
     // Should also contain `pubspec.lock`.
     var rootDir = packagePath;
     PackageConfig? packageConfig;
+    // Manually recurse through parent directories, to obtain the [rootDir]
+    // where a package config was found. It doesn't seem possible to obtain this
+    // directly with package:package_config.
     while (true) {
-      final packageConfigCandidate =
-          File(p.join(rootDir, '.dart_tool', 'package_config.json'));
-      if (packageConfigCandidate.existsSync()) {
-        packageConfig = await loadPackageConfig(packageConfigCandidate);
+      packageConfig =
+          await findPackageConfig(Directory(rootDir), recurse: false);
+      File(p.join(rootDir, '.dart_tool', 'package_config.json'));
+      if (packageConfig != null) {
         break;
       }
       final next = p.dirname(rootDir);
       if (next == rootDir) {
+        // We have reached the file system root.
         break;
       }
       rootDir = next;
@@ -111,11 +115,16 @@ class PackageGraph {
     final consistentlyOrderedPackages = packageConfig.packages.toList()
       ..sort((a, b) => a.name.compareTo(b.name));
     for (final package in consistentlyOrderedPackages) {
-      var isRoot = package.name == rootPackageName;
+      // The pubspec.lock file does not contain the workspace packages.
+      // We treat them as "path" packages in terms of mutability.
+      final isWorkspacePackage = !dependencyTypes.containsKey(package.name);
+      final isRoot = package.name == rootPackageName;
       nodes[package.name] = PackageNode(
           package.name,
           package.root.toFilePath(),
-          isRoot ? DependencyType.path : dependencyTypes[package.name],
+          isWorkspacePackage
+              ? DependencyType.path
+              : dependencyTypes[package.name],
           package.languageVersion,
           isRoot: isRoot);
     }
