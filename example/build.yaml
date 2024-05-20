@@ -24,6 +24,9 @@ builders:
     import: "package:example/builder.dart"
     builder_factories: ["cssBuilder"]
     build_extensions: {"$package$": ["web/generated.css"]}
+    # The default, but listed explicitly for illustration purposes, see:
+    # https://github.com/dart-lang/build/blob/master/docs/builder_author_faq.md#when-should-a-builder-build-to-cache-vs-source
+    build_to: cache
     auto_apply: root_package
 
   textBuilder:
