@@ -115,7 +115,6 @@ class PackageGraph {
     final consistentlyOrderedPackages = packageConfig.packages.toList()
       ..sort((a, b) => a.name.compareTo(b.name));
     for (final package in consistentlyOrderedPackages) {
-      final isWorkspacePackage = !dependencyTypes.containsKey(package.name);
       final isRoot = package.name == rootPackageName;
       nodes[package.name] = PackageNode(
           package.name,
