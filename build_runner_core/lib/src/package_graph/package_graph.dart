@@ -115,16 +115,14 @@ class PackageGraph {
     final consistentlyOrderedPackages = packageConfig.packages.toList()
       ..sort((a, b) => a.name.compareTo(b.name));
     for (final package in consistentlyOrderedPackages) {
-      // The pubspec.lock file does not contain the workspace packages.
-      // We treat them as "path" packages in terms of mutability.
       final isWorkspacePackage = !dependencyTypes.containsKey(package.name);
       final isRoot = package.name == rootPackageName;
       nodes[package.name] = PackageNode(
           package.name,
           package.root.toFilePath(),
-          isWorkspacePackage
-              ? DependencyType.path
-              : dependencyTypes[package.name],
+          // If the package is missing from pubspec.lock, assume it is a path
+          // dependency.
+          dependencyTypes[package.name] ?? DependencyType.path,
           package.languageVersion,
           isRoot: isRoot);
     }
