@@ -3,6 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @Tags(['integration'])
+library;
+
 import 'dart:async';
 import 'dart:io';
 
