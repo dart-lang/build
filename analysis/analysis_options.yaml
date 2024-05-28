@@ -14,10 +14,3 @@ analyzer:
     # Common top level directories containing generated files in any package.
     - "build/**"
     - ".dart_tool/**"
-
-linter:
-  rules:
-    # TODO: Remove this once we can use unnamed libraries.
-    library_annotations: false
-    # TODO: https://github.com/google/json_serializable.dart/issues/1313
-    use_string_in_part_of_directives: false
