@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of build_runner.src.generate.performance_tracker;
+part of 'performance_tracker.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator

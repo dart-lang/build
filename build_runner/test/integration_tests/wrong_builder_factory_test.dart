@@ -3,6 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @Tags(['integration'])
+library;
+
 import 'package:build_test/build_test.dart';
 import 'package:io/io.dart' show ExitCode;
 import 'package:test/test.dart';

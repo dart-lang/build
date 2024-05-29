@@ -5,6 +5,8 @@
 @OnPlatform({
   'windows': Skip('Directories cant be deleted while processes are still open')
 })
+library;
+
 import 'dart:async';
 import 'dart:convert';
 

@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @experimental
-library build_runner.src.generate.performance_tracker;
+library;
 
 import 'dart:async';
 
