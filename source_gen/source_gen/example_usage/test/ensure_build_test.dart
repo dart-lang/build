@@ -5,7 +5,7 @@
 @Timeout.factor(2)
 @TestOn('vm')
 @Tags(['presubmit-only'])
-library test;
+library;
 
 import 'package:build_verify/build_verify.dart';
 import 'package:test/test.dart';

@@ -6,7 +6,7 @@
 
 // Increase timeouts on this test which resolves source code and can be slow.
 @Timeout.factor(2.0)
-library test;
+library;
 
 import 'dart:collection';
 

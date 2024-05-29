@@ -4,7 +4,7 @@
 
 // Increase timeouts on this test which resolves source code and can be slow.
 @Timeout.factor(2.0)
-library test;
+library;
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build_test/build_test.dart';
