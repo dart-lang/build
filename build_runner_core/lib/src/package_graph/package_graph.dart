@@ -78,14 +78,35 @@ class PackageGraph {
           'pubspec.yaml.');
     }
 
-    final packageConfig =
-        await findPackageConfig(Directory(packagePath), recurse: false);
+    // The path of the directory that contains .dart_tool/package_config.json.
+    //
+    // Should also contain `pubspec.lock`.
+    var rootDir = packagePath;
+    PackageConfig? packageConfig;
+    // Manually recurse through parent directories, to obtain the [rootDir]
+    // where a package config was found. It doesn't seem possible to obtain this
+    // directly with package:package_config.
+    while (true) {
+      packageConfig =
+          await findPackageConfig(Directory(rootDir), recurse: false);
+      File(p.join(rootDir, '.dart_tool', 'package_config.json'));
+      if (packageConfig != null) {
+        break;
+      }
+      final next = p.dirname(rootDir);
+      if (next == rootDir) {
+        // We have reached the file system root.
+        break;
+      }
+      rootDir = next;
+    }
+
     if (packageConfig == null) {
       throw StateError(
           'Unable to find package config for package at $packagePath.');
     }
 
-    final dependencyTypes = _parseDependencyTypes(packagePath);
+    final dependencyTypes = _parseDependencyTypes(rootDir);
 
     final nodes = <String, PackageNode>{};
     // A consistent package order _should_ mean a consistent order of build
@@ -94,11 +115,13 @@ class PackageGraph {
     final consistentlyOrderedPackages = packageConfig.packages.toList()
       ..sort((a, b) => a.name.compareTo(b.name));
     for (final package in consistentlyOrderedPackages) {
-      var isRoot = package.name == rootPackageName;
+      final isRoot = package.name == rootPackageName;
       nodes[package.name] = PackageNode(
           package.name,
           package.root.toFilePath(),
-          isRoot ? DependencyType.path : dependencyTypes[package.name],
+          // If the package is missing from pubspec.lock, assume it is a path
+          // dependency.
+          dependencyTypes[package.name] ?? DependencyType.path,
           package.languageVersion,
           isRoot: isRoot);
     }

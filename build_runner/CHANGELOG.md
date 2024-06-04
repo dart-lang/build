@@ -1,5 +1,8 @@
 ## 2.4.11-wip
 
+- Explicitly pass the current isolates package config instead of assuming the
+  location, to support the upcoming pub workspaces feature.
+
 ## 2.4.10
 
 - Support version `1.x` and `2.x` of `shelf_web_socket` and `2.x` and `3.x`

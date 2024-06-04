@@ -154,6 +154,42 @@ void main() {
           throwsA(anything));
     });
   });
+
+  group('workspace ', () {
+    var workspaceFixturePath = 'test/fixtures/workspace';
+
+    test('Loads all packages in workspace. Has correct root', () async {
+      Matcher packageNodeEquals(PackageNode node) => isA<PackageNode>()
+          .having((c) => c.path, 'path', node.path)
+          .having((c) => c.dependencies, 'dependencies',
+              node.dependencies.map(packageNodeEquals))
+          .having(
+              (c) => c.dependencyType, 'dependencyType', node.dependencyType);
+
+      final graph = await PackageGraph.forPath('$workspaceFixturePath/pkgs/a');
+      var a = PackageNode(
+          'a', '$workspaceFixturePath/pkgs/a', DependencyType.path, null,
+          isRoot: true);
+      var b = PackageNode(
+          'b', '$workspaceFixturePath/pkgs/b', DependencyType.path, null);
+      a.dependencies.add(b);
+      var workspace = PackageNode(
+        'workspace',
+        workspaceFixturePath,
+        DependencyType.path,
+        null,
+      );
+
+      expect(graph.allPackages, {
+        'a': packageNodeEquals(a),
+        'b': packageNodeEquals(b),
+        'workspace': packageNodeEquals(workspace),
+        r'$sdk': anything
+      });
+
+      expect(graph.root, packageNodeEquals(a));
+    });
+  });
 }
 
 void expectPkg(PackageNode node, String name, String location,

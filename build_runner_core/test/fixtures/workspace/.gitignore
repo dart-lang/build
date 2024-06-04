@@ -1,0 +1,5 @@
+# Take special care to include the .dart_tool/package_config.json
+#
+!.dart_tool
+.dart_tool/*
+!.dart_tool/package_config.json

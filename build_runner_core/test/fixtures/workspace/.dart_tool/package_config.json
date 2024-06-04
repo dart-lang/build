@@ -1,0 +1,23 @@
+{
+  "configVersion": 2,
+  "packages": [
+    {
+      "name": "workspace",
+      "rootUri": "../",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "a",
+      "rootUri": "../pkgs/a",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "b",
+      "rootUri": "../pkgs/b",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    }
+  ]
+}
