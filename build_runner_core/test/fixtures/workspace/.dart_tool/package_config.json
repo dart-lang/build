@@ -19,8 +19,5 @@
       "packageUri": "lib/",
       "languageVersion": "3.5"
     }
-  ],
-  "generated": "2024-05-16T14:20:04.925198Z",
-  "generator": "pub",
-  "generatorVersion": "3.5.0-edge"
+  ]
 }
