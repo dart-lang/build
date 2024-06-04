@@ -3,6 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @TestOn('vm')
+library;
+
 import 'package:_test_common/package_graphs.dart';
 import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';

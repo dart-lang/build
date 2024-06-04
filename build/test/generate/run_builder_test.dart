@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 @TestOn('vm')
+library;
+
 import 'dart:async';
 
 import 'package:build/build.dart';
@@ -80,7 +82,7 @@ void main() {
             config.packages.singleWhere((p) => p.name == 'build');
         expect(buildPackage.root, Uri.parse('asset:build/'));
         expect(buildPackage.packageUriRoot, Uri.parse('asset:build/lib/'));
-        expect(buildPackage.languageVersion, LanguageVersion(3, 0));
+        expect(buildPackage.languageVersion, LanguageVersion(3, 4));
 
         final resolvedBuildUri =
             config.resolve(Uri.parse('package:build/foo.txt'))!;
@@ -104,7 +106,7 @@ void main() {
           Package(
             'build',
             Uri.file('/foo/bar/'),
-            languageVersion: LanguageVersion(3, 0),
+            languageVersion: LanguageVersion(3, 4),
           ),
         ]),
       );

@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 @Timeout.factor(4)
+library;
+
 import 'package:_test_common/descriptors.dart';
 import 'package:_test_common/sdk.dart';
 import 'package:test/test.dart';
@@ -37,8 +39,7 @@ builders:
         ]).create();
 
         var result = await runPub('a', 'run', args: ['build_runner', 'build']);
-        expect(result.stderr, isEmpty,
-            skip: 'https://github.com/dart-lang/sdk/issues/50592');
+        expect(result.stderr, isEmpty);
         expect(
             result.stdout,
             contains(
@@ -57,8 +58,7 @@ builders:
         ]).create();
 
         var result = await runPub('a', 'run', args: ['build_runner', 'build']);
-        expect(result.stderr, isEmpty,
-            skip: 'https://github.com/dart-lang/sdk/issues/50592');
+        expect(result.stderr, isEmpty);
         expect(
             result.stdout,
             isNot(contains(
@@ -87,8 +87,7 @@ builders:
 ''')
         ]).create();
         var result = await runPub('a', 'run', args: ['build_runner', 'build']);
-        expect(result.stderr, isEmpty,
-            skip: 'https://github.com/dart-lang/sdk/issues/50592');
+        expect(result.stderr, isEmpty);
         expect(result.stdout, contains('could not be parsed'));
       });
 
@@ -103,8 +102,7 @@ builders:
 ''')
         ]).create();
         var result = await runPub('a', 'run', args: ['build_runner', 'build']);
-        expect(result.stderr, isEmpty,
-            skip: 'https://github.com/dart-lang/sdk/issues/50592');
+        expect(result.stderr, isEmpty);
         expect(
             result.stdout,
             contains('Could not load imported package "unknown_package" '
@@ -123,8 +121,7 @@ global_options:
       ]).create();
 
       var result = await runPub('a', 'run', args: ['build_runner', 'build']);
-      expect(result.stderr, isEmpty,
-          skip: 'https://github.com/dart-lang/sdk/issues/50592');
+      expect(result.stderr, isEmpty);
       expect(
           result.stdout,
           allOf(

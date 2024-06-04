@@ -3,6 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @TestOn('vm')
+library;
+
 import 'dart:io';
 
 import 'package:build_runner/src/build_script_generate/build_script_generate.dart';

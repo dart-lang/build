@@ -4,6 +4,8 @@
 
 @Tags(['experiments'])
 @TestOn('vm')
+library;
+
 import 'package:build_runner/build_script_generate.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';

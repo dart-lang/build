@@ -4,6 +4,7 @@
 
 @TestOn('vm')
 @Tags(['integration'])
+library;
 
 import 'dart:async';
 import 'dart:io';

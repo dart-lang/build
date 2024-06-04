@@ -4,6 +4,7 @@
 
 @Tags(['presubmit-only'])
 @OnPlatform({'windows': Skip('line endings are different')})
+library;
 
 import 'dart:convert';
 import 'dart:io';

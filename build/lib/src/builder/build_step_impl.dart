@@ -127,8 +127,7 @@ class BuildStepImpl implements BuildStep {
   Stream<AssetId> findAssets(Glob glob) {
     if (_isComplete) throw BuildStepCompletedException();
     if (_reader is MultiPackageAssetReader) {
-      return (_reader as MultiPackageAssetReader)
-          .findAssets(glob, package: inputId.package);
+      return _reader.findAssets(glob, package: inputId.package);
     } else {
       return _reader.findAssets(glob);
     }

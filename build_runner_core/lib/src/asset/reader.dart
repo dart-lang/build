@@ -173,7 +173,7 @@ class SingleStepReader implements AssetReader {
     }
     var streamCompleter = StreamCompleter<AssetId>();
 
-    doAfter(_getGlobNode!(glob, _primaryPackage, _phaseNumber),
+    doAfter(_getGlobNode(glob, _primaryPackage, _phaseNumber),
         (GlobAssetNode globNode) {
       assetsRead.add(globNode.id);
       streamCompleter.setSourceStream(Stream.fromIterable(globNode.results!));

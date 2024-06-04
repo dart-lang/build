@@ -115,7 +115,7 @@ class Resource<T> {
     assert(_instanceByManager.containsKey(manager));
     var oldInstance = _instanceByManager[manager]!;
     if (_userDispose != null) {
-      return oldInstance.then(_userDispose!);
+      return oldInstance.then(_userDispose);
     } else {
       _instanceByManager.remove(manager);
       return Future.value(null);

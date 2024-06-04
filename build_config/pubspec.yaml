@@ -5,7 +5,7 @@ description: >-
 repository: https://github.com/dart-lang/build/tree/master/build_config
 
 environment:
-  sdk: ^3.0.0
+  sdk: ^3.4.0
 
 dependencies:
   checked_yaml: ^2.0.0
@@ -16,7 +16,10 @@ dependencies:
 
 dev_dependencies:
   build_runner: ^2.0.0
-  dart_flutter_team_lints: ^2.0.0
+  dart_flutter_team_lints: ^3.1.0
   json_serializable: ^6.0.0
   term_glyph: ^1.2.0
   test: ^1.16.0
+
+topics:
+ - build-runner

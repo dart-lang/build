@@ -1,6 +1,9 @@
 ## 7.3.1-wip
 
 - Support the upcoming pub workspaces feature.
+- Bump the min sdk to 3.4.0.
+- Remove some unnecessary casts and non-null assertions now that we have private
+  field promotion.
 
 ## 7.3.0
 
