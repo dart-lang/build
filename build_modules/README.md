@@ -1,8 +1,8 @@
 <p align="center">
   Module builders for modular compilation pipelines.
   <br>
-  <a href="https://github.com/dart-lang/build/labels/package%3A%20build_modules">
-    <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3A%20build_modules.svg" alt="Issues related to build_modules" />
+  <a href="https://github.com/dart-lang/build/labels/package%3Abuild_modules">
+    <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3Abuild_modules.svg" alt="Issues related to build_modules" />
   </a>
   <a href="https://pub.dev/packages/build_modules">
     <img src="https://img.shields.io/pub/v/build_modules.svg" alt="Pub Package Version" />
