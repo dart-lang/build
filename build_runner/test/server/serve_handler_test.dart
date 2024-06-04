@@ -7,7 +7,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:_test_common/common.dart';
-import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:build_runner/src/entrypoint/options.dart';
 import 'package:build_runner/src/generate/watch_impl.dart';
@@ -20,80 +19,11 @@ import 'package:build_runner_core/src/generate/performance_tracker.dart';
 import 'package:build_runner_core/src/package_graph/target_graph.dart';
 import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
-import 'package:stream_channel/stream_channel.dart';
 import 'package:test/fake.dart';
 import 'package:test/test.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-
-class FakeSink extends DelegatingStreamSink implements WebSocketSink {
-  final FakeWebSocketChannel _channel;
-
-  FakeSink(this._channel) : super(_channel._controller.sink);
-
-  @override
-  Future close([int? closeCode, String? closeReason]) async {
-    await super.close();
-    _channel._isClosed = true;
-    _channel._closeCode = closeCode;
-    _channel._closeReason = closeReason;
-    await _channel._closed(closeCode, closeReason);
-  }
-}
-
-class FakeWebSocketChannel extends StreamChannelMixin
-    implements WebSocketChannel {
-  final StreamChannel _controller;
-  final Future Function(int? closeCode, String? closeReason) _closed;
-
-  bool _isClosed = false;
-  int? _closeCode;
-  String? _closeReason;
-
-  FakeWebSocketChannel(this._controller, this._closed);
-
-  @override
-  int? get closeCode => _closeCode;
-
-  @override
-  String? get closeReason => _closeReason;
-
-  @override
-  String? get protocol => throw UnimplementedError();
-
-  @override
-  Future<void> get ready => Future.value();
-
-  @override
-  WebSocketSink get sink => FakeSink(this);
-
-  @override
-  Stream get stream => _controller.stream;
-
-  Future _remoteClosed(int closeCode, String? closeReason) async {
-    if (!_isClosed) {
-      await sink.close(closeCode, closeReason);
-    }
-  }
-}
-
-(WebSocketChannel, WebSocketChannel) createFakes() {
-  final peer1Write = StreamController<dynamic>();
-  final peer2Write = StreamController<dynamic>();
-
-  late FakeWebSocketChannel foreign;
-  late FakeWebSocketChannel local;
-
-  foreign = FakeWebSocketChannel(
-      StreamChannel(peer2Write.stream, peer1Write.sink),
-      (closeCode, closeReason) =>
-          local._remoteClosed(closeCode ?? 1005, closeReason));
-  local = FakeWebSocketChannel(
-      StreamChannel(peer1Write.stream, peer2Write.sink),
-      (closeCode, closeReason) =>
-          foreign._remoteClosed(closeCode ?? 1005, closeReason));
-
-  return (foreign, local);
-}
+import 'package:web_socket_channel/adapter_web_socket_channel.dart';
+import 'package:web_socket/testing.dart';
 
 void main() {
   late ServeHandler serveHandler;
@@ -376,8 +306,12 @@ void main() {
 
         handler = BuildUpdatesWebSocketHandler(watchImpl, mockHandlerFactory);
 
-        (serverChannel1, clientChannel1) = createFakes();
-        (serverChannel2, clientChannel2) = createFakes();
+        final (serverSocket1, clientSocket1) = fakes();
+        final (serverSocket2, clientSocket2) = fakes();
+        serverChannel1 = AdapterWebSocketChannel(serverSocket1);
+        clientChannel1 = AdapterWebSocketChannel(clientSocket1);
+        serverChannel2 = AdapterWebSocketChannel(serverSocket2);
+        clientChannel2 = AdapterWebSocketChannel(clientSocket2);
       });
 
       tearDown(() {
