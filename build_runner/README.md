@@ -1,8 +1,8 @@
 <p align="center">
   Standalone generator and watcher for Dart using <a href="https://pub.dev/packages/build"><code>package:build</code></a>.
   <br>
-  <a href="https://github.com/dart-lang/build/labels/package%3A%20build_runner">
-    <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3A%20build_runner.svg" alt="Issues related to build_runner" />
+  <a href="https://github.com/dart-lang/build/labels/package%3Abuild_runner">
+    <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3Abuild_runner.svg" alt="Issues related to build_runner" />
   </a>
   <a href="https://pub.dev/packages/build_runner">
     <img src="https://img.shields.io/pub/v/build_runner.svg" alt="Pub Package Version" />

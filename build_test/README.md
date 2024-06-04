@@ -1,8 +1,8 @@
 <p align="center">
   Testing utilities for users of <a href="https://pub.dev/packages/build"><code>package:build</code></a>.
   <br>
-  <a href="https://github.com/dart-lang/build/labels/package%3A%20build_test">
-    <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3A%20build_test.svg" alt="Issues related to build_test" />
+  <a href="https://github.com/dart-lang/build/labels/package%3Abuild_test">
+    <img src="https://img.shields.io/github/issues-raw/dart-lang/build/package%3Abuild_test.svg" alt="Issues related to build_test" />
   </a>
   <a href="https://pub.dev/packages/build_test">
     <img src="https://img.shields.io/pub/v/build_test.svg" alt="Pub Package Version" />
