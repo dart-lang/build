@@ -58,7 +58,8 @@ dev_dependencies:
   test_descriptor: ^2.0.0
   test_process: ^2.0.0
   web_socket: ^0.1.5
-  web_socket_channel: ^3.0.0
+  # unnecessary_dev_dependency false positive.
+  # web_socket_channel: ^3.0.0
 
 topics:
  - build-runner
