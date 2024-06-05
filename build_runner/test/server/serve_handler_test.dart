@@ -21,9 +21,9 @@ import 'package:logging/logging.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/fake.dart';
 import 'package:test/test.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:web_socket_channel/adapter_web_socket_channel.dart';
 import 'package:web_socket/testing.dart';
+import 'package:web_socket_channel/adapter_web_socket_channel.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 void main() {
   late ServeHandler serveHandler;
