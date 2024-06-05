@@ -90,12 +90,13 @@ class MissingDummyValueError {
 MissingDummyValueError: $type
 
 This means Mockito was not smart enough to generate a dummy value of type
-'$type'. Please consider using either 'provideDummy' or 'provideDummyBuilder'
-functions to give Mockito a proper dummy value.
+'$type'. Due to implementation details, Mockito sometimes needs users to
+provide dummy values for some types, even if they plan to explicitly stub all
+the called methods. Call either `provideDummy` or `provideDummyBuilder` to
+provide Mockito with a dummy value.
 
-Please note that due to implementation details Mockito sometimes needs users
-to provide dummy values for some types, even if they plan to explicitly stub
-all the called methods.
+For more details, see:
+<https://github.com/dart-lang/mockito/blob/master/FAQ.md#how-do-i-mock-a-sealed-class>
 ''';
 }
 
@@ -156,7 +157,8 @@ T dummyValue<T>(Object parent, Invocation invocation) {
   throw MissingDummyValueError(T);
 }
 
-/// Provide a builder for that could create a dummy value of type `T`.
+/// Specifies a builder to create a dummy value of type `T`.
+///
 /// This could be useful for nice mocks, such that information about the
 /// specific invocation that caused the creation of a dummy value could be
 /// preserved.
@@ -165,6 +167,9 @@ void provideDummyBuilder<T>(DummyBuilder<T> dummyBuilder) =>
 
 /// Provide a dummy value for `T` to be used both while adding expectations
 /// and as a default value for unstubbed methods, if using a nice mock.
+///
+/// For details and for example usage, see:
+/// https://github.com/dart-lang/mockito/blob/master/FAQ.md#how-do-i-mock-a-sealed-class
 void provideDummy<T>(T dummy) =>
     provideDummyBuilder((parent, invocation) => dummy);
 

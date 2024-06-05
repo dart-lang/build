@@ -1,6 +1,6 @@
 # Frequently asked questions
 
-#### How do I mock a static method, constructor, or top-level function?
+## How do I mock a static method, constructor, or top-level function?
 
 Mockito provides its stubbing and verification features by overriding class
 instance methods. Since there is no mechanism for overriding static methods,
@@ -58,12 +58,12 @@ for production and a [MemoryFileSystem] for tests), and use its wrapper methods
 [io package]: https://pub.dev/packages/io
 [ProcessManager]: https://pub.dev/documentation/io/latest/io/ProcessManager-class.html
 
-#### How do I mock an extension method?
+## How do I mock an extension method?
 
 If there is no way to override some kind of function, then mockito cannot mock
 it. See the above answer for further explanation, and alternatives.
 
-#### Why can a method call not be verified multiple times?
+## Why can a method call not be verified multiple times?
 
 When mockito verifies a method call (via [`verify`] or [`verifyInOrder`]), it
 marks the call as "verified", which excludes the call from further
@@ -100,7 +100,7 @@ expect(firstCall, equals(["birds"]));
 expect(secondCall, equals(["lizards"]));
 ```
 
-#### How does mockito work?
+## How does mockito work?
 
 The basics of the `Mock` class are nothing special: It uses `noSuchMethod` to
 catch all method invocations, and returns the value that you have configured
@@ -169,7 +169,7 @@ it's done.  It's very straightforward.
 [`verifyInOrder`]: https://pub.dev/documentation/mockito/latest/mockito/verifyInOrder.html
 
 
-### How can I customize where Mockito outputs its mocks?
+## How can I customize where Mockito outputs its mocks?
 
 Mockito supports configuration of outputs by the configuration provided by the `build`
 package by creating (if it doesn't exist already) the `build.yaml` at the root folder
@@ -203,3 +203,71 @@ targets:
 ```
 
 Also, you can also check out the example configuration in the Mockito repository. 
+
+
+## How do I mock a `sealed` class?
+
+Suppose that you have code such as:
+
+```dart
+class Bar {
+  int value;
+
+  Bar(this.value);
+
+  Bar.zero() : value = 0;
+}
+
+class Foo {
+  Bar someMethod(int value) => Bar(value);
+}
+```
+
+and now you want to mock `Foo`. The generated implementation for `MockFoo`
+needs to return *something* if `someMethod` is called. It can't return `null`
+since its return type is non-nullable. It can't construct a `Bar` on its own
+without understanding the semantics of `Bar`'s constructors. That is, which
+`Bar` constructor should be called and with what arguments? To avoid this,
+Mockito instead generates its own, fake implementation of `Bar` that it does
+know how to construct, something like:
+
+```dart
+class _FakeBar extends Fake implements Bar {}
+```
+
+And then the generated implementation of `MockFoo` can have its `someMethod`
+override return a `_FakeBar` instance.
+
+However, if `Bar` is `sealed` (or is marked with `base` or `final`), then it
+cannot be `implemented` in generated code. Therefore Mockito can't generate a
+default value for a `Bar` on its own, and it needs users to specify the default
+value to use via `provideDummy` or `provideDummyBuilder`:
+
+```dart
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
+
+@GenerateNiceMocks([MockSpec<Foo>()])
+import 'foo.mocks.dart';
+
+sealed class Bar {
+  int value;
+
+  Bar(this.value);
+
+  Bar.zero() : value = 0;
+}
+
+class Foo {
+  Bar someMethod(int value) => Bar(value);
+}
+
+void main() {
+  provideDummy(Bar.zero());
+
+  var mockFoo = MockFoo();
+}
+```
+
+Note that the value used as the "dummy" usually doesn't matter since methods on
+the mock typically will be stubbed, overriding the method's return value.
