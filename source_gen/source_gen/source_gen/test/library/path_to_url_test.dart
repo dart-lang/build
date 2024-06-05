@@ -4,7 +4,7 @@
 
 // Increase timeouts on this test which resolves source code and can be slow.
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer/src/generated/source.dart';
+import 'package:analyzer/source/source.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:test/test.dart';
 
