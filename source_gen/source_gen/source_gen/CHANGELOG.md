@@ -3,8 +3,9 @@
 - Document deduplication behavior for the output of
   `GeneratorForAnnotation.generateForAnnotatedElement`.
 - Support all the glob quotes.
-- Require Dart 3.4.0
+- Revive to the object's `variableElement` if available
 - Require `analyzer: ^6.4.0`
+- Require Dart 3.4.0
 
 ## 1.5.0
 
