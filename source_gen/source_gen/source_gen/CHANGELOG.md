@@ -4,7 +4,7 @@
   `GeneratorForAnnotation.generateForAnnotatedElement`.
 - Support all the glob quotes.
 - Require Dart 3.4.0
-- Require `analyzer: '>=6.4.0 <7.0.0'`
+- Require `analyzer: ^6.4.0`
 
 ## 1.5.0
 
