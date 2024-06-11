@@ -327,6 +327,7 @@ void main() {
         await createMockConnection(serverChannel1, 'web');
         await createMockConnection(serverChannel2, 'web');
         await handler.emitUpdateMessage(BuildResult(BuildStatus.success, []));
+        await pumpEventQueue();
         await clientChannel1.sink.close();
         await clientChannel2.sink.close();
       });
@@ -337,8 +338,10 @@ void main() {
         await createMockConnection(serverChannel1, 'web');
         await createMockConnection(serverChannel2, 'web');
         await handler.emitUpdateMessage(BuildResult(BuildStatus.success, []));
+        await pumpEventQueue();
         await clientChannel2.sink.close();
         await handler.emitUpdateMessage(BuildResult(BuildStatus.success, []));
+        await pumpEventQueue();
         await clientChannel1.sink.close();
       });
 
@@ -382,6 +385,7 @@ void main() {
           AssetId('a', 'web/index.html'),
           AssetId('a', 'lib/some.dart.js'),
         ]));
+        await pumpEventQueue();
         await clientChannel1.sink.close();
       });
 
@@ -421,6 +425,7 @@ void main() {
           AssetId('a', 'web2/index.html'),
           AssetId('a', 'lib/some.dart.js'),
         ]));
+        await pumpEventQueue();
         await clientChannel1.sink.close();
         await clientChannel2.sink.close();
       });
