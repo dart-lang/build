@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -30,11 +31,13 @@ Future<ProcessResult> runCommand(List<String> args) =>
 /// build to complete.
 ///
 /// To ensure a clean build, set [ensureCleanBuild] to `true`.
-Future<void> startServer({bool? ensureCleanBuild, List<String>? buildArgs}) =>
+Future<void> startServer(
+        {bool? ensureCleanBuild, List<String>? buildArgs}) async =>
     _startServer(
       'dart',
       [
-        '--packages=.dart_tool/package_config.json',
+        '--packages=',
+        (await Isolate.packageConfig).toString(),
         p.join('..', 'build_runner', 'bin', 'build_runner.dart'),
         'serve',
         '--verbose',
