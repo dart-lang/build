@@ -89,7 +89,6 @@ class PackageGraph {
     while (true) {
       packageConfig =
           await findPackageConfig(Directory(rootDir), recurse: false);
-      File(p.join(rootDir, '.dart_tool', 'package_config.json'));
       if (packageConfig != null) {
         break;
       }
