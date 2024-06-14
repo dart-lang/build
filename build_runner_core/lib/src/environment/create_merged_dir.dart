@@ -171,7 +171,6 @@ Future<AssetId> _writeModifiedPackageConfig(
     String rootPackage, PackageGraph packageGraph, Directory outputDir) async {
   var packageConfig = <String, Object?>{
     'configVersion': 2,
-    'generator': 'build_runner_core',
     'packages': [
       for (var package in packageGraph.allPackages.values)
         {
@@ -181,7 +180,8 @@ Future<AssetId> _writeModifiedPackageConfig(
               : '../packages/${package.name}',
           'packageUri':
               package.name == rootPackage ? 'packages/${package.name}' : '',
-          'languageVersion': '${package.languageVersion}',
+          if (package.languageVersion != null)
+            'languageVersion': '${package.languageVersion}',
         },
     ]
   };

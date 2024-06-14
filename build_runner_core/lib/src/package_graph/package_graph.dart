@@ -12,13 +12,8 @@ import '../util/constants.dart';
 
 /// The SDK package, we filter this to the core libs and dev compiler
 /// resources.
-final _sdkPackageNode = PackageNode(
-    r'$sdk',
-    sdkPath,
-    DependencyType.hosted,
-    // A fake language version for the SDK, we don't allow you to read its
-    // sources anyways, and invalidate the whole build if this changes.
-    LanguageVersion(0, 0));
+final _sdkPackageNode =
+    PackageNode(r'$sdk', sdkPath, DependencyType.hosted, null);
 
 /// A graph of the package dependencies for an application.
 class PackageGraph {
@@ -104,7 +99,6 @@ class PackageGraph {
       throw StateError(
           'Unable to find package config for package at $packagePath.');
     }
-
     final dependencyTypes = _parseDependencyTypes(rootDir);
 
     final nodes = <String, PackageNode>{};

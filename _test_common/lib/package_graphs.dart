@@ -21,10 +21,10 @@ PackageNode package(String packageName,
         DependencyType? type,
         LanguageVersion? languageVersion}) =>
     PackageNode(packageName, path ?? '/$packageName',
-        type ?? DependencyType.path, languageVersion ?? LanguageVersion(0, 0));
+        type ?? DependencyType.path, languageVersion);
 
 PackageNode rootPackage(String packageName,
         {String? path, LanguageVersion? languageVersion}) =>
     PackageNode(packageName, path ?? '/$packageName', DependencyType.path,
-        languageVersion ?? LanguageVersion(0, 0),
+        languageVersion,
         isRoot: true);
