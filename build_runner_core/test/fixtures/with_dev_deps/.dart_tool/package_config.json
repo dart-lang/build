@@ -1,0 +1,20 @@
+{
+    "configVersion": 2,
+    "packages": [
+        {
+            "name": "a",
+            "rootUri": "../pkg/a",
+            "packageUri": "lib/"
+        },
+        {
+            "name": "b",
+            "rootUri": "../pkg/b",
+            "packageUri": "lib/"
+        },
+        {
+            "name": "with_dev_deps",
+            "rootUri": "../",
+            "packageUri": "lib/"
+        }
+    ]
+}
