@@ -1,6 +1,6 @@
 name: _         # Can be anything, _ by convention.
 environment:
-  sdk: ^3.5.0-0   # Must be ^3.5.0 or later for workspace to be allowed
+  sdk: ^3.5.0-254.0.dev   # Must be ^3.5.0 or later for workspace to be allowed
 workspace:
 - _test
 - _test/pkgs/provides_builder

@@ -5,7 +5,7 @@ repository: https://github.com/dart-lang/build/tree/master/build_resolvers
 resolution: workspace
 
 environment:
-  sdk: ^3.5.0-0
+  sdk: ^3.5.0-254.0.dev
 
 dependencies:
   analyzer: '>=6.5.0 <7.0.0'

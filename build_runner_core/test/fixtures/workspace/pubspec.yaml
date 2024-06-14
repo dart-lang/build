@@ -1,6 +1,6 @@
 name: workspace
 environment:
-  sdk: ^3.5.0-0
+  sdk: ^3.5.0-254.0.dev
 workspace:
   - pkgs/a
   - pkgs/b
