@@ -1,8 +1,9 @@
-name: provides_builder
+name: d
 resolution: workspace
+
 environment:
   sdk: ^3.5.0-0
 
 dependencies:
-  build:
-    path: ../../../build
+  c:
+    path: ../c

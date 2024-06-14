@@ -1,9 +1,10 @@
 publish_to: none
 name: build_development_tools
 description: Collection of scripts used during development of build packages.
+resolution: workspace
 
 environment:
-  sdk: ^3.4.0
+  sdk: ^3.5.0-0
 
 dependencies:
   path: ^1.8.0

@@ -1,8 +1,9 @@
 name: _test
 publish_to: none
+resolution: workspace
 
 environment:
-  sdk: ^3.4.0
+  sdk: ^3.5.0-0
 
 dev_dependencies:
   analyzer: any
@@ -21,25 +22,3 @@ dev_dependencies:
     path: pkgs/provides_builder/
   test: ^1.16.0
   test_process: ^2.0.0
-
-dependency_overrides:
-  build:
-    path: ../build
-  build_config:
-    path: ../build_config
-  build_daemon:
-    path: ../build_daemon
-  build_modules:
-    path: ../build_modules
-  build_resolvers:
-    path: ../build_resolvers
-  build_runner:
-    path: ../build_runner
-  build_runner_core:
-    path: ../build_runner_core
-  build_test:
-    path: ../build_test
-  build_web_compilers:
-    path: ../build_web_compilers
-  scratch_space:
-    path: ../scratch_space

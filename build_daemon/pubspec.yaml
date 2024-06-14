@@ -2,9 +2,10 @@ name: build_daemon
 version:  4.0.2
 description: A daemon for running Dart builds.
 repository: https://github.com/dart-lang/build/tree/master/build_daemon
+resolution: workspace
 
 environment:
-  sdk: ^3.4.0
+  sdk: ^3.5.0-0
 
 dependencies:
   built_collection: ^5.0.0
@@ -30,10 +31,6 @@ dev_dependencies:
   test: ^1.25.5
   test_descriptor: ^2.0.0
   uuid: ^3.0.0
-
-dependency_overrides:
-  build_runner:
-    path: ../build_runner
 
 topics:
  - build-runner

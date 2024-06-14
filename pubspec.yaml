@@ -1,0 +1,24 @@
+name: _         # Can be anything, _ by convention.
+environment:
+  sdk: ^3.5.0-0   # Must be ^3.5.0 or later for workspace to be allowed
+workspace:
+- _test
+- _test/pkgs/provides_builder
+- _test_common
+- analysis
+- build
+- build_config
+- build_daemon
+- build_modules
+- build_resolvers
+- build_runner
+- build_runner_core
+- build_test
+- build_web_compilers
+- example
+- scratch_space
+- tool
+- build_modules/test/fixtures/a
+- build_modules/test/fixtures/b
+- build_web_compilers/test/fixtures/c
+- build_web_compilers/test/fixtures/d

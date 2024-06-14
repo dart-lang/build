@@ -2,9 +2,10 @@ name: build
 version: 2.4.2-wip
 description: A package for authoring build_runner compatible code generators.
 repository: https://github.com/dart-lang/build/tree/master/build
+resolution: workspace
 
 environment:
-  sdk: ^3.4.0
+  sdk: ^3.5.0-0
 
 dependencies:
   analyzer: ">=1.5.0 <7.0.0"

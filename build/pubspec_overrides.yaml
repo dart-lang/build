@@ -1,7 +1,0 @@
-dependency_overrides:
-  build_config:
-    path: ../build_config
-  build_resolvers:
-    path: ../build_resolvers
-  build_test:
-    path: ../build_test
