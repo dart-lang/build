@@ -2,7 +2,7 @@ name: _test
 publish_to: none
 
 environment:
-  sdk: ^3.4.0
+  sdk: ^3.5.0-259.0.dev
 
 dev_dependencies:
   analyzer: any
