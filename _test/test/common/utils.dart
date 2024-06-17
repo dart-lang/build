@@ -36,8 +36,7 @@ Future<void> startServer(
     _startServer(
       'dart',
       [
-        '--packages=',
-        (await Isolate.packageConfig).toString(),
+        '--packages=${(await Isolate.packageConfig).toString()}',
         p.join('..', 'build_runner', 'bin', 'build_runner.dart'),
         'serve',
         '--verbose',

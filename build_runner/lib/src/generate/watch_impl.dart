@@ -332,8 +332,14 @@ class WatchImpl implements BuildState {
     () async {
       await logTimedAsync(_logger, 'Waiting for all file watchers to be ready',
           () => graphWatcher.ready);
-      originalRootPackageConfigDigest = md5.convert(
-          await watcherEnvironment.reader.readAsBytes(rootPackageConfigId));
+      if (await watcherEnvironment.reader.canRead(rootPackageConfigId)) {
+        originalRootPackageConfigDigest = md5.convert(
+            await watcherEnvironment.reader.readAsBytes(rootPackageConfigId));
+      } else {
+        _logger.warning(
+            'Root package config not readable, manual restarts will be needed '
+            'after running `pub upgrade`.');
+      }
 
       BuildResult firstBuild;
       BuildImpl? build;
