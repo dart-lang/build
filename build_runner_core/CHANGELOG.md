@@ -1,4 +1,4 @@
-## 7.3.2-dev
+## 7.3.2-wip
 
 - Migrate deprecates uses of `whereNotNull()` to `nonNulls`.
 
