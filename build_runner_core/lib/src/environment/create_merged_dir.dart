@@ -7,7 +7,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
-import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
@@ -74,8 +73,7 @@ Future<bool> createMergedOutputDirectories(
 Set<String> _conflicts(Set<BuildDirectory> buildDirs) {
   final seen = <String>{};
   final conflicts = <String>{};
-  var outputLocations =
-      buildDirs.map((d) => d.outputLocation?.path).whereNotNull();
+  var outputLocations = buildDirs.map((d) => d.outputLocation?.path).nonNulls;
   for (var location in outputLocations) {
     if (!seen.add(location)) conflicts.add(location);
   }

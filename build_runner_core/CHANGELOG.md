@@ -1,3 +1,7 @@
+## 7.3.2-dev
+
+- Migrate deprecates uses of `whereNotNull()` to `nonNulls`.
+
 ## 7.3.1
 
 - Support the upcoming pub workspaces feature.
