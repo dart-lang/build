@@ -1,6 +1,6 @@
 ## 4.0.11-wip
 
-- Bump the min sdk to 3.4.0.
+- Bump the min sdk to 3.5.0-259.0.dev.
 
 ## 4.0.10
 

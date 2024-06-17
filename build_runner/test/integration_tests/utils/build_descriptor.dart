@@ -234,7 +234,7 @@ d.FileDescriptor _pubspec(String name,
   var buffer = StringBuffer()
     ..writeln('name: $name')
     ..writeln('environment:')
-    ..writeln('  sdk: ^3.4.0');
+    ..writeln('  sdk: ^3.5.0-259.0.dev');
 
   void writeDeps(String group) {
     buffer.writeln(group);

@@ -1,3 +1,7 @@
+## 2.4.12-wip
+
+- Bump the min sdk to 3.5.0-259.0.dev.
+
 ## 2.4.11
 
 - Explicitly pass the current isolates package config instead of assuming the

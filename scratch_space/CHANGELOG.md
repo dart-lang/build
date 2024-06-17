@@ -1,6 +1,6 @@
 ## 1.0.3-wip
 
-- Bump the min sdk to 3.4.0.
+- Bump the min sdk to 3.5.0-259.0.dev.
 
 ## 1.0.2
 
