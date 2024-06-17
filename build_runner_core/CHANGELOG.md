@@ -1,4 +1,4 @@
-## 7.3.1-wip
+## 7.3.1
 
 - Support the upcoming pub workspaces feature.
 - Bump the min sdk to 3.4.0.

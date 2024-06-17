@@ -1,4 +1,4 @@
-## 2.4.11-wip
+## 2.4.11
 
 - Explicitly pass the current isolates package config instead of assuming the
   location, to support the upcoming pub workspaces feature.
