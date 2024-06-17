@@ -1,12 +1,13 @@
-name: _         # Can be anything, _ by convention.
+name: build_workspace     # Can be anything
 environment:
   sdk: ^3.5.0-259.0.dev   # Must be ^3.5.0 or later for workspace to be allowed
 publish_to: none
+dev_dependencies:
+  dart_flutter_team_lints: ^3.1.0
 workspace:
 - _test
 - _test/pkgs/provides_builder
 - _test_common
-- analysis
 - build
 - build_config
 - build_daemon
