@@ -1,0 +1,45 @@
+{
+    "configVersion": 2,
+    "packages": [
+        {
+            "name": "collection",
+            "rootUri": "../pkg/collection",
+            "packageUri": "lib/"
+        },
+        {
+            "name": "flutter",
+            "rootUri": "../sdk/flutter/flutter",
+            "packageUri": "lib/"
+        },
+        {
+            "name": "flutter_driver",
+            "rootUri": "../sdk/flutter/flutter_driver",
+            "packageUri": "lib/"
+        },
+        {
+            "name": "flutter_gallery_assets",
+            "rootUri": "../sdk/flutter/flutter_gallery_assets",
+            "packageUri": "lib/"
+        },
+        {
+            "name": "flutter_test",
+            "rootUri": "../sdk/flutter/flutter_test",
+            "packageUri": "lib/"
+        },
+        {
+            "name": "intl",
+            "rootUri": "../pkg/intl",
+            "packageUri": "lib/"
+        },
+        {
+            "name": "string_scanner",
+            "rootUri": "../pkg/string_scanner",
+            "packageUri": "lib/"
+        },
+        {
+            "name": "flutter_gallery",
+            "rootUri": "../",
+            "packageUri": "lib/"
+        }
+    ]
+}

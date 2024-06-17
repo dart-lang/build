@@ -2,6 +2,7 @@ name: build_resolvers
 version: 2.4.3-wip
 description: Resolve Dart code in a Builder
 repository: https://github.com/dart-lang/build/tree/master/build_resolvers
+resolution: workspace
 
 environment:
   sdk: ^3.5.0-259.0.dev
@@ -24,7 +25,6 @@ dependencies:
 
 dev_dependencies:
   build_test: ^2.0.0
-  dart_flutter_team_lints: ^3.1.0
   test: ^1.16.0
 
 topics:

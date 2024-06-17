@@ -1,5 +1,5 @@
 name: b
-
+resolution: workspace
 environment:
   sdk: ^3.5.0-259.0.dev
 

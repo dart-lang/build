@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:math' as math;
 
 import 'package:build/build.dart';
@@ -22,7 +23,7 @@ final scratchSpace = ScratchSpace();
 
 /// A shared [Resource] for a [ScratchSpace], which cleans up the contents of
 /// the [ScratchSpace] in dispose, but doesn't delete it entirely.
-final scratchSpaceResource = Resource<ScratchSpace>(() {
+final scratchSpaceResource = Resource<ScratchSpace>(() async {
   if (!scratchSpace.exists) {
     scratchSpace.tempDir.createSync(recursive: true);
     scratchSpace.exists = true;
@@ -30,7 +31,7 @@ final scratchSpaceResource = Resource<ScratchSpace>(() {
   var packageConfigFile = File(
       p.join(scratchSpace.tempDir.path, '.dart_tool', 'package_config.json'));
   if (!packageConfigFile.existsSync()) {
-    var originalConfigFile = File(p.join('.dart_tool', 'package_config.json'));
+    var originalConfigFile = File.fromUri((await Isolate.packageConfig)!);
     var packageConfigContents = _scratchSpacePackageConfig(
         originalConfigFile.readAsStringSync(), originalConfigFile.absolute.uri);
     packageConfigFile
@@ -94,6 +95,9 @@ String _scratchSpacePackageConfig(String rootConfig, Uri packageConfigUri) {
   var foundRoot = false;
   for (var package in packages) {
     var rootUri = packageConfigUri.resolve(package['rootUri'] as String);
+    if (!rootUri.path.endsWith('/') && _currentDirUri.path.endsWith('/')) {
+      rootUri = rootUri.replace(path: '${rootUri.path}/');
+    }
     // We expect to see exactly one package where the root uri is equal to
     // the current directory, and that is the current packge.
     if (rootUri == _currentDirUri) {

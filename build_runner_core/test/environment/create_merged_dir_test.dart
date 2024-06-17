@@ -55,7 +55,7 @@ void main() {
     };
     final packageGraph = buildPackageGraph({
       rootPackage('a'): ['b'],
-      package('b'): []
+      package('b'): [],
     });
     late TargetGraph targetGraph;
     late Directory tmpDir;
@@ -212,7 +212,7 @@ void main() {
         'packages/b/c.txt': 'c',
         'packages/b/c.txt.copy': 'c',
         '.dart_tool/package_config.json':
-            _expectedPackageConfig('a', ['a', 'b']),
+            _expectedPackageConfig('a', ['a', 'b', r'$sdk']),
       };
 
       _expectFiles(webFiles, tmpDir);
@@ -297,7 +297,7 @@ void main() {
         'packages/b/c.txt': 'c',
         'web/b.txt': 'b',
         '.dart_tool/package_config.json':
-            _expectedPackageConfig('a', ['a', 'b'])
+            _expectedPackageConfig('a', ['a', 'b', r'$sdk'])
       };
       _expectFiles(expectedFiles, tmpDir);
     });
@@ -482,7 +482,10 @@ void _expectAllFiles(Directory dir) {
     'packages/b/c.txt.copy': 'c',
     'web/b.txt': 'b',
     'web/b.txt.copy': 'b',
-    '.dart_tool/package_config.json': _expectedPackageConfig('a', ['a', 'b'])
+    '.dart_tool/package_config.json': _expectedPackageConfig(
+      'a',
+      ['a', 'b', r'$sdk'],
+    )
   };
   _expectFiles(expectedFiles, dir);
 }

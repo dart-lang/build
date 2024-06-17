@@ -124,10 +124,8 @@ Future<bool> _createMergedOutputDir(
         for (var id in builtAssets)
           _writeAsset(
               id, outputDir, root, packageGraph, reader, symlinkOnly, hoist),
-        _writeCustomPackagesFile(packageGraph, outputDir),
-        if (await reader.canRead(_packageConfigId(packageGraph.root.name)))
-          _writeModifiedPackageConfig(
-              packageGraph.root.name, reader, outputDir),
+        _writeModifiedPackageConfig(
+            packageGraph.root.name, packageGraph, outputDir),
       ]));
 
       if (!hoist) {
@@ -160,22 +158,6 @@ Future<bool> _createMergedOutputDir(
   }
 }
 
-/// Creates a custom `.packages` file in [outputDir] containing all the
-/// packages in [packageGraph].
-///
-/// All package root uris are of the form `packages/<package>/`.
-Future<AssetId> _writeCustomPackagesFile(
-    PackageGraph packageGraph, Directory outputDir) async {
-  var packagesFileContent =
-      packageGraph.allPackages.keys.map((p) => '$p:packages/$p/').join('\r\n');
-  var packagesAsset = AssetId(packageGraph.root.name, '.packages');
-  await _writeAsString(outputDir, packagesAsset, packagesFileContent);
-  return packagesAsset;
-}
-
-AssetId _packageConfigId(String rootPackage) =>
-    AssetId(rootPackage, '.dart_tool/package_config.json');
-
 /// Creates a modified `.dart_tool/package_config.json` file in [outputDir]
 /// based on the current one but with modified root and package uris.
 ///
@@ -186,32 +168,26 @@ AssetId _packageConfigId(String rootPackage) =>
 ///
 /// All other fields are left as is.
 Future<AssetId> _writeModifiedPackageConfig(
-    String rootPackage, AssetReader reader, Directory outputDir) async {
-  var packageConfigAsset = _packageConfigId(rootPackage);
-  var packageConfig = jsonDecode(await reader.readAsString(packageConfigAsset))
-      as Map<String, dynamic>;
-
-  var version = packageConfig['configVersion'] as int;
-  if (version != 2) {
-    throw UnsupportedError(
-        'Unsupported package_config.json version, got $version but only '
-        'version 2 is supported.');
-  }
-  var packages =
-      (packageConfig['packages'] as List).cast<Map<String, dynamic>>();
-  for (var package in packages) {
-    final name = package['name'] as String;
-    if (name == rootPackage) {
-      package['rootUri'] = '../';
-      package['packageUri'] = 'packages/${package['name']}';
-    } else {
-      package['rootUri'] = '../packages/${package['name']}';
-      package['packageUri'] = '';
-    }
-  }
-  await _writeAsString(
-      outputDir, packageConfigAsset, jsonEncode(packageConfig));
-  return packageConfigAsset;
+    String rootPackage, PackageGraph packageGraph, Directory outputDir) async {
+  var packageConfig = <String, Object?>{
+    'configVersion': 2,
+    'packages': [
+      for (var package in packageGraph.allPackages.values)
+        {
+          'name': package.name,
+          'rootUri': package.name == rootPackage
+              ? '../'
+              : '../packages/${package.name}',
+          'packageUri':
+              package.name == rootPackage ? 'packages/${package.name}' : '',
+          if (package.languageVersion != null)
+            'languageVersion': '${package.languageVersion}',
+        },
+    ]
+  };
+  var packageConfigId = AssetId(rootPackage, '.dart_tool/package_config.json');
+  await _writeAsString(outputDir, packageConfigId, jsonEncode(packageConfig));
+  return packageConfigId;
 }
 
 Set<String> _findRootDirs(Iterable<AssetId> allAssets, String outputPath) {

@@ -4,9 +4,10 @@ description: >-
   Builders to analyze and split Dart code into individually compilable modules
   based on imports.
 repository: https://github.com/dart-lang/build/tree/master/build_modules
+resolution: workspace
 
 environment:
-  sdk: '>=3.0.0 <3.6.0'
+  sdk: '>=3.5.0-259.0.dev <3.6.0'
 
 dependencies:
   analyzer: '>=5.1.0 <7.0.0'
@@ -32,7 +33,6 @@ dev_dependencies:
   # Used inside tests
   build_runner: ^2.0.0
   build_test: ^2.0.0
-  dart_flutter_team_lints: ^3.1.0
   json_serializable: ^6.0.0
   test: ^1.16.0
 

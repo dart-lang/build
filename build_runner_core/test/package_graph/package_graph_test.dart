@@ -32,7 +32,7 @@ void main() {
     });
 
     group('basic package ', () {
-      var basicPkgPath = 'test/fixtures/basic_pkg';
+      var basicPkgPath = 'test/fixtures/basic_pkg/';
 
       setUp(() async {
         graph = await PackageGraph.forPath(basicPkgPath);
