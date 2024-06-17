@@ -8,7 +8,6 @@
 // This is forked from the equivalent file that ships with the SDK which is
 // intended for use within bazel only.
 
-import 'package:collection/collection.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_maps/source_maps.dart';
 import 'package:stack_trace/stack_trace.dart';
@@ -71,7 +70,7 @@ StackTrace mapStackTrace(Mapping sourceMap, StackTrace stackTrace,
 
     return Frame(Uri.parse(sourceUrl), span.start.line + 1,
         span.start.column + 1, _prettifyMember(frame.member!));
-  }).whereNotNull())
+  }).nonNulls)
       .foldFrames((Frame frame) => frame.uri.scheme.contains('dart'));
 }
 

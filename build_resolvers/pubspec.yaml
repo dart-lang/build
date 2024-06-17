@@ -4,7 +4,7 @@ description: Resolve Dart code in a Builder
 repository: https://github.com/dart-lang/build/tree/master/build_resolvers
 
 environment:
-  sdk: ^3.4.0
+  sdk: ^3.5.0-259.0.dev
 
 dependencies:
   analyzer: '>=6.7.0 <7.0.0'

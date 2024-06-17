@@ -51,7 +51,7 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
     try {
       allSources = _urisForThisScript
           .map((id) => idForUri(id, packageGraph))
-          .whereNotNull()
+          .nonNulls
           .toSet();
       var missing = allSources.firstWhereOrNull((id) => !graph.contains(id));
       if (missing != null) {

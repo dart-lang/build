@@ -1,3 +1,7 @@
+## 4.0.3-wip
+
+- Bump the min sdk to 3.5.0-259.0.dev.
+
 ## 4.0.2
 
 - Support version `1.x` and `2.x` of `shelf_web_socket` and `2.x` and `3.x`
