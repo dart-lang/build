@@ -9,6 +9,7 @@ import 'dart:isolate';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/file_system/memory_file_system.dart';
+import 'package:analyzer/source/file_source.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart' show AssetId, BuildStep;
@@ -217,9 +218,8 @@ class BuildAssetUriResolver extends UriResolver {
     final assetId = parseAsset(uri);
     if (assetId == null) return null;
 
-    return resourceProvider
-        .getFile(assetPath(assetId))
-        .createSource(assetId.uri);
+    var file = resourceProvider.getFile(assetPath(assetId));
+    return FileSource(file, assetId.uri);
   }
 
   @override
