@@ -45,7 +45,7 @@ dependencies:
   stream_transform: ^2.0.0
   timing: ^1.0.0
   watcher: ^1.0.0
-  web_socket_channel: ">=2.0.0 <4.0.0"
+  web_socket_channel: ^3.0.0
   yaml: ^3.0.0
 
 dev_dependencies:
@@ -57,6 +57,7 @@ dev_dependencies:
   test: ^1.25.5
   test_descriptor: ^2.0.0
   test_process: ^2.0.0
+  web_socket: ^0.1.5
 
 topics:
  - build-runner
