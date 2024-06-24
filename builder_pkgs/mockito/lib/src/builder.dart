@@ -1822,7 +1822,11 @@ class _MockClassInfo {
     } else if (constant.isInt) {
       return literalNum(constant.intValue);
     } else if (constant.isString) {
-      return literalString(constant.stringValue, raw: true);
+      // code_builder writes all strings with single quotes.
+      // Raw single quoted strings may not contain single quotes,
+      // so escape dollar signs and use a non-raw string instead.
+      final stringValue = constant.stringValue.replaceAll('\$', '\\\$');
+      return literalString(stringValue);
     } else if (constant.isList) {
       return literalConstList([
         for (final element in constant.listValue)

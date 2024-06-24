@@ -281,13 +281,46 @@ void main() {
     await expectSingleNonNullableOutput(
       dedent(r'''
       class Foo {
-        void m([String a = 'Hello', String b = 'Hello ' r"World"]) {}
+        void m([String a = 'Hello', String b = "World"]) {}
       }
       '''),
       _containsAllOf(dedent2('''
         void m([
-          String? a = r'Hello',
-          String? b = r'Hello World',
+          String? a = 'Hello',
+          String? b = 'World',
+        ]) =>
+        ''')),
+    );
+  });
+
+  test('matches string literal parameter default values with quote characters',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void m([String a = 'Hel"lo', String b = "Wor'ld"]) {}
+      }
+      '''),
+      _containsAllOf(dedent2('''
+        void m([
+          String? a = 'Hel"lo',
+          String? b = 'Wor\\'ld',
+        ]) =>
+        ''')),
+    );
+  });
+
+  test('matches raw string literal parameter default values', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void m([String a = r'$Hello', String b = r"$World"]) {}
+      }
+      '''),
+      _containsAllOf(dedent2('''
+        void m([
+          String? a = '\\\$Hello',
+          String? b = '\\\$World',
         ]) =>
         ''')),
     );
@@ -337,8 +370,8 @@ void main() {
       _containsAllOf(dedent2('''
         void m(
                 [Map<int, String>? a = const {
-                  1: r'a',
-                  2: r'b',
+                  1: 'a',
+                  2: 'b',
                 }]) =>
         ''')),
     );
@@ -354,8 +387,8 @@ void main() {
       _containsAllOf(dedent2('''
         void m(
                 [Map<int, String>? a = const {
-                  1: r'a',
-                  2: r'b',
+                  1: 'a',
+                  2: 'b',
                 }]) =>
         ''')),
     );
