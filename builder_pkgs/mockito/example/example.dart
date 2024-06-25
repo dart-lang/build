@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
@@ -92,7 +94,7 @@ void main() {
     when(cat.eatFood(any)).thenReturn(false);
 
     // ... or plain arguments themselves
-    when(cat.eatFood("fish")).thenReturn(true);
+    when(cat.eatFood('fish')).thenReturn(true);
 
     // ... including collections
     when(cat.walk(['roof', 'tree'])).thenReturn(2);
@@ -202,7 +204,7 @@ void main() {
     }
 
     // Waiting for a call.
-    chewHelper(cat);
+    unawaited(chewHelper(cat));
     await untilCalled(cat.chew()); // This completes when cat.chew() is called.
 
     // Waiting for a call that has already happened.
