@@ -602,7 +602,9 @@ class _MockTargetGatherer {
       // turned into `dynamic` by the analyzer.
       typeArguments.forEachIndexed((typeArgIdx, typeArgument) {
         if (!(typeArgument is analyzer.DynamicType ||
-            typeArgument is analyzer.InvalidType)) return;
+            typeArgument is analyzer.InvalidType)) {
+          return;
+        }
         if (typeArgIdx >= mockTypeArguments.arguments.length) return;
         final typeArgAst = mockTypeArguments.arguments[typeArgIdx];
         if (typeArgAst is! ast.NamedType) {
