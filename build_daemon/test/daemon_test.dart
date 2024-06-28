@@ -17,13 +17,13 @@ import 'package:build_daemon/src/fakes/fake_builder.dart';
 import 'package:build_daemon/src/fakes/fake_change_provider.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
-import 'package:uuid/uuid.dart';
+
+import 'uuid.dart';
 
 final defaultIdleTimeoutSec = defaultIdleTimeout.inSeconds;
 void main() {
   var testDaemons = <Process>[];
   var testWorkspaces = <String>[];
-  var uuid = const Uuid();
   group('Daemon', () {
     setUp(() {
       testDaemons.clear();
@@ -41,7 +41,7 @@ void main() {
       }
     });
     test('can be stopped', () async {
-      var workspace = uuid.v1();
+      var workspace = generateV4UUID();
       testWorkspaces.add(workspace);
       var daemon = Daemon(workspace);
       await daemon.start(
@@ -53,20 +53,20 @@ void main() {
       await daemon.stop();
     });
     test('can run if no other daemon is running', () async {
-      var workspace = uuid.v1();
+      var workspace = generateV4UUID();
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
       expect(await _statusOf(daemon), 'RUNNING');
     });
     test('shuts down if no client connects', () async {
-      var workspace = uuid.v1();
+      var workspace = generateV4UUID();
       var daemon = await _runDaemon(workspace, timeout: 1);
       testDaemons.add(daemon);
       expect(await daemon.exitCode, isNotNull);
     });
     test('can not run if another daemon is running in the same workspace',
         () async {
-      var workspace = uuid.v1();
+      var workspace = generateV4UUID();
       testWorkspaces.add(workspace);
       var daemonOne =
           await _runDaemon(workspace, timeout: defaultIdleTimeoutSec * 2);
@@ -77,8 +77,8 @@ void main() {
     }, timeout: const Timeout.factor(2));
     test('can run if another daemon is running in a different workspace',
         () async {
-      var workspace1 = uuid.v1();
-      var workspace2 = uuid.v1();
+      var workspace1 = generateV4UUID();
+      var workspace2 = generateV4UUID();
       testWorkspaces.addAll([workspace1, workspace2]);
       var daemonOne = await _runDaemon(workspace1);
       expect(await _statusOf(daemonOne), 'RUNNING');
@@ -87,7 +87,7 @@ void main() {
       expect(await _statusOf(daemonTwo), 'RUNNING');
     }, timeout: const Timeout.factor(2));
     test('can start two daemons at the same time', () async {
-      var workspace = uuid.v1();
+      var workspace = generateV4UUID();
       testWorkspaces.add(workspace);
       var daemonOne = await _runDaemon(workspace);
       expect(await _statusOf(daemonOne), 'RUNNING');
@@ -96,7 +96,7 @@ void main() {
       testDaemons.addAll([daemonOne, daemonTwo]);
     }, timeout: const Timeout.factor(2));
     test('logs the version when running', () async {
-      var workspace = uuid.v1();
+      var workspace = generateV4UUID();
       testWorkspaces.add(workspace);
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
@@ -104,12 +104,12 @@ void main() {
       expect(await Daemon(workspace).runningVersion(), currentVersion);
     });
     test('does not set the current version if not running', () async {
-      var workspace = uuid.v1();
+      var workspace = generateV4UUID();
       testWorkspaces.add(workspace);
       expect(await Daemon(workspace).runningVersion(), null);
     });
     test('logs the options when running', () async {
-      var workspace = uuid.v1();
+      var workspace = generateV4UUID();
       testWorkspaces.add(workspace);
       var daemon = await _runDaemon(workspace);
       testDaemons.add(daemon);
@@ -118,12 +118,12 @@ void main() {
           (await Daemon(workspace).currentOptions()).contains('foo'), isTrue);
     });
     test('does not log the options if not running', () async {
-      var workspace = uuid.v1();
+      var workspace = generateV4UUID();
       testWorkspaces.add(workspace);
       expect((await Daemon(workspace).currentOptions()).isEmpty, isTrue);
     });
     test('cleans up after itself', () async {
-      var workspace = uuid.v1();
+      var workspace = generateV4UUID();
       testWorkspaces.add(workspace);
       var daemon = await _runDaemon(workspace);
       // Wait for the daemon to be running before checking the workspace exits.
@@ -135,7 +135,7 @@ void main() {
       expect(Directory(daemonWorkspace(workspace)).existsSync(), isFalse);
     });
     test('daemon stops after file changes stream has error', () async {
-      var workspace = uuid.v1();
+      var workspace = generateV4UUID();
       testWorkspaces.add(workspace);
       var daemon =
           await _runDaemon(workspace, errorChangeProviderAfterNSeconds: 1);
@@ -144,7 +144,7 @@ void main() {
       expect(Directory(daemonWorkspace(workspace)).existsSync(), isFalse);
     });
     test('daemon stops after file changes stream is closed', () async {
-      var workspace = uuid.v1();
+      var workspace = generateV4UUID();
       testWorkspaces.add(workspace);
       var daemon =
           await _runDaemon(workspace, closeChangeProviderAfterNSeconds: 1);
