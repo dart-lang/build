@@ -1,6 +1,7 @@
-## 4.0.11-wip
+## 4.0.11
 
 - Bump the min sdk to 3.5.0-259.0.dev.
+- Allow version 3.6.x of the Dart SDK.
 
 ## 4.0.10
 
