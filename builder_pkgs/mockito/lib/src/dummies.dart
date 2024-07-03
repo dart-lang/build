@@ -95,8 +95,9 @@ provide dummy values for some types, even if they plan to explicitly stub all
 the called methods. Call either `provideDummy` or `provideDummyBuilder` to
 provide Mockito with a dummy value.
 
-For more details, see:
-<https://github.com/dart-lang/mockito/blob/master/FAQ.md#how-do-i-mock-a-sealed-class>
+For more details, see the questions regarding `sealed` classes in the FAQ:
+
+<https://github.com/dart-lang/mockito/blob/master/FAQ.md>
 ''';
 }
 
@@ -168,8 +169,10 @@ void provideDummyBuilder<T>(DummyBuilder<T> dummyBuilder) =>
 /// Provide a dummy value for `T` to be used both while adding expectations
 /// and as a default value for unstubbed methods, if using a nice mock.
 ///
-/// For details and for example usage, see:
-/// https://github.com/dart-lang/mockito/blob/master/FAQ.md#how-do-i-mock-a-sealed-class
+/// For details and for example usage, see the questions regarding `sealed`
+/// classes in the [FAQ].
+///
+/// [FAQ]: https://github.com/dart-lang/mockito/blob/master/FAQ.md
 void provideDummy<T>(T dummy) =>
     provideDummyBuilder((parent, invocation) => dummy);
 
