@@ -68,6 +68,13 @@ Builder dart2jsModuleBuilder([_]) => ModuleBuilder(dart2jsPlatform);
 PostProcessBuilder dart2jsArchiveExtractor(BuilderOptions options) =>
     Dart2JsArchiveExtractor.fromOptions(options);
 
+// Dart2wasm related builders
+Builder dart2wasmMetaModuleBuilder(BuilderOptions options) =>
+    MetaModuleBuilder.forOptions(dart2wasmPlatform, options);
+Builder dart2wasmMetaModuleCleanBuilder(_) =>
+    MetaModuleCleanBuilder(dart2wasmPlatform);
+Builder dart2wasmModuleBuilder([_]) => ModuleBuilder(dart2wasmPlatform);
+
 // General purpose builders
 PostProcessBuilder dartSourceCleanup(BuilderOptions options) =>
     (options.config['enabled'] as bool? ?? false)
