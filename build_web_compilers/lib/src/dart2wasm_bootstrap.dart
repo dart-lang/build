@@ -104,7 +104,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
 }
 
 (AssetId, String) _entrypointRunner(AssetId wasmSource) {
-  final id = wasmSource.changeExtension('.js');
+  final id = wasmSource.changeExtension('.dart.js');
   final withoutExtension = p.url.withoutExtension(wasmSource.path);
 
   return (
