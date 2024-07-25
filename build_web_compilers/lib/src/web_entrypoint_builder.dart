@@ -11,10 +11,13 @@ import 'package:build_modules/build_modules.dart';
 
 import 'common.dart';
 import 'dart2js_bootstrap.dart';
+import 'dart2wasm_bootstrap.dart';
 import 'dev_compiler_bootstrap.dart';
 
 const ddcBootstrapExtension = '.dart.bootstrap.js';
 const jsEntrypointExtension = '.dart.js';
+const wasmExtension = '.wasm';
+const moduleJsExtension = '.mjs';
 const jsEntrypointSourceMapExtension = '.dart.js.map';
 const jsEntrypointArchiveExtension = '.dart.js.tar.gz';
 const digestsEntrypointExtension = '.digests';
@@ -26,6 +29,8 @@ enum WebCompiler {
   Dart2Js,
   // ignore: constant_identifier_names
   DartDevc,
+  // ignore: constant_identifier_names
+  Dart2Wasm,
 }
 
 /// The top level keys supported for the `options` config for the
@@ -75,6 +80,7 @@ class WebEntrypointBuilder implements Builder {
     var compiler = switch (compilerOption) {
       'dartdevc' => WebCompiler.DartDevc,
       'dart2js' => WebCompiler.Dart2Js,
+      'dart2wasm' => WebCompiler.Dart2Wasm,
       _ => throw ArgumentError.value(compilerOption, _compilerOption,
           'Only `dartdevc` and `dart2js` are supported.')
     };
@@ -106,6 +112,8 @@ class WebEntrypointBuilder implements Builder {
       jsEntrypointArchiveExtension,
       digestsEntrypointExtension,
       mergedMetadataExtension,
+      wasmExtension,
+      moduleJsExtension,
     ],
   };
 
@@ -123,11 +131,11 @@ class WebEntrypointBuilder implements Builder {
         } on MissingModulesException catch (e) {
           log.severe('$e');
         }
-        break;
       case WebCompiler.Dart2Js:
         await bootstrapDart2Js(buildStep, dart2JsArgs,
             nativeNullAssertions: nativeNullAssertions);
-        break;
+      case WebCompiler.Dart2Wasm:
+        await bootstrapDart2Wasm(buildStep);
     }
   }
 }

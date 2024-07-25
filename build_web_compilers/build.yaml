@@ -43,6 +43,19 @@ builders:
     auto_apply: none
     required_inputs: [".dart", ".module.library"]
     applies_builders: ["build_modules:module_cleanup"]
+  dart2wasm_modules:
+    import: "package:build_web_compilers/builders.dart"
+    builder_factories:
+      - dart2wasmMetaModuleBuilder
+      - dart2wasmMetaModuleCleanBuilder
+      - dart2wasmModuleBuilder
+    build_extensions:
+      .dart:
+        - .dart2wasm.module
+    is_optional: True
+    auto_apply: none
+    required_inputs: [".dart", ".module.library"]
+    applies_builders: ["build_modules:module_cleanup"]
   ddc_modules:
     import: "package:build_web_compilers/builders.dart"
     builder_factories:
@@ -82,6 +95,7 @@ builders:
       # This isn't really the best place to apply these, but it is the only
       # place we can (its the only builder which runs on all packages).
       - build_web_compilers:dart2js_modules
+      - build_web_compilers:dart2wasm_modules
       - build_web_compilers:dart_source_cleanup
   entrypoint:
     import: "package:build_web_compilers/builders.dart"
@@ -95,11 +109,14 @@ builders:
         - .dart.js.tar.gz
         - .digests
         - .dart.ddc_merged_metadata
+        - .wasm
+        - .mjs
     required_inputs:
       - .dart
       - .ddc.js
       - .ddc.module
       - .dart2js.module
+      - .dart2wasm.module
     build_to: cache
     auto_apply: root_package
     defaults:
