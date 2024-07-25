@@ -1,3 +1,7 @@
+## 4.0.6+1
+
+- Update language version (via min sdk constraint) to 2.18.
+
 ## 4.0.6
 
 - Allow the latest `package:analyzer`.
