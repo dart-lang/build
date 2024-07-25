@@ -1,3 +1,7 @@
+// Copyright (c) 2024, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -65,6 +69,8 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
 
     args = [
       '--packages=$multiRootScheme:///.dart_tool/package_config.json',
+      // The -E prefix is removed by dartdev when starting the actual dart2wasm
+      // process.
       '-E--multi-root-scheme=$multiRootScheme',
       '-E--multi-root=${scratchSpace.tempDir.uri.toFilePath()}',
       for (var experiment in enabledExperiments)

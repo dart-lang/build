@@ -5,7 +5,7 @@
 import 'package:build_modules/build_modules.dart';
 
 /// `dart:` SDK libraries available in every platform supported by
-/// build_webc_compilers.
+/// build_web_compilers.
 const _coreLibraries = [
   '_internal',
   'async',
@@ -39,11 +39,11 @@ const _additionalWasmLibraries = [
   'ffi',
 ];
 
-const _libraries = [..._coreLibraries, ..._additionalWebLibraries];
+const _jsCompilerLibraries = [..._coreLibraries, ..._additionalWebLibraries];
 
-final ddcPlatform = DartPlatform.register('ddc', _libraries);
+final ddcPlatform = DartPlatform.register('ddc', _jsCompilerLibraries);
 
-final dart2jsPlatform = DartPlatform.register('dart2js', _libraries);
+final dart2jsPlatform = DartPlatform.register('dart2js', _jsCompilerLibraries);
 
 final dart2wasmPlatform = DartPlatform.register(
     'dart2wasm', [..._coreLibraries, ..._additionalWasmLibraries]);
