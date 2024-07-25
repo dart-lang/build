@@ -105,15 +105,15 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
 
 (AssetId, String) _entrypointRunner(AssetId wasmSource) {
   final id = wasmSource.changeExtension('.dart.js');
-  final withoutExtension = p.url.withoutExtension(wasmSource.path);
+  final basename = p.url.basenameWithoutExtension(wasmSource.path);
 
   return (
     id,
     '''
 (async () => {
-  let { instantiate, invoke } = await import("./$withoutExtension.mjs");
+  let { instantiate, invoke } = await import("./$basename.mjs");
 
-  let modulePromise = fetch("$withoutExtension.wasm")
+  let modulePromise = fetch("$basename.wasm")
     .then((response) => response.arrayBuffer())
     .then((bytes) => WebAssembly.compile(bytes));
 
