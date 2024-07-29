@@ -1,5 +1,5 @@
 sdk:
-- main
+- beta
 
 stages:
 - analyze_and_format:
