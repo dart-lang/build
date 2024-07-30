@@ -1,5 +1,6 @@
-## 7.3.2-wip
+## 7.3.2
 
+- Additional fixes for pub workspace repos
 - Migrate deprecates uses of `whereNotNull()` to `nonNulls`.
 - Bump the min sdk to 3.5.0-259.0.dev.
 

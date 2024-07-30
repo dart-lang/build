@@ -1,6 +1,7 @@
-## 2.4.12-wip
+## 2.4.12
 
 - Bump the min sdk to 3.5.0-259.0.dev.
+- Fix watch mode for workspace repos.
 
 ## 2.4.11
 
