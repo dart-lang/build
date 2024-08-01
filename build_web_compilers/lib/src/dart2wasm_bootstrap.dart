@@ -20,11 +20,14 @@ final _resourcePool = Pool(maxWorkersPerTask);
 /// Invokes `dart compile wasm` to compile the primary input of [buildStep].
 ///
 /// Additionally, generates a `.js` entrypoint file invoking the entrypoint.
-Future<void> bootstrapDart2Wasm(BuildStep buildStep) async {
-  await _resourcePool.withResource(() => _bootstrapDart2Wasm(buildStep));
+Future<void> bootstrapDart2Wasm(
+    BuildStep buildStep, List<String> additionalArguments) async {
+  await _resourcePool
+      .withResource(() => _bootstrapDart2Wasm(buildStep, additionalArguments));
 }
 
-Future<void> _bootstrapDart2Wasm(BuildStep buildStep) async {
+Future<void> _bootstrapDart2Wasm(
+    BuildStep buildStep, List<String> additionalArguments) async {
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
       dartEntrypointId.changeExtension(moduleExtension(dart2wasmPlatform));
@@ -75,6 +78,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
       '-E--multi-root=${scratchSpace.tempDir.uri.toFilePath()}',
       for (var experiment in enabledExperiments)
         '--enable-experiment=$experiment',
+      ...additionalArguments,
       '-o',
       wasmOutputPath,
       '$dartUri',
