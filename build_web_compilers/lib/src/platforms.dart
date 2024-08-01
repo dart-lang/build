@@ -8,26 +8,26 @@ import 'package:build_modules/build_modules.dart';
 /// build_web_compilers.
 const _coreLibraries = [
   '_internal',
+  '_js_annotations',
   'async',
   'collection',
   'convert',
   'core',
   'developer',
+  'js',
   'js_interop',
   'js_interop_unsafe',
+  'js_util',
   'math',
   'typed_data',
 ];
 
 /// Additional libraries supported by both ddc and dart2js.
 const _additionalWebLibraries = [
-  '_js_annotations',
   'html',
   'html',
   'html_common',
   'indexed_db',
-  'js',
-  'js_util',
   'svg',
   'web_audio',
   'web_gl',

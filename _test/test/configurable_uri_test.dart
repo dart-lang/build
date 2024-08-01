@@ -6,18 +6,20 @@ import 'package:test/test.dart';
 
 import 'common/message.dart'
     if (dart.library.io) 'common/message_io.dart'
-    if (dart.library.html) 'common/message_html.dart';
+    if (dart.library.html) 'common/message_html.dart'
+    if (dart.library.ffi) 'common/message_ffi_without_io.dart';
 
 import 'common/message_export.dart' as exported;
 
 void main() {
   group('browser', () {
     test('imports', () {
-      expect(message, contains('Javascript'));
+      expect(message, anyOf(contains('Javascript'), contains('WebAssembly')));
     });
 
     test('exports', () {
-      expect(exported.message, contains('Javascript'));
+      expect(exported.message,
+          anyOf(contains('Javascript'), contains('WebAssembly')));
     });
   }, testOn: 'browser');
 
