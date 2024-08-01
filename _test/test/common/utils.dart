@@ -167,18 +167,22 @@ Future<TestProcess> _runTests(String executable, List<String> scriptArgs,
     List<String>? buildArgs,
     List<String>? testArgs}) async {
   usePrecompiled ??= true;
-  testArgs ??= [];
-  testArgs.addAll(['-p', 'chrome', '-r', 'expanded']);
   if (usePrecompiled) {
     var args = scriptArgs.toList()
       ..add('test')
       ..add('--verbose')
       ..addAll(buildArgs ?? [])
       ..add('--')
-      ..addAll(testArgs);
+      ..addAll([
+        ...?testArgs,
+        '-p',
+        'chrome',
+        '-r',
+        'expanded',
+      ]);
     return TestProcess.start(executable, args);
   } else {
-    var args = ['run', 'test', '--pub-serve', '8081', ...testArgs];
+    var args = ['run', 'test', '--pub-serve', '8081', ...?testArgs];
     return TestProcess.start('dart', args);
   }
 }

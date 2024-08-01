@@ -35,7 +35,7 @@ void main() {
           '--config=dart2wasm',
           '--output=$_outputDir',
         ],
-        testArgs: _testArgs.toList(),
+        testArgs: _testArgs,
       );
       await _expectWasCompiledWithDart2Wasm();
     }, onPlatform: {'windows': const Skip('flaky on windows')});
@@ -51,7 +51,7 @@ void main() {
               '["--enable-asserts", "-E--enable-experimental-ffi"]',
           '--output=$_outputDir',
         ],
-        testArgs: _testArgs.toList(),
+        testArgs: _testArgs,
       );
       await _expectWasCompiledWithDart2Wasm();
     }, onPlatform: {'windows': const Skip('flaky on windows')});
@@ -64,7 +64,7 @@ void main() {
           '--config=dart2wasm',
           '--output=$_outputDir',
         ],
-        testArgs: _testArgs.toList(),
+        testArgs: _testArgs,
       );
       await _expectWasCompiledWithDart2Wasm();
     }, onPlatform: {'windows': const Skip('flaky on windows')});
