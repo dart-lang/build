@@ -20,7 +20,7 @@ void main() {
     test('exports', () {
       expect(exported.message, contains('Javascript'));
     });
-  }, testOn: 'browser && !dart2wasm');
+  }, testOn: 'js');
 
   group('wasm', () {
     test('imports', () {
