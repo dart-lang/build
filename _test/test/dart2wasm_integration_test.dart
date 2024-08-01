@@ -15,6 +15,10 @@ import 'common/utils.dart';
 
 const _outputDir = 'dart2wasm_test';
 
+// This doesn't actually change anything since we're using precompiled tests,
+// but it gets the compiler selector in tests right.
+const _testArgs = ['-c', 'dart2wasm'];
+
 void main() {
   group('Can run tests using dart2wasm', () {
     tearDown(() async {
@@ -25,31 +29,43 @@ void main() {
     });
 
     test('via build.yaml config flag', () async {
-      await expectTestsPass(usePrecompiled: true, buildArgs: [
-        '--config=dart2wasm',
-        '--output=$_outputDir',
-      ]);
+      await expectTestsPass(
+        usePrecompiled: true,
+        buildArgs: [
+          '--config=dart2wasm',
+          '--output=$_outputDir',
+        ],
+        testArgs: _testArgs.toList(),
+      );
       await _expectWasCompiledWithDart2Wasm();
     }, onPlatform: {'windows': const Skip('flaky on windows')});
 
     test('via --define flag', () async {
-      await expectTestsPass(usePrecompiled: true, buildArgs: [
-        '--define',
-        'build_web_compilers:entrypoint=compiler=dart2wasm',
-        '--define',
-        'build_web_compilers:entrypoint=dart2wasm_args='
-            '["--enable-asserts", "-E--enable-experimental-ffi"]',
-        '--output=$_outputDir',
-      ]);
+      await expectTestsPass(
+        usePrecompiled: true,
+        buildArgs: [
+          '--define',
+          'build_web_compilers:entrypoint=compiler=dart2wasm',
+          '--define',
+          'build_web_compilers:entrypoint=dart2wasm_args='
+              '["--enable-asserts", "-E--enable-experimental-ffi"]',
+          '--output=$_outputDir',
+        ],
+        testArgs: _testArgs.toList(),
+      );
       await _expectWasCompiledWithDart2Wasm();
     }, onPlatform: {'windows': const Skip('flaky on windows')});
 
     test('via --release mode', () async {
-      await expectTestsPass(usePrecompiled: true, buildArgs: [
-        '--release',
-        '--config=dart2wasm',
-        '--output=$_outputDir',
-      ]);
+      await expectTestsPass(
+        usePrecompiled: true,
+        buildArgs: [
+          '--release',
+          '--config=dart2wasm',
+          '--output=$_outputDir',
+        ],
+        testArgs: _testArgs.toList(),
+      );
       await _expectWasCompiledWithDart2Wasm();
     }, onPlatform: {'windows': const Skip('flaky on windows')});
   });
