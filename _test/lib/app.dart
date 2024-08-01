@@ -2,10 +2,10 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:html';
+import 'package:web/web.dart';
 
 void startApp({String? text}) {
   text ??= 'Hello World!';
-  var component = DivElement()..text = text;
+  var component = HTMLDivElement()..text = text;
   document.body!.append(component);
 }

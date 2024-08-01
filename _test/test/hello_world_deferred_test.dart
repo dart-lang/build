@@ -5,10 +5,11 @@
 @TestOn('browser')
 library;
 
-import 'dart:html';
+import 'dart:js_interop';
 
 import 'package:_test/app.dart';
 import 'package:test/test.dart';
+import 'package:web/web.dart';
 
 import 'common/message.dart' deferred as m;
 
@@ -16,11 +17,11 @@ void main() {
   setUp(startApp);
 
   tearDown(() {
-    document.body!.innerHtml = '';
+    document.body!.innerHTML = ''.toJS;
   });
 
   test('hello world', () async {
     await m.loadLibrary();
-    expect(document.body?.text, contains(m.message));
+    expect(document.body?.innerText, contains(m.message));
   });
 }
