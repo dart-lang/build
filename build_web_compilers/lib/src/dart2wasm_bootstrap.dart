@@ -123,10 +123,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
 (async () => {
   let { instantiate, invoke } = await import("./$basename.mjs");
 
-  let modulePromise = fetch("$basename.wasm")
-    .then((response) => response.arrayBuffer())
-    .then((bytes) => WebAssembly.compile(bytes));
-
+  let modulePromise = WebAssembly.compileStreaming(fetch("$basename.wasm"));
   let instantiated = await instantiate(modulePromise, {});
   invoke(instantiated, []);
 })();
