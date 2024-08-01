@@ -26,11 +26,32 @@ const mergedMetadataExtension = '.dart.ddc_merged_metadata';
 /// Which compiler to use when compiling web entrypoints.
 enum WebCompiler {
   // ignore: constant_identifier_names
-  Dart2Js,
+  Dart2Js('dart2js'),
   // ignore: constant_identifier_names
-  DartDevc,
+  DartDevc('dartdevc'),
   // ignore: constant_identifier_names
-  Dart2Wasm,
+  Dart2Wasm('dart2wasm');
+
+  /// The name of this compiler used when identifying it in builder options.
+  final String optionName;
+
+  const WebCompiler(this.optionName);
+
+  static WebCompiler fromOptionName(String name) {
+    for (final compiler in values) {
+      if (compiler.optionName == name) {
+        return compiler;
+      }
+    }
+
+    final supported = values.map((e) => '`${e.optionName}`').join(', ');
+
+    throw ArgumentError.value(
+      name,
+      _compilerOption,
+      'Unknown web compiler, supported are: $supported.',
+    );
+  }
 }
 
 /// The top level keys supported for the `options` config for the
@@ -39,10 +60,12 @@ const _supportedOptions = [
   _compilerOption,
   _dart2jsArgsOption,
   _nativeNullAssertionsOption,
+  _dart2wasmArgsOption,
 ];
 
 const _compilerOption = 'compiler';
 const _dart2jsArgsOption = 'dart2js_args';
+const _dart2wasmArgsOption = 'dart2wasm_args';
 const _nativeNullAssertionsOption = 'native_null_assertions';
 
 /// The deprecated keys for the `options` config for the [WebEntrypointBuilder].
@@ -57,6 +80,7 @@ const _deprecatedOptions = [
 class WebEntrypointBuilder implements Builder {
   final WebCompiler webCompiler;
   final List<String> dart2JsArgs;
+  final List<String> dart2WasmArgs;
 
   /// Whether or not to enable runtime non-null assertions for values returned
   /// from browser apis.
@@ -68,6 +92,7 @@ class WebEntrypointBuilder implements Builder {
   const WebEntrypointBuilder(
     this.webCompiler, {
     this.dart2JsArgs = const [],
+    this.dart2WasmArgs = const [],
     required this.nativeNullAssertions,
   });
 
@@ -77,30 +102,15 @@ class WebEntrypointBuilder implements Builder {
         deprecatedOptions: _deprecatedOptions);
     var compilerOption =
         options.config[_compilerOption] as String? ?? 'dartdevc';
-    var compiler = switch (compilerOption) {
-      'dartdevc' => WebCompiler.DartDevc,
-      'dart2js' => WebCompiler.Dart2Js,
-      'dart2wasm' => WebCompiler.Dart2Wasm,
-      _ => throw ArgumentError.value(compilerOption, _compilerOption,
-          'Only `dartdevc` and `dart2js` are supported.')
-    };
+    var compiler = WebCompiler.fromOptionName(compilerOption);
 
-    if (options.config[_dart2jsArgsOption] is! List) {
-      var message = options.config[_dart2jsArgsOption] is String
-          ? 'There may have been a failure decoding as JSON, expected a list'
-          : 'Expected a list';
-      throw ArgumentError.value(
-          options.config[_dart2jsArgsOption], _dart2jsArgsOption, message);
-    }
-    var dart2JsArgs = (options.config[_dart2jsArgsOption] as List?)
-            ?.map((arg) => '$arg')
-            .toList() ??
-        const <String>[];
-
-    return WebEntrypointBuilder(compiler,
-        dart2JsArgs: dart2JsArgs,
-        nativeNullAssertions:
-            options.config[_nativeNullAssertionsOption] as bool?);
+    return WebEntrypointBuilder(
+      compiler,
+      dart2JsArgs: _parseCompilerOptions(options, _dart2jsArgsOption),
+      dart2WasmArgs: _parseCompilerOptions(options, _dart2wasmArgsOption),
+      nativeNullAssertions:
+          options.config[_nativeNullAssertionsOption] as bool?,
+    );
   }
 
   @override
@@ -135,8 +145,22 @@ class WebEntrypointBuilder implements Builder {
         await bootstrapDart2Js(buildStep, dart2JsArgs,
             nativeNullAssertions: nativeNullAssertions);
       case WebCompiler.Dart2Wasm:
-        await bootstrapDart2Wasm(buildStep);
+        await bootstrapDart2Wasm(buildStep, dart2WasmArgs);
     }
+  }
+
+  static List<String> _parseCompilerOptions(
+      BuilderOptions options, String key) {
+    return switch (options.config[key]) {
+      null => const [],
+      List list => list.map((arg) => '$arg').toList(),
+      String other => throw ArgumentError.value(
+          other,
+          key,
+          'There may have been a failure decoding as JSON, expected a list.',
+        ),
+      var other => throw ArgumentError.value(other, key, 'Expected a list'),
+    };
   }
 }
 
