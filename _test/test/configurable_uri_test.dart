@@ -14,14 +14,23 @@ import 'common/message_export.dart' as exported;
 void main() {
   group('browser', () {
     test('imports', () {
-      expect(message, anyOf(contains('Javascript'), contains('WebAssembly')));
+      expect(message, contains('Javascript'));
     });
 
     test('exports', () {
-      expect(exported.message,
-          anyOf(contains('Javascript'), contains('WebAssembly')));
+      expect(exported.message, contains('Javascript'));
     });
-  }, testOn: 'browser');
+  }, testOn: 'browser && !dart2wasm');
+
+  group('wasm', () {
+    test('imports', () {
+      expect(message, contains('WebAssembly'));
+    });
+
+    test('exports', () {
+      expect(exported.message, contains('WebAssembly'));
+    });
+  }, testOn: 'dart2wasm');
 
   group('vm', () {
     test('imports', () {
