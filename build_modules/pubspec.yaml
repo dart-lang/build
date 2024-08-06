@@ -1,5 +1,5 @@
 name: build_modules
-version: 5.0.9
+version: 5.0.10-wip
 description: >-
   Builders to analyze and split Dart code into individually compilable modules
   based on imports.
