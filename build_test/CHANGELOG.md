@@ -1,6 +1,6 @@
 ## 2.2.3-wip
 
-- Bump the min sdk to 3.5.0-259.0.dev.
+- Bump the min sdk to 3.5.0.
 
 ## 2.2.2
 

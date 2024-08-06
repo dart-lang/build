@@ -1,11 +1,11 @@
 name: build_runner
-version: 2.4.12
+version: 2.4.13-wip
 description: A build system for Dart code generation and modular compilation.
 repository: https://github.com/dart-lang/build/tree/master/build_runner
 resolution: workspace
 
 environment:
-  sdk: ^3.5.0-259.0.dev
+  sdk: ^3.5.0
 
 platforms:
   linux:

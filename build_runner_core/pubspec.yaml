@@ -1,11 +1,11 @@
 name: build_runner_core
-version: 7.3.2
+version: 7.3.3-wip
 description: Core tools to organize the structure of a build and run Builders.
 repository: https://github.com/dart-lang/build/tree/master/build_runner_core
 resolution: workspace
 
 environment:
-  sdk: ^3.5.0-259.0.dev
+  sdk: ^3.5.0
 
 platforms:
   linux:

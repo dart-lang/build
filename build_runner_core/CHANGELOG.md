@@ -1,3 +1,7 @@
+## 7.3.3-wip
+
+- Bump the min sdk to 3.5.0.
+
 ## 7.3.2
 
 - Additional fixes for pub workspace repos
