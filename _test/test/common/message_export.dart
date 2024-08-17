@@ -5,4 +5,4 @@
 export 'message.dart'
     if (dart.library.io) 'message_io.dart'
     if (dart.library.html) 'message_html.dart'
-    if (dart.library.ffi) 'message_ffi_without_io.dart';
+    if (dart.library.js_interop) 'message_js_without_html.dart';

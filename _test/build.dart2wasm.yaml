@@ -7,16 +7,11 @@ targets:
           dart2wasm_args:
           - --enable-asserts
           - -O0
-          # We're not actually testing dart:ffi, but this gives us the
-          # opportunity to detect dart2wasm with conditional imports (as
-          # dart:ffi is available but dart:html is not).
-          - "-E--enable-experimental-ffi"
         release_options:
           compiler: dart2wasm
           dart2wasm_args:
           - --enable-asserts
           - -O4
-          - "-E--enable-experimental-ffi"
         generate_for:
           - web/main.dart
           - web/sub/main.dart
