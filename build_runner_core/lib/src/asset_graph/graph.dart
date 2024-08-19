@@ -175,9 +175,9 @@ class AssetGraph {
   /// Removes the node representing [id] from the graph, and all of its
   /// `primaryOutput`s.
   ///
-  /// Also removes all edges between all removed nodes and other nodes.
+  /// Also removes all edges between all removed nodes and remaining nodes.
   ///
-  /// Returns a [Set<AssetId>] of all removed nodes.
+  /// Returns the IDs of removed asset nodes.
   Set<AssetId> _removeRecursive(AssetId id, {Set<AssetId>? removedIds}) {
     removedIds ??= <AssetId>{};
     var node = get(id);

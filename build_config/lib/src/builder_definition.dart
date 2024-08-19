@@ -155,8 +155,8 @@ class PostProcessBuilderDefinition {
   /// A unique key for this Builder in `'$package:$builder'` format.
   String get key => builderKeyExpando[this]!;
 
-  /// The name of the top-level method in [import] from
-  /// Map<String, dynamic> -> Builder.
+  /// The name of the top-level method in [import] which takes a
+  /// `Map<String, dynamic>` and returns a `Builder`.
   @JsonKey(required: true, disallowNullValue: true)
   final String builderFactory;
 

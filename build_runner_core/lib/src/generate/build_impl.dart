@@ -331,8 +331,8 @@ class _SingleBuild {
   String _buildProgress() =>
       '$actionsCompletedCount/$actionsStartedCount actions completed.';
 
-  /// Runs the actions in [_buildPhases] and returns a [Future<BuildResult>]
-  /// which completes once all [BuildPhase]s are done.
+  /// Runs the actions in [_buildPhases] and returns a future which completes
+  /// to the [BuildResult] once all [BuildPhase]s are done.
   Future<BuildResult> _runPhases() {
     return _performanceTracker.track(() async {
       final outputs = <AssetId>[];
