@@ -123,7 +123,7 @@ File _fileFor(AssetId id, PackageGraph packageGraph) {
   return File(_filePathFor(id, packageGraph));
 }
 
-/// Returns a [Future<File>] for [id] given [packageGraph].
+/// Returns a `File` for the asset reference by [id] given [packageGraph].
 ///
 /// Throws an `AssetNotFoundException` if it doesn't exist.
 Future<File> _fileForOrThrow(AssetId id, PackageGraph packageGraph) {

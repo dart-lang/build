@@ -67,7 +67,8 @@ class KernelBuilder implements Builder {
   /// Optional. When omitted the [platform] name is used.
   final String kernelTargetName;
 
-  /// Experiments to pass to kernel (as --enable-experiment=<experiment> args).
+  /// Experiments to pass to kernel (as `--enable-experiment=<experiment>`
+  /// args).
   final Iterable<String> experiments;
 
   KernelBuilder({

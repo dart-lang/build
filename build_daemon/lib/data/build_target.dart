@@ -75,8 +75,11 @@ abstract class OutputLocation
   /// path.
   ///
   /// For example hoisting the build target web:
-  ///   <web>/<web-contents>
+  ///
+  ///     <web>/<web-contents>
+  ///
   /// Should result in:
-  ///   <output-folder>/<web-contents>
+  ///
+  ///     <output-folder>/<web-contents>
   bool get hoist;
 }

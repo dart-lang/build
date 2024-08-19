@@ -22,8 +22,8 @@ class InMemoryAssetReader extends AssetReader
 
   /// Create a new asset reader that contains [sourceAssets].
   ///
-  /// Any items in [sourceAssets] which are [String]s will be converted into
-  /// a [List<int>] of bytes.
+  /// Any strings in [sourceAssets] will be converted into a `List<int>` of
+  /// bytes.
   ///
   /// May optionally define a [rootPackage], which is required for some APIs.
   InMemoryAssetReader({Map<AssetId, dynamic>? sourceAssets, this.rootPackage})
