@@ -19,15 +19,25 @@ final _resourcePool = Pool(maxWorkersPerTask);
 
 /// Invokes `dart compile wasm` to compile the primary input of [buildStep].
 ///
-/// Additionally, generates a `.js` entrypoint file invoking the entrypoint.
+/// Additionally, generates a `.js` entrypoint file invoking the entrypoint
+/// if [generateEntrypoint] is enabled. We generate a wasm-only entrypoint
+/// (reflected by [generateEntrypoint] being enabled) when dart2wasm is the
+/// only compiler. Otherwise, we generate a custom entrypoint loading either the
+/// dart2js or dart2wasm-compiled program.
 Future<void> bootstrapDart2Wasm(
-    BuildStep buildStep, List<String> additionalArguments) async {
-  await _resourcePool
-      .withResource(() => _bootstrapDart2Wasm(buildStep, additionalArguments));
+  BuildStep buildStep,
+  List<String> additionalArguments,
+  bool generateEntrypoint,
+) async {
+  await _resourcePool.withResource(() =>
+      _bootstrapDart2Wasm(buildStep, additionalArguments, generateEntrypoint));
 }
 
 Future<void> _bootstrapDart2Wasm(
-    BuildStep buildStep, List<String> additionalArguments) async {
+  BuildStep buildStep,
+  List<String> additionalArguments,
+  bool generateEntrypoint,
+) async {
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
       dartEntrypointId.changeExtension(moduleExtension(dart2wasmPlatform));
@@ -105,8 +115,10 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
           dartEntrypointId.changeExtension(extension), buildStep);
     }
 
-    final entrypoint = _entrypointRunner(buildStep.inputId);
-    await buildStep.writeAsString(entrypoint.$1, entrypoint.$2);
+    if (generateEntrypoint) {
+      final entrypoint = _entrypointRunner(buildStep.inputId);
+      await buildStep.writeAsString(entrypoint.$1, entrypoint.$2);
+    }
   } else {
     log.severe('ExitCode:${result.exitCode}\nStdOut:\n${result.stdout}\n'
         'StdErr:\n${result.stderr}');

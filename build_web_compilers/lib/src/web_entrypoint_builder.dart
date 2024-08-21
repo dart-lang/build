@@ -8,6 +8,7 @@ import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
+import 'package:path/path.dart' as p;
 
 import 'common.dart';
 import 'dart2js_bootstrap.dart';
@@ -30,7 +31,9 @@ enum WebCompiler {
   // ignore: constant_identifier_names
   DartDevc('dartdevc'),
   // ignore: constant_identifier_names
-  Dart2Wasm('dart2wasm');
+  Dart2Wasm('dart2wasm'),
+  // ignore: constant_identifier_names
+  Dart2JsAndDart2Wasm('both');
 
   /// The name of this compiler used when identifying it in builder options.
   final String optionName;
@@ -145,7 +148,29 @@ class WebEntrypointBuilder implements Builder {
         await bootstrapDart2Js(buildStep, dart2JsArgs,
             nativeNullAssertions: nativeNullAssertions);
       case WebCompiler.Dart2Wasm:
-        await bootstrapDart2Wasm(buildStep, dart2WasmArgs);
+        await bootstrapDart2Wasm(buildStep, dart2WasmArgs, true);
+      case WebCompiler.Dart2JsAndDart2Wasm:
+        await Future.wait(
+          [
+            bootstrapDart2Js(
+              buildStep,
+              dart2JsArgs,
+              nativeNullAssertions: nativeNullAssertions,
+              generateEntrypoint: false,
+            ),
+            bootstrapDart2Wasm(buildStep, dart2WasmArgs, false),
+          ],
+        );
+        final basename = p.url.basenameWithoutExtension(buildStep.inputId.path);
+
+        final entrypointTemplate = await buildStep
+            .readAsString(AssetId('build_web_compilers', 'lib/src/loader.min.js'));
+        final entrypoint =
+            entrypointTemplate.replaceAll(r'$basename', basename);
+        await buildStep.writeAsString(
+          buildStep.inputId.changeExtension(jsEntrypointExtension),
+          entrypoint,
+        );
     }
   }
 

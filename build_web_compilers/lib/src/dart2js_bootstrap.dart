@@ -21,23 +21,37 @@ import 'platforms.dart';
 import 'web_entrypoint_builder.dart';
 
 /// Compiles an the primary input of [buildStep] with dart2js.
+///
+/// When [generateEntrypoint] is `false` (it defaults to `true`), the generated
+/// asset is named `.dart.bootstrap.js` instead of `.dart.js`. This is used by
+/// the entrypoint builder to invoke both the dart2js and the dart2wasm
+/// compilers and generate a custom entrypoint script detecting supported
+/// browser features to load the relevant script.
 Future<void> bootstrapDart2Js(
   BuildStep buildStep,
   List<String> dart2JsArgs, {
   required bool? nativeNullAssertions,
+  bool generateEntrypoint = true,
 }) =>
-    _resourcePool.withResource(() => _bootstrapDart2Js(buildStep, dart2JsArgs,
-        nativeNullAssertions: nativeNullAssertions));
+    _resourcePool.withResource(() => _bootstrapDart2Js(
+          buildStep,
+          dart2JsArgs,
+          nativeNullAssertions: nativeNullAssertions,
+          generateEntrypoint: generateEntrypoint,
+        ));
 
 Future<void> _bootstrapDart2Js(
   BuildStep buildStep,
   List<String> dart2JsArgs, {
   required bool? nativeNullAssertions,
+  required bool generateEntrypoint,
 }) async {
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
       dartEntrypointId.changeExtension(moduleExtension(dart2jsPlatform));
   var args = <String>[];
+  var outputExtension =
+      generateEntrypoint ? jsEntrypointExtension : ddcBootstrapExtension;
   {
     var module = Module.fromJson(
         json.decode(await buildStep.readAsString(moduleId))
@@ -74,7 +88,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
     var jsOutputPath = p.withoutExtension(dartUri.scheme == 'package'
             ? 'packages/${dartUri.path}'
             : dartUri.path.substring(1)) +
-        jsEntrypointExtension;
+        outputExtension;
     var librariesSpec = p.joinAll([sdkDir, 'lib', 'libraries.json']);
     _validateUserArgs(dart2JsArgs);
     args = dart2JsArgs.toList()
@@ -102,7 +116,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
         ...args,
       ],
       workingDirectory: scratchSpace.tempDir.path);
-  var jsOutputId = dartEntrypointId.changeExtension(jsEntrypointExtension);
+  var jsOutputId = dartEntrypointId.changeExtension(outputExtension);
   var jsOutputFile = scratchSpace.fileFor(jsOutputId);
   if (result.exitCode == 0 && await jsOutputFile.exists()) {
     log.info('${result.stdout}\n${result.stderr}');

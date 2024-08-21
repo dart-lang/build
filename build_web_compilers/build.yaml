@@ -141,7 +141,7 @@ builders:
         dart2js_args:
           - --enable-asserts
       release_options:
-        compiler: dart2js
+        compiler: both
     applies_builders:
       - build_web_compilers:dart2js_archive_extractor
   _stack_trace_mapper_copy:
