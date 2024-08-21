@@ -1,6 +1,6 @@
 name: a
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.6.0-150.0.dev
 resolution: workspace
 dependencies:
   b:
