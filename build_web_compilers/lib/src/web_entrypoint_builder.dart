@@ -64,12 +64,14 @@ const _supportedOptions = [
   _dart2jsArgsOption,
   _nativeNullAssertionsOption,
   _dart2wasmArgsOption,
+  _entrypointTemplateOption,
 ];
 
 const _compilerOption = 'compiler';
 const _dart2jsArgsOption = 'dart2js_args';
 const _dart2wasmArgsOption = 'dart2wasm_args';
 const _nativeNullAssertionsOption = 'native_null_assertions';
+const _entrypointTemplateOption = 'entrypoint_template';
 
 /// The deprecated keys for the `options` config for the [WebEntrypointBuilder].
 const _deprecatedOptions = [
@@ -92,11 +94,20 @@ class WebEntrypointBuilder implements Builder {
   /// will be used.
   final bool? nativeNullAssertions;
 
+  /// The template to use for the entrypoint script when compiling with both
+  /// dart2wasm and dart2js.
+  ///
+  /// When no template is given, we default to the `loader.min.js` file in this
+  /// package. In the template, `{{ basename }}` is replaced with the basename
+  /// of the Dart entrypoint.
+  final String? entrypointTemplate;
+
   const WebEntrypointBuilder(
     this.webCompiler, {
     this.dart2JsArgs = const [],
     this.dart2WasmArgs = const [],
     required this.nativeNullAssertions,
+    this.entrypointTemplate,
   });
 
   factory WebEntrypointBuilder.fromOptions(BuilderOptions options) {
@@ -113,6 +124,7 @@ class WebEntrypointBuilder implements Builder {
       dart2WasmArgs: _parseCompilerOptions(options, _dart2wasmArgsOption),
       nativeNullAssertions:
           options.config[_nativeNullAssertionsOption] as bool?,
+      entrypointTemplate: options.config[_entrypointTemplateOption] as String?,
     );
   }
 
@@ -163,10 +175,11 @@ class WebEntrypointBuilder implements Builder {
         );
         final basename = p.url.basenameWithoutExtension(buildStep.inputId.path);
 
-        final entrypointTemplate = await buildStep
-            .readAsString(AssetId('build_web_compilers', 'lib/src/loader.min.js'));
+        final entrypointTemplate = this.entrypointTemplate ??
+            await buildStep.readAsString(
+                AssetId('build_web_compilers', 'lib/src/loader.min.js'));
         final entrypoint =
-            entrypointTemplate.replaceAll(r'$basename', basename);
+            entrypointTemplate.replaceAll(r'{{basename}}', basename);
         await buildStep.writeAsString(
           buildStep.inputId.changeExtension(jsEntrypointExtension),
           entrypoint,

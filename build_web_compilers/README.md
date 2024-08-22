@@ -43,7 +43,9 @@ then all you need is the `dev_dependency` listed above.
 
 By default, this package uses the [Dart development compiler][] (_dartdevc_,
 also known as _DDC_) to compile Dart to JavaScript. In release builds (running
-the build tool with `--release`, the default compiler is `dart2js`).
+the build tool with `--release`, this package uses both `dart2js` and
+`dart2wasm` with a custom entrypoint loading the appropriate module depending
+on browser features).
 
 If you would like to opt into dart2js for all builds, you will need to add a
 `build.yaml` file, which should look roughly like the following:
@@ -78,6 +80,44 @@ targets:
           # List flags that should be forwarded to `dart compile wasm`
           dart2wasm_args:
           - -O2
+```
+
+### Compiling to WebAssembly and JavaScript
+
+In addition to either using `dart2wasm` or `dart2js`, this package can also
+compile your application with both compilers and emit an entrypoint loader
+that will fetch the WebAssembly module or the compiled JavaScript bundle
+depending on whether WebAssembly with the GC extension is supported by the
+browser.
+This feature is enabled by default for release builds, but can also be
+requested explicitly by using `compiler: both`. In some setups, for instance
+when running on Node.JS, the generated entrypoint script may have to be
+customized to add necessary preambles. This is possible with the
+`entrypoint_template` option:
+
+```yaml
+targets:
+  $default:
+    builders:
+      build_web_compilers:entrypoint:
+        options:
+          compiler: both
+          entrypoint_template: |
+            (async () => {
+              // Check for WasmGC being supported.
+              const bytes = [0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 95, 1, 120, 0];
+              if (WebAssembly && WebAssembly.validate(new Uint8Array(bytes))) {
+                // Use the mjs loader emitted by dart2wasm
+                let { instantiate, invoke } = await import("./{{basename}}.mjs");
+
+                let modulePromise = WebAssembly.compileStreaming(fetch("{{basename}}.wasm"));
+                let instantiated = await instantiate(modulePromise, {});
+                invoke(instantiated, []);
+              } else {
+                // Use the dart2js bundle
+                await import("./{{basename}}.bootstrap.js");
+              }
+            })();
 ```
 
 ### Configuring -D environment variables

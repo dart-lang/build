@@ -26,15 +26,15 @@ function resolveUrlWithSegments(...segments) {
 
 (async () => {
   if (supportsWasmGC()) {
-    let { instantiate, invoke } = await import("./$basename.mjs");
+    let { instantiate, invoke } = await import("./{{basename}}.mjs");
 
-    let modulePromise = WebAssembly.compileStreaming(fetch("$basename.wasm"));
+    let modulePromise = WebAssembly.compileStreaming(fetch("{{basename}}.wasm"));
     let instantiated = await instantiate(modulePromise, {});
     invoke(instantiated, []);
   } else {
     const scriptTag = document.createElement("script");
     scriptTag.type = "application/javascript";
-    scriptTag.src = resolveUrlWithSegments("./$basename.bootstrap.js");
+    scriptTag.src = resolveUrlWithSegments("./{{basename}}.bootstrap.js");
     document.head.append(scriptTag);
   }
 })();
