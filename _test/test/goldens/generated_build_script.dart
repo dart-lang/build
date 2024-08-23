@@ -88,8 +88,21 @@ final _builders = <_i1.BuilderApplication>[
     appliesBuilders: const [
       r'build_web_compilers:ddc_modules',
       r'build_web_compilers:dart2js_modules',
+      r'build_web_compilers:dart2wasm_modules',
       r'build_web_compilers:dart_source_cleanup',
     ],
+  ),
+  _i1.apply(
+    r'build_web_compilers:dart2wasm_modules',
+    [
+      _i3.dart2wasmMetaModuleBuilder,
+      _i3.dart2wasmMetaModuleCleanBuilder,
+      _i3.dart2wasmModuleBuilder,
+    ],
+    _i1.toNoneByDefault(),
+    isOptional: true,
+    hideOutput: true,
+    appliesBuilders: const [r'build_modules:module_cleanup'],
   ),
   _i1.apply(
     r'build_web_compilers:dart2js_modules',
@@ -121,7 +134,8 @@ final _builders = <_i1.BuilderApplication>[
       ],
     ),
     defaultOptions: const _i7.BuilderOptions(<String, dynamic>{
-      r'dart2js_args': <dynamic>[r'--minify']
+      r'dart2js_args': <dynamic>[r'--minify'],
+      r'dart2wasm_args': <dynamic>[r'--enable-asserts'],
     }),
     defaultDevOptions: const _i7.BuilderOptions(<String, dynamic>{
       r'dart2js_args': <dynamic>[r'--enable-asserts']
