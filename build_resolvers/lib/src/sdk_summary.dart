@@ -61,9 +61,10 @@ Future<String> defaultSdkSummaryGenerator() async {
   if (needsRebuild) {
     var watch = Stopwatch()..start();
     _logger.info('Generating SDK summary...');
+    await Directory(cacheDir).create(recursive: true);
     final tempDir = await Directory(cacheDir).createTemp();
     final tempFile = File(p.join(tempDir.path, p.basename(summaryPath)));
-    await tempFile.create(recursive: true);
+    await tempFile.create();
     final embedderYamlPath =
         isFlutter ? p.join(_dartUiPath, '_embedder.yaml') : null;
     await tempFile.writeAsBytes(
