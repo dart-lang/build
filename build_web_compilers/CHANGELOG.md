@@ -1,6 +1,7 @@
 ## 4.0.12-wip
 
 - Bump the min sdk to 3.5.0.
+- Account for dartdevc snapshot in the Dart SDK changing to an AOT snapshot.
 
 ## 4.0.11
 
