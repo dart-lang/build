@@ -50,6 +50,9 @@ builders:
       - dart2wasmMetaModuleCleanBuilder
       - dart2wasmModuleBuilder
     build_extensions:
+      $lib$:
+        - .dart2wasm.meta_module.raw
+        - .dart2wasm.meta_module.clean
       .dart:
         - .dart2wasm.module
     is_optional: True
