@@ -86,8 +86,17 @@ Future<void> _createDevCompilerModule(
   try {
     // Use standalone process instead of the worker due to
     // https://github.com/dart-lang/sdk/issues/49441
-    result = await Process.run(p.join(sdkDir, 'bin', 'dart'), [
-      p.join(sdkDir, 'bin', 'snapshots', 'dartdevc.dart.snapshot'),
+    var snapshotPath =
+        p.join(sdkDir, 'bin', 'snapshots', 'dartdevc_aot.dart.snapshot');
+    var execSuffix = Platform.isWindows ? '.exe' : '';
+    var dartPath = p.join(sdkDir, 'bin', 'dartaotruntime$execSuffix');
+    if (!File(snapshotPath).existsSync()) {
+      snapshotPath =
+          p.join(sdkDir, 'bin', 'snapshots', 'dartdevc.dart.snapshot');
+      dartPath = p.join(sdkDir, 'bin', 'dart$execSuffix');
+    }
+    result = await Process.run(dartPath, [
+      snapshotPath,
       '--multi-root-scheme=org-dartlang-sdk',
       '--modules=amd',
       if (canaryFeatures) '--canary',
