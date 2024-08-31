@@ -4,8 +4,15 @@ environment:
 publish_to: none
 dev_dependencies:
   dart_flutter_team_lints: ^3.1.0
+
+# build_web_compilers is not currently part of the workspace because it
+# requires a very recent version of the Dart SDK. mono_repo generates a CI
+# definition that runs each package with the lowest SDK version it supports.
+# This breaks `dart pub get` in the entire workspace, so it (and `_test` which
+# needs to use all packages from the repository) can't be part of the
+# workspace.
 workspace:
-- _test
+#- _test
 - _test/pkgs/provides_builder
 - _test_common
 - build
@@ -16,7 +23,7 @@ workspace:
 - build_runner
 - build_runner_core
 - build_test
-- build_web_compilers
+#- build_web_compilers
 - example
 - scratch_space
 - tool

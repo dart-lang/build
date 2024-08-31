@@ -2,7 +2,9 @@ name: build_web_compilers
 version: 4.0.12-wip
 description: Builder implementations wrapping the dart2js and DDC compilers.
 repository: https://github.com/dart-lang/build/tree/master/build_web_compilers
-resolution: workspace
+# This package can't be part of the workspace because it requires a very recent
+# Dart SDK - see the top-level pubspec for details.
+#resolution: workspace
 
 environment:
   sdk: ^3.6.0-165.0.dev
