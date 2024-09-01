@@ -34,6 +34,7 @@ dev_dependencies:
     path: test/fixtures/c
   d:
     path: test/fixtures/d
+  dart_flutter_team_lints: ^3.1.0
   test: ^1.16.0
 
 topics:
