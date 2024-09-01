@@ -28,6 +28,10 @@ dependencies:
   stack_trace: ^1.10.0
 
 dev_dependencies:
+  a:
+    path: ../build_modules/test/fixtures/a
+  b:
+    path: ../build_modules/test/fixtures/b
   build_runner: ^2.0.0
   build_test: ^2.0.0
   c:
