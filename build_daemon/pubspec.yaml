@@ -5,7 +5,7 @@ repository: https://github.com/dart-lang/build/tree/master/build_daemon
 resolution: workspace
 
 environment:
-  sdk: ^3.6.0-165.0.dev
+  sdk: ^3.5.0
 
 dependencies:
   built_collection: ^5.0.0

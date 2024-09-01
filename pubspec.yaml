@@ -1,6 +1,6 @@
 name: build_workspace     # Can be anything
 environment:
-  sdk: ^3.6.0-165.0.dev   # Must be ^3.5.0 or later for workspace to be allowed
+  sdk: ^3.5.0   # Must be ^3.5.0 or later for workspace to be allowed
 publish_to: none
 dev_dependencies:
   dart_flutter_team_lints: ^3.1.0
@@ -13,7 +13,7 @@ dev_dependencies:
 # workspace.
 workspace:
 #- _test
-- _test/pkgs/provides_builder
+#- _test/pkgs/provides_builder
 - _test_common
 - build
 - build_config
@@ -29,5 +29,5 @@ workspace:
 - tool
 - build_modules/test/fixtures/a
 - build_modules/test/fixtures/b
-- build_web_compilers/test/fixtures/c
-- build_web_compilers/test/fixtures/d
+#- build_web_compilers/test/fixtures/c
+#- build_web_compilers/test/fixtures/d
