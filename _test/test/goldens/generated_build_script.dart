@@ -134,11 +134,11 @@ final _builders = <_i1.BuilderApplication>[
       ],
     ),
     defaultOptions: const _i7.BuilderOptions(<String, dynamic>{
-      r'dart2js_args': <dynamic>[r'--minify'],
-      r'dart2wasm_args': <dynamic>[r'--enable-asserts'],
+      r'dart2js_args': <dynamic>[r'--minify']
     }),
     defaultDevOptions: const _i7.BuilderOptions(<String, dynamic>{
-      r'dart2js_args': <dynamic>[r'--enable-asserts']
+      r'dart2wasm_args': <dynamic>[r'--enable-asserts'],
+      r'dart2js_args': <dynamic>[r'--enable-asserts'],
     }),
     defaultReleaseOptions:
         const _i7.BuilderOptions(<String, dynamic>{r'compiler': r'dart2js'}),

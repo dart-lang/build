@@ -135,9 +135,9 @@ builders:
       options:
         dart2js_args:
           - --minify
+      dev_options:
         dart2wasm_args:
           - --enable-asserts
-      dev_options:
         dart2js_args:
           - --enable-asserts
       release_options:
