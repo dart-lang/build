@@ -27,6 +27,7 @@ dev_dependencies:
   provides_builder:
     path: pkgs/provides_builder/
   test: ^1.16.0
+  test_descriptor: ^2.0.1
   test_process: ^2.0.0
 
 dependency_overrides:

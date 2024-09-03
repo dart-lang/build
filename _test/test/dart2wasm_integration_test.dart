@@ -7,13 +7,11 @@
 library;
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:test/test.dart';
+import 'package:test_descriptor/test_descriptor.dart' as d;
 
 import 'common/utils.dart';
-
-const _outputDir = 'dart2wasm_test';
 
 // This doesn't actually change anything since we're using precompiled tests,
 // but it gets the compiler selector in tests right.
@@ -21,19 +19,12 @@ const _testArgs = ['-c', 'dart2wasm'];
 
 void main() {
   group('Can run tests using dart2wasm', () {
-    tearDown(() async {
-      var dir = Directory(_outputDir);
-      if (await dir.exists()) {
-        await dir.delete(recursive: true);
-      }
-    });
-
     test('via build.yaml config flag', () async {
       await expectTestsPass(
         usePrecompiled: true,
         buildArgs: [
           '--config=dart2wasm',
-          '--output=$_outputDir',
+          '--output=${d.sandbox}',
         ],
         testArgs: _testArgs,
       );
@@ -49,7 +40,7 @@ void main() {
           '--define',
           'build_web_compilers:entrypoint=dart2wasm_args='
               '["--enable-asserts", "-E--enable-experimental-ffi"]',
-          '--output=$_outputDir',
+          '--output=${d.sandbox}',
         ],
         testArgs: _testArgs,
       );
@@ -62,7 +53,7 @@ void main() {
         buildArgs: [
           '--release',
           '--config=dart2wasm',
-          '--output=$_outputDir',
+          '--output=${d.sandbox}',
         ],
         testArgs: _testArgs,
       );
@@ -72,8 +63,13 @@ void main() {
 }
 
 Future<void> _expectWasCompiledWithDart2Wasm() async {
-  var wasmFile =
-      File('$_outputDir/test/hello_world_deferred_test.dart.browser_test.wasm');
-  expect(await wasmFile.exists(), isTrue,
-      reason: '${wasmFile.path} should exist');
+  await d.dir(
+    'test',
+    [
+      d.file(
+        'hello_world_deferred_test.dart.browser_test.wasm',
+        anything,
+      ),
+    ],
+  ).validate();
 }
