@@ -1,0 +1,28 @@
+targets:
+  $default:
+    builders:
+      build_web_compilers:entrypoint:
+        options:
+          compiler: dart2wasm
+          dart2wasm_args:
+          - --enable-asserts
+          - -O0
+        release_options:
+          compiler: dart2wasm
+          dart2wasm_args:
+          - --enable-asserts
+          - -O4
+        generate_for:
+          - web/main.dart
+          - web/sub/main.dart
+          - test/configurable_uri_test.dart
+          - test/configurable_uri_test.dart.browser_test.dart
+          - test/hello_world_test.dart
+          - test/hello_world_test.dart.browser_test.dart
+          - test/hello_world_deferred_test.dart
+          - test/hello_world_deferred_test.dart.browser_test.dart
+          - test/hello_world_custom_html_test.dart
+          - test/hello_world_custom_html_test.dart.browser_test.dart
+          - test/other_test.dart.browser_test.dart
+          - test/sub-dir/subdir_test.dart
+          - test/sub-dir/subdir_test.dart.browser_test.dart

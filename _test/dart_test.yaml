@@ -3,6 +3,12 @@ timeout: 16x
 # package.
 concurrency: 1
 
+tags:
+  integration:
+  # This tag is used for integration tests - we don't need special options at the
+  # moment, but want to avoid warnings from the test runner about using undefined
+  # targets.
+
 override_platforms:
   chrome:
     settings:

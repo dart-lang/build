@@ -41,11 +41,12 @@ then all you need is the `dev_dependency` listed above.
 
 ### Configuring the default compiler
 
-By default, the [Dart development compiler][] (_dartdevc_, also known as
-_DDC_) will be used.
+By default, this package uses the [Dart development compiler][] (_dartdevc_,
+also known as _DDC_) to compile Dart to JavaScript. In release builds (running
+the build tool with `--release`, the default compiler is `dart2js`).
 
-If you would like to opt into dart2js you will need to add a `build.yaml`
-file, which should look roughly like the following:
+If you would like to opt into dart2js for all builds, you will need to add a
+`build.yaml` file, which should look roughly like the following:
 
 ```yaml
 targets:
@@ -60,6 +61,22 @@ targets:
           compiler: dart2js
           # List any dart2js specific args here, or omit it.
           dart2js_args:
+          - -O2
+```
+
+In addition to DDC and dart2js, this package also supports the dart2wasm
+compiler for compiling to WebAssembly with a JavaScript loader. It can be
+enabled by using `compiler: dart2wasm` in the build configuration:
+
+```yaml
+targets:
+  $default:
+    builders:
+      build_web_compilers:entrypoint:
+        options:
+          compiler: dart2wasm
+          # List flags that should be forwarded to `dart compile wasm`
+          dart2wasm_args:
           - -O2
 ```
 
@@ -89,6 +106,21 @@ targets:
       build_web_compilers:entrypoint:
         options:
           dart2js_args:
+          - -DSOME_VAR=some value
+          - -DANOTHER_VAR=true
+```
+
+Similarly, options are passed to `dart compile wasm` when using the
+`dart2wasm_args` option:
+
+```yaml
+targets:
+  $default:
+    builders:
+      build_web_compilers:entrypoint:
+        options:
+          compiler: dart2wasm
+          dart2wasm_args:
           - -DSOME_VAR=some value
           - -DANOTHER_VAR=true
 ```

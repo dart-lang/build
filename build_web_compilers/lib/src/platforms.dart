@@ -4,7 +4,9 @@
 
 import 'package:build_modules/build_modules.dart';
 
-const _libraries = [
+/// `dart:` SDK libraries available in every platform supported by
+/// build_web_compilers.
+const _coreLibraries = [
   '_internal',
   '_js_annotations',
   'async',
@@ -12,21 +14,36 @@ const _libraries = [
   'convert',
   'core',
   'developer',
-  'html',
-  'html_common',
-  'indexed_db',
   'js',
   'js_interop',
   'js_interop_unsafe',
   'js_util',
   'math',
-  'svg',
   'typed_data',
+];
+
+/// Additional libraries supported by both ddc and dart2js.
+const _additionalWebLibraries = [
+  'html',
+  'html',
+  'html_common',
+  'indexed_db',
+  'svg',
   'web_audio',
   'web_gl',
   'web_sql',
 ];
 
-final ddcPlatform = DartPlatform.register('ddc', _libraries);
+/// Additional libraries supported by dart2wasm.
+const _additionalWasmLibraries = [
+  'ffi',
+];
 
-final dart2jsPlatform = DartPlatform.register('dart2js', _libraries);
+const _jsCompilerLibraries = [..._coreLibraries, ..._additionalWebLibraries];
+
+final ddcPlatform = DartPlatform.register('ddc', _jsCompilerLibraries);
+
+final dart2jsPlatform = DartPlatform.register('dart2js', _jsCompilerLibraries);
+
+final dart2wasmPlatform = DartPlatform.register(
+    'dart2wasm', [..._coreLibraries, ..._additionalWasmLibraries]);

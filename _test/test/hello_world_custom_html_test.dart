@@ -5,9 +5,8 @@
 @TestOn('browser')
 library;
 
-import 'dart:html';
-
 import 'package:test/test.dart';
+import 'package:web/web.dart';
 
 void main() {
   test('can use custom html', () {

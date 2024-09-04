@@ -12,6 +12,7 @@ export 'src/dev_compiler_builder.dart'
         jsSourceMapExtension,
         metadataExtension,
         symbolsExtension;
-export 'src/platforms.dart' show dart2jsPlatform, ddcPlatform;
+export 'src/platforms.dart'
+    show dart2jsPlatform, dart2wasmPlatform, ddcPlatform;
 export 'src/web_entrypoint_builder.dart'
     show WebCompiler, WebEntrypointBuilder, ddcBootstrapExtension;
