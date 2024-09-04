@@ -33,7 +33,7 @@ enum WebCompiler {
   // ignore: constant_identifier_names
   Dart2Wasm('dart2wasm'),
   // ignore: constant_identifier_names
-  Dart2JsAndDart2Wasm('both');
+  Dart2JsAndDart2Wasm('dart2wasm+dart2js');
 
   /// The name of this compiler used when identifying it in builder options.
   final String optionName;

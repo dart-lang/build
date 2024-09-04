@@ -140,8 +140,8 @@ final _builders = <_i1.BuilderApplication>[
       r'dart2wasm_args': <dynamic>[r'--enable-asserts'],
       r'dart2js_args': <dynamic>[r'--enable-asserts'],
     }),
-    defaultReleaseOptions:
-        const _i7.BuilderOptions(<String, dynamic>{r'compiler': r'dart2js'}),
+    defaultReleaseOptions: const _i7.BuilderOptions(
+        <String, dynamic>{r'compiler': r'dart2wasm+dart2js'}),
     appliesBuilders: const [r'build_web_compilers:dart2js_archive_extractor'],
   ),
   _i1.apply(

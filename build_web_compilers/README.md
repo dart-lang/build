@@ -90,9 +90,9 @@ that will fetch the WebAssembly module or the compiled JavaScript bundle
 depending on whether WebAssembly with the GC extension is supported by the
 browser.
 This feature is enabled by default for release builds, but can also be
-requested explicitly by using `compiler: both`. In some setups, for instance
-when running on Node.JS, the generated entrypoint script may have to be
-customized to add necessary preambles. This is possible with the
+requested explicitly by using `compiler: dart2wasm+dart2js`. In some setups,
+for instance when running on Node.JS, the generated entrypoint script may have
+to be customized to add necessary preambles. This is possible with the
 `entrypoint_template` option:
 
 ```yaml
@@ -101,7 +101,7 @@ targets:
     builders:
       build_web_compilers:entrypoint:
         options:
-          compiler: both
+          compiler: dart2wasm+dart2js
           entrypoint_template: |
             (async () => {
               // Check for WasmGC being supported.
