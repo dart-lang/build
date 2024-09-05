@@ -172,9 +172,12 @@ final class EntrypointBuilderOptions {
         defaultLoaderOption = '.dart.js';
       }
     } else if (config.containsKey(compilersOption)) {
-      for (var MapEntry(:key, :value) in (config[compilersOption] as Map)
-          .cast<String, Map<String, Object?>>()
-          .entries) {
+      var configuredCompilers = (config[compilersOption] as Map?)
+              ?.cast<String, Map<String, Object?>>() ??
+          const {};
+      var hasDart2Wasm = false;
+
+      for (var MapEntry(:key, :value) in configuredCompilers.entries) {
         const extensionOption = 'extension';
         const argsOption = 'args';
         const supportedOptions = [extensionOption, argsOption];
@@ -184,11 +187,19 @@ final class EntrypointBuilderOptions {
         var compiler = WebCompiler.fromOptionName(key);
         compilers.add(EnabledEntrypointCompiler(
           compiler: compiler,
-          extension:
-              value[extensionOption] as String? ?? compiler.entrypointExtension,
+          extension: value[extensionOption] as String? ??
+              (configuredCompilers.length == 1
+                  ? compiler.entrypointExtensionWhenOnlyCompiler
+                  : compiler.entrypointExtension),
           compilerArguments:
               _parseCompilerOptions(value[argsOption], '$compilersOption.$key'),
         ));
+
+        hasDart2Wasm |= compiler == WebCompiler.Dart2Wasm;
+      }
+
+      if (hasDart2Wasm) {
+        defaultLoaderOption = '.dart.js';
       }
     }
 

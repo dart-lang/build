@@ -52,7 +52,6 @@ void main() {
                 'dart2js': <String, Object?>{},
                 'dart2wasm': <String, Object?>{},
               },
-              'loader': '.dart.js',
             },
           ),
         ),
