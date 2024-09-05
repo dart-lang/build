@@ -133,15 +133,21 @@ final _builders = <_i1.BuilderApplication>[
         r'test/**.vm_test.dart',
       ],
     ),
-    defaultOptions: const _i7.BuilderOptions(<String, dynamic>{
-      r'dart2js_args': <dynamic>[r'--minify']
-    }),
     defaultDevOptions: const _i7.BuilderOptions(<String, dynamic>{
-      r'dart2wasm_args': <dynamic>[r'--enable-asserts'],
-      r'dart2js_args': <dynamic>[r'--enable-asserts'],
+      r'compilers': <String, dynamic>{
+        r'dartdevc': <String, dynamic>{r'extension': r'.dart.js'}
+      }
     }),
-    defaultReleaseOptions: const _i7.BuilderOptions(
-        <String, dynamic>{r'compiler': r'dart2wasm+dart2js'}),
+    defaultReleaseOptions: const _i7.BuilderOptions(<String, dynamic>{
+      r'compilers': <String, dynamic>{
+        r'dart2js': <String, dynamic>{
+          r'extension': r'.dart2js.js',
+          r'args': <dynamic>[r'--minify'],
+        },
+        r'dart2wasm': <String, dynamic>{r'extension': r'.dart2wasm.mjs'},
+      },
+      r'loader': r'.dart.js',
+    }),
     appliesBuilders: const [r'build_web_compilers:dart2js_archive_extractor'],
   ),
   _i1.apply(

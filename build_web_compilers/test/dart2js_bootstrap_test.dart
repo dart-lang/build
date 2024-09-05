@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:build_modules/build_modules.dart';
 import 'package:build_test/build_test.dart';
 import 'package:build_web_compilers/build_web_compilers.dart';
+import 'package:build_web_compilers/src/web_entrypoint_builder.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
@@ -59,8 +60,15 @@ void main() {
         'a|web/index.dart.js.tar.gz': anything,
       };
       await testBuilder(
-          const WebEntrypointBuilder(WebCompiler.Dart2Js,
-              nativeNullAssertions: false),
+          WebEntrypointBuilder(
+            EntrypointBuilderOptions(compilers: [
+              EnabledEntrypointCompiler(
+                compiler: WebCompiler.Dart2Js,
+                extension: '.dart2js',
+                compilerArguments: [],
+              ),
+            ], nativeNullAssertions: false),
+          ),
           assets,
           outputs: expectedOutputs);
     });
@@ -71,8 +79,15 @@ void main() {
         'a|web/index.dart.js.tar.gz': anything,
       };
       await testBuilder(
-          const WebEntrypointBuilder(WebCompiler.Dart2Js,
-              dart2JsArgs: ['--no-source-maps'], nativeNullAssertions: false),
+          WebEntrypointBuilder(
+            EntrypointBuilderOptions(compilers: [
+              EnabledEntrypointCompiler(
+                compiler: WebCompiler.Dart2Js,
+                extension: '.dart2js',
+                compilerArguments: ['--no-source-maps'],
+              ),
+            ], nativeNullAssertions: false),
+          ),
           assets,
           outputs: expectedOutputs);
     });
@@ -101,8 +116,15 @@ void main() {
       'a|lib/index.dart.js.tar.gz': anything,
     };
     await testBuilder(
-        const WebEntrypointBuilder(WebCompiler.Dart2Js,
-            nativeNullAssertions: false),
+        WebEntrypointBuilder(
+          EntrypointBuilderOptions(compilers: [
+            EnabledEntrypointCompiler(
+              compiler: WebCompiler.Dart2Js,
+              extension: '.dart2js',
+              compilerArguments: [],
+            ),
+          ], nativeNullAssertions: false),
+        ),
         assets,
         outputs: expectedOutputs);
   });

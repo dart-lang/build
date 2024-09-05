@@ -132,16 +132,19 @@ builders:
         exclude:
           - test/**.node_test.dart
           - test/**.vm_test.dart
-      options:
-        dart2js_args:
-          - --minify
       dev_options:
-        dart2wasm_args:
-          - --enable-asserts
-        dart2js_args:
-          - --enable-asserts
+        compilers:
+          dartdevc:
+            extension: '.dart.js'
       release_options:
-        compiler: dart2wasm+dart2js
+        compilers:
+          dart2js:
+            extension: '.dart2js.js'
+            args:
+              - --minify
+          dart2wasm:
+            extension: '.dart2wasm.mjs'
+        loader: '.dart.js'
     applies_builders:
       - build_web_compilers:dart2js_archive_extractor
   _stack_trace_mapper_copy:

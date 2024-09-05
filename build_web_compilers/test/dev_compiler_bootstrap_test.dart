@@ -7,6 +7,7 @@ import 'package:build_modules/build_modules.dart';
 import 'package:build_test/build_test.dart';
 import 'package:build_web_compilers/build_web_compilers.dart';
 import 'package:build_web_compilers/builders.dart';
+import 'package:build_web_compilers/src/web_entrypoint_builder.dart';
 import 'package:test/test.dart';
 
 import 'util.dart';
@@ -54,8 +55,15 @@ void main() {
         ])),
       };
       await testBuilder(
-          const WebEntrypointBuilder(WebCompiler.DartDevc,
-              nativeNullAssertions: false),
+          WebEntrypointBuilder(
+            EntrypointBuilderOptions(compilers: [
+              EnabledEntrypointCompiler(
+                compiler: WebCompiler.DartDevc,
+                extension: '.dart2js',
+                compilerArguments: [],
+              ),
+            ], nativeNullAssertions: false),
+          ),
           assets,
           outputs: expectedOutputs);
     });
@@ -93,8 +101,15 @@ void main() {
         'a|web/b.dart.js': isNotEmpty,
       };
       await testBuilder(
-          const WebEntrypointBuilder(WebCompiler.DartDevc,
-              nativeNullAssertions: false),
+          WebEntrypointBuilder(
+            EntrypointBuilderOptions(compilers: [
+              EnabledEntrypointCompiler(
+                compiler: WebCompiler.DartDevc,
+                extension: '.dart2js',
+                compilerArguments: [],
+              ),
+            ], nativeNullAssertions: false),
+          ),
           assets,
           outputs: expectedOutputs);
     });
@@ -116,8 +131,15 @@ void main() {
         'a|lib/app.dart.js': isNotEmpty,
       };
       await testBuilder(
-          const WebEntrypointBuilder(WebCompiler.DartDevc,
-              nativeNullAssertions: false),
+          WebEntrypointBuilder(
+            EntrypointBuilderOptions(compilers: [
+              EnabledEntrypointCompiler(
+                compiler: WebCompiler.DartDevc,
+                extension: '.dart2js',
+                compilerArguments: [],
+              ),
+            ], nativeNullAssertions: false),
+          ),
           assets,
           outputs: expectedOutputs);
     });
