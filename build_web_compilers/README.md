@@ -127,11 +127,11 @@ names depend on which compilers are enabled:
 2. When only `dart2wasm` is enabled, a single `.dart.js` entrypoint (loading
    a generated `.wasm` module through a `.mjs` helper file) is generated.
 3. When both `dart2wasm` and a JavaScript compiler are enabled, then:
-  - The output of the JavaScript compiler is named `.dart2js.js` or `.ddc.js`
-    depending on the compiler.
-  - `dart2wasm` continues to emit a `.wasm` and a `.mjs` file.
-  - An entrypoint loader named `.dart.js` that loads the appropriate output
-    depending on browser features is generated.
+   - The output of the JavaScript compiler is named `.dart2js.js` or `.ddc.js`
+     depending on the compiler.
+   - `dart2wasm` continues to emit a `.wasm` and a `.mjs` file.
+   - An entrypoint loader named `.dart.js` that loads the appropriate output
+     depending on browser features is generated.
 
 All names can be overridden by using the `loader` option or the `extension`
 flag in compiler options:
@@ -160,7 +160,7 @@ it's the compiler requiring an additional loader to be emitted.
 ### Customizing the WebAssembly loader
 
 In some cases, for instance when targeting Node.JS, the generated loader for
-`dart2wasm` may be suitable. The builtin loader can be disabled by setting
+`dart2wasm` may be unsuitable. The builtin loader can be disabled by setting
 the option to null:
 
 ```yaml
