@@ -4,10 +4,10 @@
 
 import 'dart:async';
 
+import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:build_test/build_test.dart';
 import 'package:build_web_compilers/build_web_compilers.dart';
-import 'package:build_web_compilers/src/web_entrypoint_builder.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
@@ -60,15 +60,10 @@ void main() {
         'a|web/index.dart.js.tar.gz': anything,
       };
       await testBuilder(
-          WebEntrypointBuilder(
-            EntrypointBuilderOptions(compilers: [
-              EnabledEntrypointCompiler(
-                compiler: WebCompiler.Dart2Js,
-                extension: '.dart2js',
-                compilerArguments: [],
-              ),
-            ], nativeNullAssertions: false),
-          ),
+          WebEntrypointBuilder.fromOptions(const BuilderOptions({
+            'compiler': 'dart2js',
+            'native_null_assertions': false,
+          })),
           assets,
           outputs: expectedOutputs);
     });
@@ -79,15 +74,11 @@ void main() {
         'a|web/index.dart.js.tar.gz': anything,
       };
       await testBuilder(
-          WebEntrypointBuilder(
-            EntrypointBuilderOptions(compilers: [
-              EnabledEntrypointCompiler(
-                compiler: WebCompiler.Dart2Js,
-                extension: '.dart2js',
-                compilerArguments: ['--no-source-maps'],
-              ),
-            ], nativeNullAssertions: false),
-          ),
+          WebEntrypointBuilder.fromOptions(const BuilderOptions({
+            'compiler': 'dart2js',
+            'native_null_assertions': false,
+            'dart2js_args': ['--no-source-maps']
+          })),
           assets,
           outputs: expectedOutputs);
     });
@@ -116,15 +107,10 @@ void main() {
       'a|lib/index.dart.js.tar.gz': anything,
     };
     await testBuilder(
-        WebEntrypointBuilder(
-          EntrypointBuilderOptions(compilers: [
-            EnabledEntrypointCompiler(
-              compiler: WebCompiler.Dart2Js,
-              extension: '.dart2js',
-              compilerArguments: [],
-            ),
-          ], nativeNullAssertions: false),
-        ),
+        WebEntrypointBuilder.fromOptions(const BuilderOptions({
+          'compiler': 'dart2js',
+          'native_null_assertions': false,
+        })),
         assets,
         outputs: expectedOutputs);
   });

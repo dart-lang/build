@@ -55,15 +55,10 @@ void main() {
         ])),
       };
       await testBuilder(
-          WebEntrypointBuilder(
-            EntrypointBuilderOptions(compilers: [
-              EnabledEntrypointCompiler(
-                compiler: WebCompiler.DartDevc,
-                extension: '.dart2js',
-                compilerArguments: [],
-              ),
-            ], nativeNullAssertions: false),
-          ),
+          WebEntrypointBuilder.fromOptions(const BuilderOptions({
+            'compiler': 'dartdevc',
+            'native_null_assertions': false,
+          })),
           assets,
           outputs: expectedOutputs);
     });
@@ -101,15 +96,10 @@ void main() {
         'a|web/b.dart.js': isNotEmpty,
       };
       await testBuilder(
-          WebEntrypointBuilder(
-            EntrypointBuilderOptions(compilers: [
-              EnabledEntrypointCompiler(
-                compiler: WebCompiler.DartDevc,
-                extension: '.dart2js',
-                compilerArguments: [],
-              ),
-            ], nativeNullAssertions: false),
-          ),
+          WebEntrypointBuilder.fromOptions(const BuilderOptions({
+            'compiler': 'dartdevc',
+            'native_null_assertions': false,
+          })),
           assets,
           outputs: expectedOutputs);
     });
@@ -131,15 +121,10 @@ void main() {
         'a|lib/app.dart.js': isNotEmpty,
       };
       await testBuilder(
-          WebEntrypointBuilder(
-            EntrypointBuilderOptions(compilers: [
-              EnabledEntrypointCompiler(
-                compiler: WebCompiler.DartDevc,
-                extension: '.dart2js',
-                compilerArguments: [],
-              ),
-            ], nativeNullAssertions: false),
-          ),
+          WebEntrypointBuilder.fromOptions(const BuilderOptions({
+            'compiler': 'dartdevc',
+            'native_null_assertions': false,
+          })),
           assets,
           outputs: expectedOutputs);
     });
