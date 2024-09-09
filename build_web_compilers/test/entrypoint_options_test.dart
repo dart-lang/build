@@ -7,6 +7,17 @@ import 'package:build_web_compilers/src/web_entrypoint_builder.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('uses ddc by default', () {
+    final options =
+        EntrypointBuilderOptions.fromOptions(const BuilderOptions({}));
+    expect(options.compilers, [
+      isA<EnabledEntrypointCompiler>()
+          .having((e) => e.compiler, 'compiler', WebCompiler.DartDevc)
+          .having((e) => e.compilerArguments, 'compilerArguments', isEmpty)
+          .having((e) => e.extension, 'extension', '.dart.js')
+    ]);
+  });
+
   test('parses old dart2js options', () {
     final options = EntrypointBuilderOptions.fromOptions(const BuilderOptions({
       'compiler': 'dart2js',

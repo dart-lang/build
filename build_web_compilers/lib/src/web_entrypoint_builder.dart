@@ -150,7 +150,8 @@ final class EntrypointBuilderOptions {
     // to that compiler, which allows compiling with multiple compilers (e.g.
     // dart2js + dart2wasm). For backwards compatibility, we prefer the older
     // configuration format using the `compiler` argument:
-    if (config.containsKey(compilerOption)) {
+    if (config.containsKey(compilerOption) ||
+        !config.containsKey(compilersOption)) {
       var compilerName = config[compilerOption] as String? ?? 'dartdevc';
 
       var compiler = WebCompiler.fromOptionName(compilerName);

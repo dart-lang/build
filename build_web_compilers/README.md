@@ -41,9 +41,9 @@ then all you need is the `dev_dependency` listed above.
 
 By default, this package uses the [Dart development compiler][] (_dartdevc_,
 also known as _DDC_) to compile Dart to JavaScript. In release builds (running
-the build tool with `--release`, this package uses both `dart2js` and
-`dart2wasm` with a custom entrypoint loading the appropriate module depending
-on browser features).
+the build tool with `--release`), `dart2js` is used as a compiler.
+In addition to compiling to JavaScript, this package also supports compiling to
+WebAssembly.
 
 This behavior can be changed with builder options. To understand the impact of
 these options, be aware of differences between compiling to JavaScript and
