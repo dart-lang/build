@@ -59,6 +59,19 @@ void main() {
       );
       await _expectWasCompiledWithDart2Wasm();
     }, onPlatform: {'windows': const Skip('flaky on windows')});
+
+    test('when also enabling dart2js', () async {
+      await expectTestsPass(
+        usePrecompiled: true,
+        buildArgs: [
+          '--release',
+          '--config=both',
+          '--output=${d.sandbox}',
+        ],
+        testArgs: _testArgs,
+      );
+      await _expectWasCompiledWithDart2Wasm();
+    }, onPlatform: {'windows': const Skip('flaky on windows')});
   });
 }
 

@@ -148,10 +148,39 @@ final class EntrypointBuilderOptions {
 
     // The compilers option is a map of compiler names to options only applying
     // to that compiler, which allows compiling with multiple compilers (e.g.
-    // dart2js + dart2wasm). For backwards compatibility, we prefer the older
-    // configuration format using the `compiler` argument:
-    if (config.containsKey(compilerOption) ||
-        !config.containsKey(compilersOption)) {
+    // dart2js + dart2wasm). Since the default builder configuration doesn't
+    // use the compilers key, we preserve backwards compatibility.
+    if (config.containsKey(compilersOption)) {
+      var configuredCompilers = (config[compilersOption] as Map?)
+              ?.cast<String, Map<String, Object?>?>() ??
+          const {};
+      var hasDart2Wasm = false;
+
+      for (var MapEntry(:key, :value) in configuredCompilers.entries) {
+        const extensionOption = 'extension';
+        const argsOption = 'args';
+        const supportedOptions = [extensionOption, argsOption];
+        validateOptions(value ?? const {}, supportedOptions,
+            'build_web_compilers:entrypoint');
+
+        var compiler = WebCompiler.fromOptionName(key);
+        compilers.add(EnabledEntrypointCompiler(
+          compiler: compiler,
+          extension: value?[extensionOption] as String? ??
+              (configuredCompilers.length == 1
+                  ? compiler.entrypointExtensionWhenOnlyCompiler
+                  : compiler.entrypointExtension),
+          compilerArguments: _parseCompilerOptions(
+              value?[argsOption], '$compilersOption.$key'),
+        ));
+
+        hasDart2Wasm |= compiler == WebCompiler.Dart2Wasm;
+      }
+
+      if (hasDart2Wasm) {
+        defaultLoaderOption = '.dart.js';
+      }
+    } else {
       var compilerName = config[compilerOption] as String? ?? 'dartdevc';
 
       var compiler = WebCompiler.fromOptionName(compilerName);
@@ -170,36 +199,6 @@ final class EntrypointBuilderOptions {
       if (compiler == WebCompiler.Dart2Wasm) {
         // dart2wasm needs a custom loader script to work as an entrypoint, so
         // enable one by default if dart2wasm is configured as compiler.
-        defaultLoaderOption = '.dart.js';
-      }
-    } else if (config.containsKey(compilersOption)) {
-      var configuredCompilers = (config[compilersOption] as Map?)
-              ?.cast<String, Map<String, Object?>>() ??
-          const {};
-      var hasDart2Wasm = false;
-
-      for (var MapEntry(:key, :value) in configuredCompilers.entries) {
-        const extensionOption = 'extension';
-        const argsOption = 'args';
-        const supportedOptions = [extensionOption, argsOption];
-        validateOptions(
-            value, supportedOptions, 'build_web_compilers:entrypoint');
-
-        var compiler = WebCompiler.fromOptionName(key);
-        compilers.add(EnabledEntrypointCompiler(
-          compiler: compiler,
-          extension: value[extensionOption] as String? ??
-              (configuredCompilers.length == 1
-                  ? compiler.entrypointExtensionWhenOnlyCompiler
-                  : compiler.entrypointExtension),
-          compilerArguments:
-              _parseCompilerOptions(value[argsOption], '$compilersOption.$key'),
-        ));
-
-        hasDart2Wasm |= compiler == WebCompiler.Dart2Wasm;
-      }
-
-      if (hasDart2Wasm) {
         defaultLoaderOption = '.dart.js';
       }
     }
