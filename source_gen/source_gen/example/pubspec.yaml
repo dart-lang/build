@@ -1,8 +1,9 @@
 name: source_gen_example
 publish_to: none
+resolution: workspace
 
 environment:
-  sdk: ^3.4.0
+  sdk: ^3.5.0
 
 dependencies:
   analyzer: '>=5.2.0 <7.0.0'
@@ -11,7 +12,3 @@ dependencies:
 
 dev_dependencies:
   dart_flutter_team_lints: ^3.1.0
-
-dependency_overrides:
-  source_gen:
-    path: ../source_gen

@@ -3,9 +3,10 @@ version: 1.5.1-wip
 description: >-
   Source code generation builders and utilities for the Dart build system
 repository: https://github.com/dart-lang/source_gen/tree/master/source_gen
+resolution: workspace
 
 environment:
-  sdk: ^3.4.0
+  sdk: ^3.5.0
 
 dependencies:
   analyzer: ^6.4.0

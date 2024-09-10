@@ -1,4 +1,4 @@
-# Created with package:mono_repo v6.6.1
+# Created with package:mono_repo v6.6.2
 name: Dart CI
 on:
   push:
@@ -36,27 +36,27 @@ jobs:
         name: Checkout repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - name: mono_repo self validate
-        run: dart pub global activate mono_repo 6.6.1
+        run: dart pub global activate mono_repo 6.6.2
       - name: mono_repo self validate
         run: dart pub global run mono_repo generate --validate
   job_002:
-    name: "analyze_format; linux; Dart 3.4.0; PKG: source_gen; `dart analyze`"
+    name: "analyze_format; linux; Dart 3.5.0; PKG: source_gen; `dart analyze`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
         uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:3.4.0;packages:source_gen;commands:analyze_1"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:3.5.0;packages:source_gen;commands:analyze_1"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:3.4.0;packages:source_gen
-            os:ubuntu-latest;pub-cache-hosted;sdk:3.4.0
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.5.0;packages:source_gen
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.5.0
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@0a8a0fc875eb934c15d08629302413c671d3f672
         with:
-          sdk: "3.4.0"
+          sdk: "3.5.0"
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
@@ -143,23 +143,23 @@ jobs:
         if: "always() && steps.source_gen_pub_upgrade.conclusion == 'success'"
         working-directory: source_gen
   job_004:
-    name: "unit_test; linux; Dart 3.4.0; PKG: example_usage; `dart test --run-skipped`"
+    name: "unit_test; linux; Dart 3.5.0; PKG: example_usage; `dart test --run-skipped`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
         uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:3.4.0;packages:example_usage;commands:test_0"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:3.5.0;packages:example_usage;commands:test_0"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:3.4.0;packages:example_usage
-            os:ubuntu-latest;pub-cache-hosted;sdk:3.4.0
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.5.0;packages:example_usage
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.5.0
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@0a8a0fc875eb934c15d08629302413c671d3f672
         with:
-          sdk: "3.4.0"
+          sdk: "3.5.0"
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
@@ -177,23 +177,23 @@ jobs:
       - job_002
       - job_003
   job_005:
-    name: "unit_test; linux; Dart 3.4.0; PKG: source_gen; `dart test`"
+    name: "unit_test; linux; Dart 3.5.0; PKG: source_gen; `dart test`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
         uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
         with:
           path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:3.4.0;packages:source_gen;commands:test_1"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:3.5.0;packages:source_gen;commands:test_1"
           restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:3.4.0;packages:source_gen
-            os:ubuntu-latest;pub-cache-hosted;sdk:3.4.0
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.5.0;packages:source_gen
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.5.0
             os:ubuntu-latest;pub-cache-hosted
             os:ubuntu-latest
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@0a8a0fc875eb934c15d08629302413c671d3f672
         with:
-          sdk: "3.4.0"
+          sdk: "3.5.0"
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
@@ -279,13 +279,13 @@ jobs:
       - job_002
       - job_003
   job_008:
-    name: "unit_test; windows; Dart 3.4.0; PKG: source_gen; `dart test`"
+    name: "unit_test; windows; Dart 3.5.0; PKG: source_gen; `dart test`"
     runs-on: windows-latest
     steps:
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@0a8a0fc875eb934c15d08629302413c671d3f672
         with:
-          sdk: "3.4.0"
+          sdk: "3.5.0"
       - id: checkout
         name: Checkout repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332

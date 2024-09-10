@@ -1,0 +1,13 @@
+name: source_gen_workspace
+publish_to: none
+environment:
+  sdk: ^3.5.0
+
+workspace:
+  - source_gen
+  - example
+  - example_usage
+  - _test_annotations
+
+dev_dependencies:
+  dart_flutter_team_lints: ^3.1.0

@@ -1,8 +1,9 @@
 name: _test_annotations
 publish_to: none
+resolution: workspace
 
 environment:
-  sdk: ^3.4.0
+  sdk: ^3.5.0
 
 dev_dependencies:
   dart_flutter_team_lints: ^3.1.0
