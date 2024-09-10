@@ -329,8 +329,8 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
       if (!alreadyVisitedElement) {
         type.element.typeParameters.forEach(visitTypeParameterElement);
 
-        final toStringMethod =
-            type.element.lookUpMethod('toString', type.element.library);
+        final toStringMethod = type.element.augmented
+            .lookUpMethod(name: 'toString', library: type.element.library);
         if (toStringMethod != null && toStringMethod.parameters.isNotEmpty) {
           // In a Fake class which implements a class which overrides `toString`
           // with additional (optional) parameters, we must also override
@@ -594,9 +594,7 @@ class _MockTargetGatherer {
     var type = _determineDartType(typeToMock, entryLib.typeProvider);
     final mockTypeArguments = mockType?.typeArguments;
     if (mockTypeArguments != null) {
-      final typeName =
-          type.alias?.element.getDisplayString(withNullability: false) ??
-              'type $type';
+      final typeName = type.alias?.element.getDisplayString() ?? 'type $type';
       final typeArguments = type.alias?.typeArguments ?? type.typeArguments;
       // Check explicit type arguments for unknown types that were
       // turned into `dynamic` by the analyzer.
@@ -1849,7 +1847,7 @@ class _MockClassInfo {
       // TODO(srawlins): It seems like this might be revivable, but Angular
       // does not revive Types; we should investigate this if users request it.
       final type = object.toTypeValue()!;
-      final typeStr = type.getDisplayString(withNullability: false);
+      final typeStr = type.getDisplayString();
       throw _ReviveException('default value is a Type: $typeStr.');
     } else {
       // If [constant] is not null, a literal, or a type, then it must be an
@@ -2176,10 +2174,7 @@ class _MockClassInfo {
             {for (final f in type.namedFields) f.name: _typeReference(f.type)})
         ..isNullable = forceNullable || typeSystem.isNullable(type));
     } else {
-      return referImported(
-        type.getDisplayString(withNullability: false),
-        _typeImport(type.element),
-      );
+      return referImported(type.getDisplayString(), _typeImport(type.element));
     }
   }
 

@@ -81,11 +81,6 @@ void main() {}
 '''
 };
 
-const _constructorWithThrowOnMissingStub = '''
-MockFoo() {
-    _i1.throwOnMissingStub(this);
-  }''';
-
 void main() {
   late InMemoryAssetWriter writer;
 
@@ -1754,9 +1749,6 @@ void main() {
             'X1 m1<X1 extends _i2.Foo<_i2.Foo<X1, X>, X1>>(X1 Function(X)? f)'));
   });
 }
-
-TypeMatcher<List<int>> _containsAllOf(a, [b]) => decodedMatches(
-    b == null ? allOf(contains(a)) : allOf(contains(a), contains(b)));
 
 /// Expect that [testBuilder], given [assets], throws an
 /// [InvalidMockitoAnnotationException] with a message containing [message].

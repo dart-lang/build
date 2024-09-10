@@ -12,17 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// ignore_for_file: combinators_ordering
-
 // ignore: deprecated_member_use
 export 'package:test_api/fake.dart' show Fake;
 
 export 'src/dummies.dart'
-    show
-        provideDummy,
-        provideDummyBuilder,
-        DummyBuilder,
-        MissingDummyValueError;
+    show provideDummy, provideDummyBuilder, MissingDummyValueError;
 export 'src/mock.dart'
     show
         Mock,
