@@ -270,8 +270,10 @@ targets:
           - -O2
 ```
 
-Note that the `compiler` option takes precedence over the new `compilers` and
-`loader` options for backwards compatibility.
+When no option is set, the `compiler` option is implicitly set to `dart2js` on
+release builds and to `dartdevc` otherwise.
+Note that the `compilers` option takes precedence over the `compiler` option
+when set.
 
 ## Manual Usage
 

@@ -28,11 +28,23 @@ const mergedMetadataExtension = '.dart.ddc_merged_metadata';
 /// Which compiler to use when compiling web entrypoints.
 enum WebCompiler {
   // ignore: constant_identifier_names
-  Dart2Js('dart2js', jsEntrypointExtension, '.dart2js.js'),
+  Dart2Js(
+    'dart2js',
+    entrypointExtensionWhenOnlyCompiler: jsEntrypointExtension,
+    entrypointExtension: '.dart2js.js',
+  ),
   // ignore: constant_identifier_names
-  DartDevc('dartdevc', jsEntrypointExtension, '.ddc.js'),
+  DartDevc(
+    'dartdevc',
+    entrypointExtensionWhenOnlyCompiler: jsEntrypointExtension,
+    entrypointExtension: '.ddc.js',
+  ),
   // ignore: constant_identifier_names
-  Dart2Wasm('dart2wasm', moduleJsExtension, moduleJsExtension);
+  Dart2Wasm(
+    'dart2wasm',
+    entrypointExtensionWhenOnlyCompiler: moduleJsExtension,
+    entrypointExtension: moduleJsExtension,
+  );
 
   /// The name of this compiler used when identifying it in builder options.
   final String optionName;
@@ -51,10 +63,10 @@ enum WebCompiler {
   final String entrypointExtension;
 
   const WebCompiler(
-    this.optionName,
-    this.entrypointExtensionWhenOnlyCompiler,
-    this.entrypointExtension,
-  );
+    this.optionName, {
+    required this.entrypointExtensionWhenOnlyCompiler,
+    required this.entrypointExtension,
+  });
 
   static WebCompiler fromOptionName(String name) {
     for (final compiler in values) {
