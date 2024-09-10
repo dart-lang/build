@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:build/build.dart';
 import 'package:build_modules/build_modules.dart';
 import 'package:build_test/build_test.dart';
 import 'package:build_web_compilers/build_web_compilers.dart';
@@ -59,8 +60,10 @@ void main() {
         'a|web/index.dart.js.tar.gz': anything,
       };
       await testBuilder(
-          const WebEntrypointBuilder(WebCompiler.Dart2Js,
-              nativeNullAssertions: false),
+          WebEntrypointBuilder.fromOptions(const BuilderOptions({
+            'compiler': 'dart2js',
+            'native_null_assertions': false,
+          })),
           assets,
           outputs: expectedOutputs);
     });
@@ -71,8 +74,11 @@ void main() {
         'a|web/index.dart.js.tar.gz': anything,
       };
       await testBuilder(
-          const WebEntrypointBuilder(WebCompiler.Dart2Js,
-              dart2JsArgs: ['--no-source-maps'], nativeNullAssertions: false),
+          WebEntrypointBuilder.fromOptions(const BuilderOptions({
+            'compiler': 'dart2js',
+            'native_null_assertions': false,
+            'dart2js_args': ['--no-source-maps']
+          })),
           assets,
           outputs: expectedOutputs);
     });
@@ -101,8 +107,10 @@ void main() {
       'a|lib/index.dart.js.tar.gz': anything,
     };
     await testBuilder(
-        const WebEntrypointBuilder(WebCompiler.Dart2Js,
-            nativeNullAssertions: false),
+        WebEntrypointBuilder.fromOptions(const BuilderOptions({
+          'compiler': 'dart2js',
+          'native_null_assertions': false,
+        })),
         assets,
         outputs: expectedOutputs);
   });

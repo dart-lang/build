@@ -19,15 +19,22 @@ final _resourcePool = Pool(maxWorkersPerTask);
 
 /// Invokes `dart compile wasm` to compile the primary input of [buildStep].
 ///
-/// Additionally, generates a `.js` entrypoint file invoking the entrypoint.
+/// This only emits the `.wasm` and `.mjs` files produced by `dart2wasm`. An
+/// entrypoint loader needs to be emitted separately.
 Future<void> bootstrapDart2Wasm(
-    BuildStep buildStep, List<String> additionalArguments) async {
-  await _resourcePool
-      .withResource(() => _bootstrapDart2Wasm(buildStep, additionalArguments));
+  BuildStep buildStep,
+  List<String> additionalArguments,
+  String javaScriptModuleExtension,
+) async {
+  await _resourcePool.withResource(() => _bootstrapDart2Wasm(
+      buildStep, additionalArguments, javaScriptModuleExtension));
 }
 
 Future<void> _bootstrapDart2Wasm(
-    BuildStep buildStep, List<String> additionalArguments) async {
+  BuildStep buildStep,
+  List<String> additionalArguments,
+  String javaScriptModuleExtension,
+) async {
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
       dartEntrypointId.changeExtension(moduleExtension(dart2wasmPlatform));
@@ -100,33 +107,17 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
   if (result.exitCode == 0 && await wasmOutputFile.exists()) {
     log.info('${result.stdout}\n${result.stderr}');
 
-    for (final extension in [wasmExtension, moduleJsExtension]) {
-      await scratchSpace.copyOutput(
-          dartEntrypointId.changeExtension(extension), buildStep);
-    }
+    await scratchSpace.copyOutput(
+        dartEntrypointId.changeExtension(wasmExtension), buildStep);
 
-    final entrypoint = _entrypointRunner(buildStep.inputId);
-    await buildStep.writeAsString(entrypoint.$1, entrypoint.$2);
+    final loaderContents = await scratchSpace
+        .fileFor(dartEntrypointId.changeExtension(moduleJsExtension))
+        .readAsBytes();
+    await buildStep.writeAsBytes(
+        dartEntrypointId.changeExtension(javaScriptModuleExtension),
+        loaderContents);
   } else {
     log.severe('ExitCode:${result.exitCode}\nStdOut:\n${result.stdout}\n'
         'StdErr:\n${result.stderr}');
   }
-}
-
-(AssetId, String) _entrypointRunner(AssetId wasmSource) {
-  final id = wasmSource.changeExtension('.dart.js');
-  final basename = p.url.basenameWithoutExtension(wasmSource.path);
-
-  return (
-    id,
-    '''
-(async () => {
-  let { instantiate, invoke } = await import("./$basename.mjs");
-
-  let modulePromise = WebAssembly.compileStreaming(fetch("$basename.wasm"));
-  let instantiated = await instantiate(modulePromise, {});
-  invoke(instantiated, []);
-})();
-'''
-  );
 }

@@ -39,14 +39,35 @@ then all you need is the `dev_dependency` listed above.
 
 ## Configuration
 
-### Configuring the default compiler
-
 By default, this package uses the [Dart development compiler][] (_dartdevc_,
 also known as _DDC_) to compile Dart to JavaScript. In release builds (running
-the build tool with `--release`, the default compiler is `dart2js`).
+the build tool with `--release`), `dart2js` is used as a compiler.
 
-If you would like to opt into dart2js for all builds, you will need to add a
-`build.yaml` file, which should look roughly like the following:
+In addition to compiling to JavaScript, this package also supports compiling to
+WebAssembly. Currently, `dart2wasm` needs to be enabled with builder options.
+To understand the impact of these options, be aware of differences between
+compiling to JavaScript and compiling to WebAssembly:
+
+1. Dart has two compilers emitting JavaScript: `dart2js` and `dartdevc` (which
+  supports incremental rebuilds but is typically only used for development).
+  For both JavaScript compilers, `build_web_compilers` generates a primary
+  entrypoint script and additional module files or source maps depending on
+  compiler options.
+2. Compiling with `dart2wasm` generates a WebAssembly module (a `.wasm` file)
+   and a JavaScript module (a `.mjs` file) exporting functions to instantiate
+   that module. `dart2wasm` alone generates no entrypoint file that could be
+   added as a `<script>` tag.
+
+In addition to invoking compilers, `build_web_compilers` can emit an entrypoint
+file suitable for `dart2wasm`. When both `dart2wasm` and a JavaScript compiler
+are enabled, the entrypoint file runs a feature detection for WasmGC and loads
+either the WebAssembly module or the JavaScript file depending on what the
+browser supports.
+
+### Compiler arguments
+
+To customize compilers, you will need to add a `build.yaml` file configuring
+the `build_web_compilers:entrypoint` builder, similar to the following:
 
 ```yaml
 targets:
@@ -58,15 +79,61 @@ targets:
         - test/**.browser_test.dart
         - web/**.dart
         options:
-          compiler: dart2js
-          # List any dart2js specific args here, or omit it.
-          dart2js_args:
-          - -O2
+          compilers:
+            # All compilers listed here are enabled:
+            dart2js:
+              # List any dart2js specific args here, or omit it.
+              args:
+                - O2
+            dart2wasm:
+              args:
+                - O3
 ```
 
-In addition to DDC and dart2js, this package also supports the dart2wasm
-compiler for compiling to WebAssembly with a JavaScript loader. It can be
-enabled by using `compiler: dart2wasm` in the build configuration:
+`build_runner` runs development builds by default, but can use builders with a
+different configuration for `--release` builds. For instance, if you wanted to
+compile with `dartdevc` only on development and `dart2js` + `dart2wasm` for
+release builds, you can use this configuration as a starting point:
+
+```yaml
+targets:
+  $default:
+    builders:
+      build_web_compilers:entrypoint:
+        generate_for:
+        - test/**.browser_test.dart
+        - web/**.dart
+        dev_options:
+          compilers:
+            dartdevc:
+        release_options:
+          compilers:
+            dart2js:
+              args:
+                - O2
+            dart2wasm:
+              args:
+                - O3
+```
+
+### Customizing emitted file names
+
+The file names emitted by `build_web_compilers` can be changed. The default
+names depend on which compilers are enabled:
+
+1. When only `dart2js` or `dartdevc` is enabled, a single `.dart.js` entrypoint
+   is emitted.
+2. When only `dart2wasm` is enabled, a single `.dart.js` entrypoint (loading
+   a generated `.wasm` module through a `.mjs` helper file) is generated.
+3. When both `dart2wasm` and a JavaScript compiler are enabled, then:
+   - The output of the JavaScript compiler is named `.dart2js.js` or `.ddc.js`
+     depending on the compiler.
+   - `dart2wasm` continues to emit a `.wasm` and a `.mjs` file.
+   - An entrypoint loader named `.dart.js` that loads the appropriate output
+     depending on browser features is generated.
+
+All names can be overridden by using the `loader` option or the `extension`
+flag in compiler options:
 
 ```yaml
 targets:
@@ -74,11 +141,40 @@ targets:
     builders:
       build_web_compilers:entrypoint:
         options:
-          compiler: dart2wasm
-          # List flags that should be forwarded to `dart compile wasm`
-          dart2wasm_args:
-          - -O2
+          loader: .load.js
+          compilers:
+            dart2js:
+              extension: .old.js
+            dart2wasm:
+              extension: .new.mjs
 ```
+
+This configuration uses both `dart2js` and `dart2wasm`, but names the final
+entrypoint for a `main.dart` file `main.load.js`. That loader will either load
+a `.new.mjs` file for WebAssembly or a `.old.js` for pure JavaScript.
+
+Note that the `loader` option is ignored when `dart2wasm` is not enabled, as
+it's the compiler requiring an additional loader to be emitted.
+
+### Customizing the WebAssembly loader
+
+In some cases, for instance when targeting Node.JS, the generated loader for
+`dart2wasm` may be unsuitable. The builtin loader can be disabled by setting
+the option to null:
+
+```yaml
+targets:
+  $default:
+    builders:
+      build_web_compilers:entrypoint:
+        options:
+          loader: null
+          compilers:
+            dart2js:
+            dart2wasm:
+```
+
+In this case, you need to use another builder or a predefined loader instead.
 
 ### Configuring -D environment variables
 
@@ -96,8 +192,14 @@ global_options:
         ANOTHER_VAR: false
 ```
 
-For dart2js, use the `dart2js_args` option. This may be configured globally, or
-per target.
+These may also be specified on the command line with a `--define` argument.
+
+```sh
+webdev serve -- '--define=build_web_compilers:ddc=environment={"SOME_VAR":"changed"}'
+```
+
+For dart2js, use the `args` option within the `dart2js` compiler entry. This
+may be configured globally, or per target.
 
 ```yaml
 targets:
@@ -105,13 +207,56 @@ targets:
     builders:
       build_web_compilers:entrypoint:
         options:
-          dart2js_args:
-          - -DSOME_VAR=some value
-          - -DANOTHER_VAR=true
+          compilers:
+            dart2js:
+              args:
+                - -DSOME_VAR=some value
+                - -DANOTHER_VAR=true
 ```
 
-Similarly, options are passed to `dart compile wasm` when using the
-`dart2wasm_args` option:
+To apply variables across multiple compilers, they have to be added to each
+one:
+
+```yaml
+targets:
+  $default:
+    builders:
+      build_web_compilers:entrypoint:
+        options:
+          compilers:
+            dart2js:
+              args:
+                - -DSOME_VAR=some value
+                - -DANOTHER_VAR=true
+            dart2wasm:
+              args:
+                - -DSOME_VAR=some value
+                - -DANOTHER_VAR=true
+```
+
+### Legacy builder options
+
+Previous versions of `build_web_compilers` only supported a single enabled
+compiler that would be enabled with the `compiler` option.
+If you only want to use `dart2js` for all builds, you can use that option:
+
+```yaml
+targets:
+  $default:
+    builders:
+      build_web_compilers:entrypoint:
+        # These are globs for the entrypoints you want to compile.
+        generate_for:
+        - test/**.browser_test.dart
+        - web/**.dart
+        options:
+          compiler: dart2js
+          # List any dart2js specific args here, or omit it.
+          dart2js_args:
+          - -O2
+```
+
+Similarly, only compiling with `dart2wasm`:
 
 ```yaml
 targets:
@@ -120,16 +265,15 @@ targets:
       build_web_compilers:entrypoint:
         options:
           compiler: dart2wasm
+          # List flags that should be forwarded to `dart compile wasm`
           dart2wasm_args:
-          - -DSOME_VAR=some value
-          - -DANOTHER_VAR=true
+          - -O2
 ```
 
-These may also be specified on the command line with a `--define` argument.
-
-```sh
-webdev serve -- '--define=build_web_compilers:ddc=environment={"SOME_VAR":"changed"}'
-```
+When no option is set, the `compiler` option is implicitly set to `dart2js` on
+release builds and to `dartdevc` otherwise.
+Note that the `compilers` option takes precedence over the `compiler` option
+when set.
 
 ## Manual Usage
 

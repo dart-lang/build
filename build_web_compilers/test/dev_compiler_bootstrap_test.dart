@@ -54,8 +54,10 @@ void main() {
         ])),
       };
       await testBuilder(
-          const WebEntrypointBuilder(WebCompiler.DartDevc,
-              nativeNullAssertions: false),
+          WebEntrypointBuilder.fromOptions(const BuilderOptions({
+            'compiler': 'dartdevc',
+            'native_null_assertions': false,
+          })),
           assets,
           outputs: expectedOutputs);
     });
@@ -93,8 +95,10 @@ void main() {
         'a|web/b.dart.js': isNotEmpty,
       };
       await testBuilder(
-          const WebEntrypointBuilder(WebCompiler.DartDevc,
-              nativeNullAssertions: false),
+          WebEntrypointBuilder.fromOptions(const BuilderOptions({
+            'compiler': 'dartdevc',
+            'native_null_assertions': false,
+          })),
           assets,
           outputs: expectedOutputs);
     });
@@ -116,8 +120,10 @@ void main() {
         'a|lib/app.dart.js': isNotEmpty,
       };
       await testBuilder(
-          const WebEntrypointBuilder(WebCompiler.DartDevc,
-              nativeNullAssertions: false),
+          WebEntrypointBuilder.fromOptions(const BuilderOptions({
+            'compiler': 'dartdevc',
+            'native_null_assertions': false,
+          })),
           assets,
           outputs: expectedOutputs);
     });

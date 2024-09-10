@@ -25,14 +25,20 @@ Future<void> bootstrapDart2Js(
   BuildStep buildStep,
   List<String> dart2JsArgs, {
   required bool? nativeNullAssertions,
+  String entrypointExtension = jsEntrypointExtension,
 }) =>
-    _resourcePool.withResource(() => _bootstrapDart2Js(buildStep, dart2JsArgs,
-        nativeNullAssertions: nativeNullAssertions));
+    _resourcePool.withResource(() => _bootstrapDart2Js(
+          buildStep,
+          dart2JsArgs,
+          nativeNullAssertions: nativeNullAssertions,
+          entrypointExtension: entrypointExtension,
+        ));
 
 Future<void> _bootstrapDart2Js(
   BuildStep buildStep,
   List<String> dart2JsArgs, {
   required bool? nativeNullAssertions,
+  required String entrypointExtension,
 }) async {
   var dartEntrypointId = buildStep.inputId;
   var moduleId =
@@ -74,7 +80,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
     var jsOutputPath = p.withoutExtension(dartUri.scheme == 'package'
             ? 'packages/${dartUri.path}'
             : dartUri.path.substring(1)) +
-        jsEntrypointExtension;
+        entrypointExtension;
     var librariesSpec = p.joinAll([sdkDir, 'lib', 'libraries.json']);
     _validateUserArgs(dart2JsArgs);
     args = dart2JsArgs.toList()
@@ -102,7 +108,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
         ...args,
       ],
       workingDirectory: scratchSpace.tempDir.path);
-  var jsOutputId = dartEntrypointId.changeExtension(jsEntrypointExtension);
+  var jsOutputId = dartEntrypointId.changeExtension(entrypointExtension);
   var jsOutputFile = scratchSpace.fileFor(jsOutputId);
   if (result.exitCode == 0 && await jsOutputFile.exists()) {
     log.info('${result.stdout}\n${result.stderr}');
@@ -111,7 +117,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
     var fileGlob = Glob('$dartFile.js*');
     var archive = Archive();
     await for (var jsFile in fileGlob.list(root: rootDir)) {
-      if (jsFile.path.endsWith(jsEntrypointExtension) ||
+      if (jsFile.path.endsWith(entrypointExtension) ||
           jsFile.path.endsWith(jsEntrypointSourceMapExtension)) {
         // These are explicitly output, and are not part of the archive.
         continue;
