@@ -9,26 +9,26 @@ import 'util.dart';
 void main() {
   late Map<String, Object> assets;
 
-  group('generates loader script', () {
-    setUp(() async {
-      assets = {
-        'a|web/index.dart': '''
+  setUp(() async {
+    assets = {
+      'a|web/index.dart': '''
         void main() {
           print('Hello world!');
         }
       ''',
-      };
+    };
 
-      // Set up all the other required inputs for this test.
-      await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
-      for (final platform in [dart2jsPlatform, dart2wasmPlatform]) {
-        await testBuilderAndCollectAssets(MetaModuleBuilder(platform), assets);
-        await testBuilderAndCollectAssets(
-            MetaModuleCleanBuilder(platform), assets);
-        await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
-      }
-    });
+    // Set up all the other required inputs for this test.
+    await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
+    for (final platform in [dart2jsPlatform, dart2wasmPlatform]) {
+      await testBuilderAndCollectAssets(MetaModuleBuilder(platform), assets);
+      await testBuilderAndCollectAssets(
+          MetaModuleCleanBuilder(platform), assets);
+      await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
+    }
+  });
 
+  group('generates loader script', () {
     test('with old compiler option', () async {
       await testBuilder(
         WebEntrypointBuilder.fromOptions(
