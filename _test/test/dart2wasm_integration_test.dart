@@ -68,7 +68,13 @@ void main() {
           '--config=both',
           '--output=${d.sandbox}',
         ],
-        testArgs: _testArgs,
+        testArgs: [
+          ..._testArgs,
+          '-p',
+          'chrome_without_wasm',
+          '-p',
+          'chrome',
+        ],
       );
       await _expectWasCompiledWithDart2Wasm();
 

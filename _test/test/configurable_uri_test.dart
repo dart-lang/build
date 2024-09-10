@@ -30,7 +30,7 @@ void main() {
     test('exports', () {
       expect(exported.message, contains('WebAssembly'));
     });
-  }, testOn: 'dart2wasm');
+  }, testOn: 'dart2wasm && !chrome_without_wasm');
 
   group('vm', () {
     test('imports', () {
