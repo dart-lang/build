@@ -824,7 +824,7 @@ foo generated content
       PartBuilder(
         [const UnformattedCodeGenerator()],
         '.foo.dart',
-        formatOutput: (s) => s,
+        formatOutput: (s, _) => s,
       ),
       {'$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'},
       generateFor: {'$_pkgName|lib/a.dart'},
@@ -842,7 +842,7 @@ foo generated content
       PartBuilder(
         [const UnformattedCodeGenerator()],
         '.foo.dart',
-        formatOutput: (_) => customOutput,
+        formatOutput: (_, __) => customOutput,
       ),
       {'$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'},
       generateFor: {'$_pkgName|lib/a.dart'},
@@ -938,7 +938,7 @@ Map<String, String> _createPackageStub({
 PartBuilder _unformattedLiteral([String? content]) => PartBuilder(
       [_StubGenerator('Literal', () => content)],
       '.foo.dart',
-      formatOutput: (s) => s,
+      formatOutput: (s, _) => s,
     );
 
 class _StubGenerator implements Generator {

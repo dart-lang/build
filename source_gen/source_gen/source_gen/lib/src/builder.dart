@@ -8,6 +8,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:dart_style/dart_style.dart';
+import 'package:pub_semver/pub_semver.dart';
 
 import 'generated_output.dart';
 import 'generator.dart';
@@ -18,7 +19,10 @@ import 'utils.dart';
 /// A [Builder] wrapping on one or more [Generator]s.
 class _Builder extends Builder {
   /// Function that determines how the generated code is formatted.
-  final String Function(String) formatOutput;
+  ///
+  /// The `languageVersion` is the version to parse the file with, but it may be
+  /// overridden using a language version comment in the file.
+  final String Function(String code, Version languageVersion) formatOutput;
 
   /// The generators run for each targeted library.
   final List<Generator> _generators;
@@ -43,7 +47,7 @@ class _Builder extends Builder {
   /// [options] to allow output files to be generated into a different directory
   _Builder(
     this._generators, {
-    String Function(String code)? formatOutput,
+    this.formatOutput = _defaultFormatOutput,
     String generatedExtension = '.g.dart',
     List<String> additionalOutputExtensions = const [],
     String? header,
@@ -57,7 +61,6 @@ class _Builder extends Builder {
             ...additionalOutputExtensions,
           ],
         }),
-        formatOutput = formatOutput ?? _formatter.format,
         _header = (header ?? defaultFileHeader).trim() {
     if (_generatedExtension.isEmpty || !_generatedExtension.startsWith('.')) {
       throw ArgumentError.value(
@@ -165,7 +168,8 @@ class _Builder extends Builder {
     var genPartContent = contentBuffer.toString();
 
     try {
-      genPartContent = formatOutput(genPartContent);
+      genPartContent =
+          formatOutput(genPartContent, library.languageVersion.effective);
     } catch (e, stack) {
       log.severe(
         '''
@@ -299,7 +303,7 @@ class LibraryBuilder extends _Builder {
   /// should be indicated in [additionalOutputExtensions].
   ///
   /// [formatOutput] is called to format the generated code. Defaults to
-  /// [DartFormatter.format].
+  /// using the standard [DartFormatter].
   ///
   /// [header] is used to specify the content at the top of each generated file.
   /// If `null`, the content of [defaultFileHeader] is used.
@@ -309,21 +313,13 @@ class LibraryBuilder extends _Builder {
   /// libraries.
   LibraryBuilder(
     Generator generator, {
-    String Function(String code)? formatOutput,
-    String generatedExtension = '.g.dart',
-    List<String> additionalOutputExtensions = const [],
-    String? header,
-    bool allowSyntaxErrors = false,
-    BuilderOptions? options,
-  }) : super(
-          [generator],
-          formatOutput: formatOutput,
-          generatedExtension: generatedExtension,
-          additionalOutputExtensions: additionalOutputExtensions,
-          header: header,
-          allowSyntaxErrors: allowSyntaxErrors,
-          options: options,
-        );
+    super.formatOutput,
+    super.generatedExtension,
+    super.additionalOutputExtensions,
+    super.header,
+    super.allowSyntaxErrors,
+    super.options,
+  }) : super([generator]);
 }
 
 Stream<GeneratedOutput> _generate(
@@ -381,9 +377,10 @@ Future<bool> _hasAnyTopLevelAnnotations(
   return false;
 }
 
-final _formatter = DartFormatter(fixes: [StyleFix.singleCascadeStatements]);
-
 const defaultFileHeader = '// GENERATED CODE - DO NOT MODIFY BY HAND';
+
+String _defaultFormatOutput(String code, Version version) =>
+    DartFormatter(languageVersion: version).format(code);
 
 final _headerLine = '// '.padRight(77, '*');
 

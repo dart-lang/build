@@ -1,5 +1,10 @@
-## 1.5.1-wip
+## 2.0.0-wip
 
+- **Breaking Change**: Change `formatOutput` function to accept a language
+  version parameter.
+- **Formatting Change**: Generated code will no longer apply any fixes by
+  default (previously it would apply the single cascades statements fix). The
+  new formatter does not support applying fixes.
 - Document deduplication behavior for the output of
   `GeneratorForAnnotation.generateForAnnotatedElement`.
 - Support all the glob quotes.
