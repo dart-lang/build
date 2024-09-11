@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - uses: dart-lang/setup-dart@0a8a0fc875eb934c15d08629302413c671d3f672
         with:
-          sdk: 3.3.0
+          sdk: 3.5.0
       - id: install
         name: Install dependencies
         run: dart pub get
@@ -37,7 +37,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sdk: [3.3.0, dev]
+        sdk: [3.5.0, dev]
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - uses: dart-lang/setup-dart@0a8a0fc875eb934c15d08629302413c671d3f672
@@ -59,7 +59,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        sdk: [3.3.0, dev]
+        sdk: [3.5.0, dev]
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - uses: dart-lang/setup-dart@0a8a0fc875eb934c15d08629302413c671d3f672
