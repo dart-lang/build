@@ -6,6 +6,8 @@
 * Require Dart >= 3.3.0.
 * Require analyzer 6.4.1.
 * Add support for extension types.
+* Require dart_style >= 2.3.7, so that the current Dart language version can be
+  passed to `DartFormatter`.
 
 ## 5.4.4
 
