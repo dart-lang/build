@@ -9,6 +9,13 @@ tags:
   # moment, but want to avoid warnings from the test runner about using undefined
   # targets.
 
+define_platforms:
+  chrome_without_wasm:
+    name: chrome_without_wasm
+    extends: chrome
+    settings:
+      arguments: "--js-flags=--noexpose_wasm"
+
 override_platforms:
   chrome:
     settings:

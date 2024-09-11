@@ -5,6 +5,7 @@
 import 'package:build/build.dart';
 import 'package:build_web_compilers/src/web_entrypoint_builder.dart';
 import 'package:test/test.dart';
+import 'package:yaml/yaml.dart';
 
 void main() {
   test('uses ddc by default', () {
@@ -67,18 +68,20 @@ void main() {
   });
 
   test('can enable multiple compilers', () {
-    final options = EntrypointBuilderOptions.fromOptions(const BuilderOptions({
-      'compilers': {
-        'dart2js': {
-          'args': ['-O4'],
-        },
-        'dart2wasm': {
-          'extension': '.custom_extension.js',
-          'args': ['-O3'],
-        },
-      },
-      'loader': '.dart.js',
-    }));
+    final yamlOptions = loadYaml('''
+compilers:
+  dart2js:
+    args:
+      - "-O4"
+  dart2wasm:
+    extension: .custom_extension.js
+    args:
+      - "-O3"
+loader: .dart.js
+''') as Map;
+
+    final options = EntrypointBuilderOptions.fromOptions(
+        BuilderOptions(yamlOptions.cast()));
 
     expect(options.nativeNullAssertions, isNull);
     expect(options.loaderExtension, '.dart.js');

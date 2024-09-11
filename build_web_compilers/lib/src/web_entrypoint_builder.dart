@@ -163,17 +163,16 @@ final class EntrypointBuilderOptions {
     // dart2js + dart2wasm). Since the default builder configuration doesn't
     // use the compilers key, we preserve backwards compatibility.
     if (config.containsKey(compilersOption)) {
-      var configuredCompilers = (config[compilersOption] as Map?)
-              ?.cast<String, Map<String, Object?>?>() ??
-          const {};
+      var configuredCompilers =
+          (config[compilersOption] as Map?)?.cast<String, Map?>() ?? const {};
       var hasDart2Wasm = false;
 
       for (var MapEntry(:key, :value) in configuredCompilers.entries) {
         const extensionOption = 'extension';
         const argsOption = 'args';
         const supportedOptions = [extensionOption, argsOption];
-        validateOptions(value ?? const {}, supportedOptions,
-            'build_web_compilers:entrypoint');
+        validateOptions(Map<String, dynamic>.from(value ?? const {}),
+            supportedOptions, 'build_web_compilers:entrypoint');
 
         var compiler = WebCompiler.fromOptionName(key);
         compilers.add(EnabledEntrypointCompiler(
@@ -336,9 +335,6 @@ class WebEntrypointBuilder implements Builder {
         options.optionsFor(WebCompiler.DartDevc);
 
     var loaderResult = StringBuffer('''(async () => {
-function resolveUrlWithSegments(...segments) {
-  return new URL(joinPathSegments(...segments), document.baseURI).toString()
-}
 ''');
 
     // If we're compiling to JS, start a feature detection to prefer wasm but
@@ -351,7 +347,7 @@ function supportsWasmGC() {
   //
   // Copied from https://github.com/GoogleChromeLabs/wasm-feature-detect/blob/main/src/detectors/gc/index.js
   const bytes = [0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 95, 1, 120, 0];
-  return WebAssembly && WebAssembly.validate(new Uint8Array(bytes));
+  return 'WebAssembly' in self && WebAssembly.validate(new Uint8Array(bytes));
 }
 
 if (supportsWasmGC()) {
@@ -371,7 +367,7 @@ invoke(instantiated, []);
 } else {
 const scriptTag = document.createElement("script");
 scriptTag.type = "application/javascript";
-scriptTag.src = resolveUrlWithSegments("./$basename${jsCompiler.extension}");
+scriptTag.src = new URL("./$basename${jsCompiler.extension}", document.baseURI).toString();
 document.head.append(scriptTag);
 }
 ''');

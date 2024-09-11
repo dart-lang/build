@@ -63,6 +63,7 @@ void main() {
         outputs: {
           'a|web/index.mjs': anything,
           'a|web/index.wasm': anything,
+          'a|web/index.dart.js.tar.gz': anything,
           'a|web/index.dart2js.js': decodedMatches(contains('Hello world!')),
           'a|web/index.dart.js': decodedMatches(
             stringContainsInOrder(
@@ -70,7 +71,7 @@ void main() {
                 'if (supportsWasmGC())',
                 'WebAssembly.compileStreaming',
                 'else',
-                'scriptTag.src = resolveUrlWithSegments("./index.dart2js.js");'
+                'scriptTag.src = new URL("./index.dart2js.js", document.baseURI).toString();'
               ],
             ),
           ),
@@ -96,6 +97,7 @@ void main() {
       outputs: {
         'a|web/index.mjs': anything,
         'a|web/index.wasm': anything,
+        'a|web/index.dart.js.tar.gz': anything,
         'a|web/index.dart2js.js': decodedMatches(contains('Hello world!')),
       },
     );
