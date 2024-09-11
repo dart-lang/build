@@ -1,4 +1,4 @@
-## 4.1.0-wip
+## 4.1.0-beta.0
 
 - Support compiling to WebAssembly by using `dart2wasm` as a value for the
   compiler option.
