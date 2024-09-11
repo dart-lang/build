@@ -227,7 +227,6 @@ void main() {
         @_privateField
         @Wrapper(_privateFunction)
         @ProcessStartMode.normal
-        @ExtensionTypeWithStaticField.staticField
         class Example {}
 
         class Int64Like implements Int64LikeBase{
@@ -297,10 +296,6 @@ void main() {
         }
 
         void _privateFunction() {}
-
-        extension type const ExtensionTypeWithStaticField._(int _) {
-          static const staticField = ExtensionTypeWithStaticField._(1);
-        }
       ''',
         (resolver) async => (await resolver.findLibraryByName('test_lib'))!,
       );
@@ -397,12 +392,6 @@ void main() {
       expect(staticFieldWithPrivateImpl.accessor, 'ProcessStartMode.normal');
       expect(staticFieldWithPrivateImpl.isPrivate, isFalse);
       expect(staticFieldWithPrivateImpl.source.fragment, isEmpty);
-    });
-
-    test('should decode static fields on extension types', () {
-      final fieldOnly = constants[14].revive();
-      expect(fieldOnly.source.fragment, isEmpty);
-      expect(fieldOnly.accessor, 'ExtensionTypeWithStaticField.staticField');
     });
   });
 }

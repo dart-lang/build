@@ -23,21 +23,6 @@ import '../utils.dart';
 /// Dart source code (such as referencing private constructors). It is up to the
 /// build tool(s) using this library to surface error messages to the user.
 Revivable reviveInstance(DartObject object, [LibraryElement? origin]) {
-  final variableElement = object.variable;
-  if (variableElement != null &&
-      variableElement.isConst &&
-      variableElement.isPublic) {
-    final url = Uri.parse(urlOfElement(variableElement)).removeFragment();
-    if (variableElement.enclosingElement
-        case final TypeDefiningElement enclosingElement?) {
-      return Revivable._(
-        source: url,
-        accessor: '${enclosingElement.name}.${variableElement.name}',
-      );
-    }
-    return Revivable._(source: url, accessor: variableElement.name);
-  }
-
   final objectType = object.type;
   Element? element = objectType!.alias?.element;
   if (element == null) {
