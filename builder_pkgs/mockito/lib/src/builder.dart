@@ -484,7 +484,7 @@ class _MockTargetGatherer {
       // annotations, on one element or even on different elements in a library.
       for (final annotation in element.metadata) {
         if (annotation.element is! ConstructorElement) continue;
-        final annotationClass = annotation.element!.enclosingElement!.name;
+        final annotationClass = annotation.element!.enclosingElement3!.name;
         switch (annotationClass) {
           case 'GenerateMocks':
             mockTargets
@@ -1734,7 +1734,7 @@ class _MockClassInfo {
                   parameter.computeConstantValue()!, parameter)
               .code;
         } on _ReviveException catch (e) {
-          final method = parameter.enclosingElement!;
+          final method = parameter.enclosingElement3!;
           throw InvalidMockitoAnnotationException(
               'Mockito cannot generate a valid override for method '
               "'${mockTarget.interfaceElement.displayName}.${method.displayName}'; "
@@ -1765,8 +1765,8 @@ class _MockClassInfo {
     if (!parameter.isCovariant) {
       return type;
     }
-    final method = parameter.enclosingElement as MethodElement;
-    final class_ = method.enclosingElement as InterfaceElement;
+    final method = parameter.enclosingElement3 as MethodElement;
+    final class_ = method.enclosingElement3 as InterfaceElement;
     final name = Name(method.librarySource.uri, method.name);
     final overriddenMethods = inheritanceManager.getOverridden2(class_, name);
     if (overriddenMethods == null) {
@@ -1776,7 +1776,7 @@ class _MockClassInfo {
     while (allOverriddenMethods.isNotEmpty) {
       final overriddenMethod = allOverriddenMethods.removeFirst();
       final secondaryOverrides = inheritanceManager.getOverridden2(
-          overriddenMethod.enclosingElement as InterfaceElement, name);
+          overriddenMethod.enclosingElement3 as InterfaceElement, name);
       if (secondaryOverrides != null) {
         allOverriddenMethods.addAll(secondaryOverrides);
       }
@@ -2313,12 +2313,12 @@ extension on Element {
     } else if (this is EnumElement) {
       return "The enum '$name'";
     } else if (this is MethodElement) {
-      final className = enclosingElement!.name;
+      final className = enclosingElement3!.name;
       return "The method '$className.$name'";
     } else if (this is MixinElement) {
       return "The mixin '$name'";
     } else if (this is PropertyAccessorElement) {
-      final className = enclosingElement!.name;
+      final className = enclosingElement3!.name;
       return "The property accessor '$className.$name'";
     } else {
       return 'unknown element';
