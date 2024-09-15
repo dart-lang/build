@@ -1,3 +1,7 @@
+## 4.1.0-dev
+
+- Fix loading compiled modules from subdirectories.
+
 ## 4.1.0-beta.0
 
 - Support compiling to WebAssembly by using `dart2wasm` as a value for the

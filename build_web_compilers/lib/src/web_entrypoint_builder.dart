@@ -334,7 +334,15 @@ class WebEntrypointBuilder implements Builder {
     var jsCompiler = options.optionsFor(WebCompiler.Dart2Js) ??
         options.optionsFor(WebCompiler.DartDevc);
 
-    var loaderResult = StringBuffer('''(async () => {
+    var loaderResult = StringBuffer('''
+(async () => {
+const thisScript = document.currentScript;
+
+function relativeURL(ref) {
+  const base = thisScript?.src ?? document.baseURI;
+  return new URL(ref, base).toString();
+}
+
 ''');
 
     // If we're compiling to JS, start a feature detection to prefer wasm but
@@ -357,7 +365,7 @@ if (supportsWasmGC()) {
     loaderResult.writeln('''
 let { instantiate, invoke } = await import("./$basename${wasmCompiler.extension}");
 
-let modulePromise = WebAssembly.compileStreaming(fetch("$basename.wasm"));
+let modulePromise = WebAssembly.compileStreaming(fetch(relativeURL("$basename.wasm")));
 let instantiated = await instantiate(modulePromise, {});
 invoke(instantiated, []);
 ''');
@@ -367,7 +375,7 @@ invoke(instantiated, []);
 } else {
 const scriptTag = document.createElement("script");
 scriptTag.type = "application/javascript";
-scriptTag.src = new URL("./$basename${jsCompiler.extension}", document.baseURI).toString();
+scriptTag.src = relativeURL("./$basename${jsCompiler.extension}")
 document.head.append(scriptTag);
 }
 ''');
