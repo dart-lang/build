@@ -365,8 +365,6 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
             .map((id) => serializer.findAssetIndex(id,
                 from: node.id, field: 'deletedBy'))
             .toList(growable: false);
-      default:
-        throw RangeError.index(index, this);
     }
   }
 
@@ -418,8 +416,6 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
             from: generatedNode.id, field: 'builderOptions');
       case _GeneratedField.isHidden:
         return _serializeBool(generatedNode.isHidden);
-      default:
-        throw RangeError.index(index, this);
     }
   }
 }
@@ -459,8 +455,6 @@ class _WrappedGlobAssetNode extends _WrappedAssetNode {
             .map((id) => serializer.findAssetIndex(id,
                 from: globNode.id, field: 'results'))
             .toList(growable: false);
-      default:
-        throw RangeError.index(index, this);
     }
   }
 }
@@ -500,8 +494,6 @@ class _WrappedPostProcessAnchorNode extends _WrappedAssetNode {
       case _PostAnchorField.primaryInput:
         return serializer.findAssetIndex(wrappedNode.primaryInput,
             from: wrappedNode.id, field: 'primaryInput');
-      default:
-        throw RangeError.index(index, this);
     }
   }
 }

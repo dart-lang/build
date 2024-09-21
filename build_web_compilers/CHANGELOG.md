@@ -1,4 +1,4 @@
-## 4.1.0-dev
+## 4.1.0-wip
 
 - Fix loading compiled modules from subdirectories.
 
