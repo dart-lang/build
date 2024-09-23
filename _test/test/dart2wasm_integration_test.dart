@@ -18,7 +18,7 @@ import 'common/utils.dart';
 const _testArgs = ['-c', 'dart2wasm'];
 
 void main() {
-  group('Can run tests using dart2wasm', () {
+  group('Can run tests using dart2wasm', timeout: const Timeout.factor(2), () {
     test('via build.yaml config flag', () async {
       await expectTestsPass(
         usePrecompiled: true,

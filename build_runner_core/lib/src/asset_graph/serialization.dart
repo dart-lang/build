@@ -365,8 +365,6 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
             .map((id) => serializer.findAssetIndex(id,
                 from: node.id, field: 'deletedBy'))
             .toList(growable: false);
-      default:
-        throw RangeError.index(index, this);
     }
   }
 
@@ -399,28 +397,23 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
   Object? operator [](int index) {
     if (index < _serializedOffset) return super[index];
     var fieldId = _GeneratedField.values[index - _serializedOffset];
-    switch (fieldId) {
-      case _GeneratedField.primaryInput:
-        return serializer.findAssetIndex(generatedNode.primaryInput,
-            from: generatedNode.id, field: 'primaryInput');
-      case _GeneratedField.wasOutput:
-        return _serializeBool(generatedNode.wasOutput);
-      case _GeneratedField.isFailure:
-        return _serializeBool(generatedNode.isFailure);
-      case _GeneratedField.phaseNumber:
-        return generatedNode.phaseNumber;
-      case _GeneratedField.state:
-        return generatedNode.state.index;
-      case _GeneratedField.previousInputsDigest:
-        return _serializeDigest(generatedNode.previousInputsDigest);
-      case _GeneratedField.builderOptions:
-        return serializer.findAssetIndex(generatedNode.builderOptionsId,
-            from: generatedNode.id, field: 'builderOptions');
-      case _GeneratedField.isHidden:
-        return _serializeBool(generatedNode.isHidden);
-      default:
-        throw RangeError.index(index, this);
-    }
+    return switch (fieldId) {
+      _GeneratedField.primaryInput => serializer.findAssetIndex(
+          generatedNode.primaryInput,
+          from: generatedNode.id,
+          field: 'primaryInput'),
+      _GeneratedField.wasOutput => _serializeBool(generatedNode.wasOutput),
+      _GeneratedField.isFailure => _serializeBool(generatedNode.isFailure),
+      _GeneratedField.phaseNumber => generatedNode.phaseNumber,
+      _GeneratedField.state => generatedNode.state.index,
+      _GeneratedField.previousInputsDigest =>
+        _serializeDigest(generatedNode.previousInputsDigest),
+      _GeneratedField.builderOptions => serializer.findAssetIndex(
+          generatedNode.builderOptionsId,
+          from: generatedNode.id,
+          field: 'builderOptions'),
+      _GeneratedField.isHidden => _serializeBool(generatedNode.isHidden)
+    };
   }
 }
 
@@ -447,21 +440,15 @@ class _WrappedGlobAssetNode extends _WrappedAssetNode {
   Object? operator [](int index) {
     if (index < _serializedOffset) return super[index];
     var fieldId = _GlobField.values[index - _serializedOffset];
-    switch (fieldId) {
-      case _GlobField.phaseNumber:
-        return globNode.phaseNumber;
-      case _GlobField.state:
-        return globNode.state.index;
-      case _GlobField.glob:
-        return globNode.glob.pattern;
-      case _GlobField.results:
-        return globNode.results!
-            .map((id) => serializer.findAssetIndex(id,
-                from: globNode.id, field: 'results'))
-            .toList(growable: false);
-      default:
-        throw RangeError.index(index, this);
-    }
+    return switch (fieldId) {
+      _GlobField.phaseNumber => globNode.phaseNumber,
+      _GlobField.state => globNode.state.index,
+      _GlobField.glob => globNode.glob.pattern,
+      _GlobField.results => globNode.results!
+          .map((id) => serializer.findAssetIndex(id,
+              from: globNode.id, field: 'results'))
+          .toList(growable: false)
+    };
   }
 }
 
@@ -489,20 +476,19 @@ class _WrappedPostProcessAnchorNode extends _WrappedAssetNode {
   Object? operator [](int index) {
     if (index < _serializedOffset) return super[index];
     var fieldId = _PostAnchorField.values[index - _serializedOffset];
-    switch (fieldId) {
-      case _PostAnchorField.actionNumber:
-        return wrappedNode.actionNumber;
-      case _PostAnchorField.builderOptions:
-        return serializer.findAssetIndex(wrappedNode.builderOptionsId,
-            from: wrappedNode.id, field: 'builderOptions');
-      case _PostAnchorField.previousInputsDigest:
-        return _serializeDigest(wrappedNode.previousInputsDigest);
-      case _PostAnchorField.primaryInput:
-        return serializer.findAssetIndex(wrappedNode.primaryInput,
-            from: wrappedNode.id, field: 'primaryInput');
-      default:
-        throw RangeError.index(index, this);
-    }
+    return switch (fieldId) {
+      _PostAnchorField.actionNumber => wrappedNode.actionNumber,
+      _PostAnchorField.builderOptions => serializer.findAssetIndex(
+          wrappedNode.builderOptionsId,
+          from: wrappedNode.id,
+          field: 'builderOptions'),
+      _PostAnchorField.previousInputsDigest =>
+        _serializeDigest(wrappedNode.previousInputsDigest),
+      _PostAnchorField.primaryInput => serializer.findAssetIndex(
+          wrappedNode.primaryInput,
+          from: wrappedNode.id,
+          field: 'primaryInput')
+    };
   }
 }
 
