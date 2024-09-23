@@ -48,26 +48,22 @@ void main() {
     test('edit test to fail and rerun', () async {
       await replaceAllInFile(
           'test/common/message.dart', 'Hello World!', 'Goodbye World!');
-      await expectTestsFail(testArgs: ['-x', 'multiple-entrypoints']);
+      await expectTestsFail();
     });
 
     test('edit dependency lib causing test to fail and rerun', () async {
       await replaceAllInFile('lib/app.dart', 'Hello World!', 'Goodbye World!');
-      await expectTestsFail(testArgs: ['-x', 'multiple-entrypoints']);
+      await expectTestsFail();
     });
 
     test('create new test', () async {
       await createFile(p.join('test', 'other_test.dart'), basicTestContents);
-      await expectTestsPass(
-          expectedNumRan: 7, testArgs: ['-x', 'multiple-entrypoints']);
+      await expectTestsPass(expectedNumRan: 7);
     });
 
     test('delete test', () async {
       await deleteFile(p.join('test', 'sub-dir', 'subdir_test.dart'));
-      await expectTestsPass(
-        expectedNumRan: 5,
-        testArgs: ['-x', 'multiple-entrypoints'],
-      );
+      await expectTestsPass(expectedNumRan: 5);
     });
   });
 }

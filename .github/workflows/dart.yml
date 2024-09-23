@@ -1012,7 +1012,7 @@ jobs:
       - job_007
       - job_008
   job_024:
-    name: "unit_test; linux; Dart main; PKG: _test; `dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random -x multiple-entrypoints`"
+    name: "unit_test; linux; Dart main; PKG: _test; `dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -1037,8 +1037,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-      - name: "_test; dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random -x multiple-entrypoints"
-        run: "dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random -x multiple-entrypoints"
+      - name: "_test; dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random"
+        run: "dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
     needs:
@@ -1584,7 +1584,7 @@ jobs:
       - job_007
       - job_008
   job_042:
-    name: "unit_test; windows; Dart main; PKG: _test; `dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random -x multiple-entrypoints`"
+    name: "unit_test; windows; Dart main; PKG: _test; `dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
       - name: Setup Dart SDK
@@ -1599,8 +1599,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: _test
-      - name: "_test; dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random -x multiple-entrypoints"
-        run: "dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random -x multiple-entrypoints"
+      - name: "_test; dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random"
+        run: "dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random"
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
     needs:

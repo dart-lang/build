@@ -84,10 +84,7 @@ void main() {
         nextBuild = nextSuccessfulBuild;
         await replaceAllInFile(path, '1;', "'Hello World!';");
         await nextBuild;
-
-        // Disable tests with multiple entrypoints since we're compiling with
-        // ddc.
-        await expectTestsPass(testArgs: ['-x', 'multiple-entrypoints']);
+        await expectTestsPass();
       });
 
       test('build errors can be fixed', () async {

@@ -68,8 +68,8 @@ for PKG in ${PKGS}; do
         dart analyze --fatal-infos . || EXIT_CODE=$?
         ;;
       command_0)
-        echo 'dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random -x multiple-entrypoints'
-        dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random -x multiple-entrypoints || EXIT_CODE=$?
+        echo 'dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random'
+        dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random || EXIT_CODE=$?
         ;;
       command_1)
         echo 'dart run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random'
