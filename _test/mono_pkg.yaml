@@ -10,8 +10,8 @@ stages:
   - analyze: --fatal-infos .
     os: linux
 - unit_test:
-  - command: dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random
-  # TODO(https://github.com/dart-lang/build/issues/3423): restore this on windows 
+  - command: dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random -x multiple-entrypoints
+  # TODO(https://github.com/dart-lang/build/issues/3423): restore this on windows
   - command: dart run build_runner test -- -p vm test/configurable_uri_test.dart --test-randomize-ordering-seed=random
     os: linux
 - e2e_test:

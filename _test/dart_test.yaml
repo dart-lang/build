@@ -4,10 +4,14 @@ timeout: 16x
 concurrency: 1
 
 tags:
-  integration:
   # This tag is used for integration tests - we don't need special options at the
   # moment, but want to avoid warnings from the test runner about using undefined
   # targets.
+  integration:
+  # Used for subdir_source_test.dart, which deliberately includes multiple Dart
+  # entrypoints where one is from a subdirectory. Multiple entrypoints don't
+  # appear to work with ddc, so we skip this test when running ddc tests.
+  multiple-entrypoints:
 
 define_platforms:
   chrome_without_wasm:
