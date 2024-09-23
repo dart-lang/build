@@ -375,7 +375,7 @@ invoke(instantiated, []);
 } else {
 const scriptTag = document.createElement("script");
 scriptTag.type = "application/javascript";
-scriptTag.src = relativeURL("./$basename${jsCompiler.extension}")
+scriptTag.src = relativeURL("./$basename${jsCompiler.extension}");
 document.head.append(scriptTag);
 }
 ''');

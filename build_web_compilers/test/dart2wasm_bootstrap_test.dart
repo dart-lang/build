@@ -71,7 +71,7 @@ void main() {
                 'if (supportsWasmGC())',
                 'WebAssembly.compileStreaming',
                 'else',
-                'scriptTag.src = new URL("./index.dart2js.js", document.baseURI).toString();'
+                'scriptTag.src = relativeURL("./index.dart2js.js");'
               ],
             ),
           ),
