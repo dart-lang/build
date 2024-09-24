@@ -10,6 +10,7 @@
 - Support all the glob quotes.
 - Require `analyzer: ^6.9.0`
 - Require Dart 3.5.0
+- `LibraryBuilder`, `PartBuilder`, and `SharedPartBuilder` now take an optional `writeDescriptions` boolean. When set to `false`, headers and generator descriptions for the files will not be included in the builder output.
 
 ## 1.5.0
 

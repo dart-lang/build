@@ -84,6 +84,59 @@ void main() {
     );
   });
 
+  test('Omits generated comments if writeDescriptions is explicitly false',
+      () async {
+    final srcs = _createPackageStub();
+
+    // Explicitly empty header
+    final builderEmptyHeader = LibraryBuilder(
+      const CommentGenerator(),
+      header: '',
+      writeDescriptions: false,
+    );
+
+    const expected = '''
+// Code for "class Person"
+// Code for "class Customer"
+''';
+
+    await testBuilder(
+      builderEmptyHeader,
+      srcs,
+      generateFor: {'$_pkgName|lib/test_lib.dart'},
+      outputs: {
+        '$_pkgName|lib/test_lib.g.dart': decodedMatches(startsWith(expected)),
+      },
+    );
+  });
+
+  test('When writeDescriptions is true, generated comments are present',
+      () async {
+    final srcs = _createPackageStub();
+
+    // Null value for writeDescriptions resolves to true
+    final builder = LibraryBuilder(
+      const CommentGenerator(),
+      // We omit header to inspect the generator descriptions
+      header: '',
+    );
+
+    const expected = '''
+// **************************************************************************
+// CommentGenerator
+// **************************************************************************
+''';
+
+    await testBuilder(
+      builder,
+      srcs,
+      generateFor: {'$_pkgName|lib/test_lib.dart'},
+      outputs: {
+        '$_pkgName|lib/test_lib.g.dart': decodedMatches(contains(expected)),
+      },
+    );
+  });
+
   test('Expect no error when multiple generators used on nonstandalone builder',
       () async {
     expect(
