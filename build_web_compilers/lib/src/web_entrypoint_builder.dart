@@ -363,11 +363,11 @@ if (supportsWasmGC()) {
     }
 
     loaderResult.writeln('''
-let { instantiate, invoke } = await import("./$basename${wasmCompiler.extension}");
+let { compileStreaming } = await import("./$basename${wasmCompiler.extension}");
 
-let modulePromise = WebAssembly.compileStreaming(fetch(relativeURL("$basename.wasm")));
-let instantiated = await instantiate(modulePromise, {});
-invoke(instantiated, []);
+let app = await compileStreaming(fetch(relativeURL("$basename.wasm")));
+let module = await app.instantiate({});
+module.invokeMain();
 ''');
 
     if (jsCompiler != null) {
