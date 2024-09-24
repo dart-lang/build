@@ -111,8 +111,9 @@ Future<void> stopServer({bool? cleanUp}) async {
 /// Checks whether the current git client is "clean" (no pending changes) for
 /// this package directory.
 bool _gitIsClean() {
-  var gitStatus = Process.runSync('git', ['status', '.']).stdout as String;
-  return gitStatus.contains('nothing to commit, working tree clean');
+  var gitStatus =
+      Process.runSync('git', ['status', '.', '--porcelain']).stdout as String;
+  return gitStatus.isEmpty;
 }
 
 /// Ensures that the current directory is a "clean" git client (no pending
