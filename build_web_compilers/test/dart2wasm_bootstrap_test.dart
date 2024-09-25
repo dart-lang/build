@@ -41,8 +41,7 @@ void main() {
         outputs: {
           'a|web/index.mjs': anything,
           'a|web/index.wasm': anything,
-          'a|web/index.dart.js':
-              decodedMatches(contains('WebAssembly.compileStreaming')),
+          'a|web/index.dart.js': decodedMatches(contains('compileStreaming')),
         },
       );
     });
@@ -69,9 +68,9 @@ void main() {
             stringContainsInOrder(
               [
                 'if (supportsWasmGC())',
-                'WebAssembly.compileStreaming',
+                'compileStreaming',
                 'else',
-                'scriptTag.src = new URL("./index.dart2js.js", document.baseURI).toString();'
+                'scriptTag.src = relativeURL("./index.dart2js.js");'
               ],
             ),
           ),
