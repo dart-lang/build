@@ -1,6 +1,7 @@
-## 2.4.13-wip
+## 2.4.13
 
 - Bump the min sdk to 3.5.0.
+- Bump the `mime` dependency to ^2.0.0
 
 ## 2.4.12
 
