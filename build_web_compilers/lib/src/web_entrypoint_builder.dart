@@ -19,6 +19,7 @@ import 'dev_compiler_bootstrap.dart';
 const ddcBootstrapExtension = '.dart.bootstrap.js';
 const jsEntrypointExtension = '.dart.js';
 const wasmExtension = '.wasm';
+const wasmSourceMapExtension = '.wasm.map';
 const moduleJsExtension = '.mjs';
 const jsEntrypointSourceMapExtension = '.dart.js.map';
 const jsEntrypointArchiveExtension = '.dart.js.tar.gz';
@@ -244,6 +245,7 @@ final class EntrypointBuilderOptions {
         if (optionsFor(WebCompiler.Dart2Wasm) case final dart2wasm?) ...[
           dart2wasm.extension,
           wasmExtension,
+          wasmSourceMapExtension,
         ],
         if (loaderExtension case final loader?) loader,
       ]

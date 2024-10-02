@@ -1,3 +1,7 @@
+## 4.1.0-beta.2
+
+- Add source maps for dart2wasm builds.
+
 ## 4.1.0-beta.1
 
 - Fix loading compiled modules from subdirectories.

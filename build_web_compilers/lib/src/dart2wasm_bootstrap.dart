@@ -107,8 +107,12 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
   if (result.exitCode == 0 && await wasmOutputFile.exists()) {
     log.info('${result.stdout}\n${result.stderr}');
 
-    await scratchSpace.copyOutput(
-        dartEntrypointId.changeExtension(wasmExtension), buildStep);
+    await scratchSpace.copyOutput(wasmOutputId, buildStep);
+
+    await fixAndCopySourceMap(
+        dartEntrypointId.changeExtension(wasmSourceMapExtension),
+        scratchSpace,
+        buildStep);
 
     final loaderContents = await scratchSpace
         .fileFor(dartEntrypointId.changeExtension(moduleJsExtension))

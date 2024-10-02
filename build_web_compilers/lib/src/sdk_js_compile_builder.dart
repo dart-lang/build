@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:bazel_worker/bazel_worker.dart';
@@ -124,12 +123,7 @@ Future<void> _createDevCompilerModule(
 
   // Copy the output back using the buildStep.
   await scratchSpace.copyOutput(jsOutputId, buildStep);
-  // We need to modify the sources in the sourcemap to remove the custom
-  // `multiRootScheme` that we use.
-  var sourceMapId = jsOutputId.changeExtension(_jsSourceMapExtension);
-  var file = scratchSpace.fileFor(sourceMapId);
-  var content = await file.readAsString();
-  var json = jsonDecode(content) as Map<String, Object?>;
-  json['sources'] = fixSourceMapSources((json['sources'] as List).cast());
-  await buildStep.writeAsString(sourceMapId, jsonEncode(json));
+
+  await fixAndCopySourceMap(jsOutputId.changeExtension(_jsSourceMapExtension),
+      scratchSpace, buildStep);
 }

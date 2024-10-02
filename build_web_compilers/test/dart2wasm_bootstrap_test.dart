@@ -41,6 +41,7 @@ void main() {
         outputs: {
           'a|web/index.mjs': anything,
           'a|web/index.wasm': anything,
+          'a|web/index.wasm.map': anything,
           'a|web/index.dart.js': decodedMatches(contains('compileStreaming')),
         },
       );
@@ -62,6 +63,7 @@ void main() {
         outputs: {
           'a|web/index.mjs': anything,
           'a|web/index.wasm': anything,
+          'a|web/index.wasm.map': anything,
           'a|web/index.dart.js.tar.gz': anything,
           'a|web/index.dart2js.js': decodedMatches(contains('Hello world!')),
           'a|web/index.dart.js': decodedMatches(
@@ -96,6 +98,7 @@ void main() {
       outputs: {
         'a|web/index.mjs': anything,
         'a|web/index.wasm': anything,
+        'a|web/index.wasm.map': anything,
         'a|web/index.dart.js.tar.gz': anything,
         'a|web/index.dart2js.js': decodedMatches(contains('Hello world!')),
       },

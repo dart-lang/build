@@ -264,22 +264,17 @@ Future<void> _createDevCompilerModule(
     }
 
     if (debugMode) {
-      // We need to modify the sources in the sourcemap to remove the custom
-      // `multiRootScheme` that we use.
-      var sourceMapId =
-          module.primarySource.changeExtension(jsSourceMapExtension);
-      var file = scratchSpace.fileFor(sourceMapId);
-      var content = await file.readAsString();
-      var json = jsonDecode(content) as Map<String, Object?>;
-      json['sources'] = fixSourceMapSources((json['sources'] as List).cast());
-      await buildStep.writeAsString(sourceMapId, jsonEncode(json));
+      await fixAndCopySourceMap(
+          module.primarySource.changeExtension(jsSourceMapExtension),
+          scratchSpace,
+          buildStep);
 
       // Copy the metadata output, modifying its contents to remove the temp
       // directory from paths
       var metadataId = module.primarySource.changeExtension(metadataExtension);
-      file = scratchSpace.fileFor(metadataId);
-      content = await file.readAsString();
-      json = jsonDecode(content) as Map<String, Object?>;
+      var file = scratchSpace.fileFor(metadataId);
+      var content = await file.readAsString();
+      var json = jsonDecode(content) as Map<String, Object?>;
       _fixMetadataSources(json, scratchSpace.tempDir.uri);
       await buildStep.writeAsString(metadataId, jsonEncode(json));
 
