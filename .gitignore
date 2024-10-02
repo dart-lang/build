@@ -7,7 +7,7 @@ pubspec.lock
 # Common build output
 /*/build/
 
-# Include packages config files from tests which are hand coded
+# Include package config files from tests which are hand coded
 !build_runner_core/test/fixtures/**/.dart_tool/package_config.json
 !build_runner_core/test/fixtures/**/pubspec.lock
 
