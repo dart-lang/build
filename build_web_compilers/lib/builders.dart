@@ -12,7 +12,7 @@ import 'src/sdk_js_compile_builder.dart';
 import 'src/sdk_js_copy_builder.dart';
 
 // Shared entrypoint builder
-Builder webEntrypointBuilder(BuilderOptions options) =>
+WebEntrypointBuilder webEntrypointBuilder(BuilderOptions options) =>
     WebEntrypointBuilder.fromOptions(options);
 
 // Ddc related builders
