@@ -39,7 +39,7 @@ void validateOptions(Map<String, dynamic> config, List<String> supportedOptions,
   }
 }
 
-/// If [id] exists, assume it is a source map and fixe up the source uris from
+/// If [id] exists, assume it is a source map and fix up the source uris from
 /// it so they make sense in a browser context, then write the modified version
 /// using [writer].
 ///
