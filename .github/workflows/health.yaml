@@ -8,7 +8,9 @@ jobs:
   health:
     uses: dart-lang/ecosystem/.github/workflows/health.yaml@main
     with:
-      checks: "version,changelog,do-not-submit"
+      checks: "version,changelog,do-not-submit,breaking"
+      fail_on: "version,changelog,do-not-submit,breaking"
+      warn_on: "license,coverage,leaking"
       ignore_license: "**.g.dart"
       sdk: dev
     permissions:

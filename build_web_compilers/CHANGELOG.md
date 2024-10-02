@@ -1,3 +1,5 @@
+## 4.2.0
+
 ## 4.1.0-beta.1
 
 - Fix loading compiled modules from subdirectories.
