@@ -14,7 +14,7 @@ import 'package:web/web.dart';
 import 'common/message.dart' deferred as m;
 
 void main() {
-  setUp(startApp);
+  setUp(() => startApp(text: 'Hello World!'));
 
   tearDown(() {
     document.body!.innerHTML = ''.toJS;
