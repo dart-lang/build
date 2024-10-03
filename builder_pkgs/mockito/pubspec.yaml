@@ -5,6 +5,10 @@ description: >-
   behavior verification, and stubbing.
 repository: https://github.com/dart-lang/mockito
 
+topics:
+ - testing
+ - mocking
+
 environment:
   sdk: ^3.3.0
 

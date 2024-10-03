@@ -8,6 +8,7 @@
 * Add support for extension types.
 * Require dart_style >= 2.3.7, so that the current Dart language version can be
   passed to `DartFormatter`.
+* Add topics to `pubspec.yaml`.
 
 ## 5.4.4
 
