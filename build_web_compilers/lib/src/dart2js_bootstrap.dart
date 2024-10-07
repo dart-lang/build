@@ -14,7 +14,6 @@ import 'package:glob/glob.dart';
 import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
-import 'package:scratch_space/scratch_space.dart';
 
 import 'common.dart';
 import 'platforms.dart';
@@ -140,25 +139,13 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
     // Explicitly write out the original js file and sourcemap - we can't output
     // these as part of the archive because they already have asset nodes.
     await scratchSpace.copyOutput(jsOutputId, buildStep);
-    var jsSourceMapId =
-        dartEntrypointId.changeExtension(jsEntrypointSourceMapExtension);
-    await _copyModifiedSourceMap(jsSourceMapId, scratchSpace, buildStep);
+    await fixAndCopySourceMap(
+        dartEntrypointId.changeExtension(jsEntrypointSourceMapExtension),
+        scratchSpace,
+        buildStep);
   } else {
     log.severe('ExitCode:${result.exitCode}\nStdOut:\n${result.stdout}\n'
         'StdErr:\n${result.stderr}');
-  }
-}
-
-/// If [id] exists, modifies it to something the browser can understand and
-/// writes it using [writer].
-Future<void> _copyModifiedSourceMap(
-    AssetId id, ScratchSpace scratchSpace, AssetWriter writer) async {
-  var file = scratchSpace.fileFor(id);
-  if (await file.exists()) {
-    var content = await file.readAsString();
-    var json = jsonDecode(content) as Map<String, Object?>;
-    json['sources'] = fixSourceMapSources((json['sources'] as List).cast());
-    await writer.writeAsString(id, jsonEncode(json));
   }
 }
 

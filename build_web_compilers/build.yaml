@@ -113,6 +113,7 @@ builders:
         - .digests
         - .dart.ddc_merged_metadata
         - .wasm
+        - .wasm.map
         - .mjs
     required_inputs:
       - .dart
