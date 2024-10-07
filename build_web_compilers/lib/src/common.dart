@@ -47,7 +47,7 @@ void validateOptions(Map<String, dynamic> config, List<String> supportedOptions,
 /// - Strips the top level directory if its not `packages`
 Future<void> fixAndCopySourceMap(
     AssetId id, ScratchSpace scratchSpace, AssetWriter writer) async {
-  /// Copied to `web/stack_trace_mapper.dart`, these need to be kept in sync.
+  // Copied to `web/stack_trace_mapper.dart`, these need to be kept in sync.
   String fixMappedSource(String source) {
     var uri = Uri.parse(source);
     // We only want to rewrite multi-root scheme uris.
