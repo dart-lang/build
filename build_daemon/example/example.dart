@@ -51,8 +51,7 @@ void main(List<String> args) async {
       ..outputLocation = OutputLocation((b) => b
         ..output = 'web_output'
         ..useSymlinks = false
-        ..hoist = true).toBuilder()
-      ..blackListPatterns.replace([RegExp(r'.*_test\.dart$')])));
+        ..hoist = true).toBuilder()));
     print('Registered example web target...');
   } else {
     client.registerBuildTarget(DefaultBuildTarget((b) => b
