@@ -2,7 +2,6 @@ name: build
 version: 2.4.2-wip
 description: A package for authoring build_runner compatible code generators.
 repository: https://github.com/dart-lang/build/tree/master/build
-resolution: workspace
 
 # This package can't be part of the workspace because it requires a very recent
 # Dart SDK - see the top-level pubspec for details.
