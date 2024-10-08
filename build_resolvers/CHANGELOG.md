@@ -5,6 +5,7 @@
 - Bump the min sdk to 3.5.0.
 - Fix SDK summary reads when multiple isolates are using build resolvers (not
   recommended).
+- Fix analyzer deprecations.
 
 ## 2.4.2
 
