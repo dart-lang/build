@@ -42,5 +42,10 @@ dev_dependencies:
   test: ^1.16.0
   yaml: ^3.1.0
 
+# TODO: remove once this package is back in the workspace
+dependency_overrides:
+  build_modules:
+    path: ../build_modules
+
 topics:
  - build-runner

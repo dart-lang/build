@@ -128,13 +128,15 @@ void main() {
 
         var aLib = await resolver.libraryFor(primary);
         expect(aLib.name, 'a');
-        expect(aLib.importedLibraries.length, 2);
-        expect(aLib.importedLibraries.any((library) => library.name == 'b'),
+        expect(aLib.definingCompilationUnit.libraryImports.length, 2);
+        expect(
+            aLib.definingCompilationUnit.libraryImports
+                .any((import) => import.importedLibrary!.name == 'b'),
             isTrue);
 
         var bLib = await resolver.findLibraryByName('b');
         expect(bLib!.name, 'b');
-        expect(bLib.importedLibraries.length, 1);
+        expect(bLib.definingCompilationUnit.libraryImports.length, 1);
 
         await buildStep.complete();
       });

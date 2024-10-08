@@ -64,9 +64,12 @@ class PerActionResolver implements ReleasableResolver {
       // `BuildStep.canRead`. They'd still be reachable by crawling the element
       // model manually.
       yield current;
-      final toCrawl = current.importedLibraries
-          .followedBy(current.exportedLibraries)
-          .where((l) => !seen.contains(l))
+      final toCrawl = current.definingCompilationUnit.libraryImports
+          .map((import) => import.importedLibrary)
+          .followedBy(current.definingCompilationUnit.libraryExports
+              .map((export) => export.exportedLibrary))
+          .nonNulls
+          .where((library) => !seen.contains(library))
           .toSet();
       toVisit.addAll(toCrawl);
       seen.addAll(toCrawl);
@@ -279,7 +282,7 @@ class AnalyzerResolver implements ReleasableResolver {
   Future<List<ErrorsResult>> _syntacticErrorsFor(LibraryElement element) async {
     final existingSources = [element.source];
 
-    for (final part in element.parts) {
+    for (final part in element.definingCompilationUnit.parts) {
       var uri = part.uri;
       // There may be no source if the part doesn't exist. That's not important
       // for us since we only care about existing file syntax.
