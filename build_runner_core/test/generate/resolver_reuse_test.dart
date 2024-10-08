@@ -40,10 +40,13 @@ void main() {
             await buildStep.canRead(buildStep.inputId.addExtension('.foo'));
             // Check that the `.imported.dart` library is still reachable
             // through the resolver.
-            var importedLibrary =
-                inputLibrary.definingCompilationUnit.libraryImports.firstWhere(
-                    (l) => l.librarySource.uri.path.endsWith('.imported.dart'));
-            var classNames = importedLibrary.enclosingElement3.classes
+            var importedLibrary = inputLibrary
+                .definingCompilationUnit.libraryImports
+                .firstWhere((l) => l
+                    .importedLibrary!.definingCompilationUnit.source.uri.path
+                    .endsWith('.imported.dart'))
+                .importedLibrary!;
+            var classNames = importedLibrary.definingCompilationUnit.classes
                 .map((c) => c.name)
                 .toList();
             return buildStep.writeAsString(
