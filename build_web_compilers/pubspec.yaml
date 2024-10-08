@@ -7,7 +7,7 @@ repository: https://github.com/dart-lang/build/tree/master/build_web_compilers
 #resolution: workspace
 
 environment:
-  sdk: ^3.6.0-165.0.dev
+  sdk: '>=3.6.0-165.0.dev <3.7.0'
 
 dependencies:
   analyzer: '>=5.1.0 <7.0.0'
