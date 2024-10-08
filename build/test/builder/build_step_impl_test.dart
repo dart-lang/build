@@ -131,7 +131,7 @@ void main() {
         expect(aLib.definingCompilationUnit.libraryImports.length, 2);
         expect(
             aLib.definingCompilationUnit.libraryImports
-                .any((import) => import.library.name == 'b'),
+                .any((import) => import.importedLibrary!.name == 'b'),
             isTrue);
 
         var bLib = await resolver.findLibraryByName('b');
