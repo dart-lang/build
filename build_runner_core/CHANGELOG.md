@@ -1,6 +1,8 @@
 ## 7.3.3-wip
 
 - Bump the min sdk to 3.5.0.
+- Require analyzer ^6.9.0.
+- Fix analyzer deprecations.
 
 ## 7.3.2
 

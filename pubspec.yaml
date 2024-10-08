@@ -15,7 +15,7 @@ workspace:
 #- _test
 #- _test/pkgs/provides_builder
 - _test_common
-- build
+# - build
 - build_config
 - build_daemon
 - build_modules

@@ -4,11 +4,15 @@ description: A package for authoring build_runner compatible code generators.
 repository: https://github.com/dart-lang/build/tree/master/build
 resolution: workspace
 
+# This package can't be part of the workspace because it requires a very recent
+# Dart SDK - see the top-level pubspec for details.
+#resolution: workspace
+
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.6.0-217.0.dev
 
 dependencies:
-  analyzer: ">=1.5.0 <7.0.0"
+  analyzer: ^6.9.0
   async: ^2.5.0
   convert: ^3.0.0
   crypto: ^3.0.0
