@@ -50,7 +50,7 @@ void main() {
         var libA = lib
           ..definingCompilationUnit
               .libraryImports
-              .where((l) => l.library.name == 'a')
+              .where((l) => l.importedLibrary!.name == 'a')
               .single;
         expect(libA.getClass('Foo'), isNull);
       }, resolvers: AnalyzerResolvers());
@@ -72,7 +72,7 @@ void main() {
         var libB = lib
           ..definingCompilationUnit
               .libraryImports
-              .where((l) => l.library.name == 'b')
+              .where((l) => l.importedLibrary!.name == 'b')
               .single;
         expect(libB.getClass('Foo'), isNull);
       }, resolvers: AnalyzerResolvers());
@@ -466,7 +466,7 @@ void main() {
       }, (resolver) async {
         var entry = await resolver.libraryFor(AssetId('a', 'lib/a.dart'));
         var classDefinition = entry.definingCompilationUnit.libraryImports
-            .map((l) => l.library.getClass('SomeClass'))
+            .map((l) => l.importedLibrary!.getClass('SomeClass'))
             .singleWhere((c) => c != null)!;
         expect(await resolver.assetIdForElement(classDefinition),
             AssetId('a', 'lib/b.dart'));

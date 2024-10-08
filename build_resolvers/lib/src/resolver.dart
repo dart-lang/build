@@ -65,9 +65,10 @@ class PerActionResolver implements ReleasableResolver {
       // model manually.
       yield current;
       final toCrawl = current.definingCompilationUnit.libraryImports
-          .map((import) => import.library)
+          .map((import) => import.importedLibrary)
           .followedBy(current.definingCompilationUnit.libraryExports
-              .map((export) => export.library))
+              .map((export) => export.exportedLibrary))
+          .nonNulls
           .where((library) => !seen.contains(library))
           .toSet();
       toVisit.addAll(toCrawl);
