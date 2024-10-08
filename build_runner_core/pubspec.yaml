@@ -2,10 +2,13 @@ name: build_runner_core
 version: 7.3.3-wip
 description: Core tools to organize the structure of a build and run Builders.
 repository: https://github.com/dart-lang/build/tree/master/build_runner_core
-resolution: workspace
+
+# This package can't be part of the workspace because it requires a very recent
+# Dart SDK - see the top-level pubspec for details.
+#resolution: workspace
 
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.6.0-228.0.dev
 
 platforms:
   linux:
@@ -35,9 +38,10 @@ dependencies:
 dev_dependencies:
   _test_common:
     path: ../_test_common
-  analyzer: '>=5.2.0 <7.0.0'
+  analyzer: ^6.9.0
   build_runner: ^2.0.0
   build_test: ^2.0.0
+  dart_flutter_team_lints: ^3.1.0
   json_serializable: ^6.0.0
   test: ^1.16.0
   test_descriptor: ^2.0.0
