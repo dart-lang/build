@@ -1,7 +1,7 @@
-## 5.0.10-wip
+## 5.0.10-beta.0
 
 - Bump the min sdk to 3.5.0.
-- Allow version 3.7.x of the Dart SDK.
+- Support 3.7.0 pre-release sdks.
 
 ## 5.0.9
 
