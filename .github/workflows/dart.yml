@@ -528,46 +528,6 @@ jobs:
       - job_008
       - job_009
   job_012:
-    name: "unit_test; linux; Dart 3.5.0; PKG: build_runner_core; `dart test --test-randomize-ordering-seed=random`"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache Pub hosted dependencies
-        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7
-        with:
-          path: "~/.pub-cache/hosted"
-          key: "os:ubuntu-latest;pub-cache-hosted;sdk:3.5.0;packages:build_runner_core;commands:test_04"
-          restore-keys: |
-            os:ubuntu-latest;pub-cache-hosted;sdk:3.5.0;packages:build_runner_core
-            os:ubuntu-latest;pub-cache-hosted;sdk:3.5.0
-            os:ubuntu-latest;pub-cache-hosted
-            os:ubuntu-latest
-      - name: Setup Dart SDK
-        uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30
-        with:
-          sdk: "3.5.0"
-      - id: checkout
-        name: Checkout repository
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
-      - id: build_runner_core_pub_upgrade
-        name: build_runner_core; dart pub upgrade
-        run: dart pub upgrade
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_runner_core
-      - name: "build_runner_core; dart test --test-randomize-ordering-seed=random"
-        run: "dart test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_runner_core_pub_upgrade.conclusion == 'success'"
-        working-directory: build_runner_core
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-      - job_009
-  job_013:
     name: "unit_test; linux; Dart 3.5.0; PKG: build_test; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -607,7 +567,7 @@ jobs:
       - job_007
       - job_008
       - job_009
-  job_014:
+  job_013:
     name: "unit_test; linux; Dart 3.5.0; PKG: scratch_space; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -647,7 +607,7 @@ jobs:
       - job_007
       - job_008
       - job_009
-  job_015:
+  job_014:
     name: "unit_test; linux; Dart 3.6.0-165.0.dev; PKG: build_resolvers; `dart test --test-randomize-ordering-seed=random`"
     runs-on: ubuntu-latest
     steps:
@@ -677,6 +637,46 @@ jobs:
         run: "dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
         working-directory: build_resolvers
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+      - job_009
+  job_015:
+    name: "unit_test; linux; Dart 3.6.0-165.0.dev; PKG: build_runner_core; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Pub hosted dependencies
+        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7
+        with:
+          path: "~/.pub-cache/hosted"
+          key: "os:ubuntu-latest;pub-cache-hosted;sdk:3.6.0-165.0.dev;packages:build_runner_core;commands:test_04"
+          restore-keys: |
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.6.0-165.0.dev;packages:build_runner_core
+            os:ubuntu-latest;pub-cache-hosted;sdk:3.6.0-165.0.dev
+            os:ubuntu-latest;pub-cache-hosted
+            os:ubuntu-latest
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30
+        with:
+          sdk: "3.6.0-165.0.dev"
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+      - id: build_runner_core_pub_upgrade
+        name: build_runner_core; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_runner_core
+      - name: "build_runner_core; dart test --test-randomize-ordering-seed=random"
+        run: "dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_runner_core_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner_core
     needs:
       - job_001
       - job_002
@@ -1308,36 +1308,6 @@ jobs:
       - job_008
       - job_009
   job_032:
-    name: "unit_test; windows; Dart 3.5.0; PKG: build_runner_core; `dart test --test-randomize-ordering-seed=random`"
-    runs-on: windows-latest
-    steps:
-      - name: Setup Dart SDK
-        uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30
-        with:
-          sdk: "3.5.0"
-      - id: checkout
-        name: Checkout repository
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
-      - id: build_runner_core_pub_upgrade
-        name: build_runner_core; dart pub upgrade
-        run: dart pub upgrade
-        if: "always() && steps.checkout.conclusion == 'success'"
-        working-directory: build_runner_core
-      - name: "build_runner_core; dart test --test-randomize-ordering-seed=random"
-        run: "dart test --test-randomize-ordering-seed=random"
-        if: "always() && steps.build_runner_core_pub_upgrade.conclusion == 'success'"
-        working-directory: build_runner_core
-    needs:
-      - job_001
-      - job_002
-      - job_003
-      - job_004
-      - job_005
-      - job_006
-      - job_007
-      - job_008
-      - job_009
-  job_033:
     name: "unit_test; windows; Dart 3.5.0; PKG: build_test; `dart test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -1367,7 +1337,7 @@ jobs:
       - job_007
       - job_008
       - job_009
-  job_034:
+  job_033:
     name: "unit_test; windows; Dart 3.5.0; PKG: scratch_space; `dart test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -1397,7 +1367,7 @@ jobs:
       - job_007
       - job_008
       - job_009
-  job_035:
+  job_034:
     name: "unit_test; windows; Dart 3.6.0-165.0.dev; PKG: build_resolvers; `dart test --test-randomize-ordering-seed=random`"
     runs-on: windows-latest
     steps:
@@ -1417,6 +1387,36 @@ jobs:
         run: "dart test --test-randomize-ordering-seed=random"
         if: "always() && steps.build_resolvers_pub_upgrade.conclusion == 'success'"
         working-directory: build_resolvers
+    needs:
+      - job_001
+      - job_002
+      - job_003
+      - job_004
+      - job_005
+      - job_006
+      - job_007
+      - job_008
+      - job_009
+  job_035:
+    name: "unit_test; windows; Dart 3.6.0-165.0.dev; PKG: build_runner_core; `dart test --test-randomize-ordering-seed=random`"
+    runs-on: windows-latest
+    steps:
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@f0ead981b4d9a35b37f30d36160575d60931ec30
+        with:
+          sdk: "3.6.0-165.0.dev"
+      - id: checkout
+        name: Checkout repository
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+      - id: build_runner_core_pub_upgrade
+        name: build_runner_core; dart pub upgrade
+        run: dart pub upgrade
+        if: "always() && steps.checkout.conclusion == 'success'"
+        working-directory: build_runner_core
+      - name: "build_runner_core; dart test --test-randomize-ordering-seed=random"
+        run: "dart test --test-randomize-ordering-seed=random"
+        if: "always() && steps.build_runner_core_pub_upgrade.conclusion == 'success'"
+        working-directory: build_runner_core
     needs:
       - job_001
       - job_002
