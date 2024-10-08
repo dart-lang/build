@@ -1,3 +1,7 @@
+## 4.1.0-wip
+
+- Support 3.7.0 pre-release sdks.
+
 ## 4.1.0-beta.2
 
 - Add source maps for dart2wasm builds.

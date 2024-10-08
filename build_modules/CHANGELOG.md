@@ -1,6 +1,7 @@
 ## 5.0.10-wip
 
 - Bump the min sdk to 3.5.0.
+- Support 3.7.0 pre-release sdks.
 
 ## 5.0.9
 
