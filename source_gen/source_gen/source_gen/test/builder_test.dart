@@ -11,6 +11,7 @@ import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:source_gen/builder.dart';
 import 'package:source_gen/source_gen.dart';
+import 'package:source_gen/src/builder.dart';
 import 'package:test/test.dart';
 
 import 'src/comment_generator.dart';
@@ -65,8 +66,9 @@ void main() {
       srcs,
       generateFor: {'$_pkgName|lib/test_lib.dart'},
       outputs: {
-        '$_pkgName|lib/test_lib.g.dart':
-            decodedMatches(startsWith('$_customHeader\n\n// ***')),
+        '$_pkgName|lib/test_lib.g.dart': decodedMatches(
+          startsWith('$_customHeader\n$dartFormatWidth\n\n// ***'),
+        ),
       },
     );
   });
@@ -79,7 +81,8 @@ void main() {
       srcs,
       generateFor: {'$_pkgName|lib/test_lib.dart'},
       outputs: {
-        '$_pkgName|lib/test_lib.g.dart': decodedMatches(startsWith('// ***')),
+        '$_pkgName|lib/test_lib.g.dart':
+            decodedMatches(startsWith('$dartFormatWidth\n\n// ***')),
       },
     );
   });
@@ -96,6 +99,7 @@ void main() {
     );
 
     const expected = '''
+$dartFormatWidth
 // Code for "class Person"
 // Code for "class Customer"
 ''';
@@ -312,8 +316,9 @@ void main() {
         {'$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'},
         generateFor: {'$_pkgName|lib/a.dart'},
         outputs: {
-          '$_pkgName|lib/a.foo.dart':
-              decodedMatches(startsWith('$_customHeader\n\npart of')),
+          '$_pkgName|lib/a.foo.dart': decodedMatches(
+            startsWith('$_customHeader\n\n$dartFormatWidth\npart of'),
+          ),
         },
       );
     });
@@ -328,7 +333,8 @@ void main() {
         {'$_pkgName|lib/a.dart': 'library a; part "a.foo.dart";'},
         generateFor: {'$_pkgName|lib/a.dart'},
         outputs: {
-          '$_pkgName|lib/a.foo.dart': decodedMatches(startsWith('part of')),
+          '$_pkgName|lib/a.foo.dart':
+              decodedMatches(startsWith('$dartFormatWidth\npart of')),
         },
       );
     });
@@ -341,13 +347,16 @@ void main() {
           header: '',
         ),
         {
-          '$_pkgName|lib/a.dart': '''// @dart=2.12
+          '$_pkgName|lib/a.dart': '''
+$dartFormatWidth
+// @dart=2.12
 part "a.foo.dart";''',
         },
         generateFor: {'$_pkgName|lib/a.dart'},
         outputs: {
-          '$_pkgName|lib/a.foo.dart':
-              decodedMatches(startsWith('// @dart=2.12\n')),
+          '$_pkgName|lib/a.foo.dart': decodedMatches(
+            startsWith('$dartFormatWidth\n// @dart=2.12\n'),
+          ),
         },
       );
     });
@@ -390,8 +399,9 @@ part "a.foo.dart";''',
           },
         );
         expect(logs, [
-          'generated/test_lib.foo.dart must be included as a part directive in the input '
-              'library with:\n    part \'generated/test_lib.foo.dart\';'
+          'generated/test_lib.foo.dart must be included as a '
+              'part directive in the input library with:\n'
+              '    part \'generated/test_lib.foo.dart\';'
         ]);
       });
 
@@ -411,8 +421,9 @@ part "a.foo.dart";''',
           {'$_pkgName|lib/a.dart': 'part "generated/a.foo.dart";'},
           generateFor: {'$_pkgName|lib/a.dart'},
           outputs: {
-            '$_pkgName|lib/generated/a.foo.dart':
-                decodedMatches(startsWith("part of '../a.dart';")),
+            '$_pkgName|lib/generated/a.foo.dart': decodedMatches(
+              startsWith("$dartFormatWidth\npart of '../a.dart';"),
+            ),
           },
         );
       });
@@ -559,6 +570,7 @@ part "a.foo.dart";''',
         const CombiningBuilder(),
         {
           '$_pkgName|lib/a.dart': '''
+$dartFormatWidth
 // @dart=2.12
 library a;
 part "a.g.dart";
@@ -570,6 +582,7 @@ part "a.g.dart";
           '$_pkgName|lib/a.g.dart': decodedMatches(
             '''
 // GENERATED CODE - DO NOT MODIFY BY HAND
+$dartFormatWidth
 // @dart=2.12
 
 part of 'a.dart';
@@ -1056,8 +1069,10 @@ const _testLibContentSyntaxError = r'''
 final int foo = 42
 ''';
 
-const _testGenPartContent = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
+const _testGenPartContent = r'''
+// GENERATED CODE - DO NOT MODIFY BY HAND
 
+// dart format width=80
 part of 'test_lib.dart';
 
 // **************************************************************************
@@ -1068,31 +1083,10 @@ part of 'test_lib.dart';
 // Code for "class Customer"
 ''';
 
-const _testGenPartContentForLibrary =
-    r'''// GENERATED CODE - DO NOT MODIFY BY HAND
+const _testGenPartContentForLibrary = r'''
+// GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'test_lib.dart';
-
-// **************************************************************************
-// CommentGenerator
-// **************************************************************************
-
-// Code for "test_lib"
-''';
-
-const _testGenStandaloneContent = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
-
-// **************************************************************************
-// CommentGenerator
-// **************************************************************************
-
-// Code for "class Person"
-// Code for "class Customer"
-''';
-
-const _testGenPartContentForClassesAndLibrary =
-    r'''// GENERATED CODE - DO NOT MODIFY BY HAND
-
+// dart format width=80
 part of 'test_lib.dart';
 
 // **************************************************************************
@@ -1100,12 +1094,39 @@ part of 'test_lib.dart';
 // **************************************************************************
 
 // Code for "test_lib"
+''';
+
+const _testGenStandaloneContent = r'''
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format width=80
+
+// **************************************************************************
+// CommentGenerator
+// **************************************************************************
+
 // Code for "class Person"
 // Code for "class Customer"
 ''';
 
-const _testGenNoLibrary = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
+const _testGenPartContentForClassesAndLibrary = r'''
+// GENERATED CODE - DO NOT MODIFY BY HAND
 
+// dart format width=80
+part of 'test_lib.dart';
+
+// **************************************************************************
+// CommentGenerator
+// **************************************************************************
+
+// Code for "test_lib"
+// Code for "class Person"
+// Code for "class Customer"
+''';
+
+const _testGenNoLibrary = r'''
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+// dart format width=80
 part of 'test_lib.dart';
 
 // **************************************************************************
@@ -1116,8 +1137,10 @@ part of 'test_lib.dart';
 // Code for "class Customer"
 ''';
 
-const _whitespaceTrimmed = r'''// GENERATED CODE - DO NOT MODIFY BY HAND
+const _whitespaceTrimmed = r'''
+// GENERATED CODE - DO NOT MODIFY BY HAND
 
+// dart format width=80
 part of 'test_lib.dart';
 
 // **************************************************************************

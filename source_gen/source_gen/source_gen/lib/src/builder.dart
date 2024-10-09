@@ -134,6 +134,7 @@ class _Builder extends Builder {
 
       if (this is PartBuilder) {
         contentBuffer
+          ..writeln(dartFormatWidth)
           ..write(languageOverrideForLibrary(library))
           ..writeln('part of \'$partOfUri\';');
         final part = computePartUrl(buildStep.inputId, outputId);
@@ -155,6 +156,8 @@ class _Builder extends Builder {
         // For shared-part builders, `part` statements will be checked by the
         // combining build step.
       }
+    } else {
+      contentBuffer.writeln(dartFormatWidth);
     }
 
     for (var item in generatedOutputs) {
@@ -423,3 +426,7 @@ String languageOverrideForLibrary(LibraryElement library) {
       ? ''
       : '// @dart=${override.major}.${override.minor}\n';
 }
+
+/// A comment configuring `dart_style` to use the default code width so no
+/// configuration discovery is required.
+const dartFormatWidth = '// dart format width=80';

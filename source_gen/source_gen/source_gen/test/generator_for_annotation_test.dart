@@ -12,6 +12,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:source_gen/source_gen.dart';
+import 'package:source_gen/src/builder.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -44,6 +45,7 @@ void main() {
       outputs: {
         'a|lib/file.g.dart': r'''
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format width=80
 
 // **************************************************************************
 // Generator: Repeating
@@ -128,6 +130,7 @@ void main() {
       outputs: {
         'a|lib/file.g.dart': '''
 // GENERATED CODE - DO NOT MODIFY BY HAND
+$dartFormatWidth
 
 // **************************************************************************
 // Generator: Deprecated
@@ -164,6 +167,7 @@ void main() {
       outputs: {
         'a|lib/file.g.dart': '''
 // GENERATED CODE - DO NOT MODIFY BY HAND
+$dartFormatWidth
 
 // **************************************************************************
 // Generator: Deprecated
