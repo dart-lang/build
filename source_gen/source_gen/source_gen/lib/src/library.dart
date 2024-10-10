@@ -41,8 +41,7 @@ class LibraryReader {
         ...element.libraryImports,
         // ignore: deprecated_member_use
         ...element.libraryExports,
-        // ignore: deprecated_member_use
-        ...element.parts,
+        ...element.definingCompilationUnit.parts,
       ];
 
   /// All of the declarations in this library annotated with [checker].
