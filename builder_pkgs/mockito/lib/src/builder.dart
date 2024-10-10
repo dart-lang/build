@@ -474,8 +474,8 @@ class _MockTargetGatherer {
     final mockTargets = <_MockTarget>{};
 
     final possiblyAnnotatedElements = [
-      ...entryLib.libraryExports,
-      ...entryLib.libraryImports,
+      ...entryLib.definingCompilationUnit.libraryExports,
+      ...entryLib.definingCompilationUnit.libraryImports,
       ...entryLib.topLevelElements,
     ];
 
