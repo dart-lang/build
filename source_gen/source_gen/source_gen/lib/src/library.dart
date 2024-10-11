@@ -37,10 +37,8 @@ class LibraryReader {
   Iterable<Element> get allElements => [
         element,
         ...element.topLevelElements,
-        // ignore: deprecated_member_use
-        ...element.libraryImports,
-        // ignore: deprecated_member_use
-        ...element.libraryExports,
+        ...element.definingCompilationUnit.libraryImports,
+        ...element.definingCompilationUnit.libraryExports,
         ...element.definingCompilationUnit.parts,
       ];
 
