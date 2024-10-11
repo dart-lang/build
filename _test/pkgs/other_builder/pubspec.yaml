@@ -1,0 +1,10 @@
+name: other_builder
+
+environment:
+  sdk: ^3.0.0
+
+dependencies:
+  build:
+    path: ../../../build
+  provides_builder:
+    path: ../provides_builder
