@@ -3583,8 +3583,7 @@ void main() {
         expect(mocksContent, contains('implements _i2.Baz'));
       });
 
-      test(
-          'when a type parameter is a typedef a function which returns another type',
+      test('when its a type parameter of function which returns another type',
           () async {
         final mocksContent = await buildWithNonNullable({
           ...annotationsAsset,
@@ -3599,6 +3598,34 @@ void main() {
 
             class Foo extends BaseFoo<CreateBar> {
               Foo() : super(() => 1);
+            }
+          '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+
+            @GenerateMocks([Foo])
+            void main() {}
+          '''
+        });
+
+        expect(mocksContent, contains('class MockFoo extends _i1.Mock'));
+        expect(mocksContent, contains('implements _i2.Foo'));
+      });
+      test('when its a duplicate type parameter', () async {
+        final mocksContent = await buildWithNonNullable({
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            class Bar {}
+            typedef BarDef = int Function();
+            typedef BarDef2 = int Function();
+            class BaseFoo<T,P> {
+              BaseFoo(this.t1, this.t2);
+              final T t1;
+              final P t2;
+            }
+            class Foo extends BaseFoo<BarDef, BarDef2> {
+              Foo() : super(() => 1, () => 2);
             }
           '''),
           'foo|test/foo_test.dart': '''

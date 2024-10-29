@@ -173,6 +173,10 @@ $rawOutput
     void addTypesFrom(analyzer.DartType type) {
       // Prevent infinite recursion.
       if (seenTypes.contains(type)) {
+        if (type.alias != null) {
+          // To check for duplicate typdefs that have different names
+          type.alias!.element.accept(typeVisitor);
+        }
         return;
       }
       seenTypes.add(type);
