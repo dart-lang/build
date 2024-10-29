@@ -3582,6 +3582,34 @@ void main() {
         expect(mocksContent, contains('class MockBaz extends _i1.Mock'));
         expect(mocksContent, contains('implements _i2.Baz'));
       });
+
+      test('when a type parameter is a typedef a function', () async {
+        final mocksContent = await buildWithNonNullable({
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
+            typedef CreateInt = int Function();
+
+            class BaseFoo<T> {
+              BaseFoo(this.t);
+              final T t;
+            }
+
+            class Foo extends BaseFoo<CreateInt> {
+              Foo() : super(() => 1);
+            }
+          '''),
+          'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+
+            @GenerateMocks([Foo])
+            void main() {}
+          '''
+        });
+
+        expect(mocksContent, contains('class MockFoo extends _i1.Mock'));
+        expect(mocksContent, contains('implements _i2.Foo'));
+      });
     });
 
     test('generation throws when the aliased type is nullable', () {
@@ -3648,6 +3676,54 @@ void main() {
               contains('Future<(int, {_i2.Bar bar})> get v'),
               contains('returnValue: _i3.Future<(int, {_i2.Bar bar})>.value('),
               contains('bar: _FakeBar_0('))));
+    });
+    test('are supported as typedefs', () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
+          class Bar {}
+          class BaseFoo<T> {
+            BaseFoo(this.t);
+            final T t;
+          }
+          class Foo extends BaseFoo<(Bar, Bar)> {
+            Foo() : super((Bar(), Bar()));
+          }
+          '''),
+        'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+            @GenerateMocks([Foo])
+            void main() {}
+          '''
+      });
+
+      expect(mocksContent, contains('class MockFoo extends _i1.Mock'));
+      expect(mocksContent, contains('implements _i2.Foo'));
+    });
+    test('are supported as nested typedefs', () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
+            class Bar {}
+            class BaseFoo<T> {
+              BaseFoo(this.t);
+              final T t;
+            }
+            class Foo extends BaseFoo<(int, (Bar, Bar))> {
+              Foo() : super(((1, (Bar(), Bar()))));
+            }
+          '''),
+        'foo|test/foo_test.dart': '''
+            import 'package:foo/foo.dart';
+            import 'package:mockito/annotations.dart';
+            @GenerateMocks([Foo])
+            void main() {}
+          '''
+      });
+
+      expect(mocksContent, contains('class MockFoo extends _i1.Mock'));
+      expect(mocksContent, contains('implements _i2.Foo'));
     });
   });
 

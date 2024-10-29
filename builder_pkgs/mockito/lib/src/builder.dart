@@ -167,25 +167,28 @@ $rawOutput
     // `Future`, which is needed when overriding some methods which return
     // `FutureOr`.
     final typeVisitor = _TypeVisitor(entryLib.typeProvider.futureDynamicType);
-    final seenTypes = <analyzer.InterfaceType>{};
+    final seenTypes = <analyzer.DartType>{};
     final librariesWithTypes = <LibraryElement>{};
 
-    void addTypesFrom(analyzer.InterfaceType type) {
+    void addTypesFrom(analyzer.DartType type) {
       // Prevent infinite recursion.
       if (seenTypes.contains(type)) {
         return;
       }
       seenTypes.add(type);
-      librariesWithTypes.add(type.element.library);
-      type.element.accept(typeVisitor);
-      if (type.alias != null) type.alias!.element.accept(typeVisitor);
-      // For a type like `Foo<Bar>`, add the `Bar`.
-      type.typeArguments
-          .whereType<analyzer.InterfaceType>()
-          .forEach(addTypesFrom);
-      // For a type like `Foo extends Bar<Baz>`, add the `Baz`.
-      for (final supertype in type.allSupertypes) {
-        addTypesFrom(supertype);
+      librariesWithTypes.addAll([
+        if (type.element?.library != null) type.element!.library!,
+        if (type.alias?.element.library != null) type.alias!.element.library,
+      ]);
+      type.element?.accept(typeVisitor);
+      type.alias?.element.accept(typeVisitor);
+      switch (type) {
+        case analyzer.InterfaceType interface:
+          interface.typeArguments.forEach(addTypesFrom);
+          interface.allSupertypes.forEach(addTypesFrom);
+        case analyzer.RecordType record:
+          record.positionalTypes.forEach(addTypesFrom);
+          record.namedTypes.map((e) => e.type).forEach(addTypesFrom);
       }
     }
 
