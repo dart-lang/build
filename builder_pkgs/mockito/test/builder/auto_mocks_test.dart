@@ -3583,18 +3583,21 @@ void main() {
         expect(mocksContent, contains('implements _i2.Baz'));
       });
 
-      test('when a type parameter is a typedef a function', () async {
+      test(
+          'when a type parameter is a typedef a function which returns another type',
+          () async {
         final mocksContent = await buildWithNonNullable({
           ...annotationsAsset,
           'foo|lib/foo.dart': dedent(r'''
-            typedef CreateInt = int Function();
+            class Bar {}
+            typedef CreateBar = Bar Function();
 
             class BaseFoo<T> {
               BaseFoo(this.t);
               final T t;
             }
 
-            class Foo extends BaseFoo<CreateInt> {
+            class Foo extends BaseFoo<CreateBar> {
               Foo() : super(() => 1);
             }
           '''),

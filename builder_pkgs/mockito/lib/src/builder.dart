@@ -317,6 +317,7 @@ class _TypeVisitor extends RecursiveElementVisitor<void> {
 
   @override
   void visitTypeAliasElement(TypeAliasElement element) {
+    _addType(element.aliasedType);
     _elements.add(element);
     super.visitTypeAliasElement(element);
   }
