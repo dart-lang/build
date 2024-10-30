@@ -86,7 +86,7 @@ Future<void> _createDevCompilerModule(
     // Use standalone process instead of the worker due to
     // https://github.com/dart-lang/sdk/issues/49441
     var execSuffix = Platform.isWindows ? '.exe' : '';
-    var  dartPath = p.join(sdkDir, 'bin', 'dart$execSuffix');
+    var dartPath = p.join(sdkDir, 'bin', 'dart$execSuffix');
     result = await Process.run(dartPath, [
       'compile',
       'js-dev',
