@@ -50,15 +50,9 @@ final int maxWorkersPerTask = () {
 BazelWorkerDriver get _dartdevkDriver {
   _dartdevkWorkersAreDoneCompleter ??= Completer<void>();
   return __dartdevkDriver ??= BazelWorkerDriver(
-      () => Process.start(
-          p.join(sdkDir, 'bin', 'dart'),
-          [
-            'compile',
-            'js-dev',
-            '--persistent_worker'
-          ],
-          mode: _processMode,
-          workingDirectory: scratchSpace.tempDir.path),
+      () => Process.start(p.join(sdkDir, 'bin', 'dart'),
+          ['compile', 'js-dev', '--persistent_worker'],
+          mode: _processMode, workingDirectory: scratchSpace.tempDir.path),
       maxWorkers: maxWorkersPerTask);
 }
 
