@@ -2250,7 +2250,7 @@ void main() {
         bool m() => false;
       }
       '''),
-      _containsAllOf('returnValue: false,'),
+      _containsAllOf('returnValue: false'),
     );
   });
 
@@ -2261,7 +2261,7 @@ void main() {
         double m() => 3.14;
       }
       '''),
-      _containsAllOf('returnValue: 0.0,'),
+      _containsAllOf('returnValue: 0.0'),
     );
   });
 
@@ -2272,7 +2272,7 @@ void main() {
         int m() => 7;
       }
       '''),
-      _containsAllOf('returnValue: 0,'),
+      _containsAllOf('returnValue: 0'),
     );
   });
 
@@ -2295,7 +2295,7 @@ void main() {
         List<Foo> m() => [Foo()];
       }
       '''),
-      _containsAllOf('returnValue: <_i2.Foo>[],'),
+      _containsAllOf('returnValue: <_i2.Foo>[]'),
     );
   });
 
@@ -2306,7 +2306,7 @@ void main() {
         Set<Foo> m() => {Foo()};
       }
       '''),
-      _containsAllOf('returnValue: <_i2.Foo>{},'),
+      _containsAllOf('returnValue: <_i2.Foo>{}'),
     );
   });
 
@@ -2317,7 +2317,7 @@ void main() {
         Map<int, Foo> m() => {7: Foo()};
       }
       '''),
-      _containsAllOf('returnValue: <int, _i2.Foo>{},'),
+      _containsAllOf('returnValue: <int, _i2.Foo>{}'),
     );
   });
 
@@ -2328,7 +2328,7 @@ void main() {
         Map m();
       }
       '''),
-      _containsAllOf('returnValue: <dynamic, dynamic>{},'),
+      _containsAllOf('returnValue: <dynamic, dynamic>{}'),
     );
   });
 
@@ -2339,7 +2339,7 @@ void main() {
         Future<bool> m() async => false;
       }
       '''),
-      _containsAllOf('returnValue: _i3.Future<bool>.value(false),'),
+      _containsAllOf('returnValue: _i3.Future<bool>.value(false)'),
     );
   });
 
@@ -2362,7 +2362,7 @@ void main() {
         Stream<int> m();
       }
       '''),
-      _containsAllOf('returnValue: _i3.Stream<int>.empty(),'),
+      _containsAllOf('returnValue: _i3.Stream<int>.empty()'),
     );
   });
 
@@ -2384,7 +2384,7 @@ void main() {
             #m,
             [],
           ),
-        ),'''),
+        )'''),
     );
   });
 
@@ -2403,7 +2403,7 @@ void main() {
             #m,
             [],
           ),
-        ),'''),
+        )'''),
     );
   });
 
@@ -2418,7 +2418,7 @@ void main() {
         two,
       }
       '''),
-      _containsAllOf('returnValue: _i2.Bar.one,'),
+      _containsAllOf('returnValue: _i2.Bar.one'),
     );
   });
 
@@ -2435,7 +2435,7 @@ void main() {
         returnValue: (
           int __p0, [
           String? __p1,
-        ]) {},'''),
+        ]) {}'''),
     );
   });
 
@@ -2452,7 +2452,7 @@ void main() {
         returnValue: (
           _i2.Foo __p0, {
           bool? b,
-        }) {},'''),
+        }) {}'''),
     );
   });
 
@@ -2469,7 +2469,7 @@ void main() {
         returnValue: (
           _i2.Foo __p0, {
           required bool b,
-        }) {},'''),
+        }) {}'''),
     );
   });
 
@@ -2489,7 +2489,7 @@ void main() {
             #m,
             [],
           ),
-        ),'''),
+        )'''),
     );
   });
 
@@ -2510,7 +2510,7 @@ void main() {
             #m,
             [],
           ),
-        ),
+        )
       '''),
     );
   });
@@ -2523,7 +2523,7 @@ void main() {
         T? Function<T>(T) m() => (int i, [String s]) {};
       }
       '''),
-      _containsAllOf('returnValue: <T>(T __p0) => null,'),
+      _containsAllOf('returnValue: <T>(T __p0) => null'),
     );
   });
 
@@ -3753,8 +3753,49 @@ void main() {
   });
 }
 
-TypeMatcher<List<int>> _containsAllOf(a, [b]) => decodedMatches(
-    b == null ? allOf(contains(a)) : allOf(contains(a), contains(b)));
+TypeMatcher<List<int>> _containsAllOf(String a, [String? b]) =>
+    decodedMatches(b == null
+        ? _ContainsIgnoringFormattingMatcher(a)
+        : allOf(_ContainsIgnoringFormattingMatcher(a),
+            _ContainsIgnoringFormattingMatcher(b)));
+
+/// Matches a string that contains a given string, ignoring differences related
+/// to formatting: whitespace and trailing commas.
+class _ContainsIgnoringFormattingMatcher extends Matcher {
+  /// Matches one or more whitespace characters.
+  static final _whitespacePattern = RegExp(r'\s+');
+
+  /// Matches a trailing comma preceding a closing bracket character.
+  static final _trailingCommaPattern = RegExp(r',\s*([)}\]])');
+
+  /// The string that the actual value must contain in order for the match to
+  /// succeed.
+  final String _expected;
+
+  _ContainsIgnoringFormattingMatcher(this._expected);
+
+  @override
+  Description describe(Description description) {
+    return description
+        .add('Contains "$_expected" when ignoring source formatting');
+  }
+
+  @override
+  bool matches(item, Map matchState) =>
+      _stripFormatting(item.toString()).contains(_stripFormatting(_expected));
+
+  /// Removes whitespace and trailing commas.
+  ///
+  /// Note that the result is not valid code because it means adjacent
+  ///.identifiers and operators may be joined in ways that break the semantics.
+  /// The goal is not to produce an but valid version of the code, just to
+  /// produce a string that will reliably match the actual string when it has
+  /// also been stripped the same way.
+  String _stripFormatting(String code) => code
+      .replaceAll(_whitespacePattern, '')
+      .replaceAllMapped(_trailingCommaPattern, (match) => match[1]!)
+      .trim();
+}
 
 /// Expect that [testBuilder], given [assets], in a package which has opted into
 /// null safety, throws an [InvalidMockitoAnnotationException] with a message
