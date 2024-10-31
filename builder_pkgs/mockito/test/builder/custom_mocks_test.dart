@@ -21,6 +21,8 @@ import 'package:mockito/src/builder.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
+import 'contains_ignoring_formatting.dart';
+
 Builder buildMocks(BuilderOptions options) => MockBuilder();
 
 const annotationsAsset = {
@@ -439,10 +441,9 @@ void main() {
         void main() {}
         '''
     });
-    expect(mocksContent, contains('m() => throw UnsupportedError(\n'));
     expect(
         mocksContent,
-        contains(
+        containsIgnoringFormatting('m() => throw UnsupportedError('
             'r\'"m" cannot be used without a mockito fallback generator.\''));
   });
 
@@ -466,10 +467,9 @@ void main() {
         void main() {}
         '''
     });
-    expect(mocksContent, contains('get f => throw UnsupportedError('));
     expect(
         mocksContent,
-        contains(
+        containsIgnoringFormatting('get f => throw UnsupportedError('
             'r\'"f" cannot be used without a mockito fallback generator.\''));
   });
 
@@ -493,10 +493,9 @@ void main() {
         void main() {}
         '''
     });
-    expect(mocksContent, contains('set f(value) => throw UnsupportedError('));
     expect(
         mocksContent,
-        contains(
+        containsIgnoringFormatting('set f(value) => throw UnsupportedError('
             'r\'"f=" cannot be used without a mockito fallback generator.\''));
   });
 
@@ -521,10 +520,9 @@ void main() {
         void main() {}
         '''
     });
-    expect(mocksContent, contains('m() => throw UnsupportedError('));
     expect(
         mocksContent,
-        contains(
+        containsIgnoringFormatting('m() => throw UnsupportedError('
             'r\'"m" cannot be used without a mockito fallback generator.\''));
   });
 
@@ -549,10 +547,9 @@ void main() {
         void main() {}
         '''
     });
-    expect(mocksContent, contains('m() => throw UnsupportedError('));
     expect(
         mocksContent,
-        contains(
+        containsIgnoringFormatting('m() => throw UnsupportedError('
             'r\'"m" cannot be used without a mockito fallback generator.\''));
   });
 
@@ -577,10 +574,9 @@ void main() {
         void main() {}
         '''
     });
-    expect(mocksContent, contains('void m(b) => throw UnsupportedError('));
     expect(
         mocksContent,
-        contains(
+        containsIgnoringFormatting('void m(b) => throw UnsupportedError('
             'r\'"m" cannot be used without a mockito fallback generator.\''));
   });
 
@@ -636,34 +632,14 @@ void main() {
         '''
     });
 
-    // TODO(rnystrom): Allow the test to pass using the old or new formatting
-    // styles. Remove the test for the old style once google3 is migrated to
-    // the new formatter.
     expect(
       mocksContent,
-      anyOf(
-        contains('''
+      containsIgnoringFormatting('''
         returnValue: _FakeBar_0(this, Invocation.method(#m, [])),
         returnValueForMissingStub: _FakeBar_0(
           this,
           Invocation.method(#m, []),
-        ),'''),
-        contains('''
-        returnValue: _FakeBar_0(
-          this,
-          Invocation.method(
-            #m,
-            [],
-          ),
-        ),
-        returnValueForMissingStub: _FakeBar_0(
-          this,
-          Invocation.method(
-            #m,
-            [],
-          ),
-        ),'''),
-      ),
+        )'''),
     );
   });
 

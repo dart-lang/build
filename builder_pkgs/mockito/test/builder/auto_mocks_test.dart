@@ -22,6 +22,8 @@ import 'package:mockito/src/builder.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
+import 'contains_ignoring_formatting.dart';
+
 const annotationsAsset = {
   'mockito|lib/annotations.dart': '''
 class GenerateMocks {
@@ -3755,47 +3757,8 @@ void main() {
 
 TypeMatcher<List<int>> _containsAllOf(String a, [String? b]) =>
     decodedMatches(b == null
-        ? _ContainsIgnoringFormattingMatcher(a)
-        : allOf(_ContainsIgnoringFormattingMatcher(a),
-            _ContainsIgnoringFormattingMatcher(b)));
-
-/// Matches a string that contains a given string, ignoring differences related
-/// to formatting: whitespace and trailing commas.
-class _ContainsIgnoringFormattingMatcher extends Matcher {
-  /// Matches one or more whitespace characters.
-  static final _whitespacePattern = RegExp(r'\s+');
-
-  /// Matches a trailing comma preceding a closing bracket character.
-  static final _trailingCommaPattern = RegExp(r',\s*([)}\]])');
-
-  /// The string that the actual value must contain in order for the match to
-  /// succeed.
-  final String _expected;
-
-  _ContainsIgnoringFormattingMatcher(this._expected);
-
-  @override
-  Description describe(Description description) {
-    return description
-        .add('Contains "$_expected" when ignoring source formatting');
-  }
-
-  @override
-  bool matches(item, Map matchState) =>
-      _stripFormatting(item.toString()).contains(_stripFormatting(_expected));
-
-  /// Removes whitespace and trailing commas.
-  ///
-  /// Note that the result is not valid code because it means adjacent
-  ///.identifiers and operators may be joined in ways that break the semantics.
-  /// The goal is not to produce an but valid version of the code, just to
-  /// produce a string that will reliably match the actual string when it has
-  /// also been stripped the same way.
-  String _stripFormatting(String code) => code
-      .replaceAll(_whitespacePattern, '')
-      .replaceAllMapped(_trailingCommaPattern, (match) => match[1]!)
-      .trim();
-}
+        ? containsIgnoringFormatting(a)
+        : allOf(containsIgnoringFormatting(a), containsIgnoringFormatting(b)));
 
 /// Expect that [testBuilder], given [assets], in a package which has opted into
 /// null safety, throws an [InvalidMockitoAnnotationException] with a message
