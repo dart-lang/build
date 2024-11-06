@@ -9,7 +9,7 @@
 * Require dart_style >= 2.3.7, so that the current Dart language version can be
   passed to `DartFormatter`.
 * Add topics to `pubspec.yaml`.
-* Fix a bug where typedef-aliases in type arguments were not correctly
+* Fix a bug where type aliases in type arguments were not correctly
   resolved.
 * Fix a bug where record types were not correctly resolved.
 

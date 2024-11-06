@@ -3583,8 +3583,7 @@ void main() {
         expect(mocksContent, contains('implements _i2.Baz'));
       });
 
-      test('when its a type parameter of function which returns another type',
-          () async {
+      test('when it\'s a function which returns any type', () async {
         final mocksContent = await buildWithNonNullable({
           ...annotationsAsset,
           'foo|lib/foo.dart': dedent(r'''
@@ -3612,14 +3611,15 @@ void main() {
         expect(mocksContent, contains('class MockFoo extends _i1.Mock'));
         expect(mocksContent, contains('implements _i2.Foo'));
       });
-      test('when its a duplicate type parameter', () async {
+      test('when the underlying type is identical to another type alias',
+          () async {
         final mocksContent = await buildWithNonNullable({
           ...annotationsAsset,
           'foo|lib/foo.dart': dedent(r'''
             class Bar {}
             typedef BarDef = int Function();
             typedef BarDef2 = int Function();
-            class BaseFoo<T,P> {
+            class BaseFoo<T, P> {
               BaseFoo(this.t1, this.t2);
               final T t1;
               final P t2;
@@ -3707,7 +3707,7 @@ void main() {
               contains('returnValue: _i3.Future<(int, {_i2.Bar bar})>.value('),
               contains('bar: _FakeBar_0('))));
     });
-    test('are supported as typedefs', () async {
+    test('are supported as type arguments', () async {
       final mocksContent = await buildWithNonNullable({
         ...annotationsAsset,
         'foo|lib/foo.dart': dedent(r'''
@@ -3731,7 +3731,7 @@ void main() {
       expect(mocksContent, contains('class MockFoo extends _i1.Mock'));
       expect(mocksContent, contains('implements _i2.Foo'));
     });
-    test('are supported as nested typedefs', () async {
+    test('are supported as nested type arguments', () async {
       final mocksContent = await buildWithNonNullable({
         ...annotationsAsset,
         'foo|lib/foo.dart': dedent(r'''

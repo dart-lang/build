@@ -180,10 +180,14 @@ $rawOutput
         return;
       }
       seenTypes.add(type);
-      librariesWithTypes.addAll([
-        if (type.element?.library != null) type.element!.library!,
-        if (type.alias?.element.library != null) type.alias!.element.library,
-      ]);
+
+      if (type.element?.library case var library?) {
+        librariesWithTypes.add(library);
+      }
+      if (type.alias?.element.library case var library?) {
+        librariesWithTypes.add(library);
+      }
+
       type.element?.accept(typeVisitor);
       type.alias?.element.accept(typeVisitor);
       switch (type) {
