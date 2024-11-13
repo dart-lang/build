@@ -1364,7 +1364,6 @@ void main() {
   test('prefixes parameter type on generic function-typed parameter', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
-      import 'dart:async';
       class Foo {
         dynamic m(void Function(Foo f) a) {}
       }
@@ -1377,7 +1376,6 @@ void main() {
   test('prefixes return type on generic function-typed parameter', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
-      import 'dart:async';
       class Foo {
         void m(Foo Function() a) {}
       }
@@ -1389,7 +1387,6 @@ void main() {
   test('prefixes parameter type on function-typed parameter', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
-      import 'dart:async';
       class Foo {
         void m(void a(Foo f)) {}
       }
@@ -1402,12 +1399,25 @@ void main() {
   test('prefixes return type on function-typed parameter', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
-      import 'dart:async';
       class Foo {
         void m(Foo a()) {}
       }
       '''),
       _containsAllOf('void m(_i2.Foo Function()? a) => super.noSuchMethod('),
+    );
+  });
+
+  test('renames wildcard parameters', () async {
+    await expectSingleNonNullableOutput(
+      dedent(r'''
+      class Foo {
+        void m(int _, int _) {}
+      }
+      '''),
+      _containsAllOf(
+        'void m(int? _0, int? _1) => super.noSuchMethod(Invocation.method(',
+        'Invocation.method(#m, [_0, _1])',
+      ),
     );
   });
 
@@ -2040,6 +2050,23 @@ void main() {
                 #m,
                 a,
               ),
+              returnValueForMissingStub: null,
+            );
+        ''')),
+    );
+  });
+
+  test('overrides nullable instance setters with wildcard parameters',
+      () async {
+    await expectSingleNonNullableOutput(
+      dedent('''
+      class Foo {
+        void set m(int? _) {}
+      }
+      '''),
+      _containsAllOf(dedent2('''
+        set m(int? _value) => super.noSuchMethod(
+              Invocation.setter(#m, _value),
               returnValueForMissingStub: null,
             );
         ''')),

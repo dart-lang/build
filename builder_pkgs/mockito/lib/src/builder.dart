@@ -1318,14 +1318,21 @@ class _MockClassInfo {
         if (parameter.isRequiredPositional || parameter.isOptionalPositional) {
           final superParameterType =
               _escapeCovariance(parameter, position: position);
-          final matchingParameter = _matchingParameter(parameter,
-              superParameterType: superParameterType, forceNullable: true);
+          final matchingParameter = _matchingParameter(
+            parameter,
+            superParameterType: superParameterType,
+            // A parameter in the overridden method may be a wildcard, in which
+            // case we need to rename it, as we use the parameter when we pass
+            // it to `Invocation.method`.
+            defaultName: '_$position',
+            forceNullable: true,
+          );
           if (parameter.isRequiredPositional) {
             builder.requiredParameters.add(matchingParameter);
           } else {
             builder.optionalParameters.add(matchingParameter);
           }
-          invocationPositionalArgs.add(refer(parameter.displayName));
+          invocationPositionalArgs.add(refer(matchingParameter.name));
           position++;
         } else if (parameter.isNamed) {
           final superParameterType =
@@ -1712,12 +1719,14 @@ class _MockClassInfo {
       {required analyzer.DartType superParameterType,
       String? defaultName,
       bool forceNullable = false}) {
+    final parameterHasName = parameter.name.isNotEmpty && parameter.name != '_';
     assert(
-        parameter.name.isNotEmpty || defaultName != null,
-        'parameter must have a non-empty name, or non-null defaultName must be '
-        'passed, but parameter name is "${parameter.name}" and defaultName is '
-        '$defaultName');
-    final name = parameter.name.isEmpty ? defaultName! : parameter.name;
+      parameterHasName || defaultName != null,
+      'parameter must have a non-empty name, or non-null defaultName must be '
+      'passed, but parameter name is "${parameter.name}" and defaultName is '
+      '$defaultName',
+    );
+    final name = !parameterHasName ? defaultName! : parameter.name;
     return Parameter((pBuilder) {
       pBuilder.name = name;
       if (!superParameterType.containsPrivateName) {
@@ -1980,8 +1989,13 @@ class _MockClassInfo {
 
     assert(setter.parameters.length == 1);
     final parameter = setter.parameters.single;
+    // The parameter in the overridden setter may be a wildcard, in which case
+    // we need to rename it, as we use the parameter when we pass it to
+    // `Invocation.setter`.
+    final parameterName =
+        parameter.displayName == '_' ? '_value' : parameter.displayName;
     builder.requiredParameters.add(Parameter((pBuilder) {
-      pBuilder.name = parameter.displayName;
+      pBuilder.name = parameterName;
       if (!parameter.type.containsPrivateName) {
         pBuilder.type = _typeReference(parameter.type,
             forceNullable: true, overrideVoid: true);
@@ -2012,7 +2026,7 @@ class _MockClassInfo {
     final invocation =
         referImported('Invocation', 'dart:core').property('setter').call([
       refer('#$name'),
-      refer(parameter.displayName),
+      refer(parameterName),
     ]);
     final returnNoSuchMethod = refer('super')
         .property('noSuchMethod')
