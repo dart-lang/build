@@ -247,8 +247,10 @@ class WatchImpl implements BuildState {
               failureType: FailureType.buildScriptChanged);
         }
       }
-      return build.run(mergedChanges,
-          buildDirs: _buildDirs, buildFilters: _buildFilters);
+      return runWithFileSystemBatch(
+          () => build.run(mergedChanges,
+              buildDirs: _buildDirs, buildFilters: _buildFilters),
+          environment.writer);
     }
 
     var terminate = Future.any([until, _terminateCompleter.future]).then((_) {

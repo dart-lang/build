@@ -106,17 +106,19 @@ Future<BuildResult> build(List<BuilderApplication> builders,
   );
   var terminator = Terminator(terminateEventStream);
   try {
-    var build = await BuildRunner.create(
-      options,
-      environment,
-      builders,
-      builderConfigOverrides,
-      isReleaseBuild: isReleaseBuild,
-    );
-    var result =
-        await build.run({}, buildDirs: buildDirs, buildFilters: buildFilters);
-    await build.beforeExit();
-    return result;
+    return await runWithFileSystemBatch(() async {
+      var build = await BuildRunner.create(
+        options,
+        environment,
+        builders,
+        builderConfigOverrides!,
+        isReleaseBuild: isReleaseBuild!,
+      );
+      var result = await build
+          .run({}, buildDirs: buildDirs!, buildFilters: buildFilters!);
+      await build.beforeExit();
+      return result;
+    }, environment.writer);
   } finally {
     await terminator.cancel();
     await options.logListener.cancel();

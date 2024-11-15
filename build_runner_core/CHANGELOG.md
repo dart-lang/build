@@ -1,5 +1,7 @@
-## 7.3.3-wip
+## 7.4.0-wip
 
+- Add `runWithFileSystemBatch` to batch asset writes before flushing them at
+  once.
 - Bump the min sdk to 3.6.0-dev.228.
 - Require analyzer ^6.9.0.
 - Fix analyzer deprecations.
