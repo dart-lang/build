@@ -13,37 +13,6 @@ import '../environment/io_environment.dart';
 import 'reader.dart';
 import 'writer.dart';
 
-/// Runs [inner] in a zone that indicates to compatible [RunnerAssetWriter]s
-/// that written assets should not be written to the underlying file system
-/// directly, but rather in a batch after [inner] has completed.
-///
-/// This solves a common issue when `build_runner` and other tools such as an
-/// analysis server are running concurrently: During a build, generated assets
-/// are written one-by-one. The analyzer will discover these changes while the
-/// build is running and report lints for a partial state of the workspace where
-/// not all generated files are present, leading to a subpar experience.
-///
-/// [runWithFileSystemBatch] is intended to wrap a single build run. Instead of
-/// writing assets directly, they are first cached in memory and then written at
-/// once after the build has completed. This causes fewer invalidations for
-/// external tools. The [writer] will be used to complete the writes collected
-/// while running [inner].
-///
-/// The underlying asset readers and writes both need to support file system
-/// batches (reader support is crucial to report changed assets that have not
-/// been flushed to the file system yet). The default [IOEnvironment] will use
-/// batch-aware readers and writers when not in low-resources mode.
-Future<T> runWithFileSystemBatch<T>(
-  Future<T> Function() inner,
-  RunnerAssetWriter writer,
-) async {
-  final batch = FileSystemWriteBatch._();
-  final result =
-      await runZoned(inner, zoneValues: {FileSystemWriteBatch._key: batch});
-  await batch._completeWrites(writer);
-  return result;
-}
-
 /// A batch of file system writes that should be committed at once instead of
 /// when [AssetWriter.writeAsBytes] or [AssetWriter.writeAsString] is called.
 ///
@@ -61,23 +30,39 @@ final class FileSystemWriteBatch {
 
   FileSystemWriteBatch._();
 
-  Future<void> _completeWrites(RunnerAssetWriter writer) async {
-    await Future.wait(_pendingWrites.entries.map((e) async {
-      if (e.value.content case final content?) {
-        await writer.writeAsBytes(e.key, content);
+  Future<void> completeWrites(RunnerAssetWriter writer) async {
+    await Future.wait(_pendingWrites.keys.map((id) async {
+      final pending = _pendingWrites[id]!;
+
+      if (pending.content case final content?) {
+        await writer.writeAsBytes(id, content);
       } else {
-        await writer.delete(e.key);
+        await writer.delete(id);
       }
     }));
 
     _pendingWrites.clear();
   }
+}
 
-  static FileSystemWriteBatch? get current {
-    return Zone.current[_key] as FileSystemWriteBatch?;
-  }
+/// Wraps a pair of a [RunnerAssetReader] with path-prividing capabilities and
+/// a [RunnerAssetWriter] into a pair of readers and writers that will
+/// internally buffer writes and only flush them in
+/// [RunnerAssetWriter.completeBuild].
+///
+/// The returned reader will see pending writes by the returned writer before
+/// they are flushed to the file system.
+(RunnerAssetReader, RunnerAssetWriter) wrapInBatch({
+  required RunnerAssetReader reader,
+  required PathProvidingAssetReader pathProvidingReader,
+  required RunnerAssetWriter writer,
+}) {
+  final batch = FileSystemWriteBatch._();
 
-  static final _key = Object();
+  return (
+    BatchReader(reader, pathProvidingReader, batch),
+    BatchWriter(writer, batch),
+  );
 }
 
 final class _PendingFileState {
@@ -89,19 +74,16 @@ final class _PendingFileState {
 }
 
 @internal
-final class BatchAwareReader extends AssetReader
+final class BatchReader extends AssetReader
     implements RunnerAssetReader, PathProvidingAssetReader {
   final RunnerAssetReader _inner;
   final PathProvidingAssetReader _innerPathProviding;
+  final FileSystemWriteBatch _batch;
 
-  BatchAwareReader(this._inner, this._innerPathProviding);
+  BatchReader(this._inner, this._innerPathProviding, this._batch);
 
   _PendingFileState? _stateFor(AssetId id) {
-    if (FileSystemWriteBatch.current case final batch?) {
-      return batch._pendingWrites[id];
-    } else {
-      return null;
-    }
+    return _batch._pendingWrites[id];
   }
 
   @override
@@ -140,52 +122,43 @@ final class BatchAwareReader extends AssetReader
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
-    final bytes = await readAsBytes(id);
-    return encoding.decode(bytes);
+    if (_stateFor(id) case final state?) {
+      if (state.isDeleted) {
+        throw AssetNotFoundException(id);
+      } else {
+        return encoding.decode(state.content!);
+      }
+    } else {
+      return await _inner.readAsString(id, encoding: encoding);
+    }
   }
 }
 
 @internal
-final class BatchAwareWriter extends RunnerAssetWriter {
+final class BatchWriter extends RunnerAssetWriter {
   final RunnerAssetWriter _inner;
+  final FileSystemWriteBatch _batch;
 
-  BatchAwareWriter(this._inner);
-
-  FileSystemWriteBatch? _batchFor(AssetId id) {
-    // Don't batch writes for hidden files unlikely to be consumed by other
-    // tools.
-    if (id.pathSegments case ['.dart_tool', ...]) {
-      return null;
-    }
-
-    return FileSystemWriteBatch.current;
-  }
+  BatchWriter(this._inner, this._batch);
 
   @override
   Future delete(AssetId id) async {
-    if (_batchFor(id) case final batch?) {
-      batch._pendingWrites[id] = const _PendingFileState(null);
-    } else {
-      await _inner.delete(id);
-    }
+    _batch._pendingWrites[id] = const _PendingFileState(null);
   }
 
   @override
   Future<void> writeAsBytes(AssetId id, List<int> bytes) async {
-    if (_batchFor(id) case final batch?) {
-      batch._pendingWrites[id] = _PendingFileState(bytes);
-    } else {
-      await _inner.writeAsBytes(id, bytes);
-    }
+    _batch._pendingWrites[id] = _PendingFileState(bytes);
   }
 
   @override
   Future<void> writeAsString(AssetId id, String contents,
       {Encoding encoding = utf8}) async {
-    if (_batchFor(id) case final batch?) {
-      batch._pendingWrites[id] = _PendingFileState(encoding.encode(contents));
-    } else {
-      await _inner.writeAsString(id, contents, encoding: encoding);
-    }
+    _batch._pendingWrites[id] = _PendingFileState(encoding.encode(contents));
+  }
+
+  @override
+  Future<void> completeBuild() async {
+    await _batch.completeWrites(_inner);
   }
 }

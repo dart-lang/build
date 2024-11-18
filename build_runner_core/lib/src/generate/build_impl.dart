@@ -93,7 +93,12 @@ class BuildImpl {
       Set<BuildFilter> buildFilters = const {}}) {
     finalizedReader.reset(_buildPaths(buildDirs), buildFilters);
     return _SingleBuild(this, buildDirs, buildFilters).run(updates)
-      ..whenComplete(_resolvers.reset);
+      ..whenComplete(_handleCompletedBuild);
+  }
+
+  Future<void> _handleCompletedBuild() async {
+    await _environment.writer.completeBuild();
+    _resolvers.reset();
   }
 
   static Future<BuildImpl> create(

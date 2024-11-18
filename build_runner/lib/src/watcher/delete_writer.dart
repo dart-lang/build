@@ -29,4 +29,9 @@ class OnDeleteWriter implements RunnerAssetWriter {
   Future writeAsString(AssetId id, String contents,
           {Encoding encoding = utf8}) =>
       _writer.writeAsString(id, contents, encoding: encoding);
+
+  @override
+  Future<void> completeBuild() async {
+    await _writer.completeBuild();
+  }
 }

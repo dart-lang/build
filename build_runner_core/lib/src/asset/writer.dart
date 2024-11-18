@@ -11,4 +11,10 @@ typedef OnDelete = void Function(AssetId id);
 
 abstract class RunnerAssetWriter implements AssetWriter {
   Future delete(AssetId id);
+
+  /// Called after each completed build.
+  ///
+  /// Some [RunnerAssetWriter] implementations may buffer completed writes
+  /// internally and flush them in [completeBuild].
+  Future<void> completeBuild();
 }

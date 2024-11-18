@@ -35,20 +35,33 @@ class IOEnvironment implements BuildEnvironment {
 
   final PackageGraph _packageGraph;
 
-  IOEnvironment(
-    this._packageGraph, {
+  IOEnvironment._(this.reader, this.writer, this._isInteractive,
+      this._outputSymlinksOnly, this._packageGraph);
+
+  factory IOEnvironment(
+    PackageGraph packageGraph, {
     bool? assumeTty,
     bool outputSymlinksOnly = false,
     bool lowResourcesMode = false,
-  })  : _isInteractive = assumeTty == true || _canPrompt(),
-        _outputSymlinksOnly = outputSymlinksOnly,
-        reader = _createReader(_packageGraph, lowResourcesMode),
-        writer = _createWriter(_packageGraph, lowResourcesMode) {
-    if (_outputSymlinksOnly && Platform.isWindows) {
+  }) {
+    if (outputSymlinksOnly && Platform.isWindows) {
       _logger.warning('Symlinks to files are not yet working on Windows, you '
           'may experience issues using this mode. Follow '
           'https://github.com/dart-lang/sdk/issues/33966 for updates.');
     }
+
+    var fileReader = FileBasedAssetReader(packageGraph);
+    var fileWriter = FileBasedAssetWriter(packageGraph);
+
+    var (reader, writer) = lowResourcesMode
+        ? (fileReader, fileWriter)
+        : wrapInBatch(
+            reader: fileReader,
+            pathProvidingReader: fileReader,
+            writer: fileWriter);
+
+    return IOEnvironment._(reader, writer, assumeTty == true || _canPrompt(),
+        outputSymlinksOnly, packageGraph);
   }
 
   @override
@@ -92,18 +105,6 @@ class IOEnvironment implements BuildEnvironment {
       }
     }
     return buildResult;
-  }
-
-  static RunnerAssetReader _createReader(
-      PackageGraph packageGraph, bool lowResources) {
-    var reader = FileBasedAssetReader(packageGraph);
-    return lowResources ? reader : BatchAwareReader(reader, reader);
-  }
-
-  static RunnerAssetWriter _createWriter(
-      PackageGraph packageGraph, bool lowResources) {
-    var writer = FileBasedAssetWriter(packageGraph);
-    return lowResources ? writer : BatchAwareWriter(writer);
   }
 }
 
