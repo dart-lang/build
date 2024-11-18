@@ -1,5 +1,5 @@
 name: build_runner_core
-version: 7.4.0-wip
+version: 8.0.0-wip
 description: Core tools to organize the structure of a build and run Builders.
 repository: https://github.com/dart-lang/build/tree/master/build_runner_core
 

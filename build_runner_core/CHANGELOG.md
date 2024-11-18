@@ -1,7 +1,9 @@
-## 7.4.0-wip
+## 8.0.0-wip
 
-- Add `runWithFileSystemBatch` to batch asset writes before flushing them at
-  once.
+- __Breaking__: Add `completeBuild` to `RunnerAssetWriter`, a method expected
+  to be called by the build system at the end of a completed build.
+- Add `wrapInBatch` to obtain a reader/writer pair that will batch writes
+  before flushing them at the end of a build.
 - Bump the min sdk to 3.6.0-dev.228.
 - Require analyzer ^6.9.0.
 - Fix analyzer deprecations.
