@@ -93,12 +93,7 @@ class BuildImpl {
       Set<BuildFilter> buildFilters = const {}}) {
     finalizedReader.reset(_buildPaths(buildDirs), buildFilters);
     return _SingleBuild(this, buildDirs, buildFilters).run(updates)
-      ..whenComplete(_handleCompletedBuild);
-  }
-
-  Future<void> _handleCompletedBuild() async {
-    await _environment.writer.completeBuild();
-    _resolvers.reset();
+      ..whenComplete(_resolvers.reset);
   }
 
   static Future<BuildImpl> create(
@@ -250,6 +245,7 @@ class _SingleBuild {
             performance: result.performance);
       }
     }
+    await _environment.writer.completeBuild();
     await _resourceManager.disposeAll();
     result = await _environment.finalizeBuild(
         result,

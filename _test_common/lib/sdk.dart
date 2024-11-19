@@ -12,8 +12,6 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
-String _dartBinary = p.join(sdkBin, 'dart');
-
 final bool supportsUnsoundNullSafety =
     Version.parse(Platform.version.split(' ').first).major == 2;
 
@@ -54,7 +52,7 @@ Future<Process> startPub(String package, String command,
 /// The [script] should be a relative path under [package].
 Future<ProcessResult> runDart(String package, String script,
         {Iterable<String>? args}) =>
-    Process.run(_dartBinary, [script, ...?args],
+    Process.run(dartBinary, [script, ...?args],
         workingDirectory: p.join(d.sandbox, package));
 
 /// Starts the `dart` script [script] in [package] with [args].
@@ -62,5 +60,5 @@ Future<ProcessResult> runDart(String package, String script,
 /// The [script] should be a relative path under [package].
 Future<Process> startDart(String package, String script,
         {Iterable<String>? args}) =>
-    Process.start(_dartBinary, [script, ...?args],
+    Process.start(dartBinary, [script, ...?args],
         workingDirectory: p.join(d.sandbox, package));

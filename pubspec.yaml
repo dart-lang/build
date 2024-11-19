@@ -14,7 +14,7 @@ dev_dependencies:
 workspace:
 #- _test
 #- _test/pkgs/provides_builder
-- _test_common
+#- _test_common
 # - build
 - build_config
 - build_daemon
