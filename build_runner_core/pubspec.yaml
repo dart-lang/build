@@ -49,3 +49,7 @@ dev_dependencies:
 
 topics:
  - build-runner
+
+dependency_overrides:
+  build_runner:
+    path: ../build_runner

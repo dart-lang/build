@@ -24,11 +24,10 @@ import 'writer.dart';
 ///
 /// The default [IOEnvironment] uses readers and writes that are batch-aware
 /// outside of low-memory mode.
-@internal
-final class FileSystemWriteBatch {
+final class _FileSystemWriteBatch {
   final Map<AssetId, _PendingFileState> _pendingWrites = {};
 
-  FileSystemWriteBatch._();
+  _FileSystemWriteBatch._();
 
   Future<void> completeWrites(RunnerAssetWriter writer) async {
     await Future.wait(_pendingWrites.keys.map((id) async {
@@ -57,7 +56,7 @@ final class FileSystemWriteBatch {
   required PathProvidingAssetReader pathProvidingReader,
   required RunnerAssetWriter writer,
 }) {
-  final batch = FileSystemWriteBatch._();
+  final batch = _FileSystemWriteBatch._();
 
   return (
     BatchReader(reader, pathProvidingReader, batch),
@@ -78,7 +77,7 @@ final class BatchReader extends AssetReader
     implements RunnerAssetReader, PathProvidingAssetReader {
   final RunnerAssetReader _inner;
   final PathProvidingAssetReader _innerPathProviding;
-  final FileSystemWriteBatch _batch;
+  final _FileSystemWriteBatch _batch;
 
   BatchReader(this._inner, this._innerPathProviding, this._batch);
 
@@ -137,7 +136,7 @@ final class BatchReader extends AssetReader
 @internal
 final class BatchWriter extends RunnerAssetWriter {
   final RunnerAssetWriter _inner;
-  final FileSystemWriteBatch _batch;
+  final _FileSystemWriteBatch _batch;
 
   BatchWriter(this._inner, this._batch);
 
