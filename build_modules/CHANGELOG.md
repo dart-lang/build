@@ -1,3 +1,7 @@
+## 5.0.10-wip
+
+- Use 'dart compile js-dev' to invoke the Dart Development Compiler.
+
 ## 5.0.10-beta.0
 
 - Bump the min sdk to 3.5.0.
