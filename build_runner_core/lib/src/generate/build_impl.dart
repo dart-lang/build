@@ -245,6 +245,7 @@ class _SingleBuild {
             performance: result.performance);
       }
     }
+    await _environment.writer.completeBuild();
     await _resourceManager.disposeAll();
     result = await _environment.finalizeBuild(
         result,

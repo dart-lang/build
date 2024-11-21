@@ -10,6 +10,7 @@ import 'dart:isolate';
 import 'package:_test_common/sdk.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:stack_trace/stack_trace.dart';
@@ -106,7 +107,7 @@ Future<BuildTool> package(Iterable<d.Descriptor> otherPackages,
   ]).create();
   await Future.wait(otherPackages.map((d) => d.create()));
   await pubGet('a');
-  return BuildTool._('dart', ['run', 'build_runner']);
+  return BuildTool._(dartBinary, ['run', 'build_runner']);
 }
 
 /// Create a package in [d.sandbox] with a `tool/build.dart` script using
@@ -145,7 +146,7 @@ Future<BuildTool> packageWithBuildScript(
     ...contents
   ]).create();
   await pubGet('a');
-  return BuildTool._('dart', [p.join('tool', 'build.dart')]);
+  return BuildTool._(dartBinary, [p.join('tool', 'build.dart')]);
 }
 
 String _buildersFile(

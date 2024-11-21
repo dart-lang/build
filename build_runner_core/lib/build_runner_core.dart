@@ -4,6 +4,7 @@
 
 export 'package:build/build.dart' show PostProcessBuildStep, PostProcessBuilder;
 
+export 'src/asset/batch.dart' show wrapInBatch;
 export 'src/asset/file_based.dart';
 export 'src/asset/finalized_reader.dart';
 export 'src/asset/reader.dart' show RunnerAssetReader;

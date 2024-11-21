@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 
+import '../asset/batch.dart';
 import '../asset/file_based.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
@@ -34,17 +35,33 @@ class IOEnvironment implements BuildEnvironment {
 
   final PackageGraph _packageGraph;
 
-  IOEnvironment(this._packageGraph,
-      {bool? assumeTty, bool outputSymlinksOnly = false})
-      : _isInteractive = assumeTty == true || _canPrompt(),
-        _outputSymlinksOnly = outputSymlinksOnly,
-        reader = FileBasedAssetReader(_packageGraph),
-        writer = FileBasedAssetWriter(_packageGraph) {
-    if (_outputSymlinksOnly && Platform.isWindows) {
+  IOEnvironment._(this.reader, this.writer, this._isInteractive,
+      this._outputSymlinksOnly, this._packageGraph);
+
+  factory IOEnvironment(
+    PackageGraph packageGraph, {
+    bool? assumeTty,
+    bool outputSymlinksOnly = false,
+    bool lowResourcesMode = false,
+  }) {
+    if (outputSymlinksOnly && Platform.isWindows) {
       _logger.warning('Symlinks to files are not yet working on Windows, you '
           'may experience issues using this mode. Follow '
           'https://github.com/dart-lang/sdk/issues/33966 for updates.');
     }
+
+    var fileReader = FileBasedAssetReader(packageGraph);
+    var fileWriter = FileBasedAssetWriter(packageGraph);
+
+    var (reader, writer) = lowResourcesMode
+        ? (fileReader, fileWriter)
+        : wrapInBatch(
+            reader: fileReader,
+            pathProvidingReader: fileReader,
+            writer: fileWriter);
+
+    return IOEnvironment._(reader, writer, assumeTty == true || _canPrompt(),
+        outputSymlinksOnly, packageGraph);
   }
 
   @override

@@ -1,3 +1,8 @@
+## 2.4.14-wip
+
+- Write generated assets at the end of a build to avoid invalidating other
+  tools with a file watcher multiple times.
+
 ## 2.4.13
 
 - Bump the min sdk to 3.5.0.
