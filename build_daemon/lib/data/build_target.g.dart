@@ -23,10 +23,6 @@ class _$DefaultBuildTargetSerializer
       Serializers serializers, DefaultBuildTarget object,
       {FullType specifiedType = FullType.unspecified}) {
     final result = <Object?>[
-      'blackListPatterns',
-      serializers.serialize(object.blackListPatterns,
-          specifiedType:
-              const FullType(BuiltSet, const [const FullType(RegExp)])),
       'reportChangedAssets',
       serializers.serialize(object.reportChangedAssets,
           specifiedType: const FullType(bool)),
@@ -65,12 +61,6 @@ class _$DefaultBuildTargetSerializer
       iterator.moveNext();
       final Object? value = iterator.current;
       switch (key) {
-        case 'blackListPatterns':
-          result.blackListPatterns.replace(serializers.deserialize(value,
-                  specifiedType:
-                      const FullType(BuiltSet, const [const FullType(RegExp)]))!
-              as BuiltSet<Object?>);
-          break;
         case 'outputLocation':
           result.outputLocation.replace(serializers.deserialize(value,
                   specifiedType: const FullType(OutputLocation))!
@@ -154,8 +144,6 @@ class _$OutputLocationSerializer
 
 class _$DefaultBuildTarget extends DefaultBuildTarget {
   @override
-  final BuiltSet<RegExp> blackListPatterns;
-  @override
   final OutputLocation? outputLocation;
   @override
   final BuiltSet<String>? buildFilters;
@@ -169,14 +157,11 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
       (new DefaultBuildTargetBuilder()..update(updates))._build();
 
   _$DefaultBuildTarget._(
-      {required this.blackListPatterns,
-      this.outputLocation,
+      {this.outputLocation,
       this.buildFilters,
       required this.reportChangedAssets,
       required this.target})
       : super._() {
-    BuiltValueNullFieldError.checkNotNull(
-        blackListPatterns, r'DefaultBuildTarget', 'blackListPatterns');
     BuiltValueNullFieldError.checkNotNull(
         reportChangedAssets, r'DefaultBuildTarget', 'reportChangedAssets');
     BuiltValueNullFieldError.checkNotNull(
@@ -196,7 +181,6 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is DefaultBuildTarget &&
-        blackListPatterns == other.blackListPatterns &&
         outputLocation == other.outputLocation &&
         buildFilters == other.buildFilters &&
         reportChangedAssets == other.reportChangedAssets &&
@@ -206,7 +190,6 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
   @override
   int get hashCode {
     var _$hash = 0;
-    _$hash = $jc(_$hash, blackListPatterns.hashCode);
     _$hash = $jc(_$hash, outputLocation.hashCode);
     _$hash = $jc(_$hash, buildFilters.hashCode);
     _$hash = $jc(_$hash, reportChangedAssets.hashCode);
@@ -218,7 +201,6 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'DefaultBuildTarget')
-          ..add('blackListPatterns', blackListPatterns)
           ..add('outputLocation', outputLocation)
           ..add('buildFilters', buildFilters)
           ..add('reportChangedAssets', reportChangedAssets)
@@ -230,12 +212,6 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
 class DefaultBuildTargetBuilder
     implements Builder<DefaultBuildTarget, DefaultBuildTargetBuilder> {
   _$DefaultBuildTarget? _$v;
-
-  SetBuilder<RegExp>? _blackListPatterns;
-  SetBuilder<RegExp> get blackListPatterns =>
-      _$this._blackListPatterns ??= new SetBuilder<RegExp>();
-  set blackListPatterns(SetBuilder<RegExp>? blackListPatterns) =>
-      _$this._blackListPatterns = blackListPatterns;
 
   OutputLocationBuilder? _outputLocation;
   OutputLocationBuilder get outputLocation =>
@@ -265,7 +241,6 @@ class DefaultBuildTargetBuilder
   DefaultBuildTargetBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
-      _blackListPatterns = $v.blackListPatterns.toBuilder();
       _outputLocation = $v.outputLocation?.toBuilder();
       _buildFilters = $v.buildFilters?.toBuilder();
       _reportChangedAssets = $v.reportChangedAssets;
@@ -294,7 +269,6 @@ class DefaultBuildTargetBuilder
     try {
       _$result = _$v ??
           new _$DefaultBuildTarget._(
-              blackListPatterns: blackListPatterns.build(),
               outputLocation: _outputLocation?.build(),
               buildFilters: _buildFilters?.build(),
               reportChangedAssets: BuiltValueNullFieldError.checkNotNull(
@@ -306,8 +280,6 @@ class DefaultBuildTargetBuilder
     } catch (_) {
       late String _$failedField;
       try {
-        _$failedField = 'blackListPatterns';
-        blackListPatterns.build();
         _$failedField = 'outputLocation';
         _outputLocation?.build();
         _$failedField = 'buildFilters';
