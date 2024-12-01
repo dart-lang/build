@@ -21,8 +21,8 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-      - uses: dart-lang/setup-dart@0a8a0fc875eb934c15d08629302413c671d3f672
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dart-lang/setup-dart@e630b99d28a3b71860378cafdc2a067c71107f94
         with:
           sdk: 3.5.0
       - id: install
@@ -39,8 +39,8 @@ jobs:
       matrix:
         sdk: [3.5.0, dev]
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-      - uses: dart-lang/setup-dart@0a8a0fc875eb934c15d08629302413c671d3f672
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dart-lang/setup-dart@e630b99d28a3b71860378cafdc2a067c71107f94
         with:
           sdk: ${{ matrix.sdk }}
       - id: install
@@ -61,8 +61,8 @@ jobs:
         os: [ubuntu-latest]
         sdk: [3.5.0, dev]
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-      - uses: dart-lang/setup-dart@0a8a0fc875eb934c15d08629302413c671d3f672
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dart-lang/setup-dart@e630b99d28a3b71860378cafdc2a067c71107f94
         with:
           sdk: ${{ matrix.sdk }}
       - id: install
@@ -86,8 +86,8 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-      - uses: dart-lang/setup-dart@0a8a0fc875eb934c15d08629302413c671d3f672
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dart-lang/setup-dart@e630b99d28a3b71860378cafdc2a067c71107f94
         with:
           sdk: dev
       - id: install
