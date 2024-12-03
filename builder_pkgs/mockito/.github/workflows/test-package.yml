@@ -15,7 +15,7 @@ env:
 permissions: read-all
 
 jobs:
-  # Check code formatting with the stable SDK.
+  # Check code formatting with the dev SDK.
   format:
     runs-on: ubuntu-latest
     strategy:
@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: dart-lang/setup-dart@e630b99d28a3b71860378cafdc2a067c71107f94
         with:
-          sdk: 3.5.0
+          sdk: dev
       - id: install
         name: Install dependencies
         run: dart pub get
@@ -37,7 +37,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sdk: [3.5.0, dev]
+        # TODO(srawlins): Re-enable stable Dart when 3.6.0 is available.
+        #sdk: [3.5.0, dev]
+        sdk: [dev]
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: dart-lang/setup-dart@e630b99d28a3b71860378cafdc2a067c71107f94
@@ -59,7 +61,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        sdk: [3.5.0, dev]
+        # TODO(srawlins): Re-enable stable Dart when 3.6.0 is available.
+        #sdk: [3.5.0, dev]
+        sdk: [dev]
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: dart-lang/setup-dart@e630b99d28a3b71860378cafdc2a067c71107f94
@@ -75,7 +79,11 @@ jobs:
         run: dart run build_runner build --fail-on-severe
         if: always() && steps.install.outcome == 'success'
       - name: Run DDC tests
-        run: dart run build_runner test -- --platform chrome
+        # We run with `--concurrency=1` because of a bug in the test package,
+        # I believe: https://github.com/dart-lang/test/issues/2294. We can
+        # look into removing this flag when we are using a version of the test
+        # package without this bug.
+        run: dart run build_runner test -- --platform chrome --concurrency=1
         if: always() && steps.install.outcome == 'success'
 
   document:
