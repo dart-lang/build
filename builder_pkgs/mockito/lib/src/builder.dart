@@ -181,22 +181,22 @@ $rawOutput
       }
       seenTypes.add(type);
 
-      if (type.element?.library case var library?) {
+      if (type.element?.library case final library?) {
         librariesWithTypes.add(library);
       }
-      if (type.alias?.element.library case var library?) {
+      if (type.alias?.element.library case final library?) {
         librariesWithTypes.add(library);
       }
 
       type.element?.accept(typeVisitor);
       type.alias?.element.accept(typeVisitor);
       switch (type) {
-        case analyzer.InterfaceType interface:
+        case final analyzer.InterfaceType interface:
           interface.typeArguments.forEach(addTypesFrom);
           interface.allSupertypes.forEach(addTypesFrom);
-        case analyzer.RecordType record:
+        case final analyzer.RecordType record:
           record.positionalTypes.forEach(addTypesFrom);
-          record.namedTypes.map((e) => e.type).forEach(addTypesFrom);
+          record.namedFields.map((e) => e.type).forEach(addTypesFrom);
       }
     }
 

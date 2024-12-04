@@ -3589,12 +3589,10 @@ void main() {
           'foo|lib/foo.dart': dedent(r'''
             class Bar {}
             typedef CreateBar = Bar Function();
-
             class BaseFoo<T> {
               BaseFoo(this.t);
               final T t;
             }
-
             class Foo extends BaseFoo<CreateBar> {
               Foo() : super(() => 1);
             }
@@ -3602,7 +3600,6 @@ void main() {
           'foo|test/foo_test.dart': '''
             import 'package:foo/foo.dart';
             import 'package:mockito/annotations.dart';
-
             @GenerateMocks([Foo])
             void main() {}
           '''
@@ -3631,7 +3628,6 @@ void main() {
           'foo|test/foo_test.dart': '''
             import 'package:foo/foo.dart';
             import 'package:mockito/annotations.dart';
-
             @GenerateMocks([Foo])
             void main() {}
           '''
