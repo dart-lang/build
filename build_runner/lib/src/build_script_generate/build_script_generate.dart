@@ -47,7 +47,8 @@ Future<String> _generateBuildScript() async {
       ..writeln('// ignore_for_file: directives_ordering')
       ..writeln(library.accept(emitter));
 
-    return DartFormatter().format(content.toString());
+    return DartFormatter(languageVersion: DartFormatter.latestLanguageVersion)
+        .format(content.toString());
   } on FormatterException {
     _log.severe('Generated build script could not be parsed.\n'
         'This is likely caused by a misconfigured builder definition.');
