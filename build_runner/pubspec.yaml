@@ -13,7 +13,7 @@ platforms:
   macos:
 
 dependencies:
-  analyzer: '>=4.4.0 <7.0.0'
+  analyzer: '>=4.4.0 <8.0.0'
   args: ^2.0.0
   async: ^2.5.0
   build: ">=2.1.0 <2.5.0"
@@ -24,7 +24,7 @@ dependencies:
   code_builder: ^4.2.0
   collection: ^1.15.0
   crypto: ^3.0.0
-  dart_style: ^2.0.0
+  dart_style: '>=2.0.0 <4.0.0'
   frontend_server_client: ">=3.0.0 <5.0.0"
   glob: ^2.0.0
   graphs: ^2.2.0
@@ -62,6 +62,14 @@ dev_dependencies:
 dependency_overrides:
   build_runner_core:
     path: ../build_runner_core
+  build:
+    path: ../build
+  build_resolvers:
+    path: ../build_resolvers
+  build_web_compilers:
+    path: ../build_web_compilers
+  build_modules:
+    path: ../build_modules
 
 topics:
  - build-runner
