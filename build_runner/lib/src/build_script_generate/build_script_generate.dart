@@ -12,6 +12,7 @@ import 'package:dart_style/dart_style.dart';
 import 'package:graphs/graphs.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:pub_semver/pub_semver.dart';
 
 import '../package_graph/build_config_overrides.dart';
 import 'builder_ordering.dart';
@@ -47,8 +48,7 @@ Future<String> _generateBuildScript() async {
       ..writeln('// ignore_for_file: directives_ordering')
       ..writeln(library.accept(emitter));
 
-    return DartFormatter(
-            languageVersion: DartFormatter.latestShortStyleLanguageVersion)
+    return DartFormatter(languageVersion: Version(3, 6, 0))
         .format(content.toString());
   } on FormatterException {
     _log.severe('Generated build script could not be parsed.\n'
