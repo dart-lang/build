@@ -26,6 +26,8 @@ const scriptKernelCachedSuffix = '.cached';
 
 final _log = Logger('Entrypoint');
 
+final _lastShortFormatDartVersion = Version(3, 6, 0);
+
 Future<String> generateBuildScript() =>
     logTimedAsync(_log, 'Generating build script', _generateBuildScript);
 
@@ -33,6 +35,9 @@ Future<String> _generateBuildScript() async {
   final info = await findBuildScriptOptions();
   final builders = info.builderApplications;
   final library = Library((b) => b.body.addAll([
+        Code(
+          '// @dart=${_lastShortFormatDartVersion.major}.${_lastShortFormatDartVersion.minor}',
+        ),
         declareFinal('_builders')
             .assign(literalList(
                 builders,
@@ -48,7 +53,7 @@ Future<String> _generateBuildScript() async {
       ..writeln('// ignore_for_file: directives_ordering')
       ..writeln(library.accept(emitter));
 
-    return DartFormatter(languageVersion: Version(3, 6, 0))
+    return DartFormatter(languageVersion: _lastShortFormatDartVersion)
         .format(content.toString());
   } on FormatterException {
     _log.severe('Generated build script could not be parsed.\n'
