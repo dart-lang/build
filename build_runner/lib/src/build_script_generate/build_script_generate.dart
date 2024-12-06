@@ -36,7 +36,7 @@ Future<String> _generateBuildScript() async {
   final builders = info.builderApplications;
   final library = Library((b) => b.body.addAll([
         Code(
-          '// @dart=${_lastShortFormatDartVersion.major}.${_lastShortFormatDartVersion.minor}',
+          '// @dart=${_lastShortFormatDartVersion.major}.${_lastShortFormatDartVersion.minor}\n',
         ),
         declareFinal('_builders')
             .assign(literalList(
