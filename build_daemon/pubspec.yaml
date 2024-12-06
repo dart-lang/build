@@ -22,7 +22,7 @@ dependencies:
   web_socket_channel: ">=2.0.0 <4.0.0"
 
 dev_dependencies:
-  analyzer: '>=3.4.0 <7.0.0'
+  analyzer: '>=3.4.0 <8.0.0'
   build_runner: ^2.0.0
   # TODO: untangle analyzer dependency
   built_value_generator: ^8.1.0

@@ -12,6 +12,7 @@ import 'package:dart_style/dart_style.dart';
 import 'package:graphs/graphs.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:pub_semver/pub_semver.dart';
 
 import '../package_graph/build_config_overrides.dart';
 import 'builder_ordering.dart';
@@ -24,6 +25,8 @@ const scriptKernelCachedLocation =
 const scriptKernelCachedSuffix = '.cached';
 
 final _log = Logger('Entrypoint');
+
+final _lastShortFormatDartVersion = Version(3, 6, 0);
 
 Future<String> generateBuildScript() =>
     logTimedAsync(_log, 'Generating build script', _generateBuildScript);
@@ -43,11 +46,12 @@ Future<String> _generateBuildScript() async {
   final emitter = DartEmitter(
       allocator: Allocator.simplePrefixing(), useNullSafetySyntax: true);
   try {
-    final content = StringBuffer()
-      ..writeln('// ignore_for_file: directives_ordering')
-      ..writeln(library.accept(emitter));
-
-    return DartFormatter().format(content.toString());
+    return DartFormatter(languageVersion: _lastShortFormatDartVersion)
+        .format('''
+// @dart=${_lastShortFormatDartVersion.major}.${_lastShortFormatDartVersion.minor}
+// ignore_for_file: directives_ordering
+${library.accept(emitter)}
+''');
   } on FormatterException {
     _log.severe('Generated build script could not be parsed.\n'
         'This is likely caused by a misconfigured builder definition.');
