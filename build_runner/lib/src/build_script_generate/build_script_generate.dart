@@ -35,9 +35,6 @@ Future<String> _generateBuildScript() async {
   final info = await findBuildScriptOptions();
   final builders = info.builderApplications;
   final library = Library((b) => b.body.addAll([
-        Code(
-          '// @dart=${_lastShortFormatDartVersion.major}.${_lastShortFormatDartVersion.minor}\n',
-        ),
         declareFinal('_builders')
             .assign(literalList(
                 builders,
@@ -50,6 +47,8 @@ Future<String> _generateBuildScript() async {
       allocator: Allocator.simplePrefixing(), useNullSafetySyntax: true);
   try {
     final content = StringBuffer()
+      ..writeln(
+          '// @dart=${_lastShortFormatDartVersion.major}.${_lastShortFormatDartVersion.minor}')
       ..writeln('// ignore_for_file: directives_ordering')
       ..writeln(library.accept(emitter));
 
