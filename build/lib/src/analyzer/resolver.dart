@@ -5,6 +5,7 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/error/error.dart';
 
 import '../asset/id.dart';
@@ -29,6 +30,17 @@ abstract class Resolver {
   ///    instance because due to imports or exports.
   Stream<LibraryElement> get libraries;
 
+  /// All libraries resolved by this resolver.
+  ///
+  /// This includes the following libraries:
+  ///  - The primary input of this resolver (in other words, the
+  ///   [BuildStep.inputId] of a build step).
+  ///  - Libraries resolved with a direct [libraryFor] call.
+  ///  - Every public `dart:` library part of the SDK.
+  ///  - All libraries recursively accessible from the mentioned sources, for
+  ///    instance because due to imports or exports.
+  Stream<LibraryElement2> get libraries2;
+
   /// Returns the parsed [AstNode] for [Element].
   ///
   /// This should always be preferred over using the [AnalysisSession]
@@ -41,6 +53,19 @@ abstract class Resolver {
   /// element is coming from a summary, or is unavailable for some other
   /// reason.
   Future<AstNode?> astNodeFor(Element element, {bool resolve = false});
+
+  /// Returns the parsed [AstNode] for [Element].
+  ///
+  /// This should always be preferred over using the [AnalysisSession]
+  /// directly, because it avoids [InconsistentAnalysisException] issues.
+  ///
+  /// If [resolve] is `true` then you will get a resolved ast node, otherwise
+  /// it will only be a parsed ast node.
+  ///
+  /// Returns `null` if the ast node can not be found. This can happen if an
+  /// element is coming from a summary, or is unavailable for some other
+  /// reason.
+  Future<AstNode?> astNodeFor2(Fragment element, {bool resolve = false});
 
   /// Returns a parsed AST structor representing the file defined in [assetId].
   ///
@@ -60,6 +85,14 @@ abstract class Resolver {
   Future<LibraryElement> libraryFor(AssetId assetId,
       {bool allowSyntaxErrors = false});
 
+  /// Returns a resolved library representing the file defined in [assetId].
+  ///
+  /// * Throws [NonLibraryAssetException] if [assetId] is not a Dart library.
+  /// * If the [assetId] has syntax errors, and [allowSyntaxErrors] is set to
+  ///   `false` (the default), throws a [SyntaxErrorInAssetException].
+  Future<LibraryElement2> libraryFor2(AssetId assetId,
+      {bool allowSyntaxErrors = false});
+
   /// Returns the first resolved library identified by [libraryName].
   ///
   /// A library is resolved if it's recursively accessible from the entry point
@@ -72,6 +105,19 @@ abstract class Resolver {
   /// being unique.
   Future<LibraryElement?> findLibraryByName(String libraryName);
 
+  /// Returns the first resolved library identified by [libraryName].
+  ///
+  /// A library is resolved if it's recursively accessible from the entry point
+  /// or subsequent calls to [libraryFor]. In other words, this searches for
+  /// libraries in [libraries].
+  /// If no library can be found, returns `null`.
+  ///
+  /// **NOTE**: In general, its recommended to use [libraryFor] with an absolute
+  /// asset id instead of a named identifier that has the possibility of not
+  /// being unique.
+  Future<LibraryElement2?> findLibraryByName2(
+      String libraryName);
+
   /// Returns the [AssetId] of the Dart library or part declaring [element].
   ///
   /// If [element] is defined in the SDK or in a summary throws
@@ -81,6 +127,16 @@ abstract class Resolver {
   /// The returned asset is not necessarily the asset that should be imported to
   /// use the element, it may be a part file instead of the library.
   Future<AssetId> assetIdForElement(Element element);
+
+  /// Returns the [AssetId] of the Dart library or part declaring [element].
+  ///
+  /// If [element] is defined in the SDK or in a summary throws
+  /// `UnresolvableAssetException`, although a non-throwing return here does not
+  /// guarantee that the asset is readable.
+  ///
+  /// The returned asset is not necessarily the asset that should be imported to
+  /// use the element, it may be a part file instead of the library.
+  Future<AssetId> assetIdForElement2(Element2 element);
 }
 
 /// A resolver that should be manually released at the end of a build step.
