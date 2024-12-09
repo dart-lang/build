@@ -1,6 +1,7 @@
 // Copyright (c) 2019, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -72,7 +73,7 @@ class Server {
 
   /// Starts listening for build daemon clients.
   Future<int> listen() async {
-    var handler = webSocketHandler((WebSocketChannel channel) async {
+    var handler = webSocketHandler((WebSocketChannel channel, _) async {
       channel.stream.listen((message) async {
         dynamic request;
         try {
