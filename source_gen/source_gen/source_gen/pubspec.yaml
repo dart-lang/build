@@ -1,8 +1,8 @@
 name: source_gen
-version: 2.0.0-wip
+version: 2.0.0
 description: >-
   Source code generation builders and utilities for the Dart build system
-repository: https://github.com/dart-lang/source_gen/tree/master/source_gen
+repository: https://github.com/dart-lang/build/tree/master/source_gen/source_gen
 resolution: workspace
 
 environment:

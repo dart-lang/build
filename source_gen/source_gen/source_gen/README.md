@@ -1,4 +1,4 @@
-[![Dart CI](https://github.com/dart-lang/source_gen/actions/workflows/dart.yml/badge.svg)](https://github.com/dart-lang/source_gen/actions/workflows/dart.yml)
+[![Dart CI](https://github.com/dart-lang/build/actions/workflows/dart.yml/badge.svg)](https://github.com/dart-lang/build/actions/workflows/dart.yml)
 <a href="https://pub.dev/packages/source_gen">
   <img src="https://img.shields.io/pub/v/source_gen.svg" alt="Pub Package Version" />
 </a>
@@ -212,9 +212,9 @@ wraps a single Generator to make a `Builder` which creates Dart library files.
 [api:PartBuilder]: https://pub.dev/documentation/source_gen/latest/source_gen/PartBuilder-class.html
 [api:LibraryBuilder]: https://pub.dev/documentation/source_gen/latest/source_gen/LibraryBuilder-class.html
 
-[Trivial example]: https://github.com/dart-lang/source_gen/blob/master/source_gen/test/src/comment_generator.dart
-[Full example package]: https://github.com/dart-lang/source_gen/tree/master/example
-[example usage]: https://github.com/dart-lang/source_gen/tree/master/example_usage
+[Trivial example]: https://github.com/dart-lang/build/blob/master/source_gen/source_gen/test/src/comment_generator.dart
+[Full example package]: https://github.com/dart-lang/build/tree/master/source_gen/example
+[example usage]: https://github.com/dart-lang/build/tree/master/source_gen/example_usage
 [outputs]: https://github.com/dart-lang/build/blob/master/docs/writing_a_builder.md#configuring-outputs
 
 ## Publishing automation

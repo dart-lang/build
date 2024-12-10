@@ -1,4 +1,4 @@
-## 2.0.0-wip
+## 2.0.0
 
 - **Breaking Change**: Change `formatOutput` function to accept a language
   version parameter.
@@ -14,6 +14,7 @@
   `writeDescriptions` boolean. When set to `false`, headers and generator
   descriptions for the files will not be included in the builder output.
 - Include `//dart format width=80` comments in generated Dart unit files.
+- Move to `dart-lang/build` monorepo.
 
 ## 1.5.0
 
