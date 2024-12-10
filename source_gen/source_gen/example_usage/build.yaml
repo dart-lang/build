@@ -1,0 +1,23 @@
+# Read about `build.yaml` at https://pub.dev/packages/build_config
+targets:
+  $default:
+    builders:
+      # Configure the builder `pkg_name|builder_name`
+      # In this case, the member_count builder defined in `../example`
+      source_gen_example|member_count:
+        # Only run this builder on the specified input.
+        generate_for:
+          - lib/library_source.dart
+      source_gen_example|property_sum:
+        generate_for:
+          - lib/*.dart
+      source_gen_example|property_product:
+        generate_for:
+          - lib/*.dart
+      # The end-user of a builder which applies "source_gen|combining_builder"
+      # may configure the builder to ignore specific lints for their project
+      source_gen|combining_builder:
+        options:
+          ignore_for_file:
+          - lint_a
+          - lint_b

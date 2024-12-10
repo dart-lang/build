@@ -1,0 +1,16 @@
+name: source_gen_example_usage
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.6.0-270.0.dev
+
+dependencies:
+  source_gen_example:
+    path: ../example
+
+dev_dependencies:
+  build_runner: ^2.0.0
+  build_verify: ^3.0.0
+  dart_flutter_team_lints: ^3.1.0
+  test: ^1.5.1
