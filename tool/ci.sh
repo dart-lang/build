@@ -63,9 +63,13 @@ for PKG in ${PKGS}; do
       echo
       echo -e "\033[1mPKG: ${PKG}; TASK: ${TASK}\033[22m"
       case ${TASK} in
-      analyze)
+      analyze_0)
         echo 'dart analyze --fatal-infos .'
         dart analyze --fatal-infos . || EXIT_CODE=$?
+        ;;
+      analyze_1)
+        echo 'dart analyze'
+        dart analyze || EXIT_CODE=$?
         ;;
       command_0)
         echo 'dart run build_runner test -- -p chrome --test-randomize-ordering-seed=random'
@@ -130,6 +134,10 @@ for PKG in ${PKGS}; do
       test_12)
         echo 'dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1'
         dart test -t integration --total-shards 5 --shard-index 4 --test-randomize-ordering-seed=random --no-chain-stack-traces -j 1 || EXIT_CODE=$?
+        ;;
+      test_13)
+        echo 'dart test --run-skipped'
+        dart test --run-skipped || EXIT_CODE=$?
         ;;
       *)
         echo -e "\033[31mUnknown TASK '${TASK}' - TERMINATING JOB\033[0m"

@@ -63,6 +63,19 @@ If you are using the automated build scripts, your project will automatically
 start being compiled with dartdevc, and you can start developing with chrome
 without any configuration.
 
+## [source_gen](https://github.com/dart-lang/build/blob/master/source_gen/README.md)
+
+`source_gen` provides utilities for automated source code generation for Dart:
+
+* A **framework** for writing Builders that consume and produce Dart code.
+* A **convention** for human and tool generated Dart code to coexist with clean
+  separation, and for multiple code generators to integrate in the same project.
+
+Its main purpose is to expose a developer-friendly API on top of lower-level
+packages like the [analyzer][] or [build][]. You don't _have_ to use
+`source_gen` in order to generate source code; we also expose a set of library
+APIs that might be useful in your generators.
+
 <!--
 TODO: scratch_space
 -->

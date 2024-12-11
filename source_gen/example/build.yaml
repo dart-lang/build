@@ -1,0 +1,47 @@
+# Read about `build.yaml` at https://pub.dev/packages/build_config
+builders:
+  # name of the builder
+  member_count:
+    # library URI containing the builder - maps to `lib/member_count_library_generator.dart`
+    import: "package:source_gen_example/builder.dart"
+    # Name of the function in the above library to call.
+    builder_factories: ["metadataLibraryBuilder"]
+    # The mapping from the source extension to the generated file extension
+    build_extensions: {".dart": [".info.dart"]}
+    # Will automatically run on any package that depends on it
+    auto_apply: dependents
+    # Generate the output directly into the package, not to a hidden cache dir
+    build_to: source
+
+  # The next three builders are `SharedPartBuilder` instances.
+  # Notice they each have
+  # `build_extensions` set to a `NAME.g.part` file.
+  #    NAME corresponds to the second argument to the SharedPartBuilder ctor.
+  #    `.g.part` is the extension expected of SharedPartBuilder.
+  # `build_to: cache` - the output is not put directly into the project
+  # `applies_builders` - uses the `combining_builder` from `source_gen` to
+  #   combine the parts from each builder into one part file.
+
+  property_product:
+    import: "package:source_gen_example/builder.dart"
+    builder_factories: ["productBuilder"]
+    build_extensions: {".dart": ["product.g.part"]}
+    auto_apply: dependents
+    build_to: cache
+    applies_builders: ["source_gen|combining_builder"]
+
+  property_sum:
+    import: "package:source_gen_example/builder.dart"
+    builder_factories: ["sumBuilder"]
+    build_extensions: {".dart": ["sum.g.part"]}
+    auto_apply: dependents
+    build_to: cache
+    applies_builders: ["source_gen|combining_builder"]
+
+  property_multiply:
+    import: "package:source_gen_example/builder.dart"
+    builder_factories: ["multiplyBuilder"]
+    build_extensions: {".dart": ["multiply.g.part"]}
+    auto_apply: dependents
+    build_to: cache
+    applies_builders: ["source_gen|combining_builder"]
