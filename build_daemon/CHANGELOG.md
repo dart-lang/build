@@ -1,6 +1,7 @@
 ## 4.0.3-wip
 
 - Bump the min sdk to 3.5.0.
+- Update to be forward compatible with changes to `package:shelf_web_socket`.
 
 ## 4.0.2
 
