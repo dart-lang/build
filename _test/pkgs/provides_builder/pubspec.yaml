@@ -1,7 +1,7 @@
 name: provides_builder
 resolution: workspace
 environment:
-  sdk: ^3.6.0-165.0.dev
+  sdk: ^3.6.0
 publish_to: none
 
 dependencies:

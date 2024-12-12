@@ -8,7 +8,7 @@ repository: https://github.com/dart-lang/build/tree/master/build_runner_core
 #resolution: workspace
 
 environment:
-  sdk: ^3.6.0-228.0.dev
+  sdk: ^3.6.0
 
 platforms:
   linux:
