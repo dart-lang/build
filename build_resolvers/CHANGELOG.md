@@ -6,6 +6,7 @@
 - Fix SDK summary reads when multiple isolates are using build resolvers (not
   recommended).
 - Fix analyzer deprecations.
+- Require analyzer ^7.0.0.
 
 ## 2.4.2
 
