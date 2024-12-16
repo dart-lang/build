@@ -75,7 +75,7 @@ Future<PackageGraph> _createTestPackage() async {
 name: root
 
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.6.0
 '''),
     d.dir('lib', [
       d.file('source.dart'),

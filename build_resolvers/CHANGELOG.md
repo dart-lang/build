@@ -1,4 +1,4 @@
-## 2.4.3-wip
+## 2.4.3
 
 - Require the latest analyzer, and stop passing the `withNullability`
   parameter which was previously required and is now deprecated.

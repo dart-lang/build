@@ -1,33 +1,27 @@
 name: build_workspace     # Can be anything
 environment:
-  sdk: ^3.5.0   # Must be ^3.5.0 or later for workspace to be allowed
+  sdk: ^3.6.0
 publish_to: none
 dev_dependencies:
   dart_flutter_team_lints: ^3.1.0
 
-# build_web_compilers is not currently part of the workspace because it
-# requires a very recent version of the Dart SDK. mono_repo generates a CI
-# definition that runs each package with the lowest SDK version it supports.
-# This breaks `dart pub get` in the entire workspace, so it (and `_test` which
-# needs to use all packages from the repository) can't be part of the
-# workspace.
 workspace:
-#- _test
-#- _test/pkgs/provides_builder
-#- _test_common
-# - build
+- _test
+- _test/pkgs/provides_builder
+- _test_common
+- build
 - build_config
 - build_daemon
 - build_modules
-# - build_resolvers
-#- build_runner
-# - build_runner_core
+- build_resolvers
+- build_runner
+- build_runner_core
 - build_test
-#- build_web_compilers
+- build_web_compilers
 - example
 - scratch_space
 - tool
 - build_modules/test/fixtures/a
 - build_modules/test/fixtures/b
-#- build_web_compilers/test/fixtures/c
-#- build_web_compilers/test/fixtures/d
+- build_web_compilers/test/fixtures/c
+- build_web_compilers/test/fixtures/d

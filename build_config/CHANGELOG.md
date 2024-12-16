@@ -1,7 +1,7 @@
-## 1.1.2-wip
+## 1.1.2
 
 - Stop using deprecated `JsonKey.ignore`.
-- Bump the min sdk to 3.5.0.
+- Bump the min sdk to 3.6.0.
 
 ## 1.1.1
 

@@ -1,11 +1,11 @@
 name: build_test
 description: Utilities for writing unit tests of Builders.
-version: 2.2.3-wip
+version: 2.2.3
 repository: https://github.com/dart-lang/build/tree/master/build_test
 resolution: workspace
 
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.6.0
 
 dependencies:
   async: ^2.5.0
