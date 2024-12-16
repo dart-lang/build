@@ -1,4 +1,4 @@
-## 8.0.0-wip
+## 8.0.0
 
 - __Breaking__: Add `completeBuild` to `RunnerAssetWriter`, a method expected
   to be called by the build system at the end of a completed build.
