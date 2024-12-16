@@ -1,7 +1,3 @@
-## 4.1.0-wip
-
-- Support package:archive version 4.x.
-
 ## 4.1.0-beta.3
 
 - Support 3.7.0 pre-release sdks.
