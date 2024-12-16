@@ -12,9 +12,12 @@ import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/error/error.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
+// ignore: implementation_imports
+import 'package:analyzer/src/utilities/extensions/element.dart';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
@@ -42,11 +45,15 @@ class PerActionResolver implements ReleasableResolver {
   PerActionResolver(
       this._delegate, this._driverPool, this._readAndWritePool, this._step);
 
-  Stream<LibraryElement> get _librariesFromEntrypoints async* {
+  Stream<LibraryElement> get _librariesFromEntrypoints {
+    return _librariesFromEntrypoints2.map((e) => e.asElement);
+  }
+
+  Stream<LibraryElement2> get _librariesFromEntrypoints2 async* {
     await _resolveIfNecessary(_step.inputId, transitive: true);
 
-    final seen = <LibraryElement>{};
-    final toVisit = Queue<LibraryElement>();
+    final seen = <LibraryElement2>{};
+    final toVisit = Queue<LibraryElement2>();
 
     // keep a copy of entry points in case [_resolveIfNecessary] is called
     // before this stream is done.
@@ -54,7 +61,7 @@ class PerActionResolver implements ReleasableResolver {
     for (final entryPoint in entryPoints) {
       if (!await _delegate.isLibrary(entryPoint)) continue;
       final library =
-          await _delegate.libraryFor(entryPoint, allowSyntaxErrors: true);
+          await _delegate.libraryFor2(entryPoint, allowSyntaxErrors: true);
       toVisit.add(library);
       seen.add(library);
     }
@@ -64,10 +71,10 @@ class PerActionResolver implements ReleasableResolver {
       // `BuildStep.canRead`. They'd still be reachable by crawling the element
       // model manually.
       yield current;
-      final toCrawl = current.definingCompilationUnit.libraryImports
-          .map((import) => import.importedLibrary)
-          .followedBy(current.definingCompilationUnit.libraryExports
-              .map((export) => export.exportedLibrary))
+      final toCrawl = current.firstFragment.libraryImports2
+          .map((import) => import.importedLibrary2)
+          .followedBy(current.firstFragment.libraryExports2
+              .map((export) => export.exportedLibrary2))
           .nonNulls
           .where((library) => !seen.contains(library))
           .toSet();
@@ -83,13 +90,29 @@ class PerActionResolver implements ReleasableResolver {
   }
 
   @override
-  Future<LibraryElement?> findLibraryByName(String libraryName) =>
-      _step.trackStage('findLibraryByName $libraryName', () async {
-        await for (final library in libraries) {
-          if (library.name == libraryName) return library;
-        }
-        return null;
-      });
+  Stream<LibraryElement2> get libraries2 async* {
+    yield* _delegate.sdkLibraries2;
+    yield* _librariesFromEntrypoints2.where((library) => !library.isInSdk);
+  }
+
+  @override
+  Future<LibraryElement?> findLibraryByName(String libraryName) async {
+    final element = await findLibraryByName2(libraryName);
+    if (element == null) {
+      return null;
+    }
+    return element.asElement;
+  }
+
+  @override
+  Future<LibraryElement2?> findLibraryByName2(String libraryName) async {
+    return _step.trackStage('findLibraryByName $libraryName', () async {
+      await for (final library in libraries2) {
+        if (library.name3 == libraryName) return library;
+      }
+      return null;
+    });
+  }
 
   @override
   Future<bool> isLibrary(AssetId assetId) =>
@@ -105,6 +128,11 @@ class PerActionResolver implements ReleasableResolver {
           () => _delegate.astNodeFor(element, resolve: resolve));
 
   @override
+  Future<AstNode?> astNodeFor2(Fragment fragment, {bool resolve = false}) =>
+      _step.trackStage('astNodeFor $fragment',
+          () => _delegate.astNodeFor2(fragment, resolve: resolve));
+
+  @override
   Future<CompilationUnit> compilationUnitFor(AssetId assetId,
           {bool allowSyntaxErrors = false}) =>
       _step.trackStage('compilationUnitFor $assetId', () async {
@@ -118,15 +146,26 @@ class PerActionResolver implements ReleasableResolver {
 
   @override
   Future<LibraryElement> libraryFor(AssetId assetId,
-          {bool allowSyntaxErrors = false}) =>
-      _step.trackStage('libraryFor $assetId', () async {
-        if (!await _step.canRead(assetId)) {
-          throw AssetNotFoundException(assetId);
-        }
-        await _resolveIfNecessary(assetId, transitive: true);
-        return _delegate.libraryFor(assetId,
-            allowSyntaxErrors: allowSyntaxErrors);
-      });
+      {bool allowSyntaxErrors = false}) async {
+    final element = await libraryFor2(
+      assetId,
+      allowSyntaxErrors: allowSyntaxErrors,
+    );
+    return element.asElement;
+  }
+
+  @override
+  Future<LibraryElement2> libraryFor2(AssetId assetId,
+      {bool allowSyntaxErrors = false}) async {
+    return _step.trackStage('libraryFor $assetId', () async {
+      if (!await _step.canRead(assetId)) {
+        throw AssetNotFoundException(assetId);
+      }
+      await _resolveIfNecessary(assetId, transitive: true);
+      return _delegate.libraryFor2(assetId,
+          allowSyntaxErrors: allowSyntaxErrors);
+    });
+  }
 
   // Ensures we only resolve one entrypoint at a time from the same build step,
   // otherwise there are race conditions with `_entryPoints` being updated
@@ -169,6 +208,10 @@ class PerActionResolver implements ReleasableResolver {
   @override
   Future<AssetId> assetIdForElement(Element element) =>
       _delegate.assetIdForElement(element);
+
+  @override
+  Future<AssetId> assetIdForElement2(Element2 element) =>
+      _delegate.assetIdForElement2(element);
 }
 
 class AnalyzerResolver implements ReleasableResolver {
@@ -177,7 +220,7 @@ class AnalyzerResolver implements ReleasableResolver {
   final Pool _driverPool;
   final SharedResourcePool _readAndWritePool;
 
-  Future<List<LibraryElement>>? _sdkLibraries;
+  Future<List<LibraryElement2>>? _sdkLibraries;
 
   AnalyzerResolver(this._driver, this._driverPool, this._readAndWritePool,
       this._uriResolver);
@@ -226,6 +269,39 @@ class AnalyzerResolver implements ReleasableResolver {
   }
 
   @override
+  Future<AstNode?> astNodeFor2(Fragment fragment,
+      {bool resolve = false}) async {
+    final library = fragment.libraryFragment?.element;
+    if (library == null) {
+      // Invalid elements (e.g. an MultiplyDefinedElement) are not part of any
+      // library and can't be resolved like this.
+      return null;
+    }
+    var path = library.firstFragment.source.fullName;
+
+    return _driverPool.withResource(() async {
+      var session = _driver.currentSession;
+      if (resolve) {
+        final result =
+            await session.getResolvedLibrary(path) as ResolvedLibraryResult;
+        if (fragment is LibraryFragment) {
+          return result.unitWithPath(fragment.source.fullName)?.unit;
+        }
+        return result.getElementDeclaration2(fragment)?.node;
+      } else {
+        final result = session.getParsedLibrary(path) as ParsedLibraryResult;
+        if (fragment is LibraryFragment) {
+          final unitPath = fragment.source.fullName;
+          return result.units
+              .firstWhereOrNull((unit) => unit.path == unitPath)
+              ?.unit;
+        }
+        return result.getElementDeclaration2(fragment)?.node;
+      }
+    });
+  }
+
+  @override
   Future<CompilationUnit> compilationUnitFor(AssetId assetId,
       {bool allowSyntaxErrors = false}) {
     return _driverPool.withResource(() async {
@@ -246,6 +322,14 @@ class AnalyzerResolver implements ReleasableResolver {
 
   @override
   Future<LibraryElement> libraryFor(AssetId assetId,
+      {bool allowSyntaxErrors = false}) async {
+    var element =
+        await libraryFor2(assetId, allowSyntaxErrors: allowSyntaxErrors);
+    return element.asElement;
+  }
+
+  @override
+  Future<LibraryElement2> libraryFor2(AssetId assetId,
       {bool allowSyntaxErrors = false}) async {
     // Since this calls `getLibraryByUri` it is a "read", and can use the shared
     // resource to allow concurrent reads.
@@ -273,7 +357,7 @@ class AnalyzerResolver implements ReleasableResolver {
       }
     }
 
-    return library.element;
+    return library.element2;
   }
 
   /// Finds syntax errors in files related to the [element].
@@ -323,7 +407,18 @@ class AnalyzerResolver implements ReleasableResolver {
     throw UnimplementedError();
   }
 
+  @override
+  Stream<LibraryElement2> get libraries2 {
+    // We don't know what libraries to expose without leaking libraries written
+    // by later phases.
+    throw UnimplementedError();
+  }
+
   Stream<LibraryElement> get sdkLibraries {
+    return sdkLibraries2.map((e) => e.asElement);
+  }
+
+  Stream<LibraryElement2> get sdkLibraries2 {
     final loadLibraries = _sdkLibraries ??= Future.sync(() {
       final publicSdkUris =
           _driver.sdkLibraryUris.where((e) => !e.path.startsWith('_'));
@@ -332,7 +427,7 @@ class AnalyzerResolver implements ReleasableResolver {
         return _driverPool.withResource(() async {
           final result = await _driver.currentSession
               .getLibraryByUri(uri.toString()) as LibraryElementResult;
-          return result.element;
+          return result.element2;
         });
       }));
     });
@@ -348,16 +443,32 @@ class AnalyzerResolver implements ReleasableResolver {
   }
 
   @override
-  Future<AssetId> assetIdForElement(Element element) async {
-    final source = element.source;
+  Future<LibraryElement2?> findLibraryByName2(String libraryName) async {
+    // We don't know what libraries to expose without leaking libraries written
+    // by later phases.
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<AssetId> assetIdForElement(Element element) {
+    return assetIdForElement2(element.asElement2!);
+  }
+
+  @override
+  Future<AssetId> assetIdForElement2(Element2 element) async {
+    if (element is MultiplyDefinedElement2) {
+      throw UnresolvableAssetException('${element.name3} is ambiguous');
+    }
+
+    final source = element.firstFragment.libraryFragment?.source;
     if (source == null) {
       throw UnresolvableAssetException(
-          '${element.name} does not have a source');
+          '${element.name3} does not have a source');
     }
 
     final uri = source.uri;
     if (!uri.isScheme('package') && !uri.isScheme('asset')) {
-      throw UnresolvableAssetException('${element.name} in ${source.uri}');
+      throw UnresolvableAssetException('${element.name3} in ${source.uri}');
     }
     return AssetId.resolve(source.uri);
   }
