@@ -1,3 +1,6 @@
+> [!IMPORTANT]  
+> This repo has moved to https://github.com/dart-lang/test/tree/master/pkgs/mockito
+
 [![Dart CI](https://github.com/dart-lang/mockito/actions/workflows/test-package.yml/badge.svg)](https://github.com/dart-lang/mockito/actions/workflows/test-package.yml)
 [![Pub](https://img.shields.io/pub/v/mockito.svg)](https://pub.dev/packages/mockito)
 [![package publisher](https://img.shields.io/pub/publisher/mockito.svg)](https://pub.dev/packages/mockito/publisher)
