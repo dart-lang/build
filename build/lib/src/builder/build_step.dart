@@ -5,7 +5,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer/dart/element/element2.dart';
 import 'package:meta/meta.dart';
 import 'package:package_config/package_config_types.dart';
 
@@ -39,21 +38,6 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// }
   /// ```
   Future<LibraryElement> get inputLibrary;
-
-  /// Resolved library defined by [inputId].
-  ///
-  /// Throws [NonLibraryAssetException] if [inputId] is not a Dart library file.
-  /// Throws [SyntaxErrorInAssetException] if [inputId] contains syntax errors.
-  /// If you want to support libraries with syntax errors, resolve the library
-  /// manually instead of using [inputLibrary]:
-  /// ```dart
-  /// Future<void> build(BuildStep step) async {
-  ///   // Resolve the input library, allowing syntax errors
-  ///   final inputLibrary =
-  ///     await step.resolver.libraryFor(step.inputId, allowSyntaxErrors: true);
-  /// }
-  /// ```
-  Future<LibraryElement2> get inputLibrary2;
 
   /// Gets an instance provided by [resource] which is guaranteed to be unique
   /// within a single build, and may be reused across build steps within a

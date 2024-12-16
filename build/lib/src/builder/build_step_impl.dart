@@ -7,7 +7,6 @@ import 'dart:convert';
 
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer/dart/element/element2.dart';
 import 'package:async/async.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
@@ -38,12 +37,6 @@ class BuildStepImpl implements BuildStep {
   Future<LibraryElement> get inputLibrary async {
     if (_isComplete) throw BuildStepCompletedException();
     return resolver.libraryFor(inputId);
-  }
-
-  @override
-  Future<LibraryElement2> get inputLibrary2 async {
-    if (_isComplete) throw BuildStepCompletedException();
-    return resolver.libraryFor2(inputId);
   }
 
   /// The list of all outputs which are expected/allowed to be output from this
@@ -228,19 +221,8 @@ class _DelayedResolver implements Resolver {
   }
 
   @override
-  Stream<LibraryElement2> get libraries2 {
-    var completer = StreamCompleter<LibraryElement2>();
-    _delegate.then((r) => completer.setSourceStream(r.libraries2));
-    return completer.stream;
-  }
-
-  @override
   Future<AstNode?> astNodeFor(Element element, {bool resolve = false}) async =>
       (await _delegate).astNodeFor(element, resolve: resolve);
-
-  @override
-  Future<AstNode?> astNodeFor2(Fragment fragment, {bool resolve = false}) async =>
-      (await _delegate).astNodeFor2(fragment, resolve: resolve);
 
   @override
   Future<CompilationUnit> compilationUnitFor(AssetId assetId,
@@ -255,24 +237,10 @@ class _DelayedResolver implements Resolver {
           .libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
 
   @override
-  Future<LibraryElement2> libraryFor2(AssetId assetId,
-          {bool allowSyntaxErrors = false}) async =>
-      (await _delegate)
-          .libraryFor2(assetId, allowSyntaxErrors: allowSyntaxErrors);
-
-  @override
   Future<LibraryElement?> findLibraryByName(String libraryName) async =>
       (await _delegate).findLibraryByName(libraryName);
 
   @override
-  Future<LibraryElement2?> findLibraryByName2(String libraryName) async =>
-      (await _delegate).findLibraryByName2(libraryName);
-
-  @override
   Future<AssetId> assetIdForElement(Element element) async =>
       (await _delegate).assetIdForElement(element);
-
-  @override
-  Future<AssetId> assetIdForElement2(Element2 element) async =>
-      (await _delegate).assetIdForElement2(element);
 }
