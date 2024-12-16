@@ -115,8 +115,7 @@ abstract class Resolver {
   /// **NOTE**: In general, its recommended to use [libraryFor] with an absolute
   /// asset id instead of a named identifier that has the possibility of not
   /// being unique.
-  Future<LibraryElement2?> findLibraryByName2(
-      String libraryName);
+  Future<LibraryElement2?> findLibraryByName2(String libraryName);
 
   /// Returns the [AssetId] of the Dart library or part declaring [element].
   ///
