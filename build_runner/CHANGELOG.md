@@ -1,7 +1,15 @@
-## 2.4.14-wip
+## 2.4.14
 
 - Write generated assets at the end of a build to avoid invalidating other
   tools with a file watcher multiple times.
+- Support the latest dart_style version.
+- Force the generated build script language version to 3.5.0.
+  - **Note**: This is technically breaking, although it is unlikely to actually
+    break anybody. If you are affected please open an issue.
+  - This is expected to periodically increase in the future, in an adhoc
+    fashion. If you would like to use new language features in your builder
+    factory expressions, please open an issue asking for the language version to
+    be increased.
 
 ## 2.4.13
 
