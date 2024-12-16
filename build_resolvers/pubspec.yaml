@@ -8,10 +8,10 @@ repository: https://github.com/dart-lang/build/tree/master/build_resolvers
 #resolution: workspace
 
 environment:
-  sdk: ^3.6.0-228.0.dev
+  sdk: ^3.6.0
 
 dependencies:
-  analyzer: ^6.9.0
+  analyzer: '>=6.9.0 <8.0.0'
   async: ^2.5.0
   build: ^2.0.0
   collection: ^1.17.0

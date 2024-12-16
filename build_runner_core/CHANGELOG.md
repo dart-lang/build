@@ -5,7 +5,7 @@
 - Add `wrapInBatch` to obtain a reader/writer pair that will batch writes
   before flushing them at the end of a build.
 - Bump the min sdk to 3.6.0-dev.228.
-- Require analyzer ^6.9.0.
+- Require analyzer ^6.9.0, allow version 7.x.
 - Fix analyzer deprecations.
 
 ## 7.3.2
