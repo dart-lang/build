@@ -10,6 +10,7 @@
     fashion. If you would like to use new language features in your builder
     factory expressions, please open an issue asking for the language version to
     be increased.
+- Allow analyzer version 7.x.
 
 ## 2.4.13
 
