@@ -1,4 +1,4 @@
-## 5.0.10-wip
+## 5.0.10
 
 - Support analyzer version 7.x.
 

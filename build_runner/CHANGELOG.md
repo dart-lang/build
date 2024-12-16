@@ -1,4 +1,4 @@
-## 2.4.14-wip
+## 2.4.14
 
 - Write generated assets at the end of a build to avoid invalidating other
   tools with a file watcher multiple times.

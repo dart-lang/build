@@ -1,11 +1,11 @@
 name: build_runner_core
-version: 8.0.0-wip
+version: 8.0.0
 description: Core tools to organize the structure of a build and run Builders.
 repository: https://github.com/dart-lang/build/tree/master/build_runner_core
 
 # This package can't be part of the workspace because it requires a very recent
 # Dart SDK - see the top-level pubspec for details.
-#resolution: workspace
+resolution: workspace
 
 environment:
   sdk: ^3.6.0
@@ -49,7 +49,3 @@ dev_dependencies:
 
 topics:
  - build-runner
-
-dependency_overrides:
-  build_runner:
-    path: ../build_runner

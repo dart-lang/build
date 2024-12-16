@@ -9,7 +9,7 @@ topics:
   - codegen
 
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.6.0
 
 dependencies:
   build: ^2.0.0
