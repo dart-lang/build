@@ -2,10 +2,11 @@
 
 - Require the latest analyzer, and stop passing the `withNullability`
   parameter which was previously required and is now deprecated.
-- Bump the min sdk to 3.6.0-228.0.dev.
+- Bump the min sdk to 3.6.0.
 - Fix SDK summary reads when multiple isolates are using build resolvers (not
   recommended).
 - Fix analyzer deprecations.
+- Support analyzer version 7.x.
 
 ## 2.4.2
 

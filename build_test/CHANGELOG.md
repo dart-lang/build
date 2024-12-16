@@ -1,6 +1,7 @@
 ## 2.2.3-wip
 
 - Bump the min sdk to 3.5.0.
+- Allow analyzer version 7.x.
 
 ## 2.2.2
 

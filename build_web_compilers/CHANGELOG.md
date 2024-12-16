@@ -1,6 +1,7 @@
 ## 4.1.0-wip
 
 - Support package:archive version 4.x.
+- Allow analyzer version 7.x.
 
 ## 4.1.0-beta.3
 

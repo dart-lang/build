@@ -38,7 +38,7 @@ dependencies:
 dev_dependencies:
   _test_common:
     path: ../_test_common
-  analyzer: ^6.9.0
+  analyzer: '>=6.9.0 <8.0.0'
   build_runner: ^2.0.0
   build_test: ^2.0.0
   dart_flutter_team_lints: ^3.1.0

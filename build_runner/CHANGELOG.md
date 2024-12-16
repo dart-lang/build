@@ -2,6 +2,10 @@
 
 - Write generated assets at the end of a build to avoid invalidating other
   tools with a file watcher multiple times.
+- Bump the min sdk to 3.6.0.
+- Allow analyzer version 7.x.
+- Hard code the generated build script to language version 3.6.
+- Allow dart_style version 4.0.0, require at least 2.3.7.
 
 ## 2.4.13
 
