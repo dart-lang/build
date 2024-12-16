@@ -2,7 +2,7 @@
 # Commit: 1bdf351.
 name: flutter_gallery
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.6.0
 dependencies:
   collection: '>=1.9.1 <2.0.0'
   flutter:

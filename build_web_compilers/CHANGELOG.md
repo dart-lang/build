@@ -2,6 +2,7 @@
 
 - Support package:archive version 4.x.
 - Allow analyzer version 7.x.
+- Bump the min sdk to 3.6.0.
 
 ## 4.1.0-beta.3
 
