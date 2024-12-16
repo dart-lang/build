@@ -46,7 +46,7 @@ class PerActionResolver implements ReleasableResolver {
       this._delegate, this._driverPool, this._readAndWritePool, this._step);
 
   Stream<LibraryElement> get _librariesFromEntrypoints {
-    return _librariesFromEntrypoints2.map((e) => e.asElement);
+    return _librariesFromEntrypoints2.map((e) => e.asElement as LibraryElement);
   }
 
   Stream<LibraryElement2> get _librariesFromEntrypoints2 async* {
@@ -101,7 +101,7 @@ class PerActionResolver implements ReleasableResolver {
     if (element == null) {
       return null;
     }
-    return element.asElement;
+    return element.asElement as LibraryElement;
   }
 
   @override
@@ -151,7 +151,7 @@ class PerActionResolver implements ReleasableResolver {
       assetId,
       allowSyntaxErrors: allowSyntaxErrors,
     );
-    return element.asElement;
+    return element.asElement as LibraryElement;
   }
 
   @override
@@ -325,7 +325,7 @@ class AnalyzerResolver implements ReleasableResolver {
       {bool allowSyntaxErrors = false}) async {
     var element =
         await libraryFor2(assetId, allowSyntaxErrors: allowSyntaxErrors);
-    return element.asElement;
+    return element.asElement as LibraryElement;
   }
 
   @override
@@ -415,7 +415,7 @@ class AnalyzerResolver implements ReleasableResolver {
   }
 
   Stream<LibraryElement> get sdkLibraries {
-    return sdkLibraries2.map((e) => e.asElement);
+    return sdkLibraries2.map((e) => e.asElement as LibraryElement);
   }
 
   Stream<LibraryElement2> get sdkLibraries2 {

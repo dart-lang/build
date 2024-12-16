@@ -239,7 +239,8 @@ class _DelayedResolver implements Resolver {
       (await _delegate).astNodeFor(element, resolve: resolve);
 
   @override
-  Future<AstNode?> astNodeFor2(Fragment fragment, {bool resolve = false}) async =>
+  Future<AstNode?> astNodeFor2(Fragment fragment,
+          {bool resolve = false}) async =>
       (await _delegate).astNodeFor2(fragment, resolve: resolve);
 
   @override
