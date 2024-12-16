@@ -1,7 +1,7 @@
 name: _test_common
 publish_to: none
 description: Test infra for writing build tests. Is not published.
-#resolution: workspace
+resolution: workspace
 
 environment:
   sdk: ^3.5.0
@@ -22,13 +22,3 @@ dependencies:
 
 dev_dependencies:
   dart_flutter_team_lints: ^3.1.0
-
-dependency_overrides:
-  build:
-    path: ../build
-  build_config:
-    path: ../build_config
-  build_runner_core:
-    path: ../build_runner_core
-  build_test:
-    path: ../build_test

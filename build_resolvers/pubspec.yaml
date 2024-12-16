@@ -2,10 +2,7 @@ name: build_resolvers
 version: 2.4.3-wip
 description: Resolve Dart code in a Builder
 repository: https://github.com/dart-lang/build/tree/master/build_resolvers
-
-# This package can't be part of the workspace because it requires a very recent
-# Dart SDK - see the top-level pubspec for details.
-#resolution: workspace
+resolution: workspace
 
 environment:
   sdk: ^3.6.0

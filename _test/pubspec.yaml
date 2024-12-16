@@ -1,9 +1,6 @@
 name: _test
 publish_to: none
-# This package can't be part of the workspace because it needs to use the local
-# build_web_compilers, which also isn't part of the workspace. See the top-
-# level pubspec for details.
-#resolution: workspace
+resolution: workspace
 
 environment:
   sdk: ^3.6.0
@@ -29,21 +26,3 @@ dev_dependencies:
   test: ^1.16.0
   test_descriptor: ^2.0.1
   test_process: ^2.0.0
-
-dependency_overrides:
-  build:
-    path: ../build
-  build_config:
-    path: ../build_config
-  build_modules:
-    path: ../build_modules
-  build_resolvers:
-    path: ../build_resolvers
-  build_runner:
-    path: ../build_runner
-  build_runner_core:
-    path: ../build_runner_core
-  build_test:
-    path: ../build_test
-  build_web_compilers:
-    path: ../build_web_compilers

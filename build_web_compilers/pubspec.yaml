@@ -2,9 +2,7 @@ name: build_web_compilers
 version: 4.1.0-wip
 description: Builder implementations wrapping the dart2js and DDC compilers.
 repository: https://github.com/dart-lang/build/tree/master/build_web_compilers
-# This package can't be part of the workspace because it requires a very recent
-# Dart SDK - see the top-level pubspec for details.
-#resolution: workspace
+resolution: workspace
 
 environment:
   sdk: '>=3.6.0 <3.7.0-z'
@@ -41,11 +39,6 @@ dev_dependencies:
   dart_flutter_team_lints: ^3.1.0
   test: ^1.16.0
   yaml: ^3.1.0
-
-# TODO: remove once this package is back in the workspace
-dependency_overrides:
-  build_modules:
-    path: ../build_modules
 
 topics:
  - build-runner
