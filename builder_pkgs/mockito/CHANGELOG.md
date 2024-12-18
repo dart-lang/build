@@ -3,11 +3,11 @@
 * Ignore "must_be_immutable" warning in generated files. Mocks cannot be made
   immutable anyway, but this way users aren't prevented from using generated
   mocks altogether.
-* Require Dart SDK ^3.6.0-0.
-* Require analyzer ^6.9.0.
-* Require build_runner ^2.4.11.
-* Require dart_style ^2.3.7, so that the current Dart language version can be
-  passed to `DartFormatter`.
+* Require Dart SDK ^3.6.0.
+* Require `analyzer: '>=6.9.0 <8.0.0'`.
+* Require `dart_style: '>=2.3.7 <4.0.0'`, so that the current Dart language
+  version can be passed to `DartFormatter`.
+* Require `source_gen: ">=1.4.0 <3.0.0"`.
 * Add support for extension types.
 * Add topics to `pubspec.yaml`.
 * Fix a bug where type aliases in type arguments were not correctly

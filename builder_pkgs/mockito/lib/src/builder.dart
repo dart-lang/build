@@ -1707,8 +1707,8 @@ class _MockClassInfo {
           ..initializers.add(refer('super')
               .call([refer('parent'), refer('parentInvocation')]).code)));
 
-        final toStringMethod =
-            elementToFake.lookUpMethod('toString', elementToFake.library);
+        final toStringMethod = elementToFake.augmented
+            .lookUpMethod(name: 'toString', library: elementToFake.library);
         if (toStringMethod != null && toStringMethod.parameters.isNotEmpty) {
           // If [elementToFake] includes an overriding `toString` implementation,
           // we need to include an implementation which matches the signature.

@@ -13,6 +13,8 @@
 // limitations under the License.
 
 @TestOn('vm')
+library;
+
 import 'dart:convert' show utf8;
 
 import 'package:build/build.dart';
