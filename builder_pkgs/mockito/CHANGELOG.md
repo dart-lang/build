@@ -1,3 +1,7 @@
+## 5.4.6
+
+* Pass actual language version of generating package to formatter.
+
 ## 5.4.5
 
 * Ignore "must_be_immutable" warning in generated files. Mocks cannot be made
