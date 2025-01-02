@@ -18,8 +18,9 @@ Builder webEntrypointBuilder(BuilderOptions options) =>
 // Ddc related builders
 Builder ddcMetaModuleBuilder(BuilderOptions options) =>
     MetaModuleBuilder.forOptions(ddcPlatform, options);
-Builder ddcMetaModuleCleanBuilder(_) => MetaModuleCleanBuilder(ddcPlatform);
-Builder ddcModuleBuilder([_]) => ModuleBuilder(ddcPlatform);
+Builder ddcMetaModuleCleanBuilder(BuilderOptions _) =>
+    MetaModuleCleanBuilder(ddcPlatform);
+Builder ddcModuleBuilder(BuilderOptions _) => ModuleBuilder(ddcPlatform);
 
 Builder ddcBuilder(BuilderOptions options) {
   validateOptions(options.config, _supportedOptions, 'build_web_compilers:ddc');
@@ -52,7 +53,7 @@ Builder ddcKernelBuilder(BuilderOptions options) {
       trackUnusedInputs: _readTrackInputsCompilerOption(options));
 }
 
-Builder sdkJsCopyRequirejs(_) => SdkJsCopyBuilder();
+Builder sdkJsCopyRequirejs(BuilderOptions _) => SdkJsCopyBuilder();
 Builder sdkJsCompile(BuilderOptions options) => SdkJsCompileBuilder(
       sdkKernelPath: 'lib/_internal/ddc_platform.dill',
       outputPath: 'lib/src/dev_compiler/dart_sdk.js',
@@ -62,18 +63,20 @@ Builder sdkJsCompile(BuilderOptions options) => SdkJsCompileBuilder(
 // Dart2js related builders
 Builder dart2jsMetaModuleBuilder(BuilderOptions options) =>
     MetaModuleBuilder.forOptions(dart2jsPlatform, options);
-Builder dart2jsMetaModuleCleanBuilder(_) =>
+Builder dart2jsMetaModuleCleanBuilder(BuilderOptions _) =>
     MetaModuleCleanBuilder(dart2jsPlatform);
-Builder dart2jsModuleBuilder([_]) => ModuleBuilder(dart2jsPlatform);
+Builder dart2jsModuleBuilder(BuilderOptions _) =>
+    ModuleBuilder(dart2jsPlatform);
 PostProcessBuilder dart2jsArchiveExtractor(BuilderOptions options) =>
     Dart2JsArchiveExtractor.fromOptions(options);
 
 // Dart2wasm related builders
 Builder dart2wasmMetaModuleBuilder(BuilderOptions options) =>
     MetaModuleBuilder.forOptions(dart2wasmPlatform, options);
-Builder dart2wasmMetaModuleCleanBuilder(_) =>
+Builder dart2wasmMetaModuleCleanBuilder(BuilderOptions _) =>
     MetaModuleCleanBuilder(dart2wasmPlatform);
-Builder dart2wasmModuleBuilder([_]) => ModuleBuilder(dart2wasmPlatform);
+Builder dart2wasmModuleBuilder(BuilderOptions _) =>
+    ModuleBuilder(dart2wasmPlatform);
 
 // General purpose builders
 PostProcessBuilder dartSourceCleanup(BuilderOptions options) =>

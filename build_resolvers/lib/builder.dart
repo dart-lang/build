@@ -10,7 +10,8 @@ import 'package:crypto/crypto.dart';
 
 import 'src/build_asset_uri_resolver.dart';
 
-Builder transitiveDigestsBuilder(_) => _TransitiveDigestsBuilder();
+Builder transitiveDigestsBuilder(BuilderOptions _) =>
+    _TransitiveDigestsBuilder();
 
 PostProcessBuilder transitiveDigestCleanup(BuilderOptions options) =>
     FileDeletingBuilder([transitiveDigestExtension],
