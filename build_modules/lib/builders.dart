@@ -7,6 +7,6 @@ import 'build_modules.dart';
 import 'src/module_cleanup.dart';
 import 'src/module_library_builder.dart';
 
-Builder moduleLibraryBuilder(_) => const ModuleLibraryBuilder();
+Builder moduleLibraryBuilder(BuilderOptions _) => const ModuleLibraryBuilder();
 
-PostProcessBuilder moduleCleanup(_) => const ModuleCleanup();
+PostProcessBuilder moduleCleanup(BuilderOptions _) => const ModuleCleanup();

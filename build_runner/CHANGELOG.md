@@ -253,7 +253,7 @@
  `package:build_runner/build_script_generate.dart`:
   - Export `generateAndRun` to snapshot and run build scripts.
   - Export `findBuilderApplications` to find builder applications from a
-    package grah.
+    package graph.
 
 ## 1.10.13
 
@@ -262,7 +262,7 @@
 ## 1.10.12
 
 - Allow the null safe pre-releases of all migrated deps.
-- Add a warning if a `builders` section is found in when parsing an overriden
+- Add a warning if a `builders` section is found in when parsing an overridden
   build.yaml file via the `--config` flag.
 
 ## 1.10.11
@@ -322,7 +322,7 @@ Pin `analyzer` to `0.39.14` to work around Issue #2763.
 
 ## 1.9.0
 
-- Add a warning if a package is missing some required placholder files,
+- Add a warning if a package is missing some required placeholder files,
   including `$package$` and `lib/$lib$`.
 - Reduce chances for changing apparent build phases across machines with a
   different order of packages from `package_config.json`.
@@ -776,7 +776,7 @@ also work when you create an output directory.
 ## 0.8.7
 
 - Improve error handling on the `/$graph` page.
-- Support the latest `package:builde`
+- Support the latest `package:build`
 
 ## 0.8.6
 
@@ -822,7 +822,7 @@ also work when you create an output directory.
 
 - Allow passing multiple `--output` options. Each option will be split on
   `:`. The first value will be the root input directory, the second value will
-  be the output directory. If no delimeter is provided, all resources
+  be the output directory. If no delimiter is provided, all resources
   will be copied to the output directory.
 - Allow deleting files in the post process build step.
 - Bug Fix: Correctly include the default allow list when multiple targets
@@ -861,7 +861,7 @@ also work when you create an output directory.
   - They can not be optional themselves, and can only output to cache.
   - Because they all run in a single phase, after other builders, none of their
     outputs can be used as inputs to any actions.
-- Added `applyPostProccess` method which takes `PostProcessBuilderFactory`s
+- Added `applyPostProcess` method which takes `PostProcessBuilderFactory`s
   instead of `BuilderFactory`s.
 
 ### Breaking Changes
@@ -1116,7 +1116,7 @@ clients:
 ### Internal Improvements
 
 - Outputs will no longer be rebuilt unless their inputs actually changed,
-  previously if any transtive dependency changed they would be invalidated.
+  previously if any transitive dependency changed they would be invalidated.
 - Switched to using semantic analyzer summaries, this combined with the better
   input validation means that, ddc/summary builds are much faster on non-api
   affecting edits (dependent modules will no longer be rebuilt).
