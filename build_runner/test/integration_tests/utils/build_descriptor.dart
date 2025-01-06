@@ -161,7 +161,7 @@ ${builders.map(_builderFactory).join('\n')}
 ''';
 
 String _builderFactory(TestBuilderDefinition builder) =>
-    'Builder ${builder.key}Factory(_) => ${builder.key};';
+    'Builder ${builder.key}Factory(BuilderOptions _) => ${builder.key};';
 
 String _buildToolFile(
         Iterable<TestBuilderDefinition> builders, Uri callingScript) =>
