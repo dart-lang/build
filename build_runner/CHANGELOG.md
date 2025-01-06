@@ -1,3 +1,7 @@
+## 2.4.15-wip
+
+- Update to package:web and dart:js_interop.
+
 ## 2.4.14
 
 - Write generated assets at the end of a build to avoid invalidating other
