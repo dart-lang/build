@@ -4,7 +4,9 @@
 
 import 'dart:async';
 import 'dart:convert';
+// ignore: deprecated_member_use
 import 'dart:html';
+// ignore: deprecated_member_use
 import 'dart:js' as js;
 
 final _graphReference = js.context[r'$build']! as js.JsObject;

@@ -65,4 +65,4 @@ Builder someBuilder(BuilderOptions options) =>
 Builder notApplied(BuilderOptions options) => _SomeBuilder.fromOptions(options);
 PostProcessBuilder somePostProcessBuilder(BuilderOptions options) =>
     _SomePostProcessBuilder.fromOptions(options);
-Builder throwingBuilder(_) => _ThrowingBuilder();
+Builder throwingBuilder(BuilderOptions _) => _ThrowingBuilder();

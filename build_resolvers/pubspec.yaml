@@ -1,5 +1,5 @@
 name: build_resolvers
-version: 2.4.3
+version: 2.4.4-wip
 description: Resolve Dart code in a Builder
 repository: https://github.com/dart-lang/build/tree/master/build_resolvers
 resolution: workspace
