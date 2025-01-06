@@ -28,7 +28,7 @@ window.$build.initializeGraph = function (scope) {
     });
 
     return function (onFocus) {
-      scope.onFocus = onFocus;
+        scope.onFocus = onFocus;
     };
 }(window.$build);
 window.$build.setData = function (scope) {
