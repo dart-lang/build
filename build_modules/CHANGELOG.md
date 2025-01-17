@@ -1,4 +1,6 @@
-## 5.0.11-wip
+## 5.0.11
+
+- Support 3.8.0 pre-release sdks.
 
 ## 5.0.10
 
