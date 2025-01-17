@@ -1,4 +1,6 @@
-## 4.1.1-wip
+## 4.1.1
+
+- Support 3.8.0 pre-release sdks.
 
 ## 4.1.0
 
