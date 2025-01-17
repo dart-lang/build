@@ -9,6 +9,7 @@ dependencies:
   build: ^2.0.0
   # Not imported in code, but used to constrain `build.yaml` requirements
   build_config: ^1.0.0
+  web: ^1.1.0
 
 dev_dependencies:
   build_runner: ^2.0.0
