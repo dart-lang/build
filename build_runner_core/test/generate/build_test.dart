@@ -1906,6 +1906,26 @@ void main() {
       // A build does not crash in `_cleanUpStaleOutputs`
       await testBuilders(builders, {'a|lib/a.txt': 'a'});
     });
+
+    test('can have assets ending in a dot', () async {
+      var builders = [
+        applyToRoot(
+          TestBuilder(
+            buildExtensions: {
+              '': ['copy']
+            },
+            build: (step, __) async {
+              await step.writeAsString(step.allowedOutputs.single, 'out');
+            },
+          ),
+        ),
+      ];
+      await testBuilders(builders, {
+        'a|lib/a.': 'a',
+      }, outputs: {
+        'a|lib/a.copy': 'out',
+      });
+    });
   });
 }
 

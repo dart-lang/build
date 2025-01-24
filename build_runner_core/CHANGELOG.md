@@ -1,3 +1,7 @@
+## 8.0.1-dev
+
+- Fix crash when running on assets ending in a dot.
+
 ## 8.0.0
 
 - __Breaking__: Add `completeBuild` to `RunnerAssetWriter`, a method expected
