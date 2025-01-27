@@ -1,0 +1,10 @@
+# Take special care to include the .dart_tool/package_config.json files and
+# only those.
+
+# Re-include the .dart_tool dir (can't unexclude files if their parent dir is
+# ignored).
+!/*/.dart_tool
+# Exclude everything under the .dart_tool (but not the dir itself!).
+/*/.dart_tool/*
+# Re-include the package config file.
+!/*/.dart_tool/package_config.json
