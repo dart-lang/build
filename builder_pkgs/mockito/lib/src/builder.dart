@@ -193,7 +193,7 @@ $rawOutput
           interface.typeArguments.forEach(addTypesFrom);
           interface.allSupertypes.forEach(addTypesFrom);
         case final analyzer.RecordType record:
-          record.positionalTypes.forEach(addTypesFrom);
+          record.positionalFields.map((e) => e.type).forEach(addTypesFrom);
           record.namedFields.map((e) => e.type).forEach(addTypesFrom);
       }
     }
