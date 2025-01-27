@@ -1,6 +1,7 @@
 ## 5.4.6
 
-* Pass actual language version of generating package to formatter.
+* When formatting a generated mocks library, use the language version of the
+  library with the mockito annotation.
 
 ## 5.4.5
 
@@ -25,9 +26,9 @@
 
 ## 5.4.3
 
-* Require analyzer 5.12.0, allow analyzer version 6.x;
+* Require analyzer 5.12.0, allow analyzer version 6.x.
 * Add example of writing a class to mock function objects.
-* Add support for the `build_extensions` build.yaml option
+* Add support for the `build_extensions` build.yaml option.
 * Require Dart >=3.1.0.
 * **Potentially breaking** Changed default `String` value returned by nice
   mocks' unstubbed method to include some useful info. This could break the
