@@ -941,7 +941,14 @@ String _actionLoggerName(
     InBuildPhase phase, AssetId primaryInput, String rootPackageName) {
   var asset = primaryInput.package == rootPackageName
       ? primaryInput.path
-      : primaryInput.uri;
+      : primaryInput.uri.toString();
+
+  // In the rare case that the assets ends with a dot, remove it to ensure that
+  // the logger name is valid.
+  while (asset.endsWith('.')) {
+    asset = asset.substring(0, asset.length - 1);
+  }
+
   return '${phase.builderLabel} on $asset';
 }
 
