@@ -1,3 +1,8 @@
+## 5.4.6
+
+* When formatting a generated mocks library, use the language version of the
+  library with the mockito annotation.
+
 ## 5.4.5
 
 * Ignore "must_be_immutable" warning in generated files. Mocks cannot be made
