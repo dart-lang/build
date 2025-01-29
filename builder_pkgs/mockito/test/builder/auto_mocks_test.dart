@@ -49,7 +49,7 @@ class MockSpec<T> {
   })
       : mockName = as;
 }
-'''
+''',
 };
 
 const mockitoAssets = {
@@ -58,7 +58,7 @@ export 'src/mock.dart';
 ''',
   'mockito|lib/src/mock.dart': '''
 class Mock {}
-'''
+''',
 };
 
 const metaAssets = {
@@ -68,7 +68,7 @@ class _Immutable {
   const _Immutable();
 }
 const immutable = _Immutable();
-'''
+''',
 };
 
 const simpleTestAsset = {
@@ -77,59 +77,80 @@ import 'package:foo/foo.dart';
 import 'package:mockito/annotations.dart';
 @GenerateMocks([Foo])
 void main() {}
-'''
+''',
 };
 
 void main() {
   late InMemoryAssetWriter writer;
 
   /// Test [MockBuilder] in a package which has opted into null safety.
-  Future<void> testWithNonNullable(Map<String, String> sourceAssets,
-      {Map<String, /*String|Matcher<List<int>>*/ Object>? outputs,
-      Map<String, dynamic> config = const <String, dynamic>{}}) async {
+  Future<void> testWithNonNullable(
+    Map<String, String> sourceAssets, {
+    Map<String, /*String|Matcher<List<int>>*/ Object>? outputs,
+    Map<String, dynamic> config = const <String, dynamic>{},
+  }) async {
     final packageConfig = PackageConfig([
-      Package('foo', Uri.file('/foo/'),
-          packageUriRoot: Uri.file('/foo/lib/'),
-          languageVersion: LanguageVersion(3, 3))
+      Package(
+        'foo',
+        Uri.file('/foo/'),
+        packageUriRoot: Uri.file('/foo/lib/'),
+        languageVersion: LanguageVersion(3, 3),
+      ),
     ]);
-    await testBuilder(buildMocks(BuilderOptions(config)), sourceAssets,
-        writer: writer, outputs: outputs, packageConfig: packageConfig);
+    await testBuilder(
+      buildMocks(BuilderOptions(config)),
+      sourceAssets,
+      writer: writer,
+      outputs: outputs,
+      packageConfig: packageConfig,
+    );
   }
 
   /// Builds with [MockBuilder] in a package which has opted into null safety,
   /// returning the content of the generated mocks library.
   Future<String> buildWithNonNullable(Map<String, String> sourceAssets) async {
     final packageConfig = PackageConfig([
-      Package('foo', Uri.file('/foo/'),
-          packageUriRoot: Uri.file('/foo/lib/'),
-          languageVersion: LanguageVersion(3, 3))
+      Package(
+        'foo',
+        Uri.file('/foo/'),
+        packageUriRoot: Uri.file('/foo/lib/'),
+        languageVersion: LanguageVersion(3, 3),
+      ),
     ]);
 
-    await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
-        writer: writer, packageConfig: packageConfig);
+    await testBuilder(
+      buildMocks(BuilderOptions({})),
+      sourceAssets,
+      writer: writer,
+      packageConfig: packageConfig,
+    );
     final mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
     return utf8.decode(writer.assets[mocksAsset]!);
   }
 
   /// Test [MockBuilder] on a single source file, in a package which has opted
   /// into null safety, and with the non-nullable experiment enabled.
-  Future<void> expectSingleNonNullableOutput(String sourceAssetText,
-      /*String|Matcher<List<int>>*/ Object output) async {
-    await testWithNonNullable({
-      ...metaAssets,
-      ...annotationsAsset,
-      ...simpleTestAsset,
-      'foo|lib/foo.dart': sourceAssetText,
-    }, outputs: {
-      'foo|test/foo_test.mocks.dart': output
-    });
+  Future<void> expectSingleNonNullableOutput(
+    String sourceAssetText,
+    /*String|Matcher<List<int>>*/ Object output,
+  ) async {
+    await testWithNonNullable(
+      {
+        ...metaAssets,
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': sourceAssetText,
+      },
+      outputs: {'foo|test/foo_test.mocks.dart': output},
+    );
   }
 
   /// Builds with [MockBuilder] in a package which has opted into the
   /// non-nullable type system, returning the content of the generated mocks
   /// library.
   Future<String> buildWithSingleNonNullableSource(
-      String sourceAssetText) async {
+    String sourceAssetText,
+  ) async {
     await testWithNonNullable({
       ...annotationsAsset,
       ...simpleTestAsset,
@@ -144,50 +165,69 @@ void main() {
   });
 
   test(
-      'generates a mock class but does not override methods w/ zero parameters',
-      () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    'generates a mock class but does not override methods w/ zero parameters',
+    () async {
+      final mocksContent = await buildWithSingleNonNullableSource(
+        dedent(r'''
       class Foo {
         dynamic method1() => 7;
       }
-      '''));
-    expect(mocksContent,
-        contains('class MockFoo extends _i1.Mock implements _i2.Foo'));
-    expect(mocksContent, isNot(contains('method1')));
-  });
+      '''),
+      );
+      expect(
+        mocksContent,
+        contains('class MockFoo extends _i1.Mock implements _i2.Foo'),
+      );
+      expect(mocksContent, isNot(contains('method1')));
+    },
+  );
 
-  test('generates a mock class but does not override private methods',
-      () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+  test(
+    'generates a mock class but does not override private methods',
+    () async {
+      final mocksContent = await buildWithSingleNonNullableSource(
+        dedent(r'''
       class Foo {
         int _method1(int x) => 8;
       }
-      '''));
-    expect(mocksContent,
-        contains('class MockFoo extends _i1.Mock implements _i2.Foo'));
-    expect(mocksContent, isNot(contains('method1')));
-  });
+      '''),
+      );
+      expect(
+        mocksContent,
+        contains('class MockFoo extends _i1.Mock implements _i2.Foo'),
+      );
+      expect(mocksContent, isNot(contains('method1')));
+    },
+  );
 
   test('generates a mock class but does not override static methods', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
       class Foo {
         static int method1(int y) => 9;
       }
-      '''));
+      '''),
+    );
     expect(mocksContent, isNot(contains('method1')));
   });
 
-  test('generates a mock class but does not override any extension methods',
-      () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+  test(
+    'generates a mock class but does not override any extension methods',
+    () async {
+      final mocksContent = await buildWithSingleNonNullableSource(
+        dedent(r'''
       extension X on Foo {
         dynamic x(int m, String n) => n + 1;
       }
       class Foo {}
-      '''));
-    expect(mocksContent,
-        contains('class MockFoo extends _i1.Mock implements _i2.Foo'));
-  });
+      '''),
+      );
+      expect(
+        mocksContent,
+        contains('class MockFoo extends _i1.Mock implements _i2.Foo'),
+      );
+    },
+  );
 
   test('overrides methods, matching required positional parameters', () async {
     await expectSingleNonNullableOutput(
@@ -207,13 +247,15 @@ void main() {
         void m(int a, [int b, int c = 0]) {}
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         void m(
           int? a, [
           int? b,
           int? c = 0,
         ]) =>
-        ''')),
+        '''),
+      ),
     );
   });
 
@@ -224,13 +266,15 @@ void main() {
         void m(int a, {int b, int c = 0}) {}
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         void m(
           int? a, {
           int? b,
           int? c = 0,
         }) =>
-        ''')),
+        '''),
+      ),
     );
   });
 
@@ -241,11 +285,13 @@ void main() {
         void m([int a, int b = 0]) {}
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         void m([
           int? a,
           int? b = 0,
-        ]) =>''')),
+        ]) =>'''),
+      ),
     );
   });
 
@@ -256,12 +302,14 @@ void main() {
         void m([bool a = true, bool b = false]) {}
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         void m([
           bool? a = true,
           bool? b = false,
         ]) =>
-        ''')),
+        '''),
+      ),
     );
   });
 
@@ -272,12 +320,14 @@ void main() {
         void m([int a = 0, double b = 0.5]) {}
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         void m([
           int? a = 0,
           double? b = 0.5,
         ]) =>
-        ''')),
+        '''),
+      ),
     );
   });
 
@@ -288,31 +338,37 @@ void main() {
         void m([String a = 'Hello', String b = "World"]) {}
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         void m([
           String? a = 'Hello',
           String? b = 'World',
         ]) =>
-        ''')),
+        '''),
+      ),
     );
   });
 
-  test('matches string literal parameter default values with quote characters',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+  test(
+    'matches string literal parameter default values with quote characters',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
       class Foo {
         void m([String a = 'Hel"lo', String b = "Wor'ld"]) {}
       }
       '''),
-      _containsAllOf(dedent2('''
+        _containsAllOf(
+          dedent2('''
         void m([
           String? a = 'Hel"lo',
           String? b = 'Wor\\'ld',
         ]) =>
-        ''')),
-    );
-  });
+        '''),
+        ),
+      );
+    },
+  );
 
   test('matches raw string literal parameter default values', () async {
     await expectSingleNonNullableOutput(
@@ -321,12 +377,14 @@ void main() {
         void m([String a = r'$Hello', String b = r"$World"]) {}
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         void m([
           String? a = '\\\$Hello',
           String? b = '\\\$World',
         ]) =>
-        ''')),
+        '''),
+      ),
     );
   });
 
@@ -337,12 +395,14 @@ void main() {
         void m([List<int> a = const [], Map<int, int> b = const {}]) {}
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         void m([
           List<int>? a = const [],
           Map<int, int>? b = const {},
         ]) =>
-        ''')),
+        '''),
+      ),
     );
   });
 
@@ -353,14 +413,16 @@ void main() {
         void m([List<int> a = const [1, 2, 3]]) {}
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         void m(
                 [List<int>? a = const [
                   1,
                   2,
                   3,
                 ]]) =>
-        ''')),
+        '''),
+      ),
     );
   });
 
@@ -371,13 +433,15 @@ void main() {
         void m([Map<int, String> a = const {1: 'a', 2: 'b'}]) {}
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         void m(
                 [Map<int, String>? a = const {
                   1: 'a',
                   2: 'b',
                 }]) =>
-        ''')),
+        '''),
+      ),
     );
   });
 
@@ -388,20 +452,23 @@ void main() {
         void m([Map<int, String> a = const {1: 'a', 2: 'b'}]) {}
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         void m(
                 [Map<int, String>? a = const {
                   1: 'a',
                   2: 'b',
                 }]) =>
-        ''')),
+        '''),
+      ),
     );
   });
 
-  test('matches parameter default values constructed from a local class',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+  test(
+    'matches parameter default values constructed from a local class',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
       class Foo {
         void m([Bar a = const Bar()]) {}
       }
@@ -409,28 +476,34 @@ void main() {
         const Bar();
       }
       '''),
-      _containsAllOf(
-          'void m([_i2.Bar? a = const _i2.Bar()]) => super.noSuchMethod('),
-    );
-  });
+        _containsAllOf(
+          'void m([_i2.Bar? a = const _i2.Bar()]) => super.noSuchMethod(',
+        ),
+      );
+    },
+  );
 
-  test('matches parameter default values constructed from a Dart SDK class',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+  test(
+    'matches parameter default values constructed from a Dart SDK class',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
       class Foo {
         void m([Duration a = const Duration(days: 1)]) {}
       }
       '''),
-      _containsAllOf(
-          'void m([Duration? a = const Duration(days: 1)]) => super.noSuchMethod('),
-    );
-  });
+        _containsAllOf(
+          'void m([Duration? a = const Duration(days: 1)]) => super.noSuchMethod(',
+        ),
+      );
+    },
+  );
 
-  test('matches parameter default values constructed from a named constructor',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+  test(
+    'matches parameter default values constructed from a named constructor',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
       class Foo {
         void m([Bar a = const Bar.named()]) {}
       }
@@ -438,15 +511,18 @@ void main() {
         const Bar.named();
       }
       '''),
-      _containsAllOf(
-          'void m([_i2.Bar? a = const _i2.Bar.named()]) => super.noSuchMethod('),
-    );
-  });
+        _containsAllOf(
+          'void m([_i2.Bar? a = const _i2.Bar.named()]) => super.noSuchMethod(',
+        ),
+      );
+    },
+  );
 
-  test('matches parameter default values constructed with positional arguments',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+  test(
+    'matches parameter default values constructed with positional arguments',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
       class Foo {
         void m([Bar a = const Bar(7)]) {}
       }
@@ -455,15 +531,18 @@ void main() {
         const Bar(this.i);
       }
       '''),
-      _containsAllOf(
-          'void m([_i2.Bar? a = const _i2.Bar(7)]) => super.noSuchMethod('),
-    );
-  });
+        _containsAllOf(
+          'void m([_i2.Bar? a = const _i2.Bar(7)]) => super.noSuchMethod(',
+        ),
+      );
+    },
+  );
 
-  test('matches parameter default values constructed with named arguments',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+  test(
+    'matches parameter default values constructed with named arguments',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
       class Foo {
         void m([Bar a = const Bar(i: 7)]) {}
       }
@@ -472,51 +551,60 @@ void main() {
         const Bar({this.i});
       }
       '''),
-      _containsAllOf(
-          'void m([_i2.Bar? a = const _i2.Bar(i: 7)]) => super.noSuchMethod('),
-    );
-  });
+        _containsAllOf(
+          'void m([_i2.Bar? a = const _i2.Bar(i: 7)]) => super.noSuchMethod(',
+        ),
+      );
+    },
+  );
 
-  test('matches parameter default values constructed with top-level variable',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+  test(
+    'matches parameter default values constructed with top-level variable',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
       class Foo {
         void m([int a = x]) {}
       }
       const x = 1;
       '''),
-      _containsAllOf('void m([int? a = 1]) => super.noSuchMethod('),
-    );
-  });
+        _containsAllOf('void m([int? a = 1]) => super.noSuchMethod('),
+      );
+    },
+  );
 
-  test('matches parameter default values constructed with top-level function',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+  test(
+    'matches parameter default values constructed with top-level function',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
       typedef Callback = void Function();
       void defaultCallback() {}
       class Foo {
         void m([Callback a = defaultCallback]) {}
       }
       '''),
-      _containsAllOf(
-          'void m([_i2.Callback? a = _i2.defaultCallback]) => super.noSuchMethod('),
-    );
-  });
+        _containsAllOf(
+          'void m([_i2.Callback? a = _i2.defaultCallback]) => super.noSuchMethod(',
+        ),
+      );
+    },
+  );
 
-  test('matches parameter default values constructed with static field',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+  test(
+    'matches parameter default values constructed with static field',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
       class Foo {
         static const x = 1;
         void m([int a = x]) {}
       }
       '''),
-      _containsAllOf('void m([int? a = 1]) => super.noSuchMethod('),
-    );
-  });
+        _containsAllOf('void m([int? a = 1]) => super.noSuchMethod('),
+      );
+    },
+  );
 
   test('throws when given a parameter default value using a private type', () {
     _expectBuilderThrows(
@@ -534,9 +622,10 @@ void main() {
       '''),
       },
       message: contains(
-          "Mockito cannot generate a valid override for method 'Foo.m'; "
-          "parameter 'a' causes a problem: default value has a private type: "
-          'asset:foo/lib/foo.dart#_Bar'),
+        "Mockito cannot generate a valid override for method 'Foo.m'; "
+        "parameter 'a' causes a problem: default value has a private type: "
+        'asset:foo/lib/foo.dart#_Bar',
+      ),
     );
   });
 
@@ -559,20 +648,21 @@ void main() {
       '''),
       },
       message: contains(
-          "Mockito cannot generate a valid override for method 'Foo.m'; "
-          "parameter 'a' causes a problem: default value has a private type: "
-          'asset:foo/lib/foo.dart#_Bar'),
+        "Mockito cannot generate a valid override for method 'Foo.m'; "
+        "parameter 'a' causes a problem: default value has a private type: "
+        'asset:foo/lib/foo.dart#_Bar',
+      ),
     );
   });
 
   test(
-      'throws when given a parameter default value using a private constructor',
-      () {
-    _expectBuilderThrows(
-      assets: {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
+    'throws when given a parameter default value using a private constructor',
+    () {
+      _expectBuilderThrows(
+        assets: {
+          ...annotationsAsset,
+          ...simpleTestAsset,
+          'foo|lib/foo.dart': dedent(r'''
         class Foo {
           void m([Bar a = const Bar._named()]) {}
         }
@@ -580,13 +670,15 @@ void main() {
           const Bar._named();
         }
         '''),
-      },
-      message: contains(
+        },
+        message: contains(
           "Mockito cannot generate a valid override for method 'Foo.m'; "
           "parameter 'a' causes a problem: default value has a private type: "
-          'asset:foo/lib/foo.dart#Bar::_named'),
-    );
-  });
+          'asset:foo/lib/foo.dart#Bar::_named',
+        ),
+      );
+    },
+  );
 
   test('throws when given a parameter default value which is a type', () {
     _expectBuilderThrows(
@@ -599,9 +691,11 @@ void main() {
         }
         '''),
       },
-      message: contains('Mockito cannot generate a valid override for method '
-          "'Foo.m'; parameter 'a' causes a problem: default value is a Type: "
-          'int'),
+      message: contains(
+        'Mockito cannot generate a valid override for method '
+        "'Foo.m'; parameter 'a' causes a problem: default value is a Type: "
+        'int',
+      ),
     );
   });
 
@@ -650,18 +744,20 @@ void main() {
     );
   });
 
-  test('overrides methods of generic super classes, substituting types',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+  test(
+    'overrides methods of generic super classes, substituting types',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
       class FooBase<T> {
         void m(T a) {}
       }
       class Foo extends FooBase<int> {}
       '''),
-      _containsAllOf('void m(int? a) => super.noSuchMethod('),
-    );
-  });
+        _containsAllOf('void m(int? a) => super.noSuchMethod('),
+      );
+    },
+  );
 
   test('overrides methods of mixed in classes, substituting types', () async {
     await expectSingleNonNullableOutput(
@@ -688,10 +784,11 @@ void main() {
     );
   });
 
-  test('overrides mixed in methods, using correct overriding signature',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+  test(
+    'overrides mixed in methods, using correct overriding signature',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
       class Base {
         void m(int a) {}
       }
@@ -702,9 +799,10 @@ void main() {
       }
       class Foo with MixinConstraint, Mixin {}
       '''),
-      _containsAllOf('void m(num? a) => super.noSuchMethod('),
-    );
-  });
+        _containsAllOf('void m(num? a) => super.noSuchMethod('),
+      );
+    },
+  );
 
   test('overrides methods of implemented classes', () async {
     await expectSingleNonNullableOutput(
@@ -734,19 +832,20 @@ void main() {
   });
 
   test(
-      'overrides methods of indirect generic super classes, substituting types',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+    'overrides methods of indirect generic super classes, substituting types',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
       class FooBase2<T> {
         void m(T a) {}
       }
       class FooBase1<T> extends FooBase2<T> {}
       class Foo extends FooBase2<int> {}
       '''),
-      _containsAllOf('void m(int? a) => super.noSuchMethod('),
-    );
-  });
+        _containsAllOf('void m(int? a) => super.noSuchMethod('),
+      );
+    },
+  );
 
   test('overrides methods of generic super classes using void', () async {
     await expectSingleNonNullableOutput(
@@ -772,9 +871,10 @@ void main() {
     );
   });
 
-  test('overrides methods, adjusting imports for names that conflict with core',
-      () async {
-    await expectSingleNonNullableOutput(
+  test(
+    'overrides methods, adjusting imports for names that conflict with core',
+    () async {
+      await expectSingleNonNullableOutput(
         dedent('''
       import 'dart:core' as core;
       class Foo {
@@ -785,8 +885,10 @@ void main() {
         _containsAllOf(
           '  void List(int? a) => super.noSuchMethod(\n',
           '  _i3.List<String> m() => (super.noSuchMethod(\n',
-        ));
-  });
+        ),
+      );
+    },
+  );
 
   test(
       'overrides `toString` with a correct signature if the class overrides '
@@ -804,11 +906,13 @@ void main() {
   test(
       'does not override `toString` if the class does not override `toString` '
       'with additional parameters', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent('''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent('''
       abstract class Foo {
         String toString() => 'Foo';
       }
-      '''));
+      '''),
+    );
     expect(mocksContent, isNot(contains('toString')));
   });
 
@@ -829,25 +933,33 @@ void main() {
     );
   });
 
-  test('does not override `operator==`, even if the class overrides it',
-      () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent('''
+  test(
+    'does not override `operator==`, even if the class overrides it',
+    () async {
+      final mocksContent = await buildWithSingleNonNullableSource(
+        dedent('''
       class Foo {
         bool operator==(Object? other);
       }
-      '''));
-    expect(mocksContent, isNot(contains('==')));
-  });
+      '''),
+      );
+      expect(mocksContent, isNot(contains('==')));
+    },
+  );
 
-  test('does not override `hashCode`, even if the class overrides it',
-      () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent('''
+  test(
+    'does not override `hashCode`, even if the class overrides it',
+    () async {
+      final mocksContent = await buildWithSingleNonNullableSource(
+        dedent('''
       class Foo {
         final int hashCode = 7;
       }
-      '''));
-    expect(mocksContent, isNot(contains('hashCode')));
-  });
+      '''),
+      );
+      expect(mocksContent, isNot(contains('hashCode')));
+    },
+  );
 
   test('generates mock classes from part files', () async {
     final mocksOutput = await buildWithNonNullable({
@@ -864,57 +976,64 @@ void main() {
         part of 'foo_test.dart';
         @GenerateMocks([Foo])
         void fooTests() {}
-        '''
+        ''',
     });
-    expect(mocksOutput,
-        contains('class MockFoo extends _i1.Mock implements _i2.Foo'));
-  });
-
-  test('does not crash upon finding non-library files', () async {
-    await testWithNonNullable(
-      {
-        ...annotationsAsset,
-        'foo|lib/foo.dart': dedent('class Foo {}'),
-        'foo|test/foo_test.dart': "part 'part.dart';",
-        'foo|test/part.dart': "part of 'foo_test.dart';",
-      },
-      outputs: {},
+    expect(
+      mocksOutput,
+      contains('class MockFoo extends _i1.Mock implements _i2.Foo'),
     );
   });
 
-  test('generates mock classes from an annotation on an import directive',
-      () async {
-    final mocksOutput = await buildWithNonNullable({
+  test('does not crash upon finding non-library files', () async {
+    await testWithNonNullable({
       ...annotationsAsset,
-      'foo|lib/foo.dart': dedent(r'class Foo {} class Bar {}'),
-      'foo|test/foo_test.dart': '''
+      'foo|lib/foo.dart': dedent('class Foo {}'),
+      'foo|test/foo_test.dart': "part 'part.dart';",
+      'foo|test/part.dart': "part of 'foo_test.dart';",
+    }, outputs: {});
+  });
+
+  test(
+    'generates mock classes from an annotation on an import directive',
+    () async {
+      final mocksOutput = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'class Foo {} class Bar {}'),
+        'foo|test/foo_test.dart': '''
         @GenerateMocks([Foo])
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
-        '''
-    });
-    expect(mocksOutput,
-        contains('class MockFoo extends _i1.Mock implements _i2.Foo'));
-  });
+        ''',
+      });
+      expect(
+        mocksOutput,
+        contains('class MockFoo extends _i1.Mock implements _i2.Foo'),
+      );
+    },
+  );
 
-  test('generates mock classes from an annotation on an export directive',
-      () async {
-    final mocksOutput = await buildWithNonNullable({
-      ...annotationsAsset,
-      'foo|lib/foo.dart': dedent(r'''
+  test(
+    'generates mock classes from an annotation on an export directive',
+    () async {
+      final mocksOutput = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
         class Foo {}
         class Bar {}
         '''),
-      'foo|test/foo_test.dart': '''
+        'foo|test/foo_test.dart': '''
         @GenerateMocks([Foo])
         export 'dart:core';
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
-        '''
-    });
-    expect(mocksOutput,
-        contains('class MockFoo extends _i1.Mock implements _i2.Foo'));
-  });
+        ''',
+      });
+      expect(
+        mocksOutput,
+        contains('class MockFoo extends _i1.Mock implements _i2.Foo'),
+      );
+    },
+  );
 
   test('generates multiple mock classes', () async {
     final mocksOutput = await buildWithNonNullable({
@@ -928,12 +1047,16 @@ void main() {
         import 'package:mockito/annotations.dart';
         @GenerateMocks([Foo, Bar])
         void main() {}
-        '''
+        ''',
     });
-    expect(mocksOutput,
-        contains('class MockFoo extends _i1.Mock implements _i2.Foo'));
-    expect(mocksOutput,
-        contains('class MockBar extends _i1.Mock implements _i2.Bar'));
+    expect(
+      mocksOutput,
+      contains('class MockFoo extends _i1.Mock implements _i2.Foo'),
+    );
+    expect(
+      mocksOutput,
+      contains('class MockBar extends _i1.Mock implements _i2.Bar'),
+    );
   });
 
   test('generates mock classes from multiple annotations', () async {
@@ -950,44 +1073,56 @@ void main() {
         void fooTests() {}
         @GenerateMocks([Bar])
         void barTests() {}
-        '''
+        ''',
     });
-    expect(mocksOutput,
-        contains('class MockFoo extends _i1.Mock implements _i2.Foo'));
-    expect(mocksOutput,
-        contains('class MockBar extends _i1.Mock implements _i2.Bar'));
+    expect(
+      mocksOutput,
+      contains('class MockFoo extends _i1.Mock implements _i2.Foo'),
+    );
+    expect(
+      mocksOutput,
+      contains('class MockBar extends _i1.Mock implements _i2.Bar'),
+    );
   });
 
-  test('generates mock classes from multiple annotations on a single element',
-      () async {
-    final mocksOutput = await buildWithNonNullable({
-      ...annotationsAsset,
-      'foo|lib/foo.dart': dedent(r'''
+  test(
+    'generates mock classes from multiple annotations on a single element',
+    () async {
+      final mocksOutput = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
         class Foo {}
         class Bar {}
         '''),
-      'foo|test/foo_test.dart': '''
+        'foo|test/foo_test.dart': '''
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
         @GenerateMocks([Foo])
         @GenerateMocks([Bar])
         void barTests() {}
-        '''
-    });
-    expect(mocksOutput,
-        contains('class MockFoo extends _i1.Mock implements _i2.Foo'));
-    expect(mocksOutput,
-        contains('class MockBar extends _i1.Mock implements _i2.Bar'));
-  });
+        ''',
+      });
+      expect(
+        mocksOutput,
+        contains('class MockFoo extends _i1.Mock implements _i2.Foo'),
+      );
+      expect(
+        mocksOutput,
+        contains('class MockBar extends _i1.Mock implements _i2.Bar'),
+      );
+    },
+  );
 
   test('generates generic mock classes', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
       class Foo<T, U> {}
-      '''));
+      '''),
+    );
     expect(
-        mocksContent,
-        contains(
-            'class MockFoo<T, U> extends _i1.Mock implements _i2.Foo<T, U>'));
+      mocksContent,
+      contains('class MockFoo<T, U> extends _i1.Mock implements _i2.Foo<T, U>'),
+    );
   });
 
   test('generates generic mock classes with type bounds', () async {
@@ -1002,14 +1137,19 @@ void main() {
         import 'package:mockito/annotations.dart';
         @GenerateMocks([Foo, Bar])
         void main() {}
-        '''
+        ''',
     });
-    expect(mocksOutput,
-        contains('class MockFoo extends _i1.Mock implements _i2.Foo'));
     expect(
-        mocksOutput,
-        contains('class MockBar<T extends _i2.Foo> extends _i1.Mock '
-            'implements _i2.Bar<T>'));
+      mocksOutput,
+      contains('class MockFoo extends _i1.Mock implements _i2.Foo'),
+    );
+    expect(
+      mocksOutput,
+      contains(
+        'class MockBar<T extends _i2.Foo> extends _i1.Mock '
+        'implements _i2.Bar<T>',
+      ),
+    );
   });
 
   test('writes dynamic, void w/o import prefix', () async {
@@ -1019,12 +1159,14 @@ void main() {
         void m(dynamic a, int b) {}
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         void m(
           dynamic a,
           int? b,
         ) =>
-        ''')),
+        '''),
+      ),
     );
   });
 
@@ -1051,100 +1193,120 @@ void main() {
   });
 
   test('imports libraries for external class types', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
         import 'dart:async';
         class Foo {
           dynamic f(List<Foo> list) {}
         }
-        '''));
+        '''),
+    );
     expect(mocksContent, contains("import 'package:foo/foo.dart' as _i2;"));
     expect(mocksContent, contains('implements _i2.Foo'));
     expect(mocksContent, contains('List<_i2.Foo>? list'));
   });
 
-  test('imports libraries for external class types declared in parts',
-      () async {
-    final mocksContent = await buildWithNonNullable({
-      ...annotationsAsset,
-      'foo|lib/foo.dart': dedent(r'''
+  test(
+    'imports libraries for external class types declared in parts',
+    () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
         part 'foo_part.dart';
         '''),
-      'foo|lib/foo_part.dart': dedent(r'''
+        'foo|lib/foo_part.dart': dedent(r'''
         part of 'foo.dart';
         class Foo {}
         '''),
-      'foo|test/foo_test.dart': '''
+        'foo|test/foo_test.dart': '''
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
         @GenerateMocks([Foo])
         void fooTests() {}
-        '''
-    });
-    expect(mocksContent, contains("import 'package:foo/foo.dart' as _i2;"));
-    expect(mocksContent,
-        contains('class MockFoo extends _i1.Mock implements _i2.Foo'));
-  });
+        ''',
+      });
+      expect(mocksContent, contains("import 'package:foo/foo.dart' as _i2;"));
+      expect(
+        mocksContent,
+        contains('class MockFoo extends _i1.Mock implements _i2.Foo'),
+      );
+    },
+  );
 
   test(
       'imports libraries for external class types found in a method return '
       'type', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
       import 'dart:async';
       class Foo {
         Future<void> f() async {}
       }
-      '''));
+      '''),
+    );
     expect(mocksContent, contains("import 'dart:async' as _i3;"));
     expect(mocksContent, contains('_i3.Future<void> f()'));
   });
 
-  test('imports libraries for external class types found in a type argument',
-      () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+  test(
+    'imports libraries for external class types found in a type argument',
+    () async {
+      final mocksContent = await buildWithSingleNonNullableSource(
+        dedent(r'''
       import 'dart:async';
       class Foo {
         List<Future> f() => [];
       }
-      '''));
-    expect(mocksContent, contains("import 'dart:async' as _i3;"));
-    expect(mocksContent, contains('List<_i3.Future<dynamic>> f()'));
-  });
+      '''),
+      );
+      expect(mocksContent, contains("import 'dart:async' as _i3;"));
+      expect(mocksContent, contains('List<_i3.Future<dynamic>> f()'));
+    },
+  );
 
   test(
       'imports libraries for external class types found in the return type of '
       'a function-typed parameter', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
       import 'dart:async';
       class Foo {
         void f(Future<void> a()) {}
       }
-      '''));
+      '''),
+    );
     expect(mocksContent, contains("import 'dart:async' as _i3;"));
     expect(mocksContent, contains('f(_i3.Future<void> Function()? a)'));
   });
 
   test(
-      'imports libraries for external class types found in a parameter type of '
-      'a function-typed parameter', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    'imports libraries for external class types found in a parameter type of '
+    'a function-typed parameter',
+    () async {
+      final mocksContent = await buildWithSingleNonNullableSource(
+        dedent(r'''
       import 'dart:async';
       class Foo {
         void f(void a(Future<int> b)) {}
       }
-      '''));
-    expect(mocksContent, contains("import 'dart:async' as _i3;"));
-    expect(mocksContent, contains('f(void Function(_i3.Future<int>)? a)'));
-  });
+      '''),
+      );
+      expect(mocksContent, contains("import 'dart:async' as _i3;"));
+      expect(mocksContent, contains('f(void Function(_i3.Future<int>)? a)'));
+    },
+  );
 
   test(
       'imports libraries for external class types found in a function-typed '
       'parameter', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
         import 'dart:async';
         class Foo {
           void f(Future<void> a()) {}
         }
-        '''));
+        '''),
+    );
     expect(mocksContent, contains("import 'dart:async' as _i3;"));
     expect(mocksContent, contains('f(_i3.Future<void> Function()? a)'));
   });
@@ -1152,12 +1314,14 @@ void main() {
   test(
       'imports libraries for external class types found in a FunctionType '
       'parameter', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
         import 'dart:async';
         class Foo {
           void f(Future<void> Function() a) {}
         }
-        '''));
+        '''),
+    );
     expect(mocksContent, contains("import 'dart:async' as _i3;"));
     expect(mocksContent, contains('f(_i3.Future<void> Function()? a)'));
   });
@@ -1165,12 +1329,14 @@ void main() {
   test(
       'imports libraries for external class types found nested in a '
       'function-typed parameter', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
         import 'dart:async';
         class Foo {
           void f(void a(Future<void> b)) {}
         }
-        '''));
+        '''),
+    );
     expect(mocksContent, contains("import 'dart:async' as _i3;"));
     expect(mocksContent, contains('f(void Function(_i3.Future<void>)? a)'));
   });
@@ -1178,12 +1344,14 @@ void main() {
   test(
       'imports libraries for external class types found in the bound of a '
       'type parameter of a method', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
         import 'dart:async';
         class Foo {
           void f<T extends Future>(T a) {}
         }
-        '''));
+        '''),
+    );
     expect(mocksContent, contains("import 'dart:async' as _i3;"));
     expect(mocksContent, contains('f<T extends _i3.Future<dynamic>>(T? a)'));
   });
@@ -1191,64 +1359,70 @@ void main() {
   test(
       'imports libraries for external class types found in the default value '
       'of a parameter', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
       import 'dart:convert';
       class Foo {
         void f([Object a = utf8]) {}
       }
-      '''));
+      '''),
+    );
     expect(mocksContent, contains("import 'dart:convert' as _i3;"));
     expect(mocksContent, contains('f([Object? a = const _i3.Utf8Codec()])'));
   });
 
   test(
-      'imports libraries for external class types found in an inherited method',
-      () async {
-    await testWithNonNullable({
-      ...annotationsAsset,
-      ...simpleTestAsset,
-      'foo|lib/foo.dart': '''
+    'imports libraries for external class types found in an inherited method',
+    () async {
+      await testWithNonNullable({
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': '''
         import 'bar.dart';
         class Foo extends Bar {}
         ''',
-      'foo|lib/bar.dart': '''
+        'foo|lib/bar.dart': '''
         import 'dart:async';
         class Bar {
           m(Future<void> a) {}
         }
         ''',
-    });
-    final mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
-    final mocksContent = utf8.decode(writer.assets[mocksAsset]!);
-    expect(mocksContent, contains("import 'dart:async' as _i3;"));
-    expect(mocksContent, contains('m(_i3.Future<void>? a)'));
-  });
+      });
+      final mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
+      final mocksContent = utf8.decode(writer.assets[mocksAsset]!);
+      expect(mocksContent, contains("import 'dart:async' as _i3;"));
+      expect(mocksContent, contains('m(_i3.Future<void>? a)'));
+    },
+  );
 
   test(
-      'imports libraries for external class types found in an inherited method '
-      'via a generic instantiation', () async {
-    await testWithNonNullable({
-      ...annotationsAsset,
-      ...simpleTestAsset,
-      'foo|lib/foo.dart': '''
+    'imports libraries for external class types found in an inherited method '
+    'via a generic instantiation',
+    () async {
+      await testWithNonNullable({
+        ...annotationsAsset,
+        ...simpleTestAsset,
+        'foo|lib/foo.dart': '''
         import 'dart:async';
         import 'bar.dart';
         class Foo extends Bar<Future<void>> {}
         ''',
-      'foo|lib/bar.dart': '''
+        'foo|lib/bar.dart': '''
         class Bar<T> {
           m(T a) {}
         }
         ''',
-    });
-    final mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
-    final mocksContent = utf8.decode(writer.assets[mocksAsset]!);
-    expect(mocksContent, contains("import 'dart:async' as _i3;"));
-    expect(mocksContent, contains('m(_i3.Future<void>? a)'));
-  });
+      });
+      final mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
+      final mocksContent = utf8.decode(writer.assets[mocksAsset]!);
+      expect(mocksContent, contains("import 'dart:async' as _i3;"));
+      expect(mocksContent, contains('m(_i3.Future<void>? a)'));
+    },
+  );
 
   test('imports libraries for type aliases with external types', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
         import 'dart:async';
         typedef Callback = void Function();
         typedef void Callback2();
@@ -1258,7 +1432,8 @@ void main() {
           dynamic g(Callback2 c) {}
           dynamic h(Callback3<Foo> c) {}
         }
-        '''));
+        '''),
+    );
     expect(mocksContent, contains("import 'package:foo/foo.dart' as _i2;"));
     expect(mocksContent, contains('implements _i2.Foo'));
     expect(mocksContent, contains('_i2.Callback? c'));
@@ -1267,14 +1442,16 @@ void main() {
   });
 
   test('imports libraries for type aliases with external types 2', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
         import 'dart:async';
         typedef Ignore<T> = String Function(int);
         class Foo {
           dynamic f(Ignore<Future<int>> c) {}
           dynamic g(Ignore<Future> c) {}
         }
-        '''));
+        '''),
+    );
     expect(mocksContent, contains("import 'package:foo/foo.dart' as _i2;"));
     expect(mocksContent, contains("import 'dart:async' as _i3;"));
     expect(mocksContent, contains('implements _i2.Foo'));
@@ -1282,27 +1459,33 @@ void main() {
     expect(mocksContent, contains('_i2.Ignore<_i3.Future<dynamic>>? c'));
   });
 
-  test('imports libraries for types declared in private SDK libraries',
-      () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent('''
+  test(
+    'imports libraries for types declared in private SDK libraries',
+    () async {
+      final mocksContent = await buildWithSingleNonNullableSource(
+        dedent('''
         import 'dart:io';
         abstract class Foo {
           HttpClient f() {}
         }
-        '''));
-    expect(mocksContent, contains("import 'dart:io' as _i2;"));
-    expect(mocksContent, contains('_i2.HttpClient f() =>'));
-  });
+        '''),
+      );
+      expect(mocksContent, contains("import 'dart:io' as _i2;"));
+      expect(mocksContent, contains('_i2.HttpClient f() =>'));
+    },
+  );
 
   test(
       'imports libraries for types declared in private SDK libraries exported '
       'in dart:io', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent('''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent('''
         import 'dart:io';
         abstract class Foo {
           HttpStatus f() {}
         }
-        '''));
+        '''),
+    );
     expect(mocksContent, contains("import 'dart:io' as _i2;"));
     expect(mocksContent, contains('_i2.HttpStatus f() =>'));
   });
@@ -1310,12 +1493,14 @@ void main() {
   test(
       'imports libraries for types declared in private SDK libraries exported '
       'in dart:html', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent('''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent('''
         import 'dart:html';
         abstract class Foo {
           HttpStatus f() {}
         }
-        '''));
+        '''),
+    );
     expect(mocksContent, contains("import 'dart:html' as _i2;"));
     expect(mocksContent, contains('_i2.HttpStatus f() =>'));
   });
@@ -1346,22 +1531,24 @@ void main() {
     expect(mocksContent, contains('m(_i3.Bar? a)'));
   });
 
-  test('imports dart:core with a prefix when members conflict with dart:core',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent('''
+  test(
+    'imports dart:core with a prefix when members conflict with dart:core',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent('''
       import 'dart:core' as core;
       class Foo {
         void List(int a) {}
         core.List<String> m() => [];
       }
       '''),
-      _containsAllOf(
-        "import 'dart:core' hide List;",
-        "import 'dart:core' as _i3;",
-      ),
-    );
-  });
+        _containsAllOf(
+          "import 'dart:core' hide List;",
+          "import 'dart:core' as _i3;",
+        ),
+      );
+    },
+  );
 
   test('prefixes parameter type on generic function-typed parameter', () async {
     await expectSingleNonNullableOutput(
@@ -1371,7 +1558,8 @@ void main() {
       }
       '''),
       _containsAllOf(
-          'dynamic m(void Function(_i2.Foo)? a) => super.noSuchMethod(Invocation.method('),
+        'dynamic m(void Function(_i2.Foo)? a) => super.noSuchMethod(Invocation.method(',
+      ),
     );
   });
 
@@ -1394,7 +1582,8 @@ void main() {
       }
       '''),
       _containsAllOf(
-          'void m(void Function(_i2.Foo)? a) => super.noSuchMethod('),
+        'void m(void Function(_i2.Foo)? a) => super.noSuchMethod(',
+      ),
     );
   });
 
@@ -1430,12 +1619,14 @@ void main() {
           void m(int? a, int b);
         }
         '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         void m(
           int? a,
           int? b,
         ) =>
-        ''')),
+        '''),
+      ),
     );
   });
 
@@ -1448,12 +1639,14 @@ void main() {
           void m(int? a, T b);
         }
         '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         void m(
           int? a,
           T? b,
         ) =>
-        ''')),
+        '''),
+      ),
     );
   });
 
@@ -1472,10 +1665,10 @@ void main() {
   });
 
   test(
-      'widens the type of covariant parameters with default values to be nullable',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent('''
+    'widens the type of covariant parameters with default values to be nullable',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent('''
         abstract class FooBase {
           void m([num a = 0]);
         }
@@ -1483,9 +1676,10 @@ void main() {
           void m([covariant int a = 0]);
         }
         '''),
-      _containsAllOf('void m([num? a = 0]) => super.noSuchMethod('),
-    );
-  });
+        _containsAllOf('void m([num? a = 0]) => super.noSuchMethod('),
+      );
+    },
+  );
 
   test(
       'widens the type of covariant parameters (declared covariant in a '
@@ -1503,10 +1697,11 @@ void main() {
     );
   });
 
-  test('widens the type of successively covariant parameters to be nullable',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent('''
+  test(
+    'widens the type of successively covariant parameters to be nullable',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent('''
         abstract class FooBaseBase {
           void m(Object a);
         }
@@ -1517,15 +1712,16 @@ void main() {
           void m(covariant int a);
         }
         '''),
-      _containsAllOf('void m(Object? a) => super.noSuchMethod('),
-    );
-  });
+        _containsAllOf('void m(Object? a) => super.noSuchMethod('),
+      );
+    },
+  );
 
   test(
-      'widens the type of covariant parameters, overriding a mixin, to be nullable',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent('''
+    'widens the type of covariant parameters, overriding a mixin, to be nullable',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent('''
         mixin FooMixin {
           void m(num a);
         }
@@ -1533,15 +1729,17 @@ void main() {
           void m(covariant int a);
         }
         '''),
-      _containsAllOf('void m(num? a) => super.noSuchMethod('),
-    );
-  });
+        _containsAllOf('void m(num? a) => super.noSuchMethod('),
+      );
+    },
+  );
 
   test(
-      "widens the type of covariant parameters, which don't have corresponding "
-      'parameters in all overridden methods, to be nullable', () async {
-    await expectSingleNonNullableOutput(
-      dedent('''
+    "widens the type of covariant parameters, which don't have corresponding "
+    'parameters in all overridden methods, to be nullable',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent('''
         abstract class FooBaseBase {
           void m();
         }
@@ -1552,14 +1750,16 @@ void main() {
           void m([covariant int a]);
         }
         '''),
-      _containsAllOf('void m([num? a]) => super.noSuchMethod('),
-    );
-  });
+        _containsAllOf('void m([num? a]) => super.noSuchMethod('),
+      );
+    },
+  );
 
-  test('widens the type of covariant named parameters to be nullable',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent('''
+  test(
+    'widens the type of covariant named parameters to be nullable',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent('''
         abstract class FooBase extends FooBaseBase {
           void m({required num a});
         }
@@ -1567,14 +1767,16 @@ void main() {
           void m({required covariant int a});
         }
         '''),
-      _containsAllOf('void m({required num? a}) => super.noSuchMethod('),
-    );
-  });
+        _containsAllOf('void m({required num? a}) => super.noSuchMethod('),
+      );
+    },
+  );
 
-  test('widens the type of covariant generic parameters to be nullable',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent('''
+  test(
+    'widens the type of covariant generic parameters to be nullable',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent('''
         abstract class FooBase<T extends Object> {
           void m(Object a);
         }
@@ -1582,9 +1784,10 @@ void main() {
           void m(covariant T a);
         }
         '''),
-      _containsAllOf('void m(Object? a) => super.noSuchMethod('),
-    );
-  });
+        _containsAllOf('void m(Object? a) => super.noSuchMethod('),
+      );
+    },
+  );
 
   test('matches nullability of type arguments of a parameter', () async {
     await expectSingleNonNullableOutput(
@@ -1593,12 +1796,14 @@ void main() {
           void m(List<int?> a, List<int> b);
         }
         '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         void m(
           List<int?>? a,
           List<int>? b,
         ) =>
-        ''')),
+        '''),
+      ),
     );
   });
 
@@ -1611,28 +1816,31 @@ void main() {
           void m(int? Function() a, int Function() b);
         }
         '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         void m(
           int? Function()? a,
           int Function()? b,
         ) =>
-        ''')),
+        '''),
+      ),
     );
   });
 
   test(
-      'matches nullability of return type of FutureOr<T> for potentially nullable T',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+    'matches nullability of return type of FutureOr<T> for potentially nullable T',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
         import 'dart:async';
         abstract class Foo {
           FutureOr<R> m<R>();
         }
         '''),
-      _containsAllOf('_i2.FutureOr<R> m<R>() => (super.noSuchMethod('),
-    );
-  });
+        _containsAllOf('_i2.FutureOr<R> m<R>() => (super.noSuchMethod('),
+      );
+    },
+  );
 
   test(
       'matches nullability of parameter types within a generic function-typed '
@@ -1643,31 +1851,37 @@ void main() {
           void m(void Function(int?) a, void Function(int) b);
         }
         '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         void m(
           void Function(int?)? a,
           void Function(int)? b,
         ) =>
-        ''')),
+        '''),
+      ),
     );
   });
 
-  test('matches nullability of return type of a function-typed parameter',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+  test(
+    'matches nullability of return type of a function-typed parameter',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
         abstract class Foo {
           void m(int? a(), int b());
         }
         '''),
-      _containsAllOf(dedent2('''
+        _containsAllOf(
+          dedent2('''
         void m(
           int? Function()? a,
           int Function()? b,
         ) =>
-        ''')),
-    );
-  });
+        '''),
+        ),
+      );
+    },
+  );
 
   test(
       'matches nullability of parameter types within a function-typed '
@@ -1678,12 +1892,14 @@ void main() {
           void m(void a(int? x), void b(int x));
         }
         '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         void m(
           void Function(int?)? a,
           void Function(int)? b,
         ) =>
-        ''')),
+        '''),
+      ),
     );
   });
 
@@ -1691,13 +1907,15 @@ void main() {
       'matches requiredness of parameter types within a function-typed '
       'parameter', () async {
     await expectSingleNonNullableOutput(
-        dedent('''
+      dedent('''
       class Foo {
         void m(void Function({required int p}) cb) {}
       }
       '''),
-        _containsAllOf(
-            'void m(void Function({required int p})? cb) => super.noSuchMethod('));
+      _containsAllOf(
+        'void m(void Function({required int p})? cb) => super.noSuchMethod(',
+      ),
+    );
   });
 
   test('matches nullability of a generic parameter', () async {
@@ -1707,12 +1925,14 @@ void main() {
           void m<T>(T? a, T b);
         }
         '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         void m<T>(
           T? a,
           T? b,
         ) =>
-        ''')),
+        '''),
+      ),
     );
   });
 
@@ -1723,12 +1943,14 @@ void main() {
           void m(dynamic a, int b);
         }
         '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         void m(
           dynamic a,
           int? b,
         ) =>
-        ''')),
+        '''),
+      ),
     );
   });
 
@@ -1784,7 +2006,8 @@ void main() {
         }
         '''),
       _containsAllOf(
-          'dynamic m(int? a) => super.noSuchMethod(Invocation.method('),
+        'dynamic m(int? a) => super.noSuchMethod(Invocation.method(',
+      ),
     );
   });
 
@@ -1796,108 +2019,144 @@ void main() {
       }
       '''),
       _containsAllOf(
-          'dynamic f(int? a) => super.noSuchMethod(Invocation.method('),
+        'dynamic f(int? a) => super.noSuchMethod(Invocation.method(',
+      ),
     );
   });
 
   test('does not override methods with all nullable parameters', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
       class Foo {
         int? method1(int? p) => null;
       }
-      '''));
-    expect(mocksContent, isNot(contains('method1')));
-  });
-
-  test('does not override methods with all nullable parameters (dynamic)',
-      () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
-      class Foo {
-        int? method1(dynamic p) => null;
-      }
-      '''));
-    expect(mocksContent, isNot(contains('method1')));
-  });
-
-  test('does not override methods with all nullable parameters (var untyped)',
-      () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
-      class Foo {
-        int? method1(var p) => null;
-      }
-      '''));
-    expect(mocksContent, isNot(contains('method1')));
-  });
-
-  test('does not override methods with all nullable parameters (final untyped)',
-      () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
-      class Foo {
-        int? method1(final p) => null;
-      }
-      '''));
-    expect(mocksContent, isNot(contains('method1')));
-  });
-
-  test('does not override methods with all nullable parameters (type variable)',
-      () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
-      class Foo<T> {
-        int? method1(T? p) => null;
-      }
-      '''));
+      '''),
+    );
     expect(mocksContent, isNot(contains('method1')));
   });
 
   test(
-      'does not override methods with all nullable parameters (function-typed)',
-      () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    'does not override methods with all nullable parameters (dynamic)',
+    () async {
+      final mocksContent = await buildWithSingleNonNullableSource(
+        dedent(r'''
+      class Foo {
+        int? method1(dynamic p) => null;
+      }
+      '''),
+      );
+      expect(mocksContent, isNot(contains('method1')));
+    },
+  );
+
+  test(
+    'does not override methods with all nullable parameters (var untyped)',
+    () async {
+      final mocksContent = await buildWithSingleNonNullableSource(
+        dedent(r'''
+      class Foo {
+        int? method1(var p) => null;
+      }
+      '''),
+      );
+      expect(mocksContent, isNot(contains('method1')));
+    },
+  );
+
+  test(
+    'does not override methods with all nullable parameters (final untyped)',
+    () async {
+      final mocksContent = await buildWithSingleNonNullableSource(
+        dedent(r'''
+      class Foo {
+        int? method1(final p) => null;
+      }
+      '''),
+      );
+      expect(mocksContent, isNot(contains('method1')));
+    },
+  );
+
+  test(
+    'does not override methods with all nullable parameters (type variable)',
+    () async {
+      final mocksContent = await buildWithSingleNonNullableSource(
+        dedent(r'''
+      class Foo<T> {
+        int? method1(T? p) => null;
+      }
+      '''),
+      );
+      expect(mocksContent, isNot(contains('method1')));
+    },
+  );
+
+  test(
+    'does not override methods with all nullable parameters (function-typed)',
+    () async {
+      final mocksContent = await buildWithSingleNonNullableSource(
+        dedent(r'''
       class Foo {
         int? method1(int Function()? p) => null;
       }
-      '''));
-    expect(mocksContent, isNot(contains('method1')));
-  });
+      '''),
+      );
+      expect(mocksContent, isNot(contains('method1')));
+    },
+  );
 
-  test('does not override methods with an implicit dynamic return type',
-      () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+  test(
+    'does not override methods with an implicit dynamic return type',
+    () async {
+      final mocksContent = await buildWithSingleNonNullableSource(
+        dedent(r'''
       abstract class Foo {
         method1();
       }
-      '''));
-    expect(mocksContent, isNot(contains('method1')));
-  });
+      '''),
+      );
+      expect(mocksContent, isNot(contains('method1')));
+    },
+  );
 
-  test('does not override methods with an explicit dynamic return type',
-      () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+  test(
+    'does not override methods with an explicit dynamic return type',
+    () async {
+      final mocksContent = await buildWithSingleNonNullableSource(
+        dedent(r'''
       abstract class Foo {
         dynamic method1();
       }
-      '''));
-    expect(mocksContent, isNot(contains('method1')));
-  });
+      '''),
+      );
+      expect(mocksContent, isNot(contains('method1')));
+    },
+  );
 
   test('does not override methods with a nullable return type', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
       abstract class Foo {
         int? method1();
       }
-      '''));
+      '''),
+    );
     expect(mocksContent, isNot(contains('method1')));
   });
 
-  test('does not override methods with a nullable return type (type variable)',
-      () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+  test(
+    'does not override methods with a nullable return type (type variable)',
+    () async {
+      final mocksContent = await buildWithSingleNonNullableSource(
+        dedent(r'''
       abstract class Foo<T> {
         T? method1();
       }
-      '''));
-    expect(mocksContent, isNot(contains('method1')));
-  });
+      '''),
+      );
+      expect(mocksContent, isNot(contains('method1')));
+    },
+  );
 
   test('overrides methods with a non-nullable return type', () async {
     await expectSingleNonNullableOutput(
@@ -1906,7 +2165,8 @@ void main() {
           int m();
         }
         '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         int m() => (super.noSuchMethod(
               Invocation.method(
                 #m,
@@ -1914,19 +2174,22 @@ void main() {
               ),
               returnValue: 0,
             ) as int);
-        ''')),
+        '''),
+      ),
     );
   });
 
   test('overrides inherited methods with a non-nullable return type', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
         class FooBase {
           num m() => 7;
         }
         class Foo extends FooBase {
           int m() => 7;
         }
-        '''));
+        '''),
+    );
     expect(mocksContent, contains('int m()'));
     expect(mocksContent, isNot(contains('num m()')));
   });
@@ -1943,24 +2206,28 @@ void main() {
         '''),
       },
       outputs: {
-        'foo|test/foo_test.mocks.dart': _containsAllOf(dedent2('''
+        'foo|test/foo_test.mocks.dart': _containsAllOf(
+          dedent2('''
           void m(T? a) => super.noSuchMethod(
                 Invocation.method(
                   #m,
                   [a],
                 ),
-          ''')),
+          '''),
+        ),
       },
     );
   });
 
   test('overrides generic methods', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
         class Foo {
           dynamic f<T>(int a) {}
           dynamic g<T extends Foo>(int a) {}
         }
-        '''));
+        '''),
+    );
     expect(mocksContent, contains('dynamic f<T>(int? a) =>'));
     expect(mocksContent, contains('dynamic g<T extends _i2.Foo>(int? a) =>'));
   });
@@ -1972,21 +2239,25 @@ void main() {
         int get m => 7;
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         int get m => (super.noSuchMethod(
               Invocation.getter(#m),
               returnValue: 0,
             ) as int);
-        ''')),
+        '''),
+      ),
     );
   });
 
   test('does not override nullable instance getters', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
       class Foo {
         int? get getter1 => 7;
       }
-      '''));
+      '''),
+    );
     expect(mocksContent, isNot(contains('getter1')));
   });
 
@@ -1998,24 +2269,28 @@ void main() {
       }
       class Foo extends FooBase {}
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         int get m => (super.noSuchMethod(
               Invocation.getter(#m),
               returnValue: 0,
             ) as int);
-        ''')),
+        '''),
+      ),
     );
   });
 
   test('overrides inherited instance getters only once', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent('''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent('''
       class FooBase {
         num get m => 7;
       }
       class Foo extends FooBase {
         int get m => 7;
       }
-      '''));
+      '''),
+    );
     expect(mocksContent, contains('int get m'));
     expect(mocksContent, isNot(contains('num get m')));
   });
@@ -2027,7 +2302,8 @@ void main() {
         void set m(int a) {}
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         set m(int? a) => super.noSuchMethod(
               Invocation.setter(
                 #m,
@@ -2035,7 +2311,8 @@ void main() {
               ),
               returnValueForMissingStub: null,
             );
-        ''')),
+        '''),
+      ),
     );
   });
 
@@ -2046,7 +2323,8 @@ void main() {
         void set m(int? a) {}
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         set m(int? a) => super.noSuchMethod(
               Invocation.setter(
                 #m,
@@ -2054,26 +2332,31 @@ void main() {
               ),
               returnValueForMissingStub: null,
             );
-        ''')),
+        '''),
+      ),
     );
   });
 
-  test('overrides nullable instance setters with wildcard parameters',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent('''
+  test(
+    'overrides nullable instance setters with wildcard parameters',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent('''
       class Foo {
         void set m(int? _) {}
       }
       '''),
-      _containsAllOf(dedent2('''
+        _containsAllOf(
+          dedent2('''
         set m(int? _value) => super.noSuchMethod(
               Invocation.setter(#m, _value),
               returnValueForMissingStub: null,
             );
-        ''')),
-    );
-  });
+        '''),
+        ),
+      );
+    },
+  );
 
   test('overrides inherited non-nullable instance setters', () async {
     await expectSingleNonNullableOutput(
@@ -2083,7 +2366,8 @@ void main() {
       }
       class Foo extends FooBase {}
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         set m(int? a) => super.noSuchMethod(
               Invocation.setter(
                 #m,
@@ -2091,19 +2375,22 @@ void main() {
               ),
               returnValueForMissingStub: null,
             );
-        ''')),
+        '''),
+      ),
     );
   });
 
   test('overrides inherited non-nullable instance setters only once', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent('''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent('''
       class FooBase {
         set m(int a) {}
       }
       class Foo extends FooBase {
         set m(num a) {}
       }
-      '''));
+      '''),
+    );
     expect(mocksContent, contains('set m(num? a)'));
     expect(mocksContent, isNot(contains('set m(int? a)')));
   });
@@ -2115,12 +2402,14 @@ void main() {
         int m;
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         int get m => (super.noSuchMethod(
               Invocation.getter(#m),
               returnValue: 0,
             ) as int);
-      '''), dedent2('''
+      '''),
+        dedent2('''
         set m(int? _m) => super.noSuchMethod(
               Invocation.setter(
                 #m,
@@ -2128,7 +2417,8 @@ void main() {
               ),
               returnValueForMissingStub: null,
             );
-        ''')),
+        '''),
+      ),
     );
   });
 
@@ -2140,12 +2430,14 @@ void main() {
       }
       class Foo extends FooBase {}
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         int get m => (super.noSuchMethod(
               Invocation.getter(#m),
               returnValue: 0,
             ) as int);
-        '''), dedent2('''
+        '''),
+        dedent2('''
         set m(int? _m) => super.noSuchMethod(
               Invocation.setter(
                 #m,
@@ -2153,12 +2445,14 @@ void main() {
               ),
               returnValueForMissingStub: null,
             );
-        ''')),
+        '''),
+      ),
     );
   });
 
   test('overrides inherited non-nullable fields only once', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent('''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent('''
       class FooBase {
         num m;
       }
@@ -2166,7 +2460,8 @@ void main() {
         int get m => 7;
         void set m(covariant int value) {}
       }
-      '''));
+      '''),
+    );
     expect(mocksContent, contains('int get m'));
     expect(mocksContent, contains('set m(int? value)'));
     expect(mocksContent, isNot(contains('num get m')));
@@ -2181,39 +2476,47 @@ void main() {
         Foo(this.m);
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         int get m => (super.noSuchMethod(
               Invocation.getter(#m),
               returnValue: 0,
             ) as int);
-      ''')),
+      '''),
+      ),
     );
   });
 
   test('does not override getters for nullable fields', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
       class Foo {
         int? field1;
       }
-      '''));
+      '''),
+    );
     expect(mocksContent, isNot(contains('get field1')));
   });
 
   test('does not override private fields', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
       class Foo {
         int _field1;
       }
-      '''));
+      '''),
+    );
     expect(mocksContent, isNot(contains('int _field1')));
   });
 
   test('does not override static fields', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
       class Foo {
         static int field1;
       }
-      '''));
+      '''),
+    );
     expect(mocksContent, isNot(contains('int field1')));
   });
 
@@ -2224,7 +2527,8 @@ void main() {
         int operator +(Foo other) => 7;
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         int operator +(_i2.Foo? other) => (super.noSuchMethod(
               Invocation.method(
                 #+,
@@ -2232,7 +2536,8 @@ void main() {
               ),
               returnValue: 0,
             ) as int);
-      ''')),
+      '''),
+      ),
     );
   });
 
@@ -2243,7 +2548,8 @@ void main() {
         int operator [](int x) => 7;
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         int operator [](int? x) => (super.noSuchMethod(
               Invocation.method(
                 #[],
@@ -2251,7 +2557,8 @@ void main() {
               ),
               returnValue: 0,
             ) as int);
-      ''')),
+      '''),
+      ),
     );
   });
 
@@ -2262,7 +2569,8 @@ void main() {
         int operator ~() => 7;
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
         int operator ~() => (super.noSuchMethod(
               Invocation.method(
                 #~,
@@ -2270,7 +2578,8 @@ void main() {
               ),
               returnValue: 0,
             ) as int);
-      ''')),
+      '''),
+      ),
     );
   });
 
@@ -2307,17 +2616,19 @@ void main() {
     );
   });
 
-  test('calls dummyValue to get a dummy non-null String return value',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+  test(
+    'calls dummyValue to get a dummy non-null String return value',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
       class Foo {
         String m() => "Hello";
       }
       '''),
-      _containsAllOf('returnValue: _i3.dummyValue<String>('),
-    );
-  });
+        _containsAllOf('returnValue: _i3.dummyValue<String>('),
+      );
+    },
+  );
 
   test('creates dummy non-null List return value', () async {
     await expectSingleNonNullableOutput(
@@ -2374,17 +2685,19 @@ void main() {
     );
   });
 
-  test('creates dummy non-null return values for Futures of unknown types',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+  test(
+    'creates dummy non-null return values for Futures of unknown types',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
       class Foo {
         Future<T> m<T>() async => false;
       }
       '''),
-      _containsAllOf('dummyValueOrNull<T>(', '_FakeFuture_0<T>('),
-    );
-  });
+        _containsAllOf('dummyValueOrNull<T>(', '_FakeFuture_0<T>('),
+      );
+    },
+  );
 
   test('creates dummy non-null Stream return value', () async {
     await expectSingleNonNullableOutput(
@@ -2525,16 +2838,17 @@ void main() {
   });
 
   test(
-      'creates a dummy non-null function-typed return value, with private type '
-      'alias', () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+    'creates a dummy non-null function-typed return value, with private type '
+    'alias',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
       typedef _Callback = Foo Function();
       class Foo {
         _Callback m() => () => Foo();
       }
       '''),
-      _containsAllOf('''
+        _containsAllOf('''
         returnValue: () => _FakeFoo_0(
           this,
           Invocation.method(
@@ -2543,31 +2857,36 @@ void main() {
           ),
         )
       '''),
-    );
-  });
+      );
+    },
+  );
 
-  test('creates a dummy non-null generic function-typed return value',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+  test(
+    'creates a dummy non-null generic function-typed return value',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
       class Foo {
         T? Function<T>(T) m() => (int i, [String s]) {};
       }
       '''),
-      _containsAllOf('returnValue: <T>(T __p0) => null'),
-    );
-  });
+        _containsAllOf('returnValue: <T>(T __p0) => null'),
+      );
+    },
+  );
 
-  test('creates a dummy non-null generic bounded function-typed return value',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+  test(
+    'creates a dummy non-null generic bounded function-typed return value',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
       import 'dart:io';
       class Foo {
         T? Function<T extends File>(T) m() => (int i, [String s]) {};
       }
       '''),
-      _containsAllOf(dedent2('''
+        _containsAllOf(
+          dedent2('''
       T? Function<T extends _i3.File>(T) m() => (super.noSuchMethod(
             Invocation.method(
               #m,
@@ -2575,9 +2894,11 @@ void main() {
             ),
             returnValue: <T extends _i3.File>(T __p0) => null,
           ) as T? Function<T extends _i3.File>(T));
-      ''')),
-    );
-  });
+      '''),
+        ),
+      );
+    },
+  );
 
   test(
       'creates a dummy non-null function-typed (with an imported parameter '
@@ -2589,7 +2910,8 @@ void main() {
         void Function(File) m() => (int i, [String s]) {};
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
       void Function(_i3.File) m() => (super.noSuchMethod(
             Invocation.method(
               #m,
@@ -2597,7 +2919,8 @@ void main() {
             ),
             returnValue: (_i3.File __p0) {},
           ) as void Function(_i3.File));
-      ''')),
+      '''),
+      ),
     );
   });
 
@@ -2611,7 +2934,8 @@ void main() {
         File Function() m() => (int i, [String s]) {};
       }
       '''),
-      _containsAllOf(dedent2('''
+      _containsAllOf(
+        dedent2('''
       _i2.File Function() m() => (super.noSuchMethod(
             Invocation.method(
               #m,
@@ -2625,7 +2949,8 @@ void main() {
               ),
             ),
           ) as _i2.File Function());
-      ''')),
+      '''),
+      ),
     );
   });
 
@@ -2637,7 +2962,8 @@ void main() {
       }
       class Bar {}
       '''),
-      _containsAllOf(dedent('''
+      _containsAllOf(
+        dedent('''
       class _FakeBar_0 extends _i1.SmartFake implements _i2.Bar {
         _FakeBar_0(
           Object parent,
@@ -2646,7 +2972,8 @@ void main() {
                 parent,
                 parentInvocation,
               );
-      }''')),
+      }'''),
+      ),
     );
   });
 
@@ -2670,13 +2997,13 @@ void main() {
         ''',
     });
     expect(
-        mocksOutput,
-        contains(
-            'class _FakeBar_0 extends _i1.SmartFake implements _i2.Bar {'));
+      mocksOutput,
+      contains('class _FakeBar_0 extends _i1.SmartFake implements _i2.Bar {'),
+    );
     expect(
-        mocksOutput,
-        contains(
-            'class _FakeBar_1 extends _i1.SmartFake implements _i3.Bar {'));
+      mocksOutput,
+      contains('class _FakeBar_1 extends _i1.SmartFake implements _i3.Bar {'),
+    );
   });
 
   test('generates a fake generic class used in return values', () async {
@@ -2688,26 +3015,31 @@ void main() {
       class Bar<T, U> {}
       '''),
       _containsAllOf(
-          'class _FakeBar_0<T, U> extends _i1.SmartFake implements _i2.Bar<T, U> {'),
+        'class _FakeBar_0<T, U> extends _i1.SmartFake implements _i2.Bar<T, U> {',
+      ),
     );
   });
 
-  test('generates a fake, bounded generic class used in return values',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+  test(
+    'generates a fake, bounded generic class used in return values',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
       class Baz {}
       class Bar<T extends Baz> {}
       class Foo {
         Bar<Baz> m1() => Bar();
       }
       '''),
-      _containsAllOf(dedent('''
+        _containsAllOf(
+          dedent('''
       class _FakeBar_0<T extends _i1.Baz> extends _i2.SmartFake
           implements _i1.Bar<T> {
-      ''')),
-    );
-  });
+      '''),
+        ),
+      );
+    },
+  );
 
   test('generates a fake, aliased class used in return values', () async {
     await expectSingleNonNullableOutput(
@@ -2719,33 +3051,38 @@ void main() {
         BarOfBaz m1() => Bar();
       }
       '''),
-      _containsAllOf(dedent('''
+      _containsAllOf(
+        dedent('''
       class _FakeBar_0<T extends _i1.Baz> extends _i2.SmartFake
           implements _i1.Bar<T> {
-      ''')),
+      '''),
+      ),
     );
   });
 
   test(
-      'generates a fake, recursively bounded generic class used in return values',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent(r'''
+    'generates a fake, recursively bounded generic class used in return values',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent(r'''
       class Baz<T extends Baz<T>> {}
       class Bar<T> {}
       class Foo {
         Bar<Baz> m1() => Bar();
       }
       '''),
-      _containsAllOf(
-          'class _FakeBar_0<T> extends _i1.SmartFake implements _i2.Bar<T> {'),
-    );
-  });
+        _containsAllOf(
+          'class _FakeBar_0<T> extends _i1.SmartFake implements _i2.Bar<T> {',
+        ),
+      );
+    },
+  );
 
-  test('generates a fake class with an overridden `toString` implementation',
-      () async {
-    await expectSingleNonNullableOutput(
-      dedent('''
+  test(
+    'generates a fake class with an overridden `toString` implementation',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent('''
       class Foo {
         Bar m1() => Bar('name1');
       }
@@ -2753,7 +3090,8 @@ void main() {
         String toString({bool a = true}) => '';
       }
       '''),
-      _containsAllOf(dedent('''
+        _containsAllOf(
+          dedent('''
       class _FakeBar_0 extends _i1.SmartFake implements _i2.Bar {
         _FakeBar_0(
           Object parent,
@@ -2766,9 +3104,11 @@ void main() {
         @override
         String toString({bool? a = true}) => super.toString();
       }
-      ''')),
-    );
-  });
+      '''),
+        ),
+      );
+    },
+  );
 
   test('imports libraries for types used in generated fake classes', () async {
     await expectSingleNonNullableOutput(
@@ -2786,7 +3126,8 @@ void main() {
   });
 
   test('deduplicates fake classes', () async {
-    final mocksContent = await buildWithSingleNonNullableSource(dedent(r'''
+    final mocksContent = await buildWithSingleNonNullableSource(
+      dedent(r'''
       class Foo {
         Bar m1() => Bar('name1');
         Bar m2() => Bar('name2');
@@ -2795,38 +3136,50 @@ void main() {
         final String name;
         Bar(this.name);
       }
-      '''));
+      '''),
+    );
     final mocksContentLines = mocksContent.split('\n');
     // The _FakeBar_0 class should be generated exactly once.
-    expect(mocksContentLines.where((line) => line.contains('class _FakeBar_0')),
-        hasLength(1));
+    expect(
+      mocksContentLines.where((line) => line.contains('class _FakeBar_0')),
+      hasLength(1),
+    );
   });
 
   test('does not try to generate a fake for a final class', () async {
-    await expectSingleNonNullableOutput(dedent(r'''
+    await expectSingleNonNullableOutput(
+      dedent(r'''
       class Foo {
         Bar m1() => Bar();
       }
       final class Bar {}
-      '''), _containsAllOf('dummyValue<_i2.Bar>('));
+      '''),
+      _containsAllOf('dummyValue<_i2.Bar>('),
+    );
   });
 
   test('does not try to generate a fake for a base class', () async {
-    await expectSingleNonNullableOutput(dedent(r'''
+    await expectSingleNonNullableOutput(
+      dedent(r'''
       class Foo {
         Bar m1() => Bar();
       }
       base class Bar {}
-      '''), _containsAllOf('dummyValue<_i2.Bar>('));
+      '''),
+      _containsAllOf('dummyValue<_i2.Bar>('),
+    );
   });
 
   test('does not try to generate a fake for a sealed class', () async {
-    await expectSingleNonNullableOutput(dedent(r'''
+    await expectSingleNonNullableOutput(
+      dedent(r'''
       class Foo {
         Bar m1() => Bar();
       }
       sealed class Bar {}
-      '''), _containsAllOf('dummyValue<_i2.Bar>('));
+      '''),
+      _containsAllOf('dummyValue<_i2.Bar>('),
+    );
   });
 
   test('throws when GenerateMocks is given a class multiple times', () async {
@@ -2841,56 +3194,63 @@ void main() {
         import 'package:mockito/annotations.dart';
         @GenerateMocks([Foo, Foo])
         void main() {}
-        '''
+        ''',
       },
       message: contains(
-          'Mockito cannot generate two mocks with the same name: MockFoo (for '
-          'Foo declared in /foo/lib/foo.dart, and for Foo declared in '
-          '/foo/lib/foo.dart)'),
+        'Mockito cannot generate two mocks with the same name: MockFoo (for '
+        'Foo declared in /foo/lib/foo.dart, and for Foo declared in '
+        '/foo/lib/foo.dart)',
+      ),
     );
   });
 
   test(
-      'throws when GenerateMocks is given a class with a getter with a private '
-      'return type', () async {
-    _expectBuilderThrows(
-      assets: {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent('''
+    'throws when GenerateMocks is given a class with a getter with a private '
+    'return type',
+    () async {
+      _expectBuilderThrows(
+        assets: {
+          ...annotationsAsset,
+          ...simpleTestAsset,
+          'foo|lib/foo.dart': dedent('''
         abstract class Foo with FooMixin {}
         mixin FooMixin {
           _Bar get f => _Bar();
         }
         class _Bar {}
         '''),
-      },
-      message: contains(
+        },
+        message: contains(
           "The property accessor 'FooMixin.f' features a private return type, "
-          'and cannot be stubbed.'),
-    );
-  });
+          'and cannot be stubbed.',
+        ),
+      );
+    },
+  );
 
   test(
-      'throws when GenerateMocks is given a class with a setter with a private '
-      'return type', () async {
-    _expectBuilderThrows(
-      assets: {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent('''
+    'throws when GenerateMocks is given a class with a setter with a private '
+    'return type',
+    () async {
+      _expectBuilderThrows(
+        assets: {
+          ...annotationsAsset,
+          ...simpleTestAsset,
+          'foo|lib/foo.dart': dedent('''
         abstract class Foo with FooMixin {}
         mixin FooMixin {
           void set f(_Bar value) {}
         }
         class _Bar {}
         '''),
-      },
-      message: contains(
-          "The property accessor 'FooMixin.f=' features a private parameter "
-          "type, '_Bar', and cannot be stubbed."),
-    );
-  });
+        },
+        message: contains(
+          "The property accessor 'FooMixin.f' features a private parameter "
+          "type, '_Bar', and cannot be stubbed.",
+        ),
+      );
+    },
+  );
 
   test(
       'throws when GenerateMocks is given a class with a method with a '
@@ -2907,8 +3267,9 @@ void main() {
         '''),
       },
       message: contains(
-          "The method 'Foo.m' features a private return type, and cannot be "
-          'stubbed.'),
+        "The method 'Foo.m' features a private return type, and cannot be "
+        'stubbed.',
+      ),
     );
   });
 
@@ -2928,8 +3289,9 @@ void main() {
         '''),
       },
       message: contains(
-          "The method 'FooMixin.m' features a private return type, and cannot "
-          'be stubbed.'),
+        "The method 'FooMixin.m' features a private return type, and cannot "
+        'be stubbed.',
+      ),
     );
   });
 
@@ -2949,32 +3311,35 @@ void main() {
         '''),
       },
       message: contains(
-          "The method 'Foo.m' features a private parameter type, '_Bar', and "
-          'cannot be stubbed.'),
+        "The method 'Foo.m' features a private parameter type, '_Bar', and "
+        'cannot be stubbed.',
+      ),
     );
   });
 
   test(
-      'throws when GenerateMocks is given a class with a method with a '
-      'private type alias parameter type which refers to private types',
-      () async {
-    _expectBuilderThrows(
-      assets: {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent('''
+    'throws when GenerateMocks is given a class with a method with a '
+    'private type alias parameter type which refers to private types',
+    () async {
+      _expectBuilderThrows(
+        assets: {
+          ...annotationsAsset,
+          ...simpleTestAsset,
+          'foo|lib/foo.dart': dedent('''
         abstract class Foo {
           void m(_Callback c);
         }
         class _Bar {}
         typedef _Callback = Function(_Bar?);
         '''),
-      },
-      message: contains(
+        },
+        message: contains(
           "The method 'Foo.m' features a private parameter type, '_Bar', and "
-          'cannot be stubbed.'),
-    );
-  });
+          'cannot be stubbed.',
+        ),
+      );
+    },
+  );
 
   test(
       'throws when GenerateMocks is given a class with a method with a return '
@@ -2991,8 +3356,9 @@ void main() {
         '''),
       },
       message: contains(
-          "The method 'Foo.m' features a private type argument, and cannot be "
-          'stubbed.'),
+        "The method 'Foo.m' features a private type argument, and cannot be "
+        'stubbed.',
+      ),
     );
   });
 
@@ -3010,8 +3376,10 @@ void main() {
         class _Bar {}
         '''),
       },
-      message: contains("The method 'Foo.m' features a private return type, "
-          'and cannot be stubbed.'),
+      message: contains(
+        "The method 'Foo.m' features a private return type, "
+        'and cannot be stubbed.',
+      ),
     );
   });
 
@@ -3030,8 +3398,9 @@ void main() {
         '''),
       },
       message: contains(
-          "The method 'Foo.m' features a private parameter type, '_Bar', and "
-          'cannot be stubbed.'),
+        "The method 'Foo.m' features a private parameter type, '_Bar', and "
+        'cannot be stubbed.',
+      ),
     );
   });
 
@@ -3050,8 +3419,9 @@ void main() {
         '''),
       },
       message: contains(
-          "The method 'Foo.m' features a private type argument, and cannot be "
-          'stubbed.'),
+        "The method 'Foo.m' features a private type argument, and cannot be "
+        'stubbed.',
+      ),
     );
   });
 
@@ -3070,8 +3440,9 @@ void main() {
         '''),
       },
       message: contains(
-          "The method 'Foo.m' features a private return type, and cannot be "
-          'stubbed.'),
+        "The method 'Foo.m' features a private return type, and cannot be "
+        'stubbed.',
+      ),
     );
   });
 
@@ -3090,30 +3461,34 @@ void main() {
         '''),
       },
       message: contains(
-          "The method 'Foo.m' features a private parameter type, '_Bar', and "
-          'cannot be stubbed.'),
+        "The method 'Foo.m' features a private parameter type, '_Bar', and "
+        'cannot be stubbed.',
+      ),
     );
   });
 
   test(
-      'throws when GenerateMocks is given a class with a type parameter with a '
-      'private bound', () async {
-    _expectBuilderThrows(
-      assets: {
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': dedent(r'''
+    'throws when GenerateMocks is given a class with a type parameter with a '
+    'private bound',
+    () async {
+      _expectBuilderThrows(
+        assets: {
+          ...annotationsAsset,
+          ...simpleTestAsset,
+          'foo|lib/foo.dart': dedent(r'''
         class Foo<T extends _Bar> {
           void m(int a) {}
         }
         class _Bar {}
         '''),
-      },
-      message: contains(
+        },
+        message: contains(
           "The class 'Foo' features a private type parameter bound, and cannot "
-          'be stubbed.'),
-    );
-  });
+          'be stubbed.',
+        ),
+      );
+    },
+  );
 
   test(
       'throws when GenerateMocks is given a class with a method with a '
@@ -3130,51 +3505,65 @@ void main() {
         '''),
       },
       message: contains(
-          "The method 'Foo.m' features a private type parameter bound, and "
-          'cannot be stubbed.'),
+        "The method 'Foo.m' features a private type parameter bound, and "
+        'cannot be stubbed.',
+      ),
     );
   });
 
   test(
       "calls 'dummyValue' for a getter with a "
       'non-nullable class-declared type variable type', () async {
-    await expectSingleNonNullableOutput(dedent('''
+    await expectSingleNonNullableOutput(
+      dedent('''
         abstract class Foo<T> {
           T get f;
         }
-        '''), _containsAllOf('dummyValue<T>('));
+        '''),
+      _containsAllOf('dummyValue<T>('),
+    );
   });
 
   test(
       "calls 'dummyValue' for a method with a "
       'non-nullable class-declared type variable return type', () async {
-    await expectSingleNonNullableOutput(dedent('''
+    await expectSingleNonNullableOutput(
+      dedent('''
         abstract class Foo<T> {
           T m(int a);
         }
-        '''), _containsAllOf('dummyValue<T>('));
+        '''),
+      _containsAllOf('dummyValue<T>('),
+    );
   });
 
   test(
       "calls 'dummyValue' for a method with a "
       'non-nullable method-declared type variable return type', () async {
-    await expectSingleNonNullableOutput(dedent('''
+    await expectSingleNonNullableOutput(
+      dedent('''
         abstract class Foo {
           T m<T>(int a);
         }
-        '''), _containsAllOf('dummyValue<T>('));
+        '''),
+      _containsAllOf('dummyValue<T>('),
+    );
   });
 
   test(
-      "calls 'dummyValue' for a method with a "
-      'non-nullable method-declared bounded type variable return type',
-      () async {
-    await expectSingleNonNullableOutput(dedent('''
+    "calls 'dummyValue' for a method with a "
+    'non-nullable method-declared bounded type variable return type',
+    () async {
+      await expectSingleNonNullableOutput(
+        dedent('''
         abstract class Foo {
           T m<T extends num>(int a);
         }
-        '''), _containsAllOf('dummyValue<T>('));
-  });
+        '''),
+        _containsAllOf('dummyValue<T>('),
+      );
+    },
+  );
 
   test('throws when GenerateMocks is missing an argument', () async {
     _expectBuilderThrows(
@@ -3224,31 +3613,34 @@ void main() {
     );
   });
 
-  test('throws when two distinct classes with the same name are mocked',
-      () async {
-    _expectBuilderThrows(
-      assets: {
-        ...annotationsAsset,
-        'foo|lib/a.dart': dedent(r'''
+  test(
+    'throws when two distinct classes with the same name are mocked',
+    () async {
+      _expectBuilderThrows(
+        assets: {
+          ...annotationsAsset,
+          'foo|lib/a.dart': dedent(r'''
         class Foo {}
         '''),
-        'foo|lib/b.dart': dedent(r'''
+          'foo|lib/b.dart': dedent(r'''
         class Foo {}
         '''),
-        'foo|test/foo_test.dart': dedent('''
+          'foo|test/foo_test.dart': dedent('''
         import 'package:foo/a.dart' as a;
         import 'package:foo/b.dart' as b;
         import 'package:mockito/annotations.dart';
         @GenerateMocks([a.Foo, b.Foo])
         void main() {}
         '''),
-      },
-      message: contains(
+        },
+        message: contains(
           'Mockito cannot generate two mocks with the same name: MockFoo (for '
           'Foo declared in /foo/lib/a.dart, and for Foo declared in '
-          '/foo/lib/b.dart)'),
-    );
-  });
+          '/foo/lib/b.dart)',
+        ),
+      );
+    },
+  );
 
   test('throws when a mock class of the same name already exists', () async {
     _expectBuilderThrows(
@@ -3266,8 +3658,9 @@ void main() {
         '''),
       },
       message: contains(
-          'Mockito cannot generate a mock with a name which conflicts with '
-          'another class declared in this library: MockFoo'),
+        'Mockito cannot generate a mock with a name which conflicts with '
+        'another class declared in this library: MockFoo',
+      ),
     );
   });
 
@@ -3289,7 +3682,8 @@ void main() {
         '''),
       },
       message: contains(
-          'contains a class which appears to already be mocked inline: FakeFoo'),
+        'contains a class which appears to already be mocked inline: FakeFoo',
+      ),
     );
   });
 
@@ -3376,12 +3770,13 @@ void main() {
     );
   });
 
-  test('throws when GenerateMocks references sealed a class via typedef',
-      () async {
-    _expectBuilderThrows(
-      assets: {
-        ...annotationsAsset,
-        'foo|test/foo_test.dart': dedent('''
+  test(
+    'throws when GenerateMocks references sealed a class via typedef',
+    () async {
+      _expectBuilderThrows(
+        assets: {
+          ...annotationsAsset,
+          'foo|test/foo_test.dart': dedent('''
         // @dart=3.0
         import 'package:mockito/annotations.dart';
         sealed class Foo {}
@@ -3389,10 +3784,11 @@ void main() {
         @GenerateMocks([Bar])
         void main() {}
         '''),
-      },
-      message: contains("Mockito cannot mock a sealed class 'Foo'"),
-    );
-  });
+        },
+        message: contains("Mockito cannot mock a sealed class 'Foo'"),
+      );
+    },
+  );
 
   test('throws when GenerateMocks references a base class', () async {
     _expectBuilderThrows(
@@ -3455,7 +3851,7 @@ void main() {
             import 'package:mockito/annotations.dart';
             @GenerateMocks([Bar])
             void main() {}
-          '''
+          ''',
         });
 
         expect(mocksContent, contains('class MockBar extends _i1.Mock'));
@@ -3474,7 +3870,7 @@ void main() {
             import 'package:mockito/annotations.dart';
             @GenerateMocks([Bar])
             void main() {}
-          '''
+          ''',
         });
 
         expect(mocksContent, contains('class MockBar extends _i1.Mock'));
@@ -3493,7 +3889,7 @@ void main() {
             import 'package:mockito/annotations.dart';
             @GenerateMocks([Bar])
             void main() {}
-          '''
+          ''',
         });
 
         expect(mocksContent, contains('class MockBar extends _i1.Mock'));
@@ -3512,7 +3908,7 @@ void main() {
             import 'package:mockito/annotations.dart';
             @GenerateMocks([Bar])
             void main() {}
-          '''
+          ''',
         });
 
         expect(mocksContent, contains('class MockBar<X> extends _i1.Mock'));
@@ -3531,11 +3927,13 @@ void main() {
             import 'package:mockito/annotations.dart';
             @GenerateMocks([Bar])
             void main() {}
-          '''
+          ''',
         });
 
-        expect(mocksContent,
-            contains('class MockBar<X extends num> extends _i1.Mock'));
+        expect(
+          mocksContent,
+          contains('class MockBar<X extends num> extends _i1.Mock'),
+        );
         expect(mocksContent, contains('implements _i2.Bar<X>'));
       });
 
@@ -3555,7 +3953,7 @@ void main() {
 
             @GenerateMocks([Bar])
             void main() {}
-          '''
+          ''',
         });
 
         expect(mocksContent, contains('class MockBar extends _i1.Mock'));
@@ -3578,7 +3976,7 @@ void main() {
 
             @GenerateMocks([Baz])
             void main() {}
-          '''
+          ''',
         });
 
         expect(mocksContent, contains('class MockBaz extends _i1.Mock'));
@@ -3604,17 +4002,18 @@ void main() {
             import 'package:mockito/annotations.dart';
             @GenerateMocks([Foo])
             void main() {}
-          '''
+          ''',
         });
 
         expect(mocksContent, contains('class MockFoo extends _i1.Mock'));
         expect(mocksContent, contains('implements _i2.Foo'));
       });
-      test('when the underlying type is identical to another type alias',
-          () async {
-        final mocksContent = await buildWithNonNullable({
-          ...annotationsAsset,
-          'foo|lib/foo.dart': dedent(r'''
+      test(
+        'when the underlying type is identical to another type alias',
+        () async {
+          final mocksContent = await buildWithNonNullable({
+            ...annotationsAsset,
+            'foo|lib/foo.dart': dedent(r'''
             class Bar {}
             typedef BarDef = int Function();
             typedef BarDef2 = int Function();
@@ -3627,19 +4026,20 @@ void main() {
               Foo() : super(() => 1, () => 2);
             }
           '''),
-          'foo|test/foo_test.dart': '''
+            'foo|test/foo_test.dart': '''
             import 'package:foo/foo.dart';
             import 'package:mockito/annotations.dart';
             @GenerateMocks([Foo])
             void main() {}
-          '''
-        });
+          ''',
+          });
 
-        expect(mocksContent, contains('class MockFoo extends _i1.Mock'));
-        expect(mocksContent, contains('implements _i2.Foo'));
-        expect(mocksContent, contains('_i2.BarDef get t1'));
-        expect(mocksContent, contains('_i2.BarDef2 get t2'));
-      });
+          expect(mocksContent, contains('class MockFoo extends _i1.Mock'));
+          expect(mocksContent, contains('implements _i2.Foo'));
+          expect(mocksContent, contains('_i2.BarDef get t1'));
+          expect(mocksContent, contains('_i2.BarDef2 get t2'));
+        },
+      );
     });
 
     test('generation throws when the aliased type is nullable', () {
@@ -3659,10 +4059,11 @@ void main() {
 
           @GenerateMocks([Bar])
           void main() {}
-        '''
+        ''',
         },
-        message:
-            contains('Mockito cannot mock a type-aliased nullable type: Bar'),
+        message: contains(
+          'Mockito cannot mock a type-aliased nullable type: Bar',
+        ),
         enabledExperiments: ['nonfunction-type-aliases'],
         languageVersion: LanguageVersion(2, 13),
       );
@@ -3688,24 +4089,31 @@ void main() {
   });
   group('Record types', () {
     test('are supported as arguments', () async {
-      await expectSingleNonNullableOutput(dedent('''
+      await expectSingleNonNullableOutput(
+        dedent('''
         abstract class Foo {
           int m((int, {Foo foo}) a);
         }
-        '''), _containsAllOf('int m((int, {_i2.Foo foo})? a)'));
+        '''),
+        _containsAllOf('int m((int, {_i2.Foo foo})? a)'),
+      );
     });
     test('are supported as return types', () async {
       await expectSingleNonNullableOutput(
-          dedent('''
+        dedent('''
         class Bar {}
         abstract class Foo {
           Future<(int, {Bar bar})> get v;
         }
         '''),
-          decodedMatches(allOf(
-              contains('Future<(int, {_i2.Bar bar})> get v'),
-              contains('returnValue: _i3.Future<(int, {_i2.Bar bar})>.value('),
-              contains('bar: _FakeBar_0('))));
+        decodedMatches(
+          allOf(
+            contains('Future<(int, {_i2.Bar bar})> get v'),
+            contains('returnValue: _i3.Future<(int, {_i2.Bar bar})>.value('),
+            contains('bar: _FakeBar_0('),
+          ),
+        ),
+      );
     });
     test('are supported as type arguments', () async {
       final mocksContent = await buildWithNonNullable({
@@ -3725,7 +4133,7 @@ void main() {
             import 'package:mockito/annotations.dart';
             @GenerateMocks([Foo])
             void main() {}
-          '''
+          ''',
       });
 
       expect(mocksContent, contains('class MockFoo extends _i1.Mock'));
@@ -3749,7 +4157,7 @@ void main() {
             import 'package:mockito/annotations.dart';
             @GenerateMocks([Foo])
             void main() {}
-          '''
+          ''',
       });
 
       expect(mocksContent, contains('class MockFoo extends _i1.Mock'));
@@ -3759,44 +4167,50 @@ void main() {
 
   group('Extension types', () {
     test('are supported as arguments', () async {
-      await expectSingleNonNullableOutput(dedent('''
+      await expectSingleNonNullableOutput(
+        dedent('''
         extension type E(int v) {}
         class Foo {
           int m(E e);
         }
-        '''), _containsAllOf('int m(_i2.E? e)'));
+        '''),
+        _containsAllOf('int m(_i2.E? e)'),
+      );
     });
 
     test('are supported as return types', () async {
       await expectSingleNonNullableOutput(
-          dedent('''
+        dedent('''
         extension type E(int v) {}
         class Foo {
           E get v;
         }
         '''),
-          decodedMatches(
-              allOf(contains('E get v'), contains('returnValue: 0'))));
+        decodedMatches(allOf(contains('E get v'), contains('returnValue: 0'))),
+      );
     });
   });
   group('build_extensions support', () {
     test('should export mocks to different directory', () async {
-      await testWithNonNullable({
-        ...annotationsAsset,
-        ...simpleTestAsset,
-        'foo|lib/foo.dart': '''
+      await testWithNonNullable(
+        {
+          ...annotationsAsset,
+          ...simpleTestAsset,
+          'foo|lib/foo.dart': '''
         import 'bar.dart';
         class Foo extends Bar {}
         ''',
-        'foo|lib/bar.dart': '''
+          'foo|lib/bar.dart': '''
         import 'dart:async';
         class Bar {
           m(Future<void> a) {}
         }
         ''',
-      }, config: {
-        'build_extensions': {'^test/{{}}.dart': 'test/mocks/{{}}.mocks.dart'}
-      });
+        },
+        config: {
+          'build_extensions': {'^test/{{}}.dart': 'test/mocks/{{}}.mocks.dart'},
+        },
+      );
       final mocksAsset = AssetId('foo', 'test/mocks/foo_test.mocks.dart');
       final mocksContent = utf8.decode(writer.assets[mocksAsset]!);
       expect(mocksContent, contains("import 'dart:async' as _i3;"));
@@ -3805,7 +4219,8 @@ void main() {
 
     test('should throw if it has confilicting outputs', () async {
       await expectLater(
-          testWithNonNullable({
+        testWithNonNullable(
+          {
             ...annotationsAsset,
             ...simpleTestAsset,
             'foo|lib/foo.dart': '''
@@ -3818,17 +4233,22 @@ void main() {
           m(Future<void> a) {}
         }
         ''',
-          }, config: {
+          },
+          config: {
             'build_extensions': {
               '^test/{{}}.dart': 'test/mocks/{{}}.mocks.dart',
-              'test/{{}}.dart': 'test/{{}}.something.mocks.dart'
-            }
-          }),
-          throwsArgumentError);
+              'test/{{}}.dart': 'test/{{}}.something.mocks.dart',
+            },
+          },
+        ),
+        throwsArgumentError,
+      );
       final mocksAsset = AssetId('foo', 'test/mocks/foo_test.mocks.dart');
       final otherMocksAsset = AssetId('foo', 'test/mocks/foo_test.mocks.dart');
-      final somethingMocksAsset =
-          AssetId('foo', 'test/mocks/foo_test.something.mocks.dart');
+      final somethingMocksAsset = AssetId(
+        'foo',
+        'test/mocks/foo_test.something.mocks.dart',
+      );
 
       expect(writer.assets.containsKey(mocksAsset), false);
       expect(writer.assets.containsKey(otherMocksAsset), false);
@@ -3837,7 +4257,8 @@ void main() {
 
     test('should throw if input is in incorrect format', () async {
       await expectLater(
-          testWithNonNullable({
+        testWithNonNullable(
+          {
             ...annotationsAsset,
             ...simpleTestAsset,
             'foo|lib/foo.dart': '''
@@ -3850,10 +4271,13 @@ void main() {
           m(Future<void> a) {}
         }
         ''',
-          }, config: {
-            'build_extensions': {'^test/{{}}': 'test/mocks/{{}}.mocks.dart'}
-          }),
-          throwsArgumentError);
+          },
+          config: {
+            'build_extensions': {'^test/{{}}': 'test/mocks/{{}}.mocks.dart'},
+          },
+        ),
+        throwsArgumentError,
+      );
       final mocksAsset = AssetId('foo', 'test/mocks/foo_test.mocks.dart');
       final mocksAssetOriginal = AssetId('foo', 'test/foo_test.mocks.dart');
 
@@ -3863,7 +4287,8 @@ void main() {
 
     test('should throw if output is in incorrect format', () async {
       await expectLater(
-          testWithNonNullable({
+        testWithNonNullable(
+          {
             ...annotationsAsset,
             ...simpleTestAsset,
             'foo|lib/foo.dart': '''
@@ -3876,10 +4301,13 @@ void main() {
           m(Future<void> a) {}
         }
         ''',
-          }, config: {
-            'build_extensions': {'^test/{{}}.dart': 'test/mocks/{{}}.g.dart'}
-          }),
-          throwsArgumentError);
+          },
+          config: {
+            'build_extensions': {'^test/{{}}.dart': 'test/mocks/{{}}.g.dart'},
+          },
+        ),
+        throwsArgumentError,
+      );
       final mocksAsset = AssetId('foo', 'test/mocks/foo_test.mocks.dart');
       final mocksAssetOriginal = AssetId('foo', 'test/foo_test.mocks.dart');
       expect(writer.assets.containsKey(mocksAsset), false);
@@ -3888,10 +4316,11 @@ void main() {
   });
 }
 
-TypeMatcher<List<int>> _containsAllOf(String a, [String? b]) =>
-    decodedMatches(b == null
-        ? containsIgnoringFormatting(a)
-        : allOf(containsIgnoringFormatting(a), containsIgnoringFormatting(b)));
+TypeMatcher<List<int>> _containsAllOf(String a, [String? b]) => decodedMatches(
+      b == null
+          ? containsIgnoringFormatting(a)
+          : allOf(containsIgnoringFormatting(a), containsIgnoringFormatting(b)),
+    );
 
 /// Expect that [testBuilder], given [assets], in a package which has opted into
 /// null safety, throws an [InvalidMockitoAnnotationException] with a message
@@ -3903,22 +4332,31 @@ void _expectBuilderThrows({
   LanguageVersion? languageVersion,
 }) {
   final packageConfig = PackageConfig([
-    Package('foo', Uri.file('/foo/'),
-        packageUriRoot: Uri.file('/foo/lib/'),
-        languageVersion: languageVersion ?? LanguageVersion(2, 12))
+    Package(
+      'foo',
+      Uri.file('/foo/'),
+      packageUriRoot: Uri.file('/foo/lib/'),
+      languageVersion: languageVersion ?? LanguageVersion(2, 12),
+    ),
   ]);
 
   expect(
-      () => withEnabledExperiments(
-            () => testBuilder(
-              buildMocks(BuilderOptions({})),
-              assets,
-              packageConfig: packageConfig,
-            ),
-            enabledExperiments,
-          ),
-      throwsA(TypeMatcher<InvalidMockitoAnnotationException>()
-          .having((e) => e.message, 'message', message)));
+    () => withEnabledExperiments(
+      () => testBuilder(
+        buildMocks(BuilderOptions({})),
+        assets,
+        packageConfig: packageConfig,
+      ),
+      enabledExperiments,
+    ),
+    throwsA(
+      TypeMatcher<InvalidMockitoAnnotationException>().having(
+        (e) => e.message,
+        'message',
+        message,
+      ),
+    ),
+  );
 }
 
 /// Dedent [input], so that each line is shifted to the left, so that the first
@@ -3926,8 +4364,10 @@ void _expectBuilderThrows({
 String dedent(String input) {
   final indentMatch = RegExp(r'^(\s*)').firstMatch(input)!;
   final indent = ''.padRight(indentMatch.group(1)!.length);
-  return input.splitMapJoin('\n',
-      onNonMatch: (s) => s.replaceFirst(RegExp('^$indent'), ''));
+  return input.splitMapJoin(
+    '\n',
+    onNonMatch: (s) => s.replaceFirst(RegExp('^$indent'), ''),
+  );
 }
 
 /// Dedent [input], so that each line is shifted to the left, so that the first
@@ -3935,6 +4375,8 @@ String dedent(String input) {
 String dedent2(String input) {
   final indentMatch = RegExp(r'^  (\s*)').firstMatch(input)!;
   final indent = ''.padRight(indentMatch.group(1)!.length);
-  return input.replaceFirst(RegExp(r'\s*$'), '').splitMapJoin('\n',
-      onNonMatch: (s) => s.replaceFirst(RegExp('^$indent'), ''));
+  return input.replaceFirst(RegExp(r'\s*$'), '').splitMapJoin(
+        '\n',
+        onNonMatch: (s) => s.replaceFirst(RegExp('^$indent'), ''),
+      );
 }
