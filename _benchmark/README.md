@@ -4,5 +4,8 @@ Benchmarks `build_runner` against synthetic codebases applying real generators:
 Example usage:
 
 ```
-dart run _benchmark --generator=built_value benchmark
+dart run _benchmark \
+    --generator=built_value \
+    --build-repo-path=$PWD/.. \
+    benchmark
 ```

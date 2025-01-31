@@ -17,6 +17,10 @@ final commandRunner =
       ..addCommand(MeasureCommand())
       ..addCommand(CreateCommand())
       ..argParser.addOption(
+        'build-repo-path',
+        help: 'Path to build repo to benchmark.',
+      )
+      ..argParser.addOption(
         'generator',
         help: 'Generator to benchmark.',
         allowed: Generator.values.map((e) => e.packageName).toList(),

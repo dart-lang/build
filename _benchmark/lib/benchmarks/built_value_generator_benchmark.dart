@@ -33,6 +33,8 @@ dependencies:
 dev_dependencies:
   build_runner: any
   built_value_generator: any
+  
+${config.dependencyOverrides}
 ''',
     );
 

@@ -11,13 +11,19 @@ import 'workspace.dart';
 
 /// Benchmark tool config.
 class Config {
+  final String? buildRepoPath;
   final Generator generator;
   final Directory rootDirectory;
   final List<int> sizes = const [1, 100, 250, 500, 750, 1000];
 
-  Config({required this.generator, required this.rootDirectory});
+  Config({
+    required this.buildRepoPath,
+    required this.generator,
+    required this.rootDirectory,
+  });
 
   factory Config.fromArgResults(ArgResults argResults) => Config(
+    buildRepoPath: argResults['build-repo-path'] as String?,
     generator: Generator.values.singleWhere(
       (e) => e.packageName == argResults['generator'],
     ),
@@ -41,4 +47,29 @@ class RunConfig {
     required this.size,
     required this.paddedSize,
   });
+
+  String get dependencyOverrides {
+    final buildRepoPath = config.buildRepoPath;
+    if (buildRepoPath == null) return '';
+
+    return '''
+dependency_overrides:
+  build:
+    path: $buildRepoPath/build
+  build_config:
+    path: $buildRepoPath/build_config
+  build_modules:
+    path: $buildRepoPath/build_modules
+  build_resolvers:
+    path: $buildRepoPath/build_resolvers
+  build_runner:
+    path: $buildRepoPath/build_runner
+  build_runner_core:
+    path: $buildRepoPath/build_runner_core
+  build_test:
+    path: $buildRepoPath/build_test
+  build_web_compilers:
+    path: $buildRepoPath/build_web_compilers
+''';
+  }
 }
