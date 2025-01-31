@@ -8,3 +8,9 @@
 /*/.dart_tool/*
 # Re-include the package config file.
 !/*/.dart_tool/package_config.json
+
+# Handwritten pubspec.lock files.
+!basic_pkg/pubspec.lock
+!flutter_pkg/pubspec.lock
+!with_dev_deps/pubspec.lock
+!workspace/pubspec.lock
