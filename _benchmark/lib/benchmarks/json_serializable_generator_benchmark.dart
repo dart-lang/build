@@ -34,6 +34,8 @@ dependencies:
 dev_dependencies:
   build_runner: any
   json_serializable: any
+
+${config.dependencyOverrides}
 ''',
     );
 

@@ -33,6 +33,8 @@ dependencies:
 dev_dependencies:
   build_runner: any
   freezed: any
+
+${config.dependencyOverrides}
 ''',
     );
 

@@ -35,6 +35,8 @@ dependencies:
 
 dev_dependencies:
   build_runner: any
+
+${config.dependencyOverrides}
 ''',
     );
 
