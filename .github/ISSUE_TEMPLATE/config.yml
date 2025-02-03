@@ -1,0 +1,9 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: Participate in design discussions
+    url: https://github.com/dart-lang/build/discussions
+    about: Follow and participate in build and build_runner design discussions here.
+  - name: I have a general build_runner question
+    about: For general questions consider using Stack Overflow instead.
+    url: https://stackoverflow.com/tags/dart
