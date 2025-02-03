@@ -1,7 +1,7 @@
 name: _benchmark
 publish_to: none
 environment:
-  sdk: ^3.7.0-edge
+  sdk: ^3.6.0
 resolution: workspace
 
 dependencies:
