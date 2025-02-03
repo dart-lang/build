@@ -13,6 +13,8 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
 import 'package:build_resolvers/src/analysis_driver.dart';
+import 'package:build_resolvers/src/analysis_driver_model.dart';
+import 'package:build_resolvers/src/build_asset_uri_resolver.dart';
 import 'package:build_resolvers/src/resolver.dart';
 import 'package:build_resolvers/src/sdk_summary.dart';
 import 'package:build_test/build_test.dart';
@@ -22,235 +24,246 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 
 void main() {
-  final entryPoint = AssetId('a', 'web/main.dart');
-
-  group('Resolver', () {
-    test('should handle initial files', () {
-      return resolveSources({
-        'a|web/main.dart': ' main() {}',
-      }, (resolver) async {
-        var lib = await resolver.libraryFor(entryPoint);
-        expect(lib, isNotNull);
-      }, resolvers: AnalyzerResolvers());
+  for (final resolversFactory in [
+    BuildAssetUriResolversFactory(),
+    AnalysisDriverModelFactory()
+  ]) {
+    group('$resolversFactory', () {
+      runTests(resolversFactory);
     });
+  }
+}
 
-    test('should follow imports', () {
-      return resolveSources({
-        'a|web/main.dart': '''
+void runTests(ResolversFactory resolversFactory) {
+  final entryPoint = AssetId('a', 'web/main.dart');
+  Resolvers createResolvers({PackageConfig? packageConfig}) =>
+      resolversFactory.create(packageConfig: packageConfig);
+
+  test('should handle initial files', () {
+    return resolveSources({
+      'a|web/main.dart': ' main() {}',
+    }, (resolver) async {
+      var lib = await resolver.libraryFor(entryPoint);
+      expect(lib, isNotNull);
+    }, resolvers: createResolvers());
+  });
+
+  test('should follow imports', () {
+    return resolveSources({
+      'a|web/main.dart': '''
               import 'a.dart';
 
               main() {
               } ''',
-        'a|web/a.dart': '''
+      'a|web/a.dart': '''
               library a;
               ''',
+    }, (resolver) async {
+      var lib = await resolver.libraryFor(entryPoint);
+      expect(lib.definingCompilationUnit.libraryImports.length, 2);
+      var libA = lib
+        ..definingCompilationUnit
+            .libraryImports
+            .where((l) => l.importedLibrary!.name == 'a')
+            .single;
+      expect(libA.getClass('Foo'), isNull);
+    }, resolvers: createResolvers());
+  });
+
+  test('should follow package imports', () {
+    return resolveSources({
+      'a|web/main.dart': '''
+              import 'package:b/b.dart';
+
+              main() {
+              } ''',
+      'b|lib/b.dart': '''
+              library b;
+              ''',
+    }, (resolver) async {
+      var lib = await resolver.libraryFor(entryPoint);
+      expect(lib.definingCompilationUnit.libraryImports.length, 2);
+      var libB = lib
+        ..definingCompilationUnit
+            .libraryImports
+            .where((l) => l.importedLibrary!.name == 'b')
+            .single;
+      expect(libB.getClass('Foo'), isNull);
+    }, resolvers: createResolvers());
+  });
+
+  test('should still crawl transitively after a call to isLibrary', () {
+    return resolveSources({
+      'a|web/main.dart': '''
+              import 'package:b/b.dart';
+
+              main() {
+              } ''',
+      'b|lib/b.dart': '''
+              library b;
+              ''',
+    }, (resolver) async {
+      await resolver.isLibrary(entryPoint);
+      var libs = await resolver.libraries.toList();
+      expect(libs, contains(predicate((LibraryElement l) => l.name == 'b')));
+    }, resolvers: createResolvers());
+  });
+
+  test(
+      'calling isLibrary does not include that library in the libraries '
+      'stream', () {
+    return resolveSources({
+      'a|web/main.dart': '',
+      'b|lib/b.dart': '''
+              library b;
+              ''',
+    }, (resolver) async {
+      await resolver.isLibrary(AssetId('b', 'lib/b.dart'));
+      await expectLater(
+        resolver.libraries,
+        neverEmits(isA<LibraryElement>().having((e) => e.name, 'name', 'b')),
+      );
+    }, resolvers: createResolvers());
+  });
+
+  test('should still crawl transitively after a call to compilationUnitFor',
+      () {
+    return resolveSources({
+      'a|web/main.dart': '''
+              import 'package:b/b.dart';
+
+              main() {
+              } ''',
+      'b|lib/b.dart': '''
+              library b;
+              ''',
+    }, (resolver) async {
+      await resolver.compilationUnitFor(entryPoint);
+      var libs = await resolver.libraries.toList();
+      expect(libs, contains(predicate((LibraryElement l) => l.name == 'b')));
+    }, resolvers: createResolvers());
+  });
+
+  group('language versioning', () {
+    test('gives a correct languageVersion based on comments', () async {
+      await resolveSources({
+        'a|web/main.dart': '// @dart=3.1\n\nmain() {}',
       }, (resolver) async {
         var lib = await resolver.libraryFor(entryPoint);
-        expect(lib.definingCompilationUnit.libraryImports.length, 2);
-        var libA = lib
-          ..definingCompilationUnit
-              .libraryImports
-              .where((l) => l.importedLibrary!.name == 'a')
-              .single;
-        expect(libA.getClass('Foo'), isNull);
-      }, resolvers: AnalyzerResolvers());
+        expect(lib.languageVersion.effective.major, 3);
+        expect(lib.languageVersion.effective.minor, 1);
+      }, resolvers: createResolvers());
     });
 
-    test('should follow package imports', () {
-      return resolveSources({
-        'a|web/main.dart': '''
-              import 'package:b/b.dart';
+    test('defaults to the current isolate package config', () async {
+      await resolveSources({
+        'a|web/main.dart': 'main() {}',
+      }, (resolver) async {
+        var buildResolversId =
+            AssetId('build_resolvers', 'lib/build_resolvers.dart');
+        var lib = await resolver.libraryFor(buildResolversId);
+        var currentPackageConfig =
+            await loadPackageConfigUri((await Isolate.packageConfig)!);
+        var expectedVersion =
+            currentPackageConfig['build_resolvers']!.languageVersion!;
+        expect(lib.languageVersion.effective.major, expectedVersion.major);
+        expect(lib.languageVersion.effective.minor, expectedVersion.minor);
+      }, resolvers: createResolvers());
+    });
 
-              main() {
-              } ''',
-        'b|lib/b.dart': '''
-              library b;
-              ''',
+    test('uses the overridden package config if provided', () async {
+      // An arbitrary past version that could never be selected for this
+      // package.
+      var customVersion = LanguageVersion(2, 1);
+      var customPackageConfig = PackageConfig([
+        Package('a', Uri.file('/fake/a/'),
+            packageUriRoot: Uri.file('/fake/a/lib/'),
+            languageVersion: customVersion)
+      ]);
+      await resolveSources({
+        'a|web/main.dart': 'main() {}',
       }, (resolver) async {
         var lib = await resolver.libraryFor(entryPoint);
-        expect(lib.definingCompilationUnit.libraryImports.length, 2);
-        var libB = lib
-          ..definingCompilationUnit
-              .libraryImports
-              .where((l) => l.importedLibrary!.name == 'b')
-              .single;
-        expect(libB.getClass('Foo'), isNull);
-      }, resolvers: AnalyzerResolvers());
+        expect(lib.languageVersion.effective.major, customVersion.major);
+        expect(lib.languageVersion.effective.minor, customVersion.minor);
+      }, resolvers: createResolvers(packageConfig: customPackageConfig));
     });
 
-    test('should still crawl transitively after a call to isLibrary', () {
+    test('gives the current language version if not provided', () async {
+      var customPackageConfig = PackageConfig([
+        Package('a', Uri.file('/fake/a/'),
+            packageUriRoot: Uri.file('/fake/a/lib/'), languageVersion: null),
+      ]);
+      await resolveSources({
+        'a|web/main.dart': 'main() {}',
+      }, (resolver) async {
+        var lib = await resolver.libraryFor(entryPoint);
+        expect(lib.languageVersion.effective.major, sdkLanguageVersion.major);
+        expect(lib.languageVersion.effective.minor, sdkLanguageVersion.minor);
+      }, resolvers: createResolvers(packageConfig: customPackageConfig));
+    });
+
+    test('allows a version of analyzer compatibile with the current sdk',
+        skip: _skipOnPreRelease, () async {
+      var originalLevel = Logger.root.level;
+      Logger.root.level = Level.WARNING;
+      var listener = Logger.root.onRecord.listen((record) {
+        fail('Got an unexpected warning during analysis:\n\n$record');
+      });
+      addTearDown(() {
+        Logger.root.level = originalLevel;
+        listener.cancel();
+      });
+      await resolveSources({
+        'a|web/main.dart': 'main() {}',
+      }, (resolver) async {
+        await resolver.libraryFor(entryPoint);
+      }, resolvers: createResolvers());
+    });
+  });
+
+  group('assets that aren\'t a transitive import of input', () {
+    Future runWith(Future Function(Resolver) test) {
       return resolveSources({
         'a|web/main.dart': '''
-              import 'package:b/b.dart';
-
-              main() {
-              } ''',
-        'b|lib/b.dart': '''
-              library b;
-              ''',
-      }, (resolver) async {
-        await resolver.isLibrary(entryPoint);
-        var libs = await resolver.libraries.toList();
-        expect(libs, contains(predicate((LibraryElement l) => l.name == 'b')));
-      }, resolvers: AnalyzerResolvers());
-    });
-
-    test(
-        'calling isLibrary does not include that library in the libraries '
-        'stream', () {
-      return resolveSources({
-        'a|web/main.dart': '',
-        'b|lib/b.dart': '''
-              library b;
-              ''',
-      }, (resolver) async {
-        await resolver.isLibrary(AssetId('b', 'lib/b.dart'));
-        await expectLater(
-          resolver.libraries,
-          neverEmits(isA<LibraryElement>().having((e) => e.name, 'name', 'b')),
-        );
-      }, resolvers: AnalyzerResolvers());
-    });
-
-    test('should still crawl transitively after a call to compilationUnitFor',
-        () {
-      return resolveSources({
-        'a|web/main.dart': '''
-              import 'package:b/b.dart';
-
-              main() {
-              } ''',
-        'b|lib/b.dart': '''
-              library b;
-              ''',
-      }, (resolver) async {
-        await resolver.compilationUnitFor(entryPoint);
-        var libs = await resolver.libraries.toList();
-        expect(libs, contains(predicate((LibraryElement l) => l.name == 'b')));
-      }, resolvers: AnalyzerResolvers());
-    });
-
-    group('language versioning', () {
-      test('gives a correct languageVersion based on comments', () async {
-        await resolveSources({
-          'a|web/main.dart': '// @dart=3.1\n\nmain() {}',
-        }, (resolver) async {
-          var lib = await resolver.libraryFor(entryPoint);
-          expect(lib.languageVersion.effective.major, 3);
-          expect(lib.languageVersion.effective.minor, 1);
-        }, resolvers: AnalyzerResolvers());
-      });
-
-      test('defaults to the current isolate package config', () async {
-        await resolveSources({
-          'a|web/main.dart': 'main() {}',
-        }, (resolver) async {
-          var buildResolversId =
-              AssetId('build_resolvers', 'lib/build_resolvers.dart');
-          var lib = await resolver.libraryFor(buildResolversId);
-          var currentPackageConfig =
-              await loadPackageConfigUri((await Isolate.packageConfig)!);
-          var expectedVersion =
-              currentPackageConfig['build_resolvers']!.languageVersion!;
-          expect(lib.languageVersion.effective.major, expectedVersion.major);
-          expect(lib.languageVersion.effective.minor, expectedVersion.minor);
-        }, resolvers: AnalyzerResolvers());
-      });
-
-      test('uses the overridden package config if provided', () async {
-        // An arbitrary past version that could never be selected for this
-        // package.
-        var customVersion = LanguageVersion(2, 1);
-        var customPackageConfig = PackageConfig([
-          Package('a', Uri.file('/fake/a/'),
-              packageUriRoot: Uri.file('/fake/a/lib/'),
-              languageVersion: customVersion)
-        ]);
-        await resolveSources({
-          'a|web/main.dart': 'main() {}',
-        }, (resolver) async {
-          var lib = await resolver.libraryFor(entryPoint);
-          expect(lib.languageVersion.effective.major, customVersion.major);
-          expect(lib.languageVersion.effective.minor, customVersion.minor);
-        }, resolvers: AnalyzerResolvers(null, null, customPackageConfig));
-      });
-
-      test('gives the current language version if not provided', () async {
-        var customPackageConfig = PackageConfig([
-          Package('a', Uri.file('/fake/a/'),
-              packageUriRoot: Uri.file('/fake/a/lib/'), languageVersion: null),
-        ]);
-        await resolveSources({
-          'a|web/main.dart': 'main() {}',
-        }, (resolver) async {
-          var lib = await resolver.libraryFor(entryPoint);
-          expect(lib.languageVersion.effective.major, sdkLanguageVersion.major);
-          expect(lib.languageVersion.effective.minor, sdkLanguageVersion.minor);
-        }, resolvers: AnalyzerResolvers(null, null, customPackageConfig));
-      });
-
-      test('allows a version of analyzer compatibile with the current sdk',
-          skip: _skipOnPreRelease, () async {
-        var originalLevel = Logger.root.level;
-        Logger.root.level = Level.WARNING;
-        var listener = Logger.root.onRecord.listen((record) {
-          fail('Got an unexpected warning during analysis:\n\n$record');
-        });
-        addTearDown(() {
-          Logger.root.level = originalLevel;
-          listener.cancel();
-        });
-        await resolveSources({
-          'a|web/main.dart': 'main() {}',
-        }, (resolver) async {
-          await resolver.libraryFor(entryPoint);
-        }, resolvers: AnalyzerResolvers());
-      });
-    });
-
-    group('assets that aren\'t a transitive import of input', () {
-      Future runWith(Future Function(Resolver) test) {
-        return resolveSources({
-          'a|web/main.dart': '''
           main() {}
         ''',
-          'a|lib/other.dart': '''
+        'a|lib/other.dart': '''
           library other;
         '''
-        }, test, resolvers: AnalyzerResolvers());
-      }
+      }, test, resolvers: createResolvers());
+    }
 
-      final otherId = AssetId.parse('a|lib/other.dart');
+    final otherId = AssetId.parse('a|lib/other.dart');
 
-      test('can be resolved', () {
-        return runWith((resolver) async {
-          final main = await resolver.libraryFor(entryPoint);
-          expect(main, isNotNull);
+    test('can be resolved', () {
+      return runWith((resolver) async {
+        final main = await resolver.libraryFor(entryPoint);
+        expect(main, isNotNull);
 
-          final other = await resolver.libraryFor(otherId);
-          expect(other.name, 'other');
-        });
+        final other = await resolver.libraryFor(otherId);
+        expect(other.name, 'other');
       });
+    });
 
-      test('are included in library stream', () {
-        return runWith((resolver) async {
-          await expectLater(
-              resolver.libraries.map((l) => l.name), neverEmits('other'));
+    test('are included in library stream', () {
+      return runWith((resolver) async {
+        await expectLater(
+            resolver.libraries.map((l) => l.name), neverEmits('other'));
 
-          await resolver.libraryFor(otherId);
+        await resolver.libraryFor(otherId);
 
-          await expectLater(
-              resolver.libraries.map((l) => l.name), emitsThrough('other'));
-        });
+        await expectLater(
+            resolver.libraries.map((l) => l.name), emitsThrough('other'));
       });
+    });
 
-      test('can be found by name', () {
-        return runWith((resolver) async {
-          await resolver.libraryFor(otherId);
+    test('can be found by name', () {
+      return runWith((resolver) async {
+        await resolver.libraryFor(otherId);
 
-          await expectLater(
-              resolver.findLibraryByName('other'), completion(isNotNull));
-        });
+        await expectLater(
+            resolver.findLibraryByName('other'), completion(isNotNull));
       });
     });
 
@@ -270,11 +283,11 @@ void main() {
             lib.definingCompilationUnit.parts
                 .whereType<DirectiveUriWithSource>(),
             isEmpty);
-      }, resolvers: AnalyzerResolvers());
+      }, resolvers: createResolvers());
     });
 
     test('handles discovering previously missing parts', () async {
-      var resolvers = AnalyzerResolvers();
+      var resolvers = createResolvers();
       await resolveSources({
         'a|web/main.dart': '''
               part 'main.g.dart';
@@ -308,7 +321,7 @@ void main() {
     });
 
     test('handles removing deleted parts', () async {
-      var resolvers = AnalyzerResolvers();
+      var resolvers = createResolvers();
       await resolveSources({
         'a|web/main.dart': '''
               part 'main.g.dart';
@@ -375,7 +388,7 @@ void main() {
               'a.c',
               'a.d',
             ]));
-      }, resolvers: AnalyzerResolvers());
+      }, resolvers: createResolvers());
     });
 
     test('should resolve types and library uris', () {
@@ -407,7 +420,7 @@ void main() {
 
         var main = await resolver.findLibraryByName('');
         expect(main, isNotNull);
-      }, resolvers: AnalyzerResolvers());
+      }, resolvers: createResolvers());
     });
 
     test('resolves constants transitively', () {
@@ -431,7 +444,7 @@ void main() {
         var meta = main.getClass('Foo')!.supertype!.element.metadata[0];
         expect(meta, isNotNull);
         expect(meta.computeConstantValue()?.toIntValue(), 0);
-      }, resolvers: AnalyzerResolvers());
+      }, resolvers: createResolvers());
     });
 
     test('handles circular imports', () {
@@ -449,7 +462,7 @@ void main() {
         var libs = await resolver.libraries.map((lib) => lib.name).toList();
         expect(libs.contains('a'), isTrue);
         expect(libs.contains('b'), isTrue);
-      }, resolvers: AnalyzerResolvers());
+      }, resolvers: createResolvers());
     });
 
     test('assetIdForElement', () {
@@ -470,7 +483,7 @@ void main() {
             .singleWhere((c) => c != null)!;
         expect(await resolver.assetIdForElement(classDefinition),
             AssetId('a', 'lib/b.dart'));
-      }, resolvers: AnalyzerResolvers());
+      }, resolvers: createResolvers());
     });
 
     test('assetIdForElement throws for ambiguous elements', () {
@@ -497,7 +510,7 @@ void main() {
             .element!;
         await expectLater(() => resolver.assetIdForElement(element),
             throwsA(isA<UnresolvableAssetException>()));
-      }, resolvers: AnalyzerResolvers());
+      }, resolvers: createResolvers());
     });
 
     test('Respects withEnabledExperiments', skip: _skipOnPreRelease, () async {
@@ -518,13 +531,13 @@ int? get x => 1;
                 var errors = await lib.session.getErrors('/a/web/main.dart')
                     as ErrorsResult;
                 expect(errors.errors, isEmpty);
-              }, resolvers: AnalyzerResolvers()),
+              }, resolvers: createResolvers()),
           ['non-nullable']);
     });
 
     test('can get a new analysis session after resolving additional assets',
         () async {
-      var resolvers = AnalyzerResolvers();
+      var resolvers = createResolvers();
       await resolveSources({
         'a|web/main.dart': '',
         'a|web/other.dart': '',
@@ -589,7 +602,7 @@ int? get x => 1;
                   .having((e) => e.syntaxErrors, 'syntaxErrors', hasLength(1)),
             ),
           );
-        });
+        }, resolvers: createResolvers());
       });
 
       test('are not reported when disabled', () {
@@ -612,7 +625,7 @@ int? get x => 1;
                 allowSyntaxErrors: true),
             completion(isNotNull),
           );
-        });
+        }, resolvers: createResolvers());
       });
 
       test('are truncated if necessary', () {
@@ -644,7 +657,7 @@ int? get x => 1;
             resolver.compilationUnitFor(AssetId.parse('a|errors.dart')),
             expectation,
           );
-        });
+        }, resolvers: createResolvers());
       });
 
       test('do not report semantic errors', () {
@@ -666,30 +679,27 @@ int? get x => 1;
             resolver.compilationUnitFor(AssetId.parse('a|errors.dart')),
             completion(isNotNull),
           );
-        });
+        }, resolvers: createResolvers());
       });
     });
   });
 
   test('throws when reading a part-of file', () {
-    return resolveSources(
-      {
-        'a|lib/a.dart': '''
+    return resolveSources({
+      'a|lib/a.dart': '''
           part 'b.dart';
         ''',
-        'a|lib/b.dart': '''
+      'a|lib/b.dart': '''
           part of 'a.dart';
         '''
-      },
-      (resolver) async {
-        final assetId = AssetId.parse('a|lib/b.dart');
-        await expectLater(
-          () => resolver.libraryFor(assetId),
-          throwsA(const TypeMatcher<NonLibraryAssetException>()
-              .having((e) => e.assetId, 'assetId', equals(assetId))),
-        );
-      },
-    );
+    }, (resolver) async {
+      final assetId = AssetId.parse('a|lib/b.dart');
+      await expectLater(
+        () => resolver.libraryFor(assetId),
+        throwsA(const TypeMatcher<NonLibraryAssetException>()
+            .having((e) => e.assetId, 'assetId', equals(assetId))),
+      );
+    }, resolvers: createResolvers());
   });
 
   test('Can resolve sdk libraries that are not imported', () async {
@@ -720,7 +730,7 @@ int? get x => 1;
         everyElement(isA<LibraryElement>()
             .having((e) => e.isPrivate, 'isPrivate', isFalse)),
       );
-    }, resolvers: AnalyzerResolvers());
+    }, resolvers: createResolvers());
   });
 
   test('can resolve sdk libraries without seeing anything else', () async {
@@ -735,11 +745,11 @@ int? get x => 1;
           allLibraries,
           everyElement(isA<LibraryElement>()
               .having((e) => e.isInSdk, 'isInSdk', isTrue)));
-    }, resolvers: AnalyzerResolvers());
+    }, resolvers: createResolvers());
   });
 
   test('sdk libraries can still be resolved after seeing new assets', () async {
-    final resolvers = AnalyzerResolvers();
+    final resolvers = createResolvers();
     final builder = TestBuilder(
       buildExtensions: {
         '.dart': ['.txt']
@@ -791,7 +801,7 @@ int? get x => 1;
         } else {
           expect(color.type, isA<InvalidType>());
         }
-      }, resolvers: AnalyzerResolvers());
+      }, resolvers: createResolvers());
     });
   });
 
@@ -819,7 +829,7 @@ int? get x => 1;
                     '${buildStep.inputId} should not be considered a library');
           }
         });
-    var resolvers = AnalyzerResolvers();
+    var resolvers = createResolvers();
     await runBuilder(builder, [input], reader, writer, resolvers);
 
     await runBuilder(
@@ -842,7 +852,7 @@ int? get x => 1;
                   buildStep.inputId.changeExtension('doesnotexist.dart')),
               false);
         }));
-    var resolvers = AnalyzerResolvers();
+    var resolvers = createResolvers();
     await runBuilder(builder, [input], reader, writer, resolvers);
   });
 
@@ -865,7 +875,7 @@ int? get x => 1;
           expect(await buildStep.canRead(other), true);
           expect(await buildStep.resolver.isLibrary(other), false);
         }));
-    var resolvers = AnalyzerResolvers();
+    var resolvers = createResolvers();
     await runBuilder(builder, [input], reader, writer, resolvers);
   });
 
@@ -881,7 +891,7 @@ int? get x => 1;
             unit.declarations.first,
             isA<FunctionDeclaration>()
                 .having((d) => d.name.lexeme, 'main', 'main'));
-      }, resolvers: AnalyzerResolvers());
+      }, resolvers: createResolvers());
     });
   });
 
@@ -895,7 +905,7 @@ int? get x => 1;
         expect(unit, isA<FunctionDeclaration>());
         expect(unit!.toSource(), 'main() {}');
         expect((unit as FunctionDeclaration).declaredElement, isNull);
-      }, resolvers: AnalyzerResolvers());
+      }, resolvers: createResolvers());
     });
 
     test('can return an resolved ast', () {
@@ -911,7 +921,7 @@ int? get x => 1;
               .having((fd) => fd.toSource(), 'toSource()', 'main() {}')
               .having((fd) => fd.declaredElement, 'declaredElement', isNotNull),
         );
-      }, resolvers: AnalyzerResolvers());
+      }, resolvers: createResolvers());
     });
 
     test('can return a resolved compilation unit', () {
@@ -941,3 +951,28 @@ final _skipOnPreRelease =
     Version.parse(Platform.version.split(' ').first).isPreRelease
         ? 'Skipped on prerelease sdks'
         : null;
+
+abstract class ResolversFactory {
+  Resolvers create({PackageConfig? packageConfig});
+}
+
+class BuildAssetUriResolversFactory implements ResolversFactory {
+  @override
+  Resolvers create({PackageConfig? packageConfig}) => AnalyzerResolvers.custom(
+      packageConfig: packageConfig,
+      analysisDriverModel: BuildAssetUriResolver.sharedInstance);
+
+  @override
+  String toString() => 'Resolver';
+}
+
+class AnalysisDriverModelFactory implements ResolversFactory {
+  final AnalysisDriverModel sharedInstance = AnalysisDriverModel();
+
+  @override
+  Resolvers create({PackageConfig? packageConfig}) => AnalyzerResolvers.custom(
+      packageConfig: packageConfig, analysisDriverModel: sharedInstance);
+
+  @override
+  String toString() => 'New resolver';
+}
