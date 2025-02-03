@@ -2,6 +2,7 @@ name: _benchmark
 publish_to: none
 environment:
   sdk: ^3.7.0-edge
+resolution: workspace
 
 dependencies:
   args: ^2.6.0

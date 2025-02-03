@@ -6,6 +6,7 @@ dev_dependencies:
   dart_flutter_team_lints: ^3.1.0
 
 workspace:
+- _benchmark
 - _test
 - _test/pkgs/provides_builder
 - _test_common
