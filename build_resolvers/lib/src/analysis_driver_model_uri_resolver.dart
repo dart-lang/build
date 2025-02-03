@@ -12,7 +12,13 @@ import 'analysis_driver_model.dart';
 
 const _ignoredSchemes = ['dart', 'dart-ext'];
 
-/// A [UriResolver] on top of [AnalysisDriverModel]'s in-memory filesystem.
+/// A [UriResolver] on top of [AnalysisDriverModel]'s in-memory filesystem
+///
+/// This is the analyzer's view of the current build: the files that
+/// `build_runner` wants the analyzer to analyze.
+///
+/// The in-memory filesystem uses POSIX-style paths with `package:foo/bar'
+/// mapping to `/foo/bar`.
 class AnalysisDriverModelUriResolver implements UriResolver {
   final AnalysisDriverModel analysisDriverModel;
   AnalysisDriverModelUriResolver(this.analysisDriverModel);
