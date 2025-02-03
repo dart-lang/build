@@ -118,19 +118,10 @@ class AnalysisDriverModel {
     });
   }
 
-  /// Walks the import graph from [ids], returns full transitive deps.s
+  /// Walks the import graph from [ids], returns full transitive deps.
   Future<Set<AssetId>> _expandToTransitive(
       AssetReader reader, Iterable<AssetId> ids) async {
     final result = <AssetId>{};
-    await __expandToTransitive(reader, ids, result);
-    return result;
-  }
-
-  /// Walks the import graph from [ids], ignoring nodes already in [result].
-  ///
-  /// Call with [result] empty to add full transitive deps to [result].
-  Future<void> __expandToTransitive(
-      AssetReader reader, Iterable<AssetId> ids, Set<AssetId> result) async {
     final nextIds = Queue.of(ids);
     while (nextIds.isNotEmpty) {
       final nextId = nextIds.removeFirst();
@@ -145,6 +136,7 @@ class AnalysisDriverModel {
       final deps = _parseDependencies(content, nextId);
       nextIds.addAll(deps.where((id) => !result.contains(id)));
     }
+    return result;
   }
 }
 
