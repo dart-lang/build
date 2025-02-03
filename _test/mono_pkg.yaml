@@ -1,5 +1,5 @@
 sdk:
-- main
+- beta
 
 os:
 - linux
@@ -31,4 +31,4 @@ stages:
 - e2e_test_cron:
   - test:
     sdk:
-    - be/raw/latest
+    - beta
