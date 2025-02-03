@@ -9,7 +9,6 @@ import 'dart:isolate';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/file_system/memory_file_system.dart';
-import 'package:analyzer/source/file_source.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart' show AssetId, BuildStep;
@@ -19,11 +18,13 @@ import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 import 'package:stream_transform/stream_transform.dart';
 
+import 'analysis_driver_model.dart';
+
 const _ignoredSchemes = ['dart', 'dart-ext'];
 
 const transitiveDigestExtension = '.transitive_digest';
 
-class BuildAssetUriResolver extends UriResolver {
+class BuildAssetUriResolver implements AnalysisDriverModel {
   /// A cache of the directives for each Dart library.
   ///
   /// This is stored across builds and is only invalidated if we read a file and
@@ -41,6 +42,7 @@ class BuildAssetUriResolver extends UriResolver {
   /// updated in the analysis driver.
   final _needsChangeFile = HashSet<String>();
 
+  @override
   final resourceProvider = MemoryResourceProvider(context: p.posix);
 
   /// The assets which are known to be readable at some point during the current
@@ -66,11 +68,7 @@ class BuildAssetUriResolver extends UriResolver {
   /// This is not used within testing contexts or similar custom contexts.
   static final BuildAssetUriResolver sharedInstance = BuildAssetUriResolver();
 
-  /// Updates [resourceProvider] and the analysis driver given by
-  /// `withDriverResource`  with updated versions of [entryPoints].
-  ///
-  /// If [transitive], then all the transitive imports from [entryPoints] are
-  /// also updated.
+  @override
   Future<void> performResolve(
       BuildStep buildStep,
       List<AssetId> entryPoints,
@@ -186,12 +184,7 @@ class BuildAssetUriResolver extends UriResolver {
     return null;
   }
 
-  /// Attempts to parse [uri] into an [AssetId] and returns it if it is cached.
-  ///
-  /// Handles 'package:' or 'asset:' URIs, as well as 'file:' URIs that have the
-  /// same pattern used by [assetPath].
-  ///
-  /// Returns null if the Uri cannot be parsed or is not cached.
+  @override
   AssetId? lookupCachedAsset(Uri uri) {
     final assetId = parseAsset(uri);
     if (assetId == null || !_cachedAssetDigests.containsKey(assetId)) {
@@ -201,42 +194,17 @@ class BuildAssetUriResolver extends UriResolver {
     return assetId;
   }
 
+  @override
   void notifyComplete(BuildStep step) {
     _buildStepTransitivelyResolvedAssets.remove(step);
   }
 
-  /// Clear cached information specific to an individual build.
+  @override
   void reset() {
     assert(_buildStepTransitivelyResolvedAssets.isEmpty,
         'Reset was called before all build steps completed');
     globallySeenAssets.clear();
     _needsChangeFile.clear();
-  }
-
-  @override
-  Source? resolveAbsolute(Uri uri, [Uri? actualUri]) {
-    final assetId = parseAsset(uri);
-    if (assetId == null) return null;
-
-    var file = resourceProvider.getFile(assetPath(assetId));
-    return FileSource(file, assetId.uri);
-  }
-
-  @override
-  Uri pathToUri(String path) {
-    var pathSegments = p.posix.split(path);
-    var packageName = pathSegments[1];
-    if (pathSegments[2] == 'lib') {
-      return Uri(
-        scheme: 'package',
-        pathSegments: [packageName].followedBy(pathSegments.skip(3)),
-      );
-    } else {
-      return Uri(
-        scheme: 'asset',
-        pathSegments: [packageName].followedBy(pathSegments.skip(2)),
-      );
-    }
   }
 }
 

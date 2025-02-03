@@ -25,6 +25,7 @@ import 'package:pool/pool.dart';
 import 'package:yaml/yaml.dart';
 
 import 'analysis_driver.dart';
+import 'analysis_driver_model.dart';
 import 'build_asset_uri_resolver.dart';
 import 'sdk_summary.dart';
 import 'shared_resource_pool.dart';
@@ -142,7 +143,7 @@ class PerActionResolver implements ReleasableResolver {
           // in this step yet.
           await _step.trackStage(
               'Resolving library $id',
-              () => _delegate._uriResolver.performResolve(
+              () => _delegate._analysisDriverModel.performResolve(
                   _step,
                   [id],
                   // This does a "write" - it will result in
@@ -162,7 +163,7 @@ class PerActionResolver implements ReleasableResolver {
 
   @override
   void release() {
-    _delegate._uriResolver.notifyComplete(_step);
+    _delegate._analysisDriverModel.notifyComplete(_step);
     _delegate.release();
   }
 
@@ -172,7 +173,7 @@ class PerActionResolver implements ReleasableResolver {
 }
 
 class AnalyzerResolver implements ReleasableResolver {
-  final BuildAssetUriResolver _uriResolver;
+  final AnalysisDriverModel _analysisDriverModel;
   final AnalysisDriverForPackageBuild _driver;
   final Pool _driverPool;
   final SharedResourcePool _readAndWritePool;
@@ -180,7 +181,7 @@ class AnalyzerResolver implements ReleasableResolver {
   Future<List<LibraryElement>>? _sdkLibraries;
 
   AnalyzerResolver(this._driver, this._driverPool, this._readAndWritePool,
-      this._uriResolver);
+      this._analysisDriverModel);
 
   @override
   Future<bool> isLibrary(AssetId assetId) async {
@@ -292,7 +293,7 @@ class AnalyzerResolver implements ReleasableResolver {
 
     // Map from elements to absolute paths
     final paths = existingSources
-        .map((source) => _uriResolver.lookupCachedAsset(source.uri))
+        .map((source) => _analysisDriverModel.lookupCachedAsset(source.uri))
         .whereType<AssetId>() // filter out nulls
         .map(assetPath);
 
@@ -385,7 +386,8 @@ class AnalyzerResolvers implements Resolvers {
   // Lazy, all access must be preceded by a call to `_ensureInitialized`.
   late final AnalyzerResolver _resolver;
 
-  final BuildAssetUriResolver _uriResolver;
+  /// State supporting the analysis driver.
+  final AnalysisDriverModel _analysisDriverModel;
 
   /// Nullable, should not be accessed outside of [_ensureInitialized].
   Future<Result<void>>? _initialized;
@@ -410,14 +412,16 @@ class AnalyzerResolvers implements Resolvers {
     AnalysisOptions? analysisOptions,
     Future<String> Function()? sdkSummaryGenerator,
     PackageConfig? packageConfig,
-  }) =>
-      AnalyzerResolvers._(
-          analysisOptions: analysisOptions,
-          sdkSummaryGenerator: sdkSummaryGenerator,
-          packageConfig: packageConfig,
-          // Custom resolvers get their own asset uri resolver, as there should
-          // always be a 1:1 relationship between them.
-          uriResolver: BuildAssetUriResolver());
+  }) {
+    final buildAssetUriResolver = BuildAssetUriResolver();
+    return AnalyzerResolvers._(
+        analysisOptions: analysisOptions,
+        sdkSummaryGenerator: sdkSummaryGenerator,
+        packageConfig: packageConfig,
+        // Custom resolvers get their own asset uri resolver, as there should
+        // always be a 1:1 relationship between them.
+        analysisDriverModel: buildAssetUriResolver);
+  }
 
   /// See [AnalyzerResolvers.custom] for docs.
   @Deprecated('Use either the AnalyzerResolvers.custom constructor or the '
@@ -432,14 +436,14 @@ class AnalyzerResolvers implements Resolvers {
           sdkSummaryGenerator: sdkSummaryGenerator,
           packageConfig: packageConfig,
           // For backwards compatibility we use the shared instance here.
-          uriResolver: BuildAssetUriResolver.sharedInstance);
+          analysisDriverModel: BuildAssetUriResolver.sharedInstance);
 
   /// See [AnalyzerResolvers.custom] for docs.
   AnalyzerResolvers._({
     AnalysisOptions? analysisOptions,
     PackageConfig? packageConfig,
     Future<String> Function()? sdkSummaryGenerator,
-    required BuildAssetUriResolver uriResolver,
+    required AnalysisDriverModel analysisDriverModel,
   })  : _analysisOptions = analysisOptions ??
             (AnalysisOptionsImpl()
               ..contextFeatures =
@@ -447,11 +451,11 @@ class AnalyzerResolvers implements Resolvers {
         _packageConfig = packageConfig,
         _sdkSummaryGenerator =
             sdkSummaryGenerator ?? defaultSdkSummaryGenerator,
-        _uriResolver = uriResolver;
+        _analysisDriverModel = analysisDriverModel;
 
   /// The instance that most real build systems should use.
-  static final AnalyzerResolvers sharedInstance =
-      AnalyzerResolvers._(uriResolver: BuildAssetUriResolver.sharedInstance);
+  static final AnalyzerResolvers sharedInstance = AnalyzerResolvers._(
+      analysisDriverModel: BuildAssetUriResolver.sharedInstance);
 
   /// Create a Resolvers backed by an `AnalysisContext` using options
   /// [_analysisOptions].
@@ -460,11 +464,11 @@ class AnalyzerResolvers implements Resolvers {
       _warnOnLanguageVersionMismatch();
       final loadedConfig = _packageConfig ??=
           await loadPackageConfigUri((await Isolate.packageConfig)!);
-      var driver = await analysisDriver(_uriResolver, _analysisOptions,
+      var driver = await analysisDriver(_analysisDriverModel, _analysisOptions,
           await _sdkSummaryGenerator(), loadedConfig);
 
       _resolver = AnalyzerResolver(
-          driver, _driverPool, _readAndWritePool, _uriResolver);
+          driver, _driverPool, _readAndWritePool, _analysisDriverModel);
     }()));
   }
 
@@ -478,7 +482,7 @@ class AnalyzerResolvers implements Resolvers {
   /// Must be called between each build.
   @override
   void reset() {
-    _uriResolver.reset();
+    _analysisDriverModel.reset();
   }
 }
 

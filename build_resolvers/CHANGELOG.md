@@ -1,5 +1,8 @@
 ## 2.4.4-wip
 
+- Refactor `BuildAssetUriResolver` into `AnalysisDriverModel` and
+  `AnalysisDriverModelUriResolver`.
+
 ## 2.4.3
 
 - Require the latest analyzer, and stop passing the `withNullability`

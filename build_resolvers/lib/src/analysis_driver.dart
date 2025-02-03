@@ -12,13 +12,15 @@ import 'package:package_config/package_config.dart' show PackageConfig;
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
+import 'analysis_driver_model.dart';
+import 'analysis_driver_model_uri_resolver.dart';
 import 'build_asset_uri_resolver.dart';
 
 /// Builds an [AnalysisDriverForPackageBuild] backed by a summary SDK.
 ///
-/// Any code must be resolvable through [buildAssetUriResolver].
+/// Any code must be resolvable through [analysisDriverModel].
 Future<AnalysisDriverForPackageBuild> analysisDriver(
-  BuildAssetUriResolver buildAssetUriResolver,
+  AnalysisDriverModel analysisDriverModel,
   AnalysisOptions analysisOptions,
   String sdkSummaryPath,
   PackageConfig packageConfig,
@@ -27,12 +29,12 @@ Future<AnalysisDriverForPackageBuild> analysisDriver(
     analysisOptions: analysisOptions,
     packages: _buildAnalyzerPackages(
       packageConfig,
-      buildAssetUriResolver.resourceProvider,
+      analysisDriverModel.resourceProvider,
     ),
-    resourceProvider: buildAssetUriResolver.resourceProvider,
+    resourceProvider: analysisDriverModel.resourceProvider,
     sdkSummaryBytes: File(sdkSummaryPath).readAsBytesSync(),
     uriResolvers: [
-      buildAssetUriResolver,
+      AnalysisDriverModelUriResolver(analysisDriverModel),
     ],
   );
 }
