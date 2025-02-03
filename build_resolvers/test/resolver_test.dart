@@ -26,7 +26,9 @@ import 'package:test/test.dart';
 void main() {
   for (final resolversFactory in [
     BuildAssetUriResolversFactory(),
-    AnalysisDriverModelFactory()
+    SharedBuildAssetUriResolversFactory(),
+    AnalysisDriverModelFactory(),
+    SharedAnalysisDriverModelFactory()
   ]) {
     group('$resolversFactory', () {
       runTests(resolversFactory);
@@ -38,6 +40,7 @@ void runTests(ResolversFactory resolversFactory) {
   final entryPoint = AssetId('a', 'web/main.dart');
   Resolvers createResolvers({PackageConfig? packageConfig}) =>
       resolversFactory.create(packageConfig: packageConfig);
+  final isSharedResolvers = resolversFactory.isInstanceShared;
 
   test('should handle initial files', () {
     return resolveSources({
@@ -90,6 +93,147 @@ void runTests(ResolversFactory resolversFactory) {
             .single;
       expect(libB.getClass('Foo'), isNull);
     }, resolvers: createResolvers());
+  });
+
+  test('informs buildStep that transitive imports were read', () {
+    return resolveSources({
+      'a|web/main.dart': '''
+              import 'a.dart';
+              main() {
+              } ''',
+      'a|web/a.dart': '''
+              library a;
+              import 'b.dart';
+              ''',
+      'a|web/b.dart': '''
+              library b;
+              ''',
+    }, (resolver) async {
+      await resolver.libraryFor(entryPoint);
+    }, assetReaderChecks: (reader) {
+      expect(reader.assetsRead, {
+        AssetId('a', 'web/main.dart'),
+        AssetId('a', 'web/main.dart.transitive_digest'),
+        AssetId('a', 'web/a.dart'),
+        AssetId('a', 'web/a.dart.transitive_digest'),
+        AssetId('a', 'web/b.dart'),
+        AssetId('a', 'web/b.dart.transitive_digest'),
+      });
+    }, resolvers: createResolvers());
+  });
+
+  test('transitive_digest file cuts off deps reported to buildStep',
+      // This test requires a new resolvers instance.
+      skip: isSharedResolvers, () async {
+    // BuildAssetUriResolver cuts off a buildStep's deps tree if it encounters
+    // a `.transitive_digest` file, because that file stands in for the
+    // transitive deps from that point.
+    //
+    // But, the _first_ time it is reading files it continues to read them,
+    // because the analyzer still needs all the files. So the first build
+    // action will see all the files as deps.
+    final resolvers = createResolvers();
+    final sources = {
+      'a|web/main.dart': '''
+              import 'a.dart';
+              main() {
+              } ''',
+      'a|web/a.dart': '''
+              library a;
+              import 'b.dart';
+              ''',
+      'a|web/a.dart.transitive_digest': '''
+              library a;
+              import 'b.dart';
+              ''',
+      'a|web/b.dart': '''
+              library b;
+              ''',
+    };
+    // First action sees all the files as inputs.
+    await resolveSources(sources, (resolver) async {
+      await resolver.libraryFor(entryPoint);
+    }, assetReaderChecks: (reader) {
+      expect(reader.assetsRead, {
+        AssetId('a', 'web/main.dart'),
+        AssetId('a', 'web/main.dart.transitive_digest'),
+        AssetId('a', 'web/a.dart'),
+        AssetId('a', 'web/a.dart.transitive_digest'),
+        AssetId('a', 'web/b.dart'),
+        AssetId('a', 'web/b.dart.transitive_digest'),
+      });
+    }, resolvers: resolvers);
+    // Second action has inputs cut off at the `transitive_digest` file.
+    await resolveSources(sources, (resolver) async {
+      await resolver.libraryFor(entryPoint);
+    }, assetReaderChecks: (reader) {
+      expect(reader.assetsRead, {
+        AssetId('a', 'web/main.dart'),
+        AssetId('a', 'web/main.dart.transitive_digest'),
+        AssetId('a', 'web/a.dart'),
+        AssetId('a', 'web/a.dart.transitive_digest'),
+      });
+    }, resolvers: resolvers);
+  });
+
+  test('updates following a change to source', () async {
+    var resolvers = createResolvers();
+    await resolveSources({
+      'a|web/main.dart': '''
+              class A {}
+              ''',
+    }, (resolver) async {
+      var lib = await resolver.libraryFor(entryPoint);
+      expect(lib.getClass('A'), isNotNull);
+      expect(lib.getClass('B'), isNull);
+    }, resolvers: resolvers);
+
+    // Only allow changes to source between builds.
+    await _resetResolvers(resolvers);
+
+    await resolveSources({
+      'a|web/main.dart': '''
+              class B {}
+              ''',
+    }, (resolver) async {
+      var lib = await resolver.libraryFor(entryPoint);
+      expect(lib.getClass('A'), isNull);
+      expect(lib.getClass('B'), isNotNull);
+    }, resolvers: resolvers);
+  });
+
+  test('updates following a change to import graph', () async {
+    var resolvers = createResolvers();
+    await resolveSources({
+      'a|web/main.dart': '''
+              part 'main.part1.dart';
+              ''',
+      'a|web/main.part1.dart': '''
+              part of 'main.dart';
+              class A {}
+              ''',
+    }, (resolver) async {
+      var lib = await resolver.libraryFor(entryPoint);
+      expect(lib.getClass('A'), isNotNull);
+      expect(lib.getClass('B'), isNull);
+    }, resolvers: resolvers);
+
+    // Only allow changes to source between builds.
+    await _resetResolvers(resolvers);
+
+    await resolveSources({
+      'a|web/main.dart': '''
+              part 'main.part1.dart';
+              ''',
+      'a|web/main.part1.dart': '''
+              part of 'main.dart';
+              class B {}
+              ''',
+    }, (resolver) async {
+      var lib = await resolver.libraryFor(entryPoint);
+      expect(lib.getClass('A'), isNull);
+      expect(lib.getClass('B'), isNotNull);
+    }, resolvers: resolvers);
   });
 
   test('should still crawl transitively after a call to isLibrary', () {
@@ -340,16 +484,7 @@ void runTests(ResolversFactory resolversFactory) {
         expect(clazz.interfaces.first.getDisplayString(), 'B');
       }, resolvers: resolvers);
 
-      // `resolveSources` actually completes prior to the build step being
-      // done, which causes this `reset` call to fail. After a few microtasks
-      // it succeeds though.
-      var tries = 0;
-      while (tries++ < 5) {
-        await Future.value(null);
-        try {
-          resolvers.reset();
-        } catch (_) {}
-      }
+      await _resetResolvers(resolvers);
 
       await resolveSources({
         'a|web/main.dart': '''
@@ -953,26 +1088,76 @@ final _skipOnPreRelease =
         : null;
 
 abstract class ResolversFactory {
+  /// Whether [create] returns a shared instance that persists between tests.
+  bool get isInstanceShared;
   Resolvers create({PackageConfig? packageConfig});
 }
 
 class BuildAssetUriResolversFactory implements ResolversFactory {
+  @override
+  bool get isInstanceShared => false;
+
+  @override
+  Resolvers create({PackageConfig? packageConfig}) => AnalyzerResolvers.custom(
+      packageConfig: packageConfig,
+      analysisDriverModel: BuildAssetUriResolver());
+
+  @override
+  String toString() => 'Resolver';
+}
+
+class SharedBuildAssetUriResolversFactory implements ResolversFactory {
+  @override
+  bool get isInstanceShared => true;
+
   @override
   Resolvers create({PackageConfig? packageConfig}) => AnalyzerResolvers.custom(
       packageConfig: packageConfig,
       analysisDriverModel: BuildAssetUriResolver.sharedInstance);
 
   @override
-  String toString() => 'Resolver';
+  String toString() => 'Shared resolver';
 }
 
 class AnalysisDriverModelFactory implements ResolversFactory {
-  final AnalysisDriverModel sharedInstance = AnalysisDriverModel();
+  @override
+  bool get isInstanceShared => false;
 
   @override
   Resolvers create({PackageConfig? packageConfig}) => AnalyzerResolvers.custom(
-      packageConfig: packageConfig, analysisDriverModel: sharedInstance);
+      packageConfig: packageConfig, analysisDriverModel: AnalysisDriverModel());
 
   @override
   String toString() => 'New resolver';
+}
+
+class SharedAnalysisDriverModelFactory implements ResolversFactory {
+  static final AnalysisDriverModel sharedInstance = AnalysisDriverModel();
+
+  @override
+  bool get isInstanceShared => true;
+
+  @override
+  Resolvers create({PackageConfig? packageConfig}) {
+    final result = AnalyzerResolvers.custom(
+        packageConfig: packageConfig, analysisDriverModel: sharedInstance);
+    addTearDown(result.reset);
+    return result;
+  }
+
+  @override
+  String toString() => 'Shared new resolver';
+}
+
+Future<void> _resetResolvers(Resolvers resolvers) async {
+  // `resolveSources` actually completes prior to the build step being
+  // done, which causes this `reset` call to fail. After a few microtasks
+  // it succeeds though.
+  var tries = 0;
+  while (tries++ < 5) {
+    await Future.value(null);
+    try {
+      resolvers.reset();
+    } catch (_) {}
+  }
 }

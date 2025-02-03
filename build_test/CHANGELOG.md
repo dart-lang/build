@@ -1,5 +1,7 @@
 ## 2.2.4-wip
 
+- Support checks on reader state after a build acion in `resolveSources`.
+
 ## 2.2.3
 
 - Bump the min sdk to 3.6.0.
