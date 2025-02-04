@@ -412,16 +412,15 @@ class AnalyzerResolvers implements Resolvers {
     AnalysisOptions? analysisOptions,
     Future<String> Function()? sdkSummaryGenerator,
     PackageConfig? packageConfig,
-  }) {
-    final buildAssetUriResolver = BuildAssetUriResolver();
-    return AnalyzerResolvers._(
-        analysisOptions: analysisOptions,
-        sdkSummaryGenerator: sdkSummaryGenerator,
-        packageConfig: packageConfig,
-        // Custom resolvers get their own asset uri resolver, as there should
-        // always be a 1:1 relationship between them.
-        analysisDriverModel: buildAssetUriResolver);
-  }
+    AnalysisDriverModel? analysisDriverModel,
+  }) =>
+      AnalyzerResolvers._(
+          analysisOptions: analysisOptions,
+          sdkSummaryGenerator: sdkSummaryGenerator,
+          packageConfig: packageConfig,
+          // Custom resolvers get their own asset uri resolver by default as
+          // there should always be a 1:1 relationship between them.
+          analysisDriverModel: analysisDriverModel ?? BuildAssetUriResolver());
 
   /// See [AnalyzerResolvers.custom] for docs.
   @Deprecated('Use either the AnalyzerResolvers.custom constructor or the '

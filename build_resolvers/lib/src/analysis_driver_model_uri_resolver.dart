@@ -67,6 +67,7 @@ class AnalysisDriverModelUriResolver implements UriResolver {
     return null;
   }
 
+  /// Path of [assetId] for the in-memory filesystem.
   static String assetPath(AssetId assetId) =>
       p.posix.join('/${assetId.package}', assetId.path);
 }
