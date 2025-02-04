@@ -121,20 +121,25 @@ class AnalysisDriverModel {
   /// Walks the import graph from [ids], returns full transitive deps.
   Future<Set<AssetId>> _expandToTransitive(
       AssetReader reader, Iterable<AssetId> ids) async {
-    final result = <AssetId>{};
+    final result = ids.toSet();
     final nextIds = Queue.of(ids);
     while (nextIds.isNotEmpty) {
       final nextId = nextIds.removeFirst();
 
-      // Skip if already seen.
-      if (!result.add(nextId)) continue;
-
-      // Skip if not readable.
+      // Skip if not readable. Note that calling `canRead` still makes it a
+      // dependency of the `BuildStep`.
       if (!await reader.canRead(nextId)) continue;
 
       final content = await reader.readAsString(nextId);
       final deps = _parseDependencies(content, nextId);
-      nextIds.addAll(deps.where((id) => !result.contains(id)));
+
+      // For each dep, if it's not in `result` yet, it's newly-discovered:
+      // add it to `nextIds`.
+      for (final dep in deps) {
+        if (result.add(dep)) {
+          nextIds.add(dep);
+        }
+      }
     }
     return result;
   }
