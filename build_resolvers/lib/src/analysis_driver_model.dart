@@ -257,7 +257,7 @@ class _Graph {
 
       // For each dep, if it's not in `result` yet, it's newly-discovered:
       // add it to `nextIds`.
-      for (final dep in node.deps!) {
+      for (final dep in node.deps) {
         if (result.add(dep)) {
           nextIds.add(dep);
         }
