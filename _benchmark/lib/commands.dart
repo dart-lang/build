@@ -33,7 +33,7 @@ class CreateCommand extends Command<void> {
   Future<void> run() => _run(globalResults!);
 
   Future<void> _run(ArgResults globalResults) async {
-    final config = Config.fromArgResults(globalResults!);
+    final config = Config.fromArgResults(globalResults);
 
     for (final size in config.sizes) {
       final paddedSize = size.toString().padLeft(4, '0');
@@ -64,7 +64,7 @@ class MeasureCommand extends Command<void> {
 
   Future<void> _run(ArgResults globalResults) async {
     // Launch a benchmark at each size in parallel.
-    final config = Config.fromArgResults(globalResults!);
+    final config = Config.fromArgResults(globalResults);
     final pendingResults = <int, PendingResult>{};
     for (final size in config.sizes) {
       final paddedSize = size.toString().padLeft(4, '0');
