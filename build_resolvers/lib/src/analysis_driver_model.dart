@@ -116,7 +116,8 @@ class AnalysisDriverModel {
       idsToSyncOntoResourceProvider = _graph.nodes.keys.toList();
       inputIds = _graph.inputsFor(entryPoints);
 
-      // Check for missing inputs that were written during the build.
+      // Check for inputs that were missing when the directive graph was read
+      // but have since been written by another build action.
       for (final id in inputIds
           .where((id) => !id.path.endsWith(_transitiveDigestExtension))) {
         if (_graph.nodes[id]!.isMissing) {
@@ -203,6 +204,7 @@ class _Graph {
 
   /// Walks the import graph from [ids] loading into [nodes].
   Future<void> load(AssetReader reader, Iterable<AssetId> ids) async {
+    // TODO(davidmorgan): check if List is faster.
     final nextIds = Queue.of(ids);
     while (nextIds.isNotEmpty) {
       final nextId = nextIds.removeFirst();
