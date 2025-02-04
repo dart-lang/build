@@ -13,7 +13,6 @@ import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
 import 'analysis_driver_model.dart';
-import 'analysis_driver_model_uri_resolver.dart';
 import 'build_asset_uri_resolver.dart';
 
 /// Builds an [AnalysisDriverForPackageBuild] backed by a summary SDK.
@@ -29,12 +28,12 @@ Future<AnalysisDriverForPackageBuild> analysisDriver(
     analysisOptions: analysisOptions,
     packages: _buildAnalyzerPackages(
       packageConfig,
-      analysisDriverModel.resourceProvider,
+      analysisDriverModel.filesystem,
     ),
-    resourceProvider: analysisDriverModel.resourceProvider,
+    resourceProvider: analysisDriverModel.filesystem,
     sdkSummaryBytes: File(sdkSummaryPath).readAsBytesSync(),
     uriResolvers: [
-      AnalysisDriverModelUriResolver(analysisDriverModel),
+      analysisDriverModel.filesystem,
     ],
   );
 }
