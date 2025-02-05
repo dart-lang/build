@@ -43,11 +43,10 @@ class AnalysisDriverFilesystem implements UriResolver, ResourceProvider {
   ///
   /// Records the change in [changedPaths], only if the content actually
   /// changed.
-  bool writeFile(String path, String content) {
+  void writeFile(String path, String content) {
     final oldContent = _data[path];
     _data[path] = content;
     if (content != oldContent) _changedPaths.add(path);
-    return oldContent != content;
   }
 
   /// Paths that were modified by [deleteFile] or [writeFile] since the last
@@ -96,7 +95,6 @@ class AnalysisDriverFilesystem implements UriResolver, ResourceProvider {
   ///
   /// Returns null if the Uri cannot be parsed.
   static AssetId? parseAsset(Uri uri) {
-    if (const ['dart', 'dart-ext'].any(uri.isScheme)) return null;
     if (uri.isScheme('package') || uri.isScheme('asset')) {
       return AssetId.resolve(uri);
     }
