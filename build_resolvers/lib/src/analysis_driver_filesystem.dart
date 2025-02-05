@@ -157,6 +157,12 @@ class _Resource implements File, Folder {
   @override
   String readAsStringSync() => filesystem.read(path);
 
+  // `Folder` methods.
+
+  @override
+  bool contains(String path) =>
+      filesystem.pathContext.isWithin(this.path, path);
+
   // Most `File` and/or `Folder` methods are not needed.
 
   @override
