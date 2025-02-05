@@ -236,6 +236,38 @@ void runTests(ResolversFactory resolversFactory) {
     }, resolvers: resolvers);
   });
 
+  test('updates graph when a missing file appears during build', () async {
+    var resolvers = createResolvers();
+    var sources = {
+      'a|web/main.dart': '''
+              import 'b.dart';
+
+              class A implements C {}
+              ''',
+      'a|web/b.dart': '''
+              export 'c.dart';
+              ''',
+      'a|web/c.dart': '''
+              class C {}
+              ''',
+    };
+    var sourcesWithoutB = Map.of(sources)..remove('a|web/b.dart');
+    await resolveSources(sourcesWithoutB, (resolver) async {
+      var lib = await resolver.libraryFor(entryPoint);
+      var clazz = lib.getClass('A');
+      expect(clazz, isNotNull);
+      expect(clazz!.interfaces, isEmpty);
+    }, resolvers: resolvers);
+
+    await resolveSources(sources, (resolver) async {
+      var lib = await resolver.libraryFor(entryPoint);
+      var clazz = lib.getClass('A');
+      expect(clazz, isNotNull);
+      expect(clazz!.interfaces, hasLength(1));
+      expect(clazz.interfaces.first.getDisplayString(), 'C');
+    }, resolvers: resolvers);
+  });
+
   test('should still crawl transitively after a call to isLibrary', () {
     return resolveSources({
       'a|web/main.dart': '''

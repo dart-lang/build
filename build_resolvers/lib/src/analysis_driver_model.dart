@@ -112,21 +112,10 @@ class AnalysisDriverModel {
 
     // If requested, find transitive imports.
     if (transitive) {
-      await _graph.load(buildStep, entryPoints);
+      final previouslyMissingFiles = await _graph.load(buildStep, entryPoints);
+      _syncedOntoResourceProvider.removeAll(previouslyMissingFiles);
       idsToSyncOntoResourceProvider = _graph.nodes.keys.toList();
       inputIds = _graph.inputsFor(entryPoints);
-
-      // Check for inputs that were missing when the directive graph was read
-      // but have since been written by another build action.
-      for (final id in inputIds
-          .where((id) => !id.path.endsWith(_transitiveDigestExtension))) {
-        if (_graph.nodes[id]!.isMissing) {
-          if (await buildStep.canRead(id)) {
-            idsToSyncOntoResourceProvider.add(id);
-            _syncedOntoResourceProvider.remove(id);
-          }
-        }
-      }
     }
 
     // Notify [buildStep] of its inputs.
@@ -203,33 +192,50 @@ class _Graph {
   final Map<AssetId, _Node> nodes = {};
 
   /// Walks the import graph from [ids] loading into [nodes].
-  Future<void> load(AssetReader reader, Iterable<AssetId> ids) async {
+  ///
+  /// Checks files that are in the graph as missing to determine whether they
+  /// are now available.
+  ///
+  /// Returns the set of files that were in the graph as missing and have now
+  /// been loaded.
+  Future<Set<AssetId>> load(AssetReader reader, Iterable<AssetId> ids) async {
     // TODO(davidmorgan): check if List is faster.
     final nextIds = Queue.of(ids);
+    final processed = <AssetId>{};
+    final previouslyMissingFiles = <AssetId>{};
     while (nextIds.isNotEmpty) {
-      final nextId = nextIds.removeFirst();
+      final id = nextIds.removeFirst();
 
-      // Skip if already seen.
-      if (nodes.containsKey(nextId)) continue;
+      if (!processed.add(id)) continue;
 
-      final hasTransitiveDigestAsset =
-          await reader.canRead(nextId.addExtension(_transitiveDigestExtension));
-
-      // Skip if not readable.
-      if (!await reader.canRead(nextId)) {
-        nodes[nextId] = _Node.missing(
-            id: nextId, hasTransitiveDigestAsset: hasTransitiveDigestAsset);
-        continue;
+      // Read nodes not yet loaded or that were missing when loaded.
+      var node = nodes[id];
+      if (node == null || node.isMissing) {
+        if (await reader.canRead(id)) {
+          // If it was missing when loaded, record that.
+          if (node != null && node.isMissing) {
+            previouslyMissingFiles.add(id);
+          }
+          // Load the node.
+          final hasTransitiveDigestAsset =
+              await reader.canRead(id.addExtension(_transitiveDigestExtension));
+          final content = await reader.readAsString(id);
+          final deps = _parseDependencies(content, id);
+          node = _Node(
+              id: id,
+              deps: deps,
+              hasTransitiveDigestAsset: hasTransitiveDigestAsset);
+        } else {
+          node ??= _Node.missing(id: id, hasTransitiveDigestAsset: false);
+        }
+        nodes[id] = node;
       }
 
-      final content = await reader.readAsString(nextId);
-      final deps = _parseDependencies(content, nextId);
-      nodes[nextId] = _Node(
-          id: nextId,
-          deps: deps,
-          hasTransitiveDigestAsset: hasTransitiveDigestAsset);
-      nextIds.addAll(deps.where((id) => !nodes.containsKey(id)));
+      // Continue to deps even for already-loaded nodes, to check missing files.
+      nextIds.addAll(node.deps.where((id) => !processed.contains(id)));
     }
+
+    return previouslyMissingFiles;
   }
 
   void clear() {
