@@ -204,31 +204,31 @@ class _Graph {
     final processed = <AssetId>{};
     final previouslyMissingFiles = <AssetId>{};
     while (nextIds.isNotEmpty) {
-      final nextId = nextIds.removeFirst();
+      final id = nextIds.removeFirst();
 
-      if (!processed.add(nextId)) continue;
+      if (!processed.add(id)) continue;
 
       // Read nodes not yet loaded or that were missing when loaded.
-      var node = nodes[nextId];
+      var node = nodes[id];
       if (node == null || node.isMissing) {
-        if (await reader.canRead(nextId)) {
+        if (await reader.canRead(id)) {
           // If it was missing when loaded, record that.
           if (node != null && node.isMissing) {
-            previouslyMissingFiles.add(nextId);
+            previouslyMissingFiles.add(id);
           }
           // Load the node.
-          final hasTransitiveDigestAsset = await reader
-              .canRead(nextId.addExtension(_transitiveDigestExtension));
-          final content = await reader.readAsString(nextId);
-          final deps = _parseDependencies(content, nextId);
+          final hasTransitiveDigestAsset =
+              await reader.canRead(id.addExtension(_transitiveDigestExtension));
+          final content = await reader.readAsString(id);
+          final deps = _parseDependencies(content, id);
           node = _Node(
-              id: nextId,
+              id: id,
               deps: deps,
               hasTransitiveDigestAsset: hasTransitiveDigestAsset);
         } else {
-          node ??= _Node.missing(id: nextId, hasTransitiveDigestAsset: false);
+          node ??= _Node.missing(id: id, hasTransitiveDigestAsset: false);
         }
-        nodes[nextId] = node;
+        nodes[id] = node;
       }
 
       // Continue to deps even for already-loaded nodes, to check missing files.
