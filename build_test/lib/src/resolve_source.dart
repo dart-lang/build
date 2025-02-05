@@ -114,12 +114,16 @@ Future<T> resolveSource<T>(
 /// **NOTE**: All `package` dependencies are resolved using [PackageAssetReader]
 /// - by default, [PackageAssetReader.currentIsolate]. A custom [packageConfig]
 /// may be provided to map files not visible to the current package's runtime.
+///
+/// [assetReaderChecks], if provided, runs after the action completes and can be
+/// used to add expectations on the reader state.
 Future<T> resolveSources<T>(
   Map<String, String> inputs,
   FutureOr<T> Function(Resolver resolver) action, {
   PackageConfig? packageConfig,
   String? resolverFor,
   String? rootPackage,
+  FutureOr<void> Function(InMemoryAssetReader)? assetReaderChecks,
   Future<void>? tearDown,
   Resolvers? resolvers,
 }) {
@@ -132,6 +136,7 @@ Future<T> resolveSources<T>(
     action,
     packageConfig: packageConfig,
     resolverFor: AssetId.parse(resolverFor ?? inputs.keys.first),
+    assetReaderChecks: assetReaderChecks,
     tearDown: tearDown,
     resolvers: resolvers,
   );
@@ -169,6 +174,7 @@ Future<T> _resolveAssets<T>(
   FutureOr<T> Function(Resolver resolver) action, {
   PackageConfig? packageConfig,
   AssetId? resolverFor,
+  FutureOr<void> Function(InMemoryAssetReader)? assetReaderChecks,
   Future<void>? tearDown,
   Resolvers? resolvers,
 }) async {
@@ -215,7 +221,11 @@ Future<T> _resolveAssets<T>(
     InMemoryAssetWriter(),
     resolvers,
   ).catchError((_) {}));
-  return resolveBuilder.onDone.future;
+  final result = await resolveBuilder.onDone.future;
+  if (assetReaderChecks != null) {
+    await assetReaderChecks(inMemory);
+  }
+  return result;
 }
 
 /// A [Builder] that is only used to retrieve a [Resolver] instance.
