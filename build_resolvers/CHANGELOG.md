@@ -3,6 +3,7 @@
 - Refactor `BuildAssetUriResolver` into `AnalysisDriverModel` and
   `AnalysisDriverModelUriResolver`. Add new implementation of
   `AnalysisDriverModel`.
+- Make resolver only throw `SyntaxErrorInAssetException` on severe syntax errors
 
 ## 2.4.3
 
