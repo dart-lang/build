@@ -8,7 +8,6 @@ import 'dart:isolate';
 
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/file_system/memory_file_system.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart' show AssetId, BuildStep;
@@ -16,8 +15,8 @@ import 'package:collection/collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
-import 'package:stream_transform/stream_transform.dart';
 
+import 'analysis_driver_filesystem.dart';
 import 'analysis_driver_model.dart';
 
 const _ignoredSchemes = ['dart', 'dart-ext'];
@@ -38,12 +37,8 @@ class BuildAssetUriResolver implements AnalysisDriverModel {
   /// changed.
   final _cachedAssetDigests = <AssetId, Digest>{};
 
-  /// Asset paths which have been updated in [resourceProvider] but not yet
-  /// updated in the analysis driver.
-  final _needsChangeFile = HashSet<String>();
-
   @override
-  final resourceProvider = MemoryResourceProvider(context: p.posix);
+  final filesystem = AnalysisDriverFilesystem();
 
   /// The assets which are known to be readable at some point during the current
   /// build.
@@ -81,32 +76,32 @@ class BuildAssetUriResolver implements AnalysisDriverModel {
     bool notCrawled(AssetId asset) => !transitivelyResolved.contains(asset);
 
     final uncrawledIds = entryPoints.where(notCrawled);
-    final assetStates = transitive
-        ? await crawlAsync<AssetId, _AssetState?>(
-            uncrawledIds,
-            (id) => _updateCachedAssetState(id, buildStep,
-                transitivelyResolved: transitivelyResolved), (id, state) async {
-            if (state == null) return const [];
-            // Establishes a dependency on the transitive deps digest.
-            final hasTransitiveDigestAsset = await buildStep
-                .canRead(id.addExtension(transitiveDigestExtension));
-            return hasTransitiveDigestAsset
-                // Only crawl assets that we haven't yet loaded into the
-                // analyzer if we are using transitive digests for invalidation.
-                ? state.dependencies.whereNot(_cachedAssetDigests.containsKey)
-                // Otherwise fall back on crawling all source deps.
-                : state.dependencies.where(notCrawled);
-          }).whereType<_AssetState>().toList()
-        : [
-            for (final id in uncrawledIds)
-              (await _updateCachedAssetState(id, buildStep))!
-          ];
-    await withDriverResource((driver) async {
-      for (final state in assetStates) {
-        if (_needsChangeFile.remove(state.path)) {
-          driver.changeFile(state.path);
-        }
+    if (transitive) {
+      await crawlAsync<AssetId, _AssetState?>(
+          uncrawledIds,
+          (id) => _updateCachedAssetState(id, buildStep,
+              transitivelyResolved: transitivelyResolved), (id, state) async {
+        if (state == null) return const [];
+        // Establishes a dependency on the transitive deps digest.
+        final hasTransitiveDigestAsset =
+            await buildStep.canRead(id.addExtension(transitiveDigestExtension));
+        return hasTransitiveDigestAsset
+            // Only crawl assets that we haven't yet loaded into the
+            // analyzer if we are using transitive digests for invalidation.
+            ? state.dependencies.whereNot(_cachedAssetDigests.containsKey)
+            // Otherwise fall back on crawling all source deps.
+            : state.dependencies.where(notCrawled);
+      }).drain<void>();
+    } else {
+      for (final id in uncrawledIds) {
+        await _updateCachedAssetState(id, buildStep);
       }
+    }
+    await withDriverResource((driver) async {
+      for (final path in filesystem.changedPaths) {
+        driver.changeFile(path);
+      }
+      filesystem.clearChangedPaths();
       await driver.applyPendingFileChanges();
     });
   }
@@ -134,10 +129,7 @@ class BuildAssetUriResolver implements AnalysisDriverModel {
       }
       _cachedAssetState.remove(id);
       _cachedAssetDigests.remove(id);
-      if (resourceProvider.getFile(path).exists) {
-        resourceProvider.deleteFile(path);
-        _needsChangeFile.add(path);
-      }
+      filesystem.deleteFile(path);
       return _AssetState(path, const {});
     }
     globallySeenAssets.add(id);
@@ -148,19 +140,13 @@ class BuildAssetUriResolver implements AnalysisDriverModel {
     if (cachedAsset == digest) {
       return _cachedAssetState[id];
     } else {
-      final isChange = cachedAsset != null;
       final content = await buildStep.readAsString(id);
       if (_cachedAssetDigests[id] == digest) {
         // Cache may have been updated while reading asset content
         return _cachedAssetState[id];
       }
-      if (isChange) {
-        resourceProvider.modifyFile(path, content);
-      } else {
-        resourceProvider.newFile(path, content);
-      }
+      filesystem.writeFile(path, content);
       _cachedAssetDigests[id] = digest;
-      _needsChangeFile.add(path);
       return _cachedAssetState[id] =
           _AssetState(path, _parseDependencies(content, id));
     }
@@ -204,7 +190,6 @@ class BuildAssetUriResolver implements AnalysisDriverModel {
     assert(_buildStepTransitivelyResolvedAssets.isEmpty,
         'Reset was called before all build steps completed');
     globallySeenAssets.clear();
-    _needsChangeFile.clear();
   }
 }
 
