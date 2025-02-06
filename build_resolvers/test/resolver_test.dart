@@ -739,6 +739,23 @@ int? get x => 1;
           );
         });
       });
+      test('are only reported if severe', () {
+        return resolveSources({
+          'a|errors.dart': '''
+            /// {@code }
+            class A{}
+          ''',
+        }, (resolver) async {
+          await expectLater(
+            resolver.libraryFor(AssetId.parse('a|errors.dart')),
+            completion(isNotNull),
+          );
+          await expectLater(
+            resolver.compilationUnitFor(AssetId.parse('a|errors.dart')),
+            completion(isNotNull),
+          );
+        });
+      });
 
       test('are reported for part files with errors', () {
         return resolveSources({
