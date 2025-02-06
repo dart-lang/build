@@ -58,10 +58,22 @@ class AnalysisDriverFilesystem implements UriResolver, ResourceProvider {
 
   // `UriResolver` methods.
 
+  /// Converts [path] to [Uri].
+  ///
+  /// [path] must be absolute and matches one of two formats:
+  ///
+  /// ```
+  /// /<package>/lib/<rest> --> package:<package>/<rest>
+  /// /<package>/<rest> --> asset:<package>/<rest>
+  /// ```
   @override
   Uri pathToUri(String path) {
-    var pathSegments = p.posix.split(path);
-    var packageName = pathSegments[1];
+    if (!path.startsWith('/')) {
+      throw ArgumentError.value('path', path, 'Must start with "/". ');
+    }
+    final pathSegments = path.split('/');
+    // First segment is empty because of the starting `/`.
+    final packageName = pathSegments[1];
     if (pathSegments[2] == 'lib') {
       return Uri(
         scheme: 'package',
@@ -86,7 +98,7 @@ class AnalysisDriverFilesystem implements UriResolver, ResourceProvider {
 
   /// Path of [assetId] for the in-memory filesystem.
   static String assetPath(AssetId assetId) =>
-      p.posix.join('/${assetId.package}', assetId.path);
+      '/${assetId.package}/${assetId.path}';
 
   /// Attempts to parse [uri] into an [AssetId].
   ///
@@ -99,8 +111,14 @@ class AnalysisDriverFilesystem implements UriResolver, ResourceProvider {
       return AssetId.resolve(uri);
     }
     if (uri.isScheme('file')) {
-      final parts = p.split(uri.path);
-      return AssetId(parts[1], p.posix.joinAll(parts.skip(2)));
+      if (!uri.path.startsWith('/')) {
+        throw ArgumentError.value(
+            'uri.path', uri.path, 'Must start with "/". ');
+      }
+      final parts = uri.path.split('/');
+      // First part is empty because of the starting `/`, second is package,
+      // remainder is path in package.
+      return AssetId(parts[1], parts.skip(2).join('/'));
     }
     return null;
   }
