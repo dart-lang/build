@@ -2,6 +2,8 @@
 
 - Update to package:web and dart:js_interop.
 - Support the latest `package:shelf_web_socket`.
+- Add hidden `--use-experimental-resolver` flag for issue #3811 performance
+  work. This flag will be removed.
 
 ## 2.4.14
 
