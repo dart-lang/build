@@ -51,6 +51,15 @@ void runTests(ResolversFactory resolversFactory) {
     }, resolvers: createResolvers());
   });
 
+  test('provides access to source', () {
+    return resolveSources({
+      'a|web/main.dart': ' main() {}',
+    }, (resolver) async {
+      var lib = await resolver.libraryFor(entryPoint);
+      expect(lib.definingCompilationUnit.source.contents.data, ' main() {}');
+    }, resolvers: createResolvers());
+  });
+
   test('should follow imports', () {
     return resolveSources({
       'a|web/main.dart': '''
