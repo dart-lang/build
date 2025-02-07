@@ -156,12 +156,15 @@ class _Resource implements File, Folder {
 
   _Resource(this.filesystem, this.path);
 
+// `File` and `Folder` methods.
+
   @override
   bool get exists => filesystem.exists(path);
 
   @override
   String get shortName => filesystem.pathContext.basename(path);
 
+  // `File` methods.
   @override
   Uint8List readAsBytesSync() {
     // TODO(davidmorgan): the analyzer reads as bytes in `FileContentCache`
@@ -172,6 +175,15 @@ class _Resource implements File, Folder {
 
   @override
   String readAsStringSync() => filesystem.read(path);
+
+  // Analyzer methods such as `CompilationUnitElement.source` provide access to
+  // source and return a `TimestampedData` with this value.
+  //
+  // `build_runner` explicitly notifies the analyzer of changes, so it's not
+  // needed for analysis; and generators should not try to determine which files
+  // were modified since the last run. So, just return zero.
+  @override
+  int get modificationStamp => 0;
 
   // `Folder` methods.
 
