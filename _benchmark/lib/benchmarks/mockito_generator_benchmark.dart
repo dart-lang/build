@@ -40,17 +40,12 @@ ${config.dependencyOverrides}
 ''',
     );
 
-    final appLines = ['// ignore_for_file: unused_import', '// CACHEBUSTER'];
-    for (var libraryNumber = 0; libraryNumber != size; ++libraryNumber) {
-      final libraryName = Benchmarks.libraryName(
-        libraryNumber,
-        benchmarkSize: size,
-      );
-      appLines.add("import '$libraryName';");
-    }
     workspace.write(
       'lib/app.dart',
-      source: appLines.map((l) => '$l\n').join(''),
+      source: '''
+/// ignore_for_file: unused_import
+/// CACHEBUSTER
+''',
     );
 
     for (var testNumber = 0; testNumber != size; ++testNumber) {
@@ -81,11 +76,15 @@ ${config.dependencyOverrides}
         libraryNumber,
         benchmarkSize: size,
       );
+      final importNames = config.shape.importNames(
+        libraryNumber,
+        benchmarkSize: size,
+      );
       workspace.write(
         'lib/$libraryName',
         source: '''
 // ignore_for_file: unused_import
-import 'app.dart';
+${[for (final importName in importNames) "import '$importName';"].join('\n')}
 
 class Service$libraryNumber {
   void doSomething(int value) {}
