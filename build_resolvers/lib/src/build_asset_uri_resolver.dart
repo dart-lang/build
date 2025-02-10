@@ -23,6 +23,12 @@ const _ignoredSchemes = ['dart', 'dart-ext'];
 
 const transitiveDigestExtension = '.transitive_digest';
 
+/// Switches [BuildAssetUriResolver.sharedInstance] from [BuildAssetUriResolver]
+/// to [AnalysisDriverModel].
+void useExperimentalResolver() {
+  BuildAssetUriResolver._sharedInstance = AnalysisDriverModel();
+}
+
 class BuildAssetUriResolver implements AnalysisDriverModel {
   /// A cache of the directives for each Dart library.
   ///
@@ -61,7 +67,12 @@ class BuildAssetUriResolver implements AnalysisDriverModel {
   /// what should be used by normal builds.
   ///
   /// This is not used within testing contexts or similar custom contexts.
-  static final BuildAssetUriResolver sharedInstance = BuildAssetUriResolver();
+  static AnalysisDriverModel get sharedInstance => _sharedInstance;
+  static AnalysisDriverModel _sharedInstance = _sharedUriResolverInstance;
+  // Keep a [BuildAssetUriResolver] instance even if [useExperimentalResolver]
+  // is called, for [dependenciesOf].
+  static final BuildAssetUriResolver _sharedUriResolverInstance =
+      BuildAssetUriResolver();
 
   @override
   Future<void> performResolve(
@@ -219,9 +230,11 @@ Set<AssetId> _parseDependencies(String content, AssetId from) => HashSet.of(
 
 /// Read the (potentially) cached dependencies of [id] based on parsing the
 /// directives, and cache the results if they weren't already cached.
+///
+/// TODO(davidmorgan): remove this or make it use `AnalysisDriverModel`.
 Future<Iterable<AssetId>?> dependenciesOf(
         AssetId id, BuildStep buildStep) async =>
-    (await BuildAssetUriResolver.sharedInstance
+    (await BuildAssetUriResolver._sharedUriResolverInstance
             ._updateCachedAssetState(id, buildStep))
         ?.dependencies;
 

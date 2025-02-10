@@ -4,6 +4,8 @@
   `AnalysisDriverFilesystem`. Add new implementation of
   `AnalysisDriverModel`.
 - Make resolver only throw `SyntaxErrorInAssetException` on severe syntax errors
+- Add `BuildAssetUriResolver.useExperimentalResolver` for
+  `--use-experimental-resolver` flag. This will be removed.
 
 ## 2.4.3
 

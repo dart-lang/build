@@ -5,6 +5,9 @@
 import 'dart:async';
 
 import 'package:build/experiments.dart';
+// ignore: implementation_imports
+import 'package:build_resolvers/src/build_asset_uri_resolver.dart'
+    as uri_resolver;
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:io/io.dart';
 
@@ -46,6 +49,10 @@ class WatchCommand extends BuildRunnerCommand {
   }
 
   Future<int> _run(WatchOptions options) async {
+    // TODO(davidmorgan): remove when experiment is over.
+    if (options.useExperimentalResolver) {
+      uri_resolver.useExperimentalResolver();
+    }
     var handler = await watch(
       builderApplications,
       deleteFilesByDefault: options.deleteFilesByDefault,
