@@ -60,10 +60,12 @@ class Workspace {
       'build_runner',
       'build',
       '-d',
+      if (config.useExperimentalResolver) '--use-experimental-resolver',
     ], workingDirectory: directory.path);
     var exitCode = await process.exitCode;
-    result.cleanBuildTime = stopwatch.elapsed;
-    if (exitCode != 0) {
+    if (exitCode == 0) {
+      result.cleanBuildTime = stopwatch.elapsed;
+    } else {
       final stdout = await process.stdout.transform(utf8.decoder).join();
       final stderr = await process.stderr.transform(utf8.decoder).join();
       result.failure = 'Initial build failed:\n$stdout\n$stderr';
@@ -77,10 +79,12 @@ class Workspace {
       'build_runner',
       'build',
       '-d',
+      if (config.useExperimentalResolver) '--use-experimental-resolver',
     ], workingDirectory: directory.path);
     exitCode = await process.exitCode;
-    result.noChangesBuildTime = stopwatch.elapsed;
-    if (exitCode != 0) {
+    if (exitCode == 0) {
+      result.noChangesBuildTime = stopwatch.elapsed;
+    } else {
       final stdout = await process.stdout.transform(utf8.decoder).join();
       final stderr = await process.stderr.transform(utf8.decoder).join();
       result.failure = 'No changes build failed:\n$stdout\n$stderr';
@@ -95,10 +99,12 @@ class Workspace {
       'build_runner',
       'build',
       '-d',
+      if (config.useExperimentalResolver) '--use-experimental-resolver',
     ], workingDirectory: directory.path);
     exitCode = await process.exitCode;
-    result.incrementalBuildTime = stopwatch.elapsed;
-    if (exitCode != 0) {
+    if (exitCode == 0) {
+      result.incrementalBuildTime = stopwatch.elapsed;
+    } else {
       final stdout = await process.stdout.transform(utf8.decoder).join();
       final stderr = await process.stderr.transform(utf8.decoder).join();
       result.failure = 'Incremental build failed:\n$stdout\n$stderr';
@@ -117,6 +123,7 @@ class PendingResult {
   String? failure;
 
   bool get isFailure => failure != null;
+
   bool get isSuccess =>
       !isFailure &&
       cleanBuildTime != null &&

@@ -38,17 +38,12 @@ ${config.dependencyOverrides}
 ''',
     );
 
-    final appLines = ['// ignore_for_file: unused_import', '// CACHEBUSTER'];
-    for (var libraryNumber = 0; libraryNumber != size; ++libraryNumber) {
-      final libraryName = Benchmarks.libraryName(
-        libraryNumber,
-        benchmarkSize: size,
-      );
-      appLines.add("import '$libraryName';");
-    }
     workspace.write(
       'lib/app.dart',
-      source: appLines.map((l) => '$l\n').join(''),
+      source: '''
+/// ignore_for_file: unused_import
+/// CACHEBUSTER
+''',
     );
 
     for (var libraryNumber = 0; libraryNumber != size; ++libraryNumber) {
@@ -61,13 +56,17 @@ ${config.dependencyOverrides}
         benchmarkSize: size,
         infix: 'freezed',
       );
+      final importNames = config.shape.importNames(
+        libraryNumber,
+        benchmarkSize: size,
+      );
       workspace.write(
         'lib/$libraryName',
         source: '''
 // ignore_for_file: unused_import
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import 'app.dart';
+${[for (final importName in importNames) "import '$importName';"].join('\n')}
 
 part '$partName';
 
