@@ -82,6 +82,24 @@ void runTests(ResolversFactory resolversFactory) {
     }, resolvers: createResolvers());
   });
 
+  test('does not stack overflow on long import chain', () {
+    return resolveSources(
+      {
+        'a|web/main.dart': '''
+              import 'lib0.dart';
+
+              main() {
+              } ''',
+        for (var i = 0; i != 750; ++i)
+          'a|web/lib$i.dart': i == 749 ? '' : 'import "lib${i + 1}.dart";',
+      },
+      (resolver) async {
+        await resolver.libraryFor(entryPoint);
+      },
+      resolvers: createResolvers(),
+    );
+  });
+
   test('should follow package imports', () {
     return resolveSources({
       'a|web/main.dart': '''
