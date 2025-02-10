@@ -13,11 +13,11 @@ import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart' show AssetId, BuildStep;
 import 'package:collection/collection.dart';
 import 'package:crypto/crypto.dart';
-import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 
 import 'analysis_driver_filesystem.dart';
 import 'analysis_driver_model.dart';
+import 'crawl_async.dart';
 
 const _ignoredSchemes = ['dart', 'dart-ext'];
 
