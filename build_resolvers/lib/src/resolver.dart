@@ -12,6 +12,7 @@ import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:analyzer/error/error.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
@@ -238,7 +239,8 @@ class AnalyzerResolver implements ReleasableResolver {
 
       var parsedResult =
           _driver.currentSession.getParsedUnit(path) as ParsedUnitResult;
-      if (!allowSyntaxErrors && parsedResult.errors.isNotEmpty) {
+      if (!allowSyntaxErrors &&
+          parsedResult.errors.any((e) => e.severity == Severity.error)) {
         throw SyntaxErrorInAssetException(assetId, [parsedResult]);
       }
       return parsedResult.unit;
