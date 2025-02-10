@@ -1,6 +1,7 @@
-## 2.4.15-wip
+## 2.4.15
 
 - Update to package:web and dart:js_interop.
+- Support the latest `package:shelf_web_socket`.
 
 ## 2.4.14
 

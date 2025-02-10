@@ -1,3 +1,7 @@
+## 4.0.4
+
+- Support the latest `package:shelf_web_socket`.
+
 ## 4.0.3
 
 - Bump the min sdk to 3.6.0.
