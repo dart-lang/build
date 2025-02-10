@@ -198,8 +198,10 @@ class ServeHandler implements BuildState {
 /// build updates
 class BuildUpdatesWebSocketHandler {
   final connectionsByRootDir = <String, List<WebSocketChannel>>{};
-  final shelf.Handler Function(Function, {Iterable<String> protocols})
-      _handlerFactory;
+  final shelf.Handler Function(
+    void Function(WebSocketChannel webSocket, String? subprotocol), {
+    Iterable<String> protocols,
+  }) _handlerFactory;
   final _internalHandlers = <String, shelf.Handler>{};
   final WatchImpl _state;
 
@@ -208,7 +210,7 @@ class BuildUpdatesWebSocketHandler {
 
   shelf.Handler createHandlerByRootDir(String rootDir) {
     if (!_internalHandlers.containsKey(rootDir)) {
-      void closureForRootDir(WebSocketChannel webSocket, String protocol) =>
+      void closureForRootDir(WebSocketChannel webSocket, String? protocol) =>
           _handleConnection(webSocket, protocol, rootDir);
       _internalHandlers[rootDir] = _handlerFactory(closureForRootDir,
           protocols: [_buildUpdatesProtocol]);
@@ -239,7 +241,7 @@ class BuildUpdatesWebSocketHandler {
   }
 
   void _handleConnection(
-      WebSocketChannel webSocket, String protocol, String rootDir) async {
+      WebSocketChannel webSocket, String? protocol, String rootDir) async {
     var connections = connectionsByRootDir.putIfAbsent(rootDir, () => [])
       ..add(webSocket);
     await webSocket.stream.drain<void>();
