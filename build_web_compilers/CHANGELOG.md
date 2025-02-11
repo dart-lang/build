@@ -1,4 +1,4 @@
-## 4.1.2-dev
+## 4.1.2-wip
 
 - Use support-detection scripts emitted by `dart2wasm`.
 

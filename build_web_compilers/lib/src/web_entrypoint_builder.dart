@@ -329,9 +329,7 @@ class WebEntrypointBuilder implements Builder {
       AssetId input, Dart2WasmBootstrapResult? dart2WasmResult) {
     var loaderExtension = options.loaderExtension;
     var wasmCompiler = options.optionsFor(WebCompiler.Dart2Wasm);
-    if (loaderExtension == null ||
-        wasmCompiler == null ||
-        dart2WasmResult == null) {
+    if (loaderExtension == null || wasmCompiler == null) {
       // Generating the loader has been disabled or no loader is necessary.
       return null;
     }
@@ -357,7 +355,7 @@ function relativeURL(ref) {
     // If we're compiling to JS, start a feature detection to prefer wasm but
     // fall back to JS if necessary.
     if (jsCompiler != null) {
-      final supportCheck = dart2WasmResult.supportExpression ??
+      final supportCheck = dart2WasmResult?.supportExpression ??
           "'WebAssembly' in self && "
               'WebAssembly.validate(new Uint8Array('
               '[0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 95, 1, 120, 0]));';
