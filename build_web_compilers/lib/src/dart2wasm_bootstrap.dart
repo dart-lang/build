@@ -17,20 +17,28 @@ import 'web_entrypoint_builder.dart';
 
 final _resourcePool = Pool(maxWorkersPerTask);
 
+/// Result of invoking the `dart2wasm` compiler.
+///
+/// The `supportExpression` is an optional JavaScript expressions emitted by
+/// newer versions of the compiler. It can be evaluated as part of a loader
+/// script to determine whether the current JavaScript environment supports
+/// `dart2wasm`.
+typedef Dart2WasmBootstrapResult = ({String? supportExpression});
+
 /// Invokes `dart compile wasm` to compile the primary input of [buildStep].
 ///
 /// This only emits the `.wasm` and `.mjs` files produced by `dart2wasm`. An
 /// entrypoint loader needs to be emitted separately.
-Future<void> bootstrapDart2Wasm(
+Future<Dart2WasmBootstrapResult?> bootstrapDart2Wasm(
   BuildStep buildStep,
   List<String> additionalArguments,
   String javaScriptModuleExtension,
 ) async {
-  await _resourcePool.withResource(() => _bootstrapDart2Wasm(
+  return await _resourcePool.withResource(() => _bootstrapDart2Wasm(
       buildStep, additionalArguments, javaScriptModuleExtension));
 }
 
-Future<void> _bootstrapDart2Wasm(
+Future<Dart2WasmBootstrapResult?> _bootstrapDart2Wasm(
   BuildStep buildStep,
   List<String> additionalArguments,
   String javaScriptModuleExtension,
@@ -61,7 +69,7 @@ $librariesString
 
 https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-skipped-compiling-warnings
 ''');
-      return;
+      return null;
     }
 
     var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
@@ -124,4 +132,13 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
     log.severe('ExitCode:${result.exitCode}\nStdOut:\n${result.stdout}\n'
         'StdErr:\n${result.stderr}');
   }
+
+  var supportFile =
+      scratchSpace.fileFor(dartEntrypointId.changeExtension('support.js'));
+  String? supportExpression;
+  if (await supportFile.exists()) {
+    supportExpression = await supportFile.readAsString();
+  }
+
+  return (supportExpression: supportExpression);
 }
