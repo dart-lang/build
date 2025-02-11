@@ -728,8 +728,8 @@ int? get x => 1;
     });
 
     group('syntax errors', () {
-      test('are reported', () {
-        return resolveSources({
+      test('are reported', () async {
+        await resolveSources({
           'a|errors.dart': '''
              library a_library;
 
@@ -738,36 +738,37 @@ int? get x => 1;
              }
           ''',
         }, (resolver) async {
-          await expectLater(
+          expect(
             resolver.libraryFor(AssetId.parse('a|errors.dart')),
             throwsA(isA<SyntaxErrorInAssetException>()),
           );
-          await expectLater(
+          expect(
             resolver.compilationUnitFor(AssetId.parse('a|errors.dart')),
             throwsA(isA<SyntaxErrorInAssetException>()),
           );
         });
       });
-      test('are only reported if severe', () {
-        return resolveSources({
+
+      test('are only reported if severe', () async {
+        await resolveSources({
           'a|errors.dart': '''
             /// {@code }
             class A{}
           ''',
         }, (resolver) async {
-          await expectLater(
-            resolver.libraryFor(AssetId.parse('a|errors.dart')),
-            completion(isNotNull),
+          expect(
+            await resolver.libraryFor(AssetId.parse('a|errors.dart')),
+            isNotNull,
           );
-          await expectLater(
-            resolver.compilationUnitFor(AssetId.parse('a|errors.dart')),
-            completion(isNotNull),
+          expect(
+            await resolver.compilationUnitFor(AssetId.parse('a|errors.dart')),
+            isNotNull,
           );
         });
       });
 
-      test('are reported for part files with errors', () {
-        return resolveSources({
+      test('are reported for part files with errors', () async {
+        await resolveSources({
           'a|lib.dart': '''
             library a_library;
             part 'errors.dart';
