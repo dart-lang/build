@@ -70,8 +70,7 @@ class _CrawlAsync<K, V> {
     }
   }
 
-  /// Remove the next `key` from [_next], queue up any of its its edges
-  /// that haven't been seen.
+  /// Process [key], queue up any of its its edges that haven't been seen.
   Future<void> _crawlNext(K key) async {
     final value = await readNode(key);
     if (result.isClosed) return;
