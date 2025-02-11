@@ -134,7 +134,7 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
   }
 
   var supportFile =
-      scratchSpace.fileFor(dartEntrypointId.changeExtension('support.js'));
+      scratchSpace.fileFor(dartEntrypointId.changeExtension('.support.js'));
   String? supportExpression;
   if (await supportFile.exists()) {
     supportExpression = await supportFile.readAsString();

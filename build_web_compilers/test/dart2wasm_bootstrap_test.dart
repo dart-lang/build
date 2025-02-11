@@ -69,9 +69,11 @@ void main() {
           'a|web/index.dart.js': decodedMatches(
             stringContainsInOrder(
               [
-                'if (supportsWasmGC())',
+                'if',
+                'WebAssembly.validate',
+                '{',
                 'compileStreaming',
-                'else',
+                '} else {',
                 'scriptTag.src = relativeURL("./index.dart2js.js");'
               ],
             ),
