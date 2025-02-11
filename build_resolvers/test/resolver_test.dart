@@ -746,8 +746,9 @@ int? get x => 1;
             resolver.compilationUnitFor(AssetId.parse('a|errors.dart')),
             throwsA(isA<SyntaxErrorInAssetException>()),
           );
-        });
+        }, resolvers: createResolvers());
       });
+
       test('are only reported if severe', () {
         return resolveSources({
           'a|errors.dart': '''
@@ -763,7 +764,7 @@ int? get x => 1;
             resolver.compilationUnitFor(AssetId.parse('a|errors.dart')),
             completion(isNotNull),
           );
-        });
+        }, resolvers: createResolvers());
       });
 
       test('are reported for part files with errors', () {
