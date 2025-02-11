@@ -48,7 +48,7 @@ class _CrawlAsync<K, V> {
   final Iterable<K> roots;
 
   final _seen = HashSet<K>();
-  final _next = Queue<K>();
+  var _next = <K>[];
 
   _CrawlAsync(this.roots, this.readNode, this.edges);
 
@@ -58,7 +58,10 @@ class _CrawlAsync<K, V> {
     try {
       _next.addAll(roots);
       while (_next.isNotEmpty) {
-        await _crawlNext();
+        // Take everything from `_next`, await crawling it in parallel.
+        final next = _next;
+        _next = <K>[];
+        await Future.wait(next.map(_crawlNext), eagerError: true);
       }
       await result.close();
     } catch (e, st) {
@@ -69,8 +72,7 @@ class _CrawlAsync<K, V> {
 
   /// Remove the next `key` from [_next], queue up any of its its edges
   /// that haven't been seen.
-  Future<void> _crawlNext() async {
-    final key = _next.removeFirst();
+  Future<void> _crawlNext(K key) async {
     final value = await readNode(key);
     if (result.isClosed) return;
     result.add(value);
