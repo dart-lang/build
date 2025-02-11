@@ -5,8 +5,6 @@
 import 'dart:async';
 import 'dart:collection';
 
-final _empty = Future<void>.value();
-
 /// Finds and returns every node in a graph who's nodes and edges are
 /// asynchronously resolved.
 ///
