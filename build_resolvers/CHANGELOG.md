@@ -1,4 +1,4 @@
-## 2.4.4-wip
+## 2.4.4
 
 - Refactor `BuildAssetUriResolver` into `AnalysisDriverModel` and
   `AnalysisDriverFilesystem`. Add new implementation of
