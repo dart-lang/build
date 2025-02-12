@@ -1,3 +1,7 @@
+## 2.4.5-wip
+
+- Start using `package:build/internal.dart`.
+
 ## 2.4.4
 
 - Refactor `BuildAssetUriResolver` into `AnalysisDriverModel` and

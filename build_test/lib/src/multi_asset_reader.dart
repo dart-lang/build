@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
+import 'package:build/internal.dart';
 import 'package:glob/glob.dart';
 
 /// A [MultiPackageAssetReader] that delegates to multiple other asset
@@ -14,10 +15,23 @@ import 'package:glob/glob.dart';
 /// [MultiAssetReader] attempts to check every provided
 /// [MultiPackageAssetReader] to see if they are capable of reading an
 /// [AssetId], otherwise checks the next reader.
-class MultiAssetReader extends AssetReader implements MultiPackageAssetReader {
+class MultiAssetReader extends AssetReader
+    implements MultiPackageAssetReader, AssetReaderState {
   final List<MultiPackageAssetReader> _readers;
 
   MultiAssetReader(this._readers);
+
+  @override
+  InputTracker? get inputTracker {
+    // There should be exactly zero or one input trackers between the readers.
+    final results = Set<InputTracker>.identity()
+      ..addAll(_readers.map((r) => r.inputTracker).nonNulls);
+    if (results.isEmpty) return null;
+    if (results.length == 1) return results.single;
+    throw StateError(
+        'MultiAssetReader readers have more than one InputTracker: '
+        '$_readers -> $results');
+  }
 
   @override
   Future<bool> canRead(AssetId id) async {
