@@ -10,6 +10,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 
 import 'analysis_driver_filesystem.dart';
 
@@ -116,9 +118,7 @@ class AnalysisDriverModel {
     }
 
     // Notify [buildStep] of its inputs.
-    for (final id in inputIds) {
-      await buildStep.canRead(id);
-    }
+    buildStep.requireInputTracker.assetsRead.addAll(inputIds);
 
     // Sync changes onto the "URI resolver", the in-memory filesystem.
     for (final id in idsToSyncOntoFilesystem) {

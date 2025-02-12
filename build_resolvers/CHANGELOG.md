@@ -1,5 +1,6 @@
 ## 2.4.5-wip
 
+- Start using `package:build/src/internal.dart`.
 - Switch `BuildAssetUriResolver` dependency crawl to an iterative
   algorithm, preventing stack overflows.
 

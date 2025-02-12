@@ -27,7 +27,7 @@ void main() {
     test('should read from the delegate', () async {
       expect(await reader.canRead(fooTxt), isTrue);
       expect(await reader.canRead(missingTxt), isFalse);
-      expect(delegate.assetsRead, [fooTxt, missingTxt]);
+      expect(delegate.assetsRead, {fooTxt, missingTxt});
     });
 
     test('should not re-read from the delegate', () async {

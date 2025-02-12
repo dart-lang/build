@@ -18,6 +18,8 @@ import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../resource/resource.dart';
+import '../state/input_tracker.dart';
+import '../state/reader_state.dart';
 import 'build_step.dart';
 import 'exceptions.dart';
 
@@ -25,7 +27,7 @@ import 'exceptions.dart';
 ///
 /// This represents a single input and its expected and real outputs. It also
 /// handles tracking of dependencies.
-class BuildStepImpl implements BuildStep {
+class BuildStepImpl implements BuildStep, AssetReaderState {
   final Resolvers? _resolvers;
   final StageTracker _stageTracker;
 
@@ -77,6 +79,9 @@ class BuildStepImpl implements BuildStep {
       : allowedOutputs = UnmodifiableSetView(expectedOutputs.toSet()),
         _stageTracker = stageTracker ?? NoOpStageTracker.instance,
         _reportUnusedAssets = reportUnusedAssets;
+
+  @override
+  InputTracker? get inputTracker => _reader.inputTracker;
 
   @override
   Future<PackageConfig> get packageConfig async {

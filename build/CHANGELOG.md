@@ -1,3 +1,8 @@
+## 2.4.3-wip
+
+- Add `package:build/src/internal.dart` for use by `build_resolvers`,
+  `build_runner_core` and `build_test`.
+
 ## 2.4.2
 
 - Bump the min sdk to 3.6.0.
