@@ -7,7 +7,8 @@ import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
-import 'package:build/internal.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 

@@ -1,7 +1,7 @@
 ## 8.0.1-wip
 
 - Fix crash when running on assets ending in a dot.
-- Start using `package:build/internal.dart'.
+- Start using `package:build/src/internal.dart'.
 
 ## 8.0.0
 

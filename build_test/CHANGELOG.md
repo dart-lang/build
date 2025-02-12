@@ -1,7 +1,7 @@
 ## 2.2.4-wip
 
 - Support checks on reader state after a build action in `resolveSources`.
-- Start using `package:build/internal.dart`.
+- Start using `package:build/src/internal.dart`.
 
 ## 2.2.3
 

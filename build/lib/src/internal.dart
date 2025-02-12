@@ -4,9 +4,7 @@
 
 /// Internal build state for `build_resolvers`, `build_runner_core` and
 /// `build_test` only.
-///
-/// In particular, generators must not use
 library;
 
-export 'src/state/input_tracker.dart';
-export 'src/state/reader_state.dart';
+export 'state/input_tracker.dart';
+export 'state/reader_state.dart';

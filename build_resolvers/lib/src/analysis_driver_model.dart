@@ -10,7 +10,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart';
-import 'package:build/internal.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 
 import 'analysis_driver_filesystem.dart';
 

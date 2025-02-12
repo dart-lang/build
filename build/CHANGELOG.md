@@ -1,7 +1,7 @@
 ## 2.4.3-wip
 
-- Add `package:build/internal.dart` for use by `build_resolvers`,
-  `build_runner_core` and `build_test` only.
+- Add `package:build/src/internal.dart` for use by `build_resolvers`,
+  `build_runner_core` and `build_test`.
 
 ## 2.4.2
 

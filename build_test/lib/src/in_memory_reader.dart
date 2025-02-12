@@ -4,7 +4,8 @@
 import 'dart:convert';
 
 import 'package:build/build.dart';
-import 'package:build/internal.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:glob/glob.dart';
 
 /// An [AssetReader] that records which assets have been read to [assetsRead].

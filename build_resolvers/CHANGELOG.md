@@ -1,6 +1,6 @@
 ## 2.4.5-wip
 
-- Start using `package:build/internal.dart`.
+- Start using `package:build/src/internal.dart`.
 
 ## 2.4.4
 
