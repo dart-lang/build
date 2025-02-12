@@ -24,6 +24,7 @@ library;
 
 import 'dart:convert';
 
+// ignore: deprecated_member_use
 import 'package:js/js.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_maps/source_maps.dart';
