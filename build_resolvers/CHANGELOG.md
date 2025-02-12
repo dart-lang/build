@@ -1,3 +1,8 @@
+## 2.4.5-wip
+
+- Switch `BuildAssetUriResolver` dependency crawl to an iterative
+  algorithm, preventing stack overflows.
+
 ## 2.4.4
 
 - Refactor `BuildAssetUriResolver` into `AnalysisDriverModel` and
