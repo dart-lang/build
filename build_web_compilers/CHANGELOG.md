@@ -1,3 +1,7 @@
+## 4.1.2-wip
+
+- Use `build_test` 3.0.0.
+
 ## 4.1.1
 
 - Support 3.8.0 pre-release sdks.

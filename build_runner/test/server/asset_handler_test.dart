@@ -19,13 +19,13 @@ import 'package:test/test.dart';
 void main() {
   late AssetHandler handler;
   late FinalizedReader reader;
-  late InMemoryRunnerAssetReader delegate;
+  late InMemoryRunnerAssetReaderWriter delegate;
   late AssetGraph graph;
 
   setUp(() async {
     graph = await AssetGraph.build([], <AssetId>{}, <AssetId>{},
         buildPackageGraph({rootPackage('a'): []}), FakeAssetReader());
-    delegate = InMemoryRunnerAssetReader();
+    delegate = InMemoryRunnerAssetReaderWriter();
     final packageGraph = buildPackageGraph({rootPackage('a'): []});
     reader = FinalizedReader(
         delegate,

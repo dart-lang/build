@@ -10,12 +10,19 @@ import 'package:glob/glob.dart';
 
 /// An [AssetReader] that records which assets have been read to [assetsRead].
 abstract class RecordingAssetReader implements AssetReader {
-  Iterable<AssetId> get assetsRead;
+  Set<AssetId> get assetsRead;
 }
 
-/// An implementation of [AssetReader] with primed in-memory assets.
-class InMemoryAssetReader extends AssetReader
-    implements MultiPackageAssetReader, RecordingAssetReader, AssetReaderState {
+/// An implementation of [AssetWriter] that records outputs to [assets].
+abstract class RecordingAssetWriter implements AssetWriter {
+  Map<AssetId, List<int>> get assets;
+}
+
+/// An implementation of [AssetReader] and [AssetWriter] with primed in-memory
+/// assets.
+class InMemoryAssetReaderWriter extends AssetReader
+    implements InMemoryAssetReader, InMemoryAssetWriter {
+  @override
   final Map<AssetId, List<int>> assets;
   final String? rootPackage;
 
@@ -31,11 +38,12 @@ class InMemoryAssetReader extends AssetReader
   /// bytes.
   ///
   /// May optionally define a [rootPackage], which is required for some APIs.
-  InMemoryAssetReader({Map<AssetId, dynamic>? sourceAssets, this.rootPackage})
+  InMemoryAssetReaderWriter(
+      {Map<AssetId, dynamic>? sourceAssets, this.rootPackage})
       : assets = _assetsAsBytes(sourceAssets);
 
   /// Create a new asset reader backed by [assets].
-  InMemoryAssetReader.shareAssetCache(this.assets, {this.rootPackage});
+  InMemoryAssetReaderWriter.shareAssetCache(this.assets, {this.rootPackage});
 
   static Map<AssetId, List<int>> _assetsAsBytes(Map<AssetId, dynamic>? assets) {
     if (assets == null || assets.isEmpty) {
@@ -86,12 +94,69 @@ class InMemoryAssetReader extends AssetReader
         .where((id) => id.package == package && glob.matches(id.path)));
   }
 
+  @override
   void cacheBytesAsset(AssetId id, List<int> bytes) {
     assets[id] = bytes;
   }
 
+  @override
   void cacheStringAsset(AssetId id, String contents, {Encoding? encoding}) {
     encoding ??= utf8;
+    assets[id] = encoding.encode(contents);
+  }
+
+  @override
+  Future writeAsBytes(AssetId id, List<int> bytes) async {
+    assets[id] = bytes;
+  }
+
+  @override
+  Future writeAsString(AssetId id, String contents,
+      {Encoding encoding = utf8}) async {
+    assets[id] = encoding.encode(contents);
+  }
+}
+
+/// An implementation of [AssetReader] with primed in-memory assets.
+abstract class InMemoryAssetReader
+    implements
+        AssetReader,
+        MultiPackageAssetReader,
+        RecordingAssetReader,
+        AssetReaderState {
+  abstract final Map<AssetId, List<int>> assets;
+
+  /// Create a new asset reader that contains [sourceAssets].
+  ///
+  /// Any strings in [sourceAssets] will be converted into a `List<int>` of
+  /// bytes.
+  ///
+  /// May optionally define a [rootPackage], which is required for some APIs.
+  factory InMemoryAssetReader(
+          {Map<AssetId, dynamic>? sourceAssets, String? rootPackage}) =>
+      InMemoryAssetReaderWriter(
+          sourceAssets: sourceAssets, rootPackage: rootPackage);
+
+  /// Create a new asset reader backed by [assets].
+  // InMemoryAssetReader.shareAssetCache(this.assets, {this.rootPackage});
+
+  void cacheBytesAsset(AssetId id, List<int> bytes);
+
+  void cacheStringAsset(AssetId id, String contents, {Encoding? encoding});
+}
+
+/// An implementation of [AssetWriter] that writes outputs to memory.
+abstract class InMemoryAssetWriter implements RecordingAssetWriter {
+  factory InMemoryAssetWriter() => InMemoryAssetReaderWriter();
+
+  @override
+  Future writeAsBytes(AssetId id, List<int> bytes) async {
+    assets[id] = bytes;
+  }
+
+  @override
+  Future writeAsString(AssetId id, String contents,
+      {Encoding encoding = utf8}) async {
     assets[id] = encoding.encode(contents);
   }
 }

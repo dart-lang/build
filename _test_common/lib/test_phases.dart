@@ -11,8 +11,7 @@ import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
-import 'in_memory_reader.dart';
-import 'in_memory_writer.dart';
+import 'in_memory_reader_writer.dart';
 import 'package_graphs.dart';
 
 Future<void> wait(int milliseconds) =>
@@ -41,7 +40,7 @@ void _printOnFailure(LogRecord record) {
 /// For example `$$myapp|lib/utils.copy.dart` will check that the generated
 /// output was written to the build cache.
 ///
-/// [resumeFrom] reuses the filesystem state from a previous [BuildResult].
+/// [resumeFrom] reuses the `readerWriter` from a previous [BuildResult].
 ///
 /// [packageGraph] supplies the root package into which the outputs are to be
 /// written.
@@ -89,16 +88,13 @@ Future<BuildResult> testBuilders(
   void Function(AssetId id)? onDelete,
 }) async {
   packageGraph ??= buildPackageGraph({rootPackage('a'): []});
-  final writer =
-      resumeFrom == null ? InMemoryRunnerAssetWriter() : resumeFrom.writer;
-  writer.onDelete = onDelete;
-  final reader = resumeFrom == null
-      ? InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
-          rootPackage: packageGraph.root.name)
-      : resumeFrom.reader;
+  final readerWriter = resumeFrom == null
+      ? InMemoryRunnerAssetReaderWriter(rootPackage: packageGraph.root.name)
+      : resumeFrom.readerWriter;
+  readerWriter.onDelete = onDelete;
   var pkgConfigId =
       AssetId(packageGraph.root.name, '.dart_tool/package_config.json');
-  if (!await reader.canRead(pkgConfigId)) {
+  if (!await readerWriter.canRead(pkgConfigId)) {
     var packageConfig = {
       'configVersion': 2,
       'packages': [
@@ -111,21 +107,21 @@ Future<BuildResult> testBuilders(
           },
       ],
     };
-    await writer.writeAsString(pkgConfigId, jsonEncode(packageConfig));
+    await readerWriter.writeAsString(pkgConfigId, jsonEncode(packageConfig));
   }
 
   inputs.forEach((serializedId, contents) {
     var id = makeAssetId(serializedId);
     if (contents is String) {
-      reader.cacheStringAsset(id, contents);
+      readerWriter.cacheStringAsset(id, contents);
     } else if (contents is List<int>) {
-      reader.cacheBytesAsset(id, contents);
+      readerWriter.cacheBytesAsset(id, contents);
     }
   });
 
   builderConfigOverrides ??= const {};
   var environment = OverrideableEnvironment(IOEnvironment(packageGraph),
-      reader: reader, writer: writer, onLog: onLog);
+      reader: readerWriter, writer: readerWriter, onLog: onLog);
   var logSubscription =
       LogSubscription(environment, verbose: verbose, logLevel: logLevel);
   var options = await BuildOptions.create(logSubscription,
@@ -152,14 +148,13 @@ Future<BuildResult> testBuilders(
   if (checkBuildStatus) {
     checkBuild(result,
         outputs: outputs,
-        writer: writer,
+        writer: readerWriter,
         status: status,
         rootPackage: packageGraph.root.name,
         expectedGeneratedDir: expectedGeneratedDir);
   }
 
-  result._attachReader(reader);
-  result._attachWriter(writer);
+  result._attachReaderWriter(readerWriter);
 
   return result;
 }
@@ -199,21 +194,13 @@ void checkBuild(BuildResult result,
 }
 
 extension BuildResultExtension on BuildResult {
-  /// The reader used in this `testBuilders` build.
-  InMemoryRunnerAssetReader get reader => _readerExpando[this]!;
+  /// The reader/writer used in this `testBuilders` build.
+  InMemoryRunnerAssetReaderWriter get readerWriter =>
+      _readerWriterExpando[this]!;
 
-  /// The writer used in this `testBuilders` build.
-  InMemoryRunnerAssetWriter get writer => _writerExpando[this]!;
-
-  void _attachReader(InMemoryRunnerAssetReader reader) {
-    _readerExpando[this] = reader;
-  }
-
-  void _attachWriter(InMemoryRunnerAssetWriter writer) {
-    _writerExpando[this] = writer;
+  void _attachReaderWriter(InMemoryRunnerAssetReaderWriter readerWriter) {
+    _readerWriterExpando[this] = readerWriter;
   }
 }
 
-final Expando<InMemoryRunnerAssetReader> _readerExpando = Expando();
-
-final Expando<InMemoryRunnerAssetWriter> _writerExpando = Expando();
+final Expando<InMemoryRunnerAssetReaderWriter> _readerWriterExpando = Expando();

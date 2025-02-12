@@ -29,8 +29,7 @@ void main() {
     });
     builder = TestBuilder(
         extraWork: (buildStep, __) => buildStep.fetchResource(resource));
-    writer = InMemoryAssetWriter();
-    reader = InMemoryAssetReader.shareAssetCache(writer.assets);
+    writer = reader = InMemoryAssetReaderWriter();
     addAssets(inputs, writer);
   });
 

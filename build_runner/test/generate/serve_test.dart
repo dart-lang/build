@@ -17,12 +17,15 @@ import 'package:test/test.dart';
 
 void main() {
   group('ServeHandler', () {
-    late InMemoryRunnerAssetWriter writer;
+    final packageGraph =
+        buildPackageGraph({rootPackage('a', path: path.absolute('a')): []});
+    late InMemoryRunnerAssetReaderWriter readerWriter;
 
     setUp(() async {
       _terminateServeController = StreamController();
-      writer = InMemoryRunnerAssetWriter();
-      await writer.writeAsString(
+      readerWriter =
+          InMemoryRunnerAssetReaderWriter(rootPackage: packageGraph.root.name);
+      await readerWriter.writeAsString(
           makeAssetId('a|.dart_tool/package_config.json'),
           jsonEncode({
             'configVersion': 2,
@@ -42,16 +45,18 @@ void main() {
     });
 
     test('does basic builds', () async {
-      var handler = await createHandler(
-          [applyToRoot(TestBuilder())], {'a|web/a.txt': 'a'}, writer);
+      var handler = await createHandler([applyToRoot(TestBuilder())],
+          {'a|web/a.txt': 'a'}, packageGraph, readerWriter);
       var results = StreamQueue(handler.buildResults);
       var result = await results.next;
-      checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
+      checkBuild(result,
+          outputs: {'a|web/a.txt.copy': 'a'}, writer: readerWriter);
 
-      await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
+      await readerWriter.writeAsString(makeAssetId('a|web/a.txt'), 'b');
 
       result = await results.next;
-      checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
+      checkBuild(result,
+          outputs: {'a|web/a.txt.copy': 'b'}, writer: readerWriter);
     });
 
     test('blocks serving files until the build is done', () async {
@@ -61,7 +66,8 @@ void main() {
       var handler = await createHandler(
           [applyToRoot(TestBuilder(extraWork: (_, __) => nextBuildBlocker))],
           {'a|web/a.txt': 'a'},
-          writer);
+          packageGraph,
+          readerWriter);
       var webHandler = handler.handlerFor('web');
       var results = StreamQueue(handler.buildResults);
       // Give the build enough time to get started.
@@ -76,7 +82,8 @@ void main() {
       await wait(250);
       buildBlocker1.complete();
       var result = await results.next;
-      checkBuild(result, outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
+      checkBuild(result,
+          outputs: {'a|web/a.txt.copy': 'a'}, writer: readerWriter);
 
       /// Next request completes right away.
       var buildBlocker2 = Completer<void>();
@@ -88,7 +95,7 @@ void main() {
 
       /// Make an edit to force another build, and we should block again.
       nextBuildBlocker = buildBlocker2.future;
-      await writer.writeAsString(makeAssetId('a|web/a.txt'), 'b');
+      await readerWriter.writeAsString(makeAssetId('a|web/a.txt'), 'b');
       // Give the build enough time to get started.
       await wait(500);
       var done = Completer<void>();
@@ -101,7 +108,8 @@ void main() {
       await wait(250);
       buildBlocker2.complete();
       result = await results.next;
-      checkBuild(result, outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
+      checkBuild(result,
+          outputs: {'a|web/a.txt.copy': 'b'}, writer: readerWriter);
 
       /// Make sure we actually see the final request finish.
       return done.future;
@@ -113,24 +121,23 @@ final _debounceDelay = const Duration(milliseconds: 10);
 StreamController<ProcessSignal>? _terminateServeController;
 
 /// Start serving files and running builds.
-Future<ServeHandler> createHandler(List<BuilderApplication> builders,
-    Map<String, String> inputs, InMemoryRunnerAssetWriter writer) async {
+Future<ServeHandler> createHandler(
+    List<BuilderApplication> builders,
+    Map<String, String> inputs,
+    PackageGraph packageGraph,
+    InMemoryRunnerAssetReaderWriter readerWriter) async {
   await Future.wait(inputs.keys.map((serializedId) async {
-    await writer.writeAsString(
+    await readerWriter.writeAsString(
         makeAssetId(serializedId), inputs[serializedId]!);
   }));
-  final packageGraph =
-      buildPackageGraph({rootPackage('a', path: path.absolute('a')): []});
-  final reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
-      rootPackage: packageGraph.root.name);
   FakeWatcher watcherFactory(String path) => FakeWatcher(path);
 
   return watch_impl.watch(builders,
       deleteFilesByDefault: true,
       debounceDelay: _debounceDelay,
       directoryWatcherFactory: watcherFactory,
-      reader: reader,
-      writer: writer,
+      reader: readerWriter,
+      writer: readerWriter,
       packageGraph: packageGraph,
       terminateEventStream: _terminateServeController!.stream,
       logLevel: Level.OFF,

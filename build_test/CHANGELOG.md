@@ -1,8 +1,11 @@
 ## 3.0.0-wip
 
-- Breaking change: `testBuilders` no longer accepts a `reader` and a `writer`.
-  Instead, it creates them and returns them attached to the `BuildResult`. New
-  arg `continueFrom` allows reusing the previous `reader` and `writer`.
+- `InMemoryAssetReader` and `InMemoryAssetWriter` implementations are merged
+  into `InMemoryAssetReaderWriter` with shared state; it implements both
+  `InMemoryAssetReader` and `InMemoryAssetWriter`.
+- Breaking change: `testBuilder` no longer accepts a `reader` and a `writer`.
+  Instead it returns a `TestBuilderResult` with the `InMemoryAssetReaderWriter`
+  that was used.
 - Support checks on reader state after a build action in `resolveSources`.
 - Start using `package:build/src/internal.dart`.
 

@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:_test_common/common.dart';
+import 'package:build/build.dart';
 import 'package:build_runner/src/generate/build.dart' as build_impl;
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
@@ -17,12 +18,6 @@ void main() {
   final copyABuildApplication = applyToRoot(
       TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')));
   final packageConfigId = makeAssetId('a|.dart_tool/package_config.json');
-  late InMemoryRunnerAssetWriter writer;
-
-  setUp(() async {
-    writer = InMemoryRunnerAssetWriter();
-    await writer.writeAsString(packageConfigId, jsonEncode(_packageConfig));
-  });
 
   group('--config', () {
     test('warns override config defines builders', () async {
@@ -41,7 +36,8 @@ builders:
     builder_factories: ["myFactory"]
     build_extensions: {"a": ["b"]}
 '''
-      }, writer,
+      },
+          packageConfigId: packageConfigId,
           configKey: 'cool',
           logLevel: Level.WARNING,
           onLog: logs.add,
@@ -55,26 +51,28 @@ builders:
   });
 }
 
-Future<BuildResult> _doBuild(List<BuilderApplication> builders,
-    Map<String, String> inputs, InMemoryRunnerAssetWriter writer,
-    {PackageGraph? packageGraph,
+Future<BuildResult> _doBuild(
+    List<BuilderApplication> builders, Map<String, String> inputs,
+    {required AssetId packageConfigId,
+    PackageGraph? packageGraph,
     void Function(LogRecord)? onLog,
     Level? logLevel,
     String? configKey}) async {
   onLog ??= (_) {};
-  inputs.forEach((serializedId, contents) {
-    writer.writeAsString(makeAssetId(serializedId), contents);
-  });
   packageGraph ??=
       buildPackageGraph({rootPackage('a', path: path.absolute('a')): []});
-  final reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
-      rootPackage: packageGraph.root.name);
+  final readerWriter =
+      InMemoryRunnerAssetReaderWriter(rootPackage: packageGraph.root.name);
+  inputs.forEach((serializedId, contents) {
+    readerWriter.writeAsString(makeAssetId(serializedId), contents);
+  });
+  await readerWriter.writeAsString(packageConfigId, jsonEncode(_packageConfig));
 
   return await build_impl.build(builders,
       configKey: configKey,
       deleteFilesByDefault: true,
-      reader: reader,
-      writer: writer,
+      reader: readerWriter,
+      writer: readerWriter,
       packageGraph: packageGraph,
       logLevel: logLevel,
       onLog: onLog,

@@ -10,9 +10,19 @@ import 'package:build_test/build_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
-class InMemoryRunnerAssetWriter extends InMemoryAssetWriter
-    implements RunnerAssetWriter {
+class InMemoryRunnerAssetReaderWriter extends InMemoryAssetReaderWriter
+    implements RunnerAssetReader, RunnerAssetWriter {
+  final _onCanReadController = StreamController<AssetId>.broadcast();
+  Stream<AssetId> get onCanRead => _onCanReadController.stream;
   void Function(AssetId)? onDelete;
+
+  InMemoryRunnerAssetReaderWriter({super.sourceAssets, super.rootPackage});
+
+  @override
+  Future<bool> canRead(AssetId id) {
+    _onCanReadController.add(id);
+    return super.canRead(id);
+  }
 
   @override
   Future writeAsBytes(AssetId id, List<int> bytes) async {

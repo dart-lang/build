@@ -15,17 +15,30 @@ class WrittenAssetReader extends MultiPackageAssetReader {
 
   /// An optional [AssetWriterSpy] to limit what's readable through this reader.
   ///
-  /// Only assets reported as written trough this [AssetWriterSpy] can be read
+  /// Only assets reported as written through this [AssetWriterSpy] can be read
   /// from this reader. When null, all assets from [source] are available.
   final AssetWriterSpy? filterSpy;
 
+  /// Assets allowed to be read because of a call to [allowReadingAll].
+  final Set<AssetId> _additionallyAllowed = {};
+
   WrittenAssetReader(this.source, [this.filterSpy]);
+
+  /// Marks [assets] as allowed to be read.
+  ///
+  /// They are then readable regardless of whether they were written through
+  /// [filterSpy].
+  void allowReadingAll(Iterable<AssetId> assets) {
+    _additionallyAllowed.addAll(assets);
+  }
 
   @override
   Future<bool> canRead(AssetId id) {
     var canRead = source.assets.containsKey(id);
     if (filterSpy != null) {
-      canRead = canRead && filterSpy!.assetsWritten.contains(id);
+      canRead = canRead &&
+          (_additionallyAllowed.contains(id) ||
+              filterSpy!.assetsWritten.contains(id));
     }
 
     return Future.value(canRead);
@@ -35,7 +48,8 @@ class WrittenAssetReader extends MultiPackageAssetReader {
   Stream<AssetId> findAssets(Glob glob, {String? package}) async* {
     var available = source.assets.keys.toSet();
     if (filterSpy != null) {
-      available = available.intersection(filterSpy!.assetsWritten.toSet());
+      available = available.intersection(
+          filterSpy!.assetsWritten.toSet().union(_additionallyAllowed));
     }
 
     for (var asset in available) {

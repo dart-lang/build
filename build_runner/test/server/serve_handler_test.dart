@@ -97,18 +97,19 @@ class FakeWebSocketChannel extends StreamChannelMixin
 
 void main() {
   late ServeHandler serveHandler;
-  late InMemoryRunnerAssetReader reader;
+  late InMemoryRunnerAssetReaderWriter readerWriter;
   late MockWatchImpl watchImpl;
   late AssetGraph assetGraph;
 
   setUp(() async {
-    reader = InMemoryRunnerAssetReader();
     final packageGraph = buildPackageGraph({rootPackage('a'): []});
+    readerWriter =
+        InMemoryRunnerAssetReaderWriter(rootPackage: packageGraph.root.name);
     assetGraph = await AssetGraph.build(
-        [], <AssetId>{}, <AssetId>{}, packageGraph, reader);
+        [], <AssetId>{}, <AssetId>{}, packageGraph, readerWriter);
     watchImpl = MockWatchImpl(
         Future.value(FinalizedReader(
-            reader,
+            readerWriter,
             assetGraph,
             await TargetGraph.forPackageGraph(packageGraph,
                 defaultRootPackageSources: defaultRootPackageSources),
@@ -127,7 +128,7 @@ void main() {
       node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
     }
     assetGraph.add(node);
-    reader.cacheStringAsset(node.id, content);
+    readerWriter.cacheStringAsset(node.id, content);
   }
 
   test('can get handlers for a subdirectory', () async {

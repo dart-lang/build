@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:collection';
 
 import 'package:build/build.dart';
 
@@ -90,10 +89,6 @@ class TestBuilder implements Builder {
   final _buildsCompletedController = StreamController<AssetId>.broadcast();
   Stream<AssetId> get buildsCompleted => _buildsCompletedController.stream;
 
-  final Map<AssetId, BuildStep> _buildSteps = {};
-  late final Map<AssetId, BuildStep> buildSteps =
-      UnmodifiableMapView(_buildSteps);
-
   TestBuilder({
     Map<String, List<String>>? buildExtensions,
     BuildBehavior? build,
@@ -105,7 +100,6 @@ class TestBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
     if (!await buildStep.canRead(buildStep.inputId)) return;
-    _buildSteps[buildStep.inputId] = buildStep;
     _buildInputsController.add(buildStep.inputId);
     await _build(buildStep, buildExtensions);
     await _extraWork?.call(buildStep, buildExtensions);

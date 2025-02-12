@@ -20,7 +20,6 @@ void main() {
   });
 
   test('can output files to a custom generated dir', () async {
-    var writer = InMemoryRunnerAssetWriter();
     final result = await testBuilders(
         [
           applyToRoot(
@@ -35,7 +34,7 @@ void main() {
         },
         expectedGeneratedDir: customGeneratedDir);
     expect(
-        result.writer.assets[AssetId(
+        result.readerWriter.assets[AssetId(
             'a', '.dart_tool/build/$customGeneratedDir/a/lib/a.txt.copy')],
         isNotNull);
   });
