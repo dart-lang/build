@@ -1,3 +1,8 @@
+## 2.4.5-wip
+
+- Switch `BuildAssetUriResolver` dependency crawl to an iterative
+  algorithm, preventing stack overflows.
+
 ## 2.4.4
 
 - Refactor `BuildAssetUriResolver` into `AnalysisDriverModel` and
@@ -6,8 +11,6 @@
 - Make resolver only throw `SyntaxErrorInAssetException` on severe syntax errors
 - Add `BuildAssetUriResolver.useExperimentalResolver` for
   `--use-experimental-resolver` flag. This will be removed.
-- Switch `BuildAssetUriResolver` dependency crawl to an iterative
-  algorithm, preventing stack overflows.
 
 ## 2.4.3
 
