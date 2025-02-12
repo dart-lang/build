@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/dart-lang/build/workflows/Dart%20CI/badge.svg?branch=master)](https://github.com/dart-lang/build/actions?query=branch%3Amaster)
+[![Dart CI](https://github.com/dart-lang/build/actions/workflows/dart.yml/badge.svg)](https://github.com/dart-lang/build/actions/workflows/dart.yml)
 
 These packages provide libraries for generating, compiling and serving Dart code.
 
