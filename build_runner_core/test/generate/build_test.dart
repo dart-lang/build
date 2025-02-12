@@ -441,9 +441,6 @@ void main() {
         var firstBuilder = TestBuilder(
             buildExtensions: appendExtension('.exists', from: '.a'),
             build: writeCanRead(aTxtId));
-        var writer = InMemoryRunnerAssetWriter();
-        var reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
-            rootPackage: 'a');
         var builders = [
           applyToRoot(firstBuilder),
           applyToRoot(TestBuilder(
@@ -455,28 +452,23 @@ void main() {
 
         // After the first builder runs, delete the asset from the reader and
         // allow the 2nd builder to run.
-        unawaited(firstBuilder.buildsCompleted.first.then((_) {
+        unawaited(firstBuilder.buildsCompleted.first.then((id) {
+          final reader = firstBuilder.buildSteps[id] as InMemoryAssetReader;
           reader.assets.remove(aTxtId);
           ready.complete();
         }));
 
-        await testBuilders(
-            builders,
-            {
-              'a|lib/file.a': '',
-              'a|lib/file.b': '',
-            },
-            outputs: {
-              'a|lib/file.a.exists': 'true',
-              'a|lib/file.b.exists': 'true',
-            },
-            reader: reader,
-            writer: writer);
+        await testBuilders(builders, {
+          'a|lib/file.a': '',
+          'a|lib/file.b': '',
+        }, outputs: {
+          'a|lib/file.a.exists': 'true',
+          'a|lib/file.b.exists': 'true',
+        });
       });
 
       test('pre-existing outputs', () async {
-        var writer = InMemoryRunnerAssetWriter();
-        await testBuilders([
+        final result = await testBuilders([
           copyABuilderApplication,
           applyToRoot(TestBuilder(
               buildExtensions: appendExtension('.clone', from: '.copy')))
@@ -486,11 +478,12 @@ void main() {
         }, outputs: {
           'a|web/a.txt.copy': 'a',
           'a|web/a.txt.copy.clone': 'a'
-        }, writer: writer, deleteFilesByDefault: true);
+        }, deleteFilesByDefault: true);
 
         var graphId = makeAssetId('a|$assetGraphPath');
-        expect(writer.assets, contains(graphId));
-        var cachedGraph = AssetGraph.deserialize(writer.assets[graphId]!);
+        expect(result.writer.assets, contains(graphId));
+        var cachedGraph =
+            AssetGraph.deserialize(result.writer.assets[graphId]!);
         expect(
             cachedGraph.allNodes.map((node) => node.id),
             unorderedEquals([
@@ -519,26 +512,26 @@ void main() {
       });
 
       test('previous outputs are cleaned up', () async {
-        final writer = InMemoryRunnerAssetWriter();
-        await testBuilders([copyABuilderApplication], {'a|web/a.txt': 'a'},
-            outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
+        final result = await testBuilders(
+            [copyABuilderApplication], {'a|web/a.txt': 'a'},
+            outputs: {'a|web/a.txt.copy': 'a'});
 
         var blockingCompleter = Completer<void>();
         var builder = TestBuilder(
             buildExtensions: appendExtension('.copy', from: '.txt'),
             extraWork: (_, __) => blockingCompleter.future);
         var done = testBuilders([applyToRoot(builder)], {'a|web/a.txt': 'b'},
-            outputs: {'a|web/a.txt.copy': 'b'}, writer: writer);
+            resumeFrom: result, outputs: {'a|web/a.txt.copy': 'b'});
 
         // Before the build starts we should still see the asset, we haven't
         // actually deleted it yet.
         var copyId = makeAssetId('a|web/a.txt.copy');
-        expect(writer.assets, contains(copyId));
+        expect(result.writer.assets, contains(copyId));
 
         // But we should delete it before actually running the builder.
         var inputId = makeAssetId('a|web/a.txt');
         await builder.buildInputs.firstWhere((id) => id == inputId);
-        expect(writer.assets, isNot(contains(copyId)));
+        expect(result.writer.assets, isNot(contains(copyId)));
 
         // Now let the build finish.
         blockingCompleter.complete();
@@ -546,27 +539,23 @@ void main() {
       });
 
       test('does not build hidden non-lib assets by default', () async {
-        final writer = InMemoryRunnerAssetWriter();
         final result = await testBuilders(
           [applyToRoot(testBuilder, hideOutput: true)],
           {'a|example/a.txt': 'a', 'a|lib/b.txt': 'b'},
           checkBuildStatus: false,
           buildDirs: {BuildDirectory('web')},
-          writer: writer,
         );
 
         checkBuild(result,
-            writer: writer, outputs: {r'$$a|lib/b.txt.copy': 'b'});
+            writer: result.writer, outputs: {r'$$a|lib/b.txt.copy': 'b'});
       });
 
       test('builds hidden asset forming a custom public source', () async {
-        final writer = InMemoryRunnerAssetWriter();
         final result = await testBuilders(
           [applyToRoot(testBuilder, hideOutput: true)],
           {'a|include/a.txt': 'a', 'a|lib/b.txt': 'b'},
           checkBuildStatus: false,
           buildDirs: {BuildDirectory('web')},
-          writer: writer,
           overrideBuildConfig: {
             'a': BuildConfig.fromMap('a', const [], {
               'additional_public_assets': ['include/**']
@@ -576,7 +565,7 @@ void main() {
 
         checkBuild(
           result,
-          writer: writer,
+          writer: result.writer,
           outputs: {
             r'$$a|include/a.txt.copy': 'a',
             r'$$a|lib/b.txt.copy': 'b',
@@ -773,13 +762,6 @@ void main() {
       });
 
       test('Will not delete from non-root packages', () async {
-        var writer = InMemoryRunnerAssetWriter()
-          ..onDelete = (AssetId assetId) {
-            if (assetId.package != 'a') {
-              throw StateError('Should not delete outside of package:a, '
-                  'tried to delete $assetId');
-            }
-          };
         await testBuilders(
             [
               apply('', [(_) => TestBuilder()], toPackage('b'),
@@ -790,8 +772,12 @@ void main() {
               'a|.dart_tool/build/generated/b/lib/b.txt.copy': 'b'
             },
             packageGraph: packageGraph,
-            writer: writer,
-            outputs: {r'$$b|lib/b.txt.copy': 'b'});
+            outputs: {r'$$b|lib/b.txt.copy': 'b'}, onDelete: (AssetId assetId) {
+          if (assetId.package != 'a') {
+            throw StateError('Should not delete outside of package:a, '
+                'tried to delete $assetId');
+          }
+        });
       });
     });
 
@@ -972,24 +958,19 @@ void main() {
     });
 
     test('can output performance logs', () async {
-      var writer = InMemoryRunnerAssetWriter();
-      var reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
-          rootPackage: 'a');
-      await testBuilders(
+      final result = await testBuilders(
         [
           apply('test_builder', [(_) => TestBuilder()], toRoot(),
               isOptional: false, hideOutput: false),
         ],
         {'a|web/a.txt': 'a'},
         outputs: {'a|web/a.txt.copy': 'a'},
-        writer: writer,
-        reader: reader,
         logPerformanceDir: 'perf',
       );
-      var logs = await reader.findAssets(Glob('perf/**')).toList();
+      var logs = await result.reader.findAssets(Glob('perf/**')).toList();
       expect(logs.length, 1);
       var perf = BuildPerformance.fromJson(
-          jsonDecode(await reader.readAsString(logs.first))
+          jsonDecode(await result.reader.readAsString(logs.first))
               as Map<String, dynamic>);
       expect(perf.phases.length, 1);
       expect(perf.phases.first.builderKeys, equals(['test_builder']));
@@ -1077,8 +1058,7 @@ void main() {
   });
 
   test('tracks dependency graph in a asset_graph.json file', () async {
-    final writer = InMemoryRunnerAssetWriter();
-    await testBuilders([
+    final result = await testBuilders([
       requiresPostProcessBuilderApplication,
       postCopyABuilderApplication,
     ], {
@@ -1089,18 +1069,18 @@ void main() {
       'a|lib/b.txt.copy': 'b',
       r'$$a|web/a.txt.post': 'a',
       r'$$a|lib/b.txt.post': 'b',
-    }, writer: writer);
+    });
 
     var graphId = makeAssetId('a|$assetGraphPath');
-    expect(writer.assets, contains(graphId));
-    var cachedGraph = AssetGraph.deserialize(writer.assets[graphId]!);
+    expect(result.writer.assets, contains(graphId));
+    var cachedGraph = AssetGraph.deserialize(result.writer.assets[graphId]!);
 
     var expectedGraph = await AssetGraph.build(
         [],
         <AssetId>{},
         {makeAssetId('a|.dart_tool/package_config.json')},
         buildPackageGraph({rootPackage('a'): []}),
-        InMemoryAssetReader(sourceAssets: writer.assets));
+        InMemoryAssetReader(sourceAssets: result.writer.assets));
 
     // Source nodes
     var aSourceNode = makeAssetNode(
@@ -1207,9 +1187,7 @@ void main() {
 
   test("builders reading their output don't cause self-referential nodes",
       () async {
-    final writer = InMemoryRunnerAssetWriter();
-
-    await testBuilders([
+    final result = await testBuilders([
       apply(
           '',
           [
@@ -1231,10 +1209,10 @@ void main() {
       'a|lib/a.txt': 'a',
     }, outputs: {
       'a|lib/a.txt.out': 'a'
-    }, writer: writer);
+    });
 
     final graphId = makeAssetId('a|$assetGraphPath');
-    final cachedGraph = AssetGraph.deserialize(writer.assets[graphId]!);
+    final cachedGraph = AssetGraph.deserialize(result.writer.assets[graphId]!);
     final outputId = AssetId('a', 'lib/a.txt.out');
 
     final outputNode = cachedGraph.get(outputId) as GeneratedAssetNode;
@@ -1243,38 +1221,36 @@ void main() {
 
   test('outputs from previous full builds shouldn\'t be inputs to later ones',
       () async {
-    final writer = InMemoryRunnerAssetWriter();
     var inputs = <String, String>{'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'};
     var outputs = <String, String>{
       'a|web/a.txt.copy': 'a',
       'a|lib/b.txt.copy': 'b'
     };
     // First run, nothing special.
-    await testBuilders([copyABuilderApplication], inputs,
-        outputs: outputs, writer: writer);
+    final result =
+        await testBuilders([copyABuilderApplication], inputs, outputs: outputs);
     // Second run, should have no outputs.
     await testBuilders([copyABuilderApplication], inputs,
-        outputs: {}, writer: writer);
+        outputs: {}, resumeFrom: result);
   });
 
   test('can recover from a deleted asset_graph.json cache', () async {
-    final writer = InMemoryRunnerAssetWriter();
     var inputs = <String, String>{'a|web/a.txt': 'a', 'a|lib/b.txt': 'b'};
     var outputs = <String, String>{
       'a|web/a.txt.copy': 'a',
       'a|lib/b.txt.copy': 'b'
     };
     // First run, nothing special.
-    await testBuilders([copyABuilderApplication], inputs,
-        outputs: outputs, writer: writer);
+    final result =
+        await testBuilders([copyABuilderApplication], inputs, outputs: outputs);
 
     // Delete the `asset_graph.json` file!
     var outputId = makeAssetId('a|$assetGraphPath');
-    await writer.delete(outputId);
+    await result.writer.delete(outputId);
 
     // Second run, should have no extra outputs.
     var done = testBuilders([copyABuilderApplication], inputs,
-        outputs: outputs, writer: writer);
+        outputs: outputs, resumeFrom: result);
     // Should block on user input.
     await Future<void>.delayed(const Duration(seconds: 1));
     // Now it should complete!
@@ -1286,22 +1262,18 @@ void main() {
       var builders = [copyABuilderApplication];
 
       // Initial build.
-      var writer = InMemoryRunnerAssetWriter();
-      await testBuilders(
-          builders,
-          {
-            'a|web/a.txt': 'a',
-            'a|lib/b.txt': 'b',
-          },
-          outputs: {
-            'a|web/a.txt.copy': 'a',
-            'a|lib/b.txt.copy': 'b',
-          },
-          writer: writer);
+      final result = await testBuilders(builders, {
+        'a|web/a.txt': 'a',
+        'a|lib/b.txt': 'b',
+      }, outputs: {
+        'a|web/a.txt.copy': 'a',
+        'a|lib/b.txt.copy': 'b',
+      });
 
       // Followup build with modified inputs.
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
-      writer.assets.clear();
+      var serializedGraph =
+          result.writer.assets[makeAssetId('a|$assetGraphPath')]!;
+      result.writer.assets.clear();
       await testBuilders(
           builders,
           {
@@ -1316,7 +1288,7 @@ void main() {
             'a|web/a.txt.copy': 'a2',
             'a|lib/c.txt.copy': 'c',
           },
-          writer: writer);
+          resumeFrom: result);
     });
 
     test('deleting only the second output of a builder causes it to rerun',
@@ -1328,21 +1300,17 @@ void main() {
       ];
 
       // Initial build.
-      var writer = InMemoryRunnerAssetWriter();
-      await testBuilders(
-          builders,
-          {
-            'a|lib/a.txt': 'a',
-          },
-          outputs: {
-            'a|lib/a.txt.1': 'a',
-            'a|lib/a.txt.2': 'a',
-          },
-          writer: writer);
+      final result = await testBuilders(builders, {
+        'a|lib/a.txt': 'a',
+      }, outputs: {
+        'a|lib/a.txt.1': 'a',
+        'a|lib/a.txt.2': 'a',
+      });
 
       // Followup build with the 2nd output missing.
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
-      writer.assets.clear();
+      var serializedGraph =
+          result.writer.assets[makeAssetId('a|$assetGraphPath')]!;
+      result.writer.assets.clear();
       await testBuilders(
           builders,
           {
@@ -1354,7 +1322,7 @@ void main() {
             'a|lib/a.txt.1': 'a',
             'a|lib/a.txt.2': 'a',
           },
-          writer: writer);
+          resumeFrom: result);
     });
 
     group('reportUnusedAssets', () {
@@ -1378,22 +1346,18 @@ void main() {
         var builders = [applyToRoot(builder)];
 
         // Initial build.
-        var writer = InMemoryRunnerAssetWriter();
-        await testBuilders(
-            builders,
-            {
-              'a|lib/a.txt': 'a',
-              'a|lib/a.txt.used': 'b',
-              'a|lib/a.txt.unused': 'c',
-            },
-            outputs: {
-              'a|lib/a.txt.copy': 'ab',
-            },
-            writer: writer);
+        final result = await testBuilders(builders, {
+          'a|lib/a.txt': 'a',
+          'a|lib/a.txt.used': 'b',
+          'a|lib/a.txt.unused': 'c',
+        }, outputs: {
+          'a|lib/a.txt.copy': 'ab',
+        });
 
         // Followup build with modified unused inputs should have no outputs.
-        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
-        writer.assets.clear();
+        var serializedGraph =
+            result.writer.assets[makeAssetId('a|$assetGraphPath')]!;
+        result.writer.assets.clear();
         await testBuilders(
             builders,
             {
@@ -1404,11 +1368,12 @@ void main() {
               'a|$assetGraphPath': serializedGraph,
             },
             outputs: {},
-            writer: writer);
+            resumeFrom: result);
 
         // And now modify a real input.
-        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
-        writer.assets.clear();
+        serializedGraph =
+            result.writer.assets[makeAssetId('a|$assetGraphPath')]!;
+        result.writer.assets.clear();
         await testBuilders(
             builders,
             {
@@ -1421,11 +1386,12 @@ void main() {
             outputs: {
               'a|lib/a.txt.copy': 'ae',
             },
-            writer: writer);
+            resumeFrom: result);
 
         // Finally modify the primary input.
-        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
-        writer.assets.clear();
+        serializedGraph =
+            result.writer.assets[makeAssetId('a|$assetGraphPath')]!;
+        result.writer.assets.clear();
         await testBuilders(
             builders,
             {
@@ -1438,7 +1404,7 @@ void main() {
             outputs: {
               'a|lib/a.txt.copy': 'fe',
             },
-            writer: writer);
+            resumeFrom: result);
       });
 
       test('allows marking the primary input as unused', () async {
@@ -1454,21 +1420,17 @@ void main() {
         var builders = [applyToRoot(builder)];
 
         // Initial build.
-        var writer = InMemoryRunnerAssetWriter();
-        await testBuilders(
-            builders,
-            {
-              'a|lib/a.txt': 'a',
-              'a|lib/a.txt.used': '',
-            },
-            outputs: {
-              'a|lib/a.txt.copy': 'a',
-            },
-            writer: writer);
+        final result = await testBuilders(builders, {
+          'a|lib/a.txt': 'a',
+          'a|lib/a.txt.used': '',
+        }, outputs: {
+          'a|lib/a.txt.copy': 'a',
+        });
 
         // Followup build with modified primary input should have no outputs.
-        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
-        writer.assets.clear();
+        var serializedGraph =
+            result.writer.assets[makeAssetId('a|$assetGraphPath')]!;
+        result.writer.assets.clear();
         await testBuilders(
             builders,
             {
@@ -1478,11 +1440,12 @@ void main() {
               'a|$assetGraphPath': serializedGraph,
             },
             outputs: {},
-            writer: writer);
+            resumeFrom: result);
 
         // But modifying other inputs still causes a rebuild.
-        serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
-        writer.assets.clear();
+        serializedGraph =
+            result.writer.assets[makeAssetId('a|$assetGraphPath')]!;
+        result.writer.assets.clear();
         await testBuilders(
             builders,
             {
@@ -1494,7 +1457,7 @@ void main() {
             outputs: {
               'a|lib/a.txt.copy': 'b',
             },
-            writer: writer);
+            resumeFrom: result);
       });
 
       test('marking the primary input as unused still tracks if it is deleted',
@@ -1509,20 +1472,16 @@ void main() {
         var builders = [applyToRoot(builder)];
 
         // Initial build.
-        var writer = InMemoryRunnerAssetWriter();
-        await testBuilders(
-            builders,
-            {
-              'a|lib/a.txt': 'a',
-            },
-            outputs: {
-              'a|lib/a.txt.copy': 'a',
-            },
-            writer: writer);
+        final result = await testBuilders(builders, {
+          'a|lib/a.txt': 'a',
+        }, outputs: {
+          'a|lib/a.txt.copy': 'a',
+        });
 
         // Delete the primary input, the output shoud still be deleted
-        var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
-        writer.assets.clear();
+        var serializedGraph =
+            result.writer.assets[makeAssetId('a|$assetGraphPath')]!;
+        result.writer.assets.clear();
         await testBuilders(
             builders,
             {
@@ -1530,10 +1489,10 @@ void main() {
               'a|$assetGraphPath': serializedGraph,
             },
             outputs: {},
-            writer: writer);
+            resumeFrom: result);
 
         var graph = AssetGraph.deserialize(
-            writer.assets[makeAssetId('a|$assetGraphPath')]!);
+            result.writer.assets[makeAssetId('a|$assetGraphPath')]!);
         expect(graph.get(makeAssetId('a|lib/a.txt.copy')), isNull);
       });
     });
@@ -1546,21 +1505,17 @@ void main() {
       ];
 
       // Initial build.
-      var writer = InMemoryRunnerAssetWriter();
-      await testBuilders(
-          builders,
-          {
-            'a|lib/a.txt': 'a',
-          },
-          outputs: {
-            'a|lib/a.txt.copy': 'a',
-            'a|lib/a.txt.clone': 'a',
-          },
-          writer: writer);
+      final result = await testBuilders(builders, {
+        'a|lib/a.txt': 'a',
+      }, outputs: {
+        'a|lib/a.txt.copy': 'a',
+        'a|lib/a.txt.clone': 'a',
+      });
 
       // Followup build with deleted input + cached graph.
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
-      writer.assets.clear();
+      var serializedGraph =
+          result.writer.assets[makeAssetId('a|$assetGraphPath')]!;
+      result.writer.assets.clear();
       await testBuilders(
           builders,
           {
@@ -1569,32 +1524,32 @@ void main() {
             'a|$assetGraphPath': serializedGraph,
           },
           outputs: {},
-          writer: writer);
+          resumeFrom: result);
 
       /// Should be deleted using the writer, and removed from the new graph.
       var newGraph = AssetGraph.deserialize(
-          writer.assets[makeAssetId('a|$assetGraphPath')]!);
+          result.writer.assets[makeAssetId('a|$assetGraphPath')]!);
       var aNodeId = makeAssetId('a|lib/a.txt');
       var aCopyNodeId = makeAssetId('a|lib/a.txt.copy');
       var aCloneNodeId = makeAssetId('a|lib/a.txt.copy.clone');
       expect(newGraph.contains(aNodeId), isFalse);
       expect(newGraph.contains(aCopyNodeId), isFalse);
       expect(newGraph.contains(aCloneNodeId), isFalse);
-      expect(writer.assets.containsKey(aNodeId), isFalse);
-      expect(writer.assets.containsKey(aCopyNodeId), isFalse);
-      expect(writer.assets.containsKey(aCloneNodeId), isFalse);
+      expect(result.writer.assets.containsKey(aNodeId), isFalse);
+      expect(result.writer.assets.containsKey(aCopyNodeId), isFalse);
+      expect(result.writer.assets.containsKey(aCloneNodeId), isFalse);
     });
 
     test('no outputs if no changed sources', () async {
       var builders = [copyABuilderApplication];
 
       // Initial build.
-      var writer = InMemoryRunnerAssetWriter();
-      await testBuilders(builders, {'a|web/a.txt': 'a'},
-          outputs: {'a|web/a.txt.copy': 'a'}, writer: writer);
+      final result = await testBuilders(builders, {'a|web/a.txt': 'a'},
+          outputs: {'a|web/a.txt.copy': 'a'});
 
       // Followup build with same sources + cached graph.
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
+      var serializedGraph =
+          result.writer.assets[makeAssetId('a|$assetGraphPath')]!;
       await testBuilders(builders, {
         'a|web/a.txt': 'a',
         'a|web/a.txt.copy': 'a',
@@ -1608,15 +1563,14 @@ void main() {
       ];
 
       // Initial build.
-      var writer = InMemoryRunnerAssetWriter();
-      await testBuilders(builders, {'a|web/a.txt': 'a'},
+      final result = await testBuilders(builders, {'a|web/a.txt': 'a'},
           // Note that `testBuilders` converts generated cache dir paths to the
           // original ones for matching.
-          outputs: {r'$$a|web/a.txt.copy': 'a'},
-          writer: writer);
+          outputs: {r'$$a|web/a.txt.copy': 'a'});
 
       // Followup build with same sources + cached graph.
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
+      var serializedGraph =
+          result.writer.assets[makeAssetId('a|$assetGraphPath')]!;
       await testBuilders(builders, {
         'a|web/a.txt': 'a',
         'a|web/a.txt.copy': 'a',
@@ -1626,8 +1580,7 @@ void main() {
 
     test('inputs/outputs are updated if they change', () async {
       // Initial build.
-      var writer = InMemoryRunnerAssetWriter();
-      await testBuilders([
+      final result = await testBuilders([
         applyToRoot(TestBuilder(
             buildExtensions: appendExtension('.copy', from: '.a'),
             build: copyFrom(makeAssetId('a|lib/file.b')))),
@@ -1637,12 +1590,13 @@ void main() {
         'a|lib/file.c': 'c',
       }, outputs: {
         'a|lib/file.a.copy': 'b',
-      }, writer: writer);
+      });
 
       // Followup build with same sources + cached graph, but configure the
       // builder to read a different file.
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
-      writer.assets.clear();
+      var serializedGraph =
+          result.writer.assets[makeAssetId('a|$assetGraphPath')]!;
+      result.writer.assets.clear();
 
       await testBuilders([
         applyToRoot(TestBuilder(
@@ -1658,11 +1612,11 @@ void main() {
         'a|$assetGraphPath': serializedGraph,
       }, outputs: {
         'a|lib/file.a.copy': 'c',
-      }, writer: writer);
+      }, resumeFrom: result);
 
       // Read cached graph and validate.
       var graph = AssetGraph.deserialize(
-          writer.assets[makeAssetId('a|$assetGraphPath')]!);
+          result.writer.assets[makeAssetId('a|$assetGraphPath')]!);
       var outputNode =
           graph.get(makeAssetId('a|lib/file.a.copy')) as GeneratedAssetNode;
       var fileANode = graph.get(makeAssetId('a|lib/file.a'))!;
@@ -1684,23 +1638,19 @@ void main() {
       ];
 
       // Initial build.
-      var writer = InMemoryRunnerAssetWriter();
-      await testBuilders(
-          builders,
-          {
-            'a|lib/file.a': 'a',
-            'a|lib/file.b': 'b',
-          },
-          outputs: {
-            'a|lib/file.a.copy': 'b',
-            'a|lib/file.a.copy.copy': 'b',
-          },
-          writer: writer);
+      final result = await testBuilders(builders, {
+        'a|lib/file.a': 'a',
+        'a|lib/file.b': 'b',
+      }, outputs: {
+        'a|lib/file.a.copy': 'b',
+        'a|lib/file.a.copy.copy': 'b',
+      });
 
       // Modify the primary input of `file.a.copy`, but its output doesn't
       // change so `file.a.copy.copy` shouldn't be rebuilt.
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
-      writer.assets.clear();
+      var serializedGraph =
+          result.writer.assets[makeAssetId('a|$assetGraphPath')]!;
+      result.writer.assets.clear();
       await testBuilders(
           builders,
           {
@@ -1713,17 +1663,16 @@ void main() {
           outputs: {
             'a|lib/file.a.copy': 'b',
           },
-          writer: writer);
+          resumeFrom: result);
     });
 
     test('no implicit dependency on primary input contents', () async {
       var builders = [applyToRoot(SiblingCopyBuilder())];
 
       // Initial build.
-      var writer = InMemoryRunnerAssetWriter();
-      await testBuilders(
+      final result = await testBuilders(
           builders, {'a|web/a.txt': 'a', 'a|web/a.txt.sibling': 'sibling'},
-          outputs: {'a|web/a.txt.new': 'sibling'}, writer: writer);
+          outputs: {'a|web/a.txt.new': 'sibling'});
 
       // Followup build with cached graph and a changed primary input, but the
       // actual file that was read has not changed.
@@ -1731,7 +1680,8 @@ void main() {
         'a|web/a.txt': 'b',
         'a|web/a.txt.sibling': 'sibling',
         'a|web/a.txt.new': 'sibling',
-        'a|$assetGraphPath': writer.assets[makeAssetId('a|$assetGraphPath')]!,
+        'a|$assetGraphPath':
+            result.writer.assets[makeAssetId('a|$assetGraphPath')]!,
       }, outputs: {});
 
       // And now try modifying the sibling to make sure that still works.
@@ -1739,7 +1689,8 @@ void main() {
         'a|web/a.txt': 'b',
         'a|web/a.txt.sibling': 'new!',
         'a|web/a.txt.new': 'sibling',
-        'a|$assetGraphPath': writer.assets[makeAssetId('a|$assetGraphPath')]!,
+        'a|$assetGraphPath':
+            result.writer.assets[makeAssetId('a|$assetGraphPath')]!,
       }, outputs: {
         'a|web/a.txt.new': 'new!',
       });
@@ -1766,16 +1717,15 @@ void main() {
               throw StateError('Fails always');
             })),
       ];
-      var writer = InMemoryRunnerAssetWriter();
-      await testBuilders(
+      final result = await testBuilders(
         builders,
         {'a|lib/a.source': 'true'},
         status: BuildStatus.failure,
-        writer: writer,
       );
 
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
-      writer.assets.clear();
+      var serializedGraph =
+          result.writer.assets[makeAssetId('a|$assetGraphPath')]!;
+      result.writer.assets.clear();
 
       await testBuilders(
           builders,
@@ -1784,7 +1734,7 @@ void main() {
             'a|$assetGraphPath': serializedGraph,
           },
           outputs: {},
-          writer: writer);
+          resumeFrom: result);
     });
 
     test('the entrypoint cannot be read by a builder', () async {
@@ -1841,16 +1791,15 @@ void main() {
                   buildStep.inputId.changeExtension('.g3'), '');
             })),
       ];
-      var writer = InMemoryRunnerAssetWriter();
-      await testBuilders(
+      final result = await testBuilders(
         builders,
         {'a|web/a.source': 'true'},
         status: BuildStatus.failure,
-        writer: writer,
       );
 
-      var serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
-      writer.assets.clear();
+      var serializedGraph =
+          result.writer.assets[makeAssetId('a|$assetGraphPath')]!;
+      result.writer.assets.clear();
 
       await testBuilders(
           builders,
@@ -1863,10 +1812,10 @@ void main() {
             'a|web/a.g2': '',
             'a|web/a.g3': '',
           },
-          writer: writer);
+          resumeFrom: result);
 
-      serializedGraph = writer.assets[makeAssetId('a|$assetGraphPath')]!;
-      writer.assets.clear();
+      serializedGraph = result.writer.assets[makeAssetId('a|$assetGraphPath')]!;
+      result.writer.assets.clear();
 
       // Make sure if we mark the original node as a failure again, that we
       // also mark all its primary outputs as failures.
@@ -1878,10 +1827,10 @@ void main() {
           },
           outputs: {},
           status: BuildStatus.failure,
-          writer: writer);
+          resumeFrom: result);
 
-      var finalGraph =
-          AssetGraph.deserialize(writer.assets[AssetId('a', assetGraphPath)]!);
+      var finalGraph = AssetGraph.deserialize(
+          result.writer.assets[AssetId('a', assetGraphPath)]!);
       for (var i = 1; i < 4; i++) {
         var node =
             finalGraph.get(AssetId('a', 'web/a.g$i')) as GeneratedAssetNode;

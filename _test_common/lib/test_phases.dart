@@ -41,13 +41,12 @@ void _printOnFailure(LogRecord record) {
 /// For example `$$myapp|lib/utils.copy.dart` will check that the generated
 /// output was written to the build cache.
 ///
+/// [resumeFrom] reuses the filesystem state from a previous [BuildResult].
+///
 /// [packageGraph] supplies the root package into which the outputs are to be
 /// written.
 ///
 /// [status] optionally indicates the desired outcome.
-///
-/// [writer] can optionally be provided to capture assets written by the
-/// builders (e.g. when [outputs] is not sufficient).
 ///
 /// [logLevel] sets the builder log level and [onLog] can optionally capture
 /// build log messages.
@@ -70,12 +69,11 @@ void _printOnFailure(LogRecord record) {
 Future<BuildResult> testBuilders(
   List<BuilderApplication> builders,
   Map<String, /*String|List<int>*/ Object> inputs, {
+  BuildResult? resumeFrom,
   Map<String, /*String|List<int>*/ Object>? outputs,
   PackageGraph? packageGraph,
   BuildStatus status = BuildStatus.success,
   Map<String, BuildConfig>? overrideBuildConfig,
-  InMemoryRunnerAssetReader? reader,
-  InMemoryRunnerAssetWriter? writer,
   Level? logLevel,
   // A better way to "silence" logging than setting logLevel to OFF.
   void Function(LogRecord record) onLog = _printOnFailure,
@@ -88,11 +86,16 @@ Future<BuildResult> testBuilders(
   Set<BuildFilter> buildFilters = const {},
   String? logPerformanceDir,
   String expectedGeneratedDir = 'generated',
+  void Function(AssetId id)? onDelete,
 }) async {
   packageGraph ??= buildPackageGraph({rootPackage('a'): []});
-  writer ??= InMemoryRunnerAssetWriter();
-  reader ??= InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
-      rootPackage: packageGraph.root.name);
+  final writer =
+      resumeFrom == null ? InMemoryRunnerAssetWriter() : resumeFrom.writer;
+  writer.onDelete = onDelete;
+  final reader = resumeFrom == null
+      ? InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
+          rootPackage: packageGraph.root.name)
+      : resumeFrom.reader;
   var pkgConfigId =
       AssetId(packageGraph.root.name, '.dart_tool/package_config.json');
   if (!await reader.canRead(pkgConfigId)) {
@@ -114,9 +117,9 @@ Future<BuildResult> testBuilders(
   inputs.forEach((serializedId, contents) {
     var id = makeAssetId(serializedId);
     if (contents is String) {
-      reader!.cacheStringAsset(id, contents);
+      reader.cacheStringAsset(id, contents);
     } else if (contents is List<int>) {
-      reader!.cacheBytesAsset(id, contents);
+      reader.cacheBytesAsset(id, contents);
     }
   });
 
@@ -154,6 +157,10 @@ Future<BuildResult> testBuilders(
         rootPackage: packageGraph.root.name,
         expectedGeneratedDir: expectedGeneratedDir);
   }
+
+  result._attachReader(reader);
+  result._attachWriter(writer);
+
   return result;
 }
 
@@ -190,3 +197,23 @@ void checkBuild(BuildResult result,
         mapAssetIds: (id) => mapHidden(id, expectedGeneratedDir));
   }
 }
+
+extension BuildResultExtension on BuildResult {
+  /// The reader used in this `testBuilders` build.
+  InMemoryRunnerAssetReader get reader => _readerExpando[this]!;
+
+  /// The writer used in this `testBuilders` build.
+  InMemoryRunnerAssetWriter get writer => _writerExpando[this]!;
+
+  void _attachReader(InMemoryRunnerAssetReader reader) {
+    _readerExpando[this] = reader;
+  }
+
+  void _attachWriter(InMemoryRunnerAssetWriter writer) {
+    _writerExpando[this] = writer;
+  }
+}
+
+final Expando<InMemoryRunnerAssetReader> _readerExpando = Expando();
+
+final Expando<InMemoryRunnerAssetWriter> _writerExpando = Expando();
