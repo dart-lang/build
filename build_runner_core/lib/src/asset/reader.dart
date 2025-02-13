@@ -3,13 +3,15 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
+
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../util/async.dart';
@@ -60,7 +62,7 @@ typedef CheckInvalidInput = void Function(AssetId id);
 ///
 /// Tracks the assets and globs read during this step for input dependency
 /// tracking.
-class SingleStepReader implements AssetReader {
+class SingleStepReader implements AssetReader, AssetReaderState {
   final AssetGraph _assetGraph;
   final AssetReader _delegate;
   final int _phaseNumber;
@@ -71,8 +73,8 @@ class SingleStepReader implements AssetReader {
   final FutureOr<GlobAssetNode> Function(
       Glob glob, String package, int phaseNum)? _getGlobNode;
 
-  /// The assets read during this step.
-  final assetsRead = HashSet<AssetId>();
+  @override
+  final InputTracker inputTracker = InputTracker();
 
   SingleStepReader(this._delegate, this._assetGraph, this._phaseNumber,
       this._primaryPackage, this._isReadableNode, this._checkInvalidInput,
@@ -97,7 +99,7 @@ class SingleStepReader implements AssetReader {
 
     final node = _assetGraph.get(id);
     if (node == null) {
-      assetsRead.add(id);
+      inputTracker.assetsRead.add(id);
       _assetGraph.add(SyntheticSourceAssetNode(id));
       return false;
     }
@@ -105,7 +107,7 @@ class SingleStepReader implements AssetReader {
     return doAfter(_isReadableNode(node, _phaseNumber, _writtenAssets),
         (Readability readability) {
       if (!readability.inSamePhase) {
-        assetsRead.add(id);
+        inputTracker.assetsRead.add(id);
       }
 
       return readability.canRead;
@@ -175,7 +177,7 @@ class SingleStepReader implements AssetReader {
 
     doAfter(_getGlobNode(glob, _primaryPackage, _phaseNumber),
         (GlobAssetNode globNode) {
-      assetsRead.add(globNode.id);
+      inputTracker.assetsRead.add(globNode.id);
       streamCompleter.setSourceStream(Stream.fromIterable(globNode.results!));
     });
     return streamCompleter.stream;

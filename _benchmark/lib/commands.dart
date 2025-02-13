@@ -6,6 +6,7 @@ import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 
 import 'config.dart';
+import 'shape.dart';
 import 'workspace.dart';
 
 class BenchmarkCommand extends Command<void> {
@@ -35,19 +36,22 @@ class CreateCommand extends Command<void> {
   Future<void> _run(ArgResults globalResults) async {
     final config = Config.fromArgResults(globalResults);
 
-    for (final size in config.sizes) {
-      final paddedSize = size.toString().padLeft(4, '0');
-      final workspace = Workspace(
-        config: config,
-        name: '${config.generator.packageName}_$paddedSize',
-      );
-      final runConfig = RunConfig(
-        config: config,
-        workspace: workspace,
-        size: size,
-        paddedSize: paddedSize,
-      );
-      config.generator.benchmark.create(runConfig);
+    for (final shape in config.shapes) {
+      for (final size in config.sizes) {
+        final paddedSize = size.toString().padLeft(4, '0');
+        final workspace = Workspace(
+          config: config,
+          name: '${config.generator.packageName}_${shape.name}_$paddedSize',
+        );
+        final runConfig = RunConfig(
+          config: config,
+          workspace: workspace,
+          size: size,
+          paddedSize: paddedSize,
+          shape: shape,
+        );
+        config.generator.benchmark.create(runConfig);
+      }
     }
   }
 }
@@ -65,15 +69,17 @@ class MeasureCommand extends Command<void> {
   Future<void> _run(ArgResults globalResults) async {
     // Launch a benchmark at each size in parallel.
     final config = Config.fromArgResults(globalResults);
-    final pendingResults = <int, PendingResult>{};
-    for (final size in config.sizes) {
-      final paddedSize = size.toString().padLeft(4, '0');
-      final workspace = Workspace(
-        config: config,
-        name: '${config.generator.packageName}_$paddedSize',
-        clean: false,
-      );
-      pendingResults[size] = workspace.measure();
+    final pendingResults = <(Shape, int), PendingResult>{};
+    for (final shape in config.shapes) {
+      for (final size in config.sizes) {
+        final paddedSize = size.toString().padLeft(4, '0');
+        final workspace = Workspace(
+          config: config,
+          name: '${config.generator.packageName}_${shape.name}_$paddedSize',
+          clean: false,
+        );
+        pendingResults[(shape, size)] = workspace.measure();
+      }
     }
 
     // Wait for them to complete, printing status every second only if it
@@ -83,21 +89,36 @@ class MeasureCommand extends Command<void> {
       await Future<void>.delayed(const Duration(seconds: 1));
 
       final update = StringBuffer('${config.generator.packageName}\n');
-      update.write('libraries,clean/ms,no changes/ms,incremental/ms\n');
-      for (final size in config.sizes) {
-        final pendingResult = pendingResults[size]!;
-        if (pendingResult.isFailure) {
-          throw StateError(pendingResult.failure!);
+      update.write('shape,libraries,clean/ms,no changes/ms,incremental/ms\n');
+      for (final shape in config.shapes) {
+        for (final size in config.sizes) {
+          final pendingResult = pendingResults[(shape, size)]!;
+          if (pendingResult.isFailure) {
+            if (!config.allowFailures) {
+              throw StateError(pendingResult.failure!);
+            }
+            update.write(
+              [
+                shape.name,
+                size,
+                pendingResult.cleanBuildTime.renderFailed,
+                pendingResult.noChangesBuildTime.renderFailed,
+                pendingResult.incrementalBuildTime.renderFailed,
+              ].join(','),
+            );
+          } else {
+            update.write(
+              [
+                shape.name,
+                size,
+                pendingResult.cleanBuildTime.render,
+                pendingResult.noChangesBuildTime.render,
+                pendingResult.incrementalBuildTime.render,
+              ].join(','),
+            );
+          }
+          update.write('\n');
         }
-        update.write(
-          [
-            size,
-            pendingResults[size]!.cleanBuildTime.render,
-            pendingResults[size]!.noChangesBuildTime.render,
-            pendingResults[size]!.incrementalBuildTime.render,
-          ].join(','),
-        );
-        update.write('\n');
       }
 
       final updateString = update.toString();
@@ -110,5 +131,10 @@ class MeasureCommand extends Command<void> {
 }
 
 extension DurationExtension on Duration? {
+  /// Renders with `---` for `null`, to mean "pending".
   String get render => this == null ? '---' : this!.inMilliseconds.toString();
+
+  /// Renders with X` for `null`, to mean "failed".
+  String get renderFailed =>
+      this == null ? 'X' : this!.inMilliseconds.toString();
 }

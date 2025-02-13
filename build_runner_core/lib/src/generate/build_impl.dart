@@ -8,6 +8,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
@@ -512,7 +514,7 @@ class _SingleBuild {
 
         // We may have read some inputs in the call to `_buildShouldRun`, we
         // want to remove those.
-        wrappedReader.assetsRead.clear();
+        wrappedReader.inputTracker.assetsRead.clear();
 
         var actionDescription =
             _actionLoggerName(phase, input, _packageGraph.root.name);
@@ -552,6 +554,7 @@ class _SingleBuild {
             () => _setOutputsState(
                   builderOutputs,
                   wrappedReader,
+                  wrappedReader.inputTracker,
                   wrappedWriter,
                   actionDescription,
                   logger.errorsSeen,
@@ -617,7 +620,7 @@ class _SingleBuild {
     }
     // We may have read some inputs in the call to `_buildShouldRun`, we want
     // to remove those.
-    wrappedReader.assetsRead.clear();
+    wrappedReader.inputTracker.assetsRead.clear();
 
     // Clean out the impacts of the previous run
     await FailureReporter.clean(phaseNum, input);
@@ -671,8 +674,13 @@ class _SingleBuild {
     // Reset the state for all the output nodes based on what was read and
     // written.
     inputNode.primaryOutputs.addAll(assetsWritten);
-    await _setOutputsState(assetsWritten, wrappedReader, wrappedWriter,
-        actionDescription, logger.errorsSeen);
+    await _setOutputsState(
+        assetsWritten,
+        wrappedReader,
+        wrappedReader.inputTracker,
+        wrappedWriter,
+        actionDescription,
+        logger.errorsSeen);
 
     return assetsWritten;
   }
@@ -853,15 +861,16 @@ class _SingleBuild {
   /// - Storing the error message with the [_failureReporter].
   Future<void> _setOutputsState(
       Iterable<AssetId> outputs,
-      SingleStepReader reader,
+      AssetReader reader,
+      InputTracker inputTracker,
       AssetWriterSpy writer,
       String actionDescription,
       Iterable<ErrorReport> errors,
       {Set<AssetId>? unusedAssets}) async {
     if (outputs.isEmpty) return;
     var usedInputs = unusedAssets != null
-        ? reader.assetsRead.difference(unusedAssets)
-        : reader.assetsRead;
+        ? inputTracker.assetsRead.difference(unusedAssets)
+        : inputTracker.assetsRead;
 
     final inputsDigest = await _computeCombinedDigest(
         usedInputs,

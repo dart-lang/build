@@ -1,4 +1,10 @@
-## 2.4.4-wip
+## 2.4.5-wip
+
+- Start using `package:build/src/internal.dart`.
+- Switch `BuildAssetUriResolver` dependency crawl to an iterative
+  algorithm, preventing stack overflows.
+
+## 2.4.4
 
 - Refactor `BuildAssetUriResolver` into `AnalysisDriverModel` and
   `AnalysisDriverFilesystem`. Add new implementation of

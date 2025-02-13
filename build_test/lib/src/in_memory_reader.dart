@@ -4,6 +4,8 @@
 import 'dart:convert';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:glob/glob.dart';
 
 /// An [AssetReader] that records which assets have been read to [assetsRead].
@@ -13,12 +15,15 @@ abstract class RecordingAssetReader implements AssetReader {
 
 /// An implementation of [AssetReader] with primed in-memory assets.
 class InMemoryAssetReader extends AssetReader
-    implements MultiPackageAssetReader, RecordingAssetReader {
+    implements MultiPackageAssetReader, RecordingAssetReader, AssetReaderState {
   final Map<AssetId, List<int>> assets;
   final String? rootPackage;
 
   @override
-  final Set<AssetId> assetsRead = <AssetId>{};
+  final InputTracker inputTracker = InputTracker();
+
+  @override
+  Set<AssetId> get assetsRead => inputTracker.assetsRead;
 
   /// Create a new asset reader that contains [sourceAssets].
   ///
@@ -51,21 +56,21 @@ class InMemoryAssetReader extends AssetReader
 
   @override
   Future<bool> canRead(AssetId id) async {
-    assetsRead.add(id);
+    inputTracker.assetsRead.add(id);
     return assets.containsKey(id);
   }
 
   @override
   Future<List<int>> readAsBytes(AssetId id) async {
     if (!await canRead(id)) throw AssetNotFoundException(id);
-    assetsRead.add(id);
+    inputTracker.assetsRead.add(id);
     return assets[id]!;
   }
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
     if (!await canRead(id)) throw AssetNotFoundException(id);
-    assetsRead.add(id);
+    inputTracker.assetsRead.add(id);
     return encoding.decode(assets[id]!);
   }
 

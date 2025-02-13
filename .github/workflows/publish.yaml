@@ -15,6 +15,4 @@ jobs:
     uses: dart-lang/ecosystem/.github/workflows/publish.yaml@main
     with:
       write-comments: false
-      # Protected github deployment environment, requires approval to publish.
-      environment: pub.dev
       sdk: dev
