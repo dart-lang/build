@@ -361,6 +361,8 @@ void runTests(ResolversFactory resolversFactory) {
     test('defaults to the current isolate package config', () async {
       await resolveSources({
         'a|web/main.dart': 'main() {}',
+      }, nonInputsToReadFromFilesystem: {
+        AssetId('build_resolvers', 'lib/build_resolvers.dart')
       }, (resolver) async {
         var buildResolversId =
             AssetId('build_resolvers', 'lib/build_resolvers.dart');
