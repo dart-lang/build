@@ -1,5 +1,6 @@
 ## 4.1.2-wip
 
+- Use support-detection scripts emitted by `dart2wasm`.
 - Use `build_test` 3.0.0.
 
 ## 4.1.1

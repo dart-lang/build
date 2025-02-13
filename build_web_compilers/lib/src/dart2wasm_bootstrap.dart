@@ -17,20 +17,42 @@ import 'web_entrypoint_builder.dart';
 
 final _resourcePool = Pool(maxWorkersPerTask);
 
+/// Result of invoking the `dart2wasm` compiler.
+final class Dart2WasmBootstrapResult {
+  /// Whether `dart2wasm` did compile the Dart program.
+  ///
+  /// This is typically false when the program transitively imports an
+  /// unsupported library, or if the compiler fails for another reason.
+  final bool didCompile;
+
+  /// An optional JavaScript expression that might be emitted by `dart2wasm`.
+  /// The expression evaluates to `true` if the current JavaScript environment
+  /// supports all the features expected by the generated WebAssembly module.
+  final String? supportExpression;
+
+  const Dart2WasmBootstrapResult.didNotCompile()
+      : didCompile = false,
+        supportExpression = null;
+
+  Dart2WasmBootstrapResult({
+    required this.supportExpression,
+  }) : didCompile = true;
+}
+
 /// Invokes `dart compile wasm` to compile the primary input of [buildStep].
 ///
 /// This only emits the `.wasm` and `.mjs` files produced by `dart2wasm`. An
 /// entrypoint loader needs to be emitted separately.
-Future<void> bootstrapDart2Wasm(
+Future<Dart2WasmBootstrapResult> bootstrapDart2Wasm(
   BuildStep buildStep,
   List<String> additionalArguments,
   String javaScriptModuleExtension,
 ) async {
-  await _resourcePool.withResource(() => _bootstrapDart2Wasm(
+  return await _resourcePool.withResource(() => _bootstrapDart2Wasm(
       buildStep, additionalArguments, javaScriptModuleExtension));
 }
 
-Future<void> _bootstrapDart2Wasm(
+Future<Dart2WasmBootstrapResult> _bootstrapDart2Wasm(
   BuildStep buildStep,
   List<String> additionalArguments,
   String javaScriptModuleExtension,
@@ -61,7 +83,7 @@ $librariesString
 
 https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-skipped-compiling-warnings
 ''');
-      return;
+      return const Dart2WasmBootstrapResult.didNotCompile();
     }
 
     var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
@@ -123,5 +145,15 @@ https://github.com/dart-lang/build/blob/master/docs/faq.md#how-can-i-resolve-ski
   } else {
     log.severe('ExitCode:${result.exitCode}\nStdOut:\n${result.stdout}\n'
         'StdErr:\n${result.stderr}');
+    return const Dart2WasmBootstrapResult.didNotCompile();
   }
+
+  var supportFile =
+      scratchSpace.fileFor(dartEntrypointId.changeExtension('.support.js'));
+  String? supportExpression;
+  if (await supportFile.exists()) {
+    supportExpression = await supportFile.readAsString();
+  }
+
+  return Dart2WasmBootstrapResult(supportExpression: supportExpression);
 }
