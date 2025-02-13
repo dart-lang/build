@@ -1,6 +1,6 @@
 sdk:
 - pubspec
-- 3.8.0-91.0.dev
+- dev
 
 stages:
 - analyze_and_format:
