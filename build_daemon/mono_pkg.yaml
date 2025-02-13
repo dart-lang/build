@@ -1,5 +1,5 @@
 sdk:
-- dev
+- 3.8.0-91.0.dev
 - pubspec
 
 stages:
@@ -8,7 +8,7 @@ stages:
     - format
     - analyze: --fatal-infos .
     sdk:
-    - dev
+    - 3.8.0-91.0.dev
 - unit_test:
   - test: --test-randomize-ordering-seed=random
     os:
