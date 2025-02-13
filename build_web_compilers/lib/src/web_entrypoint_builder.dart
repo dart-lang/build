@@ -290,6 +290,7 @@ class WebEntrypointBuilder implements Builder {
     if (!isAppEntrypoint) return;
 
     final compilationSteps = <Future>[];
+    Dart2WasmBootstrapResult? dart2WasmResult;
 
     for (final compiler in options.compilers) {
       switch (compiler.compiler) {
@@ -311,17 +312,21 @@ class WebEntrypointBuilder implements Builder {
             entrypointExtension: compiler.extension,
           ));
         case WebCompiler.Dart2Wasm:
-          compilationSteps.add(bootstrapDart2Wasm(
-              buildStep, compiler.compilerArguments, compiler.extension));
+          compilationSteps.add(Future(() async {
+            dart2WasmResult = await bootstrapDart2Wasm(
+                buildStep, compiler.compilerArguments, compiler.extension);
+          }));
       }
     }
     await Future.wait(compilationSteps);
-    if (_generateLoader(buildStep.inputId) case (var id, var loader)?) {
+    if (_generateLoader(buildStep.inputId, dart2WasmResult)
+        case (var id, var loader)?) {
       await buildStep.writeAsString(id, loader);
     }
   }
 
-  (AssetId, String)? _generateLoader(AssetId input) {
+  (AssetId, String)? _generateLoader(
+      AssetId input, Dart2WasmBootstrapResult? dart2WasmResult) {
     var loaderExtension = options.loaderExtension;
     var wasmCompiler = options.optionsFor(WebCompiler.Dart2Wasm);
     if (loaderExtension == null || wasmCompiler == null) {
@@ -350,17 +355,13 @@ function relativeURL(ref) {
     // If we're compiling to JS, start a feature detection to prefer wasm but
     // fall back to JS if necessary.
     if (jsCompiler != null) {
-      loaderResult.writeln('''
-function supportsWasmGC() {
-  // This attempts to instantiate a wasm module that only will validate if the
-  // final WasmGC spec is implemented in the browser.
-  //
-  // Copied from https://github.com/GoogleChromeLabs/wasm-feature-detect/blob/main/src/detectors/gc/index.js
-  const bytes = [0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 95, 1, 120, 0];
-  return 'WebAssembly' in self && WebAssembly.validate(new Uint8Array(bytes));
-}
+      final supportCheck = dart2WasmResult?.supportExpression ??
+          "'WebAssembly' in self && "
+              'WebAssembly.validate(new Uint8Array('
+              '[0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 95, 1, 120, 0]));';
 
-if (supportsWasmGC()) {
+      loaderResult.writeln('''
+if ($supportCheck) {
 ''');
     }
 

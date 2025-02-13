@@ -69,9 +69,17 @@ void main() {
           'a|web/index.dart.js': decodedMatches(
             stringContainsInOrder(
               [
-                'if (supportsWasmGC())',
+                'if',
+                // Depending on whether dart2wasm emitted a .support.js file,
+                // this check either comes from dart2wasm or from our own script
+                // doing its own feature detection as a fallback. Which one is
+                // used depends on the SDK version, we can only assume that the
+                // check is guaranteed to include WebAssembly.validate to check
+                // for WASM features.
+                'WebAssembly.validate',
+                '{',
                 'compileStreaming',
-                'else',
+                '} else {',
                 'scriptTag.src = relativeURL("./index.dart2js.js");'
               ],
             ),
