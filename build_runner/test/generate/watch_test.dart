@@ -338,8 +338,6 @@ void main() {
           rootPackage('a', path: path.absolute('a')): ['b'],
           package('b', path: path.absolute('a', 'b')): []
         });
-        readerWriter = InMemoryRunnerAssetReaderWriter(
-            rootPackage: packageGraph.root.name);
 
         var buildState = await startWatch([
           copyABuildApplication,
@@ -469,8 +467,6 @@ void main() {
           rootPackage('a', path: path.absolute('a')): ['b'],
           package('b', path: path.absolute('b'), type: DependencyType.path): []
         });
-        readerWriter = InMemoryRunnerAssetReaderWriter(
-            rootPackage: packageGraph.root.name);
         late List<LogRecord> logs;
         late StreamQueue<BuildResult> results;
 

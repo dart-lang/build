@@ -554,7 +554,7 @@ void main() {
           buildDirs: {BuildDirectory('web')},
         );
 
-        checkBuild(result,
+        checkBuild(result.buildResult,
             writer: result.readerWriter, outputs: {r'$$a|lib/b.txt.copy': 'b'});
       });
 
@@ -572,7 +572,7 @@ void main() {
         );
 
         checkBuild(
-          result,
+          result.buildResult,
           writer: result.readerWriter,
           outputs: {
             r'$$a|include/a.txt.copy': 'a',

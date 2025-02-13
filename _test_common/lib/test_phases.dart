@@ -65,10 +65,10 @@ void _printOnFailure(LogRecord record) {
 ///       });
 ///     }
 ///
-Future<BuildResult> testBuilders(
+Future<TestBuildersResult> testBuilders(
   List<BuilderApplication> builders,
   Map<String, /*String|List<int>*/ Object> inputs, {
-  BuildResult? resumeFrom,
+  TestBuildersResult? resumeFrom,
   Map<String, /*String|List<int>*/ Object>? outputs,
   PackageGraph? packageGraph,
   BuildStatus status = BuildStatus.success,
@@ -154,9 +154,7 @@ Future<BuildResult> testBuilders(
         expectedGeneratedDir: expectedGeneratedDir);
   }
 
-  result._attachReaderWriter(readerWriter);
-
-  return result;
+  return TestBuildersResult(buildResult: result, readerWriter: readerWriter);
 }
 
 /// Translates expected outptus which start with `$$` to the build cache and
@@ -193,14 +191,9 @@ void checkBuild(BuildResult result,
   }
 }
 
-extension BuildResultExtension on BuildResult {
-  /// The reader/writer used in this `testBuilders` build.
-  InMemoryRunnerAssetReaderWriter get readerWriter =>
-      _readerWriterExpando[this]!;
+class TestBuildersResult {
+  final BuildResult buildResult;
+  final InMemoryRunnerAssetReaderWriter readerWriter;
 
-  void _attachReaderWriter(InMemoryRunnerAssetReaderWriter readerWriter) {
-    _readerWriterExpando[this] = readerWriter;
-  }
+  TestBuildersResult({required this.buildResult, required this.readerWriter});
 }
-
-final Expando<InMemoryRunnerAssetReaderWriter> _readerWriterExpando = Expando();
