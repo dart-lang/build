@@ -1,3 +1,7 @@
+## 5.0.12-wip
+
+- Use `build_test` 3.0.0.
+
 ## 5.0.11
 
 - Support 3.8.0 pre-release sdks.

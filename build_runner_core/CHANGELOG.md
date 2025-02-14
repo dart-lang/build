@@ -2,6 +2,7 @@
 
 - Fix crash when running on assets ending in a dot.
 - Start using `package:build/src/internal.dart'.
+- Use `build_test` 3.0.0.
 
 ## 8.0.0
 

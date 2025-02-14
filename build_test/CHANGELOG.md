@@ -1,5 +1,11 @@
-## 2.2.4-wip
+## 3.0.0-wip
 
+- `InMemoryAssetReader` and `InMemoryAssetWriter` implementations are merged
+  into `InMemoryAssetReaderWriter` with shared state; it implements both
+  `InMemoryAssetReader` and `InMemoryAssetWriter`.
+- Breaking change: `testBuilder` no longer accepts a `reader` and a `writer`.
+  Instead it returns a `TestBuilderResult` with the `InMemoryAssetReaderWriter`
+  that was used.
 - Support checks on reader state after a build action in `resolveSources`.
 - Start using `package:build/src/internal.dart`.
 

@@ -2,6 +2,7 @@
 
 - Add `package:build/src/internal.dart` for use by `build_resolvers`,
   `build_runner_core` and `build_test`.
+- Use `build_test` 3.0.0.
 
 ## 2.4.2
 

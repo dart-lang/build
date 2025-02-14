@@ -78,8 +78,7 @@ void main() {
     late InMemoryAssetReader reader;
 
     setUp(() {
-      writer = InMemoryAssetWriter();
-      reader = InMemoryAssetReader.shareAssetCache(writer.assets);
+      writer = reader = InMemoryAssetReaderWriter();
     });
 
     test('tracks outputs created by a builder', () async {

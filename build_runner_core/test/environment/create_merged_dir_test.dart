@@ -61,15 +61,15 @@ void main() {
     late Directory tmpDir;
     late Directory anotherTmpDir;
     late TestBuildEnvironment environment;
-    late InMemoryRunnerAssetReader assetReader;
+    late InMemoryRunnerAssetReaderWriter readerWriter;
     late OptionalOutputTracker optionalOutputTracker;
     late FinalizedAssetsView finalizedAssetsView;
 
     setUp(() async {
-      assetReader = InMemoryRunnerAssetReader(sources);
-      environment = TestBuildEnvironment(reader: assetReader);
-      graph = await AssetGraph.build(
-          phases, sources.keys.toSet(), <AssetId>{}, packageGraph, assetReader);
+      readerWriter = InMemoryRunnerAssetReaderWriter(sourceAssets: sources);
+      environment = TestBuildEnvironment(readerWriter: readerWriter);
+      graph = await AssetGraph.build(phases, sources.keys.toSet(), <AssetId>{},
+          packageGraph, readerWriter);
       targetGraph = await TargetGraph.forPackageGraph(packageGraph,
           defaultRootPackageSources: defaultNonRootVisibleAssets);
       optionalOutputTracker =
@@ -81,7 +81,7 @@ void main() {
           ..state = NodeState.upToDate
           ..wasOutput = true
           ..isFailure = false;
-        assetReader.cacheStringAsset(id, sources[node.primaryInput]!);
+        readerWriter.cacheStringAsset(id, sources[node.primaryInput]!);
       }
       tmpDir = await Directory.systemTemp.createTemp('build_tests');
       anotherTmpDir = await Directory.systemTemp.createTemp('build_tests');
@@ -96,7 +96,7 @@ void main() {
           {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
           packageGraph,
           environment,
-          assetReader,
+          readerWriter,
           finalizedAssetsView,
           false);
       expect(success, isTrue);
@@ -113,7 +113,7 @@ void main() {
           {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
           packageGraph,
           environment,
-          assetReader,
+          readerWriter,
           finalizedAssetsView,
           false);
       expect(success, isTrue);
@@ -131,7 +131,7 @@ void main() {
       var success = await createMergedOutputDirectories({
         BuildDirectory('', outputLocation: OutputLocation(tmpDir.path)),
         BuildDirectory('', outputLocation: OutputLocation(anotherTmpDir.path))
-      }, packageGraph, environment, assetReader, finalizedAssetsView, false);
+      }, packageGraph, environment, readerWriter, finalizedAssetsView, false);
       expect(success, isTrue);
 
       _expectAllFiles(tmpDir);
@@ -142,7 +142,7 @@ void main() {
       var success = await createMergedOutputDirectories({
         BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
         BuildDirectory('foo', outputLocation: OutputLocation(tmpDir.path))
-      }, packageGraph, environment, assetReader, finalizedAssetsView, false);
+      }, packageGraph, environment, readerWriter, finalizedAssetsView, false);
       expect(success, isFalse);
       expect(Directory(tmpDir.path).listSync(), isEmpty);
     });
@@ -152,7 +152,7 @@ void main() {
           {BuildDirectory('web'), BuildDirectory('foo')},
           packageGraph,
           environment,
-          assetReader,
+          readerWriter,
           finalizedAssetsView,
           false);
       expect(success, isTrue);
@@ -163,7 +163,7 @@ void main() {
           {BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path))},
           packageGraph,
           environment,
-          assetReader,
+          readerWriter,
           finalizedAssetsView,
           false);
       expect(success, isTrue);
@@ -180,7 +180,7 @@ void main() {
       var success = await createMergedOutputDirectories({
         BuildDirectory('no_assets_here',
             outputLocation: OutputLocation(tmpDir.path))
-      }, packageGraph, environment, assetReader, finalizedAssetsView, false);
+      }, packageGraph, environment, readerWriter, finalizedAssetsView, false);
       expect(success, isFalse);
       expect(Directory(tmpDir.path).listSync(), isEmpty);
     });
@@ -190,7 +190,7 @@ void main() {
           {BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path))},
           packageGraph,
           environment,
-          assetReader,
+          readerWriter,
           finalizedAssetsView,
           false);
       expect(success, isTrue);
@@ -203,7 +203,7 @@ void main() {
         BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
         BuildDirectory('foo',
             outputLocation: OutputLocation(anotherTmpDir.path))
-      }, packageGraph, environment, assetReader, finalizedAssetsView, false);
+      }, packageGraph, environment, readerWriter, finalizedAssetsView, false);
       expect(success, isTrue);
 
       var webFiles = <String, dynamic>{
@@ -223,7 +223,7 @@ void main() {
           {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
           packageGraph,
           environment,
-          assetReader,
+          readerWriter,
           finalizedAssetsView,
           false);
       expect(success, isTrue);
@@ -235,7 +235,7 @@ void main() {
         BuildDirectory('web', outputLocation: OutputLocation(tmpDir.path)),
         BuildDirectory('foo',
             outputLocation: OutputLocation(anotherTmpDir.path))
-      }, packageGraph, environment, assetReader, finalizedAssetsView, false);
+      }, packageGraph, environment, readerWriter, finalizedAssetsView, false);
       expect(success, isTrue);
 
       var webFiles = <String, dynamic>{
@@ -267,7 +267,7 @@ void main() {
           {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
           packageGraph,
           environment,
-          assetReader,
+          readerWriter,
           finalizedAssetsView,
           false);
       expect(success, isTrue);
@@ -285,7 +285,7 @@ void main() {
           {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
           packageGraph,
           environment,
-          assetReader,
+          readerWriter,
           finalizedAssetsView,
           false);
       expect(success, isTrue);
@@ -313,13 +313,13 @@ void main() {
       });
 
       test('fails in non-interactive mode', () async {
-        environment =
-            TestBuildEnvironment(reader: assetReader, throwOnPrompt: true);
+        environment = TestBuildEnvironment(
+            readerWriter: readerWriter, throwOnPrompt: true);
         var success = await createMergedOutputDirectories(
             {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
             packageGraph,
             environment,
-            assetReader,
+            readerWriter,
             finalizedAssetsView,
             false);
         expect(success, isFalse);
@@ -331,7 +331,7 @@ void main() {
             {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
             packageGraph,
             environment,
-            assetReader,
+            readerWriter,
             finalizedAssetsView,
             false);
         expect(success, isFalse,
@@ -351,7 +351,7 @@ void main() {
             {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
             packageGraph,
             environment,
-            assetReader,
+            readerWriter,
             finalizedAssetsView,
             false);
         expect(success, isTrue);
@@ -367,7 +367,7 @@ void main() {
             {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
             packageGraph,
             environment,
-            assetReader,
+            readerWriter,
             finalizedAssetsView,
             false);
         expect(success, isTrue);
@@ -379,7 +379,7 @@ void main() {
         environment.nextPromptResponse = 1;
         var success = await createMergedOutputDirectories({
           BuildDirectory('../', outputLocation: OutputLocation(tmpDir.path))
-        }, packageGraph, environment, assetReader, finalizedAssetsView, false);
+        }, packageGraph, environment, readerWriter, finalizedAssetsView, false);
         expect(success, isFalse);
       });
 
@@ -389,7 +389,7 @@ void main() {
             {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
             packageGraph,
             environment,
-            assetReader,
+            readerWriter,
             finalizedAssetsView,
             false);
         expect(success, isTrue);
@@ -408,7 +408,7 @@ void main() {
             {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
             packageGraph,
             environment,
-            assetReader,
+            readerWriter,
             finalizedAssetsView,
             false);
         expect(success, isTrue);
@@ -423,7 +423,7 @@ void main() {
             {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
             packageGraph,
             environment,
-            assetReader,
+            readerWriter,
             finalizedAssetsView,
             false);
         expect(success, isTrue);

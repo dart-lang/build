@@ -11,7 +11,6 @@ import 'package:build_resolvers/build_resolvers.dart';
 import 'package:package_config/package_config.dart';
 
 import 'in_memory_reader.dart';
-import 'in_memory_writer.dart';
 import 'multi_asset_reader.dart';
 import 'package_reader.dart';
 
@@ -195,7 +194,7 @@ Future<T> _resolveAssets<T>(
     }
     inputAssets[assetId] = assetValue;
   }));
-  final inMemory = InMemoryAssetReader(
+  final inMemory = InMemoryAssetReaderWriter(
     sourceAssets: inputAssets,
     rootPackage: rootPackage,
   );
@@ -218,7 +217,7 @@ Future<T> _resolveAssets<T>(
     resolveBuilder,
     inputAssets.keys,
     MultiAssetReader([inMemory, assetReader]),
-    InMemoryAssetWriter(),
+    inMemory,
     resolvers,
   ).catchError((_) {}));
   final result = await resolveBuilder.onDone.future;

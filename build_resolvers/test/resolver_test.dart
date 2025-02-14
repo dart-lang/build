@@ -975,16 +975,15 @@ int? get x => 1;
       },
     );
 
-    final writer = InMemoryAssetWriter();
-    final reader = InMemoryAssetReader.shareAssetCache(writer.assets);
+    final readerWriter = InMemoryAssetReaderWriter();
 
-    writer.assets[makeAssetId('a|lib/a.dart')] = utf8.encode('');
-    await runBuilder(
-        builder, [makeAssetId('a|lib/a.dart')], reader, writer, resolvers);
+    readerWriter.assets[makeAssetId('a|lib/a.dart')] = utf8.encode('');
+    await runBuilder(builder, [makeAssetId('a|lib/a.dart')], readerWriter,
+        readerWriter, resolvers);
 
-    writer.assets[makeAssetId('a|lib/b.dart')] = utf8.encode('');
-    await runBuilder(
-        builder, [makeAssetId('a|lib/b.dart')], reader, writer, resolvers);
+    readerWriter.assets[makeAssetId('a|lib/b.dart')] = utf8.encode('');
+    await runBuilder(builder, [makeAssetId('a|lib/b.dart')], readerWriter,
+        readerWriter, resolvers);
   });
 
   group('The ${isFlutter ? 'flutter' : 'dart'} sdk', () {
@@ -1018,10 +1017,9 @@ int? get x => 1;
   });
 
   test('generated part files are not considered libraries', () async {
-    var writer = InMemoryAssetWriter();
-    var reader = InMemoryAssetReader.shareAssetCache(writer.assets);
+    var readerWriter = InMemoryAssetReaderWriter();
     var input = AssetId('a', 'lib/input.dart');
-    writer.assets[input] = utf8.encode("part 'input.a.dart';");
+    readerWriter.assets[input] = utf8.encode("part 'input.a.dart';");
 
     var builder = TestBuilder(
         buildExtensions: {
@@ -1042,17 +1040,16 @@ int? get x => 1;
           }
         });
     var resolvers = createResolvers();
-    await runBuilder(builder, [input], reader, writer, resolvers);
+    await runBuilder(builder, [input], readerWriter, readerWriter, resolvers);
 
-    await runBuilder(
-        builder, [input.changeExtension('.a.dart')], reader, writer, resolvers);
+    await runBuilder(builder, [input.changeExtension('.a.dart')], readerWriter,
+        readerWriter, resolvers);
   });
 
   test('missing files are not considered libraries', () async {
-    var writer = InMemoryAssetWriter();
-    var reader = InMemoryAssetReader.shareAssetCache(writer.assets);
+    var readerWriter = InMemoryAssetReaderWriter();
     var input = AssetId('a', 'lib/input.dart');
-    writer.assets[input] = utf8.encode('void doStuff() {}');
+    readerWriter.assets[input] = utf8.encode('void doStuff() {}');
 
     var builder = TestBuilder(
         buildExtensions: {
@@ -1065,18 +1062,17 @@ int? get x => 1;
               false);
         }));
     var resolvers = createResolvers();
-    await runBuilder(builder, [input], reader, writer, resolvers);
+    await runBuilder(builder, [input], readerWriter, readerWriter, resolvers);
   });
 
   test('assets with extensions other than `.dart` are not considered libraries',
       () async {
-    var writer = InMemoryAssetWriter();
-    var reader = InMemoryAssetReader.shareAssetCache(writer.assets);
+    var readerWriter = InMemoryAssetReaderWriter();
     var input = AssetId('a', 'lib/input.dart');
-    writer.assets[input] = utf8.encode('void doStuff() {}');
+    readerWriter.assets[input] = utf8.encode('void doStuff() {}');
 
     var otherFile = AssetId('a', 'lib/input.notdart');
-    writer.assets[otherFile] = utf8.encode('Not a Dart file');
+    readerWriter.assets[otherFile] = utf8.encode('Not a Dart file');
 
     var builder = TestBuilder(
         buildExtensions: {
@@ -1088,7 +1084,7 @@ int? get x => 1;
           expect(await buildStep.resolver.isLibrary(other), false);
         }));
     var resolvers = createResolvers();
-    await runBuilder(builder, [input], reader, writer, resolvers);
+    await runBuilder(builder, [input], readerWriter, readerWriter, resolvers);
   });
 
   group('compilationUnitFor', () {

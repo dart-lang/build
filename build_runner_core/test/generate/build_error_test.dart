@@ -45,12 +45,9 @@ void main() {
 
   test('should fail if a severe was logged on a previous build', () async {
     var packageGraph = buildPackageGraph({rootPackage('a'): []});
-    var writer = InMemoryRunnerAssetWriter();
-    var reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
-        rootPackage: packageGraph.root.name);
     var builder = _LoggingBuilder(Level.SEVERE);
     var builders = [applyToRoot(builder)];
-    await testBuilders(
+    final result = await testBuilders(
         builders,
         {
           'a|lib/a.dart': '',
@@ -60,27 +57,21 @@ void main() {
         status: BuildStatus.failure,
         outputs: {
           'a|lib/a.dart.empty': '',
-        },
-        reader: reader,
-        writer: writer);
+        });
     await testBuilders(builders, {},
+        resumeFrom: result,
         packageGraph: packageGraph,
         checkBuildStatus: true,
         status: BuildStatus.failure,
-        outputs: {},
-        reader: reader,
-        writer: writer);
+        outputs: {});
   });
 
   test('should succeed if a severe log is fixed on a subsequent build',
       () async {
     var packageGraph = buildPackageGraph({rootPackage('a'): []});
-    var writer = InMemoryRunnerAssetWriter();
-    var reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
-        rootPackage: packageGraph.root.name);
     var builder = _LoggingBuilder(Level.SEVERE);
     var builders = [applyToRoot(builder)];
-    await testBuilders(
+    final result = await testBuilders(
         builders,
         {
           'a|lib/a.dart': '',
@@ -90,23 +81,20 @@ void main() {
         status: BuildStatus.failure,
         outputs: {
           'a|lib/a.dart.empty': '',
-        },
-        reader: reader,
-        writer: writer);
+        });
     builder.level = Level.WARNING;
     await testBuilders(
         builders,
         {
           'a|lib/a.dart': 'changed',
         },
+        resumeFrom: result,
         packageGraph: packageGraph,
         checkBuildStatus: true,
         status: BuildStatus.success,
         outputs: {
           'a|lib/a.dart.empty': '',
-        },
-        reader: reader,
-        writer: writer);
+        });
   });
 
   test('should fail if an exception is thrown', () async {

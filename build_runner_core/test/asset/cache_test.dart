@@ -15,11 +15,11 @@ void main() {
   var assets = <AssetId, dynamic>{
     fooTxt: 'bar',
   };
-  late InMemoryRunnerAssetReader delegate;
+  late InMemoryRunnerAssetReaderWriter delegate;
   late CachingAssetReader reader;
 
   setUp(() {
-    delegate = InMemoryRunnerAssetReader(assets);
+    delegate = InMemoryRunnerAssetReaderWriter(sourceAssets: assets);
     reader = CachingAssetReader(delegate);
   });
 

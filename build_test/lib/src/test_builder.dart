@@ -12,8 +12,6 @@ import 'package:test/test.dart';
 
 import 'assets.dart';
 import 'in_memory_reader.dart';
-import 'in_memory_writer.dart';
-import 'multi_asset_reader.dart';
 import 'written_asset_reader.dart';
 
 AssetId _passThrough(AssetId id) => id;
@@ -100,20 +98,6 @@ void checkOutputs(
 /// is the path to a file relative to the package. `PATH_WITHIN_PACKAGE` must
 /// include `lib`, `web`, `bin` or `test`. Example: "myapp|lib/utils.dart".
 ///
-/// If a [reader] is provided, then any asset not in [sourceAssets] will be
-/// read from the provided reader. This allows you to more easily provide
-/// sources of entire packages to the test, instead of mocking them out, for
-/// example, this exposes all assets available to the test itself:
-///
-///
-/// ```dart
-/// testBuilder(yourBuilder, {}/* test assets here */,
-///     reader: await PackageAssetReader.currentIsolate());
-/// ```
-///
-/// Callers may optionally provide a [writer] to stub different behavior or do
-/// more complex validation than what is possible with [outputs].
-///
 /// Callers may optionally provide an [onLog] callback to do validaiton on the
 /// logging output of the builder.
 ///
@@ -123,19 +107,19 @@ void checkOutputs(
 ///
 /// Enabling of language experiments is supported through the
 /// `withEnabledExperiments` method from package:build.
-Future testBuilder(
+///
+/// Returns a [TestBuilderResult] with the [InMemoryAssetReaderWriter] used for
+/// the build, which can be used for further checks.
+Future<TestBuilderResult> testBuilder(
     Builder builder, Map<String, /*String|List<int>*/ Object> sourceAssets,
     {Set<String>? generateFor,
     bool Function(String assetId)? isInput,
     String? rootPackage,
-    MultiPackageAssetReader? reader,
-    RecordingAssetWriter? writer,
     Map<String, /*String|List<int>|Matcher<List<int>>*/ Object>? outputs,
     void Function(LogRecord log)? onLog,
     void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput,
     PackageConfig? packageConfig}) async {
   onLog ??= (log) => printOnFailure('$log');
-  writer ??= InMemoryAssetWriter();
 
   var inputIds = {
     for (var descriptor in sourceAssets.keys) makeAssetId(descriptor)
@@ -152,36 +136,35 @@ Future testBuilder(
     ]
   ]);
 
-  final inMemoryReader = InMemoryAssetReader(rootPackage: rootPackage);
+  final readerWriter = InMemoryAssetReaderWriter(rootPackage: rootPackage);
 
   sourceAssets.forEach((serializedId, contents) {
     var id = makeAssetId(serializedId);
     if (contents is String) {
-      inMemoryReader.cacheStringAsset(id, contents);
+      readerWriter.cacheStringAsset(id, contents);
     } else if (contents is List<int>) {
-      inMemoryReader.cacheBytesAsset(id, contents);
+      readerWriter.cacheBytesAsset(id, contents);
     }
   });
 
   final inputFilter = isInput ?? generateFor?.contains ?? (_) => true;
   inputIds.retainWhere((id) => inputFilter('$id'));
 
-  var writerSpy = AssetWriterSpy(writer);
+  var writerSpy = AssetWriterSpy(readerWriter);
   var logger = Logger('testBuilder');
   var logSubscription = logger.onRecord.listen(onLog);
   var resolvers = packageConfig == null && enabledExperiments.isEmpty
       ? AnalyzerResolvers.sharedInstance
       : AnalyzerResolvers.custom(packageConfig: packageConfig);
 
+  final startingFiles = readerWriter.assets.keys.toList();
   for (var input in inputIds) {
-    // create another writer spy and reader for each input. This prevents writes
-    // from a previous input being readable when processing the current input.
+    // Create a reader that can read initial files plus anything written by the
+    // builder during the step; outputs by other builders during the step are
+    // not readable.
     final spyForStep = AssetWriterSpy(writerSpy);
-    final readerForStep = MultiAssetReader([
-      inMemoryReader,
-      if (reader != null) reader,
-      WrittenAssetReader(writer, spyForStep),
-    ]);
+    final readerForStep = WrittenAssetReader(readerWriter, spyForStep)
+      ..allowReadingAll(startingFiles);
 
     await runBuilder(builder, {input}, readerForStep, spyForStep, resolvers,
         logger: logger, reportUnusedAssetsForInput: reportUnusedAssetsForInput);
@@ -189,5 +172,12 @@ Future testBuilder(
 
   await logSubscription.cancel();
   var actualOutputs = writerSpy.assetsWritten;
-  checkOutputs(outputs, actualOutputs, writer);
+  checkOutputs(outputs, actualOutputs, readerWriter);
+  return TestBuilderResult(readerWriter: readerWriter);
+}
+
+class TestBuilderResult {
+  final InMemoryAssetReaderWriter readerWriter;
+
+  TestBuilderResult({required this.readerWriter});
 }

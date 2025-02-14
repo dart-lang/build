@@ -21,8 +21,7 @@ import 'package:watcher/watcher.dart';
 
 void main() {
   late FutureOr<Response> Function(Request) handler;
-  late InMemoryRunnerAssetReader reader;
-  late InMemoryRunnerAssetWriter writer;
+  late InMemoryRunnerAssetReaderWriter readerWriter;
   late StreamSubscription subscription;
   late Completer<BuildResult> nextBuild;
   late StreamController<ProcessSignal> terminateController;
@@ -31,9 +30,7 @@ void main() {
 
   setUp(() async {
     final graph = buildPackageGraph({rootPackage('example', path: path): []});
-    writer = InMemoryRunnerAssetWriter();
-    reader = InMemoryRunnerAssetReader.shareAssetCache(writer.assets,
-        rootPackage: 'example')
+    readerWriter = InMemoryRunnerAssetReaderWriter(rootPackage: 'example')
       ..cacheStringAsset(AssetId('example', 'web/initial.txt'), 'initial')
       ..cacheStringAsset(AssetId('example', 'web/large.txt'),
           List.filled(10000, 'large').join(''))
@@ -54,8 +51,8 @@ void main() {
     final server = await watch_impl.watch(
       [applyToRoot(const UppercaseBuilder())],
       packageGraph: graph,
-      reader: reader,
-      writer: writer,
+      reader: readerWriter,
+      writer: readerWriter,
       logLevel: Level.ALL,
       onLog: (record) => printOnFailure('[${record.level}] '
           '${record.loggerName}: ${record.message}'),
@@ -99,7 +96,8 @@ void main() {
 
   test('should serve built files', () async {
     final getHello = Uri.parse('http://localhost/initial.g.txt');
-    reader.cacheStringAsset(AssetId('example', 'web/initial.g.txt'), 'INITIAL');
+    readerWriter.cacheStringAsset(
+        AssetId('example', 'web/initial.g.txt'), 'INITIAL');
     final response = await handler(Request('GET', getHello));
     expect(await response.readAsString(), 'INITIAL');
   });
@@ -112,7 +110,7 @@ void main() {
 
   test('should serve newly added files', () async {
     final getNew = Uri.parse('http://localhost/new.txt');
-    reader.cacheStringAsset(AssetId('example', 'web/new.txt'), 'New');
+    readerWriter.cacheStringAsset(AssetId('example', 'web/new.txt'), 'New');
     await Future<void>.value();
     FakeWatcher.notifyWatchers(
       WatchEvent(ChangeType.ADD, '$path/web/new.txt'),
@@ -124,7 +122,7 @@ void main() {
 
   test('should serve built newly added files', () async {
     final getNew = Uri.parse('http://localhost/new.g.txt');
-    reader.cacheStringAsset(AssetId('example', 'web/new.txt'), 'New');
+    readerWriter.cacheStringAsset(AssetId('example', 'web/new.txt'), 'New');
     await Future<void>.value();
     FakeWatcher.notifyWatchers(
       WatchEvent(ChangeType.ADD, '$path/web/new.txt'),

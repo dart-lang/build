@@ -1,3 +1,7 @@
+## 2.4.16-wip
+
+- Use `build_test` 3.0.0.
+
 ## 2.4.15
 
 - Update to package:web and dart:js_interop.
