@@ -18,6 +18,7 @@ import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../resource/resource.dart';
+import '../state/asset_path_provider.dart';
 import '../state/input_tracker.dart';
 import '../state/reader_state.dart';
 import 'build_step.dart';
@@ -79,6 +80,9 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
       : allowedOutputs = UnmodifiableSetView(expectedOutputs.toSet()),
         _stageTracker = stageTracker ?? NoOpStageTracker.instance,
         _reportUnusedAssets = reportUnusedAssets;
+
+  @override
+  AssetPathProvider? get assetPathProvider => _reader.assetPathProvider;
 
   @override
   InputTracker? get inputTracker => _reader.inputTracker;

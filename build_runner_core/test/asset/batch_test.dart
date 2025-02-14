@@ -8,7 +8,6 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
-
 import 'package:glob/glob.dart';
 import 'package:package_config/package_config_types.dart';
 import 'package:test/test.dart';
@@ -24,10 +23,7 @@ void main() {
     final fileReader = FileBasedAssetReader(packageGraph);
     final fileWriter = FileBasedAssetWriter(packageGraph);
 
-    (reader, writer) = wrapInBatch(
-        reader: fileReader,
-        pathProvidingReader: fileReader,
-        writer: fileWriter);
+    (reader, writer) = wrapInBatch(reader: fileReader, writer: fileWriter);
   });
 
   test('delays writes until end', () async {

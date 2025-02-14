@@ -42,8 +42,8 @@ class InMemoryAssetReaderWriter extends AssetReader
       {Map<AssetId, dynamic>? sourceAssets, this.rootPackage})
       : assets = _assetsAsBytes(sourceAssets);
 
-  /// Create a new asset reader backed by [assets].
-  InMemoryAssetReaderWriter.shareAssetCache(this.assets, {this.rootPackage});
+  @override
+  AssetPathProvider? get assetPathProvider => null;
 
   static Map<AssetId, List<int>> _assetsAsBytes(Map<AssetId, dynamic>? assets) {
     if (assets == null || assets.isEmpty) {

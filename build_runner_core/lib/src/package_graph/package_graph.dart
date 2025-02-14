@@ -4,6 +4,9 @@
 
 import 'dart:io';
 
+import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
@@ -16,7 +19,7 @@ final _sdkPackageNode =
     PackageNode(r'$sdk', sdkPath, DependencyType.hosted, null);
 
 /// A graph of the package dependencies for an application.
-class PackageGraph {
+class PackageGraph implements AssetPathProvider {
   /// The root application package.
   final PackageNode root;
 
@@ -166,6 +169,15 @@ class PackageGraph {
 
   /// Shorthand to get a package by name.
   PackageNode? operator [](String packageName) => allPackages[packageName];
+
+  @override
+  String pathFor(AssetId id) {
+    var package = this[id.package];
+    if (package == null) {
+      throw PackageNotFoundException(id.package);
+    }
+    return p.join(package.path, id.path);
+  }
 
   @override
   String toString() {
