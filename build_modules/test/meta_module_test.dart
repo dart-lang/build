@@ -23,7 +23,7 @@ void main() {
     var assets = <AssetId>{};
     assetDescriptors.forEach((serializedId, content) {
       var id = AssetId.parse(serializedId);
-      reader.cacheStringAsset(id, content);
+      reader.filesystem.writeAsStringSync(id, content);
       assets.add(id);
     });
     return assets.toList();
@@ -39,7 +39,7 @@ void main() {
                 ModuleLibrary.fromSource(s, await reader.readAsString(s)))))
         .where((l) => l.isImportable);
     for (final library in libraries) {
-      reader.cacheStringAsset(
+      reader.filesystem.writeAsStringSync(
           library.id.changeExtension(moduleLibraryExtension),
           library.serialize());
     }

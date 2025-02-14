@@ -43,7 +43,7 @@ void main() {
       node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
     }
     graph.add(node);
-    delegate.cacheStringAsset(node.id, content);
+    delegate.filesystem.writeAsStringSync(node.id, content);
   }
 
   test('can not read deleted nodes', () async {

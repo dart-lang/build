@@ -37,7 +37,7 @@ AssetId _passThrough(AssetId id) => id;
 void checkOutputs(
     Map<String, /*List<int>|String|Matcher<List<int>>*/ Object>? outputs,
     Iterable<AssetId> actualAssets,
-    RecordingAssetWriter writer,
+    InMemoryAssetWriter writer,
     {AssetId Function(AssetId id) mapAssetIds = _passThrough}) {
   var modifiableActualAssets = Set.of(actualAssets);
   if (outputs != null) {
@@ -141,9 +141,9 @@ Future<TestBuilderResult> testBuilder(
   sourceAssets.forEach((serializedId, contents) {
     var id = makeAssetId(serializedId);
     if (contents is String) {
-      readerWriter.cacheStringAsset(id, contents);
+      readerWriter.filesystem.writeAsStringSync(id, contents);
     } else if (contents is List<int>) {
-      readerWriter.cacheBytesAsset(id, contents);
+      readerWriter.filesystem.writeAsBytesSync(id, contents);
     }
   });
 

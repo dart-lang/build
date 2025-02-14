@@ -31,10 +31,11 @@ void main() {
   setUp(() async {
     final graph = buildPackageGraph({rootPackage('example', path: path): []});
     readerWriter = InMemoryRunnerAssetReaderWriter(rootPackage: 'example')
-      ..cacheStringAsset(AssetId('example', 'web/initial.txt'), 'initial')
-      ..cacheStringAsset(AssetId('example', 'web/large.txt'),
+      ..filesystem
+          .writeAsStringSync(AssetId('example', 'web/initial.txt'), 'initial')
+      ..filesystem.writeAsStringSync(AssetId('example', 'web/large.txt'),
           List.filled(10000, 'large').join(''))
-      ..cacheStringAsset(
+      ..filesystem.writeAsStringSync(
           makeAssetId('example|.dart_tool/package_config.json'),
           jsonEncode({
             'configVersion': 2,
@@ -96,8 +97,8 @@ void main() {
 
   test('should serve built files', () async {
     final getHello = Uri.parse('http://localhost/initial.g.txt');
-    readerWriter.cacheStringAsset(
-        AssetId('example', 'web/initial.g.txt'), 'INITIAL');
+    readerWriter.filesystem
+        .writeAsStringSync(AssetId('example', 'web/initial.g.txt'), 'INITIAL');
     final response = await handler(Request('GET', getHello));
     expect(await response.readAsString(), 'INITIAL');
   });
@@ -110,7 +111,8 @@ void main() {
 
   test('should serve newly added files', () async {
     final getNew = Uri.parse('http://localhost/new.txt');
-    readerWriter.cacheStringAsset(AssetId('example', 'web/new.txt'), 'New');
+    readerWriter.filesystem
+        .writeAsStringSync(AssetId('example', 'web/new.txt'), 'New');
     await Future<void>.value();
     FakeWatcher.notifyWatchers(
       WatchEvent(ChangeType.ADD, '$path/web/new.txt'),
@@ -122,7 +124,8 @@ void main() {
 
   test('should serve built newly added files', () async {
     final getNew = Uri.parse('http://localhost/new.g.txt');
-    readerWriter.cacheStringAsset(AssetId('example', 'web/new.txt'), 'New');
+    readerWriter.filesystem
+        .writeAsStringSync(AssetId('example', 'web/new.txt'), 'New');
     await Future<void>.value();
     FakeWatcher.notifyWatchers(
       WatchEvent(ChangeType.ADD, '$path/web/new.txt'),

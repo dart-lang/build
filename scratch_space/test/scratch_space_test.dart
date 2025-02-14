@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
@@ -23,14 +24,18 @@ void main() {
       'dep|lib/dep.dart',
       'myapp|lib/myapp.dart',
       'myapp|web/main.dart',
-    ].fold<Map<AssetId, List<int>>>({}, (assets, serializedId) {
-      assets[AssetId.parse(serializedId)] = serializedId.codeUnits;
+    ].fold<Map<AssetId, Uint8List>>({}, (assets, serializedId) {
+      assets[AssetId.parse(serializedId)] =
+          Uint8List.fromList(serializedId.codeUnits);
       return assets;
     });
 
     setUp(() async {
       scratchSpace = ScratchSpace();
-      assetReader = InMemoryAssetReader(sourceAssets: allAssets);
+      assetReader = InMemoryAssetReaderWriter();
+      for (final asset in allAssets.entries) {
+        assetReader.filesystem.writeAsBytesSync(asset.key, asset.value);
+      }
       await scratchSpace.ensureAssets(allAssets.keys, assetReader);
     });
 

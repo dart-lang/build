@@ -113,9 +113,9 @@ Future<TestBuildersResult> testBuilders(
   inputs.forEach((serializedId, contents) {
     var id = makeAssetId(serializedId);
     if (contents is String) {
-      readerWriter.cacheStringAsset(id, contents);
+      readerWriter.filesystem.writeAsStringSync(id, contents);
     } else if (contents is List<int>) {
-      readerWriter.cacheBytesAsset(id, contents);
+      readerWriter.filesystem.writeAsBytesSync(id, contents);
     }
   });
 

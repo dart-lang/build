@@ -16,7 +16,7 @@ class InMemoryRunnerAssetReaderWriter extends InMemoryAssetReaderWriter
   Stream<AssetId> get onCanRead => _onCanReadController.stream;
   void Function(AssetId)? onDelete;
 
-  InMemoryRunnerAssetReaderWriter({super.sourceAssets, super.rootPackage});
+  InMemoryRunnerAssetReaderWriter({super.rootPackage});
 
   @override
   Future<bool> canRead(AssetId id) {

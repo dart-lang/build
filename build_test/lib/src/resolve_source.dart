@@ -191,24 +191,24 @@ Future<T> _resolveAssets<T>(
     tearDown,
   );
 
+  final inputAssetIds = inputs.keys.map(AssetId.parse).toList();
+
   // Prepare the in-memory filesystem the build will run on.
-  //
+  final readerWriter = InMemoryAssetReaderWriter(
+    rootPackage: rootPackage,
+  );
+
   // First, add directly-passed [inputs], reading from the filesystem if the
   // string passed is [useAssetReader].
   final assetReader = PackageAssetReader(resolvedConfig, rootPackage);
-  final inputAssets = <AssetId, String>{};
-  await Future.wait(inputs.keys.map((String rawAssetId) async {
-    final assetId = AssetId.parse(rawAssetId);
-    var assetValue = inputs[rawAssetId]!;
+
+  for (final assetId in inputAssetIds) {
+    var assetValue = inputs[assetId.toString()]!;
     if (assetValue == useAssetReader) {
       assetValue = await assetReader.readAsString(assetId);
     }
-    inputAssets[assetId] = assetValue;
-  }));
-  final readerWriter = InMemoryAssetReaderWriter(
-    sourceAssets: inputAssets,
-    rootPackage: rootPackage,
-  );
+    await readerWriter.writeAsString(assetId, assetValue);
+  }
 
   // Then, copy any additionally requested files from the filesystem to the
   // in-memory filesystem.
@@ -234,7 +234,7 @@ Future<T> _resolveAssets<T>(
   // `onDone` future that we return.
   unawaited(runBuilder(
     resolveBuilder,
-    inputAssets.keys,
+    inputAssetIds,
     readerWriter,
     readerWriter,
     resolvers,

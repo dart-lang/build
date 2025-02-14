@@ -39,6 +39,9 @@ class FinalizedReader implements AssetReader, AssetReaderState {
       this._buildPhases, this._rootPackage);
 
   @override
+  Filesystem get filesystem => _delegate.filesystem;
+
+  @override
   AssetPathProvider? get assetPathProvider => _delegate.assetPathProvider;
 
   @override

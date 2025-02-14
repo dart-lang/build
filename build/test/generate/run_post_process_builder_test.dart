@@ -11,8 +11,7 @@ import '../common/builders.dart';
 
 void main() {
   group('runPostProcessBuilder', () {
-    late InMemoryAssetReader reader;
-    late InMemoryAssetWriter writer;
+    late InMemoryAssetReaderWriter readerWriter;
     final copyBuilder = CopyingPostProcessBuilder();
     final deleteBuilder = DeletePostProcessBuilder();
     final aTxt = makeAssetId('a|lib/a.txt');
@@ -24,38 +23,37 @@ void main() {
     void addAsset(AssetId id) => adds[id] = true;
     void deleteAsset(AssetId id) => deletes[id] = true;
 
-    Map<AssetId, String> sourceAssets;
-
     setUp(() async {
-      sourceAssets = {
-        aTxt: 'a',
-      };
-      reader = InMemoryAssetReader(sourceAssets: sourceAssets);
-      writer = InMemoryAssetWriter();
+      readerWriter = InMemoryAssetReaderWriter()
+        ..filesystem.writeAsStringSync(aTxt, 'a');
       adds.clear();
       deletes.clear();
     });
 
     test('can delete assets', () async {
-      await runPostProcessBuilder(copyBuilder, aTxt, reader, writer, logger,
+      await runPostProcessBuilder(
+          copyBuilder, aTxt, readerWriter, readerWriter, logger,
           addAsset: addAsset, deleteAsset: deleteAsset);
-      await runPostProcessBuilder(deleteBuilder, aTxt, reader, writer, logger,
+      await runPostProcessBuilder(
+          deleteBuilder, aTxt, readerWriter, readerWriter, logger,
           addAsset: addAsset, deleteAsset: deleteAsset);
       expect(deletes, contains(aTxt));
       expect(deletes, isNot(contains(aTxtCopy)));
     });
 
     test('can create assets and read the primary asset', () async {
-      await runPostProcessBuilder(copyBuilder, aTxt, reader, writer, logger,
+      await runPostProcessBuilder(
+          copyBuilder, aTxt, readerWriter, readerWriter, logger,
           addAsset: addAsset, deleteAsset: deleteAsset);
-      expect(writer.assets, contains(aTxtCopy));
-      expect(writer.assets[aTxtCopy], decodedMatches('a'));
+      expect(readerWriter.assets, contains(aTxtCopy));
+      expect(readerWriter.assets[aTxtCopy], decodedMatches('a'));
       expect(adds, contains(aTxtCopy));
     });
 
     test('throws if addAsset throws', () async {
       expect(
-          () => runPostProcessBuilder(copyBuilder, aTxt, reader, writer, logger,
+          () => runPostProcessBuilder(
+              copyBuilder, aTxt, readerWriter, readerWriter, logger,
               addAsset: (id) => throw InvalidOutputException(id, ''),
               deleteAsset: deleteAsset),
           throwsA(const TypeMatcher<InvalidOutputException>()));

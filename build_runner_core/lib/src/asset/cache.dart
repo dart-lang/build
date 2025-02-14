@@ -48,6 +48,9 @@ class CachingAssetReader implements AssetReader, AssetReaderState {
   CachingAssetReader(this._delegate);
 
   @override
+  Filesystem get filesystem => _delegate.filesystem;
+
+  @override
   AssetPathProvider? get assetPathProvider => _delegate.assetPathProvider;
 
   @override
