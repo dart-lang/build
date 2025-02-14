@@ -5,12 +5,14 @@
 import 'dart:convert';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:glob/glob.dart';
 
 import 'in_memory_writer.dart';
 
-/// A [MultiPackageAssetReader] which supports reads from previous outputs.
-class WrittenAssetReader extends MultiPackageAssetReader {
+/// An [AssetReader] which supports reads from previous outputs.
+class WrittenAssetReader extends AssetReader implements AssetReaderState {
   final RecordingAssetWriter source;
 
   /// An optional [AssetWriterSpy] to limit what's readable through this reader.
@@ -23,6 +25,15 @@ class WrittenAssetReader extends MultiPackageAssetReader {
   final Set<AssetId> _additionallyAllowed = {};
 
   WrittenAssetReader(this.source, [this.filterSpy]);
+
+  @override
+  late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
+
+  @override
+  AssetPathProvider? get assetPathProvider => null;
+
+  @override
+  InputTracker? get inputTracker => null;
 
   /// Marks [assets] as allowed to be read.
   ///
@@ -44,8 +55,11 @@ class WrittenAssetReader extends MultiPackageAssetReader {
     return Future.value(canRead);
   }
 
+  // This is only for generators, so only `BuildStep` needs to implement it.
   @override
-  Stream<AssetId> findAssets(Glob glob, {String? package}) async* {
+  Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError();
+
+  Stream<AssetId> _findAssets(Glob glob, String? package) async* {
     var available = source.assets.keys.toSet();
     if (filterSpy != null) {
       available = available.intersection(

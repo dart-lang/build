@@ -38,14 +38,14 @@ void main() {
 
     expect(await filteringReader.canRead(fooA), isFalse);
     await expectLater(
-        filteringReader.findAssets(Glob('*.txt')), neverEmits(fooA));
+        filteringReader.assetFinder.find(Glob('*.txt')), neverEmits(fooA));
 
     await writerSpy.writeAsString(fooA, 'written through spy');
     expect(await filteringReader.canRead(fooA), isTrue);
   });
 
   test('can find stream of assets', () {
-    final assets = reader.findAssets(Glob('*.txt')).asBroadcastStream();
+    final assets = reader.assetFinder.find(Glob('*.txt')).asBroadcastStream();
 
     expect(
       assets,

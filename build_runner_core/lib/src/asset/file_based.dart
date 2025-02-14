@@ -14,7 +14,6 @@ import 'package:path/path.dart' as path;
 import 'package:pool/pool.dart';
 
 import '../package_graph/package_graph.dart';
-import 'reader.dart';
 import 'writer.dart';
 
 /// Pool for async file operations, we don't want to use too many file handles.
@@ -22,8 +21,10 @@ final _descriptorPool = Pool(32);
 
 /// Basic [AssetReader] which uses a [PackageGraph] to look up where to read
 /// files from disk.
-class FileBasedAssetReader extends AssetReader
-    implements AssetReaderState, RunnerAssetReader {
+class FileBasedAssetReader extends AssetReader implements AssetReaderState {
+  @override
+  late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
+
   final PackageGraph packageGraph;
 
   FileBasedAssetReader(this.packageGraph);
@@ -47,8 +48,11 @@ class FileBasedAssetReader extends AssetReader
       _fileForOrThrow(id, packageGraph).then((file) => _descriptorPool
           .withResource(() => file.readAsString(encoding: encoding)));
 
+// This is only for generators, so only `BuildStep` needs to implement it.
   @override
-  Stream<AssetId> findAssets(Glob glob, {String? package}) {
+  Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError();
+
+  Stream<AssetId> _findAssets(Glob glob, String? package) {
     var packageNode =
         package == null ? packageGraph.root : packageGraph[package];
     if (packageNode == null) {

@@ -975,7 +975,8 @@ void main() {
         outputs: {'a|web/a.txt.copy': 'a'},
         logPerformanceDir: 'perf',
       );
-      var logs = await result.readerWriter.findAssets(Glob('perf/**')).toList();
+      var logs =
+          await result.readerWriter.assetFinder.find(Glob('perf/**')).toList();
       expect(logs.length, 1);
       var perf = BuildPerformance.fromJson(
           jsonDecode(await result.readerWriter.readAsString(logs.first))

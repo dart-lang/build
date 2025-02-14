@@ -23,6 +23,9 @@ abstract class RecordingAssetWriter implements AssetWriter {
 class InMemoryAssetReaderWriter extends AssetReader
     implements InMemoryAssetReader, InMemoryAssetWriter {
   @override
+  late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
+
+  @override
   final Map<AssetId, List<int>> assets;
   final String? rootPackage;
 
@@ -82,8 +85,11 @@ class InMemoryAssetReaderWriter extends AssetReader
     return encoding.decode(assets[id]!);
   }
 
+  // This is only for generators, so only `BuildStep` needs to implement it.
   @override
-  Stream<AssetId> findAssets(Glob glob, {String? package}) {
+  Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError();
+
+  Stream<AssetId> _findAssets(Glob glob, String? package) {
     package ??= rootPackage;
     if (package == null) {
       throw UnsupportedError(
@@ -119,11 +125,7 @@ class InMemoryAssetReaderWriter extends AssetReader
 
 /// An implementation of [AssetReader] with primed in-memory assets.
 abstract class InMemoryAssetReader
-    implements
-        AssetReader,
-        MultiPackageAssetReader,
-        RecordingAssetReader,
-        AssetReaderState {
+    implements AssetReader, RecordingAssetReader, AssetReaderState {
   abstract final Map<AssetId, List<int>> assets;
 
   /// Create a new asset reader that contains [sourceAssets].

@@ -3,11 +3,17 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import '../asset/reader.dart';
+import 'asset_finder.dart';
 import 'asset_path_provider.dart';
 import 'input_tracker.dart';
 
 /// Provides access to the state backing an [AssetReader].
 extension AssetReaderStateExtension on AssetReader {
+  AssetFinder get assetFinder {
+    _requireIsAssetReaderState();
+    return (this as AssetReaderState).assetFinder;
+  }
+
   InputTracker? get inputTracker =>
       this is AssetReaderState ? (this as AssetReaderState).inputTracker : null;
 
@@ -37,6 +43,12 @@ extension AssetReaderStateExtension on AssetReader {
 
 /// The state backing an [AssetReader].
 abstract interface class AssetReaderState {
+  /// The [AssetFinder] associated with this reader.
+  ///
+  /// All readers have an [AssetFinder], but the functionality it provides,
+  /// globbing in arbitrary packages, is hidden from generators.
+  AssetFinder get assetFinder;
+
   /// The [InputTracker] that this reader records reads to; or `null` if it does
   /// not have one.
   InputTracker? get inputTracker;

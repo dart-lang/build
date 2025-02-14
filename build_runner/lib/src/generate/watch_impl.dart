@@ -36,7 +36,7 @@ Future<ServeHandler> watch(
   bool? assumeTty,
   String? configKey,
   PackageGraph? packageGraph,
-  RunnerAssetReader? reader,
+  AssetReader? reader,
   RunnerAssetWriter? writer,
   Resolvers? resolvers,
   Level? logLevel,

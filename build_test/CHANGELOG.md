@@ -14,6 +14,7 @@
 - Support checks on reader state after a build action in `resolveSources`.
 - Start using `package:build/src/internal.dart`.
 - Refactor `PathProvidingAssetReader` to `AssetPathProvider`
+- Refactor `MultiPackageAssetReader` to internal `AssetFinder`.
 
 ## 2.2.3
 

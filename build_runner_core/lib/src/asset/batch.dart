@@ -12,7 +12,6 @@ import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 
 import '../environment/io_environment.dart';
-import 'reader.dart';
 import 'writer.dart';
 
 /// A batch of file system writes that should be committed at once instead of
@@ -46,15 +45,15 @@ final class _FileSystemWriteBatch {
   }
 }
 
-/// Wraps a pair of a [RunnerAssetReader] with path-prividing capabilities and
+/// Wraps a pair of a [AssetReader] with path-providing capabilities and
 /// a [RunnerAssetWriter] into a pair of readers and writers that will
 /// internally buffer writes and only flush them in
 /// [RunnerAssetWriter.completeBuild].
 ///
 /// The returned reader will see pending writes by the returned writer before
 /// they are flushed to the file system.
-(RunnerAssetReader, RunnerAssetWriter) wrapInBatch({
-  required RunnerAssetReader reader,
+(AssetReader, RunnerAssetWriter) wrapInBatch({
+  required AssetReader reader,
   required RunnerAssetWriter writer,
 }) {
   final batch = _FileSystemWriteBatch._();
@@ -74,9 +73,10 @@ final class _PendingFileState {
 }
 
 @internal
-final class BatchReader extends AssetReader
-    implements AssetReaderState, RunnerAssetReader {
-  final RunnerAssetReader _inner;
+final class BatchReader extends AssetReader implements AssetReaderState {
+  @override
+  late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
+  final AssetReader _inner;
   final _FileSystemWriteBatch _batch;
 
   BatchReader(this._inner, this._batch);
@@ -100,10 +100,13 @@ final class BatchReader extends AssetReader
     }
   }
 
+// This is only for generators, so only `BuildStep` needs to implement it.
   @override
-  Stream<AssetId> findAssets(Glob glob, {String? package}) {
-    return _inner
-        .findAssets(glob, package: package)
+  Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError();
+
+  Stream<AssetId> _findAssets(Glob glob, String? package) {
+    return _inner.assetFinder
+        .find(glob, package: package)
         .where((asset) => _stateFor(asset)?.isDeleted != true);
   }
 

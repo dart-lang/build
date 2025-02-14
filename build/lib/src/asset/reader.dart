@@ -56,17 +56,3 @@ abstract class AssetReader {
     return digestSink.events.first;
   }
 }
-
-/// The same as an `AssetReader`, except that `findAssets` takes an optional
-/// argument `package` which allows you to glob any package.
-///
-/// This should not be exposed to end users generally, but can be used by
-/// different build system implementations.
-abstract class MultiPackageAssetReader extends AssetReader {
-  /// Returns all readable assets matching [glob] under [package].
-  ///
-  /// Some implementations may require the [package] argument, while others
-  /// may have a sane default.
-  @override
-  Stream<AssetId> findAssets(Glob glob, {String? package});
-}

@@ -34,6 +34,9 @@ class BuildCacheReader implements AssetReader, AssetReaderState {
                 overlay: (id) => _cacheLocation(id, assetGraph, rootPackage));
 
   @override
+  AssetFinder get assetFinder => _delegate.assetFinder;
+
+  @override
   InputTracker? get inputTracker => _delegate.inputTracker;
 
   @override

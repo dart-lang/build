@@ -8,6 +8,8 @@ import 'dart:io';
 import 'package:async/async.dart';
 import 'package:build/build.dart';
 import 'package:build/experiments.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
@@ -15,7 +17,6 @@ import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
 import '../asset/build_cache.dart';
-import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
@@ -73,7 +74,7 @@ class BuildDefinition {
 /// Understands how to find all assets relevant to a build as well as compute
 /// updates to those assets.
 class AssetTracker {
-  final RunnerAssetReader _reader;
+  final AssetReader _reader;
   final TargetGraph _targetGraph;
 
   AssetTracker(this._reader, this._targetGraph);
@@ -194,7 +195,7 @@ class AssetTracker {
   /// Ideally we would warn but in practice the default sources list will give
   /// this error a lot and it would be noisy.
   Stream<AssetId> _listIdsSafe(Glob glob, {String? package}) =>
-      _reader.findAssets(glob, package: package).handleError((void _) {},
+      _reader.assetFinder.find(glob, package: package).handleError((void _) {},
           test: (e) => e is FileSystemException && e.osError?.errorCode == 2);
 }
 
