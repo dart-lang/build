@@ -4,6 +4,7 @@
   `build_runner_core` and `build_test`.
 - Use `build_test` 3.0.0.
 - Refactor `PathProvidingAssetReader` to `AssetPathProvider`.
+- Refactor `MultiPackageAssetReader` to internal `AssetFinder`.
 
 ## 2.4.2
 

@@ -5,6 +5,8 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:glob/glob.dart';
@@ -14,11 +16,11 @@ import 'package:path/path.dart' as p;
 final _log = Logger('BuildConfigOverrides');
 
 Future<Map<String, BuildConfig>> findBuildConfigOverrides(
-    PackageGraph packageGraph, RunnerAssetReader reader,
+    PackageGraph packageGraph, AssetReader reader,
     {String? configKey}) async {
   final configs = <String, BuildConfig>{};
-  final configFiles =
-      reader.findAssets(Glob('*.build.yaml'), package: packageGraph.root.name);
+  final configFiles = reader.assetFinder
+      .find(Glob('*.build.yaml'), package: packageGraph.root.name);
   await for (final id in configFiles) {
     final packageName = p.basename(id.path).split('.').first;
     final packageNode = packageGraph.allPackages[packageName];

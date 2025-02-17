@@ -381,7 +381,7 @@ class AssetHandler {
     var directoryPath = p.url.dirname(from.path);
     var glob = p.url.join(directoryPath, '*');
     var result =
-        await _reader.findAssets(Glob(glob)).map((a) => a.path).toList();
+        await _reader.assetFinder.find(Glob(glob)).map((a) => a.path).toList();
     var message = StringBuffer('Could not find ${from.path}');
     if (result.isEmpty) {
       message.write(' or any files in $directoryPath. ');

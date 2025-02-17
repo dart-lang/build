@@ -11,7 +11,6 @@ import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
-import '../asset/reader.dart';
 import '../asset_graph/graph.dart';
 import '../package_graph/package_graph.dart';
 
@@ -27,8 +26,8 @@ abstract class BuildScriptUpdates {
   ///
   /// If [disabled] is `true` then all checks are skipped and
   /// [hasBeenUpdated] will always return `false`.
-  static Future<BuildScriptUpdates> create(RunnerAssetReader reader,
-      PackageGraph packageGraph, AssetGraph assetGraph,
+  static Future<BuildScriptUpdates> create(
+      AssetReader reader, PackageGraph packageGraph, AssetGraph assetGraph,
       {bool disabled = false}) async {
     if (disabled) return _NoopBuildScriptUpdates();
     return _MirrorBuildScriptUpdates.create(reader, packageGraph, assetGraph);
@@ -43,8 +42,8 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
   _MirrorBuildScriptUpdates._(
       this._supportsIncrementalRebuilds, this._allSources);
 
-  static Future<BuildScriptUpdates> create(RunnerAssetReader reader,
-      PackageGraph packageGraph, AssetGraph graph) async {
+  static Future<BuildScriptUpdates> create(
+      AssetReader reader, PackageGraph packageGraph, AssetGraph graph) async {
     var supportsIncrementalRebuilds = true;
     Set<AssetId> allSources;
     var logger = Logger('BuildScriptUpdates');

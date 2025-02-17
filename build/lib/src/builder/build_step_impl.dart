@@ -18,6 +18,7 @@ import '../asset/id.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../resource/resource.dart';
+import '../state/asset_finder.dart';
 import '../state/asset_path_provider.dart';
 import '../state/input_tracker.dart';
 import '../state/reader_state.dart';
@@ -82,6 +83,9 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
         _reportUnusedAssets = reportUnusedAssets;
 
   @override
+  AssetFinder get assetFinder => _reader.assetFinder;
+
+  @override
   AssetPathProvider? get assetPathProvider => _reader.assetPathProvider;
 
   @override
@@ -135,11 +139,7 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
   @override
   Stream<AssetId> findAssets(Glob glob) {
     if (_isComplete) throw BuildStepCompletedException();
-    if (_reader is MultiPackageAssetReader) {
-      return _reader.findAssets(glob, package: inputId.package);
-    } else {
-      return _reader.findAssets(glob);
-    }
+    return _reader.assetFinder.find(glob, package: inputId.package);
   }
 
   @override

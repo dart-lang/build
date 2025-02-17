@@ -7,6 +7,8 @@ library;
 import 'dart:io';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:glob/glob.dart';
 import 'package:package_config/package_config_types.dart';
@@ -15,7 +17,7 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 
 void main() {
   late PackageGraph packageGraph;
-  late RunnerAssetReader reader;
+  late AssetReader reader;
   late RunnerAssetWriter writer;
 
   setUp(() async {
@@ -51,14 +53,14 @@ void main() {
     final glob = Glob('lib/**');
     await expectLater(reader.readAsString(_sourceAsset), completes);
     await expectLater(
-        reader.findAssets(glob, package: 'root'), emits(_sourceAsset));
+        reader.assetFinder.find(glob, package: 'root'), emits(_sourceAsset));
 
     await writer.delete(_sourceAsset);
 
     await expectLater(() => reader.readAsString(_sourceAsset),
         throwsA(isA<AssetNotFoundException>()));
-    await expectLater(
-        reader.findAssets(glob, package: 'root'), neverEmits(_sourceAsset));
+    await expectLater(reader.assetFinder.find(glob, package: 'root'),
+        neverEmits(_sourceAsset));
   });
 }
 

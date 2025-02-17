@@ -6,6 +6,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
@@ -17,7 +19,10 @@ import '../generate/phase.dart';
 import '../package_graph/target_graph.dart';
 
 /// An [AssetReader] which ignores deleted files.
-class FinalizedReader implements AssetReader {
+class FinalizedReader implements AssetReader, AssetReaderState {
+  @override
+  late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
+
   final AssetReader _delegate;
   final AssetGraph _assetGraph;
   final TargetGraph _targetGraph;
@@ -32,6 +37,12 @@ class FinalizedReader implements AssetReader {
 
   FinalizedReader(this._delegate, this._assetGraph, this._targetGraph,
       this._buildPhases, this._rootPackage);
+
+  @override
+  AssetPathProvider? get assetPathProvider => _delegate.assetPathProvider;
+
+  @override
+  InputTracker? get inputTracker => _delegate.inputTracker;
 
   /// Returns a reason why [id] is not readable, or null if it is readable.
   Future<UnreadableReason?> unreadableReason(AssetId id) async {
@@ -69,8 +80,11 @@ class FinalizedReader implements AssetReader {
     return _delegate.readAsString(id, encoding: encoding);
   }
 
+// This is only for generators, so only `BuildStep` needs to implement it.
   @override
-  Stream<AssetId> findAssets(Glob glob) async* {
+  Stream<AssetId> findAssets(Glob glob_) => throw UnimplementedError();
+
+  Stream<AssetId> _findAssets(Glob glob, String? _) async* {
     var potentialNodes = _assetGraph
         .packageNodes(_rootPackage)
         .where((n) => glob.matches(n.id.path))

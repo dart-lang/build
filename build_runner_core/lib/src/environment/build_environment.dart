@@ -7,7 +7,6 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 
-import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../generate/build_directory.dart';
 import '../generate/build_result.dart';
@@ -20,7 +19,7 @@ import '../generate/finalized_assets_view.dart';
 /// stdout/stdin, while a theoretical web or remote environment might interact
 /// over HTTP.
 abstract class BuildEnvironment {
-  RunnerAssetReader get reader;
+  AssetReader get reader;
   RunnerAssetWriter get writer;
 
   void onLog(LogRecord record);

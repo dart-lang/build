@@ -10,7 +10,6 @@ import 'package:logging/logging.dart';
 
 import '../asset/batch.dart';
 import '../asset/file_based.dart';
-import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../generate/build_directory.dart';
 import '../generate/build_result.dart';
@@ -24,7 +23,7 @@ final _logger = Logger('IOEnvironment');
 /// A [BuildEnvironment] writing to disk and stdout.
 class IOEnvironment implements BuildEnvironment {
   @override
-  final RunnerAssetReader reader;
+  final AssetReader reader;
 
   @override
   final RunnerAssetWriter writer;

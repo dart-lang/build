@@ -17,8 +17,6 @@ import 'lru_cache.dart';
 /// An [AssetReader] that caches all results from the delegate.
 ///
 /// Assets are cached until [invalidate] is invoked.
-///
-/// Does not implement [findAssets].
 class CachingAssetReader implements AssetReader, AssetReaderState {
   /// Cached results of [readAsBytes].
   final _bytesContentCache = LruCache<AssetId, List<int>>(
@@ -56,15 +54,18 @@ class CachingAssetReader implements AssetReader, AssetReaderState {
   InputTracker? get inputTracker => _delegate.inputTracker;
 
   @override
+  AssetFinder get assetFinder => _delegate.assetFinder;
+
+  @override
   Future<bool> canRead(AssetId id) =>
       _canReadCache.putIfAbsent(id, () => _delegate.canRead(id));
 
   @override
   Future<Digest> digest(AssetId id) => _delegate.digest(id);
 
+  // This is only for generators, so only `BuildStep` needs to implement it.
   @override
-  Stream<AssetId> findAssets(Glob glob) =>
-      throw UnimplementedError('unimplemented!');
+  Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError();
 
   @override
   Future<List<int>> readAsBytes(AssetId id, {bool cache = true}) {

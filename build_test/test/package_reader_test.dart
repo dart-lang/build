@@ -51,7 +51,7 @@ void main() {
   });
 
   group('PackageAssetReader.forPackage', () {
-    AssetReader reader;
+    PackageAssetReader reader;
 
     final exampleLibA = 'test/_libs/example_a/';
     final exampleLibB = 'test/_libs/example_b/';

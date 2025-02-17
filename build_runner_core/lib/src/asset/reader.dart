@@ -16,9 +16,6 @@ import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../util/async.dart';
 
-/// A [RunnerAssetReader] must implement [MultiPackageAssetReader].
-abstract class RunnerAssetReader implements MultiPackageAssetReader {}
-
 /// Describes if and how a [SingleStepReader] should read an [AssetId].
 class Readability {
   final bool canRead;
@@ -58,6 +55,12 @@ typedef CheckInvalidInput = void Function(AssetId id);
 /// Tracks the assets and globs read during this step for input dependency
 /// tracking.
 class SingleStepReader implements AssetReader, AssetReaderState {
+  @override
+  late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
+
+  @override
+  final InputTracker inputTracker = InputTracker();
+
   final AssetGraph _assetGraph;
   final AssetReader _delegate;
   final int _phaseNumber;
@@ -67,9 +70,6 @@ class SingleStepReader implements AssetReader, AssetReaderState {
   final CheckInvalidInput _checkInvalidInput;
   final FutureOr<GlobAssetNode> Function(
       Glob glob, String package, int phaseNum)? _getGlobNode;
-
-  @override
-  final InputTracker inputTracker = InputTracker();
 
   SingleStepReader(this._delegate, this._assetGraph, this._phaseNumber,
       this._primaryPackage, this._isReadableNode, this._checkInvalidInput,
@@ -166,8 +166,11 @@ class SingleStepReader implements AssetReader, AssetReaderState {
     }));
   }
 
+// This is only for generators, so only `BuildStep` needs to implement it.
   @override
-  Stream<AssetId> findAssets(Glob glob) {
+  Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError();
+
+  Stream<AssetId> _findAssets(Glob glob, String? _) {
     if (_getGlobNode == null) {
       throw StateError('this reader does not support `findAssets`');
     }

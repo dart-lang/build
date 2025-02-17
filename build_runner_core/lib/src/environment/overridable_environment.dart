@@ -7,7 +7,6 @@ import 'dart:async';
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 
-import '../asset/reader.dart';
 import '../asset/writer.dart';
 import '../generate/build_directory.dart';
 import '../generate/build_result.dart';
@@ -18,7 +17,7 @@ import 'build_environment.dart';
 class OverrideableEnvironment implements BuildEnvironment {
   final BuildEnvironment _default;
 
-  final RunnerAssetReader? _reader;
+  final AssetReader? _reader;
   final RunnerAssetWriter? _writer;
 
   final void Function(LogRecord)? _onLog;
@@ -29,7 +28,7 @@ class OverrideableEnvironment implements BuildEnvironment {
 
   OverrideableEnvironment(
     this._default, {
-    RunnerAssetReader? reader,
+    AssetReader? reader,
     RunnerAssetWriter? writer,
     void Function(LogRecord)? onLog,
     Future<BuildResult> Function(
@@ -41,7 +40,7 @@ class OverrideableEnvironment implements BuildEnvironment {
         _finalizeBuild = finalizeBuild;
 
   @override
-  RunnerAssetReader get reader => _reader ?? _default.reader;
+  AssetReader get reader => _reader ?? _default.reader;
 
   @override
   RunnerAssetWriter get writer => _writer ?? _default.writer;

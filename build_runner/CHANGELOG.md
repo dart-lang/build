@@ -1,6 +1,8 @@
 ## 2.4.16-wip
 
 - Use `build_test` 3.0.0.
+- Start using `package:build/src/internal.dart'.
+- Refactor `MultiPackageAssetReader` to internal `AssetFinder`.
 
 ## 2.4.15
 

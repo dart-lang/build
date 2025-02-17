@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
 
@@ -21,7 +22,7 @@ class TestBuildEnvironment extends BuildEnvironment {
   final InMemoryRunnerAssetReaderWriter _readerWriter;
 
   @override
-  RunnerAssetReader get reader => _readerWriter;
+  AssetReader get reader => _readerWriter;
   @override
   RunnerAssetWriter get writer => _readerWriter;
 

@@ -11,7 +11,7 @@ import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
 class InMemoryRunnerAssetReaderWriter extends InMemoryAssetReaderWriter
-    implements RunnerAssetReader, RunnerAssetWriter {
+    implements AssetReader, RunnerAssetWriter {
   final _onCanReadController = StreamController<AssetId>.broadcast();
   Stream<AssetId> get onCanRead => _onCanReadController.stream;
   void Function(AssetId)? onDelete;

@@ -20,8 +20,11 @@ import 'package:stream_transform/stream_transform.dart';
 /// ```dart
 /// var assetReader = await PackageAssetReader.currentIsolate();
 /// ```
-class PackageAssetReader extends AssetReader
-    implements MultiPackageAssetReader {
+///
+/// Doesn't implement [AssetReader]: for cases that need an [AssetReader],
+/// use this class to read the files then write them into an
+/// `InMemoryAssetReaderWriter`.
+class PackageAssetReader {
   final PackageConfig _packageConfig;
 
   /// What package is the originating build occurring in.
@@ -108,7 +111,6 @@ class PackageAssetReader extends AssetReader
     return p.current;
   }
 
-  @override
   Stream<AssetId> findAssets(Glob glob, {String? package}) {
     package ??= _rootPackage;
     if (package == null) {
@@ -134,15 +136,12 @@ class PackageAssetReader extends AssetReader
     return packageFiles.where(glob.matches).map((p) => AssetId(package!, p));
   }
 
-  @override
   Future<bool> canRead(AssetId id) =>
       _resolve(id)?.exists() ?? Future.value(false);
 
-  @override
   Future<List<int>> readAsBytes(AssetId id) =>
       _resolve(id)?.readAsBytes() ?? (throw AssetNotFoundException(id));
 
-  @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) =>
       _resolve(id)?.readAsString(encoding: encoding) ??
       (throw AssetNotFoundException(id));

@@ -8,7 +8,7 @@ import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
 /// A no-op implementation of [AssetReader].
-class StubAssetReader extends AssetReader implements MultiPackageAssetReader {
+class StubAssetReader extends AssetReader {
   StubAssetReader();
 
   @override
@@ -21,9 +21,9 @@ class StubAssetReader extends AssetReader implements MultiPackageAssetReader {
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) =>
       Future.value('');
 
+  // This is only for generators, so only `BuildStep` needs to implement it.
   @override
-  Stream<AssetId> findAssets(Glob glob, {String? package}) =>
-      const Stream<Never>.empty();
+  Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError();
 
   @override
   Future<Digest> digest(AssetId id) => Future.value(Digest([1, 2, 3]));

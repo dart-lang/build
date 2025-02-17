@@ -30,18 +30,18 @@ void main() {
         () {
       assetReader = InMemoryAssetReader();
       expect(
-        () => assetReader.findAssets(Glob('lib/*.dart')),
+        () => assetReader.assetFinder.find(Glob('lib/*.dart')),
         throwsUnsupportedError,
       );
     });
 
     test('#findAssets should list files in lib/', () async {
-      expect(await assetReader.findAssets(Glob('lib/*.dart')).toList(),
+      expect(await assetReader.assetFinder.find(Glob('lib/*.dart')).toList(),
           [libAsset]);
     });
 
     test('#findAssets should list files in test/', () async {
-      expect(await assetReader.findAssets(Glob('test/*.dart')).toList(),
+      expect(await assetReader.assetFinder.find(Glob('test/*.dart')).toList(),
           [testAsset]);
     });
 
@@ -50,8 +50,8 @@ void main() {
       var otherLibAsset = AssetId('other', 'lib/other.dart');
       assetReader.cacheStringAsset(otherLibAsset, 'otherLibAsset');
       expect(
-          await assetReader
-              .findAssets(Glob('lib/*.dart'), package: 'other')
+          await assetReader.assetFinder
+              .find(Glob('lib/*.dart'), package: 'other')
               .toList(),
           [otherLibAsset]);
     });
