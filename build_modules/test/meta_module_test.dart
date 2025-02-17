@@ -15,11 +15,11 @@ import 'package:test/test.dart';
 import 'matchers.dart';
 
 void main() {
-  late InMemoryAssetReader reader;
+  late InMemoryAssetReaderWriter reader;
   final defaultPlatform = DartPlatform.register('test', ['async']);
 
   List<AssetId> makeAssets(Map<String, String> assetDescriptors) {
-    reader = InMemoryAssetReader();
+    reader = InMemoryAssetReaderWriter();
     var assets = <AssetId>{};
     assetDescriptors.forEach((serializedId, content) {
       var id = AssetId.parse(serializedId);
@@ -30,7 +30,7 @@ void main() {
   }
 
   Future<MetaModule> metaModuleFromSources(
-      InMemoryAssetReader reader, List<AssetId> sources,
+      InMemoryAssetReaderWriter reader, List<AssetId> sources,
       {DartPlatform? platform}) async {
     platform ??= defaultPlatform;
     final libraries = (await Future.wait(sources

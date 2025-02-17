@@ -138,7 +138,7 @@ void runTests(ResolversFactory resolversFactory) {
     }, (resolver) async {
       await resolver.libraryFor(entryPoint);
     }, assetReaderChecks: (reader) {
-      expect(reader.inputTracker!.assetsRead, {
+      expect(reader.inputTracker.assetsRead, {
         AssetId('a', 'web/main.dart'),
         AssetId('a', 'web/main.dart.transitive_digest'),
         AssetId('a', 'web/a.dart'),
@@ -181,7 +181,7 @@ void runTests(ResolversFactory resolversFactory) {
     await resolveSources(sources, (resolver) async {
       await resolver.libraryFor(entryPoint);
     }, assetReaderChecks: (reader) {
-      expect(reader.inputTracker!.assetsRead, {
+      expect(reader.inputTracker.assetsRead, {
         AssetId('a', 'web/main.dart'),
         AssetId('a', 'web/main.dart.transitive_digest'),
         AssetId('a', 'web/a.dart'),
@@ -194,7 +194,7 @@ void runTests(ResolversFactory resolversFactory) {
     await resolveSources(sources, (resolver) async {
       await resolver.libraryFor(entryPoint);
     }, assetReaderChecks: (reader) {
-      expect(reader.inputTracker!.assetsRead, {
+      expect(reader.inputTracker.assetsRead, {
         AssetId('a', 'web/main.dart'),
         AssetId('a', 'web/main.dart.transitive_digest'),
         AssetId('a', 'web/a.dart'),

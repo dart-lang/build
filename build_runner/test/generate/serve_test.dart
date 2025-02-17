@@ -50,13 +50,13 @@ void main() {
       var results = StreamQueue(handler.buildResults);
       var result = await results.next;
       checkBuild(result,
-          outputs: {'a|web/a.txt.copy': 'a'}, writer: readerWriter);
+          outputs: {'a|web/a.txt.copy': 'a'}, readerWriter: readerWriter);
 
       await readerWriter.writeAsString(makeAssetId('a|web/a.txt'), 'b');
 
       result = await results.next;
       checkBuild(result,
-          outputs: {'a|web/a.txt.copy': 'b'}, writer: readerWriter);
+          outputs: {'a|web/a.txt.copy': 'b'}, readerWriter: readerWriter);
     });
 
     test('blocks serving files until the build is done', () async {
@@ -83,7 +83,7 @@ void main() {
       buildBlocker1.complete();
       var result = await results.next;
       checkBuild(result,
-          outputs: {'a|web/a.txt.copy': 'a'}, writer: readerWriter);
+          outputs: {'a|web/a.txt.copy': 'a'}, readerWriter: readerWriter);
 
       /// Next request completes right away.
       var buildBlocker2 = Completer<void>();
@@ -109,7 +109,7 @@ void main() {
       buildBlocker2.complete();
       result = await results.next;
       checkBuild(result,
-          outputs: {'a|web/a.txt.copy': 'b'}, writer: readerWriter);
+          outputs: {'a|web/a.txt.copy': 'b'}, readerWriter: readerWriter);
 
       /// Make sure we actually see the final request finish.
       return done.future;

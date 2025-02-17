@@ -74,11 +74,10 @@ void main() {
   });
 
   group('with in memory file system', () {
-    late InMemoryAssetWriter writer;
-    late InMemoryAssetReader reader;
+    late InMemoryAssetReaderWriter readerWriter;
 
     setUp(() {
-      writer = reader = InMemoryAssetReaderWriter();
+      readerWriter = InMemoryAssetReaderWriter();
     });
 
     test('tracks outputs created by a builder', () async {
@@ -87,13 +86,13 @@ void main() {
       var inputs = {
         primary: 'foo',
       };
-      addAssets(inputs, writer);
+      addAssets(inputs, readerWriter);
       var outputId = AssetId.parse('$primary.copy');
       var buildStep = BuildStepImpl(
         primary,
         [outputId],
-        reader,
-        writer,
+        readerWriter,
+        readerWriter,
         AnalyzerResolvers.custom(),
         resourceManager,
         _unsupported,
@@ -103,7 +102,7 @@ void main() {
       await buildStep.complete();
 
       // One output.
-      expect(writer.assets[outputId], decodedMatches('foo'));
+      expect(readerWriter.assets[outputId], decodedMatches('foo'));
     });
 
     group('resolve', () {
@@ -118,10 +117,10 @@ void main() {
               library b;
             ''',
         };
-        addAssets(inputs, writer);
+        addAssets(inputs, readerWriter);
 
         var primary = makeAssetId('a|web/a.dart');
-        var buildStep = BuildStepImpl(primary, [], reader, writer,
+        var buildStep = BuildStepImpl(primary, [], readerWriter, readerWriter,
             AnalyzerResolvers.custom(), resourceManager, _unsupported);
         var resolver = buildStep.resolver;
 

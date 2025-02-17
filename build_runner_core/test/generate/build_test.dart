@@ -554,7 +554,8 @@ void main() {
         );
 
         checkBuild(result.buildResult,
-            writer: result.readerWriter, outputs: {r'$$a|lib/b.txt.copy': 'b'});
+            readerWriter: result.readerWriter,
+            outputs: {r'$$a|lib/b.txt.copy': 'b'});
       });
 
       test('builds hidden asset forming a custom public source', () async {
@@ -572,7 +573,7 @@ void main() {
 
         checkBuild(
           result.buildResult,
-          writer: result.readerWriter,
+          readerWriter: result.readerWriter,
           outputs: {
             r'$$a|include/a.txt.copy': 'a',
             r'$$a|lib/b.txt.copy': 'b',

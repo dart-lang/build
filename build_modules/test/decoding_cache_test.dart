@@ -50,7 +50,7 @@ void main() {
       final id = AssetId('foo', 'lib/foo');
       final reader = InMemoryAssetReaderWriter()
         ..filesystem.writeAsStringSync(id, 'foo');
-      await cache.write(id, InMemoryAssetWriter(), 'bar');
+      await cache.write(id, InMemoryAssetReaderWriter(), 'bar');
       expect(await cache.find(id, reader), 'bar');
       expect(reader.inputTracker.assetsRead, contains(id),
           reason: 'Should call canRead');

@@ -18,7 +18,7 @@ import 'package:test/test.dart';
 void main() {
   group('ScratchSpace', () {
     late ScratchSpace scratchSpace;
-    late InMemoryAssetReader assetReader;
+    late InMemoryAssetReaderWriter readerWriter;
 
     var allAssets = [
       'dep|lib/dep.dart',
@@ -32,11 +32,11 @@ void main() {
 
     setUp(() async {
       scratchSpace = ScratchSpace();
-      assetReader = InMemoryAssetReaderWriter();
+      readerWriter = InMemoryAssetReaderWriter();
       for (final asset in allAssets.entries) {
-        assetReader.filesystem.writeAsBytesSync(asset.key, asset.value);
+        readerWriter.filesystem.writeAsBytesSync(asset.key, asset.value);
       }
-      await scratchSpace.ensureAssets(allAssets.keys, assetReader);
+      await scratchSpace.ensureAssets(allAssets.keys, readerWriter);
     });
 
     tearDown(() async {
@@ -81,7 +81,7 @@ void main() {
       var outputContent = 'test!';
       await outputFile.writeAsString(outputContent);
 
-      var writer = InMemoryAssetWriter();
+      var writer = InMemoryAssetReaderWriter();
       await scratchSpace.copyOutput(outputId, writer);
 
       expect(writer.assets[outputId], decodedMatches(outputContent));
@@ -98,7 +98,7 @@ void main() {
 
     test('Can\'t use a ScratchSpace after deleting it', () async {
       unawaited(scratchSpace.delete());
-      expect(() => scratchSpace.ensureAssets(allAssets.keys, assetReader),
+      expect(() => scratchSpace.ensureAssets(allAssets.keys, readerWriter),
           throwsStateError);
     });
 
