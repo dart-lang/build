@@ -193,7 +193,7 @@ Future<T> _resolveAssets<T>(
 
   // Prepare the in-memory filesystem the build will run on.
   //
-  // First, add directly-passed [inputs], reading from the filesysem if the
+  // First, add directly-passed [inputs], reading from the filesystem if the
   // string passed is [useAssetReader].
   final assetReader = PackageAssetReader(resolvedConfig, rootPackage);
   final inputAssets = <AssetId, String>{};
@@ -210,7 +210,8 @@ Future<T> _resolveAssets<T>(
     rootPackage: rootPackage,
   );
 
-  // Then, read any additionally requested files from the filesystem. These are
+  // Then, copy any additionally requested files from the filesystem to the
+  // in-memory filesystem.
   if (nonInputsToReadFromFilesystem != null) {
     for (final id in nonInputsToReadFromFilesystem) {
       await readerWriter.writeAsBytes(id, await assetReader.readAsBytes(id));
