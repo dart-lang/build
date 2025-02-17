@@ -55,10 +55,7 @@ class IOEnvironment implements BuildEnvironment {
 
     var (reader, writer) = lowResourcesMode
         ? (fileReader, fileWriter)
-        : wrapInBatch(
-            reader: fileReader,
-            pathProvidingReader: fileReader,
-            writer: fileWriter);
+        : wrapInBatch(reader: fileReader, writer: fileWriter);
 
     return IOEnvironment._(reader, writer, assumeTty == true || _canPrompt(),
         outputSymlinksOnly, packageGraph);

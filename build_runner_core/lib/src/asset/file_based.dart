@@ -6,6 +6,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:glob/glob.dart';
 import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as path;
@@ -21,10 +23,16 @@ final _descriptorPool = Pool(32);
 /// Basic [AssetReader] which uses a [PackageGraph] to look up where to read
 /// files from disk.
 class FileBasedAssetReader extends AssetReader
-    implements RunnerAssetReader, PathProvidingAssetReader {
+    implements AssetReaderState, RunnerAssetReader {
   final PackageGraph packageGraph;
 
   FileBasedAssetReader(this.packageGraph);
+
+  @override
+  AssetPathProvider? get assetPathProvider => packageGraph;
+
+  @override
+  InputTracker? get inputTracker => null;
 
   @override
   Future<bool> canRead(AssetId id) =>
@@ -55,9 +63,6 @@ class FileBasedAssetReader extends AssetReader
         .cast<File>()
         .map((file) => _fileToAssetId(file, packageNode));
   }
-
-  @override
-  String pathTo(AssetId id) => _filePathFor(id, packageGraph);
 }
 
 /// Creates an [AssetId] for [file], which is a part of [packageNode].
@@ -112,18 +117,9 @@ class FileBasedAssetWriter implements RunnerAssetWriter {
   Future<void> completeBuild() async {}
 }
 
-/// Returns the path to [id] for a given [packageGraph].
-String _filePathFor(AssetId id, PackageGraph packageGraph) {
-  var package = packageGraph[id.package];
-  if (package == null) {
-    throw PackageNotFoundException(id.package);
-  }
-  return path.join(package.path, id.path);
-}
-
 /// Returns a [File] for [id] given [packageGraph].
 File _fileFor(AssetId id, PackageGraph packageGraph) {
-  return File(_filePathFor(id, packageGraph));
+  return File(packageGraph.pathFor(id));
 }
 
 /// Returns a `File` for the asset reference by [id] given [packageGraph].

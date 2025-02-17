@@ -19,11 +19,6 @@ import '../util/async.dart';
 /// A [RunnerAssetReader] must implement [MultiPackageAssetReader].
 abstract class RunnerAssetReader implements MultiPackageAssetReader {}
 
-/// An [AssetReader] that can provide actual paths to assets on disk.
-abstract class PathProvidingAssetReader implements AssetReader {
-  String pathTo(AssetId id);
-}
-
 /// Describes if and how a [SingleStepReader] should read an [AssetId].
 class Readability {
   final bool canRead;
@@ -79,6 +74,9 @@ class SingleStepReader implements AssetReader, AssetReaderState {
   SingleStepReader(this._delegate, this._assetGraph, this._phaseNumber,
       this._primaryPackage, this._isReadableNode, this._checkInvalidInput,
       [this._getGlobNode, this._writtenAssets]);
+
+  @override
+  AssetPathProvider? get assetPathProvider => _delegate.assetPathProvider;
 
   /// Checks whether [id] can be read by this step - attempting to build the
   /// asset if necessary.

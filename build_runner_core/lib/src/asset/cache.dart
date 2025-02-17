@@ -7,18 +7,19 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
 import 'lru_cache.dart';
-import 'reader.dart';
 
 /// An [AssetReader] that caches all results from the delegate.
 ///
 /// Assets are cached until [invalidate] is invoked.
 ///
 /// Does not implement [findAssets].
-class CachingAssetReader implements AssetReader {
+class CachingAssetReader implements AssetReader, AssetReaderState {
   /// Cached results of [readAsBytes].
   final _bytesContentCache = LruCache<AssetId, List<int>>(
       1024 * 1024,
@@ -46,12 +47,13 @@ class CachingAssetReader implements AssetReader {
 
   final AssetReader _delegate;
 
-  CachingAssetReader._(this._delegate);
+  CachingAssetReader(this._delegate);
 
-  factory CachingAssetReader(AssetReader delegate) =>
-      delegate is PathProvidingAssetReader
-          ? _PathProvidingCachingAssetReader._(delegate)
-          : CachingAssetReader._(delegate);
+  @override
+  AssetPathProvider? get assetPathProvider => _delegate.assetPathProvider;
+
+  @override
+  InputTracker? get inputTracker => _delegate.inputTracker;
 
   @override
   Future<bool> canRead(AssetId id) =>
@@ -110,18 +112,4 @@ class CachingAssetReader implements AssetReader {
       _pendingStringContentCache.remove(id);
     }
   }
-}
-
-/// A version of a [CachingAssetReader] that implements
-/// [PathProvidingAssetReader].
-class _PathProvidingCachingAssetReader extends CachingAssetReader
-    implements PathProvidingAssetReader {
-  @override
-  PathProvidingAssetReader get _delegate =>
-      super._delegate as PathProvidingAssetReader;
-
-  _PathProvidingCachingAssetReader._(super.delegate) : super._();
-
-  @override
-  String pathTo(AssetId id) => _delegate.pathTo(id);
 }

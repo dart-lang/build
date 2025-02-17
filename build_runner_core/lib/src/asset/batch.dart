@@ -6,6 +6,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 
@@ -53,13 +55,12 @@ final class _FileSystemWriteBatch {
 /// they are flushed to the file system.
 (RunnerAssetReader, RunnerAssetWriter) wrapInBatch({
   required RunnerAssetReader reader,
-  required PathProvidingAssetReader pathProvidingReader,
   required RunnerAssetWriter writer,
 }) {
   final batch = _FileSystemWriteBatch._();
 
   return (
-    BatchReader(reader, pathProvidingReader, batch),
+    BatchReader(reader, batch),
     BatchWriter(writer, batch),
   );
 }
@@ -74,12 +75,17 @@ final class _PendingFileState {
 
 @internal
 final class BatchReader extends AssetReader
-    implements RunnerAssetReader, PathProvidingAssetReader {
+    implements AssetReaderState, RunnerAssetReader {
   final RunnerAssetReader _inner;
-  final PathProvidingAssetReader _innerPathProviding;
   final _FileSystemWriteBatch _batch;
 
-  BatchReader(this._inner, this._innerPathProviding, this._batch);
+  BatchReader(this._inner, this._batch);
+
+  @override
+  AssetPathProvider? get assetPathProvider => _inner.assetPathProvider;
+
+  @override
+  InputTracker? get inputTracker => _inner.inputTracker;
 
   _PendingFileState? _stateFor(AssetId id) {
     return _batch._pendingWrites[id];
@@ -99,11 +105,6 @@ final class BatchReader extends AssetReader
     return _inner
         .findAssets(glob, package: package)
         .where((asset) => _stateFor(asset)?.isDeleted != true);
-  }
-
-  @override
-  String pathTo(AssetId id) {
-    return _innerPathProviding.pathTo(id);
   }
 
   @override

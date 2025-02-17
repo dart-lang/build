@@ -13,6 +13,7 @@
   in-memory reader instead of providing multiple readers.
 - Support checks on reader state after a build action in `resolveSources`.
 - Start using `package:build/src/internal.dart`.
+- Refactor `PathProvidingAssetReader` to `AssetPathProvider`
 
 ## 2.2.3
 
