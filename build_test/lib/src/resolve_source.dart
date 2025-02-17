@@ -11,7 +11,6 @@ import 'package:build_resolvers/build_resolvers.dart';
 import 'package:package_config/package_config.dart';
 
 import 'in_memory_reader.dart';
-import 'multi_asset_reader.dart';
 import 'package_reader.dart';
 
 /// Marker constant that may be used in combination with [resolveSources].
@@ -27,6 +26,7 @@ Future<T> resolveSource<T>(
   FutureOr<T> Function(Resolver resolver) action, {
   AssetId? inputId,
   PackageConfig? packageConfig,
+  Set<AssetId>? nonInputsToReadFromFilesystem,
   Future<void>? tearDown,
   Resolvers? resolvers,
 }) {
@@ -38,6 +38,7 @@ Future<T> resolveSource<T>(
     inputId.package,
     action,
     packageConfig: packageConfig,
+    nonInputsToReadFromFilesystem: nonInputsToReadFromFilesystem,
     resolverFor: inputId,
     tearDown: tearDown,
     resolvers: resolvers,
@@ -120,6 +121,7 @@ Future<T> resolveSources<T>(
   Map<String, String> inputs,
   FutureOr<T> Function(Resolver resolver) action, {
   PackageConfig? packageConfig,
+  Set<AssetId>? nonInputsToReadFromFilesystem,
   String? resolverFor,
   String? rootPackage,
   FutureOr<void> Function(InMemoryAssetReader)? assetReaderChecks,
@@ -134,6 +136,7 @@ Future<T> resolveSources<T>(
     rootPackage ?? AssetId.parse(inputs.keys.first).package,
     action,
     packageConfig: packageConfig,
+    nonInputsToReadFromFilesystem: nonInputsToReadFromFilesystem,
     resolverFor: AssetId.parse(resolverFor ?? inputs.keys.first),
     assetReaderChecks: assetReaderChecks,
     tearDown: tearDown,
@@ -146,6 +149,7 @@ Future<T> resolveAsset<T>(
   AssetId inputId,
   FutureOr<T> Function(Resolver resolver) action, {
   PackageConfig? packageConfig,
+  Set<AssetId>? nonInputsToReadFromFilesystem,
   Future<void>? tearDown,
   Resolvers? resolvers,
 }) {
@@ -156,6 +160,7 @@ Future<T> resolveAsset<T>(
     inputId.package,
     action,
     packageConfig: packageConfig,
+    nonInputsToReadFromFilesystem: nonInputsToReadFromFilesystem,
     resolverFor: inputId,
     tearDown: tearDown,
     resolvers: resolvers,
@@ -172,6 +177,7 @@ Future<T> _resolveAssets<T>(
   String rootPackage,
   FutureOr<T> Function(Resolver resolver) action, {
   PackageConfig? packageConfig,
+  Set<AssetId>? nonInputsToReadFromFilesystem,
   AssetId? resolverFor,
   FutureOr<void> Function(InMemoryAssetReader)? assetReaderChecks,
   Future<void>? tearDown,
@@ -179,12 +185,17 @@ Future<T> _resolveAssets<T>(
 }) async {
   final resolvedConfig = packageConfig ??
       await loadPackageConfigUri((await Isolate.packageConfig)!);
-  final assetReader = PackageAssetReader(resolvedConfig, rootPackage);
   final resolveBuilder = _ResolveSourceBuilder(
     action,
     resolverFor,
     tearDown,
   );
+
+  // Prepare the in-memory filesystem the build will run on.
+  //
+  // First, add directly-passed [inputs], reading from the filesystem if the
+  // string passed is [useAssetReader].
+  final assetReader = PackageAssetReader(resolvedConfig, rootPackage);
   final inputAssets = <AssetId, String>{};
   await Future.wait(inputs.keys.map((String rawAssetId) async {
     final assetId = AssetId.parse(rawAssetId);
@@ -194,10 +205,18 @@ Future<T> _resolveAssets<T>(
     }
     inputAssets[assetId] = assetValue;
   }));
-  final inMemory = InMemoryAssetReaderWriter(
+  final readerWriter = InMemoryAssetReaderWriter(
     sourceAssets: inputAssets,
     rootPackage: rootPackage,
   );
+
+  // Then, copy any additionally requested files from the filesystem to the
+  // in-memory filesystem.
+  if (nonInputsToReadFromFilesystem != null) {
+    for (final id in nonInputsToReadFromFilesystem) {
+      await readerWriter.writeAsBytes(id, await assetReader.readAsBytes(id));
+    }
+  }
 
   // Use the default resolver if no experiments are enabled. This is much
   // faster.
@@ -216,13 +235,13 @@ Future<T> _resolveAssets<T>(
   unawaited(runBuilder(
     resolveBuilder,
     inputAssets.keys,
-    MultiAssetReader([inMemory, assetReader]),
-    inMemory,
+    readerWriter,
+    readerWriter,
     resolvers,
   ).catchError((_) {}));
   final result = await resolveBuilder.onDone.future;
   if (assetReaderChecks != null) {
-    await assetReaderChecks(inMemory);
+    await assetReaderChecks(readerWriter);
   }
   return result;
 }

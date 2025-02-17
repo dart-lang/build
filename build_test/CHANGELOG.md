@@ -6,6 +6,11 @@
 - Breaking change: `testBuilder` no longer accepts a `reader` and a `writer`.
   Instead it returns a `TestBuilderResult` with the `InMemoryAssetReaderWriter`
   that was used.
+- Breaking change: `resolveSources` no longer automatically reads non-input
+  files from the filesystem; specify explicitly which non-input files the
+  test should read in `nonInputsToReadFromFilesystem`.
+- Breaking change: remove `MultiAssetReader`. Load the source into one
+  in-memory reader instead of providing multiple readers.
 - Support checks on reader state after a build action in `resolveSources`.
 - Start using `package:build/src/internal.dart`.
 

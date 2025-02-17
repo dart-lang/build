@@ -45,7 +45,10 @@ void main() {
         import 'package:collection/collection.dart';
 
         abstract class Foo implements Equality {}
-      ''', (resolver) => resolver.findLibraryNotNull('example'));
+      ''', nonInputsToReadFromFilesystem: {
+        AssetId('collection', 'lib/collection.dart'),
+        AssetId('collection', 'lib/src/equality.dart'),
+      }, (resolver) => resolver.findLibraryNotNull('example'));
       var classFoo = libExample.getClass('Foo')!;
       expect(
         classFoo.allSupertypes.map(_toStringId),
@@ -85,7 +88,10 @@ void main() {
         import 'package:collection/collection.dart';
 
         abstract class Foo implements Equality {}
-      ''', (resolver) => resolver, tearDown: resolverDone.future);
+      ''', nonInputsToReadFromFilesystem: {
+        AssetId('collection', 'lib/collection.dart'),
+        AssetId('collection', 'lib/src/equality.dart'),
+      }, (resolver) => resolver, tearDown: resolverDone.future);
       expect(
           await resolver.libraries.any((library) => library.name == 'example'),
           true);
@@ -105,7 +111,10 @@ void main() {
         import 'package:collection/collection.dart';
 
         abstract class Foo implements Equality {}
-      ''', (resolver) async {
+      ''', nonInputsToReadFromFilesystem: {
+        AssetId('collection', 'lib/collection.dart'),
+        AssetId('collection', 'lib/src/equality.dart'),
+      }, (resolver) async {
         var libExample = await resolver.findLibraryNotNull('example');
         var classFoo = libExample.getClass('Foo')!;
         expect(classFoo.allSupertypes.map(_toStringId),
