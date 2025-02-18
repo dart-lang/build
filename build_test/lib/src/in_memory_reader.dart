@@ -81,7 +81,7 @@ class InMemoryAssetReaderWriter extends AssetReader
 
   @override
   Future writeAsBytes(AssetId id, List<int> bytes) async {
-    assets[id] = Uint8List.fromList(bytes);
+    assets[id] = bytes is Uint8List ? bytes : Uint8List.fromList(bytes);
   }
 
   @override

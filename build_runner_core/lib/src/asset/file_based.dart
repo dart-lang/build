@@ -99,7 +99,7 @@ class FileBasedAssetWriter implements RunnerAssetWriter {
   @override
   Future writeAsString(AssetId id, String contents,
           {Encoding encoding = utf8}) =>
-      filesystem.writeAsString(id, contents);
+      filesystem.writeAsString(id, contents, encoding: encoding);
 
   @override
   Future delete(AssetId id) async {
