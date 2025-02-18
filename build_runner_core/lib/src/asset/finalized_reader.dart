@@ -18,9 +18,11 @@ import '../asset_graph/optional_output_tracker.dart';
 import '../generate/phase.dart';
 import '../package_graph/target_graph.dart';
 
-/// An [AssetReader] which ignores deleted files.
-class FinalizedReader implements AssetReader, AssetReaderState {
-  @override
+/// A view of the build output.
+///
+/// If [canRead] returns false, [unreadableReason] explains why the file is
+/// missing; for example, it might say that generation failed.
+class FinalizedReader {
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
 
   final AssetReader _delegate;
@@ -37,12 +39,6 @@ class FinalizedReader implements AssetReader, AssetReaderState {
 
   FinalizedReader(this._delegate, this._assetGraph, this._targetGraph,
       this._buildPhases, this._rootPackage);
-
-  @override
-  AssetPathProvider? get assetPathProvider => _delegate.assetPathProvider;
-
-  @override
-  InputTracker? get inputTracker => _delegate.inputTracker;
 
   /// Returns a reason why [id] is not readable, or null if it is readable.
   Future<UnreadableReason?> unreadableReason(AssetId id) async {
@@ -62,27 +58,19 @@ class FinalizedReader implements AssetReader, AssetReaderState {
     return UnreadableReason.unknown;
   }
 
-  @override
   Future<bool> canRead(AssetId id) async =>
       (await unreadableReason(id)) == null;
 
-  @override
   Future<Digest> digest(AssetId id) => _delegate.digest(id);
 
-  @override
   Future<List<int>> readAsBytes(AssetId id) => _delegate.readAsBytes(id);
 
-  @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
     if (_assetGraph.get(id)?.isDeleted ?? true) {
       throw AssetNotFoundException(id);
     }
     return _delegate.readAsString(id, encoding: encoding);
   }
-
-// This is only for generators, so only `BuildStep` needs to implement it.
-  @override
-  Stream<AssetId> findAssets(Glob glob_) => throw UnimplementedError();
 
   Stream<AssetId> _findAssets(Glob glob, String? _) async* {
     var potentialNodes = _assetGraph
