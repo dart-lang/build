@@ -14,7 +14,6 @@ import 'package:glob/glob.dart';
 
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
-import '../util/async.dart';
 
 /// Describes if and how a [SingleStepReader] should read an [AssetId].
 class Readability {
@@ -68,8 +67,8 @@ class SingleStepReader implements AssetReader, AssetReaderState {
   final AssetWriterSpy? _writtenAssets;
   final IsReadable _isReadableNode;
   final CheckInvalidInput _checkInvalidInput;
-  final FutureOr<GlobAssetNode> Function(
-      Glob glob, String package, int phaseNum)? _getGlobNode;
+  final Future<GlobAssetNode> Function(Glob glob, String package, int phaseNum)?
+      _getGlobNode;
 
   SingleStepReader(this._delegate, this._assetGraph, this._phaseNumber,
       this._primaryPackage, this._isReadableNode, this._checkInvalidInput,
@@ -87,7 +86,8 @@ class SingleStepReader implements AssetReader, AssetReaderState {
   /// If [catchInvalidInputs] is set to true and [_checkInvalidInput] throws an
   /// [InvalidInputException], this method will return `false` instead of
   /// throwing.
-  FutureOr<bool> _isReadable(AssetId id, {bool catchInvalidInputs = false}) {
+  Future<bool> _isReadable(AssetId id,
+      {bool catchInvalidInputs = false}) async {
     try {
       _checkInvalidInput(id);
     } on InvalidInputException {
@@ -105,68 +105,58 @@ class SingleStepReader implements AssetReader, AssetReaderState {
       return false;
     }
 
-    return doAfter(_isReadableNode(node, _phaseNumber, _writtenAssets),
-        (Readability readability) {
-      if (!readability.inSamePhase) {
-        inputTracker.assetsRead.add(id);
-      }
+    final readability =
+        await _isReadableNode(node, _phaseNumber, _writtenAssets);
+    if (!readability.inSamePhase) {
+      inputTracker.assetsRead.add(id);
+    }
 
-      return readability.canRead;
-    });
+    return readability.canRead;
   }
 
   @override
-  Future<bool> canRead(AssetId id) {
-    return toFuture(
-        doAfter(_isReadable(id, catchInvalidInputs: true), (bool isReadable) {
-      if (!isReadable) return false;
-      var node = _assetGraph.get(id);
-      FutureOr<bool> canRead() {
-        if (node is GeneratedAssetNode) {
-          // Short circut, we know this file exists because its readable and it
-          // was output.
-          return true;
-        } else {
-          return _delegate.canRead(id);
-        }
-      }
+  Future<bool> canRead(AssetId id) async {
+    final isReadable = await _isReadable(id, catchInvalidInputs: true);
+    if (!isReadable) return false;
 
-      return doAfter(canRead(), (bool canRead) {
-        if (!canRead) return false;
-        return doAfter(_ensureDigest(id), (_) => true);
-      });
-    }));
+    var node = _assetGraph.get(id);
+    // No need to check readability for [GeneratedAssetNode], they are always
+    // readable.
+    if (node is! GeneratedAssetNode && !await _delegate.canRead(id)) {
+      return false;
+    }
+    await _ensureDigest(id);
+    return true;
   }
 
   @override
-  Future<Digest> digest(AssetId id) {
-    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
-      if (!isReadable) {
-        return Future.error(AssetNotFoundException(id));
-      }
-      return _ensureDigest(id);
-    }));
+  Future<Digest> digest(AssetId id) async {
+    final isReadable = await _isReadable(id);
+
+    if (!isReadable) {
+      throw AssetNotFoundException(id);
+    }
+    return _ensureDigest(id);
   }
 
   @override
-  Future<List<int>> readAsBytes(AssetId id) {
-    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
-      if (!isReadable) {
-        return Future.error(AssetNotFoundException(id));
-      }
-      return doAfter(_ensureDigest(id), (_) => _delegate.readAsBytes(id));
-    }));
+  Future<List<int>> readAsBytes(AssetId id) async {
+    final isReadable = await _isReadable(id);
+    if (!isReadable) {
+      throw AssetNotFoundException(id);
+    }
+    await _ensureDigest(id);
+    return _delegate.readAsBytes(id);
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
-    return toFuture(doAfter(_isReadable(id), (bool isReadable) {
-      if (!isReadable) {
-        return Future.error(AssetNotFoundException(id));
-      }
-      return doAfter(_ensureDigest(id),
-          (_) => _delegate.readAsString(id, encoding: encoding));
-    }));
+  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
+    final isReadable = await _isReadable(id);
+    if (!isReadable) {
+      throw AssetNotFoundException(id);
+    }
+    await _ensureDigest(id);
+    return _delegate.readAsString(id, encoding: encoding);
   }
 
 // This is only for generators, so only `BuildStep` needs to implement it.
@@ -179,8 +169,7 @@ class SingleStepReader implements AssetReader, AssetReaderState {
     }
     var streamCompleter = StreamCompleter<AssetId>();
 
-    doAfter(_getGlobNode(glob, _primaryPackage, _phaseNumber),
-        (GlobAssetNode globNode) {
+    _getGlobNode(glob, _primaryPackage, _phaseNumber).then((globNode) {
       inputTracker.assetsRead.add(globNode.id);
       streamCompleter.setSourceStream(Stream.fromIterable(globNode.results!));
     });

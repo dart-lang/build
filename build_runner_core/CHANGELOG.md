@@ -5,6 +5,7 @@
 - Use `build_test` 3.0.0.
 - Refactor `PathProvidingAssetReader` to `AssetPathProvider`.
 - Refactor `MultiPackageAssetReader` to internal `AssetFinder`.
+- `FinalizedReader` no longer implements `AssetReader`.
 - Add internal `Filesystem` that backs `AssetReader` and `AssetWriter`
   implementations.
 

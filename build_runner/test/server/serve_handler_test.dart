@@ -123,7 +123,7 @@ void main() {
   });
 
   void addSource(String id, String content, {bool deleted = false}) {
-    var node = makeAssetNode(id, [], computeDigest(AssetId.parse(id), 'a'));
+    var node = makeAssetNode(id, [], computeDigest(AssetId.parse(id), content));
     if (deleted) {
       node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
     }
@@ -388,7 +388,7 @@ void main() {
         clientChannel2.sink.close();
       });
 
-      test('emmits a message to all listners', () async {
+      test('emits a message to all listeners', () async {
         expect(clientChannel1.stream, emitsInOrder(['{}', emitsDone]));
         expect(clientChannel2.stream, emitsInOrder(['{}', emitsDone]));
         await createMockConnection(serverChannel1, 'web');
@@ -398,7 +398,7 @@ void main() {
         await clientChannel2.sink.close();
       });
 
-      test('deletes listners on disconect', () async {
+      test('deletes listeners on disconnect', () async {
         expect(clientChannel1.stream, emitsInOrder(['{}', '{}', emitsDone]));
         expect(clientChannel2.stream, emitsInOrder(['{}', emitsDone]));
         await createMockConnection(serverChannel1, 'web');
@@ -409,21 +409,21 @@ void main() {
         await clientChannel1.sink.close();
       });
 
-      test('emmits only on successful builds', () async {
+      test('emits only on successful builds', () async {
         expect(clientChannel1.stream, emitsDone);
         await createMockConnection(serverChannel1, 'web');
         await handler.emitUpdateMessage(BuildResult(BuildStatus.failure, []));
         await clientChannel1.sink.close();
       });
 
-      test('closes listners', () async {
+      test('closes listeners', () async {
         expect(clientChannel1.stream, emitsDone);
         await createMockConnection(serverChannel1, 'web');
         await handler.close();
         expect(clientChannel1.closeCode, isNotNull);
       });
 
-      test('emmits build results digests', () async {
+      test('emits build results digests', () async {
         addSource('a|web/index.html', 'content1');
         addSource('a|lib/some.dart.js', 'content2');
         var indexHash =

@@ -18,9 +18,11 @@ import '../asset_graph/optional_output_tracker.dart';
 import '../generate/phase.dart';
 import '../package_graph/target_graph.dart';
 
-/// An [AssetReader] which ignores deleted files.
-class FinalizedReader implements AssetReader, AssetReaderState {
-  @override
+/// A view of the build output.
+///
+/// If [canRead] returns false, [unreadableReason] explains why the file is
+/// missing; for example, it might say that generation failed.
+class FinalizedReader {
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
 
   final AssetReader _delegate;
@@ -38,15 +40,9 @@ class FinalizedReader implements AssetReader, AssetReaderState {
   FinalizedReader(this._delegate, this._assetGraph, this._targetGraph,
       this._buildPhases, this._rootPackage);
 
-  @override
   Filesystem get filesystem => _delegate.filesystem;
 
   @override
-  AssetPathProvider? get assetPathProvider => _delegate.assetPathProvider;
-
-  @override
-  InputTracker? get inputTracker => _delegate.inputTracker;
-
   /// Returns a reason why [id] is not readable, or null if it is readable.
   Future<UnreadableReason?> unreadableReason(AssetId id) async {
     if (!_assetGraph.contains(id)) return UnreadableReason.notFound;
@@ -57,35 +53,43 @@ class FinalizedReader implements AssetReader, AssetReaderState {
     }
     if (node.isDeleted) return UnreadableReason.deleted;
     if (!node.isReadable) return UnreadableReason.assetType;
+
     if (node is GeneratedAssetNode) {
       if (node.isFailure) return UnreadableReason.failed;
       if (!node.wasOutput) return UnreadableReason.notOutput;
+      // No need to explicitly check readability for generated files, their
+      // readability is recorded in the node state.
+      return null;
     }
-    if (await _delegate.canRead(id)) return null;
+
+    if (node.isValidInput && await _delegate.canRead(id)) return null;
     return UnreadableReason.unknown;
   }
 
-  @override
   Future<bool> canRead(AssetId id) async =>
       (await unreadableReason(id)) == null;
 
-  @override
-  Future<Digest> digest(AssetId id) => _delegate.digest(id);
+  Future<Digest> digest(AssetId id) async {
+    final unreadableReason = await this.unreadableReason(id);
+    // Do provide digests for generated files that are known but not output
+    // or known to be deleted. `build serve` uses these digests, which
+    // reflect that the file is missing.
+    if (unreadableReason != null &&
+        unreadableReason != UnreadableReason.notOutput &&
+        unreadableReason != UnreadableReason.deleted) {
+      throw AssetNotFoundException(id);
+    }
+    return _ensureDigest(id);
+  }
 
-  @override
   Future<List<int>> readAsBytes(AssetId id) => _delegate.readAsBytes(id);
 
-  @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
     if (_assetGraph.get(id)?.isDeleted ?? true) {
       throw AssetNotFoundException(id);
     }
     return _delegate.readAsString(id, encoding: encoding);
   }
-
-// This is only for generators, so only `BuildStep` needs to implement it.
-  @override
-  Stream<AssetId> findAssets(Glob glob_) => throw UnimplementedError();
 
   Stream<AssetId> _findAssets(Glob glob, String? _) async* {
     var potentialNodes = _assetGraph
@@ -99,6 +103,16 @@ class FinalizedReader implements AssetReader, AssetReaderState {
         yield id;
       }
     }
+  }
+
+  /// Returns the `lastKnownDigest` of [id], computing and caching it if
+  /// necessary.
+  ///
+  /// Note that [id] must exist in the asset graph.
+  FutureOr<Digest> _ensureDigest(AssetId id) {
+    var node = _assetGraph.get(id)!;
+    if (node.lastKnownDigest != null) return node.lastKnownDigest!;
+    return _delegate.digest(id).then((digest) => node.lastKnownDigest = digest);
   }
 }
 

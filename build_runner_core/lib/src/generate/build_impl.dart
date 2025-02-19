@@ -34,7 +34,6 @@ import '../package_graph/apply_builders.dart';
 import '../package_graph/package_graph.dart';
 import '../package_graph/target_graph.dart';
 import '../performance_tracking/performance_tracking_resolvers.dart';
-import '../util/async.dart';
 import '../util/build_dirs.dart';
 import '../util/constants.dart';
 import 'build_definition.dart';
@@ -115,16 +114,8 @@ class BuildImpl {
     }
     var buildDefinition = await BuildDefinition.prepareWorkspace(
         environment, options, buildPhases);
-    var singleStepReader = SingleStepReader(
-        buildDefinition.reader,
-        buildDefinition.assetGraph,
-        buildPhases.length,
-        options.packageGraph.root.name,
-        _isReadableAfterBuildFactory(buildPhases),
-        _checkInvalidInputFactory(
-            buildDefinition.targetGraph, buildDefinition.packageGraph));
     var finalizedReader = FinalizedReader(
-        singleStepReader,
+        buildDefinition.reader,
         buildDefinition.assetGraph,
         buildDefinition.targetGraph,
         buildPhases,
@@ -132,17 +123,6 @@ class BuildImpl {
     var build =
         BuildImpl._(buildDefinition, options, buildPhases, finalizedReader);
     return build;
-  }
-
-  static IsReadable _isReadableAfterBuildFactory(List<BuildPhase> buildPhases) {
-    return (AssetNode node, int phaseNum, AssetWriterSpy? writtenAssets) {
-      if (node is GeneratedAssetNode) {
-        return Readability.fromPreviousPhase(node.wasOutput && !node.isFailure);
-      }
-
-      return Readability.fromPreviousPhase(
-          node.isReadable && node.isValidInput);
-    };
   }
 }
 
@@ -442,8 +422,8 @@ class _SingleBuild {
 
   /// Checks whether [node] can be read by this step - attempting to build the
   /// asset if necessary.
-  FutureOr<Readability> _isReadableNode(
-      AssetNode node, int phaseNum, AssetWriterSpy? writtenAssets) {
+  Future<Readability> _isReadableNode(
+      AssetNode node, int phaseNum, AssetWriterSpy? writtenAssets) async {
     if (node is GeneratedAssetNode) {
       if (node.phaseNumber > phaseNum) {
         return Readability.notReadable;
@@ -455,19 +435,15 @@ class _SingleBuild {
         return isInBuild ? Readability.ownOutput : Readability.notReadable;
       }
 
-      return doAfter(
-          // ignore: void_checks
-          _ensureAssetIsBuilt(node),
-          (_) =>
-              Readability.fromPreviousPhase(node.wasOutput && !node.isFailure));
+      await _ensureAssetIsBuilt(node);
+      return Readability.fromPreviousPhase(node.wasOutput && !node.isFailure);
     }
     return Readability.fromPreviousPhase(node.isReadable && node.isValidInput);
   }
 
-  FutureOr<void> _ensureAssetIsBuilt(AssetNode node) {
+  Future<void> _ensureAssetIsBuilt(AssetNode node) async {
     if (node is GeneratedAssetNode && node.state != NodeState.upToDate) {
-      return _runLazyPhaseForInput(node.phaseNumber, node.primaryInput)
-          .then((_) {});
+      await _runLazyPhaseForInput(node.phaseNumber, node.primaryInput);
     }
   }
 
@@ -761,7 +737,7 @@ class _SingleBuild {
           .map((n) => _delete(n.id)));
 
   Future<GlobAssetNode> _getUpdatedGlobNode(
-      Glob glob, String package, int phaseNum) {
+      Glob glob, String package, int phaseNum) async {
     var globNodeId = GlobAssetNode.createId(package, glob, phaseNum);
     var globNode = _assetGraph.get(globNodeId) as GlobAssetNode?;
     if (globNode == null) {
@@ -769,15 +745,12 @@ class _SingleBuild {
           globNodeId, glob, phaseNum, NodeState.definitelyNeedsUpdate);
       _assetGraph.add(globNode);
     }
-
-    return toFuture(doAfter(
-        // ignore: void_checks
-        _updateGlobNodeIfNecessary(globNode),
-        (_) => globNode!));
+    await _updateGlobNodeIfNecessary(globNode);
+    return globNode;
   }
 
-  FutureOr<void> _updateGlobNodeIfNecessary(GlobAssetNode globNode) {
-    if (globNode.state == NodeState.upToDate) return null;
+  Future<void> _updateGlobNodeIfNecessary(GlobAssetNode globNode) async {
+    if (globNode.state == NodeState.upToDate) return;
 
     return _lazyGlobs.putIfAbsent(globNode.id, () async {
       var potentialNodes = _assetGraph
@@ -790,8 +763,7 @@ class _SingleBuild {
 
       await Future.wait(potentialNodes
           .whereType<GeneratedAssetNode>()
-          .map(_ensureAssetIsBuilt)
-          .map(toFuture));
+          .map(_ensureAssetIsBuilt));
 
       var actualMatches = <AssetId>[];
       for (var node in potentialNodes) {
