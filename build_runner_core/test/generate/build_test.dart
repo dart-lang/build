@@ -15,7 +15,6 @@ import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/generate/options.dart'
     show defaultNonRootVisibleAssets;
 import 'package:build_runner_core/src/util/constants.dart';
-import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
@@ -1090,7 +1089,7 @@ void main() {
         <AssetId>{},
         {makeAssetId('a|.dart_tool/package_config.json')},
         buildPackageGraph({rootPackage('a'): []}),
-        InMemoryAssetReader(sourceAssets: result.readerWriter.assets));
+        result.readerWriter);
 
     // Source nodes
     var aSourceNode = makeAssetNode(

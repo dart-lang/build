@@ -5,10 +5,16 @@
 import '../asset/reader.dart';
 import 'asset_finder.dart';
 import 'asset_path_provider.dart';
+import 'filesystem.dart';
 import 'input_tracker.dart';
 
 /// Provides access to the state backing an [AssetReader].
 extension AssetReaderStateExtension on AssetReader {
+  Filesystem get filesystem {
+    _requireIsAssetReaderState();
+    return (this as AssetReaderState).filesystem;
+  }
+
   AssetFinder get assetFinder {
     _requireIsAssetReaderState();
     return (this as AssetReaderState).assetFinder;
@@ -43,6 +49,12 @@ extension AssetReaderStateExtension on AssetReader {
 
 /// The state backing an [AssetReader].
 abstract interface class AssetReaderState {
+  /// The [Filesystem] that this reader reads from.
+  ///
+  /// Warning: this access to the filesystem bypasses reader functionality
+  /// such as read tracking, caching and visibility restriction.
+  Filesystem get filesystem;
+
   /// The [AssetFinder] associated with this reader.
   ///
   /// All readers have an [AssetFinder], but the functionality it provides,

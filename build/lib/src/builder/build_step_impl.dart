@@ -20,6 +20,7 @@ import '../asset/writer.dart';
 import '../resource/resource.dart';
 import '../state/asset_finder.dart';
 import '../state/asset_path_provider.dart';
+import '../state/filesystem.dart';
 import '../state/input_tracker.dart';
 import '../state/reader_state.dart';
 import 'build_step.dart';
@@ -81,6 +82,9 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
       : allowedOutputs = UnmodifiableSetView(expectedOutputs.toSet()),
         _stageTracker = stageTracker ?? NoOpStageTracker.instance,
         _reportUnusedAssets = reportUnusedAssets;
+
+  @override
+  Filesystem get filesystem => _reader.filesystem;
 
   @override
   AssetFinder get assetFinder => _reader.assetFinder;

@@ -11,23 +11,22 @@ import 'package:build/src/internal.dart';
 import 'package:glob/glob.dart';
 import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as path;
-import 'package:pool/pool.dart';
 
 import '../package_graph/package_graph.dart';
 import 'writer.dart';
-
-/// Pool for async file operations, we don't want to use too many file handles.
-final _descriptorPool = Pool(32);
 
 /// Basic [AssetReader] which uses a [PackageGraph] to look up where to read
 /// files from disk.
 class FileBasedAssetReader extends AssetReader implements AssetReaderState {
   @override
+  final Filesystem filesystem;
+  @override
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
 
   final PackageGraph packageGraph;
 
-  FileBasedAssetReader(this.packageGraph);
+  FileBasedAssetReader(this.packageGraph)
+      : filesystem = IoFilesystem(assetPathProvider: packageGraph);
 
   @override
   AssetPathProvider? get assetPathProvider => packageGraph;
@@ -36,17 +35,23 @@ class FileBasedAssetReader extends AssetReader implements AssetReaderState {
   InputTracker? get inputTracker => null;
 
   @override
-  Future<bool> canRead(AssetId id) =>
-      _descriptorPool.withResource(() => _fileFor(id, packageGraph).exists());
+  Future<bool> canRead(AssetId id) => filesystem.exists(id);
 
   @override
-  Future<List<int>> readAsBytes(AssetId id) => _fileForOrThrow(id, packageGraph)
-      .then((file) => _descriptorPool.withResource(file.readAsBytes));
+  Future<List<int>> readAsBytes(AssetId id) async {
+    if (!await filesystem.exists(id)) {
+      throw AssetNotFoundException(id);
+    }
+    return filesystem.readAsBytes(id);
+  }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) =>
-      _fileForOrThrow(id, packageGraph).then((file) => _descriptorPool
-          .withResource(() => file.readAsString(encoding: encoding)));
+  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
+    if (!await filesystem.exists(id)) {
+      throw AssetNotFoundException(id);
+    }
+    return filesystem.readAsString(id, encoding: encoding);
+  }
 
 // This is only for generators, so only `BuildStep` needs to implement it.
   @override
@@ -61,81 +66,50 @@ class FileBasedAssetReader extends AssetReader implements AssetReaderState {
           'an input. Please ensure you have that package in your deps, or '
           'remove it from your input sets.');
     }
+    // TODO(davidmorgan): make this read via `filesystem`, currently it
+    // reads directly via `dart:io`.
     return glob
         .list(followLinks: true, root: packageNode.path)
         .where((e) => e is File && !path.basename(e.path).startsWith('._'))
         .cast<File>()
         .map((file) => _fileToAssetId(file, packageNode));
   }
-}
 
-/// Creates an [AssetId] for [file], which is a part of [packageNode].
-AssetId _fileToAssetId(File file, PackageNode packageNode) {
-  var filePath = path.normalize(file.absolute.path);
-  var relativePath = path.relative(filePath, from: packageNode.path);
-  return AssetId(packageNode.name, relativePath);
+  /// Creates an [AssetId] for [file], which is a part of [packageNode].
+  AssetId _fileToAssetId(File file, PackageNode packageNode) {
+    var filePath = path.normalize(file.absolute.path);
+    var relativePath = path.relative(filePath, from: packageNode.path);
+    return AssetId(packageNode.name, relativePath);
+  }
 }
 
 /// Basic [AssetWriter] which uses a [PackageGraph] to look up where to write
 /// files to disk.
 class FileBasedAssetWriter implements RunnerAssetWriter {
   final PackageGraph packageGraph;
+  final Filesystem filesystem;
 
-  FileBasedAssetWriter(this.packageGraph);
+  FileBasedAssetWriter(this.packageGraph)
+      : filesystem = IoFilesystem(assetPathProvider: packageGraph);
 
   @override
-  Future writeAsBytes(AssetId id, List<int> bytes) async {
-    var file = _fileFor(id, packageGraph);
-    await _descriptorPool.withResource(() async {
-      await file.create(recursive: true);
-      await file.writeAsBytes(bytes);
-    });
-  }
+  Future writeAsBytes(AssetId id, List<int> bytes) =>
+      filesystem.writeAsBytes(id, bytes);
 
   @override
   Future writeAsString(AssetId id, String contents,
-      {Encoding encoding = utf8}) async {
-    var file = _fileFor(id, packageGraph);
-    await _descriptorPool.withResource(() async {
-      await file.create(recursive: true);
-      await file.writeAsString(contents, encoding: encoding);
-    });
-  }
+          {Encoding encoding = utf8}) =>
+      filesystem.writeAsString(id, contents, encoding: encoding);
 
   @override
-  Future delete(AssetId id) {
+  Future delete(AssetId id) async {
     if (id.package != packageGraph.root.name) {
       throw InvalidOutputException(
           id, 'Should not delete assets outside of ${packageGraph.root.name}');
     }
-
-    var file = _fileFor(id, packageGraph);
-    return _descriptorPool.withResource(() async {
-      if (await file.exists()) {
-        await file.delete();
-      }
-    });
+    await filesystem.delete(id);
   }
 
   @override
   Future<void> completeBuild() async {}
-}
-
-/// Returns a [File] for [id] given [packageGraph].
-File _fileFor(AssetId id, PackageGraph packageGraph) {
-  return File(packageGraph.pathFor(id));
-}
-
-/// Returns a `File` for the asset reference by [id] given [packageGraph].
-///
-/// Throws an `AssetNotFoundException` if it doesn't exist.
-Future<File> _fileForOrThrow(AssetId id, PackageGraph packageGraph) {
-  if (packageGraph[id.package] == null) {
-    return Future.error(PackageNotFoundException(id.package));
-  }
-  var file = _fileFor(id, packageGraph);
-  return _descriptorPool.withResource(file.exists).then((exists) {
-    if (!exists) throw AssetNotFoundException(id);
-    return file;
-  });
 }

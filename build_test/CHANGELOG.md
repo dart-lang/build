@@ -15,6 +15,11 @@
 - Start using `package:build/src/internal.dart`.
 - Refactor `PathProvidingAssetReader` to `AssetPathProvider`
 - Refactor `MultiPackageAssetReader` to internal `AssetFinder`.
+- Add internal `Filesystem` that backs `AssetReader` and `AssetWriter`
+  implementations.
+- Breaking change: `InMemoryAssetReader` constrictur no longer accepts sources,
+  and `cacheBytes` methods are removed. Tests should write to its `filesystem`
+  instead.
 
 ## 2.2.3
 

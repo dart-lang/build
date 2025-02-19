@@ -9,11 +9,11 @@ import 'package:build/build.dart';
 import 'package:build/src/internal.dart';
 import 'package:glob/glob.dart';
 
-import 'in_memory_writer.dart';
+import 'in_memory_reader.dart';
 
 /// An [AssetReader] which supports reads from previous outputs.
 class WrittenAssetReader extends AssetReader implements AssetReaderState {
-  final RecordingAssetWriter source;
+  final InMemoryAssetReaderWriter source;
 
   /// An optional [AssetWriterSpy] to limit what's readable through this reader.
   ///
@@ -25,6 +25,9 @@ class WrittenAssetReader extends AssetReader implements AssetReaderState {
   final Set<AssetId> _additionallyAllowed = {};
 
   WrittenAssetReader(this.source, [this.filterSpy]);
+
+  @override
+  Filesystem get filesystem => source.filesystem;
 
   @override
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);

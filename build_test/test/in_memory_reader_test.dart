@@ -16,14 +16,11 @@ void main() {
     late InMemoryAssetReader assetReader;
 
     setUp(() {
-      var allAssets = {
-        libAsset: 'libAsset',
-        testAsset: 'testAsset',
-      };
-      assetReader = InMemoryAssetReader(
-        sourceAssets: allAssets,
+      assetReader = InMemoryAssetReaderWriter(
         rootPackage: packageName,
-      );
+      )
+        ..filesystem.writeAsStringSync(libAsset, 'libAsset')
+        ..filesystem.writeAsStringSync(testAsset, 'testAsset');
     });
 
     test('#findAssets should throw if rootPackage and package are not supplied',
@@ -48,7 +45,7 @@ void main() {
     test('#findAssets should be able to list files in non-root packages',
         () async {
       var otherLibAsset = AssetId('other', 'lib/other.dart');
-      assetReader.cacheStringAsset(otherLibAsset, 'otherLibAsset');
+      assetReader.filesystem.writeAsStringSync(otherLibAsset, 'otherLibAsset');
       expect(
           await assetReader.assetFinder
               .find(Glob('lib/*.dart'), package: 'other')

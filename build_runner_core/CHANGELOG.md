@@ -6,6 +6,8 @@
 - Refactor `PathProvidingAssetReader` to `AssetPathProvider`.
 - Refactor `MultiPackageAssetReader` to internal `AssetFinder`.
 - `FinalizedReader` no longer implements `AssetReader`.
+- Add internal `Filesystem` that backs `AssetReader` and `AssetWriter`
+  implementations.
 
 ## 8.0.0
 

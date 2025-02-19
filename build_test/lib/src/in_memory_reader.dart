@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:build/build.dart';
 // ignore: implementation_imports
@@ -13,57 +14,35 @@ abstract class RecordingAssetReader implements AssetReader {
   Set<AssetId> get assetsRead;
 }
 
-/// An implementation of [AssetWriter] that records outputs to [assets].
-abstract class RecordingAssetWriter implements AssetWriter {
-  Map<AssetId, List<int>> get assets;
-}
-
 /// An implementation of [AssetReader] and [AssetWriter] with primed in-memory
 /// assets.
+///
+/// TODO(davidmorgan): merge into `FileBasedReader` and `FileBasedWriter`.
 class InMemoryAssetReaderWriter extends AssetReader
     implements InMemoryAssetReader, InMemoryAssetWriter {
   @override
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
 
-  @override
-  final Map<AssetId, List<int>> assets;
+  final InMemoryFilesystem _filesystem = InMemoryFilesystem();
+
   final String? rootPackage;
 
   @override
   final InputTracker inputTracker = InputTracker();
 
-  @override
-  Set<AssetId> get assetsRead => inputTracker.assetsRead;
-
-  /// Create a new asset reader that contains [sourceAssets].
-  ///
-  /// Any strings in [sourceAssets] will be converted into a `List<int>` of
-  /// bytes.
+  /// Create a new asset reader/writer.
   ///
   /// May optionally define a [rootPackage], which is required for some APIs.
-  InMemoryAssetReaderWriter(
-      {Map<AssetId, dynamic>? sourceAssets, this.rootPackage})
-      : assets = _assetsAsBytes(sourceAssets);
+  InMemoryAssetReaderWriter({this.rootPackage});
 
   @override
   AssetPathProvider? get assetPathProvider => null;
 
-  static Map<AssetId, List<int>> _assetsAsBytes(Map<AssetId, dynamic>? assets) {
-    if (assets == null || assets.isEmpty) {
-      return {};
-    }
-    final output = <AssetId, List<int>>{};
-    assets.forEach((id, stringOrBytes) {
-      if (stringOrBytes is List<int>) {
-        output[id] = stringOrBytes;
-      } else if (stringOrBytes is String) {
-        output[id] = utf8.encode(stringOrBytes);
-      } else {
-        throw UnsupportedError('Invalid asset contents: $stringOrBytes.');
-      }
-    });
-    return output;
-  }
+  @override
+  Filesystem get filesystem => _filesystem;
+
+  @override
+  Map<AssetId, List<int>> get assets => _filesystem.assets;
 
   @override
   Future<bool> canRead(AssetId id) async {
@@ -101,64 +80,37 @@ class InMemoryAssetReaderWriter extends AssetReader
   }
 
   @override
-  void cacheBytesAsset(AssetId id, List<int> bytes) {
-    assets[id] = bytes;
-  }
-
-  @override
-  void cacheStringAsset(AssetId id, String contents, {Encoding? encoding}) {
-    encoding ??= utf8;
-    assets[id] = encoding.encode(contents);
-  }
-
-  @override
   Future writeAsBytes(AssetId id, List<int> bytes) async {
-    assets[id] = bytes;
+    assets[id] = bytes is Uint8List ? bytes : Uint8List.fromList(bytes);
   }
 
   @override
   Future writeAsString(AssetId id, String contents,
       {Encoding encoding = utf8}) async {
-    assets[id] = encoding.encode(contents);
+    assets[id] = encoding.encode(contents) as Uint8List;
   }
 }
 
 /// An implementation of [AssetReader] with primed in-memory assets.
-abstract class InMemoryAssetReader
-    implements AssetReader, RecordingAssetReader, AssetReaderState {
+abstract class InMemoryAssetReader implements AssetReader, AssetReaderState {
   abstract final Map<AssetId, List<int>> assets;
 
-  /// Create a new asset reader that contains [sourceAssets].
-  ///
-  /// Any strings in [sourceAssets] will be converted into a `List<int>` of
-  /// bytes.
+  /// Create a new asset reader.
   ///
   /// May optionally define a [rootPackage], which is required for some APIs.
-  factory InMemoryAssetReader(
-          {Map<AssetId, dynamic>? sourceAssets, String? rootPackage}) =>
-      InMemoryAssetReaderWriter(
-          sourceAssets: sourceAssets, rootPackage: rootPackage);
-
-  /// Create a new asset reader backed by [assets].
-  // InMemoryAssetReader.shareAssetCache(this.assets, {this.rootPackage});
-
-  void cacheBytesAsset(AssetId id, List<int> bytes);
-
-  void cacheStringAsset(AssetId id, String contents, {Encoding? encoding});
+  factory InMemoryAssetReader({String? rootPackage}) =>
+      InMemoryAssetReaderWriter(rootPackage: rootPackage);
 }
 
 /// An implementation of [AssetWriter] that writes outputs to memory.
-abstract class InMemoryAssetWriter implements RecordingAssetWriter {
+abstract class InMemoryAssetWriter implements AssetWriter {
+  abstract final Map<AssetId, List<int>> assets;
+
   factory InMemoryAssetWriter() => InMemoryAssetReaderWriter();
 
   @override
-  Future writeAsBytes(AssetId id, List<int> bytes) async {
-    assets[id] = bytes;
-  }
+  Future writeAsBytes(AssetId id, List<int> bytes);
 
   @override
-  Future writeAsString(AssetId id, String contents,
-      {Encoding encoding = utf8}) async {
-    assets[id] = encoding.encode(contents);
-  }
+  Future writeAsString(AssetId id, String contents, {Encoding encoding = utf8});
 }

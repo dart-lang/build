@@ -75,6 +75,9 @@ class SingleStepReader implements AssetReader, AssetReaderState {
       [this._getGlobNode, this._writtenAssets]);
 
   @override
+  Filesystem get filesystem => _delegate.filesystem;
+
+  @override
   AssetPathProvider? get assetPathProvider => _delegate.assetPathProvider;
 
   /// Checks whether [id] can be read by this step - attempting to build the

@@ -5,10 +5,10 @@ import 'package:test/test.dart';
 
 void main() {
   late WrittenAssetReader reader;
-  late InMemoryAssetWriter writer;
+  late InMemoryAssetReaderWriter writer;
 
   setUp(() async {
-    writer = InMemoryAssetWriter();
+    writer = InMemoryAssetReaderWriter();
     await writer.writeAsString(AssetId.parse('foo|a.txt'), 'a');
     await writer.writeAsString(AssetId.parse('foo|lib/b.dart'), 'b');
     await writer.writeAsString(AssetId.parse('bar|a.txt'), 'b_a');

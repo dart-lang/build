@@ -66,7 +66,10 @@ void main() {
     late FinalizedAssetsView finalizedAssetsView;
 
     setUp(() async {
-      readerWriter = InMemoryRunnerAssetReaderWriter(sourceAssets: sources);
+      readerWriter = InMemoryRunnerAssetReaderWriter();
+      for (final source in sources.entries) {
+        readerWriter.filesystem.writeAsStringSync(source.key, source.value);
+      }
       environment = TestBuildEnvironment(readerWriter: readerWriter);
       graph = await AssetGraph.build(phases, sources.keys.toSet(), <AssetId>{},
           packageGraph, readerWriter);
@@ -81,7 +84,8 @@ void main() {
           ..state = NodeState.upToDate
           ..wasOutput = true
           ..isFailure = false;
-        readerWriter.cacheStringAsset(id, sources[node.primaryInput]!);
+        readerWriter.filesystem
+            .writeAsStringSync(id, sources[node.primaryInput]!);
       }
       tmpDir = await Directory.systemTemp.createTemp('build_tests');
       anotherTmpDir = await Directory.systemTemp.createTemp('build_tests');

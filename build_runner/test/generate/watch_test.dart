@@ -14,7 +14,6 @@ import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
-import 'package:build_test/build_test.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
@@ -284,7 +283,7 @@ void main() {
             <AssetId>{},
             {packageConfigId},
             buildPackageGraph({rootPackage('a'): []}),
-            InMemoryAssetReader(sourceAssets: readerWriter.assets));
+            readerWriter);
 
         var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
         var builderOptionsNode = BuilderOptionsAssetNode(builderOptionsId,
