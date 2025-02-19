@@ -32,7 +32,7 @@ void main() {
     late List<AssetId> outputs;
 
     setUp(() {
-      var reader = StubAssetReader();
+      var reader = InMemoryAssetReaderWriter();
       var writer = const StubAssetWriter();
       primary = makeAssetId();
       outputs = List.generate(5, (index) => makeAssetId());
@@ -175,7 +175,7 @@ void main() {
       buildStep = BuildStepImpl(
         primary,
         [outputId],
-        StubAssetReader(),
+        InMemoryAssetReaderWriter(),
         assetWriter,
         AnalyzerResolvers.custom(),
         resourceManager,
@@ -236,7 +236,7 @@ void main() {
     late AssetId output;
 
     setUp(() {
-      var reader = StubAssetReader();
+      var reader = InMemoryAssetReaderWriter();
       var writer = const StubAssetWriter();
       primary = makeAssetId();
       output = makeAssetId();
@@ -259,7 +259,7 @@ void main() {
   });
 
   test('reportUnusedAssets forwards calls if provided', () {
-    var reader = StubAssetReader();
+    var reader = InMemoryAssetReaderWriter();
     var writer = const StubAssetWriter();
     var unused = <AssetId>{};
     var buildStep = BuildStepImpl(

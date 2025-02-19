@@ -9,6 +9,7 @@
 - `FinalizedReader` no longer implements `AssetReader`.
 - Add internal `Filesystem` that backs `AssetReader` and `AssetWriter`
   implementations.
+- Refactor `CachingAssetReader` to `FilesystemCache`.
 
 ## 8.0.0
 

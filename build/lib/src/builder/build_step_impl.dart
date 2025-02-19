@@ -21,6 +21,7 @@ import '../resource/resource.dart';
 import '../state/asset_finder.dart';
 import '../state/asset_path_provider.dart';
 import '../state/filesystem.dart';
+import '../state/filesystem_cache.dart';
 import '../state/input_tracker.dart';
 import '../state/reader_state.dart';
 import 'build_step.dart';
@@ -82,6 +83,19 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
   }) : allowedOutputs = UnmodifiableSetView(expectedOutputs.toSet()),
        _stageTracker = stageTracker ?? NoOpStageTracker.instance,
        _reportUnusedAssets = reportUnusedAssets;
+
+  @override
+  BuildStepImpl copyWith({FilesystemCache? cache}) => BuildStepImpl(
+    inputId,
+    allowedOutputs,
+    _reader.copyWith(cache: cache),
+    _writer,
+    _resolvers,
+    _resourceManager,
+    _resolvePackageConfig,
+    stageTracker: _stageTracker,
+    reportUnusedAssets: _reportUnusedAssets,
+  );
 
   @override
   Filesystem get filesystem => _reader.filesystem;

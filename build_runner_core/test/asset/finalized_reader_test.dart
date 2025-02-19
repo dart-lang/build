@@ -14,7 +14,6 @@ import 'package:build_runner_core/src/generate/options.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:build_runner_core/src/package_graph/target_graph.dart';
 import 'package:glob/glob.dart';
-import 'package:test/fake.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -35,7 +34,7 @@ void main() {
         <AssetId>{},
         <AssetId>{},
         packageGraph,
-        _FakeAssetReader(),
+        InMemoryAssetReaderWriter(),
       );
     });
 
@@ -99,5 +98,3 @@ void main() {
     });
   });
 }
-
-class _FakeAssetReader with Fake implements AssetReader {}

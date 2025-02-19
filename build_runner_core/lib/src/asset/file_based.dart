@@ -25,8 +25,15 @@ class FileBasedAssetReader extends AssetReader implements AssetReaderState {
 
   final PackageGraph packageGraph;
 
-  FileBasedAssetReader(this.packageGraph)
-    : filesystem = IoFilesystem(assetPathProvider: packageGraph);
+  FileBasedAssetReader(this.packageGraph, {Filesystem? filesystem})
+    : filesystem = filesystem ?? IoFilesystem(assetPathProvider: packageGraph);
+
+  @override
+  FileBasedAssetReader copyWith({FilesystemCache? cache}) =>
+      FileBasedAssetReader(
+        packageGraph,
+        filesystem: filesystem.copyWith(cache: cache),
+      );
 
   @override
   AssetPathProvider? get assetPathProvider => packageGraph;

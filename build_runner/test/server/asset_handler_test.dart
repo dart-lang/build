@@ -13,7 +13,6 @@ import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/generate/options.dart';
 import 'package:build_runner_core/src/package_graph/target_graph.dart';
 import 'package:shelf/shelf.dart';
-import 'package:test/fake.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -28,7 +27,7 @@ void main() {
       <AssetId>{},
       <AssetId>{},
       buildPackageGraph({rootPackage('a'): []}),
-      FakeAssetReader(),
+      InMemoryAssetReaderWriter(),
     );
     delegate = InMemoryRunnerAssetReaderWriter();
     final packageGraph = buildPackageGraph({rootPackage('a'): []});
@@ -157,5 +156,3 @@ void main() {
     expect(await response.readAsString(), '');
   });
 }
-
-class FakeAssetReader with Fake implements AssetReader {}
