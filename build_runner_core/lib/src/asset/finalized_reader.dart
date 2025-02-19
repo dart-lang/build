@@ -50,18 +50,34 @@ class FinalizedReader {
     }
     if (node.isDeleted) return UnreadableReason.deleted;
     if (!node.isReadable) return UnreadableReason.assetType;
+
     if (node is GeneratedAssetNode) {
       if (node.isFailure) return UnreadableReason.failed;
       if (!node.wasOutput) return UnreadableReason.notOutput;
+      // No need to explicitly check readability for generated files, their
+      // readability is recorded in the node state.
+      return null;
     }
-    if (await _delegate.canRead(id)) return null;
+
+    if (node.isValidInput && await _delegate.canRead(id)) return null;
     return UnreadableReason.unknown;
   }
 
   Future<bool> canRead(AssetId id) async =>
       (await unreadableReason(id)) == null;
 
-  Future<Digest> digest(AssetId id) => _delegate.digest(id);
+  Future<Digest> digest(AssetId id) async {
+    final unreadableReason = await this.unreadableReason(id);
+    // Do provide digests for generated files that are known but not output
+    // or known to be deleted. `build serve` uses these digests, which
+    // reflect that the file is missing.
+    if (unreadableReason != null &&
+        unreadableReason != UnreadableReason.notOutput &&
+        unreadableReason != UnreadableReason.deleted) {
+      throw AssetNotFoundException(id);
+    }
+    return _ensureDigest(id);
+  }
 
   Future<List<int>> readAsBytes(AssetId id) => _delegate.readAsBytes(id);
 
@@ -84,6 +100,16 @@ class FinalizedReader {
         yield id;
       }
     }
+  }
+
+  /// Returns the `lastKnownDigest` of [id], computing and caching it if
+  /// necessary.
+  ///
+  /// Note that [id] must exist in the asset graph.
+  FutureOr<Digest> _ensureDigest(AssetId id) {
+    var node = _assetGraph.get(id)!;
+    if (node.lastKnownDigest != null) return node.lastKnownDigest!;
+    return _delegate.digest(id).then((digest) => node.lastKnownDigest = digest);
   }
 }
 

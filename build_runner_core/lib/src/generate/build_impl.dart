@@ -114,16 +114,8 @@ class BuildImpl {
     }
     var buildDefinition = await BuildDefinition.prepareWorkspace(
         environment, options, buildPhases);
-    var singleStepReader = SingleStepReader(
-        buildDefinition.reader,
-        buildDefinition.assetGraph,
-        buildPhases.length,
-        options.packageGraph.root.name,
-        _isReadableAfterBuildFactory(buildPhases),
-        _checkInvalidInputFactory(
-            buildDefinition.targetGraph, buildDefinition.packageGraph));
     var finalizedReader = FinalizedReader(
-        singleStepReader,
+        buildDefinition.reader,
         buildDefinition.assetGraph,
         buildDefinition.targetGraph,
         buildPhases,
@@ -131,17 +123,6 @@ class BuildImpl {
     var build =
         BuildImpl._(buildDefinition, options, buildPhases, finalizedReader);
     return build;
-  }
-
-  static IsReadable _isReadableAfterBuildFactory(List<BuildPhase> buildPhases) {
-    return (AssetNode node, int phaseNum, AssetWriterSpy? writtenAssets) {
-      if (node is GeneratedAssetNode) {
-        return Readability.fromPreviousPhase(node.wasOutput && !node.isFailure);
-      }
-
-      return Readability.fromPreviousPhase(
-          node.isReadable && node.isValidInput);
-    };
   }
 }
 
