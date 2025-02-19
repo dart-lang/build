@@ -40,9 +40,6 @@ class FinalizedReader {
   FinalizedReader(this._delegate, this._assetGraph, this._targetGraph,
       this._buildPhases, this._rootPackage);
 
-  Filesystem get filesystem => _delegate.filesystem;
-
-  @override
   /// Returns a reason why [id] is not readable, or null if it is readable.
   Future<UnreadableReason?> unreadableReason(AssetId id) async {
     if (!_assetGraph.contains(id)) return UnreadableReason.notFound;
