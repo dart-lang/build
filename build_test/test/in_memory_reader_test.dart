@@ -8,15 +8,15 @@ import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('$InMemoryAssetReader', () {
+  group('InMemoryAssetReaderWriter', () {
     final packageName = 'some_pkg';
     final libAsset = AssetId(packageName, 'lib/some_pkg.dart');
     final testAsset = AssetId(packageName, 'test/some_test.dart');
 
-    late InMemoryAssetReader assetReader;
+    late InMemoryAssetReaderWriter readerWriter;
 
     setUp(() {
-      assetReader = InMemoryAssetReaderWriter(
+      readerWriter = InMemoryAssetReaderWriter(
         rootPackage: packageName,
       )
         ..filesystem.writeAsStringSync(libAsset, 'libAsset')
@@ -25,29 +25,29 @@ void main() {
 
     test('#findAssets should throw if rootPackage and package are not supplied',
         () {
-      assetReader = InMemoryAssetReader();
+      readerWriter = InMemoryAssetReaderWriter();
       expect(
-        () => assetReader.assetFinder.find(Glob('lib/*.dart')),
+        () => readerWriter.assetFinder.find(Glob('lib/*.dart')),
         throwsUnsupportedError,
       );
     });
 
     test('#findAssets should list files in lib/', () async {
-      expect(await assetReader.assetFinder.find(Glob('lib/*.dart')).toList(),
+      expect(await readerWriter.assetFinder.find(Glob('lib/*.dart')).toList(),
           [libAsset]);
     });
 
     test('#findAssets should list files in test/', () async {
-      expect(await assetReader.assetFinder.find(Glob('test/*.dart')).toList(),
+      expect(await readerWriter.assetFinder.find(Glob('test/*.dart')).toList(),
           [testAsset]);
     });
 
     test('#findAssets should be able to list files in non-root packages',
         () async {
       var otherLibAsset = AssetId('other', 'lib/other.dart');
-      assetReader.filesystem.writeAsStringSync(otherLibAsset, 'otherLibAsset');
+      readerWriter.filesystem.writeAsStringSync(otherLibAsset, 'otherLibAsset');
       expect(
-          await assetReader.assetFinder
+          await readerWriter.assetFinder
               .find(Glob('lib/*.dart'), package: 'other')
               .toList(),
           [otherLibAsset]);

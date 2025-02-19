@@ -10,7 +10,7 @@ import 'package:build/experiments.dart';
 import 'package:build_resolvers/build_resolvers.dart';
 import 'package:package_config/package_config.dart';
 
-import 'in_memory_reader.dart';
+import 'in_memory_reader_writer.dart';
 import 'package_reader.dart';
 
 /// Marker constant that may be used in combination with [resolveSources].
@@ -124,7 +124,7 @@ Future<T> resolveSources<T>(
   Set<AssetId>? nonInputsToReadFromFilesystem,
   String? resolverFor,
   String? rootPackage,
-  FutureOr<void> Function(InMemoryAssetReader)? assetReaderChecks,
+  FutureOr<void> Function(InMemoryAssetReaderWriter)? assetReaderChecks,
   Future<void>? tearDown,
   Resolvers? resolvers,
 }) {
@@ -179,7 +179,7 @@ Future<T> _resolveAssets<T>(
   PackageConfig? packageConfig,
   Set<AssetId>? nonInputsToReadFromFilesystem,
   AssetId? resolverFor,
-  FutureOr<void> Function(InMemoryAssetReader)? assetReaderChecks,
+  FutureOr<void> Function(InMemoryAssetReaderWriter)? assetReaderChecks,
   Future<void>? tearDown,
   Resolvers? resolvers,
 }) async {

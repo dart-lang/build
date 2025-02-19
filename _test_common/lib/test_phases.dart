@@ -148,7 +148,7 @@ Future<TestBuildersResult> testBuilders(
   if (checkBuildStatus) {
     checkBuild(result,
         outputs: outputs,
-        writer: readerWriter,
+        readerWriter: readerWriter,
         status: status,
         rootPackage: packageGraph.root.name,
         expectedGeneratedDir: expectedGeneratedDir);
@@ -161,7 +161,7 @@ Future<TestBuildersResult> testBuilders(
 /// validates the success and outputs of the build.
 void checkBuild(BuildResult result,
     {Map<String, Object>? outputs,
-    required InMemoryAssetWriter writer,
+    required InMemoryAssetReaderWriter readerWriter,
     BuildStatus status = BuildStatus.success,
     String rootPackage = 'a',
     String expectedGeneratedDir = 'generated'}) {
@@ -186,7 +186,7 @@ void checkBuild(BuildResult result,
           : id;
 
   if (status == BuildStatus.success) {
-    checkOutputs(unhiddenOutputs, result.outputs, writer,
+    checkOutputs(unhiddenOutputs, result.outputs, readerWriter,
         mapAssetIds: (id) => mapHidden(id, expectedGeneratedDir));
   }
 }

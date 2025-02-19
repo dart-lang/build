@@ -12,8 +12,7 @@ import 'package:package_config/package_config_types.dart';
 import 'package:test/test.dart';
 
 void main() {
-  late InMemoryAssetWriter writer;
-  late InMemoryAssetReader reader;
+  late InMemoryAssetReaderWriter readerWriter;
   final primary = makeAssetId('a|web/primary.txt');
   final inputs = {
     primary: 'foo',
@@ -29,8 +28,8 @@ void main() {
     });
     builder = TestBuilder(
         extraWork: (buildStep, __) => buildStep.fetchResource(resource));
-    writer = reader = InMemoryAssetReaderWriter();
-    addAssets(inputs, writer);
+    readerWriter = InMemoryAssetReaderWriter();
+    addAssets(inputs, readerWriter);
   });
 
   group('Given a ResourceManager', () {
@@ -38,7 +37,7 @@ void main() {
 
     setUp(() async {
       resourceManager = TrackingResourceManager();
-      await runBuilder(builder, inputs.keys, reader, writer, null,
+      await runBuilder(builder, inputs.keys, readerWriter, readerWriter, null,
           resourceManager: resourceManager);
     });
 
@@ -62,7 +61,7 @@ void main() {
 
   group('With a default ResourceManager', () {
     setUp(() async {
-      await runBuilder(builder, inputs.keys, reader, writer, null);
+      await runBuilder(builder, inputs.keys, readerWriter, readerWriter, null);
     });
 
     test('disposes the default resource manager', () async {
@@ -72,7 +71,7 @@ void main() {
 
   group('can resolve package config', () {
     setUp(() {
-      writer.assets[makeAssetId('build|lib/foo.txt')] = [1, 2, 3];
+      readerWriter.assets[makeAssetId('build|lib/foo.txt')] = [1, 2, 3];
 
       builder = TestBuilder(extraWork: (buildStep, __) async {
         final config = await buildStep.packageConfig;
@@ -91,15 +90,15 @@ void main() {
     });
 
     test('from default', () async {
-      await runBuilder(builder, inputs.keys, reader, writer, null);
+      await runBuilder(builder, inputs.keys, readerWriter, readerWriter, null);
     });
 
     test('when provided', () async {
       await runBuilder(
         builder,
         inputs.keys,
-        reader,
-        writer,
+        readerWriter,
+        readerWriter,
         null,
         packageConfig: PackageConfig([
           Package(

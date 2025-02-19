@@ -11,7 +11,7 @@ import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
 import 'assets.dart';
-import 'in_memory_reader.dart';
+import 'in_memory_reader_writer.dart';
 import 'written_asset_reader.dart';
 
 AssetId _passThrough(AssetId id) => id;
@@ -37,7 +37,7 @@ AssetId _passThrough(AssetId id) => id;
 void checkOutputs(
     Map<String, /*List<int>|String|Matcher<List<int>>*/ Object>? outputs,
     Iterable<AssetId> actualAssets,
-    InMemoryAssetWriter writer,
+    InMemoryAssetReaderWriter writer,
     {AssetId Function(AssetId id) mapAssetIds = _passThrough}) {
   var modifiableActualAssets = Set.of(actualAssets);
   if (outputs != null) {

@@ -13,7 +13,6 @@ import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/generate/options.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:build_runner_core/src/package_graph/target_graph.dart';
-import 'package:build_test/build_test.dart';
 import 'package:glob/glob.dart';
 import 'package:test/fake.dart';
 import 'package:test/test.dart';
@@ -44,7 +43,7 @@ void main() {
         ..add(notDeleted)
         ..add(deleted);
 
-      var delegate = InMemoryAssetReader();
+      var delegate = InMemoryAssetReaderWriter();
       delegate.assets.addAll({notDeleted.id: [], deleted.id: []});
 
       reader = FinalizedReader(delegate, graph, targetGraph, [], 'a');
@@ -63,7 +62,7 @@ void main() {
           isHidden: true,
           builderOptionsId: AssetId('a', 'builder_options'));
       graph.add(node);
-      var delegate = InMemoryAssetReader();
+      var delegate = InMemoryAssetReaderWriter();
       delegate.assets.addAll({id: []});
       reader = FinalizedReader(delegate, graph, targetGraph,
           [InBuildPhase(TestBuilder(), 'a', isOptional: false)], 'a')

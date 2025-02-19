@@ -20,6 +20,8 @@
 - Breaking change: `InMemoryAssetReader` constrictur no longer accepts sources,
   and `cacheBytes` methods are removed. Tests should write to its `filesystem`
   instead.
+- Breaking change: merged `InMemoryAssetReader` and `InMemoryAssetWriter` into
+  `InMemoryAssetReaderWriter`.
 
 ## 2.2.3
 

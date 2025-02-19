@@ -9,7 +9,7 @@ import 'package:build/build.dart';
 import 'package:build/src/internal.dart';
 import 'package:glob/glob.dart';
 
-import 'in_memory_reader.dart';
+import 'in_memory_reader_writer.dart';
 
 /// An [AssetReader] which supports reads from previous outputs.
 class WrittenAssetReader extends AssetReader implements AssetReaderState {

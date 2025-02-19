@@ -8,8 +8,7 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 
-export 'package:build_test/build_test.dart'
-    hide InMemoryAssetReader, InMemoryAssetWriter;
+export 'package:build_test/build_test.dart';
 
 export 'assets.dart';
 export 'builders.dart';

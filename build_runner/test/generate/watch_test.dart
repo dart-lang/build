@@ -55,13 +55,13 @@ void main() {
 
         var result = await results.next;
         checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'a'}, writer: readerWriter);
+            outputs: {'a|web/a.txt.copy': 'a'}, readerWriter: readerWriter);
 
         await readerWriter.writeAsString(makeAssetId('a|web/a.txt'), 'b');
 
         result = await results.next;
         checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'b'}, writer: readerWriter);
+            outputs: {'a|web/a.txt.copy': 'b'}, readerWriter: readerWriter);
 
         // Wait for the `_debounceDelay` before terminating.
         await Future<void>.delayed(_debounceDelay);
@@ -105,14 +105,16 @@ void main() {
 
         var result = await results.next;
         checkBuild(result,
-            outputs: {'a|test_files/a.txt.copy': 'a'}, writer: readerWriter);
+            outputs: {'a|test_files/a.txt.copy': 'a'},
+            readerWriter: readerWriter);
 
         await readerWriter.writeAsString(
             makeAssetId('a|test_files/a.txt'), 'b');
 
         result = await results.next;
         checkBuild(result,
-            outputs: {'a|test_files/a.txt.copy': 'b'}, writer: readerWriter);
+            outputs: {'a|test_files/a.txt.copy': 'b'},
+            readerWriter: readerWriter);
       });
 
       test('rebuilds on new files', () async {
@@ -126,13 +128,13 @@ void main() {
 
         var result = await results.next;
         checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'a'}, writer: readerWriter);
+            outputs: {'a|web/a.txt.copy': 'a'}, readerWriter: readerWriter);
 
         await readerWriter.writeAsString(makeAssetId('a|web/b.txt'), 'b');
 
         result = await results.next;
         checkBuild(result,
-            outputs: {'a|web/b.txt.copy': 'b'}, writer: readerWriter);
+            outputs: {'a|web/b.txt.copy': 'b'}, readerWriter: readerWriter);
         // Previous outputs should still exist.
         expect(readerWriter.assets[makeAssetId('a|web/a.txt.copy')],
             decodedMatches('a'));
@@ -155,14 +157,16 @@ void main() {
 
         var result = await results.next;
         checkBuild(result,
-            outputs: {'a|test_files/a.txt.copy': 'a'}, writer: readerWriter);
+            outputs: {'a|test_files/a.txt.copy': 'a'},
+            readerWriter: readerWriter);
 
         await readerWriter.writeAsString(
             makeAssetId('a|test_files/b.txt'), 'b');
 
         result = await results.next;
         checkBuild(result,
-            outputs: {'a|test_files/b.txt.copy': 'b'}, writer: readerWriter);
+            outputs: {'a|test_files/b.txt.copy': 'b'},
+            readerWriter: readerWriter);
         // Previous outputs should still exist.
         expect(readerWriter.assets[makeAssetId('a|test_files/a.txt.copy')],
             decodedMatches('a'));
@@ -183,7 +187,7 @@ void main() {
         var result = await results.next;
         checkBuild(result,
             outputs: {'a|web/a.txt.copy': 'a', 'a|web/b.txt.copy': 'b'},
-            writer: readerWriter);
+            readerWriter: readerWriter);
 
         // Don't call writer.delete, that has side effects.
         readerWriter.assets.remove(makeAssetId('a|web/a.txt'));
@@ -193,7 +197,7 @@ void main() {
         result = await results.next;
 
         // Shouldn't rebuild anything, no outputs.
-        checkBuild(result, outputs: {}, writer: readerWriter);
+        checkBuild(result, outputs: {}, readerWriter: readerWriter);
 
         // The old output file should no longer exist either.
         expect(readerWriter.assets[makeAssetId('a|web/a.txt.copy')], isNull);
@@ -227,7 +231,7 @@ void main() {
               'a|test_files/a.txt.copy': 'a',
               'a|test_files/b.txt.copy': 'b'
             },
-            writer: readerWriter);
+            readerWriter: readerWriter);
 
         // Don't call writer.delete, that has side effects.
         readerWriter.assets.remove(makeAssetId('a|test_files/a.txt'));
@@ -237,7 +241,7 @@ void main() {
         result = await results.next;
 
         // Shouldn't rebuild anything, no outputs.
-        checkBuild(result, outputs: {}, writer: readerWriter);
+        checkBuild(result, outputs: {}, readerWriter: readerWriter);
 
         // The old output file should no longer exist either.
         expect(readerWriter.assets[makeAssetId('a|test_files/a.txt.copy')],
@@ -259,7 +263,7 @@ void main() {
         var result = await results.next;
         checkBuild(result,
             outputs: {'a|web/a.txt.copy': 'a', 'a|web/b.txt.copy': 'b'},
-            writer: readerWriter);
+            readerWriter: readerWriter);
 
         await readerWriter.writeAsString(makeAssetId('a|web/c.txt'), 'c');
 
@@ -273,7 +277,7 @@ void main() {
         result = await results.next;
         checkBuild(result,
             outputs: {'a|web/b.txt.copy': 'b2', 'a|web/c.txt.copy': 'c'},
-            writer: readerWriter);
+            readerWriter: readerWriter);
 
         var cachedGraph = AssetGraph.deserialize(
             readerWriter.assets[makeAssetId('a|$assetGraphPath')]!);
@@ -350,7 +354,7 @@ void main() {
         // Should ignore the files under the `b` package, even though they
         // match the input set.
         checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'a'}, writer: readerWriter);
+            outputs: {'a|web/a.txt.copy': 'a'}, readerWriter: readerWriter);
 
         await readerWriter.writeAsString(makeAssetId('a|web/a.txt'), 'b');
         await readerWriter.writeAsString(makeAssetId('b|web/b.txt'), 'c');
@@ -362,7 +366,7 @@ void main() {
         // Ignores the modification under the `b` package, even though it
         // matches the input set.
         checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'b'}, writer: readerWriter);
+            outputs: {'a|web/a.txt.copy': 'b'}, readerWriter: readerWriter);
       });
 
       test('rebuilds on file updates during first build', () async {
@@ -387,11 +391,11 @@ void main() {
         await readerWriter.writeAsString(makeAssetId('a|web/a.txt'), 'b');
 
         checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'a'}, writer: readerWriter);
+            outputs: {'a|web/a.txt.copy': 'a'}, readerWriter: readerWriter);
 
         result = await results.next;
         checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'b'}, writer: readerWriter);
+            outputs: {'a|web/a.txt.copy': 'b'}, readerWriter: readerWriter);
       });
 
       test(
@@ -407,7 +411,7 @@ void main() {
 
         var result = await results.next;
         checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'a'}, writer: readerWriter);
+            outputs: {'a|web/a.txt.copy': 'a'}, readerWriter: readerWriter);
 
         var newConfig = Map.of(_packageConfig);
         newConfig['extra'] = 'stuff';
@@ -437,7 +441,7 @@ void main() {
 
         var result = await results.next;
         checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'a'}, writer: readerWriter);
+            outputs: {'a|web/a.txt.copy': 'a'}, readerWriter: readerWriter);
 
         await readerWriter.delete(packageConfigId);
 
@@ -636,7 +640,8 @@ void main() {
 
         var result = await results.next;
         expect(runCount, 1);
-        checkBuild(result, status: BuildStatus.failure, writer: readerWriter);
+        checkBuild(result,
+            status: BuildStatus.failure, readerWriter: readerWriter);
 
         await readerWriter.writeAsString(makeAssetId('a|web/a.txt'), 'a');
 
@@ -668,14 +673,14 @@ void main() {
         var result = await results.next;
         checkBuild(result,
             outputs: {'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'a'},
-            writer: readerWriter);
+            readerWriter: readerWriter);
 
         await readerWriter.writeAsString(makeAssetId('a|web/a.txt'), 'b');
 
         result = await results.next;
         checkBuild(result,
             outputs: {'a|web/a.txt.copy': 'b', 'a|web/a.txt.copy.copy': 'b'},
-            writer: readerWriter);
+            readerWriter: readerWriter);
       });
 
       test('adds propagate through all phases', () async {
@@ -696,14 +701,14 @@ void main() {
         var result = await results.next;
         checkBuild(result,
             outputs: {'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'a'},
-            writer: readerWriter);
+            readerWriter: readerWriter);
 
         await readerWriter.writeAsString(makeAssetId('a|web/b.txt'), 'b');
 
         result = await results.next;
         checkBuild(result,
             outputs: {'a|web/b.txt.copy': 'b', 'a|web/b.txt.copy.copy': 'b'},
-            writer: readerWriter);
+            readerWriter: readerWriter);
         // Previous outputs should still exist.
         expect(readerWriter.assets[makeAssetId('a|web/a.txt.copy')],
             decodedMatches('a'));
@@ -734,7 +739,7 @@ void main() {
               'a|web/b.txt.copy': 'b',
               'a|web/b.txt.copy.copy': 'b'
             },
-            writer: readerWriter);
+            readerWriter: readerWriter);
 
         // Don't call writer.delete, that has side effects.
         readerWriter.assets.remove(makeAssetId('a|web/a.txt'));
@@ -744,7 +749,7 @@ void main() {
 
         result = await results.next;
         // Shouldn't rebuild anything, no outputs.
-        checkBuild(result, outputs: {}, writer: readerWriter);
+        checkBuild(result, outputs: {}, readerWriter: readerWriter);
 
         // Derived outputs should no longer exist.
         expect(readerWriter.assets[makeAssetId('a|web/a.txt.copy')], isNull);
@@ -778,7 +783,7 @@ void main() {
               'a|web/a.txt.copy': 'a',
               'a|web/a.txt.copy.copy': 'a',
             },
-            writer: readerWriter);
+            readerWriter: readerWriter);
 
         // Don't call writer.delete, that has side effects.
         readerWriter.assets.remove(makeAssetId('a|web/a.txt.copy'));
@@ -792,7 +797,7 @@ void main() {
             outputs: {
               'a|web/a.txt.copy': 'a',
             },
-            writer: readerWriter);
+            readerWriter: readerWriter);
       });
     });
 
@@ -815,13 +820,13 @@ void main() {
 
         var result = await results.next;
         checkBuild(result,
-            outputs: {'a|web/file.a.copy': 'b'}, writer: readerWriter);
+            outputs: {'a|web/file.a.copy': 'b'}, readerWriter: readerWriter);
 
         await readerWriter.writeAsString(makeAssetId('a|web/file.b'), 'c');
 
         result = await results.next;
         checkBuild(result,
-            outputs: {'a|web/file.a.copy': 'c'}, writer: readerWriter);
+            outputs: {'a|web/file.a.copy': 'c'}, readerWriter: readerWriter);
       });
 
       test(
@@ -846,13 +851,14 @@ void main() {
         var result = await results.next;
         checkBuild(result,
             outputs: {'a|web/file.a.copy': 'a', 'a|web/file.a.copy.copy': 'b'},
-            writer: readerWriter);
+            readerWriter: readerWriter);
 
         await readerWriter.writeAsString(makeAssetId('a|web/file.b'), 'c');
 
         result = await results.next;
         checkBuild(result,
-            outputs: {'a|web/file.a.copy.copy': 'c'}, writer: readerWriter);
+            outputs: {'a|web/file.a.copy.copy': 'c'},
+            readerWriter: readerWriter);
       });
     });
   });

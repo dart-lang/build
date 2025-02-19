@@ -6,7 +6,7 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 
-import 'in_memory_writer.dart';
+import 'in_memory_reader_writer.dart';
 
 int _nextId = 0;
 AssetId makeAssetId([String? assetIdString]) {
@@ -17,7 +17,7 @@ AssetId makeAssetId([String? assetIdString]) {
   return AssetId.parse(assetIdString);
 }
 
-void addAssets(Map<AssetId, dynamic> assets, InMemoryAssetWriter writer) {
+void addAssets(Map<AssetId, dynamic> assets, InMemoryAssetReaderWriter writer) {
   assets.forEach((id, value) {
     if (value is String) {
       writer.assets[id] = utf8.encode(value);
