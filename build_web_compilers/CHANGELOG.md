@@ -2,6 +2,8 @@
 
 - Use support-detection scripts emitted by `dart2wasm`.
 - Use `build_test` 3.0.0.
+- Bump the min sdk to 3.7.0.
+- Use 'dart compile js-dev' to invoke the Dart Development Compiler
 
 ## 4.1.1
 
@@ -16,7 +18,6 @@
 ## 4.1.0-beta.3
 
 - Support 3.7.0 pre-release sdks.
-- Use 'dart compile js-dev' to invoke the Dart Development Compiler
 
 ## 4.1.0-beta.2
 
