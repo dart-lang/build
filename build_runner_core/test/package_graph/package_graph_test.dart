@@ -28,7 +28,7 @@ void main() {
           (p) => p.name == 'build_runner_core',
         );
 
-        expect(buildRunner.languageVersion, LanguageVersion(3, 6));
+        expect(buildRunner.languageVersion, LanguageVersion(3, 7));
       });
     });
 
