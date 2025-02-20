@@ -56,8 +56,11 @@ const List<String> defaultRootPackageSources = [
 final _logger = Logger('BuildOptions');
 
 class LogSubscription {
-  factory LogSubscription(BuildEnvironment environment,
-      {bool verbose = false, Level? logLevel}) {
+  factory LogSubscription(
+    BuildEnvironment environment, {
+    bool verbose = false,
+    Level? logLevel,
+  }) {
     // Set up logging
     logLevel ??= verbose ? Level.ALL : Level.INFO;
 
@@ -95,10 +98,7 @@ class BuildFilter {
     var uri = Uri.parse(arg);
     if (uri.scheme == 'package') {
       var package = uri.pathSegments.first;
-      var glob = Glob(p.url.joinAll([
-        'lib',
-        ...uri.pathSegments.skip(1),
-      ]));
+      var glob = Glob(p.url.joinAll(['lib', ...uri.pathSegments.skip(1)]));
       return BuildFilter(Glob(package), glob);
     } else if (uri.scheme.isEmpty) {
       return BuildFilter(Glob(rootPackage), Glob(uri.path));
@@ -113,13 +113,13 @@ class BuildFilter {
 
   @override
   int get hashCode => Object.hash(
-        _package.context,
-        _package.pattern,
-        _package.recursive,
-        _path.context,
-        _path.pattern,
-        _path.recursive,
-      );
+    _package.context,
+    _package.pattern,
+    _package.recursive,
+    _path.context,
+    _path.pattern,
+    _path.recursive,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -183,18 +183,24 @@ class BuildOptions {
   }) async {
     TargetGraph targetGraph;
     try {
-      targetGraph = await TargetGraph.forPackageGraph(packageGraph,
-          overrideBuildConfig: overrideBuildConfig,
-          defaultRootPackageSources: defaultRootPackageSources,
-          requiredSourcePaths: [r'lib/$lib$'],
-          requiredRootSourcePaths: [r'$package$', r'lib/$lib$']);
+      targetGraph = await TargetGraph.forPackageGraph(
+        packageGraph,
+        overrideBuildConfig: overrideBuildConfig,
+        defaultRootPackageSources: defaultRootPackageSources,
+        requiredSourcePaths: [r'lib/$lib$'],
+        requiredRootSourcePaths: [r'$package$', r'lib/$lib$'],
+      );
     } on BuildConfigParseException catch (e, s) {
-      _logger.severe('''
+      _logger.severe(
+        '''
 Failed to parse `build.yaml` for ${e.packageName}.
 
 If you believe you have gotten this message in error, especially if using a new
 feature, you may need to run `dart run build_runner clean` and then rebuild.
-''', e.exception, s);
+''',
+        e.exception,
+        s,
+      );
       throw const CannotBuildException();
     }
 
@@ -203,8 +209,10 @@ feature, you may need to run `dart run build_runner clean` and then rebuild.
       // Requiring this to be under the root package allows us to use an
       // `AssetWriter` to write logs.
       if (!p.isWithin(p.current, logPerformanceDir)) {
-        _logger.severe('Performance logs may only be output under the root '
-            'package, but got `$logPerformanceDir` which is not.');
+        _logger.severe(
+          'Performance logs may only be output under the root '
+          'package, but got `$logPerformanceDir` which is not.',
+        );
         throw const CannotBuildException();
       }
       trackPerformance = true;

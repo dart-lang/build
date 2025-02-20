@@ -34,11 +34,21 @@ class FinalizedReader {
 
   void reset(Set<String> buildDirs, Set<BuildFilter> buildFilters) {
     _optionalOutputTracker = OptionalOutputTracker(
-        _assetGraph, _targetGraph, buildDirs, buildFilters, _buildPhases);
+      _assetGraph,
+      _targetGraph,
+      buildDirs,
+      buildFilters,
+      _buildPhases,
+    );
   }
 
-  FinalizedReader(this._delegate, this._assetGraph, this._targetGraph,
-      this._buildPhases, this._rootPackage);
+  FinalizedReader(
+    this._delegate,
+    this._assetGraph,
+    this._targetGraph,
+    this._buildPhases,
+    this._rootPackage,
+  );
 
   /// Returns a reason why [id] is not readable, or null if it is readable.
   Future<UnreadableReason?> unreadableReason(AssetId id) async {
@@ -89,10 +99,11 @@ class FinalizedReader {
   }
 
   Stream<AssetId> _findAssets(Glob glob, String? _) async* {
-    var potentialNodes = _assetGraph
-        .packageNodes(_rootPackage)
-        .where((n) => glob.matches(n.id.path))
-        .toList();
+    var potentialNodes =
+        _assetGraph
+            .packageNodes(_rootPackage)
+            .where((n) => glob.matches(n.id.path))
+            .toList();
     var potentialIds = potentialNodes.map((n) => n.id).toList();
 
     for (var id in potentialIds) {

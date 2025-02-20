@@ -46,8 +46,10 @@ class PackageAssetReader {
   /// It is assumed that every _directory_ in [packageRoot] is a package where
   /// the name of the package is the name of the directory. This is similar to
   /// the older "packages" folder paradigm for resolution.
-  factory PackageAssetReader.forPackageRoot(String packageRoot,
-      [String? rootPackage]) {
+  factory PackageAssetReader.forPackageRoot(
+    String packageRoot, [
+    String? rootPackage,
+  ]) {
     final directory = Directory(packageRoot);
     final packages = <String, String>{};
     for (final entity in directory.listSync()) {
@@ -60,24 +62,31 @@ class PackageAssetReader {
   }
 
   /// Returns a [PackageAssetReader] with a simple [packageToPath] mapping.
-  PackageAssetReader.forPackages(Map<String, String> packageToPath,
-      [String? rootPackage])
-      : this(
-            PackageConfig([
-              for (var entry in packageToPath.entries)
-                Package(entry.key, Uri.file(p.absolute(entry.value)),
-                    // TODO: use a relative uri when/if possible,
-                    // https://github.com/dart-lang/package_config/issues/81
-                    packageUriRoot: Uri.file(p.absolute(entry.value, 'lib/'))),
-            ]),
-            rootPackage);
+  PackageAssetReader.forPackages(
+    Map<String, String> packageToPath, [
+    String? rootPackage,
+  ]) : this(
+         PackageConfig([
+           for (var entry in packageToPath.entries)
+             Package(
+               entry.key,
+               Uri.file(p.absolute(entry.value)),
+               // TODO: use a relative uri when/if possible,
+               // https://github.com/dart-lang/package_config/issues/81
+               packageUriRoot: Uri.file(p.absolute(entry.value, 'lib/')),
+             ),
+         ]),
+         rootPackage,
+       );
 
   /// A reader that can resolve files known to the current isolate.
   ///
   /// A [rootPackage] should be provided for full API compatibility.
-  static Future<PackageAssetReader> currentIsolate(
-      {String? rootPackage}) async {
-    final packageConfigUri = await Isolate.packageConfig ??
+  static Future<PackageAssetReader> currentIsolate({
+    String? rootPackage,
+  }) async {
+    final packageConfigUri =
+        await Isolate.packageConfig ??
         (throw UnsupportedError('No package config found'));
     final packageConfig = await loadPackageConfigUri(packageConfigUri);
 
@@ -101,9 +110,10 @@ class PackageAssetReader {
   String get _rootPackagePath {
     // If the root package has a pub layout, use `packagePath`.
     final rootPackage = _rootPackage;
-    final root = rootPackage != null
-        ? _packageConfig[rootPackage]?.root.toFilePath()
-        : null;
+    final root =
+        rootPackage != null
+            ? _packageConfig[rootPackage]?.root.toFilePath()
+            : null;
     if (root != null && Directory(p.join(root, 'lib')).existsSync()) {
       return root;
     }
@@ -115,8 +125,9 @@ class PackageAssetReader {
     package ??= _rootPackage;
     if (package == null) {
       throw UnsupportedError(
-          'Root package must be provided to use `findAssets` without an '
-          'explicit `package`.');
+        'Root package must be provided to use `findAssets` without an '
+        'explicit `package`.',
+      );
     }
     var packageLibDir = _packageConfig[package]?.packageUriRoot;
     if (packageLibDir == null) return const Stream.empty();
@@ -124,14 +135,18 @@ class PackageAssetReader {
     var packageFiles = Directory.fromUri(packageLibDir)
         .list(recursive: true)
         .whereType<File>()
-        .map((f) =>
-            p.join('lib', p.relative(f.path, from: p.fromUri(packageLibDir))));
+        .map(
+          (f) =>
+              p.join('lib', p.relative(f.path, from: p.fromUri(packageLibDir))),
+        );
     if (package == _rootPackage) {
-      packageFiles = packageFiles.merge(Directory(_rootPackagePath)
-          .list(recursive: true)
-          .whereType<File>()
-          .map((f) => p.relative(f.path, from: _rootPackagePath))
-          .where((p) => !(p.startsWith('packages/') || p.startsWith('lib/'))));
+      packageFiles = packageFiles.merge(
+        Directory(_rootPackagePath)
+            .list(recursive: true)
+            .whereType<File>()
+            .map((f) => p.relative(f.path, from: _rootPackagePath))
+            .where((p) => !(p.startsWith('packages/') || p.startsWith('lib/'))),
+      );
     }
     return packageFiles.where(glob.matches).map((p) => AssetId(package!, p));
   }

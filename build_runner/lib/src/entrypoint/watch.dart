@@ -30,22 +30,31 @@ class WatchCommand extends BuildRunnerCommand {
       'rebuilding as appropriate.';
 
   WatchCommand() {
-    argParser.addFlag(usePollingWatcherOption,
-        help: 'Use a polling watcher instead of the current platforms default '
-            'watcher implementation. This should generally only be used if '
-            'you are having problems with the default watcher, as it is '
-            'generally less efficient.');
+    argParser.addFlag(
+      usePollingWatcherOption,
+      help:
+          'Use a polling watcher instead of the current platforms default '
+          'watcher implementation. This should generally only be used if '
+          'you are having problems with the default watcher, as it is '
+          'generally less efficient.',
+    );
   }
 
   @override
   WatchOptions readOptions() => WatchOptions.fromParsedArgs(
-      argResults!, argResults!.rest, packageGraph.root.name, this);
+    argResults!,
+    argResults!.rest,
+    packageGraph.root.name,
+    this,
+  );
 
   @override
   Future<int> run() {
     var options = readOptions();
     return withEnabledExperiments(
-        () => _run(options), options.enableExperiments);
+      () => _run(options),
+      options.enableExperiments,
+    );
   }
 
   Future<int> _run(WatchOptions options) async {
@@ -79,7 +88,9 @@ class WatchCommand extends BuildRunnerCommand {
   /// Listens to [buildResults], handling certain types of errors and completing
   /// [completer] appropriately.
   void handleBuildResultsStream(
-      Stream<BuildResult> buildResults, Completer<int> completer) async {
+    Stream<BuildResult> buildResults,
+    Completer<int> completer,
+  ) async {
     var subscription = buildResults.listen((result) {
       if (completer.isCompleted) return;
       if (result.status == BuildStatus.failure) {

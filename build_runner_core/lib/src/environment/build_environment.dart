@@ -44,11 +44,11 @@ abstract class BuildEnvironment {
   ///
   /// Any operation may be performed, as determined by environment.
   Future<BuildResult> finalizeBuild(
-          BuildResult buildResult,
-          FinalizedAssetsView finalizedAssetsView,
-          AssetReader assetReader,
-          Set<BuildDirectory> buildDirs) =>
-      Future.value(buildResult);
+    BuildResult buildResult,
+    FinalizedAssetsView finalizedAssetsView,
+    AssetReader assetReader,
+    Set<BuildDirectory> buildDirs,
+  ) => Future.value(buildResult);
 }
 
 /// Thrown when the build attempts to prompt the users but no prompt is

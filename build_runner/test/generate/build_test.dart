@@ -16,7 +16,8 @@ import 'package:test/test.dart';
 void main() {
   // Basic phases/phase groups which get used in many tests
   final copyABuildApplication = applyToRoot(
-      TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')));
+    TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')),
+  );
   final packageConfigId = makeAssetId('a|.dart_tool/package_config.json');
 
   group('--config', () {
@@ -25,58 +26,68 @@ void main() {
       final packageGraph = buildPackageGraph({
         rootPackage('a', path: path.absolute('a')): [],
       });
-      var result = await _doBuild([
-        copyABuildApplication
-      ], {
-        'a|build.yaml': '',
-        'a|build.cool.yaml': '''
+      var result = await _doBuild(
+        [copyABuildApplication],
+        {
+          'a|build.yaml': '',
+          'a|build.cool.yaml': '''
 builders:
   fake:
     import: "a.dart"
     builder_factories: ["myFactory"]
     build_extensions: {"a": ["b"]}
-'''
-      },
-          packageConfigId: packageConfigId,
-          configKey: 'cool',
-          logLevel: Level.WARNING,
-          onLog: logs.add,
-          packageGraph: packageGraph);
+''',
+        },
+        packageConfigId: packageConfigId,
+        configKey: 'cool',
+        logLevel: Level.WARNING,
+        onLog: logs.add,
+        packageGraph: packageGraph,
+      );
       expect(result.status, BuildStatus.success);
       expect(
-          logs.first.message,
-          contains('Ignoring `builders` configuration in `build.cool.yaml` - '
-              'overriding builder configuration is not supported.'));
+        logs.first.message,
+        contains(
+          'Ignoring `builders` configuration in `build.cool.yaml` - '
+          'overriding builder configuration is not supported.',
+        ),
+      );
     });
   });
 }
 
 Future<BuildResult> _doBuild(
-    List<BuilderApplication> builders, Map<String, String> inputs,
-    {required AssetId packageConfigId,
-    PackageGraph? packageGraph,
-    void Function(LogRecord)? onLog,
-    Level? logLevel,
-    String? configKey}) async {
+  List<BuilderApplication> builders,
+  Map<String, String> inputs, {
+  required AssetId packageConfigId,
+  PackageGraph? packageGraph,
+  void Function(LogRecord)? onLog,
+  Level? logLevel,
+  String? configKey,
+}) async {
   onLog ??= (_) {};
-  packageGraph ??=
-      buildPackageGraph({rootPackage('a', path: path.absolute('a')): []});
-  final readerWriter =
-      InMemoryRunnerAssetReaderWriter(rootPackage: packageGraph.root.name);
+  packageGraph ??= buildPackageGraph({
+    rootPackage('a', path: path.absolute('a')): [],
+  });
+  final readerWriter = InMemoryRunnerAssetReaderWriter(
+    rootPackage: packageGraph.root.name,
+  );
   inputs.forEach((serializedId, contents) {
     readerWriter.writeAsString(makeAssetId(serializedId), contents);
   });
   await readerWriter.writeAsString(packageConfigId, jsonEncode(_packageConfig));
 
-  return await build_impl.build(builders,
-      configKey: configKey,
-      deleteFilesByDefault: true,
-      reader: readerWriter,
-      writer: readerWriter,
-      packageGraph: packageGraph,
-      logLevel: logLevel,
-      onLog: onLog,
-      skipBuildScriptCheck: true);
+  return await build_impl.build(
+    builders,
+    configKey: configKey,
+    deleteFilesByDefault: true,
+    reader: readerWriter,
+    writer: readerWriter,
+    packageGraph: packageGraph,
+    logLevel: logLevel,
+    onLog: onLog,
+    skipBuildScriptCheck: true,
+  );
 }
 
 const _packageConfig = {

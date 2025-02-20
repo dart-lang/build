@@ -21,25 +21,34 @@ late final PackageGraph packageGraph;
 final logger = Logger('graph_inspector');
 
 Future<void> main(List<String> args) async {
-  final logSubscription =
-      Logger.root.onRecord.listen((record) => print(record.message));
+  final logSubscription = Logger.root.onRecord.listen(
+    (record) => print(record.message),
+  );
   logger.warning(
-      'Warning: this tool is unsupported and usage may change at any time, '
-      'use at your own risk.');
+    'Warning: this tool is unsupported and usage may change at any time, '
+    'use at your own risk.',
+  );
 
-  final argParser = ArgParser()
-    ..addOption('graph-file',
-        abbr: 'g', help: 'Specify the asset_graph.json file to inspect.')
-    ..addOption('build-script',
-        abbr: 'b',
-        help: 'Specify the build script to find the asset graph for.',
-        defaultsTo: '.dart_tool/build/entrypoint/build.dart');
+  final argParser =
+      ArgParser()
+        ..addOption(
+          'graph-file',
+          abbr: 'g',
+          help: 'Specify the asset_graph.json file to inspect.',
+        )
+        ..addOption(
+          'build-script',
+          abbr: 'b',
+          help: 'Specify the build script to find the asset graph for.',
+          defaultsTo: '.dart_tool/build/entrypoint/build.dart',
+        );
 
   final results = argParser.parse(args);
 
   if (results.wasParsed('graph-file') && results.wasParsed('build-script')) {
     throw ArgumentError(
-        'Expected exactly one of `--graph-file` or `--build-script`.');
+      'Expected exactly one of `--graph-file` or `--build-script`.',
+    );
   }
 
   var assetGraphFile = File(_findAssetGraph(results));
@@ -51,11 +60,14 @@ Future<void> main(List<String> args) async {
   assetGraph = AssetGraph.deserialize(assetGraphFile.readAsBytesSync());
   packageGraph = await PackageGraph.forThisPackage();
 
-  var commandRunner = CommandRunner<bool>(
-      '', 'A tool for inspecting the AssetGraph for your build')
-    ..addCommand(InspectNodeCommand())
-    ..addCommand(GraphCommand())
-    ..addCommand(QuitCommand());
+  var commandRunner =
+      CommandRunner<bool>(
+          '',
+          'A tool for inspecting the AssetGraph for your build',
+        )
+        ..addCommand(InspectNodeCommand())
+        ..addCommand(GraphCommand())
+        ..addCommand(QuitCommand());
 
   stdout.writeln('Ready, please type in a command:');
 
@@ -82,7 +94,8 @@ String _findAssetGraph(ArgResults results) {
   final scriptFile = File(scriptPath);
   if (!scriptFile.existsSync()) {
     throw ArgumentError(
-        'Expected a build script at $scriptPath but didn\'t find one.');
+      'Expected a build script at $scriptPath but didn\'t find one.',
+    );
   }
   return assetGraphPathFor(p.url.joinAll(p.split(scriptPath)));
 }
@@ -121,9 +134,10 @@ class InspectNodeCommand extends Command<bool> {
         continue;
       }
 
-      var description = StringBuffer()
-        ..writeln('Asset: $stringUri')
-        ..writeln('  type: ${node.runtimeType}');
+      var description =
+          StringBuffer()
+            ..writeln('Asset: $stringUri')
+            ..writeln('  type: ${node.runtimeType}');
 
       if (node is GeneratedAssetNode) {
         description
@@ -170,14 +184,23 @@ class GraphCommand extends Command<bool> {
 
   GraphCommand() {
     argParser
-      ..addFlag('generated',
-          abbr: 'g', help: 'Show only generated assets.', defaultsTo: false)
-      ..addFlag('original',
-          abbr: 'o',
-          help: 'Show only original source assets.',
-          defaultsTo: false)
-      ..addOption('package',
-          abbr: 'p', help: 'Filters nodes to a certain package')
+      ..addFlag(
+        'generated',
+        abbr: 'g',
+        help: 'Show only generated assets.',
+        defaultsTo: false,
+      )
+      ..addFlag(
+        'original',
+        abbr: 'o',
+        help: 'Show only original source assets.',
+        defaultsTo: false,
+      )
+      ..addOption(
+        'package',
+        abbr: 'p',
+        help: 'Filters nodes to a certain package',
+      )
       ..addOption('pattern', abbr: 'm', help: 'glob pattern for path matching');
   }
 
@@ -227,19 +250,26 @@ class QuitCommand extends Command<bool> {
 AssetId? _idFromString(String stringUri) {
   var uri = Uri.parse(stringUri);
   if (uri.scheme == 'package') {
-    return AssetId(uri.pathSegments.first,
-        p.url.join('lib', p.url.joinAll(uri.pathSegments.skip(1))));
+    return AssetId(
+      uri.pathSegments.first,
+      p.url.join('lib', p.url.joinAll(uri.pathSegments.skip(1))),
+    );
   } else if (!uri.isAbsolute && (uri.scheme == '' || uri.scheme == 'file')) {
     return AssetId(packageGraph.root.name, uri.path);
   } else {
-    stderr.writeln('Unrecognized uri $uri, must be a package: uri or a '
-        'relative path.');
+    stderr.writeln(
+      'Unrecognized uri $uri, must be a package: uri or a '
+      'relative path.',
+    );
     return null;
   }
 }
 
-void _listAsset(AssetId output, StringSink buffer,
-    {String indentation = '  '}) {
+void _listAsset(
+  AssetId output,
+  StringSink buffer, {
+  String indentation = '  ',
+}) {
   var outputUri = output.uri;
   if (outputUri.scheme == 'package') {
     buffer.writeln('$indentation${output.uri}');

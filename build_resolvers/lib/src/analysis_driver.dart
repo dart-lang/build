@@ -32,31 +32,36 @@ Future<AnalysisDriverForPackageBuild> analysisDriver(
     ),
     resourceProvider: analysisDriverModel.filesystem,
     sdkSummaryBytes: File(sdkSummaryPath).readAsBytesSync(),
-    uriResolvers: [
-      analysisDriverModel.filesystem,
-    ],
+    uriResolvers: [analysisDriverModel.filesystem],
   );
 }
 
 Packages _buildAnalyzerPackages(
-        PackageConfig packageConfig, ResourceProvider resourceProvider) =>
-    Packages({
-      for (var package in packageConfig.packages)
-        package.name: Package(
-          name: package.name,
-          languageVersion: package.languageVersion == null
+  PackageConfig packageConfig,
+  ResourceProvider resourceProvider,
+) => Packages({
+  for (var package in packageConfig.packages)
+    package.name: Package(
+      name: package.name,
+      languageVersion:
+          package.languageVersion == null
               ? sdkLanguageVersion
-              : Version(package.languageVersion!.major,
-                  package.languageVersion!.minor, 0),
-          // Analyzer does not see the original file paths at all, we need to
-          // make them match the paths that we give it, so we use the
-          // `assetPath` function to create those.
-          rootFolder: resourceProvider
-              .getFolder(p.url.normalize(assetPath(AssetId(package.name, '')))),
-          libFolder: resourceProvider.getFolder(
-              p.url.normalize(assetPath(AssetId(package.name, 'lib')))),
-        ),
-    });
+              : Version(
+                package.languageVersion!.major,
+                package.languageVersion!.minor,
+                0,
+              ),
+      // Analyzer does not see the original file paths at all, we need to
+      // make them match the paths that we give it, so we use the
+      // `assetPath` function to create those.
+      rootFolder: resourceProvider.getFolder(
+        p.url.normalize(assetPath(AssetId(package.name, ''))),
+      ),
+      libFolder: resourceProvider.getFolder(
+        p.url.normalize(assetPath(AssetId(package.name, 'lib'))),
+      ),
+    ),
+});
 
 /// The language version of the current sdk parsed from the [Platform.version].
 final sdkLanguageVersion = () {

@@ -18,40 +18,47 @@ void main() {
     test('should aggregate changes from all nodes', () {
       final graph = buildPackageGraph({
         rootPackage('a', path: '/g/a'): ['b'],
-        package('b', path: '/g/b', type: DependencyType.path): []
+        package('b', path: '/g/b', type: DependencyType.path): [],
       });
       final nodes = {
         'a': FakeNodeWatcher(graph['a']!),
         'b': FakeNodeWatcher(graph['b']!),
         r'$sdk': FakeNodeWatcher(PackageNode('\$sdk', '', null, null)),
       };
-      final watcher = PackageGraphWatcher(graph, watch: (node) {
-        return nodes[node.name]!;
-      });
+      final watcher = PackageGraphWatcher(
+        graph,
+        watch: (node) {
+          return nodes[node.name]!;
+        },
+      );
 
       nodes['a']!.emitAdd('lib/a.dart');
       nodes['b']!.emitAdd('lib/b.dart');
 
       expect(
-          watcher.watch(),
-          emitsInOrder([
-            AssetChange(AssetId('a', 'lib/a.dart'), ChangeType.ADD),
-            AssetChange(AssetId('b', 'lib/b.dart'), ChangeType.ADD),
-          ]));
+        watcher.watch(),
+        emitsInOrder([
+          AssetChange(AssetId('a', 'lib/a.dart'), ChangeType.ADD),
+          AssetChange(AssetId('b', 'lib/b.dart'), ChangeType.ADD),
+        ]),
+      );
     });
 
     test('should avoid duplicate changes with nested packages', () async {
       final graph = buildPackageGraph({
         rootPackage('a', path: '/g/a'): ['b'],
-        package('b', path: '/g/a/b', type: DependencyType.path): []
+        package('b', path: '/g/a/b', type: DependencyType.path): [],
       });
       final nodes = {
         'a': FakeNodeWatcher(graph['a']!)..markReady(),
         'b': FakeNodeWatcher(graph['b']!)..markReady(),
       };
-      final watcher = PackageGraphWatcher(graph, watch: (node) {
-        return nodes[node.name]!;
-      });
+      final watcher = PackageGraphWatcher(
+        graph,
+        watch: (node) {
+          return nodes[node.name]!;
+        },
+      );
 
       final events = <AssetChange>[];
       unawaited(watcher.watch().forEach(events.add));
@@ -68,7 +75,7 @@ void main() {
     test('should avoid watchers on pub dependencies', () {
       final graph = buildPackageGraph({
         rootPackage('a', path: '/g/a'): ['b'],
-        package('b', path: '/g/a/b/', type: DependencyType.hosted): []
+        package('b', path: '/g/a/b/', type: DependencyType.hosted): [],
       });
       final nodes = {
         'a': FakeNodeWatcher(graph['a']!),
@@ -93,16 +100,19 @@ void main() {
     test('ready waits for all node watchers to be ready', () async {
       final graph = buildPackageGraph({
         rootPackage('a', path: '/g/a'): ['b'],
-        package('b', path: '/g/b', type: DependencyType.path): []
+        package('b', path: '/g/b', type: DependencyType.path): [],
       });
       final nodes = {
         'a': FakeNodeWatcher(graph['a']!),
         'b': FakeNodeWatcher(graph['b']!),
         r'$sdk': FakeNodeWatcher(PackageNode('\$sdk', '', null, null)),
       };
-      final watcher = PackageGraphWatcher(graph, watch: (node) {
-        return nodes[node.name]!;
-      });
+      final watcher = PackageGraphWatcher(
+        graph,
+        watch: (node) {
+          return nodes[node.name]!;
+        },
+      );
       // We have to listen in order for `ready` to complete.
       unawaited(watcher.watch().drain());
 
@@ -136,12 +146,7 @@ class FakeNodeWatcher implements PackageNodeWatcher {
   void markReady() => _watcher._readyCompleter.complete();
 
   void emitAdd(String path) {
-    _events.add(
-      AssetChange(
-        AssetId(node.name, path),
-        ChangeType.ADD,
-      ),
-    );
+    _events.add(AssetChange(AssetId(node.name, path), ChangeType.ADD));
   }
 
   @override

@@ -1,9 +1,10 @@
 ## 2.4.5-wip
 
+- Bump the min SDK to 3.7.0.
+- Use `build_test` 3.0.0.
 - Start using `package:build/src/internal.dart`.
 - Switch `BuildAssetUriResolver` dependency crawl to an iterative
   algorithm, preventing stack overflows.
-- Use `build_test` 3.0.0.
 
 ## 2.4.4
 

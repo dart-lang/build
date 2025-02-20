@@ -10,9 +10,13 @@ void main() {
     test('overrides with non-empty options', () {
       var defaults = const BuilderOptions({'foo': 'bar', 'baz': 'bop'});
       var overridden = defaults.overrideWith(
-          const BuilderOptions({'baz': 'different', 'more': 'added'}));
-      expect(overridden.config,
-          {'foo': 'bar', 'baz': 'different', 'more': 'added'});
+        const BuilderOptions({'baz': 'different', 'more': 'added'}),
+      );
+      expect(overridden.config, {
+        'foo': 'bar',
+        'baz': 'different',
+        'more': 'added',
+      });
       expect(overridden.isRoot, isFalse);
     });
 

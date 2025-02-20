@@ -40,20 +40,27 @@ enum PerfSortOrder {
   durationAsc,
   durationDesc,
   innerDurationAsc,
-  innerDurationDesc
+  innerDurationDesc,
 }
 
 ServeHandler createServeHandler(WatchImpl watch) {
   var rootPackage = watch.packageGraph.root.name;
   var assetGraphHanderCompleter = Completer<AssetGraphHandler>();
   var assetHandlerCompleter = Completer<AssetHandler>();
-  watch.reader.then((reader) async {
-    assetHandlerCompleter.complete(AssetHandler(reader, rootPackage));
-    assetGraphHanderCompleter
-        .complete(AssetGraphHandler(reader, rootPackage, watch.assetGraph!));
-  }).catchError((_) {}); // These errors are separately handled.
-  return ServeHandler._(watch, assetHandlerCompleter.future,
-      assetGraphHanderCompleter.future, rootPackage);
+  watch.reader
+      .then((reader) async {
+        assetHandlerCompleter.complete(AssetHandler(reader, rootPackage));
+        assetGraphHanderCompleter.complete(
+          AssetGraphHandler(reader, rootPackage, watch.assetGraph!),
+        );
+      })
+      .catchError((_) {}); // These errors are separately handled.
+  return ServeHandler._(
+    watch,
+    assetHandlerCompleter.future,
+    assetGraphHanderCompleter.future,
+    rootPackage,
+  );
 }
 
 class ServeHandler implements BuildState {
@@ -66,13 +73,18 @@ class ServeHandler implements BuildState {
 
   final BuildUpdatesWebSocketHandler _webSocketHandler;
 
-  ServeHandler._(this._state, this._assetHandler, this._assetGraphHandler,
-      this._rootPackage)
-      : _webSocketHandler = BuildUpdatesWebSocketHandler(_state) {
-    _state.buildResults.listen((result) {
-      _lastBuildResult = result;
-      _webSocketHandler.emitUpdateMessage(result);
-    }).onDone(_webSocketHandler.close);
+  ServeHandler._(
+    this._state,
+    this._assetHandler,
+    this._assetGraphHandler,
+    this._rootPackage,
+  ) : _webSocketHandler = BuildUpdatesWebSocketHandler(_state) {
+    _state.buildResults
+        .listen((result) {
+          _lastBuildResult = result;
+          _webSocketHandler.emitUpdateMessage(result);
+        })
+        .onDone(_webSocketHandler.close);
   }
 
   @override
@@ -81,9 +93,11 @@ class ServeHandler implements BuildState {
   @override
   Stream<BuildResult> get buildResults => _state.buildResults;
 
-  shelf.Handler handlerFor(String rootDir,
-      {bool logRequests = false,
-      BuildUpdatesOption buildUpdates = BuildUpdatesOption.none}) {
+  shelf.Handler handlerFor(
+    String rootDir, {
+    bool logRequests = false,
+    BuildUpdatesOption buildUpdates = BuildUpdatesOption.none,
+  }) {
     if (p.url.split(rootDir).length != 1 || rootDir == '.') {
       throw ArgumentError.value(
         rootDir,
@@ -101,8 +115,9 @@ class ServeHandler implements BuildState {
     if (buildUpdates != BuildUpdatesOption.none) {
       cascade = cascade.add(_webSocketHandler.createHandlerByRootDir(rootDir));
     }
-    cascade =
-        cascade.add(_blockOnCurrentBuild).add((shelf.Request request) async {
+    cascade = cascade.add(_blockOnCurrentBuild).add((
+      shelf.Request request,
+    ) async {
       if (request.url.path == _performancePath) {
         return _performanceHandler(request);
       }
@@ -112,7 +127,9 @@ class ServeHandler implements BuildState {
       if (request.url.path.startsWith(_graphPath)) {
         var graphHandler = await _assetGraphHandler;
         return await graphHandler.handle(
-            request.change(path: _graphPath), rootDir);
+          request.change(path: _graphPath),
+          rootDir,
+        );
       }
       var assetHandler = await _assetHandler;
       return assetHandler.handle(request, rootDir: rootDir);
@@ -150,21 +167,33 @@ class ServeHandler implements BuildState {
       detailedSlices = true;
     }
     if (request.url.queryParameters.containsKey('slicesResolution')) {
-      slicesResolution =
-          int.parse(request.url.queryParameters['slicesResolution']!);
+      slicesResolution = int.parse(
+        request.url.queryParameters['slicesResolution']!,
+      );
     }
     if (request.url.queryParameters.containsKey('sortOrder')) {
-      sortOrder = PerfSortOrder
-          .values[int.parse(request.url.queryParameters['sortOrder']!)];
+      sortOrder =
+          PerfSortOrder.values[int.parse(
+            request.url.queryParameters['sortOrder']!,
+          )];
     }
     return shelf.Response.ok(
-        _renderPerformance(_lastBuildResult!.performance!, hideSkipped,
-            detailedSlices, slicesResolution, sortOrder, filter),
-        headers: {HttpHeaders.contentTypeHeader: 'text/html'});
+      _renderPerformance(
+        _lastBuildResult!.performance!,
+        hideSkipped,
+        detailedSlices,
+        slicesResolution,
+        sortOrder,
+        filter,
+      ),
+      headers: {HttpHeaders.contentTypeHeader: 'text/html'},
+    );
   }
 
   Future<shelf.Response> _assetsDigestHandler(
-      shelf.Request request, String rootDir) async {
+    shelf.Request request,
+    String rootDir,
+  ) async {
     final reader = await _state.reader;
     var assertPathList =
         (jsonDecode(await request.readAsString()) as List).cast<String>();
@@ -179,17 +208,21 @@ class ServeHandler implements BuildState {
         results.remove(path);
       }
     }
-    return shelf.Response.ok(jsonEncode(results),
-        headers: {HttpHeaders.contentTypeHeader: 'application/json'});
+    return shelf.Response.ok(
+      jsonEncode(results),
+      headers: {HttpHeaders.contentTypeHeader: 'application/json'},
+    );
   }
 
   void _warnForEmptyDirectory(String rootDir) {
     if (!_state.assetGraph!
         .packageNodes(_rootPackage)
         .any((n) => n.id.path.startsWith('$rootDir/'))) {
-      _logger.warning('Requested a server for `$rootDir` but this directory '
-          'has no assets in the build. You may need to add some sources or '
-          'include this directory in some target in your `build.yaml`');
+      _logger.warning(
+        'Requested a server for `$rootDir` but this directory '
+        'has no assets in the build. You may need to add some sources or '
+        'include this directory in some target in your `build.yaml`',
+      );
     }
   }
 }
@@ -201,19 +234,24 @@ class BuildUpdatesWebSocketHandler {
   final shelf.Handler Function(
     void Function(WebSocketChannel webSocket, String? subprotocol), {
     Iterable<String> protocols,
-  }) _handlerFactory;
+  })
+  _handlerFactory;
   final _internalHandlers = <String, shelf.Handler>{};
   final WatchImpl _state;
 
-  BuildUpdatesWebSocketHandler(this._state,
-      [this._handlerFactory = webSocketHandler]);
+  BuildUpdatesWebSocketHandler(
+    this._state, [
+    this._handlerFactory = webSocketHandler,
+  ]);
 
   shelf.Handler createHandlerByRootDir(String rootDir) {
     if (!_internalHandlers.containsKey(rootDir)) {
       void closureForRootDir(WebSocketChannel webSocket, String? protocol) =>
           _handleConnection(webSocket, protocol, rootDir);
-      _internalHandlers[rootDir] = _handlerFactory(closureForRootDir,
-          protocols: [_buildUpdatesProtocol]);
+      _internalHandlers[rootDir] = _handlerFactory(
+        closureForRootDir,
+        protocols: [_buildUpdatesProtocol],
+      );
     }
     return _internalHandlers[rootDir]!;
   }
@@ -241,7 +279,10 @@ class BuildUpdatesWebSocketHandler {
   }
 
   void _handleConnection(
-      WebSocketChannel webSocket, String? protocol, String rootDir) async {
+    WebSocketChannel webSocket,
+    String? protocol,
+    String rootDir,
+  ) async {
     var connections = connectionsByRootDir.putIfAbsent(rootDir, () => [])
       ..add(webSocket);
     await webSocket.stream.drain<void>();
@@ -252,44 +293,47 @@ class BuildUpdatesWebSocketHandler {
   }
 
   Future<void> close() {
-    return Future.wait(connectionsByRootDir.values
-        .expand((x) => x)
-        .map((connection) => connection.sink.close()));
+    return Future.wait(
+      connectionsByRootDir.values
+          .expand((x) => x)
+          .map((connection) => connection.sink.close()),
+    );
   }
 }
 
 shelf.Handler Function(shelf.Handler) _injectBuildUpdatesClientCode(
-        String scriptName) =>
-    (innerHandler) {
-      return (shelf.Request request) async {
-        if (!request.url.path.endsWith('.js')) {
-          return innerHandler(request);
+  String scriptName,
+) => (innerHandler) {
+  return (shelf.Request request) async {
+    if (!request.url.path.endsWith('.js')) {
+      return innerHandler(request);
+    }
+    var response = await innerHandler(request);
+    // TODO: Find a way how to check and/or modify body without reading it
+    // whole.
+    var body = await response.readAsString();
+    if (body.startsWith(entrypointExtensionMarker)) {
+      body += _buildUpdatesInjectedJS(scriptName);
+      var originalEtag = response.headers[HttpHeaders.etagHeader];
+      if (originalEtag != null) {
+        var newEtag = base64.encode(md5.convert(body.codeUnits).bytes);
+        var newHeaders = Map.of(response.headers);
+        newHeaders[HttpHeaders.etagHeader] = newEtag;
+
+        if (request.headers[HttpHeaders.ifNoneMatchHeader] == newEtag) {
+          return shelf.Response.notModified(headers: newHeaders);
         }
-        var response = await innerHandler(request);
-        // TODO: Find a way how to check and/or modify body without reading it
-        // whole.
-        var body = await response.readAsString();
-        if (body.startsWith(entrypointExtensionMarker)) {
-          body += _buildUpdatesInjectedJS(scriptName);
-          var originalEtag = response.headers[HttpHeaders.etagHeader];
-          if (originalEtag != null) {
-            var newEtag = base64.encode(md5.convert(body.codeUnits).bytes);
-            var newHeaders = Map.of(response.headers);
-            newHeaders[HttpHeaders.etagHeader] = newEtag;
 
-            if (request.headers[HttpHeaders.ifNoneMatchHeader] == newEtag) {
-              return shelf.Response.notModified(headers: newHeaders);
-            }
+        response = response.change(headers: newHeaders);
+      }
+    }
+    return response.change(body: body);
+  };
+};
 
-            response = response.change(headers: newHeaders);
-          }
-        }
-        return response.change(body: body);
-      };
-    };
-
-final _injectLiveReloadClientCode =
-    _injectBuildUpdatesClientCode('live_reload_client');
+final _injectLiveReloadClientCode = _injectBuildUpdatesClientCode(
+  'live_reload_client',
+);
 
 /// Hot-/live- reload config
 ///
@@ -310,15 +354,23 @@ class AssetHandler {
   Future<shelf.Response> handle(shelf.Request request, {String rootDir = ''}) =>
       (request.url.path.endsWith('/') || request.url.path.isEmpty)
           ? _handle(
-              request,
-              pathToAssetId(_rootPackage, rootDir,
-                  [...request.url.pathSegments, 'index.html']),
-              fallbackToDirectoryList: true)
-          : _handle(request,
-              pathToAssetId(_rootPackage, rootDir, request.url.pathSegments));
+            request,
+            pathToAssetId(_rootPackage, rootDir, [
+              ...request.url.pathSegments,
+              'index.html',
+            ]),
+            fallbackToDirectoryList: true,
+          )
+          : _handle(
+            request,
+            pathToAssetId(_rootPackage, rootDir, request.url.pathSegments),
+          );
 
-  Future<shelf.Response> _handle(shelf.Request request, AssetId assetId,
-      {bool fallbackToDirectoryList = false}) async {
+  Future<shelf.Response> _handle(
+    shelf.Request request,
+    AssetId assetId, {
+    bool fallbackToDirectoryList = false,
+  }) async {
     try {
       try {
         if (!await _reader.canRead(assetId)) {
@@ -326,13 +378,15 @@ class AssetHandler {
           switch (reason) {
             case UnreadableReason.failed:
               return shelf.Response.internalServerError(
-                  body: 'Build failed for $assetId');
+                body: 'Build failed for $assetId',
+              );
             case UnreadableReason.notOutput:
               return shelf.Response.notFound('$assetId was not output');
             case UnreadableReason.notFound:
               if (fallbackToDirectoryList) {
                 return shelf.Response.notFound(
-                    await _findDirectoryList(assetId));
+                  await _findDirectoryList(assetId),
+                );
               }
               return shelf.Response.notFound('Not Found');
             default:
@@ -372,7 +426,10 @@ class AssetHandler {
       return shelf.Response.ok(body, headers: headers);
     } catch (e, s) {
       _logger.finest(
-          'Error on request ${request.method} ${request.requestedUri}', e, s);
+        'Error on request ${request.method} ${request.requestedUri}',
+        e,
+        s,
+      );
       rethrow;
     }
   }
@@ -391,33 +448,40 @@ class AssetHandler {
         ..writeAll(result, '\n')
         ..writeln();
     }
-    message
-        .write(' See https://github.com/dart-lang/build/blob/master/docs/faq.md'
-            '#why-cant-i-see-a-file-i-know-exists');
+    message.write(
+      ' See https://github.com/dart-lang/build/blob/master/docs/faq.md'
+      '#why-cant-i-see-a-file-i-know-exists',
+    );
     return '$message';
   }
 }
 
 String _renderPerformance(
-    BuildPerformance performance,
-    bool hideSkipped,
-    bool detailedSlices,
-    int slicesResolution,
-    PerfSortOrder sortOrder,
-    String filter) {
+  BuildPerformance performance,
+  bool hideSkipped,
+  bool detailedSlices,
+  int slicesResolution,
+  PerfSortOrder sortOrder,
+  String filter,
+) {
   try {
     var rows = StringBuffer();
     final resolution = Duration(milliseconds: slicesResolution);
     var count = 0,
         maxSlices = 1,
         max = 0,
-        min = performance.stopTime.millisecondsSinceEpoch -
+        min =
+            performance.stopTime.millisecondsSinceEpoch -
             performance.startTime.millisecondsSinceEpoch;
 
-    void writeRow(BuilderActionPerformance action,
-        BuilderActionStagePerformance stage, TimeSlice slice) {
+    void writeRow(
+      BuilderActionPerformance action,
+      BuilderActionStagePerformance stage,
+      TimeSlice slice,
+    ) {
       var actionKey = '${action.builderKey}:${action.primaryInput}';
-      var tooltip = '<div class=perf-tooltip>'
+      var tooltip =
+          '<div class=perf-tooltip>'
           '<p><b>Builder:</b> ${action.builderKey}</p>'
           '<p><b>Input:</b> ${action.primaryInput}</p>'
           '<p><b>Stage:</b> ${stage.label}</p>'
@@ -428,37 +492,48 @@ String _renderPerformance(
           '<p><b>Stage real duration:</b> ${stage.duration.inMilliseconds / 1000} seconds</p>'
           '<p><b>Stage user duration:</b> ${stage.innerDuration.inMilliseconds / 1000} seconds</p>';
       if (slice != stage) {
-        tooltip += '<p><b>Slice time:</b> '
+        tooltip +=
+            '<p><b>Slice time:</b> '
             // ignore: lines_longer_than_80_chars
             '${slice.startTime.difference(performance.startTime).inMilliseconds / 1000}s - '
             '${slice.stopTime.difference(performance.startTime).inMilliseconds / 1000}s</p>'
             '<p><b>Slice duration:</b> ${slice.duration.inMilliseconds / 1000} seconds</p>';
       }
       tooltip += '</div>';
-      var start = slice.startTime.millisecondsSinceEpoch -
+      var start =
+          slice.startTime.millisecondsSinceEpoch -
           performance.startTime.millisecondsSinceEpoch;
-      var end = slice.stopTime.millisecondsSinceEpoch -
+      var end =
+          slice.stopTime.millisecondsSinceEpoch -
           performance.startTime.millisecondsSinceEpoch;
 
       if (min > start) min = start;
       if (max < end) max = end;
 
       rows.writeln(
-          '          ["$actionKey", "${stage.label}", "$tooltip", $start, '
-          '$end],');
+        '          ["$actionKey", "${stage.label}", "$tooltip", $start, '
+        '$end],',
+      );
       ++count;
     }
 
     final filterRegex = filter.isNotEmpty ? RegExp(filter) : null;
 
-    final actions = performance.actions
-        .where((action) =>
-            !hideSkipped ||
-            action.stages.any((stage) => stage.label == 'Build'))
-        .where((action) =>
-            filterRegex == null ||
-            filterRegex.hasMatch('${action.builderKey}:${action.primaryInput}'))
-        .toList();
+    final actions =
+        performance.actions
+            .where(
+              (action) =>
+                  !hideSkipped ||
+                  action.stages.any((stage) => stage.label == 'Build'),
+            )
+            .where(
+              (action) =>
+                  filterRegex == null ||
+                  filterRegex.hasMatch(
+                    '${action.builderKey}:${action.primaryInput}',
+                  ),
+            )
+            .toList();
 
     int Function(BuilderActionPerformance, BuilderActionPerformance) comparator;
     switch (sortOrder) {
@@ -525,9 +600,11 @@ String _renderPerformance(
       }
     }
     if (max - min < 1000) {
-      rows.writeln('          ['
-          '"https://github.com/google/google-visualization-issues/issues/2269"'
-          ', "", "", $min, ${min + 1000}]');
+      rows.writeln(
+        '          ['
+        '"https://github.com/google/google-visualization-issues/issues/2269"'
+        ', "", "", $min, ${min + 1000}]',
+      );
     }
     return '''
   <html>
@@ -663,22 +740,37 @@ shelf.Handler _logRequests(shelf.Handler innerHandler) {
     try {
       var response = await innerHandler(request);
       var logFn = response.statusCode >= 500 ? _logger.warning : _logger.info;
-      var msg = _requestLabel(startTime, response.statusCode,
-          request.requestedUri, request.method, watch.elapsed);
+      var msg = _requestLabel(
+        startTime,
+        response.statusCode,
+        request.requestedUri,
+        request.method,
+        watch.elapsed,
+      );
       logFn(msg);
       return response;
     } catch (error, stackTrace) {
       if (error is shelf.HijackException) rethrow;
       var msg = _requestLabel(
-          startTime, 500, request.requestedUri, request.method, watch.elapsed);
+        startTime,
+        500,
+        request.requestedUri,
+        request.method,
+        watch.elapsed,
+      );
       _logger.severe(msg, error, stackTrace);
       rethrow;
     }
   };
 }
 
-String _requestLabel(DateTime requestTime, int statusCode, Uri requestedUri,
-    String method, Duration elapsedTime) {
+String _requestLabel(
+  DateTime requestTime,
+  int statusCode,
+  Uri requestedUri,
+  String method,
+  Duration elapsedTime,
+) {
   return '${requestTime.toIso8601String()} '
       '${humanReadable(elapsedTime)} '
       '$method [$statusCode] '

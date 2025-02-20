@@ -12,15 +12,15 @@ import 'package:test/test.dart';
 import 'utils/build_descriptor.dart';
 
 // test-package-start #########################################################
-final correctKey = TestBuilder(buildExtensions: {
-  '.txt': ['.txt.copy', '.txt.extra']
-});
+final correctKey = TestBuilder(
+  buildExtensions: {
+    '.txt': ['.txt.copy', '.txt.extra'],
+  },
+);
 // test-package-end ###########################################################
 
 void main() {
-  final builders = [
-    builder('wrongKey', correctKey),
-  ];
+  final builders = [builder('wrongKey', correctKey)];
 
   late BuildTool buildTool;
 
@@ -29,12 +29,18 @@ void main() {
   });
 
   group('build', () {
-    test('warns when builder definition produces invalid build script',
-        () async {
-      var result = await buildTool.build(expectExitCode: ExitCode.config.code);
-      expect(result, emitsThrough(contains('Undefined name \'wrongKey\'')));
-      expect(
-          result, emitsThrough(contains('misconfigured builder definition')));
-    });
+    test(
+      'warns when builder definition produces invalid build script',
+      () async {
+        var result = await buildTool.build(
+          expectExitCode: ExitCode.config.code,
+        );
+        expect(result, emitsThrough(contains('Undefined name \'wrongKey\'')));
+        expect(
+          result,
+          emitsThrough(contains('misconfigured builder definition')),
+        );
+      },
+    );
   });
 }

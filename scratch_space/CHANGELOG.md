@@ -1,6 +1,6 @@
 ## 1.0.3-wip
 
-- Bump the min sdk to 3.6.0.
+- Bump the min sdk to 3.7.0.
 - Use `build_test` 3.0.0.
 
 ## 1.0.2

@@ -41,10 +41,10 @@ class TestBuildEnvironment extends BuildEnvironment {
 
   int? _nextPromptResponse;
 
-  TestBuildEnvironment(
-      {InMemoryRunnerAssetReaderWriter? readerWriter,
-      this.throwOnPrompt = false})
-      : _readerWriter = readerWriter ?? InMemoryRunnerAssetReaderWriter();
+  TestBuildEnvironment({
+    InMemoryRunnerAssetReaderWriter? readerWriter,
+    this.throwOnPrompt = false,
+  }) : _readerWriter = readerWriter ?? InMemoryRunnerAssetReaderWriter();
 
   @override
   void onLog(LogRecord record) => logRecords.add(record);

@@ -49,27 +49,31 @@ class ModuleLibrary {
   /// Whether this library has a `main` function.
   final bool hasMain;
 
-  ModuleLibrary._(this.id,
-      {required this.isEntryPoint,
-      required Set<AssetId> deps,
-      required this.parts,
-      required this.conditionalDeps,
-      required this.sdkDeps,
-      required this.hasMain})
-      : _deps = deps,
-        isImportable = true;
+  ModuleLibrary._(
+    this.id, {
+    required this.isEntryPoint,
+    required Set<AssetId> deps,
+    required this.parts,
+    required this.conditionalDeps,
+    required this.sdkDeps,
+    required this.hasMain,
+  }) : _deps = deps,
+       isImportable = true;
 
   ModuleLibrary._nonImportable(this.id)
-      : isImportable = false,
-        isEntryPoint = false,
-        _deps = const {},
-        parts = const {},
-        conditionalDeps = const [],
-        sdkDeps = const {},
-        hasMain = false;
+    : isImportable = false,
+      isEntryPoint = false,
+      _deps = const {},
+      parts = const {},
+      conditionalDeps = const [],
+      sdkDeps = const {},
+      hasMain = false;
 
   factory ModuleLibrary._fromCompilationUnit(
-      AssetId id, bool isEntryPoint, CompilationUnit parsed) {
+    AssetId id,
+    bool isEntryPoint,
+    CompilationUnit parsed,
+  ) {
     var deps = <AssetId>{};
     var parts = <AssetId>{};
     var sdkDeps = <String>{};
@@ -112,37 +116,46 @@ class ModuleLibrary {
           var parsedUri = uriString == null ? null : Uri.parse(uriString);
           _checkValidConditionalImport(parsedUri, id, directive);
           parsedUri = parsedUri!;
-          conditions[condition.name.toSource()] =
-              AssetId.resolve(parsedUri, from: id);
+          conditions[condition.name.toSource()] = AssetId.resolve(
+            parsedUri,
+            from: id,
+          );
         }
         conditionalDeps.add(conditions);
       } else {
         deps.add(linkedId);
       }
     }
-    return ModuleLibrary._(id,
-        isEntryPoint: isEntryPoint,
-        deps: deps,
-        parts: parts,
-        sdkDeps: sdkDeps,
-        conditionalDeps: conditionalDeps,
-        hasMain: _hasMainMethod(parsed));
+    return ModuleLibrary._(
+      id,
+      isEntryPoint: isEntryPoint,
+      deps: deps,
+      parts: parts,
+      sdkDeps: sdkDeps,
+      conditionalDeps: conditionalDeps,
+      hasMain: _hasMainMethod(parsed),
+    );
   }
 
   static void _checkValidConditionalImport(
-      Uri? parsedUri, AssetId id, UriBasedDirective node) {
+    Uri? parsedUri,
+    AssetId id,
+    UriBasedDirective node,
+  ) {
     if (parsedUri == null) {
       throw ArgumentError(
-          'Unsupported conditional import with non-constant uri found in $id:'
-          '\n\n${node.toSource()}');
+        'Unsupported conditional import with non-constant uri found in $id:'
+        '\n\n${node.toSource()}',
+      );
     } else if (parsedUri.scheme == 'dart') {
       throw ArgumentError(
-          'Unsupported conditional import of `$parsedUri` found in $id:\n\n'
-          '${node.toSource()}\n\nThis environment does not support direct '
-          'conditional imports of `dart:` libraries. Instead you must create '
-          'a separate library which unconditionally imports (or exports) the '
-          '`dart:` library that you want to use, and conditionally import (or '
-          'export) that library.');
+        'Unsupported conditional import of `$parsedUri` found in $id:\n\n'
+        '${node.toSource()}\n\nThis environment does not support direct '
+        'conditional imports of `dart:` libraries. Instead you must create '
+        'a separate library which unconditionally imports (or exports) the '
+        '`dart:` library that you want to use, and conditionally import (or '
+        'export) that library.',
+      );
     }
   }
 
@@ -152,11 +165,13 @@ class ModuleLibrary {
     final parsed = parseString(content: source, throwIfDiagnostics: false).unit;
     // Packages within the SDK but published might have libraries that can't be
     // used outside the SDK.
-    if (parsed.directives.any((d) =>
-        d is UriBasedDirective &&
-        d.uri.stringValue?.startsWith('dart:_') == true &&
-        id.package != 'dart_internal' &&
-        id.package != 'js')) {
+    if (parsed.directives.any(
+      (d) =>
+          d is UriBasedDirective &&
+          d.uri.stringValue?.startsWith('dart:_') == true &&
+          id.package != 'dart_internal' &&
+          id.package != 'js',
+    )) {
       return ModuleLibrary._nonImportable(id);
     }
     if (_isPart(parsed)) {
@@ -175,30 +190,38 @@ class ModuleLibrary {
   factory ModuleLibrary.deserialize(AssetId id, String encoded) {
     var json = jsonDecode(encoded) as Map<String, Object?>;
 
-    return ModuleLibrary._(id,
-        isEntryPoint: json['isEntrypoint'] as bool,
-        deps: _deserializeAssetIds(json['deps'] as Iterable),
-        parts: _deserializeAssetIds(json['parts'] as Iterable),
-        sdkDeps: Set.of((json['sdkDeps'] as Iterable).cast<String>()),
-        conditionalDeps:
-            (json['conditionalDeps'] as Iterable).map((conditions) {
-          return Map.of((conditions as Map<String, dynamic>)
-              .map((k, v) => MapEntry(k, AssetId.parse(v as String))));
-        }).toList(),
-        hasMain: json['hasMain'] as bool);
+    return ModuleLibrary._(
+      id,
+      isEntryPoint: json['isEntrypoint'] as bool,
+      deps: _deserializeAssetIds(json['deps'] as Iterable),
+      parts: _deserializeAssetIds(json['parts'] as Iterable),
+      sdkDeps: Set.of((json['sdkDeps'] as Iterable).cast<String>()),
+      conditionalDeps:
+          (json['conditionalDeps'] as Iterable).map((conditions) {
+            return Map.of(
+              (conditions as Map<String, dynamic>).map(
+                (k, v) => MapEntry(k, AssetId.parse(v as String)),
+              ),
+            );
+          }).toList(),
+      hasMain: json['hasMain'] as bool,
+    );
   }
 
   String serialize() => jsonEncode({
-        'isEntrypoint': isEntryPoint,
-        'deps': _deps.map((id) => id.toString()).toList(),
-        'parts': parts.map((id) => id.toString()).toList(),
-        'conditionalDeps': conditionalDeps
-            .map((conditions) =>
-                conditions.map((k, v) => MapEntry(k, v.toString())))
+    'isEntrypoint': isEntryPoint,
+    'deps': _deps.map((id) => id.toString()).toList(),
+    'parts': parts.map((id) => id.toString()).toList(),
+    'conditionalDeps':
+        conditionalDeps
+            .map(
+              (conditions) =>
+                  conditions.map((k, v) => MapEntry(k, v.toString())),
+            )
             .toList(),
-        'sdkDeps': sdkDeps.toList(),
-        'hasMain': hasMain,
-      });
+    'sdkDeps': sdkDeps.toList(),
+    'hasMain': hasMain,
+  });
 
   List<AssetId> depsForPlatform(DartPlatform platform) {
     AssetId depForConditions(Map<String, AssetId> conditions) {
@@ -207,8 +230,9 @@ class ModuleLibrary {
         if (condition == r'$default') continue;
         if (!condition.startsWith('dart.library.')) {
           throw UnsupportedError(
-              '$condition not supported for config specific imports. Only the '
-              'dart.library.<name> constants are supported.');
+            '$condition not supported for config specific imports. Only the '
+            'dart.library.<name> constants are supported.',
+          );
         }
         var library = condition.substring('dart.library.'.length);
         if (platform.supportsLibrary(library)) {
@@ -221,7 +245,7 @@ class ModuleLibrary {
 
     return [
       ..._deps,
-      for (var conditions in conditionalDeps) depForConditions(conditions)
+      for (var conditions in conditionalDeps) depForConditions(conditions),
     ];
   }
 }
@@ -237,8 +261,10 @@ bool _isPart(CompilationUnit dart) =>
 //
 // TODO: This misses the case where a Dart file doesn't contain main(),
 // but has a part that does, or it exports a `main` from another library.
-bool _hasMainMethod(CompilationUnit dart) => dart.declarations.any((node) =>
-    node is FunctionDeclaration &&
-    node.name.lexeme == 'main' &&
-    node.functionExpression.parameters != null &&
-    node.functionExpression.parameters!.parameters.length <= 2);
+bool _hasMainMethod(CompilationUnit dart) => dart.declarations.any(
+  (node) =>
+      node is FunctionDeclaration &&
+      node.name.lexeme == 'main' &&
+      node.functionExpression.parameters != null &&
+      node.functionExpression.parameters!.parameters.length <= 2,
+);

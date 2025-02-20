@@ -18,11 +18,14 @@ import 'utils/build_descriptor.dart';
 // test-package-start #########################################################
 /// Reads a `.link` asset which is not the primary input and copies it.
 final readThroughLink = TestBuilder(
-    buildExtensions: appendExtension('.copy', from: '.txt'),
-    build: (buildStep, _) {
-      buildStep.writeAsString(buildStep.inputId.addExtension('.copy'),
-          buildStep.readAsString(buildStep.inputId.changeExtension('.link')));
-    });
+  buildExtensions: appendExtension('.copy', from: '.txt'),
+  build: (buildStep, _) {
+    buildStep.writeAsString(
+      buildStep.inputId.addExtension('.copy'),
+      buildStep.readAsString(buildStep.inputId.changeExtension('.link')),
+    );
+  },
+);
 // test-package-end ###########################################################
 
 void main() {
@@ -31,16 +34,20 @@ void main() {
   late BuildTool buildTool;
 
   setUpAll(() async {
-    buildTool = await packageWithBuildScript(builders, contents: [
-      d.dir('web', [d.file('a.txt', 'a')]),
-    ]);
-    await Link(p.join(buildTool.rootPackageDir, 'web', 'a.link'))
-        .create(p.join(buildTool.rootPackageDir, 'outside_build', 'linked'));
+    buildTool = await packageWithBuildScript(
+      builders,
+      contents: [
+        d.dir('web', [d.file('a.txt', 'a')]),
+      ],
+    );
+    await Link(
+      p.join(buildTool.rootPackageDir, 'web', 'a.link'),
+    ).create(p.join(buildTool.rootPackageDir, 'outside_build', 'linked'));
   });
 
   Future<void> updateLinkContent(String content) {
     return d.dir('a', [
-      d.dir('outside_build', [d.file('linked', content)])
+      d.dir('outside_build', [d.file('linked', content)]),
     ]).create();
   }
 
@@ -54,11 +61,11 @@ void main() {
         d.dir('build', [
           d.dir('generated', [
             d.dir('a', [
-              d.dir('web', [d.file('a.txt.copy', content)])
-            ])
-          ])
-        ])
-      ])
+              d.dir('web', [d.file('a.txt.copy', content)]),
+            ]),
+          ]),
+        ]),
+      ]),
     ]).validate();
   }
 
@@ -74,16 +81,18 @@ void main() {
   });
 
   group('serve', () {
-    test('watches a linked file',
-        skip: 'Watcher package does not support watching symlink targets',
-        () async {
-      var server = await buildTool.serve();
-      await server.nextSuccessfulBuild;
-      await expectGeneratedContent('linked');
+    test(
+      'watches a linked file',
+      skip: 'Watcher package does not support watching symlink targets',
+      () async {
+        var server = await buildTool.serve();
+        await server.nextSuccessfulBuild;
+        await expectGeneratedContent('linked');
 
-      await updateLinkContent('new content');
-      await server.nextSuccessfulBuild;
-      await expectGeneratedContent('new content');
-    });
+        await updateLinkContent('new content');
+        await server.nextSuccessfulBuild;
+        await expectGeneratedContent('new content');
+      },
+    );
   });
 }

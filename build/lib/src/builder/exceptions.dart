@@ -10,6 +10,7 @@ class UnexpectedOutputException implements Exception {
   UnexpectedOutputException(this.assetId, {this.expected});
 
   @override
-  String toString() => 'UnexpectedOutputException: $assetId'
+  String toString() =>
+      'UnexpectedOutputException: $assetId'
       '${expected == null ? '' : '\nExpected only: $expected'}';
 }

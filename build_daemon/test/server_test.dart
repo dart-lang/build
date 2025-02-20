@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @OnPlatform({
-  'windows': Skip('Directories cant be deleted while processes are still open')
+  'windows': Skip('Directories cant be deleted while processes are still open'),
 })
 library;
 
@@ -54,12 +54,15 @@ void main() {
 
       // Setup listening for a completed build.
       final buildCompleted = expectLater(
-          logs,
-          emits(_matchServerLog(
+        logs,
+        emits(
+          _matchServerLog(
             equals(Level.INFO),
             equals(FakeTestDaemonBuilder.buildCompletedMessage),
             equals(FakeTestDaemonBuilder.loggerName),
-          )));
+          ),
+        ),
+      );
 
       // Build a target to register interested channels on the server.
       _requestBuild(client, webTarget);
@@ -67,14 +70,17 @@ void main() {
 
       // Setup listening for forwarded logs.
       final logsReceived = expectLater(
-          logs,
-          emits(_matchServerLog(
+        logs,
+        emits(
+          _matchServerLog(
             equals(Level.WARNING),
             contains('bad request'),
             equals(Server.loggerName),
             isNotNull,
             isNotNull,
-          )));
+          ),
+        ),
+      );
 
       // Send request that with throw an exception an will be logged.
       client.sink.add('bad request');
@@ -90,15 +96,28 @@ void main() {
       addTearDown(interestedEvents.close);
 
       // Register default client, not intersted in changes
-      client.sink.add(jsonEncode(serializers
-          .serialize(BuildTargetRequest((b) => b.target = webTarget))));
+      client.sink.add(
+        jsonEncode(
+          serializers.serialize(
+            BuildTargetRequest((b) => b.target = webTarget),
+          ),
+        ),
+      );
 
       // Register second client which is interested in changes.
-      final targetWithChanges = DefaultBuildTarget((b) => b
-        ..target = ''
-        ..reportChangedAssets = true);
-      interstedClient.sink.add(jsonEncode(serializers
-          .serialize(BuildTargetRequest((b) => b.target = targetWithChanges))));
+      final targetWithChanges = DefaultBuildTarget(
+        (b) =>
+            b
+              ..target = ''
+              ..reportChangedAssets = true,
+      );
+      interstedClient.sink.add(
+        jsonEncode(
+          serializers.serialize(
+            BuildTargetRequest((b) => b.target = targetWithChanges),
+          ),
+        ),
+      );
 
       // Request a build. As there is no ordering guarantee between the two
       // sockets, wait a bit first
@@ -107,14 +126,24 @@ void main() {
 
       expect(
         interestedEvents.stream,
-        emitsThrough(isA<BuildResults>()
-            .having((e) => e.changedAssets, 'changedAssets', isNotEmpty)),
+        emitsThrough(
+          isA<BuildResults>().having(
+            (e) => e.changedAssets,
+            'changedAssets',
+            isNotEmpty,
+          ),
+        ),
       );
 
       await expectLater(
         controller.stream,
-        emitsThrough(isA<BuildResults>()
-            .having((e) => e.changedAssets, 'changedAssets', isNull)),
+        emitsThrough(
+          isA<BuildResults>().having(
+            (e) => e.changedAssets,
+            'changedAssets',
+            isNull,
+          ),
+        ),
       );
     });
   });
@@ -141,18 +170,23 @@ IOWebSocketChannel _createClient(
 }
 
 void _requestBuild(IOWebSocketChannel client, BuildTarget target) {
-  client.sink.add(jsonEncode(
-      serializers.serialize(BuildTargetRequest((b) => b.target = target))));
   client.sink.add(
-    jsonEncode(serializers.serialize(BuildRequest())),
+    jsonEncode(
+      serializers.serialize(BuildTargetRequest((b) => b.target = target)),
+    ),
   );
+  client.sink.add(jsonEncode(serializers.serialize(BuildRequest())));
 }
 
-Matcher _matchServerLog(Matcher level, Matcher message, Matcher loggerName,
-        [Matcher error = isNull, Matcher stackTrace = isNull]) =>
-    isA<ServerLog>()
-        .having((l) => l.level, 'level', level)
-        .having((l) => l.message, 'message', message)
-        .having((l) => l.loggerName, 'loggerName', loggerName)
-        .having((l) => l.error, 'error', error)
-        .having((l) => l.stackTrace, 'stackTrace', stackTrace);
+Matcher _matchServerLog(
+  Matcher level,
+  Matcher message,
+  Matcher loggerName, [
+  Matcher error = isNull,
+  Matcher stackTrace = isNull,
+]) => isA<ServerLog>()
+    .having((l) => l.level, 'level', level)
+    .having((l) => l.message, 'message', message)
+    .having((l) => l.loggerName, 'loggerName', loggerName)
+    .having((l) => l.error, 'error', error)
+    .having((l) => l.stackTrace, 'stackTrace', stackTrace);

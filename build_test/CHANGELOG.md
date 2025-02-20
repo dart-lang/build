@@ -1,5 +1,6 @@
 ## 3.0.0-wip
 
+- Bump the min SDK to 3.7.0.
 - `InMemoryAssetReader` and `InMemoryAssetWriter` implementations are merged
   into `InMemoryAssetReaderWriter` with shared state; it implements both
   `InMemoryAssetReader` and `InMemoryAssetWriter`.

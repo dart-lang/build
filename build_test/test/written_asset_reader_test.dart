@@ -20,8 +20,10 @@ void main() {
     final doesntExist = AssetId.parse('foo|c.txt');
     expect(await reader.canRead(doesntExist), isFalse);
 
-    expect(() => reader.readAsString(doesntExist),
-        throwsA(const TypeMatcher<AssetNotFoundException>()));
+    expect(
+      () => reader.readAsString(doesntExist),
+      throwsA(const TypeMatcher<AssetNotFoundException>()),
+    );
   });
 
   test('can read written assets', () async {
@@ -38,7 +40,9 @@ void main() {
 
     expect(await filteringReader.canRead(fooA), isFalse);
     await expectLater(
-        filteringReader.assetFinder.find(Glob('*.txt')), neverEmits(fooA));
+      filteringReader.assetFinder.find(Glob('*.txt')),
+      neverEmits(fooA),
+    );
 
     await writerSpy.writeAsString(fooA, 'written through spy');
     expect(await filteringReader.canRead(fooA), isTrue);
@@ -49,9 +53,7 @@ void main() {
 
     expect(
       assets,
-      emitsInAnyOrder(
-        [AssetId.parse('foo|a.txt'), AssetId.parse('bar|a.txt')],
-      ),
+      emitsInAnyOrder([AssetId.parse('foo|a.txt'), AssetId.parse('bar|a.txt')]),
     );
   });
 }

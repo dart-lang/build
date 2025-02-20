@@ -113,7 +113,10 @@ class AnalysisDriverFilesystem implements UriResolver, ResourceProvider {
     if (uri.isScheme('file')) {
       if (!uri.path.startsWith('/')) {
         throw ArgumentError.value(
-            'uri.path', uri.path, 'Must start with "/". ');
+          'uri.path',
+          uri.path,
+          'Must start with "/". ',
+        );
       }
       final parts = uri.path.split('/');
       // First part is empty because of the starting `/`, second is package,
@@ -156,7 +159,7 @@ class _Resource implements File, Folder {
 
   _Resource(this.filesystem, this.path);
 
-// `File` and `Folder` methods.
+  // `File` and `Folder` methods.
 
   @override
   bool get exists => filesystem.exists(path);

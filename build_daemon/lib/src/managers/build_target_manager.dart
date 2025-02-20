@@ -12,8 +12,10 @@ bool _isBlacklistedPath(String filePath, Set<RegExp> blackListedPatterns) =>
 
 bool _shouldBuild(BuildTarget target, Iterable<WatchEvent> changes) =>
     target is DefaultBuildTarget &&
-    changes.any((change) =>
-        !_isBlacklistedPath(change.path, target.blackListPatterns.toSet()));
+    changes.any(
+      (change) =>
+          !_isBlacklistedPath(change.path, target.blackListPatterns.toSet()),
+    );
 
 /// Manages the set of build targets, and corresponding listeners, tracked by
 /// the Dart Build Daemon.
@@ -23,9 +25,9 @@ class BuildTargetManager {
 
   bool Function(BuildTarget, Iterable<WatchEvent>) shouldBuild;
 
-  BuildTargetManager(
-      {bool Function(BuildTarget, Iterable<WatchEvent>)? shouldBuildOverride})
-      : shouldBuild = shouldBuildOverride ?? _shouldBuild;
+  BuildTargetManager({
+    bool Function(BuildTarget, Iterable<WatchEvent>)? shouldBuildOverride,
+  }) : shouldBuild = shouldBuildOverride ?? _shouldBuild;
 
   bool get isEmpty => _buildTargets.isEmpty;
 
@@ -51,9 +53,11 @@ class BuildTargetManager {
   }
 
   void removeChannel(WebSocketChannel channel) {
-    _buildTargets = Map.fromEntries(_buildTargets.entries
-        .map((e) => MapEntry(e.key, e.value..remove(channel)))
-        .where((e) => e.value.isNotEmpty));
+    _buildTargets = Map.fromEntries(
+      _buildTargets.entries
+          .map((e) => MapEntry(e.key, e.value..remove(channel)))
+          .where((e) => e.value.isNotEmpty),
+    );
     _channelSubscriptions.remove(channel);
   }
 

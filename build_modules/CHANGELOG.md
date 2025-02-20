@@ -1,5 +1,6 @@
 ## 5.0.12-wip
 
+- Bump the min SDK to 3.7.0.
 - Use `build_test` 3.0.0.
 
 ## 5.0.11

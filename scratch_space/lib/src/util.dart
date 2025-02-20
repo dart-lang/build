@@ -10,8 +10,10 @@ import 'package:path/path.dart' as p;
 String? topLevelDir(String uri) {
   var parts = p.url.split(p.url.normalize(uri));
   if (parts.first == '..') {
-    throw ArgumentError('Cannot compute top level dir for path `$uri` '
-        'which reaches outside the root directory.');
+    throw ArgumentError(
+      'Cannot compute top level dir for path `$uri` '
+      'which reaches outside the root directory.',
+    );
   }
   return parts.length == 1 ? null : parts.first;
 }

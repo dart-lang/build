@@ -34,26 +34,34 @@ class PlaceholderBuilder extends Builder {
   final Map<String, String> outputExtensionsToContent;
 
   @override
-  Map<String, List<String>> get buildExtensions =>
-      {inputExtension: outputExtensionsToContent.keys.toList()};
+  Map<String, List<String>> get buildExtensions => {
+    inputExtension: outputExtensionsToContent.keys.toList(),
+  };
 
-  PlaceholderBuilder(this.outputExtensionsToContent,
-      {this.inputExtension = r'$lib$'});
+  PlaceholderBuilder(
+    this.outputExtensionsToContent, {
+    this.inputExtension = r'$lib$',
+  });
 
   @override
   Future build(BuildStep buildStep) async {
     outputExtensionsToContent.forEach((extension, content) {
       buildStep.writeAsString(
-          _outputId(buildStep.inputId, inputExtension, extension), content);
+        _outputId(buildStep.inputId, inputExtension, extension),
+        content,
+      );
     });
   }
 }
 
 AssetId _outputId(
-    AssetId inputId, String inputExtension, String outputExtension) {
+  AssetId inputId,
+  String inputExtension,
+  String outputExtension,
+) {
   assert(inputId.path.endsWith(inputExtension));
   var newPath =
       inputId.path.substring(0, inputId.path.length - inputExtension.length) +
-          outputExtension;
+      outputExtension;
   return AssetId(inputId.package, newPath);
 }

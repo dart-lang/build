@@ -21,7 +21,7 @@ enum BuildTo {
   source,
 
   /// Generated files are written to the hidden 'generated' directory.
-  cache
+  cache,
 }
 
 /// Definition of a builder parsed from the `builders` section of `build.yaml`.
@@ -93,36 +93,44 @@ class BuilderDefinition {
     bool? isOptional,
     BuildTo? buildTo,
     TargetBuilderConfigDefaults? defaults,
-  })  :
-        // ignore: deprecated_member_use
-        target = target != null
-            ? normalizeTargetKeyUsage(target, currentPackage)
-            : null,
-        autoApply = autoApply ?? AutoApply.none,
-        requiredInputs = requiredInputs?.toList() ?? const [],
-        runsBefore = runsBefore
-                ?.map((builder) =>
-                    normalizeBuilderKeyUsage(builder, currentPackage))
-                .toList() ??
-            const [],
-        appliesBuilders = appliesBuilders
-                ?.map((builder) =>
-                    normalizeBuilderKeyUsage(builder, currentPackage))
-                .toList() ??
-            const [],
-        isOptional = isOptional ?? false,
-        buildTo = buildTo ?? BuildTo.cache,
-        defaults = defaults ?? const TargetBuilderConfigDefaults() {
+  }) : // ignore: deprecated_member_use
+       target =
+           target != null
+               ? normalizeTargetKeyUsage(target, currentPackage)
+               : null,
+       autoApply = autoApply ?? AutoApply.none,
+       requiredInputs = requiredInputs?.toList() ?? const [],
+       runsBefore =
+           runsBefore
+               ?.map(
+                 (builder) => normalizeBuilderKeyUsage(builder, currentPackage),
+               )
+               .toList() ??
+           const [],
+       appliesBuilders =
+           appliesBuilders
+               ?.map(
+                 (builder) => normalizeBuilderKeyUsage(builder, currentPackage),
+               )
+               .toList() ??
+           const [],
+       isOptional = isOptional ?? false,
+       buildTo = buildTo ?? BuildTo.cache,
+       defaults = defaults ?? const TargetBuilderConfigDefaults() {
     if (builderFactories.isEmpty) {
-      throw ArgumentError.value(builderFactories, 'builderFactories',
-          'Must have at least one value.');
+      throw ArgumentError.value(
+        builderFactories,
+        'builderFactories',
+        'Must have at least one value.',
+      );
     }
     if (buildExtensions.entries.any((e) => e.value.contains(e.key))) {
       throw ArgumentError.value(
-          buildExtensions,
-          'buildExtensions',
-          'May not overwrite an input, '
-              'the output extensions must not contain the input extension');
+        buildExtensions,
+        'buildExtensions',
+        'May not overwrite an input, '
+            'the output extensions must not contain the input extension',
+      );
     }
   }
 
@@ -132,7 +140,8 @@ class BuilderDefinition {
   }
 
   @override
-  String toString() => {
+  String toString() =>
+      {
         'autoApply': autoApply,
         'import': import,
         'builderFactories': builderFactories,
@@ -192,7 +201,8 @@ class PostProcessBuilderDefinition {
   }
 
   @override
-  String toString() => {
+  String toString() =>
+      {
         'import': import,
         'builderFactory': builderFactory,
         'defaults': defaults,
@@ -216,10 +226,10 @@ class TargetBuilderConfigDefaults {
     Map<String, dynamic>? options,
     Map<String, dynamic>? devOptions,
     Map<String, dynamic>? releaseOptions,
-  })  : generateFor = generateFor ?? InputSet.anything,
-        options = options ?? const {},
-        devOptions = devOptions ?? const {},
-        releaseOptions = releaseOptions ?? const {};
+  }) : generateFor = generateFor ?? InputSet.anything,
+       options = options ?? const {},
+       devOptions = devOptions ?? const {},
+       releaseOptions = releaseOptions ?? const {};
 
   factory TargetBuilderConfigDefaults.fromJson(Map json) {
     ArgumentError.checkNotNull(json);

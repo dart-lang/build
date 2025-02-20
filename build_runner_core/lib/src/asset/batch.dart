@@ -31,15 +31,17 @@ final class _FileSystemWriteBatch {
   _FileSystemWriteBatch._();
 
   Future<void> completeWrites(RunnerAssetWriter writer) async {
-    await Future.wait(_pendingWrites.keys.map((id) async {
-      final pending = _pendingWrites[id]!;
+    await Future.wait(
+      _pendingWrites.keys.map((id) async {
+        final pending = _pendingWrites[id]!;
 
-      if (pending.content case final content?) {
-        await writer.writeAsBytes(id, content);
-      } else {
-        await writer.delete(id);
-      }
-    }));
+        if (pending.content case final content?) {
+          await writer.writeAsBytes(id, content);
+        } else {
+          await writer.delete(id);
+        }
+      }),
+    );
 
     _pendingWrites.clear();
   }
@@ -58,10 +60,7 @@ final class _FileSystemWriteBatch {
 }) {
   final batch = _FileSystemWriteBatch._();
 
-  return (
-    BatchReader(reader, batch),
-    BatchWriter(writer, batch),
-  );
+  return (BatchReader(reader, batch), BatchWriter(writer, batch));
 }
 
 final class _PendingFileState {
@@ -103,7 +102,7 @@ final class BatchReader extends AssetReader implements AssetReaderState {
     }
   }
 
-// This is only for generators, so only `BuildStep` needs to implement it.
+  // This is only for generators, so only `BuildStep` needs to implement it.
   @override
   Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError();
 
@@ -158,8 +157,11 @@ final class BatchWriter extends RunnerAssetWriter {
   }
 
   @override
-  Future<void> writeAsString(AssetId id, String contents,
-      {Encoding encoding = utf8}) async {
+  Future<void> writeAsString(
+    AssetId id,
+    String contents, {
+    Encoding encoding = utf8,
+  }) async {
     _batch._pendingWrites[id] = _PendingFileState(encoding.encode(contents));
   }
 

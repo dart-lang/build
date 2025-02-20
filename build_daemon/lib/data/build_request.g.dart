@@ -16,15 +16,20 @@ class _$BuildRequestSerializer implements StructuredSerializer<BuildRequest> {
   final String wireName = 'BuildRequest';
 
   @override
-  Iterable<Object?> serialize(Serializers serializers, BuildRequest object,
-      {FullType specifiedType = FullType.unspecified}) {
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    BuildRequest object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     return <Object?>[];
   }
 
   @override
   BuildRequest deserialize(
-      Serializers serializers, Iterable<Object?> serialized,
-      {FullType specifiedType = FullType.unspecified}) {
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     return new BuildRequestBuilder().build();
   }
 }

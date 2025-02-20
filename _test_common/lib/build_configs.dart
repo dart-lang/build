@@ -5,6 +5,8 @@
 import 'package:build_config/build_config.dart';
 
 Map<String, BuildConfig> parseBuildConfigs(
-        Map<String, Map<String, dynamic>> configs) =>
-    Map<String, BuildConfig>.fromIterable(configs.keys,
-        value: (key) => BuildConfig.fromMap(key as String, [], configs[key]!));
+  Map<String, Map<String, dynamic>> configs,
+) => Map<String, BuildConfig>.fromIterable(
+  configs.keys,
+  value: (key) => BuildConfig.fromMap(key as String, [], configs[key]!),
+);

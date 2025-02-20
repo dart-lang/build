@@ -33,12 +33,16 @@ class ScratchSpace {
   final _digests = <AssetId, Digest>{};
 
   ScratchSpace._(this.tempDir)
-      : packagesDir = Directory(p.join(tempDir.path, 'packages'));
+    : packagesDir = Directory(p.join(tempDir.path, 'packages'));
 
   ScratchSpace()
-      : this._(Directory(Directory.systemTemp
-            .createTempSync('scratch_space')
-            .resolveSymbolicLinksSync()));
+    : this._(
+        Directory(
+          Directory.systemTemp
+              .createTempSync('scratch_space')
+              .resolveSymbolicLinksSync(),
+        ),
+      );
 
   /// Copies [id] from the tmp dir and writes it back using the [writer].
   ///
@@ -51,8 +55,11 @@ class ScratchSpace {
   ///
   /// If [requireContent] is true and the file is empty an
   /// [EmptyOutputException] is thrown.
-  Future<void> copyOutput(AssetId id, AssetWriter writer,
-      {bool requireContent = false}) async {
+  Future<void> copyOutput(
+    AssetId id,
+    AssetWriter writer, {
+    bool requireContent = false,
+  }) async {
     var file = fileFor(id);
     var bytes = await _descriptorPool.withResource(file.readAsBytes);
     if (requireContent && bytes.isEmpty) throw EmptyOutputException(id);
@@ -66,7 +73,8 @@ class ScratchSpace {
   Future<void> delete() async {
     if (!exists) {
       throw StateError(
-          'Tried to delete a ScratchSpace which was already deleted');
+        'Tried to delete a ScratchSpace which was already deleted',
+      );
     }
     exists = false;
     _digests.clear();
@@ -95,31 +103,33 @@ class ScratchSpace {
       throw StateError('Tried to use a deleted ScratchSpace!');
     }
 
-    var futures = assetIds.map((id) async {
-      var digest = await reader.digest(id);
-      var existing = _digests[id];
-      if (digest == existing) {
-        await _pendingWrites[id];
-        return;
-      }
-      _digests[id] = digest;
+    var futures =
+        assetIds.map((id) async {
+          var digest = await reader.digest(id);
+          var existing = _digests[id];
+          if (digest == existing) {
+            await _pendingWrites[id];
+            return;
+          }
+          _digests[id] = digest;
 
-      try {
-        await _pendingWrites.putIfAbsent(
-            id,
-            () => _descriptorPool.withResource(() async {
-                  var file = fileFor(id);
-                  if (await file.exists()) {
-                    await file.delete();
-                  }
-                  await file.create(recursive: true);
-                  await file.writeAsBytes(await reader.readAsBytes(id));
-                }));
-      } finally {
-        // TODO: Remove ?? fallback once 2.15 hits stable.
-        unawaited(_pendingWrites.remove(id) ?? Future.value());
-      }
-    }).toList();
+          try {
+            await _pendingWrites.putIfAbsent(
+              id,
+              () => _descriptorPool.withResource(() async {
+                var file = fileFor(id);
+                if (await file.exists()) {
+                  await file.delete();
+                }
+                await file.create(recursive: true);
+                await file.writeAsBytes(await reader.readAsBytes(id));
+              }),
+            );
+          } finally {
+            // TODO: Remove ?? fallback once 2.15 hits stable.
+            unawaited(_pendingWrites.remove(id) ?? Future.value());
+          }
+        }).toList();
 
     return Future.wait(futures);
   }
@@ -138,8 +148,10 @@ class ScratchSpace {
 /// otherwise it just returns [id#path].
 String canonicalUriFor(AssetId id) {
   if (topLevelDir(id.path) == 'lib') {
-    var packagePath =
-        p.url.join(id.package, p.url.joinAll(p.url.split(id.path).skip(1)));
+    var packagePath = p.url.join(
+      id.package,
+      p.url.joinAll(p.url.split(id.path).skip(1)),
+    );
     return 'package:$packagePath';
   } else {
     return id.path;

@@ -29,24 +29,30 @@ class InMemoryRunnerAssetReaderWriter extends InMemoryAssetReaderWriter
     var type = assets.containsKey(id) ? ChangeType.MODIFY : ChangeType.ADD;
     await super.writeAsBytes(id, bytes);
     FakeWatcher.notifyWatchers(
-        WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))));
+      WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))),
+    );
   }
 
   @override
-  Future writeAsString(AssetId id, String contents,
-      {Encoding encoding = utf8}) async {
+  Future writeAsString(
+    AssetId id,
+    String contents, {
+    Encoding encoding = utf8,
+  }) async {
     var type = assets.containsKey(id) ? ChangeType.MODIFY : ChangeType.ADD;
     await super.writeAsString(id, contents, encoding: encoding);
     FakeWatcher.notifyWatchers(
-        WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))));
+      WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))),
+    );
   }
 
   @override
   Future delete(AssetId id) async {
     onDelete?.call(id);
     assets.remove(id);
-    FakeWatcher.notifyWatchers(WatchEvent(
-        ChangeType.REMOVE, p.absolute(id.package, p.fromUri(id.path))));
+    FakeWatcher.notifyWatchers(
+      WatchEvent(ChangeType.REMOVE, p.absolute(id.package, p.fromUri(id.path))),
+    );
   }
 
   @override

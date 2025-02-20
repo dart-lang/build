@@ -25,10 +25,8 @@ class PackageNodeWatcher {
   /// May optionally specify a [watch] strategy, otherwise will attempt a
   /// reasonable default based on the current platform and the type of path
   /// (i.e. a file versus directory).
-  PackageNodeWatcher(
-    this.node, {
-    Watcher Function(String path)? watch,
-  }) : _strategy = watch ?? _default;
+  PackageNodeWatcher(this.node, {Watcher Function(String path)? watch})
+    : _strategy = watch ?? _default;
 
   /// Returns a stream of records for assets that change recursively.
   Stream<AssetChange> watch() {

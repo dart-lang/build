@@ -14,22 +14,28 @@ class _$ShutdownNotificationSerializer
   @override
   final Iterable<Type> types = const [
     ShutdownNotification,
-    _$ShutdownNotification
+    _$ShutdownNotification,
   ];
   @override
   final String wireName = 'ShutdownNotification';
 
   @override
   Iterable<Object?> serialize(
-      Serializers serializers, ShutdownNotification object,
-      {FullType specifiedType = FullType.unspecified}) {
+    Serializers serializers,
+    ShutdownNotification object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = <Object?>[
       'message',
-      serializers.serialize(object.message,
-          specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.message,
+        specifiedType: const FullType(String),
+      ),
       'failureType',
-      serializers.serialize(object.failureType,
-          specifiedType: const FullType(int)),
+      serializers.serialize(
+        object.failureType,
+        specifiedType: const FullType(int),
+      ),
     ];
 
     return result;
@@ -37,8 +43,10 @@ class _$ShutdownNotificationSerializer
 
   @override
   ShutdownNotification deserialize(
-      Serializers serializers, Iterable<Object?> serialized,
-      {FullType specifiedType = FullType.unspecified}) {
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = new ShutdownNotificationBuilder();
 
     final iterator = serialized.iterator;
@@ -48,12 +56,20 @@ class _$ShutdownNotificationSerializer
       final Object? value = iterator.current;
       switch (key) {
         case 'message':
-          result.message = serializers.deserialize(value,
-              specifiedType: const FullType(String))! as String;
+          result.message =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'failureType':
-          result.failureType = serializers.deserialize(value,
-              specifiedType: const FullType(int))! as int;
+          result.failureType =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(int),
+                  )!
+                  as int;
           break;
       }
     }
@@ -68,22 +84,28 @@ class _$ShutdownNotification extends ShutdownNotification {
   @override
   final int failureType;
 
-  factory _$ShutdownNotification(
-          [void Function(ShutdownNotificationBuilder)? updates]) =>
-      (new ShutdownNotificationBuilder()..update(updates))._build();
+  factory _$ShutdownNotification([
+    void Function(ShutdownNotificationBuilder)? updates,
+  ]) => (new ShutdownNotificationBuilder()..update(updates))._build();
 
   _$ShutdownNotification._({required this.message, required this.failureType})
-      : super._() {
+    : super._() {
     BuiltValueNullFieldError.checkNotNull(
-        message, r'ShutdownNotification', 'message');
+      message,
+      r'ShutdownNotification',
+      'message',
+    );
     BuiltValueNullFieldError.checkNotNull(
-        failureType, r'ShutdownNotification', 'failureType');
+      failureType,
+      r'ShutdownNotification',
+      'failureType',
+    );
   }
 
   @override
   ShutdownNotification rebuild(
-          void Function(ShutdownNotificationBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(ShutdownNotificationBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   ShutdownNotificationBuilder toBuilder() =>
@@ -154,12 +176,20 @@ class ShutdownNotificationBuilder
   ShutdownNotification build() => _build();
 
   _$ShutdownNotification _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         new _$ShutdownNotification._(
-            message: BuiltValueNullFieldError.checkNotNull(
-                message, r'ShutdownNotification', 'message'),
-            failureType: BuiltValueNullFieldError.checkNotNull(
-                failureType, r'ShutdownNotification', 'failureType'));
+          message: BuiltValueNullFieldError.checkNotNull(
+            message,
+            r'ShutdownNotification',
+            'message',
+          ),
+          failureType: BuiltValueNullFieldError.checkNotNull(
+            failureType,
+            r'ShutdownNotification',
+            'failureType',
+          ),
+        );
     replace(_$result);
     return _$result;
   }

@@ -17,8 +17,9 @@ void main() {
 
   group('error free project ', () {
     setUp(() async {
-      var listener = Logger.root.onRecord
-          .listen((r) => printOnFailure('$r\n${r.error}\n${r.stackTrace}'));
+      var listener = Logger.root.onRecord.listen(
+        (r) => printOnFailure('$r\n${r.error}\n${r.stackTrace}'),
+      );
       addTearDown(listener.cancel);
       assets = {
         'b|lib/b.dart': '''
@@ -43,15 +44,18 @@ void main() {
       await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
       await testBuilderAndCollectAssets(MetaModuleBuilder(ddcPlatform), assets);
       await testBuilderAndCollectAssets(
-          MetaModuleCleanBuilder(ddcPlatform), assets);
+        MetaModuleCleanBuilder(ddcPlatform),
+        assets,
+      );
       await testBuilderAndCollectAssets(ModuleBuilder(ddcPlatform), assets);
       await testBuilderAndCollectAssets(
-          ddcKernelBuilder(const BuilderOptions({})), assets);
+        ddcKernelBuilder(const BuilderOptions({})),
+        assets,
+      );
     });
 
     for (var trackUnusedInputs in [true, false]) {
-      test(
-          'can compile ddc modules under lib and web'
+      test('can compile ddc modules under lib and web'
           '${trackUnusedInputs ? ' and track unused inputs' : ''}', () async {
         var expectedOutputs = {
           'b|lib/b$jsModuleExtension': decodedMatches(contains('world')),
@@ -61,30 +65,39 @@ void main() {
           'a|lib/a$jsSourceMapExtension': decodedMatches(contains('a.dart')),
           'a|lib/a$metadataExtension': isNotEmpty,
           'a|web/index$jsModuleExtension': decodedMatches(contains('main')),
-          'a|web/index$jsSourceMapExtension':
-              decodedMatches(contains('index.dart')),
+          'a|web/index$jsSourceMapExtension': decodedMatches(
+            contains('index.dart'),
+          ),
           'a|web/index$metadataExtension': isNotEmpty,
         };
         var reportedUnused = <AssetId, Iterable<AssetId>>{};
 
         await testBuilder(
-            DevCompilerBuilder(
-                platform: ddcPlatform,
-                useIncrementalCompiler: trackUnusedInputs,
-                trackUnusedInputs: trackUnusedInputs),
-            assets,
-            outputs: expectedOutputs,
-            reportUnusedAssetsForInput: (input, unused) =>
-                reportedUnused[input] = unused);
+          DevCompilerBuilder(
+            platform: ddcPlatform,
+            useIncrementalCompiler: trackUnusedInputs,
+            trackUnusedInputs: trackUnusedInputs,
+          ),
+          assets,
+          outputs: expectedOutputs,
+          reportUnusedAssetsForInput:
+              (input, unused) => reportedUnused[input] = unused,
+        );
 
         expect(
-            reportedUnused[
-                AssetId('a', 'web/index${moduleExtension(ddcPlatform)}')],
-            equals(trackUnusedInputs
+          reportedUnused[AssetId(
+            'a',
+            'web/index${moduleExtension(ddcPlatform)}',
+          )],
+          equals(
+            trackUnusedInputs
                 ? [AssetId('b', 'lib/b$ddcKernelExtension')]
-                : null),
-            reason: 'Should${trackUnusedInputs ? '' : ' not'} report unused '
-                'transitive deps.');
+                : null,
+          ),
+          reason:
+              'Should${trackUnusedInputs ? '' : ' not'} report unused '
+              'transitive deps.',
+        );
       });
     }
 
@@ -96,16 +109,17 @@ void main() {
         'a|lib/a$jsModuleExtension': isNotEmpty,
         'a|lib/a$jsSourceMapExtension': isNotEmpty,
         'a|lib/a$metadataExtension': isNotEmpty,
-        'a|web/index$jsModuleExtension':
-            decodedMatches(contains('print("zap")')),
+        'a|web/index$jsModuleExtension': decodedMatches(
+          contains('print("zap")'),
+        ),
         'a|web/index$jsSourceMapExtension': isNotEmpty,
         'a|web/index$metadataExtension': isNotEmpty,
       };
       await testBuilder(
-          DevCompilerBuilder(
-              platform: ddcPlatform, environment: {'foo': 'zap'}),
-          assets,
-          outputs: expectedOutputs);
+        DevCompilerBuilder(platform: ddcPlatform, environment: {'foo': 'zap'}),
+        assets,
+        outputs: expectedOutputs,
+      );
     });
 
     test('can enable DDC canary features', () async {
@@ -162,9 +176,10 @@ void main() {
         'a|web/index$fullKernelExtension': isNotEmpty,
       };
       await testBuilder(
-          DevCompilerBuilder(platform: ddcPlatform, generateFullDill: true),
-          assets,
-          outputs: expectedOutputs);
+        DevCompilerBuilder(platform: ddcPlatform, generateFullDill: true),
+        assets,
+        outputs: expectedOutputs,
+      );
     });
 
     test('does not generate full dill by default', () async {
@@ -179,8 +194,11 @@ void main() {
         'a|web/index$jsSourceMapExtension': isNotEmpty,
         'a|web/index$metadataExtension': isNotEmpty,
       };
-      await testBuilder(DevCompilerBuilder(platform: ddcPlatform), assets,
-          outputs: expectedOutputs);
+      await testBuilder(
+        DevCompilerBuilder(platform: ddcPlatform),
+        assets,
+        outputs: expectedOutputs,
+      );
     });
 
     test('emits debug symbols when enabled', () async {
@@ -199,9 +217,10 @@ void main() {
         'a|web/index$symbolsExtension': isNotEmpty,
       };
       await testBuilder(
-          DevCompilerBuilder(platform: ddcPlatform, emitDebugSymbols: true),
-          assets,
-          outputs: expectedOutputs);
+        DevCompilerBuilder(platform: ddcPlatform, emitDebugSymbols: true),
+        assets,
+        outputs: expectedOutputs,
+      );
     });
 
     test('does not emit debug symbols by default', () async {
@@ -216,8 +235,11 @@ void main() {
         'a|web/index$jsSourceMapExtension': isNotEmpty,
         'a|web/index$metadataExtension': isNotEmpty,
       };
-      await testBuilder(DevCompilerBuilder(platform: ddcPlatform), assets,
-          outputs: expectedOutputs);
+      await testBuilder(
+        DevCompilerBuilder(platform: ddcPlatform),
+        assets,
+        outputs: expectedOutputs,
+      );
     });
 
     test('strips scratch paths from metadata', () async {
@@ -230,11 +252,15 @@ void main() {
         'a|lib/a$metadataExtension': decodedMatches(isNot(contains('scratch'))),
         'a|web/index$jsModuleExtension': isNotEmpty,
         'a|web/index$jsSourceMapExtension': isNotEmpty,
-        'a|web/index$metadataExtension':
-            decodedMatches(isNot(contains('scratch'))),
+        'a|web/index$metadataExtension': decodedMatches(
+          isNot(contains('scratch')),
+        ),
       };
-      await testBuilder(DevCompilerBuilder(platform: ddcPlatform), assets,
-          outputs: expectedOutputs);
+      await testBuilder(
+        DevCompilerBuilder(platform: ddcPlatform),
+        assets,
+        outputs: expectedOutputs,
+      );
     });
   });
 
@@ -249,29 +275,45 @@ void main() {
         // Set up all the other required inputs for this test.
         await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
         await testBuilderAndCollectAssets(
-            MetaModuleBuilder(ddcPlatform), assets);
+          MetaModuleBuilder(ddcPlatform),
+          assets,
+        );
         await testBuilderAndCollectAssets(
-            MetaModuleCleanBuilder(ddcPlatform), assets);
+          MetaModuleCleanBuilder(ddcPlatform),
+          assets,
+        );
         await testBuilderAndCollectAssets(ModuleBuilder(ddcPlatform), assets);
         await testBuilderAndCollectAssets(
-            ddcKernelBuilder(const BuilderOptions({})), assets);
+          ddcKernelBuilder(const BuilderOptions({})),
+          assets,
+        );
       });
 
       test('reports useful messages', () async {
         var expectedOutputs = {
           'a|web/index$jsModuleErrorsExtension': decodedMatches(
-              allOf(contains('String'), contains('assigned'), contains('int'))),
+            allOf(contains('String'), contains('assigned'), contains('int')),
+          ),
         };
         var logs = <LogRecord>[];
-        await testBuilder(DevCompilerBuilder(platform: ddcPlatform), assets,
-            outputs: expectedOutputs, onLog: logs.add);
+        await testBuilder(
+          DevCompilerBuilder(platform: ddcPlatform),
+          assets,
+          outputs: expectedOutputs,
+          onLog: logs.add,
+        );
         expect(
-            logs,
-            contains(predicate<LogRecord>((record) =>
-                record.level == Level.SEVERE &&
-                record.message.contains('String') &&
-                record.message.contains('assigned') &&
-                record.message.contains('int'))));
+          logs,
+          contains(
+            predicate<LogRecord>(
+              (record) =>
+                  record.level == Level.SEVERE &&
+                  record.message.contains('String') &&
+                  record.message.contains('assigned') &&
+                  record.message.contains('int'),
+            ),
+          ),
+        );
       });
     });
 
@@ -285,26 +327,41 @@ void main() {
         // Set up all the other required inputs for this test.
         await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
         await testBuilderAndCollectAssets(
-            MetaModuleBuilder(ddcPlatform), assets);
+          MetaModuleBuilder(ddcPlatform),
+          assets,
+        );
         await testBuilderAndCollectAssets(
-            MetaModuleCleanBuilder(ddcPlatform), assets);
+          MetaModuleCleanBuilder(ddcPlatform),
+          assets,
+        );
         await testBuilderAndCollectAssets(ModuleBuilder(ddcPlatform), assets);
       });
 
       test('reports useful messages', () async {
         var expectedOutputs = {
           'a|web/index$jsModuleErrorsExtension': decodedMatches(
-              contains('Unable to find modules for some sources')),
+            contains('Unable to find modules for some sources'),
+          ),
         };
         var logs = <LogRecord>[];
-        await testBuilder(DevCompilerBuilder(platform: ddcPlatform), assets,
-            outputs: expectedOutputs, onLog: logs.add);
+        await testBuilder(
+          DevCompilerBuilder(platform: ddcPlatform),
+          assets,
+          outputs: expectedOutputs,
+          onLog: logs.add,
+        );
         expect(
-            logs,
-            contains(predicate<LogRecord>((record) =>
-                record.level == Level.SEVERE &&
-                record.message
-                    .contains('Unable to find modules for some sources'))));
+          logs,
+          contains(
+            predicate<LogRecord>(
+              (record) =>
+                  record.level == Level.SEVERE &&
+                  record.message.contains(
+                    'Unable to find modules for some sources',
+                  ),
+            ),
+          ),
+        );
       });
     });
   });

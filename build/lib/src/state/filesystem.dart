@@ -34,14 +34,20 @@ abstract interface class Filesystem {
   /// Writes a file.
   ///
   /// Creates enclosing directories as needed if they don't exist.
-  void writeAsStringSync(AssetId id, String contents,
-      {Encoding encoding = utf8});
+  void writeAsStringSync(
+    AssetId id,
+    String contents, {
+    Encoding encoding = utf8,
+  });
 
   /// Writes a file.
   ///
   /// Creates enclosing directories as needed if they don't exist.
-  Future<void> writeAsString(AssetId id, String contents,
-      {Encoding encoding = utf8});
+  Future<void> writeAsString(
+    AssetId id,
+    String contents, {
+    Encoding encoding = utf8,
+  });
 
   /// Writes a file.
   ///
@@ -89,8 +95,11 @@ class IoFilesystem implements Filesystem {
   }
 
   @override
-  void writeAsBytesSync(AssetId id, List<int> contents,
-      {Encoding encoding = utf8}) {
+  void writeAsBytesSync(
+    AssetId id,
+    List<int> contents, {
+    Encoding encoding = utf8,
+  }) {
     final file = _fileFor(id);
     file.parent.createSync(recursive: true);
     file.writeAsBytesSync(contents);
@@ -106,16 +115,22 @@ class IoFilesystem implements Filesystem {
   }
 
   @override
-  void writeAsStringSync(AssetId id, String contents,
-      {Encoding encoding = utf8}) {
+  void writeAsStringSync(
+    AssetId id,
+    String contents, {
+    Encoding encoding = utf8,
+  }) {
     final file = _fileFor(id);
     file.parent.createSync(recursive: true);
     file.writeAsStringSync(contents, encoding: encoding);
   }
 
   @override
-  Future<void> writeAsString(AssetId id, String contents,
-      {Encoding encoding = utf8}) {
+  Future<void> writeAsString(
+    AssetId id,
+    String contents, {
+    Encoding encoding = utf8,
+  }) {
     return _pool.withResource(() async {
       final file = _fileFor(id);
       await file.parent.create(recursive: true);
@@ -164,14 +179,20 @@ class InMemoryFilesystem implements Filesystem {
   }
 
   @override
-  void writeAsStringSync(AssetId id, String contents,
-      {Encoding encoding = utf8}) {
+  void writeAsStringSync(
+    AssetId id,
+    String contents, {
+    Encoding encoding = utf8,
+  }) {
     assets[id] = encoding.encode(contents);
   }
 
   @override
-  Future<void> writeAsString(AssetId id, String contents,
-      {Encoding encoding = utf8}) async {
+  Future<void> writeAsString(
+    AssetId id,
+    String contents, {
+    Encoding encoding = utf8,
+  }) async {
     assets[id] = encoding.encode(contents);
   }
 }

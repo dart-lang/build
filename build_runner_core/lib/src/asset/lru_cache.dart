@@ -16,7 +16,10 @@ class LruCache<K, V> {
   final _entries = <K, _Entry<K, V>>{};
 
   LruCache(
-      this._individualWeightMax, this._totalWeightMax, this._computeWeight);
+    this._individualWeightMax,
+    this._totalWeightMax,
+    this._computeWeight,
+  );
 
   V? operator [](K key) {
     var entry = _entries[key];

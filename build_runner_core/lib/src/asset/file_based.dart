@@ -26,7 +26,7 @@ class FileBasedAssetReader extends AssetReader implements AssetReaderState {
   final PackageGraph packageGraph;
 
   FileBasedAssetReader(this.packageGraph)
-      : filesystem = IoFilesystem(assetPathProvider: packageGraph);
+    : filesystem = IoFilesystem(assetPathProvider: packageGraph);
 
   @override
   AssetPathProvider? get assetPathProvider => packageGraph;
@@ -53,7 +53,7 @@ class FileBasedAssetReader extends AssetReader implements AssetReaderState {
     return filesystem.readAsString(id, encoding: encoding);
   }
 
-// This is only for generators, so only `BuildStep` needs to implement it.
+  // This is only for generators, so only `BuildStep` needs to implement it.
   @override
   Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError();
 
@@ -62,9 +62,10 @@ class FileBasedAssetReader extends AssetReader implements AssetReaderState {
         package == null ? packageGraph.root : packageGraph[package];
     if (packageNode == null) {
       throw ArgumentError(
-          "Could not find package '$package' which was listed as "
-          'an input. Please ensure you have that package in your deps, or '
-          'remove it from your input sets.');
+        "Could not find package '$package' which was listed as "
+        'an input. Please ensure you have that package in your deps, or '
+        'remove it from your input sets.',
+      );
     }
     // TODO(davidmorgan): make this read via `filesystem`, currently it
     // reads directly via `dart:io`.
@@ -90,22 +91,26 @@ class FileBasedAssetWriter implements RunnerAssetWriter {
   final Filesystem filesystem;
 
   FileBasedAssetWriter(this.packageGraph)
-      : filesystem = IoFilesystem(assetPathProvider: packageGraph);
+    : filesystem = IoFilesystem(assetPathProvider: packageGraph);
 
   @override
   Future writeAsBytes(AssetId id, List<int> bytes) =>
       filesystem.writeAsBytes(id, bytes);
 
   @override
-  Future writeAsString(AssetId id, String contents,
-          {Encoding encoding = utf8}) =>
-      filesystem.writeAsString(id, contents, encoding: encoding);
+  Future writeAsString(
+    AssetId id,
+    String contents, {
+    Encoding encoding = utf8,
+  }) => filesystem.writeAsString(id, contents, encoding: encoding);
 
   @override
   Future delete(AssetId id) async {
     if (id.package != packageGraph.root.name) {
       throw InvalidOutputException(
-          id, 'Should not delete assets outside of ${packageGraph.root.name}');
+        id,
+        'Should not delete assets outside of ${packageGraph.root.name}',
+      );
     }
     await filesystem.delete(id);
   }

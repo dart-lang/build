@@ -11,8 +11,11 @@ import 'package:test/test.dart';
 void main() {
   test('uses builder options', () async {
     Builder copyBuilder(BuilderOptions options) => TestBuilder(
-        buildExtensions: replaceExtension(
-            options.config['inputExtension'] as String, '.copy'));
+      buildExtensions: replaceExtension(
+        options.config['inputExtension'] as String,
+        '.copy',
+      ),
+    );
 
     final buildConfigs = parseBuildConfigs({
       'a': {
@@ -20,45 +23,46 @@ void main() {
           'a': {
             'builders': {
               'a:optioned_builder': {
-                'options': {'inputExtension': '.matches'}
-              }
-            }
-          }
-        }
-      }
+                'options': {'inputExtension': '.matches'},
+              },
+            },
+          },
+        },
+      },
     });
     await testBuilders(
-        [
-          apply('a:optioned_builder', [copyBuilder], toRoot(),
-              hideOutput: false),
-        ],
-        {
-          'a|lib/file.nomatch': 'a',
-          'a|lib/file.matches': 'b',
-        },
-        overrideBuildConfig: buildConfigs,
-        outputs: {
-          'a|lib/file.copy': 'b',
-        });
+      [
+        apply('a:optioned_builder', [copyBuilder], toRoot(), hideOutput: false),
+      ],
+      {'a|lib/file.nomatch': 'a', 'a|lib/file.matches': 'b'},
+      overrideBuildConfig: buildConfigs,
+      outputs: {'a|lib/file.copy': 'b'},
+    );
   });
 
   test('isRoot is applied correctly', () async {
     Builder copyBuilder(BuilderOptions options) => TestBuilder(
-        buildExtensions: replaceExtension(
-            '.txt', options.isRoot ? '.root.copy' : '.dep.copy'));
+      buildExtensions: replaceExtension(
+        '.txt',
+        options.isRoot ? '.root.copy' : '.dep.copy',
+      ),
+    );
     var packageGraph = buildPackageGraph({
       rootPackage('a'): ['b'],
       package('b'): [],
     });
-    await testBuilders([
-      apply('a:optioned_builder', [copyBuilder], toAllPackages(),
-          hideOutput: true),
-    ], {
-      'a|lib/a.txt': 'a',
-      'b|lib/b.txt': 'b',
-    }, outputs: {
-      r'$$a|lib/a.root.copy': 'a',
-      r'$$b|lib/b.dep.copy': 'b',
-    }, packageGraph: packageGraph);
+    await testBuilders(
+      [
+        apply(
+          'a:optioned_builder',
+          [copyBuilder],
+          toAllPackages(),
+          hideOutput: true,
+        ),
+      ],
+      {'a|lib/a.txt': 'a', 'b|lib/b.txt': 'b'},
+      outputs: {r'$$a|lib/a.root.copy': 'a', r'$$b|lib/b.dep.copy': 'b'},
+      packageGraph: packageGraph,
+    );
   });
 }

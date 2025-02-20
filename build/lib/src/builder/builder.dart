@@ -57,10 +57,11 @@ class BuilderOptions {
     // ignore: avoid_returning_this
     if (other == null) return this;
     return BuilderOptions(
-        {}
-          ..addAll(config)
-          ..addAll(other.config),
-        isRoot: other.isRoot);
+      {}
+        ..addAll(config)
+        ..addAll(other.config),
+      isRoot: other.isRoot,
+    );
   }
 }
 

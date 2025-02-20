@@ -20,19 +20,27 @@ class BuildRunner {
 
   Future<void> beforeExit() => _build.beforeExit();
 
-  Future<BuildResult> run(Map<AssetId, ChangeType> updates,
-          {Set<BuildDirectory> buildDirs = const <BuildDirectory>{},
-          Set<BuildFilter> buildFilters = const {}}) =>
-      _build.run(updates, buildDirs: buildDirs, buildFilters: buildFilters);
+  Future<BuildResult> run(
+    Map<AssetId, ChangeType> updates, {
+    Set<BuildDirectory> buildDirs = const <BuildDirectory>{},
+    Set<BuildFilter> buildFilters = const {},
+  }) => _build.run(updates, buildDirs: buildDirs, buildFilters: buildFilters);
 
   static Future<BuildRunner> create(
-      BuildOptions options,
-      BuildEnvironment environment,
-      List<BuilderApplication> builders,
-      Map<String, Map<String, dynamic>> builderConfigOverrides,
-      {bool isReleaseBuild = false}) async {
-    return BuildRunner._(await BuildImpl.create(
-        options, environment, builders, builderConfigOverrides,
-        isReleaseBuild: isReleaseBuild));
+    BuildOptions options,
+    BuildEnvironment environment,
+    List<BuilderApplication> builders,
+    Map<String, Map<String, dynamic>> builderConfigOverrides, {
+    bool isReleaseBuild = false,
+  }) async {
+    return BuildRunner._(
+      await BuildImpl.create(
+        options,
+        environment,
+        builders,
+        builderConfigOverrides,
+        isReleaseBuild: isReleaseBuild,
+      ),
+    );
   }
 }

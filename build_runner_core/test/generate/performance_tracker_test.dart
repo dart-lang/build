@@ -52,23 +52,28 @@ void main() {
         }
       });
       expect(
-          tracker.phases.map((p) => p.builderKeys),
-          orderedEquals(
-              phases.map((phase) => orderedEquals([phase.builderLabel]))));
+        tracker.phases.map((p) => p.builderKeys),
+        orderedEquals(
+          phases.map((phase) => orderedEquals([phase.builderLabel])),
+        ),
+      );
 
       var times = tracker.phases.map((t) => t.stopTime).toList();
-      var expectedTimes = [5000, 10000, 15000].map((millis) =>
-          DateTime.fromMillisecondsSinceEpoch(
-              millis + startTime.millisecondsSinceEpoch));
+      var expectedTimes = [5000, 10000, 15000].map(
+        (millis) => DateTime.fromMillisecondsSinceEpoch(
+          millis + startTime.millisecondsSinceEpoch,
+        ),
+      );
       expect(times, orderedEquals(expectedTimes));
 
       var total = tracker.phases.fold(
-          const Duration(), (Duration total, phase) => phase.duration + total);
+        const Duration(),
+        (Duration total, phase) => phase.duration + total,
+      );
       expect(total, const Duration(seconds: 15));
     });
 
-    test(
-        'can track multiple actions and phases within them, and '
+    test('can track multiple actions and phases within them, and '
         'serialize/deserialize it', () async {
       var inputs = [
         makeAssetId('a|web/a.txt'),
@@ -82,26 +87,30 @@ void main() {
           var action = allActions[i];
           expect(action.startTime, startTime.add(Duration(seconds: i * 3)));
           expect(
-              action.stopTime, startTime.add(Duration(seconds: (i + 1) * 3)));
+            action.stopTime,
+            startTime.add(Duration(seconds: (i + 1) * 3)),
+          );
           var allPhases = action.stages.toList();
           for (var p = 0; p < 3; p++) {
             var phase = allPhases[p];
             expect(phase.duration, const Duration(seconds: 1));
             expect(
-                phase.startTime,
-                startTime
-                    .add(Duration(seconds: i * 3))
-                    .add(Duration(seconds: p)));
+              phase.startTime,
+              startTime.add(Duration(seconds: i * 3)).add(Duration(seconds: p)),
+            );
             expect(
-                phase.stopTime,
-                startTime
-                    .add(Duration(seconds: i * 3))
-                    .add(Duration(seconds: p + 1)));
+              phase.stopTime,
+              startTime
+                  .add(Duration(seconds: i * 3))
+                  .add(Duration(seconds: p + 1)),
+            );
           }
         }
 
-        var total = performance.actions.fold(const Duration(),
-            (Duration total, action) => action.duration + total);
+        var total = performance.actions.fold(
+          const Duration(),
+          (Duration total, action) => action.duration + total,
+        );
         expect(total, Duration(seconds: inputs.length * 3));
       }
 
@@ -124,8 +133,11 @@ void main() {
 
       checkMatchesExpected(tracker);
 
-      checkMatchesExpected(BuildPerformance.fromJson(
-          jsonDecode(jsonEncode(tracker.toJson())) as Map<String, dynamic>));
+      checkMatchesExpected(
+        BuildPerformance.fromJson(
+          jsonDecode(jsonEncode(tracker.toJson())) as Map<String, dynamic>,
+        ),
+      );
     });
   });
 }

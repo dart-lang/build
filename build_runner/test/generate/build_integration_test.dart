@@ -30,21 +30,22 @@ main(List<String> args) async {
 ''';
       setUp(() async {
         await d.dir('a', [
-          await pubspec('a', currentIsolateDependencies: [
-            'build',
-            'build_config',
-            'build_daemon',
-            'build_resolvers',
-            'build_runner',
-            'build_runner_core',
-            'build_test',
-            'code_builder',
-            'glob'
-          ]),
+          await pubspec(
+            'a',
+            currentIsolateDependencies: [
+              'build',
+              'build_config',
+              'build_daemon',
+              'build_resolvers',
+              'build_runner',
+              'build_runner_core',
+              'build_test',
+              'code_builder',
+              'glob',
+            ],
+          ),
           d.dir('tool', [d.file('build.dart', originalBuildContent)]),
-          d.dir('web', [
-            d.file('a.txt', 'a'),
-          ]),
+          d.dir('web', [d.file('a.txt', 'a')]),
         ]).create();
 
         await pubGet('a');
@@ -53,144 +54,170 @@ main(List<String> args) async {
         var result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         await d.dir('a', [
-          d.dir('web', [d.file('a.txt.copy', 'a')])
+          d.dir('web', [d.file('a.txt.copy', 'a')]),
         ]).validate();
       });
 
       test('updates cause a rebuild', () async {
         // Append a newline to the build script!
         await d.dir('a', [
-          d.dir('tool', [d.file('build.dart', '$originalBuildContent\n')])
+          d.dir('tool', [d.file('build.dart', '$originalBuildContent\n')]),
         ]).create();
 
         // Run a build and validate the full rebuild output.
-        var result = await runDart('a', 'tool/build.dart',
-            args: ['build', '--delete-conflicting-outputs']);
+        var result = await runDart(
+          'a',
+          'tool/build.dart',
+          args: ['build', '--delete-conflicting-outputs'],
+        );
         expect(result.exitCode, 0, reason: result.stderr as String);
-        expect(result.stdout,
-            contains('Invalidating asset graph due to build script update'));
+        expect(
+          result.stdout,
+          contains('Invalidating asset graph due to build script update'),
+        );
         await d.dir('a', [
-          d.dir('web', [d.file('a.txt.copy', 'a')])
+          d.dir('web', [d.file('a.txt.copy', 'a')]),
         ]).validate();
       });
 
       test('updates can change extensions', () async {
         // Update the extension from .copy to .copy2
         var changedBuildScript = originalBuildContent.replaceFirst(
-            'TestBuilder()',
-            "TestBuilder(buildExtensions: appendExtension('.copy2'))");
+          'TestBuilder()',
+          "TestBuilder(buildExtensions: appendExtension('.copy2'))",
+        );
         await d.dir('a', [
-          d.dir('tool', [d.file('build.dart', changedBuildScript)])
+          d.dir('tool', [d.file('build.dart', changedBuildScript)]),
         ]).create();
 
-        var result = await runDart('a', 'tool/build.dart',
-            args: ['build', '--delete-conflicting-outputs']);
+        var result = await runDart(
+          'a',
+          'tool/build.dart',
+          args: ['build', '--delete-conflicting-outputs'],
+        );
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(
-            result.stdout,
-            contains(
-                'Throwing away cached asset graph because the build phases '
-                'have changed.'));
+          result.stdout,
+          contains(
+            'Throwing away cached asset graph because the build phases '
+            'have changed.',
+          ),
+        );
 
         // Running a new builder should delete the old generated asset and add
         // the new copy.
         await d.dir('a', [
-          d.dir('web', [d.file('a.txt.copy2', 'a'), d.nothing('a.txt.copy')])
+          d.dir('web', [d.file('a.txt.copy2', 'a'), d.nothing('a.txt.copy')]),
         ]).validate();
       });
 
       test('--output creates a merged directory', () async {
         // Run a build and validate the full rebuild output.
-        var result = await runDart('a', 'tool/build.dart',
-            args: ['build', '--output', 'build']);
+        var result = await runDart(
+          'a',
+          'tool/build.dart',
+          args: ['build', '--output', 'build'],
+        );
         expect(result.exitCode, 0, reason: result.stderr as String);
         await d.dir('a', [
           d.dir('build', [
-            d.dir('web', [d.file('a.txt.copy', 'a')])
-          ])
+            d.dir('web', [d.file('a.txt.copy', 'a')]),
+          ]),
         ]).validate();
       });
 
       test('--output respects build filters', () async {
         await d.dir('a', [
-          d.dir('web', [
-            d.file('b.txt', 'b'),
-          ]),
+          d.dir('web', [d.file('b.txt', 'b')]),
         ]).create();
         // Run a build and validate the full rebuild output.
-        var result = await runDart('a', 'tool/build.dart', args: [
-          'build',
-          '--output',
-          'build',
-          '--build-filter',
-          'web/b.txt.copy',
-        ]);
+        var result = await runDart(
+          'a',
+          'tool/build.dart',
+          args: [
+            'build',
+            '--output',
+            'build',
+            '--build-filter',
+            'web/b.txt.copy',
+          ],
+        );
         expect(result.exitCode, 0, reason: result.stderr as String);
         await d.dir('a', [
           d.dir('build', [
-            d.dir('web', [
-              d.nothing('a.txt.copy'),
-              d.file('b.txt.copy', 'b'),
-            ])
-          ])
+            d.dir('web', [d.nothing('a.txt.copy'), d.file('b.txt.copy', 'b')]),
+          ]),
         ]).validate();
       });
 
       test('when --output fails a proper error code is returned', () async {
         await d.dir('a', [
-          d.dir('build', [
-            d.file('non_empty', 'blah'),
-          ])
+          d.dir('build', [d.file('non_empty', 'blah')]),
         ]).create();
-        var result = await runDart('a', 'tool/build.dart',
-            args: ['build', '--output', 'build']);
+        var result = await runDart(
+          'a',
+          'tool/build.dart',
+          args: ['build', '--output', 'build'],
+        );
         expect(result.exitCode, 73, reason: result.stderr as String);
       });
 
-      test('--output creates a merged directory from the provided root',
-          () async {
-        // Run a build and validate the full rebuild output.
-        var result = await runDart('a', 'tool/build.dart',
-            args: ['build', '--output', 'web:build']);
-        expect(result.exitCode, 0, reason: result.stderr as String);
-        await d.dir('a', [
-          d.dir('build', [d.file('a.txt.copy', 'a')])
-        ]).validate();
-      });
+      test(
+        '--output creates a merged directory from the provided root',
+        () async {
+          // Run a build and validate the full rebuild output.
+          var result = await runDart(
+            'a',
+            'tool/build.dart',
+            args: ['build', '--output', 'web:build'],
+          );
+          expect(result.exitCode, 0, reason: result.stderr as String);
+          await d.dir('a', [
+            d.dir('build', [d.file('a.txt.copy', 'a')]),
+          ]).validate();
+        },
+      );
 
-      test('multiple --output options create multiple merged directories',
-          () async {
-        // Run a build and validate the full rebuild output.
-        var result = await runDart('a', 'tool/build.dart',
-            args: ['build', '--output', 'build', '--output', 'foo']);
-        expect(result.exitCode, 0, reason: result.stderr as String);
-        await d.dir('a', [
-          d.dir('build', [
-            d.dir('web', [d.file('a.txt.copy', 'a')])
-          ]),
-          d.dir('foo', [
-            d.dir('web', [d.file('a.txt.copy', 'a')])
-          ])
-        ]).validate();
-      });
+      test(
+        'multiple --output options create multiple merged directories',
+        () async {
+          // Run a build and validate the full rebuild output.
+          var result = await runDart(
+            'a',
+            'tool/build.dart',
+            args: ['build', '--output', 'build', '--output', 'foo'],
+          );
+          expect(result.exitCode, 0, reason: result.stderr as String);
+          await d.dir('a', [
+            d.dir('build', [
+              d.dir('web', [d.file('a.txt.copy', 'a')]),
+            ]),
+            d.dir('foo', [
+              d.dir('web', [d.file('a.txt.copy', 'a')]),
+            ]),
+          ]).validate();
+        },
+      );
     });
 
     group('--build-filter', () {
       setUp(() async {
         await d.dir('a', [
-          await pubspec('a', currentIsolateDependencies: [
-            'build',
-            'build_config',
-            'build_daemon',
-            'build_resolvers',
-            'build_runner',
-            'build_runner_core',
-            'build_test',
-            'code_builder',
-            'glob'
-          ], pathDependencies: {
-            'b': '../b'
-          }),
+          await pubspec(
+            'a',
+            currentIsolateDependencies: [
+              'build',
+              'build_config',
+              'build_daemon',
+              'build_resolvers',
+              'build_runner',
+              'build_runner_core',
+              'build_test',
+              'code_builder',
+              'glob',
+            ],
+            pathDependencies: {'b': '../b'},
+          ),
           d.dir('tool', [
             d.file('build.dart', '''
 import 'dart:io';
@@ -204,27 +231,29 @@ main(List<String> args) async {
           apply('', [(_) => TestBuilder()], toAllPackages(), hideOutput: true)
       ]);
 }
-''')
+'''),
           ]),
           d.dir('lib', [d.file('a.txt', 'a'), d.file('b.txt', 'b')]),
-          d.dir('web', [d.file('a.txt', 'a'), d.file('b.txt', 'b')])
+          d.dir('web', [d.file('a.txt', 'a'), d.file('b.txt', 'b')]),
         ]).create();
 
         await d.dir('b', [
           await pubspec('b'),
-          d.dir('lib', [d.file('a.txt', 'a'), d.file('b.txt', 'b')])
+          d.dir('lib', [d.file('a.txt', 'a'), d.file('b.txt', 'b')]),
         ]).create();
 
         await pubGet('a');
       });
 
       test('only builds matching files', () async {
-        await runBuild(extraArgs: [
-          '--build-filter',
-          'package:*/a.txt.copy',
-          '--build-filter',
-          'web/a.txt.copy'
-        ]);
+        await runBuild(
+          extraArgs: [
+            '--build-filter',
+            'package:*/a.txt.copy',
+            '--build-filter',
+            'web/a.txt.copy',
+          ],
+        );
         await d.dir('a', [
           d.dir('.dart_tool', [
             d.dir('build', [
@@ -237,7 +266,7 @@ main(List<String> args) async {
                   d.dir('web', [
                     d.file('a.txt.copy', 'a'),
                     d.nothing('b.txt.copy'),
-                  ])
+                  ]),
                 ]),
                 d.dir('b', [
                   d.dir('lib', [
@@ -245,9 +274,9 @@ main(List<String> args) async {
                     d.nothing('b.txt.copy'),
                   ]),
                 ]),
-              ])
-            ])
-          ])
+              ]),
+            ]),
+          ]),
         ]).validate();
       });
     });
@@ -255,17 +284,20 @@ main(List<String> args) async {
     group('findAssets', () {
       setUp(() async {
         await d.dir('a', [
-          await pubspec('a', currentIsolateDependencies: [
-            'build',
-            'build_config',
-            'build_daemon',
-            'build_resolvers',
-            'build_runner',
-            'build_runner_core',
-            'build_test',
-            'code_builder',
-            'glob'
-          ]),
+          await pubspec(
+            'a',
+            currentIsolateDependencies: [
+              'build',
+              'build_config',
+              'build_daemon',
+              'build_resolvers',
+              'build_runner',
+              'build_runner_core',
+              'build_test',
+              'code_builder',
+              'glob',
+            ],
+          ),
           d.dir('tool', [
             d.file('build.dart', '''
 import 'dart:async';
@@ -281,7 +313,7 @@ main() async {
     ['build'],
     [applyToRoot(new GlobbingBuilder(new Glob('**.txt')))]);
 }
-''')
+'''),
           ]),
           d.dir('web', [
             d.file('a.globPlaceholder'),
@@ -296,14 +328,14 @@ main() async {
         var result = await runDart('a', 'tool/build.dart', args: ['build']);
         expect(result.exitCode, 0, reason: result.stderr as String);
         await d.dir('a', [
-          d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')])
+          d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')]),
         ]).validate();
       });
 
       test('picks up new files that match the glob', () async {
         // Add a new file matching the glob.
         await d.dir('a', [
-          d.dir('web', [d.file('c.txt', '')])
+          d.dir('web', [d.file('c.txt', '')]),
         ]).create();
 
         // Run a new build and validate.
@@ -312,8 +344,8 @@ main() async {
         expect(result.stdout, contains('with 1 outputs'));
         await d.dir('a', [
           d.dir('web', [
-            d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt\na|web/c.txt')
-          ])
+            d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt\na|web/c.txt'),
+          ]),
         ]).validate();
       });
 
@@ -326,16 +358,15 @@ main() async {
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(result.stdout, contains('with 1 outputs'));
         await d.dir('a', [
-          d.dir('web', [d.file('a.matchingFiles', 'a|web/b.txt')])
+          d.dir('web', [d.file('a.matchingFiles', 'a|web/b.txt')]),
         ]).validate();
       });
 
-      test(
-          'doesn\'t cause new builds for files that don\'t match '
+      test('doesn\'t cause new builds for files that don\'t match '
           'any globs', () async {
         // Add a new file not matching the glob.
         await d.dir('a', [
-          d.dir('web', [d.file('c.other', '')])
+          d.dir('web', [d.file('c.other', '')]),
         ]).create();
 
         // Run a new build and validate.
@@ -343,14 +374,14 @@ main() async {
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(result.stdout, contains('with 0 outputs'));
         await d.dir('a', [
-          d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')])
+          d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')]),
         ]).validate();
       });
 
       test('doesn\'t cause new builds for file changes', () async {
         // Change a file matching the glob.
         await d.dir('a', [
-          d.dir('web', [d.file('a.txt', 'changed!')])
+          d.dir('web', [d.file('a.txt', 'changed!')]),
         ]).create();
 
         // Run a new build and validate.
@@ -358,7 +389,7 @@ main() async {
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(result.stdout, contains('with 0 outputs'));
         await d.dir('a', [
-          d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')])
+          d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')]),
         ]).validate();
       });
     });
@@ -366,17 +397,20 @@ main() async {
     group('findAssets with no initial output', () {
       setUp(() async {
         await d.dir('a', [
-          await pubspec('a', currentIsolateDependencies: [
-            'build',
-            'build_config',
-            'build_daemon',
-            'build_resolvers',
-            'build_runner',
-            'build_runner_core',
-            'build_test',
-            'code_builder',
-            'glob'
-          ]),
+          await pubspec(
+            'a',
+            currentIsolateDependencies: [
+              'build',
+              'build_config',
+              'build_daemon',
+              'build_resolvers',
+              'build_runner',
+              'build_runner_core',
+              'build_test',
+              'code_builder',
+              'glob',
+            ],
+          ),
           d.dir('tool', [
             d.file('build.dart', '''
 import 'dart:async';
@@ -406,12 +440,9 @@ class OverDeclaringGlobbingBuilder extends GlobbingBuilder {
     }
   }
 }
-''')
+'''),
           ]),
-          d.dir('web', [
-            d.file('a.globPlaceholder'),
-            d.file('a.txt', ''),
-          ]),
+          d.dir('web', [d.file('a.globPlaceholder'), d.file('a.txt', '')]),
         ]).create();
 
         await pubGet('a');
@@ -421,14 +452,14 @@ class OverDeclaringGlobbingBuilder extends GlobbingBuilder {
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(result.stdout, contains('with 0 outputs'));
         await d.dir('a', [
-          d.dir('web', [d.nothing('a.matchingFiles')])
+          d.dir('web', [d.nothing('a.matchingFiles')]),
         ]).validate();
       });
 
       test('picks up new files that match the glob', () async {
         // Add a new file matching the glob which causes a real output.
         await d.dir('a', [
-          d.dir('web', [d.file('b.txt', '')])
+          d.dir('web', [d.file('b.txt', '')]),
         ]).create();
 
         // Run a new build and validate.
@@ -436,7 +467,7 @@ class OverDeclaringGlobbingBuilder extends GlobbingBuilder {
         expect(result.exitCode, 0, reason: result.stderr as String);
         expect(result.stdout, contains('with 1 outputs'));
         await d.dir('a', [
-          d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')])
+          d.dir('web', [d.file('a.matchingFiles', 'a|web/a.txt\na|web/b.txt')]),
         ]).validate();
       });
     });
@@ -482,16 +513,19 @@ main(List<String> args) async {
 
       test('--define overrides build.yaml', () async {
         await d.dir('a', [
-          await pubspec('a', currentIsolateDependencies: [
-            'build',
-            'build_config',
-            'build_daemon',
-            'build_resolvers',
-            'build_runner',
-            'build_runner_core',
-            'build_test',
-            'code_builder',
-          ]),
+          await pubspec(
+            'a',
+            currentIsolateDependencies: [
+              'build',
+              'build_config',
+              'build_daemon',
+              'build_resolvers',
+              'build_runner',
+              'build_runner_core',
+              'build_test',
+              'code_builder',
+            ],
+          ),
           d.file('build.yaml', r'''
 targets:
   $default:
@@ -539,16 +573,19 @@ main(List<String> args) async {
 
     test('warns on invalid builder key in target options', () async {
       await d.dir('a', [
-        await pubspec('a', currentIsolateDependencies: [
-          'build',
-          'build_config',
-          'build_daemon',
-          'build_resolvers',
-          'build_runner',
-          'build_runner_core',
-          'build_test',
-          'code_builder',
-        ]),
+        await pubspec(
+          'a',
+          currentIsolateDependencies: [
+            'build',
+            'build_config',
+            'build_daemon',
+            'build_resolvers',
+            'build_runner',
+            'build_runner_core',
+            'build_test',
+            'code_builder',
+          ],
+        ),
         d.file('build.yaml', r'''
 targets:
   $default:
@@ -557,9 +594,7 @@ targets:
         enabled: true
 '''),
         d.dir('tool', [d.file('build.dart', buildContent)]),
-        d.dir('web', [
-          d.file('a.txt', 'a'),
-        ]),
+        d.dir('web', [d.file('a.txt', 'a')]),
       ]).create();
 
       await pubGet('a');
@@ -571,25 +606,26 @@ targets:
 
     test('warns on invalid builder key in global options', () async {
       await d.dir('a', [
-        await pubspec('a', currentIsolateDependencies: [
-          'build',
-          'build_config',
-          'build_daemon',
-          'build_resolvers',
-          'build_runner',
-          'build_runner_core',
-          'build_test',
-          'code_builder',
-        ]),
+        await pubspec(
+          'a',
+          currentIsolateDependencies: [
+            'build',
+            'build_config',
+            'build_daemon',
+            'build_resolvers',
+            'build_runner',
+            'build_runner_core',
+            'build_test',
+            'code_builder',
+          ],
+        ),
         d.file('build.yaml', r'''
 global_options:
   bad:builder:
     options: {}
 '''),
         d.dir('tool', [d.file('build.dart', buildContent)]),
-        d.dir('web', [
-          d.file('a.txt', 'a'),
-        ]),
+        d.dir('web', [d.file('a.txt', 'a')]),
       ]).create();
 
       await pubGet('a');
@@ -601,20 +637,21 @@ global_options:
 
     test('warns on invalid builder key --define', () async {
       await d.dir('a', [
-        await pubspec('a', currentIsolateDependencies: [
-          'build',
-          'build_config',
-          'build_daemon',
-          'build_resolvers',
-          'build_runner',
-          'build_runner_core',
-          'build_test',
-          'code_builder',
-        ]),
+        await pubspec(
+          'a',
+          currentIsolateDependencies: [
+            'build',
+            'build_config',
+            'build_daemon',
+            'build_resolvers',
+            'build_runner',
+            'build_runner_core',
+            'build_test',
+            'code_builder',
+          ],
+        ),
         d.dir('tool', [d.file('build.dart', buildContent)]),
-        d.dir('web', [
-          d.file('a.txt', 'a'),
-        ]),
+        d.dir('web', [d.file('a.txt', 'a')]),
       ]).create();
 
       await pubGet('a');
@@ -626,21 +663,23 @@ global_options:
   });
 
   group('regression tests', () {
-    test(
-        'checking for existing outputs works with deleted '
+    test('checking for existing outputs works with deleted '
         'intermediate outputs', () async {
       await d.dir('a', [
-        await pubspec('a', currentIsolateDependencies: [
-          'build',
-          'build_config',
-          'build_daemon',
-          'build_resolvers',
-          'build_runner',
-          'build_runner_core',
-          'build_test',
-          'code_builder',
-          'glob'
-        ]),
+        await pubspec(
+          'a',
+          currentIsolateDependencies: [
+            'build',
+            'build_config',
+            'build_daemon',
+            'build_resolvers',
+            'build_runner',
+            'build_runner_core',
+            'build_test',
+            'code_builder',
+            'glob',
+          ],
+        ),
         d.dir('tool', [
           d.file('build.dart', '''
 import 'dart:io';
@@ -658,66 +697,73 @@ main() async {
           buildExtensions: appendExtension('.copy', from: '.txt.copy'))),
     ]);
 }
-''')
+'''),
         ]),
-        d.dir('web', [
-          d.file('a.txt', 'a'),
-          d.file('a.txt.copy.copy', 'a'),
-        ]),
+        d.dir('web', [d.file('a.txt', 'a'), d.file('a.txt.copy.copy', 'a')]),
       ]).create();
 
       await pubGet('a');
 
       var result = await runDart('a', 'tool/build.dart', args: ['build']);
 
-      expect(result.exitCode, isNot(0),
-          reason: 'build should fail due to conflicting outputs');
       expect(
-          result.stdout,
-          allOf(contains('Conflicting outputs'),
-              contains('web/a.txt.copy.copy')));
+        result.exitCode,
+        isNot(0),
+        reason: 'build should fail due to conflicting outputs',
+      );
+      expect(
+        result.stdout,
+        allOf(contains('Conflicting outputs'), contains('web/a.txt.copy.copy')),
+      );
     });
 
     test('Missing build_test dependency reports the right error', () async {
       await d.dir('a', [
-        await pubspec('a', currentIsolateDependencies: [
-          'build',
-          'build_config',
-          'build_daemon',
-          'build_resolvers',
-          'build_runner',
-          'build_runner_core',
-          'code_builder',
-        ]),
-        d.dir('web', [
-          d.file('a.txt', 'a'),
-        ]),
+        await pubspec(
+          'a',
+          currentIsolateDependencies: [
+            'build',
+            'build_config',
+            'build_daemon',
+            'build_resolvers',
+            'build_runner',
+            'build_runner_core',
+            'code_builder',
+          ],
+        ),
+        d.dir('web', [d.file('a.txt', 'a')]),
       ]).create();
 
       await pubGet('a');
       var result = await runPub('a', 'run', args: ['build_runner', 'test']);
 
-      expect(result.exitCode, isNot(0),
-          reason: 'build should fail due to missing build_test dependency');
-      expect(result.stdout,
-          contains('Missing dev dependency on package:build_test'));
+      expect(
+        result.exitCode,
+        isNot(0),
+        reason: 'build should fail due to missing build_test dependency',
+      );
+      expect(
+        result.stdout,
+        contains('Missing dev dependency on package:build_test'),
+      );
     });
 
     test('Missing build_web_compilers dependency warns the user', () async {
       await d.dir('a', [
-        await pubspec('a', currentIsolateDependencies: [
-          'build',
-          'build_config',
-          'build_daemon',
-          'build_resolvers',
-          'build_runner',
-          'build_runner_core',
-          'build_test',
-          'code_builder',
-        ]),
-        d.dir('web', [
-          d.file('a.dart', 'void main() {}'),
-        ]),
+        await pubspec(
+          'a',
+          currentIsolateDependencies: [
+            'build',
+            'build_config',
+            'build_daemon',
+            'build_resolvers',
+            'build_runner',
+            'build_runner_core',
+            'build_test',
+            'code_builder',
+          ],
+        ),
+        d.dir('web', [d.file('a.dart', 'void main() {}')]),
       ]).create();
 
       await pubGet('a');

@@ -17,10 +17,7 @@ void main() {
     expect(
       testBuilders(
         [applyToRoot(TestBuilder())],
-        {
-          'a|lib/a.dart': '',
-          'a|lib/a.dart.copy': '',
-        },
+        {'a|lib/a.dart': '', 'a|lib/a.dart.copy': ''},
         packageGraph: buildPackageGraph({rootPackage('a'): []}),
         deleteFilesByDefault: false,
       ),
@@ -31,15 +28,11 @@ void main() {
   test('should fail if a severe logged', () async {
     await testBuilders(
       [applyToRoot(_LoggingBuilder(Level.SEVERE))],
-      {
-        'a|lib/a.dart': '',
-      },
+      {'a|lib/a.dart': ''},
       packageGraph: buildPackageGraph({rootPackage('a'): []}),
       checkBuildStatus: true,
       status: BuildStatus.failure,
-      outputs: {
-        'a|lib/a.dart.empty': '',
-      },
+      outputs: {'a|lib/a.dart.empty': ''},
     );
   });
 
@@ -48,99 +41,106 @@ void main() {
     var builder = _LoggingBuilder(Level.SEVERE);
     var builders = [applyToRoot(builder)];
     final result = await testBuilders(
-        builders,
-        {
-          'a|lib/a.dart': '',
-        },
-        packageGraph: packageGraph,
-        checkBuildStatus: true,
-        status: BuildStatus.failure,
-        outputs: {
-          'a|lib/a.dart.empty': '',
-        });
-    await testBuilders(builders, {},
-        resumeFrom: result,
-        packageGraph: packageGraph,
-        checkBuildStatus: true,
-        status: BuildStatus.failure,
-        outputs: {});
+      builders,
+      {'a|lib/a.dart': ''},
+      packageGraph: packageGraph,
+      checkBuildStatus: true,
+      status: BuildStatus.failure,
+      outputs: {'a|lib/a.dart.empty': ''},
+    );
+    await testBuilders(
+      builders,
+      {},
+      resumeFrom: result,
+      packageGraph: packageGraph,
+      checkBuildStatus: true,
+      status: BuildStatus.failure,
+      outputs: {},
+    );
   });
 
-  test('should succeed if a severe log is fixed on a subsequent build',
-      () async {
-    var packageGraph = buildPackageGraph({rootPackage('a'): []});
-    var builder = _LoggingBuilder(Level.SEVERE);
-    var builders = [applyToRoot(builder)];
-    final result = await testBuilders(
+  test(
+    'should succeed if a severe log is fixed on a subsequent build',
+    () async {
+      var packageGraph = buildPackageGraph({rootPackage('a'): []});
+      var builder = _LoggingBuilder(Level.SEVERE);
+      var builders = [applyToRoot(builder)];
+      final result = await testBuilders(
         builders,
-        {
-          'a|lib/a.dart': '',
-        },
+        {'a|lib/a.dart': ''},
         packageGraph: packageGraph,
         checkBuildStatus: true,
         status: BuildStatus.failure,
-        outputs: {
-          'a|lib/a.dart.empty': '',
-        });
-    builder.level = Level.WARNING;
-    await testBuilders(
+        outputs: {'a|lib/a.dart.empty': ''},
+      );
+      builder.level = Level.WARNING;
+      await testBuilders(
         builders,
-        {
-          'a|lib/a.dart': 'changed',
-        },
+        {'a|lib/a.dart': 'changed'},
         resumeFrom: result,
         packageGraph: packageGraph,
         checkBuildStatus: true,
         status: BuildStatus.success,
-        outputs: {
-          'a|lib/a.dart.empty': '',
-        });
-  });
+        outputs: {'a|lib/a.dart.empty': ''},
+      );
+    },
+  );
 
   test('should fail if an exception is thrown', () async {
     await testBuilders(
       [
-        applyToRoot(TestBuilder(
-            build: (_, __) => throw Exception('Some build failure')))
+        applyToRoot(
+          TestBuilder(build: (_, __) => throw Exception('Some build failure')),
+        ),
       ],
-      {
-        'a|lib/a.txt': '',
-      },
+      {'a|lib/a.txt': ''},
       packageGraph: buildPackageGraph({rootPackage('a'): []}),
       status: BuildStatus.failure,
     );
   });
 
-  test('should throw an exception if a read is attempted on a failed file',
-      () async {
-    await testBuilders(
-      [
-        applyToRoot(TestBuilder(
-            buildExtensions: replaceExtension('.txt', '.failed'),
-            build: (buildStep, __) async {
-              await buildStep.writeAsString(
-                  buildStep.inputId.changeExtension('.failed'), 'failed');
-              log.severe('Wrote an output then failed');
-            })),
-        applyToRoot(TestBuilder(
-            buildExtensions: replaceExtension('.txt', '.success'),
-            build: expectAsync2((buildStep, __) async {
-              // Attempts to read the file that came from a failing build step
-              // and hides the exception.
-              var failedFile = buildStep.inputId.changeExtension('.failed');
-              await expectLater(
-                  buildStep.readAsString(failedFile), throwsA(anything));
-              await buildStep.writeAsString(
-                  buildStep.inputId.changeExtension('.success'), 'success');
-            })))
-      ],
-      {
-        'a|lib/a.txt': '',
-      },
-      packageGraph: buildPackageGraph({rootPackage('a'): []}),
-      status: BuildStatus.failure,
-    );
-  });
+  test(
+    'should throw an exception if a read is attempted on a failed file',
+    () async {
+      await testBuilders(
+        [
+          applyToRoot(
+            TestBuilder(
+              buildExtensions: replaceExtension('.txt', '.failed'),
+              build: (buildStep, __) async {
+                await buildStep.writeAsString(
+                  buildStep.inputId.changeExtension('.failed'),
+                  'failed',
+                );
+                log.severe('Wrote an output then failed');
+              },
+            ),
+          ),
+          applyToRoot(
+            TestBuilder(
+              buildExtensions: replaceExtension('.txt', '.success'),
+              build: expectAsync2((buildStep, __) async {
+                // Attempts to read the file that came from a failing build step
+                // and hides the exception.
+                var failedFile = buildStep.inputId.changeExtension('.failed');
+                await expectLater(
+                  buildStep.readAsString(failedFile),
+                  throwsA(anything),
+                );
+                await buildStep.writeAsString(
+                  buildStep.inputId.changeExtension('.success'),
+                  'success',
+                );
+              }),
+            ),
+          ),
+        ],
+        {'a|lib/a.txt': ''},
+        packageGraph: buildPackageGraph({rootPackage('a'): []}),
+        status: BuildStatus.failure,
+      );
+    },
+  );
 }
 
 class _LoggingBuilder implements Builder {

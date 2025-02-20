@@ -48,27 +48,29 @@ import 'watch_impl.dart' as watch_impl;
 /// If [verbose] is `true` then verbose logging will be enabled. This changes
 /// the default [logLevel] to [Level.ALL] and removes stack frame folding, among
 /// other things.
-Future<BuildResult> build(List<BuilderApplication> builders,
-    {bool? deleteFilesByDefault,
-    bool? assumeTty,
-    String? configKey,
-    PackageGraph? packageGraph,
-    AssetReader? reader,
-    RunnerAssetWriter? writer,
-    Resolvers? resolvers,
-    Level? logLevel,
-    void Function(LogRecord)? onLog,
-    Stream<ProcessSignal>? terminateEventStream,
-    bool? enableLowResourcesMode,
-    Set<BuildDirectory>? buildDirs,
-    bool? outputSymlinksOnly,
-    bool? trackPerformance,
-    bool? skipBuildScriptCheck,
-    bool? verbose,
-    bool? isReleaseBuild,
-    Map<String, Map<String, dynamic>>? builderConfigOverrides,
-    String? logPerformanceDir,
-    Set<BuildFilter>? buildFilters}) async {
+Future<BuildResult> build(
+  List<BuilderApplication> builders, {
+  bool? deleteFilesByDefault,
+  bool? assumeTty,
+  String? configKey,
+  PackageGraph? packageGraph,
+  AssetReader? reader,
+  RunnerAssetWriter? writer,
+  Resolvers? resolvers,
+  Level? logLevel,
+  void Function(LogRecord)? onLog,
+  Stream<ProcessSignal>? terminateEventStream,
+  bool? enableLowResourcesMode,
+  Set<BuildDirectory>? buildDirs,
+  bool? outputSymlinksOnly,
+  bool? trackPerformance,
+  bool? skipBuildScriptCheck,
+  bool? verbose,
+  bool? isReleaseBuild,
+  Map<String, Map<String, dynamic>>? builderConfigOverrides,
+  String? logPerformanceDir,
+  Set<BuildFilter>? buildFilters,
+}) async {
   builderConfigOverrides ??= const {};
   buildDirs ??= <BuildDirectory>{};
   buildFilters ??= <BuildFilter>{};
@@ -81,24 +83,30 @@ Future<BuildResult> build(List<BuilderApplication> builders,
   trackPerformance ??= false;
   verbose ??= false;
   var environment = OverrideableEnvironment(
-      IOEnvironment(
-        packageGraph,
-        assumeTty: assumeTty,
-        outputSymlinksOnly: outputSymlinksOnly,
-      ),
-      reader: reader,
-      writer: writer,
-      onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose));
-  var logSubscription =
-      LogSubscription(environment, verbose: verbose, logLevel: logLevel);
+    IOEnvironment(
+      packageGraph,
+      assumeTty: assumeTty,
+      outputSymlinksOnly: outputSymlinksOnly,
+    ),
+    reader: reader,
+    writer: writer,
+    onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose),
+  );
+  var logSubscription = LogSubscription(
+    environment,
+    verbose: verbose,
+    logLevel: logLevel,
+  );
   var options = await BuildOptions.create(
     logSubscription,
     deleteFilesByDefault: deleteFilesByDefault,
     packageGraph: packageGraph,
     skipBuildScriptCheck: skipBuildScriptCheck,
     overrideBuildConfig: await findBuildConfigOverrides(
-        packageGraph, environment.reader,
-        configKey: configKey),
+      packageGraph,
+      environment.reader,
+      configKey: configKey,
+    ),
     enableLowResourcesMode: enableLowResourcesMode,
     trackPerformance: trackPerformance,
     logPerformanceDir: logPerformanceDir,
@@ -113,8 +121,11 @@ Future<BuildResult> build(List<BuilderApplication> builders,
       builderConfigOverrides,
       isReleaseBuild: isReleaseBuild,
     );
-    var result =
-        await build.run({}, buildDirs: buildDirs, buildFilters: buildFilters);
+    var result = await build.run(
+      {},
+      buildDirs: buildDirs,
+      buildFilters: buildFilters,
+    );
     await build.beforeExit();
     return result;
   } finally {
@@ -143,51 +154,52 @@ Future<BuildResult> build(List<BuilderApplication> builders,
 /// first event will allow any ongoing builds to finish, and then the program
 /// will complete normally. Subsequent events are not handled (and will
 /// typically cause a shutdown).
-Future<ServeHandler> watch(List<BuilderApplication> builders,
-        {bool? deleteFilesByDefault,
-        bool? assumeTty,
-        String? configKey,
-        PackageGraph? packageGraph,
-        AssetReader? reader,
-        RunnerAssetWriter? writer,
-        Resolvers? resolvers,
-        Level? logLevel,
-        void Function(LogRecord)? onLog,
-        Duration? debounceDelay,
-        required DirectoryWatcher Function(String) directoryWatcherFactory,
-        Stream<ProcessSignal>? terminateEventStream,
-        bool? enableLowResourcesMode,
-        Set<BuildDirectory>? buildDirs,
-        bool? outputSymlinksOnly,
-        bool? trackPerformance,
-        bool? skipBuildScriptCheck,
-        bool? verbose,
-        bool? isReleaseBuild,
-        Map<String, Map<String, dynamic>>? builderConfigOverrides,
-        String? logPerformanceDir,
-        Set<BuildFilter>? buildFilters}) =>
-    watch_impl.watch(
-      builders,
-      assumeTty: assumeTty,
-      deleteFilesByDefault: deleteFilesByDefault,
-      configKey: configKey,
-      packageGraph: packageGraph,
-      reader: reader,
-      writer: writer,
-      resolvers: resolvers,
-      logLevel: logLevel,
-      onLog: onLog,
-      debounceDelay: debounceDelay,
-      directoryWatcherFactory: directoryWatcherFactory,
-      terminateEventStream: terminateEventStream,
-      enableLowResourcesMode: enableLowResourcesMode,
-      buildDirs: buildDirs,
-      outputSymlinksOnly: outputSymlinksOnly,
-      trackPerformance: trackPerformance,
-      skipBuildScriptCheck: skipBuildScriptCheck,
-      verbose: verbose,
-      builderConfigOverrides: builderConfigOverrides,
-      isReleaseBuild: isReleaseBuild,
-      logPerformanceDir: logPerformanceDir,
-      buildFilters: buildFilters,
-    );
+Future<ServeHandler> watch(
+  List<BuilderApplication> builders, {
+  bool? deleteFilesByDefault,
+  bool? assumeTty,
+  String? configKey,
+  PackageGraph? packageGraph,
+  AssetReader? reader,
+  RunnerAssetWriter? writer,
+  Resolvers? resolvers,
+  Level? logLevel,
+  void Function(LogRecord)? onLog,
+  Duration? debounceDelay,
+  required DirectoryWatcher Function(String) directoryWatcherFactory,
+  Stream<ProcessSignal>? terminateEventStream,
+  bool? enableLowResourcesMode,
+  Set<BuildDirectory>? buildDirs,
+  bool? outputSymlinksOnly,
+  bool? trackPerformance,
+  bool? skipBuildScriptCheck,
+  bool? verbose,
+  bool? isReleaseBuild,
+  Map<String, Map<String, dynamic>>? builderConfigOverrides,
+  String? logPerformanceDir,
+  Set<BuildFilter>? buildFilters,
+}) => watch_impl.watch(
+  builders,
+  assumeTty: assumeTty,
+  deleteFilesByDefault: deleteFilesByDefault,
+  configKey: configKey,
+  packageGraph: packageGraph,
+  reader: reader,
+  writer: writer,
+  resolvers: resolvers,
+  logLevel: logLevel,
+  onLog: onLog,
+  debounceDelay: debounceDelay,
+  directoryWatcherFactory: directoryWatcherFactory,
+  terminateEventStream: terminateEventStream,
+  enableLowResourcesMode: enableLowResourcesMode,
+  buildDirs: buildDirs,
+  outputSymlinksOnly: outputSymlinksOnly,
+  trackPerformance: trackPerformance,
+  skipBuildScriptCheck: skipBuildScriptCheck,
+  verbose: verbose,
+  builderConfigOverrides: builderConfigOverrides,
+  isReleaseBuild: isReleaseBuild,
+  logPerformanceDir: logPerformanceDir,
+  buildFilters: buildFilters,
+);

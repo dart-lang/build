@@ -23,58 +23,80 @@ void main() {
 
     setUp(() async {
       await d.dir('a', [
-        d.dir('web', [
-          d.file('a.txt', 'hello'),
-        ]),
+        d.dir('web', [d.file('a.txt', 'hello')]),
         d.dir('.dart_tool', [
-          d.file('package_config.json',
-              jsonEncode({'configVersion': 2, 'packages': <Object>[]})),
+          d.file(
+            'package_config.json',
+            jsonEncode({'configVersion': 2, 'packages': <Object>[]}),
+          ),
         ]),
       ]).create();
-      var packageGraph = PackageGraph.fromRoot(PackageNode('a',
-          p.join(d.sandbox, 'a'), DependencyType.path, LanguageVersion(2, 6),
-          isRoot: true));
+      var packageGraph = PackageGraph.fromRoot(
+        PackageNode(
+          'a',
+          p.join(d.sandbox, 'a'),
+          DependencyType.path,
+          LanguageVersion(2, 6),
+          isRoot: true,
+        ),
+      );
       var reader = FileBasedAssetReader(packageGraph);
       var aId = AssetId('a', 'web/a.txt');
-      assetGraph =
-          await AssetGraph.build([], {aId}, <AssetId>{}, packageGraph, reader);
+      assetGraph = await AssetGraph.build(
+        [],
+        {aId},
+        <AssetId>{},
+        packageGraph,
+        reader,
+      );
       // We need to pre-emptively assign a digest so we determine that the
       // node is "interesting".
       assetGraph.get(aId)!.lastKnownDigest = await reader.digest(aId);
 
-      var targetGraph = await TargetGraph.forPackageGraph(packageGraph,
-          defaultRootPackageSources: ['web/**']);
+      var targetGraph = await TargetGraph.forPackageGraph(
+        packageGraph,
+        defaultRootPackageSources: ['web/**'],
+      );
       assetTracker = AssetTracker(reader, targetGraph);
       var updates = await assetTracker.collectChanges(assetGraph);
-      await assetGraph
-          .updateAndInvalidate([], updates, 'a', (_) async {}, reader);
+      await assetGraph.updateAndInvalidate(
+        [],
+        updates,
+        'a',
+        (_) async {},
+        reader,
+      );
       // We should see no changes initially other than new sdk sources
       expect(
-          updates
-            ..removeWhere(
-                (id, type) => id.package == r'$sdk' && type == ChangeType.ADD),
-          isEmpty);
+        updates..removeWhere(
+          (id, type) => id.package == r'$sdk' && type == ChangeType.ADD,
+        ),
+        isEmpty,
+      );
     });
 
     test('Collects file edits', () async {
       File(p.join(d.sandbox, 'a', 'web', 'a.txt')).writeAsStringSync('goodbye');
 
-      expect(await assetTracker.collectChanges(assetGraph),
-          {AssetId('a', 'web/a.txt'): ChangeType.MODIFY});
+      expect(await assetTracker.collectChanges(assetGraph), {
+        AssetId('a', 'web/a.txt'): ChangeType.MODIFY,
+      });
     });
 
     test('Collects new files', () async {
       File(p.join(d.sandbox, 'a', 'web', 'b.txt')).writeAsStringSync('yo!');
 
-      expect(await assetTracker.collectChanges(assetGraph),
-          {AssetId('a', 'web/b.txt'): ChangeType.ADD});
+      expect(await assetTracker.collectChanges(assetGraph), {
+        AssetId('a', 'web/b.txt'): ChangeType.ADD,
+      });
     });
 
     test('Collects deleted files', () async {
       File(p.join(d.sandbox, 'a', 'web', 'a.txt')).deleteSync();
 
-      expect(await assetTracker.collectChanges(assetGraph),
-          {AssetId('a', 'web/a.txt'): ChangeType.REMOVE});
+      expect(await assetTracker.collectChanges(assetGraph), {
+        AssetId('a', 'web/a.txt'): ChangeType.REMOVE,
+      });
     });
   });
 }

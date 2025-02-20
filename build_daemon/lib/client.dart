@@ -29,18 +29,23 @@ Future<void> _handleDaemonStartup(
   Process process,
   void Function(ServerLog) logHandler,
 ) async {
-  process.stderr
-      .transform(utf8.decoder)
-      .transform(const LineSplitter())
-      .listen((line) {
-    logHandler(ServerLog((b) => b
-      ..level = Level.SEVERE
-      ..message = line));
-  });
-  var stdout = process.stdout
-      .transform(utf8.decoder)
-      .transform(const LineSplitter())
-      .asBroadcastStream();
+  process.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen(
+    (line) {
+      logHandler(
+        ServerLog(
+          (b) =>
+              b
+                ..level = Level.SEVERE
+                ..message = line,
+        ),
+      );
+    },
+  );
+  var stdout =
+      process.stdout
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .asBroadcastStream();
 
   // The daemon may log critical information prior to it successfully
   // starting. Capture this data and forward to the logHandler.
@@ -53,14 +58,21 @@ Future<void> _handleDaemonStartup(
     if (nextLogRecord != null) {
       if (line == logEndMarker) {
         try {
-          logHandler(serializers
-              .deserialize(jsonDecode(nextLogRecord.toString())) as ServerLog);
+          logHandler(
+            serializers.deserialize(jsonDecode(nextLogRecord.toString()))
+                as ServerLog,
+          );
         } catch (e, s) {
-          logHandler(ServerLog((builder) => builder
-            ..message = 'Failed to read log message:\n$nextLogRecord'
-            ..level = Level.SEVERE
-            ..error = '$e'
-            ..stackTrace = '$s'));
+          logHandler(
+            ServerLog(
+              (builder) =>
+                  builder
+                    ..message = 'Failed to read log message:\n$nextLogRecord'
+                    ..level = Level.SEVERE
+                    ..error = '$e'
+                    ..stackTrace = '$s',
+            ),
+          );
         }
         nextLogRecord = null;
       } else {
@@ -69,14 +81,21 @@ Future<void> _handleDaemonStartup(
     } else if (line == logStartMarker) {
       nextLogRecord = StringBuffer();
     } else {
-      logHandler(ServerLog((b) => b
-        ..level = Level.INFO
-        ..message = line));
+      logHandler(
+        ServerLog(
+          (b) =>
+              b
+                ..level = Level.INFO
+                ..message = line,
+        ),
+      );
     }
   });
 
-  var daemonAction = await stdout.firstWhere(_isActionMessage,
-      orElse: () => throw StateError('Unable to start build daemon.'));
+  var daemonAction = await stdout.firstWhere(
+    _isActionMessage,
+    orElse: () => throw StateError('Unable to start build daemon.'),
+  );
 
   if (daemonAction == versionSkew) {
     throw VersionSkew();
@@ -108,21 +127,23 @@ class BuildDaemonClient {
     this._serializers,
     void Function(ServerLog) logHandler,
   ) : _channel = IOWebSocketChannel.connect('ws://localhost:$port') {
-    _channel.stream.listen((data) {
-      var message = _serializers.deserialize(jsonDecode(data as String));
-      if (message is ServerLog) {
-        logHandler(message);
-      } else if (message is BuildResults) {
-        _buildResults.add(message);
-      } else if (message is ShutdownNotification) {
-        _shutdownNotifications.add(message);
-      } else {
-        // In practice we should never reach this state due to the
-        // deserialize call.
-        throw StateError(
-            'Unexpected message from the Dart Build Daemon\n $message');
-      }
-    })
+    _channel.stream
+        .listen((data) {
+          var message = _serializers.deserialize(jsonDecode(data as String));
+          if (message is ServerLog) {
+            logHandler(message);
+          } else if (message is BuildResults) {
+            _buildResults.add(message);
+          } else if (message is ShutdownNotification) {
+            _shutdownNotifications.add(message);
+          } else {
+            // In practice we should never reach this state due to the
+            // deserialize call.
+            throw StateError(
+              'Unexpected message from the Dart Build Daemon\n $message',
+            );
+          }
+        })
         // TODO(grouma) - Implement proper error handling.
         .onError(print);
   }
@@ -133,8 +154,11 @@ class BuildDaemonClient {
   Future<void> get finished async => await _channel.sink.done;
 
   /// Registers a build target to be built upon any file change.
-  void registerBuildTarget(BuildTarget target) => _channel.sink.add(jsonEncode(
-      _serializers.serialize(BuildTargetRequest((b) => b..target = target))));
+  void registerBuildTarget(BuildTarget target) => _channel.sink.add(
+    jsonEncode(
+      _serializers.serialize(BuildTargetRequest((b) => b..target = target)),
+    ),
+  );
 
   /// Builds all registered targets, including those not from this client.
   ///
@@ -177,7 +201,10 @@ class BuildDaemonClient {
     await _handleDaemonStartup(process, logHandler);
 
     return BuildDaemonClient._(
-        await _existingPort(workingDirectory), daemonSerializers, logHandler);
+      await _existingPort(workingDirectory),
+      daemonSerializers,
+      logHandler,
+    );
   }
 }
 

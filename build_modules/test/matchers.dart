@@ -32,13 +32,18 @@ class EncodedMetaModuleMatcher extends Matcher {
     if (actual is! String) return false;
     var jSon = json.decode(actual) as Map<String, dynamic>;
     var meta = MetaModule.fromJson(jSon);
-    return unorderedMatches(expected.modules.map(matchesModule))
-        .matches(meta.modules, description);
+    return unorderedMatches(
+      expected.modules.map(matchesModule),
+    ).matches(meta.modules, description);
   }
 
   @override
-  Description describeMismatch(dynamic item, Description mismatchDescription,
-      Map matchState, bool verbose) {
+  Description describeMismatch(
+    dynamic item,
+    Description mismatchDescription,
+    Map matchState,
+    bool verbose,
+  ) {
     try {
       if (item is List<int>) {
         item = utf8.decode(item);
@@ -66,10 +71,12 @@ class ModuleMatcher extends Matcher {
   bool matches(dynamic actual, Map<dynamic, dynamic> description) {
     if (actual is! Module) return false;
     return actual.primarySource == expected.primarySource &&
-        unorderedEquals(expected.sources)
-            .matches(actual.sources, description) &&
-        unorderedEquals(expected.directDependencies)
-            .matches(actual.directDependencies, description);
+        unorderedEquals(
+          expected.sources,
+        ).matches(actual.sources, description) &&
+        unorderedEquals(
+          expected.directDependencies,
+        ).matches(actual.directDependencies, description);
   }
 
   @override

@@ -22,7 +22,7 @@ class TestBootstrapBuilder extends Builder {
       '_test.dart.vm_test.dart',
       '_test.dart.browser_test.dart',
       '_test.dart.node_test.dart',
-    ]
+    ],
   };
   TestBootstrapBuilder();
 
@@ -30,9 +30,10 @@ class TestBootstrapBuilder extends Builder {
   Future<void> build(BuildStep buildStep) async {
     var id = buildStep.inputId;
     var contents = await buildStep.readAsString(id);
-    var assetPath = id.pathSegments.first == 'lib'
-        ? p.url.join('packages', id.package, id.path)
-        : id.path;
+    var assetPath =
+        id.pathSegments.first == 'lib'
+            ? p.url.join('packages', id.package, id.path)
+            : id.path;
 
     var vmRuntimes = [Runtime.vm];
     var browserRuntimes =
@@ -45,27 +46,32 @@ class TestBootstrapBuilder extends Builder {
         if (vmRuntimes.any((r) => r.identifier == parent)) {
           var runtime = vmRuntimes.firstWhere((r) => r.identifier == parent);
           vmRuntimes.add(
-              runtime.extend(customRuntime.name, customRuntime.identifier));
+            runtime.extend(customRuntime.name, customRuntime.identifier),
+          );
         } else if (browserRuntimes.any((r) => r.identifier == parent)) {
-          var runtime =
-              browserRuntimes.firstWhere((r) => r.identifier == parent);
+          var runtime = browserRuntimes.firstWhere(
+            (r) => r.identifier == parent,
+          );
           browserRuntimes.add(
-              runtime.extend(customRuntime.name, customRuntime.identifier));
+            runtime.extend(customRuntime.name, customRuntime.identifier),
+          );
         } else if (nodeRuntimes.any((r) => r.identifier == parent)) {
           var runtime = nodeRuntimes.firstWhere((r) => r.identifier == parent);
           nodeRuntimes.add(
-              runtime.extend(customRuntime.name, customRuntime.identifier));
+            runtime.extend(customRuntime.name, customRuntime.identifier),
+          );
         }
       }
     }
     var metadata = parseMetadata(
-        assetPath,
-        contents,
-        vmRuntimes
-            .followedBy(browserRuntimes)
-            .followedBy(nodeRuntimes)
-            .map((r) => r.identifier)
-            .toSet());
+      assetPath,
+      contents,
+      vmRuntimes
+          .followedBy(browserRuntimes)
+          .followedBy(nodeRuntimes)
+          .map((r) => r.identifier)
+          .toSet(),
+    );
 
     if (vmRuntimes.any((r) => metadata.testOn.evaluate(SuitePlatform(r)))) {
       await buildStep.writeAsString(id.addExtension('.vm_test.dart'), '''
@@ -82,8 +88,9 @@ class TestBootstrapBuilder extends Builder {
         ''');
     }
 
-    if (browserRuntimes
-        .any((r) => metadata.testOn.evaluate(SuitePlatform(r)))) {
+    if (browserRuntimes.any(
+      (r) => metadata.testOn.evaluate(SuitePlatform(r)),
+    )) {
       await buildStep.writeAsString(id.addExtension('.browser_test.dart'), '''
           ${metadata.languageVersionComment ?? ''}
           import "package:test/bootstrap/browser.dart";
@@ -140,8 +147,10 @@ class _ConfigLoader {
     _configDigestByPackage[package] = digest;
     return _configByPackage[package] = () async {
       var content = await reader.readAsString(customConfigId);
-      return Configuration.loadFromString(content,
-          sourceUrl: customConfigId.uri);
+      return Configuration.loadFromString(
+        content,
+        sourceUrl: customConfigId.uri,
+      );
     }();
   }
 }

@@ -20,7 +20,9 @@ class FakeDaemonBuilder implements DaemonBuilder {
 
   @override
   Future<void> build(
-      Set<BuildTarget> targets, Iterable<WatchEvent> changes) async {}
+    Set<BuildTarget> targets,
+    Iterable<WatchEvent> changes,
+  ) async {}
 
   @override
   Future<void> stop() async {}

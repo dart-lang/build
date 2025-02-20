@@ -20,9 +20,9 @@ class InputMatcher {
   final List<Glob>? excludeGlobs;
 
   InputMatcher(InputSet inputSet, {List<String>? defaultInclude})
-      : includeGlobs =
-            (inputSet.include ?? defaultInclude)?.map(Glob.new).toList(),
-        excludeGlobs = inputSet.exclude?.map(Glob.new).toList();
+    : includeGlobs =
+          (inputSet.include ?? defaultInclude)?.map(Glob.new).toList(),
+      excludeGlobs = inputSet.exclude?.map(Glob.new).toList();
 
   /// Whether [input] is included in this set of assets.
   bool matches(AssetId input) => includes(input) && !excludes(input);
@@ -64,9 +64,13 @@ class InputMatcher {
       identical(this, other) ||
       (other is InputMatcher &&
           _deepEquals.equals(
-              _patterns(includeGlobs), _patterns(other.includeGlobs)) &&
+            _patterns(includeGlobs),
+            _patterns(other.includeGlobs),
+          ) &&
           _deepEquals.equals(
-              _patterns(excludeGlobs), _patterns(other.excludeGlobs)));
+            _patterns(excludeGlobs),
+            _patterns(other.excludeGlobs),
+          ));
 
   @override
   int get hashCode =>

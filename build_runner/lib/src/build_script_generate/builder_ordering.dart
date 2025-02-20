@@ -12,15 +12,18 @@ import 'package:graphs/graphs.dart';
 /// Builders will be ordered such that their `required_inputs` and `runs_before`
 /// constraints are met, but the rest of the ordering is arbitrary.
 Iterable<BuilderDefinition> findBuilderOrder(
-    Iterable<BuilderDefinition> builders,
-    Map<String, GlobalBuilderConfig> globalBuilderConfigs) {
-  final consistentOrderBuilders = builders.toList()
-    ..sort((a, b) => a.key.compareTo(b.key));
+  Iterable<BuilderDefinition> builders,
+  Map<String, GlobalBuilderConfig> globalBuilderConfigs,
+) {
+  final consistentOrderBuilders =
+      builders.toList()..sort((a, b) => a.key.compareTo(b.key));
   Iterable<BuilderDefinition> dependencies(BuilderDefinition parent) =>
-      consistentOrderBuilders.where((child) =>
-          parent != child &&
-          (_hasInputDependency(parent, child) ||
-              _mustRunBefore(parent, child, globalBuilderConfigs)));
+      consistentOrderBuilders.where(
+        (child) =>
+            parent != child &&
+            (_hasInputDependency(parent, child) ||
+                _mustRunBefore(parent, child, globalBuilderConfigs)),
+      );
   try {
     return topologicalSort<BuilderDefinition>(
       consistentOrderBuilders,
@@ -38,12 +41,16 @@ Iterable<BuilderDefinition> findBuilderOrder(
 /// by [child].
 bool _hasInputDependency(BuilderDefinition parent, BuilderDefinition child) {
   final childOutputs = child.buildExtensions.values.expand((v) => v).toSet();
-  return parent.requiredInputs
-      .any((input) => childOutputs.any((output) => output.endsWith(input)));
+  return parent.requiredInputs.any(
+    (input) => childOutputs.any((output) => output.endsWith(input)),
+  );
 }
 
 /// Whether [child] specifies that it wants to run before [parent].
-bool _mustRunBefore(BuilderDefinition parent, BuilderDefinition child,
-        Map<String, GlobalBuilderConfig?> globalBuilderConfigs) =>
+bool _mustRunBefore(
+  BuilderDefinition parent,
+  BuilderDefinition child,
+  Map<String, GlobalBuilderConfig?> globalBuilderConfigs,
+) =>
     child.runsBefore.contains(parent.key) ||
     (globalBuilderConfigs[child.key]?.runsBefore.contains(parent.key) ?? false);

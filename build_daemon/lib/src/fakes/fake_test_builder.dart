@@ -32,14 +32,24 @@ class FakeTestDaemonBuilder implements DaemonBuilder {
 
   @override
   Future<void> build(
-      Set<BuildTarget> targets, Iterable<WatchEvent> changes) async {
-    _outputStreamController.add(ServerLog((b) => b
-      ..loggerName = loggerName
-      ..level = Level.INFO
-      ..message = buildCompletedMessage));
+    Set<BuildTarget> targets,
+    Iterable<WatchEvent> changes,
+  ) async {
+    _outputStreamController.add(
+      ServerLog(
+        (b) =>
+            b
+              ..loggerName = loggerName
+              ..level = Level.INFO
+              ..message = buildCompletedMessage,
+      ),
+    );
 
-    _buildsController.add(BuildResults(
-        (b) => b.changedAssets.add(Uri.parse('package:foo/bar.dart'))));
+    _buildsController.add(
+      BuildResults(
+        (b) => b.changedAssets.add(Uri.parse('package:foo/bar.dart')),
+      ),
+    );
   }
 
   @override

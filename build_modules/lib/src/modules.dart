@@ -43,16 +43,22 @@ class Module {
     assert(modules.every((m) => m.platform == modules.first.platform));
 
     final allSources = HashSet.of(modules.expand((m) => m.sources));
-    final allDependencies =
-        HashSet.of(modules.expand((m) => m.directDependencies))
-          ..removeAll(allSources);
-    final primarySource =
-        allSources.reduce((a, b) => a.compareTo(b) < 0 ? a : b);
+    final allDependencies = HashSet.of(
+      modules.expand((m) => m.directDependencies),
+    )..removeAll(allSources);
+    final primarySource = allSources.reduce(
+      (a, b) => a.compareTo(b) < 0 ? a : b,
+    );
     final isMissing = modules.any((m) => m.isMissing);
     final isSupported = modules.every((m) => m.isSupported);
-    return Module(primarySource, allSources, allDependencies,
-        modules.first.platform, isSupported,
-        isMissing: isMissing);
+    return Module(
+      primarySource,
+      allSources,
+      allDependencies,
+      modules.first.platform,
+      isSupported,
+      isMissing: isMissing,
+    );
   }
 
   /// The library which will be used to reference any library in [sources].
@@ -116,12 +122,15 @@ class Module {
   @JsonKey(name: 'pf')
   final DartPlatform platform;
 
-  Module(this.primarySource, Iterable<AssetId> sources,
-      Iterable<AssetId> directDependencies, this.platform, this.isSupported,
-      {this.isMissing = false})
-      : sources = UnmodifiableSetView(HashSet.of(sources)),
-        directDependencies =
-            UnmodifiableSetView(HashSet.of(directDependencies));
+  Module(
+    this.primarySource,
+    Iterable<AssetId> sources,
+    Iterable<AssetId> directDependencies,
+    this.platform,
+    this.isSupported, {
+    this.isMissing = false,
+  }) : sources = UnmodifiableSetView(HashSet.of(sources)),
+       directDependencies = UnmodifiableSetView(HashSet.of(directDependencies));
 
   /// Generated factory constructor.
   factory Module.fromJson(Map<String, dynamic> json) => _$ModuleFromJson(json);
@@ -136,8 +145,10 @@ class Module {
   ///
   /// If [throwIfUnsupported] is `true`, then an [UnsupportedModules]
   /// will be thrown if there are any modules that are not supported.
-  Future<List<Module>> computeTransitiveDependencies(BuildStep buildStep,
-      {bool throwIfUnsupported = false}) async {
+  Future<List<Module>> computeTransitiveDependencies(
+    BuildStep buildStep, {
+    bool throwIfUnsupported = false,
+  }) async {
     final modules = await buildStep.fetchResource(moduleCache);
     var transitiveDeps = <AssetId, Module>{};
     var modulesToCrawl = {primarySource};
@@ -163,17 +174,21 @@ class Module {
     }
 
     if (missingModuleSources.isNotEmpty) {
-      throw await MissingModulesException.create(missingModuleSources,
-          transitiveDeps.values.toList()..add(this), buildStep);
+      throw await MissingModulesException.create(
+        missingModuleSources,
+        transitiveDeps.values.toList()..add(this),
+        buildStep,
+      );
     }
     if (throwIfUnsupported && unsupportedModules.isNotEmpty) {
       throw UnsupportedModules(unsupportedModules);
     }
     var orderedModules = stronglyConnectedComponents<Module>(
-        transitiveDeps.values,
-        (m) => m.directDependencies.map((s) => transitiveDeps[s]!),
-        equals: (a, b) => a.primarySource == b.primarySource,
-        hashCode: (m) => m.primarySource.hashCode);
+      transitiveDeps.values,
+      (m) => m.directDependencies.map((s) => transitiveDeps[s]!),
+      equals: (a, b) => a.primarySource == b.primarySource,
+      hashCode: (m) => m.primarySource.hashCode,
+    );
     return orderedModules.map((c) => c.single).toList();
   }
 }

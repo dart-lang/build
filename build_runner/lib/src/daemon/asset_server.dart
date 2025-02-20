@@ -31,15 +31,18 @@ class AssetServer {
     String rootPackage,
   ) async {
     var server = await HttpMultiServer.loopback(0);
-    var cascade = Cascade().add((_) async {
-      await builder.building;
-      return Response.notFound('');
-    }).add(AssetHandler(builder.reader, rootPackage).handle);
+    var cascade = Cascade()
+        .add((_) async {
+          await builder.building;
+          return Response.notFound('');
+        })
+        .add(AssetHandler(builder.reader, rootPackage).handle);
 
     var pipeline = const Pipeline();
     if (options.logRequests) {
       pipeline = pipeline.addMiddleware(
-          logRequests(logger: (message, isError) => _logger.finest(message)));
+        logRequests(logger: (message, isError) => _logger.finest(message)),
+      );
     }
 
     shelf_io.serveRequests(server, pipeline.addHandler(cascade.handler));

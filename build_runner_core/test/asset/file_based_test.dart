@@ -21,88 +21,119 @@ void main() async {
     final reader = FileBasedAssetReader(packageGraph);
 
     test('can read any application package files', () async {
-      expect(await reader.readAsString(makeAssetId('basic_pkg|hello.txt')),
-          'world$newLine');
-      expect(await reader.readAsString(makeAssetId('basic_pkg|lib/hello.txt')),
-          'world$newLine');
-      expect(await reader.readAsString(makeAssetId('basic_pkg|web/hello.txt')),
-          'world$newLine');
+      expect(
+        await reader.readAsString(makeAssetId('basic_pkg|hello.txt')),
+        'world$newLine',
+      );
+      expect(
+        await reader.readAsString(makeAssetId('basic_pkg|lib/hello.txt')),
+        'world$newLine',
+      );
+      expect(
+        await reader.readAsString(makeAssetId('basic_pkg|web/hello.txt')),
+        'world$newLine',
+      );
     });
 
     test('can read package dependency files in the lib dir', () async {
       expect(
-          await reader.readAsString(makeAssetId('a|lib/a.txt')), 'A$newLine');
+        await reader.readAsString(makeAssetId('a|lib/a.txt')),
+        'A$newLine',
+      );
     });
 
     test('can check for existence of any application package files', () async {
       expect(await reader.canRead(makeAssetId('basic_pkg|hello.txt')), isTrue);
       expect(
-          await reader.canRead(makeAssetId('basic_pkg|lib/hello.txt')), isTrue);
+        await reader.canRead(makeAssetId('basic_pkg|lib/hello.txt')),
+        isTrue,
+      );
       expect(
-          await reader.canRead(makeAssetId('basic_pkg|web/hello.txt')), isTrue);
+        await reader.canRead(makeAssetId('basic_pkg|web/hello.txt')),
+        isTrue,
+      );
 
       expect(await reader.canRead(makeAssetId('basic_pkg|a.txt')), isFalse);
       expect(await reader.canRead(makeAssetId('basic_pkg|lib/a.txt')), isFalse);
     });
 
-    test('can check for existence of package dependency files in lib',
-        () async {
-      expect(await reader.canRead(makeAssetId('a|lib/a.txt')), isTrue);
-      expect(await reader.canRead(makeAssetId('a|lib/b.txt')), isFalse);
-    });
+    test(
+      'can check for existence of package dependency files in lib',
+      () async {
+        expect(await reader.canRead(makeAssetId('a|lib/a.txt')), isTrue);
+        expect(await reader.canRead(makeAssetId('a|lib/b.txt')), isFalse);
+      },
+    );
 
     test('throws when attempting to read a non-existent file', () async {
-      expect(reader.readAsString(makeAssetId('basic_pkg|foo.txt')),
-          throwsA(assetNotFoundException));
-      expect(reader.readAsString(makeAssetId('a|lib/b.txt')),
-          throwsA(assetNotFoundException));
-      expect(reader.readAsString(makeAssetId('foo|lib/bar.txt')),
-          throwsA(packageNotFoundException));
+      expect(
+        reader.readAsString(makeAssetId('basic_pkg|foo.txt')),
+        throwsA(assetNotFoundException),
+      );
+      expect(
+        reader.readAsString(makeAssetId('a|lib/b.txt')),
+        throwsA(assetNotFoundException),
+      );
+      expect(
+        reader.readAsString(makeAssetId('foo|lib/bar.txt')),
+        throwsA(packageNotFoundException),
+      );
     });
 
     test('can list files based on glob', () async {
       expect(
-          await reader.assetFinder
-              .find(Glob('{lib,web}/**'), package: 'basic_pkg')
-              .toList(),
-          unorderedEquals([
-            makeAssetId('basic_pkg|lib/hello.txt'),
-            makeAssetId('basic_pkg|web/hello.txt'),
-          ]));
+        await reader.assetFinder
+            .find(Glob('{lib,web}/**'), package: 'basic_pkg')
+            .toList(),
+        unorderedEquals([
+          makeAssetId('basic_pkg|lib/hello.txt'),
+          makeAssetId('basic_pkg|web/hello.txt'),
+        ]),
+      );
     });
 
     test('can compute digests', () async {
       expect(
-          await reader.digest(makeAssetId('basic_pkg|hello.txt')), isNotNull);
+        await reader.digest(makeAssetId('basic_pkg|hello.txt')),
+        isNotNull,
+      );
     });
 
     test('digests are different for different file contents', () async {
-      var helloDigest =
-          await reader.digest(makeAssetId('basic_pkg|lib/hello.txt'));
+      var helloDigest = await reader.digest(
+        makeAssetId('basic_pkg|lib/hello.txt'),
+      );
       var aDigest = await reader.digest(makeAssetId('a|lib/a.txt'));
       expect(helloDigest, isNot(equals(aDigest)));
     });
 
-    test('digests are identical for identical file contents and assets',
-        () async {
-      var helloDigest =
-          await reader.digest(makeAssetId('basic_pkg|lib/hello.txt'));
-      var aDigest = await reader.digest(makeAssetId('basic_pkg|lib/hello.txt'));
-      expect(helloDigest, equals(aDigest));
-    });
-
     test(
-        'digests are different for identical file contents and different '
+      'digests are identical for identical file contents and assets',
+      () async {
+        var helloDigest = await reader.digest(
+          makeAssetId('basic_pkg|lib/hello.txt'),
+        );
+        var aDigest = await reader.digest(
+          makeAssetId('basic_pkg|lib/hello.txt'),
+        );
+        expect(helloDigest, equals(aDigest));
+      },
+    );
+
+    test('digests are different for identical file contents and different '
         'assets', () async {
-      var helloDigest =
-          await reader.digest(makeAssetId('basic_pkg|lib/hello.txt'));
+      var helloDigest = await reader.digest(
+        makeAssetId('basic_pkg|lib/hello.txt'),
+      );
       var aDigest = await reader.digest(makeAssetId('basic_pkg|web/hello.txt'));
       expect(helloDigest, isNot(equals(aDigest)));
     });
 
     test('can read from the SDK', () async {
       expect(
-          await reader.canRead(makeAssetId(r'$sdk|lib/libraries.json')), true);
+        await reader.canRead(makeAssetId(r'$sdk|lib/libraries.json')),
+        true,
+      );
     });
   });
 

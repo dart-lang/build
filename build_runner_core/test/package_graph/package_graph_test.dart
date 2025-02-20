@@ -24,10 +24,11 @@ void main() {
 
       test('asPackageConfig', () {
         final config = graph.asPackageConfig;
-        final buildRunner =
-            config.packages.singleWhere((p) => p.name == 'build_runner_core');
+        final buildRunner = config.packages.singleWhere(
+          (p) => p.name == 'build_runner_core',
+        );
 
-        expect(buildRunner.languageVersion, LanguageVersion(3, 6));
+        expect(buildRunner.languageVersion, LanguageVersion(3, 7));
       });
     });
 
@@ -40,25 +41,35 @@ void main() {
 
       test('allPackages', () {
         expect(
-            graph.allPackages,
-            equals({
-              'a': graph['a'],
-              'b': graph['b'],
-              'c': graph['c'],
-              'd': graph['d'],
-              'basic_pkg': graph['basic_pkg'],
-              r'$sdk': anything,
-            }));
+          graph.allPackages,
+          equals({
+            'a': graph['a'],
+            'b': graph['b'],
+            'c': graph['c'],
+            'd': graph['d'],
+            'basic_pkg': graph['basic_pkg'],
+            r'$sdk': anything,
+          }),
+        );
       });
 
       test('root', () {
-        expectPkg(graph.root, 'basic_pkg', basicPkgPath, DependencyType.path,
-            [graph['a']!, graph['b']!, graph['c']!, graph['d']!]);
+        expectPkg(graph.root, 'basic_pkg', basicPkgPath, DependencyType.path, [
+          graph['a']!,
+          graph['b']!,
+          graph['c']!,
+          graph['d']!,
+        ]);
       });
 
       test('dependency', () {
-        expectPkg(graph['a']!, 'a', '$basicPkgPath/pkg/a',
-            DependencyType.hosted, [graph['b']!, graph['c']!]);
+        expectPkg(
+          graph['a']!,
+          'a',
+          '$basicPkgPath/pkg/a',
+          DependencyType.hosted,
+          [graph['b']!, graph['c']!],
+        );
       });
 
       test('asPackageConfig', () {
@@ -90,15 +101,30 @@ void main() {
 
       test('dev deps are contained in deps of root pkg, but not others', () {
         // Package `b` shows as a dep because this is the root package.
-        expectPkg(graph.root, 'with_dev_deps', withDevDepsPkgPath,
-            DependencyType.path, [graph['a']!, graph['b']!]);
+        expectPkg(
+          graph.root,
+          'with_dev_deps',
+          withDevDepsPkgPath,
+          DependencyType.path,
+          [graph['a']!, graph['b']!],
+        );
 
         // Package `c` does not appear because this is not the root package.
-        expectPkg(graph['a']!, 'a', '$withDevDepsPkgPath/pkg/a',
-            DependencyType.hosted, []);
+        expectPkg(
+          graph['a']!,
+          'a',
+          '$withDevDepsPkgPath/pkg/a',
+          DependencyType.hosted,
+          [],
+        );
 
-        expectPkg(graph['b']!, 'b', '$withDevDepsPkgPath/pkg/b',
-            DependencyType.hosted, []);
+        expectPkg(
+          graph['b']!,
+          'b',
+          '$withDevDepsPkgPath/pkg/b',
+          DependencyType.hosted,
+          [],
+        );
 
         expect(graph['c'], isNull);
       });
@@ -113,18 +139,19 @@ void main() {
 
       test('allPackages resolved correctly with all packages', () {
         expect(
-            graph.allPackages.keys,
-            unorderedEquals([
-              'flutter_gallery',
-              'intl',
-              'string_scanner',
-              'flutter',
-              'collection',
-              'flutter_gallery_assets',
-              'flutter_test',
-              'flutter_driver',
-              r'$sdk',
-            ]));
+          graph.allPackages.keys,
+          unorderedEquals([
+            'flutter_gallery',
+            'intl',
+            'string_scanner',
+            'flutter',
+            'collection',
+            'flutter_gallery_assets',
+            'flutter_test',
+            'flutter_driver',
+            r'$sdk',
+          ]),
+        );
       });
     });
 
@@ -137,21 +164,26 @@ void main() {
       b.dependencies.add(c);
       var graph = PackageGraph.fromRoot(a);
       expect(graph.root, a);
-      expect(graph.allPackages,
-          equals({'a': a, 'b': b, 'c': c, 'd': d, r'$sdk': anything}));
+      expect(
+        graph.allPackages,
+        equals({'a': a, 'b': b, 'c': c, 'd': d, r'$sdk': anything}),
+      );
     });
 
     test('missing pubspec throws on create', () {
       expect(
-          () => PackageGraph.forPath(p.join('test', 'fixtures', 'no_pubspec')),
-          throwsA(anything));
+        () => PackageGraph.forPath(p.join('test', 'fixtures', 'no_pubspec')),
+        throwsA(anything),
+      );
     });
 
     test('missing .dart_tool/package_config.json file throws on create', () {
       expect(
-          () => PackageGraph.forPath(
-              p.join('test', 'fixtures', 'no_packages_file')),
-          throwsA(anything));
+        () => PackageGraph.forPath(
+          p.join('test', 'fixtures', 'no_packages_file'),
+        ),
+        throwsA(anything),
+      );
     });
   });
 
@@ -161,17 +193,31 @@ void main() {
     test('Loads all packages in workspace. Has correct root', () async {
       Matcher packageNodeEquals(PackageNode node) => isA<PackageNode>()
           .having((c) => c.path, 'path', node.path)
-          .having((c) => c.dependencies, 'dependencies',
-              node.dependencies.map(packageNodeEquals))
           .having(
-              (c) => c.dependencyType, 'dependencyType', node.dependencyType);
+            (c) => c.dependencies,
+            'dependencies',
+            node.dependencies.map(packageNodeEquals),
+          )
+          .having(
+            (c) => c.dependencyType,
+            'dependencyType',
+            node.dependencyType,
+          );
 
       final graph = await PackageGraph.forPath('$workspaceFixturePath/pkgs/a');
       var a = PackageNode(
-          'a', '$workspaceFixturePath/pkgs/a', DependencyType.path, null,
-          isRoot: true);
+        'a',
+        '$workspaceFixturePath/pkgs/a',
+        DependencyType.path,
+        null,
+        isRoot: true,
+      );
       var b = PackageNode(
-          'b', '$workspaceFixturePath/pkgs/b', DependencyType.path, null);
+        'b',
+        '$workspaceFixturePath/pkgs/b',
+        DependencyType.path,
+        null,
+      );
       a.dependencies.add(b);
       var workspace = PackageNode(
         'workspace',
@@ -184,7 +230,7 @@ void main() {
         'a': packageNodeEquals(a),
         'b': packageNodeEquals(b),
         'workspace': packageNodeEquals(workspace),
-        r'$sdk': anything
+        r'$sdk': anything,
       });
 
       expect(graph.root, packageNodeEquals(a));
@@ -192,9 +238,13 @@ void main() {
   });
 }
 
-void expectPkg(PackageNode node, String name, String location,
-    DependencyType dependencyType,
-    [Iterable<PackageNode>? dependencies]) {
+void expectPkg(
+  PackageNode node,
+  String name,
+  String location,
+  DependencyType dependencyType, [
+  Iterable<PackageNode>? dependencies,
+]) {
   location = p.canonicalize(location);
   expect(node.name, name);
   expect(node.path, location);

@@ -35,22 +35,28 @@ AssetId _passThrough(AssetId id) => id;
 /// association to a package pass [mapAssetIds] to translate from the logical
 /// location to the actual written location.
 void checkOutputs(
-    Map<String, /*List<int>|String|Matcher<List<int>>*/ Object>? outputs,
-    Iterable<AssetId> actualAssets,
-    InMemoryAssetReaderWriter writer,
-    {AssetId Function(AssetId id) mapAssetIds = _passThrough}) {
+  Map<String, /*List<int>|String|Matcher<List<int>>*/ Object>? outputs,
+  Iterable<AssetId> actualAssets,
+  InMemoryAssetReaderWriter writer, {
+  AssetId Function(AssetId id) mapAssetIds = _passThrough,
+}) {
   var modifiableActualAssets = Set.of(actualAssets);
   if (outputs != null) {
     outputs.forEach((serializedId, contentsMatcher) {
-      assert(contentsMatcher is String ||
-          contentsMatcher is List<int> ||
-          contentsMatcher is Matcher);
+      assert(
+        contentsMatcher is String ||
+            contentsMatcher is List<int> ||
+            contentsMatcher is Matcher,
+      );
 
       var assetId = makeAssetId(serializedId);
 
       // Check that the asset was produced.
-      expect(modifiableActualAssets, contains(assetId),
-          reason: 'Builder failed to write asset $assetId');
+      expect(
+        modifiableActualAssets,
+        contains(assetId),
+        reason: 'Builder failed to write asset $assetId',
+      );
       modifiableActualAssets.remove(assetId);
       var actual = writer.assets[mapAssetIds(assetId)]!;
       Object expected;
@@ -61,16 +67,24 @@ void checkOutputs(
       } else if (contentsMatcher is Matcher) {
         expected = actual;
       } else {
-        throw ArgumentError('Expected values for `outputs` to be of type '
-            '`String`, `List<int>`, or `Matcher`, but got `$contentsMatcher`.');
+        throw ArgumentError(
+          'Expected values for `outputs` to be of type '
+          '`String`, `List<int>`, or `Matcher`, but got `$contentsMatcher`.',
+        );
       }
-      expect(expected, contentsMatcher,
-          reason: 'Unexpected content for $assetId in result.outputs.');
+      expect(
+        expected,
+        contentsMatcher,
+        reason: 'Unexpected content for $assetId in result.outputs.',
+      );
     });
     // Check that no extra assets were produced.
-    expect(modifiableActualAssets, isEmpty,
-        reason:
-            'Unexpected outputs found `$actualAssets`. Only expected $outputs');
+    expect(
+      modifiableActualAssets,
+      isEmpty,
+      reason:
+          'Unexpected outputs found `$actualAssets`. Only expected $outputs',
+    );
   }
 }
 
@@ -111,18 +125,20 @@ void checkOutputs(
 /// Returns a [TestBuilderResult] with the [InMemoryAssetReaderWriter] used for
 /// the build, which can be used for further checks.
 Future<TestBuilderResult> testBuilder(
-    Builder builder, Map<String, /*String|List<int>*/ Object> sourceAssets,
-    {Set<String>? generateFor,
-    bool Function(String assetId)? isInput,
-    String? rootPackage,
-    Map<String, /*String|List<int>|Matcher<List<int>>*/ Object>? outputs,
-    void Function(LogRecord log)? onLog,
-    void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput,
-    PackageConfig? packageConfig}) async {
+  Builder builder,
+  Map<String, /*String|List<int>*/ Object> sourceAssets, {
+  Set<String>? generateFor,
+  bool Function(String assetId)? isInput,
+  String? rootPackage,
+  Map<String, /*String|List<int>|Matcher<List<int>>*/ Object>? outputs,
+  void Function(LogRecord log)? onLog,
+  void Function(AssetId, Iterable<AssetId>)? reportUnusedAssetsForInput,
+  PackageConfig? packageConfig,
+}) async {
   onLog ??= (log) => printOnFailure('$log');
 
   var inputIds = {
-    for (var descriptor in sourceAssets.keys) makeAssetId(descriptor)
+    for (var descriptor in sourceAssets.keys) makeAssetId(descriptor),
   };
   var allPackages = {for (var id in inputIds) id.package};
   if (allPackages.length == 1) rootPackage ??= allPackages.first;
@@ -133,7 +149,7 @@ Future<TestBuilderResult> testBuilder(
       AssetId(rootPackage, r'$package$'),
       AssetId(rootPackage, r'test/$test$'),
       AssetId(rootPackage, r'web/$web$'),
-    ]
+    ],
   ]);
 
   final readerWriter = InMemoryAssetReaderWriter(rootPackage: rootPackage);
@@ -153,9 +169,10 @@ Future<TestBuilderResult> testBuilder(
   var writerSpy = AssetWriterSpy(readerWriter);
   var logger = Logger('testBuilder');
   var logSubscription = logger.onRecord.listen(onLog);
-  var resolvers = packageConfig == null && enabledExperiments.isEmpty
-      ? AnalyzerResolvers.sharedInstance
-      : AnalyzerResolvers.custom(packageConfig: packageConfig);
+  var resolvers =
+      packageConfig == null && enabledExperiments.isEmpty
+          ? AnalyzerResolvers.sharedInstance
+          : AnalyzerResolvers.custom(packageConfig: packageConfig);
 
   final startingFiles = readerWriter.assets.keys.toList();
   for (var input in inputIds) {
@@ -166,8 +183,15 @@ Future<TestBuilderResult> testBuilder(
     final readerForStep = WrittenAssetReader(readerWriter, spyForStep)
       ..allowReadingAll(startingFiles);
 
-    await runBuilder(builder, {input}, readerForStep, spyForStep, resolvers,
-        logger: logger, reportUnusedAssetsForInput: reportUnusedAssetsForInput);
+    await runBuilder(
+      builder,
+      {input},
+      readerForStep,
+      spyForStep,
+      resolvers,
+      logger: logger,
+      reportUnusedAssetsForInput: reportUnusedAssetsForInput,
+    );
   }
 
   await logSubscription.cancel();

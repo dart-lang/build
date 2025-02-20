@@ -96,8 +96,8 @@ class Resource<T> {
   final _instanceByManager = <ResourceManager, Future<T>>{};
 
   Resource(this._create, {DisposeInstance<T>? dispose, BeforeExit? beforeExit})
-      : _userDispose = dispose,
-        _userBeforeExit = beforeExit;
+    : _userDispose = dispose,
+      _userBeforeExit = beforeExit;
 
   /// Fetches an actual instance of this resource for [manager].
   Future<T> _fetch(ResourceManager manager) =>
@@ -156,9 +156,11 @@ class ResourceManager {
 
   /// Invokes the `beforeExit` callbacks of all [Resource]s that had one.
   Future<void> beforeExit() async {
-    await Future.wait(_resourcesWithBeforeExit.map((r) async {
-      return r._userBeforeExit?.call();
-    }));
+    await Future.wait(
+      _resourcesWithBeforeExit.map((r) async {
+        return r._userBeforeExit?.call();
+      }),
+    );
     _resourcesWithBeforeExit.clear();
   }
 }

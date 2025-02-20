@@ -2,7 +2,7 @@ name: d
 resolution: workspace
 
 environment:
-  sdk: ^3.6.0
+  sdk: ^3.7.0
 
 dependencies:
   c:

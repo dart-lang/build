@@ -24,8 +24,9 @@ final _runningDartSdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
 
 /// Path where the dart:ui package will be found, if executing via the dart
 /// binary provided by the Flutter SDK.
-final _dartUiPath =
-    p.normalize(p.join(_runningDartSdkPath, '..', 'pkg', 'sky_engine', 'lib'));
+final _dartUiPath = p.normalize(
+  p.join(_runningDartSdkPath, '..', 'pkg', 'sky_engine', 'lib'),
+);
 
 /// Lazily creates a summary of the users SDK and caches it under
 /// `.dart_tool/build_resolvers`.
@@ -38,8 +39,9 @@ Future<String> defaultSdkSummaryGenerator() async {
   var dartToolPath = '.dart_tool';
   if (!await Directory(dartToolPath).exists()) {
     throw StateError(
-        'The default analyzer resolver can only be used when the current '
-        'working directory is a standard pub package.');
+      'The default analyzer resolver can only be used when the current '
+      'working directory is a standard pub package.',
+    );
   }
 
   var cacheDir = p.join(dartToolPath, 'build_resolvers');
@@ -53,7 +55,8 @@ Future<String> defaultSdkSummaryGenerator() async {
       package: await packagePath(package),
   };
 
-  final needsRebuild = !await summaryFile.exists() ||
+  final needsRebuild =
+      !await summaryFile.exists() ||
       !await depsFile.exists() ||
       !await _checkDeps(depsFile, currentDeps);
 
@@ -79,8 +82,10 @@ Future<String> defaultSdkSummaryGenerator() async {
     await _createDepsFile(depsFile, currentDeps);
     await tempDir.delete();
     watch.stop();
-    _logger.info('Generating SDK summary completed, took '
-        '${humanReadable(watch.elapsed)}\n');
+    _logger.info(
+      'Generating SDK summary completed, took '
+      '${humanReadable(watch.elapsed)}\n',
+    );
   }
 
   return p.absolute(summaryPath);
@@ -89,7 +94,9 @@ Future<String> defaultSdkSummaryGenerator() async {
 final _packageDepsToCheck = ['analyzer', 'build_resolvers'];
 
 Future<bool> _checkDeps(
-    File versionsFile, Map<String, Object?> currentDeps) async {
+  File versionsFile,
+  Map<String, Object?> currentDeps,
+) async {
   var previous =
       jsonDecode(await versionsFile.readAsString()) as Map<String, Object?>;
 
@@ -103,7 +110,9 @@ Future<bool> _checkDeps(
 }
 
 Future<void> _createDepsFile(
-    File depsFile, Map<String, Object?> currentDeps) async {
+  File depsFile,
+  Map<String, Object?> currentDeps,
+) async {
   await depsFile.create(recursive: true);
   await depsFile.writeAsString(jsonEncode(currentDeps));
 }

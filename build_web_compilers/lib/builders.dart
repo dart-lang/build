@@ -45,20 +45,21 @@ Builder ddcKernelBuilder(BuilderOptions options) {
   _ensureSameDdcOptions(options);
 
   return KernelBuilder(
-      summaryOnly: true,
-      sdkKernelPath: sdkDdcKernelPath,
-      outputExtension: ddcKernelExtension,
-      platform: ddcPlatform,
-      useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
-      trackUnusedInputs: _readTrackInputsCompilerOption(options));
+    summaryOnly: true,
+    sdkKernelPath: sdkDdcKernelPath,
+    outputExtension: ddcKernelExtension,
+    platform: ddcPlatform,
+    useIncrementalCompiler: _readUseIncrementalCompilerOption(options),
+    trackUnusedInputs: _readTrackInputsCompilerOption(options),
+  );
 }
 
 Builder sdkJsCopyRequirejs(BuilderOptions _) => SdkJsCopyBuilder();
 Builder sdkJsCompile(BuilderOptions options) => SdkJsCompileBuilder(
-      sdkKernelPath: 'lib/_internal/ddc_platform.dill',
-      outputPath: 'lib/src/dev_compiler/dart_sdk.js',
-      canaryFeatures: _readCanaryOption(options),
-    );
+  sdkKernelPath: 'lib/_internal/ddc_platform.dill',
+  outputPath: 'lib/src/dev_compiler/dart_sdk.js',
+  canaryFeatures: _readCanaryOption(options),
+);
 
 // Dart2js related builders
 Builder dart2jsMetaModuleBuilder(BuilderOptions options) =>
@@ -81,23 +82,33 @@ Builder dart2wasmModuleBuilder(BuilderOptions _) =>
 // General purpose builders
 PostProcessBuilder dartSourceCleanup(BuilderOptions options) =>
     (options.config['enabled'] as bool? ?? false)
-        ? const FileDeletingBuilder(
-            ['.dart', '.js.map', '.ddc.js.metadata', '.ddc_merged_metadata'])
-        : const FileDeletingBuilder(
-            ['.dart', '.js.map', '.ddc.js.metadata', '.ddc_merged_metadata'],
-            isEnabled: false);
+        ? const FileDeletingBuilder([
+          '.dart',
+          '.js.map',
+          '.ddc.js.metadata',
+          '.ddc_merged_metadata',
+        ])
+        : const FileDeletingBuilder([
+          '.dart',
+          '.js.map',
+          '.ddc.js.metadata',
+          '.ddc_merged_metadata',
+        ], isEnabled: false);
 
 /// Throws if it is ever given different options.
 void _ensureSameDdcOptions(BuilderOptions options) {
   if (_previousDdcConfig != null) {
-    if (!const MapEquality<String, Object?>()
-        .equals(_previousDdcConfig, options.config)) {
+    if (!const MapEquality<String, Object?>().equals(
+      _previousDdcConfig,
+      options.config,
+    )) {
       throw ArgumentError(
-          'The build_web_compilers:ddc builder must have the same '
-          'configuration in all packages. Saw $_previousDdcConfig and '
-          '${options.config} which are not equal.\n\n '
-          'Please use the `global_options` section in '
-          '`build.yaml` or the `--define` flag to set global options.');
+        'The build_web_compilers:ddc builder must have the same '
+        'configuration in all packages. Saw $_previousDdcConfig and '
+        '${options.config} which are not equal.\n\n '
+        'Please use the `global_options` section in '
+        '`build.yaml` or the `--define` flag to set global options.',
+      );
     }
   } else {
     _previousDdcConfig = options.config;

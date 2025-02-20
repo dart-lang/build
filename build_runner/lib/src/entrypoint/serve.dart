@@ -22,16 +22,23 @@ import 'watch.dart';
 class ServeCommand extends WatchCommand {
   ServeCommand() {
     argParser
-      ..addOption(hostnameOption,
-          help: 'Specify the hostname to serve on', defaultsTo: 'localhost')
-      ..addFlag(logRequestsOption,
-          defaultsTo: false,
-          negatable: false,
-          help: 'Enables logging for each request to the server.')
-      ..addFlag(liveReloadOption,
-          defaultsTo: false,
-          negatable: false,
-          help: 'Enables automatic page reloading on rebuilds. ');
+      ..addOption(
+        hostnameOption,
+        help: 'Specify the hostname to serve on',
+        defaultsTo: 'localhost',
+      )
+      ..addFlag(
+        logRequestsOption,
+        defaultsTo: false,
+        negatable: false,
+        help: 'Enables logging for each request to the server.',
+      )
+      ..addFlag(
+        liveReloadOption,
+        defaultsTo: false,
+        negatable: false,
+        help: 'Enables automatic page reloading on rebuilds. ',
+      );
   }
 
   @override
@@ -47,34 +54,47 @@ class ServeCommand extends WatchCommand {
 
   @override
   ServeOptions readOptions() => ServeOptions.fromParsedArgs(
-      argResults!, argResults!.rest, packageGraph.root.name, this);
+    argResults!,
+    argResults!.rest,
+    packageGraph.root.name,
+    this,
+  );
 
   @override
   Future<int> run() {
     final servers = <ServeTarget, HttpServer>{};
     var options = readOptions();
     return withEnabledExperiments(
-        () => _runServe(servers, options).whenComplete(() async {
-              await Future.wait(
-                  servers.values.map((server) => server.close(force: true)));
-            }),
-        options.enableExperiments);
+      () => _runServe(servers, options).whenComplete(() async {
+        await Future.wait(
+          servers.values.map((server) => server.close(force: true)),
+        );
+      }),
+      options.enableExperiments,
+    );
   }
 
   Future<int> _runServe(
-      Map<ServeTarget, HttpServer> servers, ServeOptions options) async {
+    Map<ServeTarget, HttpServer> servers,
+    ServeOptions options,
+  ) async {
     try {
-      await Future.wait(options.serveTargets.map((target) async {
-        servers[target] =
-            await HttpMultiServer.bind(options.hostName, target.port);
-      }));
+      await Future.wait(
+        options.serveTargets.map((target) async {
+          servers[target] = await HttpMultiServer.bind(
+            options.hostName,
+            target.port,
+          );
+        }),
+      );
     } on SocketException catch (e) {
       var listener = Logger.root.onRecord.listen(stdIOLogListener());
       if (e.address != null && e.port != null) {
         logger.severe(
-            'Error starting server at ${e.address!.address}:${e.port}, address '
-            'is already in use. Please kill the server running on that port or '
-            'serve on a different port and restart this process.');
+          'Error starting server at ${e.address!.address}:${e.port}, address '
+          'is already in use. Please kill the server running on that port or '
+          'serve on a different port and restart this process.',
+        );
       } else {
         logger.severe('Error starting server on ${options.hostName}.');
       }
@@ -102,10 +122,13 @@ class ServeCommand extends WatchCommand {
 
     servers.forEach((target, server) {
       serveRequests(
-          server,
-          handler.handlerFor(target.dir,
-              logRequests: options.logRequests,
-              buildUpdates: options.buildUpdates));
+        server,
+        handler.handlerFor(
+          target.dir,
+          logRequests: options.logRequests,
+          buildUpdates: options.buildUpdates,
+        ),
+      );
     });
 
     _ensureBuildWebCompilersDependency(packageGraph, logger);
@@ -117,18 +140,24 @@ class ServeCommand extends WatchCommand {
   }
 
   void _logServerPorts(
-      ServeHandler serveHandler, ServeOptions options, Logger logger) async {
+    ServeHandler serveHandler,
+    ServeOptions options,
+    Logger logger,
+  ) async {
     await serveHandler.currentBuild;
     // Warn if in serve mode with no servers.
     if (options.serveTargets.isEmpty) {
       logger.warning(
-          'Found no known web directories to serve, but running in `serve` '
-          'mode. You may expliclity provide a directory to serve with trailing '
-          'args in <dir>[:<port>] format.');
+        'Found no known web directories to serve, but running in `serve` '
+        'mode. You may expliclity provide a directory to serve with trailing '
+        'args in <dir>[:<port>] format.',
+      );
     } else {
       for (var target in options.serveTargets) {
-        stdout.writeln('Serving `${target.dir}` on '
-            'http://${options.hostName}:${target.port}');
+        stdout.writeln(
+          'Serving `${target.dir}` on '
+          'http://${options.hostName}:${target.port}',
+        );
       }
     }
   }

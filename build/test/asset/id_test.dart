@@ -67,35 +67,47 @@ void main() {
     });
 
     test('should throw for a file: URI', () {
-      expect(() => AssetId.resolve(Uri.parse(r'file://localhost/etc/fstab1')),
-          throwsUnsupportedError);
+      expect(
+        () => AssetId.resolve(Uri.parse(r'file://localhost/etc/fstab1')),
+        throwsUnsupportedError,
+      );
     });
 
     test('should throw for a dart: URI', () {
-      expect(() => AssetId.resolve(Uri.parse(r'dart:collection')),
-          throwsUnsupportedError);
+      expect(
+        () => AssetId.resolve(Uri.parse(r'dart:collection')),
+        throwsUnsupportedError,
+      );
     });
 
     test('should throw parsing a relative package URI without an origin', () {
-      expect(() => AssetId.resolve(Uri.parse('some/relative/path.dart')),
-          throwsArgumentError);
+      expect(
+        () => AssetId.resolve(Uri.parse('some/relative/path.dart')),
+        throwsArgumentError,
+      );
     });
 
     test('should parse a relative URI within the test/ folder', () {
-      var id = AssetId.resolve(Uri.parse('common.dart'),
-          from: AssetId('app', 'test/some_test.dart'));
+      var id = AssetId.resolve(
+        Uri.parse('common.dart'),
+        from: AssetId('app', 'test/some_test.dart'),
+      );
       expect(id, AssetId('app', 'test/common.dart'));
     });
 
     test('should parse a relative package URI', () {
-      var id = AssetId.resolve(Uri.parse('some/relative/path.dart'),
-          from: AssetId('app', 'lib/app.dart'));
+      var id = AssetId.resolve(
+        Uri.parse('some/relative/path.dart'),
+        from: AssetId('app', 'lib/app.dart'),
+      );
       expect(id, AssetId('app', 'lib/some/relative/path.dart'));
     });
 
     test('should parse a relative package URI pointing back', () {
-      var id = AssetId.resolve(Uri.parse('../src/some/path.dart'),
-          from: AssetId('app', 'folder/folder.dart'));
+      var id = AssetId.resolve(
+        Uri.parse('../src/some/path.dart'),
+        from: AssetId('app', 'folder/folder.dart'),
+      );
       expect(id, AssetId('app', 'src/some/path.dart'));
     });
 
@@ -112,30 +124,42 @@ void main() {
 
   group('to URI', () {
     test('uses `package:` URIs inside lib/', () {
-      expect(AssetId('foo', 'lib/bar.dart').uri,
-          Uri.parse('package:foo/bar.dart'));
+      expect(
+        AssetId('foo', 'lib/bar.dart').uri,
+        Uri.parse('package:foo/bar.dart'),
+      );
     });
 
     test('uses `asset:` URIs outside lib/', () async {
-      expect(AssetId('foo', 'web/main.dart').uri,
-          Uri.parse('asset:foo/web/main.dart'));
+      expect(
+        AssetId('foo', 'web/main.dart').uri,
+        Uri.parse('asset:foo/web/main.dart'),
+      );
     });
 
     test('handles characters that are valid in a file path', () {
-      expect(AssetId('foo', 'lib/#bar.dart').uri,
-          Uri.parse('package:foo/%23bar.dart'));
+      expect(
+        AssetId('foo', 'lib/#bar.dart').uri,
+        Uri.parse('package:foo/%23bar.dart'),
+      );
     });
   });
 
   test('equals another ID with the same package and path', () {
     expect(
-        AssetId.parse('foo|asset.txt'), equals(AssetId.parse('foo|asset.txt')));
+      AssetId.parse('foo|asset.txt'),
+      equals(AssetId.parse('foo|asset.txt')),
+    );
 
-    expect(AssetId.parse('foo|asset.txt'),
-        isNot(equals(AssetId.parse('bar|asset.txt'))));
+    expect(
+      AssetId.parse('foo|asset.txt'),
+      isNot(equals(AssetId.parse('bar|asset.txt'))),
+    );
 
-    expect(AssetId.parse('foo|asset.txt'),
-        isNot(equals(AssetId.parse('bar|other.txt'))));
+    expect(
+      AssetId.parse('foo|asset.txt'),
+      isNot(equals(AssetId.parse('bar|other.txt'))),
+    );
   });
 
   test('identical assets are treated as the same in a Map/Set', () {

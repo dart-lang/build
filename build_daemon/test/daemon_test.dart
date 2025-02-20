@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 @OnPlatform({
-  'windows': Skip('Directories cant be deleted while processes are still open')
+  'windows': Skip('Directories cant be deleted while processes are still open'),
 })
 library;
 
@@ -44,11 +44,7 @@ void main() {
       var workspace = generateV4UUID();
       testWorkspaces.add(workspace);
       var daemon = Daemon(workspace);
-      await daemon.start(
-        <String>{},
-        FakeDaemonBuilder(),
-        FakeChangeProvider(),
-      );
+      await daemon.start(<String>{}, FakeDaemonBuilder(), FakeChangeProvider());
       expect(daemon.onDone, completes);
       await daemon.stop();
     });
@@ -64,28 +60,36 @@ void main() {
       testDaemons.add(daemon);
       expect(await daemon.exitCode, isNotNull);
     });
-    test('can not run if another daemon is running in the same workspace',
-        () async {
-      var workspace = generateV4UUID();
-      testWorkspaces.add(workspace);
-      var daemonOne =
-          await _runDaemon(workspace, timeout: defaultIdleTimeoutSec * 2);
-      expect(await _statusOf(daemonOne, logPrefix: 'one'), 'RUNNING');
-      var daemonTwo = await _runDaemon(workspace);
-      testDaemons.addAll([daemonOne, daemonTwo]);
-      expect(await _statusOf(daemonTwo, logPrefix: 'two'), 'ALREADY RUNNING');
-    }, timeout: const Timeout.factor(2));
-    test('can run if another daemon is running in a different workspace',
-        () async {
-      var workspace1 = generateV4UUID();
-      var workspace2 = generateV4UUID();
-      testWorkspaces.addAll([workspace1, workspace2]);
-      var daemonOne = await _runDaemon(workspace1);
-      expect(await _statusOf(daemonOne), 'RUNNING');
-      var daemonTwo = await _runDaemon(workspace2);
-      testDaemons.addAll([daemonOne, daemonTwo]);
-      expect(await _statusOf(daemonTwo), 'RUNNING');
-    }, timeout: const Timeout.factor(2));
+    test(
+      'can not run if another daemon is running in the same workspace',
+      () async {
+        var workspace = generateV4UUID();
+        testWorkspaces.add(workspace);
+        var daemonOne = await _runDaemon(
+          workspace,
+          timeout: defaultIdleTimeoutSec * 2,
+        );
+        expect(await _statusOf(daemonOne, logPrefix: 'one'), 'RUNNING');
+        var daemonTwo = await _runDaemon(workspace);
+        testDaemons.addAll([daemonOne, daemonTwo]);
+        expect(await _statusOf(daemonTwo, logPrefix: 'two'), 'ALREADY RUNNING');
+      },
+      timeout: const Timeout.factor(2),
+    );
+    test(
+      'can run if another daemon is running in a different workspace',
+      () async {
+        var workspace1 = generateV4UUID();
+        var workspace2 = generateV4UUID();
+        testWorkspaces.addAll([workspace1, workspace2]);
+        var daemonOne = await _runDaemon(workspace1);
+        expect(await _statusOf(daemonOne), 'RUNNING');
+        var daemonTwo = await _runDaemon(workspace2);
+        testDaemons.addAll([daemonOne, daemonTwo]);
+        expect(await _statusOf(daemonTwo), 'RUNNING');
+      },
+      timeout: const Timeout.factor(2),
+    );
     test('can start two daemons at the same time', () async {
       var workspace = generateV4UUID();
       testWorkspaces.add(workspace);
@@ -115,7 +119,9 @@ void main() {
       testDaemons.add(daemon);
       expect(await _statusOf(daemon), 'RUNNING');
       expect(
-          (await Daemon(workspace).currentOptions()).contains('foo'), isTrue);
+        (await Daemon(workspace).currentOptions()).contains('foo'),
+        isTrue,
+      );
     });
     test('does not log the options if not running', () async {
       var workspace = generateV4UUID();
@@ -137,8 +143,10 @@ void main() {
     test('daemon stops after file changes stream has error', () async {
       var workspace = generateV4UUID();
       testWorkspaces.add(workspace);
-      var daemon =
-          await _runDaemon(workspace, errorChangeProviderAfterNSeconds: 1);
+      var daemon = await _runDaemon(
+        workspace,
+        errorChangeProviderAfterNSeconds: 1,
+      );
       expect(await _statusOf(daemon), 'RUNNING');
       await daemon.exitCode;
       expect(Directory(daemonWorkspace(workspace)).existsSync(), isFalse);
@@ -146,8 +154,10 @@ void main() {
     test('daemon stops after file changes stream is closed', () async {
       var workspace = generateV4UUID();
       testWorkspaces.add(workspace);
-      var daemon =
-          await _runDaemon(workspace, closeChangeProviderAfterNSeconds: 1);
+      var daemon = await _runDaemon(
+        workspace,
+        closeChangeProviderAfterNSeconds: 1,
+      );
       expect(await _statusOf(daemon), 'RUNNING');
       await daemon.exitCode;
       expect(Directory(daemonWorkspace(workspace)).existsSync(), isFalse);
@@ -158,29 +168,29 @@ void main() {
 /// Returns the daemon status.
 Future<String> _statusOf(Process daemon, {String logPrefix = ''}) async {
   final statusCompleter = Completer<String>();
-  daemon.stdout
-      .transform(utf8.decoder)
-      .transform(const LineSplitter())
-      .listen((line) {
+  daemon.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen((
+    line,
+  ) {
     print('$logPrefix [STDOUT] $line');
     if (!statusCompleter.isCompleted &&
         (line == 'RUNNING' || line == 'ALREADY RUNNING')) {
       statusCompleter.complete(line);
     }
   });
-  daemon.stderr
-      .transform(utf8.decoder)
-      .transform(const LineSplitter())
-      .listen((line) {
+  daemon.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen((
+    line,
+  ) {
     print('$logPrefix [STDERR] $line');
   });
   return statusCompleter.future;
 }
 
-Future<Process> _runDaemon(String workspace,
-    {int timeout = -1,
-    int errorChangeProviderAfterNSeconds = -1,
-    int closeChangeProviderAfterNSeconds = -1}) async {
+Future<Process> _runDaemon(
+  String workspace, {
+  int timeout = -1,
+  int errorChangeProviderAfterNSeconds = -1,
+  int closeChangeProviderAfterNSeconds = -1,
+}) async {
   timeout = timeout > 0 ? timeout : defaultIdleTimeoutSec;
   await d.file('test.dart', '''
     import 'package:build_daemon/daemon.dart';
@@ -225,12 +235,16 @@ Future<Process> _runDaemon(String workspace,
       ''').create();
   var args = [
     ...Platform.executableArguments,
-    if (!Platform.executableArguments
-        .any((arg) => arg.startsWith('--packages')))
+    if (!Platform.executableArguments.any(
+      (arg) => arg.startsWith('--packages'),
+    ))
       '--packages=${(await Isolate.packageConfig)!.path}',
-    'test.dart'
+    'test.dart',
   ];
-  var process = await Process.start(Platform.resolvedExecutable, args,
-      workingDirectory: d.sandbox);
+  var process = await Process.start(
+    Platform.resolvedExecutable,
+    args,
+    workingDirectory: d.sandbox,
+  );
   return process;
 }

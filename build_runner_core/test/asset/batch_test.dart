@@ -53,14 +53,20 @@ void main() {
     final glob = Glob('lib/**');
     await expectLater(reader.readAsString(_sourceAsset), completes);
     await expectLater(
-        reader.assetFinder.find(glob, package: 'root'), emits(_sourceAsset));
+      reader.assetFinder.find(glob, package: 'root'),
+      emits(_sourceAsset),
+    );
 
     await writer.delete(_sourceAsset);
 
-    await expectLater(() => reader.readAsString(_sourceAsset),
-        throwsA(isA<AssetNotFoundException>()));
-    await expectLater(reader.assetFinder.find(glob, package: 'root'),
-        neverEmits(_sourceAsset));
+    await expectLater(
+      () => reader.readAsString(_sourceAsset),
+      throwsA(isA<AssetNotFoundException>()),
+    );
+    await expectLater(
+      reader.assetFinder.find(glob, package: 'root'),
+      neverEmits(_sourceAsset),
+    );
   });
 }
 
@@ -75,16 +81,16 @@ name: root
 environment:
   sdk: ^3.6.0
 '''),
-    d.dir('lib', [
-      d.file('source.dart'),
-    ]),
+    d.dir('lib', [d.file('source.dart')]),
   ]).create();
 
-  return PackageGraph.fromRoot(PackageNode(
-    'root',
-    d.path('pkg'),
-    DependencyType.path,
-    LanguageVersion.parse('3.5'),
-    isRoot: true,
-  ));
+  return PackageGraph.fromRoot(
+    PackageNode(
+      'root',
+      d.path('pkg'),
+      DependencyType.path,
+      LanguageVersion.parse('3.5'),
+      isRoot: true,
+    ),
+  );
 }

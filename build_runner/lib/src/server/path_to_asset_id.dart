@@ -6,11 +6,16 @@ import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 
 AssetId pathToAssetId(
-    String rootPackage, String rootDir, List<String> pathSegments) {
+  String rootPackage,
+  String rootDir,
+  List<String> pathSegments,
+) {
   var packagesIndex = pathSegments.indexOf('packages');
   return packagesIndex >= 0
-      ? AssetId(pathSegments[packagesIndex + 1],
-          p.join('lib', p.joinAll(pathSegments.sublist(packagesIndex + 2))))
+      ? AssetId(
+        pathSegments[packagesIndex + 1],
+        p.join('lib', p.joinAll(pathSegments.sublist(packagesIndex + 2))),
+      )
       : AssetId(rootPackage, p.joinAll([rootDir, ...pathSegments]));
 }
 
@@ -19,5 +24,5 @@ String? assetIdToPath(AssetId assetId, String rootDir) =>
     assetId.path.startsWith('lib/')
         ? assetId.path.replaceFirst('lib/', 'packages/${assetId.package}/')
         : assetId.path.startsWith('$rootDir/')
-            ? assetId.path.substring(rootDir.length + 1)
-            : null;
+        ? assetId.path.substring(rootDir.length + 1)
+        : null;

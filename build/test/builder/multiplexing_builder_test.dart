@@ -13,8 +13,11 @@ void main() {
         TestBuilder(buildExtensions: replaceExtension('.foo', '.copy')),
         TestBuilder(buildExtensions: replaceExtension('.bar', '.copy')),
       ]);
-      await testBuilder(builder, {'a|lib/a1.foo': 'a1', 'a|lib/a2.bar': 'a2'},
-          outputs: {'a|lib/a1.copy': 'a1', 'a|lib/a2.copy': 'a2'});
+      await testBuilder(
+        builder,
+        {'a|lib/a1.foo': 'a1', 'a|lib/a2.bar': 'a2'},
+        outputs: {'a|lib/a1.copy': 'a1', 'a|lib/a2.copy': 'a2'},
+      );
     });
 
     test('merges non-overlapping extension maps', () {
@@ -24,19 +27,21 @@ void main() {
       ]);
       expect(builder.buildExtensions, {
         '.foo': ['.copy'],
-        '.bar': ['.copy']
+        '.bar': ['.copy'],
       });
     });
 
     test('merges overlapping extension maps', () {
       final builder = MultiplexingBuilder([
-        TestBuilder(buildExtensions: {
-          '.foo': ['.copy.0', '.copy.1']
-        }),
+        TestBuilder(
+          buildExtensions: {
+            '.foo': ['.copy.0', '.copy.1'],
+          },
+        ),
         TestBuilder(buildExtensions: replaceExtension('.foo', '.new')),
       ]);
       expect(builder.buildExtensions, {
-        '.foo': ['.copy.0', '.copy.1', '.new']
+        '.foo': ['.copy.0', '.copy.1', '.new'],
       });
     });
   });

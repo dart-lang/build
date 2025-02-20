@@ -27,16 +27,26 @@ class Readability {
   factory Readability.fromPreviousPhase(bool readable) =>
       readable ? Readability.readable : Readability.notReadable;
 
-  static const Readability notReadable =
-      Readability(canRead: false, inSamePhase: false);
-  static const Readability readable =
-      Readability(canRead: true, inSamePhase: false);
-  static const Readability ownOutput =
-      Readability(canRead: true, inSamePhase: true);
+  static const Readability notReadable = Readability(
+    canRead: false,
+    inSamePhase: false,
+  );
+  static const Readability readable = Readability(
+    canRead: true,
+    inSamePhase: false,
+  );
+  static const Readability ownOutput = Readability(
+    canRead: true,
+    inSamePhase: true,
+  );
 }
 
-typedef IsReadable = FutureOr<Readability> Function(
-    AssetNode node, int phaseNum, AssetWriterSpy? writtenAssets);
+typedef IsReadable =
+    FutureOr<Readability> Function(
+      AssetNode node,
+      int phaseNum,
+      AssetWriterSpy? writtenAssets,
+    );
 
 /// Signature of a function throwing an [InvalidInputException] if the given
 /// asset [id] is an invalid input in a build.
@@ -68,11 +78,18 @@ class SingleStepReader implements AssetReader, AssetReaderState {
   final IsReadable _isReadableNode;
   final CheckInvalidInput _checkInvalidInput;
   final Future<GlobAssetNode> Function(Glob glob, String package, int phaseNum)?
-      _getGlobNode;
+  _getGlobNode;
 
-  SingleStepReader(this._delegate, this._assetGraph, this._phaseNumber,
-      this._primaryPackage, this._isReadableNode, this._checkInvalidInput,
-      [this._getGlobNode, this._writtenAssets]);
+  SingleStepReader(
+    this._delegate,
+    this._assetGraph,
+    this._phaseNumber,
+    this._primaryPackage,
+    this._isReadableNode,
+    this._checkInvalidInput, [
+    this._getGlobNode,
+    this._writtenAssets,
+  ]);
 
   @override
   Filesystem get filesystem => _delegate.filesystem;
@@ -86,8 +103,10 @@ class SingleStepReader implements AssetReader, AssetReaderState {
   /// If [catchInvalidInputs] is set to true and [_checkInvalidInput] throws an
   /// [InvalidInputException], this method will return `false` instead of
   /// throwing.
-  Future<bool> _isReadable(AssetId id,
-      {bool catchInvalidInputs = false}) async {
+  Future<bool> _isReadable(
+    AssetId id, {
+    bool catchInvalidInputs = false,
+  }) async {
     try {
       _checkInvalidInput(id);
     } on InvalidInputException {
@@ -105,8 +124,11 @@ class SingleStepReader implements AssetReader, AssetReaderState {
       return false;
     }
 
-    final readability =
-        await _isReadableNode(node, _phaseNumber, _writtenAssets);
+    final readability = await _isReadableNode(
+      node,
+      _phaseNumber,
+      _writtenAssets,
+    );
     if (!readability.inSamePhase) {
       inputTracker.assetsRead.add(id);
     }
@@ -159,7 +181,7 @@ class SingleStepReader implements AssetReader, AssetReaderState {
     return _delegate.readAsString(id, encoding: encoding);
   }
 
-// This is only for generators, so only `BuildStep` needs to implement it.
+  // This is only for generators, so only `BuildStep` needs to implement it.
   @override
   Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError();
 

@@ -20,43 +20,61 @@ class _$DefaultBuildTargetSerializer
 
   @override
   Iterable<Object?> serialize(
-      Serializers serializers, DefaultBuildTarget object,
-      {FullType specifiedType = FullType.unspecified}) {
+    Serializers serializers,
+    DefaultBuildTarget object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = <Object?>[
       'blackListPatterns',
-      serializers.serialize(object.blackListPatterns,
-          specifiedType:
-              const FullType(BuiltSet, const [const FullType(RegExp)])),
+      serializers.serialize(
+        object.blackListPatterns,
+        specifiedType: const FullType(BuiltSet, const [const FullType(RegExp)]),
+      ),
       'reportChangedAssets',
-      serializers.serialize(object.reportChangedAssets,
-          specifiedType: const FullType(bool)),
+      serializers.serialize(
+        object.reportChangedAssets,
+        specifiedType: const FullType(bool),
+      ),
       'target',
-      serializers.serialize(object.target,
-          specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.target,
+        specifiedType: const FullType(String),
+      ),
     ];
     Object? value;
     value = object.outputLocation;
     if (value != null) {
       result
         ..add('outputLocation')
-        ..add(serializers.serialize(value,
-            specifiedType: const FullType(OutputLocation)));
+        ..add(
+          serializers.serialize(
+            value,
+            specifiedType: const FullType(OutputLocation),
+          ),
+        );
     }
     value = object.buildFilters;
     if (value != null) {
       result
         ..add('buildFilters')
-        ..add(serializers.serialize(value,
-            specifiedType:
-                const FullType(BuiltSet, const [const FullType(String)])));
+        ..add(
+          serializers.serialize(
+            value,
+            specifiedType: const FullType(BuiltSet, const [
+              const FullType(String),
+            ]),
+          ),
+        );
     }
     return result;
   }
 
   @override
   DefaultBuildTarget deserialize(
-      Serializers serializers, Iterable<Object?> serialized,
-      {FullType specifiedType = FullType.unspecified}) {
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = new DefaultBuildTargetBuilder();
 
     final iterator = serialized.iterator;
@@ -66,29 +84,51 @@ class _$DefaultBuildTargetSerializer
       final Object? value = iterator.current;
       switch (key) {
         case 'blackListPatterns':
-          result.blackListPatterns.replace(serializers.deserialize(value,
-                  specifiedType:
-                      const FullType(BuiltSet, const [const FullType(RegExp)]))!
-              as BuiltSet<Object?>);
+          result.blackListPatterns.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltSet, const [
+                    const FullType(RegExp),
+                  ]),
+                )!
+                as BuiltSet<Object?>,
+          );
           break;
         case 'outputLocation':
-          result.outputLocation.replace(serializers.deserialize(value,
-                  specifiedType: const FullType(OutputLocation))!
-              as OutputLocation);
+          result.outputLocation.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(OutputLocation),
+                )!
+                as OutputLocation,
+          );
           break;
         case 'buildFilters':
-          result.buildFilters.replace(serializers.deserialize(value,
-                  specifiedType:
-                      const FullType(BuiltSet, const [const FullType(String)]))!
-              as BuiltSet<Object?>);
+          result.buildFilters.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltSet, const [
+                    const FullType(String),
+                  ]),
+                )!
+                as BuiltSet<Object?>,
+          );
           break;
         case 'reportChangedAssets':
-          result.reportChangedAssets = serializers.deserialize(value,
-              specifiedType: const FullType(bool))! as bool;
+          result.reportChangedAssets =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(bool),
+                  )!
+                  as bool;
           break;
         case 'target':
-          result.target = serializers.deserialize(value,
-              specifiedType: const FullType(String))! as String;
+          result.target =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
       }
     }
@@ -105,15 +145,22 @@ class _$OutputLocationSerializer
   final String wireName = 'OutputLocation';
 
   @override
-  Iterable<Object?> serialize(Serializers serializers, OutputLocation object,
-      {FullType specifiedType = FullType.unspecified}) {
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    OutputLocation object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = <Object?>[
       'output',
-      serializers.serialize(object.output,
-          specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.output,
+        specifiedType: const FullType(String),
+      ),
       'useSymlinks',
-      serializers.serialize(object.useSymlinks,
-          specifiedType: const FullType(bool)),
+      serializers.serialize(
+        object.useSymlinks,
+        specifiedType: const FullType(bool),
+      ),
       'hoist',
       serializers.serialize(object.hoist, specifiedType: const FullType(bool)),
     ];
@@ -123,8 +170,10 @@ class _$OutputLocationSerializer
 
   @override
   OutputLocation deserialize(
-      Serializers serializers, Iterable<Object?> serialized,
-      {FullType specifiedType = FullType.unspecified}) {
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = new OutputLocationBuilder();
 
     final iterator = serialized.iterator;
@@ -134,16 +183,28 @@ class _$OutputLocationSerializer
       final Object? value = iterator.current;
       switch (key) {
         case 'output':
-          result.output = serializers.deserialize(value,
-              specifiedType: const FullType(String))! as String;
+          result.output =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'useSymlinks':
-          result.useSymlinks = serializers.deserialize(value,
-              specifiedType: const FullType(bool))! as bool;
+          result.useSymlinks =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(bool),
+                  )!
+                  as bool;
           break;
         case 'hoist':
-          result.hoist = serializers.deserialize(value,
-              specifiedType: const FullType(bool))! as bool;
+          result.hoist =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(bool),
+                  )!
+                  as bool;
           break;
       }
     }
@@ -164,29 +225,38 @@ class _$DefaultBuildTarget extends DefaultBuildTarget {
   @override
   final String target;
 
-  factory _$DefaultBuildTarget(
-          [void Function(DefaultBuildTargetBuilder)? updates]) =>
-      (new DefaultBuildTargetBuilder()..update(updates))._build();
+  factory _$DefaultBuildTarget([
+    void Function(DefaultBuildTargetBuilder)? updates,
+  ]) => (new DefaultBuildTargetBuilder()..update(updates))._build();
 
-  _$DefaultBuildTarget._(
-      {required this.blackListPatterns,
-      this.outputLocation,
-      this.buildFilters,
-      required this.reportChangedAssets,
-      required this.target})
-      : super._() {
+  _$DefaultBuildTarget._({
+    required this.blackListPatterns,
+    this.outputLocation,
+    this.buildFilters,
+    required this.reportChangedAssets,
+    required this.target,
+  }) : super._() {
     BuiltValueNullFieldError.checkNotNull(
-        blackListPatterns, r'DefaultBuildTarget', 'blackListPatterns');
+      blackListPatterns,
+      r'DefaultBuildTarget',
+      'blackListPatterns',
+    );
     BuiltValueNullFieldError.checkNotNull(
-        reportChangedAssets, r'DefaultBuildTarget', 'reportChangedAssets');
+      reportChangedAssets,
+      r'DefaultBuildTarget',
+      'reportChangedAssets',
+    );
     BuiltValueNullFieldError.checkNotNull(
-        target, r'DefaultBuildTarget', 'target');
+      target,
+      r'DefaultBuildTarget',
+      'target',
+    );
   }
 
   @override
   DefaultBuildTarget rebuild(
-          void Function(DefaultBuildTargetBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(DefaultBuildTargetBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   DefaultBuildTargetBuilder toBuilder() =>
@@ -292,17 +362,23 @@ class DefaultBuildTargetBuilder
   _$DefaultBuildTarget _build() {
     _$DefaultBuildTarget _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           new _$DefaultBuildTarget._(
-              blackListPatterns: blackListPatterns.build(),
-              outputLocation: _outputLocation?.build(),
-              buildFilters: _buildFilters?.build(),
-              reportChangedAssets: BuiltValueNullFieldError.checkNotNull(
-                  reportChangedAssets,
-                  r'DefaultBuildTarget',
-                  'reportChangedAssets'),
-              target: BuiltValueNullFieldError.checkNotNull(
-                  target, r'DefaultBuildTarget', 'target'));
+            blackListPatterns: blackListPatterns.build(),
+            outputLocation: _outputLocation?.build(),
+            buildFilters: _buildFilters?.build(),
+            reportChangedAssets: BuiltValueNullFieldError.checkNotNull(
+              reportChangedAssets,
+              r'DefaultBuildTarget',
+              'reportChangedAssets',
+            ),
+            target: BuiltValueNullFieldError.checkNotNull(
+              target,
+              r'DefaultBuildTarget',
+              'target',
+            ),
+          );
     } catch (_) {
       late String _$failedField;
       try {
@@ -314,7 +390,10 @@ class DefaultBuildTargetBuilder
         _buildFilters?.build();
       } catch (e) {
         throw new BuiltValueNestedFieldError(
-            r'DefaultBuildTarget', _$failedField, e.toString());
+          r'DefaultBuildTarget',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }
@@ -334,12 +413,17 @@ class _$OutputLocation extends OutputLocation {
   factory _$OutputLocation([void Function(OutputLocationBuilder)? updates]) =>
       (new OutputLocationBuilder()..update(updates))._build();
 
-  _$OutputLocation._(
-      {required this.output, required this.useSymlinks, required this.hoist})
-      : super._() {
+  _$OutputLocation._({
+    required this.output,
+    required this.useSymlinks,
+    required this.hoist,
+  }) : super._() {
     BuiltValueNullFieldError.checkNotNull(output, r'OutputLocation', 'output');
     BuiltValueNullFieldError.checkNotNull(
-        useSymlinks, r'OutputLocation', 'useSymlinks');
+      useSymlinks,
+      r'OutputLocation',
+      'useSymlinks',
+    );
     BuiltValueNullFieldError.checkNotNull(hoist, r'OutputLocation', 'hoist');
   }
 
@@ -424,14 +508,25 @@ class OutputLocationBuilder
   OutputLocation build() => _build();
 
   _$OutputLocation _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         new _$OutputLocation._(
-            output: BuiltValueNullFieldError.checkNotNull(
-                output, r'OutputLocation', 'output'),
-            useSymlinks: BuiltValueNullFieldError.checkNotNull(
-                useSymlinks, r'OutputLocation', 'useSymlinks'),
-            hoist: BuiltValueNullFieldError.checkNotNull(
-                hoist, r'OutputLocation', 'hoist'));
+          output: BuiltValueNullFieldError.checkNotNull(
+            output,
+            r'OutputLocation',
+            'output',
+          ),
+          useSymlinks: BuiltValueNullFieldError.checkNotNull(
+            useSymlinks,
+            r'OutputLocation',
+            'useSymlinks',
+          ),
+          hoist: BuiltValueNullFieldError.checkNotNull(
+            hoist,
+            r'OutputLocation',
+            'hoist',
+          ),
+        );
     replace(_$result);
     return _$result;
   }

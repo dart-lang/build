@@ -41,26 +41,32 @@ class CleanCommand extends Command<int> {
 }
 
 Future<void> cleanFor(String assetGraphPath, Logger logger) async {
-  logger.warning('Deleting cache and generated source files.\n'
-      'This shouldn\'t be necessary for most applications, unless you have '
-      'made intentional edits to generated files (i.e. for testing). '
-      'Consider filing a bug at '
-      'https://github.com/dart-lang/build/issues/new if you are using this '
-      'to work around an apparent (and reproducible) bug.');
+  logger.warning(
+    'Deleting cache and generated source files.\n'
+    'This shouldn\'t be necessary for most applications, unless you have '
+    'made intentional edits to generated files (i.e. for testing). '
+    'Consider filing a bug at '
+    'https://github.com/dart-lang/build/issues/new if you are using this '
+    'to work around an apparent (and reproducible) bug.',
+  );
 
   await logTimedAsync(logger, 'Cleaning up source outputs', () async {
     var assetGraphFile = File(assetGraphPath);
     if (!assetGraphFile.existsSync()) {
-      logger.warning('No asset graph found. '
-          'Skipping cleanup of generated files in source directories.');
+      logger.warning(
+        'No asset graph found. '
+        'Skipping cleanup of generated files in source directories.',
+      );
       return;
     }
     AssetGraph assetGraph;
     try {
       assetGraph = AssetGraph.deserialize(await assetGraphFile.readAsBytes());
     } catch (_) {
-      logger.warning('Failed to deserialize AssetGraph. '
-          'Skipping cleanup of generated files in source directories.');
+      logger.warning(
+        'Failed to deserialize AssetGraph. '
+        'Skipping cleanup of generated files in source directories.',
+      );
       return;
     }
     var packageGraph = await PackageGraph.forThisPackage();
@@ -68,11 +74,16 @@ Future<void> cleanFor(String assetGraphPath, Logger logger) async {
   });
 
   await logTimedAsync(
-      logger, 'Cleaning up cache directory', _cleanUpGeneratedDirectory);
+    logger,
+    'Cleaning up cache directory',
+    _cleanUpGeneratedDirectory,
+  );
 }
 
 Future<void> _cleanUpSourceOutputs(
-    AssetGraph assetGraph, PackageGraph packageGraph) async {
+  AssetGraph assetGraph,
+  PackageGraph packageGraph,
+) async {
   var writer = FileBasedAssetWriter(packageGraph);
   for (var id in assetGraph.outputs) {
     if (id.package != packageGraph.root.name) continue;

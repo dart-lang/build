@@ -65,7 +65,8 @@ class DebugTestBuilder implements Builder {
     return document.outerHtml;
   }
 
-  static String _createDebugHtml(String jsScriptPath) => ''
+  static String _createDebugHtml(String jsScriptPath) =>
+      ''
       '<html>\n'
       '  <head>\n'
       '    <script src="$jsScriptPath"></script>\n'
@@ -101,7 +102,9 @@ class DebugIndexBuilder implements Builder {
     for (final test in tests) {
       final pathSegments = p.url.split(_debugHtmlId(test).path).skip(1);
       final uri = Uri(
-          pathSegments: pathSegments, queryParameters: {'directRun': 'true'});
+        pathSegments: pathSegments,
+        queryParameters: {'directRun': 'true'},
+      );
       buffer.writeln('      <li><a href="/$uri">${test.path}</a></li>');
     }
     buffer.writeln('    </ul>');
@@ -120,11 +123,12 @@ class DebugIndexBuilder implements Builder {
     final files = await buildStep.findAssets(_allTests).toList();
     final output = _outputFor(buildStep);
     return buildStep.writeAsString(
-        output,
-        '<html>\n'
-        '  <body>\n'
-        '    ${_generateHtml(files)}\n'
-        '  </body>\n'
-        '</html>');
+      output,
+      '<html>\n'
+      '  <body>\n'
+      '    ${_generateHtml(files)}\n'
+      '  </body>\n'
+      '</html>',
+    );
   }
 }

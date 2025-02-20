@@ -22,18 +22,23 @@ import 'package:watcher/watcher.dart';
 void main() {
   /// Basic phases/phase groups which get used in many tests
   final copyABuildApplication = applyToRoot(
-      TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')));
+    TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')),
+  );
   final defaultBuilderOptions = const BuilderOptions({});
   final packageConfigId = makeAssetId('a|.dart_tool/package_config.json');
-  final packageGraph =
-      buildPackageGraph({rootPackage('a', path: path.absolute('a')): []});
+  final packageGraph = buildPackageGraph({
+    rootPackage('a', path: path.absolute('a')): [],
+  });
   late InMemoryRunnerAssetReaderWriter readerWriter;
 
   setUp(() async {
-    readerWriter =
-        InMemoryRunnerAssetReaderWriter(rootPackage: packageGraph.root.name);
+    readerWriter = InMemoryRunnerAssetReaderWriter(
+      rootPackage: packageGraph.root.name,
+    );
     await readerWriter.writeAsString(
-        packageConfigId, jsonEncode(_packageConfig));
+      packageConfigId,
+      jsonEncode(_packageConfig),
+    );
   });
 
   group('watch', () {
@@ -49,19 +54,28 @@ void main() {
     group('simple', () {
       test('rebuilds once on file updates', () async {
         var buildState = await startWatch(
-            [copyABuildApplication], {'a|web/a.txt': 'a'}, readerWriter,
-            packageGraph: packageGraph);
+          [copyABuildApplication],
+          {'a|web/a.txt': 'a'},
+          readerWriter,
+          packageGraph: packageGraph,
+        );
         var results = StreamQueue(buildState.buildResults);
 
         var result = await results.next;
-        checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'a'}, readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|web/a.txt.copy': 'a'},
+          readerWriter: readerWriter,
+        );
 
         await readerWriter.writeAsString(makeAssetId('a|web/a.txt'), 'b');
 
         result = await results.next;
-        checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'b'}, readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|web/a.txt.copy': 'b'},
+          readerWriter: readerWriter,
+        );
 
         // Wait for the `_debounceDelay` before terminating.
         await Future<void>.delayed(_debounceDelay);
@@ -83,38 +97,53 @@ void main() {
         var result = await buildState.buildResults.first;
         expect(result.status, BuildStatus.success);
         expect(
-            logs,
-            contains(predicate((LogRecord record) => record.message.contains(
-                'Nothing can be built, yet a build was requested.'))));
+          logs,
+          contains(
+            predicate(
+              (LogRecord record) => record.message.contains(
+                'Nothing can be built, yet a build was requested.',
+              ),
+            ),
+          ),
+        );
       });
 
       test('rebuilds on file updates outside hardcoded sources', () async {
         var buildState = await startWatch(
-            [copyABuildApplication], {'a|test_files/a.txt': 'a'}, readerWriter,
-            packageGraph: packageGraph,
-            overrideBuildConfig: parseBuildConfigs({
-              'a': {
-                'targets': {
-                  'a': {
-                    'sources': ['test_files/**']
-                  }
-                }
-              }
-            }));
+          [copyABuildApplication],
+          {'a|test_files/a.txt': 'a'},
+          readerWriter,
+          packageGraph: packageGraph,
+          overrideBuildConfig: parseBuildConfigs({
+            'a': {
+              'targets': {
+                'a': {
+                  'sources': ['test_files/**'],
+                },
+              },
+            },
+          }),
+        );
         var results = StreamQueue(buildState.buildResults);
 
         var result = await results.next;
-        checkBuild(result,
-            outputs: {'a|test_files/a.txt.copy': 'a'},
-            readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|test_files/a.txt.copy': 'a'},
+          readerWriter: readerWriter,
+        );
 
         await readerWriter.writeAsString(
-            makeAssetId('a|test_files/a.txt'), 'b');
+          makeAssetId('a|test_files/a.txt'),
+          'b',
+        );
 
         result = await results.next;
-        checkBuild(result,
-            outputs: {'a|test_files/a.txt.copy': 'b'},
-            readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|test_files/a.txt.copy': 'b'},
+          readerWriter: readerWriter,
+        );
       });
 
       test('rebuilds on new files', () async {
@@ -127,72 +156,91 @@ void main() {
         var results = StreamQueue(buildState.buildResults);
 
         var result = await results.next;
-        checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'a'}, readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|web/a.txt.copy': 'a'},
+          readerWriter: readerWriter,
+        );
 
         await readerWriter.writeAsString(makeAssetId('a|web/b.txt'), 'b');
 
         result = await results.next;
-        checkBuild(result,
-            outputs: {'a|web/b.txt.copy': 'b'}, readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|web/b.txt.copy': 'b'},
+          readerWriter: readerWriter,
+        );
         // Previous outputs should still exist.
-        expect(readerWriter.assets[makeAssetId('a|web/a.txt.copy')],
-            decodedMatches('a'));
+        expect(
+          readerWriter.assets[makeAssetId('a|web/a.txt.copy')],
+          decodedMatches('a'),
+        );
       });
 
       test('rebuilds on new files outside hardcoded sources', () async {
         var buildState = await startWatch(
-            [copyABuildApplication], {'a|test_files/a.txt': 'a'}, readerWriter,
-            packageGraph: packageGraph,
-            overrideBuildConfig: parseBuildConfigs({
-              'a': {
-                'targets': {
-                  'a': {
-                    'sources': ['test_files/**']
-                  }
-                }
-              }
-            }));
+          [copyABuildApplication],
+          {'a|test_files/a.txt': 'a'},
+          readerWriter,
+          packageGraph: packageGraph,
+          overrideBuildConfig: parseBuildConfigs({
+            'a': {
+              'targets': {
+                'a': {
+                  'sources': ['test_files/**'],
+                },
+              },
+            },
+          }),
+        );
         var results = StreamQueue(buildState.buildResults);
 
         var result = await results.next;
-        checkBuild(result,
-            outputs: {'a|test_files/a.txt.copy': 'a'},
-            readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|test_files/a.txt.copy': 'a'},
+          readerWriter: readerWriter,
+        );
 
         await readerWriter.writeAsString(
-            makeAssetId('a|test_files/b.txt'), 'b');
+          makeAssetId('a|test_files/b.txt'),
+          'b',
+        );
 
         result = await results.next;
-        checkBuild(result,
-            outputs: {'a|test_files/b.txt.copy': 'b'},
-            readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|test_files/b.txt.copy': 'b'},
+          readerWriter: readerWriter,
+        );
         // Previous outputs should still exist.
-        expect(readerWriter.assets[makeAssetId('a|test_files/a.txt.copy')],
-            decodedMatches('a'));
+        expect(
+          readerWriter.assets[makeAssetId('a|test_files/a.txt.copy')],
+          decodedMatches('a'),
+        );
       });
 
       test('rebuilds on deleted files', () async {
         var buildState = await startWatch(
           [copyABuildApplication],
-          {
-            'a|web/a.txt': 'a',
-            'a|web/b.txt': 'b',
-          },
+          {'a|web/a.txt': 'a', 'a|web/b.txt': 'b'},
           readerWriter,
           packageGraph: packageGraph,
         );
         var results = StreamQueue(buildState.buildResults);
 
         var result = await results.next;
-        checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'a', 'a|web/b.txt.copy': 'b'},
-            readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|web/a.txt.copy': 'a', 'a|web/b.txt.copy': 'b'},
+          readerWriter: readerWriter,
+        );
 
         // Don't call writer.delete, that has side effects.
         readerWriter.assets.remove(makeAssetId('a|web/a.txt'));
         FakeWatcher.notifyWatchers(
-            WatchEvent(ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt')));
+          WatchEvent(ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt')),
+        );
 
         result = await results.next;
 
@@ -202,41 +250,48 @@ void main() {
         // The old output file should no longer exist either.
         expect(readerWriter.assets[makeAssetId('a|web/a.txt.copy')], isNull);
         // Previous outputs should still exist.
-        expect(readerWriter.assets[makeAssetId('a|web/b.txt.copy')],
-            decodedMatches('b'));
+        expect(
+          readerWriter.assets[makeAssetId('a|web/b.txt.copy')],
+          decodedMatches('b'),
+        );
       });
 
       test('rebuilds on deleted files outside hardcoded sources', () async {
-        var buildState = await startWatch([
-          copyABuildApplication
-        ], {
-          'a|test_files/a.txt': 'a',
-          'a|test_files/b.txt': 'b',
-        }, readerWriter,
-            packageGraph: packageGraph,
-            overrideBuildConfig: parseBuildConfigs({
-              'a': {
-                'targets': {
-                  'a': {
-                    'sources': ['test_files/**']
-                  }
-                }
-              }
-            }));
+        var buildState = await startWatch(
+          [copyABuildApplication],
+          {'a|test_files/a.txt': 'a', 'a|test_files/b.txt': 'b'},
+          readerWriter,
+          packageGraph: packageGraph,
+          overrideBuildConfig: parseBuildConfigs({
+            'a': {
+              'targets': {
+                'a': {
+                  'sources': ['test_files/**'],
+                },
+              },
+            },
+          }),
+        );
         var results = StreamQueue(buildState.buildResults);
 
         var result = await results.next;
-        checkBuild(result,
-            outputs: {
-              'a|test_files/a.txt.copy': 'a',
-              'a|test_files/b.txt.copy': 'b'
-            },
-            readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {
+            'a|test_files/a.txt.copy': 'a',
+            'a|test_files/b.txt.copy': 'b',
+          },
+          readerWriter: readerWriter,
+        );
 
         // Don't call writer.delete, that has side effects.
         readerWriter.assets.remove(makeAssetId('a|test_files/a.txt'));
-        FakeWatcher.notifyWatchers(WatchEvent(
-            ChangeType.REMOVE, path.absolute('a', 'test_files', 'a.txt')));
+        FakeWatcher.notifyWatchers(
+          WatchEvent(
+            ChangeType.REMOVE,
+            path.absolute('a', 'test_files', 'a.txt'),
+          ),
+        );
 
         result = await results.next;
 
@@ -244,11 +299,15 @@ void main() {
         checkBuild(result, outputs: {}, readerWriter: readerWriter);
 
         // The old output file should no longer exist either.
-        expect(readerWriter.assets[makeAssetId('a|test_files/a.txt.copy')],
-            isNull);
+        expect(
+          readerWriter.assets[makeAssetId('a|test_files/a.txt.copy')],
+          isNull,
+        );
         // Previous outputs should still exist.
-        expect(readerWriter.assets[makeAssetId('a|test_files/b.txt.copy')],
-            decodedMatches('b'));
+        expect(
+          readerWriter.assets[makeAssetId('a|test_files/b.txt.copy')],
+          decodedMatches('b'),
+        );
       });
 
       test('rebuilds properly update asset_graph.json', () async {
@@ -261,9 +320,11 @@ void main() {
         var results = StreamQueue(buildState.buildResults);
 
         var result = await results.next;
-        checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'a', 'a|web/b.txt.copy': 'b'},
-            readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|web/a.txt.copy': 'a', 'a|web/b.txt.copy': 'b'},
+          readerWriter: readerWriter,
+        );
 
         await readerWriter.writeAsString(makeAssetId('a|web/c.txt'), 'c');
 
@@ -272,107 +333,137 @@ void main() {
         // Don't call writer.delete, that has side effects.
         readerWriter.assets.remove(makeAssetId('a|web/a.txt'));
         FakeWatcher.notifyWatchers(
-            WatchEvent(ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt')));
+          WatchEvent(ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt')),
+        );
 
         result = await results.next;
-        checkBuild(result,
-            outputs: {'a|web/b.txt.copy': 'b2', 'a|web/c.txt.copy': 'c'},
-            readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|web/b.txt.copy': 'b2', 'a|web/c.txt.copy': 'c'},
+          readerWriter: readerWriter,
+        );
 
         var cachedGraph = AssetGraph.deserialize(
-            readerWriter.assets[makeAssetId('a|$assetGraphPath')]!);
+          readerWriter.assets[makeAssetId('a|$assetGraphPath')]!,
+        );
 
         var expectedGraph = await AssetGraph.build(
-            [],
-            <AssetId>{},
-            {packageConfigId},
-            buildPackageGraph({rootPackage('a'): []}),
-            readerWriter);
+          [],
+          <AssetId>{},
+          {packageConfigId},
+          buildPackageGraph({rootPackage('a'): []}),
+          readerWriter,
+        );
 
         var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
-        var builderOptionsNode = BuilderOptionsAssetNode(builderOptionsId,
-            computeBuilderOptionsDigest(defaultBuilderOptions));
+        var builderOptionsNode = BuilderOptionsAssetNode(
+          builderOptionsId,
+          computeBuilderOptionsDigest(defaultBuilderOptions),
+        );
         expectedGraph.add(builderOptionsNode);
 
         var bCopyId = makeAssetId('a|web/b.txt.copy');
         var bTxtId = makeAssetId('a|web/b.txt');
-        var bCopyNode = GeneratedAssetNode(bCopyId,
-            phaseNumber: 0,
-            primaryInput: makeAssetId('a|web/b.txt'),
-            state: NodeState.upToDate,
-            wasOutput: true,
-            isFailure: false,
-            builderOptionsId: builderOptionsId,
-            lastKnownDigest: computeDigest(bCopyId, 'b2'),
-            inputs: [makeAssetId('a|web/b.txt')],
-            isHidden: false);
+        var bCopyNode = GeneratedAssetNode(
+          bCopyId,
+          phaseNumber: 0,
+          primaryInput: makeAssetId('a|web/b.txt'),
+          state: NodeState.upToDate,
+          wasOutput: true,
+          isFailure: false,
+          builderOptionsId: builderOptionsId,
+          lastKnownDigest: computeDigest(bCopyId, 'b2'),
+          inputs: [makeAssetId('a|web/b.txt')],
+          isHidden: false,
+        );
         builderOptionsNode.outputs.add(bCopyNode.id);
         expectedGraph
           ..add(bCopyNode)
-          ..add(makeAssetNode(
-              'a|web/b.txt', [bCopyNode.id], computeDigest(bTxtId, 'b2')));
+          ..add(
+            makeAssetNode('a|web/b.txt', [
+              bCopyNode.id,
+            ], computeDigest(bTxtId, 'b2')),
+          );
 
         var cCopyId = makeAssetId('a|web/c.txt.copy');
         var cTxtId = makeAssetId('a|web/c.txt');
-        var cCopyNode = GeneratedAssetNode(cCopyId,
-            phaseNumber: 0,
-            primaryInput: cTxtId,
-            state: NodeState.upToDate,
-            wasOutput: true,
-            isFailure: false,
-            builderOptionsId: builderOptionsId,
-            lastKnownDigest: computeDigest(cCopyId, 'c'),
-            inputs: [makeAssetId('a|web/c.txt')],
-            isHidden: false);
+        var cCopyNode = GeneratedAssetNode(
+          cCopyId,
+          phaseNumber: 0,
+          primaryInput: cTxtId,
+          state: NodeState.upToDate,
+          wasOutput: true,
+          isFailure: false,
+          builderOptionsId: builderOptionsId,
+          lastKnownDigest: computeDigest(cCopyId, 'c'),
+          inputs: [makeAssetId('a|web/c.txt')],
+          isHidden: false,
+        );
         builderOptionsNode.outputs.add(cCopyNode.id);
         expectedGraph
           ..add(cCopyNode)
-          ..add(makeAssetNode(
-              'a|web/c.txt', [cCopyNode.id], computeDigest(cTxtId, 'c')));
+          ..add(
+            makeAssetNode('a|web/c.txt', [
+              cCopyNode.id,
+            ], computeDigest(cTxtId, 'c')),
+          );
 
         // TODO: We dont have a shared way of computing the combined input
         // hashes today, but eventually we should test those here too.
-        expect(cachedGraph,
-            equalsAssetGraph(expectedGraph, checkPreviousInputsDigest: false));
+        expect(
+          cachedGraph,
+          equalsAssetGraph(expectedGraph, checkPreviousInputsDigest: false),
+        );
       });
 
       test('ignores events from nested packages', () async {
         final packageGraph = buildPackageGraph({
           rootPackage('a', path: path.absolute('a')): ['b'],
-          package('b', path: path.absolute('a', 'b')): []
+          package('b', path: path.absolute('a', 'b')): [],
         });
 
-        var buildState = await startWatch([
-          copyABuildApplication,
-        ], {
-          'a|web/a.txt': 'a',
-          'b|web/b.txt': 'b'
-        }, readerWriter, packageGraph: packageGraph);
+        var buildState = await startWatch(
+          [copyABuildApplication],
+          {'a|web/a.txt': 'a', 'b|web/b.txt': 'b'},
+          readerWriter,
+          packageGraph: packageGraph,
+        );
         var results = StreamQueue(buildState.buildResults);
 
         var result = await results.next;
         // Should ignore the files under the `b` package, even though they
         // match the input set.
-        checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'a'}, readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|web/a.txt.copy': 'a'},
+          readerWriter: readerWriter,
+        );
 
         await readerWriter.writeAsString(makeAssetId('a|web/a.txt'), 'b');
         await readerWriter.writeAsString(makeAssetId('b|web/b.txt'), 'c');
         // Have to manually notify here since the path isn't standard.
-        FakeWatcher.notifyWatchers(WatchEvent(
-            ChangeType.MODIFY, path.absolute('a', 'b', 'web', 'a.txt')));
+        FakeWatcher.notifyWatchers(
+          WatchEvent(
+            ChangeType.MODIFY,
+            path.absolute('a', 'b', 'web', 'a.txt'),
+          ),
+        );
 
         result = await results.next;
         // Ignores the modification under the `b` package, even though it
         // matches the input set.
-        checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'b'}, readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|web/a.txt.copy': 'b'},
+          readerWriter: readerWriter,
+        );
       });
 
       test('rebuilds on file updates during first build', () async {
         var blocker = Completer<void>();
-        var buildAction =
-            applyToRoot(TestBuilder(extraWork: (_, __) => blocker.future));
+        var buildAction = applyToRoot(
+          TestBuilder(extraWork: (_, __) => blocker.future),
+        );
         var buildState = await startWatch(
           [buildAction],
           {'a|web/a.txt': 'a'},
@@ -382,7 +473,8 @@ void main() {
         var results = StreamQueue(buildState.buildResults);
 
         FakeWatcher.notifyWatchers(
-            WatchEvent(ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')));
+          WatchEvent(ChangeType.MODIFY, path.absolute('a', 'web', 'a.txt')),
+        );
         blocker.complete();
 
         var result = await results.next;
@@ -390,85 +482,114 @@ void main() {
         // https://github.com/dart-lang/build/issues/526 is fixed.
         await readerWriter.writeAsString(makeAssetId('a|web/a.txt'), 'b');
 
-        checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'a'}, readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|web/a.txt.copy': 'a'},
+          readerWriter: readerWriter,
+        );
 
         result = await results.next;
-        checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'b'}, readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|web/a.txt.copy': 'b'},
+          readerWriter: readerWriter,
+        );
       });
 
-      test(
-          'edits to .dart_tool/package_config.json prevent future builds '
+      test('edits to .dart_tool/package_config.json prevent future builds '
           'and ask you to restart', () async {
         var logs = <LogRecord>[];
         var buildState = await startWatch(
-            [copyABuildApplication], {'a|web/a.txt': 'a'}, readerWriter,
-            packageGraph: packageGraph,
-            logLevel: Level.SEVERE,
-            onLog: logs.add);
+          [copyABuildApplication],
+          {'a|web/a.txt': 'a'},
+          readerWriter,
+          packageGraph: packageGraph,
+          logLevel: Level.SEVERE,
+          onLog: logs.add,
+        );
         var results = StreamQueue(buildState.buildResults);
 
         var result = await results.next;
-        checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'a'}, readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|web/a.txt.copy': 'a'},
+          readerWriter: readerWriter,
+        );
 
         var newConfig = Map.of(_packageConfig);
         newConfig['extra'] = 'stuff';
         await readerWriter.writeAsString(
-            packageConfigId, jsonEncode(newConfig));
+          packageConfigId,
+          jsonEncode(newConfig),
+        );
 
         expect(await results.hasNext, isFalse);
         expect(logs, hasLength(1));
         expect(
-            logs.first.message,
-            contains('Terminating builds due to package graph update, '
-                'please restart the build.'));
+          logs.first.message,
+          contains(
+            'Terminating builds due to package graph update, '
+            'please restart the build.',
+          ),
+        );
       });
 
-      test('Gives the package config a chance to be re-written before failing',
-          () async {
-        var logs = <LogRecord>[];
-        var buildState = await startWatch(
-            [copyABuildApplication], {'a|web/a.txt': 'a'}, readerWriter,
+      test(
+        'Gives the package config a chance to be re-written before failing',
+        () async {
+          var logs = <LogRecord>[];
+          var buildState = await startWatch(
+            [copyABuildApplication],
+            {'a|web/a.txt': 'a'},
+            readerWriter,
             packageGraph: packageGraph,
             logLevel: Level.SEVERE,
-            onLog: logs.add);
-        buildState.buildResults
-            .handleError((Object e, StackTrace s) => print('$e\n$s'));
-        buildState.buildResults.listen(print);
-        var results = StreamQueue(buildState.buildResults);
+            onLog: logs.add,
+          );
+          buildState.buildResults.handleError(
+            (Object e, StackTrace s) => print('$e\n$s'),
+          );
+          buildState.buildResults.listen(print);
+          var results = StreamQueue(buildState.buildResults);
 
-        var result = await results.next;
-        checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'a'}, readerWriter: readerWriter);
+          var result = await results.next;
+          checkBuild(
+            result,
+            outputs: {'a|web/a.txt.copy': 'a'},
+            readerWriter: readerWriter,
+          );
 
-        await readerWriter.delete(packageConfigId);
+          await readerWriter.delete(packageConfigId);
 
-        // Wait for it to try reading the file twice to ensure it will retry.
-        await _readerForState[buildState]!
-            .onCanRead
-            .where((id) => id == packageConfigId)
-            .take(2)
-            .drain<void>();
+          // Wait for it to try reading the file twice to ensure it will retry.
+          await _readerForState[buildState]!.onCanRead
+              .where((id) => id == packageConfigId)
+              .take(2)
+              .drain<void>();
 
-        var newConfig = Map.of(_packageConfig);
-        newConfig['extra'] = 'stuff';
-        await readerWriter.writeAsString(
-            packageConfigId, jsonEncode(newConfig));
+          var newConfig = Map.of(_packageConfig);
+          newConfig['extra'] = 'stuff';
+          await readerWriter.writeAsString(
+            packageConfigId,
+            jsonEncode(newConfig),
+          );
 
-        expect(await results.hasNext, isFalse);
-        expect(logs, hasLength(1));
-        expect(
+          expect(await results.hasNext, isFalse);
+          expect(logs, hasLength(1));
+          expect(
             logs.first.message,
-            contains('Terminating builds due to package graph update, '
-                'please restart the build.'));
-      });
+            contains(
+              'Terminating builds due to package graph update, '
+              'please restart the build.',
+            ),
+          );
+        },
+      );
 
       group('build.yaml', () {
         final packageGraph = buildPackageGraph({
           rootPackage('a', path: path.absolute('a')): ['b'],
-          package('b', path: path.absolute('b'), type: DependencyType.path): []
+          package('b', path: path.absolute('b'), type: DependencyType.path): [],
         });
         late List<LogRecord> logs;
         late StreamQueue<BuildResult> results;
@@ -477,123 +598,158 @@ void main() {
           setUp(() async {
             logs = <LogRecord>[];
             var buildState = await startWatch(
-                [copyABuildApplication], {}, readerWriter,
-                logLevel: Level.SEVERE,
-                onLog: logs.add,
-                packageGraph: packageGraph);
+              [copyABuildApplication],
+              {},
+              readerWriter,
+              logLevel: Level.SEVERE,
+              onLog: logs.add,
+              packageGraph: packageGraph,
+            );
             results = StreamQueue(buildState.buildResults);
             await results.next;
           });
 
           test('to the root package', () async {
             await readerWriter.writeAsString(
-                AssetId('a', 'build.yaml'), '# New build.yaml file');
+              AssetId('a', 'build.yaml'),
+              '# New build.yaml file',
+            );
             expect(await results.hasNext, isTrue);
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
             expect(logs, hasLength(1));
-            expect(logs.first.message,
-                contains('Terminating builds due to a:build.yaml update'));
+            expect(
+              logs.first.message,
+              contains('Terminating builds due to a:build.yaml update'),
+            );
           });
 
           test('to a dependency', () async {
             await readerWriter.writeAsString(
-                AssetId('b', 'build.yaml'), '# New build.yaml file');
+              AssetId('b', 'build.yaml'),
+              '# New build.yaml file',
+            );
 
             expect(await results.hasNext, isTrue);
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
             expect(logs, hasLength(1));
-            expect(logs.first.message,
-                contains('Terminating builds due to b:build.yaml update'));
+            expect(
+              logs.first.message,
+              contains('Terminating builds due to b:build.yaml update'),
+            );
           });
 
           test('<package>.build.yaml', () async {
             await readerWriter.writeAsString(
-                AssetId('a', 'b.build.yaml'), '# New b.build.yaml file');
+              AssetId('a', 'b.build.yaml'),
+              '# New b.build.yaml file',
+            );
             expect(await results.hasNext, isTrue);
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
             expect(logs, hasLength(1));
-            expect(logs.first.message,
-                contains('Terminating builds due to a:b.build.yaml update'));
+            expect(
+              logs.first.message,
+              contains('Terminating builds due to a:b.build.yaml update'),
+            );
           });
         });
 
         group('is edited', () {
           setUp(() async {
             logs = <LogRecord>[];
-            var buildState = await startWatch([copyABuildApplication],
-                {'a|build.yaml': '', 'b|build.yaml': ''}, readerWriter,
-                logLevel: Level.SEVERE,
-                onLog: logs.add,
-                packageGraph: packageGraph);
+            var buildState = await startWatch(
+              [copyABuildApplication],
+              {'a|build.yaml': '', 'b|build.yaml': ''},
+              readerWriter,
+              logLevel: Level.SEVERE,
+              onLog: logs.add,
+              packageGraph: packageGraph,
+            );
             results = StreamQueue(buildState.buildResults);
             await results.next;
           });
 
           test('in the root package', () async {
             await readerWriter.writeAsString(
-                AssetId('a', 'build.yaml'), '# Edited build.yaml file');
+              AssetId('a', 'build.yaml'),
+              '# Edited build.yaml file',
+            );
 
             expect(await results.hasNext, isTrue);
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
             expect(logs, hasLength(1));
-            expect(logs.first.message,
-                contains('Terminating builds due to a:build.yaml update'));
+            expect(
+              logs.first.message,
+              contains('Terminating builds due to a:build.yaml update'),
+            );
           });
 
           test('in a dependency', () async {
             await readerWriter.writeAsString(
-                AssetId('b', 'build.yaml'), '# Edited build.yaml file');
+              AssetId('b', 'build.yaml'),
+              '# Edited build.yaml file',
+            );
 
             expect(await results.hasNext, isTrue);
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
             expect(logs, hasLength(1));
-            expect(logs.first.message,
-                contains('Terminating builds due to b:build.yaml update'));
+            expect(
+              logs.first.message,
+              contains('Terminating builds due to b:build.yaml update'),
+            );
           });
         });
 
         group('with --config', () {
           setUp(() async {
             logs = <LogRecord>[];
-            var buildState = await startWatch([copyABuildApplication],
-                {'a|build.yaml': '', 'a|build.cool.yaml': ''}, readerWriter,
-                configKey: 'cool',
-                logLevel: Level.SEVERE,
-                onLog: logs.add,
-                overrideBuildConfig: {
-                  'a': BuildConfig.useDefault('a', ['b'])
-                },
-                packageGraph: packageGraph);
+            var buildState = await startWatch(
+              [copyABuildApplication],
+              {'a|build.yaml': '', 'a|build.cool.yaml': ''},
+              readerWriter,
+              configKey: 'cool',
+              logLevel: Level.SEVERE,
+              onLog: logs.add,
+              overrideBuildConfig: {
+                'a': BuildConfig.useDefault('a', ['b']),
+              },
+              packageGraph: packageGraph,
+            );
             results = StreamQueue(buildState.buildResults);
             await results.next;
           });
 
           test('original is edited', () async {
             await readerWriter.writeAsString(
-                AssetId('a', 'build.yaml'), '# Edited build.yaml file');
+              AssetId('a', 'build.yaml'),
+              '# Edited build.yaml file',
+            );
 
             expect(await results.hasNext, isTrue);
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
             expect(logs, hasLength(1));
-            expect(logs.first.message,
-                contains('Terminating builds due to a:build.yaml update'));
+            expect(
+              logs.first.message,
+              contains('Terminating builds due to a:build.yaml update'),
+            );
           });
 
           test('build.<config>.yaml in dependencies are ignored', () async {
             await readerWriter.writeAsString(
-                AssetId('b', 'build.cool.yaml'), '# New build.yaml file');
+              AssetId('b', 'build.cool.yaml'),
+              '# New build.yaml file',
+            );
 
             await Future<void>.delayed(_debounceDelay);
             expect(logs, isEmpty);
@@ -602,16 +758,20 @@ void main() {
           });
 
           test('build.<config>.yaml is edited', () async {
-            await readerWriter.writeAsString(AssetId('a', 'build.cool.yaml'),
-                '# Edited build.cool.yaml file');
+            await readerWriter.writeAsString(
+              AssetId('a', 'build.cool.yaml'),
+              '# Edited build.cool.yaml file',
+            );
 
             expect(await results.hasNext, isTrue);
             var next = await results.next;
             expect(next.status, BuildStatus.failure);
             expect(next.failureType, FailureType.buildConfigChanged);
             expect(logs, hasLength(1));
-            expect(logs.first.message,
-                contains('Terminating builds due to a:build.cool.yaml update'));
+            expect(
+              logs.first.message,
+              contains('Terminating builds due to a:build.cool.yaml update'),
+            );
           });
         });
       });
@@ -622,15 +782,19 @@ void main() {
         var runCount = 0;
         var buildState = await startWatch(
           [
-            applyToRoot(TestBuilder(
+            applyToRoot(
+              TestBuilder(
                 buildExtensions: appendExtension('.copy', from: '.txt'),
                 build: (buildStep, _) {
                   runCount++;
                   buildStep.writeAsString(
-                      buildStep.inputId.addExtension('.copy'),
-                      buildStep.readAsString(buildStep.inputId));
+                    buildStep.inputId.addExtension('.copy'),
+                    buildStep.readAsString(buildStep.inputId),
+                  );
                   throw StateError('Fail');
-                }))
+                },
+              ),
+            ),
           ],
           {'a|web/a.txt': 'a'},
           readerWriter,
@@ -640,8 +804,11 @@ void main() {
 
         var result = await results.next;
         expect(runCount, 1);
-        checkBuild(result,
-            status: BuildStatus.failure, readerWriter: readerWriter);
+        checkBuild(
+          result,
+          status: BuildStatus.failure,
+          readerWriter: readerWriter,
+        );
 
         await readerWriter.writeAsString(makeAssetId('a|web/a.txt'), 'a');
 
@@ -658,8 +825,11 @@ void main() {
       test('edits propagate through all phases', () async {
         var buildActions = [
           copyABuildApplication,
-          applyToRoot(TestBuilder(
-              buildExtensions: appendExtension('.copy', from: '.copy')))
+          applyToRoot(
+            TestBuilder(
+              buildExtensions: appendExtension('.copy', from: '.copy'),
+            ),
+          ),
         ];
 
         var buildState = await startWatch(
@@ -671,23 +841,30 @@ void main() {
         var results = StreamQueue(buildState.buildResults);
 
         var result = await results.next;
-        checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'a'},
-            readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'a'},
+          readerWriter: readerWriter,
+        );
 
         await readerWriter.writeAsString(makeAssetId('a|web/a.txt'), 'b');
 
         result = await results.next;
-        checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'b', 'a|web/a.txt.copy.copy': 'b'},
-            readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|web/a.txt.copy': 'b', 'a|web/a.txt.copy.copy': 'b'},
+          readerWriter: readerWriter,
+        );
       });
 
       test('adds propagate through all phases', () async {
         var buildActions = [
           copyABuildApplication,
-          applyToRoot(TestBuilder(
-              buildExtensions: appendExtension('.copy', from: '.copy')))
+          applyToRoot(
+            TestBuilder(
+              buildExtensions: appendExtension('.copy', from: '.copy'),
+            ),
+          ),
         ];
 
         var buildState = await startWatch(
@@ -699,28 +876,39 @@ void main() {
         var results = StreamQueue(buildState.buildResults);
 
         var result = await results.next;
-        checkBuild(result,
-            outputs: {'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'a'},
-            readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'a'},
+          readerWriter: readerWriter,
+        );
 
         await readerWriter.writeAsString(makeAssetId('a|web/b.txt'), 'b');
 
         result = await results.next;
-        checkBuild(result,
-            outputs: {'a|web/b.txt.copy': 'b', 'a|web/b.txt.copy.copy': 'b'},
-            readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|web/b.txt.copy': 'b', 'a|web/b.txt.copy.copy': 'b'},
+          readerWriter: readerWriter,
+        );
         // Previous outputs should still exist.
-        expect(readerWriter.assets[makeAssetId('a|web/a.txt.copy')],
-            decodedMatches('a'));
-        expect(readerWriter.assets[makeAssetId('a|web/a.txt.copy.copy')],
-            decodedMatches('a'));
+        expect(
+          readerWriter.assets[makeAssetId('a|web/a.txt.copy')],
+          decodedMatches('a'),
+        );
+        expect(
+          readerWriter.assets[makeAssetId('a|web/a.txt.copy.copy')],
+          decodedMatches('a'),
+        );
       });
 
       test('deletes propagate through all phases', () async {
         var buildActions = [
           copyABuildApplication,
-          applyToRoot(TestBuilder(
-              buildExtensions: appendExtension('.copy', from: '.copy')))
+          applyToRoot(
+            TestBuilder(
+              buildExtensions: appendExtension('.copy', from: '.copy'),
+            ),
+          ),
         ];
 
         var buildState = await startWatch(
@@ -732,20 +920,23 @@ void main() {
         var results = StreamQueue(buildState.buildResults);
 
         var result = await results.next;
-        checkBuild(result,
-            outputs: {
-              'a|web/a.txt.copy': 'a',
-              'a|web/a.txt.copy.copy': 'a',
-              'a|web/b.txt.copy': 'b',
-              'a|web/b.txt.copy.copy': 'b'
-            },
-            readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {
+            'a|web/a.txt.copy': 'a',
+            'a|web/a.txt.copy.copy': 'a',
+            'a|web/b.txt.copy': 'b',
+            'a|web/b.txt.copy.copy': 'b',
+          },
+          readerWriter: readerWriter,
+        );
 
         // Don't call writer.delete, that has side effects.
         readerWriter.assets.remove(makeAssetId('a|web/a.txt'));
 
         FakeWatcher.notifyWatchers(
-            WatchEvent(ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt')));
+          WatchEvent(ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt')),
+        );
 
         result = await results.next;
         // Shouldn't rebuild anything, no outputs.
@@ -754,19 +945,28 @@ void main() {
         // Derived outputs should no longer exist.
         expect(readerWriter.assets[makeAssetId('a|web/a.txt.copy')], isNull);
         expect(
-            readerWriter.assets[makeAssetId('a|web/a.txt.copy.copy')], isNull);
+          readerWriter.assets[makeAssetId('a|web/a.txt.copy.copy')],
+          isNull,
+        );
         // Other outputs should still exist.
-        expect(readerWriter.assets[makeAssetId('a|web/b.txt.copy')],
-            decodedMatches('b'));
-        expect(readerWriter.assets[makeAssetId('a|web/b.txt.copy.copy')],
-            decodedMatches('b'));
+        expect(
+          readerWriter.assets[makeAssetId('a|web/b.txt.copy')],
+          decodedMatches('b'),
+        );
+        expect(
+          readerWriter.assets[makeAssetId('a|web/b.txt.copy.copy')],
+          decodedMatches('b'),
+        );
       });
 
       test('deleted generated outputs are regenerated', () async {
         var buildActions = [
           copyABuildApplication,
-          applyToRoot(TestBuilder(
-              buildExtensions: appendExtension('.copy', from: '.copy')))
+          applyToRoot(
+            TestBuilder(
+              buildExtensions: appendExtension('.copy', from: '.copy'),
+            ),
+          ),
         ];
 
         var buildState = await startWatch(
@@ -778,26 +978,29 @@ void main() {
         var results = StreamQueue(buildState.buildResults);
 
         var result = await results.next;
-        checkBuild(result,
-            outputs: {
-              'a|web/a.txt.copy': 'a',
-              'a|web/a.txt.copy.copy': 'a',
-            },
-            readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|web/a.txt.copy': 'a', 'a|web/a.txt.copy.copy': 'a'},
+          readerWriter: readerWriter,
+        );
 
         // Don't call writer.delete, that has side effects.
         readerWriter.assets.remove(makeAssetId('a|web/a.txt.copy'));
-        FakeWatcher.notifyWatchers(WatchEvent(
-            ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt.copy')));
+        FakeWatcher.notifyWatchers(
+          WatchEvent(
+            ChangeType.REMOVE,
+            path.absolute('a', 'web', 'a.txt.copy'),
+          ),
+        );
 
         result = await results.next;
         // Should rebuild the generated asset, but not its outputs because its
         // content didn't change.
-        checkBuild(result,
-            outputs: {
-              'a|web/a.txt.copy': 'a',
-            },
-            readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|web/a.txt.copy': 'a'},
+          readerWriter: readerWriter,
+        );
       });
     });
 
@@ -805,9 +1008,12 @@ void main() {
     group('secondary dependency', () {
       test('of an output file is edited', () async {
         var buildActions = [
-          applyToRoot(TestBuilder(
+          applyToRoot(
+            TestBuilder(
               buildExtensions: appendExtension('.copy', from: '.a'),
-              build: copyFrom(makeAssetId('a|web/file.b'))))
+              build: copyFrom(makeAssetId('a|web/file.b')),
+            ),
+          ),
         ];
 
         var buildState = await startWatch(
@@ -819,47 +1025,64 @@ void main() {
         var results = StreamQueue(buildState.buildResults);
 
         var result = await results.next;
-        checkBuild(result,
-            outputs: {'a|web/file.a.copy': 'b'}, readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|web/file.a.copy': 'b'},
+          readerWriter: readerWriter,
+        );
 
         await readerWriter.writeAsString(makeAssetId('a|web/file.b'), 'c');
 
         result = await results.next;
-        checkBuild(result,
-            outputs: {'a|web/file.a.copy': 'c'}, readerWriter: readerWriter);
+        checkBuild(
+          result,
+          outputs: {'a|web/file.a.copy': 'c'},
+          readerWriter: readerWriter,
+        );
       });
 
       test(
-          'of an output which is derived from another generated file is edited',
-          () async {
-        var buildActions = [
-          applyToRoot(TestBuilder(
-              buildExtensions: appendExtension('.copy', from: '.a'))),
-          applyToRoot(TestBuilder(
-              buildExtensions: appendExtension('.copy', from: '.a.copy'),
-              build: copyFrom(makeAssetId('a|web/file.b'))))
-        ];
+        'of an output which is derived from another generated file is edited',
+        () async {
+          var buildActions = [
+            applyToRoot(
+              TestBuilder(
+                buildExtensions: appendExtension('.copy', from: '.a'),
+              ),
+            ),
+            applyToRoot(
+              TestBuilder(
+                buildExtensions: appendExtension('.copy', from: '.a.copy'),
+                build: copyFrom(makeAssetId('a|web/file.b')),
+              ),
+            ),
+          ];
 
-        var buildState = await startWatch(
-          buildActions,
-          {'a|web/file.a': 'a', 'a|web/file.b': 'b'},
-          readerWriter,
-          packageGraph: packageGraph,
-        );
-        var results = StreamQueue(buildState.buildResults);
+          var buildState = await startWatch(
+            buildActions,
+            {'a|web/file.a': 'a', 'a|web/file.b': 'b'},
+            readerWriter,
+            packageGraph: packageGraph,
+          );
+          var results = StreamQueue(buildState.buildResults);
 
-        var result = await results.next;
-        checkBuild(result,
+          var result = await results.next;
+          checkBuild(
+            result,
             outputs: {'a|web/file.a.copy': 'a', 'a|web/file.a.copy.copy': 'b'},
-            readerWriter: readerWriter);
+            readerWriter: readerWriter,
+          );
 
-        await readerWriter.writeAsString(makeAssetId('a|web/file.b'), 'c');
+          await readerWriter.writeAsString(makeAssetId('a|web/file.b'), 'c');
 
-        result = await results.next;
-        checkBuild(result,
+          result = await results.next;
+          checkBuild(
+            result,
             outputs: {'a|web/file.a.copy.copy': 'c'},
-            readerWriter: readerWriter);
-      });
+            readerWriter: readerWriter,
+          );
+        },
+      );
     });
   });
 }
@@ -868,32 +1091,37 @@ final _debounceDelay = const Duration(milliseconds: 10);
 StreamController<ProcessSignal>? _terminateWatchController;
 
 /// Start watching files and running builds.
-Future<BuildState> startWatch(List<BuilderApplication> builders,
-    Map<String, String> inputs, InMemoryRunnerAssetReaderWriter readerWriter,
-    {required PackageGraph packageGraph,
-    Map<String, BuildConfig> overrideBuildConfig = const {},
-    void Function(LogRecord)? onLog,
-    Level logLevel = Level.OFF,
-    String? configKey}) async {
+Future<BuildState> startWatch(
+  List<BuilderApplication> builders,
+  Map<String, String> inputs,
+  InMemoryRunnerAssetReaderWriter readerWriter, {
+  required PackageGraph packageGraph,
+  Map<String, BuildConfig> overrideBuildConfig = const {},
+  void Function(LogRecord)? onLog,
+  Level logLevel = Level.OFF,
+  String? configKey,
+}) async {
   onLog ??= (_) {};
   inputs.forEach((serializedId, contents) {
     readerWriter.writeAsString(makeAssetId(serializedId), contents);
   });
   FakeWatcher watcherFactory(String path) => FakeWatcher(path);
 
-  var state = await watch_impl.watch(builders,
-      configKey: configKey,
-      deleteFilesByDefault: true,
-      debounceDelay: _debounceDelay,
-      directoryWatcherFactory: watcherFactory,
-      overrideBuildConfig: overrideBuildConfig,
-      reader: readerWriter,
-      writer: readerWriter,
-      packageGraph: packageGraph,
-      terminateEventStream: _terminateWatchController!.stream,
-      logLevel: logLevel,
-      onLog: onLog,
-      skipBuildScriptCheck: true);
+  var state = await watch_impl.watch(
+    builders,
+    configKey: configKey,
+    deleteFilesByDefault: true,
+    debounceDelay: _debounceDelay,
+    directoryWatcherFactory: watcherFactory,
+    overrideBuildConfig: overrideBuildConfig,
+    reader: readerWriter,
+    writer: readerWriter,
+    packageGraph: packageGraph,
+    terminateEventStream: _terminateWatchController!.stream,
+    logLevel: logLevel,
+    onLog: onLog,
+    skipBuildScriptCheck: true,
+  );
   // Some tests need access to `reader` so we expose it through an expando.
   _readerForState[state] = readerWriter;
   return state;

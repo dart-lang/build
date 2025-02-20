@@ -23,17 +23,25 @@ class FinalizedAssetsView {
   bool _expired = false;
 
   FinalizedAssetsView(
-      this._assetGraph, this._packageGraph, this._optionalOutputTracker);
+    this._assetGraph,
+    this._packageGraph,
+    this._optionalOutputTracker,
+  );
 
   List<AssetId> allAssets({String? rootDir}) {
     if (_expired) {
       throw StateError(
-          'Cannot use a FinalizedAssetsView after it has expired!');
+        'Cannot use a FinalizedAssetsView after it has expired!',
+      );
     }
     return _assetGraph.allNodes
         .map((node) {
           if (_shouldSkipNode(
-              node, rootDir, _packageGraph, _optionalOutputTracker)) {
+            node,
+            rootDir,
+            _packageGraph,
+            _optionalOutputTracker,
+          )) {
             return null;
           }
           return node.id;
@@ -48,8 +56,12 @@ class FinalizedAssetsView {
   }
 }
 
-bool _shouldSkipNode(AssetNode node, String? rootDir, PackageGraph packageGraph,
-    OptionalOutputTracker optionalOutputTracker) {
+bool _shouldSkipNode(
+  AssetNode node,
+  String? rootDir,
+  PackageGraph packageGraph,
+  OptionalOutputTracker optionalOutputTracker,
+) {
   if (!node.isReadable) return true;
   if (node.isDeleted) return true;
 

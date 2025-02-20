@@ -23,46 +23,57 @@ final copyBuilder = TestBuilder();
 // test-package-end ###########################################################
 
 void main() {
-  final builders = [
-    builder('copyBuilder', copyBuilder),
-  ];
+  final builders = [builder('copyBuilder', copyBuilder)];
 
   late BuildTool buildTool;
   late d.Descriptor builderPackage;
 
   setUpAll(() async {
     builderPackage = await packageWithBuilders(builders);
-    buildTool = await package([
-      builderPackage
-    ], packageContents: [
-      d.file('build.yaml', '#comment'),
-      d.dir('web', [d.file('a.txt', 'a')])
-    ]);
+    buildTool = await package(
+      [builderPackage],
+      packageContents: [
+        d.file('build.yaml', '#comment'),
+        d.dir('web', [d.file('a.txt', 'a')]),
+      ],
+    );
   });
 
   tearDown(() async {
     // Restore the files to their original state
-    final builderFile =
-        File(p.join(d.sandbox, builderPackage.name, 'lib', 'builders.dart'));
-    await builderFile.writeAsString((await builderFile.readAsString())
-        .replaceFirst(r'$updated$', r'$comment$'));
+    final builderFile = File(
+      p.join(d.sandbox, builderPackage.name, 'lib', 'builders.dart'),
+    );
+    await builderFile.writeAsString(
+      (await builderFile.readAsString()).replaceFirst(
+        r'$updated$',
+        r'$comment$',
+      ),
+    );
     final buildConfig = File(p.url.join(d.sandbox, 'a', 'build.yaml'));
-    await buildConfig.writeAsString((await buildConfig.readAsString())
-        .replaceFirst('#updated', '#comment'));
+    await buildConfig.writeAsString(
+      (await buildConfig.readAsString()).replaceFirst('#updated', '#comment'),
+    );
   });
 
   Future<void> changeBuilders() async {
-    final builderFile =
-        File(p.join(d.sandbox, builderPackage.name, 'lib', 'builders.dart'));
-    await builderFile.writeAsString((await builderFile.readAsString())
-        .replaceFirst(r'$comment$', r'$updated$'));
+    final builderFile = File(
+      p.join(d.sandbox, builderPackage.name, 'lib', 'builders.dart'),
+    );
+    await builderFile.writeAsString(
+      (await builderFile.readAsString()).replaceFirst(
+        r'$comment$',
+        r'$updated$',
+      ),
+    );
   }
 
   Future<void> changeBuildConfig() async {
     final buildConfig = File(p.url.join(d.sandbox, 'a', 'build.yaml'));
     // Update a comment
-    await buildConfig.writeAsString((await buildConfig.readAsString())
-        .replaceFirst('#comment', '#updated'));
+    await buildConfig.writeAsString(
+      (await buildConfig.readAsString()).replaceFirst('#comment', '#updated'),
+    );
   }
 
   group('Invalidates next build', () {
@@ -72,14 +83,26 @@ void main() {
       await buildTool.build();
 
       // Add a marker file to check that generated directory is cleaned.
-      markerFile = File(p.join(d.sandbox, 'a', '.dart_tool', 'build',
-          'generated', 'a', 'marker_file.txt'));
+      markerFile = File(
+        p.join(
+          d.sandbox,
+          'a',
+          '.dart_tool',
+          'build',
+          'generated',
+          'a',
+          'marker_file.txt',
+        ),
+      );
       await markerFile.writeAsString('marker');
     });
 
     tearDown(() async {
-      expect(await markerFile.exists(), isFalse,
-          reason: 'Cache dir should be cleaned on invalidated builds.');
+      expect(
+        await markerFile.exists(),
+        isFalse,
+        reason: 'Cache dir should be cleaned on invalidated builds.',
+      );
     });
 
     test('for changed dart source', () async {
@@ -95,11 +118,16 @@ void main() {
     });
 
     test('for invalid asset graph version', () async {
-      final assetGraph =
-          File(p.join(d.sandbox, 'a', assetGraphPathFor(scriptKernelLocation)));
+      final assetGraph = File(
+        p.join(d.sandbox, 'a', assetGraphPathFor(scriptKernelLocation)),
+      );
       // Prepend a 1 to the version number
-      await assetGraph.writeAsString((await assetGraph.readAsString())
-          .replaceFirst('"version":', '"version":1'));
+      await assetGraph.writeAsString(
+        (await assetGraph.readAsString()).replaceFirst(
+          '"version":',
+          '"version":1',
+        ),
+      );
 
       final secondBuild = await buildTool.build();
 
@@ -148,11 +176,21 @@ void main() {
     // Run a first build before invalidation.
     await buildTool.build();
 
-    final locationsFile = File(p.join(d.sandbox, 'a', '.dart_tool', 'build',
-        'entrypoint', '.packageLocations'));
+    final locationsFile = File(
+      p.join(
+        d.sandbox,
+        'a',
+        '.dart_tool',
+        'build',
+        'entrypoint',
+        '.packageLocations',
+      ),
+    );
     // Modify the contents in some way
-    await locationsFile.writeAsString('${await locationsFile.readAsString()}'
-        '\nmodified!');
+    await locationsFile.writeAsString(
+      '${await locationsFile.readAsString()}'
+      '\nmodified!',
+    );
 
     final secondBuild = await buildTool.build();
 
@@ -167,7 +205,10 @@ void main() {
     await buildTool.build();
 
     final secondBuild = await buildTool.build();
-    await expectLater(secondBuild, neverEmits('Creating build script snapshot'),
-        reason: 'should not invalidate the previous snapshot');
+    await expectLater(
+      secondBuild,
+      neverEmits('Creating build script snapshot'),
+      reason: 'should not invalidate the previous snapshot',
+    );
   });
 }

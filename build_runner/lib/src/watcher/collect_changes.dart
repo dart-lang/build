@@ -30,8 +30,9 @@ Map<AssetId, ChangeType> collectChanges(List<List<AssetChange>> changes) {
           } else if (change.type == ChangeType.MODIFY) {
             // REMOVE followed by MODIFY isn't sensible, just throw.
             throw StateError(
-                'Internal error, got REMOVE event followed by MODIFY event for '
-                '${change.id}.');
+              'Internal error, got REMOVE event followed by MODIFY event for '
+              '${change.id}.',
+            );
           }
           break;
         case ChangeType.MODIFY:
@@ -41,8 +42,9 @@ Map<AssetId, ChangeType> collectChanges(List<List<AssetChange>> changes) {
           } else if (change.type == ChangeType.ADD) {
             // MODIFY followed by ADD isn't sensible, just throw.
             throw StateError(
-                'Internal error, got MODIFY event followed by ADD event for '
-                '${change.id}.');
+              'Internal error, got MODIFY event followed by ADD event for '
+              '${change.id}.',
+            );
           }
           break;
       }

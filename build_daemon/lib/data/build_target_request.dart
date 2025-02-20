@@ -16,9 +16,9 @@ abstract class BuildTargetRequest
   static Serializer<BuildTargetRequest> get serializer =>
       _$buildTargetRequestSerializer;
 
-  factory BuildTargetRequest(
-          [void Function(BuildTargetRequestBuilder b) updates]) =
-      _$BuildTargetRequest;
+  factory BuildTargetRequest([
+    void Function(BuildTargetRequestBuilder b) updates,
+  ]) = _$BuildTargetRequest;
 
   BuildTargetRequest._();
 

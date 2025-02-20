@@ -23,7 +23,8 @@ class RunCommand extends BuildRunnerCommand {
   String get name => 'run';
 
   @override
-  String get description => 'Performs a single build, and executes '
+  String get description =>
+      'Performs a single build, and executes '
       'a Dart script with the given arguments.';
 
   @override
@@ -41,9 +42,10 @@ class RunCommand extends BuildRunnerCommand {
     if (separatorPos >= 0) {
       void throwUsageException() {
         throw UsageException(
-            'The `run` command does not support positional args before the '
-            '`--` separator which should separate build args from script args.',
-            usage);
+          'The `run` command does not support positional args before the '
+          '`--` separator which should separate build args from script args.',
+          usage,
+        );
       }
 
       var expectedRest = argResults.arguments.skip(separatorPos + 1).toList();
@@ -64,19 +66,26 @@ class RunCommand extends BuildRunnerCommand {
     }
 
     return SharedOptions.fromParsedArgs(
-        argResults, [], packageGraph.root.name, this);
+      argResults,
+      [],
+      packageGraph.root.name,
+      this,
+    );
   }
 
   @override
   FutureOr<int> run() {
     var options = readOptions();
     return withEnabledExperiments(
-        () => _run(options), options.enableExperiments);
+      () => _run(options),
+      options.enableExperiments,
+    );
   }
 
   FutureOr<int> _run(SharedOptions options) async {
-    var logSubscription =
-        Logger.root.onRecord.listen(stdIOLogListener(verbose: options.verbose));
+    var logSubscription = Logger.root.onRecord.listen(
+      stdIOLogListener(verbose: options.verbose),
+    );
     var argResults = this.argResults!;
     try {
       // Ensure that the user passed the name of a file to run.
@@ -92,17 +101,20 @@ class RunCommand extends BuildRunnerCommand {
 
       // Ensure the extension is .dart.
       if (p.extension(scriptName) != '.dart') {
-        logger.severe('$scriptName is not a valid Dart file '
-            'and cannot be run in the VM.');
+        logger.severe(
+          '$scriptName is not a valid Dart file '
+          'and cannot be run in the VM.',
+        );
         return ExitCode.usage.code;
       }
 
       // Create a temporary directory in which to execute the script.
-      var tempPath = Directory.systemTemp
-          .createTempSync('build_runner_run_script')
-          .absolute
-          .uri
-          .toFilePath();
+      var tempPath =
+          Directory.systemTemp
+              .createTempSync('build_runner_run_script')
+              .absolute
+              .uri
+              .toFilePath();
 
       // Create two ReceivePorts, so that we can quit when the isolate is done.
       //
@@ -114,10 +126,17 @@ class RunCommand extends BuildRunnerCommand {
       var exitCodeCompleter = Completer<int>();
 
       try {
-        var buildDirs = (options.buildDirs)
-          ..add(BuildDirectory('',
-              outputLocation: OutputLocation(tempPath,
-                  useSymlinks: options.outputSymlinksOnly, hoist: false)));
+        var buildDirs =
+            (options.buildDirs)..add(
+              BuildDirectory(
+                '',
+                outputLocation: OutputLocation(
+                  tempPath,
+                  useSymlinks: options.outputSymlinksOnly,
+                  hoist: false,
+                ),
+              ),
+            );
         var result = await build(
           builderApplications,
           deleteFilesByDefault: options.deleteFilesByDefault,
@@ -141,8 +160,10 @@ class RunCommand extends BuildRunnerCommand {
 
         // Find the path of the script to run.
         var scriptPath = p.join(tempPath, scriptName);
-        var packageConfigPath =
-            p.join(tempPath, '.dart_tool/package_config.json');
+        var packageConfigPath = p.join(
+          tempPath,
+          '.dart_tool/package_config.json',
+        );
 
         onExit = ReceivePort();
         onError = ReceivePort();
@@ -158,8 +179,11 @@ class RunCommand extends BuildRunnerCommand {
           e = e as List<Object?>;
           onExit?.close();
           onError?.close();
-          logger.severe('Unhandled error from script: $scriptName', e[0],
-              StackTrace.fromString(e[1].toString()));
+          logger.severe(
+            'Unhandled error from script: $scriptName',
+            e[0],
+            StackTrace.fromString(e[1].toString()),
+          );
           if (!exitCodeCompleter.isCompleted) exitCodeCompleter.complete(1);
         });
 
@@ -176,9 +200,10 @@ class RunCommand extends BuildRunnerCommand {
         return await exitCodeCompleter.future;
       } on IsolateSpawnException catch (e) {
         logger.severe(
-            'Could not spawn isolate. Ensure that your file is in a valid '
-            'directory (i.e. "bin", "benchmark", "example", "test", "tool").',
-            e);
+          'Could not spawn isolate. Ensure that your file is in a valid '
+          'directory (i.e. "bin", "benchmark", "example", "test", "tool").',
+          e,
+        );
         return ExitCode.ioError.code;
       } finally {
         // Clean up the output dir.

@@ -11,26 +11,29 @@ import 'package:test/test.dart';
 
 void main() {
   test('should resolve a dart file with a part file', () async {
-    await testBuilders([
-      applyToRoot(ListClassesAndHierarchyBuilder())
-    ], {
-      'a|lib/a.dart': r'''
+    await testBuilders(
+      [applyToRoot(ListClassesAndHierarchyBuilder())],
+      {
+        'a|lib/a.dart': r'''
         library a;
 
         part 'a_impl.dart';
 
         class Example {}
       ''',
-      'a|lib/a_impl.dart': r'''
+        'a|lib/a_impl.dart': r'''
         part of a;
 
         class ExamplePrime implements Example {}
       ''',
-    }, outputs: {
-      'a|lib/a.txt': ''
-          'Example: [Object]\n'
-          'ExamplePrime: [Object, Example]\n',
-    });
+      },
+      outputs: {
+        'a|lib/a.txt':
+            ''
+            'Example: [Object]\n'
+            'ExamplePrime: [Object, Example]\n',
+      },
+    );
   });
 }
 

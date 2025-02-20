@@ -73,8 +73,11 @@ abstract class BuildStep implements AssetReader, AssetWriter {
   /// Future since the runner will be responsible for waiting until all outputs
   /// are written.
   @override
-  Future<void> writeAsString(AssetId id, FutureOr<String> contents,
-      {Encoding encoding = utf8});
+  Future<void> writeAsString(
+    AssetId id,
+    FutureOr<String> contents, {
+    Encoding encoding = utf8,
+  });
 
   /// A [Resolver] for [inputId].
   Resolver get resolver;
@@ -140,9 +143,11 @@ class NoOpStageTracker implements StageTracker {
   static const StageTracker instance = NoOpStageTracker._();
 
   @override
-  T trackStage<T>(String label, T Function() action,
-          {bool isExternal = false}) =>
-      action();
+  T trackStage<T>(
+    String label,
+    T Function() action, {
+    bool isExternal = false,
+  }) => action();
 
   const NoOpStageTracker._();
 }

@@ -11,14 +11,16 @@ import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:package_config/package_config_types.dart';
 import 'package:test/test.dart';
 
-final Matcher throwsCorruptedException =
-    throwsA(const TypeMatcher<AssetGraphCorruptedException>());
+final Matcher throwsCorruptedException = throwsA(
+  const TypeMatcher<AssetGraphCorruptedException>(),
+);
 final Matcher duplicateAssetNodeException =
     const TypeMatcher<DuplicateAssetNodeException>();
 
-Matcher equalsAssetGraph(AssetGraph expected,
-        {bool checkPreviousInputsDigest = true}) =>
-    _AssetGraphMatcher(expected, checkPreviousInputsDigest);
+Matcher equalsAssetGraph(
+  AssetGraph expected, {
+  bool checkPreviousInputsDigest = true,
+}) => _AssetGraphMatcher(expected, checkPreviousInputsDigest);
 
 class _AssetGraphMatcher extends Matcher {
   final AssetGraph _expected;
@@ -36,14 +38,14 @@ class _AssetGraphMatcher extends Matcher {
       if (node.isDeleted != expectedNode?.isDeleted) {
         matchState['IsDeleted of ${node.id}'] = [
           node.isDeleted,
-          expectedNode?.isDeleted
+          expectedNode?.isDeleted,
         ];
         matches = false;
       }
       if (node.runtimeType != expectedNode.runtimeType) {
         matchState['RuntimeType'] = [
           node.runtimeType,
-          expectedNode.runtimeType
+          expectedNode.runtimeType,
         ];
         matches = false;
       }
@@ -54,30 +56,32 @@ class _AssetGraphMatcher extends Matcher {
       if (!unorderedEquals(node.outputs).matches(expectedNode.outputs, {})) {
         matchState['Outputs of ${node.id}'] = [
           node.outputs,
-          expectedNode.outputs
+          expectedNode.outputs,
         ];
         matches = false;
       }
-      if (!unorderedEquals(node.primaryOutputs)
-          .matches(expectedNode.primaryOutputs, {})) {
+      if (!unorderedEquals(
+        node.primaryOutputs,
+      ).matches(expectedNode.primaryOutputs, {})) {
         matchState['Primary outputs of ${node.id}'] = [
           node.primaryOutputs,
-          expectedNode.primaryOutputs
+          expectedNode.primaryOutputs,
         ];
         matches = false;
       }
-      if (!unorderedEquals(node.anchorOutputs)
-          .matches(expectedNode.anchorOutputs, {})) {
+      if (!unorderedEquals(
+        node.anchorOutputs,
+      ).matches(expectedNode.anchorOutputs, {})) {
         matchState['Anchor outputs of ${node.id}'] = [
           node.anchorOutputs,
-          expectedNode.anchorOutputs
+          expectedNode.anchorOutputs,
         ];
         matches = false;
       }
       if (node.lastKnownDigest != expectedNode.lastKnownDigest) {
         matchState['Digest of ${node.id}'] = [
           node.lastKnownDigest,
-          expectedNode.lastKnownDigest
+          expectedNode.lastKnownDigest,
         ];
         matches = false;
       }
@@ -86,14 +90,14 @@ class _AssetGraphMatcher extends Matcher {
           if (node.state != expectedNode.state) {
             matchState['needsUpdate of ${node.id}'] = [
               node.state,
-              expectedNode.state
+              expectedNode.state,
             ];
             matches = false;
           }
           if (!unorderedEquals(node.inputs).matches(expectedNode.inputs, {})) {
             matchState['Inputs of ${node.id}'] = [
               node.inputs,
-              expectedNode.inputs
+              expectedNode.inputs,
             ];
             matches = false;
           }
@@ -103,21 +107,21 @@ class _AssetGraphMatcher extends Matcher {
             if (node.primaryInput != expectedNode.primaryInput) {
               matchState['primaryInput of ${node.id}'] = [
                 node.primaryInput,
-                expectedNode.primaryInput
+                expectedNode.primaryInput,
               ];
               matches = false;
             }
             if (node.wasOutput != expectedNode.wasOutput) {
               matchState['wasOutput of ${node.id}'] = [
                 node.wasOutput,
-                expectedNode.wasOutput
+                expectedNode.wasOutput,
               ];
               matches = false;
             }
             if (node.isFailure != expectedNode.isFailure) {
               matchState['isFailure of ${node.id}'] = [
                 node.isFailure,
-                expectedNode.isFailure
+                expectedNode.isFailure,
               ];
               matches = false;
             }
@@ -126,25 +130,26 @@ class _AssetGraphMatcher extends Matcher {
                     expectedNode.previousInputsDigest) {
               matchState['previousInputDigest of ${node.id}'] = [
                 node.previousInputsDigest,
-                expectedNode.previousInputsDigest
+                expectedNode.previousInputsDigest,
               ];
               matches = false;
             }
           }
         } else if (node is GlobAssetNode) {
           if (expectedNode is GlobAssetNode) {
-            if (!unorderedEquals(node.results!)
-                .matches(expectedNode.results, {})) {
+            if (!unorderedEquals(
+              node.results!,
+            ).matches(expectedNode.results, {})) {
               matchState['results of ${node.id}'] = [
                 node.results,
-                expectedNode.results
+                expectedNode.results,
               ];
               matches = false;
             }
             if (node.glob.pattern != expectedNode.glob.pattern) {
               matchState['glob of ${node.id}'] = [
                 node.glob.pattern,
-                expectedNode.glob.pattern
+                expectedNode.glob.pattern,
               ];
               matches = false;
             }
@@ -155,14 +160,14 @@ class _AssetGraphMatcher extends Matcher {
           if (node.actionNumber != expectedNode.actionNumber) {
             matchState['actionNumber of ${node.id}'] = [
               node.actionNumber,
-              expectedNode.actionNumber
+              expectedNode.actionNumber,
             ];
             matches = false;
           }
           if (node.builderOptionsId != expectedNode.builderOptionsId) {
             matchState['builderOptionsId of ${node.id}'] = [
               node.builderOptionsId,
-              expectedNode.builderOptionsId
+              expectedNode.builderOptionsId,
             ];
             matches = false;
           }
@@ -170,14 +175,14 @@ class _AssetGraphMatcher extends Matcher {
               node.previousInputsDigest != expectedNode.previousInputsDigest) {
             matchState['previousInputsDigest of ${node.id}'] = [
               node.previousInputsDigest,
-              expectedNode.previousInputsDigest
+              expectedNode.previousInputsDigest,
             ];
             matches = false;
           }
           if (node.primaryInput != expectedNode.primaryInput) {
             matchState['primaryInput of ${node.id}'] = [
               node.primaryInput,
-              expectedNode.primaryInput
+              expectedNode.primaryInput,
             ];
             matches = false;
           }
@@ -185,8 +190,9 @@ class _AssetGraphMatcher extends Matcher {
       }
     }
     if (!equals(_expected.packageLanguageVersions).matches(
-        item.packageLanguageVersions,
-        matchState['packageLanguageVersions'] = <String, LanguageVersion?>{})) {
+      item.packageLanguageVersions,
+      matchState['packageLanguageVersions'] = <String, LanguageVersion?>{},
+    )) {
       matches = false;
     }
     return matches;
@@ -197,8 +203,12 @@ class _AssetGraphMatcher extends Matcher {
       description.addDescriptionOf(_expected);
 
   @override
-  Description describeMismatch(dynamic item, Description mismatchDescription,
-      Map matchState, bool verbose) {
+  Description describeMismatch(
+    dynamic item,
+    Description mismatchDescription,
+    Map matchState,
+    bool verbose,
+  ) {
     matchState.forEach((k, v) {
       v = v as List;
       mismatchDescription.add('$k: got ${v[0]} but expected ${v[1]}');

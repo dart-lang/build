@@ -56,24 +56,31 @@ class AssetId implements Comparable<AssetId> {
   /// `asset:` uris have the format '$package/$path', including the top level
   /// directory.
   factory AssetId.resolve(Uri uri, {AssetId? from}) {
-    var resolved = uri.hasScheme
-        ? uri
-        : from != null
+    var resolved =
+        uri.hasScheme
+            ? uri
+            : from != null
             ? from.uri.resolveUri(uri)
             : (throw ArgumentError.value(
-                from,
-                'from',
-                'An AssetId "from" must be specified to resolve a relative '
-                    'URI'));
+              from,
+              'from',
+              'An AssetId "from" must be specified to resolve a relative '
+                  'URI',
+            ));
     if (resolved.scheme == 'package') {
-      return AssetId(resolved.pathSegments.first,
-          p.url.join('lib', p.url.joinAll(resolved.pathSegments.skip(1))));
+      return AssetId(
+        resolved.pathSegments.first,
+        p.url.join('lib', p.url.joinAll(resolved.pathSegments.skip(1))),
+      );
     } else if (resolved.scheme == 'asset') {
-      return AssetId(resolved.pathSegments.first,
-          p.url.joinAll(resolved.pathSegments.skip(1)));
+      return AssetId(
+        resolved.pathSegments.first,
+        p.url.joinAll(resolved.pathSegments.skip(1)),
+      );
     }
     throw UnsupportedError(
-        'Cannot resolve $uri; only "package" and "asset" schemes supported');
+      'Cannot resolve $uri; only "package" and "asset" schemes supported',
+    );
   }
 
   /// Parses an [AssetId] string of the form "package|path/to/asset.txt".
@@ -89,7 +96,8 @@ class AssetId implements Comparable<AssetId> {
 
     if (parts[0].isEmpty) {
       throw FormatException(
-          'Cannot have empty package name in "$description".');
+        'Cannot have empty package name in "$description".',
+      );
     }
 
     if (parts[1].isEmpty) {
@@ -107,8 +115,8 @@ class AssetId implements Comparable<AssetId> {
   /// Deserializes an [AssetId] from [data], which must be the result of
   /// calling [serialize] on an existing [AssetId].
   AssetId.deserialize(List<dynamic> data)
-      : package = data[0] as String,
-        path = data[1] as String;
+    : package = data[0] as String,
+      path = data[1] as String;
 
   /// Returns `true` if [other] is an [AssetId] with the same package and path.
   @override
@@ -154,7 +162,9 @@ String _normalizePath(String path) {
   final collapsed = p.posix.normalize(path);
   if (collapsed.startsWith('../')) {
     throw ArgumentError.value(
-        path, 'Asset paths may not reach outside the package.');
+      path,
+      'Asset paths may not reach outside the package.',
+    );
   }
   return collapsed;
 }

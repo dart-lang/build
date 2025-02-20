@@ -72,11 +72,13 @@ class InMemoryAssetReaderWriter
     package ??= rootPackage;
     if (package == null) {
       throw UnsupportedError(
-          'Root package is required to use findAssets without providing an '
-          'explicit package.');
+        'Root package is required to use findAssets without providing an '
+        'explicit package.',
+      );
     }
-    return Stream.fromIterable(assets.keys
-        .where((id) => id.package == package && glob.matches(id.path)));
+    return Stream.fromIterable(
+      assets.keys.where((id) => id.package == package && glob.matches(id.path)),
+    );
   }
 
   @override
@@ -84,9 +86,11 @@ class InMemoryAssetReaderWriter
       filesystem.writeAsBytes(id, bytes);
 
   @override
-  Future writeAsString(AssetId id, String contents,
-          {Encoding encoding = utf8}) async =>
-      filesystem.writeAsString(id, contents, encoding: encoding);
+  Future writeAsString(
+    AssetId id,
+    String contents, {
+    Encoding encoding = utf8,
+  }) async => filesystem.writeAsString(id, contents, encoding: encoding);
 
   @override
   Future<Digest> digest(AssetId id) async {

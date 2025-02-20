@@ -84,11 +84,7 @@ class HeartbeatLogger extends Heartbeat {
   /// be logged instead.
   final String Function(String original)? transformLog;
 
-  HeartbeatLogger({
-    super.checkInterval,
-    super.waitDuration,
-    this.transformLog,
-  });
+  HeartbeatLogger({super.checkInterval, super.waitDuration, this.transformLog});
 
   /// Start listening to logs.
   @override
@@ -133,7 +129,8 @@ class HungActionsHeartbeat extends Heartbeat {
   @override
   void onTimeout(Duration elapsed) {
     var formattedTime = humanReadable(elapsed);
-    var message = 'No actions completed for $formattedTime, '
+    var message =
+        'No actions completed for $formattedTime, '
         'waiting on:\n${listActions()}';
     _logger.warning(message);
   }

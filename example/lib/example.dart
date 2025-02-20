@@ -26,7 +26,7 @@ class CopyBuilder implements Builder {
 
   @override
   final buildExtensions = const {
-    '.txt': ['.txt.copy']
+    '.txt': ['.txt.copy'],
   };
 }
 
@@ -35,12 +35,14 @@ class CssBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
     await buildStep.writeAsString(
-        AssetId(buildStep.inputId.package, 'web/generated.css'), _cssContent());
+      AssetId(buildStep.inputId.package, 'web/generated.css'),
+      _cssContent(),
+    );
   }
 
   @override
   final buildExtensions = const {
-    r'$package$': ['web/generated.css']
+    r'$package$': ['web/generated.css'],
   };
 
   static String _cssContent() => '''
@@ -75,7 +77,7 @@ Visible libraries: $visibleLibraries
 
   @override
   final buildExtensions = const {
-    '.dart': ['.dart.info']
+    '.dart': ['.dart.info'],
   };
 }
 
@@ -87,12 +89,12 @@ Visible libraries: $visibleLibraries
 class TextBuilder implements Builder {
   @override
   Map<String, List<String>> get buildExtensions => const {
-        // To implement directory moves, this builder uses capture groups
-        // ({{}}). Capture groups can match anything in the input's path,
-        // including subdirectories. The `^assets` at the beginning ensures that
-        // only jsons under the top-level `assets/` folder will be considered.
-        '^assets/{{}}.json': ['lib/generated/{{}}.dart'],
-      };
+    // To implement directory moves, this builder uses capture groups
+    // ({{}}). Capture groups can match anything in the input's path,
+    // including subdirectories. The `^assets` at the beginning ensures that
+    // only jsons under the top-level `assets/` folder will be considered.
+    '^assets/{{}}.json': ['lib/generated/{{}}.dart'],
+  };
 
   @override
   Future<void> build(BuildStep buildStep) async {
@@ -104,8 +106,9 @@ class TextBuilder implements Builder {
           .replaceFirst('.json', '.dart'),
     );
 
-    final messages = (json.decode(await buildStep.readAsString(inputId)) as Map)
-        .cast<String, String>();
+    final messages =
+        (json.decode(await buildStep.readAsString(inputId)) as Map)
+            .cast<String, String>();
 
     final outputBuffer = StringBuffer('// Generated, do not edit\n');
     messages.forEach((key, value) {

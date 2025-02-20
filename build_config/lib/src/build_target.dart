@@ -37,13 +37,16 @@ class BuildTarget {
     InputSet? sources,
     Iterable<String>? dependencies,
     Map<String, TargetBuilderConfig>? builders,
-  })  : autoApplyBuilders = autoApplyBuilders ?? true,
-        dependencies = (dependencies ?? currentPackageDefaultDependencies)
-            .map((d) => normalizeTargetKeyUsage(d, currentPackage))
-            .toList(),
-        builders = (builders ?? const {}).map((key, config) =>
-            MapEntry(normalizeBuilderKeyUsage(key, currentPackage), config)),
-        sources = sources ?? InputSet.anything;
+  }) : autoApplyBuilders = autoApplyBuilders ?? true,
+       dependencies =
+           (dependencies ?? currentPackageDefaultDependencies)
+               .map((d) => normalizeTargetKeyUsage(d, currentPackage))
+               .toList(),
+       builders = (builders ?? const {}).map(
+         (key, config) =>
+             MapEntry(normalizeBuilderKeyUsage(key, currentPackage), config),
+       ),
+       sources = sources ?? InputSet.anything;
 
   factory BuildTarget.fromJson(Map json) {
     ArgumentError.checkNotNull(json);
@@ -51,7 +54,8 @@ class BuildTarget {
   }
 
   @override
-  String toString() => {
+  String toString() =>
+      {
         'package': package,
         'sources': sources,
         'dependencies': dependencies,
@@ -104,10 +108,10 @@ class TargetBuilderConfig {
     Map<String, dynamic>? options,
     Map<String, dynamic>? devOptions,
     Map<String, dynamic>? releaseOptions,
-  })  : isEnabled = isEnabled ?? true,
-        options = options ?? const {},
-        devOptions = devOptions ?? const {},
-        releaseOptions = releaseOptions ?? const {};
+  }) : isEnabled = isEnabled ?? true,
+       options = options ?? const {},
+       devOptions = devOptions ?? const {},
+       releaseOptions = releaseOptions ?? const {};
 
   factory TargetBuilderConfig.fromJson(Map json) {
     ArgumentError.checkNotNull(json);
@@ -115,7 +119,8 @@ class TargetBuilderConfig {
   }
 
   @override
-  String toString() => {
+  String toString() =>
+      {
         'isEnabled': isEnabled,
         'generateFor': generateFor,
         'options': options,
@@ -157,14 +162,16 @@ class GlobalBuilderConfig {
     Map<String, dynamic>? devOptions,
     Map<String, dynamic>? releaseOptions,
     List<String>? runsBefore,
-  })  : options = options ?? const {},
-        devOptions = devOptions ?? const {},
-        releaseOptions = releaseOptions ?? const {},
-        runsBefore = runsBefore
-                ?.map((builder) =>
-                    normalizeBuilderKeyUsage(builder, currentPackage))
-                .toList() ??
-            const [];
+  }) : options = options ?? const {},
+       devOptions = devOptions ?? const {},
+       releaseOptions = releaseOptions ?? const {},
+       runsBefore =
+           runsBefore
+               ?.map(
+                 (builder) => normalizeBuilderKeyUsage(builder, currentPackage),
+               )
+               .toList() ??
+           const [];
 
   factory GlobalBuilderConfig.fromJson(Map json) {
     ArgumentError.checkNotNull(json);
@@ -172,7 +179,8 @@ class GlobalBuilderConfig {
   }
 
   @override
-  String toString() => {
+  String toString() =>
+      {
         'options': options,
         'devOptions': devOptions,
         'releaseOptions': releaseOptions,

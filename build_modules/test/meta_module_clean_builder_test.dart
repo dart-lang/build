@@ -25,17 +25,23 @@ void main() {
     var metaA = MetaModule([moduleA]);
     var metaB = MetaModule([moduleB]);
 
-    await testBuilder(MetaModuleCleanBuilder(platform), {
-      'a|lib/${metaModuleExtension(platform)}': json.encode(metaA),
-      'b|lib/${metaModuleExtension(platform)}': json.encode(metaB),
-      'a|lib/a.dart': 'import "package:b/b.dart"',
-      'b|lib/b.dart': 'import "package:a/a.dart"',
-    }, outputs: {
-      'a|lib/${metaModuleCleanExtension(platform)}':
-          encodedMatchesMetaModule(metaA),
-      'b|lib/${metaModuleCleanExtension(platform)}':
-          encodedMatchesMetaModule(metaB),
-    });
+    await testBuilder(
+      MetaModuleCleanBuilder(platform),
+      {
+        'a|lib/${metaModuleExtension(platform)}': json.encode(metaA),
+        'b|lib/${metaModuleExtension(platform)}': json.encode(metaB),
+        'a|lib/a.dart': 'import "package:b/b.dart"',
+        'b|lib/b.dart': 'import "package:a/a.dart"',
+      },
+      outputs: {
+        'a|lib/${metaModuleCleanExtension(platform)}': encodedMatchesMetaModule(
+          metaA,
+        ),
+        'b|lib/${metaModuleCleanExtension(platform)}': encodedMatchesMetaModule(
+          metaB,
+        ),
+      },
+    );
   });
 
   test('can handle cycles', () async {
@@ -45,41 +51,58 @@ void main() {
     var metaA = MetaModule([moduleA]);
     var metaB = MetaModule([moduleB]);
     var clean = MetaModule([
-      Module(assetA, [assetA, assetB], [], platform, true)
+      Module(assetA, [assetA, assetB], [], platform, true),
     ]);
 
-    await testBuilder(MetaModuleCleanBuilder(platform), {
-      'a|lib/${metaModuleExtension(platform)}': json.encode(metaA),
-      'b|lib/${metaModuleExtension(platform)}': json.encode(metaB),
-      'a|lib/a.dart': 'import "package:b/b.dart"',
-      'b|lib/b.dart': 'import "package:a/a.dart"',
-    }, outputs: {
-      'a|lib/${metaModuleCleanExtension(platform)}':
-          encodedMatchesMetaModule(clean),
-      'b|lib/${metaModuleCleanExtension(platform)}':
-          encodedMatchesMetaModule(MetaModule([])),
-    });
+    await testBuilder(
+      MetaModuleCleanBuilder(platform),
+      {
+        'a|lib/${metaModuleExtension(platform)}': json.encode(metaA),
+        'b|lib/${metaModuleExtension(platform)}': json.encode(metaB),
+        'a|lib/a.dart': 'import "package:b/b.dart"',
+        'b|lib/b.dart': 'import "package:a/a.dart"',
+      },
+      outputs: {
+        'a|lib/${metaModuleCleanExtension(platform)}': encodedMatchesMetaModule(
+          clean,
+        ),
+        'b|lib/${metaModuleCleanExtension(platform)}': encodedMatchesMetaModule(
+          MetaModule([]),
+        ),
+      },
+    );
   });
 
-  test('Warns about missing .meta_module.raw files from dependencies',
-      () async {
-    var moduleA = Module(assetA, [assetA], [assetB], platform, true);
-    var metaA = MetaModule([moduleA]);
-    var logs = <LogRecord>[];
-    await testBuilder(MetaModuleCleanBuilder(platform), {
-      'a|lib/${metaModuleExtension(platform)}': json.encode(metaA),
-      'a|lib/a.dart': 'import "package:b/b.dart"',
-    }, outputs: {
-      'a|lib/${metaModuleCleanExtension(platform)}':
-          encodedMatchesMetaModule(metaA),
-    }, onLog: (r) {
-      if (r.level >= Level.WARNING) logs.add(r);
-    });
-    expect(
+  test(
+    'Warns about missing .meta_module.raw files from dependencies',
+    () async {
+      var moduleA = Module(assetA, [assetA], [assetB], platform, true);
+      var metaA = MetaModule([moduleA]);
+      var logs = <LogRecord>[];
+      await testBuilder(
+        MetaModuleCleanBuilder(platform),
+        {
+          'a|lib/${metaModuleExtension(platform)}': json.encode(metaA),
+          'a|lib/a.dart': 'import "package:b/b.dart"',
+        },
+        outputs: {
+          'a|lib/${metaModuleCleanExtension(platform)}':
+              encodedMatchesMetaModule(metaA),
+        },
+        onLog: (r) {
+          if (r.level >= Level.WARNING) logs.add(r);
+        },
+      );
+      expect(
         logs,
         orderedEquals([
-          predicate((LogRecord r) => r.message
-              .startsWith('Unable to read module information for package:b'))
-        ]));
-  });
+          predicate(
+            (LogRecord r) => r.message.startsWith(
+              'Unable to read module information for package:b',
+            ),
+          ),
+        ]),
+      );
+    },
+  );
 }

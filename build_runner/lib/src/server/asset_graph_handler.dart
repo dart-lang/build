@@ -51,9 +51,11 @@ class AssetGraphHandler {
       case '':
         if (!request.url.hasQuery) {
           return shelf.Response.ok(
-              await _reader.readAsString(
-                  AssetId('build_runner', 'lib/src/server/graph_viz.html')),
-              headers: {HttpHeaders.contentTypeHeader: 'text/html'});
+            await _reader.readAsString(
+              AssetId('build_runner', 'lib/src/server/graph_viz.html'),
+            ),
+            headers: {HttpHeaders.contentTypeHeader: 'text/html'},
+          );
         }
 
         var query = request.url.queryParameters['q']?.trim();
@@ -69,8 +71,11 @@ class AssetGraphHandler {
     return shelf.Response.notFound('Bad request: "${request.url}".');
   }
 
-  Future<shelf.Response> _handleQuery(String query, String rootDir,
-      {String? filter}) async {
+  Future<shelf.Response> _handleQuery(
+    String query,
+    String rootDir, {
+    String? filter,
+  }) async {
     var filterGlob = filter != null ? Glob(filter) : null;
     var pipeIndex = query.indexOf('|');
 
@@ -79,16 +84,20 @@ class AssetGraphHandler {
       var querySplit = query.split('/');
 
       assetId = pathToAssetId(
-          _rootPackage, querySplit.first, querySplit.skip(1).toList());
+        _rootPackage,
+        querySplit.first,
+        querySplit.skip(1).toList(),
+      );
 
       if (!_assetGraph.contains(assetId)) {
         var secondTry = pathToAssetId(_rootPackage, rootDir, querySplit);
 
         if (!_assetGraph.contains(secondTry)) {
           return shelf.Response.notFound(
-              'Could not find asset for path "$query". Tried:\n'
-              '- $assetId\n'
-              '- $secondTry');
+            'Could not find asset for path "$query". Tried:\n'
+            '- $assetId\n'
+            '- $secondTry',
+          );
         }
         assetId = secondTry;
       }
@@ -96,21 +105,25 @@ class AssetGraphHandler {
       assetId = AssetId.parse(query);
       if (!_assetGraph.contains(assetId)) {
         return shelf.Response.notFound(
-            'Could not find asset in build graph: $assetId');
+          'Could not find asset in build graph: $assetId',
+        );
       }
     }
     var node = _assetGraph.get(assetId)!;
     var currentEdge = 0;
     var nodes = [
-      {'id': '${node.id}', 'label': '${node.id}'}
+      {'id': '${node.id}', 'label': '${node.id}'},
     ];
     var edges = <Map<String, String>>[];
     for (final output in node.outputs) {
       if (filterGlob != null && !filterGlob.matches(output.toString())) {
         continue;
       }
-      edges.add(
-          {'from': '${node.id}', 'to': '$output', 'id': 'e${currentEdge++}'});
+      edges.add({
+        'from': '${node.id}',
+        'to': '$output',
+        'id': 'e${currentEdge++}',
+      });
       nodes.add({'id': '$output', 'label': '$output'});
     }
     if (node is NodeWithInputs) {
@@ -118,8 +131,11 @@ class AssetGraphHandler {
         if (filterGlob != null && !filterGlob.matches(input.toString())) {
           continue;
         }
-        edges.add(
-            {'from': '$input', 'to': '${node.id}', 'id': 'e${currentEdge++}'});
+        edges.add({
+          'from': '$input',
+          'to': '${node.id}',
+          'id': 'e${currentEdge++}',
+        });
         nodes.add({'id': '$input', 'label': '$input'});
       }
     }
@@ -144,5 +160,7 @@ class AssetGraphHandler {
 
 final _jsonUtf8Encoder = JsonUtf8Encoder();
 
-shelf.Response _jsonResponse(List<int> body) => shelf.Response.ok(body,
-    headers: {HttpHeaders.contentTypeHeader: 'application/json'});
+shelf.Response _jsonResponse(List<int> body) => shelf.Response.ok(
+  body,
+  headers: {HttpHeaders.contentTypeHeader: 'application/json'},
+);

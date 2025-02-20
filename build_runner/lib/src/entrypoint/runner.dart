@@ -27,9 +27,10 @@ class BuildCommandRunner extends CommandRunner<int> {
   final PackageGraph packageGraph;
 
   BuildCommandRunner(
-      List<BuilderApplication> builderApplications, this.packageGraph)
-      : builderApplications = List.unmodifiable(builderApplications),
-        super('build_runner', 'Unified interface for running Dart builds.') {
+    List<BuilderApplication> builderApplications,
+    this.packageGraph,
+  ) : builderApplications = List.unmodifiable(builderApplications),
+      super('build_runner', 'Unified interface for running Dart builds.') {
     addCommand(BuildCommand());
     addCommand(DaemonCommand());
     addCommand(DoctorCommand());
@@ -42,7 +43,7 @@ class BuildCommandRunner extends CommandRunner<int> {
   // CommandRunner._usageWithoutDescription is private – this is a reasonable
   // facsimile.
   /// Returns [usage] with [description] removed from the beginning.
-  String get usageWithoutDescription => LineSplitter.split(usage)
-      .skipWhile((line) => line == description || line.isEmpty)
-      .join('\n');
+  String get usageWithoutDescription => LineSplitter.split(
+    usage,
+  ).skipWhile((line) => line == description || line.isEmpty).join('\n');
 }

@@ -10,8 +10,12 @@ class DuplicateAssetNodeException implements Exception {
   final String initialBuilderLabel;
   final String newBuilderLabel;
 
-  DuplicateAssetNodeException(this.rootPackage, this.assetId,
-      this.initialBuilderLabel, this.newBuilderLabel);
+  DuplicateAssetNodeException(
+    this.rootPackage,
+    this.assetId,
+    this.initialBuilderLabel,
+    this.newBuilderLabel,
+  );
   @override
   String toString() {
     final friendlyAsset =

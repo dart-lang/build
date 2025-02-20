@@ -34,8 +34,13 @@ class IOEnvironment implements BuildEnvironment {
 
   final PackageGraph _packageGraph;
 
-  IOEnvironment._(this.reader, this.writer, this._isInteractive,
-      this._outputSymlinksOnly, this._packageGraph);
+  IOEnvironment._(
+    this.reader,
+    this.writer,
+    this._isInteractive,
+    this._outputSymlinksOnly,
+    this._packageGraph,
+  );
 
   factory IOEnvironment(
     PackageGraph packageGraph, {
@@ -44,20 +49,28 @@ class IOEnvironment implements BuildEnvironment {
     bool lowResourcesMode = false,
   }) {
     if (outputSymlinksOnly && Platform.isWindows) {
-      _logger.warning('Symlinks to files are not yet working on Windows, you '
-          'may experience issues using this mode. Follow '
-          'https://github.com/dart-lang/sdk/issues/33966 for updates.');
+      _logger.warning(
+        'Symlinks to files are not yet working on Windows, you '
+        'may experience issues using this mode. Follow '
+        'https://github.com/dart-lang/sdk/issues/33966 for updates.',
+      );
     }
 
     var fileReader = FileBasedAssetReader(packageGraph);
     var fileWriter = FileBasedAssetWriter(packageGraph);
 
-    var (reader, writer) = lowResourcesMode
-        ? (fileReader, fileWriter)
-        : wrapInBatch(reader: fileReader, writer: fileWriter);
+    var (reader, writer) =
+        lowResourcesMode
+            ? (fileReader, fileWriter)
+            : wrapInBatch(reader: fileReader, writer: fileWriter);
 
-    return IOEnvironment._(reader, writer, assumeTty == true || _canPrompt(),
-        outputSymlinksOnly, packageGraph);
+    return IOEnvironment._(
+      reader,
+      writer,
+      assumeTty == true || _canPrompt(),
+      outputSymlinksOnly,
+      packageGraph,
+    );
   }
 
   @override
@@ -80,24 +93,36 @@ class IOEnvironment implements BuildEnvironment {
       final input = stdin.readLineSync()!;
       final choice = int.tryParse(input) ?? -1;
       if (choice > 0 && choice <= choices.length) return choice - 1;
-      stdout.writeln('Unrecognized option $input, '
-          'a number between 1 and ${choices.length} expected');
+      stdout.writeln(
+        'Unrecognized option $input, '
+        'a number between 1 and ${choices.length} expected',
+      );
     }
   }
 
   @override
   Future<BuildResult> finalizeBuild(
-      BuildResult buildResult,
-      FinalizedAssetsView finalizedAssetsView,
-      AssetReader reader,
-      Set<BuildDirectory> buildDirs) async {
-    if (buildDirs
-            .any((target) => target.outputLocation?.path.isNotEmpty ?? false) &&
+    BuildResult buildResult,
+    FinalizedAssetsView finalizedAssetsView,
+    AssetReader reader,
+    Set<BuildDirectory> buildDirs,
+  ) async {
+    if (buildDirs.any(
+          (target) => target.outputLocation?.path.isNotEmpty ?? false,
+        ) &&
         buildResult.status == BuildStatus.success) {
-      if (!await createMergedOutputDirectories(buildDirs, _packageGraph, this,
-          reader, finalizedAssetsView, _outputSymlinksOnly)) {
-        return _convertToFailure(buildResult,
-            failureType: FailureType.cantCreate);
+      if (!await createMergedOutputDirectories(
+        buildDirs,
+        _packageGraph,
+        this,
+        reader,
+        finalizedAssetsView,
+        _outputSymlinksOnly,
+      )) {
+        return _convertToFailure(
+          buildResult,
+          failureType: FailureType.cantCreate,
+        );
       }
     }
     return buildResult;
@@ -109,11 +134,12 @@ bool _canPrompt() =>
     // Assume running inside a test if the code is running as a `data:` URI
     Platform.script.scheme != 'data';
 
-BuildResult _convertToFailure(BuildResult previous,
-        {FailureType? failureType}) =>
-    BuildResult(
-      BuildStatus.failure,
-      previous.outputs,
-      performance: previous.performance,
-      failureType: failureType,
-    );
+BuildResult _convertToFailure(
+  BuildResult previous, {
+  FailureType? failureType,
+}) => BuildResult(
+  BuildStatus.failure,
+  previous.outputs,
+  performance: previous.performance,
+  failureType: failureType,
+);

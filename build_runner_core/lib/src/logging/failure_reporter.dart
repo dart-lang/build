@@ -38,8 +38,9 @@ class FailureReporter {
   ///
   /// This should be called anytime the action is being run.
   static Future<void> clean(int phaseNumber, AssetId primaryInput) async {
-    final errorFile =
-        File(_errorPathForPrimaryInput(phaseNumber, primaryInput));
+    final errorFile = File(
+      _errorPathForPrimaryInput(phaseNumber, primaryInput),
+    );
     if (await errorFile.exists()) {
       await errorFile.delete();
     }
@@ -51,25 +52,33 @@ class FailureReporter {
 
   /// Indicate that a failure reason for the build step which would produce
   /// [output] and all other outputs from the same build step has been printed.
-  Future<void> markReported(String actionDescription, GeneratedAssetNode output,
-      Iterable<ErrorReport> errors) async {
+  Future<void> markReported(
+    String actionDescription,
+    GeneratedAssetNode output,
+    Iterable<ErrorReport> errors,
+  ) async {
     if (!_reportedActions.add(_actionKey(output))) return;
-    final errorFile =
-        await File(_errorPathForOutput(output)).create(recursive: true);
-    await errorFile.writeAsString(jsonEncode(<dynamic>[
-      actionDescription,
-      for (var e in errors) [e.message, e.error, e.stackTrace?.toString() ?? '']
-    ]));
+    final errorFile = await File(
+      _errorPathForOutput(output),
+    ).create(recursive: true);
+    await errorFile.writeAsString(
+      jsonEncode(<dynamic>[
+        actionDescription,
+        for (var e in errors)
+          [e.message, e.error, e.stackTrace?.toString() ?? ''],
+      ]),
+    );
   }
 
   /// Indicate that the build steps which would produce [outputs] are failing
   /// due to a dependency and being skipped so no actuall error will be
   /// produced.
-  Future<void> markSkipped(Iterable<GeneratedAssetNode> outputs) =>
-      Future.wait(outputs.map((output) async {
-        if (!_reportedActions.add(_actionKey(output))) return;
-        await clean(output.phaseNumber, output.primaryInput);
-      }));
+  Future<void> markSkipped(Iterable<GeneratedAssetNode> outputs) => Future.wait(
+    outputs.map((output) async {
+      if (!_reportedActions.add(_actionKey(output))) return;
+      await clean(output.phaseNumber, output.primaryInput);
+    }),
+  );
 
   /// Log stored errors for any build steps which would output nodes in
   /// [failingNodes] which haven't already been reported.
@@ -80,20 +89,24 @@ class FailureReporter {
       if (!_reportedActions.add(key)) continue;
       errorFiles.add(File(_errorPathForOutput(failure)));
     }
-    return Future.wait(errorFiles.map((errorFile) async {
-      if (await errorFile.exists()) {
-        final errorReports = jsonDecode(await errorFile.readAsString()) as List;
-        final actionDescription = '${errorReports.first} (cached)';
-        final logger = Logger(actionDescription);
-        for (final error in errorReports.skip(1).cast<List>()) {
-          final stackTraceString = error[2] as String;
-          final stackTrace = stackTraceString.isEmpty
-              ? null
-              : StackTrace.fromString(stackTraceString);
-          logger.severe(error[0], error[1], stackTrace);
+    return Future.wait(
+      errorFiles.map((errorFile) async {
+        if (await errorFile.exists()) {
+          final errorReports =
+              jsonDecode(await errorFile.readAsString()) as List;
+          final actionDescription = '${errorReports.first} (cached)';
+          final logger = Logger(actionDescription);
+          for (final error in errorReports.skip(1).cast<List>()) {
+            final stackTraceString = error[2] as String;
+            final stackTrace =
+                stackTraceString.isEmpty
+                    ? null
+                    : StackTrace.fromString(stackTraceString);
+            logger.severe(error[0], error[1], stackTrace);
+          }
         }
-      }
-    }));
+      }),
+    );
   }
 }
 
@@ -110,16 +123,16 @@ String _actionKey(GeneratedAssetNode node) =>
     '${node.builderOptionsId} on ${node.primaryInput}';
 
 String _errorPathForOutput(GeneratedAssetNode output) => p.joinAll([
-      errorCachePath,
-      output.id.package,
-      '${output.phaseNumber}',
-      ...p.posix.split(output.primaryInput.path)
-    ]);
+  errorCachePath,
+  output.id.package,
+  '${output.phaseNumber}',
+  ...p.posix.split(output.primaryInput.path),
+]);
 
 String _errorPathForPrimaryInput(int phaseNumber, AssetId primaryInput) =>
     p.joinAll([
       errorCachePath,
       primaryInput.package,
       '$phaseNumber',
-      ...p.posix.split(primaryInput.path)
+      ...p.posix.split(primaryInput.path),
     ]);

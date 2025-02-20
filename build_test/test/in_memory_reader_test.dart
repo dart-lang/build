@@ -16,41 +16,51 @@ void main() {
     late InMemoryAssetReaderWriter readerWriter;
 
     setUp(() {
-      readerWriter = InMemoryAssetReaderWriter(
-        rootPackage: packageName,
-      )
-        ..filesystem.writeAsStringSync(libAsset, 'libAsset')
-        ..filesystem.writeAsStringSync(testAsset, 'testAsset');
+      readerWriter =
+          InMemoryAssetReaderWriter(rootPackage: packageName)
+            ..filesystem.writeAsStringSync(libAsset, 'libAsset')
+            ..filesystem.writeAsStringSync(testAsset, 'testAsset');
     });
 
-    test('#findAssets should throw if rootPackage and package are not supplied',
-        () {
-      readerWriter = InMemoryAssetReaderWriter();
-      expect(
-        () => readerWriter.assetFinder.find(Glob('lib/*.dart')),
-        throwsUnsupportedError,
-      );
-    });
+    test(
+      '#findAssets should throw if rootPackage and package are not supplied',
+      () {
+        readerWriter = InMemoryAssetReaderWriter();
+        expect(
+          () => readerWriter.assetFinder.find(Glob('lib/*.dart')),
+          throwsUnsupportedError,
+        );
+      },
+    );
 
     test('#findAssets should list files in lib/', () async {
-      expect(await readerWriter.assetFinder.find(Glob('lib/*.dart')).toList(),
-          [libAsset]);
+      expect(await readerWriter.assetFinder.find(Glob('lib/*.dart')).toList(), [
+        libAsset,
+      ]);
     });
 
     test('#findAssets should list files in test/', () async {
-      expect(await readerWriter.assetFinder.find(Glob('test/*.dart')).toList(),
-          [testAsset]);
+      expect(
+        await readerWriter.assetFinder.find(Glob('test/*.dart')).toList(),
+        [testAsset],
+      );
     });
 
-    test('#findAssets should be able to list files in non-root packages',
-        () async {
-      var otherLibAsset = AssetId('other', 'lib/other.dart');
-      readerWriter.filesystem.writeAsStringSync(otherLibAsset, 'otherLibAsset');
-      expect(
+    test(
+      '#findAssets should be able to list files in non-root packages',
+      () async {
+        var otherLibAsset = AssetId('other', 'lib/other.dart');
+        readerWriter.filesystem.writeAsStringSync(
+          otherLibAsset,
+          'otherLibAsset',
+        );
+        expect(
           await readerWriter.assetFinder
               .find(Glob('lib/*.dart'), package: 'other')
               .toList(),
-          [otherLibAsset]);
-    });
+          [otherLibAsset],
+        );
+      },
+    );
   });
 }

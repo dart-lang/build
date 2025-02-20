@@ -18,47 +18,56 @@ final bool supportsUnsoundNullSafety =
 /// Runs `pub get` on [package] (which is assumed to be in a directory with
 /// that name under the [d.sandbox] directory).
 Future<ProcessResult> pubGet(String package, {bool offline = true}) async {
-  var pubGetresult =
-      await runPub(package, 'get', args: offline ? ['--offline'] : []);
+  var pubGetresult = await runPub(
+    package,
+    'get',
+    args: offline ? ['--offline'] : [],
+  );
   expect(pubGetresult.exitCode, 0, reason: pubGetresult.stderr as String);
   return pubGetresult;
 }
 
 /// Runs the `pub` [command] on [package] with [args].
-Future<ProcessResult> runPub(String package, String command,
-        {Iterable<String>? args}) =>
-    Process.run(
-        dartBinary,
-        [
-          if (command != 'run') 'pub', // `dart run` is the new `pub run`
-          command,
-          ...?args,
-        ],
-        workingDirectory: p.join(d.sandbox, package));
+Future<ProcessResult> runPub(
+  String package,
+  String command, {
+  Iterable<String>? args,
+}) => Process.run(dartBinary, [
+  if (command != 'run') 'pub', // `dart run` is the new `pub run`
+  command,
+  ...?args,
+], workingDirectory: p.join(d.sandbox, package));
 
 /// Starts the `pub` [command] on [package] with [args].
-Future<Process> startPub(String package, String command,
-        {Iterable<String>? args}) =>
-    Process.start(
-        dartBinary,
-        [
-          if (command != 'run') 'pub', // `dart run` is the new `pub run`,
-          command, ...?args
-        ],
-        workingDirectory: p.join(d.sandbox, package));
+Future<Process> startPub(
+  String package,
+  String command, {
+  Iterable<String>? args,
+}) => Process.start(dartBinary, [
+  if (command != 'run') 'pub', // `dart run` is the new `pub run`,
+  command, ...?args,
+], workingDirectory: p.join(d.sandbox, package));
 
 /// Runs the `dart` script [script] in [package] with [args].
 ///
 /// The [script] should be a relative path under [package].
-Future<ProcessResult> runDart(String package, String script,
-        {Iterable<String>? args}) =>
-    Process.run(dartBinary, [script, ...?args],
-        workingDirectory: p.join(d.sandbox, package));
+Future<ProcessResult> runDart(
+  String package,
+  String script, {
+  Iterable<String>? args,
+}) => Process.run(dartBinary, [
+  script,
+  ...?args,
+], workingDirectory: p.join(d.sandbox, package));
 
 /// Starts the `dart` script [script] in [package] with [args].
 ///
 /// The [script] should be a relative path under [package].
-Future<Process> startDart(String package, String script,
-        {Iterable<String>? args}) =>
-    Process.start(dartBinary, [script, ...?args],
-        workingDirectory: p.join(d.sandbox, package));
+Future<Process> startDart(
+  String package,
+  String script, {
+  Iterable<String>? args,
+}) => Process.start(dartBinary, [
+  script,
+  ...?args,
+], workingDirectory: p.join(d.sandbox, package));
