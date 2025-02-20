@@ -90,7 +90,7 @@ void main() {
           );
           expect(buildPackage.root, Uri.parse('asset:build/'));
           expect(buildPackage.packageUriRoot, Uri.parse('asset:build/lib/'));
-          expect(buildPackage.languageVersion, LanguageVersion(3, 6));
+          expect(buildPackage.languageVersion, LanguageVersion(3, 7));
 
           final resolvedBuildUri =
               config.resolve(Uri.parse('package:build/foo.txt'))!;
@@ -117,7 +117,7 @@ void main() {
           Package(
             'build',
             Uri.file('/foo/bar/'),
-            languageVersion: LanguageVersion(3, 6),
+            languageVersion: LanguageVersion(3, 7),
           ),
         ]),
       );
