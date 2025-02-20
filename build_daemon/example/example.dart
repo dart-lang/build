@@ -11,29 +11,31 @@ import 'package:path/path.dart' as p;
 
 void main(List<String> args) async {
   BuildDaemonClient client;
-  var workingDirectory =
-      p.normalize(p.join('${Directory.current.path}/../example'));
+  var workingDirectory = p.normalize(
+    p.join('${Directory.current.path}/../example'),
+  );
 
   try {
     // First we connect to the daemon. This will start one if one is not
     // currently running.
-    client = await BuildDaemonClient.connect(
-        workingDirectory,
-        [
-          'dart',
-          'run',
-          'build_runner',
-          'daemon',
-          '--delete-conflicting-outputs',
-        ],
-        logHandler: print);
+    client = await BuildDaemonClient.connect(workingDirectory, [
+      'dart',
+      'run',
+      'build_runner',
+      'daemon',
+      '--delete-conflicting-outputs',
+    ], logHandler: print);
   } catch (e) {
     if (e is VersionSkew) {
-      print('Version skew. Please disconnect all other clients '
-          'before trying to start a new one.');
+      print(
+        'Version skew. Please disconnect all other clients '
+        'before trying to start a new one.',
+      );
     } else if (e is OptionsSkew) {
-      print('Options skew. Please disconnect all other clients '
-          'before trying to start a new one.');
+      print(
+        'Options skew. Please disconnect all other clients '
+        'before trying to start a new one.',
+      );
     } else {
       print('Unexpected error: $e');
     }
@@ -46,21 +48,39 @@ void main(List<String> args) async {
   // Note this will not cause a build to occur unless there are relevant file
   // changes.
   if (Random().nextBool()) {
-    client.registerBuildTarget(DefaultBuildTarget((b) => b
-      ..target = 'web'
-      ..outputLocation = OutputLocation((b) => b
-        ..output = 'web_output'
-        ..useSymlinks = false
-        ..hoist = true).toBuilder()
-      ..blackListPatterns.replace([RegExp(r'.*_test\.dart$')])));
+    client.registerBuildTarget(
+      DefaultBuildTarget(
+        (b) =>
+            b
+              ..target = 'web'
+              ..outputLocation =
+                  OutputLocation(
+                    (b) =>
+                        b
+                          ..output = 'web_output'
+                          ..useSymlinks = false
+                          ..hoist = true,
+                  ).toBuilder()
+              ..blackListPatterns.replace([RegExp(r'.*_test\.dart$')]),
+      ),
+    );
     print('Registered example web target...');
   } else {
-    client.registerBuildTarget(DefaultBuildTarget((b) => b
-      ..target = 'test'
-      ..outputLocation = OutputLocation((b) => b
-        ..output = 'test_output'
-        ..useSymlinks = true
-        ..hoist = false).toBuilder()));
+    client.registerBuildTarget(
+      DefaultBuildTarget(
+        (b) =>
+            b
+              ..target = 'test'
+              ..outputLocation =
+                  OutputLocation(
+                    (b) =>
+                        b
+                          ..output = 'test_output'
+                          ..useSymlinks = true
+                          ..hoist = false,
+                  ).toBuilder(),
+      ),
+    );
 
     print('Registered test target...');
   }

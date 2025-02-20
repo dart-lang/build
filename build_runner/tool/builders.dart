@@ -16,12 +16,17 @@ class _CopyBuilder extends Builder {
   @override
   void build(BuildStep buildStep) {
     if (!buildExtensions.containsKey(buildStep.inputId.path)) {
-      throw StateError('Unexpected input for `CopyBuilder` '
-          'expected only ${buildExtensions.keys}');
+      throw StateError(
+        'Unexpected input for `CopyBuilder` '
+        'expected only ${buildExtensions.keys}',
+      );
     }
     buildStep.writeAsString(
-        AssetId(buildStep.inputId.package,
-            buildExtensions[buildStep.inputId.path]!.single),
-        buildStep.readAsString(buildStep.inputId));
+      AssetId(
+        buildStep.inputId.package,
+        buildExtensions[buildStep.inputId.path]!.single,
+      ),
+      buildStep.readAsString(buildStep.inputId),
+    );
   }
 }
