@@ -12,10 +12,10 @@ import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart' hide OutputLocation;
 import 'package:build_daemon/data/server_log.dart';
 import 'package:build_runner_core/build_runner_core.dart'
-    hide BuildResult, BuildStatus;
-import 'package:build_runner_core/build_runner_core.dart'
     as core
     show BuildStatus;
+import 'package:build_runner_core/build_runner_core.dart'
+    hide BuildResult, BuildStatus;
 // ignore: implementation_imports
 import 'package:build_runner_core/src/generate/build_definition.dart';
 // ignore: implementation_imports
@@ -162,9 +162,10 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
               (b) =>
                   b
                     ..status = BuildStatus.failed
-                    // TODO(grouma) - We should forward the error messages instead.
-                    // We can use the AssetGraph and FailureReporter to provide a better
-                    // error message.
+                    // TODO(grouma) - We should forward the error messages
+                    // instead.
+                    // We can use the AssetGraph and FailureReporter to provide
+                    // a better error message.
                     ..error = 'FailureType: ${result.failureType?.exitCode}'
                     ..target = target.target,
             ),

@@ -35,9 +35,9 @@ void main() {
       // propery.
       expect(globalContext.has('otherScriptLoaded'), isTrue);
     },
-    skip:
-        wasCompiledWithDdc
-            ? 'This requires multiple Dart entrypoints, which appears to break DDC'
-            : null,
+    skip: wasCompiledWithDdc
+        ? 'This requires multiple Dart entrypoints, which appears to break '
+            'DDC'
+        : null,
   );
 }

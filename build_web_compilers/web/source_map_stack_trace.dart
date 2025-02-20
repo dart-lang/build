@@ -34,7 +34,8 @@ StackTrace mapStackTrace(
   return Trace(
     trace.frames.map((frame) {
       // If there's no line information, there's no way to translate this frame.
-      // We could return it as-is, but these lines are usually not useful anyways.
+      // We could return it as-is, but these lines are usually not useful
+      // anyway.
       var line = frame.line;
       if (line == null) return null;
 
@@ -49,8 +50,8 @@ StackTrace mapStackTrace(
         uri: frame.uri.toString(),
       );
 
-      // If we can't find a source span, ignore the frame. It's probably something
-      // internal that the user doesn't care about.
+      // If we can't find a source span, ignore the frame. It's probably
+      // something internal that the user doesn't care about.
       if (span == null) return null;
 
       var sourceUrl = span.sourceUrl.toString();
@@ -74,9 +75,9 @@ StackTrace mapStackTrace(
           sourceUrl.startsWith(
             'package:build_web_compilers/src/dev_compiler/dart_sdk.',
           )) {
-        // This compresses the long dart_sdk URLs if SDK source maps are missing.
-        // It's no longer linkable, but neither are the properly mapped ones
-        // above.
+        // This compresses the long dart_sdk URLs if SDK source maps are
+        // missing. It's no longer linkable, but neither are the properly mapped
+        // ones above.
         sourceUrl = 'dart:sdk_internal';
       }
 

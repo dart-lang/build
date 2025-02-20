@@ -92,8 +92,8 @@ class Server {
           if (request is BuildTargetRequest) {
             _buildTargetManager.addBuildTarget(request.target, channel);
           } else if (request is BuildRequest) {
-            // We can only get explicit build requests if we have a manual change
-            // provider.
+            // We can only get explicit build requests if we have a manual
+            // change provider.
             var changeProvider = _changeProvider;
             var changes =
                 changeProvider is ManualChangeProvider
@@ -167,8 +167,8 @@ class Server {
       )
       ..add(
         _builder.builds.listen((status) {
-          // Don't serialize or send changed assets if the client isn't interested
-          // in them.
+          // Don't serialize or send changed assets if the client isn't
+          // interested in them.
           String? message, messageWithoutChangedAssets;
           for (var channel in _interestedChannels) {
             var targets = _buildTargetManager.targetsFor(channel);

@@ -14,9 +14,10 @@ void main() {
     test(
       'Does not remove sources due to crawling for an earlier phase',
       () async {
-        // If there is an asset which can't be read by an optional phase, but can
-        // be read by a later non-optional phase, and the optional phase starts
-        // later we need to avoid hiding that file from the later-phased reader.
+        // If there is an asset which can't be read by an optional phase, but
+        // can be read by a later non-optional phase, and the optional phase
+        // starts later we need to avoid hiding that file from the later-phased
+        //  reader.
         var optionalWithResolver = TestBuilder(
           buildExtensions: appendExtension('.foo'),
           build: (buildStep, _) async {

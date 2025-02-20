@@ -96,8 +96,8 @@ void main() {
         expect(result.exitCode, isNot(0));
         expect(result.stdout, contains('Failed'));
 
-        // Remove the import to the bad file so it is no longer a requirement for
-        // the overall build
+        // Remove the import to the bad file so it is no longer a requirement
+        // for the overall build
         await replaceAllInFile(
           testFile,
           "import: 'package:_test/bad_file.dart';",
@@ -108,7 +108,8 @@ void main() {
       },
     );
 
-    test('Restores previously deleted outputs if they are not deleted in '
+    test(
+        'Restores previously deleted outputs if they are not deleted in '
         'subsequent builds', () async {
       final dartSource = File(
         p.join('build', 'web', 'packages', '_test', 'app.dart'),

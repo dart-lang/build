@@ -497,8 +497,8 @@ class _Loader {
             var node = graph.get(id) as GeneratedAssetNode;
             if (node.wasOutput && !node.isHidden) {
               var idToDelete = id;
-              // If the package no longer exists, then the user must have renamed
-              // the root package.
+              // If the package no longer exists, then the user must have
+              // renamed the root package.
               //
               // In that case we change `idToDelete` to be in the root package.
               if (_options.packageGraph[id.package] == null) {
