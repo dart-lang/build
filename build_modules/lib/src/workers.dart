@@ -56,7 +56,8 @@ BazelWorkerDriver get _dartdevkDriver {
     () => Process.start(
       p.join(sdkDir, 'bin', 'dart'),
       [
-        p.join(sdkDir, 'bin', 'snapshots', 'dartdevc.dart.snapshot'),
+        'compile',
+        'js-dev',
         '--persistent_worker',
       ],
       mode: _processMode,
