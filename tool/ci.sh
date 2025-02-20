@@ -80,8 +80,8 @@ for PKG in ${PKGS}; do
         dart format --output=none --set-exit-if-changed . || EXIT_CODE=$?
         ;;
       format_1)
-        echo 'dart format --output=none --set-exit-if-changed $(find . -name \*.dart | grep -fv .g.dart)'
-        dart format --output=none --set-exit-if-changed $(find . -name \*.dart | grep -fv .g.dart) || EXIT_CODE=$?
+        echo 'dart format --output=none --set-exit-if-changed $(find . -name \*.dart | grep -Fv .g.dart)'
+        dart format --output=none --set-exit-if-changed $(find . -name \*.dart | grep -Fv .g.dart) || EXIT_CODE=$?
         ;;
       test_00)
         echo 'dart test --total-shards 3 --shard-index 0 --test-randomize-ordering-seed=random'

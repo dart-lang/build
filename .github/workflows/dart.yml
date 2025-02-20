@@ -376,7 +376,7 @@ jobs:
         if: "always() && steps._test_pub_upgrade.conclusion == 'success'"
         working-directory: _test
   job_008:
-    name: "analyze_and_format; linux; Dart main; PKG: build_modules; `dart format --output=none --set-exit-if-changed $(find . -name \\*.dart | grep -fv .g.dart)`, `dart analyze --fatal-infos .`"
+    name: "analyze_and_format; linux; Dart main; PKG: build_modules; `dart format --output=none --set-exit-if-changed $(find . -name \\*.dart | grep -Fv .g.dart)`, `dart analyze --fatal-infos .`"
     runs-on: ubuntu-latest
     steps:
       - name: Cache Pub hosted dependencies
@@ -401,8 +401,8 @@ jobs:
         run: dart pub upgrade
         if: "always() && steps.checkout.conclusion == 'success'"
         working-directory: build_modules
-      - name: "build_modules; dart format --output=none --set-exit-if-changed $(find . -name \\*.dart | grep -fv .g.dart)"
-        run: "dart format --output=none --set-exit-if-changed $(find . -name \\*.dart | grep -fv .g.dart)"
+      - name: "build_modules; dart format --output=none --set-exit-if-changed $(find . -name \\*.dart | grep -Fv .g.dart)"
+        run: "dart format --output=none --set-exit-if-changed $(find . -name \\*.dart | grep -Fv .g.dart)"
         if: "always() && steps.build_modules_pub_upgrade.conclusion == 'success'"
         working-directory: build_modules
       - name: "build_modules; dart analyze --fatal-infos ."

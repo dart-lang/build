@@ -4,7 +4,7 @@ sdk:
 stages:
 - analyze_and_format:
   - group:
-    - format: --output=none --set-exit-if-changed $(find . -name \*.dart | grep -fv .g.dart)
+    - format: --output=none --set-exit-if-changed $(find . -name \*.dart | grep -Fv .g.dart)
     - analyze: --fatal-infos .
 - unit_test:
   - test: -P presubmit --test-randomize-ordering-seed=random
