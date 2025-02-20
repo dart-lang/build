@@ -18,7 +18,7 @@ class _SomeBuilder implements Builder {
 
   @override
   final buildExtensions = const {
-    '.dart': ['.something.dart']
+    '.dart': ['.something.dart'],
   };
 
   @override
@@ -26,8 +26,9 @@ class _SomeBuilder implements Builder {
     if (!await buildStep.canRead(buildStep.inputId)) return;
 
     await buildStep.writeAsBytes(
-        buildStep.inputId.changeExtension('.something.dart'),
-        buildStep.readAsBytes(buildStep.inputId));
+      buildStep.inputId.changeExtension('.something.dart'),
+      buildStep.readAsBytes(buildStep.inputId),
+    );
   }
 }
 
@@ -38,20 +39,22 @@ class _SomePostProcessBuilder extends PostProcessBuilder {
   final String? defaultContent;
 
   _SomePostProcessBuilder.fromOptions(BuilderOptions options)
-      : defaultContent = options.config['default_content'] as String?;
+    : defaultContent = options.config['default_content'] as String?;
 
   @override
   Future<void> build(PostProcessBuildStep buildStep) async {
     var content = defaultContent ?? await buildStep.readInputAsString();
     await buildStep.writeAsString(
-        buildStep.inputId.changeExtension('.txt.post'), content);
+      buildStep.inputId.changeExtension('.txt.post'),
+      content,
+    );
   }
 }
 
 class _ThrowingBuilder extends Builder {
   @override
   final buildExtensions = {
-    '.fail': ['.fail.message']
+    '.fail': ['.fail.message'],
   };
 
   @override
