@@ -47,7 +47,9 @@ void main() {
       await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
       await testBuilderAndCollectAssets(MetaModuleBuilder(platform), assets);
       await testBuilderAndCollectAssets(
-          MetaModuleCleanBuilder(platform), assets);
+        MetaModuleCleanBuilder(platform),
+        assets,
+      );
       await testBuilderAndCollectAssets(ModuleBuilder(platform), assets);
     });
 
@@ -60,12 +62,15 @@ void main() {
         'a|web/index.dart.js.tar.gz': anything,
       };
       await testBuilder(
-          WebEntrypointBuilder.fromOptions(const BuilderOptions({
+        WebEntrypointBuilder.fromOptions(
+          const BuilderOptions({
             'compiler': 'dart2js',
             'native_null_assertions': false,
-          })),
-          assets,
-          outputs: expectedOutputs);
+          }),
+        ),
+        assets,
+        outputs: expectedOutputs,
+      );
     });
 
     test('works with --no-sourcemap', () async {
@@ -74,13 +79,16 @@ void main() {
         'a|web/index.dart.js.tar.gz': anything,
       };
       await testBuilder(
-          WebEntrypointBuilder.fromOptions(const BuilderOptions({
+        WebEntrypointBuilder.fromOptions(
+          const BuilderOptions({
             'compiler': 'dart2js',
             'native_null_assertions': false,
-            'dart2js_args': ['--no-source-maps']
-          })),
-          assets,
-          outputs: expectedOutputs);
+            'dart2js_args': ['--no-source-maps'],
+          }),
+        ),
+        assets,
+        outputs: expectedOutputs,
+      );
     });
   });
 
@@ -107,11 +115,14 @@ void main() {
       'a|lib/index.dart.js.tar.gz': anything,
     };
     await testBuilder(
-        WebEntrypointBuilder.fromOptions(const BuilderOptions({
+      WebEntrypointBuilder.fromOptions(
+        const BuilderOptions({
           'compiler': 'dart2js',
           'native_null_assertions': false,
-        })),
-        assets,
-        outputs: expectedOutputs);
+        }),
+      ),
+      assets,
+      outputs: expectedOutputs,
+    );
   });
 }

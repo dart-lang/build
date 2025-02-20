@@ -19,7 +19,7 @@ class Dart2JsArchiveExtractor implements PostProcessBuilder {
   Dart2JsArchiveExtractor() : filterOutputs = false;
 
   Dart2JsArchiveExtractor.fromOptions(BuilderOptions options)
-      : filterOutputs = options.config['filter_outputs'] as bool? ?? false;
+    : filterOutputs = options.config['filter_outputs'] as bool? ?? false;
 
   @override
   final inputExtensions = const [jsEntrypointArchiveExtension];
@@ -32,7 +32,9 @@ class Dart2JsArchiveExtractor implements PostProcessBuilder {
       if (filterOutputs && !file.name.endsWith('.js')) continue;
       var inputId = buildStep.inputId;
       var id = AssetId(
-          inputId.package, p.url.join(p.url.dirname(inputId.path), file.name));
+        inputId.package,
+        p.url.join(p.url.dirname(inputId.path), file.name),
+      );
       await buildStep.writeAsBytes(id, file.content as List<int>);
     }
     buildStep.deletePrimaryInput();

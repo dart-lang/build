@@ -17,11 +17,13 @@ String pathToJSIdentifier(String path) {
   if (path.startsWith('/') || path.startsWith('\\')) {
     path = path.substring(1, path.length);
   }
-  return toJSIdentifier(path
-      .replaceAll('\\', '__')
-      .replaceAll('/', '__')
-      .replaceAll('..', '__')
-      .replaceAll('-', '_'));
+  return toJSIdentifier(
+    path
+        .replaceAll('\\', '__')
+        .replaceAll('/', '__')
+        .replaceAll('..', '__')
+        .replaceAll('-', '_'),
+  );
 }
 
 /// Escape [name] to make it into a valid identifier.
