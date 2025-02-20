@@ -12,6 +12,8 @@ import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart' hide OutputLocation;
 import 'package:build_daemon/data/server_log.dart';
 import 'package:build_runner_core/build_runner_core.dart'
+    hide BuildResult, BuildStatus;
+import 'package:build_runner_core/build_runner_core.dart'
     as core
     show BuildStatus;
 import 'package:build_runner_core/build_runner_core.dart'

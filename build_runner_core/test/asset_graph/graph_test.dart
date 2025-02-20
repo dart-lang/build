@@ -18,8 +18,12 @@ import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
 void main() {
-  final digestReader = StubAssetReader();
+  late InMemoryAssetReaderWriter digestReader;
   final fooPackageGraph = buildPackageGraph({rootPackage('foo'): []});
+
+  setUp(() async {
+    digestReader = InMemoryAssetReaderWriter();
+  });
 
   group('AssetGraph', () {
     late AssetGraph graph;
@@ -223,6 +227,9 @@ void main() {
       );
 
       setUp(() async {
+        for (final id in [primaryInputId, internalId]) {
+          digestReader.filesystem.writeAsStringSync(id, 'contents of $id');
+        }
         graph = await AssetGraph.build(
           buildPhases,
           {primaryInputId, excludedInputId},
@@ -457,6 +464,10 @@ void main() {
             graph.add(globNode);
 
             var coolAssetId = AssetId('foo', 'lib/really.cool');
+            digestReader.filesystem.writeAsStringSync(
+              coolAssetId,
+              'contents of $coolAssetId',
+            );
 
             Future<void> checkChangeType(ChangeType changeType) async {
               var changes = {coolAssetId: changeType};
@@ -525,6 +536,20 @@ void main() {
 
     group('regression tests', () {
       test('build can chains of pre-existing to-source outputs', () async {
+        final sources = {
+          makeAssetId('foo|lib/1.txt'),
+          makeAssetId('foo|lib/2.txt'),
+          // All the following are actually old outputs.
+          makeAssetId('foo|lib/1.a.txt'),
+          makeAssetId('foo|lib/1.a.b.txt'),
+          makeAssetId('foo|lib/2.a.txt'),
+          makeAssetId('foo|lib/2.a.b.txt'),
+          makeAssetId('foo|lib/2.a.b.c.txt'),
+        };
+
+        for (final id in sources) {
+          digestReader.filesystem.writeAsStringSync(id, 'contents of $id');
+        }
         final graph = await AssetGraph.build(
           [
             InBuildPhase(
@@ -545,16 +570,7 @@ void main() {
               hideOutput: false,
             ),
           ],
-          {
-            makeAssetId('foo|lib/1.txt'),
-            makeAssetId('foo|lib/2.txt'),
-            // All the following are actually old outputs.
-            makeAssetId('foo|lib/1.a.txt'),
-            makeAssetId('foo|lib/1.a.b.txt'),
-            makeAssetId('foo|lib/2.a.txt'),
-            makeAssetId('foo|lib/2.a.b.txt'),
-            makeAssetId('foo|lib/2.a.b.c.txt'),
-          },
+          sources,
           <AssetId>{},
           fooPackageGraph,
           digestReader,
@@ -583,6 +599,10 @@ void main() {
 
       test('allows running on generated inputs that do not match target '
           'source globs', () async {
+        final sources = {makeAssetId('foo|lib/1.txt')};
+        for (final id in sources) {
+          digestReader.filesystem.writeAsStringSync(id, 'contents of $id');
+        }
         final graph = await AssetGraph.build(
           [
             InBuildPhase(
@@ -595,7 +615,7 @@ void main() {
               targetSources: const InputSet(include: ['lib/*.txt']),
             ),
           ],
-          {makeAssetId('foo|lib/1.txt')},
+          sources,
           <AssetId>{},
           fooPackageGraph,
           digestReader,
@@ -628,9 +648,13 @@ void main() {
             'foo',
           ),
         ];
+        final sources = {makeAssetId('foo|lib/b.anchor')};
+        for (final id in sources) {
+          digestReader.filesystem.writeAsStringSync(id, 'contents of $id');
+        }
         final graph = await AssetGraph.build(
           buildPhases,
-          {makeAssetId('foo|lib/b.anchor')},
+          sources,
           <AssetId>{},
           fooPackageGraph,
           digestReader,
@@ -662,6 +686,10 @@ void main() {
 
       test('https://github.com/dart-lang/build/issues/1804', () async {
         final source = AssetId('a', 'lib/a.dart');
+        digestReader.filesystem.writeAsStringSync(
+          source,
+          'contents of $source',
+        );
         final renamedSource = AssetId('a', 'lib/A.dart');
         final generatedDart = AssetId('a', 'lib/a.g.dart');
         final generatedPart = AssetId('a', 'lib/a.g.part');

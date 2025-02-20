@@ -5,6 +5,8 @@
 - Start using `package:build/src/internal.dart'.
 - Refactor `MultiPackageAssetReader` to internal `AssetFinder`.
 - `FinalizedReader` no longer implements `AssetReader`.
+- Refactor `CachingAssetReader` to `FilesystemCache`.
+- Refactor `BuildCacheReader` to `BuildCacheAssetPathProvider`.
 
 ## 2.4.15
 

@@ -8,6 +8,7 @@
 - Refactor `MultiPackageAssetReader` to internal `AssetFinder`.
 - Add internal `Filesystem` that backs `AssetReader` and `AssetWriter`
   implementations.
+- Refactor `CachingAssetReader` to `FilesystemCache`.
 
 ## 2.4.2
 

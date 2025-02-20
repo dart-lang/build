@@ -23,6 +23,8 @@
   instead.
 - Breaking change: merged `InMemoryAssetReader` and `InMemoryAssetWriter` into
   `InMemoryAssetReaderWriter`.
+- Refactor `CachingAssetReader` to `FilesystemCache`.
+- Remove `StubAssetReader`. Use `InMemoryAssetReaderWriter` instead.
 
 ## 2.2.3
 

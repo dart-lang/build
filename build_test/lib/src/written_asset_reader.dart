@@ -27,6 +27,15 @@ class WrittenAssetReader extends AssetReader implements AssetReaderState {
   WrittenAssetReader(this.source, [this.filterSpy]);
 
   @override
+  WrittenAssetReader copyWith({
+    AssetPathProvider? assetPathProvider,
+    FilesystemCache? cache,
+  }) => WrittenAssetReader(
+    source.copyWith(assetPathProvider: assetPathProvider, cache: cache),
+    filterSpy,
+  );
+
+  @override
   Filesystem get filesystem => source.filesystem;
 
   @override

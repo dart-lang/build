@@ -17,7 +17,6 @@ import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 import 'package:watcher/watcher.dart';
 
-import '../asset/cache.dart';
 import '../asset/finalized_reader.dart';
 import '../asset/reader.dart';
 import '../asset/writer.dart';
@@ -83,8 +82,12 @@ class BuildImpl {
       _targetGraph = buildDefinition.targetGraph,
       _reader =
           options.enableLowResourcesMode
-              ? buildDefinition.reader
-              : CachingAssetReader(buildDefinition.reader),
+              ? buildDefinition.reader.copyWith(
+                cache: const PassthroughFilesystemCache(),
+              )
+              : buildDefinition.reader.copyWith(
+                cache: InMemoryFilesystemCache(),
+              ),
       _resolvers = options.resolvers,
       _writer = buildDefinition.writer,
       assetGraph = buildDefinition.assetGraph,
@@ -293,9 +296,7 @@ class _SingleBuild {
         _delete,
         _reader,
       );
-      if (_reader is CachingAssetReader) {
-        _reader.invalidate(invalidated);
-      }
+      await _reader.filesystem.cache.invalidate(invalidated);
     });
   }
 
@@ -976,7 +977,10 @@ class _SingleBuild {
           combine(md5.convert(id.toString().codeUnits).bytes as Uint8List);
           return;
         } else {
-          node.lastKnownDigest ??= await reader.digest(id);
+          if (node.lastKnownDigest == null) {
+            await reader.filesystem.cache.invalidate([id]);
+            node.lastKnownDigest = await reader.digest(id);
+          }
         }
         combine(node.lastKnownDigest!.bytes as Uint8List);
       }),
