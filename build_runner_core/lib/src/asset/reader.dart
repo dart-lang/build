@@ -92,8 +92,11 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
   ]);
 
   @override
-  SingleStepReader copyWith({FilesystemCache? cache}) => SingleStepReader(
-    _delegate.copyWith(cache: cache),
+  SingleStepReader copyWith({
+    AssetPathProvider? assetPathProvider,
+    FilesystemCache? cache,
+  }) => SingleStepReader(
+    _delegate.copyWith(assetPathProvider: assetPathProvider, cache: cache),
     _assetGraph,
     _phaseNumber,
     _primaryPackage,

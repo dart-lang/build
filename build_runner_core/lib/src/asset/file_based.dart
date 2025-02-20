@@ -23,20 +23,35 @@ class FileBasedAssetReader extends AssetReader implements AssetReaderState {
   @override
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
 
+  @override
+  final AssetPathProvider assetPathProvider;
+
   final PackageGraph packageGraph;
 
-  FileBasedAssetReader(this.packageGraph, {Filesystem? filesystem})
-    : filesystem = filesystem ?? IoFilesystem(assetPathProvider: packageGraph);
+  factory FileBasedAssetReader(
+    PackageGraph packageGraph, {
+    Filesystem? filesystem,
+  }) => FileBasedAssetReader._(
+    packageGraph,
+    packageGraph,
+    filesystem = filesystem ?? IoFilesystem(assetPathProvider: packageGraph),
+  );
+
+  FileBasedAssetReader._(
+    this.assetPathProvider,
+    this.packageGraph,
+    this.filesystem,
+  );
 
   @override
-  FileBasedAssetReader copyWith({FilesystemCache? cache}) =>
-      FileBasedAssetReader(
-        packageGraph,
-        filesystem: filesystem.copyWith(cache: cache),
-      );
-
-  @override
-  AssetPathProvider? get assetPathProvider => packageGraph;
+  FileBasedAssetReader copyWith({
+    AssetPathProvider? assetPathProvider,
+    FilesystemCache? cache,
+  }) => FileBasedAssetReader._(
+    assetPathProvider ?? this.assetPathProvider,
+    packageGraph,
+    filesystem.copyWith(cache: cache),
+  );
 
   @override
   InputTracker? get inputTracker => null;

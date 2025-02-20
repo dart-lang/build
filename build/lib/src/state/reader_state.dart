@@ -11,10 +11,17 @@ import 'input_tracker.dart';
 
 /// Provides access to the state backing an [AssetReader].
 extension AssetReaderStateExtension on AssetReader {
-  /// Returns a new instance with optionally updated [cache].
-  AssetReader copyWith({FilesystemCache? cache}) {
+  /// Returns a new instance with optionally updated [assetPathProvider] and
+  /// [cache].
+  AssetReader copyWith({
+    AssetPathProvider? assetPathProvider,
+    FilesystemCache? cache,
+  }) {
     _requireIsAssetReaderState();
-    return (this as AssetReaderState).copyWith(cache: cache);
+    return (this as AssetReaderState).copyWith(
+      assetPathProvider: assetPathProvider,
+      cache: cache,
+    );
   }
 
   Filesystem get filesystem {
@@ -59,8 +66,12 @@ extension AssetReaderStateExtension on AssetReader {
 
 /// The state backing an [AssetReader].
 abstract interface class AssetReaderState {
-  /// Returns a new instance with optionally updated [cache].
-  AssetReader copyWith({FilesystemCache? cache});
+  /// Returns a new instance with optionally updated [assetPathProvider] and
+  /// [cache].
+  AssetReader copyWith({
+    AssetPathProvider? assetPathProvider,
+    FilesystemCache? cache,
+  });
 
   /// The [Filesystem] that this reader reads from.
   ///

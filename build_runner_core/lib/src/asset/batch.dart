@@ -81,8 +81,13 @@ final class BatchReader extends AssetReader implements AssetReaderState {
   BatchReader(this._inner, this._batch);
 
   @override
-  BatchReader copyWith({FilesystemCache? cache}) =>
-      BatchReader(_inner.copyWith(cache: cache), _batch);
+  BatchReader copyWith({
+    AssetPathProvider? assetPathProvider,
+    FilesystemCache? cache,
+  }) => BatchReader(
+    _inner.copyWith(assetPathProvider: assetPathProvider, cache: cache),
+    _batch,
+  );
 
   @override
   Filesystem get filesystem => _inner.filesystem;

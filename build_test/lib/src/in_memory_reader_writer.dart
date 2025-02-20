@@ -27,23 +27,29 @@ class InMemoryAssetReaderWriter extends AssetReader
   final String? rootPackage;
 
   @override
+  final AssetPathProvider? assetPathProvider;
+
+  @override
   final InputTracker inputTracker = InputTracker();
 
   /// Create a new asset reader/writer.
   ///
   /// May optionally define a [rootPackage], which is required for some APIs.
-  InMemoryAssetReaderWriter({this.rootPackage, InMemoryFilesystem? filesystem})
-    : _filesystem = filesystem ?? InMemoryFilesystem();
+  InMemoryAssetReaderWriter({
+    this.assetPathProvider,
+    this.rootPackage,
+    InMemoryFilesystem? filesystem,
+  }) : _filesystem = filesystem ?? InMemoryFilesystem();
 
   @override
-  InMemoryAssetReaderWriter copyWith({FilesystemCache? cache}) =>
-      InMemoryAssetReaderWriter(
-        rootPackage: rootPackage,
-        filesystem: _filesystem.copyWith(cache: cache),
-      );
-
-  @override
-  AssetPathProvider? get assetPathProvider => null;
+  InMemoryAssetReaderWriter copyWith({
+    AssetPathProvider? assetPathProvider,
+    FilesystemCache? cache,
+  }) => InMemoryAssetReaderWriter(
+    assetPathProvider: assetPathProvider ?? this.assetPathProvider,
+    rootPackage: rootPackage,
+    filesystem: _filesystem.copyWith(cache: cache),
+  );
 
   @override
   Filesystem get filesystem => _filesystem;

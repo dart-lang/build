@@ -4,81 +4,31 @@ import 'dart:convert';
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
-import 'package:crypto/crypto.dart';
-import 'package:glob/glob.dart';
 
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
 import '../util/constants.dart';
 import 'writer.dart';
 
-/// Wraps an [AssetReader] and translates reads for generated files into reads
-/// from the build cache directory
-class BuildCacheReader implements AssetReader, AssetReaderState {
-  @override
-  final AssetPathProvider? assetPathProvider;
-
-  final AssetReader _delegate;
+/// [AssetPathProvider] that places "hidden" generated output in the build
+/// cache directory.
+class BuildCacheAssetPathProvider implements AssetPathProvider {
+  final AssetPathProvider _delegate;
   final AssetGraph _assetGraph;
   final String _rootPackage;
 
-  BuildCacheReader(
-    AssetReader delegate,
-    AssetGraph assetGraph,
-    String rootPackage,
-  ) : _delegate = delegate,
-      _assetGraph = assetGraph,
-      _rootPackage = rootPackage,
-      assetPathProvider =
-          delegate.assetPathProvider == null
-              ? null
-              : OverlayAssetPathProvider(
-                delegate: delegate.assetPathProvider!,
-                overlay: (id) => _cacheLocation(id, assetGraph, rootPackage),
-              );
-
-  @override
-  BuildCacheReader copyWith({FilesystemCache? cache}) => BuildCacheReader(
-    _delegate.copyWith(cache: cache),
-    _assetGraph,
-    _rootPackage,
+  BuildCacheAssetPathProvider(
+    this._delegate,
+    this._assetGraph,
+    this._rootPackage,
   );
 
   @override
-  Filesystem get filesystem => _delegate.filesystem;
-
-  @override
-  AssetFinder get assetFinder => _delegate.assetFinder;
-
-  @override
-  InputTracker? get inputTracker => _delegate.inputTracker;
-
-  @override
-  Future<bool> canRead(AssetId id) =>
-      _delegate.canRead(_cacheLocation(id, _assetGraph, _rootPackage));
-
-  @override
-  Future<Digest> digest(AssetId id) =>
-      _delegate.digest(_cacheLocation(id, _assetGraph, _rootPackage));
-
-  @override
-  Future<List<int>> readAsBytes(AssetId id) =>
-      _delegate.readAsBytes(_cacheLocation(id, _assetGraph, _rootPackage));
-
-  @override
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) =>
-      _delegate.readAsString(
-        _cacheLocation(id, _assetGraph, _rootPackage),
-        encoding: encoding,
-      );
-
-  @override
-  Stream<AssetId> findAssets(Glob glob) =>
-      throw UnimplementedError(
-        'Asset globbing should be done per phase with the AssetGraph',
-      );
+  String pathFor(AssetId id) =>
+      _delegate.pathFor(_cacheLocation(id, _assetGraph, _rootPackage));
 }
 
+// TODO(davidmorgan): refactor this in the same way as the reader.
 class BuildCacheWriter implements RunnerAssetWriter {
   final AssetGraph _assetGraph;
   final RunnerAssetWriter _delegate;

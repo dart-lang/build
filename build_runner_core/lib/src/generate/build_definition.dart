@@ -338,7 +338,7 @@ class _Loader {
     return BuildDefinition._(
       assetGraph!,
       _options.targetGraph,
-      _wrapReader(_environment.reader, assetGraph!),
+      _copyWithBuildCacheAssetPathProvider(_environment.reader, assetGraph!),
       _wrapWriter(_environment.writer, assetGraph!),
       _options.packageGraph,
       _options.deleteFilesByDefault,
@@ -545,7 +545,7 @@ class _Loader {
       updates,
       _options.packageGraph.root.name,
       (id) => _wrapWriter(_environment.writer, assetGraph).delete(id),
-      _wrapReader(_environment.reader, assetGraph),
+      _copyWithBuildCacheAssetPathProvider(_environment.reader, assetGraph),
     );
     return updates;
   }
@@ -562,12 +562,17 @@ class _Loader {
     );
   }
 
-  /// Wraps [original] in a [BuildCacheReader].
-  AssetReader _wrapReader(AssetReader original, AssetGraph assetGraph) {
-    return BuildCacheReader(
-      original,
-      assetGraph,
-      _options.packageGraph.root.name,
+  AssetReader _copyWithBuildCacheAssetPathProvider(
+    AssetReader original,
+    AssetGraph assetGraph,
+  ) {
+    if (original.assetPathProvider == null) return original;
+    return original.copyWith(
+      assetPathProvider: BuildCacheAssetPathProvider(
+        original.assetPathProvider!,
+        assetGraph,
+        _options.packageGraph.root.name,
+      ),
     );
   }
 
