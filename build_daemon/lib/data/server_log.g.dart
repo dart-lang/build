@@ -59,14 +59,18 @@ class _$LevelSerializer implements PrimitiveSerializer<Level> {
   final String wireName = 'Level';
 
   @override
-  Object serialize(Serializers serializers, Level object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      object.name;
+  Object serialize(
+    Serializers serializers,
+    Level object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => object.name;
 
   @override
-  Level deserialize(Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      Level.valueOf(serialized as String);
+  Level deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => Level.valueOf(serialized as String);
 }
 
 class _$ServerLogSerializer implements StructuredSerializer<ServerLog> {
@@ -76,43 +80,54 @@ class _$ServerLogSerializer implements StructuredSerializer<ServerLog> {
   final String wireName = 'ServerLog';
 
   @override
-  Iterable<Object?> serialize(Serializers serializers, ServerLog object,
-      {FullType specifiedType = FullType.unspecified}) {
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    ServerLog object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = <Object?>[
       'level',
       serializers.serialize(object.level, specifiedType: const FullType(Level)),
       'message',
-      serializers.serialize(object.message,
-          specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.message,
+        specifiedType: const FullType(String),
+      ),
     ];
     Object? value;
     value = object.loggerName;
     if (value != null) {
       result
         ..add('loggerName')
-        ..add(serializers.serialize(value,
-            specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     value = object.error;
     if (value != null) {
       result
         ..add('error')
-        ..add(serializers.serialize(value,
-            specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     value = object.stackTrace;
     if (value != null) {
       result
         ..add('stackTrace')
-        ..add(serializers.serialize(value,
-            specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     return result;
   }
 
   @override
-  ServerLog deserialize(Serializers serializers, Iterable<Object?> serialized,
-      {FullType specifiedType = FullType.unspecified}) {
+  ServerLog deserialize(
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = new ServerLogBuilder();
 
     final iterator = serialized.iterator;
@@ -122,24 +137,44 @@ class _$ServerLogSerializer implements StructuredSerializer<ServerLog> {
       final Object? value = iterator.current;
       switch (key) {
         case 'level':
-          result.level = serializers.deserialize(value,
-              specifiedType: const FullType(Level))! as Level;
+          result.level =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(Level),
+                  )!
+                  as Level;
           break;
         case 'message':
-          result.message = serializers.deserialize(value,
-              specifiedType: const FullType(String))! as String;
+          result.message =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'loggerName':
-          result.loggerName = serializers.deserialize(value,
-              specifiedType: const FullType(String)) as String?;
+          result.loggerName =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )
+                  as String?;
           break;
         case 'error':
-          result.error = serializers.deserialize(value,
-              specifiedType: const FullType(String)) as String?;
+          result.error =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )
+                  as String?;
           break;
         case 'stackTrace':
-          result.stackTrace = serializers.deserialize(value,
-              specifiedType: const FullType(String)) as String?;
+          result.stackTrace =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )
+                  as String?;
           break;
       }
     }
@@ -163,13 +198,13 @@ class _$ServerLog extends ServerLog {
   factory _$ServerLog([void Function(ServerLogBuilder)? updates]) =>
       (new ServerLogBuilder()..update(updates))._build();
 
-  _$ServerLog._(
-      {required this.level,
-      required this.message,
-      this.loggerName,
-      this.error,
-      this.stackTrace})
-      : super._() {
+  _$ServerLog._({
+    required this.level,
+    required this.message,
+    this.loggerName,
+    this.error,
+    this.stackTrace,
+  }) : super._() {
     BuiltValueNullFieldError.checkNotNull(level, r'ServerLog', 'level');
     BuiltValueNullFieldError.checkNotNull(message, r'ServerLog', 'message');
   }
@@ -269,15 +304,23 @@ class ServerLogBuilder implements Builder<ServerLog, ServerLogBuilder> {
   ServerLog build() => _build();
 
   _$ServerLog _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         new _$ServerLog._(
-            level: BuiltValueNullFieldError.checkNotNull(
-                level, r'ServerLog', 'level'),
-            message: BuiltValueNullFieldError.checkNotNull(
-                message, r'ServerLog', 'message'),
-            loggerName: loggerName,
-            error: error,
-            stackTrace: stackTrace);
+          level: BuiltValueNullFieldError.checkNotNull(
+            level,
+            r'ServerLog',
+            'level',
+          ),
+          message: BuiltValueNullFieldError.checkNotNull(
+            message,
+            r'ServerLog',
+            'message',
+          ),
+          loggerName: loggerName,
+          error: error,
+          stackTrace: stackTrace,
+        );
     replace(_$result);
     return _$result;
   }

@@ -20,8 +20,10 @@ void main() {
     pkgRoot = _runProc('git', ['rev-parse', '--show-toplevel']);
     var currentDir = Directory.current.resolveSymbolicLinksSync();
     if (!p.isWithin(pkgRoot, currentDir)) {
-      throw StateError('Expected the git root ($pkgRoot) '
-          'to be a parent of the current directory ($currentDir).');
+      throw StateError(
+        'Expected the git root ($pkgRoot) '
+        'to be a parent of the current directory ($currentDir).',
+      );
     }
   } catch (e) {
     print("Skipping this test – git didn't run correctly");
@@ -34,10 +36,16 @@ void main() {
     expect(_changedGeneratedFiles(), isEmpty);
 
     // 2 - run build - should be no output, since nothing should change
-    var result = _runProc('dart',
-        ['run', 'build_runner', 'build', '--delete-conflicting-outputs']);
-    expect(result,
-        contains(RegExp(r'Succeeded after \S+( \S+)? with \d+ outputs')));
+    var result = _runProc('dart', [
+      'run',
+      'build_runner',
+      'build',
+      '--delete-conflicting-outputs',
+    ]);
+    expect(
+      result,
+      contains(RegExp(r'Succeeded after \S+( \S+)? with \d+ outputs')),
+    );
 
     // 3 - get a list of modified `.g.dart` files - should still be empty
     expect(_changedGeneratedFiles(), isEmpty);
@@ -60,10 +68,11 @@ String _runProc(String proc, List<String> args) {
 
   if (result.exitCode != 0) {
     throw ProcessException(
-        proc,
-        args,
-        'Stdout:\n${result.stdout}\n\nStderr:\n${result.stderr}',
-        result.exitCode);
+      proc,
+      args,
+      'Stdout:\n${result.stdout}\n\nStderr:\n${result.stderr}',
+      result.exitCode,
+    );
   }
   var stderr = result.stderr as String;
   if (stderr.isNotEmpty) print('stderr: $stderr');

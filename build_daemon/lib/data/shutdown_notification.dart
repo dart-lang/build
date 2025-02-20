@@ -13,9 +13,9 @@ abstract class ShutdownNotification
   static Serializer<ShutdownNotification> get serializer =>
       _$shutdownNotificationSerializer;
 
-  factory ShutdownNotification(
-          [void Function(ShutdownNotificationBuilder b) updates]) =
-      _$ShutdownNotification;
+  factory ShutdownNotification([
+    void Function(ShutdownNotificationBuilder b) updates,
+  ]) = _$ShutdownNotification;
 
   String get message;
 

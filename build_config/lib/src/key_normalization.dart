@@ -15,10 +15,9 @@ const _defaultTargetNamePlaceholder = r'$default';
 /// If the legacy separator `|` is used it will be transformed to `:`
 String normalizeBuilderKeyDefinition(String builderKey, String packageName) =>
     _normalizeDefinition(
-        builderKey.contains('|')
-            ? builderKey.replaceFirst('|', ':')
-            : builderKey,
-        packageName);
+      builderKey.contains('|') ? builderKey.replaceFirst('|', ':') : builderKey,
+      packageName,
+    );
 
 /// Returns the normalized [builderKey] usage when used from [packageName].
 ///
@@ -31,10 +30,9 @@ String normalizeBuilderKeyDefinition(String builderKey, String packageName) =>
 /// If the legacy separator `|` is used it will be transformed to `:`
 String normalizeBuilderKeyUsage(String builderKey, String packageName) =>
     _normalizeUsage(
-        builderKey.contains('|')
-            ? builderKey.replaceFirst('|', ':')
-            : builderKey,
-        packageName);
+      builderKey.contains('|') ? builderKey.replaceFirst('|', ':') : builderKey,
+      packageName,
+    );
 
 /// Returns the normalized [targetKey] definition when used from [packageName].
 ///

@@ -24,27 +24,45 @@ void main() {
     void deleteAsset(AssetId id) => deletes[id] = true;
 
     setUp(() async {
-      readerWriter = InMemoryAssetReaderWriter()
-        ..filesystem.writeAsStringSync(aTxt, 'a');
+      readerWriter =
+          InMemoryAssetReaderWriter()..filesystem.writeAsStringSync(aTxt, 'a');
       adds.clear();
       deletes.clear();
     });
 
     test('can delete assets', () async {
       await runPostProcessBuilder(
-          copyBuilder, aTxt, readerWriter, readerWriter, logger,
-          addAsset: addAsset, deleteAsset: deleteAsset);
+        copyBuilder,
+        aTxt,
+        readerWriter,
+        readerWriter,
+        logger,
+        addAsset: addAsset,
+        deleteAsset: deleteAsset,
+      );
       await runPostProcessBuilder(
-          deleteBuilder, aTxt, readerWriter, readerWriter, logger,
-          addAsset: addAsset, deleteAsset: deleteAsset);
+        deleteBuilder,
+        aTxt,
+        readerWriter,
+        readerWriter,
+        logger,
+        addAsset: addAsset,
+        deleteAsset: deleteAsset,
+      );
       expect(deletes, contains(aTxt));
       expect(deletes, isNot(contains(aTxtCopy)));
     });
 
     test('can create assets and read the primary asset', () async {
       await runPostProcessBuilder(
-          copyBuilder, aTxt, readerWriter, readerWriter, logger,
-          addAsset: addAsset, deleteAsset: deleteAsset);
+        copyBuilder,
+        aTxt,
+        readerWriter,
+        readerWriter,
+        logger,
+        addAsset: addAsset,
+        deleteAsset: deleteAsset,
+      );
       expect(readerWriter.assets, contains(aTxtCopy));
       expect(readerWriter.assets[aTxtCopy], decodedMatches('a'));
       expect(adds, contains(aTxtCopy));
@@ -52,11 +70,17 @@ void main() {
 
     test('throws if addAsset throws', () async {
       expect(
-          () => runPostProcessBuilder(
-              copyBuilder, aTxt, readerWriter, readerWriter, logger,
-              addAsset: (id) => throw InvalidOutputException(id, ''),
-              deleteAsset: deleteAsset),
-          throwsA(const TypeMatcher<InvalidOutputException>()));
+        () => runPostProcessBuilder(
+          copyBuilder,
+          aTxt,
+          readerWriter,
+          readerWriter,
+          logger,
+          addAsset: (id) => throw InvalidOutputException(id, ''),
+          deleteAsset: deleteAsset,
+        ),
+        throwsA(const TypeMatcher<InvalidOutputException>()),
+      );
     });
   });
 }

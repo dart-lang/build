@@ -4,7 +4,7 @@ description: Test infra for writing build tests. Is not published.
 resolution: workspace
 
 environment:
-  sdk: ^3.6.0
+  sdk: ^3.7.0
 
 dependencies:
   build: any

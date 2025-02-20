@@ -4,7 +4,7 @@ description: Collection of scripts used during development of build packages.
 resolution: workspace
 
 environment:
-  sdk: ^3.6.0
+  sdk: ^3.7.0
 
 dependencies:
   path: ^1.8.0

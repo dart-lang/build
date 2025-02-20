@@ -16,8 +16,9 @@ void main() {
   late CachingAssetReader reader;
 
   setUp(() {
-    delegate = InMemoryRunnerAssetReaderWriter()
-      ..filesystem.writeAsStringSync(fooTxt, 'bar');
+    delegate =
+        InMemoryRunnerAssetReaderWriter()
+          ..filesystem.writeAsStringSync(fooTxt, 'bar');
     reader = CachingAssetReader(delegate);
   });
 

@@ -11,12 +11,13 @@ import 'package:test/test.dart';
 
 void main() {
   group('Resolver Reuse', () {
-    test('Does not remove sources due to crawling for an earlier phase',
-        () async {
-      // If there is an asset which can't be read by an optional phase, but can
-      // be read by a later non-optional phase, and the optional phase starts
-      // later we need to avoid hiding that file from the later-phased reader.
-      var optionalWithResolver = TestBuilder(
+    test(
+      'Does not remove sources due to crawling for an earlier phase',
+      () async {
+        // If there is an asset which can't be read by an optional phase, but can
+        // be read by a later non-optional phase, and the optional phase starts
+        // later we need to avoid hiding that file from the later-phased reader.
+        var optionalWithResolver = TestBuilder(
           buildExtensions: appendExtension('.foo'),
           build: (buildStep, _) async {
             // Use the resolver so ensure that the entry point is crawled
@@ -24,14 +25,20 @@ void main() {
             // If this was non-optional then the the `.imported.dart` file would
             // not be visible, but we don't care whether it is.
             return buildStep.writeAsString(
-                buildStep.inputId.addExtension('.foo'), 'anything');
-          });
-      var nonOptionalWritesImportedFile = TestBuilder(
+              buildStep.inputId.addExtension('.foo'),
+              'anything',
+            );
+          },
+        );
+        var nonOptionalWritesImportedFile = TestBuilder(
           buildExtensions: replaceExtension('.dart', '.imported.dart'),
-          build: (buildStep, _) => buildStep.writeAsString(
-              buildStep.inputId.changeExtension('.imported.dart'),
-              'class SomeClass {}'));
-      var nonOptionalResolveImportedFile = TestBuilder(
+          build:
+              (buildStep, _) => buildStep.writeAsString(
+                buildStep.inputId.changeExtension('.imported.dart'),
+                'class SomeClass {}',
+              ),
+        );
+        var nonOptionalResolveImportedFile = TestBuilder(
           buildExtensions: appendExtension('.bar'),
           build: (buildStep, _) async {
             // Fetch the resolver so the imports get crawled.
@@ -40,98 +47,131 @@ void main() {
             await buildStep.canRead(buildStep.inputId.addExtension('.foo'));
             // Check that the `.imported.dart` library is still reachable
             // through the resolver.
-            var importedLibrary = inputLibrary
-                .definingCompilationUnit.libraryImports
-                .firstWhere((l) => l
-                    .importedLibrary!.definingCompilationUnit.source.uri.path
-                    .endsWith('.imported.dart'))
-                .importedLibrary!;
-            var classNames = importedLibrary.definingCompilationUnit.classes
-                .map((c) => c.name)
-                .toList();
+            var importedLibrary =
+                inputLibrary.definingCompilationUnit.libraryImports
+                    .firstWhere(
+                      (l) => l
+                          .importedLibrary!
+                          .definingCompilationUnit
+                          .source
+                          .uri
+                          .path
+                          .endsWith('.imported.dart'),
+                    )
+                    .importedLibrary!;
+            var classNames =
+                importedLibrary.definingCompilationUnit.classes
+                    .map((c) => c.name)
+                    .toList();
             return buildStep.writeAsString(
-                buildStep.inputId.addExtension('.bar'), '$classNames');
-          });
-      await testBuilders([
-        applyToRoot(optionalWithResolver, isOptional: true),
-        applyToRoot(nonOptionalWritesImportedFile,
-            generateFor: const InputSet(include: ['lib/file.dart'])),
-        applyToRoot(nonOptionalResolveImportedFile,
-            generateFor: const InputSet(include: ['lib/file.dart'])),
-      ], {
-        'a|lib/file.dart': 'import "file.imported.dart";',
-      }, outputs: {
-        'a|lib/file.dart.bar': '[SomeClass]',
-        'a|lib/file.dart.foo': 'anything',
-        'a|lib/file.imported.dart': 'class SomeClass {}',
-      });
-    });
+              buildStep.inputId.addExtension('.bar'),
+              '$classNames',
+            );
+          },
+        );
+        await testBuilders(
+          [
+            applyToRoot(optionalWithResolver, isOptional: true),
+            applyToRoot(
+              nonOptionalWritesImportedFile,
+              generateFor: const InputSet(include: ['lib/file.dart']),
+            ),
+            applyToRoot(
+              nonOptionalResolveImportedFile,
+              generateFor: const InputSet(include: ['lib/file.dart']),
+            ),
+          ],
+          {'a|lib/file.dart': 'import "file.imported.dart";'},
+          outputs: {
+            'a|lib/file.dart.bar': '[SomeClass]',
+            'a|lib/file.dart.foo': 'anything',
+            'a|lib/file.imported.dart': 'class SomeClass {}',
+          },
+        );
+      },
+    );
 
     test('A hidden generated file does not poison resolving', () async {
       final slowBuilderCompleter = Completer<void>();
       final builders = [
         applyToRoot(
-            TestBuilder(
-                buildExtensions: replaceExtension('.dart', '.g1.dart'),
-                build: (buildStep, _) async {
-                  // Put the analysis driver into the bad state.
-                  await buildStep.inputLibrary;
-                  await buildStep.writeAsString(
-                      buildStep.inputId.changeExtension('.g1.dart'),
-                      'class Annotation {const Annotation();}');
-                }),
-            generateFor: const InputSet(include: ['lib/a.dart'])),
+          TestBuilder(
+            buildExtensions: replaceExtension('.dart', '.g1.dart'),
+            build: (buildStep, _) async {
+              // Put the analysis driver into the bad state.
+              await buildStep.inputLibrary;
+              await buildStep.writeAsString(
+                buildStep.inputId.changeExtension('.g1.dart'),
+                'class Annotation {const Annotation();}',
+              );
+            },
+          ),
+          generateFor: const InputSet(include: ['lib/a.dart']),
+        ),
         applyToRoot(
-            TestBuilder(
-                buildExtensions: replaceExtension('.dart', '.g2.dart'),
-                build: (buildStep, _) async {
-                  var library = await buildStep.inputLibrary;
-                  var annotation = library
-                      .topLevelElements.single.metadata.single
+          TestBuilder(
+            buildExtensions: replaceExtension('.dart', '.g2.dart'),
+            build: (buildStep, _) async {
+              var library = await buildStep.inputLibrary;
+              var annotation =
+                  library.topLevelElements.single.metadata.single
                       .computeConstantValue();
-                  await buildStep.writeAsString(
-                      buildStep.inputId.changeExtension('.g2.dart'),
-                      '//$annotation');
-                  slowBuilderCompleter.complete();
-                }),
-            isOptional: true,
-            generateFor: const InputSet(include: ['lib/a.dart'])),
+              await buildStep.writeAsString(
+                buildStep.inputId.changeExtension('.g2.dart'),
+                '//$annotation',
+              );
+              slowBuilderCompleter.complete();
+            },
+          ),
+          isOptional: true,
+          generateFor: const InputSet(include: ['lib/a.dart']),
+        ),
         applyToRoot(
-            TestBuilder(
-                buildExtensions: replaceExtension('.dart', '.slow.dart'),
-                build: (buildStep, _) async {
-                  await slowBuilderCompleter.future;
-                  await buildStep.writeAsString(
-                      buildStep.inputId.changeExtension('.slow.dart'), '');
-                }),
-            isOptional: true,
-            generateFor: const InputSet(include: ['lib/b.dart'])),
+          TestBuilder(
+            buildExtensions: replaceExtension('.dart', '.slow.dart'),
+            build: (buildStep, _) async {
+              await slowBuilderCompleter.future;
+              await buildStep.writeAsString(
+                buildStep.inputId.changeExtension('.slow.dart'),
+                '',
+              );
+            },
+          ),
+          isOptional: true,
+          generateFor: const InputSet(include: ['lib/b.dart']),
+        ),
         applyToRoot(
-            TestBuilder(
-                buildExtensions: replaceExtension('.dart', '.root'),
-                build: (buildStep, _) async {
-                  await buildStep.inputLibrary;
-                }),
-            generateFor: const InputSet(include: ['lib/b.dart'])),
+          TestBuilder(
+            buildExtensions: replaceExtension('.dart', '.root'),
+            build: (buildStep, _) async {
+              await buildStep.inputLibrary;
+            },
+          ),
+          generateFor: const InputSet(include: ['lib/b.dart']),
+        ),
       ];
-      await testBuilders(builders, {
-        'a|lib/a.dart': '''
+      await testBuilders(
+        builders,
+        {
+          'a|lib/a.dart': '''
 import 'a.g1.dart';
 import 'a.g2.dart';
 
 @Annotation()
 int x() => 1;
 ''',
-        'a|lib/b.dart': r'''
+          'a|lib/b.dart': r'''
 import 'a.g1.dart';
 import 'a.g2.dart';
 import 'b.slow.dart';
-'''
-      }, outputs: {
-        'a|lib/a.g1.dart': 'class Annotation {const Annotation();}',
-        'a|lib/a.g2.dart': '//Annotation ()',
-        'a|lib/b.slow.dart': '',
-      });
+''',
+        },
+        outputs: {
+          'a|lib/a.g1.dart': 'class Annotation {const Annotation();}',
+          'a|lib/a.g2.dart': '//Annotation ()',
+          'a|lib/b.slow.dart': '',
+        },
+      );
     });
   });
 }

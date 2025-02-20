@@ -23,8 +23,12 @@ void main() {
       'a|lib/a.matchingFiles':
           'a|lib/a.txt\na|lib/b.txt\na|lib/c.txt\na|lib/d.txt',
     };
-    await testBuilder(GlobbingBuilder(Glob('**.txt')), assets,
-        rootPackage: 'a', outputs: expectedOutputs);
+    await testBuilder(
+      GlobbingBuilder(Glob('**.txt')),
+      assets,
+      rootPackage: 'a',
+      outputs: expectedOutputs,
+    );
   });
 
   test('can glob files in non-root and root packages', () async {
@@ -40,14 +44,21 @@ void main() {
     };
     var expectedOutputs = {
       'a|lib/a.matchingFiles': decodedMatches(
-          allOf(contains('a|lib/a.txt'), contains('a|lib/b.txt'))),
-      'b|lib/b.matchingFiles': decodedMatches('b|lib/a.txt\n'
-          'b|lib/b.txt\n'
-          'b|lib/c.txt\n'
-          'b|lib/d.txt'),
+        allOf(contains('a|lib/a.txt'), contains('a|lib/b.txt')),
+      ),
+      'b|lib/b.matchingFiles': decodedMatches(
+        'b|lib/a.txt\n'
+        'b|lib/b.txt\n'
+        'b|lib/c.txt\n'
+        'b|lib/d.txt',
+      ),
     };
-    await testBuilder(GlobbingBuilder(Glob('**.txt')), assets,
-        rootPackage: 'a', outputs: expectedOutputs);
+    await testBuilder(
+      GlobbingBuilder(Glob('**.txt')),
+      assets,
+      rootPackage: 'a',
+      outputs: expectedOutputs,
+    );
   });
 
   group('can output special placeholder outpout files', () {
@@ -61,9 +72,7 @@ void main() {
           'a|data/3.txt': '3',
         };
 
-        var outputs = {
-          'a|$dir/concat.txt': '1\n2\n3\n',
-        };
+        var outputs = {'a|$dir/concat.txt': '1\n2\n3\n'};
 
         await testBuilder(
           _ConcatBuilder(dir),
@@ -78,23 +87,28 @@ void main() {
   test('can capture reportUnusedAssets calls', () async {
     var unusedInput = AssetId('a', 'lib/unused.txt');
     var recorded = <AssetId, Iterable<AssetId>>{};
-    await testBuilder(TestBuilder(build: (BuildStep buildStep, _) async {
-      buildStep.reportUnusedAssets([unusedInput]);
-    }), {
-      'a|lib/a.txt': 'a',
-    }, reportUnusedAssetsForInput: (input, unused) => recorded[input] = unused);
+    await testBuilder(
+      TestBuilder(
+        build: (BuildStep buildStep, _) async {
+          buildStep.reportUnusedAssets([unusedInput]);
+        },
+      ),
+      {'a|lib/a.txt': 'a'},
+      reportUnusedAssetsForInput: (input, unused) => recorded[input] = unused,
+    );
     expect(
-        recorded,
-        equals({
-          AssetId('a', 'lib/a.txt'): [unusedInput]
-        }));
+      recorded,
+      equals({
+        AssetId('a', 'lib/a.txt'): [unusedInput],
+      }),
+    );
   });
 
   test('can read own outputs', () {
     return testBuilder(
       TestBuilder(
         buildExtensions: {
-          '.txt': ['.temp']
+          '.txt': ['.temp'],
         },
         build: (step, _) async {
           final input = step.inputId;
@@ -107,9 +121,7 @@ void main() {
           expect(readOutput, content.toUpperCase());
         },
       ),
-      {
-        'a|foo.txt': 'foo',
-      },
+      {'a|foo.txt': 'foo'},
     );
   });
 
@@ -117,55 +129,62 @@ void main() {
     return testBuilder(
       TestBuilder(
         buildExtensions: {
-          '.txt': ['.temp']
+          '.txt': ['.temp'],
         },
         build: (step, _) async {
           final input = step.inputId;
           await step.writeAsString(input.changeExtension('.temp'), 'out');
 
-          final outputFromOther = input.path.contains('foo')
-              ? AssetId('a', 'bar.temp')
-              : AssetId('a', 'foo.temp');
+          final outputFromOther =
+              input.path.contains('foo')
+                  ? AssetId('a', 'bar.temp')
+                  : AssetId('a', 'foo.temp');
 
           expect(await step.canRead(outputFromOther), isFalse);
         },
       ),
-      {
-        'a|foo.txt': 'foo',
-        'a|bar.txt': 'foo',
-      },
+      {'a|foo.txt': 'foo', 'a|bar.txt': 'foo'},
     );
   });
 
-  test('can resolve with specified language versions from a PackageConfig',
-      () async {
-    var packageConfig = PackageConfig([
-      Package('a', Uri.file('/a/'),
+  test(
+    'can resolve with specified language versions from a PackageConfig',
+    () async {
+      var packageConfig = PackageConfig([
+        Package(
+          'a',
+          Uri.file('/a/'),
           packageUriRoot: Uri.file('/a/lib/'),
-          languageVersion: LanguageVersion(2, 3))
-    ]);
+          languageVersion: LanguageVersion(2, 3),
+        ),
+      ]);
 
-    await testBuilder(
-      TestBuilder(
-        buildExtensions: {
-          '.dart': ['.fake']
-        },
-        build: (step, _) async {
-          expect(
+      await testBuilder(
+        TestBuilder(
+          buildExtensions: {
+            '.dart': ['.fake'],
+          },
+          build: (step, _) async {
+            expect(
               step.inputLibrary,
-              throwsA(isA<SyntaxErrorInAssetException>().having(
+              throwsA(
+                isA<SyntaxErrorInAssetException>().having(
                   (e) => e.syntaxErrors.first.message,
                   'message',
-                  contains('This requires the \'extension-methods\' language '
-                      'feature to be enabled.'))));
-        },
-      ),
-      {
-        'a|error.dart': '''extension _Foo on int {}''',
-      },
-      packageConfig: packageConfig,
-    );
-  });
+                  contains(
+                    'This requires the \'extension-methods\' language '
+                    'feature to be enabled.',
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        {'a|error.dart': '''extension _Foo on int {}'''},
+        packageConfig: packageConfig,
+      );
+    },
+  );
 }
 
 /// Concatenates the contents of multiple text files into a single output.
@@ -173,9 +192,9 @@ class _ConcatBuilder implements Builder {
   final String _input;
 
   _ConcatBuilder(this._input)
-      : buildExtensions = {
-          '\$$_input\$': ['concat.txt'],
-        };
+    : buildExtensions = {
+        '\$$_input\$': ['concat.txt'],
+      };
 
   @override
   Future<void> build(BuildStep buildStep) async {

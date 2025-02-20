@@ -55,20 +55,23 @@ class BuildDefinition {
   final BuildEnvironment environment;
 
   BuildDefinition._(
-      this.assetGraph,
-      this.targetGraph,
-      this.reader,
-      this.writer,
-      this.packageGraph,
-      this.deleteFilesByDefault,
-      this.resourceManager,
-      this.buildScriptUpdates,
-      this.enableLowResourcesMode,
-      this.environment);
+    this.assetGraph,
+    this.targetGraph,
+    this.reader,
+    this.writer,
+    this.packageGraph,
+    this.deleteFilesByDefault,
+    this.resourceManager,
+    this.buildScriptUpdates,
+    this.enableLowResourcesMode,
+    this.environment,
+  );
 
-  static Future<BuildDefinition> prepareWorkspace(BuildEnvironment environment,
-          BuildOptions options, List<BuildPhase> buildPhases) =>
-      _Loader(environment, options, buildPhases).prepareWorkspace();
+  static Future<BuildDefinition> prepareWorkspace(
+    BuildEnvironment environment,
+    BuildOptions options,
+    List<BuildPhase> buildPhases,
+  ) => _Loader(environment, options, buildPhases).prepareWorkspace();
 }
 
 /// Understands how to find all assets relevant to a build as well as compute
@@ -86,7 +89,11 @@ class AssetTracker {
     var generatedSources = await _findCacheDirSources();
     var internalSources = await _findInternalSources();
     return _computeSourceUpdates(
-        inputSources, generatedSources, internalSources, assetGraph);
+      inputSources,
+      generatedSources,
+      internalSources,
+      assetGraph,
+    );
   }
 
   /// Returns the all the sources found in the cache directory.
@@ -95,16 +102,19 @@ class AssetTracker {
 
   /// Returns the set of original package inputs on disk.
   Future<Set<AssetId>> _findInputSources() {
-    final targets =
-        Stream<TargetNode>.fromIterable(_targetGraph.allModules.values);
+    final targets = Stream<TargetNode>.fromIterable(
+      _targetGraph.allModules.values,
+    );
     return targets.asyncExpand(_listAssetIds).toSet();
   }
 
   /// Returns all the internal sources, such as those under [entryPointDir].
   Future<Set<AssetId>> _findInternalSources() async {
     var ids = await _listIdsSafe(Glob('$entryPointDir/**')).toSet();
-    var packageConfigId = AssetId(_targetGraph.rootPackageConfig.packageName,
-        '.dart_tool/package_config.json');
+    var packageConfigId = AssetId(
+      _targetGraph.rootPackageConfig.packageName,
+      '.dart_tool/package_config.json',
+    );
 
     if (await _reader.canRead(packageConfigId)) {
       ids.add(packageConfigId);
@@ -116,14 +126,16 @@ class AssetTracker {
   /// by taking a difference between the assets in the graph and the assets on
   /// disk.
   Future<Map<AssetId, ChangeType>> _computeSourceUpdates(
-      Set<AssetId> inputSources,
-      Set<AssetId> generatedSources,
-      Set<AssetId> internalSources,
-      AssetGraph assetGraph) async {
-    final allSources = <AssetId>{}
-      ..addAll(inputSources)
-      ..addAll(generatedSources)
-      ..addAll(internalSources);
+    Set<AssetId> inputSources,
+    Set<AssetId> generatedSources,
+    Set<AssetId> internalSources,
+    AssetGraph assetGraph,
+  ) async {
+    final allSources =
+        <AssetId>{}
+          ..addAll(inputSources)
+          ..addAll(generatedSources)
+          ..addAll(internalSources);
     var updates = <AssetId, ChangeType>{};
     void addUpdates(Iterable<AssetId> assets, ChangeType type) {
       for (var asset in assets) {
@@ -131,10 +143,12 @@ class AssetTracker {
       }
     }
 
-    var newSources = inputSources.difference(assetGraph.allNodes
-        .where((node) => node.isValidInput)
-        .map((node) => node.id)
-        .toSet());
+    var newSources = inputSources.difference(
+      assetGraph.allNodes
+          .where((node) => node.isValidInput)
+          .map((node) => node.id)
+          .toSet(),
+    );
     addUpdates(newSources, ChangeType.ADD);
     var removedAssets = assetGraph.allNodes
         .where((n) {
@@ -166,11 +180,15 @@ class AssetTracker {
   Stream<AssetId> _listAssetIds(TargetNode targetNode) {
     return targetNode.sourceIncludes.isEmpty
         ? const Stream<AssetId>.empty()
-        : StreamGroup.merge(targetNode.sourceIncludes.map((glob) =>
-            _listIdsSafe(glob, package: targetNode.package.name)
-                .where((id) =>
-                    _targetGraph.isVisibleInBuild(id, targetNode.package))
-                .where((id) => !targetNode.excludesSource(id))));
+        : StreamGroup.merge(
+          targetNode.sourceIncludes.map(
+            (glob) => _listIdsSafe(glob, package: targetNode.package.name)
+                .where(
+                  (id) => _targetGraph.isVisibleInBuild(id, targetNode.package),
+                )
+                .where((id) => !targetNode.excludesSource(id)),
+          ),
+        );
   }
 
   Stream<AssetId> _listGeneratedAssetIds() {
@@ -178,8 +196,9 @@ class AssetTracker {
 
     return _listIdsSafe(glob)
         .map((id) {
-          var packagePath =
-              id.path.substring(generatedOutputDirectory.length + 1);
+          var packagePath = id.path.substring(
+            generatedOutputDirectory.length + 1,
+          );
           var firstSlash = packagePath.indexOf('/');
           if (firstSlash == -1) return null;
           var package = packagePath.substring(0, firstSlash);
@@ -194,9 +213,13 @@ class AssetTracker {
   ///
   /// Ideally we would warn but in practice the default sources list will give
   /// this error a lot and it would be noisy.
-  Stream<AssetId> _listIdsSafe(Glob glob, {String? package}) =>
-      _reader.assetFinder.find(glob, package: package).handleError((void _) {},
-          test: (e) => e is FileSystemException && e.osError?.errorCode == 2);
+  Stream<AssetId> _listIdsSafe(Glob glob, {String? package}) => _reader
+      .assetFinder
+      .find(glob, package: package)
+      .handleError(
+        (void _) {},
+        test: (e) => e is FileSystemException && e.osError?.errorCode == 2,
+      );
 }
 
 class _Loader {
@@ -220,15 +243,26 @@ class _Loader {
     BuildScriptUpdates? buildScriptUpdates;
     if (assetGraph != null) {
       var updates = await logTimedAsync(
-          _logger,
-          'Checking for updates since last build',
-          () => _updateAssetGraph(assetGraph!, assetTracker, _buildPhases,
-              inputSources, cacheDirSources, internalSources));
+        _logger,
+        'Checking for updates since last build',
+        () => _updateAssetGraph(
+          assetGraph!,
+          assetTracker,
+          _buildPhases,
+          inputSources,
+          cacheDirSources,
+          internalSources,
+        ),
+      );
       buildScriptUpdates = await BuildScriptUpdates.create(
-          _environment.reader, _options.packageGraph, assetGraph,
-          disabled: _options.skipBuildScriptCheck);
+        _environment.reader,
+        _options.packageGraph,
+        assetGraph,
+        disabled: _options.skipBuildScriptCheck,
+      );
 
-      var buildScriptUpdated = !_options.skipBuildScriptCheck &&
+      var buildScriptUpdated =
+          !_options.skipBuildScriptCheck &&
           buildScriptUpdates.hasBeenUpdated(updates.keys.toSet());
       if (buildScriptUpdated) {
         _logger.warning('Invalidating asset graph due to build script update!');
@@ -251,51 +285,67 @@ class _Loader {
 
       await logTimedAsync(_logger, 'Building new asset graph', () async {
         try {
-          assetGraph = await AssetGraph.build(_buildPhases, inputSources,
-              internalSources, _options.packageGraph, _environment.reader);
+          assetGraph = await AssetGraph.build(
+            _buildPhases,
+            inputSources,
+            internalSources,
+            _options.packageGraph,
+            _environment.reader,
+          );
         } on DuplicateAssetNodeException catch (e, st) {
           _logger.severe('Conflicting outputs', e, st);
           throw const CannotBuildException();
         }
         buildScriptUpdates = await BuildScriptUpdates.create(
-            _environment.reader, _options.packageGraph, assetGraph!,
-            disabled: _options.skipBuildScriptCheck);
+          _environment.reader,
+          _options.packageGraph,
+          assetGraph!,
+          disabled: _options.skipBuildScriptCheck,
+        );
 
-        conflictingOutputs = assetGraph!.outputs
-            .where((n) => n.package == _options.packageGraph.root.name)
-            .where(inputSources.contains)
-            .toSet();
-        final conflictsInDeps = assetGraph!.outputs
-            .where((n) => n.package != _options.packageGraph.root.name)
-            .where(inputSources.contains)
-            .toSet();
+        conflictingOutputs =
+            assetGraph!.outputs
+                .where((n) => n.package == _options.packageGraph.root.name)
+                .where(inputSources.contains)
+                .toSet();
+        final conflictsInDeps =
+            assetGraph!.outputs
+                .where((n) => n.package != _options.packageGraph.root.name)
+                .where(inputSources.contains)
+                .toSet();
         if (conflictsInDeps.isNotEmpty) {
-          log.severe('There are existing files in dependencies which conflict '
-              'with files that a Builder may produce. These must be removed or '
-              'the Builders disabled before a build can continue: '
-              '${conflictsInDeps.map((a) => a.uri).join('\n')}');
+          log.severe(
+            'There are existing files in dependencies which conflict '
+            'with files that a Builder may produce. These must be removed or '
+            'the Builders disabled before a build can continue: '
+            '${conflictsInDeps.map((a) => a.uri).join('\n')}',
+          );
           throw const CannotBuildException();
         }
       });
 
       await logTimedAsync(
-          _logger,
-          'Checking for unexpected pre-existing outputs.',
-          () => _initialBuildCleanup(conflictingOutputs,
-              _wrapWriter(_environment.writer, assetGraph!)));
+        _logger,
+        'Checking for unexpected pre-existing outputs.',
+        () => _initialBuildCleanup(
+          conflictingOutputs,
+          _wrapWriter(_environment.writer, assetGraph!),
+        ),
+      );
     }
 
     return BuildDefinition._(
-        assetGraph!,
-        _options.targetGraph,
-        _wrapReader(_environment.reader, assetGraph!),
-        _wrapWriter(_environment.writer, assetGraph!),
-        _options.packageGraph,
-        _options.deleteFilesByDefault,
-        ResourceManager(),
-        buildScriptUpdates,
-        _options.enableLowResourcesMode,
-        _environment);
+      assetGraph!,
+      _options.targetGraph,
+      _wrapReader(_environment.reader, assetGraph!),
+      _wrapWriter(_environment.writer, assetGraph!),
+      _options.packageGraph,
+      _options.deleteFilesByDefault,
+      ResourceManager(),
+      buildScriptUpdates,
+      _options.enableLowResourcesMode,
+      _environment,
+    );
   }
 
   /// Checks that the [_buildPhases] are valid based on whether they are
@@ -308,17 +358,19 @@ class _Loader {
         if (action is InBuildPhase && action.package != root) {
           // This should happen only with a manual build script since the build
           // script generation filters these out.
-          _logger.severe('A build phase (${action.builderLabel}) is attempting '
-              'to operate on package "${action.package}", but the build script '
-              'is located in package "$root". It\'s not valid to attempt to '
-              'generate files for another package unless the BuilderApplication'
-              'specified "hideOutput".'
-              '\n\n'
-              'Did you mean to write:\n'
-              '  new BuilderApplication(..., toRoot())\n'
-              'or\n'
-              '  new BuilderApplication(..., hideOutput: true)\n'
-              '... instead?');
+          _logger.severe(
+            'A build phase (${action.builderLabel}) is attempting '
+            'to operate on package "${action.package}", but the build script '
+            'is located in package "$root". It\'s not valid to attempt to '
+            'generate files for another package unless the BuilderApplication'
+            'specified "hideOutput".'
+            '\n\n'
+            'Did you mean to write:\n'
+            '  new BuilderApplication(..., toRoot())\n'
+            'or\n'
+            '  new BuilderApplication(..., hideOutput: true)\n'
+            '... instead?',
+          );
           throw const CannotBuildException();
         }
       }
@@ -338,8 +390,10 @@ class _Loader {
   /// Attempts to read in an [AssetGraph] from disk, and returns `null` if it
   /// fails for any reason.
   Future<AssetGraph?> _tryReadCachedAssetGraph() async {
-    final assetGraphId =
-        AssetId(_options.packageGraph.root.name, assetGraphPath);
+    final assetGraphId = AssetId(
+      _options.packageGraph.root.name,
+      assetGraphPath,
+    );
     if (!await _environment.reader.canRead(assetGraphId)) {
       return null;
     }
@@ -347,39 +401,47 @@ class _Loader {
     return logTimedAsync(_logger, 'Reading cached asset graph', () async {
       try {
         var cachedGraph = AssetGraph.deserialize(
-            await _environment.reader.readAsBytes(assetGraphId));
-        var buildPhasesChanged = computeBuildPhasesDigest(_buildPhases) !=
+          await _environment.reader.readAsBytes(assetGraphId),
+        );
+        var buildPhasesChanged =
+            computeBuildPhasesDigest(_buildPhases) !=
             cachedGraph.buildPhasesDigest;
-        var pkgVersionsChanged = !const DeepCollectionEquality()
-            .equals(cachedGraph.packageLanguageVersions, {
-          for (var pkg in _options.packageGraph.allPackages.values)
-            pkg.name: pkg.languageVersion
-        });
+        var pkgVersionsChanged =
+            !const DeepCollectionEquality()
+                .equals(cachedGraph.packageLanguageVersions, {
+                  for (var pkg in _options.packageGraph.allPackages.values)
+                    pkg.name: pkg.languageVersion,
+                });
         var enabledExperimentsChanged =
-            !const DeepCollectionEquality.unordered()
-                .equals(cachedGraph.enabledExperiments, enabledExperiments);
+            !const DeepCollectionEquality.unordered().equals(
+              cachedGraph.enabledExperiments,
+              enabledExperiments,
+            );
         if (buildPhasesChanged ||
             pkgVersionsChanged ||
             enabledExperimentsChanged) {
           if (buildPhasesChanged) {
             _logger.warning(
-                'Throwing away cached asset graph because the build phases '
-                'have changed. This most commonly would happen as a result of '
-                'adding a new dependency or updating your dependencies.');
+              'Throwing away cached asset graph because the build phases '
+              'have changed. This most commonly would happen as a result of '
+              'adding a new dependency or updating your dependencies.',
+            );
           }
           if (pkgVersionsChanged) {
             _logger.warning(
-                'Throwing away cached asset graph because the language '
-                'version of some package(s) changed. This would most commonly '
-                'happen when updating dependencies or changing your min sdk '
-                'constraint.');
+              'Throwing away cached asset graph because the language '
+              'version of some package(s) changed. This would most commonly '
+              'happen when updating dependencies or changing your min sdk '
+              'constraint.',
+            );
           }
           if (enabledExperimentsChanged) {
             _logger.warning(
-                'Throwing away cached asset graph because the enabled Dart '
-                'language experiments changed:\n\n'
-                'Previous value: ${cachedGraph.enabledExperiments.join(' ')}\n'
-                'Current value: ${enabledExperiments.join(' ')}');
+              'Throwing away cached asset graph because the enabled Dart '
+              'language experiments changed:\n\n'
+              'Previous value: ${cachedGraph.enabledExperiments.join(' ')}\n'
+              'Current value: ${enabledExperiments.join(' ')}',
+            );
           }
           await Future.wait([
             _deleteAssetGraph(_options.packageGraph),
@@ -393,7 +455,8 @@ class _Loader {
         }
         if (!isSameSdkVersion(cachedGraph.dartVersion, Platform.version)) {
           _logger.warning(
-              'Throwing away cached asset graph due to Dart SDK update.');
+            'Throwing away cached asset graph due to Dart SDK update.',
+          );
           await Future.wait([
             _deleteAssetGraph(_options.packageGraph),
             _cleanupOldOutputs(cachedGraph),
@@ -407,8 +470,10 @@ class _Loader {
         return cachedGraph;
       } on AssetGraphCorruptedException catch (_) {
         // Start fresh if the cached asset_graph cannot be deserialized
-        _logger.warning('Throwing away cached asset graph due to '
-            'version mismatch or corrupted asset graph.');
+        _logger.warning(
+          'Throwing away cached asset graph due to '
+          'version mismatch or corrupted asset graph.',
+        );
         await Future.wait([
           _deleteGeneratedDir(),
           FailureReporter.cleanErrorCache(),
@@ -422,28 +487,33 @@ class _Loader {
   /// tree, and deletes the entire generated directory.
   Future<Iterable<AssetId>> _cleanupOldOutputs(AssetGraph graph) async {
     var deletedSources = <AssetId>[];
-    await logTimedAsync(_logger, 'Cleaning up outputs from previous builds.',
-        () async {
-      // Delete all the non-hidden outputs.
-      await Future.wait(graph.outputs.map((id) {
-        var node = graph.get(id) as GeneratedAssetNode;
-        if (node.wasOutput && !node.isHidden) {
-          var idToDelete = id;
-          // If the package no longer exists, then the user must have renamed
-          // the root package.
-          //
-          // In that case we change `idToDelete` to be in the root package.
-          if (_options.packageGraph[id.package] == null) {
-            idToDelete = AssetId(_options.packageGraph.root.name, id.path);
-          }
-          deletedSources.add(idToDelete);
-          return _environment.writer.delete(idToDelete);
-        }
-        return null;
-      }).whereType<Future>());
+    await logTimedAsync(
+      _logger,
+      'Cleaning up outputs from previous builds.',
+      () async {
+        // Delete all the non-hidden outputs.
+        await Future.wait(
+          graph.outputs.map((id) {
+            var node = graph.get(id) as GeneratedAssetNode;
+            if (node.wasOutput && !node.isHidden) {
+              var idToDelete = id;
+              // If the package no longer exists, then the user must have renamed
+              // the root package.
+              //
+              // In that case we change `idToDelete` to be in the root package.
+              if (_options.packageGraph[id.package] == null) {
+                idToDelete = AssetId(_options.packageGraph.root.name, id.path);
+              }
+              deletedSources.add(idToDelete);
+              return _environment.writer.delete(idToDelete);
+            }
+            return null;
+          }).whereType<Future>(),
+        );
 
-      await _deleteGeneratedDir();
-    });
+        await _deleteGeneratedDir();
+      },
+    );
     return deletedSources;
   }
 
@@ -455,45 +525,63 @@ class _Loader {
   /// Once done, this returns a map of [AssetId] to [ChangeType] for all the
   /// changes.
   Future<Map<AssetId, ChangeType>> _updateAssetGraph(
-      AssetGraph assetGraph,
-      AssetTracker assetTracker,
-      List<BuildPhase> buildPhases,
-      Set<AssetId> inputSources,
-      Set<AssetId> cacheDirSources,
-      Set<AssetId> internalSources) async {
+    AssetGraph assetGraph,
+    AssetTracker assetTracker,
+    List<BuildPhase> buildPhases,
+    Set<AssetId> inputSources,
+    Set<AssetId> cacheDirSources,
+    Set<AssetId> internalSources,
+  ) async {
     var updates = await assetTracker._computeSourceUpdates(
-        inputSources, cacheDirSources, internalSources, assetGraph);
+      inputSources,
+      cacheDirSources,
+      internalSources,
+      assetGraph,
+    );
     updates.addAll(_computeBuilderOptionsUpdates(assetGraph, buildPhases));
     await assetGraph.updateAndInvalidate(
-        _buildPhases,
-        updates,
-        _options.packageGraph.root.name,
-        (id) => _wrapWriter(_environment.writer, assetGraph).delete(id),
-        _wrapReader(_environment.reader, assetGraph));
+      _buildPhases,
+      updates,
+      _options.packageGraph.root.name,
+      (id) => _wrapWriter(_environment.writer, assetGraph).delete(id),
+      _wrapReader(_environment.reader, assetGraph),
+    );
     return updates;
   }
 
   /// Wraps [original] in a [BuildCacheWriter].
   RunnerAssetWriter _wrapWriter(
-      RunnerAssetWriter original, AssetGraph assetGraph) {
+    RunnerAssetWriter original,
+    AssetGraph assetGraph,
+  ) {
     return BuildCacheWriter(
-        original, assetGraph, _options.packageGraph.root.name);
+      original,
+      assetGraph,
+      _options.packageGraph.root.name,
+    );
   }
 
   /// Wraps [original] in a [BuildCacheReader].
   AssetReader _wrapReader(AssetReader original, AssetGraph assetGraph) {
     return BuildCacheReader(
-        original, assetGraph, _options.packageGraph.root.name);
+      original,
+      assetGraph,
+      _options.packageGraph.root.name,
+    );
   }
 
   /// Checks for any updates to the [BuilderOptionsAssetNode]s for
   /// [buildPhases] compared to the last known state.
   Map<AssetId, ChangeType> _computeBuilderOptionsUpdates(
-      AssetGraph assetGraph, List<BuildPhase> buildPhases) {
+    AssetGraph assetGraph,
+    List<BuildPhase> buildPhases,
+  ) {
     var result = <AssetId, ChangeType>{};
 
     void updateBuilderOptionsNode(
-        AssetId builderOptionsId, BuilderOptions options) {
+      AssetId builderOptionsId,
+      BuilderOptions options,
+    ) {
       var builderOptionsNode =
           assetGraph.get(builderOptionsId) as BuilderOptionsAssetNode;
       var oldDigest = builderOptionsNode.lastKnownDigest;
@@ -507,13 +595,16 @@ class _Loader {
       var action = buildPhases[phase];
       if (action is InBuildPhase) {
         updateBuilderOptionsNode(
-            builderOptionsIdForAction(action, phase), action.builderOptions);
+          builderOptionsIdForAction(action, phase),
+          action.builderOptions,
+        );
       } else if (action is PostBuildPhase) {
         var actionNum = 0;
         for (var builderAction in action.builderActions) {
           updateBuilderOptionsNode(
-              builderOptionsIdForAction(builderAction, actionNum),
-              builderAction.builderOptions);
+            builderOptionsIdForAction(builderAction, actionNum),
+            builderAction.builderOptions,
+          );
           actionNum++;
         }
       }
@@ -524,28 +615,37 @@ class _Loader {
   /// Handles cleanup of pre-existing outputs for initial builds (where there is
   /// no cached graph).
   Future<void> _initialBuildCleanup(
-      Set<AssetId> conflictingAssets, RunnerAssetWriter writer) async {
+    Set<AssetId> conflictingAssets,
+    RunnerAssetWriter writer,
+  ) async {
     if (conflictingAssets.isEmpty) return;
 
     // Skip the prompt if using this option.
     if (_options.deleteFilesByDefault) {
-      _logger.info('Deleting ${conflictingAssets.length} declared outputs '
-          'which already existed on disk.');
+      _logger.info(
+        'Deleting ${conflictingAssets.length} declared outputs '
+        'which already existed on disk.',
+      );
       await Future.wait(conflictingAssets.map((id) => writer.delete(id)));
       return;
     }
 
     // Prompt the user to delete files that are declared as outputs.
-    _logger.info('Found ${conflictingAssets.length} declared outputs '
-        'which already exist on disk. This is likely because the'
-        '`$cacheDir` folder was deleted, or you are submitting generated '
-        'files to your source repository.');
+    _logger.info(
+      'Found ${conflictingAssets.length} declared outputs '
+      'which already exist on disk. This is likely because the'
+      '`$cacheDir` folder was deleted, or you are submitting generated '
+      'files to your source repository.',
+    );
 
     var done = false;
     while (!done) {
       try {
-        var choice = await _environment.prompt('Delete these files?',
-            ['Delete', 'Cancel build', 'List conflicts']);
+        var choice = await _environment.prompt('Delete these files?', [
+          'Delete',
+          'Cancel build',
+          'List conflicts',
+        ]);
         switch (choice) {
           case 0:
             _logger.info('Deleting files...');
@@ -553,10 +653,12 @@ class _Loader {
             await Future.wait(conflictingAssets.map((id) => writer.delete(id)));
             break;
           case 1:
-            _logger.severe('The build will not be able to contiue until the '
-                'conflicting assets are removed or the Builders which may '
-                'output them are disabled. The outputs are: '
-                '${conflictingAssets.map((a) => a.path).join('\n')}');
+            _logger.severe(
+              'The build will not be able to contiue until the '
+              'conflicting assets are removed or the Builders which may '
+              'output them are disabled. The outputs are: '
+              '${conflictingAssets.map((a) => a.path).join('\n')}',
+            );
             throw const CannotBuildException();
           case 2:
             _logger.info('Conflicts:\n${conflictingAssets.join('\n')}');
@@ -564,11 +666,13 @@ class _Loader {
             await Future(() {});
         }
       } on NonInteractiveBuildException {
-        _logger.severe('Conflicting outputs were detected and the build '
-            'is unable to prompt for permission to remove them. '
-            'These outputs must be removed manually or the build can be '
-            'run with `--delete-conflicting-outputs`. The outputs are: '
-            '${conflictingAssets.map((a) => a.path).join('\n')}');
+        _logger.severe(
+          'Conflicting outputs were detected and the build '
+          'is unable to prompt for permission to remove them. '
+          'These outputs must be removed manually or the build can be '
+          'run with `--delete-conflicting-outputs`. The outputs are: '
+          '${conflictingAssets.map((a) => a.path).join('\n')}',
+        );
         throw const CannotBuildException();
       }
     }

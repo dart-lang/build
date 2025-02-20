@@ -34,41 +34,48 @@ class PackageGraphWatcher {
     this._graph, {
     Logger? logger,
     PackageNodeWatcher Function(PackageNode node)? watch,
-  })  : _logger = logger ?? Logger('build_runner'),
-        _strategy = watch ?? _default;
+  }) : _logger = logger ?? Logger('build_runner'),
+       _strategy = watch ?? _default;
 
   /// Returns a stream of records for assets that changed in the package graph.
   Stream<AssetChange> watch() {
     assert(!_isWatching);
     _isWatching = true;
     return LazyStream(
-        () => logTimedSync(_logger, 'Setting up file watchers', _watch));
+      () => logTimedSync(_logger, 'Setting up file watchers', _watch),
+    );
   }
 
   Stream<AssetChange> _watch() {
-    final allWatchers = _graph.allPackages.values
-        .where((node) => node.dependencyType == DependencyType.path)
-        .map(_strategy)
-        .toList();
-    final filteredEvents = allWatchers
-        .map((w) => w
-                .watch()
-                .where(_nestedPathFilter(w.node))
-                .handleError((Object e, StackTrace s) {
-              _logger.severe(
+    final allWatchers =
+        _graph.allPackages.values
+            .where((node) => node.dependencyType == DependencyType.path)
+            .map(_strategy)
+            .toList();
+    final filteredEvents =
+        allWatchers
+            .map(
+              (w) => w.watch().where(_nestedPathFilter(w.node)).handleError((
+                Object e,
+                StackTrace s,
+              ) {
+                _logger.severe(
                   'Error from directory watcher for package:${w.node.name}\n\n'
                   'If you see this consistently then it is recommended that '
                   'you enable the polling file watcher with '
                   '--use-polling-watcher.\n\n',
                   e,
-                  s);
-            }))
-        .toList();
+                  s,
+                );
+              }),
+            )
+            .toList();
     // Asynchronously complete the `_readyCompleter` once all the watchers
     // are done.
     () async {
       await Future.wait(
-          allWatchers.map((nodeWatcher) => nodeWatcher.watcher.ready));
+        allWatchers.map((nodeWatcher) => nodeWatcher.watcher.ready),
+      );
       _readyCompleter.complete();
     }();
     return StreamGroup.merge(filteredEvents);
@@ -88,9 +95,11 @@ class PackageGraphWatcher {
           return node.path.length > rootNode.path.length &&
               node.path.startsWith(rootNode.path);
         })
-        .map((node) =>
-            node.path.substring(rootNode.path.length + 1) +
-            Platform.pathSeparator)
+        .map(
+          (node) =>
+              node.path.substring(rootNode.path.length + 1) +
+              Platform.pathSeparator,
+        )
         .toList();
   }
 }

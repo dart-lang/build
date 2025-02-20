@@ -48,24 +48,31 @@ class SdkJsCompileBuilder implements Builder {
     String? librariesPath,
     String? platformSdk,
     required this.canaryFeatures,
-  })  : platformSdk = platformSdk ?? sdkDir,
-        librariesPath = librariesPath ??
-            p.join(platformSdk ?? sdkDir, 'lib', 'libraries.json'),
-        buildExtensions = {
-          r'$package$': [
-            outputPath,
-            p.setExtension(outputPath, _jsSourceMapExtension),
-          ],
-        },
-        jsOutputId = AssetId('build_web_compilers', outputPath);
+  }) : platformSdk = platformSdk ?? sdkDir,
+       librariesPath =
+           librariesPath ??
+           p.join(platformSdk ?? sdkDir, 'lib', 'libraries.json'),
+       buildExtensions = {
+         r'$package$': [
+           outputPath,
+           p.setExtension(outputPath, _jsSourceMapExtension),
+         ],
+       },
+       jsOutputId = AssetId('build_web_compilers', outputPath);
 
   @override
   final Map<String, List<String>> buildExtensions;
 
   @override
   Future build(BuildStep buildStep) async {
-    await _createDevCompilerModule(buildStep, platformSdk, sdkKernelPath,
-        librariesPath, jsOutputId, canaryFeatures);
+    await _createDevCompilerModule(
+      buildStep,
+      platformSdk,
+      sdkKernelPath,
+      librariesPath,
+      jsOutputId,
+      canaryFeatures,
+    );
   }
 }
 
@@ -85,13 +92,21 @@ Future<void> _createDevCompilerModule(
   try {
     // Use standalone process instead of the worker due to
     // https://github.com/dart-lang/sdk/issues/49441
-    var snapshotPath =
-        p.join(sdkDir, 'bin', 'snapshots', 'dartdevc_aot.dart.snapshot');
+    var snapshotPath = p.join(
+      sdkDir,
+      'bin',
+      'snapshots',
+      'dartdevc_aot.dart.snapshot',
+    );
     var execSuffix = Platform.isWindows ? '.exe' : '';
     var dartPath = p.join(sdkDir, 'bin', 'dartaotruntime$execSuffix');
     if (!File(snapshotPath).existsSync()) {
-      snapshotPath =
-          p.join(sdkDir, 'bin', 'snapshots', 'dartdevc.dart.snapshot');
+      snapshotPath = p.join(
+        sdkDir,
+        'bin',
+        'snapshots',
+        'dartdevc.dart.snapshot',
+      );
       dartPath = p.join(sdkDir, 'bin', 'dart$execSuffix');
     }
     result = await Process.run(dartPath, [
@@ -124,6 +139,9 @@ Future<void> _createDevCompilerModule(
   // Copy the output back using the buildStep.
   await scratchSpace.copyOutput(jsOutputId, buildStep);
 
-  await fixAndCopySourceMap(jsOutputId.changeExtension(_jsSourceMapExtension),
-      scratchSpace, buildStep);
+  await fixAndCopySourceMap(
+    jsOutputId.changeExtension(_jsSourceMapExtension),
+    scratchSpace,
+    buildStep,
+  );
 }

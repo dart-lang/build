@@ -37,7 +37,10 @@ class BuildConfig {
   ///
   /// [path] should the path to a directory which may contain a `build.yaml`.
   static Future<BuildConfig> fromBuildConfigDir(
-      String packageName, Iterable<String> dependencies, String path) async {
+    String packageName,
+    Iterable<String> dependencies,
+    String path,
+  ) async {
     final configPath = p.join(path, 'build.yaml');
     final file = File(configPath);
     if (await file.exists()) {
@@ -77,21 +80,28 @@ class BuildConfig {
 
   /// The default config if you have no `build.yaml` file.
   factory BuildConfig.useDefault(
-      String packageName, Iterable<String> dependencies) {
-    return runInBuildConfigZone(() {
-      final key = '$packageName:$packageName';
-      final target = BuildTarget(
-        dependencies: dependencies
-            .map((dep) => normalizeTargetKeyUsage(dep, packageName))
-            .toList(),
-        sources: InputSet.anything,
-      );
-      return BuildConfig(
-        packageName: packageName,
-        buildTargets: {key: target},
-        globalOptions: {},
-      );
-    }, packageName, dependencies.toList());
+    String packageName,
+    Iterable<String> dependencies,
+  ) {
+    return runInBuildConfigZone(
+      () {
+        final key = '$packageName:$packageName';
+        final target = BuildTarget(
+          dependencies:
+              dependencies
+                  .map((dep) => normalizeTargetKeyUsage(dep, packageName))
+                  .toList(),
+          sources: InputSet.anything,
+        );
+        return BuildConfig(
+          packageName: packageName,
+          buildTargets: {key: target},
+          globalOptions: {},
+        );
+      },
+      packageName,
+      dependencies.toList(),
+    );
   }
 
   /// Create a [BuildConfig] by parsing [configYaml].
@@ -119,9 +129,15 @@ class BuildConfig {
 
   /// Create a [BuildConfig] read a map which was already parsed.
   factory BuildConfig.fromMap(
-      String packageName, Iterable<String> dependencies, Map config) {
-    return runInBuildConfigZone(() => BuildConfig._fromJson(config),
-        packageName, dependencies.toList());
+    String packageName,
+    Iterable<String> dependencies,
+    Map config,
+  ) {
+    return runInBuildConfigZone(
+      () => BuildConfig._fromJson(config),
+      packageName,
+      dependencies.toList(),
+    );
   }
 
   BuildConfig({
@@ -132,22 +148,27 @@ class BuildConfig {
     Map<String, PostProcessBuilderDefinition>? postProcessBuilderDefinitions =
         const {},
     this.additionalPublicAssets = const [],
-  })  : buildTargets =
-            identical(buildTargets, BuildConfig._placeholderBuildTarget)
-                ? {
-                    _defaultTarget(packageName ?? currentPackage): BuildTarget(
-                      dependencies: currentPackageDefaultDependencies,
-                    )
-                  }
-                : buildTargets,
-        globalOptions = (globalOptions ?? const {}).map((key, config) =>
-            MapEntry(normalizeBuilderKeyUsage(key, currentPackage), config)),
-        builderDefinitions = _normalizeBuilderDefinitions(
-            builderDefinitions ?? const {}, packageName ?? currentPackage),
-        postProcessBuilderDefinitions = _normalizeBuilderDefinitions(
-            postProcessBuilderDefinitions ?? const {},
-            packageName ?? currentPackage),
-        packageName = packageName ?? currentPackage {
+  }) : buildTargets =
+           identical(buildTargets, BuildConfig._placeholderBuildTarget)
+               ? {
+                 _defaultTarget(packageName ?? currentPackage): BuildTarget(
+                   dependencies: currentPackageDefaultDependencies,
+                 ),
+               }
+               : buildTargets,
+       globalOptions = (globalOptions ?? const {}).map(
+         (key, config) =>
+             MapEntry(normalizeBuilderKeyUsage(key, currentPackage), config),
+       ),
+       builderDefinitions = _normalizeBuilderDefinitions(
+         builderDefinitions ?? const {},
+         packageName ?? currentPackage,
+       ),
+       postProcessBuilderDefinitions = _normalizeBuilderDefinitions(
+         postProcessBuilderDefinitions ?? const {},
+         packageName ?? currentPackage,
+       ),
+       packageName = packageName ?? currentPackage {
     // Set up the expandos for all our build targets and definitions so they
     // can know which package and builder key they refer to.
     this.buildTargets.forEach((key, target) {
@@ -170,21 +191,29 @@ class BuildConfig {
 String _defaultTarget(String package) => '$package:$package';
 
 Map<String, T> _normalizeBuilderDefinitions<T>(
-        Map<String, T> builderDefinitions, String packageName) =>
-    builderDefinitions.map((key, definition) =>
-        MapEntry(normalizeBuilderKeyDefinition(key, packageName), definition));
+  Map<String, T> builderDefinitions,
+  String packageName,
+) => builderDefinitions.map(
+  (key, definition) =>
+      MapEntry(normalizeBuilderKeyDefinition(key, packageName), definition),
+);
 
 Map<String, BuildTarget> _buildTargetsFromJson(Map? json) {
   if (json == null) {
     return BuildConfig._placeholderBuildTarget;
   }
-  var targets = json.map((key, target) => MapEntry(
+  var targets = json.map(
+    (key, target) => MapEntry(
       normalizeTargetKeyDefinition(key as String, currentPackage),
-      BuildTarget.fromJson(target as Map)));
+      BuildTarget.fromJson(target as Map),
+    ),
+  );
 
   if (!targets.containsKey(_defaultTarget(currentPackage))) {
-    throw ArgumentError('Must specify a target with the name '
-        '`$currentPackage` or `\$default`.');
+    throw ArgumentError(
+      'Must specify a target with the name '
+      '`$currentPackage` or `\$default`.',
+    );
   }
 
   return targets;

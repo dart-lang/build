@@ -23,8 +23,12 @@ class OverrideableEnvironment implements BuildEnvironment {
   final void Function(LogRecord)? _onLog;
 
   final Future<BuildResult> Function(
-          BuildResult, FinalizedAssetsView, AssetReader, Set<BuildDirectory>)?
-      _finalizeBuild;
+    BuildResult,
+    FinalizedAssetsView,
+    AssetReader,
+    Set<BuildDirectory>,
+  )?
+  _finalizeBuild;
 
   OverrideableEnvironment(
     this._default, {
@@ -32,12 +36,16 @@ class OverrideableEnvironment implements BuildEnvironment {
     RunnerAssetWriter? writer,
     void Function(LogRecord)? onLog,
     Future<BuildResult> Function(
-            BuildResult, FinalizedAssetsView, AssetReader, Set<BuildDirectory>)?
-        finalizeBuild,
-  })  : _reader = reader,
-        _writer = writer,
-        _onLog = onLog,
-        _finalizeBuild = finalizeBuild;
+      BuildResult,
+      FinalizedAssetsView,
+      AssetReader,
+      Set<BuildDirectory>,
+    )?
+    finalizeBuild,
+  }) : _reader = reader,
+       _writer = writer,
+       _onLog = onLog,
+       _finalizeBuild = finalizeBuild;
 
   @override
   AssetReader get reader => _reader ?? _default.reader;
@@ -47,12 +55,16 @@ class OverrideableEnvironment implements BuildEnvironment {
 
   @override
   Future<BuildResult> finalizeBuild(
-          BuildResult buildResult,
-          FinalizedAssetsView finalizedAssetsView,
-          AssetReader reader,
-          Set<BuildDirectory> buildDirs) =>
-      (_finalizeBuild ?? _default.finalizeBuild)(
-          buildResult, finalizedAssetsView, reader, buildDirs);
+    BuildResult buildResult,
+    FinalizedAssetsView finalizedAssetsView,
+    AssetReader reader,
+    Set<BuildDirectory> buildDirs,
+  ) => (_finalizeBuild ?? _default.finalizeBuild)(
+    buildResult,
+    finalizedAssetsView,
+    reader,
+    buildDirs,
+  );
 
   @override
   void onLog(LogRecord record) => (_onLog ?? _default.onLog)(record);

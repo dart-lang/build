@@ -83,29 +83,38 @@ class AnalysisDriverModel {
   /// of deps to the [buildStep], but does not affect the reporting of
   /// files to the analysis driver.
   Future<void> performResolve(
-      BuildStep buildStep,
-      List<AssetId> entryPoints,
-      Future<void> Function(
-              FutureOr<void> Function(AnalysisDriverForPackageBuild))
-          withDriverResource,
-      {required bool transitive}) async {
+    BuildStep buildStep,
+    List<AssetId> entryPoints,
+    Future<void> Function(
+      FutureOr<void> Function(AnalysisDriverForPackageBuild),
+    )
+    withDriverResource, {
+    required bool transitive,
+  }) async {
     // Immediately take the lock on `driver` so that the whole class state,
     // `_graph` and `_readForAnalyzir`, is only mutated by one build step at a
     // time. Otherwise, interleaved access complicates processing significantly.
     await withDriverResource((driver) async {
-      return _performResolve(driver, buildStep, entryPoints, withDriverResource,
-          transitive: transitive);
+      return _performResolve(
+        driver,
+        buildStep,
+        entryPoints,
+        withDriverResource,
+        transitive: transitive,
+      );
     });
   }
 
   Future<void> _performResolve(
-      AnalysisDriverForPackageBuild driver,
-      BuildStep buildStep,
-      List<AssetId> entryPoints,
-      Future<void> Function(
-              FutureOr<void> Function(AnalysisDriverForPackageBuild))
-          withDriverResource,
-      {required bool transitive}) async {
+    AnalysisDriverForPackageBuild driver,
+    BuildStep buildStep,
+    List<AssetId> entryPoints,
+    Future<void> Function(
+      FutureOr<void> Function(AnalysisDriverForPackageBuild),
+    )
+    withDriverResource, {
+    required bool transitive,
+  }) async {
     var idsToSyncOntoFilesystem = entryPoints;
     Iterable<AssetId> inputIds = entryPoints;
 
@@ -147,9 +156,7 @@ const _ignoredSchemes = ['dart', 'dart-ext'];
 /// Parses Dart source in [content], returns all depedencies: all assets
 /// mentioned in directives, excluding `dart:` and `dart-ext` schemes.
 List<AssetId> _parseDependencies(String content, AssetId from) =>
-    parseString(content: content, throwIfDiagnostics: false)
-        .unit
-        .directives
+    parseString(content: content, throwIfDiagnostics: false).unit.directives
         .whereType<UriBasedDirective>()
         .map((directive) => directive.uri.stringValue)
         // Uri.stringValue can be null for strings that use interpolation.
@@ -198,14 +205,16 @@ class _Graph {
             previouslyMissingFiles.add(id);
           }
           // Load the node.
-          final hasTransitiveDigestAsset =
-              await reader.canRead(id.addExtension(_transitiveDigestExtension));
+          final hasTransitiveDigestAsset = await reader.canRead(
+            id.addExtension(_transitiveDigestExtension),
+          );
           final content = await reader.readAsString(id);
           final deps = _parseDependencies(content, id);
           node = _Node(
-              id: id,
-              deps: deps,
-              hasTransitiveDigestAsset: hasTransitiveDigestAsset);
+            id: id,
+            deps: deps,
+            hasTransitiveDigestAsset: hasTransitiveDigestAsset,
+          );
         } else {
           node ??= _Node.missing(id: id, hasTransitiveDigestAsset: false);
         }
@@ -266,18 +275,19 @@ class _Node {
   final bool isMissing;
   final bool hasTransitiveDigestAsset;
 
-  _Node(
-      {required this.id,
-      required this.deps,
-      required this.hasTransitiveDigestAsset})
-      : isMissing = false;
+  _Node({
+    required this.id,
+    required this.deps,
+    required this.hasTransitiveDigestAsset,
+  }) : isMissing = false;
 
   _Node.missing({required this.id, required this.hasTransitiveDigestAsset})
-      : isMissing = true,
-        deps = const [];
+    : isMissing = true,
+      deps = const [];
 
   @override
-  String toString() => '$id:'
+  String toString() =>
+      '$id:'
       '${hasTransitiveDigestAsset ? 'digest:' : ''}'
       '${isMissing ? 'missing' : deps}';
 }

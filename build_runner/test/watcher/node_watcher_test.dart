@@ -48,18 +48,9 @@ void main() {
       expect(
         nodeWatcher.watch(),
         emitsInAnyOrder([
-          AssetChange(
-            AssetId('a', 'lib/1.dart'),
-            ChangeType.ADD,
-          ),
-          AssetChange(
-            AssetId('a', 'lib/2.dart'),
-            ChangeType.MODIFY,
-          ),
-          AssetChange(
-            AssetId('a', 'lib/3.dart'),
-            ChangeType.REMOVE,
-          ),
+          AssetChange(AssetId('a', 'lib/1.dart'), ChangeType.ADD),
+          AssetChange(AssetId('a', 'lib/2.dart'), ChangeType.MODIFY),
+          AssetChange(AssetId('a', 'lib/3.dart'), ChangeType.REMOVE),
         ]),
       );
 
@@ -68,8 +59,12 @@ void main() {
     });
 
     test('should also respect relative watch URLs', () async {
-      var node = PackageNode('a',
-          p.relative(p.join(tmpDir.path, 'a'), from: p.current), null, null);
+      var node = PackageNode(
+        'a',
+        p.relative(p.join(tmpDir.path, 'a'), from: p.current),
+        null,
+        null,
+      );
       var nodeWatcher = PackageNodeWatcher(node);
 
       initFiles(node);
@@ -77,18 +72,9 @@ void main() {
       expect(
         nodeWatcher.watch(),
         emitsInAnyOrder([
-          AssetChange(
-            AssetId('a', 'lib/1.dart'),
-            ChangeType.ADD,
-          ),
-          AssetChange(
-            AssetId('a', 'lib/2.dart'),
-            ChangeType.MODIFY,
-          ),
-          AssetChange(
-            AssetId('a', 'lib/3.dart'),
-            ChangeType.REMOVE,
-          ),
+          AssetChange(AssetId('a', 'lib/1.dart'), ChangeType.ADD),
+          AssetChange(AssetId('a', 'lib/2.dart'), ChangeType.MODIFY),
+          AssetChange(AssetId('a', 'lib/3.dart'), ChangeType.REMOVE),
         ]),
       );
 

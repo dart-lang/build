@@ -22,7 +22,8 @@ class GlobbingBuilder extends Builder {
     var allAssets = await buildStep.findAssets(glob).toList();
     allAssets.sort((a, b) => a.path.compareTo(b.path));
     await buildStep.writeAsString(
-        buildStep.inputId.changeExtension('.matchingFiles'),
-        allAssets.map((id) => id.toString()).join('\n'));
+      buildStep.inputId.changeExtension('.matchingFiles'),
+      allAssets.map((id) => id.toString()).join('\n'),
+    );
   }
 }

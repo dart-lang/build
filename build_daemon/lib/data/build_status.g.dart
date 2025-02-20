@@ -23,12 +23,9 @@ BuildStatus _$valueOf(String name) {
   }
 }
 
-final BuiltSet<BuildStatus> _$values =
-    new BuiltSet<BuildStatus>(const <BuildStatus>[
-  _$started,
-  _$succeeded,
-  _$failed,
-]);
+final BuiltSet<BuildStatus> _$values = new BuiltSet<BuildStatus>(
+  const <BuildStatus>[_$started, _$succeeded, _$failed],
+);
 
 Serializer<BuildStatus> _$buildStatusSerializer = new _$BuildStatusSerializer();
 Serializer<DefaultBuildResult> _$defaultBuildResultSerializer =
@@ -43,14 +40,18 @@ class _$BuildStatusSerializer implements PrimitiveSerializer<BuildStatus> {
   final String wireName = 'BuildStatus';
 
   @override
-  Object serialize(Serializers serializers, BuildStatus object,
-          {FullType specifiedType = FullType.unspecified}) =>
-      object.name;
+  Object serialize(
+    Serializers serializers,
+    BuildStatus object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => object.name;
 
   @override
-  BuildStatus deserialize(Serializers serializers, Object serialized,
-          {FullType specifiedType = FullType.unspecified}) =>
-      BuildStatus.valueOf(serialized as String);
+  BuildStatus deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => BuildStatus.valueOf(serialized as String);
 }
 
 class _$DefaultBuildResultSerializer
@@ -62,45 +63,56 @@ class _$DefaultBuildResultSerializer
 
   @override
   Iterable<Object?> serialize(
-      Serializers serializers, DefaultBuildResult object,
-      {FullType specifiedType = FullType.unspecified}) {
+    Serializers serializers,
+    DefaultBuildResult object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = <Object?>[
       'status',
-      serializers.serialize(object.status,
-          specifiedType: const FullType(BuildStatus)),
+      serializers.serialize(
+        object.status,
+        specifiedType: const FullType(BuildStatus),
+      ),
       'target',
-      serializers.serialize(object.target,
-          specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.target,
+        specifiedType: const FullType(String),
+      ),
     ];
     Object? value;
     value = object.buildId;
     if (value != null) {
       result
         ..add('buildId')
-        ..add(serializers.serialize(value,
-            specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     value = object.error;
     if (value != null) {
       result
         ..add('error')
-        ..add(serializers.serialize(value,
-            specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     value = object.isCached;
     if (value != null) {
       result
         ..add('isCached')
         ..add(
-            serializers.serialize(value, specifiedType: const FullType(bool)));
+          serializers.serialize(value, specifiedType: const FullType(bool)),
+        );
     }
     return result;
   }
 
   @override
   DefaultBuildResult deserialize(
-      Serializers serializers, Iterable<Object?> serialized,
-      {FullType specifiedType = FullType.unspecified}) {
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = new DefaultBuildResultBuilder();
 
     final iterator = serialized.iterator;
@@ -110,24 +122,44 @@ class _$DefaultBuildResultSerializer
       final Object? value = iterator.current;
       switch (key) {
         case 'status':
-          result.status = serializers.deserialize(value,
-              specifiedType: const FullType(BuildStatus))! as BuildStatus;
+          result.status =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(BuildStatus),
+                  )!
+                  as BuildStatus;
           break;
         case 'target':
-          result.target = serializers.deserialize(value,
-              specifiedType: const FullType(String))! as String;
+          result.target =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'buildId':
-          result.buildId = serializers.deserialize(value,
-              specifiedType: const FullType(String)) as String?;
+          result.buildId =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )
+                  as String?;
           break;
         case 'error':
-          result.error = serializers.deserialize(value,
-              specifiedType: const FullType(String)) as String?;
+          result.error =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )
+                  as String?;
           break;
         case 'isCached':
-          result.isCached = serializers.deserialize(value,
-              specifiedType: const FullType(bool)) as bool?;
+          result.isCached =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(bool),
+                  )
+                  as bool?;
           break;
       }
     }
@@ -143,30 +175,43 @@ class _$BuildResultsSerializer implements StructuredSerializer<BuildResults> {
   final String wireName = 'BuildResults';
 
   @override
-  Iterable<Object?> serialize(Serializers serializers, BuildResults object,
-      {FullType specifiedType = FullType.unspecified}) {
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    BuildResults object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = <Object?>[
       'results',
-      serializers.serialize(object.results,
-          specifiedType:
-              const FullType(BuiltList, const [const FullType(BuildResult)])),
+      serializers.serialize(
+        object.results,
+        specifiedType: const FullType(BuiltList, const [
+          const FullType(BuildResult),
+        ]),
+      ),
     ];
     Object? value;
     value = object.changedAssets;
     if (value != null) {
       result
         ..add('changedAssets')
-        ..add(serializers.serialize(value,
-            specifiedType:
-                const FullType(BuiltList, const [const FullType(Uri)])));
+        ..add(
+          serializers.serialize(
+            value,
+            specifiedType: const FullType(BuiltList, const [
+              const FullType(Uri),
+            ]),
+          ),
+        );
     }
     return result;
   }
 
   @override
   BuildResults deserialize(
-      Serializers serializers, Iterable<Object?> serialized,
-      {FullType specifiedType = FullType.unspecified}) {
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = new BuildResultsBuilder();
 
     final iterator = serialized.iterator;
@@ -176,16 +221,26 @@ class _$BuildResultsSerializer implements StructuredSerializer<BuildResults> {
       final Object? value = iterator.current;
       switch (key) {
         case 'results':
-          result.results.replace(serializers.deserialize(value,
-                  specifiedType: const FullType(
-                      BuiltList, const [const FullType(BuildResult)]))!
-              as BuiltList<Object?>);
+          result.results.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltList, const [
+                    const FullType(BuildResult),
+                  ]),
+                )!
+                as BuiltList<Object?>,
+          );
           break;
         case 'changedAssets':
-          result.changedAssets.replace(serializers.deserialize(value,
-                  specifiedType:
-                      const FullType(BuiltList, const [const FullType(Uri)]))!
-              as BuiltList<Object?>);
+          result.changedAssets.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltList, const [
+                    const FullType(Uri),
+                  ]),
+                )!
+                as BuiltList<Object?>,
+          );
           break;
       }
     }
@@ -206,27 +261,33 @@ class _$DefaultBuildResult extends DefaultBuildResult {
   @override
   final bool? isCached;
 
-  factory _$DefaultBuildResult(
-          [void Function(DefaultBuildResultBuilder)? updates]) =>
-      (new DefaultBuildResultBuilder()..update(updates))._build();
+  factory _$DefaultBuildResult([
+    void Function(DefaultBuildResultBuilder)? updates,
+  ]) => (new DefaultBuildResultBuilder()..update(updates))._build();
 
-  _$DefaultBuildResult._(
-      {required this.status,
-      required this.target,
-      this.buildId,
-      this.error,
-      this.isCached})
-      : super._() {
+  _$DefaultBuildResult._({
+    required this.status,
+    required this.target,
+    this.buildId,
+    this.error,
+    this.isCached,
+  }) : super._() {
     BuiltValueNullFieldError.checkNotNull(
-        status, r'DefaultBuildResult', 'status');
+      status,
+      r'DefaultBuildResult',
+      'status',
+    );
     BuiltValueNullFieldError.checkNotNull(
-        target, r'DefaultBuildResult', 'target');
+      target,
+      r'DefaultBuildResult',
+      'target',
+    );
   }
 
   @override
   DefaultBuildResult rebuild(
-          void Function(DefaultBuildResultBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(DefaultBuildResultBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   DefaultBuildResultBuilder toBuilder() =>
@@ -321,15 +382,23 @@ class DefaultBuildResultBuilder
   DefaultBuildResult build() => _build();
 
   _$DefaultBuildResult _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         new _$DefaultBuildResult._(
-            status: BuiltValueNullFieldError.checkNotNull(
-                status, r'DefaultBuildResult', 'status'),
-            target: BuiltValueNullFieldError.checkNotNull(
-                target, r'DefaultBuildResult', 'target'),
-            buildId: buildId,
-            error: error,
-            isCached: isCached);
+          status: BuiltValueNullFieldError.checkNotNull(
+            status,
+            r'DefaultBuildResult',
+            'status',
+          ),
+          target: BuiltValueNullFieldError.checkNotNull(
+            target,
+            r'DefaultBuildResult',
+            'target',
+          ),
+          buildId: buildId,
+          error: error,
+          isCached: isCached,
+        );
     replace(_$result);
     return _$result;
   }
@@ -425,9 +494,12 @@ class BuildResultsBuilder
   _$BuildResults _build() {
     _$BuildResults _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           new _$BuildResults._(
-              results: results.build(), changedAssets: _changedAssets?.build());
+            results: results.build(),
+            changedAssets: _changedAssets?.build(),
+          );
     } catch (_) {
       late String _$failedField;
       try {
@@ -437,7 +509,10 @@ class BuildResultsBuilder
         _changedAssets?.build();
       } catch (e) {
         throw new BuiltValueNestedFieldError(
-            r'BuildResults', _$failedField, e.toString());
+          r'BuildResults',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

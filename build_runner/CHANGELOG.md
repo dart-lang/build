@@ -1,5 +1,6 @@
 ## 2.4.16-wip
 
+- Bump the min SDK to 3.7.0.
 - Use `build_test` 3.0.0.
 - Start using `package:build/src/internal.dart'.
 - Refactor `MultiPackageAssetReader` to internal `AssetFinder`.

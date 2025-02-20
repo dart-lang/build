@@ -23,8 +23,10 @@ void main() async {
   var searchForm = document.getElementById('searchform') as HTMLFormElement;
   searchForm.onSubmit.listen((e) {
     e.preventDefault();
-    _focus(searchBox.value.trim(),
-        filterBox.value.isNotEmpty ? filterBox.value : null);
+    _focus(
+      searchBox.value.trim(),
+      filterBox.value.isNotEmpty ? filterBox.value : null,
+    );
   });
   _graphReference.initializeGraph(_focus.toJS);
 }
@@ -53,7 +55,7 @@ void _focus(String query, [String? filter]) async {
     var msg = [
       'Error requesting query "$query".',
       '${response.statusCode} ${response.reasonPhrase ?? ''}',
-      response.body
+      response.body,
     ].join('\n');
     _error(msg);
     return;
@@ -62,14 +64,15 @@ void _focus(String query, [String? filter]) async {
   var graphData = {'edges': nodeInfo['edges'], 'nodes': nodeInfo['nodes']};
   _graphReference.setData(graphData.jsify() as JSObject);
   var primaryNode = nodeInfo['primary'] as Map<String, Object?>;
-  _details.innerHTML = '<strong>ID:</strong> ${primaryNode['id']} <br />'
-          '<strong>Type:</strong> ${primaryNode['type']}<br />'
-          '<strong>Hidden:</strong> ${primaryNode['hidden']} <br />'
-          '<strong>State:</strong> ${primaryNode['state']} <br />'
-          '<strong>Was Output:</strong> ${primaryNode['wasOutput']} <br />'
-          '<strong>Failed:</strong> ${primaryNode['isFailure']} <br />'
-          '<strong>Phase:</strong> ${primaryNode['phaseNumber']} <br />'
-          '<strong>Glob:</strong> ${primaryNode['glob']}<br />'
-          '<strong>Last Digest:</strong> ${primaryNode['lastKnownDigest']}<br />'
-      .toJS;
+  _details.innerHTML =
+      '<strong>ID:</strong> ${primaryNode['id']} <br />'
+              '<strong>Type:</strong> ${primaryNode['type']}<br />'
+              '<strong>Hidden:</strong> ${primaryNode['hidden']} <br />'
+              '<strong>State:</strong> ${primaryNode['state']} <br />'
+              '<strong>Was Output:</strong> ${primaryNode['wasOutput']} <br />'
+              '<strong>Failed:</strong> ${primaryNode['isFailure']} <br />'
+              '<strong>Phase:</strong> ${primaryNode['phaseNumber']} <br />'
+              '<strong>Glob:</strong> ${primaryNode['glob']}<br />'
+              '<strong>Last Digest:</strong> ${primaryNode['lastKnownDigest']}<br />'
+          .toJS;
 }

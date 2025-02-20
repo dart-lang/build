@@ -13,38 +13,44 @@ import 'utils/build_descriptor.dart';
 
 // test-package-start #########################################################
 final alwaysThrow = TestBuilder(
-    buildExtensions: {
-      '.txt': ['.txt.copy'],
-    },
-    build: (_, __) {
-      throw StateError('Build action failure');
-    });
+  buildExtensions: {
+    '.txt': ['.txt.copy'],
+  },
+  build: (_, __) {
+    throw StateError('Build action failure');
+  },
+);
 // test-package-end ###########################################################
 
 void main() {
-  final builders = [
-    builder('alwaysThrow', alwaysThrow),
-  ];
+  final builders = [builder('alwaysThrow', alwaysThrow)];
 
   late BuildTool buildTool;
 
   setUpAll(() async {
-    buildTool = await packageWithBuildScript(builders, contents: [
-      d.dir('web', [d.file('a.txt', 'a')])
-    ]);
+    buildTool = await packageWithBuildScript(
+      builders,
+      contents: [
+        d.dir('web', [d.file('a.txt', 'a')]),
+      ],
+    );
   });
 
   group('build', () {
     test('replays errors on builds with no change', () async {
       final firstBuild = await buildTool.build(expectExitCode: 1);
       await expectLater(
-          firstBuild, emitsThrough(contains('Build action failure')));
+        firstBuild,
+        emitsThrough(contains('Build action failure')),
+      );
 
       // Run another build, no action should run but the failure will be logged
       // again
       final nextBuild = await buildTool.build(expectExitCode: 1);
       await expectLater(
-          nextBuild, emitsThrough(contains('Build action failure')));
+        nextBuild,
+        emitsThrough(contains('Build action failure')),
+      );
     });
   });
 }

@@ -10,9 +10,14 @@ import 'package:test/test.dart';
 
 /// Forwards to [testBuilder], and adds all output assets to [assets].
 Future<void> testBuilderAndCollectAssets(
-    Builder builder, Map<String, Object> assets) async {
-  final result = await testBuilder(builder, assets,
-      onLog: (log) => printOnFailure('${log.level}: ${log.message}'));
+  Builder builder,
+  Map<String, Object> assets,
+) async {
+  final result = await testBuilder(
+    builder,
+    assets,
+    onLog: (log) => printOnFailure('${log.level}: ${log.message}'),
+  );
   result.readerWriter.assets.forEach((id, value) {
     assets['${id.package}|${id.path}'] = value;
   });

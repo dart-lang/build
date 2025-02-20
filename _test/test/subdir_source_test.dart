@@ -24,8 +24,9 @@ void main() {
 
       await Future.any([
         scriptTag.onLoad.first,
-        scriptTag.onError.first
-            .then((_) => fail('Script from sub directory failed to load'))
+        scriptTag.onError.first.then(
+          (_) => fail('Script from sub directory failed to load'),
+        ),
       ]);
 
       await pumpEventQueue();
@@ -34,8 +35,9 @@ void main() {
       // propery.
       expect(globalContext.has('otherScriptLoaded'), isTrue);
     },
-    skip: wasCompiledWithDdc
-        ? 'This requires multiple Dart entrypoints, which appears to break DDC'
-        : null,
+    skip:
+        wasCompiledWithDdc
+            ? 'This requires multiple Dart entrypoints, which appears to break DDC'
+            : null,
   );
 }

@@ -16,8 +16,9 @@ import 'package_graph.dart';
 /// based on build config.
 class TargetGraph {
   static final InputMatcher _defaultMatcherForNonRoot = InputMatcher(
-      const InputSet(),
-      defaultInclude: defaultNonRootVisibleAssets);
+    const InputSet(),
+    defaultInclude: defaultNonRootVisibleAssets,
+  );
 
   /// All [TargetNode]s indexed by `"$packageName:$targetName"`.
   final Map<String, TargetNode> allModules;
@@ -53,17 +54,20 @@ class TargetGraph {
   ///
   /// All [requiredRootSourcePaths] should appear in the root package. A
   /// warning is logged if this condition is not met.
-  static Future<TargetGraph> forPackageGraph(PackageGraph packageGraph,
-      {Map<String, BuildConfig> overrideBuildConfig = const {},
-      required List<String> defaultRootPackageSources,
-      List<String> requiredSourcePaths = const [],
-      List<String> requiredRootSourcePaths = const []}) async {
+  static Future<TargetGraph> forPackageGraph(
+    PackageGraph packageGraph, {
+    Map<String, BuildConfig> overrideBuildConfig = const {},
+    required List<String> defaultRootPackageSources,
+    List<String> requiredSourcePaths = const [],
+    List<String> requiredRootSourcePaths = const [],
+  }) async {
     final modulesByKey = <String, TargetNode>{};
     final publicAssetsByPackage = <String, InputMatcher>{};
     final modulesByPackage = <String, List<TargetNode>>{};
     late BuildConfig rootPackageConfig;
     for (final package in packageGraph.allPackages.values) {
-      final config = overrideBuildConfig[package.name] ??
+      final config =
+          overrideBuildConfig[package.name] ??
           await _packageBuildConfig(package);
       List<String> defaultInclude;
       if (package.isRoot) {
@@ -80,30 +84,33 @@ class TargetGraph {
       } else {
         defaultInclude = [
           ...defaultNonRootVisibleAssets,
-          ...config.additionalPublicAssets
+          ...config.additionalPublicAssets,
         ];
       }
       publicAssetsByPackage[package.name] = InputMatcher(
         const InputSet(),
         defaultInclude: [
           ...defaultNonRootVisibleAssets, // public by default
-          ...config.additionalPublicAssets // user-defined public assets
+          ...config.additionalPublicAssets, // user-defined public assets
         ],
       );
-      final nodes = config.buildTargets.values.map((target) =>
-          TargetNode(target, package, defaultInclude: defaultInclude));
+      final nodes = config.buildTargets.values.map(
+        (target) => TargetNode(target, package, defaultInclude: defaultInclude),
+      );
       if (package.name != r'$sdk') {
         var requiredPackagePaths =
             package.isRoot ? requiredRootSourcePaths : requiredSourcePaths;
-        var requiredIds =
-            requiredPackagePaths.map((path) => AssetId(package.name, path));
+        var requiredIds = requiredPackagePaths.map(
+          (path) => AssetId(package.name, path),
+        );
         var missing = _missingSources(nodes, requiredIds);
         if (missing.isNotEmpty) {
           log.warning(
-              'The package `${package.name}` does not include some required '
-              'sources in any of its targets (see their build.yaml file).\n'
-              'The missing sources are:\n'
-              '${missing.map((s) => '  - ${s.path}').join('\n')}');
+            'The package `${package.name}` does not include some required '
+            'sources in any of its targets (see their build.yaml file).\n'
+            'The missing sources are:\n'
+            '${missing.map((s) => '  - ${s.path}').join('\n')}',
+          );
         }
       }
       for (final node in nodes) {
@@ -137,7 +144,7 @@ class TargetGraph {
         // `_matcherForNonRoot` always returns a matcher with non-null include
         // globs.
         for (final glob in _matcherForNonRoot(package).includeGlobs!)
-          glob.pattern
+          glob.pattern,
       ];
     }
   }
@@ -198,8 +205,10 @@ class TargetNode {
   final InputMatcher _sourcesMatcher;
 
   TargetNode(this.target, this.package, {required List<String> defaultInclude})
-      : _sourcesMatcher =
-            InputMatcher(target.sources, defaultInclude: defaultInclude);
+    : _sourcesMatcher = InputMatcher(
+        target.sources,
+        defaultInclude: defaultInclude,
+      );
 
   bool excludesSource(AssetId id) => _sourcesMatcher.excludes(id);
 
@@ -213,7 +222,10 @@ Future<BuildConfig> _packageBuildConfig(PackageNode package) async {
   final dependencyNames = package.dependencies.map((n) => n.name);
   try {
     return await BuildConfig.fromBuildConfigDir(
-        package.name, dependencyNames, package.path);
+      package.name,
+      dependencyNames,
+      package.path,
+    );
   } on ArgumentError // ignore: avoid_catching_errors
   catch (e) {
     throw BuildConfigParseException(package.name, e);
@@ -229,5 +241,6 @@ class BuildConfigParseException implements Exception {
 
 /// Returns the [sources] are not included in any [targets].
 Iterable<AssetId> _missingSources(
-        Iterable<TargetNode> targets, Iterable<AssetId> sources) =>
-    sources.where((s) => !targets.any((t) => t.matchesSource(s)));
+  Iterable<TargetNode> targets,
+  Iterable<AssetId> sources,
+) => sources.where((s) => !targets.any((t) => t.matchesSource(s)));

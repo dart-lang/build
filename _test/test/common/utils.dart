@@ -31,22 +31,22 @@ Future<ProcessResult> runCommand(List<String> args) =>
 /// build to complete.
 ///
 /// To ensure a clean build, set [ensureCleanBuild] to `true`.
-Future<void> startServer(
-        {bool? ensureCleanBuild, List<String>? buildArgs}) async =>
-    _startServer(
-      'dart',
-      [
-        '--packages=${(await Isolate.packageConfig).toString()}',
-        p.join('..', 'build_runner', 'bin', 'build_runner.dart'),
-        'serve',
-        '--verbose',
-        if (buildArgs != null) ...buildArgs,
-      ],
-      ensureCleanBuild: ensureCleanBuild,
-    );
+Future<void> startServer({
+  bool? ensureCleanBuild,
+  List<String>? buildArgs,
+}) async => _startServer('dart', [
+  '--packages=${(await Isolate.packageConfig).toString()}',
+  p.join('..', 'build_runner', 'bin', 'build_runner.dart'),
+  'serve',
+  '--verbose',
+  if (buildArgs != null) ...buildArgs,
+], ensureCleanBuild: ensureCleanBuild);
 
-Future<ProcessResult> _runBuild(String command, List<String> args,
-    {bool? ensureCleanBuild}) async {
+Future<ProcessResult> _runBuild(
+  String command,
+  List<String> args, {
+  bool? ensureCleanBuild,
+}) async {
   ensureCleanBuild ??= false;
 
   // Make sure this is a clean build
@@ -60,8 +60,11 @@ Future<ProcessResult> _runBuild(String command, List<String> args,
   return result;
 }
 
-Future<void> _startServer(String command, List<String> buildArgs,
-    {bool? ensureCleanBuild}) async {
+Future<void> _startServer(
+  String command,
+  List<String> buildArgs, {
+  bool? ensureCleanBuild,
+}) async {
   ensureCleanBuild ??= false;
 
   // Make sure this is a clean build
@@ -70,18 +73,23 @@ Future<void> _startServer(String command, List<String> buildArgs,
   }
 
   final proc = _process = await Process.start(command, buildArgs);
-  unawaited(proc.exitCode.then((_) {
-    if (_process != null) _process = null;
-  }));
-  final stdOutLines = _stdOutLines = proc.stdout
-      .transform(utf8.decoder)
-      .transform(const LineSplitter())
-      .asBroadcastStream();
+  unawaited(
+    proc.exitCode.then((_) {
+      if (_process != null) _process = null;
+    }),
+  );
+  final stdOutLines =
+      _stdOutLines =
+          proc.stdout
+              .transform(utf8.decoder)
+              .transform(const LineSplitter())
+              .asBroadcastStream();
 
-  var stdErrLines = proc.stderr
-      .transform(utf8.decoder)
-      .transform(const LineSplitter())
-      .asBroadcastStream();
+  var stdErrLines =
+      proc.stderr
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .asBroadcastStream();
 
   stdOutLines.listen((line) => printOnFailure('StdOut: $line'));
   stdErrLines.listen((line) => printOnFailure('StdErr: $line'));
@@ -123,8 +131,11 @@ bool _gitIsClean() {
 /// state for this directory after running the test.
 void ensureCleanGitClient() {
   var gitWasClean = _gitIsClean();
-  expect(gitWasClean, isTrue,
-      reason: 'Not running on a clean git client, aborting test.\n');
+  expect(
+    gitWasClean,
+    isTrue,
+    reason: 'Not running on a clean git client, aborting test.\n',
+  );
 
   addTearDown(_resetGitClient);
 }
@@ -155,32 +166,36 @@ Future<String> nextStdOutLine(String message) =>
     _stdOutLines!.firstWhere((line) => line.contains(message));
 
 /// Runs tests using the auto build script.
-Future<TestProcess> runTests(
-    {bool? usePrecompiled,
-    List<String>? buildArgs,
-    List<String>? testArgs}) async {
-  return _runTests('dart', ['run', 'build_runner'],
-      usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
+Future<TestProcess> runTests({
+  bool? usePrecompiled,
+  List<String>? buildArgs,
+  List<String>? testArgs,
+}) async {
+  return _runTests(
+    'dart',
+    ['run', 'build_runner'],
+    usePrecompiled: usePrecompiled,
+    buildArgs: buildArgs,
+    testArgs: testArgs,
+  );
 }
 
-Future<TestProcess> _runTests(String executable, List<String> scriptArgs,
-    {bool? usePrecompiled,
-    List<String>? buildArgs,
-    List<String>? testArgs}) async {
+Future<TestProcess> _runTests(
+  String executable,
+  List<String> scriptArgs, {
+  bool? usePrecompiled,
+  List<String>? buildArgs,
+  List<String>? testArgs,
+}) async {
   usePrecompiled ??= true;
   if (usePrecompiled) {
-    var args = scriptArgs.toList()
-      ..add('test')
-      ..add('--verbose')
-      ..addAll(buildArgs ?? [])
-      ..add('--')
-      ..addAll([
-        ...?testArgs,
-        '-p',
-        'chrome',
-        '-r',
-        'expanded',
-      ]);
+    var args =
+        scriptArgs.toList()
+          ..add('test')
+          ..add('--verbose')
+          ..addAll(buildArgs ?? [])
+          ..add('--')
+          ..addAll([...?testArgs, '-p', 'chrome', '-r', 'expanded']);
     return TestProcess.start(executable, args);
   } else {
     var args = ['run', 'test', '--pub-serve', '8081', ...?testArgs];
@@ -188,23 +203,31 @@ Future<TestProcess> _runTests(String executable, List<String> scriptArgs,
   }
 }
 
-Future<void> expectTestsFail(
-    {bool? usePrecompiled,
-    List<String>? buildArgs,
-    List<String>? testArgs}) async {
+Future<void> expectTestsFail({
+  bool? usePrecompiled,
+  List<String>? buildArgs,
+  List<String>? testArgs,
+}) async {
   var result = await runTests(
-      usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
+    usePrecompiled: usePrecompiled,
+    buildArgs: buildArgs,
+    testArgs: testArgs,
+  );
   expect(result.stdout, emitsThrough(contains('Some tests failed')));
   expect(await result.exitCode, isNot(0));
 }
 
-Future<void> expectTestsPass(
-    {int? expectedNumRan,
-    bool? usePrecompiled,
-    List<String>? buildArgs,
-    List<String>? testArgs}) async {
+Future<void> expectTestsPass({
+  int? expectedNumRan,
+  bool? usePrecompiled,
+  List<String>? buildArgs,
+  List<String>? testArgs,
+}) async {
   var result = await runTests(
-      usePrecompiled: usePrecompiled, buildArgs: buildArgs, testArgs: testArgs);
+    usePrecompiled: usePrecompiled,
+    buildArgs: buildArgs,
+    testArgs: testArgs,
+  );
   var allLines = await result.stdout.rest.toList();
   expect(allLines, contains(contains('All tests passed!')));
   if (expectedNumRan != null) {

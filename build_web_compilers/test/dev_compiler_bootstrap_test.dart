@@ -40,26 +40,33 @@ void main() {
         'a|web/index.digests': decodedMatches(contains('packages/')),
         'a|web/index.dart.js': decodedMatches(contains('index.dart.bootstrap')),
         'a|web/index.dart.ddc_merged_metadata': isNotEmpty,
-        'a|web/index.dart.bootstrap.js': decodedMatches(allOf([
-          // Maps non-lib modules to remove the top level dir.
-          contains('"web/index": "index.ddc"'),
-          // Maps lib modules to packages path
-          contains('"packages/a/a": "packages/a/a.ddc"'),
-          contains('"packages/b/b": "packages/b/b.ddc"'),
-          // Requires the top level module and dart sdk.
-          contains('define("index.dart.bootstrap", ["web/index", "dart_sdk"]'),
-          // Calls main on the top level module.
-          contains('(app.web__index || app.index).main()'),
-          isNot(contains('lib/a')),
-        ])),
+        'a|web/index.dart.bootstrap.js': decodedMatches(
+          allOf([
+            // Maps non-lib modules to remove the top level dir.
+            contains('"web/index": "index.ddc"'),
+            // Maps lib modules to packages path
+            contains('"packages/a/a": "packages/a/a.ddc"'),
+            contains('"packages/b/b": "packages/b/b.ddc"'),
+            // Requires the top level module and dart sdk.
+            contains(
+              'define("index.dart.bootstrap", ["web/index", "dart_sdk"]',
+            ),
+            // Calls main on the top level module.
+            contains('(app.web__index || app.index).main()'),
+            isNot(contains('lib/a')),
+          ]),
+        ),
       };
       await testBuilder(
-          WebEntrypointBuilder.fromOptions(const BuilderOptions({
+        WebEntrypointBuilder.fromOptions(
+          const BuilderOptions({
             'compiler': 'dartdevc',
             'native_null_assertions': false,
-          })),
-          assets,
-          outputs: expectedOutputs);
+          }),
+        ),
+        assets,
+        outputs: expectedOutputs,
+      );
     });
   });
   group('regression tests', () {
@@ -81,62 +88,73 @@ void main() {
 
       // Check that we are invoking the correct
       var expectedOutputs = {
-        'a|web/b.dart.bootstrap.js': decodedMatches(allOf([
-          // Confirm that `a.dart` is the actual primary source.
-          contains('"web/a": "a.ddc"'),
-          // And `b.dart` is the application, but its module is `web/a`.
-          contains('define("b.dart.bootstrap", ["web/a", "dart_sdk"]'),
-          // Calls main on the `b.dart` library, not the `a.dart` library.
-          contains('(app.web__b || app.b).main()'),
-          contains('if (childName === "b.dart")'),
-        ])),
+        'a|web/b.dart.bootstrap.js': decodedMatches(
+          allOf([
+            // Confirm that `a.dart` is the actual primary source.
+            contains('"web/a": "a.ddc"'),
+            // And `b.dart` is the application, but its module is `web/a`.
+            contains('define("b.dart.bootstrap", ["web/a", "dart_sdk"]'),
+            // Calls main on the `b.dart` library, not the `a.dart` library.
+            contains('(app.web__b || app.b).main()'),
+            contains('if (childName === "b.dart")'),
+          ]),
+        ),
         'a|web/b.digests': isNotEmpty,
         'a|web/b.dart.ddc_merged_metadata': isNotEmpty,
         'a|web/b.dart.js': isNotEmpty,
       };
       await testBuilder(
-          WebEntrypointBuilder.fromOptions(const BuilderOptions({
+        WebEntrypointBuilder.fromOptions(
+          const BuilderOptions({
             'compiler': 'dartdevc',
             'native_null_assertions': false,
-          })),
-          assets,
-          outputs: expectedOutputs);
+          }),
+        ),
+        assets,
+        outputs: expectedOutputs,
+      );
     });
 
     test('root dart file is under lib', () async {
-      assets = {
-        'a|lib/app.dart': 'void main() {}',
-      };
+      assets = {'a|lib/app.dart': 'void main() {}'};
       await runPrerequisites(assets);
 
       var expectedOutputs = {
-        'a|lib/app.dart.bootstrap.js': decodedMatches(allOf([
-          // Confirm that the child name is referenced via a package: uri
-          // and not relative path to the root dir being served.
-          contains('if (childName === "package:a/app.dart")'),
-        ])),
+        'a|lib/app.dart.bootstrap.js': decodedMatches(
+          allOf([
+            // Confirm that the child name is referenced via a package: uri
+            // and not relative path to the root dir being served.
+            contains('if (childName === "package:a/app.dart")'),
+          ]),
+        ),
         'a|lib/app.digests': isNotEmpty,
         'a|lib/app.dart.ddc_merged_metadata': isNotEmpty,
         'a|lib/app.dart.js': isNotEmpty,
       };
       await testBuilder(
-          WebEntrypointBuilder.fromOptions(const BuilderOptions({
+        WebEntrypointBuilder.fromOptions(
+          const BuilderOptions({
             'compiler': 'dartdevc',
             'native_null_assertions': false,
-          })),
-          assets,
-          outputs: expectedOutputs);
+          }),
+        ),
+        assets,
+        outputs: expectedOutputs,
+      );
     });
 
     test('can enable canary features for SDK', () async {
       var sdkAssets = <String, Object>{'build_web_compilers|fake.txt': ''};
       await testBuilderAndCollectAssets(
-          sdkJsCompile(const BuilderOptions({'canary': true})), sdkAssets);
+        sdkJsCompile(const BuilderOptions({'canary': true})),
+        sdkAssets,
+      );
 
       var expectedOutputs = {
         'build_web_compilers|fake.txt': isEmpty,
-        'build_web_compilers|lib/src/dev_compiler/dart_sdk.js':
-            decodedMatches(contains('canary')),
+        'build_web_compilers|lib/src/dev_compiler/dart_sdk.js': decodedMatches(
+          contains('canary'),
+        ),
         'build_web_compilers|lib/src/dev_compiler/dart_sdk.js.map': isNotEmpty,
       };
       expect(sdkAssets, expectedOutputs);
@@ -145,12 +163,15 @@ void main() {
     test('does not enable canary features for SDK by default', () async {
       var sdkAssets = <String, Object>{'build_web_compilers|fake.txt': ''};
       await testBuilderAndCollectAssets(
-          sdkJsCompile(const BuilderOptions({})), sdkAssets);
+        sdkJsCompile(const BuilderOptions({})),
+        sdkAssets,
+      );
 
       var expectedOutputs = {
         'build_web_compilers|fake.txt': isEmpty,
-        'build_web_compilers|lib/src/dev_compiler/dart_sdk.js':
-            decodedMatches(isNot(contains('canary'))),
+        'build_web_compilers|lib/src/dev_compiler/dart_sdk.js': decodedMatches(
+          isNot(contains('canary')),
+        ),
         'build_web_compilers|lib/src/dev_compiler/dart_sdk.js.map': isNotEmpty,
       };
       expect(sdkAssets, expectedOutputs);
@@ -166,18 +187,28 @@ Future<void> runPrerequisites(Map<String, Object> assets) async {
   // package exists.
   var sdkAssets = <String, Object>{'build_web_compilers|fake.txt': ''};
   await testBuilderAndCollectAssets(
-      sdkJsCopyRequirejs(const BuilderOptions({})), sdkAssets);
+    sdkJsCopyRequirejs(const BuilderOptions({})),
+    sdkAssets,
+  );
   await testBuilderAndCollectAssets(
-      sdkJsCompile(const BuilderOptions({})), sdkAssets);
+    sdkJsCompile(const BuilderOptions({})),
+    sdkAssets,
+  );
   assets.addAll(sdkAssets);
 
   await testBuilderAndCollectAssets(const ModuleLibraryBuilder(), assets);
   await testBuilderAndCollectAssets(MetaModuleBuilder(ddcPlatform), assets);
   await testBuilderAndCollectAssets(
-      MetaModuleCleanBuilder(ddcPlatform), assets);
+    MetaModuleCleanBuilder(ddcPlatform),
+    assets,
+  );
   await testBuilderAndCollectAssets(ModuleBuilder(ddcPlatform), assets);
   await testBuilderAndCollectAssets(
-      ddcKernelBuilder(const BuilderOptions({})), assets);
+    ddcKernelBuilder(const BuilderOptions({})),
+    assets,
+  );
   await testBuilderAndCollectAssets(
-      DevCompilerBuilder(platform: ddcPlatform), assets);
+    DevCompilerBuilder(platform: ddcPlatform),
+    assets,
+  );
 }

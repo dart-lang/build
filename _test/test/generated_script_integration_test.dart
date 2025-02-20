@@ -19,9 +19,9 @@ void main() {
   test('Generates a build script matching the golden', () {
     var generatedScript =
         File('.dart_tool/build/entrypoint/build.dart').readAsStringSync();
-    var expected = File('test/goldens/generated_build_script.dart')
-        .readAsStringSync()
-        .replaceAll('\r', '');
+    var expected = File(
+      'test/goldens/generated_build_script.dart',
+    ).readAsStringSync().replaceAll('\r', '');
     expect(generatedScript, expected);
   });
 }

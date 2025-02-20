@@ -1,8 +1,9 @@
 ## 2.4.3-wip
 
+- Bump the min sdk to 3.7.0.
+- Use `build_test` 3.0.0.
 - Add `package:build/src/internal.dart` for use by `build_resolvers`,
   `build_runner_core` and `build_test`.
-- Use `build_test` 3.0.0.
 - Refactor `PathProvidingAssetReader` to `AssetPathProvider`.
 - Refactor `MultiPackageAssetReader` to internal `AssetFinder`.
 - Add internal `Filesystem` that backs `AssetReader` and `AssetWriter`

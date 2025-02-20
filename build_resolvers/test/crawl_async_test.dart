@@ -30,14 +30,15 @@ void main() {
     });
 
     test('hits every node in a graph', () async {
-      final result = await crawl({
-        'a': ['b', 'c'],
-        'b': ['c'],
-        'c': ['d'],
-        'd': [],
-      }, [
-        'a',
-      ]);
+      final result = await crawl(
+        {
+          'a': ['b', 'c'],
+          'b': ['c'],
+          'c': ['d'],
+          'd': [],
+        },
+        ['a'],
+      );
       expect(result, hasLength(4));
       expect(
         result,
@@ -46,45 +47,49 @@ void main() {
     });
 
     test('handles cycles', () async {
-      final result = await crawl({
-        'a': ['b'],
-        'b': ['c'],
-        'c': ['b'],
-      }, [
-        'a',
-      ]);
+      final result = await crawl(
+        {
+          'a': ['b'],
+          'b': ['c'],
+          'c': ['b'],
+        },
+        ['a'],
+      );
       expect(result, hasLength(3));
       expect(result, allOf(contains('a'), contains('b'), contains('c')));
     });
 
     test('handles self cycles', () async {
-      final result = await crawl({
-        'a': ['b'],
-        'b': ['b'],
-      }, [
-        'a',
-      ]);
+      final result = await crawl(
+        {
+          'a': ['b'],
+          'b': ['b'],
+        },
+        ['a'],
+      );
       expect(result, hasLength(2));
       expect(result, allOf(contains('a'), contains('b')));
     });
 
     test('allows null edges', () async {
-      final result = await crawl({
-        'a': ['b'],
-        'b': null,
-      }, [
-        'a',
-      ]);
+      final result = await crawl(
+        {
+          'a': ['b'],
+          'b': null,
+        },
+        ['a'],
+      );
       expect(result, hasLength(2));
       expect(result, allOf(contains('a'), contains('b')));
     });
 
     test('allows null nodes', () async {
-      final result = await crawl({
-        'a': ['b'],
-      }, [
-        'a',
-      ]);
+      final result = await crawl(
+        {
+          'a': ['b'],
+        },
+        ['a'],
+      );
       expect(result, ['a', null]);
     });
 

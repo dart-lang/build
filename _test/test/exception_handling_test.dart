@@ -12,16 +12,24 @@ import 'common/utils.dart';
 void main() {
   test('Exceptions from the isolate are handled properly', () async {
     var asyncResult = runBuild(trailingArgs: ['--config', 'throws']);
-    expect(asyncResult, completes,
-        reason:
-            'Wrapper script should not hang if the isolate has an unhandled '
-            'error.');
+    expect(
+      asyncResult,
+      completes,
+      reason:
+          'Wrapper script should not hang if the isolate has an unhandled '
+          'error.',
+    );
     var result = await asyncResult;
     expect(
-        result.stdout, contains('Throwing on purpose cause you asked for it!'),
-        reason: 'Exceptions from the isolate should be logged.');
-    expect(result.exitCode, isNot(0),
-        reason:
-            'The exit code should be non-zero if there is an unhandled error.');
+      result.stdout,
+      contains('Throwing on purpose cause you asked for it!'),
+      reason: 'Exceptions from the isolate should be logged.',
+    );
+    expect(
+      result.exitCode,
+      isNot(0),
+      reason:
+          'The exit code should be non-zero if there is an unhandled error.',
+    );
   });
 }

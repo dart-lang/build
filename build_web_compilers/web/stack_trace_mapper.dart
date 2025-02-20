@@ -45,9 +45,10 @@ List<String> fixSourceMapSources(List<String> uris) {
     var uri = Uri.parse(source);
     // We only want to rewrite multi-root scheme uris.
     if (uri.scheme.isEmpty) return source;
-    var newSegments = uri.pathSegments.first == 'packages'
-        ? uri.pathSegments
-        : uri.pathSegments.skip(1);
+    var newSegments =
+        uri.pathSegments.first == 'packages'
+            ? uri.pathSegments
+            : uri.pathSegments.skip(1);
     return Uri(path: p.url.joinAll(['/', ...newSegments])).toString();
   }).toList();
 }
@@ -66,8 +67,10 @@ typedef SetSourceMapProvider = void Function(SourceMapProvider provider);
 @JS()
 @anonymous
 class DartStackTraceUtility {
-  external factory DartStackTraceUtility(
-      {StackTraceMapper mapper, SetSourceMapProvider setSourceMapProvider});
+  external factory DartStackTraceUtility({
+    StackTraceMapper mapper,
+    SetSourceMapProvider setSourceMapProvider,
+  });
 }
 
 /// Source mapping that waits to parse source maps until they match the uri
@@ -86,22 +89,29 @@ class LazyMapping extends Mapping {
   List toJson() => _bundle.toJson();
 
   @override
-  SourceMapSpan? spanFor(int line, int column,
-      {Map<String, SourceFile>? files, String? uri}) {
+  SourceMapSpan? spanFor(
+    int line,
+    int column, {
+    Map<String, SourceFile>? files,
+    String? uri,
+  }) {
     if (uri == null) {
       throw ArgumentError.notNull('uri');
     }
 
     if (!_bundle.containsMapping(uri)) {
       var rawMap = _provider(uri);
-      var parsedMap = (rawMap is String ? jsonDecode(rawMap) : rawMap)
-          as Map<String, Object?>?;
+      var parsedMap =
+          (rawMap is String ? jsonDecode(rawMap) : rawMap)
+              as Map<String, Object?>?;
       if (parsedMap != null) {
-        parsedMap['sources'] =
-            fixSourceMapSources((parsedMap['sources'] as List).cast());
-        var mapping = parse(jsonEncode(parsedMap)) as SingleMapping
-          ..targetUrl = uri
-          ..sourceRoot = '${p.dirname(uri)}/';
+        parsedMap['sources'] = fixSourceMapSources(
+          (parsedMap['sources'] as List).cast(),
+        );
+        var mapping =
+            parse(jsonEncode(parsedMap)) as SingleMapping
+              ..targetUrl = uri
+              ..sourceRoot = '${p.dirname(uri)}/';
         _bundle.addMapping(mapping);
       }
     }
@@ -136,6 +146,7 @@ void setSourceMapProvider(SourceMapProvider provider) {
 void main() {
   // Register with DDC.
   dartStackTraceUtility = DartStackTraceUtility(
-      mapper: allowInterop(mapper),
-      setSourceMapProvider: allowInterop(setSourceMapProvider));
+    mapper: allowInterop(mapper),
+    setSourceMapProvider: allowInterop(setSourceMapProvider),
+  );
 }

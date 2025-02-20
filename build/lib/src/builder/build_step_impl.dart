@@ -70,18 +70,18 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
   Future<Result<PackageConfig>>? _resolvedPackageConfig;
 
   BuildStepImpl(
-      this.inputId,
-      Iterable<AssetId> expectedOutputs,
-      this._reader,
-      this._writer,
-      this._resolvers,
-      this._resourceManager,
-      this._resolvePackageConfig,
-      {StageTracker? stageTracker,
-      void Function(Iterable<AssetId>)? reportUnusedAssets})
-      : allowedOutputs = UnmodifiableSetView(expectedOutputs.toSet()),
-        _stageTracker = stageTracker ?? NoOpStageTracker.instance,
-        _reportUnusedAssets = reportUnusedAssets;
+    this.inputId,
+    Iterable<AssetId> expectedOutputs,
+    this._reader,
+    this._writer,
+    this._resolvers,
+    this._resourceManager,
+    this._resolvePackageConfig, {
+    StageTracker? stageTracker,
+    void Function(Iterable<AssetId>)? reportUnusedAssets,
+  }) : allowedOutputs = UnmodifiableSetView(expectedOutputs.toSet()),
+       _stageTracker = stageTracker ?? NoOpStageTracker.instance,
+       _reportUnusedAssets = reportUnusedAssets;
 
   @override
   Filesystem get filesystem => _reader.filesystem;
@@ -150,19 +150,26 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
   Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
     if (_isComplete) throw BuildStepCompletedException();
     _checkOutput(id);
-    var done =
-        _futureOrWrite(bytes, (List<int> b) => _writer.writeAsBytes(id, b));
+    var done = _futureOrWrite(
+      bytes,
+      (List<int> b) => _writer.writeAsBytes(id, b),
+    );
     _writeResults.add(Result.capture(done));
     return done;
   }
 
   @override
-  Future<void> writeAsString(AssetId id, FutureOr<String> content,
-      {Encoding encoding = utf8}) {
+  Future<void> writeAsString(
+    AssetId id,
+    FutureOr<String> content, {
+    Encoding encoding = utf8,
+  }) {
     if (_isComplete) throw BuildStepCompletedException();
     _checkOutput(id);
-    var done = _futureOrWrite(content,
-        (String c) => _writer.writeAsString(id, c, encoding: encoding));
+    var done = _futureOrWrite(
+      content,
+      (String c) => _writer.writeAsString(id, c, encoding: encoding),
+    );
     _writeResults.add(Result.capture(done));
     return done;
   }
@@ -174,13 +181,16 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
   }
 
   @override
-  T trackStage<T>(String label, T Function() action,
-          {bool isExternal = false}) =>
-      _stageTracker.trackStage(label, action, isExternal: isExternal);
+  T trackStage<T>(
+    String label,
+    T Function() action, {
+    bool isExternal = false,
+  }) => _stageTracker.trackStage(label, action, isExternal: isExternal);
 
   Future<void> _futureOrWrite<T>(
-          FutureOr<T> content, Future<void> Function(T content) write) =>
-      (content is Future<T>) ? content.then(write) : write(content);
+    FutureOr<T> content,
+    Future<void> Function(T content) write,
+  ) => (content is Future<T>) ? content.then(write) : write(content);
 
   /// Waits for work to finish and cleans up resources.
   ///
@@ -238,16 +248,22 @@ class _DelayedResolver implements Resolver {
       (await _delegate).astNodeFor(element, resolve: resolve);
 
   @override
-  Future<CompilationUnit> compilationUnitFor(AssetId assetId,
-          {bool allowSyntaxErrors = false}) async =>
-      (await _delegate)
-          .compilationUnitFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
+  Future<CompilationUnit> compilationUnitFor(
+    AssetId assetId, {
+    bool allowSyntaxErrors = false,
+  }) async => (await _delegate).compilationUnitFor(
+    assetId,
+    allowSyntaxErrors: allowSyntaxErrors,
+  );
 
   @override
-  Future<LibraryElement> libraryFor(AssetId assetId,
-          {bool allowSyntaxErrors = false}) async =>
-      (await _delegate)
-          .libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
+  Future<LibraryElement> libraryFor(
+    AssetId assetId, {
+    bool allowSyntaxErrors = false,
+  }) async => (await _delegate).libraryFor(
+    assetId,
+    allowSyntaxErrors: allowSyntaxErrors,
+  );
 
   @override
   Future<LibraryElement?> findLibraryByName(String libraryName) async =>

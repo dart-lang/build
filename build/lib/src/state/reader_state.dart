@@ -29,20 +29,23 @@ extension AssetReaderStateExtension on AssetReader {
     if (result == null) {
       _requireIsAssetReaderState();
       throw StateError(
-          '`AssetReader` is missing required `inputTracker`: $this');
+        '`AssetReader` is missing required `inputTracker`: $this',
+      );
     }
     return result;
   }
 
-  AssetPathProvider? get assetPathProvider => this is AssetReaderState
-      ? (this as AssetReaderState).assetPathProvider
-      : null;
+  AssetPathProvider? get assetPathProvider =>
+      this is AssetReaderState
+          ? (this as AssetReaderState).assetPathProvider
+          : null;
 
   /// Throws if `this` is not an [AssetReaderState].
   void _requireIsAssetReaderState() {
     if (this is! AssetReaderState) {
       throw StateError(
-          '`AssetReader` must implement `AssetReaderState`: $this');
+        '`AssetReader` must implement `AssetReaderState`: $this',
+      );
     }
   }
 }

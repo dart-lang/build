@@ -22,11 +22,11 @@ import 'options.dart';
 /// assets.
 class TestCommand extends BuildRunnerCommand {
   TestCommand(PackageGraph packageGraph)
-      : super(
-          // Use symlinks by default, if package:test supports it.
-          symlinksDefault:
-              _packageTestSupportsSymlinks(packageGraph) && !Platform.isWindows,
-        );
+    : super(
+        // Use symlinks by default, if package:test supports it.
+        symlinksDefault:
+            _packageTestSupportsSymlinks(packageGraph) && !Platform.isWindows,
+      );
 
   @override
   String get invocation =>
@@ -52,9 +52,10 @@ class TestCommand extends BuildRunnerCommand {
     if (argResults.rest.isNotEmpty) {
       void throwUsageException() {
         throw UsageException(
-            'The `test` command does not support positional args before the, '
-            '`--` separator, which should separate build args from test args.',
-            usage);
+          'The `test` command does not support positional args before the, '
+          '`--` separator, which should separate build args from test args.',
+          usage,
+        );
       }
 
       var separatorPos = argResults.arguments.indexOf('--');
@@ -73,23 +74,30 @@ class TestCommand extends BuildRunnerCommand {
     }
 
     return SharedOptions.fromParsedArgs(
-        argResults, ['test'], packageGraph.root.name, this);
+      argResults,
+      ['test'],
+      packageGraph.root.name,
+      this,
+    );
   }
 
   @override
   Future<int> run() async {
     SharedOptions options;
     // We always run our tests in a temp dir.
-    var tempPath = Directory.systemTemp
-        .createTempSync('build_runner_test')
-        .absolute
-        .uri
-        .toFilePath();
+    var tempPath =
+        Directory.systemTemp
+            .createTempSync('build_runner_test')
+            .absolute
+            .uri
+            .toFilePath();
     try {
       _ensureBuildTestDependency(packageGraph);
       options = readOptions();
       return withEnabledExperiments(
-          () => _run(options, tempPath), options.enableExperiments);
+        () => _run(options, tempPath),
+        options.enableExperiments,
+      );
     } on _BuildTestDependencyError // ignore: avoid_catching_errors
     catch (e) {
       stdout.writeln(e);
@@ -101,11 +109,19 @@ class TestCommand extends BuildRunnerCommand {
   }
 
   Future<int> _run(SharedOptions options, String tempPath) async {
-    var buildDirs = (options.buildDirs)
-      // Build test by default.
-      ..add(BuildDirectory('test',
-          outputLocation: OutputLocation(tempPath,
-              useSymlinks: options.outputSymlinksOnly, hoist: false)));
+    var buildDirs =
+        (options.buildDirs)
+          // Build test by default.
+          ..add(
+            BuildDirectory(
+              'test',
+              outputLocation: OutputLocation(
+                tempPath,
+                useSymlinks: options.outputSymlinksOnly,
+                hoist: false,
+              ),
+            ),
+          );
 
     var result = await build(
       builderApplications,
@@ -137,16 +153,13 @@ class TestCommand extends BuildRunnerCommand {
     var argResults = this.argResults!;
     stdout.writeln('Running tests...\n');
     var extraTestArgs = argResults.rest;
-    var testProcess = await Process.start(
-        dartBinary,
-        [
-          'run',
-          'test',
-          '--precompiled',
-          precompiledPath,
-          ...extraTestArgs,
-        ],
-        mode: ProcessStartMode.inheritStdio);
+    var testProcess = await Process.start(dartBinary, [
+      'run',
+      'test',
+      '--precompiled',
+      precompiledPath,
+      ...extraTestArgs,
+    ], mode: ProcessStartMode.inheritStdio);
     _ensureProcessExit(testProcess);
     return testProcess.exitCode;
   }
@@ -168,8 +181,9 @@ void _ensureBuildTestDependency(PackageGraph packageGraph) {
 }
 
 void _ensureProcessExit(Process process) {
-  StreamSubscription<ProcessSignal>? signalsSub =
-      _exitProcessSignals.listen((signal) async {
+  StreamSubscription<ProcessSignal>? signalsSub = _exitProcessSignals.listen((
+    signal,
+  ) async {
     stdout.writeln('waiting for subprocess to exit...');
   });
   process.exitCode.then((_) {
@@ -178,13 +192,17 @@ void _ensureProcessExit(Process process) {
   });
 }
 
-Stream<ProcessSignal> get _exitProcessSignals => Platform.isWindows
-    ? ProcessSignal.sigint.watch()
-    : StreamGroup.merge(
-        [ProcessSignal.sigterm.watch(), ProcessSignal.sigint.watch()]);
+Stream<ProcessSignal> get _exitProcessSignals =>
+    Platform.isWindows
+        ? ProcessSignal.sigint.watch()
+        : StreamGroup.merge([
+          ProcessSignal.sigterm.watch(),
+          ProcessSignal.sigint.watch(),
+        ]);
 
 class _BuildTestDependencyError extends StateError {
-  _BuildTestDependencyError() : super('''
+  _BuildTestDependencyError()
+    : super('''
 Missing dev dependency on package:build_test, which is required to run tests.
 
 Please update your dev_dependencies section of your pubspec.yaml:

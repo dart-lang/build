@@ -37,8 +37,13 @@ class OptionalOutputTracker {
   final Set<BuildFilter> _buildFilters;
   final List<BuildPhase> _buildPhases;
 
-  OptionalOutputTracker(this._assetGraph, this._targetGraph, this._buildDirs,
-      this._buildFilters, this._buildPhases);
+  OptionalOutputTracker(
+    this._assetGraph,
+    this._targetGraph,
+    this._buildDirs,
+    this._buildFilters,
+    this._buildPhases,
+  );
 
   /// Returns whether [output] is required.
   ///
@@ -55,22 +60,25 @@ class OptionalOutputTracker {
     if (node is! GeneratedAssetNode) return true;
     final phase = _buildPhases[node.phaseNumber];
     if (!phase.isOptional &&
-        shouldBuildForDirs(output,
-            buildDirs: _buildDirs,
-            buildFilters: _buildFilters,
-            phase: phase,
-            targetGraph: _targetGraph)) {
+        shouldBuildForDirs(
+          output,
+          buildDirs: _buildDirs,
+          buildFilters: _buildFilters,
+          phase: phase,
+          targetGraph: _targetGraph,
+        )) {
       return true;
     }
     return _checkedOutputs.putIfAbsent(
-        output,
-        () =>
-            node.outputs.any((o) => isRequired(o, currentlyChecking)) ||
-            _assetGraph
-                .outputsForPhase(output.package, node.phaseNumber)
-                .where((n) => n.primaryInput == node.primaryInput)
-                .map((n) => n.id)
-                .any((o) => isRequired(o, currentlyChecking)));
+      output,
+      () =>
+          node.outputs.any((o) => isRequired(o, currentlyChecking)) ||
+          _assetGraph
+              .outputsForPhase(output.package, node.phaseNumber)
+              .where((n) => n.primaryInput == node.primaryInput)
+              .map((n) => n.id)
+              .any((o) => isRequired(o, currentlyChecking)),
+    );
   }
 
   /// Clears the cache of which assets were required.

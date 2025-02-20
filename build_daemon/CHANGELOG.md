@@ -1,3 +1,7 @@
+## 4.0.5-wip
+
+- Bump the min SDK to 3.7.0.
+
 ## 4.0.4
 
 - Support the latest `package:shelf_web_socket`.

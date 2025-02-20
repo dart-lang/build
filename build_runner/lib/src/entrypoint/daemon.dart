@@ -32,24 +32,34 @@ class DaemonCommand extends WatchCommand {
 
   DaemonCommand() {
     argParser
-      ..addOption(buildModeFlag,
-          help: 'Specify the build mode of the daemon, e.g. auto or manual.',
-          defaultsTo: 'BuildMode.Auto')
-      ..addFlag(logRequestsOption,
-          defaultsTo: false,
-          negatable: false,
-          help: 'Enables logging for each request to the server.');
+      ..addOption(
+        buildModeFlag,
+        help: 'Specify the build mode of the daemon, e.g. auto or manual.',
+        defaultsTo: 'BuildMode.Auto',
+      )
+      ..addFlag(
+        logRequestsOption,
+        defaultsTo: false,
+        negatable: false,
+        help: 'Enables logging for each request to the server.',
+      );
   }
 
   @override
   DaemonOptions readOptions() => DaemonOptions.fromParsedArgs(
-      argResults!, argResults!.rest, packageGraph.root.name, this);
+    argResults!,
+    argResults!.rest,
+    packageGraph.root.name,
+    this,
+  );
 
   @override
   Future<int> run() async {
     var options = readOptions();
     return withEnabledExperiments(
-        () => _run(options), options.enableExperiments);
+      () => _run(options),
+      options.enableExperiments,
+    );
   }
 
   Future<int> _run(DaemonOptions options) async {
@@ -85,11 +95,12 @@ class DaemonCommand extends WatchCommand {
       // These are serialized between special `<log-record>` and `</log-record>`
       // tags to make parsing them on stdout easier. They can have multiline
       // strings so we can't just serialize the json on a single line.
-      var startupLogSub =
-          Logger.root.onRecord.listen((record) => stdout.writeln('''
+      var startupLogSub = Logger.root.onRecord.listen(
+        (record) => stdout.writeln('''
 $logStartMarker
 ${jsonEncode(serializers.serialize(ServerLog.fromLogRecord(record)))}
-$logEndMarker'''));
+$logEndMarker'''),
+      );
       builder = await BuildRunnerDaemonBuilder.create(
         packageGraph,
         builderApplications,
@@ -108,17 +119,28 @@ $logEndMarker'''));
           stdout.writeln(log.message);
         }
       });
-      var server =
-          await AssetServer.run(options, builder, packageGraph.root.name);
-      File(assetServerPortFilePath(workingDirectory))
-          .writeAsStringSync('${server.port}');
-      unawaited(builder.buildScriptUpdated.then((_) async {
-        await daemon.stop(
+      var server = await AssetServer.run(
+        options,
+        builder,
+        packageGraph.root.name,
+      );
+      File(
+        assetServerPortFilePath(workingDirectory),
+      ).writeAsStringSync('${server.port}');
+      unawaited(
+        builder.buildScriptUpdated.then((_) async {
+          await daemon.stop(
             message: 'Build script updated. Shutting down the Build Daemon.',
-            failureType: 75);
-      }));
-      await daemon.start(requestedOptions, builder, builder.changeProvider,
-          timeout: const Duration(seconds: 60));
+            failureType: 75,
+          );
+        }),
+      );
+      await daemon.start(
+        requestedOptions,
+        builder,
+        builder.changeProvider,
+        timeout: const Duration(seconds: 60),
+      );
       stdout.writeln(readyToConnectLog);
       await logSub.cancel();
       await daemon.onDone.whenComplete(() async {

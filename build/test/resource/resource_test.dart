@@ -34,10 +34,12 @@ void main() {
 
     test('reuses instances when a dispose can clean the state', () async {
       var last = 0;
-      var intResource = Resource(() => last++,
-          dispose: expectAsync1((int instance) {
-            expect(instance, last - 1);
-          }, max: -1));
+      var intResource = Resource(
+        () => last++,
+        dispose: expectAsync1((int instance) {
+          expect(instance, last - 1);
+        }, max: -1),
+      );
       var first = await resourceManager.fetch(intResource);
       expect(first, 0);
       await resourceManager.disposeAll();
@@ -54,10 +56,13 @@ void main() {
 
     test('can asynchronously dispose resources', () async {
       var disposed = false;
-      var intResource = Resource(() => 0, dispose: (_) async {
-        await Future<void>.delayed(const Duration(milliseconds: 20));
-        disposed = true;
-      });
+      var intResource = Resource(
+        () => 0,
+        dispose: (_) async {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          disposed = true;
+        },
+      );
       await resourceManager.fetch(intResource);
       await resourceManager.disposeAll();
       expect(disposed, true);
@@ -67,13 +72,18 @@ void main() {
       var numDisposed = 0;
       final length = 10;
       var resources = List<Resource<int>>.generate(
-          length,
-          (i) => Resource(() => i, dispose: (instance) {
-                expect(instance, i);
-                numDisposed++;
-              }));
-      var values =
-          await Future.wait(resources.map((r) => resourceManager.fetch(r)));
+        length,
+        (i) => Resource(
+          () => i,
+          dispose: (instance) {
+            expect(instance, i);
+            numDisposed++;
+          },
+        ),
+      );
+      var values = await Future.wait(
+        resources.map((r) => resourceManager.fetch(r)),
+      );
       expect(values, List<int>.generate(length, (i) => i));
       await resourceManager.disposeAll();
       expect(numDisposed, length);

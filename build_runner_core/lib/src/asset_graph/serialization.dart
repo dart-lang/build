@@ -35,12 +35,14 @@ class _AssetGraphDeserializer {
   /// Perform the deserialization, should only be called once.
   AssetGraph deserialize() {
     var packageLanguageVersions = {
-      for (var entry in (_serializedGraph['packageLanguageVersions']
-              as Map<String, dynamic>)
-          .entries)
-        entry.key: entry.value != null
-            ? LanguageVersion.parse(entry.value as String)
-            : null
+      for (var entry
+          in (_serializedGraph['packageLanguageVersions']
+                  as Map<String, dynamic>)
+              .entries)
+        entry.key:
+            entry.value != null
+                ? LanguageVersion.parse(entry.value as String)
+                : null,
     };
     var graph = AssetGraph._(
       _deserializeDigest(_serializedGraph['buildActionsDigest'] as String)!,
@@ -74,10 +76,12 @@ class _AssetGraphDeserializer {
       for (var output in node.outputs) {
         var inputsNode = graph.get(output) as NodeWithInputs?;
         if (inputsNode == null) {
-          log.severe('Failed to locate $output referenced from ${node.id} '
-              'which is a ${node.runtimeType}. If you encounter this error '
-              'please copy the details from this message and add them to '
-              'https://github.com/dart-lang/build/issues/1804.');
+          log.severe(
+            'Failed to locate $output referenced from ${node.id} '
+            'which is a ${node.runtimeType}. If you encounter this error '
+            'please copy the details from this message and add them to '
+            'https://github.com/dart-lang/build/issues/1804.',
+          );
           throw AssetGraphCorruptedException();
         }
         inputsNode.inputs.add(node.id);
@@ -114,23 +118,32 @@ class _AssetGraphDeserializer {
           id,
           phaseNumber:
               serializedNode[_GeneratedField.phaseNumber.index + offset] as int,
-          primaryInput: _idToAssetId[
-              serializedNode[_GeneratedField.primaryInput.index + offset]
+          primaryInput:
+              _idToAssetId[serializedNode[_GeneratedField.primaryInput.index +
+                      offset]
                   as int]!,
-          state: NodeState.values[
-              serializedNode[_GeneratedField.state.index + offset] as int],
+          state:
+              NodeState.values[serializedNode[_GeneratedField.state.index +
+                      offset]
+                  as int],
           wasOutput: _deserializeBool(
-              serializedNode[_GeneratedField.wasOutput.index + offset] as int),
+            serializedNode[_GeneratedField.wasOutput.index + offset] as int,
+          ),
           isFailure: _deserializeBool(
-              serializedNode[_GeneratedField.isFailure.index + offset] as int),
-          builderOptionsId: _idToAssetId[
-              serializedNode[_GeneratedField.builderOptions.index + offset]
+            serializedNode[_GeneratedField.isFailure.index + offset] as int,
+          ),
+          builderOptionsId:
+              _idToAssetId[serializedNode[_GeneratedField.builderOptions.index +
+                      offset]
                   as int]!,
           lastKnownDigest: digest,
-          previousInputsDigest: _deserializeDigest(serializedNode[
-              _GeneratedField.previousInputsDigest.index + offset] as String?),
+          previousInputsDigest: _deserializeDigest(
+            serializedNode[_GeneratedField.previousInputsDigest.index + offset]
+                as String?,
+          ),
           isHidden: _deserializeBool(
-              serializedNode[_GeneratedField.isHidden.index + offset] as int),
+            serializedNode[_GeneratedField.isHidden.index + offset] as int,
+          ),
         );
         break;
       case _NodeType.glob:
@@ -140,12 +153,13 @@ class _AssetGraphDeserializer {
           id,
           Glob(serializedNode[_GlobField.glob.index + offset] as String),
           serializedNode[_GlobField.phaseNumber.index + offset] as int,
-          NodeState
-              .values[serializedNode[_GlobField.state.index + offset] as int],
+          NodeState.values[serializedNode[_GlobField.state.index + offset]
+              as int],
           lastKnownDigest: digest,
-          results: _deserializeAssetIds(
-                  serializedNode[_GlobField.results.index + offset] as List)
-              .toList(),
+          results:
+              _deserializeAssetIds(
+                serializedNode[_GlobField.results.index + offset] as List,
+              ).toList(),
         );
         break;
       case _NodeType.internal:
@@ -164,25 +178,34 @@ class _AssetGraphDeserializer {
         assert(serializedNode.length == _WrappedPostProcessAnchorNode._length);
         var offset = _AssetField.values.length;
         node = PostProcessAnchorNode(
-            id,
-            _idToAssetId[
-                serializedNode[_PostAnchorField.primaryInput.index + offset]
-                    as int]!,
-            serializedNode[_PostAnchorField.actionNumber.index + offset] as int,
-            _idToAssetId[
-                serializedNode[_PostAnchorField.builderOptions.index + offset]
-                    as int]!,
-            previousInputsDigest: _deserializeDigest(serializedNode[
-                    _PostAnchorField.previousInputsDigest.index + offset]
-                as String?));
+          id,
+          _idToAssetId[serializedNode[_PostAnchorField.primaryInput.index +
+                  offset]
+              as int]!,
+          serializedNode[_PostAnchorField.actionNumber.index + offset] as int,
+          _idToAssetId[serializedNode[_PostAnchorField.builderOptions.index +
+                  offset]
+              as int]!,
+          previousInputsDigest: _deserializeDigest(
+            serializedNode[_PostAnchorField.previousInputsDigest.index + offset]
+                as String?,
+          ),
+        );
         break;
     }
-    node.outputs.addAll(_deserializeAssetIds(
-        serializedNode[_AssetField.outputs.index] as List));
-    node.primaryOutputs.addAll(_deserializeAssetIds(
-        serializedNode[_AssetField.primaryOutputs.index] as List));
-    node.deletedBy.addAll(_deserializeAssetIds(
-        (serializedNode[_AssetField.deletedBy.index] as List).cast<int>()));
+    node.outputs.addAll(
+      _deserializeAssetIds(serializedNode[_AssetField.outputs.index] as List),
+    );
+    node.primaryOutputs.addAll(
+      _deserializeAssetIds(
+        serializedNode[_AssetField.primaryOutputs.index] as List,
+      ),
+    );
+    node.deletedBy.addAll(
+      _deserializeAssetIds(
+        (serializedNode[_AssetField.deletedBy.index] as List).cast<int>(),
+      ),
+    );
     return node;
   }
 
@@ -222,8 +245,9 @@ class _AssetGraphSerializer {
       'buildActionsDigest': _serializeDigest(_graph.buildPhasesDigest),
       'packages': packages,
       'assetPaths': assetPaths,
-      'packageLanguageVersions': _graph.packageLanguageVersions
-          .map((pkg, version) => MapEntry(pkg, version?.toString())),
+      'packageLanguageVersions': _graph.packageLanguageVersions.map(
+        (pkg, version) => MapEntry(pkg, version?.toString()),
+      ),
       'enabledExperiments': _graph.enabledExperiments,
     };
     return utf8.encode(json.encode(result));
@@ -241,15 +265,20 @@ class _AssetGraphSerializer {
     }
   }
 
-  int findAssetIndex(AssetId id,
-      {required AssetId from, required String field}) {
+  int findAssetIndex(
+    AssetId id, {
+    required AssetId from,
+    required String field,
+  }) {
     final index = _assetIdToId[id];
     if (index == null) {
-      log.severe('The $field field in $from references a non-existent asset '
-          '$id and will corrupt the asset graph. '
-          'If you encounter this error please copy '
-          'the details from this message and add them to '
-          'https://github.com/dart-lang/build/issues/1804.');
+      log.severe(
+        'The $field field in $from references a non-existent asset '
+        '$id and will corrupt the asset graph. '
+        'If you encounter this error please copy '
+        'the details from this message and add them to '
+        'https://github.com/dart-lang/build/issues/1804.',
+      );
     }
     return index!;
   }
@@ -268,14 +297,7 @@ enum _NodeType {
 }
 
 /// Field indexes for all [AssetNode]s
-enum _AssetField {
-  nodeType,
-  id,
-  outputs,
-  primaryOutputs,
-  digest,
-  deletedBy,
-}
+enum _AssetField { nodeType, id, outputs, primaryOutputs, digest, deletedBy }
 
 /// Field indexes for [GeneratedAssetNode]s
 enum _GeneratedField {
@@ -290,12 +312,7 @@ enum _GeneratedField {
 }
 
 /// Field indexes for [GlobAssetNode]s
-enum _GlobField {
-  phaseNumber,
-  state,
-  glob,
-  results,
-}
+enum _GlobField { phaseNumber, state, glob, results }
 
 /// Field indexes for [PostProcessAnchorNode]s.
 enum _PostAnchorField {
@@ -319,8 +336,10 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
   int get length => _length;
 
   @override
-  set length(void _) => throw UnsupportedError(
-      'length setter not unsupported for WrappedAssetNode');
+  set length(void _) =>
+      throw UnsupportedError(
+        'length setter not unsupported for WrappedAssetNode',
+      );
 
   @override
   Object? operator [](int index) {
@@ -350,20 +369,35 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
         return serializer.findAssetIndex(node.id, from: node.id, field: 'id');
       case _AssetField.outputs:
         return node.outputs
-            .map((id) =>
-                serializer.findAssetIndex(id, from: node.id, field: 'outputs'))
+            .map(
+              (id) => serializer.findAssetIndex(
+                id,
+                from: node.id,
+                field: 'outputs',
+              ),
+            )
             .toList(growable: false);
       case _AssetField.primaryOutputs:
         return node.primaryOutputs
-            .map((id) => serializer.findAssetIndex(id,
-                from: node.id, field: 'primaryOutputs'))
+            .map(
+              (id) => serializer.findAssetIndex(
+                id,
+                from: node.id,
+                field: 'primaryOutputs',
+              ),
+            )
             .toList(growable: false);
       case _AssetField.digest:
         return _serializeDigest(node.lastKnownDigest);
       case _AssetField.deletedBy:
         return node.deletedBy
-            .map((id) => serializer.findAssetIndex(id,
-                from: node.id, field: 'deletedBy'))
+            .map(
+              (id) => serializer.findAssetIndex(
+                id,
+                from: node.id,
+                field: 'deletedBy',
+              ),
+            )
             .toList(growable: false);
     }
   }
@@ -390,8 +424,9 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
   int get length => _length;
 
   _WrappedGeneratedAssetNode(
-      this.generatedNode, _AssetGraphSerializer serializer)
-      : super(generatedNode, serializer);
+    this.generatedNode,
+    _AssetGraphSerializer serializer,
+  ) : super(generatedNode, serializer);
 
   @override
   Object? operator [](int index) {
@@ -399,20 +434,23 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
     var fieldId = _GeneratedField.values[index - _serializedOffset];
     return switch (fieldId) {
       _GeneratedField.primaryInput => serializer.findAssetIndex(
-          generatedNode.primaryInput,
-          from: generatedNode.id,
-          field: 'primaryInput'),
+        generatedNode.primaryInput,
+        from: generatedNode.id,
+        field: 'primaryInput',
+      ),
       _GeneratedField.wasOutput => _serializeBool(generatedNode.wasOutput),
       _GeneratedField.isFailure => _serializeBool(generatedNode.isFailure),
       _GeneratedField.phaseNumber => generatedNode.phaseNumber,
       _GeneratedField.state => generatedNode.state.index,
-      _GeneratedField.previousInputsDigest =>
-        _serializeDigest(generatedNode.previousInputsDigest),
+      _GeneratedField.previousInputsDigest => _serializeDigest(
+        generatedNode.previousInputsDigest,
+      ),
       _GeneratedField.builderOptions => serializer.findAssetIndex(
-          generatedNode.builderOptionsId,
-          from: generatedNode.id,
-          field: 'builderOptions'),
-      _GeneratedField.isHidden => _serializeBool(generatedNode.isHidden)
+        generatedNode.builderOptionsId,
+        from: generatedNode.id,
+        field: 'builderOptions',
+      ),
+      _GeneratedField.isHidden => _serializeBool(generatedNode.isHidden),
     };
   }
 }
@@ -434,7 +472,7 @@ class _WrappedGlobAssetNode extends _WrappedAssetNode {
   int get length => _length;
 
   _WrappedGlobAssetNode(this.globNode, _AssetGraphSerializer serializer)
-      : super(globNode, serializer);
+    : super(globNode, serializer);
 
   @override
   Object? operator [](int index) {
@@ -445,9 +483,14 @@ class _WrappedGlobAssetNode extends _WrappedAssetNode {
       _GlobField.state => globNode.state.index,
       _GlobField.glob => globNode.glob.pattern,
       _GlobField.results => globNode.results!
-          .map((id) => serializer.findAssetIndex(id,
-              from: globNode.id, field: 'results'))
-          .toList(growable: false)
+          .map(
+            (id) => serializer.findAssetIndex(
+              id,
+              from: globNode.id,
+              field: 'results',
+            ),
+          )
+          .toList(growable: false),
     };
   }
 }
@@ -469,8 +512,9 @@ class _WrappedPostProcessAnchorNode extends _WrappedAssetNode {
   int get length => _length;
 
   _WrappedPostProcessAnchorNode(
-      this.wrappedNode, _AssetGraphSerializer serializer)
-      : super(wrappedNode, serializer);
+    this.wrappedNode,
+    _AssetGraphSerializer serializer,
+  ) : super(wrappedNode, serializer);
 
   @override
   Object? operator [](int index) {
@@ -479,15 +523,18 @@ class _WrappedPostProcessAnchorNode extends _WrappedAssetNode {
     return switch (fieldId) {
       _PostAnchorField.actionNumber => wrappedNode.actionNumber,
       _PostAnchorField.builderOptions => serializer.findAssetIndex(
-          wrappedNode.builderOptionsId,
-          from: wrappedNode.id,
-          field: 'builderOptions'),
-      _PostAnchorField.previousInputsDigest =>
-        _serializeDigest(wrappedNode.previousInputsDigest),
+        wrappedNode.builderOptionsId,
+        from: wrappedNode.id,
+        field: 'builderOptions',
+      ),
+      _PostAnchorField.previousInputsDigest => _serializeDigest(
+        wrappedNode.previousInputsDigest,
+      ),
       _PostAnchorField.primaryInput => serializer.findAssetIndex(
-          wrappedNode.primaryInput,
-          from: wrappedNode.id,
-          field: 'primaryInput')
+        wrappedNode.primaryInput,
+        from: wrappedNode.id,
+        field: 'primaryInput',
+      ),
     };
   }
 }

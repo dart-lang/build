@@ -44,8 +44,9 @@ var _username = Platform.environment['USER'] ?? '';
 String daemonWorkspace(String workingDirectory) {
   var segments = [Directory.systemTemp.path];
   if (_username.isNotEmpty) segments.add(_username);
-  final workingDirHash =
-      base64UrlEncode(md5.convert(workingDirectory.codeUnits).bytes);
+  final workingDirHash = base64UrlEncode(
+    md5.convert(workingDirectory.codeUnits).bytes,
+  );
   segments.add(workingDirHash);
   return p.joinAll(segments);
 }

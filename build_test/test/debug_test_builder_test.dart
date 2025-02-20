@@ -11,23 +11,27 @@ void main() {
     final builder = const DebugTestBuilder();
 
     test('can create default html', () async {
-      await testBuilder(builder, {
-        'a|test/hello_test.dart': '',
-      }, outputs: {
-        'a|test/hello_test.debug.html': _equalsTextWithoutWhitespace('''
+      await testBuilder(
+        builder,
+        {'a|test/hello_test.dart': ''},
+        outputs: {
+          'a|test/hello_test.debug.html': _equalsTextWithoutWhitespace('''
           <html>
             <head>
               <script src="hello_test.dart.browser_test.dart.js"></script>
             </head>
           </html>
-        ''')
-      });
+        '''),
+        },
+      );
     });
 
     test('can modify custom html', () async {
-      await testBuilder(builder, {
-        'a|test/hello_test.dart': '',
-        'a|test/hello_test.html': '''
+      await testBuilder(
+        builder,
+        {
+          'a|test/hello_test.dart': '',
+          'a|test/hello_test.html': '''
           <html>
             <head>
               <link rel="x-dart-test" href="hello_test.dart" />
@@ -38,8 +42,9 @@ void main() {
             </body>
           </html>
         ''',
-      }, outputs: {
-        'a|test/hello_test.debug.html': _equalsTextWithoutWhitespace('''
+        },
+        outputs: {
+          'a|test/hello_test.debug.html': _equalsTextWithoutWhitespace('''
           <html>
             <head>
               <script src="hello_test.dart.browser_test.dart.js"></script>
@@ -48,8 +53,9 @@ void main() {
               <cool-element>I am awesome</cool-element>
             </body>
           </html>
-        ''')
-      });
+        '''),
+        },
+      );
     });
   });
 
@@ -57,13 +63,16 @@ void main() {
     final builder = const DebugIndexBuilder();
 
     test('should create an index of all tests', () async {
-      await testBuilder(builder, {
-        'a|test/1_test.dart': '',
-        'a|test/2_test.dart': '',
-        'a|test/3_ignore.dart': '',
-        'a|test/sub/4_test.dart': '',
-      }, outputs: {
-        'a|test/index.html': _equalsTextWithoutWhitespace('''
+      await testBuilder(
+        builder,
+        {
+          'a|test/1_test.dart': '',
+          'a|test/2_test.dart': '',
+          'a|test/3_ignore.dart': '',
+          'a|test/sub/4_test.dart': '',
+        },
+        outputs: {
+          'a|test/index.html': _equalsTextWithoutWhitespace('''
 <html>
   <body>
     <ul>
@@ -76,7 +85,8 @@ void main() {
   </body>
 </html>
         '''),
-      });
+        },
+      );
     });
   });
 }
@@ -88,7 +98,7 @@ class _IgnoringNewlinesAndWhitespaceMatcher extends Matcher {
   final String _expected;
 
   _IgnoringNewlinesAndWhitespaceMatcher(String expected)
-      : _expected = _stripWhitespaceAndNewlines(expected);
+    : _expected = _stripWhitespaceAndNewlines(expected);
 
   @override
   Description describe(Description description) => description;

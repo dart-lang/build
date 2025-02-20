@@ -56,8 +56,13 @@ class BuildForInputLogger implements Logger {
   bool isLoggable(Level value) => _delegate.isLoggable(value);
 
   @override
-  void log(Level logLevel, Object? message,
-      [Object? error, StackTrace? stackTrace, Zone? zone]) {
+  void log(
+    Level logLevel,
+    Object? message, [
+    Object? error,
+    StackTrace? stackTrace,
+    Zone? zone,
+  ]) {
     if (logLevel >= Level.SEVERE) {
       errorsSeen.add(ErrorReport('$message', '${error ?? ''}', stackTrace));
     }

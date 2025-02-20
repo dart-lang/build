@@ -15,21 +15,29 @@ import 'common.dart';
 class SdkJsCopyBuilder implements Builder {
   @override
   final buildExtensions = {
-    r'$package$': ['lib/src/dev_compiler/require.js']
+    r'$package$': ['lib/src/dev_compiler/require.js'],
   };
 
   /// Path to the require.js file that should be used for all ddc web apps.
-  final _sdkRequireJsLocation =
-      p.join(sdkDir, 'lib', 'dev_compiler', 'amd', 'require.js');
+  final _sdkRequireJsLocation = p.join(
+    sdkDir,
+    'lib',
+    'dev_compiler',
+    'amd',
+    'require.js',
+  );
 
   @override
   FutureOr<void> build(BuildStep buildStep) async {
     if (buildStep.inputId.package != 'build_web_compilers') {
-      throw StateError('This builder should only be applied to the '
-          'build_web_compilers package');
+      throw StateError(
+        'This builder should only be applied to the '
+        'build_web_compilers package',
+      );
     }
     await buildStep.writeAsBytes(
-        AssetId('build_web_compilers', 'lib/src/dev_compiler/require.js'),
-        await File(_sdkRequireJsLocation).readAsBytes());
+      AssetId('build_web_compilers', 'lib/src/dev_compiler/require.js'),
+      await File(_sdkRequireJsLocation).readAsBytes(),
+    );
   }
 }

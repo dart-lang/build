@@ -57,12 +57,13 @@ void main() {
     manager.addBuildTarget(targetB, channelB);
     expect(manager.targets.isNotEmpty, isTrue);
     manager.removeChannel(channelA);
-    expect(manager.targets.map((target) => target.target).toList(),
-        allOf(isNot(contains('foo')), contains('bar')));
+    expect(
+      manager.targets.map((target) => target.target).toList(),
+      allOf(isNot(contains('foo')), contains('bar')),
+    );
   });
 
-  test(
-      'when multiple channels are listening to a target, '
+  test('when multiple channels are listening to a target, '
       'it is only removed when both channels are removed', () {
     var manager = BuildTargetManager();
     var channelA = DummyChannel();
@@ -78,18 +79,23 @@ void main() {
     expect(manager.targets.isEmpty, isTrue);
   });
 
-  test(
-      'a build target will be reused if the target and the blackListPattern '
+  test('a build target will be reused if the target and the blackListPattern '
       'is the same', () {
     var manager = BuildTargetManager();
     var channelA = DummyChannel();
     var channelB = DummyChannel();
-    var targetA = DefaultBuildTarget((b) => b
-      ..target = 'foo'
-      ..blackListPatterns.replace([RegExp('bar')]));
-    var targetB = DefaultBuildTarget((b) => b
-      ..target = 'foo'
-      ..blackListPatterns.replace([RegExp('bar')]));
+    var targetA = DefaultBuildTarget(
+      (b) =>
+          b
+            ..target = 'foo'
+            ..blackListPatterns.replace([RegExp('bar')]),
+    );
+    var targetB = DefaultBuildTarget(
+      (b) =>
+          b
+            ..target = 'foo'
+            ..blackListPatterns.replace([RegExp('bar')]),
+    );
     manager
       ..addBuildTarget(targetA, channelA)
       ..addBuildTarget(targetB, channelB);
@@ -101,9 +107,12 @@ void main() {
     var channelA = DummyChannel();
     var channelB = DummyChannel();
     var targetA = DefaultBuildTarget((b) => b..target = 'foo');
-    var targetB = DefaultBuildTarget((b) => b
-      ..target = 'foo'
-      ..blackListPatterns.replace([RegExp('bar')]));
+    var targetB = DefaultBuildTarget(
+      (b) =>
+          b
+            ..target = 'foo'
+            ..blackListPatterns.replace([RegExp('bar')]),
+    );
     manager
       ..addBuildTarget(targetA, channelA)
       ..addBuildTarget(targetB, channelB);
@@ -111,21 +120,27 @@ void main() {
   });
 
   test(
-      'correctly uses the blackListPattern to filter build targets for changes',
-      () {
-    var manager = BuildTargetManager();
-    var channel = DummyChannel();
-    var target = DefaultBuildTarget((b) => b
-      ..target = 'foo'
-      ..blackListPatterns.replace([RegExp(r'.*_test\.dart$')]));
-    manager.addBuildTarget(target, channel);
-    var targets = manager.targetsForChanges(
-        [WatchEvent(ChangeType.ADD, 'foo/bar/blah/some_file.dart')]);
-    expect(targets.map((target) => target.target), contains('foo'));
-    targets = manager.targetsForChanges(
-        [WatchEvent(ChangeType.ADD, 'foo/bar/blah/some_test.dart')]);
-    expect(targets.isEmpty, isTrue);
-  });
+    'correctly uses the blackListPattern to filter build targets for changes',
+    () {
+      var manager = BuildTargetManager();
+      var channel = DummyChannel();
+      var target = DefaultBuildTarget(
+        (b) =>
+            b
+              ..target = 'foo'
+              ..blackListPatterns.replace([RegExp(r'.*_test\.dart$')]),
+      );
+      manager.addBuildTarget(target, channel);
+      var targets = manager.targetsForChanges([
+        WatchEvent(ChangeType.ADD, 'foo/bar/blah/some_file.dart'),
+      ]);
+      expect(targets.map((target) => target.target), contains('foo'));
+      targets = manager.targetsForChanges([
+        WatchEvent(ChangeType.ADD, 'foo/bar/blah/some_test.dart'),
+      ]);
+      expect(targets.isEmpty, isTrue);
+    },
+  );
 }
 
 class DummyChannel extends Mock implements WebSocketChannel {}

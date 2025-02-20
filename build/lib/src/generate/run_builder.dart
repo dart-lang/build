@@ -41,7 +41,7 @@ Future<void> runBuilder(
   ResourceManager? resourceManager,
   StageTracker stageTracker = NoOpStageTracker.instance,
   void Function(AssetId input, Iterable<AssetId> assets)?
-      reportUnusedAssetsForInput,
+  reportUnusedAssetsForInput,
   PackageConfig? packageConfig,
 }) async {
   var shouldDisposeResourceManager = resourceManager == null;
@@ -59,8 +59,9 @@ Future<void> runBuilder(
 
       if (uri == null) {
         throw UnsupportedError(
-            'Isolate running the build does not have a package config and no '
-            'fallback has been provided');
+          'Isolate running the build does not have a package config and no '
+          'fallback has been provided',
+        );
       }
 
       config = await loadPackageConfigUri(uri);
@@ -74,11 +75,19 @@ Future<void> runBuilder(
     var outputs = expectedOutputs(builder, input);
     if (outputs.isEmpty) return;
     var buildStep = BuildStepImpl(
-        input, outputs, reader, writer, resolvers, resources, loadPackageConfig,
-        stageTracker: stageTracker,
-        reportUnusedAssets: reportUnusedAssetsForInput == null
-            ? null
-            : (assets) => reportUnusedAssetsForInput(input, assets));
+      input,
+      outputs,
+      reader,
+      writer,
+      resolvers,
+      resources,
+      loadPackageConfig,
+      stageTracker: stageTracker,
+      reportUnusedAssets:
+          reportUnusedAssetsForInput == null
+              ? null
+              : (assets) => reportUnusedAssetsForInput(input, assets),
+    );
     try {
       await builder.build(buildStep);
     } finally {
@@ -110,11 +119,8 @@ extension on Package {
 
 extension on PackageConfig {
   PackageConfig transformToAssetUris() {
-    return PackageConfig(
-      [
-        for (final package in packages) package.transformToAssetUris(),
-      ],
-      extraData: extraData,
-    );
+    return PackageConfig([
+      for (final package in packages) package.transformToAssetUris(),
+    ], extraData: extraData);
   }
 }

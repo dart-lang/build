@@ -16,26 +16,33 @@ void main() {
     await expectTestsPass(usePrecompiled: true);
   });
 
-  test('Can build and run a single test with --precompiled and --build-filter',
-      () async {
-    var buildArgs = ['--build-filter', 'test/hello_world_test.*.dart.js'];
-    await expectTestsPass(
+  test(
+    'Can build and run a single test with --precompiled and --build-filter',
+    () async {
+      var buildArgs = ['--build-filter', 'test/hello_world_test.*.dart.js'];
+      await expectTestsPass(
         usePrecompiled: true,
         testArgs: ['test/hello_world_test.dart'],
-        buildArgs: buildArgs);
+        buildArgs: buildArgs,
+      );
 
-    // This wasn't built so it should fail
-    await expectTestsFail(
+      // This wasn't built so it should fail
+      await expectTestsFail(
         usePrecompiled: true,
         testArgs: ['test/hello_world_custom_html_test.dart'],
-        buildArgs: buildArgs);
-  });
+        buildArgs: buildArgs,
+      );
+    },
+  );
 
   test('Failing tests print mapped stack traces', () async {
     var result = await runTests(
-        testArgs: ['--run-skipped', 'test/hello_world_test.dart']);
-    expect(result.stdout,
-        emitsThrough(matches(RegExp(r'hello_world_test.dart [\d]+:[\d]+'))));
+      testArgs: ['--run-skipped', 'test/hello_world_test.dart'],
+    );
+    expect(
+      result.stdout,
+      emitsThrough(matches(RegExp(r'hello_world_test.dart [\d]+:[\d]+'))),
+    );
     expect(result.stdout, neverEmits(contains('.js')));
     expect(await result.exitCode, isNot(ExitCode.success));
   });
@@ -47,7 +54,10 @@ void main() {
 
     test('edit test to fail and rerun', () async {
       await replaceAllInFile(
-          'test/common/message.dart', 'Hello World!', 'Goodbye World!');
+        'test/common/message.dart',
+        'Hello World!',
+        'Goodbye World!',
+      );
       await expectTestsFail();
     });
 

@@ -39,16 +39,20 @@ void main() {
     });
 
     test('a simple dart file package: dependencies', () async {
-      var libExample = await resolveSource(r'''
+      var libExample = await resolveSource(
+        r'''
         library example;
 
         import 'package:collection/collection.dart';
 
         abstract class Foo implements Equality {}
-      ''', nonInputsToReadFromFilesystem: {
-        AssetId('collection', 'lib/collection.dart'),
-        AssetId('collection', 'lib/src/equality.dart'),
-      }, (resolver) => resolver.findLibraryNotNull('example'));
+      ''',
+        nonInputsToReadFromFilesystem: {
+          AssetId('collection', 'lib/collection.dart'),
+          AssetId('collection', 'lib/src/equality.dart'),
+        },
+        (resolver) => resolver.findLibraryNotNull('example'),
+      );
       var classFoo = libExample.getClass('Foo')!;
       expect(
         classFoo.allSupertypes.map(_toStringId),
@@ -82,19 +86,25 @@ void main() {
 
     test('waits for tearDown', () async {
       var resolverDone = Completer<void>();
-      var resolver = await resolveSource(r'''
+      var resolver = await resolveSource(
+        r'''
         library example;
 
         import 'package:collection/collection.dart';
 
         abstract class Foo implements Equality {}
-      ''', nonInputsToReadFromFilesystem: {
-        AssetId('collection', 'lib/collection.dart'),
-        AssetId('collection', 'lib/src/equality.dart'),
-      }, (resolver) => resolver, tearDown: resolverDone.future);
+      ''',
+        nonInputsToReadFromFilesystem: {
+          AssetId('collection', 'lib/collection.dart'),
+          AssetId('collection', 'lib/src/equality.dart'),
+        },
+        (resolver) => resolver,
+        tearDown: resolverDone.future,
+      );
       expect(
-          await resolver.libraries.any((library) => library.name == 'example'),
-          true);
+        await resolver.libraries.any((library) => library.name == 'example'),
+        true,
+      );
       var libExample = await resolver.findLibraryNotNull('example');
       resolverDone.complete();
       var classFoo = libExample.getClass('Foo')!;
@@ -105,42 +115,60 @@ void main() {
     });
 
     test('can do expects inside the action', () async {
-      await resolveSource(r'''
+      await resolveSource(
+        r'''
         library example;
 
         import 'package:collection/collection.dart';
 
         abstract class Foo implements Equality {}
-      ''', nonInputsToReadFromFilesystem: {
-        AssetId('collection', 'lib/collection.dart'),
-        AssetId('collection', 'lib/src/equality.dart'),
-      }, (resolver) async {
-        var libExample = await resolver.findLibraryNotNull('example');
-        var classFoo = libExample.getClass('Foo')!;
-        expect(classFoo.allSupertypes.map(_toStringId),
-            contains(endsWith(':collection#Equality')));
-      });
+      ''',
+        nonInputsToReadFromFilesystem: {
+          AssetId('collection', 'lib/collection.dart'),
+          AssetId('collection', 'lib/src/equality.dart'),
+        },
+        (resolver) async {
+          var libExample = await resolver.findLibraryNotNull('example');
+          var classFoo = libExample.getClass('Foo')!;
+          expect(
+            classFoo.allSupertypes.map(_toStringId),
+            contains(endsWith(':collection#Equality')),
+          );
+        },
+      );
     });
 
     test('with specified language versions from a PackageConfig', () async {
       var packageConfig = PackageConfig([
-        Package('a', Uri.file('/a/'),
-            packageUriRoot: Uri.file('/a/lib/'),
-            languageVersion: LanguageVersion(2, 3))
+        Package(
+          'a',
+          Uri.file('/a/'),
+          packageUriRoot: Uri.file('/a/lib/'),
+          languageVersion: LanguageVersion(2, 3),
+        ),
       ]);
-      var libExample = await resolveSource(r'''
+      var libExample = await resolveSource(
+        r'''
         library example;
 
         extension _Foo on int {}
-      ''', (resolver) => resolver.findLibraryNotNull('example'),
-          packageConfig: packageConfig, inputId: AssetId('a', 'invalid.dart'));
-      var errors = await libExample.session
-          .getErrors(libExample.source.fullName) as ErrorsResult;
+      ''',
+        (resolver) => resolver.findLibraryNotNull('example'),
+        packageConfig: packageConfig,
+        inputId: AssetId('a', 'invalid.dart'),
+      );
+      var errors =
+          await libExample.session.getErrors(libExample.source.fullName)
+              as ErrorsResult;
       expect(
-          errors.errors.map((e) => e.message),
-          contains(contains(
-              'This requires the \'extension-methods\' language feature to be '
-              'enabled.')));
+        errors.errors.map((e) => e.message),
+        contains(
+          contains(
+            'This requires the \'extension-methods\' language feature to be '
+            'enabled.',
+          ),
+        ),
+      );
     });
   });
 
@@ -148,7 +176,9 @@ void main() {
     test('asset:build_test/test/_files/example_lib.dart', () async {
       var asset = AssetId('build_test', 'test/_files/example_lib.dart');
       var libExample = await resolveAsset(
-          asset, (resolver) => resolver.findLibraryNotNull('example_lib'));
+        asset,
+        (resolver) => resolver.findLibraryNotNull('example_lib'),
+      );
       expect(libExample.getClass('Example'), isNotNull);
     });
   });
@@ -158,9 +188,15 @@ void main() {
       var partAsset = AssetId('build_test', 'test/_files/example_part.dart');
       await resolveAsset(partAsset, (resolver) async {
         expect(
-            () => resolver.libraryFor(partAsset),
-            throwsA(isA<NonLibraryAssetException>()
-                .having((e) => e.assetId, 'assetId', partAsset)));
+          () => resolver.libraryFor(partAsset),
+          throwsA(
+            isA<NonLibraryAssetException>().having(
+              (e) => e.assetId,
+              'assetId',
+              partAsset,
+            ),
+          ),
+        );
       });
     });
   });

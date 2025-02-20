@@ -69,16 +69,25 @@ Future<ServeHandler> watch(
   verbose ??= false;
 
   var environment = OverrideableEnvironment(
-      IOEnvironment(packageGraph,
-          assumeTty: assumeTty, outputSymlinksOnly: outputSymlinksOnly),
-      reader: reader,
-      writer: writer,
-      onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose));
-  var logSubscription =
-      LogSubscription(environment, verbose: verbose, logLevel: logLevel);
+    IOEnvironment(
+      packageGraph,
+      assumeTty: assumeTty,
+      outputSymlinksOnly: outputSymlinksOnly,
+    ),
+    reader: reader,
+    writer: writer,
+    onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose),
+  );
+  var logSubscription = LogSubscription(
+    environment,
+    verbose: verbose,
+    logLevel: logLevel,
+  );
   overrideBuildConfig ??= await findBuildConfigOverrides(
-      packageGraph, environment.reader,
-      configKey: configKey);
+    packageGraph,
+    environment.reader,
+    configKey: configKey,
+  );
   var options = await BuildOptions.create(
     logSubscription,
     deleteFilesByDefault: deleteFilesByDefault,
@@ -94,23 +103,25 @@ Future<ServeHandler> watch(
   var terminator = Terminator(terminateEventStream);
 
   var watch = _runWatch(
-      options,
-      environment,
-      builders,
-      builderConfigOverrides,
-      terminator.shouldTerminate,
-      directoryWatcherFactory,
-      configKey,
-      buildDirs
-          .any((target) => target.outputLocation?.path.isNotEmpty ?? false),
-      buildDirs,
-      buildFilters,
-      isReleaseMode: isReleaseBuild ?? false);
+    options,
+    environment,
+    builders,
+    builderConfigOverrides,
+    terminator.shouldTerminate,
+    directoryWatcherFactory,
+    configKey,
+    buildDirs.any((target) => target.outputLocation?.path.isNotEmpty ?? false),
+    buildDirs,
+    buildFilters,
+    isReleaseMode: isReleaseBuild ?? false,
+  );
 
-  unawaited(watch.buildResults.drain<void>().then((_) async {
-    await terminator.cancel();
-    await options.logListener.cancel();
-  }));
+  unawaited(
+    watch.buildResults.drain<void>().then((_) async {
+      await terminator.cancel();
+      await options.logListener.cancel();
+    }),
+  );
 
   return createServeHandler(watch);
 }
@@ -124,29 +135,30 @@ Future<ServeHandler> watch(
 /// The [BuildState.buildResults] stream will end after the final build has been
 /// run.
 WatchImpl _runWatch(
-        BuildOptions options,
-        BuildEnvironment environment,
-        List<BuilderApplication> builders,
-        Map<String, Map<String, dynamic>> builderConfigOverrides,
-        Future until,
-        DirectoryWatcher Function(String) directoryWatcherFactory,
-        String? configKey,
-        bool willCreateOutputDirs,
-        Set<BuildDirectory> buildDirs,
-        Set<BuildFilter> buildFilters,
-        {bool isReleaseMode = false}) =>
-    WatchImpl(
-        options,
-        environment,
-        builders,
-        builderConfigOverrides,
-        until,
-        directoryWatcherFactory,
-        configKey,
-        willCreateOutputDirs,
-        buildDirs,
-        buildFilters,
-        isReleaseMode: isReleaseMode);
+  BuildOptions options,
+  BuildEnvironment environment,
+  List<BuilderApplication> builders,
+  Map<String, Map<String, dynamic>> builderConfigOverrides,
+  Future until,
+  DirectoryWatcher Function(String) directoryWatcherFactory,
+  String? configKey,
+  bool willCreateOutputDirs,
+  Set<BuildDirectory> buildDirs,
+  Set<BuildFilter> buildFilters, {
+  bool isReleaseMode = false,
+}) => WatchImpl(
+  options,
+  environment,
+  builders,
+  builderConfigOverrides,
+  until,
+  directoryWatcherFactory,
+  configKey,
+  willCreateOutputDirs,
+  buildDirs,
+  buildFilters,
+  isReleaseMode: isReleaseMode,
+);
 
 class WatchImpl implements BuildState {
   BuildImpl? _build;
@@ -190,23 +202,28 @@ class WatchImpl implements BuildState {
   Future<FinalizedReader> get reader => _readerCompleter.future;
 
   WatchImpl(
-      BuildOptions options,
-      BuildEnvironment environment,
-      List<BuilderApplication> builders,
-      Map<String, Map<String, dynamic>> builderConfigOverrides,
-      Future until,
-      this._directoryWatcherFactory,
-      this._configKey,
-      this._willCreateOutputDirs,
-      this._buildDirs,
-      this._buildFilters,
-      {bool isReleaseMode = false})
-      : _debounceDelay = options.debounceDelay,
-        packageGraph = options.packageGraph {
-    buildResults = _run(
-            options, environment, builders, builderConfigOverrides, until,
-            isReleaseMode: isReleaseMode)
-        .asBroadcastStream();
+    BuildOptions options,
+    BuildEnvironment environment,
+    List<BuilderApplication> builders,
+    Map<String, Map<String, dynamic>> builderConfigOverrides,
+    Future until,
+    this._directoryWatcherFactory,
+    this._configKey,
+    this._willCreateOutputDirs,
+    this._buildDirs,
+    this._buildFilters, {
+    bool isReleaseMode = false,
+  }) : _debounceDelay = options.debounceDelay,
+       packageGraph = options.packageGraph {
+    buildResults =
+        _run(
+          options,
+          environment,
+          builders,
+          builderConfigOverrides,
+          until,
+          isReleaseMode: isReleaseMode,
+        ).asBroadcastStream();
   }
 
   @override
@@ -218,14 +235,17 @@ class WatchImpl implements BuildState {
   ///
   /// File watchers are scheduled synchronously.
   Stream<BuildResult> _run(
-      BuildOptions options,
-      BuildEnvironment environment,
-      List<BuilderApplication> builders,
-      Map<String, Map<String, dynamic>> builderConfigOverrides,
-      Future until,
-      {bool isReleaseMode = false}) {
-    var watcherEnvironment = OverrideableEnvironment(environment,
-        writer: OnDeleteWriter(environment.writer, _expectedDeletes.add));
+    BuildOptions options,
+    BuildEnvironment environment,
+    List<BuilderApplication> builders,
+    Map<String, Map<String, dynamic>> builderConfigOverrides,
+    Future until, {
+    bool isReleaseMode = false,
+  }) {
+    var watcherEnvironment = OverrideableEnvironment(
+      environment,
+      writer: OnDeleteWriter(environment.writer, _expectedDeletes.add),
+    );
     var firstBuildCompleter = Completer<BuildResult>();
     currentBuild = firstBuildCompleter.future;
     var controller = StreamController<BuildResult>();
@@ -239,16 +259,23 @@ class WatchImpl implements BuildState {
 
       _expectedDeletes.clear();
       if (!options.skipBuildScriptCheck) {
-        if (build.buildScriptUpdates!
-            .hasBeenUpdated(mergedChanges.keys.toSet())) {
+        if (build.buildScriptUpdates!.hasBeenUpdated(
+          mergedChanges.keys.toSet(),
+        )) {
           _terminateCompleter.complete();
           _logger.severe('Terminating builds due to build script update');
-          return BuildResult(BuildStatus.failure, [],
-              failureType: FailureType.buildScriptChanged);
+          return BuildResult(
+            BuildStatus.failure,
+            [],
+            failureType: FailureType.buildScriptChanged,
+          );
         }
       }
-      return build.run(mergedChanges,
-          buildDirs: _buildDirs, buildFilters: _buildFilters);
+      return build.run(
+        mergedChanges,
+        buildDirs: _buildDirs,
+        buildFilters: _buildFilters,
+      );
     }
 
     var terminate = Future.any([until, _terminateCompleter.future]).then((_) {
@@ -256,14 +283,18 @@ class WatchImpl implements BuildState {
     });
 
     Digest? originalRootPackageConfigDigest;
-    final rootPackageConfigId =
-        AssetId(packageGraph.root.name, '.dart_tool/package_config.json');
+    final rootPackageConfigId = AssetId(
+      packageGraph.root.name,
+      '.dart_tool/package_config.json',
+    );
 
     // Start watching files immediately, before the first build is even started.
-    var graphWatcher = PackageGraphWatcher(packageGraph,
-        logger: _logger,
-        watch: (node) =>
-            PackageNodeWatcher(node, watch: _directoryWatcherFactory));
+    var graphWatcher = PackageGraphWatcher(
+      packageGraph,
+      logger: _logger,
+      watch:
+          (node) => PackageNodeWatcher(node, watch: _directoryWatcherFactory),
+    );
     graphWatcher
         .watch()
         .asyncMap<AssetChange>((change) {
@@ -282,22 +313,29 @@ class WatchImpl implements BuildState {
             return _readOnceExists(id, watcherEnvironment.reader).then((bytes) {
               if (md5.convert(bytes) != digest) {
                 _terminateCompleter.complete();
-                _logger
-                    .severe('Terminating builds due to package graph update, '
-                        'please restart the build.');
+                _logger.severe(
+                  'Terminating builds due to package graph update, '
+                  'please restart the build.',
+                );
               }
               return change;
             });
           } else if (_isBuildYaml(id) ||
               _isConfiguredBuildYaml(id) ||
               _isPackageBuildYamlOverride(id)) {
-            controller.add(BuildResult(BuildStatus.failure, [],
-                failureType: FailureType.buildConfigChanged));
+            controller.add(
+              BuildResult(
+                BuildStatus.failure,
+                [],
+                failureType: FailureType.buildConfigChanged,
+              ),
+            );
 
             // Kill future builds if the build.yaml files change.
             _terminateCompleter.complete();
             _logger.severe(
-                'Terminating builds due to ${id.package}:${id.path} update.');
+              'Terminating builds due to ${id.package}:${id.path} update.',
+            );
           }
           return change;
         })
@@ -314,8 +352,11 @@ class WatchImpl implements BuildState {
         })
         .debounceBuffer(_debounceDelay)
         .takeUntil(terminate)
-        .asyncMapBuffer((changes) => currentBuild = doBuild(changes)
-          ..whenComplete(() => currentBuild = null))
+        .asyncMapBuffer(
+          (changes) =>
+              currentBuild = doBuild(changes)
+                ..whenComplete(() => currentBuild = null),
+        )
         .listen((BuildResult result) {
           if (controller.isClosed) return;
           controller.add(result);
@@ -330,26 +371,39 @@ class WatchImpl implements BuildState {
     // Schedule the actual first build for the future so we can return the
     // stream synchronously.
     () async {
-      await logTimedAsync(_logger, 'Waiting for all file watchers to be ready',
-          () => graphWatcher.ready);
+      await logTimedAsync(
+        _logger,
+        'Waiting for all file watchers to be ready',
+        () => graphWatcher.ready,
+      );
       if (await watcherEnvironment.reader.canRead(rootPackageConfigId)) {
         originalRootPackageConfigDigest = md5.convert(
-            await watcherEnvironment.reader.readAsBytes(rootPackageConfigId));
+          await watcherEnvironment.reader.readAsBytes(rootPackageConfigId),
+        );
       } else {
         _logger.warning(
-            'Root package config not readable, manual restarts will be needed '
-            'after running `pub upgrade`.');
+          'Root package config not readable, manual restarts will be needed '
+          'after running `pub upgrade`.',
+        );
       }
 
       BuildResult firstBuild;
       BuildImpl? build;
       try {
-        build = _build = await BuildImpl.create(
-            options, watcherEnvironment, builders, builderConfigOverrides,
-            isReleaseBuild: isReleaseMode);
+        build =
+            _build = await BuildImpl.create(
+              options,
+              watcherEnvironment,
+              builders,
+              builderConfigOverrides,
+              isReleaseBuild: isReleaseMode,
+            );
 
-        firstBuild = await build
-            .run({}, buildDirs: _buildDirs, buildFilters: _buildFilters);
+        firstBuild = await build.run(
+          {},
+          buildDirs: _buildDirs,
+          buildFilters: _buildFilters,
+        );
       } on CannotBuildException catch (e, s) {
         _terminateCompleter.complete();
 
@@ -358,8 +412,11 @@ class WatchImpl implements BuildState {
       } on BuildScriptChangedException catch (e, s) {
         _terminateCompleter.complete();
 
-        firstBuild = BuildResult(BuildStatus.failure, [],
-            failureType: FailureType.buildScriptChanged);
+        firstBuild = BuildResult(
+          BuildStatus.failure,
+          [],
+          failureType: FailureType.buildScriptChanged,
+        );
         _readerCompleter.completeError(e, s);
       }
       if (build != null) {

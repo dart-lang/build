@@ -30,22 +30,26 @@ const _manifestSeparator = '\n';
 ///
 /// Returns whether it succeeded or not.
 Future<bool> createMergedOutputDirectories(
-    Set<BuildDirectory> buildDirs,
-    PackageGraph packageGraph,
-    BuildEnvironment environment,
-    AssetReader reader,
-    FinalizedAssetsView finalizedAssetsView,
-    bool outputSymlinksOnly) async {
+  Set<BuildDirectory> buildDirs,
+  PackageGraph packageGraph,
+  BuildEnvironment environment,
+  AssetReader reader,
+  FinalizedAssetsView finalizedAssetsView,
+  bool outputSymlinksOnly,
+) async {
   if (outputSymlinksOnly && reader.assetPathProvider == null) {
     _logger.severe(
-        'The current environment does not support symlinks, but symlinks were '
-        'requested.');
+      'The current environment does not support symlinks, but symlinks were '
+      'requested.',
+    );
     return false;
   }
   var conflictingOutputs = _conflicts(buildDirs);
   if (conflictingOutputs.isNotEmpty) {
-    _logger.severe('Unable to create merged directory. '
-        'Conflicting outputs for $conflictingOutputs');
+    _logger.severe(
+      'Unable to create merged directory. '
+      'Conflicting outputs for $conflictingOutputs',
+    );
     return false;
   }
 
@@ -53,17 +57,19 @@ Future<bool> createMergedOutputDirectories(
     var outputLocation = target.outputLocation;
     if (outputLocation != null) {
       if (!await _createMergedOutputDir(
-          outputLocation.path,
-          target.directory,
-          packageGraph,
-          environment,
-          reader,
-          finalizedAssetsView,
-          // TODO(grouma) - retrieve symlink information from target only.
-          outputSymlinksOnly || outputLocation.useSymlinks,
-          outputLocation.hoist)) {
+        outputLocation.path,
+        target.directory,
+        packageGraph,
+        environment,
+        reader,
+        finalizedAssetsView,
+        // TODO(grouma) - retrieve symlink information from target only.
+        outputSymlinksOnly || outputLocation.useSymlinks,
+        outputLocation.hoist,
+      )) {
         _logger.severe(
-            'Unable to create merged directory for ${outputLocation.path}.');
+          'Unable to create merged directory for ${outputLocation.path}.',
+        );
         return false;
       }
     }
@@ -82,21 +88,23 @@ Set<String> _conflicts(Set<BuildDirectory> buildDirs) {
 }
 
 Future<bool> _createMergedOutputDir(
-    String outputPath,
-    String? root,
-    PackageGraph packageGraph,
-    BuildEnvironment environment,
-    AssetReader reader,
-    FinalizedAssetsView finalizedOutputsView,
-    bool symlinkOnly,
-    bool hoist) async {
+  String outputPath,
+  String? root,
+  PackageGraph packageGraph,
+  BuildEnvironment environment,
+  AssetReader reader,
+  FinalizedAssetsView finalizedOutputsView,
+  bool symlinkOnly,
+  bool hoist,
+) async {
   try {
     if (root == null) return false;
     var absoluteRoot = p.join(packageGraph.root.path, root);
     if (absoluteRoot != packageGraph.root.path &&
         !p.isWithin(packageGraph.root.path, absoluteRoot)) {
       _logger.severe(
-          'Invalid dir to build `$root`, must be within the package root.');
+        'Invalid dir to build `$root`, must be within the package root.',
+      );
       return false;
     }
     var outputDir = Directory(outputPath);
@@ -115,35 +123,53 @@ Future<bool> _createMergedOutputDir(
 
     var outputAssets = <AssetId>[];
 
-    await logTimedAsync(_logger, 'Creating merged output dir `$outputPath`',
-        () async {
-      if (!outputDirExists) {
-        await outputDir.create(recursive: true);
-      }
+    await logTimedAsync(
+      _logger,
+      'Creating merged output dir `$outputPath`',
+      () async {
+        if (!outputDirExists) {
+          await outputDir.create(recursive: true);
+        }
 
-      outputAssets.addAll(await Future.wait([
-        for (var id in builtAssets)
-          _writeAsset(
-              id, outputDir, root, packageGraph, reader, symlinkOnly, hoist),
-        _writeModifiedPackageConfig(
-            packageGraph.root.name, packageGraph, outputDir),
-      ]));
+        outputAssets.addAll(
+          await Future.wait([
+            for (var id in builtAssets)
+              _writeAsset(
+                id,
+                outputDir,
+                root,
+                packageGraph,
+                reader,
+                symlinkOnly,
+                hoist,
+              ),
+            _writeModifiedPackageConfig(
+              packageGraph.root.name,
+              packageGraph,
+              outputDir,
+            ),
+          ]),
+        );
 
-      if (!hoist) {
-        for (var dir in _findRootDirs(builtAssets, outputPath)) {
-          var link = Link(p.join(outputDir.path, dir, 'packages'));
-          if (!link.existsSync()) {
-            link.createSync(p.join('..', 'packages'), recursive: true);
+        if (!hoist) {
+          for (var dir in _findRootDirs(builtAssets, outputPath)) {
+            var link = Link(p.join(outputDir.path, dir, 'packages'));
+            if (!link.existsSync()) {
+              link.createSync(p.join('..', 'packages'), recursive: true);
+            }
           }
         }
-      }
-    });
+      },
+    );
 
     await logTimedAsync(_logger, 'Writing asset manifest', () async {
       var paths = outputAssets.map((id) => id.path).toList()..sort();
       var content = paths.join(_manifestSeparator);
       await _writeAsString(
-          outputDir, AssetId(packageGraph.root.name, _manifestName), content);
+        outputDir,
+        AssetId(packageGraph.root.name, _manifestName),
+        content,
+      );
     });
 
     return true;
@@ -152,9 +178,11 @@ Future<bool> _createMergedOutputDir(
     var devModeLink =
         'https://docs.microsoft.com/en-us/windows/uwp/get-started/'
         'enable-your-device-for-development';
-    _logger.severe('Unable to create symlink ${e.path}. Note that to create '
-        'symlinks on windows you need to either run in a console with admin '
-        'privileges or enable developer mode (see $devModeLink).');
+    _logger.severe(
+      'Unable to create symlink ${e.path}. Note that to create '
+      'symlinks on windows you need to either run in a console with admin '
+      'privileges or enable developer mode (see $devModeLink).',
+    );
     return false;
   }
 }
@@ -169,22 +197,26 @@ Future<bool> _createMergedOutputDir(
 ///
 /// All other fields are left as is.
 Future<AssetId> _writeModifiedPackageConfig(
-    String rootPackage, PackageGraph packageGraph, Directory outputDir) async {
+  String rootPackage,
+  PackageGraph packageGraph,
+  Directory outputDir,
+) async {
   var packageConfig = <String, Object?>{
     'configVersion': 2,
     'packages': [
       for (var package in packageGraph.allPackages.values)
         {
           'name': package.name,
-          'rootUri': package.name == rootPackage
-              ? '../'
-              : '../packages/${package.name}',
+          'rootUri':
+              package.name == rootPackage
+                  ? '../'
+                  : '../packages/${package.name}',
           'packageUri':
               package.name == rootPackage ? 'packages/${package.name}' : '',
           if (package.languageVersion != null)
             'languageVersion': '${package.languageVersion}',
         },
-    ]
+    ],
   };
   var packageConfigId = AssetId(rootPackage, '.dart_tool/package_config.json');
   await _writeAsString(outputDir, packageConfigId, jsonEncode(packageConfig));
@@ -204,18 +236,22 @@ Set<String> _findRootDirs(Iterable<AssetId> allAssets, String outputPath) {
 }
 
 Future<AssetId> _writeAsset(
-    AssetId id,
-    Directory outputDir,
-    String root,
-    PackageGraph packageGraph,
-    AssetReader reader,
-    bool symlinkOnly,
-    bool hoist) {
+  AssetId id,
+  Directory outputDir,
+  String root,
+  PackageGraph packageGraph,
+  AssetReader reader,
+  bool symlinkOnly,
+  bool hoist,
+) {
   return _descriptorPool.withResource(() async {
     String assetPath;
     if (id.path.startsWith('lib/')) {
-      assetPath =
-          p.url.join('packages', id.package, id.path.substring('lib/'.length));
+      assetPath = p.url.join(
+        'packages',
+        id.package,
+        id.path.substring('lib/'.length),
+      );
     } else {
       assetPath = id.path;
       assert(id.package == packageGraph.root.name);
@@ -228,10 +264,11 @@ Future<AssetId> _writeAsset(
     try {
       if (symlinkOnly) {
         await Link(_filePathFor(outputDir, outputId)).create(
-            // We assert at the top of `createMergedOutputDirectories` that the
-            // reader implements this type when requesting symlinks.
-            reader.assetPathProvider!.pathFor(id),
-            recursive: true);
+          // We assert at the top of `createMergedOutputDirectories` that the
+          // reader implements this type when requesting symlinks.
+          reader.assetPathProvider!.pathFor(id),
+          recursive: true,
+        );
       } else {
         await _writeAsBytes(outputDir, outputId, await reader.readAsBytes(id));
       }
@@ -240,10 +277,11 @@ Future<AssetId> _writeAsset(
         _logger.fine('Skipping missing hidden file ${id.path}');
       } else {
         _logger.severe(
-            'Missing asset ${e.assetId}, it may have been deleted during the '
-            'build. Please try rebuilding and if you continue to see the '
-            'error then file a bug at '
-            'https://github.com/dart-lang/build/issues/new.');
+          'Missing asset ${e.assetId}, it may have been deleted during the '
+          'build. Please try rebuilding and if you continue to see the '
+          'error then file a bug at '
+          'https://github.com/dart-lang/build/issues/new.',
+        );
         rethrow;
       }
     }
@@ -264,8 +302,11 @@ Future<File> _fileFor(Directory outputDir, AssetId id) {
 String _filePathFor(Directory outputDir, AssetId id) {
   String relativePath;
   if (id.path.startsWith('lib')) {
-    relativePath =
-        p.join('packages', id.package, p.joinAll(p.url.split(id.path).skip(1)));
+    relativePath = p.join(
+      'packages',
+      id.package,
+      p.joinAll(p.url.split(id.path).skip(1)),
+    );
   } else {
     relativePath = id.path;
   }
@@ -278,7 +319,9 @@ String _filePathFor(Directory outputDir, AssetId id) {
 ///
 /// Returns whether or not the directory was successfully cleaned up.
 Future<bool> _cleanUpOutputDir(
-    Directory outputDir, BuildEnvironment environment) async {
+  Directory outputDir,
+  BuildEnvironment environment,
+) async {
   var outputPath = outputDir.path;
   var manifestFile = File(p.join(outputPath, _manifestName));
   if (!manifestFile.existsSync()) {
@@ -291,13 +334,16 @@ Future<bool> _cleanUpOutputDir(
       int choice;
       try {
         choice = await environment.prompt(
-            'Found existing directory `$outputPath` but no manifest file.\n'
-            'Please choose one of the following options:',
-            choices);
+          'Found existing directory `$outputPath` but no manifest file.\n'
+          'Please choose one of the following options:',
+          choices,
+        );
       } on NonInteractiveBuildException catch (_) {
-        _logger.severe('Unable to create merged directory at $outputPath.\n'
-            'Choose a different directory or delete the contents of that '
-            'directory.');
+        _logger.severe(
+          'Unable to create merged directory at $outputPath.\n'
+          'Choose a different directory or delete the contents of that '
+          'directory.',
+        );
         return false;
       }
       switch (choice) {
@@ -309,8 +355,9 @@ Future<bool> _cleanUpOutputDir(
             outputDir.deleteSync(recursive: true);
           } catch (e) {
             _logger.severe(
-                'Failed to delete output dir at `$outputPath` with error:\n\n'
-                '$e');
+              'Failed to delete output dir at `$outputPath` with error:\n\n'
+              '$e',
+            );
             return false;
           }
           // Actually recreate the directory, but as an empty one.
@@ -323,9 +370,10 @@ Future<bool> _cleanUpOutputDir(
     }
   } else {
     var previousOutputs = logTimedSync(
-        _logger,
-        'Reading manifest at ${manifestFile.path}',
-        () => manifestFile.readAsStringSync().split(_manifestSeparator));
+      _logger,
+      'Reading manifest at ${manifestFile.path}',
+      () => manifestFile.readAsStringSync().split(_manifestSeparator),
+    );
 
     logTimedSync(_logger, 'Deleting previous outputs in `$outputPath`', () {
       for (var path in previousOutputs) {
@@ -341,10 +389,13 @@ Future<bool> _cleanUpOutputDir(
 /// Deletes all the directories which used to contain any path in
 /// [removedFilePaths] if that directory is now empty.
 void _cleanEmptyDirectories(
-    String outputPath, Iterable<String> removedFilePaths) {
-  for (var directory in removedFilePaths
-      .map((path) => p.join(outputPath, p.dirname(path)))
-      .toSet()) {
+  String outputPath,
+  Iterable<String> removedFilePaths,
+) {
+  for (var directory
+      in removedFilePaths
+          .map((path) => p.join(outputPath, p.dirname(path)))
+          .toSet()) {
     _deleteUp(directory, outputPath);
   }
 }

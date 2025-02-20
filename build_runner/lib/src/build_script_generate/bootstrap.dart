@@ -84,25 +84,30 @@ Future<int> generateAndRun(
       if (scriptExitCode == 0) scriptExitCode = 1;
     });
     try {
-      await Isolate.spawnUri(Uri.file(p.absolute(scriptKernelLocation)), args,
-          messagePort.sendPort,
-          errorsAreFatal: true,
-          onExit: exitPort.sendPort,
-          onError: errorPort.sendPort);
+      await Isolate.spawnUri(
+        Uri.file(p.absolute(scriptKernelLocation)),
+        args,
+        messagePort.sendPort,
+        errorsAreFatal: true,
+        onExit: exitPort.sendPort,
+        onError: errorPort.sendPort,
+      );
       succeeded = true;
     } on IsolateSpawnException catch (e) {
       if (tryCount > 1) {
         logger.severe(
-            'Failed to spawn build script after retry. '
-            'This is likely due to a misconfigured builder definition. '
-            'See the generated script at $scriptLocation to find errors.',
-            e);
+          'Failed to spawn build script after retry. '
+          'This is likely due to a misconfigured builder definition. '
+          'See the generated script at $scriptLocation to find errors.',
+          e,
+        );
         messagePort.sendPort.send(ExitCode.config.code);
         exitPort.sendPort.send(null);
       } else {
         logger.warning(
-            'Error spawning build script isolate, this is likely due to a Dart '
-            'SDK update. Deleting precompiled script and retrying...');
+          'Error spawning build script isolate, this is likely due to a Dart '
+          'SDK update. Deleting precompiled script and retrying...',
+        );
       }
       await File(scriptKernelLocation).rename(scriptKernelCachedLocation);
     }
@@ -114,8 +119,9 @@ Future<int> generateAndRun(
       scriptExitCode = isolateExitCode;
     } else {
       throw StateError(
-          'Bad response from isolate, expected an exit code but got '
-          '$isolateExitCode');
+        'Bad response from isolate, expected an exit code but got '
+        '$isolateExitCode',
+      );
     }
     exitCodeListener!.cancel();
     exitCodeListener = null;
@@ -138,7 +144,9 @@ Future<int> generateAndRun(
 /// Returns zero for success or a number for failure which should be set to the
 /// exit code.
 Future<int> _createKernelIfNeeded(
-    Logger logger, List<String> experiments) async {
+  Logger logger,
+  List<String> experiments,
+) async {
   var assetGraphFile = File(assetGraphPathFor(scriptKernelLocation));
   var kernelFile = File(scriptKernelLocation);
   var kernelCacheFile = File(scriptKernelCachedLocation);
@@ -149,11 +157,13 @@ Future<int> _createKernelIfNeeded(
     if (!await assetGraphFile.exists()) {
       await kernelFile.rename(scriptKernelCachedLocation);
       logger.warning(
-          'Invalidated precompiled build script due to missing asset graph.');
+        'Invalidated precompiled build script due to missing asset graph.',
+      );
     } else if (!await _checkImportantPackageDepsAndExperiments(experiments)) {
       await kernelFile.rename(scriptKernelCachedLocation);
       logger.warning(
-          'Invalidated precompiled build script due to core package update');
+        'Invalidated precompiled build script due to core package update',
+      );
     }
   }
 
@@ -221,12 +231,10 @@ This is likely caused by a misconfigured builder definition.
   return 0;
 }
 
-const _importantPackages = [
-  'build_daemon',
-  'build_runner',
-];
-final _previousLocationsFile =
-    File(p.url.join(p.url.dirname(scriptKernelLocation), '.packageLocations'));
+const _importantPackages = ['build_daemon', 'build_runner'];
+final _previousLocationsFile = File(
+  p.url.join(p.url.dirname(scriptKernelLocation), '.packageLocations'),
+);
 
 /// Returns whether the [_importantPackages] are all pointing at same locations
 /// from the previous run, and [experiments] are the same as the last run.
@@ -237,12 +245,19 @@ final _previousLocationsFile =
 /// pre-emptively resolve them by precompiling the build script again, see
 /// https://github.com/dart-lang/build/issues/1929.
 Future<bool> _checkImportantPackageDepsAndExperiments(
-    List<String> experiments) async {
-  var currentLocations = await Future.wait(_importantPackages.map((pkg) =>
-      Isolate.resolvePackageUri(
-          Uri(scheme: 'package', path: '$pkg/fake.dart'))));
-  var fileContents =
-      currentLocations.map((uri) => '$uri').followedBy(experiments).join('\n');
+  List<String> experiments,
+) async {
+  var currentLocations = await Future.wait(
+    _importantPackages.map(
+      (pkg) => Isolate.resolvePackageUri(
+        Uri(scheme: 'package', path: '$pkg/fake.dart'),
+      ),
+    ),
+  );
+  var fileContents = currentLocations
+      .map((uri) => '$uri')
+      .followedBy(experiments)
+      .join('\n');
 
   if (!_previousLocationsFile.existsSync()) {
     _logger.fine('Core package locations file does not exist');
@@ -262,8 +277,10 @@ Future<bool> _checkImportantPackageDepsAndExperiments(
 void _defaultHandleUncaughtError(Object error, StackTrace stackTrace) {
   stderr
     ..writeln('\n\nYou have hit a bug in build_runner')
-    ..writeln('Please file an issue with reproduction steps at '
-        'https://github.com/dart-lang/build/issues\n\n')
+    ..writeln(
+      'Please file an issue with reproduction steps at '
+      'https://github.com/dart-lang/build/issues\n\n',
+    )
     ..writeln(error)
     ..writeln(stackTrace);
 }

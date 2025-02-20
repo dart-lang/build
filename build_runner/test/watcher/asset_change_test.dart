@@ -31,8 +31,11 @@ void main() {
 
     test('should support relative paths', () {
       final pkgBar = p.join('/', 'foo', 'bar');
-      final barFile =
-          p.join(p.relative(pkgBar, from: p.current), 'lib', 'bar.dart');
+      final barFile = p.join(
+        p.relative(pkgBar, from: p.current),
+        'lib',
+        'bar.dart',
+      );
       final nodeBar = PackageNode('bar', pkgBar, null, null);
 
       final event = WatchEvent(ChangeType.ADD, barFile);

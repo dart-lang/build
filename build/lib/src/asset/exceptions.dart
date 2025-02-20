@@ -69,7 +69,8 @@ class InvalidInputException implements Exception {
 
 class BuildStepCompletedException implements Exception {
   @override
-  String toString() => 'BuildStepCompletedException: '
+  String toString() =>
+      'BuildStepCompletedException: '
       'Attempt to use a BuildStep after it has completed';
 }
 

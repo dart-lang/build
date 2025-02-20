@@ -34,27 +34,39 @@ Future<String> generateBuildScript() =>
 Future<String> _generateBuildScript() async {
   final info = await findBuildScriptOptions();
   final builders = info.builderApplications;
-  final library = Library((b) => b.body.addAll([
-        declareFinal('_builders')
-            .assign(literalList(
-                builders,
-                refer('BuilderApplication',
-                    'package:build_runner_core/build_runner_core.dart')))
-            .statement,
-        _main()
-      ]));
+  final library = Library(
+    (b) => b.body.addAll([
+      declareFinal('_builders')
+          .assign(
+            literalList(
+              builders,
+              refer(
+                'BuilderApplication',
+                'package:build_runner_core/build_runner_core.dart',
+              ),
+            ),
+          )
+          .statement,
+      _main(),
+    ]),
+  );
   final emitter = DartEmitter(
-      allocator: Allocator.simplePrefixing(), useNullSafetySyntax: true);
+    allocator: Allocator.simplePrefixing(),
+    useNullSafetySyntax: true,
+  );
   try {
-    return DartFormatter(languageVersion: _lastShortFormatDartVersion)
-        .format('''
+    return DartFormatter(languageVersion: _lastShortFormatDartVersion).format(
+      '''
 // @dart=${_lastShortFormatDartVersion.major}.${_lastShortFormatDartVersion.minor}
 // ignore_for_file: directives_ordering
 ${library.accept(emitter)}
-''');
+''',
+    );
   } on FormatterException {
-    _log.severe('Generated build script could not be parsed.\n'
-        'This is likely caused by a misconfigured builder definition.');
+    _log.severe(
+      'Generated build script could not be parsed.\n'
+      'This is likely caused by a misconfigured builder definition.',
+    );
     throw const CannotBuildException();
   }
 }
@@ -74,7 +86,9 @@ Future<Iterable<Expression>> findBuilderApplications({
   Map<String, BuildConfig>? buildConfigOverrides,
 }) async {
   final info = await findBuildScriptOptions(
-      packageGraph: packageGraph, buildConfigOverrides: buildConfigOverrides);
+    packageGraph: packageGraph,
+    buildConfigOverrides: buildConfigOverrides,
+  );
   return info.builderApplications;
 }
 
@@ -90,20 +104,28 @@ Future<BuildScriptInfo> findBuildScriptOptions({
     hashCode: (n) => n.name.hashCode,
   ).expand((c) => c);
   var reader = FileBasedAssetReader(packageGraph);
-  var overrides = buildConfigOverrides ??=
-      await findBuildConfigOverrides(packageGraph, reader);
+  var overrides =
+      buildConfigOverrides ??= await findBuildConfigOverrides(
+        packageGraph,
+        reader,
+      );
   Future<BuildConfig> packageBuildConfig(PackageNode package) async {
     if (overrides.containsKey(package.name)) {
       return overrides[package.name]!;
     }
     try {
       return await BuildConfig.fromBuildConfigDir(
-          package.name, package.dependencies.map((n) => n.name), package.path);
+        package.name,
+        package.dependencies.map((n) => n.name),
+        package.path,
+      );
     } on ArgumentError // ignore: avoid_catching_errors
     catch (_) {
       // During the build an error will be logged.
       return BuildConfig.useDefault(
-          package.name, package.dependencies.map((n) => n.name));
+        package.name,
+        package.dependencies.map((n) => n.name),
+      );
     }
   }
 
@@ -121,25 +143,30 @@ Future<BuildScriptInfo> findBuildScriptOptions({
       if (packageGraph?.allPackages.containsKey(pkg) ?? true) {
         return true;
       }
-      _log.warning('Could not load imported package "$pkg" for definition '
-          // ignore: avoid_dynamic_calls
-          '"${definition.key}".');
+      _log.warning(
+        'Could not load imported package "$pkg" for definition '
+        // ignore: avoid_dynamic_calls
+        '"${definition.key}".',
+      );
       return false;
     }
     // ignore: avoid_dynamic_calls
     return definition.package == packageGraph!.root.name;
   }
 
-  final orderedConfigs =
-      await Future.wait(orderedPackages.map(packageBuildConfig));
+  final orderedConfigs = await Future.wait(
+    orderedPackages.map(packageBuildConfig),
+  );
   final builderDefinitions = orderedConfigs
       .expand((c) => c.builderDefinitions.values)
       .where(isValidDefinition);
 
   final rootBuildConfig = orderedConfigs.last;
   final orderedBuilders =
-      findBuilderOrder(builderDefinitions, rootBuildConfig.globalOptions)
-          .toList();
+      findBuilderOrder(
+        builderDefinitions,
+        rootBuildConfig.globalOptions,
+      ).toList();
 
   final postProcessBuilderDefinitions = orderedConfigs
       .expand((c) => c.postProcessBuilderDefinitions.values)
@@ -152,8 +179,9 @@ Future<BuildScriptInfo> findBuildScriptOptions({
     void checkBuilderKey(String builderKey) {
       if (allBuilderKeys.contains(builderKey)) return;
       _log.warning(
-          'Invalid builder key `$builderKey` found in global_options config of '
-          'build.yaml. This configuration will have no effect.');
+        'Invalid builder key `$builderKey` found in global_options config of '
+        'build.yaml. This configuration will have no effect.',
+      );
     }
 
     checkBuilderKey(globalBuilderConfig.key);
@@ -163,7 +191,7 @@ Future<BuildScriptInfo> findBuildScriptOptions({
   final applications = [
     for (var builder in orderedBuilders) _applyBuilder(builder),
     for (var builder in postProcessBuilderDefinitions)
-      _applyPostProcessBuilder(builder)
+      _applyPostProcessBuilder(builder),
   ];
 
   return BuildScriptInfo(applications);
@@ -176,31 +204,54 @@ class BuildScriptInfo {
 }
 
 /// A method forwarding to `run`.
-Method _main() => Method((b) => b
-  ..name = 'main'
-  ..returns = refer('void')
-  ..modifier = MethodModifier.async
-  ..requiredParameters.add(Parameter((b) => b
-    ..name = 'args'
-    ..type = TypeReference((b) => b
-      ..symbol = 'List'
-      ..types.add(refer('String')))))
-  ..optionalParameters.add(Parameter((b) => b
-    ..name = 'sendPort'
-    ..type = TypeReference((b) => b
-      ..symbol = 'SendPort'
-      ..url = 'dart:isolate'
-      ..isNullable = true)))
-  ..body = Block.of([
-    declareVar('result')
-        .assign(refer('run', 'package:build_runner/build_runner.dart')
-            .call([refer('args'), refer('_builders')]).awaited)
-        .statement,
-    refer('sendPort')
-        .nullSafeProperty('send')
-        .call([refer('result')]).statement,
-    refer('exitCode', 'dart:io').assign(refer('result')).statement,
-  ]));
+Method _main() => Method(
+  (b) =>
+      b
+        ..name = 'main'
+        ..returns = refer('void')
+        ..modifier = MethodModifier.async
+        ..requiredParameters.add(
+          Parameter(
+            (b) =>
+                b
+                  ..name = 'args'
+                  ..type = TypeReference(
+                    (b) =>
+                        b
+                          ..symbol = 'List'
+                          ..types.add(refer('String')),
+                  ),
+          ),
+        )
+        ..optionalParameters.add(
+          Parameter(
+            (b) =>
+                b
+                  ..name = 'sendPort'
+                  ..type = TypeReference(
+                    (b) =>
+                        b
+                          ..symbol = 'SendPort'
+                          ..url = 'dart:isolate'
+                          ..isNullable = true,
+                  ),
+          ),
+        )
+        ..body = Block.of([
+          declareVar('result')
+              .assign(
+                refer(
+                  'run',
+                  'package:build_runner/build_runner.dart',
+                ).call([refer('args'), refer('_builders')]).awaited,
+              )
+              .statement,
+          refer(
+            'sendPort',
+          ).nullSafeProperty('send').call([refer('result')]).statement,
+          refer('exitCode', 'dart:io').assign(refer('result')).statement,
+        ]),
+);
 
 /// An expression calling `apply` with appropriate setup for a Builder.
 Expression _applyBuilder(BuilderDefinition definition) {
@@ -211,9 +262,10 @@ Expression _applyBuilder(BuilderDefinition definition) {
     else
       'hideOutput': literalFalse,
     if (!identical(definition.defaults.generateFor, InputSet.anything))
-      'defaultGenerateFor':
-          refer('InputSet', 'package:build_config/build_config.dart')
-              .constInstance([], {
+      'defaultGenerateFor': refer(
+        'InputSet',
+        'package:build_config/build_config.dart',
+      ).constInstance([], {
         if (definition.defaults.generateFor.include != null)
           'include': _rawStringList(definition.defaults.generateFor.include!),
         if (definition.defaults.generateFor.exclude != null)
@@ -222,17 +274,21 @@ Expression _applyBuilder(BuilderDefinition definition) {
     if (definition.defaults.options.isNotEmpty)
       'defaultOptions': _constructBuilderOptions(definition.defaults.options),
     if (definition.defaults.devOptions.isNotEmpty)
-      'defaultDevOptions':
-          _constructBuilderOptions(definition.defaults.devOptions),
+      'defaultDevOptions': _constructBuilderOptions(
+        definition.defaults.devOptions,
+      ),
     if (definition.defaults.releaseOptions.isNotEmpty)
-      'defaultReleaseOptions':
-          _constructBuilderOptions(definition.defaults.releaseOptions),
+      'defaultReleaseOptions': _constructBuilderOptions(
+        definition.defaults.releaseOptions,
+      ),
     if (definition.appliesBuilders.isNotEmpty)
       'appliesBuilders': _rawStringList(definition.appliesBuilders),
   };
   var import = _buildScriptImport(definition.import);
-  return refer('apply', 'package:build_runner_core/build_runner_core.dart')
-      .call([
+  return refer(
+    'apply',
+    'package:build_runner_core/build_runner_core.dart',
+  ).call([
     literalString(definition.key, raw: true),
     literalList([for (var f in definition.builderFactories) refer(f, import)]),
     _findToExpression(definition),
@@ -244,9 +300,10 @@ Expression _applyBuilder(BuilderDefinition definition) {
 Expression _applyPostProcessBuilder(PostProcessBuilderDefinition definition) {
   final namedArgs = {
     if (!identical(definition.defaults.generateFor, InputSet.anything))
-      'defaultGenerateFor':
-          refer('InputSet', 'package:build_config/build_config.dart')
-              .constInstance([], {
+      'defaultGenerateFor': refer(
+        'InputSet',
+        'package:build_config/build_config.dart',
+      ).constInstance([], {
         if (definition.defaults.generateFor.include != null)
           'include': _rawStringList(definition.defaults.generateFor.include!),
         if (definition.defaults.generateFor.exclude != null)
@@ -255,16 +312,19 @@ Expression _applyPostProcessBuilder(PostProcessBuilderDefinition definition) {
     if (definition.defaults.options.isNotEmpty)
       'defaultOptions': _constructBuilderOptions(definition.defaults.options),
     if (definition.defaults.devOptions.isNotEmpty)
-      'defaultDevOptions':
-          _constructBuilderOptions(definition.defaults.devOptions),
+      'defaultDevOptions': _constructBuilderOptions(
+        definition.defaults.devOptions,
+      ),
     if (definition.defaults.releaseOptions.isNotEmpty)
-      'defaultReleaseOptions':
-          _constructBuilderOptions(definition.defaults.releaseOptions),
+      'defaultReleaseOptions': _constructBuilderOptions(
+        definition.defaults.releaseOptions,
+      ),
   };
   var import = _buildScriptImport(definition.import);
-  return refer('applyPostProcess',
-          'package:build_runner_core/build_runner_core.dart')
-      .call([
+  return refer(
+    'applyPostProcess',
+    'package:build_runner_core/build_runner_core.dart',
+  ).call([
     literalString(definition.key, raw: true),
     refer(definition.builderFactory, import),
   ], namedArgs);
@@ -279,9 +339,11 @@ String _buildScriptImport(String import) {
   if (import.startsWith('package:')) {
     return import;
   } else if (import.startsWith('../') || import.startsWith('/')) {
-    _log.warning('The `../` import syntax in build.yaml is now deprecated, '
-        'instead do a normal relative import as if it was from the root of '
-        'the package. Found `$import` in your `build.yaml` file.');
+    _log.warning(
+      'The `../` import syntax in build.yaml is now deprecated, '
+      'instead do a normal relative import as if it was from the root of '
+      'the package. Found `$import` in your `build.yaml` file.',
+    );
     return import;
   } else {
     return p.url.relative(import, from: p.url.dirname(scriptLocation));
@@ -291,27 +353,33 @@ String _buildScriptImport(String import) {
 Expression _findToExpression(BuilderDefinition definition) {
   switch (definition.autoApply) {
     case AutoApply.none:
-      return refer('toNoneByDefault',
-              'package:build_runner_core/build_runner_core.dart')
-          .call([]);
+      return refer(
+        'toNoneByDefault',
+        'package:build_runner_core/build_runner_core.dart',
+      ).call([]);
     case AutoApply.dependents:
-      return refer('toDependentsOf',
-              'package:build_runner_core/build_runner_core.dart')
-          .call([literalString(definition.package, raw: true)]);
+      return refer(
+        'toDependentsOf',
+        'package:build_runner_core/build_runner_core.dart',
+      ).call([literalString(definition.package, raw: true)]);
     case AutoApply.allPackages:
-      return refer('toAllPackages',
-              'package:build_runner_core/build_runner_core.dart')
-          .call([]);
+      return refer(
+        'toAllPackages',
+        'package:build_runner_core/build_runner_core.dart',
+      ).call([]);
     case AutoApply.rootPackage:
-      return refer('toRoot', 'package:build_runner_core/build_runner_core.dart')
-          .call([]);
+      return refer(
+        'toRoot',
+        'package:build_runner_core/build_runner_core.dart',
+      ).call([]);
   }
 }
 
 /// An expression creating a [BuilderOptions] from a json string.
-Expression _constructBuilderOptions(Map<String, dynamic> options) =>
-    refer('BuilderOptions', 'package:build/build.dart')
-        .constInstance([options.toExpression()]);
+Expression _constructBuilderOptions(Map<String, dynamic> options) => refer(
+  'BuilderOptions',
+  'package:build/build.dart',
+).constInstance([options.toExpression()]);
 
 /// Converts a Dart object to a source code representation.
 ///
@@ -322,14 +390,18 @@ extension ConvertToExpression on Object? {
     final $this = this;
 
     if ($this is Map) {
-      return literalMap({
-        for (final entry in $this.cast<Object?, Object?>().entries)
-          entry.key.toExpression(): entry.value.toExpression()
-      }, refer('String'), refer('dynamic'));
+      return literalMap(
+        {
+          for (final entry in $this.cast<Object?, Object?>().entries)
+            entry.key.toExpression(): entry.value.toExpression(),
+        },
+        refer('String'),
+        refer('dynamic'),
+      );
     } else if ($this is List) {
-      return literalList(
-          [for (final entry in $this.cast<Object?>()) entry.toExpression()],
-          refer('dynamic'));
+      return literalList([
+        for (final entry in $this.cast<Object?>()) entry.toExpression(),
+      ], refer('dynamic'));
     } else if ($this is String) {
       return literalString($this, raw: true);
     } else {

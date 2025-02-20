@@ -15,9 +15,10 @@ import 'scratch_space.dart';
 final sdkDir = p.dirname(p.dirname(Platform.resolvedExecutable));
 
 // If no terminal is attached, prevent a new one from launching.
-final _processMode = stdin.hasTerminal
-    ? ProcessStartMode.normal
-    : ProcessStartMode.detachedWithStdio;
+final _processMode =
+    stdin.hasTerminal
+        ? ProcessStartMode.normal
+        : ProcessStartMode.detachedWithStdio;
 
 /// Completes once the dartdevk workers have been shut down.
 Future<void> get dartdevkWorkersAreDone =>
@@ -38,9 +39,11 @@ final int maxWorkersPerTask = () {
       Platform.environment[_maxWorkersEnvVar] ?? '$_defaultMaxWorkers';
   var parsed = int.tryParse(toParse);
   if (parsed == null) {
-    log.warning('Invalid value for $_maxWorkersEnvVar environment variable, '
-        'expected an int but got `$toParse`. Falling back to default value '
-        'of $_defaultMaxWorkers.');
+    log.warning(
+      'Invalid value for $_maxWorkersEnvVar environment variable, '
+      'expected an int but got `$toParse`. Falling back to default value '
+      'of $_defaultMaxWorkers.',
+    );
     return _defaultMaxWorkers;
   }
   return parsed;
@@ -50,50 +53,58 @@ final int maxWorkersPerTask = () {
 BazelWorkerDriver get _dartdevkDriver {
   _dartdevkWorkersAreDoneCompleter ??= Completer<void>();
   return __dartdevkDriver ??= BazelWorkerDriver(
-      () => Process.start(
-          p.join(sdkDir, 'bin', 'dart'),
-          [
-            p.join(sdkDir, 'bin', 'snapshots', 'dartdevc.dart.snapshot'),
-            '--persistent_worker'
-          ],
-          mode: _processMode,
-          workingDirectory: scratchSpace.tempDir.path),
-      maxWorkers: maxWorkersPerTask);
+    () => Process.start(
+      p.join(sdkDir, 'bin', 'dart'),
+      [
+        p.join(sdkDir, 'bin', 'snapshots', 'dartdevc.dart.snapshot'),
+        '--persistent_worker',
+      ],
+      mode: _processMode,
+      workingDirectory: scratchSpace.tempDir.path,
+    ),
+    maxWorkers: maxWorkersPerTask,
+  );
 }
 
 BazelWorkerDriver? __dartdevkDriver;
 
 /// Resource for fetching the current [BazelWorkerDriver] for dartdevk.
-final dartdevkDriverResource =
-    Resource<BazelWorkerDriver>(() => _dartdevkDriver, beforeExit: () async {
-  await __dartdevkDriver?.terminateWorkers();
-  _dartdevkWorkersAreDoneCompleter?.complete();
-  _dartdevkWorkersAreDoneCompleter = null;
-  __dartdevkDriver = null;
-});
+final dartdevkDriverResource = Resource<BazelWorkerDriver>(
+  () => _dartdevkDriver,
+  beforeExit: () async {
+    await __dartdevkDriver?.terminateWorkers();
+    _dartdevkWorkersAreDoneCompleter?.complete();
+    _dartdevkWorkersAreDoneCompleter = null;
+    __dartdevkDriver = null;
+  },
+);
 
 /// Manages a shared set of persistent common frontend workers.
 BazelWorkerDriver get _frontendDriver {
   _frontendWorkersAreDoneCompleter ??= Completer<void>();
   return __frontendDriver ??= BazelWorkerDriver(
-      () => Process.start(
-          p.join(sdkDir, 'bin', 'dart'),
-          [
-            p.join(sdkDir, 'bin', 'snapshots', 'kernel_worker.dart.snapshot'),
-            '--persistent_worker'
-          ],
-          mode: _processMode,
-          workingDirectory: scratchSpace.tempDir.path),
-      maxWorkers: maxWorkersPerTask);
+    () => Process.start(
+      p.join(sdkDir, 'bin', 'dart'),
+      [
+        p.join(sdkDir, 'bin', 'snapshots', 'kernel_worker.dart.snapshot'),
+        '--persistent_worker',
+      ],
+      mode: _processMode,
+      workingDirectory: scratchSpace.tempDir.path,
+    ),
+    maxWorkers: maxWorkersPerTask,
+  );
 }
 
 BazelWorkerDriver? __frontendDriver;
 
 /// Resource for fetching the current [BazelWorkerDriver] for common frontend.
-final frontendDriverResource =
-    Resource<BazelWorkerDriver>(() => _frontendDriver, beforeExit: () async {
-  await __frontendDriver?.terminateWorkers();
-  _frontendWorkersAreDoneCompleter?.complete();
-  _frontendWorkersAreDoneCompleter = null;
-  __frontendDriver = null;
-});
+final frontendDriverResource = Resource<BazelWorkerDriver>(
+  () => _frontendDriver,
+  beforeExit: () async {
+    await __frontendDriver?.terminateWorkers();
+    _frontendWorkersAreDoneCompleter?.complete();
+    _frontendWorkersAreDoneCompleter = null;
+    __frontendDriver = null;
+  },
+);

@@ -18,12 +18,16 @@ class _$BuildTargetRequestSerializer
 
   @override
   Iterable<Object?> serialize(
-      Serializers serializers, BuildTargetRequest object,
-      {FullType specifiedType = FullType.unspecified}) {
+    Serializers serializers,
+    BuildTargetRequest object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = <Object?>[
       'target',
-      serializers.serialize(object.target,
-          specifiedType: const FullType(BuildTarget)),
+      serializers.serialize(
+        object.target,
+        specifiedType: const FullType(BuildTarget),
+      ),
     ];
 
     return result;
@@ -31,8 +35,10 @@ class _$BuildTargetRequestSerializer
 
   @override
   BuildTargetRequest deserialize(
-      Serializers serializers, Iterable<Object?> serialized,
-      {FullType specifiedType = FullType.unspecified}) {
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
     final result = new BuildTargetRequestBuilder();
 
     final iterator = serialized.iterator;
@@ -42,8 +48,12 @@ class _$BuildTargetRequestSerializer
       final Object? value = iterator.current;
       switch (key) {
         case 'target':
-          result.target = serializers.deserialize(value,
-              specifiedType: const FullType(BuildTarget))! as BuildTarget;
+          result.target =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(BuildTarget),
+                  )!
+                  as BuildTarget;
           break;
       }
     }
@@ -56,19 +66,22 @@ class _$BuildTargetRequest extends BuildTargetRequest {
   @override
   final BuildTarget target;
 
-  factory _$BuildTargetRequest(
-          [void Function(BuildTargetRequestBuilder)? updates]) =>
-      (new BuildTargetRequestBuilder()..update(updates))._build();
+  factory _$BuildTargetRequest([
+    void Function(BuildTargetRequestBuilder)? updates,
+  ]) => (new BuildTargetRequestBuilder()..update(updates))._build();
 
   _$BuildTargetRequest._({required this.target}) : super._() {
     BuiltValueNullFieldError.checkNotNull(
-        target, r'BuildTargetRequest', 'target');
+      target,
+      r'BuildTargetRequest',
+      'target',
+    );
   }
 
   @override
   BuildTargetRequest rebuild(
-          void Function(BuildTargetRequestBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(BuildTargetRequestBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   BuildTargetRequestBuilder toBuilder() =>
@@ -91,8 +104,7 @@ class _$BuildTargetRequest extends BuildTargetRequest {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'BuildTargetRequest')
-          ..add('target', target))
-        .toString();
+      ..add('target', target)).toString();
   }
 }
 
@@ -130,10 +142,15 @@ class BuildTargetRequestBuilder
   BuildTargetRequest build() => _build();
 
   _$BuildTargetRequest _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         new _$BuildTargetRequest._(
-            target: BuiltValueNullFieldError.checkNotNull(
-                target, r'BuildTargetRequest', 'target'));
+          target: BuiltValueNullFieldError.checkNotNull(
+            target,
+            r'BuildTargetRequest',
+            'target',
+          ),
+        );
     replace(_$result);
     return _$result;
   }

@@ -23,15 +23,19 @@ class BuildCacheReader implements AssetReader, AssetReaderState {
   final String _rootPackage;
 
   BuildCacheReader(
-      AssetReader delegate, AssetGraph assetGraph, String rootPackage)
-      : _delegate = delegate,
-        _assetGraph = assetGraph,
-        _rootPackage = rootPackage,
-        assetPathProvider = delegate.assetPathProvider == null
-            ? null
-            : OverlayAssetPathProvider(
+    AssetReader delegate,
+    AssetGraph assetGraph,
+    String rootPackage,
+  ) : _delegate = delegate,
+      _assetGraph = assetGraph,
+      _rootPackage = rootPackage,
+      assetPathProvider =
+          delegate.assetPathProvider == null
+              ? null
+              : OverlayAssetPathProvider(
                 delegate: delegate.assetPathProvider!,
-                overlay: (id) => _cacheLocation(id, assetGraph, rootPackage));
+                overlay: (id) => _cacheLocation(id, assetGraph, rootPackage),
+              );
 
   @override
   Filesystem get filesystem => _delegate.filesystem;
@@ -56,12 +60,16 @@ class BuildCacheReader implements AssetReader, AssetReaderState {
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) =>
-      _delegate.readAsString(_cacheLocation(id, _assetGraph, _rootPackage),
-          encoding: encoding);
+      _delegate.readAsString(
+        _cacheLocation(id, _assetGraph, _rootPackage),
+        encoding: encoding,
+      );
 
   @override
-  Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError(
-      'Asset globbing should be done per phase with the AssetGraph');
+  Stream<AssetId> findAssets(Glob glob) =>
+      throw UnimplementedError(
+        'Asset globbing should be done per phase with the AssetGraph',
+      );
 }
 
 class BuildCacheWriter implements RunnerAssetWriter {
@@ -73,14 +81,20 @@ class BuildCacheWriter implements RunnerAssetWriter {
 
   @override
   Future writeAsBytes(AssetId id, List<int> content) => _delegate.writeAsBytes(
-      _cacheLocation(id, _assetGraph, _rootPackage), content);
+    _cacheLocation(id, _assetGraph, _rootPackage),
+    content,
+  );
 
   @override
-  Future writeAsString(AssetId id, String content,
-          {Encoding encoding = utf8}) =>
-      _delegate.writeAsString(
-          _cacheLocation(id, _assetGraph, _rootPackage), content,
-          encoding: encoding);
+  Future writeAsString(
+    AssetId id,
+    String content, {
+    Encoding encoding = utf8,
+  }) => _delegate.writeAsString(
+    _cacheLocation(id, _assetGraph, _rootPackage),
+    content,
+    encoding: encoding,
+  );
 
   @override
   Future delete(AssetId id) =>
@@ -101,7 +115,9 @@ AssetId _cacheLocation(AssetId id, AssetGraph assetGraph, String rootPackage) {
   final assetNode = assetGraph.get(id);
   if (assetNode is GeneratedAssetNode && assetNode.isHidden) {
     return AssetId(
-        rootPackage, '$generatedOutputDirectory/${id.package}/${id.path}');
+      rootPackage,
+      '$generatedOutputDirectory/${id.package}/${id.path}',
+    );
   }
   return id;
 }

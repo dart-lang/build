@@ -67,12 +67,16 @@ class InBuildPhase extends BuildPhase implements BuildAction {
   @override
   final bool hideOutput;
 
-  InBuildPhase._(this.package, this.builder, this.builderOptions,
-      {required this.targetSources,
-      required this.generateFor,
-      required this.builderLabel,
-      this.isOptional = false,
-      this.hideOutput = false});
+  InBuildPhase._(
+    this.package,
+    this.builder,
+    this.builderOptions, {
+    required this.targetSources,
+    required this.generateFor,
+    required this.builderLabel,
+    this.isOptional = false,
+    this.hideOutput = false,
+  });
 
   /// Creates an [BuildPhase] for a normal [Builder].
   ///
@@ -94,14 +98,19 @@ class InBuildPhase extends BuildPhase implements BuildAction {
     BuilderOptions builderOptions = const BuilderOptions({}),
     bool isOptional = false,
     bool hideOutput = false,
-  }) : this._(package, builder, builderOptions,
-            targetSources: InputMatcher(targetSources),
-            generateFor: InputMatcher(generateFor),
-            builderLabel: builderKey == null || builderKey.isEmpty
-                ? _builderLabel(builder)
-                : _simpleBuilderKey(builderKey),
-            isOptional: isOptional,
-            hideOutput: hideOutput);
+  }) : this._(
+         package,
+         builder,
+         builderOptions,
+         targetSources: InputMatcher(targetSources),
+         generateFor: InputMatcher(generateFor),
+         builderLabel:
+             builderKey == null || builderKey.isEmpty
+                 ? _builderLabel(builder)
+                 : _simpleBuilderKey(builderKey),
+         isOptional: isOptional,
+         hideOutput: hideOutput,
+       );
 
   @override
   String toString() {
@@ -115,14 +124,14 @@ class InBuildPhase extends BuildPhase implements BuildAction {
 
   @override
   int get identity => _deepEquals.hash([
-        builderLabel,
-        builder.buildExtensions,
-        package,
-        targetSources,
-        generateFor,
-        isOptional,
-        hideOutput
-      ]);
+    builderLabel,
+    builder.buildExtensions,
+    package,
+    targetSources,
+    generateFor,
+    isOptional,
+    hideOutput,
+  ]);
 }
 
 /// A [BuildPhase] that can run multiple [PostBuildAction]s to
@@ -144,12 +153,10 @@ class PostBuildPhase extends BuildPhase {
   String toString() => builderActions.map((a) => a.builderLabel).join(', ');
 
   @override
-  int get identity =>
-      _deepEquals.hash(builderActions.map<dynamic>((b) => b.identity).toList()
-        ..addAll([
-          isOptional,
-          hideOutput,
-        ]));
+  int get identity => _deepEquals.hash(
+    builderActions.map<dynamic>((b) => b.identity).toList()
+      ..addAll([isOptional, hideOutput]),
+  );
 }
 
 /// Part of a larger [PostBuildPhase], applies a single
@@ -168,24 +175,27 @@ class PostBuildAction implements BuildAction {
   @override
   final InputMatcher targetSources;
 
-  PostBuildAction(this.builder, this.package,
-      {String? builderKey,
-      required this.builderOptions,
-      required InputSet targetSources,
-      required InputSet generateFor})
-      : builderLabel = builderKey == null || builderKey.isEmpty
-            ? _builderLabel(builder)
-            : _simpleBuilderKey(builderKey),
-        targetSources = InputMatcher(targetSources),
-        generateFor = InputMatcher(generateFor);
+  PostBuildAction(
+    this.builder,
+    this.package, {
+    String? builderKey,
+    required this.builderOptions,
+    required InputSet targetSources,
+    required InputSet generateFor,
+  }) : builderLabel =
+           builderKey == null || builderKey.isEmpty
+               ? _builderLabel(builder)
+               : _simpleBuilderKey(builderKey),
+       targetSources = InputMatcher(targetSources),
+       generateFor = InputMatcher(generateFor);
 
   int get identity => _deepEquals.hash([
-        builderLabel,
-        builder.inputExtensions.toList(),
-        generateFor,
-        package,
-        targetSources,
-      ]);
+    builderLabel,
+    builder.inputExtensions.toList(),
+    generateFor,
+    package,
+    targetSources,
+  ]);
 }
 
 /// If we have no key find a human friendly name for the Builder.

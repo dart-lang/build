@@ -50,7 +50,9 @@ extension on AssetId {
   /// Replaces the last [suffixLength] characters with [newSuffix].
   AssetId replaceSuffix(int suffixLength, String newSuffix) {
     return AssetId(
-        package, path.substring(0, path.length - suffixLength) + newSuffix);
+      package,
+      path.substring(0, path.length - suffixLength) + newSuffix,
+    );
   }
 }
 
@@ -58,7 +60,10 @@ abstract class _ParsedBuildOutputs {
   _ParsedBuildOutputs();
 
   factory _ParsedBuildOutputs.parse(
-      Builder builder, String input, List<String> outputs) {
+    Builder builder,
+    String input,
+    List<String> outputs,
+  ) {
     final matches = _captureGroupRegexp.allMatches(input).toList();
     if (matches.isNotEmpty) {
       return _CapturingBuildOutputs.parse(builder, input, outputs, matches);
@@ -104,8 +109,9 @@ class _FullMatchBuildOutputs extends _ParsedBuildOutputs {
 
     // If we expect an output, the asset's path ends with the input extension.
     // Expected outputs just replace the matched suffix in the path.
-    return outputExtensions
-        .map((extension) => AssetId(input.package, extension));
+    return outputExtensions.map(
+      (extension) => AssetId(input.package, extension),
+    );
   }
 }
 
@@ -127,7 +133,8 @@ class _SuffixBuildOutputs extends _ParsedBuildOutputs {
     // If we expect an output, the asset's path ends with the input extension.
     // Expected outputs just replace the matched suffix in the path.
     return outputExtensions.map(
-        (extension) => input.replaceSuffix(inputExtension.length, extension));
+      (extension) => input.replaceSuffix(inputExtension.length, extension),
+    );
   }
 }
 
@@ -144,8 +151,12 @@ class _CapturingBuildOutputs extends _ParsedBuildOutputs {
 
   _CapturingBuildOutputs(this._pathMatcher, this._groupNames, this._outputs);
 
-  factory _CapturingBuildOutputs.parse(Builder builder, String input,
-      List<String> outputs, List<RegExpMatch> matches) {
+  factory _CapturingBuildOutputs.parse(
+    Builder builder,
+    String input,
+    List<String> outputs,
+    List<RegExpMatch> matches,
+  ) {
     final regexBuffer = StringBuffer();
     var positionInInput = 0;
     if (input.startsWith('^')) {
@@ -217,7 +228,10 @@ class _CapturingBuildOutputs extends _ParsedBuildOutputs {
     }
 
     return _CapturingBuildOutputs(
-        RegExp(regexBuffer.toString()), names, outputs);
+      RegExp(regexBuffer.toString()),
+      names,
+      outputs,
+    );
   }
 
   @override
@@ -238,21 +252,20 @@ class _CapturingBuildOutputs extends _ParsedBuildOutputs {
     final lengthOfMatch = match.end - match.start;
 
     return _outputs.map((output) {
-      final resolvedOutput = output.replaceAllMapped(
-        _captureGroupRegexp,
-        (outputMatch) {
-          final name = outputMatch.group(1)!;
-          final index = _groupNames.indexOf(name);
-          assert(
-            !index.isNegative,
-            'Output refers to a group not declared in the input extension. '
-            'Validation was supposed to catch that.',
-          );
+      final resolvedOutput = output.replaceAllMapped(_captureGroupRegexp, (
+        outputMatch,
+      ) {
+        final name = outputMatch.group(1)!;
+        final index = _groupNames.indexOf(name);
+        assert(
+          !index.isNegative,
+          'Output refers to a group not declared in the input extension. '
+          'Validation was supposed to catch that.',
+        );
 
-          // Regex group indices start at 1.
-          return match.group(index + 1)!;
-        },
-      );
+        // Regex group indices start at 1.
+        return match.group(index + 1)!;
+      });
       return input.replaceSuffix(lengthOfMatch, resolvedOutput);
     });
   }

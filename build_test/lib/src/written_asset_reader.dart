@@ -50,7 +50,8 @@ class WrittenAssetReader extends AssetReader implements AssetReaderState {
   Future<bool> canRead(AssetId id) {
     var canRead = source.assets.containsKey(id);
     if (filterSpy != null) {
-      canRead = canRead &&
+      canRead =
+          canRead &&
           (_additionallyAllowed.contains(id) ||
               filterSpy!.assetsWritten.contains(id));
     }
@@ -66,7 +67,8 @@ class WrittenAssetReader extends AssetReader implements AssetReaderState {
     var available = source.assets.keys.toSet();
     if (filterSpy != null) {
       available = available.intersection(
-          filterSpy!.assetsWritten.toSet().union(_additionallyAllowed));
+        filterSpy!.assetsWritten.toSet().union(_additionallyAllowed),
+      );
     }
 
     for (var asset in available) {

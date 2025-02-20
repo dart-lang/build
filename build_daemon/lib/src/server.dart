@@ -51,10 +51,11 @@ class Server {
     ChangeProvider changeProvider, {
     Serializers? serializersOverride,
     bool Function(BuildTarget, Iterable<WatchEvent>)? shouldBuild,
-  })  : _changeProvider = changeProvider,
-        _serializers = serializersOverride ?? serializers,
-        _buildTargetManager =
-            BuildTargetManager(shouldBuildOverride: shouldBuild) {
+  }) : _changeProvider = changeProvider,
+       _serializers = serializersOverride ?? serializers,
+       _buildTargetManager = BuildTargetManager(
+         shouldBuildOverride: shouldBuild,
+       ) {
     _logs = _outputStreamController.stream;
     _forwardData();
     if (changeProvider is AutoChangeProvider) {
@@ -74,31 +75,41 @@ class Server {
   /// Starts listening for build daemon clients.
   Future<int> listen() async {
     var handler = webSocketHandler((WebSocketChannel channel, _) async {
-      channel.stream.listen((message) async {
-        dynamic request;
-        try {
-          request = _serializers.deserialize(jsonDecode(message as String));
-        } catch (e, s) {
-          _logMessage(Level.WARNING, 'Unable to parse message: $message', e, s);
-          return;
-        }
-        if (request is BuildTargetRequest) {
-          _buildTargetManager.addBuildTarget(request.target, channel);
-        } else if (request is BuildRequest) {
-          // We can only get explicit build requests if we have a manual change
-          // provider.
-          var changeProvider = _changeProvider;
-          var changes = changeProvider is ManualChangeProvider
-              ? await changeProvider.collectChanges()
-              : <WatchEvent>[];
-          var targets = changes.isEmpty
-              ? _buildTargetManager.targets
-              : _buildTargetManager.targetsForChanges(changes);
-          await _build(targets, changes);
-        }
-      }, onDone: () {
-        _removeChannel(channel);
-      });
+      channel.stream.listen(
+        (message) async {
+          dynamic request;
+          try {
+            request = _serializers.deserialize(jsonDecode(message as String));
+          } catch (e, s) {
+            _logMessage(
+              Level.WARNING,
+              'Unable to parse message: $message',
+              e,
+              s,
+            );
+            return;
+          }
+          if (request is BuildTargetRequest) {
+            _buildTargetManager.addBuildTarget(request.target, channel);
+          } else if (request is BuildRequest) {
+            // We can only get explicit build requests if we have a manual change
+            // provider.
+            var changeProvider = _changeProvider;
+            var changes =
+                changeProvider is ManualChangeProvider
+                    ? await changeProvider.collectChanges()
+                    : <WatchEvent>[];
+            var targets =
+                changes.isEmpty
+                    ? _buildTargetManager.targets
+                    : _buildTargetManager.targetsForChanges(changes);
+            await _build(targets, changes);
+          }
+        },
+        onDone: () {
+          _removeChannel(channel);
+        },
+      );
     });
     var server = _server = await HttpMultiServer.loopback(0);
     // Serve requests in an error zone to prevent failures
@@ -112,10 +123,18 @@ class Server {
   Future<void> stop({String message = '', int failureType = 0}) async {
     if (message.isNotEmpty && failureType != 0) {
       for (var connection in _buildTargetManager.allChannels) {
-        connection.sink
-            .add(jsonEncode(_serializers.serialize(ShutdownNotification((b) => b
-              ..message = message
-              ..failureType = failureType))));
+        connection.sink.add(
+          jsonEncode(
+            _serializers.serialize(
+              ShutdownNotification(
+                (b) =>
+                    b
+                      ..message = message
+                      ..failureType = failureType,
+              ),
+            ),
+          ),
+        );
       }
     }
     _timeout.cancel();
@@ -129,65 +148,86 @@ class Server {
   }
 
   Future<void> _build(
-          Set<BuildTarget> buildTargets, Iterable<WatchEvent> changes) =>
-      _pool.withResource(() {
-        _interestedChannels =
-            buildTargets.expand(_buildTargetManager.channels).toSet();
-        return _builder.build(buildTargets, changes);
-      });
+    Set<BuildTarget> buildTargets,
+    Iterable<WatchEvent> changes,
+  ) => _pool.withResource(() {
+    _interestedChannels =
+        buildTargets.expand(_buildTargetManager.channels).toSet();
+    return _builder.build(buildTargets, changes);
+  });
   void _forwardData() {
     _subs
-      ..add(_builder.logs.listen((log) {
-        var message = jsonEncode(_serializers.serialize(log));
-        for (var channel in _interestedChannels) {
-          channel.sink.add(message);
-        }
-      }))
-      ..add(_builder.builds.listen((status) {
-        // Don't serialize or send changed assets if the client isn't interested
-        // in them.
-        String? message, messageWithoutChangedAssets;
-        for (var channel in _interestedChannels) {
-          var targets = _buildTargetManager.targetsFor(channel);
-          var wantsChangedAssets = targets
-              .any((e) => e is DefaultBuildTarget && e.reportChangedAssets);
-          String messageForChannel;
-          if (wantsChangedAssets) {
-            messageForChannel =
-                message ??= jsonEncode(_serializers.serialize(status));
-          } else {
-            messageForChannel = messageWithoutChangedAssets ??= jsonEncode(
-                _serializers
-                    .serialize(status.rebuild((b) => b.changedAssets = null)));
+      ..add(
+        _builder.logs.listen((log) {
+          var message = jsonEncode(_serializers.serialize(log));
+          for (var channel in _interestedChannels) {
+            channel.sink.add(message);
           }
-          channel.sink.add(messageForChannel);
-        }
-      }))
-      ..add(_logs.listen((log) {
-        var message = jsonEncode(_serializers.serialize(log));
-        for (var channel in _interestedChannels) {
-          channel.sink.add(message);
-        }
-      }));
+        }),
+      )
+      ..add(
+        _builder.builds.listen((status) {
+          // Don't serialize or send changed assets if the client isn't interested
+          // in them.
+          String? message, messageWithoutChangedAssets;
+          for (var channel in _interestedChannels) {
+            var targets = _buildTargetManager.targetsFor(channel);
+            var wantsChangedAssets = targets.any(
+              (e) => e is DefaultBuildTarget && e.reportChangedAssets,
+            );
+            String messageForChannel;
+            if (wantsChangedAssets) {
+              messageForChannel =
+                  message ??= jsonEncode(_serializers.serialize(status));
+            } else {
+              messageForChannel =
+                  messageWithoutChangedAssets ??= jsonEncode(
+                    _serializers.serialize(
+                      status.rebuild((b) => b.changedAssets = null),
+                    ),
+                  );
+            }
+            channel.sink.add(messageForChannel);
+          }
+        }),
+      )
+      ..add(
+        _logs.listen((log) {
+          var message = jsonEncode(_serializers.serialize(log));
+          for (var channel in _interestedChannels) {
+            channel.sink.add(message);
+          }
+        }),
+      );
   }
 
   void _handleChanges(Stream<List<WatchEvent>> changes) {
-    _subs.add(changes.asyncMapBuffer((changesLists) async {
-      var changes = changesLists.expand((x) => x).toList();
-      if (changes.isEmpty) return;
-      if (_buildTargetManager.targets.isEmpty) return;
-      var buildTargets = _buildTargetManager.targetsForChanges(changes);
-      if (buildTargets.isEmpty) return;
-      await _build(buildTargets, changes);
-    }).listen((_) {}, onError: (Object? e) {
-      stop(
-          message: 'Error in file change event: $e',
-          failureType: fileChangeEventErrorCode);
-    }, onDone: () {
-      stop(
-          message: 'File change stream closed',
-          failureType: fileChangeStreamClosedErrorCode);
-    }));
+    _subs.add(
+      changes
+          .asyncMapBuffer((changesLists) async {
+            var changes = changesLists.expand((x) => x).toList();
+            if (changes.isEmpty) return;
+            if (_buildTargetManager.targets.isEmpty) return;
+            var buildTargets = _buildTargetManager.targetsForChanges(changes);
+            if (buildTargets.isEmpty) return;
+            await _build(buildTargets, changes);
+          })
+          .listen(
+            (_) {},
+            onError: (Object? e) {
+              stop(
+                message: 'Error in file change event: $e',
+                failureType: fileChangeEventErrorCode,
+              );
+            },
+            onDone: () {
+              stop(
+                message: 'File change stream closed',
+                failureType: fileChangeStreamClosedErrorCode,
+              );
+            },
+          ),
+    );
   }
 
   void _removeChannel(WebSocketChannel channel) async {
@@ -197,12 +237,20 @@ class Server {
     }
   }
 
-  void _logMessage(Level level, String message,
-          [Object? error, StackTrace? stackTrace]) =>
-      _outputStreamController.add(ServerLog((b) => b
-        ..message = message
-        ..level = level
-        ..loggerName = loggerName
-        ..error = error?.toString()
-        ..stackTrace = stackTrace?.toString()));
+  void _logMessage(
+    Level level,
+    String message, [
+    Object? error,
+    StackTrace? stackTrace,
+  ]) => _outputStreamController.add(
+    ServerLog(
+      (b) =>
+          b
+            ..message = message
+            ..level = level
+            ..loggerName = loggerName
+            ..error = error?.toString()
+            ..stackTrace = stackTrace?.toString(),
+    ),
+  );
 }

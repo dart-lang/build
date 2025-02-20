@@ -17,13 +17,18 @@ String assetGraphPathFor(String path) =>
 
 /// Relative path to the directory which holds serialized versions of errors
 /// reported during previous builds.
-final errorCachePath =
-    p.join(cacheDir, _scriptHashFor(_scriptPath), 'error_cache');
+final errorCachePath = p.join(
+  cacheDir,
+  _scriptHashFor(_scriptPath),
+  'error_cache',
+);
 
-final String _scriptPath = Platform.script.scheme == 'file'
-    ? p.url.joinAll(
-        p.split(p.relative(Platform.script.toFilePath(), from: p.current)))
-    : Platform.script.path;
+final String _scriptPath =
+    Platform.script.scheme == 'file'
+        ? p.url.joinAll(
+          p.split(p.relative(Platform.script.toFilePath(), from: p.current)),
+        )
+        : Platform.script.path;
 
 /// Directory containing automatically generated build entrypoints.
 ///
@@ -54,10 +59,13 @@ void overrideGeneratedOutputDirectory(String path) {
     throw StateError('You can only override the generated dir once.');
   } else if (_generatedOutputDirectoryIsLocked) {
     throw StateError(
-        'Attempted to override the generated dir after it was locked.');
+      'Attempted to override the generated dir after it was locked.',
+    );
   } else if (!p.isRelative(path)) {
-    throw StateError('Only relative paths are accepted for the generated dir '
-        'but got `$path`.');
+    throw StateError(
+      'Only relative paths are accepted for the generated dir '
+      'but got `$path`.',
+    );
   }
   _generatedOutputDirectory = path;
 }
@@ -69,10 +77,16 @@ const String cacheDir = '.dart_tool/build';
 ///
 /// Normalizes between snapshot and Dart source file paths so they give the same
 /// hash.
-String _scriptHashFor(String path) => md5
-    .convert(utf8.encode(
-        path.endsWith('.snapshot') ? path.substring(0, path.length - 9) : path))
-    .toString();
+String _scriptHashFor(String path) =>
+    md5
+        .convert(
+          utf8.encode(
+            path.endsWith('.snapshot')
+                ? path.substring(0, path.length - 9)
+                : path,
+          ),
+        )
+        .toString();
 
 /// The name of the pub binary on the current platform.
 @Deprecated('The pub binary is deprecated')

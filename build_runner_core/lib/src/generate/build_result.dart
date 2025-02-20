@@ -24,12 +24,16 @@ class BuildResult {
   @experimental
   final BuildPerformance? performance;
 
-  BuildResult(this.status, List<AssetId> outputs,
-      {this.performance, FailureType? failureType})
-      : outputs = List.unmodifiable(outputs),
-        failureType = failureType == null && status == BuildStatus.failure
-            ? FailureType.general
-            : failureType;
+  BuildResult(
+    this.status,
+    List<AssetId> outputs, {
+    this.performance,
+    FailureType? failureType,
+  }) : outputs = List.unmodifiable(outputs),
+       failureType =
+           failureType == null && status == BuildStatus.failure
+               ? FailureType.general
+               : failureType;
   @override
   String toString() {
     if (status == BuildStatus.success) {
@@ -47,10 +51,7 @@ Build Failed :(
 }
 
 /// The status of a build.
-enum BuildStatus {
-  success,
-  failure,
-}
+enum BuildStatus { success, failure }
 
 /// The type of failure
 class FailureType {

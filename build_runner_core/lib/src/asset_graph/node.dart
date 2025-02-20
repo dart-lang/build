@@ -207,7 +207,7 @@ class SyntheticSourceAssetNode extends AssetNode with _SyntheticAssetNode {
 /// their configuration.
 class BuilderOptionsAssetNode extends AssetNode with _SyntheticAssetNode {
   BuilderOptionsAssetNode(super.id, Digest super.lastKnownDigest)
-      : super._forMixinsWithDigest();
+    : super._forMixinsWithDigest();
 
   @override
   String toString() => 'BuildOptionsAssetNode: $id';
@@ -237,14 +237,23 @@ class PostProcessAnchorNode extends AssetNode with _SyntheticAssetNode {
   Digest? previousInputsDigest;
 
   PostProcessAnchorNode(
-      super.id, this.primaryInput, this.actionNumber, this.builderOptionsId,
-      {this.previousInputsDigest})
-      : super._forMixins();
+    super.id,
+    this.primaryInput,
+    this.actionNumber,
+    this.builderOptionsId, {
+    this.previousInputsDigest,
+  }) : super._forMixins();
 
   PostProcessAnchorNode.forInputAndAction(
-      AssetId primaryInput, int actionNumber, AssetId builderOptionsId)
-      : this(primaryInput.addExtension('.post_anchor.$actionNumber'),
-            primaryInput, actionNumber, builderOptionsId);
+    AssetId primaryInput,
+    int actionNumber,
+    AssetId builderOptionsId,
+  ) : this(
+        primaryInput.addExtension('.post_anchor.$actionNumber'),
+        primaryInput,
+        actionNumber,
+        builderOptionsId,
+      );
 }
 
 /// A node representing a glob ran from a builder.
@@ -274,12 +283,20 @@ class GlobAssetNode extends InternalAssetNode implements NodeWithInputs {
   @override
   NodeState state;
 
-  GlobAssetNode(super.id, this.glob, this.phaseNumber, this.state,
-      {HashSet<AssetId>? inputs, super.lastKnownDigest, this.results})
-      : inputs = inputs ?? HashSet();
+  GlobAssetNode(
+    super.id,
+    this.glob,
+    this.phaseNumber,
+    this.state, {
+    HashSet<AssetId>? inputs,
+    super.lastKnownDigest,
+    this.results,
+  }) : inputs = inputs ?? HashSet();
 
   static AssetId createId(String package, Glob glob, int phaseNum) => AssetId(
-      package, 'glob.$phaseNum.${base64.encode(utf8.encode(glob.pattern))}');
+    package,
+    'glob.$phaseNum.${base64.encode(utf8.encode(glob.pattern))}',
+  );
 }
 
 /// A node which has [inputs], a [NodeState], and a [phaseNumber].

@@ -62,9 +62,10 @@ class Level extends EnumClass implements Comparable<Level> {
 }
 
 /// Converts a [Level] to a [logging.Level].
-logging.Level toLoggingLevel(Level level) =>
-    logging.Level.LEVELS.firstWhere((l) => l.name == level.name,
-        orElse: () => throw StateError('Unrecognized level `$level`'));
+logging.Level toLoggingLevel(Level level) => logging.Level.LEVELS.firstWhere(
+  (l) => l.name == level.name,
+  orElse: () => throw StateError('Unrecognized level `$level`'),
+);
 
 /// Roughly matches the `LogRecord` class from `package:logging`.
 abstract class ServerLog implements Built<ServerLog, ServerLogBuilder> {
@@ -72,17 +73,24 @@ abstract class ServerLog implements Built<ServerLog, ServerLogBuilder> {
 
   factory ServerLog([void Function(ServerLogBuilder b) updates]) = _$ServerLog;
 
-  factory ServerLog.fromLogRecord(logging.LogRecord record) =>
-      ServerLog((b) => b
-        ..message = record.message
-        ..level = Level.valueOf(record.level.name)
-        ..loggerName = record.loggerName
-        ..error = record.error?.toString()
-        ..stackTrace = record.stackTrace?.toString());
+  factory ServerLog.fromLogRecord(logging.LogRecord record) => ServerLog(
+    (b) =>
+        b
+          ..message = record.message
+          ..level = Level.valueOf(record.level.name)
+          ..loggerName = record.loggerName
+          ..error = record.error?.toString()
+          ..stackTrace = record.stackTrace?.toString(),
+  );
 
   logging.LogRecord toLogRecord() {
-    return logging.LogRecord(toLoggingLevel(level), message, loggerName ?? '',
-        error, stackTrace == null ? null : StackTrace.fromString(stackTrace!));
+    return logging.LogRecord(
+      toLoggingLevel(level),
+      message,
+      loggerName ?? '',
+      error,
+      stackTrace == null ? null : StackTrace.fromString(stackTrace!),
+    );
   }
 
   ServerLog._();

@@ -12,18 +12,14 @@ void main() {
   test('should assert something was logged synchronously', () {
     expect(
       recordLogs(() => log.info('Hello World')),
-      emitsAnyOf([
-        anyLogOf('Hello World'),
-      ]),
+      emitsAnyOf([anyLogOf('Hello World')]),
     );
   });
 
   test('should assert something was logged asynchronously', () {
     expect(
       recordLogs(() => Future.microtask(() => log.info('Hello World'))),
-      emitsAnyOf([
-        anyLogOf('Hello World'),
-      ]),
+      emitsAnyOf([anyLogOf('Hello World')]),
     );
   });
 

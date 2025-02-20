@@ -1,5 +1,6 @@
 ## 8.0.1-wip
 
+- Bump the min SDK to 3.7.0.
 - Fix crash when running on assets ending in a dot.
 - Start using `package:build/src/internal.dart'.
 - Use `build_test` 3.0.0.

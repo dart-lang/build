@@ -42,7 +42,11 @@ class PerActionResolver implements ReleasableResolver {
   final _entryPoints = <AssetId>{};
 
   PerActionResolver(
-      this._delegate, this._driverPool, this._readAndWritePool, this._step);
+    this._delegate,
+    this._driverPool,
+    this._readAndWritePool,
+    this._step,
+  );
 
   Stream<LibraryElement> get _librariesFromEntrypoints async* {
     await _resolveIfNecessary(_step.inputId, transitive: true);
@@ -55,8 +59,10 @@ class PerActionResolver implements ReleasableResolver {
     final entryPoints = _entryPoints.toList();
     for (final entryPoint in entryPoints) {
       if (!await _delegate.isLibrary(entryPoint)) continue;
-      final library =
-          await _delegate.libraryFor(entryPoint, allowSyntaxErrors: true);
+      final library = await _delegate.libraryFor(
+        entryPoint,
+        allowSyntaxErrors: true,
+      );
       toVisit.add(library);
       seen.add(library);
     }
@@ -66,13 +72,17 @@ class PerActionResolver implements ReleasableResolver {
       // `BuildStep.canRead`. They'd still be reachable by crawling the element
       // model manually.
       yield current;
-      final toCrawl = current.definingCompilationUnit.libraryImports
-          .map((import) => import.importedLibrary)
-          .followedBy(current.definingCompilationUnit.libraryExports
-              .map((export) => export.exportedLibrary))
-          .nonNulls
-          .where((library) => !seen.contains(library))
-          .toSet();
+      final toCrawl =
+          current.definingCompilationUnit.libraryImports
+              .map((import) => import.importedLibrary)
+              .followedBy(
+                current.definingCompilationUnit.libraryExports.map(
+                  (export) => export.exportedLibrary,
+                ),
+              )
+              .nonNulls
+              .where((library) => !seen.contains(library))
+              .toSet();
       toVisit.addAll(toCrawl);
       seen.addAll(toCrawl);
     }
@@ -103,64 +113,73 @@ class PerActionResolver implements ReleasableResolver {
 
   @override
   Future<AstNode?> astNodeFor(Element element, {bool resolve = false}) =>
-      _step.trackStage('astNodeFor $element',
-          () => _delegate.astNodeFor(element, resolve: resolve));
+      _step.trackStage(
+        'astNodeFor $element',
+        () => _delegate.astNodeFor(element, resolve: resolve),
+      );
 
   @override
-  Future<CompilationUnit> compilationUnitFor(AssetId assetId,
-          {bool allowSyntaxErrors = false}) =>
-      _step.trackStage('compilationUnitFor $assetId', () async {
-        if (!await _step.canRead(assetId)) {
-          throw AssetNotFoundException(assetId);
-        }
-        await _resolveIfNecessary(assetId, transitive: false);
-        return _delegate.compilationUnitFor(assetId,
-            allowSyntaxErrors: allowSyntaxErrors);
-      });
+  Future<CompilationUnit> compilationUnitFor(
+    AssetId assetId, {
+    bool allowSyntaxErrors = false,
+  }) => _step.trackStage('compilationUnitFor $assetId', () async {
+    if (!await _step.canRead(assetId)) {
+      throw AssetNotFoundException(assetId);
+    }
+    await _resolveIfNecessary(assetId, transitive: false);
+    return _delegate.compilationUnitFor(
+      assetId,
+      allowSyntaxErrors: allowSyntaxErrors,
+    );
+  });
 
   @override
-  Future<LibraryElement> libraryFor(AssetId assetId,
-          {bool allowSyntaxErrors = false}) =>
-      _step.trackStage('libraryFor $assetId', () async {
-        if (!await _step.canRead(assetId)) {
-          throw AssetNotFoundException(assetId);
-        }
-        await _resolveIfNecessary(assetId, transitive: true);
-        return _delegate.libraryFor(assetId,
-            allowSyntaxErrors: allowSyntaxErrors);
-      });
+  Future<LibraryElement> libraryFor(
+    AssetId assetId, {
+    bool allowSyntaxErrors = false,
+  }) => _step.trackStage('libraryFor $assetId', () async {
+    if (!await _step.canRead(assetId)) {
+      throw AssetNotFoundException(assetId);
+    }
+    await _resolveIfNecessary(assetId, transitive: true);
+    return _delegate.libraryFor(assetId, allowSyntaxErrors: allowSyntaxErrors);
+  });
 
   // Ensures we only resolve one entrypoint at a time from the same build step,
   // otherwise there are race conditions with `_entryPoints` being updated
   // before it is actually ready, or resolving entrypoints more than once.
   final Pool _perActionResolvePool = Pool(1);
-  Future<void> _resolveIfNecessary(AssetId id, {required bool transitive}) =>
-      _perActionResolvePool.withResource(() async {
-        if (!_entryPoints.contains(id)) {
-          // We only want transitively resolved ids in `_entrypoints`.
-          if (transitive) _entryPoints.add(id);
+  Future<void> _resolveIfNecessary(
+    AssetId id, {
+    required bool transitive,
+  }) => _perActionResolvePool.withResource(() async {
+    if (!_entryPoints.contains(id)) {
+      // We only want transitively resolved ids in `_entrypoints`.
+      if (transitive) _entryPoints.add(id);
 
-          // The resolver will only visit assets that haven't been resolved
-          // in this step yet.
-          await _step.trackStage(
-              'Resolving library $id',
-              () => _delegate._analysisDriverModel.performResolve(
-                  _step,
-                  [id],
-                  // This does a "write" - it will result in
-                  // `changeFile` calls in the analysis driver.
-                  //
-                  // It can't use the shared resource since it is a "write"
-                  // operation.
-                  //
-                  // TODO: Better abstraction here? We are relying on
-                  // implementation details (knowing this calls changeFile).
-                  (withDriver) => _readAndWritePool.withResource(() =>
-                      _driverPool
-                          .withResource(() => withDriver(_delegate._driver))),
-                  transitive: transitive));
-        }
-      });
+      // The resolver will only visit assets that haven't been resolved
+      // in this step yet.
+      await _step.trackStage(
+        'Resolving library $id',
+        () => _delegate._analysisDriverModel.performResolve(
+          _step,
+          [id],
+          // This does a "write" - it will result in
+          // `changeFile` calls in the analysis driver.
+          //
+          // It can't use the shared resource since it is a "write"
+          // operation.
+          //
+          // TODO: Better abstraction here? We are relying on
+          // implementation details (knowing this calls changeFile).
+          (withDriver) => _readAndWritePool.withResource(
+            () => _driverPool.withResource(() => withDriver(_delegate._driver)),
+          ),
+          transitive: transitive,
+        ),
+      );
+    }
+  });
 
   @override
   void release() {
@@ -181,8 +200,12 @@ class AnalyzerResolver implements ReleasableResolver {
 
   Future<List<LibraryElement>>? _sdkLibraries;
 
-  AnalyzerResolver(this._driver, this._driverPool, this._readAndWritePool,
-      this._analysisDriverModel);
+  AnalyzerResolver(
+    this._driver,
+    this._driverPool,
+    this._readAndWritePool,
+    this._analysisDriverModel,
+  );
 
   @override
   Future<bool> isLibrary(AssetId assetId) async {
@@ -228,8 +251,10 @@ class AnalyzerResolver implements ReleasableResolver {
   }
 
   @override
-  Future<CompilationUnit> compilationUnitFor(AssetId assetId,
-      {bool allowSyntaxErrors = false}) {
+  Future<CompilationUnit> compilationUnitFor(
+    AssetId assetId, {
+    bool allowSyntaxErrors = false,
+  }) {
     return _driverPool.withResource(() async {
       if (!_driver.isUriOfExistingFile(assetId.uri)) {
         throw AssetNotFoundException(assetId);
@@ -248,26 +273,29 @@ class AnalyzerResolver implements ReleasableResolver {
   }
 
   @override
-  Future<LibraryElement> libraryFor(AssetId assetId,
-      {bool allowSyntaxErrors = false}) async {
+  Future<LibraryElement> libraryFor(
+    AssetId assetId, {
+    bool allowSyntaxErrors = false,
+  }) async {
     // Since this calls `getLibraryByUri` it is a "read", and can use the shared
     // resource to allow concurrent reads.
-    final library = await _readAndWritePool
-        .withSharedResource(() => _driverPool.withResource(() async {
-              var uri = assetId.uri;
-              if (!_driver.isUriOfExistingFile(uri)) {
-                throw AssetNotFoundException(assetId);
-              }
+    final library = await _readAndWritePool.withSharedResource(
+      () => _driverPool.withResource(() async {
+        var uri = assetId.uri;
+        if (!_driver.isUriOfExistingFile(uri)) {
+          throw AssetNotFoundException(assetId);
+        }
 
-              var path = assetPath(assetId);
-              var parsedResult = _driver.currentSession.getParsedUnit(path);
-              if (parsedResult is! ParsedUnitResult || parsedResult.isPart) {
-                throw NonLibraryAssetException(assetId);
-              }
+        var path = assetPath(assetId);
+        var parsedResult = _driver.currentSession.getParsedUnit(path);
+        if (parsedResult is! ParsedUnitResult || parsedResult.isPart) {
+          throw NonLibraryAssetException(assetId);
+        }
 
-              return await _driver.currentSession
-                  .getLibraryByUri(uri.toString()) as LibraryElementResult;
-            }));
+        return await _driver.currentSession.getLibraryByUri(uri.toString())
+            as LibraryElementResult;
+      }),
+    );
 
     if (!allowSyntaxErrors) {
       final errors = await _syntacticErrorsFor(library.element);
@@ -306,7 +334,8 @@ class AnalyzerResolver implements ReleasableResolver {
         final result = await _driver.currentSession.getErrors(path);
         if (result is ErrorsResult &&
             result.errors.any(
-                (error) => error.errorCode.type == ErrorType.SYNTACTIC_ERROR)) {
+              (error) => error.errorCode.type == ErrorType.SYNTACTIC_ERROR,
+            )) {
           relevantResults.add(result);
         }
       }
@@ -327,18 +356,23 @@ class AnalyzerResolver implements ReleasableResolver {
   }
 
   Stream<LibraryElement> get sdkLibraries {
-    final loadLibraries = _sdkLibraries ??= Future.sync(() {
-      final publicSdkUris =
-          _driver.sdkLibraryUris.where((e) => !e.path.startsWith('_'));
+    final loadLibraries =
+        _sdkLibraries ??= Future.sync(() {
+          final publicSdkUris = _driver.sdkLibraryUris.where(
+            (e) => !e.path.startsWith('_'),
+          );
 
-      return Future.wait(publicSdkUris.map((uri) {
-        return _driverPool.withResource(() async {
-          final result = await _driver.currentSession
-              .getLibraryByUri(uri.toString()) as LibraryElementResult;
-          return result.element;
+          return Future.wait(
+            publicSdkUris.map((uri) {
+              return _driverPool.withResource(() async {
+                final result =
+                    await _driver.currentSession.getLibraryByUri(uri.toString())
+                        as LibraryElementResult;
+                return result.element;
+              });
+            }),
+          );
         });
-      }));
-    });
 
     return Stream.fromFuture(loadLibraries).expand((libraries) => libraries);
   }
@@ -355,7 +389,8 @@ class AnalyzerResolver implements ReleasableResolver {
     final source = element.source;
     if (source == null) {
       throw UnresolvableAssetException(
-          '${element.name} does not have a source');
+        '${element.name} does not have a source',
+      );
     }
 
     final uri = source.uri;
@@ -415,29 +450,31 @@ class AnalyzerResolvers implements Resolvers {
     Future<String> Function()? sdkSummaryGenerator,
     PackageConfig? packageConfig,
     AnalysisDriverModel? analysisDriverModel,
-  }) =>
-      AnalyzerResolvers._(
-          analysisOptions: analysisOptions,
-          sdkSummaryGenerator: sdkSummaryGenerator,
-          packageConfig: packageConfig,
-          // Custom resolvers get their own asset uri resolver by default as
-          // there should always be a 1:1 relationship between them.
-          analysisDriverModel: analysisDriverModel ?? BuildAssetUriResolver());
+  }) => AnalyzerResolvers._(
+    analysisOptions: analysisOptions,
+    sdkSummaryGenerator: sdkSummaryGenerator,
+    packageConfig: packageConfig,
+    // Custom resolvers get their own asset uri resolver by default as
+    // there should always be a 1:1 relationship between them.
+    analysisDriverModel: analysisDriverModel ?? BuildAssetUriResolver(),
+  );
 
   /// See [AnalyzerResolvers.custom] for docs.
-  @Deprecated('Use either the AnalyzerResolvers.custom constructor or the '
-      'AnalyzerResolvers.sharedInstance static getter to get an instance.')
+  @Deprecated(
+    'Use either the AnalyzerResolvers.custom constructor or the '
+    'AnalyzerResolvers.sharedInstance static getter to get an instance.',
+  )
   factory AnalyzerResolvers([
     AnalysisOptions? analysisOptions,
     Future<String> Function()? sdkSummaryGenerator,
     PackageConfig? packageConfig,
-  ]) =>
-      AnalyzerResolvers._(
-          analysisOptions: analysisOptions,
-          sdkSummaryGenerator: sdkSummaryGenerator,
-          packageConfig: packageConfig,
-          // For backwards compatibility we use the shared instance here.
-          analysisDriverModel: BuildAssetUriResolver.sharedInstance);
+  ]) => AnalyzerResolvers._(
+    analysisOptions: analysisOptions,
+    sdkSummaryGenerator: sdkSummaryGenerator,
+    packageConfig: packageConfig,
+    // For backwards compatibility we use the shared instance here.
+    analysisDriverModel: BuildAssetUriResolver.sharedInstance,
+  );
 
   /// See [AnalyzerResolvers.custom] for docs.
   AnalyzerResolvers._({
@@ -445,39 +482,57 @@ class AnalyzerResolvers implements Resolvers {
     PackageConfig? packageConfig,
     Future<String> Function()? sdkSummaryGenerator,
     required AnalysisDriverModel analysisDriverModel,
-  })  : _analysisOptions = analysisOptions ??
-            (AnalysisOptionsImpl()
-              ..contextFeatures =
-                  _featureSet(enableExperiments: enabledExperiments)),
-        _packageConfig = packageConfig,
-        _sdkSummaryGenerator =
-            sdkSummaryGenerator ?? defaultSdkSummaryGenerator,
-        _analysisDriverModel = analysisDriverModel;
+  }) : _analysisOptions =
+           analysisOptions ??
+           (AnalysisOptionsImpl()
+             ..contextFeatures = _featureSet(
+               enableExperiments: enabledExperiments,
+             )),
+       _packageConfig = packageConfig,
+       _sdkSummaryGenerator = sdkSummaryGenerator ?? defaultSdkSummaryGenerator,
+       _analysisDriverModel = analysisDriverModel;
 
   /// The instance that most real build systems should use.
   static final AnalyzerResolvers sharedInstance = AnalyzerResolvers._(
-      analysisDriverModel: BuildAssetUriResolver.sharedInstance);
+    analysisDriverModel: BuildAssetUriResolver.sharedInstance,
+  );
 
   /// Create a Resolvers backed by an `AnalysisContext` using options
   /// [_analysisOptions].
   Future<void> _ensureInitialized() {
-    return Result.release(_initialized ??= Result.capture(() async {
-      _warnOnLanguageVersionMismatch();
-      final loadedConfig = _packageConfig ??=
-          await loadPackageConfigUri((await Isolate.packageConfig)!);
-      var driver = await analysisDriver(_analysisDriverModel, _analysisOptions,
-          await _sdkSummaryGenerator(), loadedConfig);
+    return Result.release(
+      _initialized ??= Result.capture(() async {
+        _warnOnLanguageVersionMismatch();
+        final loadedConfig =
+            _packageConfig ??= await loadPackageConfigUri(
+              (await Isolate.packageConfig)!,
+            );
+        var driver = await analysisDriver(
+          _analysisDriverModel,
+          _analysisOptions,
+          await _sdkSummaryGenerator(),
+          loadedConfig,
+        );
 
-      _resolver = AnalyzerResolver(
-          driver, _driverPool, _readAndWritePool, _analysisDriverModel);
-    }()));
+        _resolver = AnalyzerResolver(
+          driver,
+          _driverPool,
+          _readAndWritePool,
+          _analysisDriverModel,
+        );
+      }()),
+    );
   }
 
   @override
   Future<ReleasableResolver> get(BuildStep buildStep) async {
     await _ensureInitialized();
     return PerActionResolver(
-        _resolver, _driverPool, _readAndWritePool, buildStep);
+      _resolver,
+      _driverPool,
+      _readAndWritePool,
+      buildStep,
+    );
   }
 
   /// Must be called between each build.
@@ -494,8 +549,9 @@ void _warnOnLanguageVersionMismatch() async {
 
   try {
     var client = HttpClient();
-    var request = await client
-        .getUrl(Uri.https('pub.dartlang.org', 'api/packages/analyzer'));
+    var request = await client.getUrl(
+      Uri.https('pub.dartlang.org', 'api/packages/analyzer'),
+    );
     var response = await request.close();
     var content = StringBuffer();
     await response
@@ -504,8 +560,10 @@ void _warnOnLanguageVersionMismatch() async {
         .asFuture<void>();
     var json = jsonDecode(content.toString()) as Map<String, Object?>;
     var latestAnalyzer = (json['latest'] as Map<String, Object?>)['version'];
-    var analyzerPubspecPath =
-        p.join(await packagePath('analyzer'), 'pubspec.yaml');
+    var analyzerPubspecPath = p.join(
+      await packagePath('analyzer'),
+      'pubspec.yaml',
+    );
     var currentAnalyzer =
         (loadYaml(await File(analyzerPubspecPath).readAsString())
             as YamlMap)['version'];
@@ -580,5 +638,7 @@ current version by running `pub deps`.
 ''');
   }
   return FeatureSet.fromEnableFlags2(
-      sdkLanguageVersion: sdkLanguageVersion, flags: enableExperiments);
+    sdkLanguageVersion: sdkLanguageVersion,
+    flags: enableExperiments,
+  );
 }

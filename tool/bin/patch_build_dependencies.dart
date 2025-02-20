@@ -9,7 +9,8 @@ import 'package:build_development_tools/patch_build_dependencies.dart';
 void main(List<String> args) {
   if (args.length != 1) {
     print(
-        'Usage: dart run tool/bin/patch_build_dependencies.dart <target_dir>');
+      'Usage: dart run tool/bin/patch_build_dependencies.dart <target_dir>',
+    );
     exit(1);
   }
 

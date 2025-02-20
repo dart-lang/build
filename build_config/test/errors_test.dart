@@ -127,31 +127,39 @@ targets:
 ''';
 
     _expectThrows(
-        buildYaml,
-        allOf(
-          contains('line 4, column 7 of build.yaml: Unsupported value for '
-              '"builders".'),
-          contains(r'''
+      buildYaml,
+      allOf(
+        contains(
+          'line 4, column 7 of build.yaml: Unsupported value for '
+          '"builders".',
+        ),
+        contains(r'''
   ╷
 4 │       not:defined:
   │       ^^^^^^^^^^^^
   ╵'''),
-        ));
+      ),
+    );
   });
 }
 
 void _expectThrows(String buildYaml, Object matcher) => expect(
-    () => BuildConfig.parse('package_name', [], buildYaml,
-        configYamlPath: 'build.yaml'),
-    _throwsError(matcher));
+  () => BuildConfig.parse(
+    'package_name',
+    [],
+    buildYaml,
+    configYamlPath: 'build.yaml',
+  ),
+  _throwsError(matcher),
+);
 
 Matcher _throwsError(Object matcher) => throwsA(
-      isA<ArgumentError>().having(
-        (e) {
-          printOnFailure("ACTUAL\nr'''\n${e.message}'''");
-          return e.message;
-        },
-        'message',
-        matcher,
-      ),
-    );
+  isA<ArgumentError>().having(
+    (e) {
+      printOnFailure("ACTUAL\nr'''\n${e.message}'''");
+      return e.message;
+    },
+    'message',
+    matcher,
+  ),
+);

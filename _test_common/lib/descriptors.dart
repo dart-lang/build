@@ -28,11 +28,12 @@ Future<d.FileDescriptor> pubspec(
   Map<String, String> versionDependencies = const {},
   String sdkEnvironment = '>=2.12.0 <4.0.0',
 }) async {
-  var buffer = StringBuffer()
-    ..writeln('name: $name')
-    ..writeln('environment:')
-    ..writeln('  sdk: "$sdkEnvironment"')
-    ..writeln('dependencies:');
+  var buffer =
+      StringBuffer()
+        ..writeln('name: $name')
+        ..writeln('environment:')
+        ..writeln('  sdk: "$sdkEnvironment"')
+        ..writeln('dependencies:');
 
   // Add all deps as `any` deps, real versions are set in dependency_overrides
   // below.
@@ -49,8 +50,9 @@ Future<d.FileDescriptor> pubspec(
   // warnings about hosted vs path dependency conflicts.
   buffer.writeln('dependency_overrides:');
 
-  var packageConfig =
-      await loadPackageConfigUri((await Isolate.packageConfig)!);
+  var packageConfig = await loadPackageConfigUri(
+    (await Isolate.packageConfig)!,
+  );
 
   void addPathDep(String package, String path) {
     buffer

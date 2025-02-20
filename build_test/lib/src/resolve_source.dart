@@ -32,9 +32,7 @@ Future<T> resolveSource<T>(
 }) {
   inputId ??= AssetId('_resolve_source', 'lib/_resolve_source.dart');
   return _resolveAssets(
-    {
-      '${inputId.package}|${inputId.path}': inputSource,
-    },
+    {'${inputId.package}|${inputId.path}': inputSource},
     inputId.package,
     action,
     packageConfig: packageConfig,
@@ -154,9 +152,7 @@ Future<T> resolveAsset<T>(
   Resolvers? resolvers,
 }) {
   return _resolveAssets(
-    {
-      '${inputId.package}|${inputId.path}': useAssetReader,
-    },
+    {'${inputId.package}|${inputId.path}': useAssetReader},
     inputId.package,
     action,
     packageConfig: packageConfig,
@@ -183,20 +179,15 @@ Future<T> _resolveAssets<T>(
   Future<void>? tearDown,
   Resolvers? resolvers,
 }) async {
-  final resolvedConfig = packageConfig ??
+  final resolvedConfig =
+      packageConfig ??
       await loadPackageConfigUri((await Isolate.packageConfig)!);
-  final resolveBuilder = _ResolveSourceBuilder(
-    action,
-    resolverFor,
-    tearDown,
-  );
+  final resolveBuilder = _ResolveSourceBuilder(action, resolverFor, tearDown);
 
   final inputAssetIds = inputs.keys.map(AssetId.parse).toList();
 
   // Prepare the in-memory filesystem the build will run on.
-  final readerWriter = InMemoryAssetReaderWriter(
-    rootPackage: rootPackage,
-  );
+  final readerWriter = InMemoryAssetReaderWriter(rootPackage: rootPackage);
 
   // First, add directly-passed [inputs], reading from the filesystem if the
   // string passed is [useAssetReader].
@@ -220,9 +211,10 @@ Future<T> _resolveAssets<T>(
 
   // Use the default resolver if no experiments are enabled. This is much
   // faster.
-  resolvers ??= packageConfig == null && enabledExperiments.isEmpty
-      ? AnalyzerResolvers.sharedInstance
-      : AnalyzerResolvers.custom(packageConfig: resolvedConfig);
+  resolvers ??=
+      packageConfig == null && enabledExperiments.isEmpty
+          ? AnalyzerResolvers.sharedInstance
+          : AnalyzerResolvers.custom(packageConfig: resolvedConfig);
 
   // We don't care about the results of this build, but we also can't await
   // it because that would block on the `tearDown` of the `resolveBuilder`.
@@ -232,13 +224,15 @@ Future<T> _resolveAssets<T>(
   //
   // Errors will still be reported through the resolver itself as well as the
   // `onDone` future that we return.
-  unawaited(runBuilder(
-    resolveBuilder,
-    inputAssetIds,
-    readerWriter,
-    readerWriter,
-    resolvers,
-  ).catchError((_) {}));
+  unawaited(
+    runBuilder(
+      resolveBuilder,
+      inputAssetIds,
+      readerWriter,
+      readerWriter,
+      resolvers,
+    ).catchError((_) {}),
+  );
   final result = await resolveBuilder.onDone.future;
   if (assetReaderChecks != null) {
     await assetReaderChecks(readerWriter);
@@ -272,6 +266,6 @@ class _ResolveSourceBuilder<T> implements Builder {
 
   @override
   final buildExtensions = const {
-    '': ['.unused']
+    '': ['.unused'],
   };
 }

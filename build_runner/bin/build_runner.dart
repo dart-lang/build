@@ -23,18 +23,22 @@ Future<void> main(List<String> args) async {
   // Use the actual command runner to parse the args and immediately print the
   // usage information if there is no command provided or the help command was
   // explicitly invoked.
-  var commandRunner =
-      BuildCommandRunner([], await PackageGraph.forThisPackage());
+  var commandRunner = BuildCommandRunner(
+    [],
+    await PackageGraph.forThisPackage(),
+  );
   var localCommands = [CleanCommand(), GenerateBuildScript()];
   var localCommandNames = localCommands.map((c) => c.name).toSet();
   for (var command in localCommands) {
     commandRunner.addCommand(command);
     // This flag is added to each command individually and not the top level.
-    command.argParser.addFlag(verboseOption,
-        abbr: 'v',
-        defaultsTo: false,
-        negatable: false,
-        help: 'Enables verbose logging.');
+    command.argParser.addFlag(
+      verboseOption,
+      abbr: 'v',
+      defaultsTo: false,
+      negatable: false,
+      help: 'Enables verbose logging.',
+    );
   }
 
   ArgResults parsedArgs;
@@ -52,7 +56,8 @@ Future<void> main(List<String> args) async {
 
   if (parsedArgs.rest.isNotEmpty) {
     print(
-        yellow.wrap('Could not find a command named "${parsedArgs.rest[0]}".'));
+      yellow.wrap('Could not find a command named "${parsedArgs.rest[0]}".'),
+    );
     print('');
     print(commandRunner.usageWithoutDescription);
     exitCode = ExitCode.usage.code;
@@ -89,8 +94,9 @@ Future<void> main(List<String> args) async {
   } else {
     var verbose = parsedArgs.command!['verbose'] as bool? ?? false;
     if (verbose) Logger.root.level = Level.ALL;
-    logListener =
-        Logger.root.onRecord.listen(stdIOLogListener(verbose: verbose));
+    logListener = Logger.root.onRecord.listen(
+      stdIOLogListener(verbose: verbose),
+    );
   }
   if (localCommandNames.contains(commandName)) {
     exitCode = await commandRunner.runCommand(parsedArgs) ?? 1;

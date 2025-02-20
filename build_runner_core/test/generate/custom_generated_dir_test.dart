@@ -14,28 +14,28 @@ void main() {
   late PackageGraph packageGraph;
 
   setUp(() {
-    packageGraph = buildPackageGraph({
-      rootPackage('a', path: 'a/'): [],
-    });
+    packageGraph = buildPackageGraph({rootPackage('a', path: 'a/'): []});
   });
 
   test('can output files to a custom generated dir', () async {
     final result = await testBuilders(
-        [
-          applyToRoot(
-              TestBuilder(
-                  buildExtensions: appendExtension('.copy', from: '.txt')),
-              hideOutput: true),
-        ],
-        {'a|lib/a.txt': 'a'},
-        packageGraph: packageGraph,
-        outputs: {
-          r'$$a|lib/a.txt.copy': 'a',
-        },
-        expectedGeneratedDir: customGeneratedDir);
+      [
+        applyToRoot(
+          TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')),
+          hideOutput: true,
+        ),
+      ],
+      {'a|lib/a.txt': 'a'},
+      packageGraph: packageGraph,
+      outputs: {r'$$a|lib/a.txt.copy': 'a'},
+      expectedGeneratedDir: customGeneratedDir,
+    );
     expect(
-        result.readerWriter.assets[AssetId(
-            'a', '.dart_tool/build/$customGeneratedDir/a/lib/a.txt.copy')],
-        isNotNull);
+      result.readerWriter.assets[AssetId(
+        'a',
+        '.dart_tool/build/$customGeneratedDir/a/lib/a.txt.copy',
+      )],
+      isNotNull,
+    );
   });
 }

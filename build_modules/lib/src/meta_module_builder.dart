@@ -30,12 +30,12 @@ class MetaModuleBuilder implements Builder {
   final DartPlatform _platform;
 
   MetaModuleBuilder(this._platform, {this.strategy = ModuleStrategy.coarse})
-      : buildExtensions = {
-          r'$lib$': [metaModuleExtension(_platform)]
-        };
+    : buildExtensions = {
+        r'$lib$': [metaModuleExtension(_platform)],
+      };
 
   MetaModuleBuilder.forOptions(DartPlatform platform, BuilderOptions options)
-      : this(platform, strategy: moduleStrategy(options));
+    : this(platform, strategy: moduleStrategy(options));
 
   @override
   Future build(BuildStep buildStep) async {
@@ -45,9 +45,15 @@ class MetaModuleBuilder implements Builder {
         await buildStep.findAssets(Glob('**$moduleLibraryExtension')).toList();
 
     var metaModule = await MetaModule.forLibraries(
-        buildStep, libraryAssets, strategy, _platform);
+      buildStep,
+      libraryAssets,
+      strategy,
+      _platform,
+    );
     var id = AssetId(
-        buildStep.inputId.package, 'lib/${metaModuleExtension(_platform)}');
+      buildStep.inputId.package,
+      'lib/${metaModuleExtension(_platform)}',
+    );
     var metaModules = await buildStep.fetchResource(metaModuleCache);
     await metaModules.write(id, buildStep, metaModule);
   }

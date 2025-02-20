@@ -9,29 +9,36 @@ import '../package_graph/apply_builders.dart';
 
 /// Checks that all configuration is for valid builder keys.
 void validateBuilderConfig(
-    Iterable<BuilderApplication> builders,
-    BuildConfig rootPackageConfig,
-    Map<String, Map<String, dynamic>> builderConfigOverrides,
-    Logger logger) {
+  Iterable<BuilderApplication> builders,
+  BuildConfig rootPackageConfig,
+  Map<String, Map<String, dynamic>> builderConfigOverrides,
+  Logger logger,
+) {
   final builderKeys = builders.map((b) => b.builderKey).toSet();
   for (final key in builderConfigOverrides.keys) {
     if (!builderKeys.contains(key)) {
-      logger.warning('Overriding configuration for `$key` but this is not a '
-          'known Builder');
+      logger.warning(
+        'Overriding configuration for `$key` but this is not a '
+        'known Builder',
+      );
     }
   }
   for (final target in rootPackageConfig.buildTargets.values) {
     for (final key in target.builders.keys) {
       if (!builderKeys.contains(key)) {
-        logger.warning('Configuring `$key` in target `${target.key}` but this '
-            'is not a known Builder');
+        logger.warning(
+          'Configuring `$key` in target `${target.key}` but this '
+          'is not a known Builder',
+        );
       }
     }
   }
   for (final key in rootPackageConfig.globalOptions.keys) {
     if (!builderKeys.contains(key)) {
-      logger.warning('Configuring `$key` in global options but this is not a '
-          'known Builder');
+      logger.warning(
+        'Configuring `$key` in global options but this is not a '
+        'known Builder',
+      );
     }
   }
 }

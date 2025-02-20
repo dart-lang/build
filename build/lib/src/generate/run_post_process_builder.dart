@@ -17,13 +17,23 @@ import '../builder/post_process_builder.dart';
 /// If an asset should not be written this function should throw.
 /// [deleteAsset] should remove the asset from the build system, it will not be
 /// deleted on disk since the `writer` has no mechanism for delete.
-Future<void> runPostProcessBuilder(PostProcessBuilder builder, AssetId inputId,
-    AssetReader reader, AssetWriter writer, Logger logger,
-    {required void Function(AssetId) addAsset,
-    required void Function(AssetId) deleteAsset}) async {
+Future<void> runPostProcessBuilder(
+  PostProcessBuilder builder,
+  AssetId inputId,
+  AssetReader reader,
+  AssetWriter writer,
+  Logger logger, {
+  required void Function(AssetId) addAsset,
+  required void Function(AssetId) deleteAsset,
+}) async {
   await scopeLogAsync(() async {
-    var buildStep =
-        postProcessBuildStep(inputId, reader, writer, addAsset, deleteAsset);
+    var buildStep = postProcessBuildStep(
+      inputId,
+      reader,
+      writer,
+      addAsset,
+      deleteAsset,
+    );
     try {
       await builder.build(buildStep);
     } finally {

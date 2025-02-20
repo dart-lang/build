@@ -31,8 +31,8 @@ class Daemon {
   StreamSubscription? _sub;
 
   Daemon(String workingDirectory)
-      : _workingDirectory = workingDirectory,
-        _lock = _tryGetLock(workingDirectory);
+    : _workingDirectory = workingDirectory,
+      _lock = _tryGetLock(workingDirectory);
 
   /// Returns exit code.
   Future<int> get onDone => _doneCompleter.future;
@@ -74,19 +74,22 @@ class Daemon {
     _createVersionFile();
     _createOptionsFile(options);
 
-    var server = _server = Server(
-      builder,
-      timeout,
-      changeProvider,
-      serializersOverride: serializersOverride,
-      shouldBuild: shouldBuild,
-    );
+    var server =
+        _server = Server(
+          builder,
+          timeout,
+          changeProvider,
+          serializersOverride: serializersOverride,
+          shouldBuild: shouldBuild,
+        );
     var port = await server.listen();
     _createPortFile(port);
 
-    unawaited(server.onDone.then((exitCode) async {
-      await _cleanUp(exitCode);
-    }));
+    unawaited(
+      server.onDone.then((exitCode) async {
+        await _cleanUp(exitCode);
+      }),
+    );
   }
 
   Future<void> _cleanUp(int exitCode) async {
@@ -104,12 +107,13 @@ class Daemon {
   void _createPortFile(int port) =>
       File(portFilePath(_workingDirectory)).writeAsStringSync('$port');
 
-  void _createVersionFile() => File(versionFilePath(_workingDirectory))
-      .writeAsStringSync(currentVersion);
+  void _createVersionFile() => File(
+    versionFilePath(_workingDirectory),
+  ).writeAsStringSync(currentVersion);
 
-  void _createOptionsFile(Set<String> options) =>
-      File(optionsFilePath(_workingDirectory))
-          .writeAsStringSync(options.toList().join('\n'));
+  void _createOptionsFile(Set<String> options) => File(
+    optionsFilePath(_workingDirectory),
+  ).writeAsStringSync(options.toList().join('\n'));
 
   void _handleGracefulExit() {
     var cancelCount = 0;
@@ -126,9 +130,9 @@ class Daemon {
 RandomAccessFile? _tryGetLock(String workingDirectory) {
   try {
     _createDaemonWorkspace(workingDirectory);
-    var lock = File(lockFilePath(workingDirectory))
-        .openSync(mode: FileMode.write)
-      ..lockSync();
+    var lock = File(
+      lockFilePath(workingDirectory),
+    ).openSync(mode: FileMode.write)..lockSync();
     return lock;
   } on FileSystemException {
     return null;

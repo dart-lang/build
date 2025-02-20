@@ -12,12 +12,12 @@ import '../../build.dart';
 
 // This is not exported to hack around a package-private constructor.
 PostProcessBuildStep postProcessBuildStep(
-        AssetId inputId,
-        AssetReader reader,
-        AssetWriter writer,
-        void Function(AssetId) addAsset,
-        void Function(AssetId) deleteAsset) =>
-    PostProcessBuildStep._(inputId, reader, writer, addAsset, deleteAsset);
+  AssetId inputId,
+  AssetReader reader,
+  AssetWriter writer,
+  void Function(AssetId) addAsset,
+  void Function(AssetId) deleteAsset,
+) => PostProcessBuildStep._(inputId, reader, writer, addAsset, deleteAsset);
 
 /// A simplified [BuildStep] which can only read its primary input, and can't
 /// get a [Resolver] or any [Resource]s, at least for now.
@@ -32,12 +32,18 @@ class PostProcessBuildStep {
   /// The result of any writes which are starting during this step.
   final _writeResults = <Future<Result<void>>>[];
 
-  PostProcessBuildStep._(this.inputId, this._reader, this._writer,
-      this._addAsset, this._deleteAsset);
+  PostProcessBuildStep._(
+    this.inputId,
+    this._reader,
+    this._writer,
+    this._addAsset,
+    this._deleteAsset,
+  );
 
-  Future<Digest> digest(AssetId id) => inputId == id
-      ? _reader.digest(id)
-      : Future.error(InvalidInputException(id));
+  Future<Digest> digest(AssetId id) =>
+      inputId == id
+          ? _reader.digest(id)
+          : Future.error(InvalidInputException(id));
 
   Future<List<int>> readInputAsBytes() => _reader.readAsBytes(inputId);
 
@@ -46,17 +52,24 @@ class PostProcessBuildStep {
 
   Future<void> writeAsBytes(AssetId id, FutureOr<List<int>> bytes) {
     _addAsset(id);
-    var done =
-        _futureOrWrite(bytes, (List<int> b) => _writer.writeAsBytes(id, b));
+    var done = _futureOrWrite(
+      bytes,
+      (List<int> b) => _writer.writeAsBytes(id, b),
+    );
     _writeResults.add(Result.capture(done));
     return done;
   }
 
-  Future<void> writeAsString(AssetId id, FutureOr<String> content,
-      {Encoding encoding = utf8}) {
+  Future<void> writeAsString(
+    AssetId id,
+    FutureOr<String> content, {
+    Encoding encoding = utf8,
+  }) {
     _addAsset(id);
-    var done = _futureOrWrite(content,
-        (String c) => _writer.writeAsString(id, c, encoding: encoding));
+    var done = _futureOrWrite(
+      content,
+      (String c) => _writer.writeAsString(id, c, encoding: encoding),
+    );
     _writeResults.add(Result.capture(done));
     return done;
   }
@@ -76,5 +89,6 @@ class PostProcessBuildStep {
 }
 
 Future<void> _futureOrWrite<T>(
-        FutureOr<T> content, Future<void> Function(T content) write) =>
-    (content is Future<T>) ? content.then(write) : write(content);
+  FutureOr<T> content,
+  Future<void> Function(T content) write,
+) => (content is Future<T>) ? content.then(write) : write(content);

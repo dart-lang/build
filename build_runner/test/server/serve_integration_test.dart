@@ -30,23 +30,29 @@ void main() {
 
   setUp(() async {
     final graph = buildPackageGraph({rootPackage('example', path: path): []});
-    readerWriter = InMemoryRunnerAssetReaderWriter(rootPackage: 'example')
-      ..filesystem
-          .writeAsStringSync(AssetId('example', 'web/initial.txt'), 'initial')
-      ..filesystem.writeAsStringSync(AssetId('example', 'web/large.txt'),
-          List.filled(10000, 'large').join(''))
-      ..filesystem.writeAsStringSync(
-          makeAssetId('example|.dart_tool/package_config.json'),
-          jsonEncode({
-            'configVersion': 2,
-            'packages': [
-              {
-                'name': 'example',
-                'rootUri': 'file://fake/pkg/path',
-                'packageUri': 'lib/'
-              },
-            ],
-          }));
+    readerWriter =
+        InMemoryRunnerAssetReaderWriter(rootPackage: 'example')
+          ..filesystem.writeAsStringSync(
+            AssetId('example', 'web/initial.txt'),
+            'initial',
+          )
+          ..filesystem.writeAsStringSync(
+            AssetId('example', 'web/large.txt'),
+            List.filled(10000, 'large').join(''),
+          )
+          ..filesystem.writeAsStringSync(
+            makeAssetId('example|.dart_tool/package_config.json'),
+            jsonEncode({
+              'configVersion': 2,
+              'packages': [
+                {
+                  'name': 'example',
+                  'rootUri': 'file://fake/pkg/path',
+                  'packageUri': 'lib/',
+                },
+              ],
+            }),
+          );
 
     terminateController = StreamController<ProcessSignal>();
     final server = await watch_impl.watch(
@@ -55,8 +61,11 @@ void main() {
       reader: readerWriter,
       writer: readerWriter,
       logLevel: Level.ALL,
-      onLog: (record) => printOnFailure('[${record.level}] '
-          '${record.loggerName}: ${record.message}'),
+      onLog:
+          (record) => printOnFailure(
+            '[${record.level}] '
+            '${record.loggerName}: ${record.message}',
+          ),
       directoryWatcherFactory: FakeWatcher.new,
       terminateEventStream: terminateController.stream,
       skipBuildScriptCheck: true,
@@ -97,8 +106,10 @@ void main() {
 
   test('should serve built files', () async {
     final getHello = Uri.parse('http://localhost/initial.g.txt');
-    readerWriter.filesystem
-        .writeAsStringSync(AssetId('example', 'web/initial.g.txt'), 'INITIAL');
+    readerWriter.filesystem.writeAsStringSync(
+      AssetId('example', 'web/initial.g.txt'),
+      'INITIAL',
+    );
     final response = await handler(Request('GET', getHello));
     expect(await response.readAsString(), 'INITIAL');
   });
@@ -111,12 +122,12 @@ void main() {
 
   test('should serve newly added files', () async {
     final getNew = Uri.parse('http://localhost/new.txt');
-    readerWriter.filesystem
-        .writeAsStringSync(AssetId('example', 'web/new.txt'), 'New');
-    await Future<void>.value();
-    FakeWatcher.notifyWatchers(
-      WatchEvent(ChangeType.ADD, '$path/web/new.txt'),
+    readerWriter.filesystem.writeAsStringSync(
+      AssetId('example', 'web/new.txt'),
+      'New',
     );
+    await Future<void>.value();
+    FakeWatcher.notifyWatchers(WatchEvent(ChangeType.ADD, '$path/web/new.txt'));
     await nextBuild.future;
     final response = await handler(Request('GET', getNew));
     expect(await response.readAsString(), 'New');
@@ -124,12 +135,12 @@ void main() {
 
   test('should serve built newly added files', () async {
     final getNew = Uri.parse('http://localhost/new.g.txt');
-    readerWriter.filesystem
-        .writeAsStringSync(AssetId('example', 'web/new.txt'), 'New');
-    await Future<void>.value();
-    FakeWatcher.notifyWatchers(
-      WatchEvent(ChangeType.ADD, '$path/web/new.txt'),
+    readerWriter.filesystem.writeAsStringSync(
+      AssetId('example', 'web/new.txt'),
+      'New',
     );
+    await Future<void>.value();
+    FakeWatcher.notifyWatchers(WatchEvent(ChangeType.ADD, '$path/web/new.txt'));
     await nextBuild.future;
     final response = await handler(Request('GET', getNew));
     expect(await response.readAsString(), 'NEW');
@@ -142,11 +153,15 @@ void main() {
     for (var slashOrNot in ['', '/']) {
       test('/\$graph$slashOrNot should (try to) send the HTML page', () async {
         expect(
-            requestGraphPath(slashOrNot),
-            throwsA(isA<AssetNotFoundException>().having(
-                (e) => e.assetId,
-                'assetId',
-                AssetId.parse('build_runner|lib/src/server/graph_viz.html'))));
+          requestGraphPath(slashOrNot),
+          throwsA(
+            isA<AssetNotFoundException>().having(
+              (e) => e.assetId,
+              'assetId',
+              AssetId.parse('build_runner|lib/src/server/graph_viz.html'),
+            ),
+          ),
+        );
       });
     }
 
@@ -160,23 +175,31 @@ void main() {
     }
 
     test404('404s on an unsupported URL', '/bob', 'Bad request: "bob".');
-    test404('404s on an unsupported URL', '/bob/?q=bob',
-        'Bad request: "bob/?q=bob".');
+    test404(
+      '404s on an unsupported URL',
+      '/bob/?q=bob',
+      'Bad request: "bob/?q=bob".',
+    );
     test404('empty query causes 404', '?=', 'Bad request: "?=".');
-    test404('bad asset query', '?q=bob|bob',
-        'Could not find asset in build graph: bob|bob');
     test404(
-        'bad path query',
-        '?q=bob/bob',
-        'Could not find asset for path "bob/bob". Tried:\n'
-            '- example|bob/bob\n'
-            '- example|web/bob/bob');
+      'bad asset query',
+      '?q=bob|bob',
+      'Could not find asset in build graph: bob|bob',
+    );
     test404(
-        'valid path, 2nd try',
-        '?q=bob/initial.txt',
-        'Could not find asset for path "bob/initial.txt". Tried:\n'
-            '- example|bob/initial.txt\n'
-            '- example|web/bob/initial.txt');
+      'bad path query',
+      '?q=bob/bob',
+      'Could not find asset for path "bob/bob". Tried:\n'
+          '- example|bob/bob\n'
+          '- example|web/bob/bob',
+    );
+    test404(
+      'valid path, 2nd try',
+      '?q=bob/initial.txt',
+      'Could not find asset for path "bob/initial.txt". Tried:\n'
+          '- example|bob/initial.txt\n'
+          '- example|web/bob/initial.txt',
+    );
 
     void testSuccess(String testName, String path, String expectedId) {
       test(testName, () async {
@@ -191,14 +214,26 @@ void main() {
     }
 
     testSuccess('valid path', '?q=web/initial.txt', 'example|web/initial.txt');
-    testSuccess('valid path, leading slash', '?q=/web/initial.txt',
-        'example|web/initial.txt');
-    testSuccess('valid path, assuming root', '?q=initial.txt',
-        'example|web/initial.txt');
-    testSuccess('valid path, assuming root, leading slash', '?q=/initial.txt',
-        'example|web/initial.txt');
-    testSuccess('valid AssetId', '?q=example|web/initial.txt',
-        'example|web/initial.txt');
+    testSuccess(
+      'valid path, leading slash',
+      '?q=/web/initial.txt',
+      'example|web/initial.txt',
+    );
+    testSuccess(
+      'valid path, assuming root',
+      '?q=initial.txt',
+      'example|web/initial.txt',
+    );
+    testSuccess(
+      'valid path, assuming root, leading slash',
+      '?q=/initial.txt',
+      'example|web/initial.txt',
+    );
+    testSuccess(
+      'valid AssetId',
+      '?q=example|web/initial.txt',
+      'example|web/initial.txt',
+    );
   });
 }
 
@@ -216,6 +251,6 @@ class UppercaseBuilder implements Builder {
 
   @override
   final buildExtensions = const {
-    'txt': ['g.txt']
+    'txt': ['g.txt'],
   };
 }

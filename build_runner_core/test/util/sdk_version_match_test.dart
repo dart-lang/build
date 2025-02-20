@@ -10,27 +10,35 @@ void main() {
     test('should return true if versions are exactly same', () async {
       expect(isSameSdkVersion('2.0.0-dev30.0', '2.0.0-dev30.0'), isTrue);
       expect(
-          isSameSdkVersion('2.0.0-dev30.0 (unknown_timestamp) "linux_x64"',
-              '2.0.0-dev30.0 (unknown_timestamp) "linux_x64"'),
-          isTrue);
+        isSameSdkVersion(
+          '2.0.0-dev30.0 (unknown_timestamp) "linux_x64"',
+          '2.0.0-dev30.0 (unknown_timestamp) "linux_x64"',
+        ),
+        isTrue,
+      );
       expect(isSameSdkVersion('random_string', 'random_string'), isTrue);
     });
-    test(
-        'should return true if versions are same but version strings are '
+    test('should return true if versions are same but version strings are '
         'different', () async {
       expect(isSameSdkVersion('2.0.0-dev30.0 11', '2.0.0-dev30.0'), isTrue);
       expect(
-          isSameSdkVersion('2.0.0-dev30.0 (unknown_timestamp) "linux_x64"',
-              '2.0.0-dev30.0 (unknown_timestamp) "macos_x64"'),
-          isTrue);
+        isSameSdkVersion(
+          '2.0.0-dev30.0 (unknown_timestamp) "linux_x64"',
+          '2.0.0-dev30.0 (unknown_timestamp) "macos_x64"',
+        ),
+        isTrue,
+      );
     });
 
     test('should return false if versions are different', () async {
       expect(isSameSdkVersion('2.0.0-dev30.0', '2.0.0-dev30.1'), isFalse);
       expect(
-          isSameSdkVersion('2.0.0-dev30.0 (unknown_timestamp) "linux_x64"',
-              '2.0.0-dev30.4 (unknown_timestamp) "linux_x64"'),
-          isFalse);
+        isSameSdkVersion(
+          '2.0.0-dev30.0 (unknown_timestamp) "linux_x64"',
+          '2.0.0-dev30.4 (unknown_timestamp) "linux_x64"',
+        ),
+        isFalse,
+      );
       expect(isSameSdkVersion('random_string', 'random_string_other'), isFalse);
     });
   });

@@ -30,21 +30,33 @@ class InputSet {
     if (json is List) {
       if (json.any((e) => e == null)) {
         throw ArgumentError.value(
-            json, 'generate_for', 'Include globs must not be empty');
+          json,
+          'generate_for',
+          'Include globs must not be empty',
+        );
       }
       json = <String, List>{'include': json};
     } else if (json is! Map) {
-      throw ArgumentError.value(json, 'sources',
-          'Expected a Map or a List but got a ${json.runtimeType}');
+      throw ArgumentError.value(
+        json,
+        'sources',
+        'Expected a Map or a List but got a ${json.runtimeType}',
+      );
     }
     final parsed = _$InputSetFromJson(json as Map);
     if (parsed.include != null && parsed.include!.any((s) => s.isEmpty)) {
       throw ArgumentError.value(
-          parsed.include, 'include', 'Include globs must not be empty');
+        parsed.include,
+        'include',
+        'Include globs must not be empty',
+      );
     }
     if (parsed.exclude != null && parsed.exclude!.any((s) => s.isEmpty)) {
       throw ArgumentError.value(
-          parsed.exclude, 'exclude', 'Exclude globs must not be empty');
+        parsed.exclude,
+        'exclude',
+        'Exclude globs must not be empty',
+      );
     }
     return parsed;
   }

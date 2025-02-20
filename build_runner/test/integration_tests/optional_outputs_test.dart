@@ -15,37 +15,43 @@ import 'utils/build_descriptor.dart';
 
 // test-package-start #########################################################
 /// Copies an asset to both `.txt.copy` and `.txt.extra`.
-final copyTwice = TestBuilder(buildExtensions: {
-  '.txt': ['.txt.copy', '.txt.extra']
-});
+final copyTwice = TestBuilder(
+  buildExtensions: {
+    '.txt': ['.txt.copy', '.txt.extra'],
+  },
+);
 
 /// Reads `.txt.copy` files if the primary input contains "true".
 final maybeReadCopy = TestBuilder(
-    buildExtensions: appendExtension('.other', from: '.txt'),
-    extraWork: (buildStep, _) async {
-      if ((await buildStep.readAsString(buildStep.inputId)).contains('true')) {
-        await buildStep.readAsString(buildStep.inputId.addExtension('.copy'));
-      }
-    });
+  buildExtensions: appendExtension('.other', from: '.txt'),
+  extraWork: (buildStep, _) async {
+    if ((await buildStep.readAsString(buildStep.inputId)).contains('true')) {
+      await buildStep.readAsString(buildStep.inputId.addExtension('.copy'));
+    }
+  },
+);
 // test-package-end ###########################################################
 
 void main() {
   final builders = [
     builder('copyTwice', copyTwice, isOptional: true),
-    builder('maybeReadCopy', maybeReadCopy, requiredInputs: ['.txt.copy'])
+    builder('maybeReadCopy', maybeReadCopy, requiredInputs: ['.txt.copy']),
   ];
 
   late BuildTool buildTool;
 
   setUpAll(() async {
-    buildTool = await packageWithBuildScript(builders, contents: [
-      d.dir('web', [d.file('a.txt', 'false')])
-    ]);
+    buildTool = await packageWithBuildScript(
+      builders,
+      contents: [
+        d.dir('web', [d.file('a.txt', 'false')]),
+      ],
+    );
   });
 
   Future<void> updateTxtContent(String content) {
     return d.dir('a', [
-      d.dir('web', [d.file('a.txt', content)])
+      d.dir('web', [d.file('a.txt', content)]),
     ]).create();
   }
 
@@ -77,8 +83,10 @@ void main() {
 
   group('build', () {
     /// Expects the build output based on [expectCopy].
-    Future<void> expectBuildOutput(
-        {required bool expectCopy, required String content}) async {
+    Future<void> expectBuildOutput({
+      required bool expectCopy,
+      required String content,
+    }) async {
       await d.dir('a', [
         d.dir('build', [
           d.dir('web', [

@@ -1,7 +1,8 @@
 ## 4.1.2-wip
 
-- Use support-detection scripts emitted by `dart2wasm`.
+- Bump the min SDK to 3.7.0.
 - Use `build_test` 3.0.0.
+- Use support-detection scripts emitted by `dart2wasm`.
 
 ## 4.1.1
 
