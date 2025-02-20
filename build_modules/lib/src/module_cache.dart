@@ -18,10 +18,14 @@ List<int> _serialize(Map<String, dynamic> data) =>
     utf8.encode(jsonEncode(data));
 
 final metaModuleCache = DecodingCache.resource(
-    (m) => MetaModule.fromJson(_deserialize(m)), (m) => _serialize(m.toJson()));
+  (m) => MetaModule.fromJson(_deserialize(m)),
+  (m) => _serialize(m.toJson()),
+);
 
 final moduleCache = DecodingCache.resource(
-    (m) => Module.fromJson(_deserialize(m)), (m) => _serialize(m.toJson()));
+  (m) => Module.fromJson(_deserialize(m)),
+  (m) => _serialize(m.toJson()),
+);
 
 /// A cache of objects decoded from written assets suitable for use as a
 /// [Resource].
@@ -34,9 +38,12 @@ class DecodingCache<T> {
   /// Create a [Resource] which can decoded instances of [T] serialized via json
   /// to assets.
   static Resource<DecodingCache<T>> resource<T>(
-          T Function(List<int>) fromBytes, List<int> Function(T) toBytes) =>
-      Resource<DecodingCache<T>>(() => DecodingCache._(fromBytes, toBytes),
-          dispose: (c) => c._dispose());
+    T Function(List<int>) fromBytes,
+    List<int> Function(T) toBytes,
+  ) => Resource<DecodingCache<T>>(
+    () => DecodingCache._(fromBytes, toBytes),
+    dispose: (c) => c._dispose(),
+  );
 
   final _cached = <AssetId, _Entry<T>>{};
 
@@ -61,9 +68,11 @@ class DecodingCache<T> {
     if (!await reader.canRead(id)) return null;
     _Entry<T> entry;
     if (!_cached.containsKey(id)) {
-      entry = _cached[id] = _Entry(
-          Result.capture(reader.readAsBytes(id).then(_fromBytes)),
-          digest: Result.capture(reader.digest(id)));
+      entry =
+          _cached[id] = _Entry(
+            Result.capture(reader.readAsBytes(id).then(_fromBytes)),
+            digest: Result.capture(reader.digest(id)),
+          );
     } else {
       entry = _cached[id]!;
       if (entry.needsCheck) {
@@ -72,8 +81,9 @@ class DecodingCache<T> {
               entry.digest == null ? null : await Result.release(entry.digest!);
           entry.digest = Result.capture(reader.digest(id));
           if (await Result.release(entry.digest!) != previousDigest) {
-            entry.value =
-                Result.capture(reader.readAsBytes(id).then(_fromBytes));
+            entry.value = Result.capture(
+              reader.readAsBytes(id).then(_fromBytes),
+            );
           }
           entry
             ..needsCheck = false

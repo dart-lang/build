@@ -81,20 +81,22 @@ class KernelBuilder implements Builder {
     this.trackUnusedInputs = false,
     String? platformSdk,
     String? kernelTargetName,
-  })  : platformSdk = platformSdk ?? sdkDir,
-        kernelTargetName = kernelTargetName ?? platform.name,
-        librariesPath = librariesPath ??
-            p.join(platformSdk ?? sdkDir, 'lib', 'libraries.json'),
-        buildExtensions = {
-          moduleExtension(platform): [outputExtension]
-        },
-        experiments = enabledExperiments;
+  }) : platformSdk = platformSdk ?? sdkDir,
+       kernelTargetName = kernelTargetName ?? platform.name,
+       librariesPath =
+           librariesPath ??
+           p.join(platformSdk ?? sdkDir, 'lib', 'libraries.json'),
+       buildExtensions = {
+         moduleExtension(platform): [outputExtension],
+       },
+       experiments = enabledExperiments;
 
   @override
   Future build(BuildStep buildStep) async {
     var module = Module.fromJson(
-        json.decode(await buildStep.readAsString(buildStep.inputId))
-            as Map<String, dynamic>);
+      json.decode(await buildStep.readAsString(buildStep.inputId))
+          as Map<String, dynamic>,
+    );
     // Entrypoints always have a `.module` file for ease of looking them up,
     // but they might not be the primary source.
     if (module.primarySource.changeExtension(moduleExtension(platform)) !=
@@ -104,42 +106,45 @@ class KernelBuilder implements Builder {
 
     try {
       await _createKernel(
-          module: module,
-          buildStep: buildStep,
-          summaryOnly: summaryOnly,
-          outputExtension: outputExtension,
-          targetName: kernelTargetName,
-          dartSdkDir: platformSdk,
-          sdkKernelPath: sdkKernelPath,
-          librariesPath: librariesPath,
-          useIncrementalCompiler: useIncrementalCompiler,
-          trackUnusedInputs: trackUnusedInputs,
-          experiments: experiments);
+        module: module,
+        buildStep: buildStep,
+        summaryOnly: summaryOnly,
+        outputExtension: outputExtension,
+        targetName: kernelTargetName,
+        dartSdkDir: platformSdk,
+        sdkKernelPath: sdkKernelPath,
+        librariesPath: librariesPath,
+        useIncrementalCompiler: useIncrementalCompiler,
+        trackUnusedInputs: trackUnusedInputs,
+        experiments: experiments,
+      );
     } on MissingModulesException catch (e) {
       log.severe(e.toString());
     } on KernelException catch (e, s) {
       log.severe(
-          'Error creating '
-          '${module.primarySource.changeExtension(outputExtension)}',
-          e,
-          s);
+        'Error creating '
+        '${module.primarySource.changeExtension(outputExtension)}',
+        e,
+        s,
+      );
     }
   }
 }
 
 /// Creates a kernel file for [module].
-Future<void> _createKernel(
-    {required Module module,
-    required BuildStep buildStep,
-    required bool summaryOnly,
-    required String outputExtension,
-    required String targetName,
-    required String dartSdkDir,
-    required String sdkKernelPath,
-    required String librariesPath,
-    required bool useIncrementalCompiler,
-    required bool trackUnusedInputs,
-    required Iterable<String> experiments}) async {
+Future<void> _createKernel({
+  required Module module,
+  required BuildStep buildStep,
+  required bool summaryOnly,
+  required String outputExtension,
+  required String targetName,
+  required String dartSdkDir,
+  required String sdkKernelPath,
+  required String librariesPath,
+  required bool useIncrementalCompiler,
+  required bool trackUnusedInputs,
+  required Iterable<String> experiments,
+}) async {
   var request = WorkRequest();
   var scratchSpace = await buildStep.fetchResource(scratchSpaceResource);
   var outputId = module.primarySource.changeExtension(outputExtension);
@@ -157,7 +162,12 @@ Future<void> _createKernel(
     var sourceDeps = <AssetId>[];
 
     await _findModuleDeps(
-        module, kernelDeps, sourceDeps, buildStep, outputExtension);
+      module,
+      kernelDeps,
+      sourceDeps,
+      buildStep,
+      outputExtension,
+    );
 
     var allAssetIds = <AssetId>{
       ...module.sources,
@@ -167,39 +177,51 @@ Future<void> _createKernel(
     await scratchSpace.ensureAssets(allAssetIds, buildStep);
 
     if (trackUnusedInputs) {
-      usedInputsFile = await File(p.join(
+      usedInputsFile =
+          await File(
+            p.join(
               (await Directory.systemTemp.createTemp('kernel_builder_')).path,
-              'used_inputs.txt'))
-          .create();
+              'used_inputs.txt',
+            ),
+          ).create();
       kernelInputPathToId = {};
     }
 
     await _addRequestArguments(
-        request,
-        module,
-        kernelDeps,
-        targetName,
-        dartSdkDir,
-        sdkKernelPath,
-        librariesPath,
-        outputFile,
-        summaryOnly,
-        useIncrementalCompiler,
-        buildStep,
-        experiments,
-        usedInputsFile: usedInputsFile,
-        kernelInputPathToId: kernelInputPathToId);
+      request,
+      module,
+      kernelDeps,
+      targetName,
+      dartSdkDir,
+      sdkKernelPath,
+      librariesPath,
+      outputFile,
+      summaryOnly,
+      useIncrementalCompiler,
+      buildStep,
+      experiments,
+      usedInputsFile: usedInputsFile,
+      kernelInputPathToId: kernelInputPathToId,
+    );
   });
 
   // We need to make sure and clean up the temp dir, even if we fail to compile.
   try {
     var frontendWorker = await buildStep.fetchResource(frontendDriverResource);
-    var response = await frontendWorker.doWork(request,
-        trackWork: (response) => buildStep
-            .trackStage('Kernel Generate', () => response, isExternal: true));
+    var response = await frontendWorker.doWork(
+      request,
+      trackWork:
+          (response) => buildStep.trackStage(
+            'Kernel Generate',
+            () => response,
+            isExternal: true,
+          ),
+    );
     if (response.exitCode != EXIT_CODE_OK || !await outputFile.exists()) {
       throw KernelException(
-          outputId, '${request.arguments.join(' ')}\n${response.output}');
+        outputId,
+        '${request.arguments.join(' ')}\n${response.output}',
+      );
     }
 
     if (response.output.isNotEmpty) {
@@ -213,7 +235,11 @@ Future<void> _createKernel(
     // inputs if there is a failure.
     if (usedInputsFile != null) {
       await reportUnusedKernelInputs(
-          usedInputsFile!, kernelDeps, kernelInputPathToId!, buildStep);
+        usedInputsFile!,
+        kernelDeps,
+        kernelInputPathToId!,
+        buildStep,
+      );
     }
   } finally {
     await usedInputsFile?.parent.delete(recursive: true);
@@ -233,29 +259,34 @@ Future<void> _createKernel(
 /// - No used dependencies are reported (it is assumed something went wrong
 ///   or there were zero deps to begin with).
 Future<void> reportUnusedKernelInputs(
-    File usedInputsFile,
-    Iterable<AssetId> transitiveKernelDeps,
-    Map<String, AssetId> inputPathToId,
-    BuildStep buildStep) async {
+  File usedInputsFile,
+  Iterable<AssetId> transitiveKernelDeps,
+  Map<String, AssetId> inputPathToId,
+  BuildStep buildStep,
+) async {
   var usedPaths = await usedInputsFile.readAsLines();
   if (usedPaths.isEmpty || usedPaths.first == '') return;
 
   String? firstMissingInputPath;
-  var usedIds = usedPaths.map((usedPath) {
-    var id = inputPathToId[usedPath];
-    if (id == null) firstMissingInputPath ??= usedPath;
-    return id;
-  }).toSet();
+  var usedIds =
+      usedPaths.map((usedPath) {
+        var id = inputPathToId[usedPath];
+        if (id == null) firstMissingInputPath ??= usedPath;
+        return id;
+      }).toSet();
 
   if (firstMissingInputPath != null) {
-    log.warning('Error reporting unused kernel deps, unable to map path: '
-        '`$firstMissingInputPath` back to an asset id.\n\nPlease file an issue '
-        'at https://github.com/dart-lang/build/issues/new.');
+    log.warning(
+      'Error reporting unused kernel deps, unable to map path: '
+      '`$firstMissingInputPath` back to an asset id.\n\nPlease file an issue '
+      'at https://github.com/dart-lang/build/issues/new.',
+    );
     return;
   }
 
   buildStep.reportUnusedAssets(
-      transitiveKernelDeps.where((id) => !usedIds.contains(id)));
+    transitiveKernelDeps.where((id) => !usedIds.contains(id)),
+  );
 }
 
 /// Finds the transitive dependencies of [root] and categorizes them as
@@ -266,15 +297,19 @@ Future<void> reportUnusedKernelInputs(
 /// readable kernel file then it, and all of it's dependents will be categorized
 /// as [sourceDeps] which will have all of their [Module.sources].
 Future<void> _findModuleDeps(
-    Module root,
-    List<AssetId> kernelDeps,
-    List<AssetId> sourceDeps,
-    BuildStep buildStep,
-    String outputExtension) async {
+  Module root,
+  List<AssetId> kernelDeps,
+  List<AssetId> sourceDeps,
+  BuildStep buildStep,
+  String outputExtension,
+) async {
   final resolvedModules = await _resolveTransitiveModules(root, buildStep);
 
   final sourceOnly = await _parentsOfMissingKernelFiles(
-      resolvedModules, buildStep, outputExtension);
+    resolvedModules,
+    buildStep,
+    outputExtension,
+  );
 
   for (final module in resolvedModules) {
     if (sourceOnly.contains(module.primarySource)) {
@@ -287,29 +322,34 @@ Future<void> _findModuleDeps(
 
 /// The transitive dependencies of [root], not including [root] itself.
 Future<List<Module>> _resolveTransitiveModules(
-    Module root, BuildStep buildStep) async {
+  Module root,
+  BuildStep buildStep,
+) async {
   var missing = <AssetId>{};
-  var modules = await crawlAsync<AssetId, Module?>(
-          [root.primarySource],
-          (id) => buildStep.fetchResource(moduleCache).then((c) async {
-                var moduleId =
-                    id.changeExtension(moduleExtension(root.platform));
-                var module = await c.find(moduleId, buildStep);
-                if (module == null) {
-                  missing.add(moduleId);
-                } else if (module.isMissing) {
-                  missing.add(module.primarySource);
-                }
-                return module;
-              }),
-          (id, module) => module?.directDependencies ?? [])
-      .skip(1) // Skip the root.
-      .whereType<Module>()
-      .toList();
+  var modules =
+      await crawlAsync<AssetId, Module?>(
+            [root.primarySource],
+            (id) => buildStep.fetchResource(moduleCache).then((c) async {
+              var moduleId = id.changeExtension(moduleExtension(root.platform));
+              var module = await c.find(moduleId, buildStep);
+              if (module == null) {
+                missing.add(moduleId);
+              } else if (module.isMissing) {
+                missing.add(module.primarySource);
+              }
+              return module;
+            }),
+            (id, module) => module?.directDependencies ?? [],
+          )
+          .skip(1) // Skip the root.
+          .whereType<Module>()
+          .toList();
 
   if (missing.isNotEmpty) {
-    throw await MissingModulesException.create(
-        missing, [...modules, root], buildStep);
+    throw await MissingModulesException.create(missing, [
+      ...modules,
+      root,
+    ], buildStep);
   }
 
   return modules;
@@ -321,15 +361,19 @@ Future<List<Module>> _resolveTransitiveModules(
 /// Inverts the direction of the graph and then crawls to all reachables nodes
 /// from the modules which do not have a readable kernel file
 Future<Set<AssetId>> _parentsOfMissingKernelFiles(
-    List<Module> modules, BuildStep buildStep, String outputExtension) async {
+  List<Module> modules,
+  BuildStep buildStep,
+  String outputExtension,
+) async {
   final sourceOnly = <AssetId>{};
   final parents = <AssetId, Set<AssetId>>{};
   for (final module in modules) {
     for (final dep in module.directDependencies) {
       parents.putIfAbsent(dep, () => <AssetId>{}).add(module.primarySource);
     }
-    if (!await buildStep
-        .canRead(module.primarySource.changeExtension(outputExtension))) {
+    if (!await buildStep.canRead(
+      module.primarySource.changeExtension(outputExtension),
+    )) {
       sourceOnly.add(module.primarySource);
     }
   }
@@ -365,17 +409,21 @@ Future<void> _addRequestArguments(
   Map<String, AssetId>? kernelInputPathToId,
 }) async {
   // Add all kernel outlines as summary inputs, with digests.
-  var inputs = await Future.wait(transitiveKernelDeps.map((id) async {
-    var relativePath = p.url.relative(scratchSpace.fileFor(id).uri.path,
-        from: scratchSpace.tempDir.uri.path);
-    var path = '$multiRootScheme:///$relativePath';
-    if (kernelInputPathToId != null) {
-      kernelInputPathToId[path] = id;
-    }
-    return Input()
-      ..path = path
-      ..digest = (await reader.digest(id)).bytes;
-  }));
+  var inputs = await Future.wait(
+    transitiveKernelDeps.map((id) async {
+      var relativePath = p.url.relative(
+        scratchSpace.fileFor(id).uri.path,
+        from: scratchSpace.tempDir.uri.path,
+      );
+      var path = '$multiRootScheme:///$relativePath';
+      if (kernelInputPathToId != null) {
+        kernelInputPathToId[path] = id;
+      }
+      return Input()
+        ..path = path
+        ..digest = (await reader.digest(id)).bytes;
+    }),
+  );
   request.arguments.addAll([
     '--dart-sdk-summary=${Uri.file(p.join(sdkDir, sdkKernelPath))}',
     '--output=${outputFile.path}',
@@ -407,8 +455,9 @@ Future<void> _addRequestArguments(
 }
 
 String _sourceArg(AssetId id) {
-  var uri = id.path.startsWith('lib')
-      ? canonicalUriFor(id)
-      : '$multiRootScheme:///${id.path}';
+  var uri =
+      id.path.startsWith('lib')
+          ? canonicalUriFor(id)
+          : '$multiRootScheme:///${id.path}';
   return '--source=$uri';
 }

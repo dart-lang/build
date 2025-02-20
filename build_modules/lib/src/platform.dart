@@ -41,8 +41,10 @@ class DartPlatform {
       throw DartPlatformAlreadyRegistered(name);
     }
 
-    return _platformsByName[name] =
-        DartPlatform._(name, List.unmodifiable(supportedLibraries));
+    return _platformsByName[name] = DartPlatform._(
+      name,
+      List.unmodifiable(supportedLibraries),
+    );
   }
 
   const DartPlatform._(this.name, this._supportedLibraries);
@@ -75,6 +77,7 @@ class UnrecognizedDartPlatform implements Exception {
   const UnrecognizedDartPlatform(this.name);
 
   @override
-  String toString() => 'Unrecognized platform `$name`, it must be registered '
+  String toString() =>
+      'Unrecognized platform `$name`, it must be registered '
       'first using `DartPlatform.register`';
 }

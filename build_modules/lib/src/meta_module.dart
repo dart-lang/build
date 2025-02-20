@@ -29,14 +29,17 @@ String _topLevelDir(String path) {
   }
   if (error != null) {
     throw ArgumentError(
-        'Cannot compute top level dir for path `$path`. $error');
+      'Cannot compute top level dir for path `$path`. $error',
+    );
   }
   return parts.first;
 }
 
 /// Creates a module containing [componentLibraries].
 Module _moduleForComponent(
-    List<ModuleLibrary> componentLibraries, DartPlatform platform) {
+  List<ModuleLibrary> componentLibraries,
+  DartPlatform platform,
+) {
   // Name components based on first alphabetically sorted node, preferring
   // public srcs (not under lib/src).
   var sources = componentLibraries.map((n) => n.id).toSet();
@@ -46,9 +49,10 @@ Module _moduleForComponent(
   // Expand to include all the part files of each node, these aren't
   // included as individual `_AssetNodes`s in `connectedComponents`.
   sources.addAll(componentLibraries.expand((n) => n.parts));
-  var directDependencies = <AssetId>{}
-    ..addAll(componentLibraries.expand((n) => n.depsForPlatform(platform)))
-    ..removeAll(sources);
+  var directDependencies =
+      <AssetId>{}
+        ..addAll(componentLibraries.expand((n) => n.depsForPlatform(platform)))
+        ..removeAll(sources);
   var isSupported = componentLibraries
       .expand((l) => l.sdkDeps)
       .every(platform.supportsLibrary);
@@ -58,7 +62,9 @@ Module _moduleForComponent(
 /// Gets the local (same top level dir of the same package) transitive deps of
 /// [module] using [assetsToModules].
 Set<AssetId> _localTransitiveDeps(
-    Module module, Map<AssetId, Module> assetsToModules) {
+  Module module,
+  Map<AssetId, Module> assetsToModules,
+) {
   var localTransitiveDeps = <AssetId>{};
   var nextIds = module.directDependencies;
   var seenIds = <AssetId>{};
@@ -80,7 +86,9 @@ Set<AssetId> _localTransitiveDeps(
 /// Creates a map of modules to the entrypoint modules that transitively
 /// depend on those modules.
 Map<AssetId, Set<AssetId>> _findReverseEntrypointDeps(
-    Iterable<Module> entrypointModules, Iterable<Module> modules) {
+  Iterable<Module> entrypointModules,
+  Iterable<Module> modules,
+) {
   var reverseDeps = <AssetId, Set<AssetId>>{};
   var assetsToModules = <AssetId, Module>{};
   for (var module in modules) {
@@ -117,8 +125,10 @@ List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
   };
 
   // Maps modules to entrypoint modules that transitively depend on them.
-  var modulesToEntryPoints =
-      _findReverseEntrypointDeps(entrypointModules, modules);
+  var modulesToEntryPoints = _findReverseEntrypointDeps(
+    entrypointModules,
+    modules,
+  );
 
   // Modules which are not depended on by any entrypoint
   var standaloneModules = <Module>[];
@@ -153,12 +163,17 @@ List<Module> _mergeModules(Iterable<Module> modules, Set<AssetId> entrypoints) {
     for (var module in mergedModules.values)
       _withConsistentPrimarySource(Module.merge(module)),
     for (var module in entrypointModuleGroups.values) Module.merge(module),
-    ...standaloneModules
+    ...standaloneModules,
   ];
 }
 
-Module _withConsistentPrimarySource(Module m) => Module(m.sources.reduce(_min),
-    m.sources, m.directDependencies, m.platform, m.isSupported);
+Module _withConsistentPrimarySource(Module m) => Module(
+  m.sources.reduce(_min),
+  m.sources,
+  m.directDependencies,
+  m.platform,
+  m.isSupported,
+);
 
 T _min<T extends Comparable<T>>(T a, T b) => a.compareTo(b) < 0 ? a : b;
 
@@ -177,27 +192,31 @@ T _min<T extends Comparable<T>>(T a, T b) => a.compareTo(b) < 0 ? a : b;
 /// connected components, as they must always be a part of the containing
 /// library's module.
 List<Module> _computeModules(
-    Map<AssetId, ModuleLibrary> libraries, DartPlatform platform) {
+  Map<AssetId, ModuleLibrary> libraries,
+  DartPlatform platform,
+) {
   assert(() {
     var dir = _topLevelDir(libraries.values.first.id.path);
     return libraries.values.every((l) => _topLevelDir(l.id.path) == dir);
   }());
 
   final connectedComponents = stronglyConnectedComponents<ModuleLibrary>(
-      libraries.values,
-      (n) => n
-          .depsForPlatform(platform)
-          // Only "internal" dependencies
-          .where(libraries.containsKey)
-          .map((dep) => libraries[dep]!),
-      equals: (a, b) => a.id == b.id,
-      hashCode: (l) => l.id.hashCode);
+    libraries.values,
+    (n) => n
+        .depsForPlatform(platform)
+        // Only "internal" dependencies
+        .where(libraries.containsKey)
+        .map((dep) => libraries[dep]!),
+    equals: (a, b) => a.id == b.id,
+    hashCode: (l) => l.id.hashCode,
+  );
 
   final entryIds =
       libraries.values.where((l) => l.isEntryPoint).map((l) => l.id).toSet();
   return _mergeModules(
-      connectedComponents.map((c) => _moduleForComponent(c, platform)),
-      entryIds);
+    connectedComponents.map((c) => _moduleForComponent(c, platform)),
+    entryIds,
+  );
 }
 
 @JsonSerializable()
@@ -214,15 +233,19 @@ class MetaModule {
   Map<String, dynamic> toJson() => _$MetaModuleToJson(this);
 
   static Future<MetaModule> forLibraries(
-      AssetReader reader,
-      List<AssetId> libraryIds,
-      ModuleStrategy strategy,
-      DartPlatform platform) async {
+    AssetReader reader,
+    List<AssetId> libraryIds,
+    ModuleStrategy strategy,
+    DartPlatform platform,
+  ) async {
     var libraries = <ModuleLibrary>[];
     for (var id in libraryIds) {
-      libraries.add(ModuleLibrary.deserialize(
+      libraries.add(
+        ModuleLibrary.deserialize(
           id.changeExtension('').changeExtension('.dart'),
-          await reader.readAsString(id)));
+          await reader.readAsString(id),
+        ),
+      );
     }
     switch (strategy) {
       case ModuleStrategy.fine:
@@ -234,7 +257,10 @@ class MetaModule {
 }
 
 MetaModule _coarseModulesForLibraries(
-    AssetReader reader, List<ModuleLibrary> libraries, DartPlatform platform) {
+  AssetReader reader,
+  List<ModuleLibrary> libraries,
+  DartPlatform platform,
+) {
   var librariesByDirectory = <String, Map<AssetId, ModuleLibrary>>{};
   for (var library in libraries) {
     final dir = _topLevelDir(library.id.path);
@@ -243,22 +269,26 @@ MetaModule _coarseModulesForLibraries(
 
   final modules = [
     for (var libraries in librariesByDirectory.values)
-      ..._computeModules(libraries, platform)
+      ..._computeModules(libraries, platform),
   ];
   _sortModules(modules);
   return MetaModule(modules);
 }
 
 MetaModule _fineModulesForLibraries(
-    AssetReader reader, List<ModuleLibrary> libraries, DartPlatform platform) {
+  AssetReader reader,
+  List<ModuleLibrary> libraries,
+  DartPlatform platform,
+) {
   var modules = [
     for (var library in libraries)
       Module(
-          library.id,
-          [...library.parts, library.id],
-          library.depsForPlatform(platform),
-          platform,
-          library.sdkDeps.every(platform.supportsLibrary))
+        library.id,
+        [...library.parts, library.id],
+        library.depsForPlatform(platform),
+        platform,
+        library.sdkDeps.every(platform.supportsLibrary),
+      ),
   ];
   _sortModules(modules);
   return MetaModule(modules);

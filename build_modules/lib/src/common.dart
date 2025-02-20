@@ -5,8 +5,10 @@
 import 'package:build/build.dart';
 import 'package:scratch_space/scratch_space.dart';
 
-final defaultAnalysisOptionsId =
-    AssetId('build_modules', 'lib/src/analysis_options.default.yaml');
+final defaultAnalysisOptionsId = AssetId(
+  'build_modules',
+  'lib/src/analysis_options.default.yaml',
+);
 
 String defaultAnalysisOptionsArg(ScratchSpace scratchSpace) =>
     '--options=${scratchSpace.fileFor(defaultAnalysisOptionsId).path}';
@@ -28,12 +30,19 @@ ModuleStrategy moduleStrategy(BuilderOptions options) {
 /// Validates that [config] only has the top level keys [supportedOptions].
 ///
 /// Throws an [ArgumentError] if not.
-void validateOptions(Map<String, dynamic> config, List<String> supportedOptions,
-    String builderKey) {
-  var unsupportedOptions =
-      config.keys.where((o) => !supportedOptions.contains(o));
+void validateOptions(
+  Map<String, dynamic> config,
+  List<String> supportedOptions,
+  String builderKey,
+) {
+  var unsupportedOptions = config.keys.where(
+    (o) => !supportedOptions.contains(o),
+  );
   if (unsupportedOptions.isNotEmpty) {
-    throw ArgumentError.value(unsupportedOptions.join(', '), builderKey,
-        'only $supportedOptions are supported options, but got');
+    throw ArgumentError.value(
+      unsupportedOptions.join(', '),
+      builderKey,
+      'only $supportedOptions are supported options, but got',
+    );
   }
 }

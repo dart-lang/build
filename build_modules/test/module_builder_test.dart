@@ -24,25 +24,35 @@ void main() {
     var assetE = AssetId('a', 'lib/e.dart');
     var moduleA = Module(assetA, [assetA], <AssetId>[], platform, true);
     var moduleB = Module(assetB, [assetB, assetC], <AssetId>[], platform, true);
-    var moduleD =
-        Module(assetD, [assetD, assetE], <AssetId>[], platform, false);
+    var moduleD = Module(
+      assetD,
+      [assetD, assetE],
+      <AssetId>[],
+      platform,
+      false,
+    );
     var metaModule = MetaModule([moduleA, moduleB, moduleD]);
-    await testBuilder(ModuleBuilder(platform), {
-      'a|lib/a.dart': '',
-      'a|lib/b.dart': '',
-      'a|lib/c.dart': '',
-      'a|lib/d.dart': '',
-      'a|lib/e.dart': '',
-      'a|lib/${metaModuleCleanExtension(platform)}':
-          jsonEncode(metaModule.toJson()),
-      'a|lib/c$moduleLibraryExtension':
-          ModuleLibrary.fromSource(assetC, '').serialize(),
-      'a|lib/e$moduleLibraryExtension':
-          ModuleLibrary.fromSource(assetE, '').serialize(),
-    }, outputs: {
-      'a|lib/a${moduleExtension(platform)}': encodedMatchesModule(moduleA),
-      'a|lib/b${moduleExtension(platform)}': encodedMatchesModule(moduleB),
-      'a|lib/d${moduleExtension(platform)}': encodedMatchesModule(moduleD),
-    });
+    await testBuilder(
+      ModuleBuilder(platform),
+      {
+        'a|lib/a.dart': '',
+        'a|lib/b.dart': '',
+        'a|lib/c.dart': '',
+        'a|lib/d.dart': '',
+        'a|lib/e.dart': '',
+        'a|lib/${metaModuleCleanExtension(platform)}': jsonEncode(
+          metaModule.toJson(),
+        ),
+        'a|lib/c$moduleLibraryExtension':
+            ModuleLibrary.fromSource(assetC, '').serialize(),
+        'a|lib/e$moduleLibraryExtension':
+            ModuleLibrary.fromSource(assetE, '').serialize(),
+      },
+      outputs: {
+        'a|lib/a${moduleExtension(platform)}': encodedMatchesModule(moduleA),
+        'a|lib/b${moduleExtension(platform)}': encodedMatchesModule(moduleB),
+        'a|lib/d${moduleExtension(platform)}': encodedMatchesModule(moduleD),
+      },
+    );
   });
 }

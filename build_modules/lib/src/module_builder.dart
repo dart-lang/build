@@ -23,9 +23,9 @@ class ModuleBuilder implements Builder {
   final DartPlatform _platform;
 
   ModuleBuilder(this._platform)
-      : buildExtensions = {
-          '.dart': [moduleExtension(_platform)]
-        };
+    : buildExtensions = {
+        '.dart': [moduleExtension(_platform)],
+      };
 
   @override
   final Map<String, List<String>> buildExtensions;
@@ -33,27 +33,37 @@ class ModuleBuilder implements Builder {
   @override
   Future build(BuildStep buildStep) async {
     final cleanMetaModules = await buildStep.fetchResource(metaModuleCache);
-    final metaModule = (await cleanMetaModules.find(
-        AssetId(buildStep.inputId.package,
-            'lib/${metaModuleCleanExtension(_platform)}'),
-        buildStep))!;
-    var outputModule = metaModule.modules
-        .firstWhereOrNull((m) => m.primarySource == buildStep.inputId);
+    final metaModule =
+        (await cleanMetaModules.find(
+          AssetId(
+            buildStep.inputId.package,
+            'lib/${metaModuleCleanExtension(_platform)}',
+          ),
+          buildStep,
+        ))!;
+    var outputModule = metaModule.modules.firstWhereOrNull(
+      (m) => m.primarySource == buildStep.inputId,
+    );
     if (outputModule == null) {
       final serializedLibrary = await buildStep.readAsString(
-          buildStep.inputId.changeExtension(moduleLibraryExtension));
-      final libraryModule =
-          ModuleLibrary.deserialize(buildStep.inputId, serializedLibrary);
+        buildStep.inputId.changeExtension(moduleLibraryExtension),
+      );
+      final libraryModule = ModuleLibrary.deserialize(
+        buildStep.inputId,
+        serializedLibrary,
+      );
       if (libraryModule.hasMain) {
-        outputModule = metaModule.modules
-            .firstWhere((m) => m.sources.contains(buildStep.inputId));
+        outputModule = metaModule.modules.firstWhere(
+          (m) => m.sources.contains(buildStep.inputId),
+        );
       }
     }
     if (outputModule == null) return;
     final modules = await buildStep.fetchResource(moduleCache);
     await modules.write(
-        buildStep.inputId.changeExtension(moduleExtension(_platform)),
-        buildStep,
-        outputModule);
+      buildStep.inputId.changeExtension(moduleExtension(_platform)),
+      buildStep,
+      outputModule,
+    );
   }
 }

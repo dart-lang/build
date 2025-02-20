@@ -54,8 +54,11 @@ class MissingModulesException implements Exception {
 
   MissingModulesException._(this.message);
 
-  static Future<MissingModulesException> create(Set<AssetId> missingSources,
-      Iterable<Module> transitiveModules, AssetReader reader) async {
+  static Future<MissingModulesException> create(
+    Set<AssetId> missingSources,
+    Iterable<Module> transitiveModules,
+    AssetReader reader,
+  ) async {
     var buffer = StringBuffer('''
 Unable to find modules for some sources, this is usually the result of either a
 bad import, a missing dependency in a package (or possibly a dev_dependency
@@ -69,15 +72,20 @@ Please check the following imports:\n
     for (var module in transitiveModules) {
       var missingIds = module.directDependencies.intersection(missingSources);
       for (var missingId in missingIds) {
-        var checkedAlready =
-            checkedSourceDependencies.putIfAbsent(missingId, () => <AssetId>{});
+        var checkedAlready = checkedSourceDependencies.putIfAbsent(
+          missingId,
+          () => <AssetId>{},
+        );
         for (var sourceId in module.sources) {
           if (checkedAlready.contains(sourceId)) {
             continue;
           }
           checkedAlready.add(sourceId);
-          var message =
-              await _missingImportMessage(sourceId, missingId, reader);
+          var message = await _missingImportMessage(
+            sourceId,
+            missingId,
+            reader,
+          );
           if (message != null) buffer.writeln(message);
         }
       }
@@ -90,18 +98,21 @@ Please check the following imports:\n
 /// Checks if [sourceId] directly imports [missingId], and returns an error
 /// message if so.
 Future<String?> _missingImportMessage(
-    AssetId sourceId, AssetId missingId, AssetReader reader) async {
+  AssetId sourceId,
+  AssetId missingId,
+  AssetReader reader,
+) async {
   var contents = await reader.readAsString(sourceId);
   var parsed = parseString(content: contents, throwIfDiagnostics: false).unit;
   var import = parsed.directives
       .whereType<UriBasedDirective>()
       .firstWhereOrNull((directive) {
-    var uriString = directive.uri.stringValue;
-    if (uriString == null) return false;
-    if (uriString.startsWith('dart:')) return false;
-    var id = AssetId.resolve(Uri.parse(uriString), from: sourceId);
-    return id == missingId;
-  });
+        var uriString = directive.uri.stringValue;
+        if (uriString == null) return false;
+        if (uriString.startsWith('dart:')) return false;
+        var id = AssetId.resolve(Uri.parse(uriString), from: sourceId);
+        return id == missingId;
+      });
   if (import == null) return null;
   var lineInfo = parsed.lineInfo.getLocation(import.offset);
   return '`$import` from $sourceId at $lineInfo';
@@ -120,14 +131,17 @@ class UnsupportedModules implements Exception {
         ModuleLibrary library;
         if (await reader.canRead(libraryId)) {
           library = ModuleLibrary.deserialize(
-              libraryId, await reader.readAsString(libraryId));
+            libraryId,
+            await reader.readAsString(libraryId),
+          );
         } else {
           // A missing .module.library file indicates a part file, which can't
           // have import statements, so we just skip them.
           continue;
         }
-        if (library.sdkDeps
-            .any((lib) => !module.platform.supportsLibrary(lib))) {
+        if (library.sdkDeps.any(
+          (lib) => !module.platform.supportsLibrary(lib),
+        )) {
           yield library;
         }
       }
