@@ -12,9 +12,15 @@ import 'input_tracker.dart';
 /// Provides access to the state backing an [AssetReader].
 extension AssetReaderStateExtension on AssetReader {
   /// Returns a new instance with optionally updated [cache].
-  AssetReader copyWith({FilesystemCache? cache}) {
+  AssetReader copyWith({
+    AssetPathProvider? assetPathProvider,
+    FilesystemCache? cache,
+  }) {
     _requireIsAssetReaderState();
-    return (this as AssetReaderState).copyWith(cache: cache);
+    return (this as AssetReaderState).copyWith(
+      assetPathProvider: assetPathProvider,
+      cache: cache,
+    );
   }
 
   Filesystem get filesystem {
@@ -35,6 +41,11 @@ extension AssetReaderStateExtension on AssetReader {
   InputTracker? get inputTracker =>
       this is AssetReaderState ? (this as AssetReaderState).inputTracker : null;
 
+  AssetPathProvider get assetPathProvider {
+    _requireIsAssetReaderState();
+    return (this as AssetReaderState).assetPathProvider;
+  }
+
   /// Gets [inputTracker] or throws a descriptive error if it is `null`.
   InputTracker get requireInputTracker {
     final result = inputTracker;
@@ -46,11 +57,6 @@ extension AssetReaderStateExtension on AssetReader {
     }
     return result;
   }
-
-  AssetPathProvider? get assetPathProvider =>
-      this is AssetReaderState
-          ? (this as AssetReaderState).assetPathProvider
-          : null;
 
   /// Throws if `this` is not an [AssetReaderState].
   void _requireIsAssetReaderState() {
@@ -64,8 +70,11 @@ extension AssetReaderStateExtension on AssetReader {
 
 /// The state backing an [AssetReader].
 abstract interface class AssetReaderState {
-  /// Returns a new instance with optionally updated [cache].
-  AssetReader copyWith({FilesystemCache? cache});
+  /// Returns a new instance with optionally updated [assetPathProvider] and/or [cache].
+  AssetReader copyWith({
+    AssetPathProvider? assetPathProvider,
+    FilesystemCache? cache,
+  });
 
   /// The [Filesystem] that this reader reads from.
   ///
@@ -86,7 +95,6 @@ abstract interface class AssetReaderState {
   /// not have one.
   InputTracker? get inputTracker;
 
-  /// The [AssetPathProvider] associated with this reader, or `null` if it does
-  /// not have one.
-  AssetPathProvider? get assetPathProvider;
+  /// The [AssetPathProvider] associated with this reader.
+  AssetPathProvider get assetPathProvider;
 }

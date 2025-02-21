@@ -1023,6 +1023,9 @@ class _SingleBuild {
 
     for (var output in outputs) {
       var wasOutput = writer.assetsWritten.contains(output);
+      if (wasOutput) {
+        await _reader.digest(output);
+      }
       var digest = wasOutput ? await _reader.digest(output) : null;
       var node = _assetGraph.get(output) as GeneratedAssetNode;
 

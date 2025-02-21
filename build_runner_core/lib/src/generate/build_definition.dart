@@ -338,7 +338,10 @@ class _Loader {
     return BuildDefinition._(
       assetGraph!,
       _options.targetGraph,
-      _wrapReader(_environment.reader, assetGraph!),
+      _copyReaderWithBuildCacheAssetPathProvider(
+        _environment.reader,
+        assetGraph!,
+      ),
       _wrapWriter(_environment.writer, assetGraph!),
       _options.packageGraph,
       _options.deleteFilesByDefault,
@@ -545,7 +548,10 @@ class _Loader {
       updates,
       _options.packageGraph.root.name,
       (id) => _wrapWriter(_environment.writer, assetGraph).delete(id),
-      _wrapReader(_environment.reader, assetGraph),
+      _copyReaderWithBuildCacheAssetPathProvider(
+        _environment.reader,
+        assetGraph,
+      ),
     );
     return updates;
   }
@@ -562,14 +568,16 @@ class _Loader {
     );
   }
 
-  /// Wraps [original] in a [BuildCacheReader].
-  AssetReader _wrapReader(AssetReader original, AssetGraph assetGraph) {
-    return BuildCacheReader(
-      original,
-      assetGraph,
-      _options.packageGraph.root.name,
-    );
-  }
+  AssetReader _copyReaderWithBuildCacheAssetPathProvider(
+    AssetReader original,
+    AssetGraph assetGraph,
+  ) => original.copyWith(
+    assetPathProvider: BuildCacheAssetPathProvider(
+      delegate: original.assetPathProvider,
+      assetGraph: assetGraph,
+      rootPackage: _options.packageGraph.root.name,
+    ),
+  );
 
   /// Checks for any updates to the [BuilderOptionsAssetNode]s for
   /// [buildPhases] compared to the last known state.
