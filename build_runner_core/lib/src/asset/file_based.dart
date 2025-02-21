@@ -31,15 +31,23 @@ class FileBasedAssetReader extends AssetReader implements AssetReaderState {
 
   FileBasedAssetReader(
     this.packageGraph, {
+    AssetPathProvider? assetPathProvider,
     Filesystem? filesystem,
     FilesystemCache? cache,
   }) : filesystem = filesystem ?? IoFilesystem(),
        cache = cache ?? const PassthroughFilesystemCache(),
-       assetPathProvider = packageGraph;
+       assetPathProvider = assetPathProvider ?? packageGraph;
 
   @override
-  FileBasedAssetReader copyWith({FilesystemCache? cache}) =>
-      FileBasedAssetReader(packageGraph, filesystem: filesystem, cache: cache);
+  FileBasedAssetReader copyWith({
+    AssetPathProvider? assetPathProvider,
+    FilesystemCache? cache,
+  }) => FileBasedAssetReader(
+    packageGraph,
+    assetPathProvider: assetPathProvider,
+    filesystem: filesystem,
+    cache: cache,
+  );
 
   @override
   InputTracker? get inputTracker => null;

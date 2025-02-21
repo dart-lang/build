@@ -27,8 +27,13 @@ class WrittenAssetReader extends AssetReader implements AssetReaderState {
   WrittenAssetReader(this.source, [this.filterSpy]);
 
   @override
-  WrittenAssetReader copyWith({FilesystemCache? cache}) =>
-      WrittenAssetReader(source.copyWith(cache: cache), filterSpy);
+  WrittenAssetReader copyWith({
+    AssetPathProvider? assetPathProvider,
+    FilesystemCache? cache,
+  }) => WrittenAssetReader(
+    source.copyWith(assetPathProvider: assetPathProvider, cache: cache),
+    filterSpy,
+  );
 
   @override
   Filesystem get filesystem => source.filesystem;
@@ -40,7 +45,7 @@ class WrittenAssetReader extends AssetReader implements AssetReaderState {
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
 
   @override
-  AssetPathProvider? get assetPathProvider => null;
+  AssetPathProvider get assetPathProvider => source.assetPathProvider;
 
   @override
   InputTracker? get inputTracker => null;
@@ -54,8 +59,8 @@ class WrittenAssetReader extends AssetReader implements AssetReaderState {
   }
 
   @override
-  Future<bool> canRead(AssetId id) {
-    var canRead = source.testing.exists(id);
+  Future<bool> canRead(AssetId id) async {
+    var canRead = await source.canRead(id);
     if (filterSpy != null) {
       canRead =
           canRead &&

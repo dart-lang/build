@@ -37,7 +37,7 @@ Future<bool> createMergedOutputDirectories(
   FinalizedAssetsView finalizedAssetsView,
   bool outputSymlinksOnly,
 ) async {
-  if (outputSymlinksOnly && reader.assetPathProvider == null) {
+  if (outputSymlinksOnly && reader.filesystem is! IoFilesystem) {
     _logger.severe(
       'The current environment does not support symlinks, but symlinks were '
       'requested.',
@@ -263,12 +263,11 @@ Future<AssetId> _writeAsset(
     var outputId = AssetId(packageGraph.root.name, assetPath);
     try {
       if (symlinkOnly) {
-        await Link(_filePathFor(outputDir, outputId)).create(
-          // We assert at the top of `createMergedOutputDirectories` that the
-          // reader implements this type when requesting symlinks.
-          reader.assetPathProvider!.pathFor(id),
-          recursive: true,
-        );
+        // We assert at the top of `createMergedOutputDirectories` that the
+        // reader filesystem is `IoFilesystem`, so symlinks make sense.
+        await Link(
+          _filePathFor(outputDir, outputId),
+        ).create(reader.assetPathProvider.pathFor(id), recursive: true);
       } else {
         await _writeAsBytes(outputDir, outputId, await reader.readAsBytes(id));
       }
