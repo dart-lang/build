@@ -101,6 +101,9 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
   Filesystem get filesystem => _reader.filesystem;
 
   @override
+  FilesystemCache get cache => _reader.cache;
+
+  @override
   AssetFinder get assetFinder => _reader.assetFinder;
 
   @override

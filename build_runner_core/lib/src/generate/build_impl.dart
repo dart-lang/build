@@ -296,7 +296,7 @@ class _SingleBuild {
         _delete,
         _reader,
       );
-      await _reader.filesystem.cache.invalidate(invalidated);
+      await _reader.cache.invalidate(invalidated);
     });
   }
 
@@ -978,7 +978,7 @@ class _SingleBuild {
           return;
         } else {
           if (node.lastKnownDigest == null) {
-            await reader.filesystem.cache.invalidate([id]);
+            await reader.cache.invalidate([id]);
             node.lastKnownDigest = await reader.digest(id);
           }
         }

@@ -34,12 +34,10 @@ abstract interface class FilesystemCache {
   /// Reads [id] as a `String`.
   ///
   /// Returns a cached result if available, or caches and returns `ifAbsent()`.
-  ///
-  /// The encoding used is always `utf8`. For other encodings, use
-  /// [readAsBytes].
   Future<String> readAsString(
     AssetId id, {
-    required Future<String> Function() ifAbsent,
+    Encoding encoding = utf8,
+    required Future<Uint8List> Function() ifAbsent,
   });
 }
 
@@ -65,8 +63,9 @@ class PassthroughFilesystemCache implements FilesystemCache {
   @override
   Future<String> readAsString(
     AssetId id, {
-    required Future<String> Function() ifAbsent,
-  }) => ifAbsent();
+    Encoding encoding = utf8,
+    required Future<Uint8List> Function() ifAbsent,
+  }) async => encoding.decode(await ifAbsent());
 }
 
 /// [FilesystemCache] that stores data in memory.
@@ -139,14 +138,20 @@ class InMemoryFilesystemCache implements FilesystemCache {
   @override
   Future<String> readAsString(
     AssetId id, {
-    required Future<String> Function() ifAbsent,
+    Encoding encoding = utf8,
+    required Future<Uint8List> Function() ifAbsent,
   }) async {
+    if (encoding != utf8) {
+      final bytes = await readAsBytes(id, ifAbsent: ifAbsent);
+      return encoding.decode(bytes);
+    }
+
     var cached = _stringContentCache[id];
     if (cached != null) return cached;
 
     return _pendingStringContentCache.putIfAbsent(id, () async {
-      final result = await ifAbsent();
-      _stringContentCache[id] = result;
+      final bytes = await ifAbsent();
+      final result = _stringContentCache[id] = utf8.decode(bytes);
       unawaited(_pendingStringContentCache.remove(id));
       return result;
     });

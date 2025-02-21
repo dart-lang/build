@@ -8,58 +8,44 @@ import 'dart:typed_data';
 
 import 'package:pool/pool.dart';
 
-import '../asset/id.dart';
-import 'asset_path_provider.dart';
-import 'filesystem_cache.dart';
-
 /// The filesystem the build is running on.
 ///
 /// Methods behave as the `dart:io` methods with the same names, with some
 /// exceptions noted in the docs.
-///
-/// Some methods cache, all uses of the cache are noted in the docs.
-///
-/// The cache might be a [PassthroughFilesystemCache] in which case it has no
-/// effect.
-///
-/// TODO(davidmorgan): extend caching to sync methods, deletes, writes.
 abstract interface class Filesystem {
-  FilesystemCache get cache;
-
-  /// Returns a new instance with optionally updated [cache].
-  Filesystem copyWith({FilesystemCache? cache});
+  /// Whether the file exists.
+  Future<bool> exists(String path);
 
   /// Whether the file exists.
-  ///
-  /// Uses [cache].
-  Future<bool> exists(AssetId id);
+  bool existsSync(String path);
 
   /// Reads a file as a string.
-  ///
-  /// Uses [cache]. For `utf8`, the `String` is cached; for any other encoding
-  /// the bytes are cached but the conversion runs on every read.
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8});
+  Future<String> readAsString(String path, {Encoding encoding = utf8});
+
+  /// Reads a file as a string.
+  String readAsStringSync(String path, {Encoding encoding = utf8});
 
   /// Reads a file as bytes.
-  ///
-  /// Uses [cache].
-  Future<Uint8List> readAsBytes(AssetId id);
+  Future<Uint8List> readAsBytes(String path);
+
+  /// Reads a file as bytes.
+  Uint8List readAsBytesSync(String path);
 
   /// Deletes a file.
   ///
   /// If the file does not exist, does nothing.
-  Future<void> delete(AssetId id);
+  Future<void> delete(String path);
 
   /// Deletes a file.
   ///
   /// If the file does not exist, does nothing.
-  void deleteSync(AssetId id);
+  void deleteSync(String path);
 
   /// Writes a file.
   ///
   /// Creates enclosing directories as needed if they don't exist.
   void writeAsStringSync(
-    AssetId id,
+    String path,
     String contents, {
     Encoding encoding = utf8,
   });
@@ -68,7 +54,7 @@ abstract interface class Filesystem {
   ///
   /// Creates enclosing directories as needed if they don't exist.
   Future<void> writeAsString(
-    AssetId id,
+    String path,
     String contents, {
     Encoding encoding = utf8,
   });
@@ -76,88 +62,69 @@ abstract interface class Filesystem {
   /// Writes a file.
   ///
   /// Creates enclosing directories as needed if they don't exist.
-  void writeAsBytesSync(AssetId id, List<int> contents);
+  void writeAsBytesSync(String path, List<int> contents);
 
   /// Writes a file.
   ///
   /// Creates enclosing directories as needed if they don't exist.
-  Future<void> writeAsBytes(AssetId id, List<int> contents);
+  Future<void> writeAsBytes(String path, List<int> contents);
 }
 
-/// A filesystem using [assetPathProvider] to map to the `dart:io` filesystem.
+/// The `dart:io` filesystem.
 class IoFilesystem implements Filesystem {
-  @override
-  final FilesystemCache cache;
-
-  final AssetPathProvider assetPathProvider;
-
   /// Pool for async file operations.
   final _pool = Pool(32);
 
-  IoFilesystem({
-    required this.assetPathProvider,
-    this.cache = const PassthroughFilesystemCache(),
-  });
+  @override
+  Future<bool> exists(String path) => _pool.withResource(File(path).exists);
 
   @override
-  IoFilesystem copyWith({FilesystemCache? cache}) => IoFilesystem(
-    assetPathProvider: assetPathProvider,
-    cache: cache ?? this.cache,
-  );
+  bool existsSync(String path) => File(path).existsSync();
 
   @override
-  Future<bool> exists(AssetId id) =>
-      cache.exists(id, ifAbsent: () => _pool.withResource(_fileFor(id).exists));
+  Future<Uint8List> readAsBytes(String path) =>
+      _pool.withResource(File(path).readAsBytes);
 
   @override
-  Future<Uint8List> readAsBytes(AssetId id) => cache.readAsBytes(
-    id,
-    ifAbsent: () => _pool.withResource(_fileFor(id).readAsBytes),
-  );
+  Uint8List readAsBytesSync(String path) => File(path).readAsBytesSync();
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
-    // The cache only directly supports utf8, for other encodings get the
-    // bytes via the cache then convert.
-    if (encoding == utf8) {
-      return cache.readAsString(
-        id,
-        ifAbsent: () => _pool.withResource(_fileFor(id).readAsString),
-      );
-    } else {
-      return encoding.decode(await readAsBytes(id));
-    }
-  }
+  Future<String> readAsString(String path, {Encoding encoding = utf8}) =>
+      _pool.withResource(() => File(path).readAsString(encoding: encoding));
 
   @override
-  void deleteSync(AssetId id) {
-    final file = _fileFor(id);
+  String readAsStringSync(String path, {Encoding encoding = utf8}) =>
+      File(path).readAsStringSync(encoding: encoding);
+
+  @override
+  void deleteSync(String path) {
+    final file = File(path);
     if (file.existsSync()) file.deleteSync();
   }
 
   @override
-  Future<void> delete(AssetId id) {
+  Future<void> delete(String path) {
     return _pool.withResource(() async {
-      final file = _fileFor(id);
+      final file = File(path);
       if (await file.exists()) await file.delete();
     });
   }
 
   @override
   void writeAsBytesSync(
-    AssetId id,
+    String path,
     List<int> contents, {
     Encoding encoding = utf8,
   }) {
-    final file = _fileFor(id);
+    final file = File(path);
     file.parent.createSync(recursive: true);
     file.writeAsBytesSync(contents);
   }
 
   @override
-  Future<void> writeAsBytes(AssetId id, List<int> contents) {
+  Future<void> writeAsBytes(String path, List<int> contents) {
     return _pool.withResource(() async {
-      final file = _fileFor(id);
+      final file = File(path);
       await file.parent.create(recursive: true);
       await file.writeAsBytes(contents);
     });
@@ -165,108 +132,87 @@ class IoFilesystem implements Filesystem {
 
   @override
   void writeAsStringSync(
-    AssetId id,
+    String path,
     String contents, {
     Encoding encoding = utf8,
   }) {
-    final file = _fileFor(id);
+    final file = File(path);
     file.parent.createSync(recursive: true);
     file.writeAsStringSync(contents, encoding: encoding);
   }
 
   @override
   Future<void> writeAsString(
-    AssetId id,
+    String path,
     String contents, {
     Encoding encoding = utf8,
   }) {
     return _pool.withResource(() async {
-      final file = _fileFor(id);
+      final file = File(path);
       await file.parent.create(recursive: true);
       await file.writeAsString(contents, encoding: encoding);
     });
-  }
-
-  /// Returns a [File] for [id] for the current [assetPathProvider].
-  File _fileFor(AssetId id) {
-    return File(assetPathProvider.pathFor(id));
   }
 }
 
 /// An in-memory [Filesystem].
 class InMemoryFilesystem implements Filesystem {
-  @override
-  FilesystemCache cache;
+  final Map<String, Uint8List> _files = {};
 
-  final Map<AssetId, List<int>> assets;
-
-  InMemoryFilesystem({FilesystemCache? cache})
-    : cache = cache ?? const PassthroughFilesystemCache(),
-      assets = {};
-
-  InMemoryFilesystem._({required this.cache, required this.assets});
+  /// The paths to all files present on the filesystem.
+  Iterable<String> get filePaths => _files.keys;
 
   @override
-  InMemoryFilesystem copyWith({FilesystemCache? cache}) =>
-      InMemoryFilesystem._(assets: assets, cache: cache ?? this.cache);
+  Future<bool> exists(String path) async => _files.containsKey(path);
 
   @override
-  Future<bool> exists(AssetId id) async =>
-      cache.exists(id, ifAbsent: () async => assets.containsKey(id));
+  bool existsSync(String path) => _files.containsKey(path);
 
   @override
-  Future<Uint8List> readAsBytes(AssetId id) async =>
-      cache.readAsBytes(id, ifAbsent: () async => assets[id] as Uint8List);
+  Future<Uint8List> readAsBytes(String path) async => _files[path]!;
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
-    // The cache only directly supports utf8, for other encodings get the
-    // bytes via the cache then convert.
-    if (encoding == utf8) {
-      return cache.readAsString(
-        id,
-        ifAbsent: () async => encoding.decode(assets[id]!),
-      );
-    } else {
-      return encoding.decode(await readAsBytes(id));
-    }
+  Uint8List readAsBytesSync(String path) => _files[path]!;
+
+  @override
+  Future<String> readAsString(String path, {Encoding encoding = utf8}) async =>
+      encoding.decode(_files[path]!);
+
+  @override
+  String readAsStringSync(String path, {Encoding encoding = utf8}) =>
+      encoding.decode(_files[path]!);
+
+  @override
+  Future<void> delete(String path) async => _files.remove(path);
+
+  @override
+  void deleteSync(String path) async => _files.remove(path);
+
+  @override
+  void writeAsBytesSync(String path, List<int> contents) {
+    _files[path] = Uint8List.fromList(contents);
   }
 
   @override
-  Future<void> delete(AssetId id) async {
-    assets.remove(id);
-  }
-
-  @override
-  void deleteSync(AssetId id) async {
-    assets.remove(id);
-  }
-
-  @override
-  void writeAsBytesSync(AssetId id, List<int> contents) {
-    assets[id] = contents;
-  }
-
-  @override
-  Future<void> writeAsBytes(AssetId id, List<int> contents) async {
-    assets[id] = contents;
+  Future<void> writeAsBytes(String path, List<int> contents) async {
+    _files[path] = Uint8List.fromList(contents);
   }
 
   @override
   void writeAsStringSync(
-    AssetId id,
+    String path,
     String contents, {
     Encoding encoding = utf8,
   }) {
-    assets[id] = encoding.encode(contents);
+    _files[path] = Uint8List.fromList(encoding.encode(contents));
   }
 
   @override
   Future<void> writeAsString(
-    AssetId id,
+    String path,
     String contents, {
     Encoding encoding = utf8,
   }) async {
-    assets[id] = encoding.encode(contents);
+    _files[path] = Uint8List.fromList(encoding.encode(contents));
   }
 }

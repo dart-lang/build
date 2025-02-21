@@ -19,45 +19,70 @@ import 'writer.dart';
 /// files from disk.
 class FileBasedAssetReader extends AssetReader implements AssetReaderState {
   @override
+  final AssetPathProvider assetPathProvider;
+  @override
   final Filesystem filesystem;
   @override
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
+  @override
+  final FilesystemCache cache;
 
   final PackageGraph packageGraph;
 
-  FileBasedAssetReader(this.packageGraph, {Filesystem? filesystem})
-    : filesystem = filesystem ?? IoFilesystem(assetPathProvider: packageGraph);
+  FileBasedAssetReader(
+    this.packageGraph, {
+    Filesystem? filesystem,
+    FilesystemCache? cache,
+  }) : filesystem = filesystem ?? IoFilesystem(),
+       cache = cache ?? const PassthroughFilesystemCache(),
+       assetPathProvider = packageGraph;
 
   @override
   FileBasedAssetReader copyWith({FilesystemCache? cache}) =>
-      FileBasedAssetReader(
-        packageGraph,
-        filesystem: filesystem.copyWith(cache: cache),
-      );
-
-  @override
-  AssetPathProvider? get assetPathProvider => packageGraph;
+      FileBasedAssetReader(packageGraph, filesystem: filesystem, cache: cache);
 
   @override
   InputTracker? get inputTracker => null;
 
   @override
-  Future<bool> canRead(AssetId id) => filesystem.exists(id);
+  Future<bool> canRead(AssetId id) {
+    return cache.exists(
+      id,
+      ifAbsent: () async {
+        final path = assetPathProvider.pathFor(id);
+        return filesystem.exists(path);
+      },
+    );
+  }
 
   @override
   Future<List<int>> readAsBytes(AssetId id) async {
-    if (!await filesystem.exists(id)) {
-      throw AssetNotFoundException(id);
-    }
-    return filesystem.readAsBytes(id);
+    return cache.readAsBytes(
+      id,
+      ifAbsent: () async {
+        final path = assetPathProvider.pathFor(id);
+        if (!await filesystem.exists(path)) {
+          // TODO(davidmorgan): report the path as well?
+          throw AssetNotFoundException(id);
+        }
+        return filesystem.readAsBytes(path);
+      },
+    );
   }
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
-    if (!await filesystem.exists(id)) {
-      throw AssetNotFoundException(id);
-    }
-    return filesystem.readAsString(id, encoding: encoding);
+    return cache.readAsString(
+      id,
+      encoding: encoding,
+      ifAbsent: () async {
+        final path = assetPathProvider.pathFor(id);
+        if (!await filesystem.exists(path)) {
+          throw AssetNotFoundException(id);
+        }
+        return filesystem.readAsBytes(path);
+      },
+    );
   }
 
   // This is only for generators, so only `BuildStep` needs to implement it.
@@ -97,19 +122,23 @@ class FileBasedAssetWriter implements RunnerAssetWriter {
   final PackageGraph packageGraph;
   final Filesystem filesystem;
 
-  FileBasedAssetWriter(this.packageGraph)
-    : filesystem = IoFilesystem(assetPathProvider: packageGraph);
+  FileBasedAssetWriter(this.packageGraph) : filesystem = IoFilesystem();
 
   @override
-  Future writeAsBytes(AssetId id, List<int> bytes) =>
-      filesystem.writeAsBytes(id, bytes);
+  Future<void> writeAsBytes(AssetId id, List<int> bytes) async {
+    final path = packageGraph.pathFor(id);
+    await filesystem.writeAsBytes(path, bytes);
+  }
 
   @override
-  Future writeAsString(
+  Future<void> writeAsString(
     AssetId id,
     String contents, {
     Encoding encoding = utf8,
-  }) => filesystem.writeAsString(id, contents, encoding: encoding);
+  }) async {
+    final path = packageGraph.pathFor(id);
+    await filesystem.writeAsString(path, contents, encoding: encoding);
+  }
 
   @override
   Future delete(AssetId id) async {
@@ -119,7 +148,8 @@ class FileBasedAssetWriter implements RunnerAssetWriter {
         'Should not delete assets outside of ${packageGraph.root.name}',
       );
     }
-    await filesystem.delete(id);
+    final path = packageGraph.pathFor(id);
+    await filesystem.delete(path);
   }
 
   @override

@@ -27,7 +27,8 @@ Future<void> testBuilderAndCollectAssets(
     onLog: onLog,
     reportUnusedAssetsForInput: reportUnusedAssetsForInput,
   );
-  result.readerWriter.assets.forEach((id, value) {
+  for (var id in result.readerWriter.testing.assets) {
+    final value = result.readerWriter.testing.readBytes(id);
     assets['${id.package}|${id.path}'] = value;
-  });
+  }
 }

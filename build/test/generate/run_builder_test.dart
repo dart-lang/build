@@ -12,7 +12,7 @@ import 'package:package_config/package_config_types.dart';
 import 'package:test/test.dart';
 
 void main() {
-  late InMemoryAssetReaderWriter readerWriter;
+  late TestReaderWriter readerWriter;
   final primary = makeAssetId('a|web/primary.txt');
   final inputs = {primary: 'foo'};
   late Resource resource;
@@ -30,7 +30,7 @@ void main() {
     builder = TestBuilder(
       extraWork: (buildStep, __) => buildStep.fetchResource(resource),
     );
-    readerWriter = InMemoryAssetReaderWriter();
+    readerWriter = TestReaderWriter();
     addAssets(inputs, readerWriter);
   });
 
@@ -79,7 +79,11 @@ void main() {
 
   group('can resolve package config', () {
     setUp(() {
-      readerWriter.assets[makeAssetId('build|lib/foo.txt')] = [1, 2, 3];
+      readerWriter.testing.writeBytes(makeAssetId('build|lib/foo.txt'), [
+        1,
+        2,
+        3,
+      ]);
 
       builder = TestBuilder(
         extraWork: (buildStep, __) async {

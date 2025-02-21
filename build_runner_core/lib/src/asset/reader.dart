@@ -107,6 +107,9 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
   Filesystem get filesystem => _delegate.filesystem;
 
   @override
+  FilesystemCache get cache => _delegate.cache;
+
+  @override
   AssetPathProvider? get assetPathProvider => _delegate.assetPathProvider;
 
   /// Checks whether [id] can be read by this step - attempting to build the

@@ -27,7 +27,7 @@ void main() {
       <AssetId>{},
       <AssetId>{},
       buildPackageGraph({rootPackage('a'): []}),
-      InMemoryAssetReaderWriter(),
+      TestReaderWriter(),
     );
     delegate = InMemoryRunnerAssetReaderWriter();
     final packageGraph = buildPackageGraph({rootPackage('a'): []});
@@ -50,7 +50,7 @@ void main() {
       node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
     }
     graph.add(node);
-    delegate.filesystem.writeAsStringSync(node.id, content);
+    delegate.testing.writeString(node.id, content);
   }
 
   test('can not read deleted nodes', () async {

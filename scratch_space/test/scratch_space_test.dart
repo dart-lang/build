@@ -18,7 +18,7 @@ import 'package:test/test.dart';
 void main() {
   group('ScratchSpace', () {
     late ScratchSpace scratchSpace;
-    late InMemoryAssetReaderWriter readerWriter;
+    late TestReaderWriter readerWriter;
 
     var allAssets = [
       'dep|lib/dep.dart',
@@ -33,9 +33,9 @@ void main() {
 
     setUp(() async {
       scratchSpace = ScratchSpace();
-      readerWriter = InMemoryAssetReaderWriter();
+      readerWriter = TestReaderWriter();
       for (final asset in allAssets.entries) {
-        readerWriter.filesystem.writeAsBytesSync(asset.key, asset.value);
+        readerWriter.testing.writeBytes(asset.key, asset.value);
       }
       await scratchSpace.ensureAssets(allAssets.keys, readerWriter);
     });
@@ -90,10 +90,10 @@ void main() {
       var outputContent = 'test!';
       await outputFile.writeAsString(outputContent);
 
-      var writer = InMemoryAssetReaderWriter();
+      var writer = TestReaderWriter();
       await scratchSpace.copyOutput(outputId, writer);
 
-      expect(writer.assets[outputId], decodedMatches(outputContent));
+      expect(writer.testing.readString(outputId), outputContent);
     });
 
     test('Can delete a ScratchSpace', () async {

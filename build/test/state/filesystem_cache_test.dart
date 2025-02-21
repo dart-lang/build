@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:typed_data';
+import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build/src/state/filesystem_cache.dart';
@@ -10,10 +10,12 @@ import 'package:test/test.dart';
 
 void main() {
   final txt1 = AssetId('a', 'foo.txt');
-  final txt2 = AssetId('a', 'missing.txt');
+  final txt1String = 'txt1';
+  final txt1Bytes = utf8.encode(txt1String);
 
-  final txt1Bytes = Uint8List.fromList([1, 2, 3]);
-  final txt2Bytes = Uint8List.fromList([4, 5, 6]);
+  final txt2 = AssetId('a', 'missing.txt');
+  final txt2String = 'txt2';
+  final txt2Bytes = utf8.encode(txt2String);
 
   late FilesystemCache cache;
 
@@ -79,23 +81,32 @@ void main() {
 
   group('readAsString', () {
     test('reads from isAbsent', () async {
-      expect(await cache.readAsString(txt1, ifAbsent: () async => '1'), '1');
+      expect(
+        await cache.readAsString(txt1, ifAbsent: () async => txt1Bytes),
+        txt1String,
+      );
     });
 
     test('does not re-read from isAbsent', () async {
-      expect(await cache.readAsString(txt1, ifAbsent: () async => '1'), '1');
       expect(
-        await cache.readAsString(txt1, ifAbsent: () async => '2'),
-        '1' /* cached value */,
+        await cache.readAsString(txt1, ifAbsent: () async => txt1Bytes),
+        txt1String,
+      );
+      expect(
+        await cache.readAsString(txt1, ifAbsent: () async => txt2Bytes),
+        txt1String /* cached value */,
       );
     });
 
     test('can be invalidated with invalidate', () async {
-      expect(await cache.readAsString(txt1, ifAbsent: () async => '1'), '1');
+      expect(
+        await cache.readAsString(txt1, ifAbsent: () async => txt1Bytes),
+        txt1String,
+      );
       await cache.invalidate([txt1]);
       expect(
-        await cache.readAsString(txt1, ifAbsent: () async => '2'),
-        '2' /* updated value */,
+        await cache.readAsString(txt1, ifAbsent: () async => txt2Bytes),
+        txt2String /* updated value */,
       );
     });
   });

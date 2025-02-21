@@ -190,7 +190,7 @@ class AssetGraph {
     Iterable<AssetNode> nodes,
     AssetReader digestReader,
   ) async {
-    await digestReader.filesystem.cache.invalidate(nodes.map((n) => n.id));
+    await digestReader.cache.invalidate(nodes.map((n) => n.id));
     await Future.wait(
       nodes.map((node) async {
         node.lastKnownDigest = await digestReader.digest(node.id);

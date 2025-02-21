@@ -34,7 +34,7 @@ void main() {
         <AssetId>{},
         <AssetId>{},
         packageGraph,
-        InMemoryAssetReaderWriter(),
+        TestReaderWriter(),
       );
     });
 
@@ -55,8 +55,9 @@ void main() {
         ..add(notDeleted)
         ..add(deleted);
 
-      var delegate = InMemoryAssetReaderWriter();
-      delegate.assets.addAll({notDeleted.id: [], deleted.id: []});
+      var delegate = TestReaderWriter();
+      delegate.testing.writeString(notDeleted.id, '');
+      delegate.testing.writeString(deleted.id, '');
 
       reader = FinalizedReader(delegate, graph, targetGraph, [], 'a');
       expect(await reader.canRead(notDeleted.id), true);
@@ -76,8 +77,8 @@ void main() {
         builderOptionsId: AssetId('a', 'builder_options'),
       );
       graph.add(node);
-      var delegate = InMemoryAssetReaderWriter();
-      delegate.assets.addAll({id: []});
+      var delegate = TestReaderWriter();
+      delegate.testing.writeString(id, '');
       reader = FinalizedReader(delegate, graph, targetGraph, [
         InBuildPhase(TestBuilder(), 'a', isOptional: false),
       ], 'a')..reset({'web'}, {});

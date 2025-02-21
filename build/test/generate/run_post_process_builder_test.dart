@@ -11,7 +11,7 @@ import '../common/builders.dart';
 
 void main() {
   group('runPostProcessBuilder', () {
-    late InMemoryAssetReaderWriter readerWriter;
+    late TestReaderWriter readerWriter;
     final copyBuilder = CopyingPostProcessBuilder();
     final deleteBuilder = DeletePostProcessBuilder();
     final aTxt = makeAssetId('a|lib/a.txt');
@@ -24,8 +24,7 @@ void main() {
     void deleteAsset(AssetId id) => deletes[id] = true;
 
     setUp(() async {
-      readerWriter =
-          InMemoryAssetReaderWriter()..filesystem.writeAsStringSync(aTxt, 'a');
+      readerWriter = TestReaderWriter()..testing.writeString(aTxt, 'a');
       adds.clear();
       deletes.clear();
     });
@@ -63,8 +62,8 @@ void main() {
         addAsset: addAsset,
         deleteAsset: deleteAsset,
       );
-      expect(readerWriter.assets, contains(aTxtCopy));
-      expect(readerWriter.assets[aTxtCopy], decodedMatches('a'));
+      expect(readerWriter.testing.exists(aTxt), isTrue);
+      expect(readerWriter.testing.readString(aTxtCopy), 'a');
       expect(adds, contains(aTxtCopy));
     });
 

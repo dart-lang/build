@@ -1,30 +1,19 @@
 ## 3.0.0-wip
 
 - Bump the min SDK to 3.7.0.
-- `InMemoryAssetReader` and `InMemoryAssetWriter` implementations are merged
-  into `InMemoryAssetReaderWriter` with shared state; it implements both
+- Breaking change: tests must use new `TestReaderWriter` instead of
   `InMemoryAssetReader` and `InMemoryAssetWriter`.
 - Breaking change: `testBuilder` no longer accepts a `reader` and a `writer`.
-  Instead it returns a `TestBuilderResult` with the `InMemoryAssetReaderWriter`
+  Instead it returns a `TestBuilderResult` with the `TestReaderWriter`
   that was used.
 - Breaking change: `resolveSources` no longer automatically reads non-input
   files from the filesystem; specify explicitly which non-input files the
   test should read in `nonInputsToReadFromFilesystem`.
 - Breaking change: remove `MultiAssetReader`. Load the source into one
-  in-memory reader instead of providing multiple readers.
+  `TestReaderWriter` instead.
+- Breaking change: Remove `StubAssetReader`. Use `TestReaderWriter` instead.
 - Support checks on reader state after a build action in `resolveSources`.
 - Start using `package:build/src/internal.dart`.
-- Refactor `PathProvidingAssetReader` to `AssetPathProvider`
-- Refactor `MultiPackageAssetReader` to internal `AssetFinder`.
-- Add internal `Filesystem` that backs `AssetReader` and `AssetWriter`
-  implementations.
-- Breaking change: `InMemoryAssetReader` constrictur no longer accepts sources,
-  and `cacheBytes` methods are removed. Tests should write to its `filesystem`
-  instead.
-- Breaking change: merged `InMemoryAssetReader` and `InMemoryAssetWriter` into
-  `InMemoryAssetReaderWriter`.
-- Refactor `CachingAssetReader` to `FilesystemCache`.
-- Remove `StubAssetReader`. Use `InMemoryAssetReaderWriter` instead.
 
 ## 2.2.3
 

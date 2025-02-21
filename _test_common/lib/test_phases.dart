@@ -116,9 +116,9 @@ Future<TestBuildersResult> testBuilders(
   inputs.forEach((serializedId, contents) {
     var id = makeAssetId(serializedId);
     if (contents is String) {
-      readerWriter.filesystem.writeAsStringSync(id, contents);
+      readerWriter.testing.writeString(id, contents);
     } else if (contents is List<int>) {
-      readerWriter.filesystem.writeAsBytesSync(id, contents);
+      readerWriter.testing.writeBytes(id, contents);
     }
   });
 
@@ -179,7 +179,7 @@ Future<TestBuildersResult> testBuilders(
 void checkBuild(
   BuildResult result, {
   Map<String, Object>? outputs,
-  required InMemoryAssetReaderWriter readerWriter,
+  required TestReaderWriter readerWriter,
   BuildStatus status = BuildStatus.success,
   String rootPackage = 'a',
   String expectedGeneratedDir = 'generated',

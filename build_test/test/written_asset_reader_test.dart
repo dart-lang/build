@@ -1,5 +1,6 @@
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
+import 'package:build_test/src/in_memory_reader_writer.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 

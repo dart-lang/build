@@ -18,7 +18,8 @@ Future<void> testBuilderAndCollectAssets(
     assets,
     onLog: (log) => printOnFailure('${log.level}: ${log.message}'),
   );
-  result.readerWriter.assets.forEach((id, value) {
+  for (var id in result.readerWriter.testing.assets) {
+    final value = result.readerWriter.testing.readBytes(id);
     assets['${id.package}|${id.path}'] = value;
-  });
+  }
 }

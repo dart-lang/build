@@ -15,22 +15,22 @@ import 'package:test/test.dart';
 import 'matchers.dart';
 
 void main() {
-  late InMemoryAssetReaderWriter reader;
+  late TestReaderWriter reader;
   final defaultPlatform = DartPlatform.register('test', ['async']);
 
   List<AssetId> makeAssets(Map<String, String> assetDescriptors) {
-    reader = InMemoryAssetReaderWriter();
+    reader = TestReaderWriter();
     var assets = <AssetId>{};
     assetDescriptors.forEach((serializedId, content) {
       var id = AssetId.parse(serializedId);
-      reader.filesystem.writeAsStringSync(id, content);
+      reader.testing.writeString(id, content);
       assets.add(id);
     });
     return assets.toList();
   }
 
   Future<MetaModule> metaModuleFromSources(
-    InMemoryAssetReaderWriter reader,
+    TestReaderWriter reader,
     List<AssetId> sources, {
     DartPlatform? platform,
   }) async {
@@ -44,7 +44,7 @@ void main() {
           ),
     )).where((l) => l.isImportable);
     for (final library in libraries) {
-      reader.filesystem.writeAsStringSync(
+      reader.testing.writeString(
         library.id.changeExtension(moduleLibraryExtension),
         library.serialize(),
       );
