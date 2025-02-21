@@ -38,7 +38,7 @@ void main() {
           )
           ..testing.writeString(
             AssetId('example', 'web/large.txt'),
-            List.filled(10000, 'large').join(''),
+            'large' * 10000,
           )
           ..testing.writeString(
             makeAssetId('example|.dart_tool/package_config.json'),

@@ -163,30 +163,33 @@ class InMemoryFilesystem implements Filesystem {
   Iterable<String> get filePaths => _files.keys;
 
   @override
-  Future<bool> exists(String path) async => _files.containsKey(path);
+  Future<bool> exists(String path) => Future.value(_files.containsKey(path));
 
   @override
   bool existsSync(String path) => _files.containsKey(path);
 
   @override
-  Future<Uint8List> readAsBytes(String path) async => _files[path]!;
+  Future<Uint8List> readAsBytes(String path) => Future.value(_files[path]!);
 
   @override
   Uint8List readAsBytesSync(String path) => _files[path]!;
 
   @override
-  Future<String> readAsString(String path, {Encoding encoding = utf8}) async =>
-      encoding.decode(_files[path]!);
+  Future<String> readAsString(String path, {Encoding encoding = utf8}) =>
+      Future.value(encoding.decode(_files[path]!));
 
   @override
   String readAsStringSync(String path, {Encoding encoding = utf8}) =>
       encoding.decode(_files[path]!);
 
   @override
-  Future<void> delete(String path) async => _files.remove(path);
+  Future<void> delete(String path) {
+    _files.remove(path);
+    return Future.value();
+  }
 
   @override
-  void deleteSync(String path) async => _files.remove(path);
+  void deleteSync(String path) => _files.remove(path);
 
   @override
   void writeAsBytesSync(String path, List<int> contents) {
@@ -194,8 +197,9 @@ class InMemoryFilesystem implements Filesystem {
   }
 
   @override
-  Future<void> writeAsBytes(String path, List<int> contents) async {
+  Future<void> writeAsBytes(String path, List<int> contents) {
     _files[path] = Uint8List.fromList(contents);
+    return Future.value();
   }
 
   @override
@@ -212,7 +216,8 @@ class InMemoryFilesystem implements Filesystem {
     String path,
     String contents, {
     Encoding encoding = utf8,
-  }) async {
+  }) {
     _files[path] = Uint8List.fromList(encoding.encode(contents));
+    return Future.value();
   }
 }
