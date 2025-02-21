@@ -38,6 +38,13 @@ class BuildCacheReader implements AssetReader, AssetReaderState {
               );
 
   @override
+  BuildCacheReader copyWith({FilesystemCache? cache}) => BuildCacheReader(
+    _delegate.copyWith(cache: cache),
+    _assetGraph,
+    _rootPackage,
+  );
+
+  @override
   Filesystem get filesystem => _delegate.filesystem;
 
   @override

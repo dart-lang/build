@@ -6,8 +6,6 @@ import 'dart:convert';
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
-import 'package:convert/convert.dart';
-import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
 /// An [AssetReader] that records which assets have been read to [assetsRead].
@@ -19,12 +17,12 @@ abstract class RecordingAssetReader implements AssetReader {
 /// assets.
 ///
 /// TODO(davidmorgan): merge into `FileBasedReader` and `FileBasedWriter`.
-class InMemoryAssetReaderWriter
-    implements AssetReader, AssetReaderState, AssetWriter {
+class InMemoryAssetReaderWriter extends AssetReader
+    implements AssetReaderState, AssetWriter {
   @override
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
 
-  final InMemoryFilesystem _filesystem = InMemoryFilesystem();
+  final InMemoryFilesystem _filesystem;
 
   final String? rootPackage;
 
@@ -34,7 +32,15 @@ class InMemoryAssetReaderWriter
   /// Create a new asset reader/writer.
   ///
   /// May optionally define a [rootPackage], which is required for some APIs.
-  InMemoryAssetReaderWriter({this.rootPackage});
+  InMemoryAssetReaderWriter({this.rootPackage, InMemoryFilesystem? filesystem})
+    : _filesystem = filesystem ?? InMemoryFilesystem();
+
+  @override
+  InMemoryAssetReaderWriter copyWith({FilesystemCache? cache}) =>
+      InMemoryAssetReaderWriter(
+        rootPackage: rootPackage,
+        filesystem: _filesystem.copyWith(cache: cache),
+      );
 
   @override
   AssetPathProvider? get assetPathProvider => null;
@@ -91,14 +97,4 @@ class InMemoryAssetReaderWriter
     String contents, {
     Encoding encoding = utf8,
   }) async => filesystem.writeAsString(id, contents, encoding: encoding);
-
-  @override
-  Future<Digest> digest(AssetId id) async {
-    var digestSink = AccumulatorSink<Digest>();
-    md5.startChunkedConversion(digestSink)
-      ..add(await readAsBytes(id))
-      ..add(id.toString().codeUnits)
-      ..close();
-    return digestSink.events.first;
-  }
 }

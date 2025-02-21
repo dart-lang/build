@@ -63,7 +63,7 @@ typedef CheckInvalidInput = void Function(AssetId id);
 ///
 /// Tracks the assets and globs read during this step for input dependency
 /// tracking.
-class SingleStepReader implements AssetReader, AssetReaderState {
+class SingleStepReader extends AssetReader implements AssetReaderState {
   @override
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
 
@@ -90,6 +90,18 @@ class SingleStepReader implements AssetReader, AssetReaderState {
     this._getGlobNode,
     this._writtenAssets,
   ]);
+
+  @override
+  SingleStepReader copyWith({FilesystemCache? cache}) => SingleStepReader(
+    _delegate.copyWith(cache: cache),
+    _assetGraph,
+    _phaseNumber,
+    _primaryPackage,
+    _isReadableNode,
+    _checkInvalidInput,
+    _getGlobNode,
+    _writtenAssets,
+  );
 
   @override
   Filesystem get filesystem => _delegate.filesystem;

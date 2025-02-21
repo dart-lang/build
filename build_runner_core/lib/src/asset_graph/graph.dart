@@ -9,6 +9,8 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build/experiments.dart' as experiments_zone;
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
@@ -188,6 +190,7 @@ class AssetGraph {
     Iterable<AssetNode> nodes,
     AssetReader digestReader,
   ) async {
+    await digestReader.filesystem.cache.invalidate(nodes.map((n) => n.id));
     await Future.wait(
       nodes.map((node) async {
         node.lastKnownDigest = await digestReader.digest(node.id);

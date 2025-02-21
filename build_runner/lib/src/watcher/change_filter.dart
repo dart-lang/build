@@ -4,6 +4,8 @@
 import 'dart:async';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/asset_graph/graph.dart';
@@ -29,6 +31,7 @@ FutureOr<bool> shouldProcess(
     if (_isAddOrEditOnGeneratedFile(node, change.type)) return false;
     if (change.type == ChangeType.MODIFY) {
       // Was it really modified or just touched?
+      reader.filesystem.cache.invalidate([change.id]);
       return reader
           .digest(change.id)
           .then((newDigest) => node.lastKnownDigest != newDigest);
