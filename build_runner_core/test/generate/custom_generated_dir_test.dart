@@ -31,11 +31,10 @@ void main() {
       expectedGeneratedDir: customGeneratedDir,
     );
     expect(
-      result.readerWriter.assets[AssetId(
-        'a',
-        '.dart_tool/build/$customGeneratedDir/a/lib/a.txt.copy',
-      )],
-      isNotNull,
+      result.readerWriter.testing.exists(
+        AssetId('a', '.dart_tool/build/$customGeneratedDir/a/lib/a.txt.copy'),
+      ),
+      isTrue,
     );
   });
 }

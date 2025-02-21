@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:convert';
 import 'dart:io' show Platform;
 import 'dart:isolate';
 
@@ -145,7 +144,7 @@ void runTests(ResolversFactory resolversFactory) {
         await resolver.libraryFor(entryPoint);
       },
       assetReaderChecks: (reader) {
-        expect(reader.inputTracker.assetsRead, {
+        expect(reader.testing.assetsRead, {
           AssetId('a', 'web/main.dart'),
           AssetId('a', 'web/main.dart.transitive_digest'),
           AssetId('a', 'web/a.dart'),
@@ -195,7 +194,7 @@ void runTests(ResolversFactory resolversFactory) {
           await resolver.libraryFor(entryPoint);
         },
         assetReaderChecks: (reader) {
-          expect(reader.inputTracker.assetsRead, {
+          expect(reader.testing.assetsRead, {
             AssetId('a', 'web/main.dart'),
             AssetId('a', 'web/main.dart.transitive_digest'),
             AssetId('a', 'web/a.dart'),
@@ -213,7 +212,7 @@ void runTests(ResolversFactory resolversFactory) {
           await resolver.libraryFor(entryPoint);
         },
         assetReaderChecks: (reader) {
-          expect(reader.inputTracker.assetsRead, {
+          expect(reader.testing.assetsRead, {
             AssetId('a', 'web/main.dart'),
             AssetId('a', 'web/main.dart.transitive_digest'),
             AssetId('a', 'web/a.dart'),
@@ -1176,9 +1175,9 @@ int? get x => 1;
       },
     );
 
-    final readerWriter = InMemoryAssetReaderWriter();
+    final readerWriter = TestReaderWriter();
 
-    readerWriter.assets[makeAssetId('a|lib/a.dart')] = utf8.encode('');
+    readerWriter.testing.writeString(makeAssetId('a|lib/a.dart'), '');
     await runBuilder(
       builder,
       [makeAssetId('a|lib/a.dart')],
@@ -1187,7 +1186,7 @@ int? get x => 1;
       resolvers,
     );
 
-    readerWriter.assets[makeAssetId('a|lib/b.dart')] = utf8.encode('');
+    readerWriter.testing.writeString(makeAssetId('a|lib/b.dart'), '');
     await runBuilder(
       builder,
       [makeAssetId('a|lib/b.dart')],
@@ -1233,9 +1232,9 @@ int? get x => 1;
   });
 
   test('generated part files are not considered libraries', () async {
-    var readerWriter = InMemoryAssetReaderWriter();
+    var readerWriter = TestReaderWriter();
     var input = AssetId('a', 'lib/input.dart');
-    readerWriter.assets[input] = utf8.encode("part 'input.a.dart';");
+    readerWriter.testing.writeString(input, "part 'input.a.dart';");
 
     var builder = TestBuilder(
       buildExtensions: {
@@ -1271,9 +1270,9 @@ int? get x => 1;
   });
 
   test('missing files are not considered libraries', () async {
-    var readerWriter = InMemoryAssetReaderWriter();
+    var readerWriter = TestReaderWriter();
     var input = AssetId('a', 'lib/input.dart');
-    readerWriter.assets[input] = utf8.encode('void doStuff() {}');
+    readerWriter.testing.writeString(input, 'void doStuff() {}');
 
     var builder = TestBuilder(
       buildExtensions: {
@@ -1295,12 +1294,12 @@ int? get x => 1;
   test(
     'assets with extensions other than `.dart` are not considered libraries',
     () async {
-      var readerWriter = InMemoryAssetReaderWriter();
+      var readerWriter = TestReaderWriter();
       var input = AssetId('a', 'lib/input.dart');
-      readerWriter.assets[input] = utf8.encode('void doStuff() {}');
+      readerWriter.testing.writeString(input, 'void doStuff() {}');
 
       var otherFile = AssetId('a', 'lib/input.notdart');
-      readerWriter.assets[otherFile] = utf8.encode('Not a Dart file');
+      readerWriter.testing.writeString(otherFile, 'Not a Dart file');
 
       var builder = TestBuilder(
         buildExtensions: {

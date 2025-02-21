@@ -32,15 +32,15 @@ void main() {
     final graph = buildPackageGraph({rootPackage('example', path: path): []});
     readerWriter =
         InMemoryRunnerAssetReaderWriter(rootPackage: 'example')
-          ..filesystem.writeAsStringSync(
+          ..testing.writeString(
             AssetId('example', 'web/initial.txt'),
             'initial',
           )
-          ..filesystem.writeAsStringSync(
+          ..testing.writeString(
             AssetId('example', 'web/large.txt'),
-            List.filled(10000, 'large').join(''),
+            'large' * 10000,
           )
-          ..filesystem.writeAsStringSync(
+          ..testing.writeString(
             makeAssetId('example|.dart_tool/package_config.json'),
             jsonEncode({
               'configVersion': 2,
@@ -106,7 +106,7 @@ void main() {
 
   test('should serve built files', () async {
     final getHello = Uri.parse('http://localhost/initial.g.txt');
-    readerWriter.filesystem.writeAsStringSync(
+    readerWriter.testing.writeString(
       AssetId('example', 'web/initial.g.txt'),
       'INITIAL',
     );
@@ -122,10 +122,7 @@ void main() {
 
   test('should serve newly added files', () async {
     final getNew = Uri.parse('http://localhost/new.txt');
-    readerWriter.filesystem.writeAsStringSync(
-      AssetId('example', 'web/new.txt'),
-      'New',
-    );
+    readerWriter.testing.writeString(AssetId('example', 'web/new.txt'), 'New');
     await Future<void>.value();
     FakeWatcher.notifyWatchers(WatchEvent(ChangeType.ADD, '$path/web/new.txt'));
     await nextBuild.future;
@@ -135,10 +132,7 @@ void main() {
 
   test('should serve built newly added files', () async {
     final getNew = Uri.parse('http://localhost/new.g.txt');
-    readerWriter.filesystem.writeAsStringSync(
-      AssetId('example', 'web/new.txt'),
-      'New',
-    );
+    readerWriter.testing.writeString(AssetId('example', 'web/new.txt'), 'New');
     await Future<void>.value();
     FakeWatcher.notifyWatchers(WatchEvent(ChangeType.ADD, '$path/web/new.txt'));
     await nextBuild.future;

@@ -7,7 +7,7 @@ void main() {
       var a = makeAssetId('a|lib/a.txt');
       var b = makeAssetId('a|lib/b.txt');
       var actualAssets = [a, b];
-      var readerWriter = InMemoryAssetReaderWriter();
+      var readerWriter = TestReaderWriter();
       await readerWriter.writeAsString(a, 'a');
       await readerWriter.writeAsString(b, 'b');
 
@@ -22,7 +22,7 @@ void main() {
       var a = makeAssetId('a|lib/a.txt');
       var b = makeAssetId('a|lib/b.txt');
       var actualAssets = [a, b];
-      var readerWriter = InMemoryAssetReaderWriter();
+      var readerWriter = TestReaderWriter();
       await readerWriter.writeAsString(a, 'a');
       await readerWriter.writeAsString(b, 'b');
 
@@ -37,7 +37,7 @@ void main() {
     test('with missing output', () async {
       var a = makeAssetId('a|lib/a.txt');
       var actualAssets = [a];
-      var readerWriter = InMemoryAssetReaderWriter();
+      var readerWriter = TestReaderWriter();
       await readerWriter.writeAsString(a, 'a');
 
       var outputs = {'a|lib/a.txt': 'a', 'a|lib/b.txt': 'b'};
@@ -53,7 +53,7 @@ void main() {
       var b = makeAssetId('b|lib/b.txt');
       var bMapped = makeAssetId('a|.generated/b/lib/b.txt');
       var actualAssets = [a, b];
-      var readerWriter = InMemoryAssetReaderWriter();
+      var readerWriter = TestReaderWriter();
       await readerWriter.writeAsString(a, 'a');
       await readerWriter.writeAsString(bMapped, 'b');
 

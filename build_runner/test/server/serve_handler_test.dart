@@ -143,7 +143,7 @@ void main() {
       node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
     }
     assetGraph.add(node);
-    readerWriter.filesystem.writeAsStringSync(node.id, content);
+    readerWriter.testing.writeString(node.id, content);
   }
 
   test('can get handlers for a subdirectory', () async {

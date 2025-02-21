@@ -48,6 +48,9 @@ class BuildCacheReader implements AssetReader, AssetReaderState {
   Filesystem get filesystem => _delegate.filesystem;
 
   @override
+  FilesystemCache get cache => _delegate.cache;
+
+  @override
   AssetFinder get assetFinder => _delegate.assetFinder;
 
   @override

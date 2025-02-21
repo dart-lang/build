@@ -18,11 +18,11 @@ import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
 void main() {
-  late InMemoryAssetReaderWriter digestReader;
+  late TestReaderWriter digestReader;
   final fooPackageGraph = buildPackageGraph({rootPackage('foo'): []});
 
   setUp(() async {
-    digestReader = InMemoryAssetReaderWriter();
+    digestReader = TestReaderWriter();
   });
 
   group('AssetGraph', () {
@@ -228,7 +228,7 @@ void main() {
 
       setUp(() async {
         for (final id in [primaryInputId, internalId]) {
-          digestReader.filesystem.writeAsStringSync(id, 'contents of $id');
+          digestReader.testing.writeString(id, 'contents of $id');
         }
         graph = await AssetGraph.build(
           buildPhases,
@@ -464,7 +464,7 @@ void main() {
             graph.add(globNode);
 
             var coolAssetId = AssetId('foo', 'lib/really.cool');
-            digestReader.filesystem.writeAsStringSync(
+            digestReader.testing.writeString(
               coolAssetId,
               'contents of $coolAssetId',
             );
@@ -548,7 +548,7 @@ void main() {
         };
 
         for (final id in sources) {
-          digestReader.filesystem.writeAsStringSync(id, 'contents of $id');
+          digestReader.testing.writeString(id, 'contents of $id');
         }
         final graph = await AssetGraph.build(
           [
@@ -601,7 +601,7 @@ void main() {
           'source globs', () async {
         final sources = {makeAssetId('foo|lib/1.txt')};
         for (final id in sources) {
-          digestReader.filesystem.writeAsStringSync(id, 'contents of $id');
+          digestReader.testing.writeString(id, 'contents of $id');
         }
         final graph = await AssetGraph.build(
           [
@@ -650,7 +650,7 @@ void main() {
         ];
         final sources = {makeAssetId('foo|lib/b.anchor')};
         for (final id in sources) {
-          digestReader.filesystem.writeAsStringSync(id, 'contents of $id');
+          digestReader.testing.writeString(id, 'contents of $id');
         }
         final graph = await AssetGraph.build(
           buildPhases,
@@ -686,10 +686,7 @@ void main() {
 
       test('https://github.com/dart-lang/build/issues/1804', () async {
         final source = AssetId('a', 'lib/a.dart');
-        digestReader.filesystem.writeAsStringSync(
-          source,
-          'contents of $source',
-        );
+        digestReader.testing.writeString(source, 'contents of $source');
         final renamedSource = AssetId('a', 'lib/A.dart');
         final generatedDart = AssetId('a', 'lib/a.g.dart');
         final generatedPart = AssetId('a', 'lib/a.g.part');

@@ -88,6 +88,9 @@ final class BatchReader extends AssetReader implements AssetReaderState {
   Filesystem get filesystem => _inner.filesystem;
 
   @override
+  FilesystemCache get cache => _inner.cache;
+
+  @override
   AssetPathProvider? get assetPathProvider => _inner.assetPathProvider;
 
   @override

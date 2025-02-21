@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import 'package:build_test/build_test.dart';
+import 'package:build_test/src/in_memory_reader_writer.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
@@ -18,8 +18,8 @@ void main() {
     setUp(() {
       readerWriter =
           InMemoryAssetReaderWriter(rootPackage: packageName)
-            ..filesystem.writeAsStringSync(libAsset, 'libAsset')
-            ..filesystem.writeAsStringSync(testAsset, 'testAsset');
+            ..testing.writeString(libAsset, 'libAsset')
+            ..testing.writeString(testAsset, 'testAsset');
     });
 
     test(
@@ -50,10 +50,7 @@ void main() {
       '#findAssets should be able to list files in non-root packages',
       () async {
         var otherLibAsset = AssetId('other', 'lib/other.dart');
-        readerWriter.filesystem.writeAsStringSync(
-          otherLibAsset,
-          'otherLibAsset',
-        );
+        readerWriter.testing.writeString(otherLibAsset, 'otherLibAsset');
         expect(
           await readerWriter.assetFinder
               .find(Glob('lib/*.dart'), package: 'other')

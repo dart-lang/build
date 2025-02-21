@@ -7,6 +7,8 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
+// ignore: implementation_imports
+import 'package:build_test/src/in_memory_reader_writer.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
@@ -26,7 +28,7 @@ class InMemoryRunnerAssetReaderWriter extends InMemoryAssetReaderWriter
 
   @override
   Future writeAsBytes(AssetId id, List<int> bytes) async {
-    var type = assets.containsKey(id) ? ChangeType.MODIFY : ChangeType.ADD;
+    var type = testing.exists(id) ? ChangeType.MODIFY : ChangeType.ADD;
     await super.writeAsBytes(id, bytes);
     FakeWatcher.notifyWatchers(
       WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))),
@@ -39,7 +41,7 @@ class InMemoryRunnerAssetReaderWriter extends InMemoryAssetReaderWriter
     String contents, {
     Encoding encoding = utf8,
   }) async {
-    var type = assets.containsKey(id) ? ChangeType.MODIFY : ChangeType.ADD;
+    var type = testing.exists(id) ? ChangeType.MODIFY : ChangeType.ADD;
     await super.writeAsString(id, contents, encoding: encoding);
     FakeWatcher.notifyWatchers(
       WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))),
@@ -49,7 +51,7 @@ class InMemoryRunnerAssetReaderWriter extends InMemoryAssetReaderWriter
   @override
   Future delete(AssetId id) async {
     onDelete?.call(id);
-    assets.remove(id);
+    testing.delete(id);
     FakeWatcher.notifyWatchers(
       WatchEvent(ChangeType.REMOVE, p.absolute(id.package, p.fromUri(id.path))),
     );

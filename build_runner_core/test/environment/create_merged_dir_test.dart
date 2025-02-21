@@ -70,7 +70,7 @@ void main() {
     setUp(() async {
       readerWriter = InMemoryRunnerAssetReaderWriter();
       for (final source in sources.entries) {
-        readerWriter.filesystem.writeAsStringSync(source.key, source.value);
+        readerWriter.testing.writeString(source.key, source.value);
       }
       environment = TestBuildEnvironment(readerWriter: readerWriter);
       graph = await AssetGraph.build(
@@ -102,10 +102,7 @@ void main() {
               ..state = NodeState.upToDate
               ..wasOutput = true
               ..isFailure = false;
-        readerWriter.filesystem.writeAsStringSync(
-          id,
-          sources[node.primaryInput]!,
-        );
+        readerWriter.testing.writeString(id, sources[node.primaryInput]!);
       }
       tmpDir = await Directory.systemTemp.createTemp('build_tests');
       anotherTmpDir = await Directory.systemTemp.createTemp('build_tests');

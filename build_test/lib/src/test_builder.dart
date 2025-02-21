@@ -12,6 +12,7 @@ import 'package:test/test.dart';
 
 import 'assets.dart';
 import 'in_memory_reader_writer.dart';
+import 'test_reader_writer.dart';
 import 'written_asset_reader.dart';
 
 AssetId _passThrough(AssetId id) => id;
@@ -37,7 +38,7 @@ AssetId _passThrough(AssetId id) => id;
 void checkOutputs(
   Map<String, /*List<int>|String|Matcher<List<int>>*/ Object>? outputs,
   Iterable<AssetId> actualAssets,
-  InMemoryAssetReaderWriter writer, {
+  TestReaderWriter writer, {
   AssetId Function(AssetId id) mapAssetIds = _passThrough,
 }) {
   var modifiableActualAssets = Set.of(actualAssets);
@@ -58,7 +59,7 @@ void checkOutputs(
         reason: 'Builder failed to write asset $assetId',
       );
       modifiableActualAssets.remove(assetId);
-      var actual = writer.assets[mapAssetIds(assetId)]!;
+      var actual = writer.testing.readBytes(mapAssetIds(assetId));
       Object expected;
       if (contentsMatcher is String) {
         expected = utf8.decode(actual);
@@ -122,7 +123,7 @@ void checkOutputs(
 /// Enabling of language experiments is supported through the
 /// `withEnabledExperiments` method from package:build.
 ///
-/// Returns a [TestBuilderResult] with the [InMemoryAssetReaderWriter] used for
+/// Returns a [TestBuilderResult] with the [TestReaderWriter] used for
 /// the build, which can be used for further checks.
 Future<TestBuilderResult> testBuilder(
   Builder builder,
@@ -152,14 +153,14 @@ Future<TestBuilderResult> testBuilder(
     ],
   ]);
 
-  final readerWriter = InMemoryAssetReaderWriter(rootPackage: rootPackage);
+  final readerWriter = TestReaderWriter(rootPackage: rootPackage);
 
   sourceAssets.forEach((serializedId, contents) {
     var id = makeAssetId(serializedId);
     if (contents is String) {
-      readerWriter.filesystem.writeAsStringSync(id, contents);
+      readerWriter.testing.writeString(id, contents);
     } else if (contents is List<int>) {
-      readerWriter.filesystem.writeAsBytesSync(id, contents);
+      readerWriter.testing.writeBytes(id, contents);
     }
   });
 
@@ -174,14 +175,18 @@ Future<TestBuilderResult> testBuilder(
           ? AnalyzerResolvers.sharedInstance
           : AnalyzerResolvers.custom(packageConfig: packageConfig);
 
-  final startingFiles = readerWriter.assets.keys.toList();
+  final startingFiles = readerWriter.testing.assets.toList();
   for (var input in inputIds) {
     // Create a reader that can read initial files plus anything written by the
     // builder during the step; outputs by other builders during the step are
     // not readable.
     final spyForStep = AssetWriterSpy(writerSpy);
-    final readerForStep = WrittenAssetReader(readerWriter, spyForStep)
-      ..allowReadingAll(startingFiles);
+    final readerForStep = WrittenAssetReader(
+      // TODO(davidmorgan): this cast should go away with just a bit
+      // more refactoring.
+      readerWriter as InMemoryAssetReaderWriter,
+      spyForStep,
+    )..allowReadingAll(startingFiles);
 
     await runBuilder(
       builder,
@@ -201,7 +206,7 @@ Future<TestBuilderResult> testBuilder(
 }
 
 class TestBuilderResult {
-  final InMemoryAssetReaderWriter readerWriter;
+  final TestReaderWriter readerWriter;
 
   TestBuilderResult({required this.readerWriter});
 }

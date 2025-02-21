@@ -172,8 +172,8 @@ void main() {
         );
         // Previous outputs should still exist.
         expect(
-          readerWriter.assets[makeAssetId('a|web/a.txt.copy')],
-          decodedMatches('a'),
+          readerWriter.testing.readString(makeAssetId('a|web/a.txt.copy')),
+          'a',
         );
       });
 
@@ -215,8 +215,10 @@ void main() {
         );
         // Previous outputs should still exist.
         expect(
-          readerWriter.assets[makeAssetId('a|test_files/a.txt.copy')],
-          decodedMatches('a'),
+          readerWriter.testing.readString(
+            makeAssetId('a|test_files/a.txt.copy'),
+          ),
+          'a',
         );
       });
 
@@ -237,7 +239,7 @@ void main() {
         );
 
         // Don't call writer.delete, that has side effects.
-        readerWriter.assets.remove(makeAssetId('a|web/a.txt'));
+        readerWriter.testing.delete(makeAssetId('a|web/a.txt'));
         FakeWatcher.notifyWatchers(
           WatchEvent(ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt')),
         );
@@ -248,11 +250,14 @@ void main() {
         checkBuild(result, outputs: {}, readerWriter: readerWriter);
 
         // The old output file should no longer exist either.
-        expect(readerWriter.assets[makeAssetId('a|web/a.txt.copy')], isNull);
+        expect(
+          readerWriter.testing.exists(makeAssetId('a|web/a.txt.copy')),
+          isFalse,
+        );
         // Previous outputs should still exist.
         expect(
-          readerWriter.assets[makeAssetId('a|web/b.txt.copy')],
-          decodedMatches('b'),
+          readerWriter.testing.readString(makeAssetId('a|web/b.txt.copy')),
+          'b',
         );
       });
 
@@ -285,7 +290,7 @@ void main() {
         );
 
         // Don't call writer.delete, that has side effects.
-        readerWriter.assets.remove(makeAssetId('a|test_files/a.txt'));
+        readerWriter.testing.delete(makeAssetId('a|test_files/a.txt'));
         FakeWatcher.notifyWatchers(
           WatchEvent(
             ChangeType.REMOVE,
@@ -300,13 +305,15 @@ void main() {
 
         // The old output file should no longer exist either.
         expect(
-          readerWriter.assets[makeAssetId('a|test_files/a.txt.copy')],
-          isNull,
+          readerWriter.testing.exists(makeAssetId('a|test_files/a.txt.copy')),
+          isFalse,
         );
         // Previous outputs should still exist.
         expect(
-          readerWriter.assets[makeAssetId('a|test_files/b.txt.copy')],
-          decodedMatches('b'),
+          readerWriter.testing.readString(
+            makeAssetId('a|test_files/b.txt.copy'),
+          ),
+          'b',
         );
       });
 
@@ -331,7 +338,7 @@ void main() {
         await readerWriter.writeAsString(makeAssetId('a|web/b.txt'), 'b2');
 
         // Don't call writer.delete, that has side effects.
-        readerWriter.assets.remove(makeAssetId('a|web/a.txt'));
+        readerWriter.testing.delete(makeAssetId('a|web/a.txt'));
         FakeWatcher.notifyWatchers(
           WatchEvent(ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt')),
         );
@@ -344,7 +351,7 @@ void main() {
         );
 
         var cachedGraph = AssetGraph.deserialize(
-          readerWriter.assets[makeAssetId('a|$assetGraphPath')]!,
+          readerWriter.testing.readBytes(makeAssetId('a|$assetGraphPath')),
         );
 
         var expectedGraph = await AssetGraph.build(
@@ -892,12 +899,12 @@ void main() {
         );
         // Previous outputs should still exist.
         expect(
-          readerWriter.assets[makeAssetId('a|web/a.txt.copy')],
-          decodedMatches('a'),
+          readerWriter.testing.readString(makeAssetId('a|web/a.txt.copy')),
+          'a',
         );
         expect(
-          readerWriter.assets[makeAssetId('a|web/a.txt.copy.copy')],
-          decodedMatches('a'),
+          readerWriter.testing.readString(makeAssetId('a|web/a.txt.copy.copy')),
+          'a',
         );
       });
 
@@ -932,7 +939,7 @@ void main() {
         );
 
         // Don't call writer.delete, that has side effects.
-        readerWriter.assets.remove(makeAssetId('a|web/a.txt'));
+        readerWriter.testing.delete(makeAssetId('a|web/a.txt'));
 
         FakeWatcher.notifyWatchers(
           WatchEvent(ChangeType.REMOVE, path.absolute('a', 'web', 'a.txt')),
@@ -943,19 +950,22 @@ void main() {
         checkBuild(result, outputs: {}, readerWriter: readerWriter);
 
         // Derived outputs should no longer exist.
-        expect(readerWriter.assets[makeAssetId('a|web/a.txt.copy')], isNull);
         expect(
-          readerWriter.assets[makeAssetId('a|web/a.txt.copy.copy')],
-          isNull,
+          readerWriter.testing.exists(makeAssetId('a|web/a.txt.copy')),
+          isFalse,
+        );
+        expect(
+          readerWriter.testing.exists(makeAssetId('a|web/a.txt.copy.copy')),
+          isFalse,
         );
         // Other outputs should still exist.
         expect(
-          readerWriter.assets[makeAssetId('a|web/b.txt.copy')],
-          decodedMatches('b'),
+          readerWriter.testing.readString(makeAssetId('a|web/b.txt.copy')),
+          'b',
         );
         expect(
-          readerWriter.assets[makeAssetId('a|web/b.txt.copy.copy')],
-          decodedMatches('b'),
+          readerWriter.testing.readString(makeAssetId('a|web/b.txt.copy.copy')),
+          'b',
         );
       });
 
@@ -985,7 +995,7 @@ void main() {
         );
 
         // Don't call writer.delete, that has side effects.
-        readerWriter.assets.remove(makeAssetId('a|web/a.txt.copy'));
+        readerWriter.testing.delete(makeAssetId('a|web/a.txt.copy'));
         FakeWatcher.notifyWatchers(
           WatchEvent(
             ChangeType.REMOVE,

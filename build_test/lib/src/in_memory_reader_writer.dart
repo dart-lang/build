@@ -2,27 +2,33 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
 import 'package:glob/glob.dart';
 
-/// An [AssetReader] that records which assets have been read to [assetsRead].
-abstract class RecordingAssetReader implements AssetReader {
-  Set<AssetId> get assetsRead;
-}
+import 'test_reader_writer.dart';
 
-/// An implementation of [AssetReader] and [AssetWriter] with primed in-memory
-/// assets.
+/// The implementation behind [TestReaderWriter].
+///
+/// It exposes `build_runner` internals and should not be used directly outside
+/// this package.
 ///
 /// TODO(davidmorgan): merge into `FileBasedReader` and `FileBasedWriter`.
 class InMemoryAssetReaderWriter extends AssetReader
-    implements AssetReaderState, AssetWriter {
+    implements AssetReaderState, AssetWriter, TestReaderWriter {
   @override
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
 
+  @override
+  final AssetPathProvider assetPathProvider;
+
   final InMemoryFilesystem _filesystem;
+
+  @override
+  final FilesystemCache cache;
 
   final String? rootPackage;
 
@@ -32,42 +38,69 @@ class InMemoryAssetReaderWriter extends AssetReader
   /// Create a new asset reader/writer.
   ///
   /// May optionally define a [rootPackage], which is required for some APIs.
-  InMemoryAssetReaderWriter({this.rootPackage, InMemoryFilesystem? filesystem})
-    : _filesystem = filesystem ?? InMemoryFilesystem();
+  InMemoryAssetReaderWriter({
+    this.rootPackage,
+    InMemoryFilesystem? filesystem,
+    FilesystemCache? cache,
+    AssetPathProvider? assetPathProvider,
+  }) : _filesystem = filesystem ?? InMemoryFilesystem(),
+       cache = cache ?? const PassthroughFilesystemCache(),
+       assetPathProvider =
+           assetPathProvider ?? const InMemoryAssetPathProvider();
 
   @override
   InMemoryAssetReaderWriter copyWith({FilesystemCache? cache}) =>
       InMemoryAssetReaderWriter(
         rootPackage: rootPackage,
-        filesystem: _filesystem.copyWith(cache: cache),
+        filesystem: _filesystem,
+        cache: cache ?? this.cache,
       );
 
   @override
-  AssetPathProvider? get assetPathProvider => null;
+  ReaderWriterTesting get testing => _ReaderWriterTestingImpl(this);
+
+  // Other methods.
 
   @override
   Filesystem get filesystem => _filesystem;
 
-  Map<AssetId, List<int>> get assets => _filesystem.assets;
-
   @override
   Future<bool> canRead(AssetId id) async {
     inputTracker.assetsRead.add(id);
-    return filesystem.exists(id);
+    return cache.exists(
+      id,
+      ifAbsent: () async {
+        final path = assetPathProvider.pathFor(id);
+        return filesystem.exists(path);
+      },
+    );
   }
 
   @override
   Future<List<int>> readAsBytes(AssetId id) async {
     if (!await canRead(id)) throw AssetNotFoundException(id);
     inputTracker.assetsRead.add(id);
-    return filesystem.readAsBytes(id);
+    return cache.readAsBytes(
+      id,
+      ifAbsent: () async {
+        final path = assetPathProvider.pathFor(id);
+        return filesystem.readAsBytes(path);
+      },
+    );
   }
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
     if (!await canRead(id)) throw AssetNotFoundException(id);
     inputTracker.assetsRead.add(id);
-    return filesystem.readAsString(id, encoding: encoding);
+    return cache.readAsString(
+      id,
+      encoding: encoding,
+      ifAbsent: () async {
+        final path = assetPathProvider.pathFor(id);
+        return filesystem.readAsBytes(path);
+      },
+    );
   }
 
   // This is only for generators, so only `BuildStep` needs to implement it.
@@ -83,18 +116,72 @@ class InMemoryAssetReaderWriter extends AssetReader
       );
     }
     return Stream.fromIterable(
-      assets.keys.where((id) => id.package == package && glob.matches(id.path)),
+      testing.assets.where(
+        (id) => id.package == package && glob.matches(id.path),
+      ),
     );
   }
 
   @override
   Future writeAsBytes(AssetId id, List<int> bytes) async =>
-      filesystem.writeAsBytes(id, bytes);
+      filesystem.writeAsBytes(assetPathProvider.pathFor(id), bytes);
 
   @override
   Future writeAsString(
     AssetId id,
     String contents, {
     Encoding encoding = utf8,
-  }) async => filesystem.writeAsString(id, contents, encoding: encoding);
+  }) async => filesystem.writeAsString(
+    assetPathProvider.pathFor(id),
+    contents,
+    encoding: encoding,
+  );
+}
+
+class InMemoryAssetPathProvider implements AssetPathProvider {
+  const InMemoryAssetPathProvider();
+
+  @override
+  String pathFor(AssetId id) => id.toString();
+}
+
+class _ReaderWriterTestingImpl implements ReaderWriterTesting {
+  final InMemoryAssetReaderWriter _readerWriter;
+
+  _ReaderWriterTestingImpl(this._readerWriter);
+
+  @override
+  Iterable<AssetId> get assets =>
+      _readerWriter._filesystem.filePaths.map(AssetId.parse);
+
+  @override
+  Iterable<AssetId> get assetsRead => _readerWriter.inputTracker.assetsRead;
+
+  @override
+  bool exists(AssetId id) => _readerWriter.filesystem.existsSync(
+    _readerWriter.assetPathProvider.pathFor(id),
+  );
+
+  @override
+  void writeString(AssetId id, String contents) => _readerWriter.filesystem
+      .writeAsStringSync(_readerWriter.assetPathProvider.pathFor(id), contents);
+
+  @override
+  void writeBytes(AssetId id, List<int> contents) => _readerWriter.filesystem
+      .writeAsBytesSync(_readerWriter.assetPathProvider.pathFor(id), contents);
+
+  @override
+  Uint8List readBytes(AssetId id) => _readerWriter.filesystem.readAsBytesSync(
+    _readerWriter.assetPathProvider.pathFor(id),
+  );
+
+  @override
+  String readString(AssetId id) => _readerWriter.filesystem.readAsStringSync(
+    _readerWriter.assetPathProvider.pathFor(id),
+  );
+
+  @override
+  void delete(AssetId id) => _readerWriter.filesystem.deleteSync(
+    _readerWriter.assetPathProvider.pathFor(id),
+  );
 }

@@ -22,6 +22,11 @@ extension AssetReaderStateExtension on AssetReader {
     return (this as AssetReaderState).filesystem;
   }
 
+  FilesystemCache get cache {
+    _requireIsAssetReaderState();
+    return (this as AssetReaderState).cache;
+  }
+
   AssetFinder get assetFinder {
     _requireIsAssetReaderState();
     return (this as AssetReaderState).assetFinder;
@@ -67,6 +72,9 @@ abstract interface class AssetReaderState {
   /// Warning: this access to the filesystem bypasses reader functionality
   /// such as read tracking, caching and visibility restriction.
   Filesystem get filesystem;
+
+  /// The [FilesystemCache] that this reader uses for caching.
+  FilesystemCache get cache;
 
   /// The [AssetFinder] associated with this reader.
   ///

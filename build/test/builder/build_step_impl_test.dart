@@ -32,7 +32,7 @@ void main() {
     late List<AssetId> outputs;
 
     setUp(() {
-      var reader = InMemoryAssetReaderWriter();
+      var reader = TestReaderWriter();
       var writer = const StubAssetWriter();
       primary = makeAssetId();
       outputs = List.generate(5, (index) => makeAssetId());
@@ -87,10 +87,10 @@ void main() {
   });
 
   group('with in memory file system', () {
-    late InMemoryAssetReaderWriter readerWriter;
+    late TestReaderWriter readerWriter;
 
     setUp(() {
-      readerWriter = InMemoryAssetReaderWriter();
+      readerWriter = TestReaderWriter();
     });
 
     test('tracks outputs created by a builder', () async {
@@ -113,7 +113,7 @@ void main() {
       await buildStep.complete();
 
       // One output.
-      expect(readerWriter.assets[outputId], decodedMatches('foo'));
+      expect(readerWriter.testing.readString(outputId), 'foo');
     });
 
     group('resolve', () {
@@ -175,7 +175,7 @@ void main() {
       buildStep = BuildStepImpl(
         primary,
         [outputId],
-        InMemoryAssetReaderWriter(),
+        TestReaderWriter(),
         assetWriter,
         AnalyzerResolvers.custom(),
         resourceManager,
@@ -236,7 +236,7 @@ void main() {
     late AssetId output;
 
     setUp(() {
-      var reader = InMemoryAssetReaderWriter();
+      var reader = TestReaderWriter();
       var writer = const StubAssetWriter();
       primary = makeAssetId();
       output = makeAssetId();
@@ -259,7 +259,7 @@ void main() {
   });
 
   test('reportUnusedAssets forwards calls if provided', () {
-    var reader = InMemoryAssetReaderWriter();
+    var reader = TestReaderWriter();
     var writer = const StubAssetWriter();
     var unused = <AssetId>{};
     var buildStep = BuildStepImpl(

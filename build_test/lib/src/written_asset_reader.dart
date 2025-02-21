@@ -34,6 +34,9 @@ class WrittenAssetReader extends AssetReader implements AssetReaderState {
   Filesystem get filesystem => source.filesystem;
 
   @override
+  FilesystemCache get cache => source.cache;
+
+  @override
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
 
   @override
@@ -52,7 +55,7 @@ class WrittenAssetReader extends AssetReader implements AssetReaderState {
 
   @override
   Future<bool> canRead(AssetId id) {
-    var canRead = source.assets.containsKey(id);
+    var canRead = source.testing.exists(id);
     if (filterSpy != null) {
       canRead =
           canRead &&
@@ -68,7 +71,7 @@ class WrittenAssetReader extends AssetReader implements AssetReaderState {
   Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError();
 
   Stream<AssetId> _findAssets(Glob glob, String? package) async* {
-    var available = source.assets.keys.toSet();
+    var available = source.testing.assets.toSet();
     if (filterSpy != null) {
       available = available.intersection(
         filterSpy!.assetsWritten.toSet().union(_additionallyAllowed),
@@ -84,15 +87,9 @@ class WrittenAssetReader extends AssetReader implements AssetReaderState {
   }
 
   @override
-  Future<List<int>> readAsBytes(AssetId id) {
-    if (!source.assets.containsKey(id)) {
-      throw AssetNotFoundException(id);
-    }
-    return Future.value(source.assets[id]!);
-  }
+  Future<List<int>> readAsBytes(AssetId id) => source.readAsBytes(id);
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
-    return encoding.decode(await readAsBytes(id));
-  }
+  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) =>
+      source.readAsString(id, encoding: encoding);
 }
