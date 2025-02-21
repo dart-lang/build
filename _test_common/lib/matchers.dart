@@ -189,10 +189,9 @@ class _AssetGraphMatcher extends Matcher {
         }
       }
     }
-    if (!equals(_expected.packageLanguageVersions).matches(
-      item.packageLanguageVersions,
-      matchState['packageLanguageVersions'] = <String, LanguageVersion?>{},
-    )) {
+    if (!equals(
+      _expected.packageLanguageVersions,
+    ).matches(item.packageLanguageVersions, matchState)) {
       matches = false;
     }
     return matches;

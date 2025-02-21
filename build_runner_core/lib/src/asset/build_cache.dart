@@ -68,19 +68,24 @@ class BuildCacheWriter implements RunnerAssetWriter {
 }
 
 AssetId _cacheLocation(AssetId id, AssetGraph assetGraph, String rootPackage) {
+  print('_cacheLocation $id');
   if (id.path.startsWith(generatedOutputDirectory) ||
       id.path.startsWith(cacheDir)) {
+    print('--> return 1');
     return id;
   }
   if (!assetGraph.contains(id)) {
+    print('--> return 2');
     return id;
   }
   final assetNode = assetGraph.get(id);
   if (assetNode is GeneratedAssetNode && assetNode.isHidden) {
+    print('--> hit');
     return AssetId(
       rootPackage,
       '$generatedOutputDirectory/${id.package}/${id.path}',
     );
   }
+  print('--> return 3');
   return id;
 }

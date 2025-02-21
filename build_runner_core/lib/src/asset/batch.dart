@@ -58,6 +58,7 @@ final class _FileSystemWriteBatch {
   required AssetReader reader,
   required RunnerAssetWriter writer,
 }) {
+  throw 'nope';
   final batch = _FileSystemWriteBatch._();
 
   return (BatchReader(reader, batch), BatchWriter(writer, batch));
@@ -165,6 +166,9 @@ final class BatchWriter extends RunnerAssetWriter {
 
   @override
   Future<void> writeAsBytes(AssetId id, List<int> bytes) async {
+    if (id.path.contains('.dart_tool')) {
+      throw 'whoops: $id, ${StackTrace.current}';
+    }
     _batch._pendingWrites[id] = _PendingFileState(bytes);
   }
 
@@ -174,6 +178,9 @@ final class BatchWriter extends RunnerAssetWriter {
     String contents, {
     Encoding encoding = utf8,
   }) async {
+    if (id.path.contains('.dart_tool')) {
+      throw 'whoops: $id';
+    }
     _batch._pendingWrites[id] = _PendingFileState(encoding.encode(contents));
   }
 

@@ -46,7 +46,7 @@ class IOEnvironment implements BuildEnvironment {
     PackageGraph packageGraph, {
     bool? assumeTty,
     bool outputSymlinksOnly = false,
-    bool lowResourcesMode = false,
+    //bool lowResourcesMode = false,
   }) {
     if (outputSymlinksOnly && Platform.isWindows) {
       _logger.warning(
@@ -60,7 +60,7 @@ class IOEnvironment implements BuildEnvironment {
     var fileWriter = FileBasedAssetWriter(packageGraph);
 
     var (reader, writer) =
-        lowResourcesMode
+        true
             ? (fileReader, fileWriter)
             : wrapInBatch(reader: fileReader, writer: fileWriter);
 

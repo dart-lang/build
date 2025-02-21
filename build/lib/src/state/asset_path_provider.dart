@@ -4,18 +4,7 @@
 
 import '../asset/id.dart';
 
-/// Converts [AssetId] to paths.
+/// Converts [AssetId]s to paths.
 abstract interface class AssetPathProvider {
   String pathFor(AssetId id);
-}
-
-/// Applies a function to an existing [AssetPathProvider].
-class OverlayAssetPathProvider implements AssetPathProvider {
-  AssetPathProvider delegate;
-  AssetId Function(AssetId) overlay;
-
-  OverlayAssetPathProvider({required this.delegate, required this.overlay});
-
-  @override
-  String pathFor(AssetId id) => delegate.pathFor(overlay(id));
 }
