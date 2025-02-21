@@ -8,7 +8,6 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 
-import '../asset/batch.dart';
 import '../asset/file_based.dart';
 import '../asset/writer.dart';
 import '../generate/build_directory.dart';
@@ -46,7 +45,6 @@ class IOEnvironment implements BuildEnvironment {
     PackageGraph packageGraph, {
     bool? assumeTty,
     bool outputSymlinksOnly = false,
-    bool lowResourcesMode = false,
   }) {
     if (outputSymlinksOnly && Platform.isWindows) {
       _logger.warning(
@@ -56,17 +54,9 @@ class IOEnvironment implements BuildEnvironment {
       );
     }
 
-    var fileReader = FileBasedAssetReader(packageGraph);
-    var fileWriter = FileBasedAssetWriter(packageGraph);
-
-    var (reader, writer) =
-        lowResourcesMode
-            ? (fileReader, fileWriter)
-            : wrapInBatch(reader: fileReader, writer: fileWriter);
-
     return IOEnvironment._(
-      reader,
-      writer,
+      FileBasedAssetReader(packageGraph),
+      FileBasedAssetWriter(packageGraph),
       assumeTty == true || _canPrompt(),
       outputSymlinksOnly,
       packageGraph,

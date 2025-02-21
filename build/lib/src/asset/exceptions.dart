@@ -5,11 +5,15 @@ import 'id.dart';
 
 class AssetNotFoundException implements Exception {
   final AssetId assetId;
+  final String? path;
 
-  AssetNotFoundException(this.assetId);
+  AssetNotFoundException(this.assetId, {this.path});
 
   @override
-  String toString() => 'AssetNotFoundException: $assetId';
+  String toString() {
+    if (path == null) return 'AssetNotFoundException: $assetId';
+    return 'AssetNotFoundException: $assetId ($path)';
+  }
 }
 
 class PackageNotFoundException implements Exception {
