@@ -13,7 +13,6 @@ import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as path;
 
 import '../package_graph/package_graph.dart';
-import 'build_cache.dart';
 import 'writer.dart';
 
 /// Basic [AssetReader] which uses a [PackageGraph] to look up where to read
@@ -71,9 +70,6 @@ class FileBasedAssetReader extends AssetReader implements AssetReaderState {
       ifAbsent: () async {
         final path = assetPathProvider.pathFor(id);
         if (!await filesystem.exists(path)) {
-          print(
-            '${assetPathProvider.runtimeType} is missing $path at ${StackTrace.current}',
-          );
           throw AssetNotFoundException(id, path: path);
         }
         return filesystem.readAsBytes(path);
@@ -89,7 +85,6 @@ class FileBasedAssetReader extends AssetReader implements AssetReaderState {
       ifAbsent: () async {
         final path = assetPathProvider.pathFor(id);
         if (!await filesystem.exists(path)) {
-          print('${assetPathProvider.runtimeType} is missing $path');
           throw AssetNotFoundException(id, path: path);
         }
         return filesystem.readAsBytes(path);
@@ -165,5 +160,7 @@ class FileBasedAssetWriter implements RunnerAssetWriter {
   }
 
   @override
-  Future<void> completeBuild() async {}
+  Future<void> completeBuild() async {
+    // TODO(davidmorgan): add back write caching, "batching".
+  }
 }

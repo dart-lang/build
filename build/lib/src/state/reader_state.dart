@@ -41,6 +41,11 @@ extension AssetReaderStateExtension on AssetReader {
   InputTracker? get inputTracker =>
       this is AssetReaderState ? (this as AssetReaderState).inputTracker : null;
 
+  AssetPathProvider get assetPathProvider {
+    _requireIsAssetReaderState();
+    return (this as AssetReaderState).assetPathProvider;
+  }
+
   /// Gets [inputTracker] or throws a descriptive error if it is `null`.
   InputTracker get requireInputTracker {
     final result = inputTracker;
@@ -51,11 +56,6 @@ extension AssetReaderStateExtension on AssetReader {
       );
     }
     return result;
-  }
-
-  AssetPathProvider get assetPathProvider {
-    _requireIsAssetReaderState();
-    return (this as AssetReaderState).assetPathProvider;
   }
 
   /// Throws if `this` is not an [AssetReaderState].
