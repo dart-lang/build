@@ -10,6 +10,8 @@ import '../asset/id.dart';
 import 'lru_cache.dart';
 
 /// Cache for file existence and contents.
+///
+/// TODO(davidmorgan): benchmark, optimize the caching strategy.
 abstract interface class FilesystemCache {
   /// Clears all [ids] from all caches.
   ///
