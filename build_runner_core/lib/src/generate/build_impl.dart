@@ -445,8 +445,6 @@ class _SingleBuild {
           if (input.state != NodeState.upToDate) {
             await _runLazyPhaseForInput(input.phaseNumber, input.primaryInput);
           }
-          if (!input.wasOutput) return;
-          if (input.isFailure) return;
         }
         ids.add(input.id);
       }),
@@ -598,24 +596,27 @@ class _SingleBuild {
             .add(actionDescription);
 
         var unusedAssets = <AssetId>{};
-        await tracker.trackStage(
-          'Build',
-          () => runBuilder(
-            builder,
-            [input],
-            wrappedReader,
-            wrappedWriter,
-            PerformanceTrackingResolvers(_resolvers, tracker),
-            logger: logger,
-            resourceManager: _resourceManager,
-            stageTracker: tracker,
-            reportUnusedAssetsForInput:
-                (_, assets) => unusedAssets.addAll(assets),
-            packageConfig: _packageGraph.asPackageConfig,
-          ).catchError((void _) {
-            // Errors tracked through the logger
-          }),
-        );
+        // Don't run for primary inputs which weren't output.
+        if (inputNode is! GeneratedAssetNode || inputNode.wasOutput) {
+          await tracker.trackStage(
+            'Build',
+            () => runBuilder(
+              builder,
+              [input],
+              wrappedReader,
+              wrappedWriter,
+              PerformanceTrackingResolvers(_resolvers, tracker),
+              logger: logger,
+              resourceManager: _resourceManager,
+              stageTracker: tracker,
+              reportUnusedAssetsForInput:
+                  (_, assets) => unusedAssets.addAll(assets),
+              packageConfig: _packageGraph.asPackageConfig,
+            ).catchError((void _) {
+              // Errors tracked through the logger
+            }),
+          );
+        }
         actionsCompletedCount++;
         hungActionsHeartbeat.ping();
         pendingActions[phaseNumber]!.remove(actionDescription);
