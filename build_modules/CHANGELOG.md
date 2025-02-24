@@ -2,9 +2,6 @@
 
 - Bump the min SDK to 3.7.0.
 - Use `build_test` 3.0.0.
-- Use the command 'compile js-dev' for compilation instead of invoking
-  dart with the snapshot name (uses internal implementation detail of
-  the dart sdk which could change).
 
 ## 5.0.11
 
