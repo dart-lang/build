@@ -21,10 +21,9 @@ void main() {
 
   setUp(() async {
     packageGraph = await _createTestPackage();
-    final fileReader = FileBasedAssetReader(packageGraph);
-    final fileWriter = FileBasedAssetWriter(packageGraph);
+    final readerWriter = ReaderWriter(packageGraph);
 
-    (reader, writer) = wrapInBatch(reader: fileReader, writer: fileWriter);
+    (reader, writer) = wrapInBatch(reader: readerWriter, writer: readerWriter);
   });
 
   test('delays writes until end', () async {

@@ -40,7 +40,7 @@ void main() {
           isRoot: true,
         ),
       );
-      var reader = FileBasedAssetReader(packageGraph);
+      var reader = ReaderWriter(packageGraph);
       var aId = AssetId('a', 'web/a.txt');
       assetGraph = await AssetGraph.build(
         [],

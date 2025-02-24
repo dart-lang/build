@@ -7,6 +7,8 @@ import 'dart:typed_data';
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
+// ignore: implementation_imports
+import 'package:build_runner_core/src/asset/reader_writer.dart';
 import 'package:glob/glob.dart';
 
 import 'test_reader_writer.dart';
@@ -15,130 +17,73 @@ import 'test_reader_writer.dart';
 ///
 /// It exposes `build_runner` internals and should not be used directly outside
 /// this package.
-///
-/// TODO(davidmorgan): merge into `FileBasedReader` and `FileBasedWriter`.
-class InMemoryAssetReaderWriter extends AssetReader
-    implements AssetReaderState, AssetWriter, TestReaderWriter {
-  @override
-  late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
-
-  @override
-  final AssetPathProvider assetPathProvider;
-
-  final InMemoryFilesystem _filesystem;
-
-  @override
-  final FilesystemCache cache;
-
-  final String? rootPackage;
-
-  @override
-  final InputTracker inputTracker = InputTracker();
-
+class InMemoryAssetReaderWriter extends ReaderWriter
+    implements TestReaderWriter {
   /// Create a new asset reader/writer.
   ///
-  /// May optionally define a [rootPackage], which is required for some APIs.
-  InMemoryAssetReaderWriter({
-    this.rootPackage,
-    InMemoryFilesystem? filesystem,
-    FilesystemCache? cache,
-    AssetPathProvider? assetPathProvider,
-  }) : _filesystem = filesystem ?? InMemoryFilesystem(),
-       cache = cache ?? const PassthroughFilesystemCache(),
-       assetPathProvider =
-           assetPathProvider ?? const InMemoryAssetPathProvider();
+  /// If provided [rootPackage] is the default package when globbing for files.
+  ///
+  /// Unlike the non-test [ReaderWriter], starts with an [inputTracker] so
+  /// inputs can be inspected after the test runs.
+  factory InMemoryAssetReaderWriter({String? rootPackage}) {
+    final filesystem = InMemoryFilesystem();
+    return InMemoryAssetReaderWriter.using(
+      rootPackage: rootPackage ?? 'unset',
+      assetFinder: InMemoryAssetFinder(filesystem, rootPackage),
+      assetPathProvider: const InMemoryAssetPathProvider(),
+      filesystem: filesystem,
+      cache: const PassthroughFilesystemCache(),
+      inputTracker: InputTracker(),
+    );
+  }
+
+  InMemoryAssetReaderWriter.using({
+    required super.rootPackage,
+    required super.assetFinder,
+    required super.assetPathProvider,
+    required super.filesystem,
+    required super.cache,
+    required super.inputTracker,
+  }) : super.using();
 
   @override
   InMemoryAssetReaderWriter copyWith({
     AssetPathProvider? assetPathProvider,
     FilesystemCache? cache,
-  }) => InMemoryAssetReaderWriter(
+  }) => InMemoryAssetReaderWriter.using(
     rootPackage: rootPackage,
-    filesystem: _filesystem,
+    assetFinder: assetFinder,
     assetPathProvider: assetPathProvider ?? this.assetPathProvider,
+    filesystem: filesystem,
     cache: cache ?? this.cache,
+    inputTracker: inputTracker,
   );
 
   @override
   ReaderWriterTesting get testing => _ReaderWriterTestingImpl(this);
 
-  // Other methods.
+  // Record all reads in `inputTracker` so tests can verify them.
+  //
+  // TODO(davidmorgan): refactor to remove differences in how test and real
+  // code use inputTracker; keep tracking for tests separate from real tracking.
 
   @override
-  Filesystem get filesystem => _filesystem;
-
-  @override
-  Future<bool> canRead(AssetId id) async {
-    inputTracker.assetsRead.add(id);
-    return cache.exists(
-      id,
-      ifAbsent: () async {
-        final path = assetPathProvider.pathFor(id);
-        return filesystem.exists(path);
-      },
-    );
+  Future<bool> canRead(AssetId id) {
+    inputTracker!.assetsRead.add(id);
+    return super.canRead(id);
   }
 
   @override
   Future<List<int>> readAsBytes(AssetId id) async {
-    if (!await canRead(id)) throw AssetNotFoundException(id);
-    inputTracker.assetsRead.add(id);
-    return cache.readAsBytes(
-      id,
-      ifAbsent: () async {
-        final path = assetPathProvider.pathFor(id);
-        return filesystem.readAsBytes(path);
-      },
-    );
+    inputTracker!.assetsRead.add(id);
+    return super.readAsBytes(id);
   }
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
-    if (!await canRead(id)) throw AssetNotFoundException(id);
-    inputTracker.assetsRead.add(id);
-    return cache.readAsString(
-      id,
-      encoding: encoding,
-      ifAbsent: () async {
-        final path = assetPathProvider.pathFor(id);
-        return filesystem.readAsBytes(path);
-      },
-    );
+    inputTracker!.assetsRead.add(id);
+    return super.readAsString(id, encoding: encoding);
   }
-
-  // This is only for generators, so only `BuildStep` needs to implement it.
-  @override
-  Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError();
-
-  Stream<AssetId> _findAssets(Glob glob, String? package) {
-    package ??= rootPackage;
-    if (package == null) {
-      throw UnsupportedError(
-        'Root package is required to use findAssets without providing an '
-        'explicit package.',
-      );
-    }
-    return Stream.fromIterable(
-      testing.assets.where(
-        (id) => id.package == package && glob.matches(id.path),
-      ),
-    );
-  }
-
-  @override
-  Future writeAsBytes(AssetId id, List<int> bytes) async =>
-      filesystem.writeAsBytes(assetPathProvider.pathFor(id), bytes);
-
-  @override
-  Future writeAsString(
-    AssetId id,
-    String contents, {
-    Encoding encoding = utf8,
-  }) async => filesystem.writeAsString(
-    assetPathProvider.pathFor(id),
-    contents,
-    encoding: encoding,
-  );
 }
 
 class InMemoryAssetPathProvider implements AssetPathProvider {
@@ -148,6 +93,29 @@ class InMemoryAssetPathProvider implements AssetPathProvider {
   String pathFor(AssetId id) => id.toString();
 }
 
+class InMemoryAssetFinder implements AssetFinder {
+  final InMemoryFilesystem filesystem;
+  final String? rootPackage;
+
+  InMemoryAssetFinder(this.filesystem, this.rootPackage);
+
+  @override
+  Stream<AssetId> find(Glob glob, {String? package}) {
+    package ??= rootPackage;
+    if (package == null) {
+      throw UnsupportedError(
+        'Root package is required to use findAssets without providing an '
+        'explicit package.',
+      );
+    }
+    return Stream.fromIterable(
+      filesystem.filePaths
+          .map(AssetId.parse)
+          .where((id) => id.package == package && glob.matches(id.path)),
+    );
+  }
+}
+
 class _ReaderWriterTestingImpl implements ReaderWriterTesting {
   final InMemoryAssetReaderWriter _readerWriter;
 
@@ -155,10 +123,12 @@ class _ReaderWriterTestingImpl implements ReaderWriterTesting {
 
   @override
   Iterable<AssetId> get assets =>
-      _readerWriter._filesystem.filePaths.map(AssetId.parse);
+      (_readerWriter.filesystem as InMemoryFilesystem).filePaths.map(
+        AssetId.parse,
+      );
 
   @override
-  Iterable<AssetId> get assetsRead => _readerWriter.inputTracker.assetsRead;
+  Iterable<AssetId> get assetsRead => _readerWriter.inputTracker!.assetsRead;
 
   @override
   bool exists(AssetId id) => _readerWriter.filesystem.existsSync(

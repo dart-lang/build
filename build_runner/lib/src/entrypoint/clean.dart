@@ -84,7 +84,7 @@ Future<void> _cleanUpSourceOutputs(
   AssetGraph assetGraph,
   PackageGraph packageGraph,
 ) async {
-  var writer = FileBasedAssetWriter(packageGraph);
+  var writer = ReaderWriter(packageGraph);
   for (var id in assetGraph.outputs) {
     if (id.package != packageGraph.root.name) continue;
     var node = assetGraph.get(id) as GeneratedAssetNode;
