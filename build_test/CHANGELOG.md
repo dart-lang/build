@@ -14,6 +14,8 @@
 - Breaking change: Remove `StubAssetReader`. Use `TestReaderWriter` instead.
 - Support checks on reader state after a build action in `resolveSources`.
 - Start using `package:build/src/internal.dart`.
+- Add a `shouldSkip` parameter to `TestBuilder`, which allows it to skip certain
+  inputs based on their file content.
 
 ## 2.2.3
 

@@ -13,6 +13,10 @@ typedef BuildBehavior =
       Map<String, List<String>> buildExtensions,
     );
 
+/// Optional function to skip a build step based on the content
+/// of the primary input.
+typedef ShouldSkip = bool Function(String content);
+
 /// Copy the input asset to all possible output assets.
 Future<void> _defaultBehavior(
   BuildStep buildStep,
@@ -42,12 +46,11 @@ Future<void> _copyToAll(
   }
 
   return Future.wait(
-    outputs.map(
-      (id) => buildStep.writeAsString(
-        id,
-        read(buildStep, readFrom(buildStep.inputId)),
-      ),
-    ),
+    outputs.map((id) async {
+      final content = await read(buildStep, readFrom(buildStep.inputId));
+      if (content == 'ignore') return;
+      await buildStep.writeAsString(id, content);
+    }),
   );
 }
 
@@ -96,6 +99,7 @@ class TestBuilder implements Builder {
 
   final BuildBehavior _build;
   final BuildBehavior? _extraWork;
+  final ShouldSkip? _shouldSkip;
 
   /// A stream of all the [BuildStep.inputId]s that are seen.
   ///
@@ -113,16 +117,25 @@ class TestBuilder implements Builder {
     Map<String, List<String>>? buildExtensions,
     BuildBehavior? build,
     BuildBehavior? extraWork,
+    ShouldSkip? shouldSkip,
   }) : buildExtensions = buildExtensions ?? appendExtension('.copy'),
        _build = build ?? _defaultBehavior,
-       _extraWork = extraWork;
+       _extraWork = extraWork,
+       _shouldSkip = shouldSkip;
 
   @override
   Future build(BuildStep buildStep) async {
     if (!await buildStep.canRead(buildStep.inputId)) return;
     _buildInputsController.add(buildStep.inputId);
-    await _build(buildStep, buildExtensions);
-    await _extraWork?.call(buildStep, buildExtensions);
-    _buildsCompletedController.add(buildStep.inputId);
+    try {
+      if (_shouldSkip != null) {
+        final content = await buildStep.readAsString(buildStep.inputId);
+        if (_shouldSkip(content)) return;
+      }
+      await _build(buildStep, buildExtensions);
+      await _extraWork?.call(buildStep, buildExtensions);
+    } finally {
+      _buildsCompletedController.add(buildStep.inputId);
+    }
   }
 }

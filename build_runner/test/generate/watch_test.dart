@@ -22,7 +22,10 @@ import 'package:watcher/watcher.dart';
 void main() {
   /// Basic phases/phase groups which get used in many tests
   final copyABuildApplication = applyToRoot(
-    TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')),
+    TestBuilder(
+      buildExtensions: appendExtension('.copy', from: '.txt'),
+      shouldSkip: (content) => content.contains('skip'),
+    ),
   );
   final defaultBuilderOptions = const BuilderOptions({});
   final packageConfigId = makeAssetId('a|.dart_tool/package_config.json');
@@ -861,6 +864,20 @@ void main() {
           result,
           outputs: {'a|web/a.txt.copy': 'b', 'a|web/a.txt.copy.copy': 'b'},
           readerWriter: readerWriter,
+        );
+
+        await readerWriter.writeAsString(makeAssetId('a|web/a.txt'), 'skip');
+        result = await results.next;
+        checkBuild(result, outputs: {}, readerWriter: readerWriter);
+
+        // Derived outputs should no longer exist.
+        expect(
+          readerWriter.testing.exists(makeAssetId('a|web/a.txt.copy')),
+          isFalse,
+        );
+        expect(
+          readerWriter.testing.exists(makeAssetId('a|web/a.txt.copy.copy')),
+          isFalse,
         );
       });
 
