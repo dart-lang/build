@@ -11,6 +11,7 @@
   implementations.
 - Refactor `CachingAssetReader` to `FilesystemCache`.
 - Refactor `BuildCacheReader` to `BuildCacheAssetPathProvider`.
+- Refactor `FileBasedAssetReader` and `FileBasedAssetWriter` to `ReaderWriter`.
 
 ## 2.4.2
 

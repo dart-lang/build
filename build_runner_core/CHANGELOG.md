@@ -10,7 +10,8 @@
 - Add internal `Filesystem` that backs `AssetReader` and `AssetWriter`
   implementations.
 - Refactor `CachingAssetReader` to `FilesystemCache`.
-- Refactor `BuildCacheReader` to `BuildCacheAssetPathProvider`.
+- Refactor `BuildCacheReader` and `BuildCacheWriter` to `BuildCacheAssetPathProvider`.
+- Refactor `FileBasedAssetReader` and `FileBasedAssetWriter` to `ReaderWriter`.
 
 ## 8.0.0
 

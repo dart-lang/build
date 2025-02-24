@@ -5,6 +5,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
 // ignore: implementation_imports
@@ -12,13 +14,47 @@ import 'package:build_test/src/in_memory_reader_writer.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
+// TODO(davidmorgan): refactor to remove this class.
 class InMemoryRunnerAssetReaderWriter extends InMemoryAssetReaderWriter
     implements AssetReader, RunnerAssetWriter {
   final _onCanReadController = StreamController<AssetId>.broadcast();
   Stream<AssetId> get onCanRead => _onCanReadController.stream;
   void Function(AssetId)? onDelete;
 
-  InMemoryRunnerAssetReaderWriter({super.rootPackage});
+  factory InMemoryRunnerAssetReaderWriter({String? rootPackage}) {
+    final filesystem = InMemoryFilesystem();
+    return InMemoryRunnerAssetReaderWriter.using(
+      rootPackage: rootPackage ?? 'unset',
+      assetFinder: InMemoryAssetFinder(filesystem, rootPackage),
+      assetPathProvider: const InMemoryAssetPathProvider(),
+      filesystem: filesystem,
+      cache: const PassthroughFilesystemCache(),
+      inputTracker: InputTracker(),
+    );
+  }
+
+  InMemoryRunnerAssetReaderWriter.using({
+    required super.rootPackage,
+    required super.assetFinder,
+    required super.assetPathProvider,
+    required super.filesystem,
+    required super.cache,
+    required super.inputTracker,
+  }) : super.using();
+
+  @override
+  InMemoryRunnerAssetReaderWriter copyWith({
+    AssetPathProvider? assetPathProvider,
+    FilesystemCache? cache,
+    InputTracker? inputTracker,
+  }) => InMemoryRunnerAssetReaderWriter.using(
+    rootPackage: rootPackage,
+    assetFinder: assetFinder,
+    assetPathProvider: assetPathProvider ?? this.assetPathProvider,
+    filesystem: filesystem,
+    cache: cache ?? this.cache,
+    inputTracker: inputTracker ?? this.inputTracker,
+  );
 
   @override
   Future<bool> canRead(AssetId id) {

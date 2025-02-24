@@ -6,6 +6,7 @@
 - Refactor `MultiPackageAssetReader` to internal `AssetFinder`.
 - `FinalizedReader` no longer implements `AssetReader`.
 - Refactor `CachingAssetReader` to `FilesystemCache`.
+- Refactor `FileBasedAssetReader` and `FileBasedAssetWriter` to `ReaderWriter`.
 
 ## 2.4.15
 

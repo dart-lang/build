@@ -8,7 +8,7 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:logging/logging.dart';
 
-import '../asset/file_based.dart';
+import '../asset/reader_writer.dart';
 import '../asset/writer.dart';
 import '../generate/build_directory.dart';
 import '../generate/build_result.dart';
@@ -22,7 +22,7 @@ final _logger = Logger('IOEnvironment');
 /// A [BuildEnvironment] writing to disk and stdout.
 class IOEnvironment implements BuildEnvironment {
   @override
-  final AssetReader reader;
+  final ReaderWriter reader;
 
   @override
   final RunnerAssetWriter writer;
@@ -54,9 +54,11 @@ class IOEnvironment implements BuildEnvironment {
       );
     }
 
+    final readerWriter = ReaderWriter(packageGraph);
+
     return IOEnvironment._(
-      FileBasedAssetReader(packageGraph),
-      FileBasedAssetWriter(packageGraph),
+      readerWriter,
+      readerWriter,
       assumeTty == true || _canPrompt(),
       outputSymlinksOnly,
       packageGraph,

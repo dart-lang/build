@@ -15,6 +15,7 @@
 - Support checks on reader state after a build action in `resolveSources`.
 - Start using `package:build/src/internal.dart`.
 - Refactor `BuildCacheReader` to `BuildCacheAssetPathProvider`.
+- Refactor `FileBasedAssetReader` and `FileBasedAssetWriter` to `ReaderWriter`.
 
 ## 2.2.3
 

@@ -63,7 +63,7 @@ class DoctorCommand extends BuildRunnerCommand {
     final packageGraph = await PackageGraph.forThisPackage();
     final buildConfigOverrides = await findBuildConfigOverrides(
       packageGraph,
-      FileBasedAssetReader(packageGraph),
+      ReaderWriter(packageGraph),
     );
     Future<BuildConfig> packageBuildConfig(PackageNode package) async {
       if (buildConfigOverrides.containsKey(package.name)) {
