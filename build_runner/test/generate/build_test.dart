@@ -69,9 +69,7 @@ Future<BuildResult> _doBuild(
   packageGraph ??= buildPackageGraph({
     rootPackage('a', path: path.absolute('a')): [],
   });
-  final readerWriter = InMemoryRunnerAssetReaderWriter(
-    rootPackage: packageGraph.root.name,
-  );
+  final readerWriter = TestReaderWriter(rootPackage: packageGraph.root.name);
   inputs.forEach((serializedId, contents) {
     readerWriter.writeAsString(makeAssetId(serializedId), contents);
   });

@@ -4,27 +4,28 @@
 
 import 'dart:async';
 
-import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
 
 import 'common.dart';
-import 'in_memory_reader_writer.dart';
 
 /// A [BuildEnvironment] for testing.
 ///
-/// Defaults to an empty [InMemoryRunnerAssetReaderWriter].
+/// Defaults to an empty [TestReaderWriter].
 ///
 /// To handle prompts you must first set `nextPromptResponse`. Alternatively
 /// you can set `throwOnPrompt` to `true` to emulate a
 /// [NonInteractiveBuildException].
 class TestBuildEnvironment extends BuildEnvironment {
-  final InMemoryRunnerAssetReaderWriter _readerWriter;
+  final TestReaderWriter _readerWriter;
+
+  TestReaderWriter get readerWriter => _readerWriter;
 
   @override
-  AssetReader get reader => _readerWriter;
+  TestReaderWriter get reader => _readerWriter;
+
   @override
-  RunnerAssetWriter get writer => _readerWriter;
+  TestReaderWriter get writer => _readerWriter;
 
   /// If true, this will throw a [NonInteractiveBuildException] for all calls to
   /// [prompt].
@@ -42,9 +43,9 @@ class TestBuildEnvironment extends BuildEnvironment {
   int? _nextPromptResponse;
 
   TestBuildEnvironment({
-    InMemoryRunnerAssetReaderWriter? readerWriter,
+    TestReaderWriter? readerWriter,
     this.throwOnPrompt = false,
-  }) : _readerWriter = readerWriter ?? InMemoryRunnerAssetReaderWriter();
+  }) : _readerWriter = readerWriter ?? TestReaderWriter();
 
   @override
   void onLog(LogRecord record) => logRecords.add(record);

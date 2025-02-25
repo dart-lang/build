@@ -1,6 +1,7 @@
 // Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -12,7 +13,10 @@ import 'package:build_runner_core/src/asset/reader_writer.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/generate/input_tracker.dart';
 import 'package:glob/glob.dart';
+import 'package:path/path.dart' as p;
+import 'package:watcher/watcher.dart';
 
+import 'fake_watcher.dart';
 import 'test_reader_writer.dart';
 
 /// The implementation behind [TestReaderWriter].
@@ -23,6 +27,14 @@ class InMemoryAssetReaderWriter extends ReaderWriter
     implements TestReaderWriter {
   /// Assets read directly from this reader.
   final Set<AssetId> assetsRead;
+
+  /// Called on delete.
+  ///
+  /// This is used by internal `build_runner` tests and not exposed via the
+  /// public `build_test` APIs.
+  void Function(AssetId id)? onDelete;
+
+  final _onCanReadController = StreamController<AssetId>.broadcast();
 
   /// Create a new asset reader/writer.
   ///
@@ -68,9 +80,16 @@ class InMemoryAssetReaderWriter extends ReaderWriter
 
   @override
   Future<bool> canRead(AssetId id) {
+    _onCanReadController.add(id);
     assetsRead.add(id);
     return super.canRead(id);
   }
+
+  /// Emits an event when `canRead` is called.
+  ///
+  /// This is used by internal `build_runner` tests and not exposed via the
+  /// public `build_test` APIs.
+  Stream<AssetId> get onCanRead => _onCanReadController.stream;
 
   @override
   Future<List<int>> readAsBytes(AssetId id) async {
@@ -82,6 +101,37 @@ class InMemoryAssetReaderWriter extends ReaderWriter
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
     assetsRead.add(id);
     return super.readAsString(id, encoding: encoding);
+  }
+
+  @override
+  Future writeAsBytes(AssetId id, List<int> bytes) async {
+    var type = testing.exists(id) ? ChangeType.MODIFY : ChangeType.ADD;
+    await super.writeAsBytes(id, bytes);
+    FakeWatcher.notifyWatchers(
+      WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))),
+    );
+  }
+
+  @override
+  Future writeAsString(
+    AssetId id,
+    String contents, {
+    Encoding encoding = utf8,
+  }) async {
+    var type = testing.exists(id) ? ChangeType.MODIFY : ChangeType.ADD;
+    await super.writeAsString(id, contents, encoding: encoding);
+    FakeWatcher.notifyWatchers(
+      WatchEvent(type, p.absolute(id.package, p.fromUri(id.path))),
+    );
+  }
+
+  @override
+  Future<void> delete(AssetId id) {
+    onDelete?.call(id);
+    FakeWatcher.notifyWatchers(
+      WatchEvent(ChangeType.REMOVE, p.absolute(id.package, p.fromUri(id.path))),
+    );
+    return super.delete(id);
   }
 }
 

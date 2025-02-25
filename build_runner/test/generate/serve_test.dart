@@ -20,13 +20,11 @@ void main() {
     final packageGraph = buildPackageGraph({
       rootPackage('a', path: path.absolute('a')): [],
     });
-    late InMemoryRunnerAssetReaderWriter readerWriter;
+    late TestReaderWriter readerWriter;
 
     setUp(() async {
       _terminateServeController = StreamController();
-      readerWriter = InMemoryRunnerAssetReaderWriter(
-        rootPackage: packageGraph.root.name,
-      );
+      readerWriter = TestReaderWriter(rootPackage: packageGraph.root.name);
       await readerWriter.writeAsString(
         makeAssetId('a|.dart_tool/package_config.json'),
         jsonEncode({
@@ -157,7 +155,7 @@ Future<ServeHandler> createHandler(
   List<BuilderApplication> builders,
   Map<String, String> inputs,
   PackageGraph packageGraph,
-  InMemoryRunnerAssetReaderWriter readerWriter,
+  TestReaderWriter readerWriter,
 ) async {
   await Future.wait(
     inputs.keys.map((serializedId) async {

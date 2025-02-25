@@ -21,7 +21,7 @@ import 'package:watcher/watcher.dart';
 
 void main() {
   late FutureOr<Response> Function(Request) handler;
-  late InMemoryRunnerAssetReaderWriter readerWriter;
+  late TestReaderWriter readerWriter;
   late StreamSubscription subscription;
   late Completer<BuildResult> nextBuild;
   late StreamController<ProcessSignal> terminateController;
@@ -31,7 +31,7 @@ void main() {
   setUp(() async {
     final graph = buildPackageGraph({rootPackage('example', path: path): []});
     readerWriter =
-        InMemoryRunnerAssetReaderWriter(rootPackage: 'example')
+        TestReaderWriter(rootPackage: 'example')
           ..testing.writeString(
             AssetId('example', 'web/initial.txt'),
             'initial',
