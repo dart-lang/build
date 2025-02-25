@@ -17,6 +17,7 @@ import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
 import '../asset/build_cache.dart';
+import '../asset/reader_writer.dart';
 import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
@@ -330,7 +331,10 @@ class _Loader {
         'Checking for unexpected pre-existing outputs.',
         () => _initialBuildCleanup(
           conflictingOutputs,
-          _wrapWriter(_environment.writer, assetGraph!),
+          _copyWriterWithBuildCacheAssetPathProvider(
+            _environment.writer,
+            assetGraph!,
+          ),
         ),
       );
     }
@@ -342,7 +346,10 @@ class _Loader {
         _environment.reader,
         assetGraph!,
       ),
-      _wrapWriter(_environment.writer, assetGraph!),
+      _copyWriterWithBuildCacheAssetPathProvider(
+        _environment.writer,
+        assetGraph!,
+      ),
       _options.packageGraph,
       _options.deleteFilesByDefault,
       ResourceManager(),
@@ -547,7 +554,10 @@ class _Loader {
       _buildPhases,
       updates,
       _options.packageGraph.root.name,
-      (id) => _wrapWriter(_environment.writer, assetGraph).delete(id),
+      (id) => _copyWriterWithBuildCacheAssetPathProvider(
+        _environment.writer,
+        assetGraph,
+      ).delete(id),
       _copyReaderWithBuildCacheAssetPathProvider(
         _environment.reader,
         assetGraph,
@@ -556,22 +566,21 @@ class _Loader {
     return updates;
   }
 
-  /// Wraps [original] in a [BuildCacheWriter].
-  RunnerAssetWriter _wrapWriter(
-    RunnerAssetWriter original,
-    AssetGraph assetGraph,
-  ) {
-    return BuildCacheWriter(
-      original,
-      assetGraph,
-      _options.packageGraph.root.name,
-    );
-  }
-
   AssetReader _copyReaderWithBuildCacheAssetPathProvider(
     AssetReader original,
     AssetGraph assetGraph,
   ) => original.copyWith(
+    assetPathProvider: BuildCacheAssetPathProvider(
+      delegate: original.assetPathProvider,
+      assetGraph: assetGraph,
+      rootPackage: _options.packageGraph.root.name,
+    ),
+  );
+
+  RunnerAssetWriter _copyWriterWithBuildCacheAssetPathProvider(
+    RunnerAssetWriter original,
+    AssetGraph assetGraph,
+  ) => (original as ReaderWriter).copyWith(
     assetPathProvider: BuildCacheAssetPathProvider(
       delegate: original.assetPathProvider,
       assetGraph: assetGraph,

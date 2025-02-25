@@ -89,13 +89,17 @@ Future<TestBuildersResult> testBuilders(
   void Function(AssetId id)? onDelete,
 }) async {
   packageGraph ??= buildPackageGraph({rootPackage('a'): []});
-  final readerWriter =
+  var readerWriter =
       resumeFrom == null
           ? TestReaderWriter(rootPackage: packageGraph.root.name)
           : resumeFrom.readerWriter;
 
   // Cast because this is not part of public `test_builder` API.
-  (readerWriter as InMemoryAssetReaderWriter).onDelete = onDelete;
+  if (onDelete != null) {
+    readerWriter = (readerWriter as InMemoryAssetReaderWriter).copyWith(
+      onDelete: onDelete,
+    );
+  }
 
   var pkgConfigId = AssetId(
     packageGraph.root.name,

@@ -12,8 +12,6 @@ import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart' hide OutputLocation;
 import 'package:build_daemon/data/server_log.dart';
 import 'package:build_runner_core/build_runner_core.dart'
-    hide BuildResult, BuildStatus;
-import 'package:build_runner_core/build_runner_core.dart'
     as core
     show BuildStatus;
 import 'package:build_runner_core/build_runner_core.dart'
@@ -30,7 +28,6 @@ import '../package_graph/build_config_overrides.dart';
 import '../watcher/asset_change.dart';
 import '../watcher/change_filter.dart';
 import '../watcher/collect_changes.dart';
-import '../watcher/delete_writer.dart';
 import '../watcher/graph_watcher.dart';
 import '../watcher/node_watcher.dart';
 import 'change_providers.dart';
@@ -258,7 +255,9 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
 
     var daemonEnvironment = OverrideableEnvironment(
       environment,
-      writer: OnDeleteWriter(environment.writer, expectedDeletes.add),
+      writer: (environment.writer as ReaderWriter).copyWith(
+        onDelete: expectedDeletes.add,
+      ),
     );
 
     var logSubscription = LogSubscription(

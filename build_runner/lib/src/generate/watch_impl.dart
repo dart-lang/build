@@ -23,7 +23,6 @@ import '../server/server.dart';
 import '../watcher/asset_change.dart';
 import '../watcher/change_filter.dart';
 import '../watcher/collect_changes.dart';
-import '../watcher/delete_writer.dart';
 import '../watcher/graph_watcher.dart';
 import '../watcher/node_watcher.dart';
 import 'terminator.dart';
@@ -244,7 +243,9 @@ class WatchImpl implements BuildState {
   }) {
     var watcherEnvironment = OverrideableEnvironment(
       environment,
-      writer: OnDeleteWriter(environment.writer, _expectedDeletes.add),
+      writer: (environment.writer as ReaderWriter).copyWith(
+        onDelete: _expectedDeletes.add,
+      ),
     );
     var firstBuildCompleter = Completer<BuildResult>();
     currentBuild = firstBuildCompleter.future;
