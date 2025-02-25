@@ -561,6 +561,7 @@ class _SingleBuild {
         var wrappedWriter = AssetWriterSpy(_writer);
 
         var wrappedReader = SingleStepReader(
+          input,
           _reader,
           _assetGraph,
           phaseNumber,
@@ -581,9 +582,9 @@ class _SingleBuild {
         await _cleanUpStaleOutputs(builderOutputs);
         await FailureReporter.clean(phaseNumber, input);
 
-        // We may have read some inputs in the call to `_buildShouldRun`, we
-        // want to remove those.
-        wrappedReader.inputTracker.assetsRead.clear();
+        // Clear input tracking accumulated during `_buildShouldRun` and any
+        // previous builds.
+        wrappedReader.inputTracker.clear(primaryInput: input);
 
         var actionDescription = _actionLoggerName(
           phase,
@@ -625,6 +626,7 @@ class _SingleBuild {
         await tracker.trackStage(
           'Finalize',
           () => _setOutputsState(
+            input,
             builderOutputs,
             wrappedReader,
             wrappedReader.inputTracker,
@@ -701,6 +703,7 @@ class _SingleBuild {
     var inputNode = _assetGraph.get(input)!;
     var wrappedWriter = AssetWriterSpy(_writer);
     var wrappedReader = SingleStepReader(
+      input,
       _reader,
       _assetGraph,
       phaseNum,
@@ -714,9 +717,9 @@ class _SingleBuild {
     if (!await _postProcessBuildShouldRun(anchorNode, wrappedReader)) {
       return <AssetId>[];
     }
-    // We may have read some inputs in the call to `_buildShouldRun`, we want
-    // to remove those.
-    wrappedReader.inputTracker.assetsRead.clear();
+    // Clear input tracking accumulated during `_buildShouldRun` and any
+    // previous builds.
+    wrappedReader.inputTracker.clear(primaryInput: input);
 
     // Clean out the impacts of the previous run
     await FailureReporter.clean(phaseNum, input);
@@ -782,6 +785,7 @@ class _SingleBuild {
     // written.
     inputNode.primaryOutputs.addAll(assetsWritten);
     await _setOutputsState(
+      input,
       assetsWritten,
       wrappedReader,
       wrappedReader.inputTracker,
@@ -999,6 +1003,7 @@ class _SingleBuild {
   /// - Setting the `previousInputsDigest` on each output based on the inputs.
   /// - Storing the error message with the [_failureReporter].
   Future<void> _setOutputsState(
+    AssetId input,
     Iterable<AssetId> outputs,
     AssetReader reader,
     InputTracker inputTracker,
@@ -1010,8 +1015,10 @@ class _SingleBuild {
     if (outputs.isEmpty) return;
     var usedInputs =
         unusedAssets != null
-            ? inputTracker.assetsRead.difference(unusedAssets)
-            : inputTracker.assetsRead;
+            ? inputTracker
+                .inputsOf(primaryInput: input)
+                .difference(unusedAssets)
+            : inputTracker.inputsOf(primaryInput: input);
 
     final inputsDigest = await _computeCombinedDigest(
       usedInputs,

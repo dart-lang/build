@@ -19,6 +19,9 @@ import 'test_reader_writer.dart';
 /// this package.
 class InMemoryAssetReaderWriter extends ReaderWriter
     implements TestReaderWriter {
+  /// Assets read directly from this reader.
+  final Set<AssetId> assetsRead;
+
   /// Create a new asset reader/writer.
   ///
   /// If provided [rootPackage] is the default package when globbing for files.
@@ -28,6 +31,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
   factory InMemoryAssetReaderWriter({String? rootPackage}) {
     final filesystem = InMemoryFilesystem();
     return InMemoryAssetReaderWriter.using(
+      assetsRead: {},
       rootPackage: rootPackage ?? 'unset',
       assetFinder: InMemoryAssetFinder(filesystem, rootPackage),
       assetPathProvider: const InMemoryAssetPathProvider(),
@@ -38,6 +42,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
   }
 
   InMemoryAssetReaderWriter.using({
+    required this.assetsRead,
     required super.rootPackage,
     required super.assetFinder,
     required super.assetPathProvider,
@@ -51,6 +56,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
     AssetPathProvider? assetPathProvider,
     FilesystemCache? cache,
   }) => InMemoryAssetReaderWriter.using(
+    assetsRead: assetsRead,
     rootPackage: rootPackage,
     assetFinder: assetFinder,
     assetPathProvider: assetPathProvider ?? this.assetPathProvider,
@@ -62,26 +68,21 @@ class InMemoryAssetReaderWriter extends ReaderWriter
   @override
   ReaderWriterTesting get testing => _ReaderWriterTestingImpl(this);
 
-  // Record all reads in `inputTracker` so tests can verify them.
-  //
-  // TODO(davidmorgan): refactor to remove differences in how test and real
-  // code use inputTracker; keep tracking for tests separate from real tracking.
-
   @override
   Future<bool> canRead(AssetId id) {
-    inputTracker!.assetsRead.add(id);
+    assetsRead.add(id);
     return super.canRead(id);
   }
 
   @override
   Future<List<int>> readAsBytes(AssetId id) async {
-    inputTracker!.assetsRead.add(id);
+    assetsRead.add(id);
     return super.readAsBytes(id);
   }
 
   @override
-  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
-    inputTracker!.assetsRead.add(id);
+  Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
+    assetsRead.add(id);
     return super.readAsString(id, encoding: encoding);
   }
 }
@@ -128,7 +129,10 @@ class _ReaderWriterTestingImpl implements ReaderWriterTesting {
       );
 
   @override
-  Iterable<AssetId> get assetsRead => _readerWriter.inputTracker!.assetsRead;
+  Iterable<AssetId> get inputsTracked => _readerWriter.inputTracker.allInputs();
+
+  @override
+  Iterable<AssetId> get assetsRead => _readerWriter.assetsRead;
 
   @override
   bool exists(AssetId id) => _readerWriter.filesystem.existsSync(

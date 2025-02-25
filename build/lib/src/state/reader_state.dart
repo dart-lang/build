@@ -38,24 +38,19 @@ extension AssetReaderStateExtension on AssetReader {
     return (this as AssetReaderState).assetFinder;
   }
 
-  InputTracker? get inputTracker =>
-      this is AssetReaderState ? (this as AssetReaderState).inputTracker : null;
+  bool get handlesInputTracking {
+    _requireIsAssetReaderState();
+    return (this as AssetReaderState).handlesInputTracking;
+  }
+
+  InputTracker get inputTracker {
+    _requireIsAssetReaderState();
+    return (this as AssetReaderState).inputTracker;
+  }
 
   AssetPathProvider get assetPathProvider {
     _requireIsAssetReaderState();
     return (this as AssetReaderState).assetPathProvider;
-  }
-
-  /// Gets [inputTracker] or throws a descriptive error if it is `null`.
-  InputTracker get requireInputTracker {
-    final result = inputTracker;
-    if (result == null) {
-      _requireIsAssetReaderState();
-      throw StateError(
-        '`AssetReader` is missing required `inputTracker`: $this',
-      );
-    }
-    return result;
   }
 
   /// Throws if `this` is not an [AssetReaderState].
@@ -91,9 +86,28 @@ abstract interface class AssetReaderState {
   /// globbing in arbitrary packages, is hidden from generators.
   AssetFinder get assetFinder;
 
-  /// The [InputTracker] that this reader records reads to; or `null` if it does
-  /// not have one.
-  InputTracker? get inputTracker;
+  /// Whether this reader does input tracking.
+  ///
+  /// Readers that do not know the primary input ID of the current build step
+  /// can't do tracking. If they delegate to another reader they return its
+  /// `handlesInputTracking` value, or they return false.
+  ///
+  /// A reader that does know the primary input ID of the current build step
+  /// must decide whether to do tracking. If it delegates to another reader
+  /// that already does tracking, there is nothing more to do: it returns
+  /// `true`. Otherwise, it does tracking: it notifes [inputTracker] of reads,
+  /// and likewise returns `true`.
+  ///
+  /// So, of all the readers working together, exactly one reader does tracking:
+  /// the one closest to the underlying filesystem that knows the primary input
+  /// ID. This is the reader that has the most information about what the build
+  /// actually intends to read.
+  bool get handlesInputTracking;
+
+  /// The [InputTracker] that this reader records reads to.
+  ///
+  /// See [handlesInputTracking].
+  InputTracker get inputTracker;
 
   /// The [AssetPathProvider] associated with this reader.
   AssetPathProvider get assetPathProvider;

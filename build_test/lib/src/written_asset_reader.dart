@@ -48,7 +48,10 @@ class WrittenAssetReader extends AssetReader implements AssetReaderState {
   AssetPathProvider get assetPathProvider => source.assetPathProvider;
 
   @override
-  InputTracker? get inputTracker => source.inputTracker;
+  bool get handlesInputTracking => source.handlesInputTracking;
+
+  @override
+  InputTracker get inputTracker => source.inputTracker;
 
   /// Marks [assets] as allowed to be read.
   ///

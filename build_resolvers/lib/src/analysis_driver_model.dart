@@ -127,7 +127,10 @@ class AnalysisDriverModel {
     }
 
     // Notify [buildStep] of its inputs.
-    buildStep.requireInputTracker.assetsRead.addAll(inputIds);
+    buildStep.inputTracker.addAll(
+      primaryInput: buildStep.inputId,
+      inputs: inputIds,
+    );
 
     // Sync changes onto the "URI resolver", the in-memory filesystem.
     for (final id in idsToSyncOntoFilesystem) {

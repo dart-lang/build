@@ -112,8 +112,12 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
   @override
   AssetPathProvider get assetPathProvider => _reader.assetPathProvider;
 
+  // Either handled here or by `_delegate`.
   @override
-  InputTracker? get inputTracker => _reader.inputTracker;
+  bool get handlesInputTracking => true;
+
+  @override
+  InputTracker get inputTracker => _reader.inputTracker;
 
   @override
   Future<PackageConfig> get packageConfig async {
@@ -139,6 +143,9 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
   @override
   Future<bool> canRead(AssetId id) {
     if (_isComplete) throw BuildStepCompletedException();
+    if (!_reader.handlesInputTracking) {
+      inputTracker.add(primaryInput: inputId, input: id);
+    }
     return _reader.canRead(id);
   }
 
@@ -151,12 +158,18 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
   @override
   Future<List<int>> readAsBytes(AssetId id) {
     if (_isComplete) throw BuildStepCompletedException();
+    if (!_reader.handlesInputTracking) {
+      inputTracker.add(primaryInput: inputId, input: id);
+    }
     return _reader.readAsBytes(id);
   }
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
     if (_isComplete) throw BuildStepCompletedException();
+    if (!_reader.handlesInputTracking) {
+      inputTracker.add(primaryInput: inputId, input: id);
+    }
     return _reader.readAsString(id, encoding: encoding);
   }
 

@@ -24,6 +24,7 @@ class InMemoryRunnerAssetReaderWriter extends InMemoryAssetReaderWriter
   factory InMemoryRunnerAssetReaderWriter({String? rootPackage}) {
     final filesystem = InMemoryFilesystem();
     return InMemoryRunnerAssetReaderWriter.using(
+      assetsRead: {},
       rootPackage: rootPackage ?? 'unset',
       assetFinder: InMemoryAssetFinder(filesystem, rootPackage),
       assetPathProvider: const InMemoryAssetPathProvider(),
@@ -34,6 +35,7 @@ class InMemoryRunnerAssetReaderWriter extends InMemoryAssetReaderWriter
   }
 
   InMemoryRunnerAssetReaderWriter.using({
+    required super.assetsRead,
     required super.rootPackage,
     required super.assetFinder,
     required super.assetPathProvider,
@@ -48,6 +50,7 @@ class InMemoryRunnerAssetReaderWriter extends InMemoryAssetReaderWriter
     FilesystemCache? cache,
     InputTracker? inputTracker,
   }) => InMemoryRunnerAssetReaderWriter.using(
+    assetsRead: assetsRead,
     rootPackage: rootPackage,
     assetFinder: assetFinder,
     assetPathProvider: assetPathProvider ?? this.assetPathProvider,

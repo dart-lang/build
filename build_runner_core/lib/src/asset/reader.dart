@@ -67,9 +67,7 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
   @override
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
 
-  @override
-  final InputTracker inputTracker = InputTracker();
-
+  final AssetId _primaryInput;
   final AssetGraph _assetGraph;
   final AssetReader _delegate;
   final int _phaseNumber;
@@ -81,6 +79,7 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
   _getGlobNode;
 
   SingleStepReader(
+    this._primaryInput,
     this._delegate,
     this._assetGraph,
     this._phaseNumber,
@@ -89,13 +88,21 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
     this._checkInvalidInput, [
     this._getGlobNode,
     this._writtenAssets,
-  ]);
+  ]) {
+    if (_delegate.handlesInputTracking) {
+      // The `handlesInputTracking` codepaths are to support configurations
+      // without SingleStepReader. If there is a SingleStepReader it is always
+      // the right place to do tracking.
+      throw StateError('SingleStepReader expects to do input tracking.');
+    }
+  }
 
   @override
   SingleStepReader copyWith({
     AssetPathProvider? assetPathProvider,
     FilesystemCache? cache,
   }) => SingleStepReader(
+    _primaryInput,
     _delegate.copyWith(assetPathProvider: assetPathProvider, cache: cache),
     _assetGraph,
     _phaseNumber,
@@ -114,6 +121,12 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
 
   @override
   AssetPathProvider get assetPathProvider => _delegate.assetPathProvider;
+
+  @override
+  bool get handlesInputTracking => true;
+
+  @override
+  InputTracker get inputTracker => _delegate.inputTracker;
 
   /// Checks whether [id] can be read by this step - attempting to build the
   /// asset if necessary.
@@ -137,7 +150,7 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
 
     final node = _assetGraph.get(id);
     if (node == null) {
-      inputTracker.assetsRead.add(id);
+      inputTracker.add(primaryInput: _primaryInput, input: id);
       _assetGraph.add(SyntheticSourceAssetNode(id));
       return false;
     }
@@ -147,8 +160,13 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
       _phaseNumber,
       _writtenAssets,
     );
+
+    // If it's in the same phase it's never an input: it is either an output of
+    // the current generator, which means it's readable but not an input, or
+    // it's an output of a generator running in parallel, which means it's
+    // hidden.
     if (!readability.inSamePhase) {
-      inputTracker.assetsRead.add(id);
+      inputTracker.add(primaryInput: _primaryInput, input: id);
     }
 
     return readability.canRead;
@@ -210,7 +228,7 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
     var streamCompleter = StreamCompleter<AssetId>();
 
     _getGlobNode(glob, _primaryPackage, _phaseNumber).then((globNode) {
-      inputTracker.assetsRead.add(globNode.id);
+      inputTracker.add(primaryInput: _primaryInput, input: globNode.id);
       streamCompleter.setSourceStream(Stream.fromIterable(globNode.results!));
     });
     return streamCompleter.stream;
