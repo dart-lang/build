@@ -16,6 +16,7 @@
 - Start using `package:build/src/internal.dart`.
 - Add a `shouldSkip` parameter to `TestBuilder`, which allows it to skip certain
   inputs based on their file content.
+- Refactor `BuildCacheReader` to `BuildCacheAssetPathProvider`.
 
 ## 2.2.3
 

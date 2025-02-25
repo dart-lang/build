@@ -25,6 +25,8 @@ import 'writer.dart';
 ///
 /// The default [IOEnvironment] uses readers and writes that are batch-aware
 /// outside of low-memory mode.
+///
+/// TODO(davidmorgan): this is not currently used, refactor into `Filesystem`.
 final class _FileSystemWriteBatch {
   final Map<AssetId, _PendingFileState> _pendingWrites = {};
 
@@ -54,7 +56,7 @@ final class _FileSystemWriteBatch {
 ///
 /// The returned reader will see pending writes by the returned writer before
 /// they are flushed to the file system.
-(AssetReader, RunnerAssetWriter) wrapInBatch({
+(BatchReader, BatchWriter) wrapInBatch({
   required AssetReader reader,
   required RunnerAssetWriter writer,
 }) {
@@ -72,35 +74,18 @@ final class _PendingFileState {
 }
 
 @internal
-final class BatchReader extends AssetReader implements AssetReaderState {
-  @override
+final class BatchReader {
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
+
   final AssetReader _inner;
   final _FileSystemWriteBatch _batch;
 
   BatchReader(this._inner, this._batch);
 
-  @override
-  BatchReader copyWith({FilesystemCache? cache}) =>
-      BatchReader(_inner.copyWith(cache: cache), _batch);
-
-  @override
-  Filesystem get filesystem => _inner.filesystem;
-
-  @override
-  FilesystemCache get cache => _inner.cache;
-
-  @override
-  AssetPathProvider? get assetPathProvider => _inner.assetPathProvider;
-
-  @override
-  InputTracker? get inputTracker => _inner.inputTracker;
-
   _PendingFileState? _stateFor(AssetId id) {
     return _batch._pendingWrites[id];
   }
 
-  @override
   Future<bool> canRead(AssetId id) async {
     if (_stateFor(id) case final state?) {
       return !state.isDeleted;
@@ -110,7 +95,6 @@ final class BatchReader extends AssetReader implements AssetReaderState {
   }
 
   // This is only for generators, so only `BuildStep` needs to implement it.
-  @override
   Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError();
 
   Stream<AssetId> _findAssets(Glob glob, String? package) {
@@ -119,7 +103,6 @@ final class BatchReader extends AssetReader implements AssetReaderState {
         .where((asset) => _stateFor(asset)?.isDeleted != true);
   }
 
-  @override
   Future<List<int>> readAsBytes(AssetId id) async {
     if (_stateFor(id) case final state?) {
       if (state.isDeleted) {
@@ -132,7 +115,6 @@ final class BatchReader extends AssetReader implements AssetReaderState {
     }
   }
 
-  @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
     if (_stateFor(id) case final state?) {
       if (state.isDeleted) {

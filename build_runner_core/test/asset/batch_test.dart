@@ -7,9 +7,8 @@ library;
 import 'dart:io';
 
 import 'package:build/build.dart';
-// ignore: implementation_imports
-import 'package:build/src/internal.dart';
 import 'package:build_runner_core/build_runner_core.dart';
+import 'package:build_runner_core/src/asset/batch.dart';
 import 'package:glob/glob.dart';
 import 'package:package_config/package_config_types.dart';
 import 'package:test/test.dart';
@@ -17,7 +16,7 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 
 void main() {
   late PackageGraph packageGraph;
-  late AssetReader reader;
+  late BatchReader reader;
   late RunnerAssetWriter writer;
 
   setUp(() async {
