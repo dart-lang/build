@@ -11,6 +11,9 @@
   test should read in `nonInputsToReadFromFilesystem`.
 - Breaking change: remove `MultiAssetReader`. Load the source into one
   `TestReaderWriter` instead.
+- Breaking change: `TestReaderWriter.assetsRead` does not take into account
+  details of the build, it's just what was actually read. Use
+  `TestReaderWriter.inputsTracked` for what was recorded as an input.
 - Breaking change: Remove `StubAssetReader`. Use `TestReaderWriter` instead.
 - Support checks on reader state after a build action in `resolveSources`.
 - Start using `package:build/src/internal.dart`.

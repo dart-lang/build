@@ -31,8 +31,6 @@ class ReaderWriter extends AssetReader
   final AssetFinder assetFinder;
   @override
   final FilesystemCache cache;
-  @override
-  final InputTracker? inputTracker;
 
   /// A [ReaderWriter] suitable for real builds.
   ///
@@ -46,8 +44,6 @@ class ReaderWriter extends AssetReader
     assetPathProvider: packageGraph,
     filesystem: IoFilesystem(),
     cache: const PassthroughFilesystemCache(),
-    // In real builds input tracking is done per generator.
-    inputTracker: null,
   );
 
   ReaderWriter.using({
@@ -56,7 +52,6 @@ class ReaderWriter extends AssetReader
     required this.assetPathProvider,
     required this.filesystem,
     required this.cache,
-    required this.inputTracker,
   });
 
   @override
@@ -69,7 +64,6 @@ class ReaderWriter extends AssetReader
     assetPathProvider: assetPathProvider ?? this.assetPathProvider,
     filesystem: filesystem,
     cache: cache ?? this.cache,
-    inputTracker: inputTracker,
   );
 
   @override

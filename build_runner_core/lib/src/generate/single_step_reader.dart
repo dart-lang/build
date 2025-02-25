@@ -14,6 +14,7 @@ import 'package:glob/glob.dart';
 
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
+import 'input_tracker.dart';
 
 /// Describes if and how a [SingleStepReader] should read an [AssetId].
 class Readability {
@@ -67,18 +68,17 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
   @override
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
 
-  @override
-  final InputTracker inputTracker = InputTracker();
-
-  final AssetGraph _assetGraph;
+  final AssetGraph? _assetGraph;
   final AssetReader _delegate;
   final int _phaseNumber;
-  final String _primaryPackage;
+  final String? _primaryPackage;
   final AssetWriterSpy? _writtenAssets;
   final IsReadable _isReadableNode;
   final CheckInvalidInput _checkInvalidInput;
   final Future<GlobAssetNode> Function(Glob glob, String package, int phaseNum)?
   _getGlobNode;
+
+  final InputTracker inputTracker;
 
   SingleStepReader(
     this._delegate,
@@ -86,7 +86,8 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
     this._phaseNumber,
     this._primaryPackage,
     this._isReadableNode,
-    this._checkInvalidInput, [
+    this._checkInvalidInput,
+    this.inputTracker, [
     this._getGlobNode,
     this._writtenAssets,
   ]);
@@ -102,9 +103,29 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
     _primaryPackage,
     _isReadableNode,
     _checkInvalidInput,
+    inputTracker,
     _getGlobNode,
     _writtenAssets,
   );
+
+  /// Returns [reader] if it's already a [SingleStepReader], or wraps in one.
+  ///
+  /// When wrapping, `SingleStepReader` skips most functionality. For example,
+  /// it has no [AssetGraph], so readability checks against the graph are not
+  /// done. It still provides tracking of reads in [inputTracker].
+  static SingleStepReader wrapIfNeeded(AssetReader reader) {
+    if (reader is SingleStepReader) return reader;
+    return SingleStepReader(
+      reader,
+      null,
+      -1,
+      null,
+      (_, _, _) => Readability.readable,
+      (_) {},
+      InputTracker(reader.filesystem),
+      null,
+    );
+  }
 
   @override
   Filesystem get filesystem => _delegate.filesystem;
@@ -135,9 +156,14 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
       rethrow;
     }
 
+    if (_assetGraph == null) {
+      inputTracker.add(id);
+      return _delegate.canRead(id);
+    }
+
     final node = _assetGraph.get(id);
     if (node == null) {
-      inputTracker.assetsRead.add(id);
+      inputTracker.add(id);
       _assetGraph.add(SyntheticSourceAssetNode(id));
       return false;
     }
@@ -147,8 +173,13 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
       _phaseNumber,
       _writtenAssets,
     );
+
+    // If it's in the same phase it's never an input: it is either an output of
+    // the current generator, which means it's readable but not an input, or
+    // it's an output of a generator running in parallel, which means it's
+    // hidden and can't be an input.
     if (!readability.inSamePhase) {
-      inputTracker.assetsRead.add(id);
+      inputTracker.add(id);
     }
 
     return readability.canRead;
@@ -159,13 +190,17 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
     final isReadable = await _isReadable(id, catchInvalidInputs: true);
     if (!isReadable) return false;
 
-    var node = _assetGraph.get(id);
     // No need to check readability for [GeneratedAssetNode], they are always
     // readable.
-    if (node is! GeneratedAssetNode && !await _delegate.canRead(id)) {
+    final nodeIsGeneratedNode =
+        _assetGraph != null && _assetGraph.get(id) is GeneratedAssetNode;
+    if (nodeIsGeneratedNode && !await _delegate.canRead(id)) {
       return false;
     }
-    await _ensureDigest(id);
+
+    // If digests can be cached, cache it.
+    // TODO(davidmorgan): remove?
+    if (_assetGraph != null) await _ensureDigest(id);
     return true;
   }
 
@@ -203,14 +238,17 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
   @override
   Stream<AssetId> findAssets(Glob glob) => throw UnimplementedError();
 
-  Stream<AssetId> _findAssets(Glob glob, String? _) {
+  Stream<AssetId> _findAssets(Glob glob, String? package) {
+    if (_assetGraph == null) {
+      return _delegate.assetFinder.find(glob, package: package);
+    }
     if (_getGlobNode == null) {
       throw StateError('this reader does not support `findAssets`');
     }
     var streamCompleter = StreamCompleter<AssetId>();
 
-    _getGlobNode(glob, _primaryPackage, _phaseNumber).then((globNode) {
-      inputTracker.assetsRead.add(globNode.id);
+    _getGlobNode(glob, _primaryPackage!, _phaseNumber).then((globNode) {
+      inputTracker.add(globNode.id);
       streamCompleter.setSourceStream(Stream.fromIterable(globNode.results!));
     });
     return streamCompleter.stream;
@@ -221,6 +259,7 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
   ///
   /// Note that [id] must exist in the asset graph.
   FutureOr<Digest> _ensureDigest(AssetId id) {
+    if (_assetGraph == null) return _delegate.digest(id);
     var node = _assetGraph.get(id)!;
     if (node.lastKnownDigest != null) return node.lastKnownDigest!;
     return _delegate.digest(id).then((digest) => node.lastKnownDigest = digest);
