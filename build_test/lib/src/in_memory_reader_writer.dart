@@ -49,12 +49,15 @@ class InMemoryAssetReaderWriter extends AssetReader
            assetPathProvider ?? const InMemoryAssetPathProvider();
 
   @override
-  InMemoryAssetReaderWriter copyWith({FilesystemCache? cache}) =>
-      InMemoryAssetReaderWriter(
-        rootPackage: rootPackage,
-        filesystem: _filesystem,
-        cache: cache ?? this.cache,
-      );
+  InMemoryAssetReaderWriter copyWith({
+    AssetPathProvider? assetPathProvider,
+    FilesystemCache? cache,
+  }) => InMemoryAssetReaderWriter(
+    rootPackage: rootPackage,
+    filesystem: _filesystem,
+    assetPathProvider: assetPathProvider ?? this.assetPathProvider,
+    cache: cache ?? this.cache,
+  );
 
   @override
   ReaderWriterTesting get testing => _ReaderWriterTestingImpl(this);

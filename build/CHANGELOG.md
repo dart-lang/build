@@ -1,5 +1,6 @@
 ## 2.4.3-wip
 
+- `AssetNotFoundException` now also reports the missing `path`.
 - Bump the min sdk to 3.7.0.
 - Use `build_test` 3.0.0.
 - Add `package:build/src/internal.dart` for use by `build_resolvers`,
@@ -9,6 +10,7 @@
 - Add internal `Filesystem` that backs `AssetReader` and `AssetWriter`
   implementations.
 - Refactor `CachingAssetReader` to `FilesystemCache`.
+- Refactor `BuildCacheReader` to `BuildCacheAssetPathProvider`.
 
 ## 2.4.2
 

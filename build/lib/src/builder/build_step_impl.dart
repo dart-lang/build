@@ -85,10 +85,13 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
        _reportUnusedAssets = reportUnusedAssets;
 
   @override
-  BuildStepImpl copyWith({FilesystemCache? cache}) => BuildStepImpl(
+  BuildStepImpl copyWith({
+    AssetPathProvider? assetPathProvider,
+    FilesystemCache? cache,
+  }) => BuildStepImpl(
     inputId,
     allowedOutputs,
-    _reader.copyWith(cache: cache),
+    _reader.copyWith(assetPathProvider: assetPathProvider, cache: cache),
     _writer,
     _resolvers,
     _resourceManager,
@@ -107,7 +110,7 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
   AssetFinder get assetFinder => _reader.assetFinder;
 
   @override
-  AssetPathProvider? get assetPathProvider => _reader.assetPathProvider;
+  AssetPathProvider get assetPathProvider => _reader.assetPathProvider;
 
   @override
   InputTracker? get inputTracker => _reader.inputTracker;

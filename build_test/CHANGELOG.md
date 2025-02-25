@@ -14,6 +14,7 @@
 - Breaking change: Remove `StubAssetReader`. Use `TestReaderWriter` instead.
 - Support checks on reader state after a build action in `resolveSources`.
 - Start using `package:build/src/internal.dart`.
+- Refactor `BuildCacheReader` to `BuildCacheAssetPathProvider`.
 
 ## 2.2.3
 

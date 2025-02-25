@@ -31,15 +31,23 @@ class FileBasedAssetReader extends AssetReader implements AssetReaderState {
 
   FileBasedAssetReader(
     this.packageGraph, {
+    AssetPathProvider? assetPathProvider,
     Filesystem? filesystem,
     FilesystemCache? cache,
   }) : filesystem = filesystem ?? IoFilesystem(),
        cache = cache ?? const PassthroughFilesystemCache(),
-       assetPathProvider = packageGraph;
+       assetPathProvider = assetPathProvider ?? packageGraph;
 
   @override
-  FileBasedAssetReader copyWith({FilesystemCache? cache}) =>
-      FileBasedAssetReader(packageGraph, filesystem: filesystem, cache: cache);
+  FileBasedAssetReader copyWith({
+    AssetPathProvider? assetPathProvider,
+    FilesystemCache? cache,
+  }) => FileBasedAssetReader(
+    packageGraph,
+    assetPathProvider: assetPathProvider ?? this.assetPathProvider,
+    filesystem: filesystem,
+    cache: cache ?? this.cache,
+  );
 
   @override
   InputTracker? get inputTracker => null;
@@ -62,8 +70,7 @@ class FileBasedAssetReader extends AssetReader implements AssetReaderState {
       ifAbsent: () async {
         final path = assetPathProvider.pathFor(id);
         if (!await filesystem.exists(path)) {
-          // TODO(davidmorgan): report the path as well?
-          throw AssetNotFoundException(id);
+          throw AssetNotFoundException(id, path: path);
         }
         return filesystem.readAsBytes(path);
       },
@@ -78,7 +85,7 @@ class FileBasedAssetReader extends AssetReader implements AssetReaderState {
       ifAbsent: () async {
         final path = assetPathProvider.pathFor(id);
         if (!await filesystem.exists(path)) {
-          throw AssetNotFoundException(id);
+          throw AssetNotFoundException(id, path: path);
         }
         return filesystem.readAsBytes(path);
       },
@@ -153,5 +160,7 @@ class FileBasedAssetWriter implements RunnerAssetWriter {
   }
 
   @override
-  Future<void> completeBuild() async {}
+  Future<void> completeBuild() async {
+    // TODO(davidmorgan): add back write caching, "batching".
+  }
 }

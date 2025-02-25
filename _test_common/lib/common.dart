@@ -20,13 +20,11 @@ export 'sdk.dart';
 export 'test_phases.dart';
 
 Digest computeDigest(AssetId id, String contents) {
-  // Special handling for `$$` assets, these are generated under the .dart_tool
-  // dir and unfortunately that leaks into the digest computations.
-  if (id.package.startsWith(r'$$')) {
-    var package = id.package.substring(2);
-    id = AssetId(package, '.dart_tool/build/generated/$package/${id.path}');
-  }
-  return md5.convert([...utf8.encode(contents), ...id.toString().codeUnits]);
+  // Tests use `$$` at the start of an ID to signal "generated", remove it.
+  var idString = id.toString();
+  if (idString.startsWith(r'$$')) idString = idString.substring(2);
+
+  return md5.convert([...utf8.encode(contents), ...idString.codeUnits]);
 }
 
 class PlaceholderBuilder extends Builder {
