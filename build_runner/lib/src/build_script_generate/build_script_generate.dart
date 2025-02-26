@@ -103,7 +103,7 @@ Future<BuildScriptInfo> findBuildScriptOptions({
     equals: (a, b) => a.name == b.name,
     hashCode: (n) => n.name.hashCode,
   ).expand((c) => c);
-  var reader = FileBasedAssetReader(packageGraph);
+  var reader = ReaderWriter(packageGraph);
   var overrides =
       buildConfigOverrides ??= await findBuildConfigOverrides(
         packageGraph,
