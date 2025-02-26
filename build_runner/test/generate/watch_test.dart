@@ -14,6 +14,7 @@ import 'package:build_runner/src/generate/watch_impl.dart' as watch_impl;
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
+import 'package:build_test/src/in_memory_reader_writer.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
@@ -29,12 +30,10 @@ void main() {
   final packageGraph = buildPackageGraph({
     rootPackage('a', path: path.absolute('a')): [],
   });
-  late InMemoryRunnerAssetReaderWriter readerWriter;
+  late TestReaderWriter readerWriter;
 
   setUp(() async {
-    readerWriter = InMemoryRunnerAssetReaderWriter(
-      rootPackage: packageGraph.root.name,
-    );
+    readerWriter = TestReaderWriter(rootPackage: packageGraph.root.name);
     await readerWriter.writeAsString(
       packageConfigId,
       jsonEncode(_packageConfig),
@@ -569,7 +568,8 @@ void main() {
           await readerWriter.delete(packageConfigId);
 
           // Wait for it to try reading the file twice to ensure it will retry.
-          await _readerForState[buildState]!.onCanRead
+          await (_readerForState[buildState] as InMemoryAssetReaderWriter)
+              .onCanRead
               .where((id) => id == packageConfigId)
               .take(2)
               .drain<void>();
@@ -1104,7 +1104,7 @@ StreamController<ProcessSignal>? _terminateWatchController;
 Future<BuildState> startWatch(
   List<BuilderApplication> builders,
   Map<String, String> inputs,
-  InMemoryRunnerAssetReaderWriter readerWriter, {
+  TestReaderWriter readerWriter, {
   required PackageGraph packageGraph,
   Map<String, BuildConfig> overrideBuildConfig = const {},
   void Function(LogRecord)? onLog,
@@ -1157,4 +1157,4 @@ const _packageConfig = {
 
 /// Store the private in memory asset reader for a given [BuildState] object
 /// here so we can get access to it.
-final _readerForState = Expando<InMemoryRunnerAssetReaderWriter>();
+final _readerForState = Expando<TestReaderWriter>();

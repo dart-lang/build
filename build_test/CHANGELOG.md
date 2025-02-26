@@ -15,6 +15,7 @@
   details of the build, it's just what was actually read. Use
   `TestReaderWriter.inputsTracked` for what was recorded as an input.
 - Breaking change: Remove `StubAssetReader`. Use `TestReaderWriter` instead.
+- `TestReaderWriter` writes and deletes are notified to `FakeWatcher`.
 - Support checks on reader state after a build action in `resolveSources`.
 - Start using `package:build/src/internal.dart`.
 - Refactor `BuildCacheReader` to `BuildCacheAssetPathProvider`.

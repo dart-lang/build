@@ -18,7 +18,7 @@ import 'package:test/test.dart';
 void main() {
   late AssetHandler handler;
   late FinalizedReader reader;
-  late InMemoryRunnerAssetReaderWriter delegate;
+  late TestReaderWriter delegate;
   late AssetGraph graph;
 
   setUp(() async {
@@ -29,7 +29,7 @@ void main() {
       buildPackageGraph({rootPackage('a'): []}),
       TestReaderWriter(),
     );
-    delegate = InMemoryRunnerAssetReaderWriter();
+    delegate = TestReaderWriter();
     final packageGraph = buildPackageGraph({rootPackage('a'): []});
     reader = FinalizedReader(
       delegate,

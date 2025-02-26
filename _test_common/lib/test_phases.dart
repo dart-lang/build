@@ -8,10 +8,11 @@ import 'package:build/build.dart';
 import 'package:build_config/build_config.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_test/build_test.dart';
+// ignore: implementation_imports
+import 'package:build_test/src/in_memory_reader_writer.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
-import 'in_memory_reader_writer.dart';
 import 'package_graphs.dart';
 
 Future<void> wait(int milliseconds) =>
@@ -90,9 +91,12 @@ Future<TestBuildersResult> testBuilders(
   packageGraph ??= buildPackageGraph({rootPackage('a'): []});
   final readerWriter =
       resumeFrom == null
-          ? InMemoryRunnerAssetReaderWriter(rootPackage: packageGraph.root.name)
+          ? TestReaderWriter(rootPackage: packageGraph.root.name)
           : resumeFrom.readerWriter;
-  readerWriter.onDelete = onDelete;
+
+  // Cast because this is not part of public `test_builder` API.
+  (readerWriter as InMemoryAssetReaderWriter).onDelete = onDelete;
+
   var pkgConfigId = AssetId(
     packageGraph.root.name,
     '.dart_tool/package_config.json',
@@ -218,7 +222,7 @@ void checkBuild(
 
 class TestBuildersResult {
   final BuildResult buildResult;
-  final InMemoryRunnerAssetReaderWriter readerWriter;
+  final TestReaderWriter readerWriter;
 
   TestBuildersResult({required this.buildResult, required this.readerWriter});
 }

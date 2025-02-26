@@ -13,7 +13,6 @@ export 'package:build_test/build_test.dart';
 export 'assets.dart';
 export 'builders.dart';
 export 'descriptors.dart';
-export 'in_memory_reader_writer.dart';
 export 'matchers.dart';
 export 'package_graphs.dart';
 export 'sdk.dart';

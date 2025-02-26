@@ -4,7 +4,9 @@
 import 'dart:typed_data';
 
 import 'package:build/build.dart';
+import 'package:build_runner_core/build_runner_core.dart';
 
+import 'fake_watcher.dart';
 import 'in_memory_reader_writer.dart';
 
 /// In-memory implementation of [AssetReader] and [AssetWriter].
@@ -12,7 +14,10 @@ import 'in_memory_reader_writer.dart';
 /// [testing] provides a [ReaderWriterTesting] that gives access to the
 /// in-memory filesystem for tests to directly modify files and check on
 /// files.
-abstract interface class TestReaderWriter implements AssetReader, AssetWriter {
+///
+/// Writes and deletes are notified to [FakeWatcher].
+abstract interface class TestReaderWriter
+    implements AssetReader, RunnerAssetWriter {
   factory TestReaderWriter({String? rootPackage}) =>
       InMemoryAssetReaderWriter(rootPackage: rootPackage);
 

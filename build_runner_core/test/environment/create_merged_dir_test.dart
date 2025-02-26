@@ -63,12 +63,12 @@ void main() {
     late Directory tmpDir;
     late Directory anotherTmpDir;
     late TestBuildEnvironment environment;
-    late InMemoryRunnerAssetReaderWriter readerWriter;
+    late TestReaderWriter readerWriter;
     late OptionalOutputTracker optionalOutputTracker;
     late FinalizedAssetsView finalizedAssetsView;
 
     setUp(() async {
-      readerWriter = InMemoryRunnerAssetReaderWriter();
+      readerWriter = TestReaderWriter();
       for (final source in sources.entries) {
         readerWriter.testing.writeString(source.key, source.value);
       }
