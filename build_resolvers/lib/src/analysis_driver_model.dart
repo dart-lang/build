@@ -11,7 +11,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart';
 // ignore: implementation_imports
-import 'package:build/src/internal.dart';
+import 'package:build_runner_core/src/generate/build_step_impl.dart';
 
 import 'analysis_driver_filesystem.dart';
 
@@ -97,7 +97,7 @@ class AnalysisDriverModel {
     await withDriverResource((driver) async {
       return _performResolve(
         driver,
-        buildStep,
+        buildStep as BuildStepImpl,
         entryPoints,
         withDriverResource,
         transitive: transitive,
@@ -107,7 +107,7 @@ class AnalysisDriverModel {
 
   Future<void> _performResolve(
     AnalysisDriverForPackageBuild driver,
-    BuildStep buildStep,
+    BuildStepImpl buildStep,
     List<AssetId> entryPoints,
     Future<void> Function(
       FutureOr<void> Function(AnalysisDriverForPackageBuild),
@@ -127,7 +127,10 @@ class AnalysisDriverModel {
     }
 
     // Notify [buildStep] of its inputs.
-    buildStep.requireInputTracker.assetsRead.addAll(inputIds);
+    buildStep.inputTracker.addAll(
+      primaryInput: buildStep.inputId,
+      inputs: inputIds,
+    );
 
     // Sync changes onto the "URI resolver", the in-memory filesystem.
     for (final id in idsToSyncOntoFilesystem) {

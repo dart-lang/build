@@ -5,7 +5,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:analyzer/dart/element/element.dart';
-import 'package:meta/meta.dart';
 import 'package:package_config/package_config_types.dart';
 
 import '../analyzer/resolver.dart';
@@ -19,7 +18,6 @@ import '../resource/resource.dart';
 /// This represents a single [inputId], logic around resolving as a library,
 /// and the ability to read and write assets as allowed by the underlying build
 /// system.
-@sealed
 abstract class BuildStep implements AssetReader, AssetWriter {
   /// The primary for this build step.
   AssetId get inputId;

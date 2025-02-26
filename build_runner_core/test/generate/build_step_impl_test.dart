@@ -9,8 +9,8 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build/src/builder/build_step.dart';
-import 'package:build/src/builder/build_step_impl.dart';
 import 'package:build_resolvers/build_resolvers.dart';
+import 'package:build_runner_core/src/generate/build_step_impl.dart';
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';

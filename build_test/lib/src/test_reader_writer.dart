@@ -24,8 +24,16 @@ abstract interface class ReaderWriterTesting {
   /// All the assets that exist on the [TestReaderWriter] in-memory filesystem.
   Iterable<AssetId> get assets;
 
+  /// The assets that have been recorded as inputs of the build.
+  Iterable<AssetId> get inputsTracked;
+
   /// The assets that have been read via the [TestReaderWriter]'s non-test
   /// APIs.
+  ///
+  /// This differs from [inputsTracked] when the reader is not integrated
+  /// with a build, for example when read methods are called directly on
+  /// [TestReaderWriter]. Then, the assets are recorded in [assetsRead]
+  /// but not in [inputsTracked].
   Iterable<AssetId> get assetsRead;
 
   /// Whether [id] exists on the [TestReaderWriter] in-memory filesystem.

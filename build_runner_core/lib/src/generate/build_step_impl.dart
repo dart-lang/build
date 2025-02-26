@@ -8,24 +8,17 @@ import 'dart:convert';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:async/async.dart';
+import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/builder/build_step.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:package_config/package_config_types.dart';
 
-import '../analyzer/resolver.dart';
-import '../asset/exceptions.dart';
-import '../asset/id.dart';
-import '../asset/reader.dart';
-import '../asset/writer.dart';
-import '../resource/resource.dart';
-import '../state/asset_finder.dart';
-import '../state/asset_path_provider.dart';
-import '../state/filesystem.dart';
-import '../state/filesystem_cache.dart';
-import '../state/input_tracker.dart';
-import '../state/reader_state.dart';
-import 'build_step.dart';
-import 'exceptions.dart';
+import 'input_tracker.dart';
+import 'single_step_reader.dart';
 
 /// A single step in the build processes.
 ///
@@ -56,7 +49,7 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
   final _writtenAssets = <AssetId>{};
 
   /// Used internally for reading files.
-  final AssetReader _reader;
+  final SingleStepReader _reader;
 
   /// Used internally for writing files.
   final AssetWriter _writer;
@@ -73,7 +66,7 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
   BuildStepImpl(
     this.inputId,
     Iterable<AssetId> expectedOutputs,
-    this._reader,
+    AssetReader reader,
     this._writer,
     this._resolvers,
     this._resourceManager,
@@ -82,7 +75,8 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
     void Function(Iterable<AssetId>)? reportUnusedAssets,
   }) : allowedOutputs = UnmodifiableSetView(expectedOutputs.toSet()),
        _stageTracker = stageTracker ?? NoOpStageTracker.instance,
-       _reportUnusedAssets = reportUnusedAssets;
+       _reportUnusedAssets = reportUnusedAssets,
+       _reader = SingleStepReader.wrapIfNeeded(reader);
 
   @override
   BuildStepImpl copyWith({
@@ -112,8 +106,7 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
   @override
   AssetPathProvider get assetPathProvider => _reader.assetPathProvider;
 
-  @override
-  InputTracker? get inputTracker => _reader.inputTracker;
+  InputTracker get inputTracker => _reader.inputTracker;
 
   @override
   Future<PackageConfig> get packageConfig async {
