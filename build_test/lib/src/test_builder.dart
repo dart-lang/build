@@ -11,9 +11,9 @@ import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
 import 'assets.dart';
-import 'in_memory_reader_writer.dart';
+// import 'in_memory_reader_writer.dart';
 import 'test_reader_writer.dart';
-import 'written_asset_reader.dart';
+// import 'written_asset_reader.dart';
 
 AssetId _passThrough(AssetId id) => id;
 
@@ -175,23 +175,23 @@ Future<TestBuilderResult> testBuilder(
           ? AnalyzerResolvers.sharedInstance
           : AnalyzerResolvers.custom(packageConfig: packageConfig);
 
-  final startingFiles = readerWriter.testing.assets.toList();
+  // final startingFiles = readerWriter.testing.assets.toList();
   for (var input in inputIds) {
     // Create a reader that can read initial files plus anything written by the
     // builder during the step; outputs by other builders during the step are
     // not readable.
     final spyForStep = AssetWriterSpy(writerSpy);
-    final readerForStep = WrittenAssetReader(
+    /*final readerForStep = WrittenAssetReader(
       // TODO(davidmorgan): this cast should go away with just a bit
       // more refactoring.
       readerWriter as InMemoryAssetReaderWriter,
       spyForStep,
-    )..allowReadingAll(startingFiles);
+    )..allowReadingAll(startingFiles);*/
 
     await runBuilder(
       builder,
       {input},
-      readerForStep,
+      readerWriter,
       spyForStep,
       resolvers,
       logger: logger,

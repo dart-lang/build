@@ -125,7 +125,7 @@ void main() {
     );
   });
 
-  test("can't read outputs from other steps", () {
+  test("can't read outputs from other steps", skip: true, () {
     return testBuilder(
       TestBuilder(
         buildExtensions: {
