@@ -25,8 +25,11 @@ import 'test_reader_writer.dart';
 /// this package.
 class InMemoryAssetReaderWriter extends ReaderWriter
     implements TestReaderWriter {
-  /// Assets read directly from this reader.
+  /// Assets read directly from this reader/writer.
   final Set<AssetId> assetsRead;
+
+  /// Assets written directly to this reader/writer.
+  final Set<AssetId> assetsWritten;
 
   final _onCanReadController = StreamController<AssetId>.broadcast();
 
@@ -37,6 +40,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
     final filesystem = InMemoryFilesystem();
     return InMemoryAssetReaderWriter.using(
       assetsRead: {},
+      assetsWritten: {},
       rootPackage: rootPackage ?? 'unset',
       assetFinder: InMemoryAssetFinder(filesystem, rootPackage),
       assetPathProvider: const InMemoryAssetPathProvider(),
@@ -48,6 +52,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
 
   InMemoryAssetReaderWriter.using({
     required this.assetsRead,
+    required this.assetsWritten,
     required super.rootPackage,
     required super.assetFinder,
     required super.assetPathProvider,
@@ -65,6 +70,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
     void Function(AssetId)? onDelete,
   }) => InMemoryAssetReaderWriter.using(
     assetsRead: assetsRead,
+    assetsWritten: assetsWritten,
     rootPackage: rootPackage,
     assetFinder: assetFinder,
     assetPathProvider: assetPathProvider ?? this.assetPathProvider,
@@ -103,6 +109,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
 
   @override
   Future writeAsBytes(AssetId id, List<int> bytes) async {
+    assetsWritten.add(id);
     var type = testing.exists(id) ? ChangeType.MODIFY : ChangeType.ADD;
     await super.writeAsBytes(id, bytes);
     FakeWatcher.notifyWatchers(
@@ -116,6 +123,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
     String contents, {
     Encoding encoding = utf8,
   }) async {
+    assetsWritten.add(id);
     var type = testing.exists(id) ? ChangeType.MODIFY : ChangeType.ADD;
     await super.writeAsString(id, contents, encoding: encoding);
     FakeWatcher.notifyWatchers(
@@ -182,6 +190,9 @@ class _ReaderWriterTestingImpl implements ReaderWriterTesting {
 
   @override
   Iterable<AssetId> get assetsRead => _readerWriter.assetsRead;
+
+  @override
+  Iterable<AssetId> get assetsWritten => _readerWriter.assetsWritten;
 
   @override
   bool exists(AssetId id) => _readerWriter.filesystem.existsSync(

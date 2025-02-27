@@ -1,5 +1,6 @@
 ## 2.4.3-wip
 
+- `runBuilder` supports passing `fakeStartingAssets` for testing.
 - `AssetNotFoundException` now also reports the missing `path`.
 - Bump the min sdk to 3.7.0.
 - Use `build_test` 3.0.0.

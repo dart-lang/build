@@ -11,9 +11,7 @@ import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
 import 'assets.dart';
-import 'in_memory_reader_writer.dart';
 import 'test_reader_writer.dart';
-import 'written_asset_reader.dart';
 
 AssetId _passThrough(AssetId id) => id;
 
@@ -167,40 +165,29 @@ Future<TestBuilderResult> testBuilder(
   final inputFilter = isInput ?? generateFor?.contains ?? (_) => true;
   inputIds.retainWhere((id) => inputFilter('$id'));
 
-  var writerSpy = AssetWriterSpy(readerWriter);
   var logger = Logger('testBuilder');
   var logSubscription = logger.onRecord.listen(onLog);
   var resolvers =
       packageConfig == null && enabledExperiments.isEmpty
           ? AnalyzerResolvers.sharedInstance
           : AnalyzerResolvers.custom(packageConfig: packageConfig);
+  final startingAssets = readerWriter.testing.assets.toSet();
 
-  final startingFiles = readerWriter.testing.assets.toList();
   for (var input in inputIds) {
-    // Create a reader that can read initial files plus anything written by the
-    // builder during the step; outputs by other builders during the step are
-    // not readable.
-    final spyForStep = AssetWriterSpy(writerSpy);
-    final readerForStep = WrittenAssetReader(
-      // TODO(davidmorgan): this cast should go away with just a bit
-      // more refactoring.
-      readerWriter as InMemoryAssetReaderWriter,
-      spyForStep,
-    )..allowReadingAll(startingFiles);
-
     await runBuilder(
       builder,
       {input},
-      readerForStep,
-      spyForStep,
+      readerWriter,
+      readerWriter,
       resolvers,
       logger: logger,
       reportUnusedAssetsForInput: reportUnusedAssetsForInput,
+      fakeStartingAssets: startingAssets,
     );
   }
 
   await logSubscription.cancel();
-  var actualOutputs = writerSpy.assetsWritten;
+  var actualOutputs = readerWriter.testing.assetsWritten;
   checkOutputs(outputs, actualOutputs, readerWriter);
   return TestBuilderResult(readerWriter: readerWriter);
 }

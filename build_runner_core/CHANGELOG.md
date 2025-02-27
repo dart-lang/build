@@ -14,6 +14,8 @@
 - Refactor `FileBasedAssetReader` and `FileBasedAssetWriter` to `ReaderWriter`.
 - Move `BuildStepImpl` to `build_runner_core`, use `SingleStepReader` directly.
 - Remove `BuildCacheWriter`, functionality is handled by `AssetPathProvider`.
+- Refactor `SingleStepReader` to `SingleStepReaderWriter`, incorporating
+  `AssetWriterSpy` functionality.
 
 ## 8.0.0
 

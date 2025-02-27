@@ -7,11 +7,12 @@ import 'asset_finder.dart';
 import 'asset_path_provider.dart';
 import 'filesystem.dart';
 import 'filesystem_cache.dart';
+import 'reader_writer.dart';
 
 /// Provides access to the state backing an [AssetReader].
 extension AssetReaderStateExtension on AssetReader {
   /// Returns a new instance with optionally updated [cache].
-  AssetReader copyWith({
+  AssetReaderWriter copyWith({
     AssetPathProvider? assetPathProvider,
     FilesystemCache? cache,
   }) {
@@ -55,7 +56,7 @@ extension AssetReaderStateExtension on AssetReader {
 /// The state backing an [AssetReader].
 abstract interface class AssetReaderState {
   /// Returns a new instance with optionally updated [assetPathProvider] and/or [cache].
-  AssetReader copyWith({
+  AssetReaderWriter copyWith({
     AssetPathProvider? assetPathProvider,
     FilesystemCache? cache,
   });

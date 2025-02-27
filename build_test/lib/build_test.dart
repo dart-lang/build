@@ -13,7 +13,5 @@ export 'src/package_reader.dart' show PackageAssetReader;
 export 'src/record_logs.dart';
 export 'src/resolve_source.dart'
     show resolveAsset, resolveSource, resolveSources, useAssetReader;
-export 'src/stub_writer.dart';
 export 'src/test_builder.dart';
 export 'src/test_reader_writer.dart';
-export 'src/written_asset_reader.dart';
