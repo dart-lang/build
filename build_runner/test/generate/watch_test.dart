@@ -468,7 +468,7 @@ void main() {
       test('rebuilds on file updates during first build', () async {
         var blocker = Completer<void>();
         var buildAction = applyToRoot(
-          TestBuilder(extraWork: (_, __) => blocker.future),
+          TestBuilder(extraWork: (_, _) => blocker.future),
         );
         var buildState = await startWatch(
           [buildAction],
