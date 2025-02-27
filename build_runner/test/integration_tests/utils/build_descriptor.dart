@@ -271,7 +271,7 @@ d.FileDescriptor _pubspec(
       StringBuffer()
         ..writeln('name: $name')
         ..writeln('environment:')
-        ..writeln('  sdk: ^3.6.0');
+        ..writeln('  sdk: ^3.7.0');
 
   void writeDeps(String group) {
     buffer.writeln(group);
