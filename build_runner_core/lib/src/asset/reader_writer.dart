@@ -13,6 +13,7 @@ import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as path;
 
 import '../package_graph/package_graph.dart';
+import '../util/constants.dart';
 import 'writer.dart';
 
 /// Pluggable [AssetReader] and [AssetWriter].
@@ -32,6 +33,8 @@ class ReaderWriter extends AssetReader
   @override
   final FilesystemCache cache;
 
+  final void Function(AssetId)? onDelete;
+
   /// A [ReaderWriter] suitable for real builds.
   ///
   /// [packageGraph] is used for mapping paths and finding assets. The
@@ -44,6 +47,7 @@ class ReaderWriter extends AssetReader
     assetPathProvider: packageGraph,
     filesystem: IoFilesystem(),
     cache: const PassthroughFilesystemCache(),
+    onDelete: null,
   );
 
   ReaderWriter.using({
@@ -52,18 +56,21 @@ class ReaderWriter extends AssetReader
     required this.assetPathProvider,
     required this.filesystem,
     required this.cache,
+    required this.onDelete,
   });
 
   @override
   ReaderWriter copyWith({
     AssetPathProvider? assetPathProvider,
     FilesystemCache? cache,
+    void Function(AssetId)? onDelete,
   }) => ReaderWriter.using(
     rootPackage: rootPackage,
     assetFinder: assetFinder,
     assetPathProvider: assetPathProvider ?? this.assetPathProvider,
     filesystem: filesystem,
     cache: cache ?? this.cache,
+    onDelete: onDelete ?? this.onDelete,
   );
 
   @override
@@ -130,13 +137,21 @@ class ReaderWriter extends AssetReader
 
   @override
   Future delete(AssetId id) async {
-    if (id.package != rootPackage) {
+    onDelete?.call(id);
+    final path = assetPathProvider.pathFor(id);
+    // Hidden generated files are moved by `assetPathProvider` under the root
+    // package folder, and it's allowed to delete them. So for assets in a
+    // different package, check if the path has mapped onto the generated output
+    // path, and if so allow the deleted.
+    var generatedOutputPath = assetPathProvider.pathFor(
+      AssetId(rootPackage, generatedOutputDirectory),
+    );
+    if (id.package != rootPackage && !path.startsWith(generatedOutputPath)) {
       throw InvalidOutputException(
         id,
         'Should not delete assets outside of $rootPackage',
       );
     }
-    final path = assetPathProvider.pathFor(id);
     await filesystem.delete(path);
   }
 

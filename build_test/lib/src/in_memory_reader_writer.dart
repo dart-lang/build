@@ -28,12 +28,6 @@ class InMemoryAssetReaderWriter extends ReaderWriter
   /// Assets read directly from this reader.
   final Set<AssetId> assetsRead;
 
-  /// Called on delete.
-  ///
-  /// This is used by internal `build_runner` tests and not exposed via the
-  /// public `build_test` APIs.
-  void Function(AssetId id)? onDelete;
-
   final _onCanReadController = StreamController<AssetId>.broadcast();
 
   /// Create a new asset reader/writer.
@@ -48,6 +42,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
       assetPathProvider: const InMemoryAssetPathProvider(),
       filesystem: filesystem,
       cache: const PassthroughFilesystemCache(),
+      onDelete: null,
     );
   }
 
@@ -58,6 +53,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
     required super.assetPathProvider,
     required super.filesystem,
     required super.cache,
+    required super.onDelete,
   }) : super.using() {
     InputTracker.captureInputTrackersForTesting = true;
   }
@@ -66,6 +62,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
   InMemoryAssetReaderWriter copyWith({
     AssetPathProvider? assetPathProvider,
     FilesystemCache? cache,
+    void Function(AssetId)? onDelete,
   }) => InMemoryAssetReaderWriter.using(
     assetsRead: assetsRead,
     rootPackage: rootPackage,
@@ -73,6 +70,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
     assetPathProvider: assetPathProvider ?? this.assetPathProvider,
     filesystem: filesystem,
     cache: cache ?? this.cache,
+    onDelete: onDelete ?? this.onDelete,
   );
 
   @override
