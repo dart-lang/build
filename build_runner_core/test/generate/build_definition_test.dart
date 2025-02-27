@@ -251,7 +251,7 @@ targets:
       test('retains non-output generated nodes', () async {
         await createFile(p.join('lib', 'test.txt'), 'a');
         var buildPhases = [
-          InBuildPhase(TestBuilder(build: (_, __) {}), 'a', hideOutput: true),
+          InBuildPhase(TestBuilder(build: (_, _) {}), 'a', hideOutput: true),
         ];
 
         var originalAssetGraph = await AssetGraph.build(

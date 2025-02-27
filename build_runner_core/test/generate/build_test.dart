@@ -172,7 +172,7 @@ void main() {
             [
               (_) {
                 return TestBuilder(
-                  build: (_, __) async {
+                  build: (_, _) async {
                     concurrentCount += 1;
                     maxConcurrentCount = math.max(
                       concurrentCount,
@@ -516,7 +516,7 @@ void main() {
           applyToRoot(
             TestBuilder(
               buildExtensions: appendExtension('.exists', from: '.b'),
-              build: (_, __) => ready.future,
+              build: (_, _) => ready.future,
               extraWork: writeCanRead(aTxtId),
             ),
           ),
@@ -608,7 +608,7 @@ void main() {
         var blockingCompleter = Completer<void>();
         var builder = TestBuilder(
           buildExtensions: appendExtension('.copy', from: '.txt'),
-          extraWork: (_, __) => blockingCompleter.future,
+          extraWork: (_, _) => blockingCompleter.future,
         );
         var done = testBuilders(
           [applyToRoot(builder)],
@@ -1028,7 +1028,7 @@ void main() {
           applyToRoot(
             TestBuilder(
               buildExtensions: appendExtension('.unexpected'),
-              build: (_, __) {},
+              build: (_, _) {},
             ),
           ),
           applyToRoot(
@@ -1396,7 +1396,7 @@ void main() {
             [
               (_) {
                 return TestBuilder(
-                  build: (step, __) async {
+                  build: (step, _) async {
                     final output = step.inputId.addExtension('.out');
                     await step.writeAsString(output, 'a');
                     await step.readAsString(output);
@@ -2139,7 +2139,7 @@ void main() {
             buildExtensions: {
               '': ['copy'],
             },
-            build: (step, __) async {
+            build: (step, _) async {
               await step.writeAsString(step.allowedOutputs.single, 'out');
             },
           ),

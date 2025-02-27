@@ -90,7 +90,7 @@ void main() {
     await testBuilders(
       [
         applyToRoot(
-          TestBuilder(build: (_, __) => throw Exception('Some build failure')),
+          TestBuilder(build: (_, _) => throw Exception('Some build failure')),
         ),
       ],
       {'a|lib/a.txt': ''},
@@ -107,7 +107,7 @@ void main() {
           applyToRoot(
             TestBuilder(
               buildExtensions: replaceExtension('.txt', '.failed'),
-              build: (buildStep, __) async {
+              build: (buildStep, _) async {
                 await buildStep.writeAsString(
                   buildStep.inputId.changeExtension('.failed'),
                   'failed',
@@ -119,7 +119,7 @@ void main() {
           applyToRoot(
             TestBuilder(
               buildExtensions: replaceExtension('.txt', '.success'),
-              build: expectAsync2((buildStep, __) async {
+              build: expectAsync2((buildStep, _) async {
                 // Attempts to read the file that came from a failing build step
                 // and hides the exception.
                 var failedFile = buildStep.inputId.changeExtension('.failed');

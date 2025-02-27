@@ -75,7 +75,7 @@ void main() {
       var nextBuildBlocker = buildBlocker1.future;
 
       var handler = await createHandler(
-        [applyToRoot(TestBuilder(extraWork: (_, __) => nextBuildBlocker))],
+        [applyToRoot(TestBuilder(extraWork: (_, _) => nextBuildBlocker))],
         {'a|web/a.txt': 'a'},
         packageGraph,
         readerWriter,
