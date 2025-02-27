@@ -14,7 +14,16 @@ import 'package:glob/glob.dart';
 
 import '../asset_graph/graph.dart';
 import '../asset_graph/node.dart';
+import '../package_graph/package_graph.dart';
+import '../package_graph/target_graph.dart';
 import 'input_tracker.dart';
+import 'phase.dart';
+
+/// Builds an asset.
+typedef AssetBuilder = Future<void> Function(AssetNode);
+
+/// Builds a "glob node": all assets matching a glob.
+typedef GlobNodeBuilder = Future<void> Function(GlobAssetNode);
 
 /// Describes if and how a [SingleStepReader] should read an [AssetId].
 class Readability {
@@ -42,17 +51,6 @@ class Readability {
   );
 }
 
-typedef IsReadable =
-    FutureOr<Readability> Function(
-      AssetNode node,
-      int phaseNum,
-      AssetWriterSpy? writtenAssets,
-    );
-
-/// Signature of a function throwing an [InvalidInputException] if the given
-/// asset [id] is an invalid input in a build.
-typedef CheckInvalidInput = void Function(AssetId id);
-
 /// An [AssetReader] with a lifetime equivalent to that of a single step in a
 /// build.
 ///
@@ -68,27 +66,30 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
   @override
   late final AssetFinder assetFinder = FunctionAssetFinder(_findAssets);
 
+  final PackageGraph? _packageGraph;
+  final TargetGraph? _targetGraph;
+  final BuildPhase? _buildPhase;
+  final AssetBuilder? _nodeBuilder;
+  final GlobNodeBuilder? _globNodeBuilder;
   final AssetGraph? _assetGraph;
   final AssetReader _delegate;
   final int _phaseNumber;
   final String? _primaryPackage;
   final AssetWriterSpy? _writtenAssets;
-  final IsReadable _isReadableNode;
-  final CheckInvalidInput _checkInvalidInput;
-  final Future<GlobAssetNode> Function(Glob glob, String package, int phaseNum)?
-  _getGlobNode;
 
   final InputTracker inputTracker;
 
   SingleStepReader(
+    this._packageGraph,
+    this._targetGraph,
+    this._buildPhase,
+    this._nodeBuilder,
+    this._globNodeBuilder,
     this._delegate,
     this._assetGraph,
     this._phaseNumber,
     this._primaryPackage,
-    this._isReadableNode,
-    this._checkInvalidInput,
     this.inputTracker, [
-    this._getGlobNode,
     this._writtenAssets,
   ]);
 
@@ -97,14 +98,16 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
     AssetPathProvider? assetPathProvider,
     FilesystemCache? cache,
   }) => SingleStepReader(
+    _packageGraph,
+    _targetGraph,
+    _buildPhase,
+    _nodeBuilder,
+    _globNodeBuilder,
     _delegate.copyWith(assetPathProvider: assetPathProvider, cache: cache),
     _assetGraph,
     _phaseNumber,
     _primaryPackage,
-    _isReadableNode,
-    _checkInvalidInput,
     inputTracker,
-    _getGlobNode,
     _writtenAssets,
   );
 
@@ -113,15 +116,21 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
   /// When wrapping, `SingleStepReader` skips most functionality. For example,
   /// it has no [AssetGraph], so readability checks against the graph are not
   /// done. It still provides tracking of reads in [inputTracker].
+  ///
+  /// TODO(davidmorgan): this is just here to support testing, can it be
+  /// removed by unifying test and non-test codepaths?
   static SingleStepReader wrapIfNeeded(AssetReader reader) {
     if (reader is SingleStepReader) return reader;
     return SingleStepReader(
+      null,
+      null,
+      null,
+      null,
+      null,
       reader,
       null,
       -1,
       null,
-      (_, _, _) => Readability.readable,
-      (_) {},
       InputTracker(reader.filesystem),
       null,
     );
@@ -168,11 +177,7 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
       return false;
     }
 
-    final readability = await _isReadableNode(
-      node,
-      _phaseNumber,
-      _writtenAssets,
-    );
+    final readability = await _isReadableNode(node);
 
     // If it's in the same phase it's never an input: it is either an output of
     // the current generator, which means it's readable but not an input, or
@@ -242,12 +247,10 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
     if (_assetGraph == null) {
       return _delegate.assetFinder.find(glob, package: package);
     }
-    if (_getGlobNode == null) {
-      throw StateError('this reader does not support `findAssets`');
-    }
+
     var streamCompleter = StreamCompleter<AssetId>();
 
-    _getGlobNode(glob, _primaryPackage!, _phaseNumber).then((globNode) {
+    _buildGlobNode(glob).then((globNode) {
       inputTracker.add(globNode.id);
       streamCompleter.setSourceStream(Stream.fromIterable(globNode.results!));
     });
@@ -263,5 +266,69 @@ class SingleStepReader extends AssetReader implements AssetReaderState {
     var node = _assetGraph.get(id)!;
     if (node.lastKnownDigest != null) return node.lastKnownDigest!;
     return _delegate.digest(id).then((digest) => node.lastKnownDigest = digest);
+  }
+
+  /// Checks whether [node] can be read by this step.
+  ///
+  /// If it's a generated node from an earlier phase, wait for it to be built.
+  Future<Readability> _isReadableNode(AssetNode node) async {
+    if (node is GeneratedAssetNode) {
+      if (node.phaseNumber > _phaseNumber) {
+        return Readability.notReadable;
+      } else if (node.phaseNumber == _phaseNumber) {
+        // allow a build step to read its outputs (contained in writtenAssets)
+        final isInBuild =
+            _buildPhase is InBuildPhase &&
+            (_writtenAssets?.assetsWritten.contains(node.id) ?? true);
+
+        return isInBuild ? Readability.ownOutput : Readability.notReadable;
+      }
+
+      await _nodeBuilder!.call(node);
+      return Readability.fromPreviousPhase(node.wasOutput && !node.isFailure);
+    }
+    return Readability.fromPreviousPhase(node.isReadable && node.isValidInput);
+  }
+
+  void _checkInvalidInput(AssetId id) {
+    if (_packageGraph == null) return;
+
+    final packageNode = _packageGraph[id.package];
+    if (packageNode == null) {
+      throw PackageNotFoundException(id.package);
+    }
+
+    if (_targetGraph == null) return;
+
+    // The id is an invalid input if it's not part of the build.
+    if (!_targetGraph.isVisibleInBuild(id, packageNode)) {
+      final allowed = _targetGraph.validInputsFor(packageNode);
+
+      throw InvalidInputException(id, allowedGlobs: allowed);
+    }
+  }
+
+  /// Builds a [GlobAssetNode] for [glob].
+  ///
+  /// Retrieves an existing node from [_assetGraph] it's available; if not, adds
+  /// one. Then, waits for [_globNodeBuilder] to build it.
+  Future<GlobAssetNode> _buildGlobNode(Glob glob) async {
+    var globNodeId = GlobAssetNode.createId(
+      _primaryPackage!,
+      glob,
+      _phaseNumber,
+    );
+    var globNode = _assetGraph!.get(globNodeId) as GlobAssetNode?;
+    if (globNode == null) {
+      globNode = GlobAssetNode(
+        globNodeId,
+        glob,
+        _phaseNumber,
+        NodeState.definitelyNeedsUpdate,
+      );
+      _assetGraph.add(globNode);
+    }
+    await _globNodeBuilder!.call(globNode);
+    return globNode;
   }
 }
