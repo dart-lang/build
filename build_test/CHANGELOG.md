@@ -18,6 +18,8 @@
 - `TestReaderWriter` writes and deletes are notified to `FakeWatcher`.
 - Support checks on reader state after a build action in `resolveSources`.
 - Start using `package:build/src/internal.dart`.
+- Add a `shouldSkip` parameter to `TestBuilder`, which allows it to skip certain
+  inputs based on their file content.
 - Refactor `BuildCacheReader` to `BuildCacheAssetPathProvider`.
 - Refactor `FileBasedAssetReader` and `FileBasedAssetWriter` to `ReaderWriter`.
 
