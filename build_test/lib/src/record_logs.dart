@@ -79,7 +79,7 @@ class _LogRecordMatcher extends Matcher {
     covariant LogRecord item,
     Description description,
     _,
-    __,
+    _,
   ) {
     if (!_level.matches(item.level, {})) {
       _level.describeMismatch(item.level, description, {}, false);

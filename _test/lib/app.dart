@@ -6,6 +6,7 @@ import 'package:web/web.dart';
 
 void startApp({String? text}) {
   text ??= 'Hello World!';
+  // ignore: deprecated_member_use
   var component = HTMLDivElement()..text = text;
   document.body!.append(component);
 }

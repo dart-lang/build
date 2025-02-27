@@ -28,7 +28,7 @@ void main() {
       },
     );
     builder = TestBuilder(
-      extraWork: (buildStep, __) => buildStep.fetchResource(resource),
+      extraWork: (buildStep, _) => buildStep.fetchResource(resource),
     );
     readerWriter = TestReaderWriter();
     addAssets(inputs, readerWriter);
@@ -86,7 +86,7 @@ void main() {
       ]);
 
       builder = TestBuilder(
-        extraWork: (buildStep, __) async {
+        extraWork: (buildStep, _) async {
           final config = await buildStep.packageConfig;
 
           final buildPackage = config.packages.singleWhere(
