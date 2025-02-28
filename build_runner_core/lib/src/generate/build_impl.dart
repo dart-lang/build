@@ -664,7 +664,6 @@ class _SingleBuild {
       ),
       runningBuildStep: RunningBuildStep(
         phaseNumber: phaseNumber,
-
         buildPhase: _buildPhases[phaseNumber],
         primaryPackage: input.package,
       ),
