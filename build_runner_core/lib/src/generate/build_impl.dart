@@ -11,7 +11,6 @@ import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
 import 'package:crypto/crypto.dart';
-import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
@@ -149,26 +148,6 @@ class BuildImpl {
   }
 }
 
-CheckInvalidInput _checkInvalidInputFactory(
-  TargetGraph targetGraph,
-  PackageGraph packageGraph,
-) {
-  return (AssetId id) {
-    final packageNode = packageGraph[id.package];
-
-    if (packageNode == null) {
-      throw PackageNotFoundException(id.package);
-    }
-
-    // The id is an invalid input if it's not part of the build.
-    if (!targetGraph.isVisibleInBuild(id, packageNode)) {
-      final allowed = targetGraph.validInputsFor(packageNode);
-
-      throw InvalidInputException(id, allowedGlobs: allowed);
-    }
-  };
-}
-
 /// Performs a single build and manages state that only lives for a single
 /// build.
 class _SingleBuild {
@@ -181,7 +160,6 @@ class _SingleBuild {
   final _lazyGlobs = <AssetId, Future<void>>{};
   final PackageGraph _packageGraph;
   final TargetGraph _targetGraph;
-  final CheckInvalidInput _checkInvalidInput;
   final BuildPerformanceTracker _performanceTracker;
   final AssetReader _reader;
   final Resolvers _resolvers;
@@ -213,10 +191,6 @@ class _SingleBuild {
       _environment = buildImpl._environment,
       _packageGraph = buildImpl._packageGraph,
       _targetGraph = buildImpl._targetGraph,
-      _checkInvalidInput = _checkInvalidInputFactory(
-        buildImpl._targetGraph,
-        buildImpl._packageGraph,
-      ),
       _performanceTracker =
           buildImpl._trackPerformance
               ? BuildPerformanceTracker()
@@ -501,32 +475,7 @@ class _SingleBuild {
     });
   }
 
-  /// Checks whether [node] can be read by this step - attempting to build the
-  /// asset if necessary.
-  Future<Readability> _isReadableNode(
-    AssetNode node,
-    int phaseNum,
-    AssetWriterSpy? writtenAssets,
-  ) async {
-    if (node is GeneratedAssetNode) {
-      if (node.phaseNumber > phaseNum) {
-        return Readability.notReadable;
-      } else if (node.phaseNumber == phaseNum) {
-        // allow a build step to read its outputs (contained in writtenAssets)
-        final isInBuild =
-            _buildPhases[phaseNum] is InBuildPhase &&
-            (writtenAssets?.assetsWritten.contains(node.id) ?? true);
-
-        return isInBuild ? Readability.ownOutput : Readability.notReadable;
-      }
-
-      await _ensureAssetIsBuilt(node);
-      return Readability.fromPreviousPhase(node.wasOutput && !node.isFailure);
-    }
-    return Readability.fromPreviousPhase(node.isReadable && node.isValidInput);
-  }
-
-  Future<void> _ensureAssetIsBuilt(AssetNode node) async {
+  Future<void> _buildAsset(AssetNode node) async {
     if (node is GeneratedAssetNode && node.state != NodeState.upToDate) {
       await _runLazyPhaseForInput(node.phaseNumber, node.primaryInput);
     }
@@ -562,14 +511,16 @@ class _SingleBuild {
         var wrappedWriter = AssetWriterSpy(_writer);
 
         var wrappedReader = SingleStepReader(
+          _packageGraph,
+          _targetGraph,
+          phase,
+          _buildAsset,
+          _buildGlobNode,
           _reader,
           _assetGraph,
           phaseNumber,
           input.package,
-          _isReadableNode,
-          _checkInvalidInput,
           InputTracker(_reader.filesystem),
-          _getUpdatedGlobNode,
           wrappedWriter,
         );
 
@@ -703,14 +654,16 @@ class _SingleBuild {
     var inputNode = _assetGraph.get(input)!;
     var wrappedWriter = AssetWriterSpy(_writer);
     var wrappedReader = SingleStepReader(
+      _packageGraph,
+      _targetGraph,
+      _buildPhases[phaseNum],
+      _buildAsset,
+      _buildGlobNode,
       _reader,
       _assetGraph,
       phaseNum,
       input.package,
-      _isReadableNode,
-      _checkInvalidInput,
       InputTracker(_reader.filesystem),
-      null,
       wrappedWriter,
     );
 
@@ -887,27 +840,7 @@ class _SingleBuild {
         .map((n) => _delete(n.id)),
   );
 
-  Future<GlobAssetNode> _getUpdatedGlobNode(
-    Glob glob,
-    String package,
-    int phaseNum,
-  ) async {
-    var globNodeId = GlobAssetNode.createId(package, glob, phaseNum);
-    var globNode = _assetGraph.get(globNodeId) as GlobAssetNode?;
-    if (globNode == null) {
-      globNode = GlobAssetNode(
-        globNodeId,
-        glob,
-        phaseNum,
-        NodeState.definitelyNeedsUpdate,
-      );
-      _assetGraph.add(globNode);
-    }
-    await _updateGlobNodeIfNecessary(globNode);
-    return globNode;
-  }
-
-  Future<void> _updateGlobNodeIfNecessary(GlobAssetNode globNode) async {
+  Future<void> _buildGlobNode(GlobAssetNode globNode) async {
     if (globNode.state == NodeState.upToDate) return;
 
     return _lazyGlobs.putIfAbsent(globNode.id, () async {
@@ -924,7 +857,7 @@ class _SingleBuild {
               .toList();
 
       await Future.wait(
-        potentialNodes.whereType<GeneratedAssetNode>().map(_ensureAssetIsBuilt),
+        potentialNodes.whereType<GeneratedAssetNode>().map(_buildAsset),
       );
 
       var actualMatches = <AssetId>[];
@@ -971,7 +904,7 @@ class _SingleBuild {
       ids.map((id) async {
         var node = _assetGraph.get(id)!;
         if (node is GlobAssetNode) {
-          await _updateGlobNodeIfNecessary(node);
+          await _buildGlobNode(node);
         } else if (!await reader.canRead(id)) {
           // We want to add something here, a missing/unreadable input should be
           // different from no input at all.
