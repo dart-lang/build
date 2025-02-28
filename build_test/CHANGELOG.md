@@ -16,6 +16,7 @@
   `TestReaderWriter.inputsTracked` for what was recorded as an input.
 - Breaking change: Remove `StubAssetReader`. Use `TestReaderWriter` instead.
 - `TestReaderWriter` writes and deletes are notified to `FakeWatcher`.
+- `TestReaderWriter` tracks `assetsWritten`.
 - Support checks on reader state after a build action in `resolveSources`.
 - Start using `package:build/src/internal.dart`.
 - Refactor `BuildCacheReader` to `BuildCacheAssetPathProvider`.

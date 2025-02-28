@@ -18,13 +18,13 @@ import 'package:glob/glob.dart';
 import 'package:package_config/package_config_types.dart';
 
 import 'input_tracker.dart';
-import 'single_step_reader.dart';
+import 'single_step_reader_writer.dart';
 
 /// A single step in the build processes.
 ///
 /// This represents a single input and its expected and real outputs. It also
 /// handles tracking of dependencies.
-class BuildStepImpl implements BuildStep, AssetReaderState {
+class BuildStepImpl implements BuildStep, AssetReaderState, AssetReaderWriter {
   final Resolvers? _resolvers;
   final StageTracker _stageTracker;
 
@@ -48,11 +48,7 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
 
   final _writtenAssets = <AssetId>{};
 
-  /// Used internally for reading files.
-  final SingleStepReader _reader;
-
-  /// Used internally for writing files.
-  final AssetWriter _writer;
+  final SingleStepReaderWriter _readerWriter;
 
   final ResourceManager _resourceManager;
 
@@ -66,8 +62,7 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
   BuildStepImpl(
     this.inputId,
     Iterable<AssetId> expectedOutputs,
-    AssetReader reader,
-    this._writer,
+    this._readerWriter,
     this._resolvers,
     this._resourceManager,
     this._resolvePackageConfig, {
@@ -75,8 +70,7 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
     void Function(Iterable<AssetId>)? reportUnusedAssets,
   }) : allowedOutputs = UnmodifiableSetView(expectedOutputs.toSet()),
        _stageTracker = stageTracker ?? NoOpStageTracker.instance,
-       _reportUnusedAssets = reportUnusedAssets,
-       _reader = SingleStepReader.wrapIfNeeded(reader);
+       _reportUnusedAssets = reportUnusedAssets;
 
   @override
   BuildStepImpl copyWith({
@@ -85,8 +79,7 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
   }) => BuildStepImpl(
     inputId,
     allowedOutputs,
-    _reader.copyWith(assetPathProvider: assetPathProvider, cache: cache),
-    _writer,
+    _readerWriter.copyWith(assetPathProvider: assetPathProvider, cache: cache),
     _resolvers,
     _resourceManager,
     _resolvePackageConfig,
@@ -95,18 +88,18 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
   );
 
   @override
-  Filesystem get filesystem => _reader.filesystem;
+  Filesystem get filesystem => _readerWriter.filesystem;
 
   @override
-  FilesystemCache get cache => _reader.cache;
+  FilesystemCache get cache => _readerWriter.cache;
 
   @override
-  AssetFinder get assetFinder => _reader.assetFinder;
+  AssetFinder get assetFinder => _readerWriter.assetFinder;
 
   @override
-  AssetPathProvider get assetPathProvider => _reader.assetPathProvider;
+  AssetPathProvider get assetPathProvider => _readerWriter.assetPathProvider;
 
-  InputTracker get inputTracker => _reader.inputTracker;
+  InputTracker get inputTracker => _readerWriter.inputTracker;
 
   @override
   Future<PackageConfig> get packageConfig async {
@@ -132,7 +125,7 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
   @override
   Future<bool> canRead(AssetId id) {
     if (_isComplete) throw BuildStepCompletedException();
-    return _reader.canRead(id);
+    return _readerWriter.canRead(id);
   }
 
   @override
@@ -144,19 +137,19 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
   @override
   Future<List<int>> readAsBytes(AssetId id) {
     if (_isComplete) throw BuildStepCompletedException();
-    return _reader.readAsBytes(id);
+    return _readerWriter.readAsBytes(id);
   }
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) {
     if (_isComplete) throw BuildStepCompletedException();
-    return _reader.readAsString(id, encoding: encoding);
+    return _readerWriter.readAsString(id, encoding: encoding);
   }
 
   @override
   Stream<AssetId> findAssets(Glob glob) {
     if (_isComplete) throw BuildStepCompletedException();
-    return _reader.assetFinder.find(glob, package: inputId.package);
+    return _readerWriter.assetFinder.find(glob, package: inputId.package);
   }
 
   @override
@@ -165,7 +158,7 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
     _checkOutput(id);
     var done = _futureOrWrite(
       bytes,
-      (List<int> b) => _writer.writeAsBytes(id, b),
+      (List<int> b) => _readerWriter.writeAsBytes(id, b),
     );
     _writeResults.add(Result.capture(done));
     return done;
@@ -181,7 +174,7 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
     _checkOutput(id);
     var done = _futureOrWrite(
       content,
-      (String c) => _writer.writeAsString(id, c, encoding: encoding),
+      (String c) => _readerWriter.writeAsString(id, c, encoding: encoding),
     );
     _writeResults.add(Result.capture(done));
     return done;
@@ -190,7 +183,7 @@ class BuildStepImpl implements BuildStep, AssetReaderState {
   @override
   Future<Digest> digest(AssetId id) {
     if (_isComplete) throw BuildStepCompletedException();
-    return _reader.digest(id);
+    return _readerWriter.digest(id);
   }
 
   @override

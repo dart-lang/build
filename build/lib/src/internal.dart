@@ -11,3 +11,4 @@ export 'state/asset_path_provider.dart';
 export 'state/filesystem.dart';
 export 'state/filesystem_cache.dart';
 export 'state/reader_state.dart';
+export 'state/reader_writer.dart';

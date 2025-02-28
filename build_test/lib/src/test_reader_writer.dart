@@ -41,6 +41,10 @@ abstract interface class ReaderWriterTesting {
   /// but not in [inputsTracked].
   Iterable<AssetId> get assetsRead;
 
+  /// The assets that have been written via the [TestReaderWriter]'s non-test
+  /// APIs.
+  Iterable<AssetId> get assetsWritten;
+
   /// Whether [id] exists on the [TestReaderWriter] in-memory filesystem.
   bool exists(AssetId id);
 

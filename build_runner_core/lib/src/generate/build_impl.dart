@@ -42,7 +42,7 @@ import 'input_tracker.dart';
 import 'options.dart';
 import 'performance_tracker.dart';
 import 'phase.dart';
-import 'single_step_reader.dart';
+import 'single_step_reader_writer.dart';
 
 final _logger = Logger('Build');
 
@@ -62,7 +62,7 @@ class BuildImpl {
   final List<BuildPhase> _buildPhases;
   final PackageGraph _packageGraph;
   final TargetGraph _targetGraph;
-  final AssetReader _reader;
+  final AssetReaderWriter _reader;
   final Resolvers _resolvers;
   final ResourceManager _resourceManager;
   final RunnerAssetWriter _writer;
@@ -161,7 +161,7 @@ class _SingleBuild {
   final PackageGraph _packageGraph;
   final TargetGraph _targetGraph;
   final BuildPerformanceTracker _performanceTracker;
-  final AssetReader _reader;
+  final AssetReaderWriter _readerWriter;
   final Resolvers _resolvers;
   final ResourceManager _resourceManager;
   final RunnerAssetWriter _writer;
@@ -195,7 +195,7 @@ class _SingleBuild {
           buildImpl._trackPerformance
               ? BuildPerformanceTracker()
               : BuildPerformanceTracker.noOp(),
-      _reader = buildImpl._reader,
+      _readerWriter = buildImpl._reader,
       _resolvers = buildImpl._resolvers,
       _resourceManager = buildImpl._resourceManager,
       _writer = buildImpl._writer,
@@ -247,7 +247,7 @@ class _SingleBuild {
     result = await _environment.finalizeBuild(
       result,
       FinalizedAssetsView(_assetGraph, _packageGraph, optionalOutputTracker),
-      _reader,
+      _readerWriter,
       _buildDirs,
     );
     if (result.status == BuildStatus.success) {
@@ -269,9 +269,9 @@ class _SingleBuild {
         updates,
         _packageGraph.root.name,
         _delete,
-        _reader,
+        _readerWriter,
       );
-      await _reader.cache.invalidate(invalidated);
+      await _readerWriter.cache.invalidate(invalidated);
     });
   }
 
@@ -508,25 +508,28 @@ class _SingleBuild {
                   .join(', '),
         );
 
-        var wrappedWriter = AssetWriterSpy(_writer);
+        var readerWriter = SingleStepReaderWriter(
+          runningBuild: RunningBuild(
+            packageGraph: _packageGraph,
+            targetGraph: _targetGraph,
+            assetGraph: _assetGraph,
+            nodeBuilder: _buildAsset,
+            globNodeBuilder: _buildGlobNode,
+          ),
+          runningBuildStep: RunningBuildStep(
+            phaseNumber: phaseNumber,
 
-        var wrappedReader = SingleStepReader(
-          _packageGraph,
-          _targetGraph,
-          phase,
-          _buildAsset,
-          _buildGlobNode,
-          _reader,
-          _assetGraph,
-          phaseNumber,
-          input.package,
-          InputTracker(_reader.filesystem),
-          wrappedWriter,
+            buildPhase: phase,
+            primaryPackage: input.package,
+          ),
+          readerWriter: _readerWriter,
+          inputTracker: InputTracker(_readerWriter.filesystem),
+          assetsWritten: {},
         );
 
         if (!await tracker.trackStage(
           'Setup',
-          () => _buildShouldRun(builderOutputs, wrappedReader),
+          () => _buildShouldRun(builderOutputs, readerWriter),
         )) {
           return <AssetId>[];
         }
@@ -535,7 +538,7 @@ class _SingleBuild {
         await FailureReporter.clean(phaseNumber, input);
 
         // Clear input tracking accumulated during `_buildShouldRun`.
-        wrappedReader.inputTracker.clear();
+        readerWriter.inputTracker.clear();
 
         var actionDescription = _actionLoggerName(
           phase,
@@ -555,8 +558,8 @@ class _SingleBuild {
           () => runBuilder(
             builder,
             [input],
-            wrappedReader,
-            wrappedWriter,
+            readerWriter,
+            readerWriter,
             PerformanceTrackingResolvers(_resolvers, tracker),
             logger: logger,
             resourceManager: _resourceManager,
@@ -579,16 +582,15 @@ class _SingleBuild {
           () => _setOutputsState(
             input,
             builderOutputs,
-            wrappedReader,
-            wrappedReader.inputTracker,
-            wrappedWriter,
+            readerWriter,
+            readerWriter.inputTracker,
             actionDescription,
             logger.errorsSeen,
             unusedAssets: unusedAssets,
           ),
         );
 
-        return wrappedWriter.assetsWritten;
+        return readerWriter.assetsWritten;
       });
     });
   }
@@ -645,36 +647,39 @@ class _SingleBuild {
   }
 
   Future<Iterable<AssetId>> _runPostProcessBuilderForAnchor(
-    int phaseNum,
+    int phaseNumber,
     int actionNum,
     PostProcessBuilder builder,
     PostProcessAnchorNode anchorNode,
   ) async {
     var input = anchorNode.primaryInput;
     var inputNode = _assetGraph.get(input)!;
-    var wrappedWriter = AssetWriterSpy(_writer);
-    var wrappedReader = SingleStepReader(
-      _packageGraph,
-      _targetGraph,
-      _buildPhases[phaseNum],
-      _buildAsset,
-      _buildGlobNode,
-      _reader,
-      _assetGraph,
-      phaseNum,
-      input.package,
-      InputTracker(_reader.filesystem),
-      wrappedWriter,
+    var readerWriter = SingleStepReaderWriter(
+      runningBuild: RunningBuild(
+        packageGraph: _packageGraph,
+        targetGraph: _targetGraph,
+        assetGraph: _assetGraph,
+        nodeBuilder: _buildAsset,
+        globNodeBuilder: _buildGlobNode,
+      ),
+      runningBuildStep: RunningBuildStep(
+        phaseNumber: phaseNumber,
+        buildPhase: _buildPhases[phaseNumber],
+        primaryPackage: input.package,
+      ),
+      readerWriter: _readerWriter,
+      inputTracker: InputTracker(_readerWriter.filesystem),
+      assetsWritten: {},
     );
 
-    if (!await _postProcessBuildShouldRun(anchorNode, wrappedReader)) {
+    if (!await _postProcessBuildShouldRun(anchorNode, readerWriter)) {
       return <AssetId>[];
     }
     // Clear input tracking accumulated during `_buildShouldRun`.
-    wrappedReader.inputTracker.clear();
+    readerWriter.inputTracker.clear();
 
     // Clean out the impacts of the previous run
-    await FailureReporter.clean(phaseNum, input);
+    await FailureReporter.clean(phaseNumber, input);
     await _cleanUpStaleOutputs(anchorNode.outputs);
     anchorNode.outputs
       ..toList().forEach(_assetGraph.remove)
@@ -686,14 +691,14 @@ class _SingleBuild {
 
     actionsStartedCount++;
     pendingActions
-        .putIfAbsent(phaseNum, () => <String>{})
+        .putIfAbsent(phaseNumber, () => <String>{})
         .add(actionDescription);
 
     await runPostProcessBuilder(
       builder,
       input,
-      wrappedReader,
-      wrappedWriter,
+      readerWriter,
+      readerWriter,
       logger,
       addAsset: (assetId) {
         if (_assetGraph.contains(assetId)) {
@@ -704,7 +709,7 @@ class _SingleBuild {
           primaryInput: input,
           builderOptionsId: anchorNode.builderOptionsId,
           isHidden: true,
-          phaseNumber: phaseNum,
+          phaseNumber: phaseNumber,
           wasOutput: true,
           isFailure: false,
           state: NodeState.upToDate,
@@ -729,9 +734,9 @@ class _SingleBuild {
     });
     actionsCompletedCount++;
     hungActionsHeartbeat.ping();
-    pendingActions[phaseNum]!.remove(actionDescription);
+    pendingActions[phaseNumber]!.remove(actionDescription);
 
-    var assetsWritten = wrappedWriter.assetsWritten.toSet();
+    var assetsWritten = readerWriter.assetsWritten.toSet();
 
     // Reset the state for all the output nodes based on what was read and
     // written.
@@ -739,9 +744,8 @@ class _SingleBuild {
     await _setOutputsState(
       input,
       assetsWritten,
-      wrappedReader,
-      wrappedReader.inputTracker,
-      wrappedWriter,
+      readerWriter,
+      readerWriter.inputTracker,
       actionDescription,
       logger.errorsSeen,
     );
@@ -937,9 +941,8 @@ class _SingleBuild {
   Future<void> _setOutputsState(
     AssetId input,
     Iterable<AssetId> outputs,
-    AssetReader reader,
+    SingleStepReaderWriter readerWriter,
     InputTracker inputTracker,
-    AssetWriterSpy writer,
     String actionDescription,
     Iterable<ErrorReport> errors, {
     Set<AssetId>? unusedAssets,
@@ -953,14 +956,14 @@ class _SingleBuild {
     final inputsDigest = await _computeCombinedDigest(
       usedInputs,
       (_assetGraph.get(outputs.first) as GeneratedAssetNode).builderOptionsId,
-      reader,
+      readerWriter,
     );
 
     final isFailure = errors.isNotEmpty;
 
     for (var output in outputs) {
-      var wasOutput = writer.assetsWritten.contains(output);
-      var digest = wasOutput ? await _reader.digest(output) : null;
+      var wasOutput = readerWriter.assetsWritten.contains(output);
+      var digest = wasOutput ? await _readerWriter.digest(output) : null;
       var node = _assetGraph.get(output) as GeneratedAssetNode;
 
       // **IMPORTANT**: All updates to `node` must be synchronous. With lazy

@@ -18,7 +18,7 @@ import 'writer.dart';
 
 /// Pluggable [AssetReader] and [AssetWriter].
 class ReaderWriter extends AssetReader
-    implements AssetReaderState, RunnerAssetWriter {
+    implements AssetReaderState, RunnerAssetWriter, AssetReaderWriter {
   /// The package the generator is running for.
   ///
   /// Deletes are only allowed within this package.

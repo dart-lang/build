@@ -11,6 +11,7 @@ import 'package:build/build.dart';
 import 'package:build/src/builder/build_step.dart';
 import 'package:build_resolvers/build_resolvers.dart';
 import 'package:build_runner_core/src/generate/build_step_impl.dart';
+import 'package:build_runner_core/src/generate/single_step_reader_writer.dart';
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
@@ -33,14 +34,12 @@ void main() {
 
     setUp(() {
       var reader = TestReaderWriter();
-      var writer = const StubAssetWriter();
       primary = makeAssetId();
       outputs = List.generate(5, (index) => makeAssetId());
       buildStep = BuildStepImpl(
         primary,
         outputs,
-        reader,
-        writer,
+        SingleStepReaderWriter.from(reader: reader, writer: reader),
         AnalyzerResolvers.custom(),
         resourceManager,
         _unsupported,
@@ -102,8 +101,7 @@ void main() {
       var buildStep = BuildStepImpl(
         primary,
         [outputId],
-        readerWriter,
-        readerWriter,
+        SingleStepReaderWriter.from(reader: readerWriter, writer: readerWriter),
         AnalyzerResolvers.custom(),
         resourceManager,
         _unsupported,
@@ -134,8 +132,10 @@ void main() {
         var buildStep = BuildStepImpl(
           primary,
           [],
-          readerWriter,
-          readerWriter,
+          SingleStepReaderWriter.from(
+            reader: readerWriter,
+            writer: readerWriter,
+          ),
           AnalyzerResolvers.custom(),
           resourceManager,
           _unsupported,
@@ -175,8 +175,10 @@ void main() {
       buildStep = BuildStepImpl(
         primary,
         [outputId],
-        TestReaderWriter(),
-        assetWriter,
+        SingleStepReaderWriter.from(
+          reader: TestReaderWriter(),
+          writer: assetWriter,
+        ),
         AnalyzerResolvers.custom(),
         resourceManager,
         _unsupported,
@@ -237,14 +239,12 @@ void main() {
 
     setUp(() {
       var reader = TestReaderWriter();
-      var writer = const StubAssetWriter();
       primary = makeAssetId();
       output = makeAssetId();
       buildStep = BuildStepImpl(
         primary,
         [output],
-        reader,
-        writer,
+        SingleStepReaderWriter.from(reader: reader, writer: reader),
         AnalyzerResolvers.custom(),
         resourceManager,
         _unsupported,
@@ -260,13 +260,11 @@ void main() {
 
   test('reportUnusedAssets forwards calls if provided', () {
     var reader = TestReaderWriter();
-    var writer = const StubAssetWriter();
     var unused = <AssetId>{};
     var buildStep = BuildStepImpl(
       makeAssetId(),
       [],
-      reader,
-      writer,
+      SingleStepReaderWriter.from(reader: reader, writer: reader),
       AnalyzerResolvers.custom(),
       resourceManager,
       _unsupported,
