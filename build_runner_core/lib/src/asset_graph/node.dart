@@ -144,12 +144,6 @@ class GeneratedAssetNode extends AssetNode implements NodeWithInputs {
   @override
   HashSet<AssetId> inputs;
 
-  /// A digest combining all digests of all previous inputs.
-  ///
-  /// Used to determine whether all the inputs to a build step are identical to
-  /// the previous run, indicating that the previous output is still valid.
-  Digest? previousInputsDigest;
-
   /// Whether the action which did or would produce this node failed.
   bool isFailure;
 
@@ -164,7 +158,6 @@ class GeneratedAssetNode extends AssetNode implements NodeWithInputs {
     super.id, {
     super.lastKnownDigest,
     Iterable<AssetId>? inputs,
-    this.previousInputsDigest,
     required this.isHidden,
     required this.state,
     required this.phaseNumber,

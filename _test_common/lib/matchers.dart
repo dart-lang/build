@@ -125,15 +125,6 @@ class _AssetGraphMatcher extends Matcher {
               ];
               matches = false;
             }
-            if (checkPreviousInputsDigest &&
-                node.previousInputsDigest !=
-                    expectedNode.previousInputsDigest) {
-              matchState['previousInputDigest of ${node.id}'] = [
-                node.previousInputsDigest,
-                expectedNode.previousInputsDigest,
-              ];
-              matches = false;
-            }
           }
         } else if (node is GlobAssetNode) {
           if (expectedNode is GlobAssetNode) {

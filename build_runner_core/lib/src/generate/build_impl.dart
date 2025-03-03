@@ -794,22 +794,21 @@ class _SingleBuild {
     // Early bail out condition, this is a forced update.
     if (firstNode.state == NodeState.definitelyNeedsUpdate) return true;
     // This is a fresh build or the first time we've seen this output.
-    if (firstNode.previousInputsDigest == null) return true;
+    // if (firstNode.previousInputsDigest == null) return true;
 
-    var digest = await _computeCombinedDigest(
-      firstNode.inputs,
-      firstNode.builderOptionsId,
-      reader,
-    );
-    if (digest != firstNode.previousInputsDigest) {
-      return true;
-    } else {
-      // Make sure to update the `state` field for all outputs.
-      for (var id in outputs) {
-        (_assetGraph.get(id) as NodeWithInputs).state = NodeState.upToDate;
+    for (final id in firstNode.inputs) {
+      final node = _assetGraph.get(id)!;
+      if (!await reader.canRead(id) ||
+          await reader.digest(id) != node.lastKnownDigest) {
+        return true;
       }
-      return false;
     }
+
+    // Make sure to update the `state` field for all outputs.
+    for (var id in outputs) {
+      (_assetGraph.get(id) as NodeWithInputs).state = NodeState.upToDate;
+    }
+    return false;
   }
 
   /// Checks if a post process build should run based on [anchorNode].
@@ -953,12 +952,6 @@ class _SingleBuild {
             ? inputTracker.inputs.difference(unusedAssets)
             : inputTracker.inputs;
 
-    final inputsDigest = await _computeCombinedDigest(
-      usedInputs,
-      (_assetGraph.get(outputs.first) as GeneratedAssetNode).builderOptionsId,
-      readerWriter,
-    );
-
     final isFailure = errors.isNotEmpty;
 
     for (var output in outputs) {
@@ -975,8 +968,7 @@ class _SingleBuild {
         ..state = NodeState.upToDate
         ..wasOutput = wasOutput
         ..isFailure = isFailure
-        ..lastKnownDigest = digest
-        ..previousInputsDigest = inputsDigest;
+        ..lastKnownDigest = digest;
 
       if (isFailure) {
         await _failureReporter.markReported(actionDescription, node, errors);
@@ -989,8 +981,7 @@ class _SingleBuild {
                 ..state = NodeState.upToDate
                 ..wasOutput = false
                 ..isFailure = true
-                ..lastKnownDigest = null
-                ..previousInputsDigest = null;
+                ..lastKnownDigest = null;
           allSkippedFailures.add(outputNode);
           needsMarkAsFailure.addAll(outputNode.primaryOutputs);
 
