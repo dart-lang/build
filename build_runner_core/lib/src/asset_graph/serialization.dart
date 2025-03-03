@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 24;
+const _version = 25;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -137,10 +137,6 @@ class _AssetGraphDeserializer {
                       offset]
                   as int]!,
           lastKnownDigest: digest,
-          previousInputsDigest: _deserializeDigest(
-            serializedNode[_GeneratedField.previousInputsDigest.index + offset]
-                as String?,
-          ),
           isHidden: _deserializeBool(
             serializedNode[_GeneratedField.isHidden.index + offset] as int,
           ),
@@ -306,7 +302,6 @@ enum _GeneratedField {
   isFailure,
   phaseNumber,
   state,
-  previousInputsDigest,
   builderOptions,
   isHidden,
 }
@@ -442,9 +437,6 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
       _GeneratedField.isFailure => _serializeBool(generatedNode.isFailure),
       _GeneratedField.phaseNumber => generatedNode.phaseNumber,
       _GeneratedField.state => generatedNode.state.index,
-      _GeneratedField.previousInputsDigest => _serializeDigest(
-        generatedNode.previousInputsDigest,
-      ),
       _GeneratedField.builderOptions => serializer.findAssetIndex(
         generatedNode.builderOptionsId,
         from: generatedNode.id,

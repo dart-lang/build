@@ -149,13 +149,6 @@ void main() {
               syntheticNode.id,
               globNode.id,
             ]);
-            if (g.isOdd) {
-              // Fake a digest using the id, we just care that this gets
-              // serialized/deserialized properly.
-              generatedNode.previousInputsDigest = md5.convert(
-                utf8.encode(generatedNode.id.toString()),
-              );
-            }
 
             graph
               ..add(syntheticNode)
