@@ -16,3 +16,5 @@ jobs:
     with:
       write-comments: false
       sdk: dev
+    permissions:
+      pull-requests: write
