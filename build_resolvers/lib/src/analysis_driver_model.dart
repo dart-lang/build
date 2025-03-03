@@ -78,10 +78,6 @@ class AnalysisDriverModel {
   /// Notifies [buildStep] of all inputs that result from analysis. If
   /// [transitive], this includes all transitive dependencies.
   ///
-  /// If while finding transitive deps a `.transitive_deps` file is
-  /// encountered next to a source file then this cuts off the reporting
-  /// of deps to the [buildStep], but does not affect the reporting of
-  /// files to the analysis driver.
   Future<void> performResolve(
     BuildStep buildStep,
     List<AssetId> entryPoints,
@@ -176,9 +172,6 @@ extension _AssetIdExtensions on AssetId {
 }
 
 /// The directive graph of all known sources.
-///
-/// Also tracks whether there is a `.transitive_digest` file next to each source
-/// asset, and tracks missing files.
 class _Graph {
   final Map<AssetId, _Node> nodes = {};
 
@@ -208,18 +201,11 @@ class _Graph {
             previouslyMissingFiles.add(id);
           }
           // Load the node.
-          final hasTransitiveDigestAsset = await reader.canRead(
-            id.addExtension(_transitiveDigestExtension),
-          );
           final content = await reader.readAsString(id);
           final deps = _parseDependencies(content, id);
-          node = _Node(
-            id: id,
-            deps: deps,
-            hasTransitiveDigestAsset: hasTransitiveDigestAsset,
-          );
+          node = _Node(id: id, deps: deps);
         } else {
-          node ??= _Node.missing(id: id, hasTransitiveDigestAsset: false);
+          node ??= _Node.missing(id: id);
         }
         nodes[id] = node;
       }
@@ -247,12 +233,6 @@ class _Graph {
       final nextId = nextIds.removeFirst();
       final node = nodes[nextId]!;
 
-      // Add the transitive digest file as an input. If it exists, skip deps.
-      result.add(nextId.addExtension(_transitiveDigestExtension));
-      if (node.hasTransitiveDigestAsset) {
-        continue;
-      }
-
       // Skip if there are no deps because the file is missing.
       if (node.isMissing) continue;
 
@@ -276,27 +256,13 @@ class _Node {
   final AssetId id;
   final List<AssetId> deps;
   final bool isMissing;
-  final bool hasTransitiveDigestAsset;
 
-  _Node({
-    required this.id,
-    required this.deps,
-    required this.hasTransitiveDigestAsset,
-  }) : isMissing = false;
+  _Node({required this.id, required this.deps}) : isMissing = false;
 
-  _Node.missing({required this.id, required this.hasTransitiveDigestAsset})
-    : isMissing = true,
-      deps = const [];
+  _Node.missing({required this.id}) : isMissing = true, deps = const [];
 
   @override
   String toString() =>
       '$id:'
-      '${hasTransitiveDigestAsset ? 'digest:' : ''}'
       '${isMissing ? 'missing' : deps}';
 }
-
-// Transitive digest files are built next to source inputs. As the name
-// suggests, they contain the transitive digest of all deps of the file.
-// So, establishing a dependency on a transitive digest file is equivalent
-// to establishing a dependency on all deps of the file.
-const _transitiveDigestExtension = '.transitive_digest';

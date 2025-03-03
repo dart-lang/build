@@ -11,7 +11,6 @@ import 'package:analyzer/dart/ast/ast.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/clients/build_resolvers/build_resolvers.dart';
 import 'package:build/build.dart' show AssetId, BuildStep;
-import 'package:collection/collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
@@ -20,8 +19,6 @@ import 'analysis_driver_model.dart';
 import 'crawl_async.dart';
 
 const _ignoredSchemes = ['dart', 'dart-ext'];
-
-const transitiveDigestExtension = '.transitive_digest';
 
 /// Switches [BuildAssetUriResolver.sharedInstance] from [BuildAssetUriResolver]
 /// to [AnalysisDriverModel].
@@ -99,16 +96,7 @@ class BuildAssetUriResolver implements AnalysisDriverModel {
         ),
         (id, state) async {
           if (state == null) return const [];
-          // Establishes a dependency on the transitive deps digest.
-          final hasTransitiveDigestAsset = await buildStep.canRead(
-            id.addExtension(transitiveDigestExtension),
-          );
-          return hasTransitiveDigestAsset
-              // Only crawl assets that we haven't yet loaded into the
-              // analyzer if we are using transitive digests for invalidation.
-              ? state.dependencies.whereNot(_cachedAssetDigests.containsKey)
-              // Otherwise fall back on crawling all source deps.
-              : state.dependencies.where(notCrawled);
+          return state.dependencies.where(notCrawled);
         },
       ).drain<void>();
     } else {

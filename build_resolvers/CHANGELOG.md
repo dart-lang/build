@@ -6,6 +6,7 @@
 - Switch `BuildAssetUriResolver` dependency crawl to an iterative
   algorithm, preventing stack overflows.
 - Move `BuildStepImpl` to `build_runner_core`, use `SingleStepReader` directly.
+- Stop building `transitive_digest` files by default.
 
 ## 2.4.4
 

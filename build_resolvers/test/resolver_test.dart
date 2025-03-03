@@ -39,8 +39,6 @@ void runTests(ResolversFactory resolversFactory) {
   final entryPoint = AssetId('a', 'web/main.dart');
   Resolvers createResolvers({PackageConfig? packageConfig}) =>
       resolversFactory.create(packageConfig: packageConfig);
-  final isSharedResolvers = resolversFactory.isInstanceShared;
-
   test('should handle initial files', () {
     return resolveSources({'a|web/main.dart': ' main() {}'}, (resolver) async {
       var lib = await resolver.libraryFor(entryPoint);
@@ -146,83 +144,13 @@ void runTests(ResolversFactory resolversFactory) {
       assetReaderChecks: (reader) {
         expect(reader.testing.inputsTracked, {
           AssetId('a', 'web/main.dart'),
-          AssetId('a', 'web/main.dart.transitive_digest'),
           AssetId('a', 'web/a.dart'),
-          AssetId('a', 'web/a.dart.transitive_digest'),
           AssetId('a', 'web/b.dart'),
-          AssetId('a', 'web/b.dart.transitive_digest'),
         });
       },
       resolvers: createResolvers(),
     );
   });
-
-  test(
-    'transitive_digest file cuts off deps reported to buildStep',
-    // This test requires a new resolvers instance.
-    skip: isSharedResolvers,
-    () async {
-      // BuildAssetUriResolver cuts off a buildStep's deps tree if it encounters
-      // a `.transitive_digest` file, because that file stands in for the
-      // transitive deps from that point.
-      //
-      // But, the _first_ time it is reading files it continues to read them,
-      // because the analyzer still needs all the files. So the first build
-      // action will see all the files as deps.
-      final resolvers = createResolvers();
-      final sources = {
-        'a|web/main.dart': '''
-              import 'a.dart';
-              main() {
-              } ''',
-        'a|web/a.dart': '''
-              library a;
-              import 'b.dart';
-              ''',
-        'a|web/a.dart.transitive_digest': '''
-              library a;
-              import 'b.dart';
-              ''',
-        'a|web/b.dart': '''
-              library b;
-              ''',
-      };
-      // First action sees all the files as inputs.
-      await resolveSources(
-        sources,
-        (resolver) async {
-          await resolver.libraryFor(entryPoint);
-        },
-        assetReaderChecks: (reader) {
-          expect(reader.testing.inputsTracked, {
-            AssetId('a', 'web/main.dart'),
-            AssetId('a', 'web/main.dart.transitive_digest'),
-            AssetId('a', 'web/a.dart'),
-            AssetId('a', 'web/a.dart.transitive_digest'),
-            AssetId('a', 'web/b.dart'),
-            AssetId('a', 'web/b.dart.transitive_digest'),
-          });
-        },
-        resolvers: resolvers,
-      );
-      // Second action has inputs cut off at the `transitive_digest` file.
-      await resolveSources(
-        sources,
-        (resolver) async {
-          await resolver.libraryFor(entryPoint);
-        },
-        assetReaderChecks: (reader) {
-          expect(reader.testing.inputsTracked, {
-            AssetId('a', 'web/main.dart'),
-            AssetId('a', 'web/main.dart.transitive_digest'),
-            AssetId('a', 'web/a.dart'),
-            AssetId('a', 'web/a.dart.transitive_digest'),
-          });
-        },
-        resolvers: resolvers,
-      );
-    },
-  );
 
   test('updates following a change to source', () async {
     var resolvers = createResolvers();
@@ -1398,14 +1326,10 @@ final _skipOnPreRelease =
 
 abstract class ResolversFactory {
   /// Whether [create] returns a shared instance that persists between tests.
-  bool get isInstanceShared;
   Resolvers create({PackageConfig? packageConfig});
 }
 
 class BuildAssetUriResolversFactory implements ResolversFactory {
-  @override
-  bool get isInstanceShared => false;
-
   @override
   Resolvers create({PackageConfig? packageConfig}) => AnalyzerResolvers.custom(
     packageConfig: packageConfig,
@@ -1418,9 +1342,6 @@ class BuildAssetUriResolversFactory implements ResolversFactory {
 
 class SharedBuildAssetUriResolversFactory implements ResolversFactory {
   @override
-  bool get isInstanceShared => true;
-
-  @override
   Resolvers create({PackageConfig? packageConfig}) => AnalyzerResolvers.custom(
     packageConfig: packageConfig,
     analysisDriverModel: BuildAssetUriResolver.sharedInstance,
@@ -1431,9 +1352,6 @@ class SharedBuildAssetUriResolversFactory implements ResolversFactory {
 }
 
 class AnalysisDriverModelFactory implements ResolversFactory {
-  @override
-  bool get isInstanceShared => false;
-
   @override
   Resolvers create({PackageConfig? packageConfig}) => AnalyzerResolvers.custom(
     packageConfig: packageConfig,
@@ -1446,9 +1364,6 @@ class AnalysisDriverModelFactory implements ResolversFactory {
 
 class SharedAnalysisDriverModelFactory implements ResolversFactory {
   static final AnalysisDriverModel sharedInstance = AnalysisDriverModel();
-
-  @override
-  bool get isInstanceShared => true;
 
   @override
   Resolvers create({PackageConfig? packageConfig}) {
