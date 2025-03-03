@@ -10,6 +10,8 @@ import 'package:crypto/crypto.dart';
 
 import 'src/build_asset_uri_resolver.dart';
 
+const transitiveDigestExtension = '.transitive_digest';
+
 Builder transitiveDigestsBuilder(BuilderOptions _) =>
     _TransitiveDigestsBuilder();
 
@@ -24,6 +26,9 @@ PostProcessBuilder transitiveDigestCleanup(BuilderOptions options) =>
 /// For any dependency that has a transitive digest already written, we just use
 /// that and don't crawl its transitive deps, as the transitive digest includes
 /// all the information we need.
+///
+/// TODO(davidmorgan): this is not used by `build_resolvers` any more, consider
+/// deprecating and removing.
 class _TransitiveDigestsBuilder extends Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
