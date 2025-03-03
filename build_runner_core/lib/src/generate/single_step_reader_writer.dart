@@ -56,14 +56,12 @@ class RunningBuild {
   final PackageGraph packageGraph;
   final TargetGraph targetGraph;
   final AssetGraph assetGraph;
-  final AssetBuilder nodeBuilder;
   final GlobNodeBuilder globNodeBuilder;
 
   RunningBuild({
     required this.packageGraph,
     required this.targetGraph,
     required this.assetGraph,
-    required this.nodeBuilder,
     required this.globNodeBuilder,
   });
 }
@@ -388,7 +386,6 @@ class SingleStepReaderWriter extends AssetReader
         return isInBuild ? Readability.ownOutput : Readability.notReadable;
       }
 
-      await _runningBuild!.nodeBuilder(node);
       return Readability.fromPreviousPhase(node.wasOutput && !node.isFailure);
     }
     return Readability.fromPreviousPhase(node.isReadable && node.isValidInput);
