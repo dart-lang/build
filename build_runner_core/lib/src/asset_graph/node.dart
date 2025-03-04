@@ -105,7 +105,7 @@ class SourceAssetNode extends AssetNode {
   SourceAssetNode(super.id, {super.lastKnownDigest});
 
   @override
-  String toString() => 'SourceAssetNode: $id';
+  String toString() => 'SourceAssetNode: $id, $lastKnownDigest';
 }
 
 /// States for nodes that can be invalidated.

@@ -262,8 +262,10 @@ class _SingleBuild {
     return result;
   }
 
-  Future<void> _updateAssetGraph(Map<AssetId, ChangeType> updates) async {
-    await logTimedAsync(_logger, 'Updating asset graph', () async {
+  Future<Set<AssetId>> _updateAssetGraph(
+    Map<AssetId, ChangeType> updates,
+  ) async {
+    return await logTimedAsync(_logger, 'Updating asset graph', () async {
       var invalidated = await _assetGraph.updateAndInvalidate(
         _buildPhases,
         updates,
@@ -272,6 +274,7 @@ class _SingleBuild {
         _readerWriter,
       );
       await _readerWriter.cache.invalidate(invalidated);
+      return invalidated;
     });
   }
 
@@ -292,11 +295,20 @@ class _SingleBuild {
 
     runZonedGuarded(
       () async {
-        if (updates.isNotEmpty) {
-          await _updateAssetGraph(updates);
+        final Set<AssetId>? invalidated;
+        if (updates.isEmpty) {
+          print('no updates');
+          invalidated = null;
+        } else {
+          throw 'updates!';
+          invalidated = await _updateAssetGraph(updates);
         }
         // Run a fresh build.
-        var result = await logTimedAsync(_logger, 'Running build', _runPhases);
+        var result = await logTimedAsync(
+          _logger,
+          'Running build',
+          () => _runPhases(invalidated),
+        );
 
         // Write out the dependency graph file.
         await logTimedAsync(
@@ -349,7 +361,7 @@ class _SingleBuild {
 
   /// Runs the actions in [_buildPhases] and returns a future which completes
   /// to the [BuildResult] once all [BuildPhase]s are done.
-  Future<BuildResult> _runPhases() {
+  Future<BuildResult> _runPhases(Set<AssetId>? invalidated) {
     return _performanceTracker.track(() async {
       final outputs = <AssetId>[];
       for (var phaseNum = 0; phaseNum < _buildPhases.length; phaseNum++) {
@@ -359,12 +371,13 @@ class _SingleBuild {
           await _performanceTracker.trackBuildPhase(phase, () async {
             if (phase is InBuildPhase) {
               var primaryInputs = await _matchingPrimaryInputs(
+                invalidated,
                 phase.package,
                 phaseNum,
               );
-              return _runBuilder(phaseNum, phase, primaryInputs);
+              return _runBuilder(invalidated, phaseNum, phase, primaryInputs);
             } else if (phase is PostBuildPhase) {
-              return _runPostProcessPhase(phaseNum, phase);
+              return _runPostProcessPhase(invalidated, phaseNum, phase);
             } else {
               throw StateError('Unrecognized BuildPhase type $phase');
             }
@@ -391,6 +404,7 @@ class _SingleBuild {
   /// Lazily builds any optional build actions that might potentially produce
   /// a primary input to this phase.
   Future<Set<AssetId>> _matchingPrimaryInputs(
+    Set<AssetId>? invalidated,
     String package,
     int phaseNumber,
   ) async {
@@ -418,7 +432,11 @@ class _SingleBuild {
       var input = _assetGraph.get(node.primaryInput)!;
       if (input is GeneratedAssetNode) {
         if (input.state != NodeState.upToDate) {
-          await _runLazyPhaseForInput(input.phaseNumber, input.primaryInput);
+          await _runLazyPhaseForInput(
+            invalidated,
+            input.phaseNumber,
+            input.primaryInput,
+          );
         }
         if (!input.wasOutput) continue;
         if (input.isFailure) continue;
@@ -434,19 +452,23 @@ class _SingleBuild {
   /// Does not return outputs that didn't need to be re-ran or were declared
   /// but not output.
   Future<Iterable<AssetId>> _runBuilder(
+    Set<AssetId>? invalidated,
     int phaseNumber,
     InBuildPhase action,
     Iterable<AssetId> primaryInputs,
   ) async {
     final outputs = <AssetId>[];
     for (final input in primaryInputs) {
-      outputs.addAll(await _runForInput(phaseNumber, action, input));
+      outputs.addAll(
+        await _runForInput(invalidated, phaseNumber, action, input),
+      );
     }
     return outputs;
   }
 
   /// Lazily runs [phaseNumber] with [input]..
   Future<Iterable<AssetId>> _runLazyPhaseForInput(
+    Set<AssetId>? invalidated,
     int phaseNumber,
     AssetId input,
   ) {
@@ -458,6 +480,7 @@ class _SingleBuild {
         // Make sure the `inputNode` is up to date, and rebuild it if not.
         if (inputNode.state != NodeState.upToDate) {
           await _runLazyPhaseForInput(
+            invalidated,
             inputNode.phaseNumber,
             inputNode.primaryInput,
           );
@@ -468,17 +491,22 @@ class _SingleBuild {
       // We can never lazily build `PostProcessBuildAction`s.
       var action = _buildPhases[phaseNumber] as InBuildPhase;
 
-      return _runForInput(phaseNumber, action, input);
+      return _runForInput(invalidated, phaseNumber, action, input);
     });
   }
 
-  Future<void> _buildAsset(AssetNode node) async {
+  Future<void> _buildAsset(Set<AssetId>? invalidated, AssetNode node) async {
     if (node is GeneratedAssetNode && node.state != NodeState.upToDate) {
-      await _runLazyPhaseForInput(node.phaseNumber, node.primaryInput);
+      await _runLazyPhaseForInput(
+        invalidated,
+        node.phaseNumber,
+        node.primaryInput,
+      );
     }
   }
 
   Future<Iterable<AssetId>> _runForInput(
+    Set<AssetId>? invalidated,
     int phaseNumber,
     InBuildPhase phase,
     AssetId input,
@@ -510,8 +538,8 @@ class _SingleBuild {
             packageGraph: _packageGraph,
             targetGraph: _targetGraph,
             assetGraph: _assetGraph,
-            nodeBuilder: _buildAsset,
-            globNodeBuilder: _buildGlobNode,
+            nodeBuilder: (id) => _buildAsset(invalidated, id),
+            globNodeBuilder: (id) => _buildGlobNode(invalidated, id),
           ),
           runningBuildStep: RunningBuildStep(
             phaseNumber: phaseNumber,
@@ -526,7 +554,7 @@ class _SingleBuild {
 
         if (!await tracker.trackStage(
           'Setup',
-          () => _buildShouldRun(builderOutputs, readerWriter),
+          () => _buildShouldRun(invalidated, builderOutputs, readerWriter),
         )) {
           return <AssetId>[];
         }
@@ -577,6 +605,7 @@ class _SingleBuild {
         await tracker.trackStage(
           'Finalize',
           () => _setOutputsState(
+            invalidated,
             input,
             builderOutputs,
             readerWriter,
@@ -593,13 +622,15 @@ class _SingleBuild {
   }
 
   Future<Iterable<AssetId>> _runPostProcessPhase(
+    Set<AssetId>? invalidated,
     int phaseNum,
     PostBuildPhase phase,
   ) async {
     var actionNum = 0;
     var outputLists = await Future.wait(
       phase.builderActions.map(
-        (action) => _runPostProcessAction(phaseNum, actionNum++, action),
+        (action) =>
+            _runPostProcessAction(invalidated, phaseNum, actionNum++, action),
       ),
     );
     return outputLists.fold<List<AssetId>>(
@@ -609,6 +640,7 @@ class _SingleBuild {
   }
 
   Future<Iterable<AssetId>> _runPostProcessAction(
+    Set<AssetId>? invalidated,
     int phaseNum,
     int actionNum,
     PostBuildAction action,
@@ -625,6 +657,7 @@ class _SingleBuild {
               inputNode.state == NodeState.upToDate) {
         outputs.addAll(
           await _runPostProcessBuilderForAnchor(
+            invalidated,
             phaseNum,
             actionNum,
             action.builder,
@@ -637,6 +670,7 @@ class _SingleBuild {
   }
 
   Future<Iterable<AssetId>> _runPostProcessBuilderForAnchor(
+    Set<AssetId>? invalidated,
     int phaseNumber,
     int actionNum,
     PostProcessBuilder builder,
@@ -649,8 +683,8 @@ class _SingleBuild {
         packageGraph: _packageGraph,
         targetGraph: _targetGraph,
         assetGraph: _assetGraph,
-        nodeBuilder: _buildAsset,
-        globNodeBuilder: _buildGlobNode,
+        nodeBuilder: (id) => _buildAsset(invalidated, id),
+        globNodeBuilder: (id) => _buildGlobNode(invalidated, id),
       ),
       runningBuildStep: RunningBuildStep(
         phaseNumber: phaseNumber,
@@ -662,7 +696,11 @@ class _SingleBuild {
       assetsWritten: {},
     );
 
-    if (!await _postProcessBuildShouldRun(anchorNode, readerWriter)) {
+    if (!await _postProcessBuildShouldRun(
+      invalidated,
+      anchorNode,
+      readerWriter,
+    )) {
       return <AssetId>[];
     }
     // Clear input tracking accumulated during `_buildShouldRun`.
@@ -732,6 +770,7 @@ class _SingleBuild {
     // written.
     inputNode.primaryOutputs.addAll(assetsWritten);
     await _setOutputsState(
+      invalidated,
       input,
       assetsWritten,
       readerWriter,
@@ -745,6 +784,7 @@ class _SingleBuild {
 
   /// Checks and returns whether any [outputs] need to be updated.
   Future<bool> _buildShouldRun(
+    Set<AssetId>? invalidated,
     Iterable<AssetId> outputs,
     AssetReader reader,
   ) async {
@@ -786,14 +826,34 @@ class _SingleBuild {
     // This is a fresh build or the first time we've seen this output.
     if (firstNode.previousInputsDigest == null) return true;
 
+    final inputs = firstNode.inputs;
+
+    void compareResult(bool expectedResult) {
+      final myResult = invalidated == null || invalidated.any(inputs.contains);
+      print('''
+_buildShouldRun $inputs -> $outputs
+
+${inputs.map((i) => '$i ${_assetGraph.get(i)}').join(', ')}
+
+expected result: $expectedResult
+my result: $myResult
+invalidated: $invalidated
+''');
+
+      if (myResult != expectedResult) throw 'whoops';
+    }
+
     var digest = await _computeCombinedDigest(
-      firstNode.inputs,
+      invalidated,
+      inputs,
       firstNode.builderOptionsId,
       reader,
     );
     if (digest != firstNode.previousInputsDigest) {
+      compareResult(true);
       return true;
     } else {
+      compareResult(false);
       // Make sure to update the `state` field for all outputs.
       for (var id in outputs) {
         (_assetGraph.get(id) as NodeWithInputs).state = NodeState.upToDate;
@@ -804,10 +864,12 @@ class _SingleBuild {
 
   /// Checks if a post process build should run based on [anchorNode].
   Future<bool> _postProcessBuildShouldRun(
+    Set<AssetId>? invalidated,
     PostProcessAnchorNode anchorNode,
     AssetReader reader,
   ) async {
     var inputsDigest = await _computeCombinedDigest(
+      invalidated,
       [anchorNode.primaryInput],
       anchorNode.builderOptionsId,
       reader,
@@ -835,7 +897,10 @@ class _SingleBuild {
     }
   }
 
-  Future<void> _buildGlobNode(GlobAssetNode globNode) async {
+  Future<void> _buildGlobNode(
+    Set<AssetId>? invalidated,
+    GlobAssetNode globNode,
+  ) async {
     if (globNode.state == NodeState.upToDate) return;
 
     return _lazyGlobs.putIfAbsent(globNode.id, () async {
@@ -853,7 +918,7 @@ class _SingleBuild {
 
       for (final node in potentialNodes) {
         if (node is GeneratedAssetNode) {
-          await _buildAsset(node);
+          await _buildAsset(invalidated, node);
         }
       }
 
@@ -880,6 +945,7 @@ class _SingleBuild {
   /// Computes a single [Digest] based on the combined [Digest]s of [ids] and
   /// [builderOptionsId].
   Future<Digest> _computeCombinedDigest(
+    Set<AssetId>? invalidated,
     Iterable<AssetId> ids,
     AssetId builderOptionsId,
     AssetReader reader,
@@ -898,7 +964,7 @@ class _SingleBuild {
     for (final id in ids) {
       var node = _assetGraph.get(id)!;
       if (node is GlobAssetNode) {
-        await _buildGlobNode(node);
+        await _buildGlobNode(invalidated, node);
       } else if (!await reader.canRead(id)) {
         // We want to add something here, a missing/unreadable input should be
         // different from no input at all.
@@ -928,6 +994,7 @@ class _SingleBuild {
   /// - Setting the `previousInputsDigest` on each output based on the inputs.
   /// - Storing the error message with the [_failureReporter].
   Future<void> _setOutputsState(
+    Set<AssetId>? invalidated,
     AssetId input,
     Iterable<AssetId> outputs,
     SingleStepReaderWriter readerWriter,
@@ -943,6 +1010,7 @@ class _SingleBuild {
             : inputTracker.inputs;
 
     final inputsDigest = await _computeCombinedDigest(
+      invalidated,
       usedInputs,
       (_assetGraph.get(outputs.first) as GeneratedAssetNode).builderOptionsId,
       readerWriter,
