@@ -38,7 +38,7 @@ final _logger = Logger('BuildDefinition');
 
 class BuildDefinition {
   final AssetGraph assetGraph;
-  final Map<AssetId, ChangeType>? updates;
+  Map<AssetId, ChangeType>? updates;
   final TargetGraph targetGraph;
 
   final AssetReader reader;
@@ -134,6 +134,7 @@ class AssetTracker {
     Set<AssetId> internalSources,
     AssetGraph assetGraph,
   ) async {
+    print('compute source updates');
     final allSources =
         <AssetId>{}
           ..addAll(inputSources)
@@ -173,6 +174,7 @@ class AssetTracker {
       if (originalDigest == null) return;
       await _reader.cache.invalidate([id]);
       var currentDigest = await _reader.digest(id);
+      print('$id $originalDigest -> $currentDigest');
       if (currentDigest != originalDigest) {
         updates[id] = ChangeType.MODIFY;
       }
@@ -554,7 +556,8 @@ class _Loader {
       assetGraph,
     );
     updates.addAll(_computeBuilderOptionsUpdates(assetGraph, buildPhases));
-    await assetGraph.updateAndInvalidate(
+    // build_impl also wants to do this, and uses the results
+    /*await assetGraph.updateAndInvalidate(
       _buildPhases,
       updates,
       _options.packageGraph.root.name,
@@ -566,7 +569,7 @@ class _Loader {
         _environment.reader,
         assetGraph,
       ),
-    );
+    );*/
     return updates;
   }
 

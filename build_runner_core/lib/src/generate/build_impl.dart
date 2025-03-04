@@ -96,7 +96,9 @@ class BuildImpl {
       _resourceManager = buildDefinition.resourceManager,
       _environment = buildDefinition.environment,
       _trackPerformance = options.trackPerformance,
-      _logPerformanceDir = options.logPerformanceDir;
+      _logPerformanceDir = options.logPerformanceDir {
+    buildDefinition.updates = null;
+  }
 
   Future<BuildResult> run(
     Map<AssetId, ChangeType> updates, {
@@ -827,7 +829,10 @@ class _SingleBuild {
     final inputs = firstNode.inputs;
 
     void compareResult(bool expectedResult) {
-      final myResult = invalidated == null || invalidated.any(inputs.contains);
+      final reallyInvalidated = invalidated!.difference(
+        unchangedGeneratedNodes,
+      );
+      final myResult = reallyInvalidated.any(inputs.contains);
       print('''
 _buildShouldRun $inputs -> $outputs
 
@@ -982,6 +987,8 @@ invalidated: $invalidated
     return Digest(combinedBytes);
   }
 
+  Set<AssetId> unchangedGeneratedNodes = {};
+
   /// Sets the state for all [outputs] of a build step, by:
   ///
   /// - Setting `needsUpdate` to `false` for each output
@@ -1026,6 +1033,7 @@ invalidated: $invalidated
       // time a node might not be in a valid state.
       _removeOldInputs(node, usedInputs);
       _addNewInputs(node, usedInputs);
+      if (node.lastKnownDigest == digest) unchangedGeneratedNodes.add(node.id);
       node
         ..state = NodeState.upToDate
         ..wasOutput = wasOutput
