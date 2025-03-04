@@ -100,6 +100,3 @@ final sdkBin = p.join(sdkPath, 'bin');
 
 /// The path to the sdk on the current platform.
 final sdkPath = p.dirname(p.dirname(Platform.resolvedExecutable));
-
-/// The maximum number of concurrent actions to run per build phase.
-const buildPhasePoolSize = 16;

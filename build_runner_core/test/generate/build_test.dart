@@ -16,7 +16,6 @@ import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/generate/options.dart'
     show defaultNonRootVisibleAssets;
-import 'package:build_runner_core/src/util/constants.dart';
 import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 
@@ -157,9 +156,9 @@ void main() {
       );
     });
 
-    test('runs a max of 16 concurrent actions per phase', () async {
+    test('runs a max of one concurrent action per phase', () async {
       var assets = <String, String>{};
-      for (var i = 0; i < buildPhasePoolSize * 2; i++) {
+      for (var i = 0; i < 2; i++) {
         assets['a|web/$i.txt'] = '$i';
       }
       var concurrentCount = 0;
@@ -178,8 +177,7 @@ void main() {
                       concurrentCount,
                       maxConcurrentCount,
                     );
-                    if (concurrentCount >= buildPhasePoolSize &&
-                        !reachedMax.isCompleted) {
+                    if (concurrentCount >= 1 && !reachedMax.isCompleted) {
                       await Future<void>.delayed(
                         const Duration(milliseconds: 100),
                       );
@@ -199,7 +197,7 @@ void main() {
         assets,
         outputs: {},
       );
-      expect(maxConcurrentCount, buildPhasePoolSize);
+      expect(maxConcurrentCount, 1);
     });
 
     group('with root package inputs', () {
