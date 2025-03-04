@@ -57,6 +57,7 @@ class BuildImpl {
 
   final AssetGraph assetGraph;
 
+  final Map<AssetId, ChangeType>? initialUpdates;
   final BuildScriptUpdates? buildScriptUpdates;
 
   final List<BuildPhase> _buildPhases;
@@ -77,7 +78,8 @@ class BuildImpl {
     BuildOptions options,
     this._buildPhases,
     this.finalizedReader,
-  ) : buildScriptUpdates = buildDefinition.buildScriptUpdates,
+  ) : initialUpdates = buildDefinition.updates,
+      buildScriptUpdates = buildDefinition.buildScriptUpdates,
       _packageGraph = buildDefinition.packageGraph,
       _targetGraph = buildDefinition.targetGraph,
       _reader =
@@ -102,8 +104,9 @@ class BuildImpl {
     Set<BuildFilter> buildFilters = const {},
   }) {
     finalizedReader.reset(_buildPaths(buildDirs), buildFilters);
-    return _SingleBuild(this, buildDirs, buildFilters).run(updates)
-      ..whenComplete(_resolvers.reset);
+    return _SingleBuild(this, buildDirs, buildFilters).run(
+      updates.isEmpty ? (initialUpdates ?? {}) : updates,
+    )..whenComplete(_resolvers.reset);
   }
 
   static Future<BuildImpl> create(
@@ -296,13 +299,8 @@ class _SingleBuild {
     runZonedGuarded(
       () async {
         final Set<AssetId>? invalidated;
-        if (updates.isEmpty) {
-          print('no updates');
-          invalidated = null;
-        } else {
-          throw 'updates!';
-          invalidated = await _updateAssetGraph(updates);
-        }
+        invalidated = await _updateAssetGraph(updates);
+
         // Run a fresh build.
         var result = await logTimedAsync(
           _logger,
@@ -347,7 +345,7 @@ class _SingleBuild {
       },
       (e, st) {
         if (!done.isCompleted) {
-          _logger.severe('Unhandled build failure!', e, st);
+          _logger.severe('Unhandled build failure! $e $st', e, st);
           done.complete(BuildResult(BuildStatus.failure, []));
         }
       },

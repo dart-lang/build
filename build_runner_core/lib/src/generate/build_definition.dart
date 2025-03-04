@@ -38,6 +38,7 @@ final _logger = Logger('BuildDefinition');
 
 class BuildDefinition {
   final AssetGraph assetGraph;
+  final Map<AssetId, ChangeType>? updates;
   final TargetGraph targetGraph;
 
   final AssetReader reader;
@@ -57,6 +58,7 @@ class BuildDefinition {
 
   BuildDefinition._(
     this.assetGraph,
+    this.updates,
     this.targetGraph,
     this.reader,
     this.writer,
@@ -243,8 +245,9 @@ class _Loader {
     var internalSources = await assetTracker._findInternalSources();
 
     BuildScriptUpdates? buildScriptUpdates;
+    Map<AssetId, ChangeType>? updates;
     if (assetGraph != null) {
-      var updates = await logTimedAsync(
+      updates = await logTimedAsync(
         _logger,
         'Checking for updates since last build',
         () => _updateAssetGraph(
@@ -265,7 +268,7 @@ class _Loader {
 
       var buildScriptUpdated =
           !_options.skipBuildScriptCheck &&
-          buildScriptUpdates.hasBeenUpdated(updates.keys.toSet());
+          buildScriptUpdates.hasBeenUpdated(updates!.keys.toSet());
       if (buildScriptUpdated) {
         _logger.warning('Invalidating asset graph due to build script update!');
 
@@ -341,6 +344,7 @@ class _Loader {
 
     return BuildDefinition._(
       assetGraph!,
+      updates,
       _options.targetGraph,
       _copyReaderWithBuildCacheAssetPathProvider(
         _environment.reader,

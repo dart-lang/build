@@ -276,6 +276,32 @@ class AssetGraph {
   Iterable<AssetId> get sources =>
       allNodes.whereType<SourceAssetNode>().map((n) => n.id);
 
+  Future<Map<AssetId, ChangeType>> checkForChanges(
+    List<BuildPhase> buildPhases,
+    String rootPackage,
+    Future Function(AssetId id) delete,
+    AssetReader digestReader,
+  ) async {
+    final result = <AssetId, ChangeType>{};
+    for (final node in allNodes) {
+      print('Check $node');
+      final oldDigest = node.lastKnownDigest;
+      await digestReader.cache.invalidate([node.id]);
+      if (await digestReader.canRead(node.id)) {
+        print('  readable');
+        final newDigest = await digestReader.digest(node.id);
+        print('  $oldDigest -> $newDigest');
+        if (oldDigest != newDigest) {
+          result[node.id] = ChangeType.MODIFY;
+        }
+      } else {
+        print('  not readable');
+        result[node.id] = ChangeType.REMOVE;
+      }
+    }
+    return result;
+  }
+
   /// Updates graph structure, invalidating and deleting any outputs that were
   /// affected.
   ///
@@ -287,6 +313,7 @@ class AssetGraph {
     Future Function(AssetId id) delete,
     AssetReader digestReader,
   ) async {
+    print('Updating graph! ${StackTrace.current}');
     var newIds = <AssetId>{};
     var modifyIds = <AssetId>{};
     var removeIds = <AssetId>{};

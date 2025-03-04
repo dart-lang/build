@@ -1897,6 +1897,7 @@ void main() {
         builders,
         {'a|lib/file.a': 'a', 'a|lib/file.b': 'b'},
         outputs: {'a|lib/file.a.copy': 'b', 'a|lib/file.a.copy.copy': 'b'},
+        onLog: print,
       );
 
       // Modify the primary input of `file.a.copy`, but its output doesn't
@@ -1915,6 +1916,7 @@ void main() {
         },
         outputs: {'a|lib/file.a.copy': 'b'},
         resumeFrom: result,
+        onLog: print,
       );
     });
 
