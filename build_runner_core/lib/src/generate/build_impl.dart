@@ -185,7 +185,7 @@ class _SingleBuild {
       _buildPhases = buildImpl._buildPhases,
       _buildPhasePool = List.generate(
         buildImpl._buildPhases.length,
-        (_) => Pool(buildPhasePoolSize),
+        (_) => Pool(1),
         growable: false,
       ),
       _environment = buildImpl._environment,
@@ -398,34 +398,33 @@ class _SingleBuild {
     var phase = _buildPhases[phaseNumber];
     var packageNode = _packageGraph[package]!;
 
-    await Future.wait(
-      _assetGraph.outputsForPhase(package, phaseNumber).map((node) async {
-        if (!shouldBuildForDirs(
-          node.id,
-          buildDirs: _buildPaths(_buildDirs),
-          buildFilters: _buildFilters,
-          phase: phase,
-          targetGraph: _targetGraph,
-        )) {
-          return;
-        }
+    for (final node
+        in _assetGraph.outputsForPhase(package, phaseNumber).toList()) {
+      if (!shouldBuildForDirs(
+        node.id,
+        buildDirs: _buildPaths(_buildDirs),
+        buildFilters: _buildFilters,
+        phase: phase,
+        targetGraph: _targetGraph,
+      )) {
+        continue;
+      }
 
-        // Don't build for inputs that aren't visible. This can happen for
-        // placeholder nodes like `test/$test$` that are added to each package,
-        // since the test dir is not part of the build for non-root packages.
-        if (!_targetGraph.isVisibleInBuild(node.id, packageNode)) return;
+      // Don't build for inputs that aren't visible. This can happen for
+      // placeholder nodes like `test/$test$` that are added to each package,
+      // since the test dir is not part of the build for non-root packages.
+      if (!_targetGraph.isVisibleInBuild(node.id, packageNode)) continue;
 
-        var input = _assetGraph.get(node.primaryInput)!;
-        if (input is GeneratedAssetNode) {
-          if (input.state != NodeState.upToDate) {
-            await _runLazyPhaseForInput(input.phaseNumber, input.primaryInput);
-          }
-          if (!input.wasOutput) return;
-          if (input.isFailure) return;
+      var input = _assetGraph.get(node.primaryInput)!;
+      if (input is GeneratedAssetNode) {
+        if (input.state != NodeState.upToDate) {
+          await _runLazyPhaseForInput(input.phaseNumber, input.primaryInput);
         }
-        ids.add(input.id);
-      }),
-    );
+        if (!input.wasOutput) continue;
+        if (input.isFailure) continue;
+      }
+      ids.add(input.id);
+    }
     return ids;
   }
 
@@ -439,13 +438,11 @@ class _SingleBuild {
     InBuildPhase action,
     Iterable<AssetId> primaryInputs,
   ) async {
-    var outputLists = await Future.wait(
-      primaryInputs.map((input) => _runForInput(phaseNumber, action, input)),
-    );
-    return outputLists.fold<List<AssetId>>(
-      <AssetId>[],
-      (combined, next) => combined..addAll(next),
-    );
+    final outputs = <AssetId>[];
+    for (final input in primaryInputs) {
+      outputs.addAll(await _runForInput(phaseNumber, action, input));
+    }
+    return outputs;
   }
 
   /// Lazily runs [phaseNumber] with [input]..
@@ -616,34 +613,27 @@ class _SingleBuild {
     int actionNum,
     PostBuildAction action,
   ) async {
-    var anchorNodes =
-        _assetGraph.packageNodes(action.package).where((node) {
-          if (node is PostProcessAnchorNode && node.actionNumber == actionNum) {
-            var inputNode = _assetGraph.get(node.primaryInput);
-            if (inputNode is SourceAssetNode) {
-              return true;
-            } else if (inputNode is GeneratedAssetNode) {
-              return inputNode.wasOutput &&
-                  !inputNode.isFailure &&
-                  inputNode.state == NodeState.upToDate;
-            }
-          }
-          return false;
-        }).cast<PostProcessAnchorNode>();
-    var outputLists = await Future.wait(
-      anchorNodes.map(
-        (anchorNode) => _runPostProcessBuilderForAnchor(
-          phaseNum,
-          actionNum,
-          action.builder,
-          anchorNode,
-        ),
-      ),
-    );
-    return outputLists.fold<List<AssetId>>(
-      <AssetId>[],
-      (combined, next) => combined..addAll(next),
-    );
+    final outputs = <AssetId>[];
+    for (final node in _assetGraph.packageNodes(action.package).toList()) {
+      if (node is! PostProcessAnchorNode) continue;
+      if (node.actionNumber != actionNum) continue;
+      final inputNode = _assetGraph.get(node.primaryInput);
+      if (inputNode is SourceAssetNode ||
+          inputNode is GeneratedAssetNode &&
+              inputNode.wasOutput &&
+              !inputNode.isFailure &&
+              inputNode.state == NodeState.upToDate) {
+        outputs.addAll(
+          await _runPostProcessBuilderForAnchor(
+            phaseNum,
+            actionNum,
+            action.builder,
+            node,
+          ),
+        );
+      }
+    }
+    return outputs;
   }
 
   Future<Iterable<AssetId>> _runPostProcessBuilderForAnchor(
@@ -836,13 +826,14 @@ class _SingleBuild {
   /// This should be called after deciding that an asset really needs to be
   /// regenerated based on its inputs hash changing. All assets in [outputs]
   /// must correspond to a [GeneratedAssetNode].
-  Future<void> _cleanUpStaleOutputs(Iterable<AssetId> outputs) => Future.wait(
-    outputs
-        .map(_assetGraph.get)
-        .cast<GeneratedAssetNode>()
-        .where((n) => n.wasOutput)
-        .map((n) => _delete(n.id)),
-  );
+  Future<void> _cleanUpStaleOutputs(Iterable<AssetId> outputs) async {
+    for (final output in outputs) {
+      final node = _assetGraph.get(output)!;
+      if (node is GeneratedAssetNode && node.wasOutput) {
+        await _delete(output);
+      }
+    }
+  }
 
   Future<void> _buildGlobNode(GlobAssetNode globNode) async {
     if (globNode.state == NodeState.upToDate) return;
@@ -860,9 +851,11 @@ class _SingleBuild {
               .where((n) => globNode.glob.matches(n.id.path))
               .toList();
 
-      await Future.wait(
-        potentialNodes.whereType<GeneratedAssetNode>().map(_buildAsset),
-      );
+      for (final node in potentialNodes) {
+        if (node is GeneratedAssetNode) {
+          await _buildAsset(node);
+        }
+      }
 
       var actualMatches = <AssetId>[];
       for (var node in potentialNodes) {
@@ -902,29 +895,25 @@ class _SingleBuild {
     var builderOptionsNode = _assetGraph.get(builderOptionsId)!;
     combine(builderOptionsNode.lastKnownDigest!.bytes as Uint8List);
 
-    // Limit the total number of digests we are computing at a time. Otherwise
-    // this can overload the event queue.
-    await Future.wait(
-      ids.map((id) async {
-        var node = _assetGraph.get(id)!;
-        if (node is GlobAssetNode) {
-          await _buildGlobNode(node);
-        } else if (!await reader.canRead(id)) {
-          // We want to add something here, a missing/unreadable input should be
-          // different from no input at all.
-          //
-          // This needs to be unique per input so we use the md5 hash of the id.
-          combine(md5.convert(id.toString().codeUnits).bytes as Uint8List);
-          return;
-        } else {
-          if (node.lastKnownDigest == null) {
-            await reader.cache.invalidate([id]);
-            node.lastKnownDigest = await reader.digest(id);
-          }
+    for (final id in ids) {
+      var node = _assetGraph.get(id)!;
+      if (node is GlobAssetNode) {
+        await _buildGlobNode(node);
+      } else if (!await reader.canRead(id)) {
+        // We want to add something here, a missing/unreadable input should be
+        // different from no input at all.
+        //
+        // This needs to be unique per input so we use the md5 hash of the id.
+        combine(md5.convert(id.toString().codeUnits).bytes as Uint8List);
+        continue;
+      } else {
+        if (node.lastKnownDigest == null) {
+          await reader.cache.invalidate([id]);
+          node.lastKnownDigest = await reader.digest(id);
         }
-        combine(node.lastKnownDigest!.bytes as Uint8List);
-      }),
-    );
+      }
+      combine(node.lastKnownDigest!.bytes as Uint8List);
+    }
 
     return Digest(combinedBytes);
   }
