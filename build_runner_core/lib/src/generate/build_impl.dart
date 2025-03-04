@@ -13,7 +13,6 @@ import 'package:build/src/internal.dart';
 import 'package:crypto/crypto.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
-import 'package:pool/pool.dart';
 import 'package:watcher/watcher.dart';
 
 import '../asset/finalized_reader.dart';
@@ -154,7 +153,6 @@ class _SingleBuild {
   final AssetGraph _assetGraph;
   final Set<BuildFilter> _buildFilters;
   final List<BuildPhase> _buildPhases;
-  final List<Pool> _buildPhasePool;
   final BuildEnvironment _environment;
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
   final _lazyGlobs = <AssetId, Future<void>>{};
@@ -183,11 +181,6 @@ class _SingleBuild {
   ) : _assetGraph = buildImpl.assetGraph,
       _buildFilters = buildFilters,
       _buildPhases = buildImpl._buildPhases,
-      _buildPhasePool = List.generate(
-        buildImpl._buildPhases.length,
-        (_) => Pool(1),
-        growable: false,
-      ),
       _environment = buildImpl._environment,
       _packageGraph = buildImpl._packageGraph,
       _targetGraph = buildImpl._targetGraph,
@@ -398,8 +391,9 @@ class _SingleBuild {
     var phase = _buildPhases[phaseNumber];
     var packageNode = _packageGraph[package]!;
 
-    for (final node
-        in _assetGraph.outputsForPhase(package, phaseNumber).toList()) {
+    for (final node in _assetGraph
+        .outputsForPhase(package, phaseNumber)
+        .toList(growable: false)) {
       if (!shouldBuildForDirs(
         node.id,
         buildDirs: _buildPaths(_buildDirs),
@@ -482,113 +476,111 @@ class _SingleBuild {
     int phaseNumber,
     InBuildPhase phase,
     AssetId input,
-  ) {
-    return _buildPhasePool[phaseNumber].withResource(() {
-      final builder = phase.builder;
-      var tracker = _performanceTracker.addBuilderAction(
-        input,
-        phase.builderLabel,
+  ) async {
+    final builder = phase.builder;
+    var tracker = _performanceTracker.addBuilderAction(
+      input,
+      phase.builderLabel,
+    );
+    return tracker.track(() async {
+      var builderOutputs = expectedOutputs(builder, input);
+
+      // Add `builderOutputs` to the primary outputs of the input.
+      var inputNode = _assetGraph.get(input)!;
+      assert(
+        inputNode.primaryOutputs.containsAll(builderOutputs),
+        // ignore: prefer_interpolation_to_compose_strings
+        'input $input with builder $builder missing primary outputs: \n'
+                'Got ${inputNode.primaryOutputs.join(', ')} '
+                'which was missing:\n' +
+            builderOutputs
+                .where((id) => !inputNode.primaryOutputs.contains(id))
+                .join(', '),
       );
-      return tracker.track(() async {
-        var builderOutputs = expectedOutputs(builder, input);
 
-        // Add `builderOutputs` to the primary outputs of the input.
-        var inputNode = _assetGraph.get(input)!;
-        assert(
-          inputNode.primaryOutputs.containsAll(builderOutputs),
-          // ignore: prefer_interpolation_to_compose_strings
-          'input $input with builder $builder missing primary outputs: \n'
-                  'Got ${inputNode.primaryOutputs.join(', ')} '
-                  'which was missing:\n' +
-              builderOutputs
-                  .where((id) => !inputNode.primaryOutputs.contains(id))
-                  .join(', '),
-        );
+      var readerWriter = SingleStepReaderWriter(
+        runningBuild: RunningBuild(
+          packageGraph: _packageGraph,
+          targetGraph: _targetGraph,
+          assetGraph: _assetGraph,
+          nodeBuilder: _buildAsset,
+          globNodeBuilder: _buildGlobNode,
+        ),
+        runningBuildStep: RunningBuildStep(
+          phaseNumber: phaseNumber,
 
-        var readerWriter = SingleStepReaderWriter(
-          runningBuild: RunningBuild(
-            packageGraph: _packageGraph,
-            targetGraph: _targetGraph,
-            assetGraph: _assetGraph,
-            nodeBuilder: _buildAsset,
-            globNodeBuilder: _buildGlobNode,
-          ),
-          runningBuildStep: RunningBuildStep(
-            phaseNumber: phaseNumber,
+          buildPhase: phase,
+          primaryPackage: input.package,
+        ),
+        readerWriter: _readerWriter,
+        inputTracker: InputTracker(_readerWriter.filesystem),
+        assetsWritten: {},
+      );
 
-            buildPhase: phase,
-            primaryPackage: input.package,
-          ),
-          readerWriter: _readerWriter,
-          inputTracker: InputTracker(_readerWriter.filesystem),
-          assetsWritten: {},
-        );
+      if (!await tracker.trackStage(
+        'Setup',
+        () => _buildShouldRun(builderOutputs, readerWriter),
+      )) {
+        return <AssetId>[];
+      }
 
-        if (!await tracker.trackStage(
-          'Setup',
-          () => _buildShouldRun(builderOutputs, readerWriter),
-        )) {
-          return <AssetId>[];
-        }
+      await _cleanUpStaleOutputs(builderOutputs);
+      await FailureReporter.clean(phaseNumber, input);
 
-        await _cleanUpStaleOutputs(builderOutputs);
-        await FailureReporter.clean(phaseNumber, input);
+      // Clear input tracking accumulated during `_buildShouldRun`.
+      readerWriter.inputTracker.clear();
 
-        // Clear input tracking accumulated during `_buildShouldRun`.
-        readerWriter.inputTracker.clear();
+      var actionDescription = _actionLoggerName(
+        phase,
+        input,
+        _packageGraph.root.name,
+      );
+      var logger = BuildForInputLogger(Logger(actionDescription));
 
-        var actionDescription = _actionLoggerName(
-          phase,
+      actionsStartedCount++;
+      pendingActions
+          .putIfAbsent(phaseNumber, () => <String>{})
+          .add(actionDescription);
+
+      var unusedAssets = <AssetId>{};
+      await tracker.trackStage(
+        'Build',
+        () => runBuilder(
+          builder,
+          [input],
+          readerWriter,
+          readerWriter,
+          PerformanceTrackingResolvers(_resolvers, tracker),
+          logger: logger,
+          resourceManager: _resourceManager,
+          stageTracker: tracker,
+          reportUnusedAssetsForInput:
+              (_, assets) => unusedAssets.addAll(assets),
+          packageConfig: _packageGraph.asPackageConfig,
+        ).catchError((void _) {
+          // Errors tracked through the logger
+        }),
+      );
+      actionsCompletedCount++;
+      hungActionsHeartbeat.ping();
+      pendingActions[phaseNumber]!.remove(actionDescription);
+
+      // Reset the state for all the `builderOutputs` nodes based on what was
+      // read and written.
+      await tracker.trackStage(
+        'Finalize',
+        () => _setOutputsState(
           input,
-          _packageGraph.root.name,
-        );
-        var logger = BuildForInputLogger(Logger(actionDescription));
+          builderOutputs,
+          readerWriter,
+          readerWriter.inputTracker,
+          actionDescription,
+          logger.errorsSeen,
+          unusedAssets: unusedAssets,
+        ),
+      );
 
-        actionsStartedCount++;
-        pendingActions
-            .putIfAbsent(phaseNumber, () => <String>{})
-            .add(actionDescription);
-
-        var unusedAssets = <AssetId>{};
-        await tracker.trackStage(
-          'Build',
-          () => runBuilder(
-            builder,
-            [input],
-            readerWriter,
-            readerWriter,
-            PerformanceTrackingResolvers(_resolvers, tracker),
-            logger: logger,
-            resourceManager: _resourceManager,
-            stageTracker: tracker,
-            reportUnusedAssetsForInput:
-                (_, assets) => unusedAssets.addAll(assets),
-            packageConfig: _packageGraph.asPackageConfig,
-          ).catchError((void _) {
-            // Errors tracked through the logger
-          }),
-        );
-        actionsCompletedCount++;
-        hungActionsHeartbeat.ping();
-        pendingActions[phaseNumber]!.remove(actionDescription);
-
-        // Reset the state for all the `builderOutputs` nodes based on what was
-        // read and written.
-        await tracker.trackStage(
-          'Finalize',
-          () => _setOutputsState(
-            input,
-            builderOutputs,
-            readerWriter,
-            readerWriter.inputTracker,
-            actionDescription,
-            logger.errorsSeen,
-            unusedAssets: unusedAssets,
-          ),
-        );
-
-        return readerWriter.assetsWritten;
-      });
+      return readerWriter.assetsWritten;
     });
   }
 
@@ -614,7 +606,9 @@ class _SingleBuild {
     PostBuildAction action,
   ) async {
     final outputs = <AssetId>[];
-    for (final node in _assetGraph.packageNodes(action.package).toList()) {
+    for (final node in _assetGraph
+        .packageNodes(action.package)
+        .toList(growable: false)) {
       if (node is! PostProcessAnchorNode) continue;
       if (node.actionNumber != actionNum) continue;
       final inputNode = _assetGraph.get(node.primaryInput);
