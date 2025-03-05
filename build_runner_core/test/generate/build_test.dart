@@ -1478,6 +1478,10 @@ void main() {
   });
 
   group('incremental builds with cached graph', () {
+    // Using `resumeFrom: result` to pass the filesystem between `testBuilders`
+    // calls causes the serialized graph from the previous build to be loaded,
+    // exactly as in real builds.
+
     test('one new asset, one modified asset, one unchanged asset', () async {
       var builders = [copyABuilderApplication];
 
@@ -1489,9 +1493,6 @@ void main() {
       );
 
       // Followup build with modified inputs.
-      var serializedGraph = result.readerWriter.testing.readBytes(
-        makeAssetId('a|$assetGraphPath'),
-      );
       await testBuilders(
         builders,
         {
@@ -1500,7 +1501,6 @@ void main() {
           'a|lib/b.txt': 'b',
           'a|lib/b.txt.copy': 'b',
           'a|lib/c.txt': 'c',
-          'a|$assetGraphPath': serializedGraph,
         },
         outputs: {'a|web/a.txt.copy': 'a2', 'a|lib/c.txt.copy': 'c'},
         resumeFrom: result,
@@ -1528,17 +1528,10 @@ void main() {
         );
 
         // Followup build with the 2nd output missing.
-        var serializedGraph = result.readerWriter.testing.readBytes(
-          makeAssetId('a|$assetGraphPath'),
-        );
         result.readerWriter.testing.delete(AssetId('a', 'lib/a.txt.2'));
         await testBuilders(
           builders,
-          {
-            'a|lib/a.txt': 'a',
-            'a|lib/a.txt.1': 'a',
-            'a|$assetGraphPath': serializedGraph,
-          },
+          {'a|lib/a.txt': 'a', 'a|lib/a.txt.1': 'a'},
           outputs: {'a|lib/a.txt.1': 'a', 'a|lib/a.txt.2': 'a'},
           resumeFrom: result,
         );
@@ -1581,9 +1574,6 @@ void main() {
         );
 
         // Followup build with modified unused inputs should have no outputs.
-        var serializedGraph = result.readerWriter.testing.readBytes(
-          makeAssetId('a|$assetGraphPath'),
-        );
         await testBuilders(
           builders,
           {
@@ -1591,16 +1581,12 @@ void main() {
             'a|lib/a.txt.used': 'b',
             'a|lib/a.txt.unused': 'd', // changed the content of this one
             'a|lib/a.txt.copy': 'ab',
-            'a|$assetGraphPath': serializedGraph,
           },
           outputs: {},
           resumeFrom: result,
         );
 
         // And now modify a real input.
-        serializedGraph = result.readerWriter.testing.readBytes(
-          makeAssetId('a|$assetGraphPath'),
-        );
         await testBuilders(
           builders,
           {
@@ -1608,16 +1594,12 @@ void main() {
             'a|lib/a.txt.used': 'e',
             'a|lib/a.txt.unused': 'd',
             'a|lib/a.txt.copy': 'ab',
-            'a|$assetGraphPath': serializedGraph,
           },
           outputs: {'a|lib/a.txt.copy': 'ae'},
           resumeFrom: result,
         );
 
         // Finally modify the primary input.
-        serializedGraph = result.readerWriter.testing.readBytes(
-          makeAssetId('a|$assetGraphPath'),
-        );
         await testBuilders(
           builders,
           {
@@ -1625,7 +1607,6 @@ void main() {
             'a|lib/a.txt.used': 'e',
             'a|lib/a.txt.unused': 'd',
             'a|lib/a.txt.copy': 'ae',
-            'a|$assetGraphPath': serializedGraph,
           },
           outputs: {'a|lib/a.txt.copy': 'fe'},
           resumeFrom: result,
@@ -1653,32 +1634,20 @@ void main() {
         );
 
         // Followup build with modified primary input should have no outputs.
-        var serializedGraph = result.readerWriter.testing.readBytes(
-          makeAssetId('a|$assetGraphPath'),
-        );
         await testBuilders(
           builders,
-          {
-            'a|lib/a.txt': 'b',
-            'a|lib/a.txt.used': '',
-            'a|lib/a.txt.copy': 'a',
-            'a|$assetGraphPath': serializedGraph,
-          },
+          {'a|lib/a.txt': 'b', 'a|lib/a.txt.used': '', 'a|lib/a.txt.copy': 'a'},
           outputs: {},
           resumeFrom: result,
         );
 
         // But modifying other inputs still causes a rebuild.
-        serializedGraph = result.readerWriter.testing.readBytes(
-          makeAssetId('a|$assetGraphPath'),
-        );
         await testBuilders(
           builders,
           {
             'a|lib/a.txt': 'b',
             'a|lib/a.txt.used': 'b',
             'a|lib/a.txt.copy': 'a',
-            'a|$assetGraphPath': serializedGraph,
           },
           outputs: {'a|lib/a.txt.copy': 'b'},
           resumeFrom: result,
@@ -1706,13 +1675,10 @@ void main() {
           );
 
           // Delete the primary input, the output shoud still be deleted
-          var serializedGraph = result.readerWriter.testing.readBytes(
-            makeAssetId('a|$assetGraphPath'),
-          );
           result.readerWriter.testing.delete(AssetId('a', 'lib/a.txt'));
           await testBuilders(
             builders,
-            {'a|lib/a.txt.copy': 'a', 'a|$assetGraphPath': serializedGraph},
+            {'a|lib/a.txt.copy': 'a'},
             outputs: {},
             resumeFrom: result,
           );
@@ -1743,17 +1709,10 @@ void main() {
       );
 
       // Followup build with deleted input + cached graph.
-      var serializedGraph = result.readerWriter.testing.readBytes(
-        makeAssetId('a|$assetGraphPath'),
-      );
       result.readerWriter.testing.delete(AssetId('a', 'lib/a.txt'));
       await testBuilders(
         builders,
-        {
-          'a|lib/a.txt.copy': 'a',
-          'a|lib/a.txt.clone': 'a',
-          'a|$assetGraphPath': serializedGraph,
-        },
+        {'a|lib/a.txt.copy': 'a', 'a|lib/a.txt.clone': 'a'},
         outputs: {},
         resumeFrom: result,
       );
@@ -1784,14 +1743,7 @@ void main() {
       );
 
       // Followup build with same sources + cached graph.
-      var serializedGraph = result.readerWriter.testing.readBytes(
-        makeAssetId('a|$assetGraphPath'),
-      );
-      await testBuilders(builders, {
-        'a|web/a.txt': 'a',
-        'a|web/a.txt.copy': 'a',
-        'a|$assetGraphPath': serializedGraph,
-      }, outputs: {});
+      await testBuilders(builders, {}, outputs: {}, resumeFrom: result);
     });
 
     test('no outputs if no changed sources using `hideOutput: true`', () async {
@@ -1809,14 +1761,7 @@ void main() {
       );
 
       // Followup build with same sources + cached graph.
-      var serializedGraph = result.readerWriter.testing.readBytes(
-        makeAssetId('a|$assetGraphPath'),
-      );
-      await testBuilders(builders, {
-        'a|web/a.txt': 'a',
-        'a|web/a.txt.copy': 'a',
-        'a|$assetGraphPath': serializedGraph,
-      }, outputs: {});
+      await testBuilders(builders, {}, outputs: {}, resumeFrom: result);
     });
 
     test('inputs/outputs are updated if they change', () async {
@@ -1836,10 +1781,6 @@ void main() {
 
       // Followup build with same sources + cached graph, but configure the
       // builder to read a different file.
-      var serializedGraph = result.readerWriter.testing.readBytes(
-        makeAssetId('a|$assetGraphPath'),
-      );
-
       await testBuilders(
         [
           applyToRoot(
@@ -1856,7 +1797,6 @@ void main() {
           // builder but pretending its the same.
           'a|lib/file.b': 'b2',
           'a|lib/file.c': 'c',
-          'a|$assetGraphPath': serializedGraph,
         },
         outputs: {'a|lib/file.a.copy': 'c'},
         resumeFrom: result,
@@ -1901,9 +1841,6 @@ void main() {
 
       // Modify the primary input of `file.a.copy`, but its output doesn't
       // change so `file.a.copy.copy` shouldn't be rebuilt.
-      var serializedGraph = result.readerWriter.testing.readBytes(
-        makeAssetId('a|$assetGraphPath'),
-      );
       await testBuilders(
         builders,
         {
@@ -1911,7 +1848,6 @@ void main() {
           'a|lib/file.b': 'b',
           'a|lib/file.a.copy': 'b',
           'a|lib/file.a.copy.copy': 'b',
-          'a|$assetGraphPath': serializedGraph,
         },
         outputs: {'a|lib/file.a.copy': 'b'},
         resumeFrom: result,
@@ -1922,7 +1858,7 @@ void main() {
       var builders = [applyToRoot(SiblingCopyBuilder())];
 
       // Initial build.
-      final result = await testBuilders(
+      var result = await testBuilders(
         builders,
         {'a|web/a.txt': 'a', 'a|web/a.txt.sibling': 'sibling'},
         outputs: {'a|web/a.txt.new': 'sibling'},
@@ -1930,14 +1866,16 @@ void main() {
 
       // Followup build with cached graph and a changed primary input, but the
       // actual file that was read has not changed.
-      await testBuilders(builders, {
-        'a|web/a.txt': 'b',
-        'a|web/a.txt.sibling': 'sibling',
-        'a|web/a.txt.new': 'sibling',
-        'a|$assetGraphPath': result.readerWriter.testing.readBytes(
-          makeAssetId('a|$assetGraphPath'),
-        ),
-      }, outputs: {});
+      result = await testBuilders(
+        builders,
+        {
+          'a|web/a.txt': 'b',
+          'a|web/a.txt.sibling': 'sibling',
+          'a|web/a.txt.new': 'sibling',
+        },
+        outputs: {},
+        resumeFrom: result,
+      );
 
       // And now try modifying the sibling to make sure that still works.
       await testBuilders(
@@ -1946,11 +1884,9 @@ void main() {
           'a|web/a.txt': 'b',
           'a|web/a.txt.sibling': 'new!',
           'a|web/a.txt.new': 'sibling',
-          'a|$assetGraphPath': result.readerWriter.testing.readBytes(
-            makeAssetId('a|$assetGraphPath'),
-          ),
         },
         outputs: {'a|web/a.txt.new': 'new!'},
+        resumeFrom: result,
       );
     });
   });
@@ -1986,13 +1922,9 @@ void main() {
         'a|lib/a.source': 'true',
       }, status: BuildStatus.failure);
 
-      var serializedGraph = result.readerWriter.testing.readBytes(
-        makeAssetId('a|$assetGraphPath'),
-      );
-
       await testBuilders(
         builders,
-        {'a|lib/a.source': 'false', 'a|$assetGraphPath': serializedGraph},
+        {'a|lib/a.source': 'false'},
         outputs: {},
         resumeFrom: result,
       );
@@ -2070,30 +2002,22 @@ void main() {
           ),
         ),
       ];
-      final result = await testBuilders(builders, {
+      var result = await testBuilders(builders, {
         'a|web/a.source': 'true',
       }, status: BuildStatus.failure);
 
-      var serializedGraph = result.readerWriter.testing.readBytes(
-        makeAssetId('a|$assetGraphPath'),
-      );
-
-      await testBuilders(
+      result = await testBuilders(
         builders,
-        {'a|web/a.source': 'false', 'a|$assetGraphPath': serializedGraph},
+        {'a|web/a.source': 'false'},
         outputs: {'a|web/a.g1': '', 'a|web/a.g2': '', 'a|web/a.g3': ''},
         resumeFrom: result,
-      );
-
-      serializedGraph = result.readerWriter.testing.readBytes(
-        makeAssetId('a|$assetGraphPath'),
       );
 
       // Make sure if we mark the original node as a failure again, that we
       // also mark all its primary outputs as failures.
       await testBuilders(
         builders,
-        {'a|web/a.source': 'true', 'a|$assetGraphPath': serializedGraph},
+        {'a|web/a.source': 'true'},
         outputs: {},
         status: BuildStatus.failure,
         resumeFrom: result,
