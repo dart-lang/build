@@ -139,12 +139,14 @@ class InspectNodeCommand extends Command<bool> {
             ..writeln('Asset: $stringUri')
             ..writeln('  type: ${node.runtimeType}');
 
-      if (node is GeneratedAssetNode) {
+      if (node.type == NodeType.generated) {
+        final nodeState = node.generatedNodeState;
+        final nodeConfiguration = node.generatedNodeConfiguration;
         description
-          ..writeln('  state: ${node.state}')
-          ..writeln('  wasOutput: ${node.wasOutput}')
-          ..writeln('  phase: ${node.phaseNumber}')
-          ..writeln('  isFailure: ${node.isFailure}');
+          ..writeln('  state: ${nodeState.pendingBuildAction}')
+          ..writeln('  wasOutput: ${nodeState.wasOutput}')
+          ..writeln('  phase: ${nodeConfiguration.phaseNumber}')
+          ..writeln('  isFailure: ${nodeState.isFailure}');
       }
 
       void printAsset(AssetId asset) =>
@@ -159,7 +161,7 @@ class InspectNodeCommand extends Command<bool> {
             .difference(node.inspect.primaryOutputs)
             .forEach(printAsset);
 
-        if (node is NodeWithInputs) {
+        if (node.type == NodeType.generated || node.type == NodeType.glob) {
           description.writeln('  inputs:');
           assetGraph.allNodes
               .where((n) => n.outputs.contains(node.id))

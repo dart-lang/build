@@ -66,9 +66,9 @@ void main() {
 
     test('Failure nodes interact well with build filters ', () async {
       var id = AssetId('a', 'web/a.txt');
-      var node = GeneratedAssetNode(
+      var node = AssetNode.generated(
         id,
-        state: NodeState.upToDate,
+        state: PendingBuildAction.none,
         phaseNumber: 0,
         wasOutput: true,
         isFailure: true,

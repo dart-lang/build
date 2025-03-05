@@ -3,8 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:build/build.dart';
-import '../../build_runner_core.dart';
 
+import '../../build_runner_core.dart';
 import '../generate/phase.dart';
 import '../package_graph/target_graph.dart';
 import '../util/build_dirs.dart';
@@ -56,9 +56,10 @@ class OptionalOutputTracker {
     if (currentlyChecking.contains(output)) return false;
     currentlyChecking.add(output);
 
-    final node = _assetGraph.get(output);
-    if (node is! GeneratedAssetNode) return true;
-    final phase = _buildPhases[node.phaseNumber];
+    final node = _assetGraph.get(output)!;
+    if (node.type != NodeType.generated) return true;
+    final nodeConfiguration = node.generatedNodeConfiguration;
+    final phase = _buildPhases[nodeConfiguration.phaseNumber];
     if (!phase.isOptional &&
         shouldBuildForDirs(
           output,
@@ -74,8 +75,12 @@ class OptionalOutputTracker {
       () =>
           node.outputs.any((o) => isRequired(o, currentlyChecking)) ||
           _assetGraph
-              .outputsForPhase(output.package, node.phaseNumber)
-              .where((n) => n.primaryInput == node.primaryInput)
+              .outputsForPhase(output.package, nodeConfiguration.phaseNumber)
+              .where(
+                (n) =>
+                    n.generatedNodeConfiguration.primaryInput ==
+                    node.generatedNodeConfiguration.primaryInput,
+              )
               .map((n) => n.id)
               .any((o) => isRequired(o, currentlyChecking)),
     );
