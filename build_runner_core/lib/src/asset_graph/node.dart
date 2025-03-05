@@ -11,9 +11,23 @@ import 'package:glob/glob.dart';
 
 import '../generate/phase.dart';
 
+/// Types of [AssetNode].
+enum NodeType {
+  builderOptions,
+  generated,
+  glob,
+  internal,
+  placeholder,
+  postProcessAnchor,
+  source,
+  syntheticSource,
+}
+
 /// A node in the asset graph which may be an input to other assets.
 abstract class AssetNode {
   final AssetId id;
+
+  final NodeType type;
 
   /// The assets that any [Builder] in the build graph declares it may output
   /// when run on this asset.
@@ -68,15 +82,7 @@ abstract class AssetNode {
   /// and re-added, in which case it won't have a digest.
   bool get isInteresting => outputs.isNotEmpty || lastKnownDigest != null;
 
-  AssetNode(this.id, {this.lastKnownDigest});
-
-  /// Work around issue where you can't mixin classes into a class with optional
-  /// constructor args.
-  AssetNode._forMixins(this.id);
-
-  /// Work around issue where you can't mixin classes into a class with optional
-  /// constructor args, this one includes the digest.
-  AssetNode._forMixinsWithDigest(this.id, this.lastKnownDigest);
+  AssetNode(this.id, {required this.type, this.lastKnownDigest});
 
   @override
   String toString() => 'AssetNode: $id';
@@ -94,7 +100,8 @@ class InternalAssetNode extends AssetNode {
   @override
   bool get isValidInput => false;
 
-  InternalAssetNode(super.id, {super.lastKnownDigest});
+  InternalAssetNode(super.id, {super.lastKnownDigest})
+    : super(type: NodeType.internal);
 
   @override
   String toString() => 'InternalAssetNode: $id';
@@ -102,7 +109,8 @@ class InternalAssetNode extends AssetNode {
 
 /// A node which is an original source asset (not generated).
 class SourceAssetNode extends AssetNode {
-  SourceAssetNode(super.id, {super.lastKnownDigest});
+  SourceAssetNode(super.id, {super.lastKnownDigest})
+    : super(type: NodeType.source);
 
   @override
   String toString() => 'SourceAssetNode: $id';
@@ -172,42 +180,43 @@ class GeneratedAssetNode extends AssetNode implements NodeWithInputs {
     required this.isFailure,
     required this.primaryInput,
     required this.builderOptionsId,
-  }) : inputs = inputs != null ? HashSet.from(inputs) : HashSet();
+  }) : inputs = inputs != null ? HashSet.from(inputs) : HashSet(),
+       super(type: NodeType.generated);
 
   @override
   String toString() =>
       'GeneratedAssetNode: $id generated from input $primaryInput.';
 }
 
-/// A node which is not a generated or source asset.
+/// A non-existent source.
 ///
-/// These are typically not readable or valid as inputs.
-mixin _SyntheticAssetNode implements AssetNode {
+/// Typically these are created as a result of `canRead` calls for assets that
+/// don't exist in the graph. We still need to set up proper dependencies so
+/// that if that asset gets added later the outputs are properly invalidated.
+class SyntheticSourceAssetNode extends AssetNode {
   @override
   bool get isReadable => false;
 
   @override
   bool get isValidInput => false;
+
+  SyntheticSourceAssetNode(super.id) : super(type: NodeType.syntheticSource);
 }
 
-/// A [_SyntheticAssetNode] representing a non-existent source.
-///
-/// Typically these are created as a result of `canRead` calls for assets that
-/// don't exist in the graph. We still need to set up proper dependencies so
-/// that if that asset gets added later the outputs are properly invalidated.
-class SyntheticSourceAssetNode extends AssetNode with _SyntheticAssetNode {
-  SyntheticSourceAssetNode(super.id) : super._forMixins();
-}
-
-/// A [_SyntheticAssetNode] which represents an individual [BuilderOptions]
-/// object.
+/// An individual [BuilderOptions] object.
 ///
 /// These are used to track the state of a [BuilderOptions] object, and all
 /// [GeneratedAssetNode]s should depend on one of these nodes, which represents
 /// their configuration.
-class BuilderOptionsAssetNode extends AssetNode with _SyntheticAssetNode {
-  BuilderOptionsAssetNode(super.id, Digest super.lastKnownDigest)
-    : super._forMixinsWithDigest();
+class BuilderOptionsAssetNode extends AssetNode {
+  BuilderOptionsAssetNode(super.id, {required super.lastKnownDigest})
+    : super(type: NodeType.builderOptions);
+
+  @override
+  bool get isReadable => false;
+
+  @override
+  bool get isValidInput => false;
 
   @override
   String toString() => 'BuildOptionsAssetNode: $id';
@@ -215,22 +224,24 @@ class BuilderOptionsAssetNode extends AssetNode with _SyntheticAssetNode {
 
 /// Placeholder assets are magic files that are usable as inputs but are not
 /// readable.
-class PlaceHolderAssetNode extends AssetNode with _SyntheticAssetNode {
+class PlaceHolderAssetNode extends AssetNode {
+  @override
+  bool get isReadable => false;
+
   @override
   bool get isValidInput => true;
 
-  PlaceHolderAssetNode(super.id) : super._forMixins();
+  PlaceHolderAssetNode(super.id) : super(type: NodeType.placeholder);
 
   @override
   String toString() => 'PlaceHolderAssetNode: $id';
 }
 
-/// A [_SyntheticAssetNode] which is created for each [primaryInput] to a
-/// [PostBuildAction].
+/// A [primaryInput] to a [PostBuildAction].
 ///
 /// The [outputs] of this node are the individual outputs created for the
 /// [primaryInput] during the [PostBuildAction] at index [actionNumber].
-class PostProcessAnchorNode extends AssetNode with _SyntheticAssetNode {
+class PostProcessAnchorNode extends AssetNode {
   final int actionNumber;
   final AssetId builderOptionsId;
   final AssetId primaryInput;
@@ -242,7 +253,13 @@ class PostProcessAnchorNode extends AssetNode with _SyntheticAssetNode {
     this.actionNumber,
     this.builderOptionsId, {
     this.previousInputsDigest,
-  }) : super._forMixins();
+  }) : super(type: NodeType.postProcessAnchor);
+
+  @override
+  bool get isReadable => false;
+
+  @override
+  bool get isValidInput => false;
 
   PostProcessAnchorNode.forInputAndAction(
     AssetId primaryInput,
@@ -260,7 +277,7 @@ class PostProcessAnchorNode extends AssetNode with _SyntheticAssetNode {
 ///
 /// The [id] must always be unique to a given package, phase, and glob
 /// pattern.
-class GlobAssetNode extends InternalAssetNode implements NodeWithInputs {
+class GlobAssetNode extends AssetNode implements NodeWithInputs {
   final Glob glob;
 
   /// All the potential inputs matching this glob.
@@ -270,6 +287,12 @@ class GlobAssetNode extends InternalAssetNode implements NodeWithInputs {
   /// [results].
   @override
   HashSet<AssetId> inputs;
+
+  @override
+  bool get isInteresting => true;
+
+  @override
+  bool get isValidInput => false;
 
   @override
   bool get isReadable => false;
@@ -291,7 +314,8 @@ class GlobAssetNode extends InternalAssetNode implements NodeWithInputs {
     HashSet<AssetId>? inputs,
     super.lastKnownDigest,
     this.results,
-  }) : inputs = inputs ?? HashSet();
+  }) : inputs = inputs ?? HashSet(),
+       super(type: NodeType.glob);
 
   static AssetId createId(String package, Glob glob, int phaseNum) => AssetId(
     package,

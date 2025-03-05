@@ -1274,7 +1274,7 @@ void main() {
     var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
     var builderOptionsNode = BuilderOptionsAssetNode(
       builderOptionsId,
-      computeBuilderOptionsDigest(defaultBuilderOptions),
+      lastKnownDigest: computeBuilderOptionsDigest(defaultBuilderOptions),
     );
     expectedGraph.add(builderOptionsNode);
 
@@ -1318,7 +1318,7 @@ void main() {
     var postBuilderOptionsId = makeAssetId('a|PostPhase0.builderOptions');
     var postBuilderOptionsNode = BuilderOptionsAssetNode(
       postBuilderOptionsId,
-      computeBuilderOptionsDigest(defaultBuilderOptions),
+      lastKnownDigest: computeBuilderOptionsDigest(defaultBuilderOptions),
     );
     expectedGraph.add(postBuilderOptionsNode);
 

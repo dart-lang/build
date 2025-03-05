@@ -611,8 +611,8 @@ class _SingleBuild {
         .toList(growable: false)) {
       if (node is! PostProcessAnchorNode) continue;
       if (node.actionNumber != actionNum) continue;
-      final inputNode = _assetGraph.get(node.primaryInput);
-      if (inputNode is SourceAssetNode ||
+      final inputNode = _assetGraph.get(node.primaryInput)!;
+      if (inputNode.type == NodeType.source ||
           inputNode is GeneratedAssetNode &&
               inputNode.wasOutput &&
               !inputNode.isFailure &&

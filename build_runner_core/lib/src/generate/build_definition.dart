@@ -600,8 +600,13 @@ class _Loader {
       AssetId builderOptionsId,
       BuilderOptions options,
     ) {
-      var builderOptionsNode =
-          assetGraph.get(builderOptionsId) as BuilderOptionsAssetNode;
+      var builderOptionsNode = assetGraph.get(builderOptionsId)!;
+      if (builderOptionsNode.type != NodeType.builderOptions) {
+        throw StateError(
+          'Expected node of type NodeType.builderOptionsNode:'
+          '$builderOptionsNode',
+        );
+      }
       var oldDigest = builderOptionsNode.lastKnownDigest;
       builderOptionsNode.lastKnownDigest = computeBuilderOptionsDigest(options);
       if (builderOptionsNode.lastKnownDigest != oldDigest) {

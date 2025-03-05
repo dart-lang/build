@@ -72,7 +72,7 @@ bool _shouldSkipNode(
     if (node.id.package != packageGraph.root.name) return true;
   }
 
-  if (node is InternalAssetNode) return true;
+  if (node.type == NodeType.internal || node.type == NodeType.glob) return true;
   if (node is GeneratedAssetNode) {
     if (!node.wasOutput || node.isFailure || node.state != NodeState.upToDate) {
       return true;

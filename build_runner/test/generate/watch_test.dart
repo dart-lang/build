@@ -364,7 +364,7 @@ void main() {
         var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
         var builderOptionsNode = BuilderOptionsAssetNode(
           builderOptionsId,
-          computeBuilderOptionsDigest(defaultBuilderOptions),
+          lastKnownDigest: computeBuilderOptionsDigest(defaultBuilderOptions),
         );
         expectedGraph.add(builderOptionsNode);
 

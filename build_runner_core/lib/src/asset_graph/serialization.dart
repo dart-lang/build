@@ -71,7 +71,7 @@ class _AssetGraphDeserializer {
     // current nodes.
     for (var node in graph.allNodes) {
       // These aren't explicitly added as inputs.
-      if (node is BuilderOptionsAssetNode) continue;
+      if (node.type == NodeType.builderOptions) continue;
 
       for (var output in node.outputs) {
         var inputsNode = graph.get(output) as NodeWithInputs?;
@@ -168,7 +168,7 @@ class _AssetGraphDeserializer {
         break;
       case _NodeType.builderOptions:
         assert(serializedNode.length == _WrappedAssetNode._length);
-        node = BuilderOptionsAssetNode(id, digest!);
+        node = BuilderOptionsAssetNode(id, lastKnownDigest: digest!);
         break;
       case _NodeType.placeholder:
         assert(serializedNode.length == _WrappedAssetNode._length);
@@ -346,24 +346,24 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
     var fieldId = _AssetField.values[index];
     switch (fieldId) {
       case _AssetField.nodeType:
-        if (node is SourceAssetNode) {
-          return _NodeType.source.index;
-        } else if (node is GeneratedAssetNode) {
-          return _NodeType.generated.index;
-        } else if (node is GlobAssetNode) {
-          return _NodeType.glob.index;
-        } else if (node is SyntheticSourceAssetNode) {
-          return _NodeType.syntheticSource.index;
-        } else if (node is InternalAssetNode) {
-          return _NodeType.internal.index;
-        } else if (node is BuilderOptionsAssetNode) {
-          return _NodeType.builderOptions.index;
-        } else if (node is PlaceHolderAssetNode) {
-          return _NodeType.placeholder.index;
-        } else if (node is PostProcessAnchorNode) {
-          return _NodeType.postProcessAnchor.index;
-        } else {
-          throw StateError('Unrecognized node type');
+        switch (node.type) {
+          case NodeType.source:
+            return _NodeType.source.index;
+          case NodeType.generated:
+            return _NodeType.generated.index;
+          case NodeType.glob:
+            return _NodeType.glob.index;
+          case NodeType.syntheticSource:
+            return _NodeType.syntheticSource.index;
+          case NodeType.internal:
+            return _NodeType.internal.index;
+          case NodeType.builderOptions:
+            return _NodeType.builderOptions.index;
+
+          case NodeType.placeholder:
+            return _NodeType.placeholder.index;
+          case NodeType.postProcessAnchor:
+            return _NodeType.postProcessAnchor.index;
         }
       case _AssetField.id:
         return serializer.findAssetIndex(node.id, from: node.id, field: 'id');
