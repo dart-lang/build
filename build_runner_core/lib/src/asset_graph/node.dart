@@ -30,25 +30,30 @@ class AssetNode {
 
   /// The assets that any [Builder] in the build graph declares it may output
   /// when run on this asset.
-  final Set<AssetId> primaryOutputs = <AssetId>{};
+  final Set<AssetId> _primaryOutputs;
+  Iterable<AssetId> get primaryOutputs => _primaryOutputs;
 
   /// The [AssetId]s of all generated assets which are output by a [Builder]
   /// which reads this asset.
-  final Set<AssetId> outputs = <AssetId>{};
+  final Set<AssetId> _outputs;
+  Iterable<AssetId> get outputs => _outputs;
 
   /// The [AssetId]s of all [PostProcessAnchorNode] assets for which this node
   /// is the primary input.
-  final Set<AssetId> anchorOutputs = <AssetId>{};
+  final Set<AssetId> _anchorOutputs;
+  Iterable<AssetId> get anchorOutputs => _anchorOutputs;
 
   /// The [Digest] for this node in its last known state.
   ///
   /// May be `null` if this asset has no outputs, or if it doesn't actually
   /// exist.
-  Digest? lastKnownDigest;
+  Digest? _lastKnownDigest;
+  Digest? get lastKnownDigest => _lastKnownDigest;
 
   /// The IDs of the [PostProcessAnchorNode] for post process builder which
   /// requested to delete this asset.
-  final Set<AssetId> deletedBy = <AssetId>{};
+  final Set<AssetId> _deletedBy;
+  Iterable<AssetId> get deletedBy => _deletedBy;
 
   /// Whether this asset is a normal, readable file.
   ///
@@ -79,7 +84,12 @@ class AssetNode {
       outputs.isNotEmpty ||
       lastKnownDigest != null;
 
-  AssetNode(this.id, {required this.type, this.lastKnownDigest});
+  AssetNode(this.id, {required this.type, Digest? lastKnownDigest})
+    : _primaryOutputs = {},
+      _outputs = {},
+      _anchorOutputs = {},
+      _lastKnownDigest = lastKnownDigest,
+      _deletedBy = {};
 
   /// An internal asset.
   ///
@@ -87,18 +97,38 @@ class AssetNode {
   ///
   /// They are "inputs" to the entire build, so they are never explicitly
   /// tracked as inputs.
-  AssetNode.internal(this.id, {this.lastKnownDigest})
-    : type = NodeType.internal;
+  AssetNode.internal(this.id, {Digest? lastKnownDigest})
+    : type = NodeType.internal,
+      _primaryOutputs = {},
+      _outputs = {},
+      _anchorOutputs = {},
+      _lastKnownDigest = lastKnownDigest,
+      _deletedBy = {};
 
   /// A manually-written source file.
-  AssetNode.source(this.id, {this.lastKnownDigest}) : type = NodeType.source;
+  AssetNode.source(
+    this.id, {
+    Digest? lastKnownDigest,
+    Iterable<AssetId>? outputs,
+    Iterable<AssetId>? primaryOutputs,
+  }) : type = NodeType.source,
+       _primaryOutputs = primaryOutputs?.toSet() ?? {},
+       _outputs = outputs?.toSet() ?? {},
+       _anchorOutputs = {},
+       _lastKnownDigest = lastKnownDigest,
+       _deletedBy = {};
 
   /// A [BuilderOptions] object.
   ///
   /// Each [GeneratedAssetNode] has one describing its configuration, so it
   /// rebuilds when the configuration changes.
-  AssetNode.builderOptions(this.id, {this.lastKnownDigest})
-    : type = NodeType.builderOptions;
+  AssetNode.builderOptions(this.id, {Digest? lastKnownDigest})
+    : type = NodeType.builderOptions,
+      _primaryOutputs = {},
+      _outputs = {},
+      _anchorOutputs = {},
+      _lastKnownDigest = lastKnownDigest,
+      _deletedBy = {};
 
   /// A missing source file.
   ///
@@ -106,8 +136,13 @@ class AssetNode {
   ///
   /// If later the file does exist, the builder must be rerun as it can
   /// produce different output.
-  AssetNode.missingSource(this.id, {this.lastKnownDigest})
-    : type = NodeType.syntheticSource;
+  AssetNode.missingSource(this.id, {Digest? lastKnownDigest})
+    : type = NodeType.syntheticSource,
+      _primaryOutputs = {},
+      _outputs = {},
+      _anchorOutputs = {},
+      _lastKnownDigest = lastKnownDigest,
+      _deletedBy = {};
 
   /// Placeholders for useful parts of packages.
   ///
@@ -115,11 +150,40 @@ class AssetNode {
   /// `test` folder, the `web` folder, and the whole package.
   ///
   /// TODO(davidmorgan): describe how these are used.
-  AssetNode.placeholder(this.id, {this.lastKnownDigest})
-    : type = NodeType.placeholder;
+  AssetNode.placeholder(this.id, {Digest? lastKnownDigest})
+    : type = NodeType.placeholder,
+      _primaryOutputs = {},
+      _outputs = {},
+      _anchorOutputs = {},
+      _lastKnownDigest = lastKnownDigest,
+      _deletedBy = {};
 
   @override
   String toString() => 'AssetNode: $id';
+
+  /// Write access to collections in the node.
+  AssetNodeMutator get mutate => AssetNodeMutator(this);
+
+  /// Access to unmodifable views on collections in the node.
+  AssetNodeInspector get inspect => AssetNodeInspector(this);
+}
+
+/// Write access to collections in the node.
+extension type AssetNodeMutator(AssetNode node) {
+  Set<AssetId> get primaryOutputs => node._primaryOutputs;
+  Set<AssetId> get outputs => node._outputs;
+  Set<AssetId> get anchorOutputs => node._anchorOutputs;
+
+  Digest? get lastKnownDigest => node._lastKnownDigest;
+  set lastKnownDigest(Digest? value) => node._lastKnownDigest = value;
+
+  Set<AssetId> get deletedBy => node._deletedBy;
+}
+
+/// Access to unmodifable views on collections in the node.
+extension type AssetNodeInspector(AssetNode node) {
+  Set<AssetId> get primaryOutputs => UnmodifiableSetView(node._primaryOutputs);
+  Set<AssetId> get outputs => UnmodifiableSetView(node._outputs);
 }
 
 /// States for nodes that can be invalidated.

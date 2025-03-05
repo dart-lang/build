@@ -1291,10 +1291,11 @@ void main() {
       inputs: [makeAssetId('a|web/a.txt')],
       isHidden: false,
     );
-    builderOptionsNode.outputs.add(aCopyNode.id);
+    builderOptionsNode.mutate.outputs.add(aCopyNode.id);
     expectedGraph.add(aCopyNode);
-    aSourceNode.outputs.add(aCopyNode.id);
-    aSourceNode.primaryOutputs.add(aCopyNode.id);
+    aSourceNode.mutate
+      ..outputs.add(aCopyNode.id)
+      ..primaryOutputs.add(aCopyNode.id);
 
     var bCopyId = makeAssetId('a|lib/b.txt.copy'); //;
     var bCopyNode = GeneratedAssetNode(
@@ -1309,10 +1310,11 @@ void main() {
       inputs: [makeAssetId('a|lib/b.txt')],
       isHidden: false,
     );
-    builderOptionsNode.outputs.add(bCopyNode.id);
+    builderOptionsNode.mutate.outputs.add(bCopyNode.id);
     expectedGraph.add(bCopyNode);
-    bSourceNode.outputs.add(bCopyNode.id);
-    bSourceNode.primaryOutputs.add(bCopyNode.id);
+    bSourceNode.mutate
+      ..outputs.add(bCopyNode.id)
+      ..primaryOutputs.add(bCopyNode.id);
 
     // Post build generates asset nodes and supporting nodes
     var postBuilderOptionsId = makeAssetId('a|PostPhase0.builderOptions');
@@ -1351,10 +1353,11 @@ void main() {
     // Note we don't expect this node to get added to the builder options node
     // outputs.
     expectedGraph.add(aPostCopyNode);
-    aSourceNode.outputs.add(aPostCopyNode.id);
-    aSourceNode.anchorOutputs.add(aAnchorNode.id);
-    aAnchorNode.outputs.add(aPostCopyNode.id);
-    aSourceNode.primaryOutputs.add(aPostCopyNode.id);
+    aSourceNode.mutate
+      ..outputs.add(aPostCopyNode.id)
+      ..anchorOutputs.add(aAnchorNode.id);
+    aAnchorNode.mutate.outputs.add(aPostCopyNode.id);
+    aSourceNode.mutate.primaryOutputs.add(aPostCopyNode.id);
 
     var bPostCopyNode = GeneratedAssetNode(
       makeAssetId('a|lib/b.txt.post'),
@@ -1371,10 +1374,11 @@ void main() {
     // Note we don't expect this node to get added to the builder options node
     // outputs.
     expectedGraph.add(bPostCopyNode);
-    bSourceNode.outputs.add(bPostCopyNode.id);
-    bSourceNode.anchorOutputs.add(bAnchorNode.id);
-    bAnchorNode.outputs.add(bPostCopyNode.id);
-    bSourceNode.primaryOutputs.add(bPostCopyNode.id);
+    bSourceNode.mutate
+      ..outputs.add(bPostCopyNode.id)
+      ..anchorOutputs.add(bAnchorNode.id);
+    bAnchorNode.mutate.outputs.add(bPostCopyNode.id);
+    bSourceNode.mutate.primaryOutputs.add(bPostCopyNode.id);
 
     // TODO: We dont have a shared way of computing the combined input hashes
     // today, but eventually we should test those here too.

@@ -102,7 +102,7 @@ void main() {
           var node = makeAssetNode();
           globNode.inputs.add(node.id);
           globNode.results!.add(node.id);
-          node.outputs.add(globNode.id);
+          node.mutate.outputs.add(globNode.id);
           graph.add(node);
           var phaseNum = n;
           var builderOptionsNode = AssetNode.builderOptions(
@@ -116,7 +116,7 @@ void main() {
             builderOptionsNode.id,
           );
           graph.add(anchorNode);
-          node.anchorOutputs.add(anchorNode.id);
+          node.mutate.anchorOutputs.add(anchorNode.id);
           for (var g = 0; g < 5 - n; g++) {
             var builderOptionsNode = AssetNode.builderOptions(
               makeAssetId(),
@@ -133,16 +133,16 @@ void main() {
               builderOptionsId: builderOptionsNode.id,
               isHidden: g % 3 == 0,
             );
-            node.outputs.add(generatedNode.id);
-            node.primaryOutputs.add(generatedNode.id);
-            globNode.outputs.add(generatedNode.id);
-            builderOptionsNode.outputs.add(generatedNode.id);
+            node.mutate.outputs.add(generatedNode.id);
+            node.mutate.primaryOutputs.add(generatedNode.id);
+            globNode.mutate.outputs.add(generatedNode.id);
+            builderOptionsNode.mutate.outputs.add(generatedNode.id);
             if (g.isEven) {
-              node.deletedBy.add(anchorNode.id);
+              node.mutate.deletedBy.add(anchorNode.id);
             }
 
             var syntheticNode = AssetNode.missingSource(makeAssetId());
-            syntheticNode.outputs.add(generatedNode.id);
+            syntheticNode.mutate.outputs.add(generatedNode.id);
 
             generatedNode.inputs.addAll([
               node.id,
@@ -337,7 +337,7 @@ void main() {
           (graph.get(primaryOutputId) as GeneratedAssetNode)
             ..state = NodeState.upToDate
             ..inputs.add(primaryInputId);
-          graph.get(primaryInputId)!.outputs.add(primaryOutputId);
+          graph.get(primaryInputId)!.mutate.outputs.add(primaryOutputId);
           await graph.updateAndInvalidate(
             buildPhases,
             changes,
@@ -418,7 +418,7 @@ void main() {
           () async {
             var secondaryId = makeAssetId('foo|secondary.txt');
             var secondaryNode = AssetNode.source(secondaryId);
-            secondaryNode.outputs.add(primaryOutputId);
+            secondaryNode.mutate.outputs.add(primaryOutputId);
             var primaryOutputNode =
                 graph.get(primaryOutputId) as GeneratedAssetNode;
             primaryOutputNode.inputs.add(secondaryNode.id);
@@ -460,7 +460,7 @@ void main() {
                 graph.get(primaryOutputId) as GeneratedAssetNode
                   ..state = NodeState.upToDate
                   ..inputs.add(globNode.id);
-            globNode.outputs.add(primaryOutputId);
+            globNode.mutate.outputs.add(primaryOutputId);
             graph.add(globNode);
 
             var coolAssetId = AssetId('foo', 'lib/really.cool');
@@ -508,7 +508,7 @@ void main() {
             globNode.state = NodeState.upToDate;
             globNode.inputs.add(coolAssetId);
             globNode.results!.add(coolAssetId);
-            graph.get(coolAssetId)!.outputs.add(globNode.id);
+            graph.get(coolAssetId)!.mutate.outputs.add(globNode.id);
             await checkChangeType(ChangeType.MODIFY);
 
             expect(globNode.inputs, contains(coolAssetId));
@@ -662,12 +662,13 @@ void main() {
 
         // Pretend a build happened
         graph.add(
-          AssetNode.missingSource(nodeToRead)..outputs.add(outputReadingNode),
+          AssetNode.missingSource(nodeToRead)
+            ..mutate.outputs.add(outputReadingNode),
         );
         (graph.get(outputReadingNode) as GeneratedAssetNode)
           ..state = NodeState.upToDate
           ..inputs.add(nodeToRead)
-          ..outputs.add(lastPrimaryOutputNode);
+          ..mutate.outputs.add(lastPrimaryOutputNode);
         (graph.get(lastPrimaryOutputNode) as GeneratedAssetNode)
           ..state = NodeState.upToDate
           ..inputs.add(outputReadingNode);
@@ -715,14 +716,14 @@ void main() {
         // Pretend a build happened
         graph.add(
           AssetNode.missingSource(toBeGeneratedDart)
-            ..outputs.add(generatedPart),
+            ..mutate.outputs.add(generatedPart),
         );
         (graph.get(generatedDart) as GeneratedAssetNode)
           ..state = NodeState.upToDate
           ..inputs.addAll([generatedPart, toBeGeneratedDart]);
         final node = graph.get(source)!;
         expect(node.type, NodeType.source);
-        node.outputs.add(generatedPart);
+        node.mutate.outputs.add(generatedPart);
 
         await graph.updateAndInvalidate(
           buildPhases,

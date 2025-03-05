@@ -73,7 +73,7 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
       } else {
         // Make sure we are tracking changes for all ids in [allSources].
         for (var id in allSources) {
-          graph.get(id)!.lastKnownDigest ??= await reader.digest(id);
+          graph.get(id)!.mutate.lastKnownDigest ??= await reader.digest(id);
         }
       }
     } on ArgumentError // ignore: avoid_catching_errors

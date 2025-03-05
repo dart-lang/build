@@ -120,7 +120,9 @@ class FinalizedReader {
   FutureOr<Digest> _ensureDigest(AssetId id) {
     var node = _assetGraph.get(id)!;
     if (node.lastKnownDigest != null) return node.lastKnownDigest!;
-    return _delegate.digest(id).then((digest) => node.lastKnownDigest = digest);
+    return _delegate
+        .digest(id)
+        .then((digest) => node.mutate.lastKnownDigest = digest);
   }
 }
 

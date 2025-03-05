@@ -13,10 +13,14 @@ AssetNode makeAssetNode([
   Digest? lastKnownDigest,
 ]) {
   var id = makeAssetId(assetIdString);
-  var node = AssetNode.source(id, lastKnownDigest: lastKnownDigest);
-  if (outputs != null) {
-    node.outputs.addAll(outputs);
-    node.primaryOutputs.addAll(outputs);
+  if (outputs == null) {
+    return AssetNode.source(id, lastKnownDigest: lastKnownDigest);
+  } else {
+    return AssetNode.source(
+      id,
+      lastKnownDigest: lastKnownDigest,
+      outputs: outputs,
+      primaryOutputs: outputs,
+    );
   }
-  return node;
 }

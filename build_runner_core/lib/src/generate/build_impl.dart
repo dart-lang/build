@@ -488,7 +488,7 @@ class _SingleBuild {
       // Add `builderOutputs` to the primary outputs of the input.
       var inputNode = _assetGraph.get(input)!;
       assert(
-        inputNode.primaryOutputs.containsAll(builderOutputs),
+        inputNode.inspect.primaryOutputs.containsAll(builderOutputs),
         // ignore: prefer_interpolation_to_compose_strings
         'input $input with builder $builder missing primary outputs: \n'
                 'Got ${inputNode.primaryOutputs.join(', ')} '
@@ -662,13 +662,14 @@ class _SingleBuild {
     // Clear input tracking accumulated during `_buildShouldRun`.
     readerWriter.inputTracker.clear();
 
-    // Clean out the impacts of the previous run
+    // Clean out the impacts of the previous run.
     await FailureReporter.clean(phaseNumber, input);
     await _cleanUpStaleOutputs(anchorNode.outputs);
-    anchorNode.outputs
-      ..toList().forEach(_assetGraph.remove)
-      ..clear();
-    inputNode.deletedBy.remove(anchorNode.id);
+    for (final output in anchorNode.outputs.toList(growable: false)) {
+      _assetGraph.remove(output);
+    }
+    anchorNode.mutate.outputs.clear();
+    inputNode.mutate.deletedBy.remove(anchorNode.id);
 
     var actionDescription = '$builder on $input';
     var logger = BuildForInputLogger(Logger(actionDescription));
@@ -699,7 +700,7 @@ class _SingleBuild {
           state: NodeState.upToDate,
         );
         _assetGraph.add(node);
-        anchorNode.outputs.add(assetId);
+        anchorNode.mutate.outputs.add(assetId);
       },
       deleteAsset: (assetId) {
         if (!_assetGraph.contains(assetId)) {
@@ -711,7 +712,7 @@ class _SingleBuild {
             'Can only delete primary input',
           );
         }
-        _assetGraph.get(assetId)!.deletedBy.add(anchorNode.id);
+        _assetGraph.get(assetId)!.mutate.deletedBy.add(anchorNode.id);
       },
     ).catchError((void _) {
       // Errors tracked through the logger
@@ -724,7 +725,7 @@ class _SingleBuild {
 
     // Reset the state for all the output nodes based on what was read and
     // written.
-    inputNode.primaryOutputs.addAll(assetsWritten);
+    inputNode.mutate.primaryOutputs.addAll(assetsWritten);
     await _setOutputsState(
       input,
       assetsWritten,
@@ -853,7 +854,7 @@ class _SingleBuild {
 
       var actualMatches = <AssetId>[];
       for (var node in potentialNodes) {
-        node.outputs.add(globNode.id);
+        node.mutate.outputs.add(globNode.id);
         if (node is GeneratedAssetNode && (!node.wasOutput || node.isFailure)) {
           continue;
         }
@@ -863,8 +864,10 @@ class _SingleBuild {
       globNode
         ..results = actualMatches
         ..inputs = HashSet.of(potentialNodes.map((n) => n.id))
-        ..state = NodeState.upToDate
-        ..lastKnownDigest = md5.convert(utf8.encode(actualMatches.join(' ')));
+        ..state = NodeState.upToDate;
+      globNode.mutate.lastKnownDigest = md5.convert(
+        utf8.encode(actualMatches.join(' ')),
+      );
 
       // TODO: remove ?? fallback after 2.15 sdk.
       unawaited(_lazyGlobs.remove(globNode.id) ?? Future.value());
@@ -903,7 +906,7 @@ class _SingleBuild {
       } else {
         if (node.lastKnownDigest == null) {
           await reader.cache.invalidate([id]);
-          node.lastKnownDigest = await reader.digest(id);
+          node.mutate.lastKnownDigest = await reader.digest(id);
         }
       }
       combine(node.lastKnownDigest!.bytes as Uint8List);
@@ -958,8 +961,8 @@ class _SingleBuild {
         ..state = NodeState.upToDate
         ..wasOutput = wasOutput
         ..isFailure = isFailure
-        ..lastKnownDigest = digest
         ..previousInputsDigest = inputsDigest;
+      node.mutate.lastKnownDigest = digest;
 
       if (isFailure) {
         await _failureReporter.markReported(actionDescription, node, errors);
@@ -972,14 +975,14 @@ class _SingleBuild {
                 ..state = NodeState.upToDate
                 ..wasOutput = false
                 ..isFailure = true
-                ..lastKnownDigest = null
                 ..previousInputsDigest = null;
+          outputNode.mutate.lastKnownDigest = null;
           allSkippedFailures.add(outputNode);
           needsMarkAsFailure.addAll(outputNode.primaryOutputs);
 
           // Make sure output invalidation follows primary outputs for builds
           // that won't run.
-          node.outputs.add(output);
+          node.mutate.outputs.add(output);
           outputNode.inputs.add(node.id);
         }
         await _failureReporter.markSkipped(allSkippedFailures);
@@ -994,7 +997,7 @@ class _SingleBuild {
     node.inputs.removeAll(removedInputs);
     for (var input in removedInputs) {
       var inputNode = _assetGraph.get(input)!;
-      inputNode.outputs.remove(node.id);
+      inputNode.mutate.outputs.remove(node.id);
     }
   }
 
@@ -1005,7 +1008,7 @@ class _SingleBuild {
     node.inputs.addAll(newInputs);
     for (var input in newInputs) {
       var inputNode = _assetGraph.get(input)!;
-      inputNode.outputs.add(node.id);
+      inputNode.mutate.outputs.add(node.id);
     }
   }
 

@@ -369,7 +369,9 @@ class SingleStepReaderWriter extends AssetReader
     if (_runningBuild == null) return _delegate.digest(id);
     var node = _runningBuild.assetGraph.get(id)!;
     if (node.lastKnownDigest != null) return node.lastKnownDigest!;
-    return _delegate.digest(id).then((digest) => node.lastKnownDigest = digest);
+    return _delegate
+        .digest(id)
+        .then((digest) => node.mutate.lastKnownDigest = digest);
   }
 
   /// Checks whether [node] can be read by this step.

@@ -155,7 +155,9 @@ class InspectNodeCommand extends Command<bool> {
         node.primaryOutputs.forEach(printAsset);
 
         description.writeln('  secondary outputs:');
-        node.outputs.difference(node.primaryOutputs).forEach(printAsset);
+        node.inspect.outputs
+            .difference(node.inspect.primaryOutputs)
+            .forEach(printAsset);
 
         if (node is NodeWithInputs) {
           description.writeln('  inputs:');

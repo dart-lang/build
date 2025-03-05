@@ -116,8 +116,9 @@ class AssetGraph {
         // Don't call _removeRecursive, that recursively removes all transitive
         // primary outputs. We only want to remove this node.
         _nodesByPackage[existing.id.package]!.remove(existing.id.path);
-        node.outputs.addAll(existing.outputs);
-        node.primaryOutputs.addAll(existing.primaryOutputs);
+        node.mutate
+          ..outputs.addAll(existing.outputs)
+          ..primaryOutputs.addAll(existing.primaryOutputs);
       } else {
         throw StateError(
           'Tried to add node ${node.id} to the asset graph but it already '
@@ -195,7 +196,7 @@ class AssetGraph {
     await digestReader.cache.invalidate(nodes.map((n) => n.id));
     await Future.wait(
       nodes.map((node) async {
-        node.lastKnownDigest = await digestReader.digest(node.id);
+        node.mutate.lastKnownDigest = await digestReader.digest(node.id);
       }),
     );
   }
@@ -231,12 +232,13 @@ class AssetGraph {
         var inputNode = get(input);
         // We may have already removed this node entirely.
         if (inputNode != null) {
-          inputNode.outputs.remove(id);
-          inputNode.primaryOutputs.remove(id);
+          inputNode.mutate
+            ..outputs.remove(id)
+            ..primaryOutputs.remove(id);
         }
       }
       if (node is GeneratedAssetNode) {
-        get(node.builderOptionsId)!.outputs.remove(id);
+        get(node.builderOptionsId)!.mutate.outputs.remove(id);
       }
     }
     // Synthetic nodes need to be kept to retain dependency tracking.
@@ -498,7 +500,7 @@ class AssetGraph {
       var node = get(input)!;
       var outputs = expectedOutputs(phase.builder, input);
       phaseOutputs.addAll(outputs);
-      node.primaryOutputs.addAll(outputs);
+      node.mutate.primaryOutputs.addAll(outputs);
       var deleted = _addGeneratedOutputs(
         outputs,
         phaseNum,
@@ -533,7 +535,7 @@ class AssetGraph {
           buildOptionsNodeId,
         );
         add(anchor);
-        get(input)!.anchorOutputs.add(anchor.id);
+        get(input)!.mutate.anchorOutputs.add(anchor.id);
       }
       actionNum++;
     }
@@ -588,11 +590,11 @@ class AssetGraph {
         isHidden: isHidden,
       );
       if (existing != null) {
-        newNode.outputs.addAll(existing.outputs);
+        newNode.mutate.outputs.addAll(existing.outputs);
         // Ensure we set up the reverse link for NodeWithInput nodes.
         _addInput(existing.outputs, output);
       }
-      builderOptionsNode.outputs.add(output);
+      builderOptionsNode.mutate.outputs.add(output);
       _add(newNode);
     }
     return removed;
