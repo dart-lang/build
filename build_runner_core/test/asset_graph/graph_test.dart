@@ -107,7 +107,7 @@ void main() {
           var phaseNum = n;
           var builderOptionsNode = BuilderOptionsAssetNode(
             makeAssetId(),
-            Digest([n]),
+            lastKnownDigest: Digest([n]),
           );
           graph.add(builderOptionsNode);
           var anchorNode = PostProcessAnchorNode.forInputAndAction(
@@ -120,7 +120,7 @@ void main() {
           for (var g = 0; g < 5 - n; g++) {
             var builderOptionsNode = BuilderOptionsAssetNode(
               makeAssetId(),
-              md5.convert(utf8.encode('test')),
+              lastKnownDigest: md5.convert(utf8.encode('test')),
             );
 
             var generatedNode = GeneratedAssetNode(
@@ -280,12 +280,12 @@ void main() {
         expect(primaryOutputNode.inputs, isEmpty);
         expect(primaryOutputNode.primaryInput, primaryInputId);
 
-        var builderOptionsNode =
-            graph.get(builderOptionsId) as BuilderOptionsAssetNode;
+        var builderOptionsNode = graph.get(builderOptionsId)!;
+        expect(builderOptionsNode.type, NodeType.builderOptions);
         expect(builderOptionsNode.outputs, unorderedEquals([primaryOutputId]));
 
-        var postBuilderOptionsNode =
-            graph.get(postBuilderOptionsId) as BuilderOptionsAssetNode;
+        var postBuilderOptionsNode = graph.get(postBuilderOptionsId)!;
+        expect(postBuilderOptionsNode.type, NodeType.builderOptions);
         expect(postBuilderOptionsNode, isNotNull);
         expect(postBuilderOptionsNode.outputs, isEmpty);
         var anchorNode =
@@ -369,7 +369,7 @@ void main() {
           );
 
           expect(graph.contains(syntheticId), isTrue);
-          expect(graph.get(syntheticId), const TypeMatcher<SourceAssetNode>());
+          expect(graph.get(syntheticId)?.type, NodeType.source);
           expect(graph.contains(syntheticOutputId), isTrue);
           expect(
             graph.get(syntheticOutputId),
@@ -720,7 +720,9 @@ void main() {
         (graph.get(generatedDart) as GeneratedAssetNode)
           ..state = NodeState.upToDate
           ..inputs.addAll([generatedPart, toBeGeneratedDart]);
-        (graph.get(source) as SourceAssetNode).outputs.add(generatedPart);
+        final node = graph.get(source)!;
+        expect(node.type, NodeType.source);
+        node.outputs.add(generatedPart);
 
         await graph.updateAndInvalidate(
           buildPhases,

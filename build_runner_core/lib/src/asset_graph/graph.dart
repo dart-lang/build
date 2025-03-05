@@ -112,7 +112,7 @@ class AssetGraph {
   void _add(AssetNode node) {
     var existing = get(node.id);
     if (existing != null) {
-      if (existing is SyntheticSourceAssetNode) {
+      if (existing.type == NodeType.syntheticSource) {
         // Don't call _removeRecursive, that recursively removes all transitive
         // primary outputs. We only want to remove this node.
         _nodesByPackage[existing.id.package]!.remove(existing.id.path);
@@ -164,7 +164,7 @@ class AssetGraph {
         add(
           BuilderOptionsAssetNode(
             builderOptionsIdForAction(phase, phaseNum),
-            computeBuilderOptionsDigest(phase.builderOptions),
+            lastKnownDigest: computeBuilderOptionsDigest(phase.builderOptions),
           ),
         );
       } else if (phase is PostBuildPhase) {
@@ -173,7 +173,9 @@ class AssetGraph {
           add(
             BuilderOptionsAssetNode(
               builderOptionsIdForAction(builderAction, actionNum),
-              computeBuilderOptionsDigest(builderAction.builderOptions),
+              lastKnownDigest: computeBuilderOptionsDigest(
+                builderAction.builderOptions,
+              ),
             ),
           );
           actionNum++;
@@ -238,7 +240,7 @@ class AssetGraph {
       }
     }
     // Synthetic nodes need to be kept to retain dependency tracking.
-    if (node is! SyntheticSourceAssetNode) {
+    if (node.type != NodeType.syntheticSource) {
       _nodesByPackage[id.package]!.remove(id.path);
     }
     return removedIds;
@@ -274,7 +276,7 @@ class AssetGraph {
 
   /// All the source files in the graph.
   Iterable<AssetId> get sources =>
-      allNodes.whereType<SourceAssetNode>().map((n) => n.id);
+      allNodes.where((n) => n.type == NodeType.source).map((n) => n.id);
 
   /// Updates graph structure, invalidating and deleting any outputs that were
   /// affected.
@@ -332,9 +334,12 @@ class AssetGraph {
       }
     }
 
-    removeIds
-        .where((id) => get(id) is SourceAssetNode)
-        .forEach(addTransitivePrimaryOutputs);
+    for (final id in removeIds) {
+      final node = get(id);
+      if (node != null && node.type == NodeType.source) {
+        addTransitivePrimaryOutputs(id);
+      }
+    }
 
     // The generated nodes to actually delete from the file system.
     var idsToDelete = Set<AssetId>.from(transitiveRemovedIds)
@@ -397,9 +402,12 @@ class AssetGraph {
 
     // Remove all deleted source assets from the graph, which also recursively
     // removes all their primary outputs.
-    for (var id in removeIds.where((id) => get(id) is SourceAssetNode)) {
-      invalidateNodeAndDeps(id);
-      _removeRecursive(id);
+    for (final id in removeIds) {
+      final node = get(id);
+      if (node != null && node.type == NodeType.source) {
+        invalidateNodeAndDeps(id);
+        _removeRecursive(id);
+      }
     }
 
     return invalidatedIds;
@@ -480,7 +488,7 @@ class AssetGraph {
   ) {
     var phaseOutputs = <AssetId>{};
     var buildOptionsNodeId = builderOptionsIdForAction(phase, phaseNum);
-    var builderOptionsNode = get(buildOptionsNodeId) as BuilderOptionsAssetNode;
+    var builderOptionsNode = get(buildOptionsNodeId)!;
     var inputs =
         allInputs.where((input) => _actionMatches(phase, input)).toList();
     for (var input in inputs) {
@@ -541,12 +549,15 @@ class AssetGraph {
   Set<AssetId> _addGeneratedOutputs(
     Iterable<AssetId> outputs,
     int phaseNumber,
-    BuilderOptionsAssetNode builderOptionsNode,
+    AssetNode builderOptionsNode,
     List<BuildPhase> buildPhases,
     String rootPackage, {
     required AssetId primaryInput,
     required bool isHidden,
   }) {
+    if (builderOptionsNode.type != NodeType.builderOptions) {
+      throw ArgumentError('Expected node of type NodeType.builderOptionsNode');
+    }
     var removed = <AssetId>{};
     for (var output in outputs) {
       AssetNode? existing;
