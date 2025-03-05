@@ -84,9 +84,9 @@ BazelWorkerDriver get _frontendDriver {
   _frontendWorkersAreDoneCompleter ??= Completer<void>();
   return __frontendDriver ??= BazelWorkerDriver(
     () => Process.start(
-      p.join(sdkDir, 'bin', 'dart'),
+      p.join(sdkDir, 'bin', 'dartaotruntime'),
       [
-        p.join(sdkDir, 'bin', 'snapshots', 'kernel_worker.dart.snapshot'),
+        p.join(sdkDir, 'bin', 'snapshots', 'kernel_worker_aot.dart.snapshot'),
         '--persistent_worker',
       ],
       mode: _processMode,
