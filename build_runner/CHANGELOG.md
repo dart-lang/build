@@ -8,6 +8,7 @@
 - Refactor `CachingAssetReader` to `FilesystemCache`.
 - Refactor `FileBasedAssetReader` and `FileBasedAssetWriter` to `ReaderWriter`.
 - Remove `OnDeleteWriter`, add functionality to `ReaderWriter`.
+- Add `NodeType` to `AssetNode`, remove subtypes.
 
 ## 2.4.15
 

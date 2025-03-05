@@ -1272,7 +1272,7 @@ void main() {
 
     // Regular generated asset nodes and supporting nodes.
     var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
-    var builderOptionsNode = BuilderOptionsAssetNode(
+    var builderOptionsNode = AssetNode.builderOptions(
       builderOptionsId,
       lastKnownDigest: computeBuilderOptionsDigest(defaultBuilderOptions),
     );
@@ -1316,7 +1316,7 @@ void main() {
 
     // Post build generates asset nodes and supporting nodes
     var postBuilderOptionsId = makeAssetId('a|PostPhase0.builderOptions');
-    var postBuilderOptionsNode = BuilderOptionsAssetNode(
+    var postBuilderOptionsNode = AssetNode.builderOptions(
       postBuilderOptionsId,
       lastKnownDigest: computeBuilderOptionsDigest(defaultBuilderOptions),
     );

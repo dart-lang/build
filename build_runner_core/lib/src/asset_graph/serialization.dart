@@ -105,11 +105,11 @@ class _AssetGraphDeserializer {
     switch (typeId) {
       case _NodeType.source:
         assert(serializedNode.length == _WrappedAssetNode._length);
-        node = SourceAssetNode(id, lastKnownDigest: digest);
+        node = AssetNode.source(id, lastKnownDigest: digest);
         break;
       case _NodeType.syntheticSource:
         assert(serializedNode.length == _WrappedAssetNode._length);
-        node = SyntheticSourceAssetNode(id);
+        node = AssetNode.missingSource(id);
         break;
       case _NodeType.generated:
         assert(serializedNode.length == _WrappedGeneratedAssetNode._length);
@@ -164,15 +164,15 @@ class _AssetGraphDeserializer {
         break;
       case _NodeType.internal:
         assert(serializedNode.length == _WrappedAssetNode._length);
-        node = InternalAssetNode(id, lastKnownDigest: digest);
+        node = AssetNode.internal(id, lastKnownDigest: digest);
         break;
       case _NodeType.builderOptions:
         assert(serializedNode.length == _WrappedAssetNode._length);
-        node = BuilderOptionsAssetNode(id, lastKnownDigest: digest!);
+        node = AssetNode.builderOptions(id, lastKnownDigest: digest!);
         break;
       case _NodeType.placeholder:
         assert(serializedNode.length == _WrappedAssetNode._length);
-        node = PlaceHolderAssetNode(id);
+        node = AssetNode.placeholder(id);
         break;
       case _NodeType.postProcessAnchor:
         assert(serializedNode.length == _WrappedPostProcessAnchorNode._length);

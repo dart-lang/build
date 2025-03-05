@@ -27,7 +27,7 @@ FutureOr<bool> shouldProcess(
   if (_isCacheFile(change) && !assetGraph.contains(change.id)) return false;
   var node = assetGraph.get(change.id);
   if (node != null) {
-    if (!willCreateOutputDir && !node.isInteresting) return false;
+    if (!willCreateOutputDir && !node.changesRequireRebuild) return false;
     if (_isAddOrEditOnGeneratedFile(node, change.type)) return false;
     if (change.type == ChangeType.MODIFY) {
       // Was it really modified or just touched?
@@ -45,7 +45,7 @@ FutureOr<bool> shouldProcess(
 }
 
 bool _isAddOrEditOnGeneratedFile(AssetNode node, ChangeType changeType) =>
-    node.isGenerated && changeType != ChangeType.REMOVE;
+    node.type == NodeType.generated && changeType != ChangeType.REMOVE;
 
 bool _isCacheFile(AssetChange change) => change.id.path.startsWith(cacheDir);
 

@@ -59,7 +59,7 @@ class FinalizedReader {
       return UnreadableReason.notOutput;
     }
     if (node.isDeleted) return UnreadableReason.deleted;
-    if (!node.isReadable) return UnreadableReason.assetType;
+    if (!node.isFile) return UnreadableReason.assetType;
 
     if (node is GeneratedAssetNode) {
       if (node.isFailure) return UnreadableReason.failed;
@@ -69,7 +69,7 @@ class FinalizedReader {
       return null;
     }
 
-    if (node.isValidInput && await _delegate.canRead(id)) return null;
+    if (node.isTrackedInput && await _delegate.canRead(id)) return null;
     return UnreadableReason.unknown;
   }
 

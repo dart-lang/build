@@ -16,6 +16,7 @@
 - Remove `BuildCacheWriter`, functionality is handled by `AssetPathProvider`.
 - Refactor `SingleStepReader` to `SingleStepReaderWriter`, incorporating
   `AssetWriterSpy` functionality.
+- Add `NodeType` to `AssetNode`, remove subtypes.
 
 ## 8.0.0
 

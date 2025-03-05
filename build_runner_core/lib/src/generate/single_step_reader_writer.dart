@@ -276,7 +276,7 @@ class SingleStepReaderWriter extends AssetReader
     final node = _runningBuild.assetGraph.get(id);
     if (node == null) {
       inputTracker.add(id);
-      _runningBuild.assetGraph.add(SyntheticSourceAssetNode(id));
+      _runningBuild.assetGraph.add(AssetNode.missingSource(id));
       return false;
     }
 
@@ -391,7 +391,7 @@ class SingleStepReaderWriter extends AssetReader
       await _runningBuild!.nodeBuilder(node);
       return Readability.fromPreviousPhase(node.wasOutput && !node.isFailure);
     }
-    return Readability.fromPreviousPhase(node.isReadable && node.isValidInput);
+    return Readability.fromPreviousPhase(node.isFile && node.isTrackedInput);
   }
 
   void _checkInvalidInput(AssetId id) {

@@ -62,7 +62,7 @@ bool _shouldSkipNode(
   PackageGraph packageGraph,
   OptionalOutputTracker optionalOutputTracker,
 ) {
-  if (!node.isReadable) return true;
+  if (!node.isFile) return true;
   if (node.isDeleted) return true;
 
   // Exclude non-lib assets if they're outside of the root directory or not from
