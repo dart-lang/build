@@ -24,9 +24,8 @@ enum NodeType {
 }
 
 /// A node in the asset graph which may be an input to other assets.
-abstract class AssetNode {
+class AssetNode {
   final AssetId id;
-
   final NodeType type;
 
   /// The assets that any [Builder] in the build graph declares it may output
@@ -47,73 +46,80 @@ abstract class AssetNode {
   /// exist.
   Digest? lastKnownDigest;
 
-  /// Whether or not this node was an output of this build.
-  bool get isGenerated => false;
-
-  /// Whether or not this asset type can be read.
-  ///
-  /// This does not indicate whether or not this specific node actually exists
-  /// at this moment in time.
-  bool get isReadable => true;
-
   /// The IDs of the [PostProcessAnchorNode] for post process builder which
   /// requested to delete this asset.
   final Set<AssetId> deletedBy = <AssetId>{};
+
+  /// Whether this asset is a normal, readable file.
+  ///
+  /// Does not guarantee that the file currently exists.
+  bool get isFile =>
+      type == NodeType.generated ||
+      type == NodeType.source ||
+      type == NodeType.internal;
+
+  /// Whether this node is tracked as an input in the asset graph.
+  ///
+  /// [NodeType.internal] nodes are a dependency of _all_ builders, so they are
+  /// inputs but not tracked inputs.
+  bool get isTrackedInput =>
+      type == NodeType.generated ||
+      type == NodeType.source ||
+      type == NodeType.placeholder;
 
   /// Whether the node is deleted.
   ///
   /// Deleted nodes are ignored in the final merge step and watch handlers.
   bool get isDeleted => deletedBy.isNotEmpty;
 
-  /// Whether or not this node can be read by a builder as a primary or
-  /// secondary input.
-  ///
-  /// Some nodes are valid primary inputs but are not readable (see
-  /// [PlaceHolderAssetNode]), while others are readable in the overall build
-  /// system  but are not valid builder inputs (see [InternalAssetNode]).
-  bool get isValidInput => true;
-
-  /// Whether or not changes to this node will have any effect on other nodes.
-  ///
-  /// Be default, if we haven't computed a digest for this asset and it has no
-  /// outputs, then it isn't interesting.
-  ///
-  /// Checking for a digest alone isn't enough because a file may be deleted
-  /// and re-added, in which case it won't have a digest.
-  bool get isInteresting => outputs.isNotEmpty || lastKnownDigest != null;
+  /// Whether changes to this node will have any effect on other nodes.
+  bool get changesRequireRebuild =>
+      type == NodeType.internal ||
+      type == NodeType.glob ||
+      outputs.isNotEmpty ||
+      lastKnownDigest != null;
 
   AssetNode(this.id, {required this.type, this.lastKnownDigest});
 
+  /// An internal asset.
+  ///
+  /// Examples: `build_runner` generated entrypoint, package config.
+  ///
+  /// They are "inputs" to the entire build, so they are never explicitly
+  /// tracked as inputs.
+  AssetNode.internal(this.id, {this.lastKnownDigest})
+    : type = NodeType.internal;
+
+  /// A manually-written source file.
+  AssetNode.source(this.id, {this.lastKnownDigest}) : type = NodeType.source;
+
+  /// A [BuilderOptions] object.
+  ///
+  /// Each [GeneratedAssetNode] has one describing its configuration, so it
+  /// rebuilds when the configuration changes.
+  AssetNode.builderOptions(this.id, {this.lastKnownDigest})
+    : type = NodeType.builderOptions;
+
+  /// A missing source file.
+  ///
+  /// Created when a builder tries to read a non-existent file.
+  ///
+  /// If later the file does exist, the builder must be rerun as it can
+  /// produce different output.
+  AssetNode.missingSource(this.id, {this.lastKnownDigest})
+    : type = NodeType.syntheticSource;
+
+  /// Placeholders for useful parts of packages.
+  ///
+  /// Four types of placeholder are used per package: the `lib` folder, the
+  /// `test` folder, the `web` folder, and the whole package.
+  ///
+  /// TODO(davidmorgan): describe how these are used.
+  AssetNode.placeholder(this.id, {this.lastKnownDigest})
+    : type = NodeType.placeholder;
+
   @override
   String toString() => 'AssetNode: $id';
-}
-
-/// A node representing some internal asset.
-///
-/// These nodes are not used as primary inputs, but they are tracked in the
-/// asset graph and are readable.
-class InternalAssetNode extends AssetNode {
-  // These don't have [outputs] but they are interesting regardless.
-  @override
-  bool get isInteresting => true;
-
-  @override
-  bool get isValidInput => false;
-
-  InternalAssetNode(super.id, {super.lastKnownDigest})
-    : super(type: NodeType.internal);
-
-  @override
-  String toString() => 'InternalAssetNode: $id';
-}
-
-/// A node which is an original source asset (not generated).
-class SourceAssetNode extends AssetNode {
-  SourceAssetNode(super.id, {super.lastKnownDigest})
-    : super(type: NodeType.source);
-
-  @override
-  String toString() => 'SourceAssetNode: $id';
 }
 
 /// States for nodes that can be invalidated.
@@ -129,9 +135,6 @@ enum NodeState {
 
 /// A generated node in the asset graph.
 class GeneratedAssetNode extends AssetNode implements NodeWithInputs {
-  @override
-  bool get isGenerated => true;
-
   @override
   final int phaseNumber;
 
@@ -188,55 +191,6 @@ class GeneratedAssetNode extends AssetNode implements NodeWithInputs {
       'GeneratedAssetNode: $id generated from input $primaryInput.';
 }
 
-/// A non-existent source.
-///
-/// Typically these are created as a result of `canRead` calls for assets that
-/// don't exist in the graph. We still need to set up proper dependencies so
-/// that if that asset gets added later the outputs are properly invalidated.
-class SyntheticSourceAssetNode extends AssetNode {
-  @override
-  bool get isReadable => false;
-
-  @override
-  bool get isValidInput => false;
-
-  SyntheticSourceAssetNode(super.id) : super(type: NodeType.syntheticSource);
-}
-
-/// An individual [BuilderOptions] object.
-///
-/// These are used to track the state of a [BuilderOptions] object, and all
-/// [GeneratedAssetNode]s should depend on one of these nodes, which represents
-/// their configuration.
-class BuilderOptionsAssetNode extends AssetNode {
-  BuilderOptionsAssetNode(super.id, {required super.lastKnownDigest})
-    : super(type: NodeType.builderOptions);
-
-  @override
-  bool get isReadable => false;
-
-  @override
-  bool get isValidInput => false;
-
-  @override
-  String toString() => 'BuildOptionsAssetNode: $id';
-}
-
-/// Placeholder assets are magic files that are usable as inputs but are not
-/// readable.
-class PlaceHolderAssetNode extends AssetNode {
-  @override
-  bool get isReadable => false;
-
-  @override
-  bool get isValidInput => true;
-
-  PlaceHolderAssetNode(super.id) : super(type: NodeType.placeholder);
-
-  @override
-  String toString() => 'PlaceHolderAssetNode: $id';
-}
-
 /// A [primaryInput] to a [PostBuildAction].
 ///
 /// The [outputs] of this node are the individual outputs created for the
@@ -254,12 +208,6 @@ class PostProcessAnchorNode extends AssetNode {
     this.builderOptionsId, {
     this.previousInputsDigest,
   }) : super(type: NodeType.postProcessAnchor);
-
-  @override
-  bool get isReadable => false;
-
-  @override
-  bool get isValidInput => false;
 
   PostProcessAnchorNode.forInputAndAction(
     AssetId primaryInput,
@@ -287,15 +235,6 @@ class GlobAssetNode extends AssetNode implements NodeWithInputs {
   /// [results].
   @override
   HashSet<AssetId> inputs;
-
-  @override
-  bool get isInteresting => true;
-
-  @override
-  bool get isValidInput => false;
-
-  @override
-  bool get isReadable => false;
 
   @override
   final int phaseNumber;

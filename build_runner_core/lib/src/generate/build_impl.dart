@@ -836,7 +836,7 @@ class _SingleBuild {
       var potentialNodes =
           _assetGraph
               .packageNodes(globNode.id.package)
-              .where((n) => n.isReadable && n.isValidInput)
+              .where((n) => n.isFile && n.isTrackedInput)
               .where(
                 (n) =>
                     n is! GeneratedAssetNode ||

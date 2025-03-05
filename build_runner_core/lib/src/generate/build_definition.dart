@@ -146,14 +146,14 @@ class AssetTracker {
 
     var newSources = inputSources.difference(
       assetGraph.allNodes
-          .where((node) => node.isValidInput)
+          .where((node) => node.isTrackedInput)
           .map((node) => node.id)
           .toSet(),
     );
     addUpdates(newSources, ChangeType.ADD);
     var removedAssets = assetGraph.allNodes
         .where((n) {
-          if (!n.isReadable) return false;
+          if (!n.isFile) return false;
           if (n is GeneratedAssetNode) return n.wasOutput;
           return true;
         })
@@ -588,7 +588,7 @@ class _Loader {
     ),
   );
 
-  /// Checks for any updates to the [BuilderOptionsAssetNode]s for
+  /// Checks for any updates to the [AssetNode.builderOptions] for
   /// [buildPhases] compared to the last known state.
   Map<AssetId, ChangeType> _computeBuilderOptionsUpdates(
     AssetGraph assetGraph,

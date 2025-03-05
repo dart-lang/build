@@ -105,7 +105,7 @@ void main() {
           node.outputs.add(globNode.id);
           graph.add(node);
           var phaseNum = n;
-          var builderOptionsNode = BuilderOptionsAssetNode(
+          var builderOptionsNode = AssetNode.builderOptions(
             makeAssetId(),
             lastKnownDigest: Digest([n]),
           );
@@ -118,7 +118,7 @@ void main() {
           graph.add(anchorNode);
           node.anchorOutputs.add(anchorNode.id);
           for (var g = 0; g < 5 - n; g++) {
-            var builderOptionsNode = BuilderOptionsAssetNode(
+            var builderOptionsNode = AssetNode.builderOptions(
               makeAssetId(),
               lastKnownDigest: md5.convert(utf8.encode('test')),
             );
@@ -141,7 +141,7 @@ void main() {
               node.deletedBy.add(anchorNode.id);
             }
 
-            var syntheticNode = SyntheticSourceAssetNode(makeAssetId());
+            var syntheticNode = AssetNode.missingSource(makeAssetId());
             syntheticNode.outputs.add(generatedNode.id);
 
             generatedNode.inputs.addAll([
@@ -271,7 +271,7 @@ void main() {
           reason: 'Nodes with no output shouldn\'t get an eager digest.',
         );
 
-        expect(graph.get(internalId), const TypeMatcher<InternalAssetNode>());
+        expect(graph.get(internalId)?.type, NodeType.internal);
 
         var primaryOutputNode =
             graph.get(primaryOutputId) as GeneratedAssetNode;
@@ -355,7 +355,7 @@ void main() {
         });
 
         test('add new primary input which replaces a synthetic node', () async {
-          var syntheticNode = SyntheticSourceAssetNode(syntheticId);
+          var syntheticNode = AssetNode.missingSource(syntheticId);
           graph.add(syntheticNode);
           expect(graph.get(syntheticId), syntheticNode);
 
@@ -391,7 +391,7 @@ void main() {
         test(
           'add new generated asset which replaces a synthetic node',
           () async {
-            var syntheticNode = SyntheticSourceAssetNode(syntheticOutputId);
+            var syntheticNode = AssetNode.missingSource(syntheticOutputId);
             graph.add(syntheticNode);
             expect(graph.get(syntheticOutputId), syntheticNode);
 
@@ -417,7 +417,7 @@ void main() {
           'removing nodes deletes primary outputs and secondary edges',
           () async {
             var secondaryId = makeAssetId('foo|secondary.txt');
-            var secondaryNode = SourceAssetNode(secondaryId);
+            var secondaryNode = AssetNode.source(secondaryId);
             secondaryNode.outputs.add(primaryOutputId);
             var primaryOutputNode =
                 graph.get(primaryOutputId) as GeneratedAssetNode;
@@ -662,7 +662,7 @@ void main() {
 
         // Pretend a build happened
         graph.add(
-          SyntheticSourceAssetNode(nodeToRead)..outputs.add(outputReadingNode),
+          AssetNode.missingSource(nodeToRead)..outputs.add(outputReadingNode),
         );
         (graph.get(outputReadingNode) as GeneratedAssetNode)
           ..state = NodeState.upToDate
@@ -714,7 +714,7 @@ void main() {
 
         // Pretend a build happened
         graph.add(
-          SyntheticSourceAssetNode(toBeGeneratedDart)
+          AssetNode.missingSource(toBeGeneratedDart)
             ..outputs.add(generatedPart),
         );
         (graph.get(generatedDart) as GeneratedAssetNode)

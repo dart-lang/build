@@ -362,7 +362,7 @@ void main() {
         );
 
         var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
-        var builderOptionsNode = BuilderOptionsAssetNode(
+        var builderOptionsNode = AssetNode.builderOptions(
           builderOptionsId,
           lastKnownDigest: computeBuilderOptionsDigest(defaultBuilderOptions),
         );

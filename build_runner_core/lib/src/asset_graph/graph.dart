@@ -128,41 +128,41 @@ class AssetGraph {
     _nodesByPackage.putIfAbsent(node.id.package, () => {})[node.id.path] = node;
   }
 
-  /// Adds [assetIds] as [InternalAssetNode]s to this graph.
+  /// Adds [assetIds] as [AssetNode.internal].
   Iterable<AssetNode> _addInternalSources(Set<AssetId> assetIds) sync* {
     for (var id in assetIds) {
-      var node = InternalAssetNode(id);
+      var node = AssetNode.internal(id);
       _add(node);
       yield node;
     }
   }
 
-  /// Adds [PlaceHolderAssetNode]s for every package in [packageGraph].
+  /// Adds [AssetNode.placeholder]s for every package in [packageGraph].
   Set<AssetId> _addPlaceHolderNodes(PackageGraph packageGraph) {
     var placeholders = placeholderIdsFor(packageGraph);
     for (var id in placeholders) {
-      _add(PlaceHolderAssetNode(id));
+      _add(AssetNode.placeholder(id));
     }
     return placeholders;
   }
 
-  /// Adds [assetIds] as [AssetNode]s to this graph, and returns the newly
+  /// Adds [assetIds] as [AssetNode.source] to this graph, and returns the newly
   /// created nodes.
   List<AssetNode> _addSources(Set<AssetId> assetIds) {
     return assetIds.map((id) {
-      var node = SourceAssetNode(id);
+      var node = AssetNode.source(id);
       _add(node);
       return node;
     }).toList();
   }
 
-  /// Adds [BuilderOptionsAssetNode]s for all [buildPhases] to this graph.
+  /// Adds [AssetNode.builderOptions] for all [buildPhases] to this graph.
   void _addBuilderOptionsNodes(List<BuildPhase> buildPhases) {
     for (var phaseNum = 0; phaseNum < buildPhases.length; phaseNum++) {
       var phase = buildPhases[phaseNum];
       if (phase is InBuildPhase) {
         add(
-          BuilderOptionsAssetNode(
+          AssetNode.builderOptions(
             builderOptionsIdForAction(phase, phaseNum),
             lastKnownDigest: computeBuilderOptionsDigest(phase.builderOptions),
           ),
@@ -171,7 +171,7 @@ class AssetGraph {
         var actionNum = 0;
         for (var builderAction in phase.builderActions) {
           add(
-            BuilderOptionsAssetNode(
+            AssetNode.builderOptions(
               builderOptionsIdForAction(builderAction, actionNum),
               lastKnownDigest: computeBuilderOptionsDigest(
                 builderAction.builderOptions,
@@ -256,7 +256,7 @@ class AssetGraph {
 
   /// All the generated outputs in the graph.
   Iterable<AssetId> get outputs =>
-      allNodes.where((n) => n.isGenerated).map((n) => n.id);
+      allNodes.where((n) => n.type == NodeType.generated).map((n) => n.id);
 
   /// The outputs which were, or would have been, produced by failing actions.
   Iterable<GeneratedAssetNode> get failedOutputs => allNodes
@@ -316,7 +316,7 @@ class AssetGraph {
     await _setLastKnownDigests(
       newAndModifiedNodes.where(
         (node) =>
-            node.isValidInput &&
+            node.isTrackedInput &&
             (node.outputs.isNotEmpty ||
                 node.primaryOutputs.isNotEmpty ||
                 node.lastKnownDigest != null),
@@ -541,7 +541,7 @@ class AssetGraph {
 
   /// Adds [outputs] as [GeneratedAssetNode]s to the graph.
   ///
-  /// If there are existing [SourceAssetNode]s or [SyntheticSourceAssetNode]s
+  /// If there are existing [AssetNode.source]s or [AssetNode.missingSource]s
   /// that overlap the [GeneratedAssetNode]s, then they will be replaced with
   /// [GeneratedAssetNode]s, and all their `primaryOutputs` will be removed
   /// from the graph as well. The return value is the set of assets that were
