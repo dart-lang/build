@@ -33,48 +33,43 @@ class NodeType extends EnumClass {
 }
 
 /// A node in the asset graph which may be an input to other assets.
-class AssetNode {
-  final AssetId id;
-  final NodeType type;
+abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
+  AssetId get id;
+  NodeType get type;
 
   /// Additional node configuration that's available before the build runs.
   ///
   /// [NodeType.generated], [NodeType.glob] and [NodeType.postProcessAnchor]
   /// have additional configuration.
-  final AdditionalNodeConfiguration? configuration;
+  AdditionalNodeConfiguration? get configuration;
 
   /// Additional node state that changes during the build.
   ///
   /// [NodeType.generated], [NodeType.glob] and [NodeType.postProcessAnchor]
   /// have additional state.
-  AdditionalNodeState? state;
+  AdditionalNodeState? get state;
 
   /// The assets that any [Builder] in the build graph declares it may output
   /// when run on this asset.
-  final Set<AssetId> _primaryOutputs;
-  Iterable<AssetId> get primaryOutputs => _primaryOutputs;
+  BuiltSet<AssetId> get primaryOutputs;
 
   /// The [AssetId]s of all generated assets which are output by a [Builder]
   /// which reads this asset.
-  final Set<AssetId> _outputs;
-  Iterable<AssetId> get outputs => _outputs;
+  BuiltSet<AssetId> get outputs;
 
   /// The [AssetId]s of all [AssetNode.postProcessAnchor] assets for which this
   /// node is the primary input.
-  final Set<AssetId> _anchorOutputs;
-  Iterable<AssetId> get anchorOutputs => _anchorOutputs;
+  BuiltSet<AssetId> get anchorOutputs;
 
   /// The [Digest] for this node in its last known state.
   ///
   /// May be `null` if this asset has no outputs, or if it doesn't actually
   /// exist.
-  Digest? _lastKnownDigest;
-  Digest? get lastKnownDigest => _lastKnownDigest;
+  Digest? get lastKnownDigest;
 
   /// The IDs of the [AssetNode.postProcessAnchor] for post process builder
   /// which requested to delete this asset.
-  final Set<AssetId> _deletedBy;
-  Iterable<AssetId> get deletedBy => _deletedBy;
+  BuiltSet<AssetId> get deletedBy;
 
   /// Whether this asset is a normal, readable file.
   ///
@@ -105,50 +100,51 @@ class AssetNode {
       outputs.isNotEmpty ||
       lastKnownDigest != null;
 
+  factory AssetNode([void Function(AssetNodeBuilder) updates]) = _$AssetNode;
+
   /// An internal asset.
   ///
   /// Examples: `build_runner` generated entrypoint, package config.
   ///
   /// They are "inputs" to the entire build, so they are never explicitly
   /// tracked as inputs.
-  AssetNode.internal(this.id, {Digest? lastKnownDigest})
-    : type = NodeType.internal,
-      configuration = null,
-      state = null,
-      _primaryOutputs = {},
-      _outputs = {},
-      _anchorOutputs = {},
-      _lastKnownDigest = lastKnownDigest,
-      _deletedBy = {};
+  factory AssetNode.internal(AssetId id, {Digest? lastKnownDigest}) =>
+      AssetNode(
+        (b) =>
+            b
+              ..id = id
+              ..type = NodeType.internal
+              ..lastKnownDigest = lastKnownDigest,
+      );
 
   /// A manually-written source file.
-  AssetNode.source(
-    this.id, {
+  factory AssetNode.source(
+    AssetId id, {
     Digest? lastKnownDigest,
     Iterable<AssetId>? outputs,
     Iterable<AssetId>? primaryOutputs,
-  }) : type = NodeType.source,
-       configuration = null,
-       state = null,
-       _primaryOutputs = primaryOutputs?.toSet() ?? {},
-       _outputs = outputs?.toSet() ?? {},
-       _anchorOutputs = {},
-       _lastKnownDigest = lastKnownDigest,
-       _deletedBy = {};
+  }) => AssetNode(
+    (b) =>
+        b
+          ..id = id
+          ..type = NodeType.source
+          ..primaryOutputs.replace(primaryOutputs ?? {})
+          ..outputs.replace(outputs ?? {})
+          ..lastKnownDigest = lastKnownDigest,
+  );
 
   /// A [BuilderOptions] object.
   ///
   /// Each [AssetNode.generated] has one describing its configuration, so it
   /// rebuilds when the configuration changes.
-  AssetNode.builderOptions(this.id, {Digest? lastKnownDigest})
-    : type = NodeType.builderOptions,
-      configuration = null,
-      state = null,
-      _primaryOutputs = {},
-      _outputs = {},
-      _anchorOutputs = {},
-      _lastKnownDigest = lastKnownDigest,
-      _deletedBy = {};
+  factory AssetNode.builderOptions(AssetId id, {Digest? lastKnownDigest}) =>
+      AssetNode(
+        (b) =>
+            b
+              ..id = id
+              ..type = NodeType.builderOptions
+              ..lastKnownDigest = lastKnownDigest,
+      );
 
   /// A missing source file.
   ///
@@ -156,15 +152,14 @@ class AssetNode {
   ///
   /// If later the file does exist, the builder must be rerun as it can
   /// produce different output.
-  AssetNode.missingSource(this.id, {Digest? lastKnownDigest})
-    : type = NodeType.syntheticSource,
-      configuration = null,
-      state = null,
-      _primaryOutputs = {},
-      _outputs = {},
-      _anchorOutputs = {},
-      _lastKnownDigest = lastKnownDigest,
-      _deletedBy = {};
+  factory AssetNode.missingSource(AssetId id, {Digest? lastKnownDigest}) =>
+      AssetNode(
+        (b) =>
+            b
+              ..id = id
+              ..type = NodeType.syntheticSource
+              ..lastKnownDigest = lastKnownDigest,
+      );
 
   /// Placeholders for useful parts of packages.
   ///
@@ -172,19 +167,18 @@ class AssetNode {
   /// `test` folder, the `web` folder, and the whole package.
   ///
   /// TODO(davidmorgan): describe how these are used.
-  AssetNode.placeholder(this.id, {Digest? lastKnownDigest})
-    : type = NodeType.placeholder,
-      configuration = null,
-      state = null,
-      _primaryOutputs = {},
-      _outputs = {},
-      _anchorOutputs = {},
-      _lastKnownDigest = lastKnownDigest,
-      _deletedBy = {};
+  factory AssetNode.placeholder(AssetId id, {Digest? lastKnownDigest}) =>
+      AssetNode(
+        (b) =>
+            b
+              ..id = id
+              ..type = NodeType.placeholder
+              ..lastKnownDigest = lastKnownDigest,
+      );
 
   /// A generated node.
-  AssetNode.generated(
-    this.id, {
+  factory AssetNode.generated(
+    AssetId id, {
     Digest? lastKnownDigest,
     required AssetId primaryInput,
     required AssetId builderOptionsId,
@@ -195,57 +189,59 @@ class AssetNode {
     required PendingBuildAction pendingBuildAction,
     required bool wasOutput,
     required bool isFailure,
-  }) : type = NodeType.generated,
-       configuration = GeneratedNodeConfiguration(
-         (b) =>
-             b
-               ..primaryInput = primaryInput
-               ..builderOptionsId = builderOptionsId
-               ..phaseNumber = phaseNumber
-               ..isHidden = isHidden,
-       ),
-       state = GeneratedNodeState(
-         (b) =>
-             b
-               ..inputs.replace(inputs ?? [])
-               ..previousInputsDigest = previousInputsDigest
-               ..pendingBuildAction = pendingBuildAction
-               ..wasOutput = wasOutput
-               ..isFailure = isFailure,
-       ),
-       _primaryOutputs = {},
-       _outputs = {},
-       _anchorOutputs = {},
-       _lastKnownDigest = lastKnownDigest,
-       _deletedBy = {};
+  }) => AssetNode(
+    (b) =>
+        b
+          ..id = id
+          ..type = NodeType.generated
+          ..configuration = GeneratedNodeConfiguration(
+            (b) =>
+                b
+                  ..primaryInput = primaryInput
+                  ..builderOptionsId = builderOptionsId
+                  ..phaseNumber = phaseNumber
+                  ..isHidden = isHidden,
+          )
+          ..state = GeneratedNodeState(
+            (b) =>
+                b
+                  ..inputs.replace(inputs ?? [])
+                  ..previousInputsDigest = previousInputsDigest
+                  ..pendingBuildAction = pendingBuildAction
+                  ..wasOutput = wasOutput
+                  ..isFailure = isFailure,
+          )
+          ..lastKnownDigest = lastKnownDigest,
+  );
 
   /// A glob node.
-  AssetNode.glob(
-    this.id, {
+  factory AssetNode.glob(
+    AssetId id, {
     Digest? lastKnownDigest,
     required Glob glob,
     required int phaseNumber,
     Iterable<AssetId>? inputs,
     required PendingBuildAction pendingBuildAction,
     List<AssetId>? results,
-  }) : type = NodeType.glob,
-       configuration = GlobNodeConfiguration(
-         (b) =>
-             b
-               ..glob = glob
-               ..phaseNumber = phaseNumber,
-       ),
-       state = GlobNodeState(
-         (b) =>
-             b
-               ..pendingBuildAction = pendingBuildAction
-               ..results.replace(results ?? []),
-       ),
-       _primaryOutputs = {},
-       _outputs = {},
-       _anchorOutputs = {},
-       _lastKnownDigest = lastKnownDigest,
-       _deletedBy = {};
+  }) => AssetNode(
+    (b) =>
+        b
+          ..id = id
+          ..type = NodeType.glob
+          ..configuration = GlobNodeConfiguration(
+            (b) =>
+                b
+                  ..glob = glob
+                  ..phaseNumber = phaseNumber,
+          )
+          ..state = GlobNodeState(
+            (b) =>
+                b
+                  ..pendingBuildAction = pendingBuildAction
+                  ..results.replace(results ?? []),
+          )
+          ..lastKnownDigest = lastKnownDigest,
+  );
 
   static AssetId createGlobNodeId(String package, Glob glob, int phaseNum) =>
       AssetId(
@@ -257,39 +253,41 @@ class AssetNode {
   ///
   /// The [outputs] of this node are the individual outputs created for the
   /// [primaryInput] during the [PostBuildAction] at index [actionNumber].
-  AssetNode.postProcessAnchor(
-    this.id, {
+  factory AssetNode.postProcessAnchor(
+    AssetId id, {
     required AssetId primaryInput,
     required int actionNumber,
     required AssetId builderOptionsId,
     Digest? previousInputsDigest,
-  }) : type = NodeType.postProcessAnchor,
-       configuration = PostProcessAnchorNodeConfiguration(
-         (b) =>
-             b
-               ..actionNumber = actionNumber
-               ..builderOptionsId = builderOptionsId
-               ..primaryInput = primaryInput,
-       ),
-       state = PostProcessAnchorNodeState(
-         (b) => b..previousInputsDigest = previousInputsDigest,
-       ),
-       _primaryOutputs = {},
-       _outputs = {},
-       _anchorOutputs = {},
-       _lastKnownDigest = null,
-       _deletedBy = {};
+  }) => AssetNode(
+    (b) =>
+        b
+          ..id = id
+          ..type = NodeType.postProcessAnchor
+          ..configuration = PostProcessAnchorNodeConfiguration(
+            (b) =>
+                b
+                  ..actionNumber = actionNumber
+                  ..builderOptionsId = builderOptionsId
+                  ..primaryInput = primaryInput,
+          )
+          ..state = PostProcessAnchorNodeState(
+            (b) => b..previousInputsDigest = previousInputsDigest,
+          ),
+  );
 
-  AssetNode.postProcessAnchorForInputAndAction(
+  factory AssetNode.postProcessAnchorForInputAndAction(
     AssetId primaryInput,
     int actionNumber,
     AssetId builderOptionsId,
-  ) : this.postProcessAnchor(
-        primaryInput.addExtension('.post_anchor.$actionNumber'),
-        primaryInput: primaryInput,
-        actionNumber: actionNumber,
-        builderOptionsId: builderOptionsId,
-      );
+  ) => AssetNode.postProcessAnchor(
+    primaryInput.addExtension('.post_anchor.$actionNumber'),
+    primaryInput: primaryInput,
+    actionNumber: actionNumber,
+    builderOptionsId: builderOptionsId,
+  );
+
+  AssetNode._();
 
   @override
   String toString() => 'AssetNode: $id';
@@ -303,25 +301,54 @@ class AssetNode {
   GeneratedNodeConfiguration get generatedNodeConfiguration =>
       configuration as GeneratedNodeConfiguration;
   GeneratedNodeState get generatedNodeState => state as GeneratedNodeState;
-  set generatedNodeState(GeneratedNodeState state) => this.state = state;
 
   GlobNodeConfiguration get globNodeConfiguration =>
       configuration as GlobNodeConfiguration;
   GlobNodeState get globNodeState => state as GlobNodeState;
-  set globNodeState(GlobNodeState state) => this.state = state;
 
   PostProcessAnchorNodeConfiguration get postProcessAnchorNodeConfiguration =>
       configuration as PostProcessAnchorNodeConfiguration;
   PostProcessAnchorNodeState get postProcessAnchorNodeState =>
       state as PostProcessAnchorNodeState;
-  set postProcessAnchorNodeState(PostProcessAnchorNodeState state) =>
-      this.state = state;
+}
+
+abstract class AssetNodeBuilder
+    implements Builder<AssetNode, AssetNodeBuilder> {
+  AssetId? id;
+  NodeType? type;
+  AdditionalNodeConfigurationBuilder? configuration;
+  AdditionalNodeStateBuilder? state;
+  SetBuilder<AssetId> primaryOutputs = SetBuilder();
+  SetBuilder<AssetId> outputs = SetBuilder();
+  SetBuilder<AssetId> anchorOutputs = SetBuilder();
+  Digest? lastKnownDigest;
+  SetBuilder<AssetId> deletedBy = SetBuilder();
+
+  AssetNodeBuilder._();
+  factory AssetNodeBuilder() = _$AssetNodeBuilder;
+
+  GeneratedNodeConfigurationBuilder get generatedNodeConfiguration =>
+      configuration as GeneratedNodeConfigurationBuilder;
+  GeneratedNodeStateBuilder get generatedNodeState =>
+      state as GeneratedNodeStateBuilder;
+
+  GlobNodeConfigurationBuilder get globNodeConfiguration =>
+      configuration as GlobNodeConfigurationBuilder;
+  GlobNodeStateBuilder get globNodeState => state as GlobNodeStateBuilder;
+
+  PostProcessAnchorNodeConfigurationBuilder
+  get postProcessAnchorNodeConfiguration =>
+      configuration as PostProcessAnchorNodeConfigurationBuilder;
+  PostProcessAnchorNodeStateBuilder get postProcessAnchorNodeState =>
+      state as PostProcessAnchorNodeStateBuilder;
 }
 
 /// Additional immutable configuration for some node types.
-abstract interface class AdditionalNodeConfiguration {}
+@BuiltValue(instantiable: false)
+abstract class AdditionalNodeConfiguration {}
 
 /// Additional mutable state for some node types.
+@BuiltValue(instantiable: false)
 abstract interface class AdditionalNodeState {}
 
 /// Additional configuration for an [AssetNode.generated].

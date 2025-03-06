@@ -106,6 +106,23 @@ class AssetGraph {
     return pkg[id.path];
   }
 
+  void updateNode(AssetId id, void Function(AssetNodeBuilder) updates) {
+    final node = get(id);
+    if (node == null) throw StateError('Missing node: $id');
+    final updatedNode = node.rebuild(updates);
+    _nodesByPackage[id.package]![id.path] = updatedNode;
+  }
+
+  void updateNodeIfPresent(
+    AssetId id,
+    void Function(AssetNodeBuilder) updates,
+  ) {
+    final node = get(id);
+    if (node == null) return;
+    final updatedNode = node.rebuild(updates);
+    _nodesByPackage[id.package]![id.path] = updatedNode;
+  }
+
   /// Adds [node] to the graph if it doesn't exist.
   ///
   /// Throws a [StateError] if it already exists in the graph.
@@ -219,21 +236,15 @@ class AssetGraph {
       _removeRecursive(output, removedIds: removedIds);
     }
     for (var output in node.outputs) {
-      var inputsNode = get(output);
-      if (inputsNode != null) {
-        if (inputsNode.type == NodeType.generated) {
-          inputsNode.generatedNodeState = inputsNode.generatedNodeState.rebuild(
-            (b) => b..inputs.remove(id),
-          );
-        } else if (inputsNode.type == NodeType.glob) {
-          inputsNode.globNodeState = inputsNode.globNodeState.rebuild(
-            (b) =>
-                b
-                  ..inputs.remove(id)
-                  ..results.remove(id),
-          );
+      updateNodeIfPresent(output, (nodeBuilder) {
+        if (nodeBuilder.type == NodeType.generated) {
+          nodeBuilder.generatedNodeState.inputs.remove(id);
+        } else if (nodeBuilder.type == NodeType.glob) {
+          nodeBuilder.globNodeState
+            ..inputs.remove(id)
+            ..results.remove(id);
         }
-      }
+      });
     }
 
     if (node.type == NodeType.generated) {
@@ -432,10 +443,10 @@ class AssetGraph {
         final nodeConfiguration = node.globNodeConfiguration;
         if (nodeConfiguration.glob.matches(id.path)) {
           invalidateNodeAndDeps(node.id);
-          node.globNodeState = node.globNodeState.rebuild(
-            (b) =>
-                b..pendingBuildAction = PendingBuildAction.buildIfInputsChanged,
-          );
+          updateNode(node.id, (nodeBuilder) {
+            nodeBuilder.globNodeState.pendingBuildAction =
+                PendingBuildAction.buildIfInputsChanged;
+          });
         }
       }
     }
@@ -658,18 +669,15 @@ class AssetGraph {
   /// Nodes that track inputs are [AssetNode.generated] or [AssetNode.glob].
   void _addInput(Iterable<AssetId> outputs, AssetId input) {
     for (var output in outputs) {
-      var node = get(output);
-      if (node != null) {
-        if (node.type == NodeType.generated) {
-          node.generatedNodeState = node.generatedNodeState.rebuild(
-            (b) => b..inputs.add(input),
-          );
-        } else if (node.type == NodeType.glob) {
-          node.globNodeState = node.globNodeState.rebuild(
-            (b) => b..inputs.add(input),
-          );
+      updateNodeIfPresent(output, (nodeBuilder) {
+        if (nodeBuilder.type == NodeType.generated) {
+          nodeBuilder.generatedNodeState.inputs.add(input);
+        } else if (nodeBuilder.type == NodeType.glob) {
+          nodeBuilder.globNodeState.inputs.add(input);
+        } else {
+          throw StateError('Unrecognized node type ${nodeBuilder.type}');
         }
-      }
+      });
     }
   }
 }

@@ -76,6 +76,295 @@ final BuiltSet<PendingBuildAction> _$pendingBuildActionValues =
       _$build,
     ]);
 
+class _$AssetNode extends AssetNode {
+  @override
+  final AssetId id;
+  @override
+  final NodeType type;
+  @override
+  final AdditionalNodeConfiguration? configuration;
+  @override
+  final AdditionalNodeState? state;
+  @override
+  final BuiltSet<AssetId> primaryOutputs;
+  @override
+  final BuiltSet<AssetId> outputs;
+  @override
+  final BuiltSet<AssetId> anchorOutputs;
+  @override
+  final Digest? lastKnownDigest;
+  @override
+  final BuiltSet<AssetId> deletedBy;
+
+  factory _$AssetNode([void Function(AssetNodeBuilder)? updates]) =>
+      (new AssetNodeBuilder()..update(updates)).build() as _$AssetNode;
+
+  _$AssetNode._({
+    required this.id,
+    required this.type,
+    this.configuration,
+    this.state,
+    required this.primaryOutputs,
+    required this.outputs,
+    required this.anchorOutputs,
+    this.lastKnownDigest,
+    required this.deletedBy,
+  }) : super._() {
+    BuiltValueNullFieldError.checkNotNull(id, r'AssetNode', 'id');
+    BuiltValueNullFieldError.checkNotNull(type, r'AssetNode', 'type');
+    BuiltValueNullFieldError.checkNotNull(
+      primaryOutputs,
+      r'AssetNode',
+      'primaryOutputs',
+    );
+    BuiltValueNullFieldError.checkNotNull(outputs, r'AssetNode', 'outputs');
+    BuiltValueNullFieldError.checkNotNull(
+      anchorOutputs,
+      r'AssetNode',
+      'anchorOutputs',
+    );
+    BuiltValueNullFieldError.checkNotNull(deletedBy, r'AssetNode', 'deletedBy');
+  }
+
+  @override
+  AssetNode rebuild(void Function(AssetNodeBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
+
+  @override
+  _$AssetNodeBuilder toBuilder() => new _$AssetNodeBuilder()..replace(this);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(other, this)) return true;
+    return other is AssetNode &&
+        id == other.id &&
+        type == other.type &&
+        configuration == other.configuration &&
+        state == other.state &&
+        primaryOutputs == other.primaryOutputs &&
+        outputs == other.outputs &&
+        anchorOutputs == other.anchorOutputs &&
+        lastKnownDigest == other.lastKnownDigest &&
+        deletedBy == other.deletedBy;
+  }
+
+  @override
+  int get hashCode {
+    var _$hash = 0;
+    _$hash = $jc(_$hash, id.hashCode);
+    _$hash = $jc(_$hash, type.hashCode);
+    _$hash = $jc(_$hash, configuration.hashCode);
+    _$hash = $jc(_$hash, state.hashCode);
+    _$hash = $jc(_$hash, primaryOutputs.hashCode);
+    _$hash = $jc(_$hash, outputs.hashCode);
+    _$hash = $jc(_$hash, anchorOutputs.hashCode);
+    _$hash = $jc(_$hash, lastKnownDigest.hashCode);
+    _$hash = $jc(_$hash, deletedBy.hashCode);
+    _$hash = $jf(_$hash);
+    return _$hash;
+  }
+}
+
+class _$AssetNodeBuilder extends AssetNodeBuilder {
+  _$AssetNode? _$v;
+
+  @override
+  AssetId? get id {
+    _$this;
+    return super.id;
+  }
+
+  @override
+  set id(AssetId? id) {
+    _$this;
+    super.id = id;
+  }
+
+  @override
+  NodeType? get type {
+    _$this;
+    return super.type;
+  }
+
+  @override
+  set type(NodeType? type) {
+    _$this;
+    super.type = type;
+  }
+
+  @override
+  AdditionalNodeConfiguration? get configuration {
+    _$this;
+    return super.configuration;
+  }
+
+  @override
+  set configuration(AdditionalNodeConfiguration? configuration) {
+    _$this;
+    super.configuration = configuration;
+  }
+
+  @override
+  AdditionalNodeState? get state {
+    _$this;
+    return super.state;
+  }
+
+  @override
+  set state(AdditionalNodeState? state) {
+    _$this;
+    super.state = state;
+  }
+
+  @override
+  SetBuilder<AssetId> get primaryOutputs {
+    _$this;
+    return super.primaryOutputs;
+  }
+
+  @override
+  set primaryOutputs(SetBuilder<AssetId> primaryOutputs) {
+    _$this;
+    super.primaryOutputs = primaryOutputs;
+  }
+
+  @override
+  SetBuilder<AssetId> get outputs {
+    _$this;
+    return super.outputs;
+  }
+
+  @override
+  set outputs(SetBuilder<AssetId> outputs) {
+    _$this;
+    super.outputs = outputs;
+  }
+
+  @override
+  SetBuilder<AssetId> get anchorOutputs {
+    _$this;
+    return super.anchorOutputs;
+  }
+
+  @override
+  set anchorOutputs(SetBuilder<AssetId> anchorOutputs) {
+    _$this;
+    super.anchorOutputs = anchorOutputs;
+  }
+
+  @override
+  Digest? get lastKnownDigest {
+    _$this;
+    return super.lastKnownDigest;
+  }
+
+  @override
+  set lastKnownDigest(Digest? lastKnownDigest) {
+    _$this;
+    super.lastKnownDigest = lastKnownDigest;
+  }
+
+  @override
+  SetBuilder<AssetId> get deletedBy {
+    _$this;
+    return super.deletedBy;
+  }
+
+  @override
+  set deletedBy(SetBuilder<AssetId> deletedBy) {
+    _$this;
+    super.deletedBy = deletedBy;
+  }
+
+  _$AssetNodeBuilder() : super._();
+
+  AssetNodeBuilder get _$this {
+    final $v = _$v;
+    if ($v != null) {
+      super.id = $v.id;
+      super.type = $v.type;
+      super.configuration = $v.configuration;
+      super.state = $v.state;
+      super.primaryOutputs = $v.primaryOutputs.toBuilder();
+      super.outputs = $v.outputs.toBuilder();
+      super.anchorOutputs = $v.anchorOutputs.toBuilder();
+      super.lastKnownDigest = $v.lastKnownDigest;
+      super.deletedBy = $v.deletedBy.toBuilder();
+      _$v = null;
+    }
+    return this;
+  }
+
+  @override
+  void replace(AssetNode other) {
+    ArgumentError.checkNotNull(other, 'other');
+    _$v = other as _$AssetNode;
+  }
+
+  @override
+  void update(void Function(AssetNodeBuilder)? updates) {
+    if (updates != null) updates(this);
+  }
+
+  @override
+  AssetNode build() => _build();
+
+  _$AssetNode _build() {
+    _$AssetNode _$result;
+    try {
+      _$result =
+          _$v ??
+          new _$AssetNode._(
+            id: BuiltValueNullFieldError.checkNotNull(id, r'AssetNode', 'id'),
+            type: BuiltValueNullFieldError.checkNotNull(
+              type,
+              r'AssetNode',
+              'type',
+            ),
+            configuration: configuration,
+            state: state,
+            primaryOutputs: primaryOutputs.build(),
+            outputs: outputs.build(),
+            anchorOutputs: anchorOutputs.build(),
+            lastKnownDigest: lastKnownDigest,
+            deletedBy: deletedBy.build(),
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'primaryOutputs';
+        primaryOutputs.build();
+        _$failedField = 'outputs';
+        outputs.build();
+        _$failedField = 'anchorOutputs';
+        anchorOutputs.build();
+
+        _$failedField = 'deletedBy';
+        deletedBy.build();
+      } catch (e) {
+        throw new BuiltValueNestedFieldError(
+          r'AssetNode',
+          _$failedField,
+          e.toString(),
+        );
+      }
+      rethrow;
+    }
+    replace(_$result);
+    return _$result;
+  }
+}
+
+abstract mixin class AdditionalNodeConfigurationBuilder {
+  void replace(AdditionalNodeConfiguration other);
+  void update(void Function(AdditionalNodeConfigurationBuilder) updates);
+}
+
+abstract mixin class AdditionalNodeStateBuilder {
+  void replace(AdditionalNodeState other);
+  void update(void Function(AdditionalNodeStateBuilder) updates);
+}
+
 class _$GeneratedNodeConfiguration extends GeneratedNodeConfiguration {
   @override
   final AssetId primaryInput;
@@ -161,26 +450,28 @@ class _$GeneratedNodeConfiguration extends GeneratedNodeConfiguration {
 
 class GeneratedNodeConfigurationBuilder
     implements
-        Builder<GeneratedNodeConfiguration, GeneratedNodeConfigurationBuilder> {
+        Builder<GeneratedNodeConfiguration, GeneratedNodeConfigurationBuilder>,
+        AdditionalNodeConfigurationBuilder {
   _$GeneratedNodeConfiguration? _$v;
 
   AssetId? _primaryInput;
   AssetId? get primaryInput => _$this._primaryInput;
-  set primaryInput(AssetId? primaryInput) =>
+  set primaryInput(covariant AssetId? primaryInput) =>
       _$this._primaryInput = primaryInput;
 
   AssetId? _builderOptionsId;
   AssetId? get builderOptionsId => _$this._builderOptionsId;
-  set builderOptionsId(AssetId? builderOptionsId) =>
+  set builderOptionsId(covariant AssetId? builderOptionsId) =>
       _$this._builderOptionsId = builderOptionsId;
 
   int? _phaseNumber;
   int? get phaseNumber => _$this._phaseNumber;
-  set phaseNumber(int? phaseNumber) => _$this._phaseNumber = phaseNumber;
+  set phaseNumber(covariant int? phaseNumber) =>
+      _$this._phaseNumber = phaseNumber;
 
   bool? _isHidden;
   bool? get isHidden => _$this._isHidden;
-  set isHidden(bool? isHidden) => _$this._isHidden = isHidden;
+  set isHidden(covariant bool? isHidden) => _$this._isHidden = isHidden;
 
   GeneratedNodeConfigurationBuilder();
 
@@ -197,7 +488,7 @@ class GeneratedNodeConfigurationBuilder
   }
 
   @override
-  void replace(GeneratedNodeConfiguration other) {
+  void replace(covariant GeneratedNodeConfiguration other) {
     ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$GeneratedNodeConfiguration;
   }
@@ -330,30 +621,32 @@ class _$GeneratedNodeState extends GeneratedNodeState {
 }
 
 class GeneratedNodeStateBuilder
-    implements Builder<GeneratedNodeState, GeneratedNodeStateBuilder> {
+    implements
+        Builder<GeneratedNodeState, GeneratedNodeStateBuilder>,
+        AdditionalNodeStateBuilder {
   _$GeneratedNodeState? _$v;
 
   SetBuilder<AssetId>? _inputs;
   SetBuilder<AssetId> get inputs =>
       _$this._inputs ??= new SetBuilder<AssetId>();
-  set inputs(SetBuilder<AssetId>? inputs) => _$this._inputs = inputs;
+  set inputs(covariant SetBuilder<AssetId>? inputs) => _$this._inputs = inputs;
 
   PendingBuildAction? _pendingBuildAction;
   PendingBuildAction? get pendingBuildAction => _$this._pendingBuildAction;
-  set pendingBuildAction(PendingBuildAction? pendingBuildAction) =>
+  set pendingBuildAction(covariant PendingBuildAction? pendingBuildAction) =>
       _$this._pendingBuildAction = pendingBuildAction;
 
   bool? _wasOutput;
   bool? get wasOutput => _$this._wasOutput;
-  set wasOutput(bool? wasOutput) => _$this._wasOutput = wasOutput;
+  set wasOutput(covariant bool? wasOutput) => _$this._wasOutput = wasOutput;
 
   bool? _isFailure;
   bool? get isFailure => _$this._isFailure;
-  set isFailure(bool? isFailure) => _$this._isFailure = isFailure;
+  set isFailure(covariant bool? isFailure) => _$this._isFailure = isFailure;
 
   Digest? _previousInputsDigest;
   Digest? get previousInputsDigest => _$this._previousInputsDigest;
-  set previousInputsDigest(Digest? previousInputsDigest) =>
+  set previousInputsDigest(covariant Digest? previousInputsDigest) =>
       _$this._previousInputsDigest = previousInputsDigest;
 
   GeneratedNodeStateBuilder();
@@ -372,7 +665,7 @@ class GeneratedNodeStateBuilder
   }
 
   @override
-  void replace(GeneratedNodeState other) {
+  void replace(covariant GeneratedNodeState other) {
     ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$GeneratedNodeState;
   }
@@ -488,16 +781,19 @@ class _$GlobNodeConfiguration extends GlobNodeConfiguration {
 }
 
 class GlobNodeConfigurationBuilder
-    implements Builder<GlobNodeConfiguration, GlobNodeConfigurationBuilder> {
+    implements
+        Builder<GlobNodeConfiguration, GlobNodeConfigurationBuilder>,
+        AdditionalNodeConfigurationBuilder {
   _$GlobNodeConfiguration? _$v;
 
   Glob? _glob;
   Glob? get glob => _$this._glob;
-  set glob(Glob? glob) => _$this._glob = glob;
+  set glob(covariant Glob? glob) => _$this._glob = glob;
 
   int? _phaseNumber;
   int? get phaseNumber => _$this._phaseNumber;
-  set phaseNumber(int? phaseNumber) => _$this._phaseNumber = phaseNumber;
+  set phaseNumber(covariant int? phaseNumber) =>
+      _$this._phaseNumber = phaseNumber;
 
   GlobNodeConfigurationBuilder();
 
@@ -512,7 +808,7 @@ class GlobNodeConfigurationBuilder
   }
 
   @override
-  void replace(GlobNodeConfiguration other) {
+  void replace(covariant GlobNodeConfiguration other) {
     ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$GlobNodeConfiguration;
   }
@@ -607,23 +903,26 @@ class _$GlobNodeState extends GlobNodeState {
 }
 
 class GlobNodeStateBuilder
-    implements Builder<GlobNodeState, GlobNodeStateBuilder> {
+    implements
+        Builder<GlobNodeState, GlobNodeStateBuilder>,
+        AdditionalNodeStateBuilder {
   _$GlobNodeState? _$v;
 
   SetBuilder<AssetId>? _inputs;
   SetBuilder<AssetId> get inputs =>
       _$this._inputs ??= new SetBuilder<AssetId>();
-  set inputs(SetBuilder<AssetId>? inputs) => _$this._inputs = inputs;
+  set inputs(covariant SetBuilder<AssetId>? inputs) => _$this._inputs = inputs;
 
   PendingBuildAction? _pendingBuildAction;
   PendingBuildAction? get pendingBuildAction => _$this._pendingBuildAction;
-  set pendingBuildAction(PendingBuildAction? pendingBuildAction) =>
+  set pendingBuildAction(covariant PendingBuildAction? pendingBuildAction) =>
       _$this._pendingBuildAction = pendingBuildAction;
 
   ListBuilder<AssetId>? _results;
   ListBuilder<AssetId> get results =>
       _$this._results ??= new ListBuilder<AssetId>();
-  set results(ListBuilder<AssetId>? results) => _$this._results = results;
+  set results(covariant ListBuilder<AssetId>? results) =>
+      _$this._results = results;
 
   GlobNodeStateBuilder();
 
@@ -639,7 +938,7 @@ class GlobNodeStateBuilder
   }
 
   @override
-  void replace(GlobNodeState other) {
+  void replace(covariant GlobNodeState other) {
     ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$GlobNodeState;
   }
@@ -768,21 +1067,23 @@ class PostProcessAnchorNodeConfigurationBuilder
         Builder<
           PostProcessAnchorNodeConfiguration,
           PostProcessAnchorNodeConfigurationBuilder
-        > {
+        >,
+        AdditionalNodeConfigurationBuilder {
   _$PostProcessAnchorNodeConfiguration? _$v;
 
   int? _actionNumber;
   int? get actionNumber => _$this._actionNumber;
-  set actionNumber(int? actionNumber) => _$this._actionNumber = actionNumber;
+  set actionNumber(covariant int? actionNumber) =>
+      _$this._actionNumber = actionNumber;
 
   AssetId? _builderOptionsId;
   AssetId? get builderOptionsId => _$this._builderOptionsId;
-  set builderOptionsId(AssetId? builderOptionsId) =>
+  set builderOptionsId(covariant AssetId? builderOptionsId) =>
       _$this._builderOptionsId = builderOptionsId;
 
   AssetId? _primaryInput;
   AssetId? get primaryInput => _$this._primaryInput;
-  set primaryInput(AssetId? primaryInput) =>
+  set primaryInput(covariant AssetId? primaryInput) =>
       _$this._primaryInput = primaryInput;
 
   PostProcessAnchorNodeConfigurationBuilder();
@@ -799,7 +1100,7 @@ class PostProcessAnchorNodeConfigurationBuilder
   }
 
   @override
-  void replace(PostProcessAnchorNodeConfiguration other) {
+  void replace(covariant PostProcessAnchorNodeConfiguration other) {
     ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$PostProcessAnchorNodeConfiguration;
   }
@@ -882,12 +1183,13 @@ class _$PostProcessAnchorNodeState extends PostProcessAnchorNodeState {
 
 class PostProcessAnchorNodeStateBuilder
     implements
-        Builder<PostProcessAnchorNodeState, PostProcessAnchorNodeStateBuilder> {
+        Builder<PostProcessAnchorNodeState, PostProcessAnchorNodeStateBuilder>,
+        AdditionalNodeStateBuilder {
   _$PostProcessAnchorNodeState? _$v;
 
   Digest? _previousInputsDigest;
   Digest? get previousInputsDigest => _$this._previousInputsDigest;
-  set previousInputsDigest(Digest? previousInputsDigest) =>
+  set previousInputsDigest(covariant Digest? previousInputsDigest) =>
       _$this._previousInputsDigest = previousInputsDigest;
 
   PostProcessAnchorNodeStateBuilder();
@@ -902,7 +1204,7 @@ class PostProcessAnchorNodeStateBuilder
   }
 
   @override
-  void replace(PostProcessAnchorNodeState other) {
+  void replace(covariant PostProcessAnchorNodeState other) {
     ArgumentError.checkNotNull(other, 'other');
     _$v = other as _$PostProcessAnchorNodeState;
   }
