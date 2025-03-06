@@ -219,16 +219,20 @@ class AssetGraph {
       _removeRecursive(output, removedIds: removedIds);
     }
     for (var output in node.outputs) {
-      var inputsNode = get(output) as NodeWithInputs?;
+      var inputsNode = get(output);
       if (inputsNode != null) {
-        inputsNode.inputs.remove(id);
-        if (inputsNode is GlobAssetNode) {
-          inputsNode.results?.remove(id);
+        if (inputsNode.type == NodeType.generated) {
+          inputsNode.generatedNodeState.inputs.remove(id);
+        } else if (inputsNode.type == NodeType.glob) {
+          inputsNode.globNodeState
+            ..inputs.remove(id)
+            ..results?.remove(id);
         }
       }
     }
-    if (node is NodeWithInputs) {
-      for (var input in node.inputs) {
+
+    if (node.type == NodeType.generated) {
+      for (var input in node.generatedNodeState.inputs) {
         var inputNode = get(input);
         // We may have already removed this node entirely.
         if (inputNode != null) {
@@ -237,10 +241,21 @@ class AssetGraph {
             ..primaryOutputs.remove(id);
         }
       }
-      if (node is GeneratedAssetNode) {
-        get(node.builderOptionsId)!.mutate.outputs.remove(id);
+      get(
+        node.generatedNodeConfiguration.builderOptionsId,
+      )!.mutate.outputs.remove(id);
+    } else if (node.type == NodeType.glob) {
+      for (var input in node.globNodeState.inputs) {
+        var inputNode = get(input);
+        // We may have already removed this node entirely.
+        if (inputNode != null) {
+          inputNode.mutate
+            ..outputs.remove(id)
+            ..primaryOutputs.remove(id);
+        }
       }
     }
+
     // Synthetic nodes need to be kept to retain dependency tracking.
     if (node.type != NodeType.syntheticSource) {
       _nodesByPackage[id.package]!.remove(id.path);
@@ -261,20 +276,20 @@ class AssetGraph {
       allNodes.where((n) => n.type == NodeType.generated).map((n) => n.id);
 
   /// The outputs which were, or would have been, produced by failing actions.
-  Iterable<GeneratedAssetNode> get failedOutputs => allNodes
-      .where(
-        (n) =>
-            n is GeneratedAssetNode &&
-            n.isFailure &&
-            n.state == NodeState.upToDate,
-      )
-      .map((n) => n as GeneratedAssetNode);
+  Iterable<AssetNode> get failedOutputs => allNodes.where(
+    (n) =>
+        n.type == NodeType.generated &&
+        n.generatedNodeState.isFailure &&
+        n.generatedNodeState.pendingBuildAction == PendingBuildAction.none,
+  );
 
   /// All the generated outputs for a particular phase.
-  Iterable<GeneratedAssetNode> outputsForPhase(String package, int phase) =>
-      packageNodes(
-        package,
-      ).whereType<GeneratedAssetNode>().where((n) => n.phaseNumber == phase);
+  Iterable<AssetNode> outputsForPhase(String package, int phase) =>
+      packageNodes(package).where(
+        (n) =>
+            n.type == NodeType.generated &&
+            n.generatedNodeConfiguration.phaseNumber == phase,
+      );
 
   /// All the source files in the graph.
   Iterable<AssetId> get sources =>
@@ -348,9 +363,12 @@ class AssetGraph {
       ..removeAll(removeIds);
 
     // We definitely need to update manually deleted outputs.
-    for (var deletedOutput
-        in removeIds.map(get).whereType<GeneratedAssetNode>()) {
-      deletedOutput.state = NodeState.definitelyNeedsUpdate;
+    for (var deletedOutput in removeIds
+        .map(get)
+        .nonNulls
+        .where((n) => n.type == NodeType.generated)) {
+      deletedOutput.generatedNodeState.pendingBuildAction =
+          PendingBuildAction.build;
     }
 
     // Transitively invalidates all assets. This needs to happen after the
@@ -369,8 +387,18 @@ class AssetGraph {
       if (node == null) return;
       if (!invalidatedIds.add(id)) return;
 
-      if (node is NodeWithInputs && node.state == NodeState.upToDate) {
-        node.state = NodeState.mayNeedUpdate;
+      if (node.type == NodeType.generated) {
+        final nodeState = node.generatedNodeState;
+        if (nodeState.pendingBuildAction == PendingBuildAction.none) {
+          nodeState.pendingBuildAction =
+              PendingBuildAction.buildIfInputsChanged;
+        }
+      } else if (node.type == NodeType.glob) {
+        final nodeState = node.globNodeState;
+        if (nodeState.pendingBuildAction == PendingBuildAction.none) {
+          nodeState.pendingBuildAction =
+              PendingBuildAction.buildIfInputsChanged;
+        }
       }
 
       // Update all outputs of this asset as well.
@@ -386,13 +414,17 @@ class AssetGraph {
     // For all new or deleted assets, check if they match any glob nodes and
     // invalidate those.
     for (var id in allNewAndDeletedIds) {
-      var samePackageGlobNodes = packageNodes(
-        id.package,
-      ).whereType<GlobAssetNode>().where((n) => n.state == NodeState.upToDate);
+      var samePackageGlobNodes = packageNodes(id.package).where(
+        (n) =>
+            n.type == NodeType.glob &&
+            n.globNodeState.pendingBuildAction == PendingBuildAction.none,
+      );
       for (final node in samePackageGlobNodes) {
-        if (node.glob.matches(id.path)) {
+        final nodeConfiguration = node.globNodeConfiguration;
+        if (nodeConfiguration.glob.matches(id.path)) {
           invalidateNodeAndDeps(node.id);
-          node.state = NodeState.mayNeedUpdate;
+          node.globNodeState.pendingBuildAction =
+              PendingBuildAction.buildIfInputsChanged;
         }
       }
     }
@@ -432,11 +464,12 @@ class AssetGraph {
       throw StateError('Unrecognized action type $action');
     }
 
-    var inputNode = get(input);
-    while (inputNode is GeneratedAssetNode) {
-      inputNode = get(inputNode.primaryInput);
+    var inputNode = get(input)!;
+    while (inputNode.type == NodeType.generated) {
+      final inputNodeConfiguration = inputNode.generatedNodeConfiguration;
+      inputNode = get(inputNodeConfiguration.primaryInput)!;
     }
-    return action.targetSources.matches(inputNode!.id);
+    return action.targetSources.matches(inputNode.id);
   }
 
   /// Returns a set containing [newSources] plus any new generated sources
@@ -475,7 +508,7 @@ class AssetGraph {
     return allInputs;
   }
 
-  /// Adds all [GeneratedAssetNode]s for [phase] given [allInputs].
+  /// Adds all [AssetNode.generated]s for [phase] given [allInputs].
   ///
   /// May remove some items from [allInputs], if they are deemed to actually be
   /// outputs of this phase and not original sources.
@@ -519,17 +552,17 @@ class AssetGraph {
     return phaseOutputs;
   }
 
-  /// Adds all [PostProcessAnchorNode]s for [phase] given [allInputs];
+  /// Adds all [AssetNode.postProcessAnchor]s for [phase] given [allInputs];
   ///
-  /// Does not return anything because [PostProcessAnchorNode]s are synthetic
-  /// and should not be treated as inputs.
+  /// Does not return anything because [AssetNode.postProcessAnchor]s are
+  /// synthetic and should not be treated as inputs.
   void _addPostBuildPhaseAnchors(PostBuildPhase phase, Set<AssetId> allInputs) {
     var actionNum = 0;
     for (var action in phase.builderActions) {
       var inputs = allInputs.where((input) => _actionMatches(action, input));
       for (var input in inputs) {
         var buildOptionsNodeId = builderOptionsIdForAction(action, actionNum);
-        var anchor = PostProcessAnchorNode.forInputAndAction(
+        var anchor = AssetNode.postProcessAnchorForInputAndAction(
           input,
           actionNum,
           buildOptionsNodeId,
@@ -541,13 +574,13 @@ class AssetGraph {
     }
   }
 
-  /// Adds [outputs] as [GeneratedAssetNode]s to the graph.
+  /// Adds [outputs] as [AssetNode.generated]s to the graph.
   ///
   /// If there are existing [AssetNode.source]s or [AssetNode.missingSource]s
-  /// that overlap the [GeneratedAssetNode]s, then they will be replaced with
-  /// [GeneratedAssetNode]s, and all their `primaryOutputs` will be removed
-  /// from the graph as well. The return value is the set of assets that were
-  /// removed from the graph.
+  /// that overlap the [AssetNode.generated]s, then they will be replaced with
+  /// [AssetNode.generated]s, and all their `primaryOutputs` will be removed
+  /// from from the graph as well. The return value is the set of assets that
+  /// were removed from the graph.
   Set<AssetId> _addGeneratedOutputs(
     Iterable<AssetId> outputs,
     int phaseNumber,
@@ -568,22 +601,24 @@ class AssetGraph {
       // outputs, and replace them with a `GeneratedAssetNode`.
       if (contains(output)) {
         existing = get(output)!;
-        if (existing is GeneratedAssetNode) {
+        if (existing.type == NodeType.generated) {
+          final existingConfiguration = existing.generatedNodeConfiguration;
           throw DuplicateAssetNodeException(
             rootPackage,
             existing.id,
-            (buildPhases[existing.phaseNumber] as InBuildPhase).builderLabel,
+            (buildPhases[existingConfiguration.phaseNumber] as InBuildPhase)
+                .builderLabel,
             (buildPhases[phaseNumber] as InBuildPhase).builderLabel,
           );
         }
         _removeRecursive(output, removedIds: removed);
       }
 
-      var newNode = GeneratedAssetNode(
+      var newNode = AssetNode.generated(
         output,
         phaseNumber: phaseNumber,
         primaryInput: primaryInput,
-        state: NodeState.definitelyNeedsUpdate,
+        state: PendingBuildAction.build,
         wasOutput: false,
         isFailure: false,
         builderOptionsId: builderOptionsNode.id,
@@ -607,11 +642,19 @@ class AssetGraph {
   void add(AssetNode node) => _add(node);
   Set<AssetId> remove(AssetId id) => _removeRecursive(id);
 
-  /// Adds [input] to all [outputs] if they represent [NodeWithInputs] nodes.
+  /// Adds [input] to all [outputs] if they track inputs.
+  ///
+  /// Nodes that track inputs are [AssetNode.generated] or [AssetNode.glob].
   void _addInput(Iterable<AssetId> outputs, AssetId input) {
     for (var output in outputs) {
       var node = get(output);
-      if (node is NodeWithInputs) node.inputs.add(input);
+      if (node != null) {
+        if (node.type == NodeType.generated) {
+          node.generatedNodeState.inputs.add(input);
+        } else if (node.type == NodeType.glob) {
+          node.globNodeState.inputs.add(input);
+        }
+      }
     }
   }
 }

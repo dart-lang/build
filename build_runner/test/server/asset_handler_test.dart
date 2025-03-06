@@ -128,11 +128,11 @@ void main() {
 
   test('Fails request for failed outputs', () async {
     graph.add(
-      GeneratedAssetNode(
+      AssetNode.generated(
         AssetId('a', 'web/main.ddc.js'),
         builderOptionsId: AssetId('_\$fake', 'options_id'),
         phaseNumber: 0,
-        state: NodeState.upToDate,
+        state: PendingBuildAction.none,
         isHidden: false,
         wasOutput: true,
         isFailure: true,

@@ -370,11 +370,11 @@ void main() {
 
         var bCopyId = makeAssetId('a|web/b.txt.copy');
         var bTxtId = makeAssetId('a|web/b.txt');
-        var bCopyNode = GeneratedAssetNode(
+        var bCopyNode = AssetNode.generated(
           bCopyId,
           phaseNumber: 0,
           primaryInput: makeAssetId('a|web/b.txt'),
-          state: NodeState.upToDate,
+          state: PendingBuildAction.none,
           wasOutput: true,
           isFailure: false,
           builderOptionsId: builderOptionsId,
@@ -393,11 +393,11 @@ void main() {
 
         var cCopyId = makeAssetId('a|web/c.txt.copy');
         var cTxtId = makeAssetId('a|web/c.txt');
-        var cCopyNode = GeneratedAssetNode(
+        var cCopyNode = AssetNode.generated(
           cCopyId,
           phaseNumber: 0,
           primaryInput: cTxtId,
-          state: NodeState.upToDate,
+          state: PendingBuildAction.none,
           wasOutput: true,
           isFailure: false,
           builderOptionsId: builderOptionsId,

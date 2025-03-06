@@ -85,104 +85,144 @@ class _AssetGraphMatcher extends Matcher {
         ];
         matches = false;
       }
-      if (node is NodeWithInputs) {
-        if (expectedNode is NodeWithInputs) {
-          if (node.state != expectedNode.state) {
-            matchState['needsUpdate of ${node.id}'] = [
-              node.state,
-              expectedNode.state,
+      if (node.type == NodeType.generated) {
+        if (expectedNode.type == NodeType.generated) {
+          final configuration = node.generatedNodeConfiguration;
+          final expectedConfiguration = expectedNode.generatedNodeConfiguration;
+
+          if (configuration.primaryInput !=
+              expectedConfiguration.primaryInput) {
+            matchState['primaryInput of ${node.id}'] = [
+              configuration.primaryInput,
+              expectedConfiguration.primaryInput,
             ];
             matches = false;
           }
-          if (!unorderedEquals(node.inputs).matches(expectedNode.inputs, {})) {
+
+          final state = node.generatedNodeState;
+          final expectedState = expectedNode.generatedNodeState;
+
+          if (state.pendingBuildAction != expectedState.pendingBuildAction) {
+            matchState['pendingBuildAction of ${node.id}'] = [
+              state.pendingBuildAction,
+              expectedState.pendingBuildAction,
+            ];
+            matches = false;
+          }
+          if (!unorderedEquals(
+            state.inputs,
+          ).matches(expectedState.inputs, {})) {
             matchState['Inputs of ${node.id}'] = [
-              node.inputs,
-              expectedNode.inputs,
+              state.inputs,
+              expectedState.inputs,
             ];
             matches = false;
           }
-        }
-        if (node is GeneratedAssetNode) {
-          if (expectedNode is GeneratedAssetNode) {
-            if (node.primaryInput != expectedNode.primaryInput) {
-              matchState['primaryInput of ${node.id}'] = [
-                node.primaryInput,
-                expectedNode.primaryInput,
-              ];
-              matches = false;
-            }
-            if (node.wasOutput != expectedNode.wasOutput) {
-              matchState['wasOutput of ${node.id}'] = [
-                node.wasOutput,
-                expectedNode.wasOutput,
-              ];
-              matches = false;
-            }
-            if (node.isFailure != expectedNode.isFailure) {
-              matchState['isFailure of ${node.id}'] = [
-                node.isFailure,
-                expectedNode.isFailure,
-              ];
-              matches = false;
-            }
-            if (checkPreviousInputsDigest &&
-                node.previousInputsDigest !=
-                    expectedNode.previousInputsDigest) {
-              matchState['previousInputDigest of ${node.id}'] = [
-                node.previousInputsDigest,
-                expectedNode.previousInputsDigest,
-              ];
-              matches = false;
-            }
-          }
-        } else if (node is GlobAssetNode) {
-          if (expectedNode is GlobAssetNode) {
-            if (!unorderedEquals(
-              node.results!,
-            ).matches(expectedNode.results, {})) {
-              matchState['results of ${node.id}'] = [
-                node.results,
-                expectedNode.results,
-              ];
-              matches = false;
-            }
-            if (node.glob.pattern != expectedNode.glob.pattern) {
-              matchState['glob of ${node.id}'] = [
-                node.glob.pattern,
-                expectedNode.glob.pattern,
-              ];
-              matches = false;
-            }
-          }
-        }
-      } else if (node is PostProcessAnchorNode) {
-        if (expectedNode is PostProcessAnchorNode) {
-          if (node.actionNumber != expectedNode.actionNumber) {
-            matchState['actionNumber of ${node.id}'] = [
-              node.actionNumber,
-              expectedNode.actionNumber,
+
+          if (state.wasOutput != expectedState.wasOutput) {
+            matchState['wasOutput of ${node.id}'] = [
+              state.wasOutput,
+              expectedState.wasOutput,
             ];
             matches = false;
           }
-          if (node.builderOptionsId != expectedNode.builderOptionsId) {
-            matchState['builderOptionsId of ${node.id}'] = [
-              node.builderOptionsId,
-              expectedNode.builderOptionsId,
+          if (state.isFailure != expectedState.isFailure) {
+            matchState['isFailure of ${node.id}'] = [
+              state.isFailure,
+              expectedState.isFailure,
             ];
             matches = false;
           }
           if (checkPreviousInputsDigest &&
-              node.previousInputsDigest != expectedNode.previousInputsDigest) {
-            matchState['previousInputsDigest of ${node.id}'] = [
-              node.previousInputsDigest,
-              expectedNode.previousInputsDigest,
+              state.previousInputsDigest !=
+                  expectedState.previousInputsDigest) {
+            matchState['previousInputDigest of ${node.id}'] = [
+              state.previousInputsDigest,
+              expectedState.previousInputsDigest,
             ];
             matches = false;
           }
-          if (node.primaryInput != expectedNode.primaryInput) {
+        }
+      } else if (node.type == NodeType.glob) {
+        if (expectedNode.type == NodeType.glob) {
+          final state = node.globNodeState;
+          final expectedState = expectedNode.globNodeState;
+
+          if (state.pendingBuildAction != expectedState.pendingBuildAction) {
+            matchState['pendingBuildAction of ${node.id}'] = [
+              state.pendingBuildAction,
+              expectedState.pendingBuildAction,
+            ];
+            matches = false;
+          }
+          if (!unorderedEquals(
+            state.inputs,
+          ).matches(expectedState.inputs, {})) {
+            matchState['Inputs of ${node.id}'] = [
+              state.inputs,
+              expectedState.inputs,
+            ];
+            matches = false;
+          }
+
+          if (!unorderedEquals(
+            state.results!,
+          ).matches(expectedState.results, {})) {
+            matchState['results of ${node.id}'] = [
+              state.results,
+              expectedState.results,
+            ];
+            matches = false;
+          }
+
+          final configuration = node.globNodeConfiguration;
+          final expectedConfiguration = expectedNode.globNodeConfiguration;
+          if (configuration.glob.pattern !=
+              expectedConfiguration.glob.pattern) {
+            matchState['glob of ${node.id}'] = [
+              configuration.glob.pattern,
+              expectedConfiguration.glob.pattern,
+            ];
+            matches = false;
+          }
+        }
+      } else if (node.type == NodeType.postProcessAnchor) {
+        if (expectedNode.type == NodeType.postProcessAnchor) {
+          final nodeConfiguration = node.postProcessAnchorNodeConfiguration;
+          final expectedNodeConfiguration =
+              expectedNode.postProcessAnchorNodeConfiguration;
+          if (nodeConfiguration.actionNumber !=
+              expectedNodeConfiguration.actionNumber) {
+            matchState['actionNumber of ${node.id}'] = [
+              nodeConfiguration.actionNumber,
+              expectedNodeConfiguration.actionNumber,
+            ];
+            matches = false;
+          }
+          if (nodeConfiguration.builderOptionsId !=
+              expectedNodeConfiguration.builderOptionsId) {
+            matchState['builderOptionsId of ${node.id}'] = [
+              nodeConfiguration.builderOptionsId,
+              expectedNodeConfiguration.builderOptionsId,
+            ];
+            matches = false;
+          }
+          final nodeState = node.postProcessAnchorNodeState;
+          final expectedNodeState = expectedNode.postProcessAnchorNodeState;
+          if (checkPreviousInputsDigest &&
+              nodeState.previousInputsDigest !=
+                  expectedNodeState.previousInputsDigest) {
+            matchState['previousInputsDigest of ${node.id}'] = [
+              nodeState.previousInputsDigest,
+              expectedNodeState.previousInputsDigest,
+            ];
+            matches = false;
+          }
+          if (nodeConfiguration.primaryInput !=
+              expectedNodeConfiguration.primaryInput) {
             matchState['primaryInput of ${node.id}'] = [
-              node.primaryInput,
-              expectedNode.primaryInput,
+              nodeConfiguration.primaryInput,
+              expectedNodeConfiguration.primaryInput,
             ];
             matches = false;
           }
