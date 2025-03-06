@@ -169,6 +169,9 @@ class AssetNode {
 }
 
 /// Write access to collections in the node.
+///
+/// This allows the same access as if they were directly exposed, but makes it
+/// easy to search the code for mutates.
 extension type AssetNodeMutator(AssetNode node) {
   Set<AssetId> get primaryOutputs => node._primaryOutputs;
   Set<AssetId> get outputs => node._outputs;
