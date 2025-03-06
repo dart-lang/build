@@ -5,22 +5,31 @@
 import 'dart:collection';
 import 'dart:convert';
 
-import 'package:build/build.dart';
+import 'package:build/build.dart' hide Builder;
+import 'package:built_collection/built_collection.dart';
+import 'package:built_value/built_value.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 
 import '../generate/phase.dart';
 
+part 'node.g.dart';
+
 /// Types of [AssetNode].
-enum NodeType {
-  builderOptions,
-  generated,
-  glob,
-  internal,
-  placeholder,
-  postProcessAnchor,
-  source,
-  syntheticSource,
+class NodeType extends EnumClass {
+  static const NodeType builderOptions = _$builderOptions;
+  static const NodeType generated = _$generated;
+  static const NodeType glob = _$glob;
+  static const NodeType internal = _$internal;
+  static const NodeType placeholder = _$placeholder;
+  static const NodeType postProcessAnchor = _$postProcessAnchor;
+  static const NodeType source = _$source;
+  static const NodeType syntheticSource = _$syntheticSource;
+
+  const NodeType._(super.name);
+
+  static BuiltSet<NodeType> get values => _$nodeTypeValues;
+  static NodeType valueOf(String name) => _$nodeTypeValueOf(name);
 }
 
 /// A node in the asset graph which may be an input to other assets.
@@ -188,10 +197,12 @@ class AssetNode {
     required bool isFailure,
   }) : type = NodeType.generated,
        configuration = GeneratedNodeConfiguration(
-         primaryInput: primaryInput,
-         builderOptionsId: builderOptionsId,
-         phaseNumber: phaseNumber,
-         isHidden: isHidden,
+         (b) =>
+             b
+               ..primaryInput = primaryInput
+               ..builderOptionsId = builderOptionsId
+               ..phaseNumber = phaseNumber
+               ..isHidden = isHidden,
        ),
        state = GeneratedNodeState(
          inputs: inputs == null ? HashSet() : HashSet.of(inputs),
@@ -217,8 +228,10 @@ class AssetNode {
     List<AssetId>? results,
   }) : type = NodeType.glob,
        configuration = GlobNodeConfiguration(
-         glob: glob,
-         phaseNumber: phaseNumber,
+         (b) =>
+             b
+               ..glob = glob
+               ..phaseNumber = phaseNumber,
        ),
        state = GlobNodeState(
          inputs: HashSet(),
@@ -249,9 +262,11 @@ class AssetNode {
     Digest? previousInputsDigest,
   }) : type = NodeType.postProcessAnchor,
        configuration = PostProcessAnchorNodeConfiguration(
-         actionNumber: actionNumber,
-         builderOptionsId: builderOptionsId,
-         primaryInput: primaryInput,
+         (b) =>
+             b
+               ..actionNumber = actionNumber
+               ..builderOptionsId = builderOptionsId
+               ..primaryInput = primaryInput,
        ),
        state = PostProcessAnchorNodeState(
          previousInputsDigest: previousInputsDigest,
@@ -303,13 +318,16 @@ abstract interface class AdditionalNodeConfiguration {}
 abstract interface class AdditionalNodeState {}
 
 /// Additional configuration for an [AssetNode.generated].
-class GeneratedNodeConfiguration implements AdditionalNodeConfiguration {
+abstract class GeneratedNodeConfiguration
+    implements
+        Built<GeneratedNodeConfiguration, GeneratedNodeConfigurationBuilder>,
+        AdditionalNodeConfiguration {
   /// The primary input which generated this node.
-  final AssetId primaryInput;
+  AssetId get primaryInput;
 
   /// The [AssetId] of the node representing the [BuilderOptions] used to create
   /// this node.
-  final AssetId builderOptionsId;
+  AssetId get builderOptionsId;
 
   /// The phase in which this node is generated.
   ///
@@ -318,17 +336,16 @@ class GeneratedNodeConfiguration implements AdditionalNodeConfiguration {
   ///
   /// Other generators and globs can only read this node if they run in a
   /// later phase.
-  final int phaseNumber;
+  int get phaseNumber;
 
   /// Whether the asset should be placed in the build cache.
-  final bool isHidden;
+  bool get isHidden;
 
-  GeneratedNodeConfiguration({
-    required this.primaryInput,
-    required this.builderOptionsId,
-    required this.phaseNumber,
-    required this.isHidden,
-  });
+  factory GeneratedNodeConfiguration(
+    void Function(GeneratedNodeConfigurationBuilder) updates,
+  ) = _$GeneratedNodeConfiguration;
+
+  GeneratedNodeConfiguration._();
 }
 
 /// State for an [AssetNode.generated] that changes during the build.
@@ -365,11 +382,18 @@ class GeneratedNodeState implements AdditionalNodeState {
 }
 
 /// Additional configuration for an [AssetNode.glob].
-class GlobNodeConfiguration implements AdditionalNodeConfiguration {
-  final Glob glob;
-  final int phaseNumber;
+abstract class GlobNodeConfiguration
+    implements
+        Built<GlobNodeConfiguration, GlobNodeConfigurationBuilder>,
+        AdditionalNodeConfiguration {
+  Glob get glob;
+  int get phaseNumber;
 
-  GlobNodeConfiguration({required this.glob, required this.phaseNumber});
+  factory GlobNodeConfiguration(
+    void Function(GlobNodeConfigurationBuilder) updates,
+  ) = _$GlobNodeConfiguration;
+
+  GlobNodeConfiguration._();
 }
 
 /// State for an [AssetNode.glob] that changes during the build.
@@ -394,17 +418,22 @@ class GlobNodeState implements AdditionalNodeState {
 }
 
 // Additional configuration for an [AssetNode.postProcessAnchor].
-class PostProcessAnchorNodeConfiguration
-    implements AdditionalNodeConfiguration {
-  final int actionNumber;
-  final AssetId builderOptionsId;
-  final AssetId primaryInput;
+abstract class PostProcessAnchorNodeConfiguration
+    implements
+        Built<
+          PostProcessAnchorNodeConfiguration,
+          PostProcessAnchorNodeConfigurationBuilder
+        >,
+        AdditionalNodeConfiguration {
+  int get actionNumber;
+  AssetId get builderOptionsId;
+  AssetId get primaryInput;
 
-  PostProcessAnchorNodeConfiguration({
-    required this.actionNumber,
-    required this.builderOptionsId,
-    required this.primaryInput,
-  });
+  PostProcessAnchorNodeConfiguration._();
+
+  factory PostProcessAnchorNodeConfiguration(
+    void Function(PostProcessAnchorNodeConfigurationBuilder) updates,
+  ) = _$PostProcessAnchorNodeConfiguration;
 }
 
 /// State for an [AssetNode.postProcessAnchor].
@@ -436,4 +465,14 @@ extension type AssetNodeInspector(AssetNode node) {
 }
 
 /// Work that needs doing for a node that tracks its inputs.
-enum PendingBuildAction { none, buildIfInputsChanged, build }
+class PendingBuildAction extends EnumClass {
+  static const PendingBuildAction none = _$none;
+  static const PendingBuildAction buildIfInputsChanged = _$buildIfInputsChanged;
+  static const PendingBuildAction build = _$build;
+
+  const PendingBuildAction._(super.name);
+
+  static BuiltSet<PendingBuildAction> get values => _$pendingBuildActionValues;
+  static PendingBuildAction valueOf(String name) =>
+      _$pendingBuildActionValueOf(name);
+}

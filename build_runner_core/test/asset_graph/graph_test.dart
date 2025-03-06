@@ -128,7 +128,7 @@ void main() {
               phaseNumber: phaseNum,
               primaryInput: node.id,
               state:
-                  PendingBuildAction.values[g %
+                  PendingBuildAction.values.toList()[g %
                       PendingBuildAction.values.length],
               wasOutput: g.isEven,
               isFailure: phaseNum.isEven,

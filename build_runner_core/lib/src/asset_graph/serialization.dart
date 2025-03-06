@@ -8,7 +8,7 @@ part of 'graph.dart';
 ///
 /// This should be incremented any time the serialize/deserialize formats
 /// change.
-const _version = 24;
+const _version = 25;
 
 /// Deserializes an [AssetGraph] from a [Map].
 class _AssetGraphDeserializer {
@@ -132,10 +132,9 @@ class _AssetGraphDeserializer {
               _idToAssetId[serializedNode[_GeneratedField.primaryInput.index +
                       offset]
                   as int]!,
-          state:
-              PendingBuildAction
-                  .values[serializedNode[_GeneratedField.state.index + offset]
-                  as int],
+          state: PendingBuildAction.valueOf(
+            serializedNode[_GeneratedField.state.index + offset] as String,
+          ),
           wasOutput: _deserializeBool(
             serializedNode[_GeneratedField.wasOutput.index + offset] as int,
           ),
@@ -164,10 +163,9 @@ class _AssetGraphDeserializer {
           glob: Glob(serializedNode[_GlobField.glob.index + offset] as String),
           phaseNumber:
               serializedNode[_GlobField.phaseNumber.index + offset] as int,
-          pendingBuildAction:
-              PendingBuildAction.values[serializedNode[_GlobField.state.index +
-                      offset]
-                  as int],
+          pendingBuildAction: PendingBuildAction.valueOf(
+            serializedNode[_GlobField.state.index + offset] as String,
+          ),
           lastKnownDigest: digest,
           results:
               _deserializeAssetIds(
@@ -383,6 +381,8 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
             return _NodeType.placeholder.index;
           case NodeType.postProcessAnchor:
             return _NodeType.postProcessAnchor.index;
+          default:
+            throw UnsupportedError(node.type.name);
         }
       case _AssetField.id:
         return serializer.findAssetIndex(node.id, from: node.id, field: 'id');
@@ -462,7 +462,7 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
       _GeneratedField.wasOutput => _serializeBool(state.wasOutput),
       _GeneratedField.isFailure => _serializeBool(state.isFailure),
       _GeneratedField.phaseNumber => configuration.phaseNumber,
-      _GeneratedField.state => state.pendingBuildAction.index,
+      _GeneratedField.state => state.pendingBuildAction.name,
       _GeneratedField.previousInputsDigest => _serializeDigest(
         state.previousInputsDigest,
       ),
@@ -503,7 +503,7 @@ class _WrappedGlobAssetNode extends _WrappedAssetNode {
     final state = globNode.globNodeState;
     return switch (fieldId) {
       _GlobField.phaseNumber => configuration.phaseNumber,
-      _GlobField.state => state.pendingBuildAction.index,
+      _GlobField.state => state.pendingBuildAction.name,
       _GlobField.glob => configuration.glob.pattern,
       _GlobField.results => state.results!
           .map(
