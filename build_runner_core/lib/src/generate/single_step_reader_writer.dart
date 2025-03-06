@@ -20,12 +20,12 @@ import 'input_tracker.dart';
 import 'phase.dart';
 
 /// Builds an asset.
-typedef AssetBuilder = Future<void> Function(AssetNode);
+typedef AssetBuilder = Future<void> Function(AssetId);
 
 /// Builds a "glob node": all assets matching a glob.
 ///
 /// The node must have type [NodeType.glob].
-typedef GlobNodeBuilder = Future<void> Function(AssetNode);
+typedef GlobNodeBuilder = Future<void> Function(AssetId);
 
 /// Describes if and how a [SingleStepReaderWriter] should read an [AssetId].
 class Readability {
@@ -356,10 +356,11 @@ class SingleStepReaderWriter extends AssetReader
 
     var streamCompleter = StreamCompleter<AssetId>();
 
-    _buildGlobNode(glob).then((globNode) {
-      inputTracker.add(globNode.id);
+    _buildGlobNode(glob).then((globNodeId) {
+      inputTracker.add(globNodeId);
+      final globNode = _runningBuild.assetGraph.get(globNodeId)!;
       streamCompleter.setSourceStream(
-        Stream.fromIterable(globNode.globNodeState.results!),
+        Stream.fromIterable(globNode.globNodeState!.results),
       );
     });
     return streamCompleter.stream;
@@ -373,9 +374,12 @@ class SingleStepReaderWriter extends AssetReader
     if (_runningBuild == null) return _delegate.digest(id);
     var node = _runningBuild.assetGraph.get(id)!;
     if (node.lastKnownDigest != null) return node.lastKnownDigest!;
-    return _delegate
-        .digest(id)
-        .then((digest) => node.mutate.lastKnownDigest = digest);
+    return _delegate.digest(id).then((digest) {
+      _runningBuild.assetGraph.updateNode(id, (nodeBuilder) {
+        nodeBuilder.lastKnownDigest = digest;
+      });
+      return digest;
+    });
   }
 
   /// Checks whether [node] can be read by this step.
@@ -383,7 +387,7 @@ class SingleStepReaderWriter extends AssetReader
   /// If it's a generated node from an earlier phase, wait for it to be built.
   Future<Readability> _isReadableNode(AssetNode node) async {
     if (node.type == NodeType.generated) {
-      final nodeConfiguration = node.generatedNodeConfiguration;
+      final nodeConfiguration = node.generatedNodeConfiguration!;
       if (nodeConfiguration.phaseNumber > _runningBuildStep!.phaseNumber) {
         return Readability.notReadable;
       } else if (nodeConfiguration.phaseNumber ==
@@ -396,8 +400,9 @@ class SingleStepReaderWriter extends AssetReader
         return isInBuild ? Readability.ownOutput : Readability.notReadable;
       }
 
-      await _runningBuild!.nodeBuilder(node);
-      final nodeState = node.generatedNodeState;
+      await _runningBuild!.nodeBuilder(node.id);
+      node = _runningBuild.assetGraph.get(node.id)!;
+      final nodeState = node.generatedNodeState!;
       return Readability.fromPreviousPhase(
         nodeState.wasOutput && !nodeState.isFailure,
       );
@@ -426,7 +431,7 @@ class SingleStepReaderWriter extends AssetReader
   /// Retrieves an existing node from `_runningBuild.assetGraph` if it's
   /// available; if not, adds one. Then, gets the built glob from
   /// `runningBuild.globNodeBuilder`, which might return an existing result.
-  Future<AssetNode> _buildGlobNode(Glob glob) async {
+  Future<AssetId> _buildGlobNode(Glob glob) async {
     var globNodeId = AssetNode.createGlobNodeId(
       _runningBuildStep!.primaryPackage,
       glob,
@@ -442,8 +447,8 @@ class SingleStepReaderWriter extends AssetReader
       );
       _runningBuild.assetGraph.add(globNode);
     }
-    await _runningBuild.globNodeBuilder(globNode);
-    return globNode;
+    await _runningBuild.globNodeBuilder(globNodeId);
+    return globNodeId;
   }
 
   @override

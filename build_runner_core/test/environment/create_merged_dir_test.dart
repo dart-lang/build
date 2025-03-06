@@ -97,14 +97,15 @@ void main() {
         optionalOutputTracker,
       );
       for (var id in graph.outputs) {
-        var node = graph.get(id)!;
-        node.generatedNodeState
-          ..pendingBuildAction = PendingBuildAction.none
-          ..wasOutput = true
-          ..isFailure = false;
+        graph.updateNode(id, (nodeBuilder) {
+          nodeBuilder.generatedNodeState
+            ..pendingBuildAction = PendingBuildAction.none
+            ..wasOutput = true
+            ..isFailure = false;
+        });
         readerWriter.testing.writeString(
           id,
-          sources[node.generatedNodeConfiguration.primaryInput]!,
+          sources[graph.get(id)!.generatedNodeConfiguration!.primaryInput]!,
         );
       }
       tmpDir = await Directory.systemTemp.createTemp('build_tests');
@@ -131,7 +132,9 @@ void main() {
 
     test('doesnt write deleted files', () async {
       var node = graph.get(AssetId('b', 'lib/c.txt.copy'))!;
-      node.mutate.deletedBy.add(node.id.addExtension('.post_anchor.1'));
+      graph.updateNode(node.id, (nodeBuilder) {
+        nodeBuilder.deletedBy.add(node.id.addExtension('.post_anchor.1'));
+      });
 
       var success = await createMergedOutputDirectories(
         {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
@@ -328,9 +331,12 @@ void main() {
     });
 
     test('doesnt write files that werent output', () async {
-      graph.get(AssetId('b', 'lib/c.txt.copy'))!.generatedNodeState
-        ..wasOutput = false
-        ..isFailure = false;
+      final node = graph.get(AssetId('b', 'lib/c.txt.copy'))!;
+      graph.updateNode(node.id, (nodeBuilder) {
+        nodeBuilder.generatedNodeState
+          ..wasOutput = false
+          ..isFailure = false;
+      });
 
       var success = await createMergedOutputDirectories(
         {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
@@ -527,11 +533,11 @@ void main() {
         expect(success, isTrue);
         final removes = ['a|lib/a.txt', 'a|lib/a.txt.copy'];
         for (var remove in removes) {
-          graph
-              .get(makeAssetId(remove))!
-              .mutate
-              .deletedBy
-              .add(makeAssetId(remove).addExtension('.post_anchor.1'));
+          graph.updateNode(makeAssetId(remove), (nodeBuilder) {
+            nodeBuilder.deletedBy.add(
+              makeAssetId(remove).addExtension('.post_anchor.1'),
+            );
+          });
         }
         success = await createMergedOutputDirectories(
           {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},

@@ -1266,9 +1266,6 @@ void main() {
       [],
       computeDigest(AssetId('a', 'lib/b.txt'), 'b'),
     );
-    expectedGraph
-      ..add(aSourceNode)
-      ..add(bSourceNode);
 
     // Regular generated asset nodes and supporting nodes.
     var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
@@ -1276,14 +1273,13 @@ void main() {
       builderOptionsId,
       lastKnownDigest: computeBuilderOptionsDigest(defaultBuilderOptions),
     );
-    expectedGraph.add(builderOptionsNode);
 
     var aCopyId = makeAssetId('a|web/a.txt.copy');
     var aCopyNode = AssetNode.generated(
       aCopyId,
       phaseNumber: 0,
       primaryInput: makeAssetId('a|web/a.txt'),
-      state: PendingBuildAction.none,
+      pendingBuildAction: PendingBuildAction.none,
       wasOutput: true,
       isFailure: false,
       builderOptionsId: builderOptionsId,
@@ -1291,18 +1287,22 @@ void main() {
       inputs: [makeAssetId('a|web/a.txt')],
       isHidden: false,
     );
-    builderOptionsNode.mutate.outputs.add(aCopyNode.id);
-    expectedGraph.add(aCopyNode);
-    aSourceNode.mutate
-      ..outputs.add(aCopyNode.id)
-      ..primaryOutputs.add(aCopyNode.id);
+    builderOptionsNode = builderOptionsNode.rebuild(
+      (b) => b..outputs.add(aCopyNode.id),
+    );
+    aSourceNode = aSourceNode.rebuild(
+      (b) =>
+          b
+            ..outputs.add(aCopyNode.id)
+            ..primaryOutputs.add(aCopyNode.id),
+    );
 
     var bCopyId = makeAssetId('a|lib/b.txt.copy'); //;
     var bCopyNode = AssetNode.generated(
       bCopyId,
       phaseNumber: 0,
       primaryInput: makeAssetId('a|lib/b.txt'),
-      state: PendingBuildAction.none,
+      pendingBuildAction: PendingBuildAction.none,
       wasOutput: true,
       isFailure: false,
       builderOptionsId: builderOptionsId,
@@ -1310,11 +1310,15 @@ void main() {
       inputs: [makeAssetId('a|lib/b.txt')],
       isHidden: false,
     );
-    builderOptionsNode.mutate.outputs.add(bCopyNode.id);
-    expectedGraph.add(bCopyNode);
-    bSourceNode.mutate
-      ..outputs.add(bCopyNode.id)
-      ..primaryOutputs.add(bCopyNode.id);
+    builderOptionsNode = builderOptionsNode.rebuild(
+      (b) => b..outputs.add(bCopyNode.id),
+    );
+    bSourceNode = bSourceNode.rebuild(
+      (b) =>
+          b
+            ..outputs.add(bCopyNode.id)
+            ..primaryOutputs.add(bCopyNode.id),
+    );
 
     // Post build generates asset nodes and supporting nodes
     var postBuilderOptionsId = makeAssetId('a|PostPhase0.builderOptions');
@@ -1322,7 +1326,6 @@ void main() {
       postBuilderOptionsId,
       lastKnownDigest: computeBuilderOptionsDigest(defaultBuilderOptions),
     );
-    expectedGraph.add(postBuilderOptionsNode);
 
     var aAnchorNode = AssetNode.postProcessAnchorForInputAndAction(
       aSourceNode.id,
@@ -1334,15 +1337,12 @@ void main() {
       0,
       postBuilderOptionsId,
     );
-    expectedGraph
-      ..add(aAnchorNode)
-      ..add(bAnchorNode);
 
     var aPostCopyNode = AssetNode.generated(
       makeAssetId('a|web/a.txt.post'),
       phaseNumber: 1,
       primaryInput: makeAssetId('a|web/a.txt'),
-      state: PendingBuildAction.none,
+      pendingBuildAction: PendingBuildAction.none,
       wasOutput: true,
       isFailure: false,
       builderOptionsId: postBuilderOptionsId,
@@ -1352,18 +1352,22 @@ void main() {
     );
     // Note we don't expect this node to get added to the builder options node
     // outputs.
-    expectedGraph.add(aPostCopyNode);
-    aSourceNode.mutate
-      ..outputs.add(aPostCopyNode.id)
-      ..anchorOutputs.add(aAnchorNode.id);
-    aAnchorNode.mutate.outputs.add(aPostCopyNode.id);
-    aSourceNode.mutate.primaryOutputs.add(aPostCopyNode.id);
+    aSourceNode = aSourceNode.rebuild(
+      (b) =>
+          b
+            ..outputs.add(aPostCopyNode.id)
+            ..anchorOutputs.add(aAnchorNode.id),
+    );
+    aAnchorNode = aAnchorNode.rebuild((b) => b..outputs.add(aPostCopyNode.id));
+    aSourceNode = aSourceNode.rebuild(
+      (b) => b..primaryOutputs.add(aPostCopyNode.id),
+    );
 
     var bPostCopyNode = AssetNode.generated(
       makeAssetId('a|lib/b.txt.post'),
       phaseNumber: 1,
       primaryInput: makeAssetId('a|lib/b.txt'),
-      state: PendingBuildAction.none,
+      pendingBuildAction: PendingBuildAction.none,
       wasOutput: true,
       isFailure: false,
       builderOptionsId: postBuilderOptionsId,
@@ -1373,12 +1377,28 @@ void main() {
     );
     // Note we don't expect this node to get added to the builder options node
     // outputs.
-    expectedGraph.add(bPostCopyNode);
-    bSourceNode.mutate
-      ..outputs.add(bPostCopyNode.id)
-      ..anchorOutputs.add(bAnchorNode.id);
-    bAnchorNode.mutate.outputs.add(bPostCopyNode.id);
-    bSourceNode.mutate.primaryOutputs.add(bPostCopyNode.id);
+    bSourceNode = bSourceNode.rebuild(
+      (b) =>
+          b
+            ..outputs.add(bPostCopyNode.id)
+            ..anchorOutputs.add(bAnchorNode.id),
+    );
+    bAnchorNode = bAnchorNode.rebuild((b) => b..outputs.add(bPostCopyNode.id));
+    bSourceNode = bSourceNode.rebuild(
+      (b) => b..primaryOutputs.add(bPostCopyNode.id),
+    );
+
+    expectedGraph
+      ..add(aSourceNode)
+      ..add(bSourceNode)
+      ..add(builderOptionsNode)
+      ..add(aCopyNode)
+      ..add(bCopyNode)
+      ..add(postBuilderOptionsNode)
+      ..add(aPostCopyNode)
+      ..add(bPostCopyNode)
+      ..add(aAnchorNode)
+      ..add(bAnchorNode);
 
     // TODO: We dont have a shared way of computing the combined input hashes
     // today, but eventually we should test those here too.
@@ -1423,7 +1443,7 @@ void main() {
       final outputId = AssetId('a', 'lib/a.txt.out');
 
       final outputNode = cachedGraph.get(outputId)!;
-      expect(outputNode.generatedNodeState.inputs, isNot(contains(outputId)));
+      expect(outputNode.generatedNodeState!.inputs, isNot(contains(outputId)));
     },
   );
 
@@ -1815,7 +1835,7 @@ void main() {
       var fileBNode = graph.get(makeAssetId('a|lib/file.b'))!;
       var fileCNode = graph.get(makeAssetId('a|lib/file.c'))!;
       expect(
-        outputNode.generatedNodeState.inputs,
+        outputNode.generatedNodeState!.inputs,
         unorderedEquals([fileANode.id, fileCNode.id]),
       );
       expect(fileANode.outputs, contains(outputNode.id));
@@ -2034,7 +2054,7 @@ void main() {
       );
       for (var i = 1; i < 4; i++) {
         var node = finalGraph.get(AssetId('a', 'web/a.g$i'))!;
-        expect(node.generatedNodeState.isFailure, isTrue);
+        expect(node.generatedNodeState!.isFailure, isTrue);
       }
     });
 

@@ -58,7 +58,7 @@ class OptionalOutputTracker {
 
     final node = _assetGraph.get(output)!;
     if (node.type != NodeType.generated) return true;
-    final nodeConfiguration = node.generatedNodeConfiguration;
+    final nodeConfiguration = node.generatedNodeConfiguration!;
     final phase = _buildPhases[nodeConfiguration.phaseNumber];
     if (!phase.isOptional &&
         shouldBuildForDirs(
@@ -78,8 +78,8 @@ class OptionalOutputTracker {
               .outputsForPhase(output.package, nodeConfiguration.phaseNumber)
               .where(
                 (n) =>
-                    n.generatedNodeConfiguration.primaryInput ==
-                    node.generatedNodeConfiguration.primaryInput,
+                    n.generatedNodeConfiguration!.primaryInput ==
+                    node.generatedNodeConfiguration!.primaryInput,
               )
               .map((n) => n.id)
               .any((o) => isRequired(o, currentlyChecking)),

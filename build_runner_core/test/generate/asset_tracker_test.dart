@@ -51,7 +51,10 @@ void main() {
       );
       // We need to pre-emptively assign a digest so we determine that the
       // node is "interesting".
-      assetGraph.get(aId)!.mutate.lastKnownDigest = await reader.digest(aId);
+      final digest = await reader.digest(aId);
+      assetGraph.updateNode(aId, (nodeBuilder) {
+        nodeBuilder.lastKnownDigest = digest;
+      });
 
       var targetGraph = await TargetGraph.forPackageGraph(
         packageGraph,

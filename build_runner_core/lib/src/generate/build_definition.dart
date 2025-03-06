@@ -155,7 +155,7 @@ class AssetTracker {
         .where((n) {
           if (!n.isFile) return false;
           if (n.type == NodeType.generated) {
-            return n.generatedNodeState.wasOutput;
+            return n.generatedNodeState!.wasOutput;
           }
           return true;
         })
@@ -508,8 +508,8 @@ class _Loader {
         await Future.wait(
           graph.outputs.map((id) {
             var node = graph.get(id)!;
-            final nodeConfiguration = node.generatedNodeConfiguration;
-            final nodeState = node.generatedNodeState;
+            final nodeConfiguration = node.generatedNodeConfiguration!;
+            final nodeState = node.generatedNodeState!;
             if (nodeState.wasOutput && !nodeConfiguration.isHidden) {
               var idToDelete = id;
               // If the package no longer exists, then the user must have
@@ -604,20 +604,19 @@ class _Loader {
       AssetId builderOptionsId,
       BuilderOptions options,
     ) {
-      var builderOptionsNode = assetGraph.get(builderOptionsId)!;
-      if (builderOptionsNode.type != NodeType.builderOptions) {
-        throw StateError(
-          'Expected node of type NodeType.builderOptionsNode:'
-          '$builderOptionsNode',
-        );
-      }
-      var oldDigest = builderOptionsNode.lastKnownDigest;
-      builderOptionsNode.mutate.lastKnownDigest = computeBuilderOptionsDigest(
-        options,
-      );
-      if (builderOptionsNode.lastKnownDigest != oldDigest) {
-        result[builderOptionsId] = ChangeType.MODIFY;
-      }
+      assetGraph.updateNode(builderOptionsId, (nodeBuilder) {
+        if (nodeBuilder.type != NodeType.builderOptions) {
+          throw StateError(
+            'Expected node of type NodeType.builderOptionsNode:'
+            '${nodeBuilder.build()}',
+          );
+        }
+        var oldDigest = nodeBuilder.lastKnownDigest;
+        nodeBuilder.lastKnownDigest = computeBuilderOptionsDigest(options);
+        if (nodeBuilder.lastKnownDigest != oldDigest) {
+          result[builderOptionsId] = ChangeType.MODIFY;
+        }
+      });
     }
 
     for (var phase = 0; phase < buildPhases.length; phase++) {

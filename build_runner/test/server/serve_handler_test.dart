@@ -138,7 +138,9 @@ void main() {
   void addSource(String id, String content, {bool deleted = false}) {
     var node = makeAssetNode(id, [], computeDigest(AssetId.parse(id), content));
     if (deleted) {
-      node.mutate.deletedBy.add(node.id.addExtension('.post_anchor.1'));
+      node = node.rebuild(
+        (b) => b..deletedBy.add(node.id.addExtension('.post_anchor.1')),
+      );
     }
     assetGraph.add(node);
     readerWriter.testing.writeString(node.id, content);
@@ -205,7 +207,7 @@ void main() {
           AssetId('a', 'web/main.ddc.js'),
           builderOptionsId: AssetId('_\$fake', 'options_id'),
           phaseNumber: 0,
-          state: PendingBuildAction.none,
+          pendingBuildAction: PendingBuildAction.none,
           isHidden: false,
           wasOutput: true,
           isFailure: true,
