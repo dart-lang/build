@@ -359,7 +359,7 @@ class SingleStepReaderWriter extends AssetReader
     _buildGlobNode(glob).then((globNode) {
       inputTracker.add(globNode.id);
       streamCompleter.setSourceStream(
-        Stream.fromIterable(globNode.globNodeState.results!),
+        Stream.fromIterable(globNode.globNodeState.results),
       );
     });
     return streamCompleter.stream;

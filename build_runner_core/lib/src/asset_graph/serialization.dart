@@ -87,9 +87,13 @@ class _AssetGraphDeserializer {
           throw AssetGraphCorruptedException();
         }
         if (inputsNode.type == NodeType.generated) {
-          inputsNode.generatedNodeState.inputs.add(node.id);
+          inputsNode.generatedNodeState = inputsNode.generatedNodeState.rebuild(
+            (b) => b..inputs.add(node.id),
+          );
         } else {
-          inputsNode.globNodeState.inputs.add(node.id);
+          inputsNode.globNodeState = inputsNode.globNodeState.rebuild(
+            (b) => b..inputs.add(node.id),
+          );
         }
       }
 
@@ -132,7 +136,7 @@ class _AssetGraphDeserializer {
               _idToAssetId[serializedNode[_GeneratedField.primaryInput.index +
                       offset]
                   as int]!,
-          state: PendingBuildAction.valueOf(
+          pendingBuildAction: PendingBuildAction.valueOf(
             serializedNode[_GeneratedField.state.index + offset] as String,
           ),
           wasOutput: _deserializeBool(
@@ -505,7 +509,7 @@ class _WrappedGlobAssetNode extends _WrappedAssetNode {
       _GlobField.phaseNumber => configuration.phaseNumber,
       _GlobField.state => state.pendingBuildAction.name,
       _GlobField.glob => configuration.glob.pattern,
-      _GlobField.results => state.results!
+      _GlobField.results => state.results
           .map(
             (id) => serializer.findAssetIndex(
               id,

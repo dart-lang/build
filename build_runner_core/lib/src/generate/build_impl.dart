@@ -710,7 +710,7 @@ class _SingleBuild {
           phaseNumber: phaseNumber,
           wasOutput: true,
           isFailure: false,
-          state: PendingBuildAction.none,
+          pendingBuildAction: PendingBuildAction.none,
         );
         _assetGraph.add(node);
         anchorNode.mutate.outputs.add(assetId);
@@ -816,9 +816,13 @@ class _SingleBuild {
       for (var id in outputs) {
         final node = _assetGraph.get(id)!;
         if (node.type == NodeType.generated) {
-          node.generatedNodeState.pendingBuildAction = PendingBuildAction.none;
+          node.generatedNodeState = node.generatedNodeState.rebuild(
+            (b) => b..pendingBuildAction = PendingBuildAction.none,
+          );
         } else if (node.type == NodeType.glob) {
-          node.globNodeState.pendingBuildAction = PendingBuildAction.none;
+          node.globNodeState = node.globNodeState.rebuild(
+            (b) => b..pendingBuildAction = PendingBuildAction.none,
+          );
         }
       }
       return false;
@@ -839,7 +843,9 @@ class _SingleBuild {
 
     final nodeState = anchorNode.postProcessAnchorNodeState;
     if (inputsDigest != nodeState.previousInputsDigest) {
-      nodeState.previousInputsDigest = inputsDigest;
+      anchorNode.postProcessAnchorNodeState = nodeState.rebuild(
+        (b) => b..previousInputsDigest = inputsDigest,
+      );
       return true;
     }
 
@@ -899,10 +905,13 @@ class _SingleBuild {
         actualMatches.add(node.id);
       }
 
-      globNode.globNodeState
-        ..results = actualMatches
-        ..inputs = HashSet.of(potentialNodes.map((n) => n.id))
-        ..pendingBuildAction = PendingBuildAction.none;
+      globNode.globNodeState = GlobNodeState(
+        (b) =>
+            b
+              ..results.replace(actualMatches)
+              ..inputs.replace(potentialNodes.map((n) => n.id))
+              ..pendingBuildAction = PendingBuildAction.none,
+      );
       globNode.mutate.lastKnownDigest = md5.convert(
         utf8.encode(actualMatches.join(' ')),
       );
@@ -998,12 +1007,14 @@ class _SingleBuild {
       // time a node might not be in a valid state.
       _removeOldInputs(node, usedInputs);
       _addNewInputs(node, usedInputs);
-      final nodeState = node.generatedNodeState;
-      nodeState
-        ..pendingBuildAction = PendingBuildAction.none
-        ..wasOutput = wasOutput
-        ..isFailure = isFailure
-        ..previousInputsDigest = inputsDigest;
+      node.generatedNodeState = node.generatedNodeState.rebuild(
+        (b) =>
+            b
+              ..pendingBuildAction = PendingBuildAction.none
+              ..wasOutput = wasOutput
+              ..isFailure = isFailure
+              ..previousInputsDigest = inputsDigest,
+      );
       node.mutate.lastKnownDigest = digest;
 
       if (isFailure) {
@@ -1013,11 +1024,14 @@ class _SingleBuild {
         while (needsMarkAsFailure.isNotEmpty) {
           var output = needsMarkAsFailure.removeLast();
           var outputNode = _assetGraph.get(output)!;
-          outputNode.generatedNodeState
-            ..pendingBuildAction = PendingBuildAction.none
-            ..wasOutput = false
-            ..isFailure = true
-            ..previousInputsDigest = null;
+          outputNode.generatedNodeState = outputNode.generatedNodeState.rebuild(
+            (b) =>
+                b
+                  ..pendingBuildAction = PendingBuildAction.none
+                  ..wasOutput = false
+                  ..isFailure = true
+                  ..previousInputsDigest = null,
+          );
           outputNode.mutate.lastKnownDigest = null;
           allSkippedFailures.add(outputNode);
           needsMarkAsFailure.addAll(outputNode.primaryOutputs);
@@ -1025,7 +1039,9 @@ class _SingleBuild {
           // Make sure output invalidation follows primary outputs for builds
           // that won't run.
           node.mutate.outputs.add(output);
-          outputNode.generatedNodeState.inputs.add(node.id);
+          outputNode.generatedNodeState = outputNode.generatedNodeState.rebuild(
+            (b) => b..inputs.add(node.id),
+          );
         }
         await _failureReporter.markSkipped(allSkippedFailures);
       }
@@ -1036,8 +1052,10 @@ class _SingleBuild {
   /// the old edges.
   void _removeOldInputs(AssetNode node, Set<AssetId> updatedInputs) {
     final nodeState = node.generatedNodeState;
-    var removedInputs = nodeState.inputs.difference(updatedInputs);
-    nodeState.inputs.removeAll(removedInputs);
+    var removedInputs = nodeState.inputs.asSet().difference(updatedInputs);
+    node.generatedNodeState = nodeState.rebuild(
+      (b) => b..inputs.removeAll(removedInputs),
+    );
     for (var input in removedInputs) {
       var inputNode = _assetGraph.get(input)!;
       inputNode.mutate.outputs.remove(node.id);
@@ -1048,8 +1066,10 @@ class _SingleBuild {
   /// appropriate edges.
   void _addNewInputs(AssetNode node, Set<AssetId> updatedInputs) {
     final nodeState = node.generatedNodeState;
-    var newInputs = updatedInputs.difference(nodeState.inputs);
-    nodeState.inputs.addAll(newInputs);
+    var newInputs = updatedInputs.difference(nodeState.inputs.asSet());
+    node.generatedNodeState = nodeState.rebuild(
+      (b) => b..inputs.addAll(newInputs),
+    );
     for (var input in newInputs) {
       var inputNode = _assetGraph.get(input)!;
       inputNode.mutate.outputs.add(node.id);

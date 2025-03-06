@@ -222,11 +222,16 @@ class AssetGraph {
       var inputsNode = get(output);
       if (inputsNode != null) {
         if (inputsNode.type == NodeType.generated) {
-          inputsNode.generatedNodeState.inputs.remove(id);
+          inputsNode.generatedNodeState = inputsNode.generatedNodeState.rebuild(
+            (b) => b..inputs.remove(id),
+          );
         } else if (inputsNode.type == NodeType.glob) {
-          inputsNode.globNodeState
-            ..inputs.remove(id)
-            ..results?.remove(id);
+          inputsNode.globNodeState = inputsNode.globNodeState.rebuild(
+            (b) =>
+                b
+                  ..inputs.remove(id)
+                  ..results.remove(id),
+          );
         }
       }
     }
@@ -367,8 +372,8 @@ class AssetGraph {
         .map(get)
         .nonNulls
         .where((n) => n.type == NodeType.generated)) {
-      deletedOutput.generatedNodeState.pendingBuildAction =
-          PendingBuildAction.build;
+      deletedOutput.generatedNodeState = deletedOutput.generatedNodeState
+          .rebuild((b) => b..pendingBuildAction = PendingBuildAction.build);
     }
 
     // Transitively invalidates all assets. This needs to happen after the
@@ -390,14 +395,18 @@ class AssetGraph {
       if (node.type == NodeType.generated) {
         final nodeState = node.generatedNodeState;
         if (nodeState.pendingBuildAction == PendingBuildAction.none) {
-          nodeState.pendingBuildAction =
-              PendingBuildAction.buildIfInputsChanged;
+          node.generatedNodeState = nodeState.rebuild(
+            (b) =>
+                b..pendingBuildAction = PendingBuildAction.buildIfInputsChanged,
+          );
         }
       } else if (node.type == NodeType.glob) {
         final nodeState = node.globNodeState;
         if (nodeState.pendingBuildAction == PendingBuildAction.none) {
-          nodeState.pendingBuildAction =
-              PendingBuildAction.buildIfInputsChanged;
+          node.globNodeState = node.globNodeState.rebuild(
+            (b) =>
+                b..pendingBuildAction = PendingBuildAction.buildIfInputsChanged,
+          );
         }
       }
 
@@ -423,8 +432,10 @@ class AssetGraph {
         final nodeConfiguration = node.globNodeConfiguration;
         if (nodeConfiguration.glob.matches(id.path)) {
           invalidateNodeAndDeps(node.id);
-          node.globNodeState.pendingBuildAction =
-              PendingBuildAction.buildIfInputsChanged;
+          node.globNodeState = node.globNodeState.rebuild(
+            (b) =>
+                b..pendingBuildAction = PendingBuildAction.buildIfInputsChanged,
+          );
         }
       }
     }
@@ -618,7 +629,7 @@ class AssetGraph {
         output,
         phaseNumber: phaseNumber,
         primaryInput: primaryInput,
-        state: PendingBuildAction.build,
+        pendingBuildAction: PendingBuildAction.build,
         wasOutput: false,
         isFailure: false,
         builderOptionsId: builderOptionsNode.id,
@@ -650,9 +661,13 @@ class AssetGraph {
       var node = get(output);
       if (node != null) {
         if (node.type == NodeType.generated) {
-          node.generatedNodeState.inputs.add(input);
+          node.generatedNodeState = node.generatedNodeState.rebuild(
+            (b) => b..inputs.add(input),
+          );
         } else if (node.type == NodeType.glob) {
-          node.globNodeState.inputs.add(input);
+          node.globNodeState = node.globNodeState.rebuild(
+            (b) => b..inputs.add(input),
+          );
         }
       }
     }

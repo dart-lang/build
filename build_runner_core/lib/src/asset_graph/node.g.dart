@@ -240,6 +240,194 @@ class GeneratedNodeConfigurationBuilder
   }
 }
 
+class _$GeneratedNodeState extends GeneratedNodeState {
+  @override
+  final BuiltSet<AssetId> inputs;
+  @override
+  final PendingBuildAction pendingBuildAction;
+  @override
+  final bool wasOutput;
+  @override
+  final bool isFailure;
+  @override
+  final Digest? previousInputsDigest;
+
+  factory _$GeneratedNodeState([
+    void Function(GeneratedNodeStateBuilder)? updates,
+  ]) => (new GeneratedNodeStateBuilder()..update(updates))._build();
+
+  _$GeneratedNodeState._({
+    required this.inputs,
+    required this.pendingBuildAction,
+    required this.wasOutput,
+    required this.isFailure,
+    this.previousInputsDigest,
+  }) : super._() {
+    BuiltValueNullFieldError.checkNotNull(
+      inputs,
+      r'GeneratedNodeState',
+      'inputs',
+    );
+    BuiltValueNullFieldError.checkNotNull(
+      pendingBuildAction,
+      r'GeneratedNodeState',
+      'pendingBuildAction',
+    );
+    BuiltValueNullFieldError.checkNotNull(
+      wasOutput,
+      r'GeneratedNodeState',
+      'wasOutput',
+    );
+    BuiltValueNullFieldError.checkNotNull(
+      isFailure,
+      r'GeneratedNodeState',
+      'isFailure',
+    );
+  }
+
+  @override
+  GeneratedNodeState rebuild(
+    void Function(GeneratedNodeStateBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
+
+  @override
+  GeneratedNodeStateBuilder toBuilder() =>
+      new GeneratedNodeStateBuilder()..replace(this);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(other, this)) return true;
+    return other is GeneratedNodeState &&
+        inputs == other.inputs &&
+        pendingBuildAction == other.pendingBuildAction &&
+        wasOutput == other.wasOutput &&
+        isFailure == other.isFailure &&
+        previousInputsDigest == other.previousInputsDigest;
+  }
+
+  @override
+  int get hashCode {
+    var _$hash = 0;
+    _$hash = $jc(_$hash, inputs.hashCode);
+    _$hash = $jc(_$hash, pendingBuildAction.hashCode);
+    _$hash = $jc(_$hash, wasOutput.hashCode);
+    _$hash = $jc(_$hash, isFailure.hashCode);
+    _$hash = $jc(_$hash, previousInputsDigest.hashCode);
+    _$hash = $jf(_$hash);
+    return _$hash;
+  }
+
+  @override
+  String toString() {
+    return (newBuiltValueToStringHelper(r'GeneratedNodeState')
+          ..add('inputs', inputs)
+          ..add('pendingBuildAction', pendingBuildAction)
+          ..add('wasOutput', wasOutput)
+          ..add('isFailure', isFailure)
+          ..add('previousInputsDigest', previousInputsDigest))
+        .toString();
+  }
+}
+
+class GeneratedNodeStateBuilder
+    implements Builder<GeneratedNodeState, GeneratedNodeStateBuilder> {
+  _$GeneratedNodeState? _$v;
+
+  SetBuilder<AssetId>? _inputs;
+  SetBuilder<AssetId> get inputs =>
+      _$this._inputs ??= new SetBuilder<AssetId>();
+  set inputs(SetBuilder<AssetId>? inputs) => _$this._inputs = inputs;
+
+  PendingBuildAction? _pendingBuildAction;
+  PendingBuildAction? get pendingBuildAction => _$this._pendingBuildAction;
+  set pendingBuildAction(PendingBuildAction? pendingBuildAction) =>
+      _$this._pendingBuildAction = pendingBuildAction;
+
+  bool? _wasOutput;
+  bool? get wasOutput => _$this._wasOutput;
+  set wasOutput(bool? wasOutput) => _$this._wasOutput = wasOutput;
+
+  bool? _isFailure;
+  bool? get isFailure => _$this._isFailure;
+  set isFailure(bool? isFailure) => _$this._isFailure = isFailure;
+
+  Digest? _previousInputsDigest;
+  Digest? get previousInputsDigest => _$this._previousInputsDigest;
+  set previousInputsDigest(Digest? previousInputsDigest) =>
+      _$this._previousInputsDigest = previousInputsDigest;
+
+  GeneratedNodeStateBuilder();
+
+  GeneratedNodeStateBuilder get _$this {
+    final $v = _$v;
+    if ($v != null) {
+      _inputs = $v.inputs.toBuilder();
+      _pendingBuildAction = $v.pendingBuildAction;
+      _wasOutput = $v.wasOutput;
+      _isFailure = $v.isFailure;
+      _previousInputsDigest = $v.previousInputsDigest;
+      _$v = null;
+    }
+    return this;
+  }
+
+  @override
+  void replace(GeneratedNodeState other) {
+    ArgumentError.checkNotNull(other, 'other');
+    _$v = other as _$GeneratedNodeState;
+  }
+
+  @override
+  void update(void Function(GeneratedNodeStateBuilder)? updates) {
+    if (updates != null) updates(this);
+  }
+
+  @override
+  GeneratedNodeState build() => _build();
+
+  _$GeneratedNodeState _build() {
+    _$GeneratedNodeState _$result;
+    try {
+      _$result =
+          _$v ??
+          new _$GeneratedNodeState._(
+            inputs: inputs.build(),
+            pendingBuildAction: BuiltValueNullFieldError.checkNotNull(
+              pendingBuildAction,
+              r'GeneratedNodeState',
+              'pendingBuildAction',
+            ),
+            wasOutput: BuiltValueNullFieldError.checkNotNull(
+              wasOutput,
+              r'GeneratedNodeState',
+              'wasOutput',
+            ),
+            isFailure: BuiltValueNullFieldError.checkNotNull(
+              isFailure,
+              r'GeneratedNodeState',
+              'isFailure',
+            ),
+            previousInputsDigest: previousInputsDigest,
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'inputs';
+        inputs.build();
+      } catch (e) {
+        throw new BuiltValueNestedFieldError(
+          r'GeneratedNodeState',
+          _$failedField,
+          e.toString(),
+        );
+      }
+      rethrow;
+    }
+    replace(_$result);
+    return _$result;
+  }
+}
+
 class _$GlobNodeConfiguration extends GlobNodeConfiguration {
   @override
   final Glob glob;
@@ -352,6 +540,149 @@ class GlobNodeConfigurationBuilder
             'phaseNumber',
           ),
         );
+    replace(_$result);
+    return _$result;
+  }
+}
+
+class _$GlobNodeState extends GlobNodeState {
+  @override
+  final BuiltSet<AssetId> inputs;
+  @override
+  final PendingBuildAction pendingBuildAction;
+  @override
+  final BuiltList<AssetId> results;
+
+  factory _$GlobNodeState([void Function(GlobNodeStateBuilder)? updates]) =>
+      (new GlobNodeStateBuilder()..update(updates))._build();
+
+  _$GlobNodeState._({
+    required this.inputs,
+    required this.pendingBuildAction,
+    required this.results,
+  }) : super._() {
+    BuiltValueNullFieldError.checkNotNull(inputs, r'GlobNodeState', 'inputs');
+    BuiltValueNullFieldError.checkNotNull(
+      pendingBuildAction,
+      r'GlobNodeState',
+      'pendingBuildAction',
+    );
+    BuiltValueNullFieldError.checkNotNull(results, r'GlobNodeState', 'results');
+  }
+
+  @override
+  GlobNodeState rebuild(void Function(GlobNodeStateBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
+
+  @override
+  GlobNodeStateBuilder toBuilder() => new GlobNodeStateBuilder()..replace(this);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(other, this)) return true;
+    return other is GlobNodeState &&
+        inputs == other.inputs &&
+        pendingBuildAction == other.pendingBuildAction &&
+        results == other.results;
+  }
+
+  @override
+  int get hashCode {
+    var _$hash = 0;
+    _$hash = $jc(_$hash, inputs.hashCode);
+    _$hash = $jc(_$hash, pendingBuildAction.hashCode);
+    _$hash = $jc(_$hash, results.hashCode);
+    _$hash = $jf(_$hash);
+    return _$hash;
+  }
+
+  @override
+  String toString() {
+    return (newBuiltValueToStringHelper(r'GlobNodeState')
+          ..add('inputs', inputs)
+          ..add('pendingBuildAction', pendingBuildAction)
+          ..add('results', results))
+        .toString();
+  }
+}
+
+class GlobNodeStateBuilder
+    implements Builder<GlobNodeState, GlobNodeStateBuilder> {
+  _$GlobNodeState? _$v;
+
+  SetBuilder<AssetId>? _inputs;
+  SetBuilder<AssetId> get inputs =>
+      _$this._inputs ??= new SetBuilder<AssetId>();
+  set inputs(SetBuilder<AssetId>? inputs) => _$this._inputs = inputs;
+
+  PendingBuildAction? _pendingBuildAction;
+  PendingBuildAction? get pendingBuildAction => _$this._pendingBuildAction;
+  set pendingBuildAction(PendingBuildAction? pendingBuildAction) =>
+      _$this._pendingBuildAction = pendingBuildAction;
+
+  ListBuilder<AssetId>? _results;
+  ListBuilder<AssetId> get results =>
+      _$this._results ??= new ListBuilder<AssetId>();
+  set results(ListBuilder<AssetId>? results) => _$this._results = results;
+
+  GlobNodeStateBuilder();
+
+  GlobNodeStateBuilder get _$this {
+    final $v = _$v;
+    if ($v != null) {
+      _inputs = $v.inputs.toBuilder();
+      _pendingBuildAction = $v.pendingBuildAction;
+      _results = $v.results.toBuilder();
+      _$v = null;
+    }
+    return this;
+  }
+
+  @override
+  void replace(GlobNodeState other) {
+    ArgumentError.checkNotNull(other, 'other');
+    _$v = other as _$GlobNodeState;
+  }
+
+  @override
+  void update(void Function(GlobNodeStateBuilder)? updates) {
+    if (updates != null) updates(this);
+  }
+
+  @override
+  GlobNodeState build() => _build();
+
+  _$GlobNodeState _build() {
+    _$GlobNodeState _$result;
+    try {
+      _$result =
+          _$v ??
+          new _$GlobNodeState._(
+            inputs: inputs.build(),
+            pendingBuildAction: BuiltValueNullFieldError.checkNotNull(
+              pendingBuildAction,
+              r'GlobNodeState',
+              'pendingBuildAction',
+            ),
+            results: results.build(),
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'inputs';
+        inputs.build();
+
+        _$failedField = 'results';
+        results.build();
+      } catch (e) {
+        throw new BuiltValueNestedFieldError(
+          r'GlobNodeState',
+          _$failedField,
+          e.toString(),
+        );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }
@@ -502,6 +833,93 @@ class PostProcessAnchorNodeConfigurationBuilder
             r'PostProcessAnchorNodeConfiguration',
             'primaryInput',
           ),
+        );
+    replace(_$result);
+    return _$result;
+  }
+}
+
+class _$PostProcessAnchorNodeState extends PostProcessAnchorNodeState {
+  @override
+  final Digest? previousInputsDigest;
+
+  factory _$PostProcessAnchorNodeState([
+    void Function(PostProcessAnchorNodeStateBuilder)? updates,
+  ]) => (new PostProcessAnchorNodeStateBuilder()..update(updates))._build();
+
+  _$PostProcessAnchorNodeState._({this.previousInputsDigest}) : super._();
+
+  @override
+  PostProcessAnchorNodeState rebuild(
+    void Function(PostProcessAnchorNodeStateBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
+
+  @override
+  PostProcessAnchorNodeStateBuilder toBuilder() =>
+      new PostProcessAnchorNodeStateBuilder()..replace(this);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(other, this)) return true;
+    return other is PostProcessAnchorNodeState &&
+        previousInputsDigest == other.previousInputsDigest;
+  }
+
+  @override
+  int get hashCode {
+    var _$hash = 0;
+    _$hash = $jc(_$hash, previousInputsDigest.hashCode);
+    _$hash = $jf(_$hash);
+    return _$hash;
+  }
+
+  @override
+  String toString() {
+    return (newBuiltValueToStringHelper(r'PostProcessAnchorNodeState')
+      ..add('previousInputsDigest', previousInputsDigest)).toString();
+  }
+}
+
+class PostProcessAnchorNodeStateBuilder
+    implements
+        Builder<PostProcessAnchorNodeState, PostProcessAnchorNodeStateBuilder> {
+  _$PostProcessAnchorNodeState? _$v;
+
+  Digest? _previousInputsDigest;
+  Digest? get previousInputsDigest => _$this._previousInputsDigest;
+  set previousInputsDigest(Digest? previousInputsDigest) =>
+      _$this._previousInputsDigest = previousInputsDigest;
+
+  PostProcessAnchorNodeStateBuilder();
+
+  PostProcessAnchorNodeStateBuilder get _$this {
+    final $v = _$v;
+    if ($v != null) {
+      _previousInputsDigest = $v.previousInputsDigest;
+      _$v = null;
+    }
+    return this;
+  }
+
+  @override
+  void replace(PostProcessAnchorNodeState other) {
+    ArgumentError.checkNotNull(other, 'other');
+    _$v = other as _$PostProcessAnchorNodeState;
+  }
+
+  @override
+  void update(void Function(PostProcessAnchorNodeStateBuilder)? updates) {
+    if (updates != null) updates(this);
+  }
+
+  @override
+  PostProcessAnchorNodeState build() => _build();
+
+  _$PostProcessAnchorNodeState _build() {
+    final _$result =
+        _$v ??
+        new _$PostProcessAnchorNodeState._(
+          previousInputsDigest: previousInputsDigest,
         );
     replace(_$result);
     return _$result;

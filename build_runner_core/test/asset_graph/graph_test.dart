@@ -100,8 +100,12 @@ void main() {
         graph.add(globNode);
         for (var n = 0; n < 5; n++) {
           var node = makeAssetNode();
-          globNode.globNodeState.inputs.add(node.id);
-          globNode.globNodeState.results!.add(node.id);
+          globNode.globNodeState = globNode.globNodeState.rebuild(
+            (b) =>
+                b
+                  ..inputs.add(node.id)
+                  ..results.add(node.id),
+          );
           node.mutate.outputs.add(globNode.id);
           graph.add(node);
           var phaseNum = n;
@@ -127,7 +131,7 @@ void main() {
               makeAssetId(),
               phaseNumber: phaseNum,
               primaryInput: node.id,
-              state:
+              pendingBuildAction:
                   PendingBuildAction.values.toList()[g %
                       PendingBuildAction.values.length],
               wasOutput: g.isEven,
@@ -146,16 +150,22 @@ void main() {
             var syntheticNode = AssetNode.missingSource(makeAssetId());
             syntheticNode.mutate.outputs.add(generatedNode.id);
 
-            generatedNode.generatedNodeState.inputs.addAll([
-              node.id,
-              syntheticNode.id,
-              globNode.id,
-            ]);
+            generatedNode
+                .generatedNodeState = generatedNode.generatedNodeState.rebuild(
+              (b) => b..inputs.addAll([node.id, syntheticNode.id, globNode.id]),
+            );
             if (g.isOdd) {
               // Fake a digest using the id, we just care that this gets
               // serialized/deserialized properly.
-              generatedNode.generatedNodeState.previousInputsDigest = md5
-                  .convert(utf8.encode(generatedNode.id.toString()));
+              generatedNode.generatedNodeState = generatedNode
+                  .generatedNodeState
+                  .rebuild(
+                    (b) =>
+                        b
+                          ..previousInputsDigest = md5.convert(
+                            utf8.encode(generatedNode.id.toString()),
+                          ),
+                  );
             }
 
             graph
@@ -339,9 +349,13 @@ void main() {
           var deletes = <AssetId>[];
           expect(graph.contains(primaryOutputId), isTrue);
           // pretend a build happened
-          graph.get(primaryOutputId)!.generatedNodeState
-            ..pendingBuildAction = PendingBuildAction.none
-            ..inputs.add(primaryInputId);
+          final node = graph.get(primaryOutputId)!;
+          node.generatedNodeState = node.generatedNodeState.rebuild(
+            (b) =>
+                b
+                  ..pendingBuildAction = PendingBuildAction.none
+                  ..inputs.add(primaryInputId),
+          );
           graph.get(primaryInputId)!.mutate.outputs.add(primaryOutputId);
           await graph.updateAndInvalidate(
             buildPhases,
@@ -419,7 +433,9 @@ void main() {
             var secondaryNode = AssetNode.source(secondaryId);
             secondaryNode.mutate.outputs.add(primaryOutputId);
             var primaryOutputNode = graph.get(primaryOutputId)!;
-            primaryOutputNode.generatedNodeState.inputs.add(secondaryNode.id);
+            primaryOutputNode.generatedNodeState = primaryOutputNode
+                .generatedNodeState
+                .rebuild((b) => b..inputs.add(secondaryNode.id));
 
             graph.add(secondaryNode);
             expect(graph.get(secondaryId), secondaryNode);
@@ -454,11 +470,15 @@ void main() {
               inputs: HashSet(),
               results: [],
             );
-            var primaryOutputNode =
-                graph.get(primaryOutputId)!
-                  ..generatedNodeState.pendingBuildAction =
-                      PendingBuildAction.none
-                  ..generatedNodeState.inputs.add(globNode.id);
+            var primaryOutputNode = graph.get(primaryOutputId)!;
+            primaryOutputNode.generatedNodeState = primaryOutputNode
+                .generatedNodeState
+                .rebuild(
+                  (b) =>
+                      b
+                        ..pendingBuildAction = PendingBuildAction.none
+                        ..inputs.add(globNode.id),
+                );
             globNode.mutate.outputs.add(primaryOutputId);
             graph.add(globNode);
 
@@ -495,22 +515,38 @@ void main() {
 
             await checkChangeType(ChangeType.ADD);
 
-            primaryOutputNode.generatedNodeState.pendingBuildAction =
-                PendingBuildAction.none;
-            globNode.globNodeState.pendingBuildAction = PendingBuildAction.none;
+            primaryOutputNode.generatedNodeState = primaryOutputNode
+                .generatedNodeState
+                .rebuild(
+                  (b) => b..pendingBuildAction = PendingBuildAction.none,
+                );
+            globNode.globNodeState = globNode.globNodeState.rebuild(
+              (b) => b..pendingBuildAction = PendingBuildAction.none,
+            );
             await checkChangeType(ChangeType.REMOVE);
 
-            primaryOutputNode.generatedNodeState.pendingBuildAction =
-                PendingBuildAction.none;
-            globNode.globNodeState.pendingBuildAction = PendingBuildAction.none;
+            primaryOutputNode.generatedNodeState = primaryOutputNode
+                .generatedNodeState
+                .rebuild(
+                  (b) => b..pendingBuildAction = PendingBuildAction.none,
+                );
+            globNode.globNodeState = globNode.globNodeState.rebuild(
+              (b) => b..pendingBuildAction = PendingBuildAction.none,
+            );
             await checkChangeType(ChangeType.ADD);
 
-            primaryOutputNode.generatedNodeState.pendingBuildAction =
-                PendingBuildAction.none;
-            globNode.globNodeState
-              ..pendingBuildAction = PendingBuildAction.none
-              ..inputs.add(coolAssetId)
-              ..results!.add(coolAssetId);
+            primaryOutputNode.generatedNodeState = primaryOutputNode
+                .generatedNodeState
+                .rebuild(
+                  (b) => b..pendingBuildAction = PendingBuildAction.none,
+                );
+            globNode.globNodeState = globNode.globNodeState.rebuild(
+              (b) =>
+                  b
+                    ..pendingBuildAction = PendingBuildAction.none
+                    ..inputs.add(coolAssetId)
+                    ..results.add(coolAssetId),
+            );
             graph.get(coolAssetId)!.mutate.outputs.add(globNode.id);
             await checkChangeType(ChangeType.MODIFY);
 
@@ -671,13 +707,21 @@ void main() {
           AssetNode.missingSource(nodeToRead)
             ..mutate.outputs.add(outputReadingNode),
         );
-        graph.get(outputReadingNode)!
-          ..generatedNodeState.pendingBuildAction = PendingBuildAction.none
-          ..generatedNodeState.inputs.add(nodeToRead)
-          ..mutate.outputs.add(lastPrimaryOutputNode);
-        graph.get(lastPrimaryOutputNode)!
-          ..generatedNodeState.pendingBuildAction = PendingBuildAction.none
-          ..generatedNodeState.inputs.add(outputReadingNode);
+        var node = graph.get(outputReadingNode)!;
+        node.generatedNodeState = node.generatedNodeState.rebuild(
+          (b) =>
+              b
+                ..pendingBuildAction = PendingBuildAction.none
+                ..inputs.add(nodeToRead),
+        );
+        node.mutate.outputs.add(lastPrimaryOutputNode);
+        node = graph.get(lastPrimaryOutputNode)!;
+        node.generatedNodeState = node.generatedNodeState.rebuild(
+          (b) =>
+              b
+                ..pendingBuildAction = PendingBuildAction.none
+                ..inputs.add(outputReadingNode),
+        );
 
         final invalidatedNodes = await graph.updateAndInvalidate(
           buildPhases,
@@ -724,13 +768,14 @@ void main() {
           AssetNode.missingSource(toBeGeneratedDart)
             ..mutate.outputs.add(generatedPart),
         );
-        graph.get(generatedDart)!
-          ..generatedNodeState.pendingBuildAction = PendingBuildAction.none
-          ..generatedNodeState.inputs.addAll([
-            generatedPart,
-            toBeGeneratedDart,
-          ]);
-        final node = graph.get(source)!;
+        var node = graph.get(generatedDart)!;
+        node.generatedNodeState = node.generatedNodeState.rebuild(
+          (b) =>
+              b
+                ..pendingBuildAction = PendingBuildAction.none
+                ..inputs.addAll([generatedPart, toBeGeneratedDart]),
+        );
+        node = graph.get(source)!;
         expect(node.type, NodeType.source);
         node.mutate.outputs.add(generatedPart);
 

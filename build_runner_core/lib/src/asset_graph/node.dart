@@ -47,7 +47,7 @@ class AssetNode {
   ///
   /// [NodeType.generated], [NodeType.glob] and [NodeType.postProcessAnchor]
   /// have additional state.
-  final AdditionalNodeState? state;
+  AdditionalNodeState? state;
 
   /// The assets that any [Builder] in the build graph declares it may output
   /// when run on this asset.
@@ -192,7 +192,7 @@ class AssetNode {
     required bool isHidden,
     Iterable<AssetId>? inputs,
     Digest? previousInputsDigest,
-    required PendingBuildAction state,
+    required PendingBuildAction pendingBuildAction,
     required bool wasOutput,
     required bool isFailure,
   }) : type = NodeType.generated,
@@ -205,11 +205,13 @@ class AssetNode {
                ..isHidden = isHidden,
        ),
        state = GeneratedNodeState(
-         inputs: inputs == null ? HashSet() : HashSet.of(inputs),
-         previousInputsDigest: previousInputsDigest,
-         pendingBuildAction: state,
-         wasOutput: wasOutput,
-         isFailure: isFailure,
+         (b) =>
+             b
+               ..inputs.replace(inputs ?? [])
+               ..previousInputsDigest = previousInputsDigest
+               ..pendingBuildAction = pendingBuildAction
+               ..wasOutput = wasOutput
+               ..isFailure = isFailure,
        ),
        _primaryOutputs = {},
        _outputs = {},
@@ -234,9 +236,10 @@ class AssetNode {
                ..phaseNumber = phaseNumber,
        ),
        state = GlobNodeState(
-         inputs: HashSet(),
-         pendingBuildAction: pendingBuildAction,
-         results: results,
+         (b) =>
+             b
+               ..pendingBuildAction = pendingBuildAction
+               ..results.replace(results ?? []),
        ),
        _primaryOutputs = {},
        _outputs = {},
@@ -269,7 +272,7 @@ class AssetNode {
                ..primaryInput = primaryInput,
        ),
        state = PostProcessAnchorNodeState(
-         previousInputsDigest: previousInputsDigest,
+         (b) => b..previousInputsDigest = previousInputsDigest,
        ),
        _primaryOutputs = {},
        _outputs = {},
@@ -300,15 +303,19 @@ class AssetNode {
   GeneratedNodeConfiguration get generatedNodeConfiguration =>
       configuration as GeneratedNodeConfiguration;
   GeneratedNodeState get generatedNodeState => state as GeneratedNodeState;
+  set generatedNodeState(GeneratedNodeState state) => this.state = state;
 
   GlobNodeConfiguration get globNodeConfiguration =>
       configuration as GlobNodeConfiguration;
   GlobNodeState get globNodeState => state as GlobNodeState;
+  set globNodeState(GlobNodeState state) => this.state = state;
 
   PostProcessAnchorNodeConfiguration get postProcessAnchorNodeConfiguration =>
       configuration as PostProcessAnchorNodeConfiguration;
   PostProcessAnchorNodeState get postProcessAnchorNodeState =>
       state as PostProcessAnchorNodeState;
+  set postProcessAnchorNodeState(PostProcessAnchorNodeState state) =>
+      this.state = state;
 }
 
 /// Additional immutable configuration for some node types.
@@ -349,36 +356,36 @@ abstract class GeneratedNodeConfiguration
 }
 
 /// State for an [AssetNode.generated] that changes during the build.
-class GeneratedNodeState implements AdditionalNodeState {
+abstract class GeneratedNodeState
+    implements
+        Built<GeneratedNodeState, GeneratedNodeStateBuilder>,
+        AdditionalNodeState {
   /// All the inputs that were read when generating this asset, or deciding not
   /// to generate it.
-  final HashSet<AssetId> inputs;
+  BuiltSet<AssetId> get inputs;
 
   /// The next work that needs doing on this node.
-  PendingBuildAction pendingBuildAction;
+  PendingBuildAction get pendingBuildAction;
 
   /// Whether the asset was actually output.
-  bool wasOutput;
+  bool get wasOutput;
 
   /// Whether the action which did or would produce this node failed.
-  bool isFailure;
+  bool get isFailure;
 
   /// A digest combining all digests of all previous inputs.
   ///
   /// Used to determine whether all the inputs to a build step are identical to
   /// the previous run, indicating that the previous output is still valid.
-  Digest? previousInputsDigest;
+  Digest? get previousInputsDigest;
 
   bool get isSuccessfulFreshOutput =>
       wasOutput && !isFailure && pendingBuildAction == PendingBuildAction.none;
 
-  GeneratedNodeState({
-    required this.inputs,
-    required this.pendingBuildAction,
-    required this.wasOutput,
-    required this.isFailure,
-    required this.previousInputsDigest,
-  });
+  factory GeneratedNodeState(void Function(GeneratedNodeStateBuilder) updates) =
+      _$GeneratedNodeState;
+
+  GeneratedNodeState._();
 }
 
 /// Additional configuration for an [AssetNode.glob].
@@ -397,24 +404,25 @@ abstract class GlobNodeConfiguration
 }
 
 /// State for an [AssetNode.glob] that changes during the build.
-class GlobNodeState implements AdditionalNodeState {
+abstract class GlobNodeState
+    implements Built<GlobNodeState, GlobNodeStateBuilder>, AdditionalNodeState {
   /// All the potential inputs matching this glob.
   ///
   /// This field differs from [results] in that [AssetNode.generated] which may
   /// have been readable but were not output are included here and not in
   /// [results].
-  HashSet<AssetId> inputs;
+  BuiltSet<AssetId> get inputs;
 
-  PendingBuildAction pendingBuildAction;
+  PendingBuildAction get pendingBuildAction;
 
-  /// The actual results of the glob.
-  List<AssetId>? results;
+  /// The results of the glob, valid when [pendingBuildAction] is
+  /// [PendingBuildAction.none].
+  BuiltList<AssetId> get results;
 
-  GlobNodeState({
-    required this.inputs,
-    required this.pendingBuildAction,
-    required this.results,
-  });
+  factory GlobNodeState(void Function(GlobNodeStateBuilder) updates) =
+      _$GlobNodeState;
+
+  GlobNodeState._();
 }
 
 // Additional configuration for an [AssetNode.postProcessAnchor].
@@ -437,10 +445,17 @@ abstract class PostProcessAnchorNodeConfiguration
 }
 
 /// State for an [AssetNode.postProcessAnchor].
-class PostProcessAnchorNodeState implements AdditionalNodeState {
-  Digest? previousInputsDigest;
+abstract class PostProcessAnchorNodeState
+    implements
+        Built<PostProcessAnchorNodeState, PostProcessAnchorNodeStateBuilder>,
+        AdditionalNodeState {
+  Digest? get previousInputsDigest;
 
-  PostProcessAnchorNodeState({this.previousInputsDigest});
+  factory PostProcessAnchorNodeState(
+    void Function(PostProcessAnchorNodeStateBuilder) updates,
+  ) = _$PostProcessAnchorNodeState;
+
+  PostProcessAnchorNodeState._();
 }
 
 /// Write access to collections in the node.

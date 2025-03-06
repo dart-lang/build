@@ -68,7 +68,7 @@ void main() {
       var id = AssetId('a', 'web/a.txt');
       var node = AssetNode.generated(
         id,
-        state: PendingBuildAction.none,
+        pendingBuildAction: PendingBuildAction.none,
         phaseNumber: 0,
         wasOutput: true,
         isFailure: true,

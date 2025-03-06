@@ -166,7 +166,7 @@ class _AssetGraphMatcher extends Matcher {
           }
 
           if (!unorderedEquals(
-            state.results!,
+            state.results,
           ).matches(expectedState.results, {})) {
             matchState['results of ${node.id}'] = [
               state.results,

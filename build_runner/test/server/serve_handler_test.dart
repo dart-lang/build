@@ -205,7 +205,7 @@ void main() {
           AssetId('a', 'web/main.ddc.js'),
           builderOptionsId: AssetId('_\$fake', 'options_id'),
           phaseNumber: 0,
-          state: PendingBuildAction.none,
+          pendingBuildAction: PendingBuildAction.none,
           isHidden: false,
           wasOutput: true,
           isFailure: true,

@@ -98,10 +98,13 @@ void main() {
       );
       for (var id in graph.outputs) {
         var node = graph.get(id)!;
-        node.generatedNodeState
-          ..pendingBuildAction = PendingBuildAction.none
-          ..wasOutput = true
-          ..isFailure = false;
+        node.generatedNodeState = node.generatedNodeState.rebuild(
+          (b) =>
+              b
+                ..pendingBuildAction = PendingBuildAction.none
+                ..wasOutput = true
+                ..isFailure = false,
+        );
         readerWriter.testing.writeString(
           id,
           sources[node.generatedNodeConfiguration.primaryInput]!,
@@ -328,9 +331,13 @@ void main() {
     });
 
     test('doesnt write files that werent output', () async {
-      graph.get(AssetId('b', 'lib/c.txt.copy'))!.generatedNodeState
-        ..wasOutput = false
-        ..isFailure = false;
+      final node = graph.get(AssetId('b', 'lib/c.txt.copy'))!;
+      node.generatedNodeState = node.generatedNodeState.rebuild(
+        (b) =>
+            b
+              ..wasOutput = false
+              ..isFailure = false,
+      );
 
       var success = await createMergedOutputDirectories(
         {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
