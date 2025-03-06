@@ -47,7 +47,9 @@ void main() {
   void addAsset(String id, String content, {bool deleted = false}) {
     var node = makeAssetNode(id, [], computeDigest(AssetId.parse(id), 'a'));
     if (deleted) {
-      node.mutate.deletedBy.add(node.id.addExtension('.post_anchor.1'));
+      node = node.rebuild(
+        (b) => b..deletedBy.add(node.id.addExtension('.post_anchor.1')),
+      );
     }
     graph.add(node);
     delegate.testing.writeString(node.id, content);

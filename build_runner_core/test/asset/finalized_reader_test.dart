@@ -49,7 +49,10 @@ void main() {
         [],
         computeDigest(AssetId('a', 'lib/b.txt'), 'b'),
       );
-      deleted.mutate.deletedBy.add(deleted.id.addExtension('.post_anchor.1'));
+
+      deleted = deleted.rebuild(
+        (b) => b..deletedBy.add(deleted.id.addExtension('.post_anchor.1')),
+      );
 
       graph
         ..add(notDeleted)

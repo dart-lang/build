@@ -138,7 +138,9 @@ void main() {
   void addSource(String id, String content, {bool deleted = false}) {
     var node = makeAssetNode(id, [], computeDigest(AssetId.parse(id), content));
     if (deleted) {
-      node.mutate.deletedBy.add(node.id.addExtension('.post_anchor.1'));
+      node = node.rebuild(
+        (b) => b..deletedBy.add(node.id.addExtension('.post_anchor.1')),
+      );
     }
     assetGraph.add(node);
     readerWriter.testing.writeString(node.id, content);

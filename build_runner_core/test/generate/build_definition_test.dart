@@ -154,14 +154,12 @@ targets:
           environment.reader,
         );
         var generatedAId = makeAssetId('a|lib/a.txt.copy');
-        final node = originalAssetGraph.get(generatedAId)!;
-        node.generatedNodeState = node.generatedNodeState.rebuild(
-          (b) =>
-              b
-                ..wasOutput = true
-                ..isFailure = false
-                ..pendingBuildAction = PendingBuildAction.none,
-        );
+        originalAssetGraph.updateNode(generatedAId, (nodeBuilder) {
+          nodeBuilder.generatedNodeState
+            ..wasOutput = true
+            ..isFailure = false
+            ..pendingBuildAction = PendingBuildAction.none;
+        });
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
@@ -176,7 +174,7 @@ targets:
         var generatedANode = newAssetGraph.get(generatedAId)!;
         expect(generatedANode, isNotNull);
         expect(
-          generatedANode.generatedNodeState.pendingBuildAction,
+          generatedANode.generatedNodeState!.pendingBuildAction,
           PendingBuildAction.build,
         );
 
@@ -215,7 +213,7 @@ targets:
         expect(generatedANode, isNotNull);
         // New nodes definitely need an update.
         expect(
-          generatedANode.generatedNodeState.pendingBuildAction,
+          generatedANode.generatedNodeState!.pendingBuildAction,
           PendingBuildAction.build,
         );
       });
@@ -235,14 +233,14 @@ targets:
         );
 
         // pretend a build happened
-        final node = originalAssetGraph.get(aTxtCopy)!;
-        node.generatedNodeState = node.generatedNodeState.rebuild(
-          (b) =>
-              b
-                ..pendingBuildAction = PendingBuildAction.none
-                ..inputs.add(aTxt),
-        );
-        originalAssetGraph.get(aTxt)!.mutate.outputs.add(aTxtCopy);
+        originalAssetGraph.updateNode(aTxtCopy, (nodeBuilder) {
+          nodeBuilder.generatedNodeState
+            ..pendingBuildAction = PendingBuildAction.none
+            ..inputs.add(aTxt);
+        });
+        originalAssetGraph.updateNode(aTxt, (nodeBuilder) {
+          nodeBuilder.outputs.add(aTxtCopy);
+        });
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
         await modifyFile(p.join('lib', 'a.txt'), 'b');
@@ -257,7 +255,7 @@ targets:
             newAssetGraph.get(makeAssetId('a|lib/a.txt.copy'))!;
         expect(generatedANode, isNotNull);
         expect(
-          generatedANode.generatedNodeState.pendingBuildAction,
+          generatedANode.generatedNodeState!.pendingBuildAction,
           PendingBuildAction.buildIfInputsChanged,
         );
       });
@@ -276,13 +274,11 @@ targets:
           environment.reader,
         );
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
-        final node = originalAssetGraph.get(generatedSrcId)!;
-        node.generatedNodeState = node.generatedNodeState.rebuild(
-          (b) =>
-              b
-                ..wasOutput = false
-                ..isFailure = false,
-        );
+        originalAssetGraph.updateNode(generatedSrcId, (nodeBuilder) {
+          nodeBuilder.generatedNodeState
+            ..wasOutput = false
+            ..isFailure = false;
+        });
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
@@ -324,14 +320,12 @@ targets:
         var generatedACopyId = makeAssetId('a|lib/a.txt.copy');
         var generatedACloneId = makeAssetId('a|lib/a.txt.clone');
         for (var id in [generatedACopyId, generatedACloneId]) {
-          final node = originalAssetGraph.get(id)!;
-          node.generatedNodeState = node.generatedNodeState.rebuild(
-            (b) =>
-                b
-                  ..wasOutput = true
-                  ..isFailure = false
-                  ..pendingBuildAction = PendingBuildAction.none,
-          );
+          originalAssetGraph.updateNode(id, (nodeBuilder) {
+            nodeBuilder.generatedNodeState
+              ..wasOutput = true
+              ..isFailure = false
+              ..pendingBuildAction = PendingBuildAction.none;
+          });
         }
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
@@ -363,7 +357,7 @@ targets:
         var generatedACopyNode = newAssetGraph.get(generatedACopyId)!;
         expect(generatedACopyNode, isNotNull);
         expect(
-          generatedACopyNode.generatedNodeState.pendingBuildAction,
+          generatedACopyNode.generatedNodeState!.pendingBuildAction,
           PendingBuildAction.buildIfInputsChanged,
         );
 
@@ -371,7 +365,7 @@ targets:
         var generatedACloneNode = newAssetGraph.get(generatedACloneId)!;
         expect(generatedACloneNode, isNotNull);
         expect(
-          generatedACloneNode.generatedNodeState.pendingBuildAction,
+          generatedACloneNode.generatedNodeState!.pendingBuildAction,
           PendingBuildAction.none,
         );
       });
@@ -746,10 +740,9 @@ targets:
 
         var aTxtCopy = AssetId('a', 'lib/a.txt.copy');
         // Pretend we already output this without actually running a build.
-        final node = originalAssetGraph.get(aTxtCopy)!;
-        node.generatedNodeState = node.generatedNodeState.rebuild(
-          (b) => b.wasOutput = true,
-        );
+        originalAssetGraph.updateNode(aTxtCopy, (nodeBuilder) {
+          nodeBuilder.generatedNodeState.wasOutput = true;
+        });
         await createFile(aTxtCopy.path, 'hello');
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
@@ -789,10 +782,9 @@ targets:
 
         var aTxtCopy = AssetId('a', 'lib/a.txt.copy');
         // Pretend we already output this without actually running a build.
-        final node = originalAssetGraph.get(aTxtCopy)!;
-        node.generatedNodeState = node.generatedNodeState.rebuild(
-          (b) => b.wasOutput = true,
-        );
+        originalAssetGraph.updateNode(aTxtCopy, (nodeBuilder) {
+          nodeBuilder.generatedNodeState.wasOutput = true;
+        });
         await createFile(aTxtCopy.path, 'hello');
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());

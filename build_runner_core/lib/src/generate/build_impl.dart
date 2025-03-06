@@ -155,7 +155,7 @@ class _SingleBuild {
   final List<BuildPhase> _buildPhases;
   final BuildEnvironment _environment;
   final _lazyPhases = <String, Future<Iterable<AssetId>>>{};
-  final _lazyGlobs = <AssetId, Future<void>>{};
+  final _lazyGlobs = <AssetId, Future<AssetNode>>{};
   final PackageGraph _packageGraph;
   final TargetGraph _targetGraph;
   final BuildPerformanceTracker _performanceTracker;
@@ -410,11 +410,11 @@ class _SingleBuild {
       if (!_targetGraph.isVisibleInBuild(node.id, packageNode)) continue;
 
       var input =
-          _assetGraph.get(node.generatedNodeConfiguration.primaryInput)!;
+          _assetGraph.get(node.generatedNodeConfiguration!.primaryInput)!;
       if (input.type == NodeType.generated) {
-        final inputState = input.generatedNodeState;
+        final inputState = input.generatedNodeState!;
         if (inputState.pendingBuildAction != PendingBuildAction.none) {
-          final inputConfiguration = input.generatedNodeConfiguration;
+          final inputConfiguration = input.generatedNodeConfiguration!;
           await _runLazyPhaseForInput(
             inputConfiguration.phaseNumber,
             inputConfiguration.primaryInput,
@@ -455,10 +455,10 @@ class _SingleBuild {
       // actually output. If it wasn't then we just return an empty list here.
       var inputNode = _assetGraph.get(input)!;
       if (inputNode.type == NodeType.generated) {
-        final nodeState = inputNode.generatedNodeState;
+        final nodeState = inputNode.generatedNodeState!;
         // Make sure the `inputNode` is up to date, and rebuild it if not.
         if (nodeState.pendingBuildAction != PendingBuildAction.none) {
-          final nodeConfiguration = inputNode.generatedNodeConfiguration;
+          final nodeConfiguration = inputNode.generatedNodeConfiguration!;
           await _runLazyPhaseForInput(
             nodeConfiguration.phaseNumber,
             nodeConfiguration.primaryInput,
@@ -476,8 +476,9 @@ class _SingleBuild {
 
   Future<void> _buildAsset(AssetNode node) async {
     if (node.type == NodeType.generated &&
-        node.generatedNodeState.pendingBuildAction != PendingBuildAction.none) {
-      final nodeConfiguration = node.generatedNodeConfiguration;
+        node.generatedNodeState!.pendingBuildAction !=
+            PendingBuildAction.none) {
+      final nodeConfiguration = node.generatedNodeConfiguration!;
       await _runLazyPhaseForInput(
         nodeConfiguration.phaseNumber,
         nodeConfiguration.primaryInput,
@@ -501,7 +502,7 @@ class _SingleBuild {
       // Add `builderOutputs` to the primary outputs of the input.
       var inputNode = _assetGraph.get(input)!;
       assert(
-        inputNode.inspect.primaryOutputs.containsAll(builderOutputs),
+        inputNode.primaryOutputs.containsAll(builderOutputs),
         // ignore: prefer_interpolation_to_compose_strings
         'input $input with builder $builder missing primary outputs: \n'
                 'Got ${inputNode.primaryOutputs.join(', ')} '
@@ -623,12 +624,12 @@ class _SingleBuild {
         .packageNodes(action.package)
         .toList(growable: false)) {
       if (node.type != NodeType.postProcessAnchor) continue;
-      final nodeConfiguration = node.postProcessAnchorNodeConfiguration;
+      final nodeConfiguration = node.postProcessAnchorNodeConfiguration!;
       if (nodeConfiguration.actionNumber != actionNum) continue;
       final inputNode = _assetGraph.get(nodeConfiguration.primaryInput)!;
       if (inputNode.type == NodeType.source ||
           inputNode.type == NodeType.generated &&
-              inputNode.generatedNodeState.isSuccessfulFreshOutput) {
+              inputNode.generatedNodeState!.isSuccessfulFreshOutput) {
         outputs.addAll(
           await _runPostProcessBuilderForAnchor(
             phaseNum,
@@ -648,7 +649,7 @@ class _SingleBuild {
     PostProcessBuilder builder,
     AssetNode anchorNode,
   ) async {
-    var input = anchorNode.postProcessAnchorNodeConfiguration.primaryInput;
+    var input = anchorNode.postProcessAnchorNodeConfiguration!.primaryInput;
     var inputNode = _assetGraph.get(input)!;
     var readerWriter = SingleStepReaderWriter(
       runningBuild: RunningBuild(
@@ -680,8 +681,12 @@ class _SingleBuild {
     for (final output in anchorNode.outputs.toList(growable: false)) {
       _assetGraph.remove(output);
     }
-    anchorNode.mutate.outputs.clear();
-    inputNode.mutate.deletedBy.remove(anchorNode.id);
+    _assetGraph.updateNode(anchorNode.id, (nodeBuilder) {
+      nodeBuilder.outputs.clear();
+    });
+    _assetGraph.updateNode(inputNode.id, (nodeBuilder) {
+      nodeBuilder.deletedBy.remove(anchorNode.id);
+    });
 
     var actionDescription = '$builder on $input';
     var logger = BuildForInputLogger(Logger(actionDescription));
@@ -705,7 +710,7 @@ class _SingleBuild {
           assetId,
           primaryInput: input,
           builderOptionsId:
-              anchorNode.postProcessAnchorNodeConfiguration.builderOptionsId,
+              anchorNode.postProcessAnchorNodeConfiguration!.builderOptionsId,
           isHidden: true,
           phaseNumber: phaseNumber,
           wasOutput: true,
@@ -713,7 +718,9 @@ class _SingleBuild {
           pendingBuildAction: PendingBuildAction.none,
         );
         _assetGraph.add(node);
-        anchorNode.mutate.outputs.add(assetId);
+        _assetGraph.updateNode(anchorNode.id, (nodeBuilder) {
+          nodeBuilder.outputs.add(assetId);
+        });
       },
       deleteAsset: (assetId) {
         if (!_assetGraph.contains(assetId)) {
@@ -725,7 +732,9 @@ class _SingleBuild {
             'Can only delete primary input',
           );
         }
-        _assetGraph.get(assetId)!.mutate.deletedBy.add(anchorNode.id);
+        _assetGraph.updateNode(assetId, (nodeBuilder) {
+          nodeBuilder.deletedBy.add(anchorNode.id);
+        });
       },
     ).catchError((void _) {
       // Errors tracked through the logger
@@ -738,7 +747,10 @@ class _SingleBuild {
 
     // Reset the state for all the output nodes based on what was read and
     // written.
-    inputNode.mutate.primaryOutputs.addAll(assetsWritten);
+    _assetGraph.updateNode(inputNode.id, (nodeBuilder) {
+      nodeBuilder.primaryOutputs.addAll(assetsWritten);
+    });
+
     await _setOutputsState(
       input,
       assetsWritten,
@@ -766,7 +778,7 @@ class _SingleBuild {
     // We check if any output definitely needs an update - its possible during
     // manual deletions that only one of the outputs would be marked.
     for (var output in outputs.skip(1)) {
-      if (_assetGraph.get(output)!.generatedNodeState.pendingBuildAction ==
+      if (_assetGraph.get(output)!.generatedNodeState!.pendingBuildAction ==
           PendingBuildAction.build) {
         return true;
       }
@@ -782,15 +794,15 @@ class _SingleBuild {
             (output) =>
                 _assetGraph
                     .get(output)!
-                    .generatedNodeState
+                    .generatedNodeState!
                     .inputs
-                    .difference(firstNode.generatedNodeState.inputs)
+                    .difference(firstNode.generatedNodeState!.inputs)
                     .isEmpty,
           ),
       'All outputs of a build action should share the same inputs.',
     );
 
-    final firstNodeState = firstNode.generatedNodeState;
+    final firstNodeState = firstNode.generatedNodeState!;
 
     // No need to build an up to date output
     if (firstNodeState.pendingBuildAction == PendingBuildAction.none) {
@@ -806,7 +818,7 @@ class _SingleBuild {
 
     var digest = await _computeCombinedDigest(
       firstNodeState.inputs,
-      firstNode.generatedNodeConfiguration.builderOptionsId,
+      firstNode.generatedNodeConfiguration!.builderOptionsId,
       reader,
     );
     if (digest != firstNodeState.previousInputsDigest) {
@@ -814,16 +826,15 @@ class _SingleBuild {
     } else {
       // Make sure to update the `state` field for all outputs.
       for (var id in outputs) {
-        final node = _assetGraph.get(id)!;
-        if (node.type == NodeType.generated) {
-          node.generatedNodeState = node.generatedNodeState.rebuild(
-            (b) => b..pendingBuildAction = PendingBuildAction.none,
-          );
-        } else if (node.type == NodeType.glob) {
-          node.globNodeState = node.globNodeState.rebuild(
-            (b) => b..pendingBuildAction = PendingBuildAction.none,
-          );
-        }
+        _assetGraph.updateNode(id, (nodeBuilder) {
+          if (nodeBuilder.type == NodeType.generated) {
+            nodeBuilder.generatedNodeState.pendingBuildAction =
+                PendingBuildAction.none;
+          } else if (nodeBuilder.type == NodeType.glob) {
+            nodeBuilder.globNodeState.pendingBuildAction =
+                PendingBuildAction.none;
+          }
+        });
       }
       return false;
     }
@@ -834,18 +845,19 @@ class _SingleBuild {
     AssetNode anchorNode,
     AssetReader reader,
   ) async {
-    final nodeConfiguration = anchorNode.postProcessAnchorNodeConfiguration;
+    final nodeConfiguration = anchorNode.postProcessAnchorNodeConfiguration!;
     var inputsDigest = await _computeCombinedDigest(
       [nodeConfiguration.primaryInput],
       nodeConfiguration.builderOptionsId,
       reader,
     );
 
-    final nodeState = anchorNode.postProcessAnchorNodeState;
+    final nodeState = anchorNode.postProcessAnchorNodeState!;
     if (inputsDigest != nodeState.previousInputsDigest) {
-      anchorNode.postProcessAnchorNodeState = nodeState.rebuild(
-        (b) => b..previousInputsDigest = inputsDigest,
-      );
+      _assetGraph.updateNode(anchorNode.id, (nodeBuilder) {
+        nodeBuilder.postProcessAnchorNodeState.previousInputsDigest =
+            inputsDigest;
+      });
       return true;
     }
 
@@ -861,15 +873,15 @@ class _SingleBuild {
     for (final output in outputs) {
       final node = _assetGraph.get(output)!;
       if (node.type == NodeType.generated &&
-          node.generatedNodeState.wasOutput) {
+          node.generatedNodeState!.wasOutput) {
         await _delete(output);
       }
     }
   }
 
-  Future<void> _buildGlobNode(AssetNode globNode) async {
-    if (globNode.globNodeState.pendingBuildAction == PendingBuildAction.none) {
-      return;
+  Future<AssetNode> _buildGlobNode(AssetNode globNode) async {
+    if (globNode.globNodeState!.pendingBuildAction == PendingBuildAction.none) {
+      return globNode;
     }
 
     return _lazyGlobs.putIfAbsent(globNode.id, () async {
@@ -880,11 +892,11 @@ class _SingleBuild {
               .where(
                 (n) =>
                     n.type != NodeType.generated ||
-                    n.generatedNodeConfiguration.phaseNumber <
-                        globNode.globNodeConfiguration.phaseNumber,
+                    n.generatedNodeConfiguration!.phaseNumber <
+                        globNode.globNodeConfiguration!.phaseNumber,
               )
               .where(
-                (n) => globNode.globNodeConfiguration.glob.matches(n.id.path),
+                (n) => globNode.globNodeConfiguration!.glob.matches(n.id.path),
               )
               .toList();
 
@@ -896,28 +908,32 @@ class _SingleBuild {
 
       var actualMatches = <AssetId>[];
       for (var node in potentialNodes) {
-        node.mutate.outputs.add(globNode.id);
+        _assetGraph.updateNode(node.id, (nodeBuilder) {
+          nodeBuilder.outputs.add(globNode.id);
+        });
         if (node.type == NodeType.generated &&
-            (!node.generatedNodeState.wasOutput ||
-                node.generatedNodeState.isFailure)) {
+            (!node.generatedNodeState!.wasOutput ||
+                node.generatedNodeState!.isFailure)) {
           continue;
         }
         actualMatches.add(node.id);
       }
 
-      globNode.globNodeState = GlobNodeState(
+      globNode = globNode.rebuild(
         (b) =>
             b
-              ..results.replace(actualMatches)
-              ..inputs.replace(potentialNodes.map((n) => n.id))
-              ..pendingBuildAction = PendingBuildAction.none,
-      );
-      globNode.mutate.lastKnownDigest = md5.convert(
-        utf8.encode(actualMatches.join(' ')),
+              ..globNodeState.results.replace(actualMatches)
+              ..globNodeState.inputs.replace(potentialNodes.map((n) => n.id))
+              ..globNodeState.pendingBuildAction = PendingBuildAction.none
+              ..lastKnownDigest = md5.convert(
+                utf8.encode(actualMatches.join(' ')),
+              ),
       );
 
       // TODO: remove ?? fallback after 2.15 sdk.
       unawaited(_lazyGlobs.remove(globNode.id) ?? Future.value());
+
+      return globNode;
     });
   }
 
@@ -942,7 +958,7 @@ class _SingleBuild {
     for (final id in ids) {
       var node = _assetGraph.get(id)!;
       if (node.type == NodeType.glob) {
-        await _buildGlobNode(node);
+        node = await _buildGlobNode(node);
       } else if (!await reader.canRead(id)) {
         // We want to add something here, a missing/unreadable input should be
         // different from no input at all.
@@ -952,8 +968,11 @@ class _SingleBuild {
         continue;
       } else {
         if (node.lastKnownDigest == null) {
+          final digest = await reader.digest(id);
           await reader.cache.invalidate([id]);
-          node.mutate.lastKnownDigest = await reader.digest(id);
+          node = _assetGraph.updateNode(node.id, (nodeBuilder) {
+            nodeBuilder.lastKnownDigest = digest;
+          });
         }
       }
       combine(node.lastKnownDigest!.bytes as Uint8List);
@@ -990,7 +1009,7 @@ class _SingleBuild {
       usedInputs,
       _assetGraph
           .get(outputs.first)!
-          .generatedNodeConfiguration
+          .generatedNodeConfiguration!
           .builderOptionsId,
       readerWriter,
     );
@@ -1002,20 +1021,16 @@ class _SingleBuild {
       var digest = wasOutput ? await _readerWriter.digest(output) : null;
       var node = _assetGraph.get(output)!;
 
-      // **IMPORTANT**: All updates to `node` must be synchronous. With lazy
-      // builders we can run arbitrary code between updates otherwise, at which
-      // time a node might not be in a valid state.
       _removeOldInputs(node, usedInputs);
       _addNewInputs(node, usedInputs);
-      node.generatedNodeState = node.generatedNodeState.rebuild(
-        (b) =>
-            b
-              ..pendingBuildAction = PendingBuildAction.none
-              ..wasOutput = wasOutput
-              ..isFailure = isFailure
-              ..previousInputsDigest = inputsDigest,
-      );
-      node.mutate.lastKnownDigest = digest;
+      _assetGraph.updateNode(node.id, (nodeBuilder) {
+        nodeBuilder.generatedNodeState
+          ..pendingBuildAction = PendingBuildAction.none
+          ..wasOutput = wasOutput
+          ..isFailure = isFailure
+          ..previousInputsDigest = inputsDigest;
+        nodeBuilder.lastKnownDigest = digest;
+      });
 
       if (isFailure) {
         await _failureReporter.markReported(actionDescription, node, errors);
@@ -1023,25 +1038,26 @@ class _SingleBuild {
         var allSkippedFailures = <AssetNode>[];
         while (needsMarkAsFailure.isNotEmpty) {
           var output = needsMarkAsFailure.removeLast();
-          var outputNode = _assetGraph.get(output)!;
-          outputNode.generatedNodeState = outputNode.generatedNodeState.rebuild(
-            (b) =>
-                b
-                  ..pendingBuildAction = PendingBuildAction.none
-                  ..wasOutput = false
-                  ..isFailure = true
-                  ..previousInputsDigest = null,
-          );
-          outputNode.mutate.lastKnownDigest = null;
+          _assetGraph.updateNode(output, (nodeBuilder) {
+            nodeBuilder.generatedNodeState
+              ..pendingBuildAction = PendingBuildAction.none
+              ..wasOutput = false
+              ..isFailure = true
+              ..previousInputsDigest = null;
+            nodeBuilder.lastKnownDigest = null;
+          });
+          final outputNode = _assetGraph.get(output)!;
           allSkippedFailures.add(outputNode);
           needsMarkAsFailure.addAll(outputNode.primaryOutputs);
 
           // Make sure output invalidation follows primary outputs for builds
-          // that won't run.
-          node.mutate.outputs.add(output);
-          outputNode.generatedNodeState = outputNode.generatedNodeState.rebuild(
-            (b) => b..inputs.add(node.id),
-          );
+          // that won't run
+          _assetGraph.updateNode(node.id, (nodeBuilder) {
+            nodeBuilder.outputs.add(output);
+          });
+          _assetGraph.updateNode(outputNode.id, (nodeBuilder) {
+            nodeBuilder.generatedNodeState.inputs.add(node.id);
+          });
         }
         await _failureReporter.markSkipped(allSkippedFailures);
       }
@@ -1051,28 +1067,30 @@ class _SingleBuild {
   /// Removes old inputs from [node] based on [updatedInputs], and cleans up all
   /// the old edges.
   void _removeOldInputs(AssetNode node, Set<AssetId> updatedInputs) {
-    final nodeState = node.generatedNodeState;
+    final nodeState = node.generatedNodeState!;
     var removedInputs = nodeState.inputs.asSet().difference(updatedInputs);
-    node.generatedNodeState = nodeState.rebuild(
-      (b) => b..inputs.removeAll(removedInputs),
-    );
+    _assetGraph.updateNode(node.id, (nodeBuilder) {
+      nodeBuilder.generatedNodeState.inputs.removeAll(removedInputs);
+    });
     for (var input in removedInputs) {
-      var inputNode = _assetGraph.get(input)!;
-      inputNode.mutate.outputs.remove(node.id);
+      _assetGraph.updateNode(input, (nodeBuilder) {
+        nodeBuilder.outputs.remove(node.id);
+      });
     }
   }
 
   /// Adds new inputs to [node] based on [updatedInputs], and adds the
   /// appropriate edges.
   void _addNewInputs(AssetNode node, Set<AssetId> updatedInputs) {
-    final nodeState = node.generatedNodeState;
+    final nodeState = node.generatedNodeState!;
     var newInputs = updatedInputs.difference(nodeState.inputs.asSet());
-    node.generatedNodeState = nodeState.rebuild(
-      (b) => b..inputs.addAll(newInputs),
-    );
+    _assetGraph.updateNode(node.id, (nodeBuilder) {
+      nodeBuilder.generatedNodeState.inputs.addAll(newInputs);
+    });
     for (var input in newInputs) {
-      var inputNode = _assetGraph.get(input)!;
-      inputNode.mutate.outputs.add(node.id);
+      _assetGraph.updateNode(input, (nodeBuilder) {
+        nodeBuilder.outputs.add(node.id);
+      });
     }
   }
 

@@ -106,36 +106,44 @@ class AssetGraph {
     return pkg[id.path];
   }
 
-  void updateNode(AssetId id, void Function(AssetNodeBuilder) updates) {
+  AssetNode updateNode(AssetId id, void Function(AssetNodeBuilder) updates) {
     final node = get(id);
     if (node == null) throw StateError('Missing node: $id');
     final updatedNode = node.rebuild(updates);
     _nodesByPackage[id.package]![id.path] = updatedNode;
+    return updatedNode;
   }
 
-  void updateNodeIfPresent(
+  AssetNode? updateNodeIfPresent(
     AssetId id,
     void Function(AssetNodeBuilder) updates,
   ) {
     final node = get(id);
-    if (node == null) return;
+    if (node == null) return null;
     final updatedNode = node.rebuild(updates);
     _nodesByPackage[id.package]![id.path] = updatedNode;
+    return updatedNode;
   }
 
   /// Adds [node] to the graph if it doesn't exist.
   ///
   /// Throws a [StateError] if it already exists in the graph.
-  void _add(AssetNode node) {
+  ///
+  /// Returns the updated node: if it replaces an [AssetNode.missingSource] then
+  /// `outputs` and `primaryOutputs` are copied to it from that.
+  AssetNode _add(AssetNode node) {
     var existing = get(node.id);
     if (existing != null) {
       if (existing.type == NodeType.syntheticSource) {
         // Don't call _removeRecursive, that recursively removes all transitive
         // primary outputs. We only want to remove this node.
         _nodesByPackage[existing.id.package]!.remove(existing.id.path);
-        node.mutate
-          ..outputs.addAll(existing.outputs)
-          ..primaryOutputs.addAll(existing.primaryOutputs);
+        node = node.rebuild(
+          (b) =>
+              b
+                ..outputs.addAll(existing.outputs)
+                ..primaryOutputs.addAll(existing.primaryOutputs),
+        );
       } else {
         throw StateError(
           'Tried to add node ${node.id} to the asset graph but it already '
@@ -144,14 +152,14 @@ class AssetGraph {
       }
     }
     _nodesByPackage.putIfAbsent(node.id.package, () => {})[node.id.path] = node;
+    return node;
   }
 
   /// Adds [assetIds] as [AssetNode.internal].
   Iterable<AssetNode> _addInternalSources(Set<AssetId> assetIds) sync* {
     for (var id in assetIds) {
       var node = AssetNode.internal(id);
-      _add(node);
-      yield node;
+      yield _add(node);
     }
   }
 
@@ -169,8 +177,7 @@ class AssetGraph {
   List<AssetNode> _addSources(Set<AssetId> assetIds) {
     return assetIds.map((id) {
       var node = AssetNode.source(id);
-      _add(node);
-      return node;
+      return _add(node);
     }).toList();
   }
 
@@ -213,7 +220,10 @@ class AssetGraph {
     await digestReader.cache.invalidate(nodes.map((n) => n.id));
     await Future.wait(
       nodes.map((node) async {
-        node.mutate.lastKnownDigest = await digestReader.digest(node.id);
+        final digest = await digestReader.digest(node.id);
+        updateNode(node.id, (nodeBuilder) {
+          nodeBuilder.lastKnownDigest = digest;
+        });
       }),
     );
   }
@@ -248,27 +258,27 @@ class AssetGraph {
     }
 
     if (node.type == NodeType.generated) {
-      for (var input in node.generatedNodeState.inputs) {
-        var inputNode = get(input);
+      for (var input in node.generatedNodeState!.inputs) {
         // We may have already removed this node entirely.
-        if (inputNode != null) {
-          inputNode.mutate
+        updateNodeIfPresent(input, (nodeBuilder) {
+          nodeBuilder
             ..outputs.remove(id)
             ..primaryOutputs.remove(id);
-        }
+        });
       }
-      get(
-        node.generatedNodeConfiguration.builderOptionsId,
-      )!.mutate.outputs.remove(id);
+      updateNode(node.generatedNodeConfiguration!.builderOptionsId, (
+        nodeBuilder,
+      ) {
+        nodeBuilder.outputs.remove(id);
+      });
     } else if (node.type == NodeType.glob) {
-      for (var input in node.globNodeState.inputs) {
-        var inputNode = get(input);
+      for (var input in node.globNodeState!.inputs) {
         // We may have already removed this node entirely.
-        if (inputNode != null) {
-          inputNode.mutate
+        updateNodeIfPresent(input, (nodeBuilder) {
+          nodeBuilder
             ..outputs.remove(id)
             ..primaryOutputs.remove(id);
-        }
+        });
       }
     }
 
@@ -295,8 +305,8 @@ class AssetGraph {
   Iterable<AssetNode> get failedOutputs => allNodes.where(
     (n) =>
         n.type == NodeType.generated &&
-        n.generatedNodeState.isFailure &&
-        n.generatedNodeState.pendingBuildAction == PendingBuildAction.none,
+        n.generatedNodeState!.isFailure &&
+        n.generatedNodeState!.pendingBuildAction == PendingBuildAction.none,
   );
 
   /// All the generated outputs for a particular phase.
@@ -304,7 +314,7 @@ class AssetGraph {
       packageNodes(package).where(
         (n) =>
             n.type == NodeType.generated &&
-            n.generatedNodeConfiguration.phaseNumber == phase,
+            n.generatedNodeConfiguration!.phaseNumber == phase,
       );
 
   /// All the source files in the graph.
@@ -383,8 +393,10 @@ class AssetGraph {
         .map(get)
         .nonNulls
         .where((n) => n.type == NodeType.generated)) {
-      deletedOutput.generatedNodeState = deletedOutput.generatedNodeState
-          .rebuild((b) => b..pendingBuildAction = PendingBuildAction.build);
+      updateNode(deletedOutput.id, (nodeBuilder) {
+        nodeBuilder.generatedNodeState.pendingBuildAction =
+            PendingBuildAction.build;
+      });
     }
 
     // Transitively invalidates all assets. This needs to happen after the
@@ -399,32 +411,28 @@ class AssetGraph {
     var allNewAndDeletedIds = {...newGeneratedOutputs, ...transitiveRemovedIds};
 
     void invalidateNodeAndDeps(AssetId id) {
-      var node = get(id);
-      if (node == null) return;
-      if (!invalidatedIds.add(id)) return;
+      updateNodeIfPresent(id, (nodeBuilder) {
+        if (!invalidatedIds.add(id)) return;
 
-      if (node.type == NodeType.generated) {
-        final nodeState = node.generatedNodeState;
-        if (nodeState.pendingBuildAction == PendingBuildAction.none) {
-          node.generatedNodeState = nodeState.rebuild(
-            (b) =>
-                b..pendingBuildAction = PendingBuildAction.buildIfInputsChanged,
-          );
+        if (nodeBuilder.type == NodeType.generated) {
+          final nodeState = nodeBuilder.generatedNodeState;
+          if (nodeState.pendingBuildAction == PendingBuildAction.none) {
+            nodeBuilder.generatedNodeState.pendingBuildAction =
+                PendingBuildAction.buildIfInputsChanged;
+          }
+        } else if (nodeBuilder.type == NodeType.glob) {
+          final nodeState = nodeBuilder.globNodeState;
+          if (nodeState.pendingBuildAction == PendingBuildAction.none) {
+            nodeBuilder.globNodeState.pendingBuildAction =
+                PendingBuildAction.buildIfInputsChanged;
+          }
         }
-      } else if (node.type == NodeType.glob) {
-        final nodeState = node.globNodeState;
-        if (nodeState.pendingBuildAction == PendingBuildAction.none) {
-          node.globNodeState = node.globNodeState.rebuild(
-            (b) =>
-                b..pendingBuildAction = PendingBuildAction.buildIfInputsChanged,
-          );
-        }
-      }
 
-      // Update all outputs of this asset as well.
-      for (var output in node.outputs) {
-        invalidateNodeAndDeps(output);
-      }
+        // Update all outputs of this asset as well.
+        for (var output in nodeBuilder.outputs.build()) {
+          invalidateNodeAndDeps(output);
+        }
+      });
     }
 
     for (var changed in updates.keys.followedBy(newGeneratedOutputs)) {
@@ -437,10 +445,10 @@ class AssetGraph {
       var samePackageGlobNodes = packageNodes(id.package).where(
         (n) =>
             n.type == NodeType.glob &&
-            n.globNodeState.pendingBuildAction == PendingBuildAction.none,
+            n.globNodeState!.pendingBuildAction == PendingBuildAction.none,
       );
       for (final node in samePackageGlobNodes) {
-        final nodeConfiguration = node.globNodeConfiguration;
+        final nodeConfiguration = node.globNodeConfiguration!;
         if (nodeConfiguration.glob.matches(id.path)) {
           invalidateNodeAndDeps(node.id);
           updateNode(node.id, (nodeBuilder) {
@@ -488,7 +496,7 @@ class AssetGraph {
 
     var inputNode = get(input)!;
     while (inputNode.type == NodeType.generated) {
-      final inputNodeConfiguration = inputNode.generatedNodeConfiguration;
+      final inputNodeConfiguration = inputNode.generatedNodeConfiguration!;
       inputNode = get(inputNodeConfiguration.primaryInput)!;
     }
     return action.targetSources.matches(inputNode.id);
@@ -552,10 +560,11 @@ class AssetGraph {
       // We might have deleted some inputs during this loop, if they turned
       // out to be generated assets.
       if (!allInputs.contains(input)) continue;
-      var node = get(input)!;
       var outputs = expectedOutputs(phase.builder, input);
       phaseOutputs.addAll(outputs);
-      node.mutate.primaryOutputs.addAll(outputs);
+      updateNode(input, (nodeBuilder) {
+        nodeBuilder.primaryOutputs.addAll(outputs);
+      });
       var deleted = _addGeneratedOutputs(
         outputs,
         phaseNum,
@@ -590,7 +599,9 @@ class AssetGraph {
           buildOptionsNodeId,
         );
         add(anchor);
-        get(input)!.mutate.anchorOutputs.add(anchor.id);
+        updateNode(input, (nodeBuilder) {
+          nodeBuilder.anchorOutputs.add(anchor.id);
+        });
       }
       actionNum++;
     }
@@ -628,7 +639,7 @@ class AssetGraph {
           throw DuplicateAssetNodeException(
             rootPackage,
             existing.id,
-            (buildPhases[existingConfiguration.phaseNumber] as InBuildPhase)
+            (buildPhases[existingConfiguration!.phaseNumber] as InBuildPhase)
                 .builderLabel,
             (buildPhases[phaseNumber] as InBuildPhase).builderLabel,
           );
@@ -647,11 +658,13 @@ class AssetGraph {
         isHidden: isHidden,
       );
       if (existing != null) {
-        newNode.mutate.outputs.addAll(existing.outputs);
+        newNode = newNode.rebuild((b) => b..outputs.addAll(existing!.outputs));
         // Ensure we set up the reverse link for NodeWithInput nodes.
         _addInput(existing.outputs, output);
       }
-      builderOptionsNode.mutate.outputs.add(output);
+      updateNode(builderOptionsNode.id, (nodeBuilder) {
+        nodeBuilder.outputs.add(output);
+      });
       _add(newNode);
     }
     return removed;

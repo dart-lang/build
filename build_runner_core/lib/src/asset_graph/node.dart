@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:collection';
 import 'dart:convert';
 
 import 'package:build/build.dart' hide Builder;
@@ -37,17 +36,27 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   AssetId get id;
   NodeType get type;
 
-  /// Additional node configuration that's available before the build runs.
-  ///
-  /// [NodeType.generated], [NodeType.glob] and [NodeType.postProcessAnchor]
-  /// have additional configuration.
-  AdditionalNodeConfiguration? get configuration;
+  /// Additional node configuration for an [AssetNode.generated].
+  GeneratedNodeConfiguration? get generatedNodeConfiguration;
 
-  /// Additional node state that changes during the build.
-  ///
-  /// [NodeType.generated], [NodeType.glob] and [NodeType.postProcessAnchor]
-  /// have additional state.
-  AdditionalNodeState? get state;
+  /// Additional node state that changes during the build for an
+  /// [AssetNode.generated].
+  GeneratedNodeState? get generatedNodeState;
+
+  /// Additional node configuration for an [AssetNode.glob].
+  GlobNodeConfiguration? get globNodeConfiguration;
+
+  /// Additional node state that changes during the build for an
+  /// [AssetNode.glob].
+  GlobNodeState? get globNodeState;
+
+  /// Additional node configuration for an
+  /// [AssetNode.postProcessAnchorNodeConfiguration].
+  PostProcessAnchorNodeConfiguration? get postProcessAnchorNodeConfiguration;
+
+  /// Additional node state that changes during the build for an
+  /// [AssetNode.postProcessAnchor].
+  PostProcessAnchorNodeState? get postProcessAnchorNodeState;
 
   /// The assets that any [Builder] in the build graph declares it may output
   /// when run on this asset.
@@ -194,23 +203,15 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
         b
           ..id = id
           ..type = NodeType.generated
-          ..configuration = GeneratedNodeConfiguration(
-            (b) =>
-                b
-                  ..primaryInput = primaryInput
-                  ..builderOptionsId = builderOptionsId
-                  ..phaseNumber = phaseNumber
-                  ..isHidden = isHidden,
-          )
-          ..state = GeneratedNodeState(
-            (b) =>
-                b
-                  ..inputs.replace(inputs ?? [])
-                  ..previousInputsDigest = previousInputsDigest
-                  ..pendingBuildAction = pendingBuildAction
-                  ..wasOutput = wasOutput
-                  ..isFailure = isFailure,
-          )
+          ..generatedNodeConfiguration.primaryInput = primaryInput
+          ..generatedNodeConfiguration.builderOptionsId = builderOptionsId
+          ..generatedNodeConfiguration.phaseNumber = phaseNumber
+          ..generatedNodeConfiguration.isHidden = isHidden
+          ..generatedNodeState.inputs.replace(inputs ?? [])
+          ..generatedNodeState.previousInputsDigest = previousInputsDigest
+          ..generatedNodeState.pendingBuildAction = pendingBuildAction
+          ..generatedNodeState.wasOutput = wasOutput
+          ..generatedNodeState.isFailure = isFailure
           ..lastKnownDigest = lastKnownDigest,
   );
 
@@ -228,18 +229,10 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
         b
           ..id = id
           ..type = NodeType.glob
-          ..configuration = GlobNodeConfiguration(
-            (b) =>
-                b
-                  ..glob = glob
-                  ..phaseNumber = phaseNumber,
-          )
-          ..state = GlobNodeState(
-            (b) =>
-                b
-                  ..pendingBuildAction = pendingBuildAction
-                  ..results.replace(results ?? []),
-          )
+          ..globNodeConfiguration.glob = glob
+          ..globNodeConfiguration.phaseNumber = phaseNumber
+          ..globNodeState.pendingBuildAction = pendingBuildAction
+          ..globNodeState.results.replace(results ?? [])
           ..lastKnownDigest = lastKnownDigest,
   );
 
@@ -264,16 +257,12 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
         b
           ..id = id
           ..type = NodeType.postProcessAnchor
-          ..configuration = PostProcessAnchorNodeConfiguration(
-            (b) =>
-                b
-                  ..actionNumber = actionNumber
-                  ..builderOptionsId = builderOptionsId
-                  ..primaryInput = primaryInput,
-          )
-          ..state = PostProcessAnchorNodeState(
-            (b) => b..previousInputsDigest = previousInputsDigest,
-          ),
+          ..postProcessAnchorNodeConfiguration.actionNumber = actionNumber
+          ..postProcessAnchorNodeConfiguration.builderOptionsId =
+              builderOptionsId
+          ..postProcessAnchorNodeConfiguration.primaryInput = primaryInput
+          ..postProcessAnchorNodeState.previousInputsDigest =
+              previousInputsDigest,
   );
 
   factory AssetNode.postProcessAnchorForInputAndAction(
@@ -287,75 +276,43 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
     builderOptionsId: builderOptionsId,
   );
 
-  AssetNode._();
+  AssetNode._() {
+    void checkArguments(bool hasType, bool hasConfiguration, bool hasState) {
+      if (hasType != hasConfiguration) {
+        throw ArgumentError(
+          'Node configuration does not match its type: $this',
+        );
+      }
+      if (hasType != hasState) {
+        throw ArgumentError('Node state does not match its type: $this');
+      }
+    }
+
+    checkArguments(
+      type == NodeType.generated,
+      generatedNodeConfiguration != null,
+      generatedNodeState != null,
+    );
+    checkArguments(
+      type == NodeType.glob,
+      globNodeConfiguration != null,
+      globNodeState != null,
+    );
+    checkArguments(
+      type == NodeType.postProcessAnchor,
+      postProcessAnchorNodeConfiguration != null,
+      postProcessAnchorNodeState != null,
+    );
+  }
 
   @override
   String toString() => 'AssetNode: $id';
-
-  /// Write access to collections in the node.
-  AssetNodeMutator get mutate => AssetNodeMutator(this);
-
-  /// Access to unmodifable views on collections in the node.
-  AssetNodeInspector get inspect => AssetNodeInspector(this);
-
-  GeneratedNodeConfiguration get generatedNodeConfiguration =>
-      configuration as GeneratedNodeConfiguration;
-  GeneratedNodeState get generatedNodeState => state as GeneratedNodeState;
-
-  GlobNodeConfiguration get globNodeConfiguration =>
-      configuration as GlobNodeConfiguration;
-  GlobNodeState get globNodeState => state as GlobNodeState;
-
-  PostProcessAnchorNodeConfiguration get postProcessAnchorNodeConfiguration =>
-      configuration as PostProcessAnchorNodeConfiguration;
-  PostProcessAnchorNodeState get postProcessAnchorNodeState =>
-      state as PostProcessAnchorNodeState;
 }
-
-abstract class AssetNodeBuilder
-    implements Builder<AssetNode, AssetNodeBuilder> {
-  AssetId? id;
-  NodeType? type;
-  AdditionalNodeConfigurationBuilder? configuration;
-  AdditionalNodeStateBuilder? state;
-  SetBuilder<AssetId> primaryOutputs = SetBuilder();
-  SetBuilder<AssetId> outputs = SetBuilder();
-  SetBuilder<AssetId> anchorOutputs = SetBuilder();
-  Digest? lastKnownDigest;
-  SetBuilder<AssetId> deletedBy = SetBuilder();
-
-  AssetNodeBuilder._();
-  factory AssetNodeBuilder() = _$AssetNodeBuilder;
-
-  GeneratedNodeConfigurationBuilder get generatedNodeConfiguration =>
-      configuration as GeneratedNodeConfigurationBuilder;
-  GeneratedNodeStateBuilder get generatedNodeState =>
-      state as GeneratedNodeStateBuilder;
-
-  GlobNodeConfigurationBuilder get globNodeConfiguration =>
-      configuration as GlobNodeConfigurationBuilder;
-  GlobNodeStateBuilder get globNodeState => state as GlobNodeStateBuilder;
-
-  PostProcessAnchorNodeConfigurationBuilder
-  get postProcessAnchorNodeConfiguration =>
-      configuration as PostProcessAnchorNodeConfigurationBuilder;
-  PostProcessAnchorNodeStateBuilder get postProcessAnchorNodeState =>
-      state as PostProcessAnchorNodeStateBuilder;
-}
-
-/// Additional immutable configuration for some node types.
-@BuiltValue(instantiable: false)
-abstract class AdditionalNodeConfiguration {}
-
-/// Additional mutable state for some node types.
-@BuiltValue(instantiable: false)
-abstract interface class AdditionalNodeState {}
 
 /// Additional configuration for an [AssetNode.generated].
 abstract class GeneratedNodeConfiguration
     implements
-        Built<GeneratedNodeConfiguration, GeneratedNodeConfigurationBuilder>,
-        AdditionalNodeConfiguration {
+        Built<GeneratedNodeConfiguration, GeneratedNodeConfigurationBuilder> {
   /// The primary input which generated this node.
   AssetId get primaryInput;
 
@@ -384,9 +341,7 @@ abstract class GeneratedNodeConfiguration
 
 /// State for an [AssetNode.generated] that changes during the build.
 abstract class GeneratedNodeState
-    implements
-        Built<GeneratedNodeState, GeneratedNodeStateBuilder>,
-        AdditionalNodeState {
+    implements Built<GeneratedNodeState, GeneratedNodeStateBuilder> {
   /// All the inputs that were read when generating this asset, or deciding not
   /// to generate it.
   BuiltSet<AssetId> get inputs;
@@ -417,9 +372,7 @@ abstract class GeneratedNodeState
 
 /// Additional configuration for an [AssetNode.glob].
 abstract class GlobNodeConfiguration
-    implements
-        Built<GlobNodeConfiguration, GlobNodeConfigurationBuilder>,
-        AdditionalNodeConfiguration {
+    implements Built<GlobNodeConfiguration, GlobNodeConfigurationBuilder> {
   Glob get glob;
   int get phaseNumber;
 
@@ -432,7 +385,7 @@ abstract class GlobNodeConfiguration
 
 /// State for an [AssetNode.glob] that changes during the build.
 abstract class GlobNodeState
-    implements Built<GlobNodeState, GlobNodeStateBuilder>, AdditionalNodeState {
+    implements Built<GlobNodeState, GlobNodeStateBuilder> {
   /// All the potential inputs matching this glob.
   ///
   /// This field differs from [results] in that [AssetNode.generated] which may
@@ -458,8 +411,7 @@ abstract class PostProcessAnchorNodeConfiguration
         Built<
           PostProcessAnchorNodeConfiguration,
           PostProcessAnchorNodeConfigurationBuilder
-        >,
-        AdditionalNodeConfiguration {
+        > {
   int get actionNumber;
   AssetId get builderOptionsId;
   AssetId get primaryInput;
@@ -474,8 +426,7 @@ abstract class PostProcessAnchorNodeConfiguration
 /// State for an [AssetNode.postProcessAnchor].
 abstract class PostProcessAnchorNodeState
     implements
-        Built<PostProcessAnchorNodeState, PostProcessAnchorNodeStateBuilder>,
-        AdditionalNodeState {
+        Built<PostProcessAnchorNodeState, PostProcessAnchorNodeStateBuilder> {
   Digest? get previousInputsDigest;
 
   factory PostProcessAnchorNodeState(
@@ -483,27 +434,6 @@ abstract class PostProcessAnchorNodeState
   ) = _$PostProcessAnchorNodeState;
 
   PostProcessAnchorNodeState._();
-}
-
-/// Write access to collections in the node.
-///
-/// This allows the same access as if they were directly exposed, but makes it
-/// easy to search the code for mutates.
-extension type AssetNodeMutator(AssetNode node) {
-  Set<AssetId> get primaryOutputs => node._primaryOutputs;
-  Set<AssetId> get outputs => node._outputs;
-  Set<AssetId> get anchorOutputs => node._anchorOutputs;
-
-  Digest? get lastKnownDigest => node._lastKnownDigest;
-  set lastKnownDigest(Digest? value) => node._lastKnownDigest = value;
-
-  Set<AssetId> get deletedBy => node._deletedBy;
-}
-
-/// Access to unmodifable views on collections in the node.
-extension type AssetNodeInspector(AssetNode node) {
-  Set<AssetId> get primaryOutputs => UnmodifiableSetView(node._primaryOutputs);
-  Set<AssetId> get outputs => UnmodifiableSetView(node._outputs);
 }
 
 /// Work that needs doing for a node that tracks its inputs.

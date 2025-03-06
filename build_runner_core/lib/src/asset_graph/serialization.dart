@@ -86,23 +86,22 @@ class _AssetGraphDeserializer {
           );
           throw AssetGraphCorruptedException();
         }
-        if (inputsNode.type == NodeType.generated) {
-          inputsNode.generatedNodeState = inputsNode.generatedNodeState.rebuild(
-            (b) => b..inputs.add(node.id),
-          );
-        } else {
-          inputsNode.globNodeState = inputsNode.globNodeState.rebuild(
-            (b) => b..inputs.add(node.id),
-          );
-        }
+        graph.updateNode(inputsNode.id, (nodeBuilder) {
+          if (inputsNode.type == NodeType.generated) {
+            nodeBuilder.generatedNodeState.inputs.add(node.id);
+          } else {
+            nodeBuilder.globNodeState.inputs.add(node.id);
+          }
+        });
       }
 
       if (node.type == NodeType.postProcessAnchor) {
-        graph
-            .get(node.postProcessAnchorNodeConfiguration.primaryInput)!
-            .mutate
-            .anchorOutputs
-            .add(node.id);
+        graph.updateNode(
+          node.postProcessAnchorNodeConfiguration!.primaryInput,
+          (nodeBuilder) {
+            nodeBuilder.anchorOutputs.add(node.id);
+          },
+        );
       }
     }
 
@@ -214,18 +213,25 @@ class _AssetGraphDeserializer {
         );
         break;
     }
-    node.mutate.outputs.addAll(
-      _deserializeAssetIds(serializedNode[_AssetField.outputs.index] as List),
-    );
-    node.mutate.primaryOutputs.addAll(
-      _deserializeAssetIds(
-        serializedNode[_AssetField.primaryOutputs.index] as List,
-      ),
-    );
-    node.mutate.deletedBy.addAll(
-      _deserializeAssetIds(
-        (serializedNode[_AssetField.deletedBy.index] as List).cast<int>(),
-      ),
+    node = node.rebuild(
+      (b) =>
+          b
+            ..outputs.addAll(
+              _deserializeAssetIds(
+                serializedNode[_AssetField.outputs.index] as List,
+              ),
+            )
+            ..primaryOutputs.addAll(
+              _deserializeAssetIds(
+                serializedNode[_AssetField.primaryOutputs.index] as List,
+              ),
+            )
+            ..deletedBy.addAll(
+              _deserializeAssetIds(
+                (serializedNode[_AssetField.deletedBy.index] as List)
+                    .cast<int>(),
+              ),
+            ),
     );
     return node;
   }
@@ -455,8 +461,8 @@ class _WrappedGeneratedAssetNode extends _WrappedAssetNode {
   Object? operator [](int index) {
     if (index < _serializedOffset) return super[index];
     var fieldId = _GeneratedField.values[index - _serializedOffset];
-    final configuration = generatedNode.generatedNodeConfiguration;
-    final state = generatedNode.generatedNodeState;
+    final configuration = generatedNode.generatedNodeConfiguration!;
+    final state = generatedNode.generatedNodeState!;
     return switch (fieldId) {
       _GeneratedField.primaryInput => serializer.findAssetIndex(
         configuration.primaryInput,
@@ -503,8 +509,8 @@ class _WrappedGlobAssetNode extends _WrappedAssetNode {
   Object? operator [](int index) {
     if (index < _serializedOffset) return super[index];
     var fieldId = _GlobField.values[index - _serializedOffset];
-    final configuration = globNode.globNodeConfiguration;
-    final state = globNode.globNodeState;
+    final configuration = globNode.globNodeConfiguration!;
+    final state = globNode.globNodeState!;
     return switch (fieldId) {
       _GlobField.phaseNumber => configuration.phaseNumber,
       _GlobField.state => state.pendingBuildAction.name,
@@ -547,8 +553,8 @@ class _WrappedPostProcessAnchorNode extends _WrappedAssetNode {
   Object? operator [](int index) {
     if (index < _serializedOffset) return super[index];
     var fieldId = _PostAnchorField.values[index - _serializedOffset];
-    final nodeConfiguration = wrappedNode.postProcessAnchorNodeConfiguration;
-    final nodeState = wrappedNode.postProcessAnchorNodeState;
+    final nodeConfiguration = wrappedNode.postProcessAnchorNodeConfiguration!;
+    final nodeState = wrappedNode.postProcessAnchorNodeState!;
     return switch (fieldId) {
       _PostAnchorField.actionNumber => nodeConfiguration.actionNumber,
       _PostAnchorField.builderOptions => serializer.findAssetIndex(

@@ -38,7 +38,7 @@ class BuildCacheAssetPathProvider implements AssetPathProvider {
     }
     final assetNode = _assetGraph.get(id)!;
     if (assetNode.type == NodeType.generated &&
-        assetNode.generatedNodeConfiguration.isHidden) {
+        assetNode.generatedNodeConfiguration!.isHidden) {
       return AssetId(
         _rootPackage,
         '$generatedOutputDirectory/${id.package}/${id.path}',

@@ -140,8 +140,8 @@ class InspectNodeCommand extends Command<bool> {
             ..writeln('  type: ${node.runtimeType}');
 
       if (node.type == NodeType.generated) {
-        final nodeState = node.generatedNodeState;
-        final nodeConfiguration = node.generatedNodeConfiguration;
+        final nodeState = node.generatedNodeState!;
+        final nodeConfiguration = node.generatedNodeConfiguration!;
         description
           ..writeln('  state: ${nodeState.pendingBuildAction}')
           ..writeln('  wasOutput: ${nodeState.wasOutput}')
@@ -157,9 +157,7 @@ class InspectNodeCommand extends Command<bool> {
         node.primaryOutputs.forEach(printAsset);
 
         description.writeln('  secondary outputs:');
-        node.inspect.outputs
-            .difference(node.inspect.primaryOutputs)
-            .forEach(printAsset);
+        node.outputs.difference(node.primaryOutputs).forEach(printAsset);
 
         if (node.type == NodeType.generated || node.type == NodeType.glob) {
           description.writeln('  inputs:');
