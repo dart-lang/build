@@ -88,7 +88,7 @@ class _AssetGraphDeserializer {
       }
 
       if (node is PostProcessAnchorNode) {
-        graph.get(node.primaryInput)!.anchorOutputs.add(node.id);
+        graph.get(node.primaryInput)!.mutate.anchorOutputs.add(node.id);
       }
     }
 
@@ -193,15 +193,15 @@ class _AssetGraphDeserializer {
         );
         break;
     }
-    node.outputs.addAll(
+    node.mutate.outputs.addAll(
       _deserializeAssetIds(serializedNode[_AssetField.outputs.index] as List),
     );
-    node.primaryOutputs.addAll(
+    node.mutate.primaryOutputs.addAll(
       _deserializeAssetIds(
         serializedNode[_AssetField.primaryOutputs.index] as List,
       ),
     );
-    node.deletedBy.addAll(
+    node.mutate.deletedBy.addAll(
       _deserializeAssetIds(
         (serializedNode[_AssetField.deletedBy.index] as List).cast<int>(),
       ),

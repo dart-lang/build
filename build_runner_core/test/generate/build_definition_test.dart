@@ -230,7 +230,7 @@ targets:
         (originalAssetGraph.get(aTxtCopy) as GeneratedAssetNode)
           ..state = NodeState.upToDate
           ..inputs.add(aTxt);
-        originalAssetGraph.get(aTxt)!.outputs.add(aTxtCopy);
+        originalAssetGraph.get(aTxt)!.mutate.outputs.add(aTxtCopy);
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
         await modifyFile(p.join('lib', 'a.txt'), 'b');

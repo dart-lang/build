@@ -129,7 +129,7 @@ void main() {
     test('doesnt write deleted files', () async {
       var node =
           graph.get(AssetId('b', 'lib/c.txt.copy')) as GeneratedAssetNode;
-      node.deletedBy.add(node.id.addExtension('.post_anchor.1'));
+      node.mutate.deletedBy.add(node.id.addExtension('.post_anchor.1'));
 
       var success = await createMergedOutputDirectories(
         {BuildDirectory('', outputLocation: OutputLocation(tmpDir.path))},
@@ -527,6 +527,7 @@ void main() {
         for (var remove in removes) {
           graph
               .get(makeAssetId(remove))!
+              .mutate
               .deletedBy
               .add(makeAssetId(remove).addExtension('.post_anchor.1'));
         }

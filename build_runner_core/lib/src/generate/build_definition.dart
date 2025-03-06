@@ -608,7 +608,9 @@ class _Loader {
         );
       }
       var oldDigest = builderOptionsNode.lastKnownDigest;
-      builderOptionsNode.lastKnownDigest = computeBuilderOptionsDigest(options);
+      builderOptionsNode.mutate.lastKnownDigest = computeBuilderOptionsDigest(
+        options,
+      );
       if (builderOptionsNode.lastKnownDigest != oldDigest) {
         result[builderOptionsId] = ChangeType.MODIFY;
       }

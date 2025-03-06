@@ -382,7 +382,7 @@ void main() {
           inputs: [makeAssetId('a|web/b.txt')],
           isHidden: false,
         );
-        builderOptionsNode.outputs.add(bCopyNode.id);
+        builderOptionsNode.mutate.outputs.add(bCopyNode.id);
         expectedGraph
           ..add(bCopyNode)
           ..add(
@@ -405,7 +405,7 @@ void main() {
           inputs: [makeAssetId('a|web/c.txt')],
           isHidden: false,
         );
-        builderOptionsNode.outputs.add(cCopyNode.id);
+        builderOptionsNode.mutate.outputs.add(cCopyNode.id);
         expectedGraph
           ..add(cCopyNode)
           ..add(
