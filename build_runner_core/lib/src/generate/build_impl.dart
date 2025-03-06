@@ -903,9 +903,9 @@ class _SingleBuild {
         ..results = actualMatches
         ..inputs = HashSet.of(potentialNodes.map((n) => n.id))
         ..pendingBuildAction = PendingBuildAction.none;
-      globNode.mutate.lastKnownDigest = md5.convert(
-        utf8.encode(actualMatches.join(' ')),
-      );
+      // TODO(davidmorgan): what do we do with the digest?
+      // ignore: unused_local_variable
+      final newDigest = md5.convert(utf8.encode(actualMatches.join(' ')));
 
       // TODO: remove ?? fallback after 2.15 sdk.
       unawaited(_lazyGlobs.remove(globNode.id) ?? Future.value());
@@ -927,8 +927,9 @@ class _SingleBuild {
       }
     }
 
-    var builderOptionsNode = _assetGraph.get(builderOptionsId)!;
-    combine(builderOptionsNode.lastKnownDigest!.bytes as Uint8List);
+    // TODO(davidmorgan): where to get this digest from.
+    //var builderOptionsNode = _assetGraph.get(builderOptionsId)!;
+    //combine(builderOptionsNode.lastKnownDigest!.bytes as Uint8List);
 
     for (final id in ids) {
       var node = _assetGraph.get(id)!;
@@ -941,13 +942,8 @@ class _SingleBuild {
         // This needs to be unique per input so we use the md5 hash of the id.
         combine(md5.convert(id.toString().codeUnits).bytes as Uint8List);
         continue;
-      } else {
-        if (node.lastKnownDigest == null) {
-          await reader.cache.invalidate([id]);
-          node.mutate.lastKnownDigest = await reader.digest(id);
-        }
       }
-      combine(node.lastKnownDigest!.bytes as Uint8List);
+      combine((await reader.digest(id)).bytes as Uint8List);
     }
 
     return Digest(combinedBytes);
@@ -990,7 +986,7 @@ class _SingleBuild {
 
     for (var output in outputs) {
       var wasOutput = readerWriter.assetsWritten.contains(output);
-      var digest = wasOutput ? await _readerWriter.digest(output) : null;
+      // var digest = wasOutput ? await _readerWriter.digest(output) : null;
       var node = _assetGraph.get(output)!;
 
       // **IMPORTANT**: All updates to `node` must be synchronous. With lazy
@@ -1004,7 +1000,9 @@ class _SingleBuild {
         ..wasOutput = wasOutput
         ..isFailure = isFailure
         ..previousInputsDigest = inputsDigest;
-      node.mutate.lastKnownDigest = digest;
+
+      // TODO(davidmorgan): store output digests.
+      //node.mutate.lastKnownDigest = digest;
 
       if (isFailure) {
         await _failureReporter.markReported(actionDescription, node, errors);
@@ -1018,7 +1016,10 @@ class _SingleBuild {
             ..wasOutput = false
             ..isFailure = true
             ..previousInputsDigest = null;
-          outputNode.mutate.lastKnownDigest = null;
+
+          // TODO(davidmorgan): store output digests.
+          // outputNode.mutate.lastKnownDigest = null;
+
           allSkippedFailures.add(outputNode);
           needsMarkAsFailure.addAll(outputNode.primaryOutputs);
 

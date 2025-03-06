@@ -87,7 +87,7 @@ class FinalizedReader {
         unreadableReason != UnreadableReason.deleted) {
       throw AssetNotFoundException(id);
     }
-    return _ensureDigest(id);
+    return await _delegate.digest(id);
   }
 
   Future<List<int>> readAsBytes(AssetId id) => _delegate.readAsBytes(id);
@@ -112,18 +112,6 @@ class FinalizedReader {
         yield id;
       }
     }
-  }
-
-  /// Returns the `lastKnownDigest` of [id], computing and caching it if
-  /// necessary.
-  ///
-  /// Note that [id] must exist in the asset graph.
-  FutureOr<Digest> _ensureDigest(AssetId id) {
-    var node = _assetGraph.get(id)!;
-    if (node.lastKnownDigest != null) return node.lastKnownDigest!;
-    return _delegate
-        .digest(id)
-        .then((digest) => node.mutate.lastKnownDigest = digest);
   }
 }
 

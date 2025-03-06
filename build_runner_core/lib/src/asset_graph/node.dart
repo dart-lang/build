@@ -55,13 +55,6 @@ class AssetNode {
   final Set<AssetId> _anchorOutputs;
   Iterable<AssetId> get anchorOutputs => _anchorOutputs;
 
-  /// The [Digest] for this node in its last known state.
-  ///
-  /// May be `null` if this asset has no outputs, or if it doesn't actually
-  /// exist.
-  Digest? _lastKnownDigest;
-  Digest? get lastKnownDigest => _lastKnownDigest;
-
   /// The IDs of the [AssetNode.postProcessAnchor] for post process builder
   /// which requested to delete this asset.
   final Set<AssetId> _deletedBy;
@@ -91,10 +84,7 @@ class AssetNode {
 
   /// Whether changes to this node will have any effect on other nodes.
   bool get changesRequireRebuild =>
-      type == NodeType.internal ||
-      type == NodeType.glob ||
-      outputs.isNotEmpty ||
-      lastKnownDigest != null;
+      type == NodeType.internal || type == NodeType.glob || outputs.isNotEmpty;
 
   /// An internal asset.
   ///
@@ -109,7 +99,6 @@ class AssetNode {
       _primaryOutputs = {},
       _outputs = {},
       _anchorOutputs = {},
-      _lastKnownDigest = lastKnownDigest,
       _deletedBy = {};
 
   /// A manually-written source file.
@@ -124,7 +113,6 @@ class AssetNode {
        _primaryOutputs = primaryOutputs?.toSet() ?? {},
        _outputs = outputs?.toSet() ?? {},
        _anchorOutputs = {},
-       _lastKnownDigest = lastKnownDigest,
        _deletedBy = {};
 
   /// A [BuilderOptions] object.
@@ -138,7 +126,6 @@ class AssetNode {
       _primaryOutputs = {},
       _outputs = {},
       _anchorOutputs = {},
-      _lastKnownDigest = lastKnownDigest,
       _deletedBy = {};
 
   /// A missing source file.
@@ -154,7 +141,6 @@ class AssetNode {
       _primaryOutputs = {},
       _outputs = {},
       _anchorOutputs = {},
-      _lastKnownDigest = lastKnownDigest,
       _deletedBy = {};
 
   /// Placeholders for useful parts of packages.
@@ -170,7 +156,6 @@ class AssetNode {
       _primaryOutputs = {},
       _outputs = {},
       _anchorOutputs = {},
-      _lastKnownDigest = lastKnownDigest,
       _deletedBy = {};
 
   /// A generated node.
@@ -203,7 +188,6 @@ class AssetNode {
        _primaryOutputs = {},
        _outputs = {},
        _anchorOutputs = {},
-       _lastKnownDigest = lastKnownDigest,
        _deletedBy = {};
 
   /// A glob node.
@@ -228,7 +212,6 @@ class AssetNode {
        _primaryOutputs = {},
        _outputs = {},
        _anchorOutputs = {},
-       _lastKnownDigest = lastKnownDigest,
        _deletedBy = {};
 
   static AssetId createGlobNodeId(String package, Glob glob, int phaseNum) =>
@@ -259,7 +242,6 @@ class AssetNode {
        _primaryOutputs = {},
        _outputs = {},
        _anchorOutputs = {},
-       _lastKnownDigest = null,
        _deletedBy = {};
 
   AssetNode.postProcessAnchorForInputAndAction(
@@ -422,9 +404,6 @@ extension type AssetNodeMutator(AssetNode node) {
   Set<AssetId> get primaryOutputs => node._primaryOutputs;
   Set<AssetId> get outputs => node._outputs;
   Set<AssetId> get anchorOutputs => node._anchorOutputs;
-
-  Digest? get lastKnownDigest => node._lastKnownDigest;
-  set lastKnownDigest(Digest? value) => node._lastKnownDigest = value;
 
   Set<AssetId> get deletedBy => node._deletedBy;
 }

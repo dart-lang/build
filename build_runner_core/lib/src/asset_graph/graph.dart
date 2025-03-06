@@ -9,8 +9,6 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build/experiments.dart' as experiments_zone;
-// ignore: implementation_imports
-import 'package:build/src/internal.dart';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
@@ -73,8 +71,9 @@ class AssetGraph {
       experiments_zone.enabledExperiments,
     );
     var placeholders = graph._addPlaceHolderNodes(packageGraph);
-    var sourceNodes = graph._addSources(sources);
     graph
+      .._addSources(sources)
+      .._addInternalSources(internalSources)
       .._addBuilderOptionsNodes(buildPhases)
       .._addOutputsForSources(
         buildPhases,
@@ -82,14 +81,6 @@ class AssetGraph {
         packageGraph.root.name,
         placeholders: placeholders,
       );
-    // Pre-emptively compute digests for the nodes we know have outputs.
-    await graph._setLastKnownDigests(
-      sourceNodes.where((node) => node.primaryOutputs.isNotEmpty),
-      digestReader,
-    );
-    // Always compute digests for all internal nodes.
-    var internalNodes = graph._addInternalSources(internalSources);
-    await graph._setLastKnownDigests(internalNodes, digestReader);
     return graph;
   }
 
@@ -104,6 +95,11 @@ class AssetGraph {
     var pkg = _nodesByPackage[id.package];
     if (pkg == null) return null;
     return pkg[id.path];
+  }
+
+  Digest? digestIfUsed(AssetId id) {
+    // TODO(davidmorgan).
+    return null;
   }
 
   /// Adds [node] to the graph if it doesn't exist.
@@ -185,20 +181,6 @@ class AssetGraph {
         throw StateError('Invalid action type $phase');
       }
     }
-  }
-
-  /// Uses [digestReader] to compute the [Digest] for [nodes] and set the
-  /// `lastKnownDigest` field.
-  Future<void> _setLastKnownDigests(
-    Iterable<AssetNode> nodes,
-    AssetReader digestReader,
-  ) async {
-    await digestReader.cache.invalidate(nodes.map((n) => n.id));
-    await Future.wait(
-      nodes.map((node) async {
-        node.mutate.lastKnownDigest = await digestReader.digest(node.id);
-      }),
-    );
   }
 
   /// Removes the node representing [id] from the graph, and all of its
@@ -324,22 +306,12 @@ class AssetGraph {
       }
     });
 
+    // TODO(davidmorgan): use these for invalidation of nodes.
+    // ignore: unused_local_variable
     var newAndModifiedNodes = [
       for (var id in modifyIds) get(id)!,
       ..._addSources(newIds),
     ];
-    // Pre-emptively compute digests for the new and modified nodes we know have
-    // outputs.
-    await _setLastKnownDigests(
-      newAndModifiedNodes.where(
-        (node) =>
-            node.isTrackedInput &&
-            (node.outputs.isNotEmpty ||
-                node.primaryOutputs.isNotEmpty ||
-                node.lastKnownDigest != null),
-      ),
-      digestReader,
-    );
 
     // Collects the set of all transitive ids to be removed from the graph,
     // based on the removed `SourceAssetNode`s by following the

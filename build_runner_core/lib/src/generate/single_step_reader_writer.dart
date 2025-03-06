@@ -309,9 +309,6 @@ class SingleStepReaderWriter extends AssetReader
       return false;
     }
 
-    // If digests can be cached, cache it.
-    // TODO(davidmorgan): remove?
-    await _ensureDigest(id);
     return true;
   }
 
@@ -322,7 +319,8 @@ class SingleStepReaderWriter extends AssetReader
     if (!isReadable) {
       throw AssetNotFoundException(id);
     }
-    return _ensureDigest(id);
+
+    return _delegate.digest(id);
   }
 
   @override
@@ -331,7 +329,6 @@ class SingleStepReaderWriter extends AssetReader
     if (!isReadable) {
       throw AssetNotFoundException(id);
     }
-    await _ensureDigest(id);
     return _delegate.readAsBytes(id);
   }
 
@@ -341,7 +338,6 @@ class SingleStepReaderWriter extends AssetReader
     if (!isReadable) {
       throw AssetNotFoundException(id);
     }
-    await _ensureDigest(id);
     return _delegate.readAsString(id, encoding: encoding);
   }
 
@@ -363,19 +359,6 @@ class SingleStepReaderWriter extends AssetReader
       );
     });
     return streamCompleter.stream;
-  }
-
-  /// Returns the `lastKnownDigest` of [id], computing and caching it if
-  /// necessary.
-  ///
-  /// Note that [id] must exist in the asset graph.
-  FutureOr<Digest> _ensureDigest(AssetId id) {
-    if (_runningBuild == null) return _delegate.digest(id);
-    var node = _runningBuild.assetGraph.get(id)!;
-    if (node.lastKnownDigest != null) return node.lastKnownDigest!;
-    return _delegate
-        .digest(id)
-        .then((digest) => node.mutate.lastKnownDigest = digest);
   }
 
   /// Checks whether [node] can be read by this step.

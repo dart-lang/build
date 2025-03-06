@@ -168,8 +168,7 @@ class AssetTracker {
     var preExistingSources = originalGraphSources.intersection(inputSources)
       ..addAll(internalSources.where(assetGraph.contains));
     var modifyChecks = preExistingSources.map((id) async {
-      var node = assetGraph.get(id)!;
-      var originalDigest = node.lastKnownDigest;
+      var originalDigest = assetGraph.digestIfUsed(id);
       if (originalDigest == null) return;
       await _reader.cache.invalidate([id]);
       var currentDigest = await _reader.digest(id);
@@ -611,11 +610,10 @@ class _Loader {
           '$builderOptionsNode',
         );
       }
-      var oldDigest = builderOptionsNode.lastKnownDigest;
-      builderOptionsNode.mutate.lastKnownDigest = computeBuilderOptionsDigest(
-        options,
-      );
-      if (builderOptionsNode.lastKnownDigest != oldDigest) {
+      final oldDigest = assetGraph.digestIfUsed(builderOptionsId);
+      final newDigest = computeBuilderOptionsDigest(options);
+      // TODO(davidmorgan): how does the new digest get to the graph?
+      if (oldDigest != newDigest) {
         result[builderOptionsId] = ChangeType.MODIFY;
       }
     }
