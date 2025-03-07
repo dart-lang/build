@@ -154,7 +154,9 @@ class AssetTracker {
     var removedAssets = assetGraph.allNodes
         .where((n) {
           if (!n.isFile) return false;
-          if (n is GeneratedAssetNode) return n.wasOutput;
+          if (n.type == NodeType.generated) {
+            return n.generatedNodeState!.wasOutput;
+          }
           return true;
         })
         .map((n) => n.id)
@@ -505,8 +507,10 @@ class _Loader {
         // Delete all the non-hidden outputs.
         await Future.wait(
           graph.outputs.map((id) {
-            var node = graph.get(id) as GeneratedAssetNode;
-            if (node.wasOutput && !node.isHidden) {
+            var node = graph.get(id)!;
+            final nodeConfiguration = node.generatedNodeConfiguration!;
+            final nodeState = node.generatedNodeState!;
+            if (nodeState.wasOutput && !nodeConfiguration.isHidden) {
               var idToDelete = id;
               // If the package no longer exists, then the user must have
               // renamed the root package.
@@ -600,20 +604,19 @@ class _Loader {
       AssetId builderOptionsId,
       BuilderOptions options,
     ) {
-      var builderOptionsNode = assetGraph.get(builderOptionsId)!;
-      if (builderOptionsNode.type != NodeType.builderOptions) {
-        throw StateError(
-          'Expected node of type NodeType.builderOptionsNode:'
-          '$builderOptionsNode',
-        );
-      }
-      var oldDigest = builderOptionsNode.lastKnownDigest;
-      builderOptionsNode.mutate.lastKnownDigest = computeBuilderOptionsDigest(
-        options,
-      );
-      if (builderOptionsNode.lastKnownDigest != oldDigest) {
-        result[builderOptionsId] = ChangeType.MODIFY;
-      }
+      assetGraph.updateNode(builderOptionsId, (nodeBuilder) {
+        if (nodeBuilder.type != NodeType.builderOptions) {
+          throw StateError(
+            'Expected node of type NodeType.builderOptionsNode:'
+            '${nodeBuilder.build()}',
+          );
+        }
+        var oldDigest = nodeBuilder.lastKnownDigest;
+        nodeBuilder.lastKnownDigest = computeBuilderOptionsDigest(options);
+        if (nodeBuilder.lastKnownDigest != oldDigest) {
+          result[builderOptionsId] = ChangeType.MODIFY;
+        }
+      });
     }
 
     for (var phase = 0; phase < buildPhases.length; phase++) {
