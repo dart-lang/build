@@ -126,8 +126,12 @@ class AssetGraphHandler {
       });
       nodes.add({'id': '$output', 'label': '$output'});
     }
-    if (node is NodeWithInputs) {
-      for (final input in node.inputs) {
+    if (node.type == NodeType.generated || node.type == NodeType.glob) {
+      final inputs =
+          node.type == NodeType.generated
+              ? node.generatedNodeState.inputs
+              : node.globNodeState.inputs;
+      for (final input in inputs) {
         if (filterGlob != null && !filterGlob.matches(input.toString())) {
           continue;
         }
@@ -142,13 +146,35 @@ class AssetGraphHandler {
     var result = <String, dynamic>{
       'primary': {
         'id': '${node.id}',
-        'hidden': node is GeneratedAssetNode ? node.isHidden : null,
-        'state': node is NodeWithInputs ? '${node.state}' : null,
-        'wasOutput': node is GeneratedAssetNode ? node.wasOutput : null,
-        'isFailure': node is GeneratedAssetNode ? node.isFailure : null,
-        'phaseNumber': node is NodeWithInputs ? node.phaseNumber : null,
+        'hidden':
+            node.type == NodeType.generated
+                ? node.generatedNodeConfiguration.isHidden
+                : null,
+        'state':
+            node.type == NodeType.generated
+                ? '${node.generatedNodeState.pendingBuildAction}'
+                : node.type == NodeType.glob
+                ? '${node.globNodeState.pendingBuildAction}'
+                : null,
+        'wasOutput':
+            node.type == NodeType.generated
+                ? node.generatedNodeState.wasOutput
+                : null,
+        'isFailure':
+            node.type == NodeType.generated
+                ? node.generatedNodeState.isFailure
+                : null,
+        'phaseNumber':
+            node.type == NodeType.generated
+                ? node.generatedNodeConfiguration.phaseNumber
+                : node.type == NodeType.glob
+                ? node.globNodeConfiguration.phaseNumber
+                : null,
         'type': node.runtimeType.toString(),
-        'glob': node is GlobAssetNode ? node.glob.pattern : null,
+        'glob':
+            node.type == NodeType.glob
+                ? node.globNodeConfiguration.glob.pattern
+                : null,
         'lastKnownDigest': node.lastKnownDigest.toString(),
       },
       'edges': edges,

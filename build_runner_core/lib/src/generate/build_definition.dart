@@ -154,7 +154,9 @@ class AssetTracker {
     var removedAssets = assetGraph.allNodes
         .where((n) {
           if (!n.isFile) return false;
-          if (n is GeneratedAssetNode) return n.wasOutput;
+          if (n.type == NodeType.generated) {
+            return n.generatedNodeState.wasOutput;
+          }
           return true;
         })
         .map((n) => n.id)
@@ -166,8 +168,7 @@ class AssetTracker {
     var preExistingSources = originalGraphSources.intersection(inputSources)
       ..addAll(internalSources.where(assetGraph.contains));
     var modifyChecks = preExistingSources.map((id) async {
-      var node = assetGraph.get(id)!;
-      var originalDigest = node.lastKnownDigest;
+      var originalDigest = assetGraph.digestIfUsed(id);
       if (originalDigest == null) return;
       await _reader.cache.invalidate([id]);
       var currentDigest = await _reader.digest(id);
@@ -505,8 +506,10 @@ class _Loader {
         // Delete all the non-hidden outputs.
         await Future.wait(
           graph.outputs.map((id) {
-            var node = graph.get(id) as GeneratedAssetNode;
-            if (node.wasOutput && !node.isHidden) {
+            var node = graph.get(id)!;
+            final nodeConfiguration = node.generatedNodeConfiguration;
+            final nodeState = node.generatedNodeState;
+            if (nodeState.wasOutput && !nodeConfiguration.isHidden) {
               var idToDelete = id;
               // If the package no longer exists, then the user must have
               // renamed the root package.
@@ -607,11 +610,10 @@ class _Loader {
           '$builderOptionsNode',
         );
       }
-      var oldDigest = builderOptionsNode.lastKnownDigest;
-      builderOptionsNode.mutate.lastKnownDigest = computeBuilderOptionsDigest(
-        options,
-      );
-      if (builderOptionsNode.lastKnownDigest != oldDigest) {
+      final oldDigest = assetGraph.digestIfUsed(builderOptionsId);
+      final newDigest = computeBuilderOptionsDigest(options);
+      // TODO(davidmorgan): how does the new digest get to the graph?
+      if (oldDigest != newDigest) {
         result[builderOptionsId] = ChangeType.MODIFY;
       }
     }

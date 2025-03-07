@@ -201,11 +201,11 @@ void main() {
     setUp(() async {
       addSource('a|web/index.html', '');
       assetGraph.add(
-        GeneratedAssetNode(
+        AssetNode.generated(
           AssetId('a', 'web/main.ddc.js'),
           builderOptionsId: AssetId('_\$fake', 'options_id'),
           phaseNumber: 0,
-          state: NodeState.upToDate,
+          state: PendingBuildAction.none,
           isHidden: false,
           wasOutput: true,
           isFailure: true,

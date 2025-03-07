@@ -97,12 +97,15 @@ void main() {
         optionalOutputTracker,
       );
       for (var id in graph.outputs) {
-        var node =
-            graph.get(id) as GeneratedAssetNode
-              ..state = NodeState.upToDate
-              ..wasOutput = true
-              ..isFailure = false;
-        readerWriter.testing.writeString(id, sources[node.primaryInput]!);
+        var node = graph.get(id)!;
+        node.generatedNodeState
+          ..pendingBuildAction = PendingBuildAction.none
+          ..wasOutput = true
+          ..isFailure = false;
+        readerWriter.testing.writeString(
+          id,
+          sources[node.generatedNodeConfiguration.primaryInput]!,
+        );
       }
       tmpDir = await Directory.systemTemp.createTemp('build_tests');
       anotherTmpDir = await Directory.systemTemp.createTemp('build_tests');
@@ -127,8 +130,7 @@ void main() {
     });
 
     test('doesnt write deleted files', () async {
-      var node =
-          graph.get(AssetId('b', 'lib/c.txt.copy')) as GeneratedAssetNode;
+      var node = graph.get(AssetId('b', 'lib/c.txt.copy'))!;
       node.mutate.deletedBy.add(node.id.addExtension('.post_anchor.1'));
 
       var success = await createMergedOutputDirectories(
@@ -326,7 +328,7 @@ void main() {
     });
 
     test('doesnt write files that werent output', () async {
-      graph.get(AssetId('b', 'lib/c.txt.copy')) as GeneratedAssetNode
+      graph.get(AssetId('b', 'lib/c.txt.copy'))!.generatedNodeState
         ..wasOutput = false
         ..isFailure = false;
 

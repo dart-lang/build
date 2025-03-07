@@ -54,7 +54,7 @@ class FailureReporter {
   /// [output] and all other outputs from the same build step has been printed.
   Future<void> markReported(
     String actionDescription,
-    GeneratedAssetNode output,
+    AssetNode output,
     Iterable<ErrorReport> errors,
   ) async {
     if (!_reportedActions.add(_actionKey(output))) return;
@@ -73,16 +73,20 @@ class FailureReporter {
   /// Indicate that the build steps which would produce [outputs] are failing
   /// due to a dependency and being skipped so no actuall error will be
   /// produced.
-  Future<void> markSkipped(Iterable<GeneratedAssetNode> outputs) => Future.wait(
+  Future<void> markSkipped(Iterable<AssetNode> outputs) => Future.wait(
     outputs.map((output) async {
       if (!_reportedActions.add(_actionKey(output))) return;
-      await clean(output.phaseNumber, output.primaryInput);
+      final outputConfiguration = output.generatedNodeConfiguration;
+      await clean(
+        outputConfiguration.phaseNumber,
+        outputConfiguration.primaryInput,
+      );
     }),
   );
 
   /// Log stored errors for any build steps which would output nodes in
   /// [failingNodes] which haven't already been reported.
-  Future<void> reportErrors(Iterable<GeneratedAssetNode> failingNodes) {
+  Future<void> reportErrors(Iterable<AssetNode> failingNodes) {
     final errorFiles = <File>[];
     for (final failure in failingNodes) {
       final key = _actionKey(failure);
@@ -119,14 +123,15 @@ class ErrorReport {
   ErrorReport(this.message, this.error, this.stackTrace);
 }
 
-String _actionKey(GeneratedAssetNode node) =>
-    '${node.builderOptionsId} on ${node.primaryInput}';
+String _actionKey(AssetNode node) =>
+    '${node.generatedNodeConfiguration.builderOptionsId} on '
+    '${node.generatedNodeConfiguration.primaryInput}';
 
-String _errorPathForOutput(GeneratedAssetNode output) => p.joinAll([
+String _errorPathForOutput(AssetNode output) => p.joinAll([
   errorCachePath,
   output.id.package,
-  '${output.phaseNumber}',
-  ...p.posix.split(output.primaryInput.path),
+  '${output.generatedNodeConfiguration.phaseNumber}',
+  ...p.posix.split(output.generatedNodeConfiguration.primaryInput.path),
 ]);
 
 String _errorPathForPrimaryInput(int phaseNumber, AssetId primaryInput) =>

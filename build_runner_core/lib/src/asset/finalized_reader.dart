@@ -61,9 +61,10 @@ class FinalizedReader {
     if (node.isDeleted) return UnreadableReason.deleted;
     if (!node.isFile) return UnreadableReason.assetType;
 
-    if (node is GeneratedAssetNode) {
-      if (node.isFailure) return UnreadableReason.failed;
-      if (!node.wasOutput) return UnreadableReason.notOutput;
+    if (node.type == NodeType.generated) {
+      final nodeState = node.generatedNodeState;
+      if (nodeState.isFailure) return UnreadableReason.failed;
+      if (!nodeState.wasOutput) return UnreadableReason.notOutput;
       // No need to explicitly check readability for generated files, their
       // readability is recorded in the node state.
       return null;
@@ -86,7 +87,7 @@ class FinalizedReader {
         unreadableReason != UnreadableReason.deleted) {
       throw AssetNotFoundException(id);
     }
-    return _ensureDigest(id);
+    return await _delegate.digest(id);
   }
 
   Future<List<int>> readAsBytes(AssetId id) => _delegate.readAsBytes(id);
@@ -111,18 +112,6 @@ class FinalizedReader {
         yield id;
       }
     }
-  }
-
-  /// Returns the `lastKnownDigest` of [id], computing and caching it if
-  /// necessary.
-  ///
-  /// Note that [id] must exist in the asset graph.
-  FutureOr<Digest> _ensureDigest(AssetId id) {
-    var node = _assetGraph.get(id)!;
-    if (node.lastKnownDigest != null) return node.lastKnownDigest!;
-    return _delegate
-        .digest(id)
-        .then((digest) => node.mutate.lastKnownDigest = digest);
   }
 }
 

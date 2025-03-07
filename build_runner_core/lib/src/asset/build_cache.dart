@@ -10,7 +10,7 @@ import '../util/constants.dart';
 /// cache directory.
 ///
 /// Assets that are in the provided [AssetGraph], have node type
-/// [GeneratedAssetNode] and have `isHidden == true` are mapped to
+/// [NodeType.generated] and have `isHidden == true` are mapped to
 /// [generatedOutputDirectory].
 class BuildCacheAssetPathProvider implements AssetPathProvider {
   final AssetPathProvider _delegate;
@@ -36,8 +36,9 @@ class BuildCacheAssetPathProvider implements AssetPathProvider {
     if (!_assetGraph.contains(id)) {
       return id;
     }
-    final assetNode = _assetGraph.get(id);
-    if (assetNode is GeneratedAssetNode && assetNode.isHidden) {
+    final assetNode = _assetGraph.get(id)!;
+    if (assetNode.type == NodeType.generated &&
+        assetNode.generatedNodeConfiguration.isHidden) {
       return AssetId(
         _rootPackage,
         '$generatedOutputDirectory/${id.package}/${id.path}',

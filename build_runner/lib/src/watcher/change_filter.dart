@@ -16,14 +16,14 @@ import 'package:watcher/watcher.dart';
 import 'asset_change.dart';
 
 /// Returns if a given asset change should be considered for building.
-FutureOr<bool> shouldProcess(
+Future<bool> shouldProcess(
   AssetChange change,
   AssetGraph assetGraph,
   BuildOptions buildOptions,
   bool willCreateOutputDir,
   Set<AssetId> expectedDeletes,
   AssetReader reader,
-) {
+) async {
   if (_isCacheFile(change) && !assetGraph.contains(change.id)) return false;
   var node = assetGraph.get(change.id);
   if (node != null) {
@@ -31,10 +31,10 @@ FutureOr<bool> shouldProcess(
     if (_isAddOrEditOnGeneratedFile(node, change.type)) return false;
     if (change.type == ChangeType.MODIFY) {
       // Was it really modified or just touched?
-      reader.cache.invalidate([change.id]);
-      return reader
-          .digest(change.id)
-          .then((newDigest) => node.lastKnownDigest != newDigest);
+      final oldDigest = await reader.digest(change.id);
+      await reader.cache.invalidate([change.id]);
+      final newDigest = await reader.digest(change.id);
+      return oldDigest != newDigest;
     }
   } else {
     if (change.type != ChangeType.ADD) return false;

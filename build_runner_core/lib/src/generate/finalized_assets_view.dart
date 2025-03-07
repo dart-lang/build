@@ -73,8 +73,11 @@ bool _shouldSkipNode(
   }
 
   if (node.type == NodeType.internal || node.type == NodeType.glob) return true;
-  if (node is GeneratedAssetNode) {
-    if (!node.wasOutput || node.isFailure || node.state != NodeState.upToDate) {
+  if (node.type == NodeType.generated) {
+    final nodeState = node.generatedNodeState;
+    if (!nodeState.wasOutput ||
+        nodeState.isFailure ||
+        nodeState.pendingBuildAction != PendingBuildAction.none) {
       return true;
     }
     return !optionalOutputTracker.isRequired(node.id);

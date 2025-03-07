@@ -154,10 +154,10 @@ targets:
           environment.reader,
         );
         var generatedAId = makeAssetId('a|lib/a.txt.copy');
-        originalAssetGraph.get(generatedAId) as GeneratedAssetNode
+        originalAssetGraph.get(generatedAId)!.generatedNodeState
           ..wasOutput = true
           ..isFailure = false
-          ..state = NodeState.upToDate;
+          ..pendingBuildAction = PendingBuildAction.none;
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
 
@@ -169,10 +169,12 @@ targets:
         );
         var newAssetGraph = buildDefinition.assetGraph;
 
-        var generatedANode =
-            newAssetGraph.get(generatedAId) as GeneratedAssetNode;
+        var generatedANode = newAssetGraph.get(generatedAId)!;
         expect(generatedANode, isNotNull);
-        expect(generatedANode.state, NodeState.definitelyNeedsUpdate);
+        expect(
+          generatedANode.generatedNodeState.pendingBuildAction,
+          PendingBuildAction.build,
+        );
 
         expect(newAssetGraph.contains(makeAssetId('a|lib/b.txt')), isFalse);
         expect(
@@ -205,11 +207,13 @@ targets:
         expect(newAssetGraph.contains(makeAssetId('a|lib/a.txt')), isTrue);
 
         var generatedANode =
-            newAssetGraph.get(makeAssetId('a|lib/a.txt.copy'))
-                as GeneratedAssetNode;
+            newAssetGraph.get(makeAssetId('a|lib/a.txt.copy'))!;
         expect(generatedANode, isNotNull);
         // New nodes definitely need an update.
-        expect(generatedANode.state, NodeState.definitelyNeedsUpdate);
+        expect(
+          generatedANode.generatedNodeState.pendingBuildAction,
+          PendingBuildAction.build,
+        );
       });
 
       test('for changed sources', () async {
@@ -227,8 +231,8 @@ targets:
         );
 
         // pretend a build happened
-        (originalAssetGraph.get(aTxtCopy) as GeneratedAssetNode)
-          ..state = NodeState.upToDate
+        originalAssetGraph.get(aTxtCopy)!.generatedNodeState
+          ..pendingBuildAction = PendingBuildAction.none
           ..inputs.add(aTxt);
         originalAssetGraph.get(aTxt)!.mutate.outputs.add(aTxtCopy);
         await createFile(assetGraphPath, originalAssetGraph.serialize());
@@ -242,10 +246,12 @@ targets:
         var newAssetGraph = buildDefinition.assetGraph;
 
         var generatedANode =
-            newAssetGraph.get(makeAssetId('a|lib/a.txt.copy'))
-                as GeneratedAssetNode;
+            newAssetGraph.get(makeAssetId('a|lib/a.txt.copy'))!;
         expect(generatedANode, isNotNull);
-        expect(generatedANode.state, NodeState.mayNeedUpdate);
+        expect(
+          generatedANode.generatedNodeState.pendingBuildAction,
+          PendingBuildAction.buildIfInputsChanged,
+        );
       });
 
       test('retains non-output generated nodes', () async {
@@ -262,7 +268,7 @@ targets:
           environment.reader,
         );
         var generatedSrcId = makeAssetId('a|lib/test.txt.copy');
-        originalAssetGraph.get(generatedSrcId) as GeneratedAssetNode
+        originalAssetGraph.get(generatedSrcId)!.generatedNodeState
           ..wasOutput = false
           ..isFailure = false;
 
@@ -306,10 +312,10 @@ targets:
         var generatedACopyId = makeAssetId('a|lib/a.txt.copy');
         var generatedACloneId = makeAssetId('a|lib/a.txt.clone');
         for (var id in [generatedACopyId, generatedACloneId]) {
-          originalAssetGraph.get(id) as GeneratedAssetNode
+          originalAssetGraph.get(id)!.generatedNodeState
             ..wasOutput = true
             ..isFailure = false
-            ..state = NodeState.upToDate;
+            ..pendingBuildAction = PendingBuildAction.none;
         }
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
@@ -338,16 +344,20 @@ targets:
         var newAssetGraph = buildDefinition.assetGraph;
 
         // The *.copy node should be invalidated, its builder options changed.
-        var generatedACopyNode =
-            newAssetGraph.get(generatedACopyId) as GeneratedAssetNode;
+        var generatedACopyNode = newAssetGraph.get(generatedACopyId)!;
         expect(generatedACopyNode, isNotNull);
-        expect(generatedACopyNode.state, NodeState.mayNeedUpdate);
+        expect(
+          generatedACopyNode.generatedNodeState.pendingBuildAction,
+          PendingBuildAction.buildIfInputsChanged,
+        );
 
         // But the *.clone node should remain the same since its options didn't.
-        var generatedACloneNode =
-            newAssetGraph.get(generatedACloneId) as GeneratedAssetNode;
+        var generatedACloneNode = newAssetGraph.get(generatedACloneId)!;
         expect(generatedACloneNode, isNotNull);
-        expect(generatedACloneNode.state, NodeState.upToDate);
+        expect(
+          generatedACloneNode.generatedNodeState.pendingBuildAction,
+          PendingBuildAction.none,
+        );
       });
     });
 
@@ -720,8 +730,7 @@ targets:
 
         var aTxtCopy = AssetId('a', 'lib/a.txt.copy');
         // Pretend we already output this without actually running a build.
-        (originalAssetGraph.get(aTxtCopy) as GeneratedAssetNode).wasOutput =
-            true;
+        originalAssetGraph.get(aTxtCopy)!.generatedNodeState.wasOutput = true;
         await createFile(aTxtCopy.path, 'hello');
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
@@ -761,8 +770,7 @@ targets:
 
         var aTxtCopy = AssetId('a', 'lib/a.txt.copy');
         // Pretend we already output this without actually running a build.
-        (originalAssetGraph.get(aTxtCopy) as GeneratedAssetNode).wasOutput =
-            true;
+        originalAssetGraph.get(aTxtCopy)!.generatedNodeState.wasOutput = true;
         await createFile(aTxtCopy.path, 'hello');
 
         await createFile(assetGraphPath, originalAssetGraph.serialize());
