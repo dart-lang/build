@@ -144,14 +144,13 @@ void main() {
           'a',
           Uri.file('/a/'),
           packageUriRoot: Uri.file('/a/lib/'),
-          languageVersion: LanguageVersion(2, 3),
+          languageVersion: LanguageVersion(3, 5),
         ),
       ]);
       var libExample = await resolveSource(
         r'''
         library example;
-
-        extension _Foo on int {}
+        int x = 1_000;
       ''',
         (resolver) => resolver.findLibraryNotNull('example'),
         packageConfig: packageConfig,
@@ -164,7 +163,7 @@ void main() {
         errors.errors.map((e) => e.message),
         contains(
           contains(
-            'This requires the \'extension-methods\' language feature to be '
+            'This requires the \'digit-separators\' language feature to be '
             'enabled.',
           ),
         ),
