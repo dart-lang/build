@@ -13,7 +13,7 @@ const NodeType _$internal = const NodeType._('internal');
 const NodeType _$placeholder = const NodeType._('placeholder');
 const NodeType _$postProcessAnchor = const NodeType._('postProcessAnchor');
 const NodeType _$source = const NodeType._('source');
-const NodeType _$syntheticSource = const NodeType._('syntheticSource');
+const NodeType _$missingSource = const NodeType._('missingSource');
 
 NodeType _$nodeTypeValueOf(String name) {
   switch (name) {
@@ -31,8 +31,8 @@ NodeType _$nodeTypeValueOf(String name) {
       return _$postProcessAnchor;
     case 'source':
       return _$source;
-    case 'syntheticSource':
-      return _$syntheticSource;
+    case 'missingSource':
+      return _$missingSource;
     default:
       throw new ArgumentError(name);
   }
@@ -47,7 +47,7 @@ final BuiltSet<NodeType> _$nodeTypeValues =
       _$placeholder,
       _$postProcessAnchor,
       _$source,
-      _$syntheticSource,
+      _$missingSource,
     ]);
 
 const PendingBuildAction _$none = const PendingBuildAction._('none');
@@ -183,6 +183,28 @@ class _$AssetNode extends AssetNode {
     _$hash = $jc(_$hash, deletedBy.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
+  }
+
+  @override
+  String toString() {
+    return (newBuiltValueToStringHelper(r'AssetNode')
+          ..add('id', id)
+          ..add('type', type)
+          ..add('generatedNodeConfiguration', generatedNodeConfiguration)
+          ..add('generatedNodeState', generatedNodeState)
+          ..add('globNodeConfiguration', globNodeConfiguration)
+          ..add('globNodeState', globNodeState)
+          ..add(
+            'postProcessAnchorNodeConfiguration',
+            postProcessAnchorNodeConfiguration,
+          )
+          ..add('postProcessAnchorNodeState', postProcessAnchorNodeState)
+          ..add('primaryOutputs', primaryOutputs)
+          ..add('outputs', outputs)
+          ..add('anchorOutputs', anchorOutputs)
+          ..add('lastKnownDigest', lastKnownDigest)
+          ..add('deletedBy', deletedBy))
+        .toString();
   }
 }
 

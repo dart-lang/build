@@ -84,7 +84,10 @@ class AssetGraph {
       );
     // Pre-emptively compute digests for the nodes we know have outputs.
     await graph._setLastKnownDigests(
-      sourceNodes.where((node) => node.primaryOutputs.isNotEmpty),
+      sourceNodes.where(
+        // Fetch nodes from the graph as they've been updated.
+        (node) => graph.get(node.id)!.primaryOutputs.isNotEmpty,
+      ),
       digestReader,
     );
     // Always compute digests for all internal nodes.
@@ -106,6 +109,11 @@ class AssetGraph {
     return pkg[id.path];
   }
 
+  /// Updates a node in the graph with [updates].
+  ///
+  /// If it does not exist, [StateError] is thrown.
+  ///
+  /// Returns the updated node.
   AssetNode updateNode(AssetId id, void Function(AssetNodeBuilder) updates) {
     final node = get(id);
     if (node == null) throw StateError('Missing node: $id');
@@ -114,6 +122,11 @@ class AssetGraph {
     return updatedNode;
   }
 
+  /// Updates a node in the graph with [updates].
+  ///
+  /// If it does not exist, does nothing and returns `null`.
+  ///
+  /// If it does exist, returns the updated node.
   AssetNode? updateNodeIfPresent(
     AssetId id,
     void Function(AssetNodeBuilder) updates,
@@ -134,7 +147,7 @@ class AssetGraph {
   AssetNode _add(AssetNode node) {
     var existing = get(node.id);
     if (existing != null) {
-      if (existing.type == NodeType.syntheticSource) {
+      if (existing.type == NodeType.missingSource) {
         // Don't call _removeRecursive, that recursively removes all transitive
         // primary outputs. We only want to remove this node.
         _nodesByPackage[existing.id.package]!.remove(existing.id.path);
@@ -158,8 +171,7 @@ class AssetGraph {
   /// Adds [assetIds] as [AssetNode.internal].
   Iterable<AssetNode> _addInternalSources(Set<AssetId> assetIds) sync* {
     for (var id in assetIds) {
-      var node = AssetNode.internal(id);
-      yield _add(node);
+      yield _add(AssetNode.internal(id));
     }
   }
 
@@ -283,7 +295,7 @@ class AssetGraph {
     }
 
     // Synthetic nodes need to be kept to retain dependency tracking.
-    if (node.type != NodeType.syntheticSource) {
+    if (node.type != NodeType.missingSource) {
       _nodesByPackage[id.package]!.remove(id.path);
     }
     return removedIds;
@@ -635,11 +647,11 @@ class AssetGraph {
       if (contains(output)) {
         existing = get(output)!;
         if (existing.type == NodeType.generated) {
-          final existingConfiguration = existing.generatedNodeConfiguration;
+          final existingConfiguration = existing.generatedNodeConfiguration!;
           throw DuplicateAssetNodeException(
             rootPackage,
             existing.id,
-            (buildPhases[existingConfiguration!.phaseNumber] as InBuildPhase)
+            (buildPhases[existingConfiguration.phaseNumber] as InBuildPhase)
                 .builderLabel,
             (buildPhases[phaseNumber] as InBuildPhase).builderLabel,
           );

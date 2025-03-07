@@ -23,7 +23,7 @@ class NodeType extends EnumClass {
   static const NodeType placeholder = _$placeholder;
   static const NodeType postProcessAnchor = _$postProcessAnchor;
   static const NodeType source = _$source;
-  static const NodeType syntheticSource = _$syntheticSource;
+  static const NodeType missingSource = _$missingSource;
 
   const NodeType._(super.name);
 
@@ -166,7 +166,7 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
         (b) =>
             b
               ..id = id
-              ..type = NodeType.syntheticSource
+              ..type = NodeType.missingSource
               ..lastKnownDigest = lastKnownDigest,
       );
 
@@ -277,7 +277,10 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   );
 
   AssetNode._() {
-    void checkArguments(bool hasType, bool hasConfiguration, bool hasState) {
+    // Check that configuration and state fields are non-null exactly when the
+    // node is of the corresponding type.
+
+    void check(bool hasType, bool hasConfiguration, bool hasState) {
       if (hasType != hasConfiguration) {
         throw ArgumentError(
           'Node configuration does not match its type: $this',
@@ -288,25 +291,22 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
       }
     }
 
-    checkArguments(
+    check(
       type == NodeType.generated,
       generatedNodeConfiguration != null,
       generatedNodeState != null,
     );
-    checkArguments(
+    check(
       type == NodeType.glob,
       globNodeConfiguration != null,
       globNodeState != null,
     );
-    checkArguments(
+    check(
       type == NodeType.postProcessAnchor,
       postProcessAnchorNodeConfiguration != null,
       postProcessAnchorNodeState != null,
     );
   }
-
-  @override
-  String toString() => 'AssetNode: $id';
 }
 
 /// Additional configuration for an [AssetNode.generated].

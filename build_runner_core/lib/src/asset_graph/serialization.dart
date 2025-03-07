@@ -380,7 +380,7 @@ class _WrappedAssetNode extends Object with ListMixin implements List {
             return _NodeType.generated.index;
           case NodeType.glob:
             return _NodeType.glob.index;
-          case NodeType.syntheticSource:
+          case NodeType.missingSource:
             return _NodeType.syntheticSource.index;
           case NodeType.internal:
             return _NodeType.internal.index;

@@ -20,7 +20,7 @@ import 'input_tracker.dart';
 import 'phase.dart';
 
 /// Builds an asset.
-typedef AssetBuilder = Future<void> Function(AssetNode);
+typedef AssetBuilder = Future<AssetNode> Function(AssetNode);
 
 /// Builds a "glob node": all assets matching a glob.
 ///
@@ -399,7 +399,7 @@ class SingleStepReaderWriter extends AssetReader
         return isInBuild ? Readability.ownOutput : Readability.notReadable;
       }
 
-      await _runningBuild!.nodeBuilder(node);
+      node = await _runningBuild!.nodeBuilder(node);
       final nodeState = node.generatedNodeState!;
       return Readability.fromPreviousPhase(
         nodeState.wasOutput && !nodeState.isFailure,

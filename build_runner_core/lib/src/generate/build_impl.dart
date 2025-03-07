@@ -474,7 +474,7 @@ class _SingleBuild {
     });
   }
 
-  Future<void> _buildAsset(AssetNode node) async {
+  Future<AssetNode> _buildAsset(AssetNode node) async {
     if (node.type == NodeType.generated &&
         node.generatedNodeState!.pendingBuildAction !=
             PendingBuildAction.none) {
@@ -483,7 +483,9 @@ class _SingleBuild {
         nodeConfiguration.phaseNumber,
         nodeConfiguration.primaryInput,
       );
+      return _assetGraph.get(node.id)!;
     }
+    return node;
   }
 
   Future<Iterable<AssetId>> _runForInput(

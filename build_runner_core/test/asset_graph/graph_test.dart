@@ -99,19 +99,20 @@ void main() {
         );
         for (var n = 0; n < 5; n++) {
           var node = makeAssetNode();
-          graph.updateNode(globNode.id, (nodeBuilder) {
-            nodeBuilder.globNodeState
-              ..inputs.add(node.id)
-              ..results.add(node.id);
-          });
+          globNode = globNode.rebuild(
+            (b) =>
+                b.globNodeState
+                  ..inputs.add(node.id)
+                  ..results.add(node.id),
+          );
           node = node.rebuild((b) => b..outputs.add(globNode.id));
           var phaseNum = n;
-          var builderOptionsNode = AssetNode.builderOptions(
+          final builderOptionsNode = AssetNode.builderOptions(
             makeAssetId(),
             lastKnownDigest: Digest([n]),
           );
           graph.add(builderOptionsNode);
-          var anchorNode = AssetNode.postProcessAnchorForInputAndAction(
+          final anchorNode = AssetNode.postProcessAnchorForInputAndAction(
             node.id,
             n,
             builderOptionsNode.id,
@@ -174,15 +175,14 @@ void main() {
                       ),
               );
             }
-
             graph
-              ..add(node)
-              ..add(globNode)
-              ..add(syntheticNode)
+              ..add(builderOptionsNode)
               ..add(generatedNode)
-              ..add(builderOptionsNode);
+              ..add(syntheticNode);
           }
+          graph.add(node);
         }
+        graph.add(globNode);
 
         var encoded = graph.serialize();
         var decoded = AssetGraph.deserialize(encoded);
@@ -363,7 +363,7 @@ void main() {
               ..pendingBuildAction = PendingBuildAction.none
               ..inputs.add(primaryInputId);
           });
-          graph.updateNode(primaryOutputId, (nodeBuilder) {
+          graph.updateNode(primaryInputId, (nodeBuilder) {
             nodeBuilder.outputs.add(primaryOutputId);
           });
           await graph.updateAndInvalidate(
@@ -512,6 +512,7 @@ void main() {
                     'A $changeType matching a glob should invalidate its '
                     'outputs.',
               );
+              globNode = graph.get(globNode.id)!;
               expect(
                 globNode.globNodeState!.pendingBuildAction,
                 PendingBuildAction.buildIfInputsChanged,
