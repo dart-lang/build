@@ -173,7 +173,7 @@ class AssetGraphHandler {
         'type': node.runtimeType.toString(),
         'glob':
             node.type == NodeType.glob
-                ? node.globNodeConfiguration!.glob.pattern
+                ? node.globNodeConfiguration!.glob
                 : null,
         'lastKnownDigest': node.lastKnownDigest.toString(),
       },

@@ -356,7 +356,7 @@ class SingleStepReaderWriter extends AssetReader
 
     var streamCompleter = StreamCompleter<AssetId>();
 
-    _buildGlobNode(glob).then((globNodeId) {
+    _buildGlobNode(glob.pattern).then((globNodeId) {
       inputTracker.add(globNodeId);
       final globNode = _runningBuild.assetGraph.get(globNodeId)!;
       streamCompleter.setSourceStream(
@@ -431,7 +431,7 @@ class SingleStepReaderWriter extends AssetReader
   /// Retrieves an existing node from `_runningBuild.assetGraph` if it's
   /// available; if not, adds one. Then, gets the built glob from
   /// `runningBuild.globNodeBuilder`, which might return an existing result.
-  Future<AssetId> _buildGlobNode(Glob glob) async {
+  Future<AssetId> _buildGlobNode(String glob) async {
     var globNodeId = AssetNode.createGlobNodeId(
       _runningBuildStep!.primaryPackage,
       glob,

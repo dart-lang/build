@@ -469,7 +469,8 @@ class AssetGraph {
       );
       for (final node in samePackageGlobNodes) {
         final nodeConfiguration = node.globNodeConfiguration!;
-        if (nodeConfiguration.glob.matches(id.path)) {
+        final glob = Glob(nodeConfiguration.glob);
+        if (glob.matches(id.path)) {
           invalidateNodeAndDeps(node.id);
           updateNode(node.id, (nodeBuilder) {
             nodeBuilder.globNodeState.pendingBuildAction =
