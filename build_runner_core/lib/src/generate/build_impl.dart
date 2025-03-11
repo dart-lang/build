@@ -884,57 +884,90 @@ class _SingleBuild {
     }
   }
 
-  Future<void> _buildGlobNode(AssetId id) async {
-    if (_assetGraph.get(id)!.globNodeState!.pendingBuildAction ==
+  /// Builds the glob node with [globId].
+  ///
+  /// This means finding matches of the glob and building them if necessary.
+  ///
+  /// Generated files are special for two reasons.
+  ///
+  /// First, they are only visible to the glob if they are generated in an
+  /// earlier phase than the phase in which the glob is evaluated. If not, they
+  /// are totally invisible: nothing is done for them.
+  ///
+  /// Second, a generated file might not actually be generated: its builder
+  /// might choose at runtime to output nothing. In this case, the non-existent
+  /// generated file is still tracked as an input that matched the glob, but is
+  /// not useful to something that wants to read the file. On the glob node, it
+  /// ends up in `inputs` but not in `results`.
+  ///
+  ///
+  Future<void> _buildGlobNode(AssetId globId) async {
+    if (_assetGraph.get(globId)!.globNodeState!.pendingBuildAction ==
         PendingBuildAction.none) {
       return;
     }
 
-    return _lazyGlobs.putIfAbsent(id, () async {
-      final globNodeConfiguration = _assetGraph.get(id)!.globNodeConfiguration!;
-      var potentialIds =
-          _assetGraph
-              .packageNodes(id.package)
-              .where((n) => n.isFile && n.isTrackedInput)
-              .where(
-                (n) =>
-                    n.type != NodeType.generated ||
-                    n.generatedNodeConfiguration!.phaseNumber <
-                        globNodeConfiguration.phaseNumber,
-              )
-              .where((n) => globNodeConfiguration.glob.matches(n.id.path))
-              .map((node) => node.id)
-              .toList();
+    return _lazyGlobs.putIfAbsent(globId, () async {
+      final globNodeConfiguration =
+          _assetGraph.get(globId)!.globNodeConfiguration!;
 
-      for (final potentialId in potentialIds) {
-        final node = _assetGraph.get(potentialId)!;
-        if (node.type == NodeType.generated) {
-          await _buildAsset(node.id);
+      // Generated files that match the glob.
+      final generatedFileInputs = <AssetId>[];
+      // Other types of file that match the glob.
+      final otherInputs = <AssetId>[];
+
+      for (final node in _assetGraph.packageNodes(globId.package)) {
+        if (node.isFile &&
+            node.isTrackedInput &&
+            // Generated nodes are only considered at all if they are output in
+            // an earlier phase.
+            (node.type != NodeType.generated ||
+                node.generatedNodeConfiguration!.phaseNumber <
+                    globNodeConfiguration.phaseNumber) &&
+            globNodeConfiguration.glob.matches(node.id.path)) {
+          if (node.type == NodeType.generated) {
+            generatedFileInputs.add(node.id);
+          } else {
+            otherInputs.add(node.id);
+          }
         }
       }
 
-      var actualMatches = <AssetId>[];
-      for (var potentialId in potentialIds) {
-        final node = _assetGraph.updateNode(potentialId, (nodeBuilder) {
-          nodeBuilder.outputs.add(id);
+      // Mark the glob node as an output of all the inputs.
+      for (var id in generatedFileInputs.followedBy(otherInputs)) {
+        _assetGraph.updateNode(id, (nodeBuilder) {
+          nodeBuilder.outputs.add(globId);
         });
-        if (node.type == NodeType.generated &&
-            (!node.generatedNodeState!.wasOutput ||
-                node.generatedNodeState!.isFailure)) {
-          continue;
-        }
-        actualMatches.add(potentialId);
       }
 
-      _assetGraph.updateNode(id, (nodeBuilder) {
+      // Request to build the matching generated files.
+      for (final id in generatedFileInputs) {
+        await _buildAsset(id);
+      }
+
+      // The generated file matches that were output are part of the results of
+      // the glob.
+      final generatedFileResults = <AssetId>[];
+      for (final id in generatedFileInputs) {
+        final node = _assetGraph.get(id)!;
+        if (node.generatedNodeState!.wasOutput &&
+            !node.generatedNodeState!.isFailure) {
+          generatedFileResults.add(id);
+        }
+      }
+
+      final results = [...otherInputs, ...generatedFileResults];
+      _assetGraph.updateNode(globId, (nodeBuilder) {
         nodeBuilder
-          ..globNodeState.results.replace(actualMatches)
-          ..globNodeState.inputs.replace(potentialIds)
+          ..globNodeState.results.replace(results)
+          ..globNodeState.inputs.replace(
+            generatedFileInputs.followedBy(otherInputs),
+          )
           ..globNodeState.pendingBuildAction = PendingBuildAction.none
-          ..lastKnownDigest = md5.convert(utf8.encode(actualMatches.join(' ')));
+          ..lastKnownDigest = md5.convert(utf8.encode(results.join(' ')));
       });
 
-      unawaited(_lazyGlobs.remove(id));
+      unawaited(_lazyGlobs.remove(globId));
     });
   }
 
