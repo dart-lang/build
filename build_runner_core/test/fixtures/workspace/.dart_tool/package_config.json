@@ -5,19 +5,25 @@
       "name": "workspace",
       "rootUri": "../",
       "packageUri": "lib/",
-      "languageVersion": "3.5"
+      "languageVersion": "3.7"
     },
     {
       "name": "a",
       "rootUri": "../pkgs/a",
       "packageUri": "lib/",
-      "languageVersion": "3.5"
+      "languageVersion": "3.7"
     },
     {
       "name": "b",
       "rootUri": "../pkgs/b",
       "packageUri": "lib/",
-      "languageVersion": "3.5"
+      "languageVersion": "3.7"
     }
-  ]
+  ],
+  "generated": "2025-03-06T13:52:35.390409Z",
+  "generator": "pub",
+  "generatorVersion": "3.8.0-edge",
+  "flutterRoot": "file:///usr/local/google/home/davidmorgan/opt/flutter-sdk/flutter",
+  "flutterVersion": "3.29.0",
+  "pubCache": "file:///usr/local/google/home/davidmorgan/.pub-cache"
 }

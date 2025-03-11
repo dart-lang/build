@@ -87,8 +87,9 @@ class _AssetGraphMatcher extends Matcher {
       }
       if (node.type == NodeType.generated) {
         if (expectedNode.type == NodeType.generated) {
-          final configuration = node.generatedNodeConfiguration;
-          final expectedConfiguration = expectedNode.generatedNodeConfiguration;
+          final configuration = node.generatedNodeConfiguration!;
+          final expectedConfiguration =
+              expectedNode.generatedNodeConfiguration!;
 
           if (configuration.primaryInput !=
               expectedConfiguration.primaryInput) {
@@ -99,8 +100,8 @@ class _AssetGraphMatcher extends Matcher {
             matches = false;
           }
 
-          final state = node.generatedNodeState;
-          final expectedState = expectedNode.generatedNodeState;
+          final state = node.generatedNodeState!;
+          final expectedState = expectedNode.generatedNodeState!;
 
           if (state.pendingBuildAction != expectedState.pendingBuildAction) {
             matchState['pendingBuildAction of ${node.id}'] = [
@@ -145,8 +146,8 @@ class _AssetGraphMatcher extends Matcher {
         }
       } else if (node.type == NodeType.glob) {
         if (expectedNode.type == NodeType.glob) {
-          final state = node.globNodeState;
-          final expectedState = expectedNode.globNodeState;
+          final state = node.globNodeState!;
+          final expectedState = expectedNode.globNodeState!;
 
           if (state.pendingBuildAction != expectedState.pendingBuildAction) {
             matchState['pendingBuildAction of ${node.id}'] = [
@@ -166,7 +167,7 @@ class _AssetGraphMatcher extends Matcher {
           }
 
           if (!unorderedEquals(
-            state.results!,
+            state.results,
           ).matches(expectedState.results, {})) {
             matchState['results of ${node.id}'] = [
               state.results,
@@ -175,8 +176,8 @@ class _AssetGraphMatcher extends Matcher {
             matches = false;
           }
 
-          final configuration = node.globNodeConfiguration;
-          final expectedConfiguration = expectedNode.globNodeConfiguration;
+          final configuration = node.globNodeConfiguration!;
+          final expectedConfiguration = expectedNode.globNodeConfiguration!;
           if (configuration.glob.pattern !=
               expectedConfiguration.glob.pattern) {
             matchState['glob of ${node.id}'] = [
@@ -188,9 +189,9 @@ class _AssetGraphMatcher extends Matcher {
         }
       } else if (node.type == NodeType.postProcessAnchor) {
         if (expectedNode.type == NodeType.postProcessAnchor) {
-          final nodeConfiguration = node.postProcessAnchorNodeConfiguration;
+          final nodeConfiguration = node.postProcessAnchorNodeConfiguration!;
           final expectedNodeConfiguration =
-              expectedNode.postProcessAnchorNodeConfiguration;
+              expectedNode.postProcessAnchorNodeConfiguration!;
           if (nodeConfiguration.actionNumber !=
               expectedNodeConfiguration.actionNumber) {
             matchState['actionNumber of ${node.id}'] = [
@@ -207,8 +208,8 @@ class _AssetGraphMatcher extends Matcher {
             ];
             matches = false;
           }
-          final nodeState = node.postProcessAnchorNodeState;
-          final expectedNodeState = expectedNode.postProcessAnchorNodeState;
+          final nodeState = node.postProcessAnchorNodeState!;
+          final expectedNodeState = expectedNode.postProcessAnchorNodeState!;
           if (checkPreviousInputsDigest &&
               nodeState.previousInputsDigest !=
                   expectedNodeState.previousInputsDigest) {
@@ -250,8 +251,9 @@ class _AssetGraphMatcher extends Matcher {
     bool verbose,
   ) {
     matchState.forEach((k, v) {
-      v = v as List;
-      mismatchDescription.add('$k: got ${v[0]} but expected ${v[1]}');
+      if (v is List) {
+        mismatchDescription.add('$k: got ${v[0]} but expected ${v[1]}');
+      }
     });
 
     return mismatchDescription;

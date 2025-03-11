@@ -76,7 +76,7 @@ class FailureReporter {
   Future<void> markSkipped(Iterable<AssetNode> outputs) => Future.wait(
     outputs.map((output) async {
       if (!_reportedActions.add(_actionKey(output))) return;
-      final outputConfiguration = output.generatedNodeConfiguration;
+      final outputConfiguration = output.generatedNodeConfiguration!;
       await clean(
         outputConfiguration.phaseNumber,
         outputConfiguration.primaryInput,
@@ -124,14 +124,14 @@ class ErrorReport {
 }
 
 String _actionKey(AssetNode node) =>
-    '${node.generatedNodeConfiguration.builderOptionsId} on '
-    '${node.generatedNodeConfiguration.primaryInput}';
+    '${node.generatedNodeConfiguration!.builderOptionsId} on '
+    '${node.generatedNodeConfiguration!.primaryInput}';
 
 String _errorPathForOutput(AssetNode output) => p.joinAll([
   errorCachePath,
   output.id.package,
-  '${output.generatedNodeConfiguration.phaseNumber}',
-  ...p.posix.split(output.generatedNodeConfiguration.primaryInput.path),
+  '${output.generatedNodeConfiguration!.phaseNumber}',
+  ...p.posix.split(output.generatedNodeConfiguration!.primaryInput.path),
 ]);
 
 String _errorPathForPrimaryInput(int phaseNumber, AssetId primaryInput) =>

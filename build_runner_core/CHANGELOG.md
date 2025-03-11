@@ -17,6 +17,7 @@
 - Refactor `SingleStepReader` to `SingleStepReaderWriter`, incorporating
   `AssetWriterSpy` functionality.
 - Add `NodeType` to `AssetNode`, remove subtypes. Make mutations explicit.
+- Use `built_value` for `AssetNode` and related types.
 
 ## 8.0.0
 

@@ -366,7 +366,6 @@ void main() {
           builderOptionsId,
           lastKnownDigest: computeBuilderOptionsDigest(defaultBuilderOptions),
         );
-        expectedGraph.add(builderOptionsNode);
 
         var bCopyId = makeAssetId('a|web/b.txt.copy');
         var bTxtId = makeAssetId('a|web/b.txt');
@@ -374,7 +373,7 @@ void main() {
           bCopyId,
           phaseNumber: 0,
           primaryInput: makeAssetId('a|web/b.txt'),
-          state: PendingBuildAction.none,
+          pendingBuildAction: PendingBuildAction.none,
           wasOutput: true,
           isFailure: false,
           builderOptionsId: builderOptionsId,
@@ -382,7 +381,9 @@ void main() {
           inputs: [makeAssetId('a|web/b.txt')],
           isHidden: false,
         );
-        builderOptionsNode.mutate.outputs.add(bCopyNode.id);
+        builderOptionsNode = builderOptionsNode.rebuild(
+          (b) => b..outputs.add(bCopyNode.id),
+        );
         expectedGraph
           ..add(bCopyNode)
           ..add(
@@ -397,7 +398,7 @@ void main() {
           cCopyId,
           phaseNumber: 0,
           primaryInput: cTxtId,
-          state: PendingBuildAction.none,
+          pendingBuildAction: PendingBuildAction.none,
           wasOutput: true,
           isFailure: false,
           builderOptionsId: builderOptionsId,
@@ -405,7 +406,9 @@ void main() {
           inputs: [makeAssetId('a|web/c.txt')],
           isHidden: false,
         );
-        builderOptionsNode.mutate.outputs.add(cCopyNode.id);
+        builderOptionsNode = builderOptionsNode.rebuild(
+          (b) => b..outputs.add(cCopyNode.id),
+        );
         expectedGraph
           ..add(cCopyNode)
           ..add(
@@ -413,6 +416,8 @@ void main() {
               cCopyNode.id,
             ], computeDigest(cTxtId, 'c')),
           );
+
+        expectedGraph.add(builderOptionsNode);
 
         // TODO: We dont have a shared way of computing the combined input
         // hashes today, but eventually we should test those here too.
