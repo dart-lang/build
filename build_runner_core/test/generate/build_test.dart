@@ -1279,11 +1279,11 @@ void main() {
     expectedGraph.add(builderOptionsNode);
 
     var aCopyId = makeAssetId('a|web/a.txt.copy');
-    var aCopyNode = GeneratedAssetNode(
+    var aCopyNode = AssetNode.generated(
       aCopyId,
       phaseNumber: 0,
       primaryInput: makeAssetId('a|web/a.txt'),
-      state: NodeState.upToDate,
+      state: PendingBuildAction.none,
       wasOutput: true,
       isFailure: false,
       builderOptionsId: builderOptionsId,
@@ -1298,11 +1298,11 @@ void main() {
       ..primaryOutputs.add(aCopyNode.id);
 
     var bCopyId = makeAssetId('a|lib/b.txt.copy'); //;
-    var bCopyNode = GeneratedAssetNode(
+    var bCopyNode = AssetNode.generated(
       bCopyId,
       phaseNumber: 0,
       primaryInput: makeAssetId('a|lib/b.txt'),
-      state: NodeState.upToDate,
+      state: PendingBuildAction.none,
       wasOutput: true,
       isFailure: false,
       builderOptionsId: builderOptionsId,
@@ -1324,12 +1324,12 @@ void main() {
     );
     expectedGraph.add(postBuilderOptionsNode);
 
-    var aAnchorNode = PostProcessAnchorNode.forInputAndAction(
+    var aAnchorNode = AssetNode.postProcessAnchorForInputAndAction(
       aSourceNode.id,
       0,
       postBuilderOptionsId,
     );
-    var bAnchorNode = PostProcessAnchorNode.forInputAndAction(
+    var bAnchorNode = AssetNode.postProcessAnchorForInputAndAction(
       bSourceNode.id,
       0,
       postBuilderOptionsId,
@@ -1338,11 +1338,11 @@ void main() {
       ..add(aAnchorNode)
       ..add(bAnchorNode);
 
-    var aPostCopyNode = GeneratedAssetNode(
+    var aPostCopyNode = AssetNode.generated(
       makeAssetId('a|web/a.txt.post'),
       phaseNumber: 1,
       primaryInput: makeAssetId('a|web/a.txt'),
-      state: NodeState.upToDate,
+      state: PendingBuildAction.none,
       wasOutput: true,
       isFailure: false,
       builderOptionsId: postBuilderOptionsId,
@@ -1359,11 +1359,11 @@ void main() {
     aAnchorNode.mutate.outputs.add(aPostCopyNode.id);
     aSourceNode.mutate.primaryOutputs.add(aPostCopyNode.id);
 
-    var bPostCopyNode = GeneratedAssetNode(
+    var bPostCopyNode = AssetNode.generated(
       makeAssetId('a|lib/b.txt.post'),
       phaseNumber: 1,
       primaryInput: makeAssetId('a|lib/b.txt'),
-      state: NodeState.upToDate,
+      state: PendingBuildAction.none,
       wasOutput: true,
       isFailure: false,
       builderOptionsId: postBuilderOptionsId,
@@ -1422,8 +1422,8 @@ void main() {
       );
       final outputId = AssetId('a', 'lib/a.txt.out');
 
-      final outputNode = cachedGraph.get(outputId) as GeneratedAssetNode;
-      expect(outputNode.inputs, isNot(contains(outputId)));
+      final outputNode = cachedGraph.get(outputId)!;
+      expect(outputNode.generatedNodeState.inputs, isNot(contains(outputId)));
     },
   );
 
@@ -1810,12 +1810,14 @@ void main() {
       var graph = AssetGraph.deserialize(
         result.readerWriter.testing.readBytes(makeAssetId('a|$assetGraphPath')),
       );
-      var outputNode =
-          graph.get(makeAssetId('a|lib/file.a.copy')) as GeneratedAssetNode;
+      var outputNode = graph.get(makeAssetId('a|lib/file.a.copy'))!;
       var fileANode = graph.get(makeAssetId('a|lib/file.a'))!;
       var fileBNode = graph.get(makeAssetId('a|lib/file.b'))!;
       var fileCNode = graph.get(makeAssetId('a|lib/file.c'))!;
-      expect(outputNode.inputs, unorderedEquals([fileANode.id, fileCNode.id]));
+      expect(
+        outputNode.generatedNodeState.inputs,
+        unorderedEquals([fileANode.id, fileCNode.id]),
+      );
       expect(fileANode.outputs, contains(outputNode.id));
       expect(fileBNode.outputs, isEmpty);
       expect(fileCNode.outputs, unorderedEquals([outputNode.id]));
@@ -2031,9 +2033,8 @@ void main() {
         result.readerWriter.testing.readBytes(AssetId('a', assetGraphPath)),
       );
       for (var i = 1; i < 4; i++) {
-        var node =
-            finalGraph.get(AssetId('a', 'web/a.g$i')) as GeneratedAssetNode;
-        expect(node.isFailure, isTrue);
+        var node = finalGraph.get(AssetId('a', 'web/a.g$i'))!;
+        expect(node.generatedNodeState.isFailure, isTrue);
       }
     });
 

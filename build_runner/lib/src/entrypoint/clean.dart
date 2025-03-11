@@ -10,8 +10,6 @@ import 'package:args/command_runner.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/asset_graph/graph.dart';
-// ignore: implementation_imports
-import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:logging/logging.dart';
 
 import '../logging/std_io_logging.dart';
@@ -87,8 +85,8 @@ Future<void> _cleanUpSourceOutputs(
   var writer = ReaderWriter(packageGraph);
   for (var id in assetGraph.outputs) {
     if (id.package != packageGraph.root.name) continue;
-    var node = assetGraph.get(id) as GeneratedAssetNode;
-    if (node.wasOutput) {
+    var node = assetGraph.get(id)!;
+    if (node.generatedNodeState.wasOutput) {
       // Note that this does a file.exists check in the root package and
       // only tries to delete the file if it exists. This way we only
       // actually delete to_source outputs, without reading in the build

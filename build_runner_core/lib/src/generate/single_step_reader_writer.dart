@@ -23,7 +23,9 @@ import 'phase.dart';
 typedef AssetBuilder = Future<void> Function(AssetNode);
 
 /// Builds a "glob node": all assets matching a glob.
-typedef GlobNodeBuilder = Future<void> Function(GlobAssetNode);
+///
+/// The node must have type [NodeType.glob].
+typedef GlobNodeBuilder = Future<void> Function(AssetNode);
 
 /// Describes if and how a [SingleStepReaderWriter] should read an [AssetId].
 class Readability {
@@ -302,7 +304,7 @@ class SingleStepReaderWriter extends AssetReader
     // No need to check readability for [GeneratedAssetNode], they are always
     // readable.
 
-    if (_runningBuild.assetGraph.get(id) is GeneratedAssetNode &&
+    if (_runningBuild.assetGraph.get(id)!.type == NodeType.generated &&
         !await _delegate.canRead(id)) {
       return false;
     }
@@ -356,7 +358,9 @@ class SingleStepReaderWriter extends AssetReader
 
     _buildGlobNode(glob).then((globNode) {
       inputTracker.add(globNode.id);
-      streamCompleter.setSourceStream(Stream.fromIterable(globNode.results!));
+      streamCompleter.setSourceStream(
+        Stream.fromIterable(globNode.globNodeState.results!),
+      );
     });
     return streamCompleter.stream;
   }
@@ -378,10 +382,12 @@ class SingleStepReaderWriter extends AssetReader
   ///
   /// If it's a generated node from an earlier phase, wait for it to be built.
   Future<Readability> _isReadableNode(AssetNode node) async {
-    if (node is GeneratedAssetNode) {
-      if (node.phaseNumber > _runningBuildStep!.phaseNumber) {
+    if (node.type == NodeType.generated) {
+      final nodeConfiguration = node.generatedNodeConfiguration;
+      if (nodeConfiguration.phaseNumber > _runningBuildStep!.phaseNumber) {
         return Readability.notReadable;
-      } else if (node.phaseNumber == _runningBuildStep.phaseNumber) {
+      } else if (nodeConfiguration.phaseNumber ==
+          _runningBuildStep.phaseNumber) {
         // allow a build step to read its outputs (contained in writtenAssets)
         final isInBuild =
             _runningBuildStep.buildPhase is InBuildPhase &&
@@ -391,7 +397,10 @@ class SingleStepReaderWriter extends AssetReader
       }
 
       await _runningBuild!.nodeBuilder(node);
-      return Readability.fromPreviousPhase(node.wasOutput && !node.isFailure);
+      final nodeState = node.generatedNodeState;
+      return Readability.fromPreviousPhase(
+        nodeState.wasOutput && !nodeState.isFailure,
+      );
     }
     return Readability.fromPreviousPhase(node.isFile && node.isTrackedInput);
   }
@@ -412,24 +421,24 @@ class SingleStepReaderWriter extends AssetReader
     }
   }
 
-  /// Builds a [GlobAssetNode] for [glob].
+  /// Builds an [AssetNode.glob] for [glob].
   ///
   /// Retrieves an existing node from `_runningBuild.assetGraph` if it's
   /// available; if not, adds one. Then, gets the built glob from
   /// `runningBuild.globNodeBuilder`, which might return an existing result.
-  Future<GlobAssetNode> _buildGlobNode(Glob glob) async {
-    var globNodeId = GlobAssetNode.createId(
+  Future<AssetNode> _buildGlobNode(Glob glob) async {
+    var globNodeId = AssetNode.createGlobNodeId(
       _runningBuildStep!.primaryPackage,
       glob,
       _runningBuildStep.phaseNumber,
     );
-    var globNode = _runningBuild!.assetGraph.get(globNodeId) as GlobAssetNode?;
+    var globNode = _runningBuild!.assetGraph.get(globNodeId);
     if (globNode == null) {
-      globNode = GlobAssetNode(
+      globNode = AssetNode.glob(
         globNodeId,
-        glob,
-        _runningBuildStep.phaseNumber,
-        NodeState.definitelyNeedsUpdate,
+        glob: glob,
+        phaseNumber: _runningBuildStep.phaseNumber,
+        pendingBuildAction: PendingBuildAction.build,
       );
       _runningBuild.assetGraph.add(globNode);
     }
