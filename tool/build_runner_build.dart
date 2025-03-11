@@ -60,11 +60,14 @@ dependencies:
   );
   mergedConfigFile.writeAsStringSync(mergedConfig);
 
-  final home = Platform.environment['HOME'];
+  final buildRunnerPath = pubConfigLines
+      .singleWhere((l) => l.contains('/build_runner-2.4.15'))
+      .replaceAll('      "rootUri": "', '')
+      .replaceAll('",', '');
   final buildResult = Process.runSync('dart', [
     '--packages=${mergedConfigFile.path}',
     'run',
-    '$home/.pub-cache/hosted/pub.dev/build_runner-2.4.15/bin/build_runner.dart',
+    '$buildRunnerPath/bin/build_runner.dart',
     'build',
     '-d',
   ], workingDirectory: Directory.current.path);
