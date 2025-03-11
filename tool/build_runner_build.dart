@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
 import 'dart:io';
 
 /// Runs `dart run build_runner build` using `build` packages from pub instead
@@ -17,6 +18,8 @@ void main() {
     exit(1);
   }
 
+  // Run `pub get` in a temp folder to get paths for published versions of
+  // `build` packages that won't break due to local changes.
   final tempDirectory = Directory.systemTemp.createTempSync(
     'build_runner_build',
   );
@@ -30,14 +33,33 @@ dependencies:
   build_test: any
 ''');
   Process.runSync('dart', ['pub', 'get'], workingDirectory: tempDirectory.path);
-  final pubConfigLines =
-      File.fromUri(
-        tempDirectory.uri.resolve('.dart_tool/package_config.json'),
-      ).readAsLinesSync();
-  var mergedConfig =
-      File.fromUri(
-        Directory.current.uri.resolve('../.dart_tool/package_config.json'),
-      ).readAsStringSync();
+  final pubConfig = PackageConfig(
+    json.decode(
+          File.fromUri(
+            tempDirectory.uri.resolve('.dart_tool/package_config.json'),
+          ).readAsStringSync(),
+        )
+        as Map<String, Object?>,
+  );
+
+  // Merge `pubConfig` into the local package config.
+  //
+  // `build_runner` expects to run with the local package config because it
+  // creates a build script that depends on whatever generators the local
+  // package uses.
+  //
+  // So the merged config will have the two things needed: `build` packages
+  // not broken by local changes, and whatever generators are needed.
+  var mergedConfig = PackageConfig(
+    json.decode(
+          File.fromUri(
+            Directory.current.uri.resolve('../.dart_tool/package_config.json'),
+          ).readAsStringSync(),
+        )
+        as Map<String, Object?>,
+  );
+
+  late String buildRunnerPath;
   for (final package in [
     'build',
     'build_config',
@@ -47,23 +69,17 @@ dependencies:
     'build_runner_core',
     'build_test',
   ]) {
-    final pubConfigPattern = RegExp('"rootUri": ".*/$package-.*"');
-    final line = pubConfigLines.singleWhere(pubConfigPattern.hasMatch);
-    final localConfigPattern = RegExp(
-      '^.*"rootUri": "\\.\\./$package"[,]\$',
-      multiLine: true,
-    );
-    mergedConfig = mergedConfig.replaceAll(localConfigPattern, line);
+    final packageConfig = pubConfig.packageNamed(package);
+    mergedConfig.packageNamed(package).rootUri = packageConfig.rootUri;
+    if (package == 'build_runner') {
+      buildRunnerPath = packageConfig.rootUri;
+    }
   }
   final mergedConfigFile = File.fromUri(
     tempDirectory.uri.resolve('package_config.json'),
   );
-  mergedConfigFile.writeAsStringSync(mergedConfig);
+  mergedConfigFile.writeAsStringSync(json.encode(mergedConfig));
 
-  final buildRunnerPath = pubConfigLines
-      .singleWhere((l) => l.contains('/build_runner-2.4.15'))
-      .replaceAll('      "rootUri": "', '')
-      .replaceAll('",', '');
   final buildResult = Process.runSync('dart', [
     '--packages=${mergedConfigFile.path}',
     'run',
@@ -79,4 +95,19 @@ dependencies:
     tempDirectory.deleteSync(recursive: true);
   }
   exit(buildResult.exitCode);
+}
+
+extension type PackageConfig(Map<String, Object?> node) {
+  List<Package> get packages =>
+      (node['packages'] as List<Object?>)
+          .map((p) => Package(p as Map<String, Object?>))
+          .toList();
+  Package packageNamed(String name) =>
+      packages.singleWhere((package) => package.name == name);
+}
+
+extension type Package(Map<String, Object?> node) {
+  String get name => node['name'] as String;
+  String get rootUri => node['rootUri'] as String;
+  set rootUri(String rootUri) => node['rootUri'] = rootUri;
 }
