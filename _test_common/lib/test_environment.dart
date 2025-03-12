@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:build/build.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:logging/logging.dart';
 
@@ -16,7 +17,7 @@ import 'common.dart';
 /// To handle prompts you must first set `nextPromptResponse`. Alternatively
 /// you can set `throwOnPrompt` to `true` to emulate a
 /// [NonInteractiveBuildException].
-class TestBuildEnvironment extends BuildEnvironment {
+class TestBuildEnvironment implements BuildEnvironment {
   final TestReaderWriter _readerWriter;
 
   TestReaderWriter get readerWriter => _readerWriter;
@@ -64,4 +65,21 @@ class TestBuildEnvironment extends BuildEnvironment {
     assert(_nextPromptResponse != null);
     return Future.value(_nextPromptResponse);
   }
+
+  @override
+  BuildEnvironment copyWith({
+    void Function(LogRecord)? onLogOverride,
+    RunnerAssetWriter? writer,
+  }) => TestBuildEnvironment(
+    readerWriter: (writer as TestReaderWriter?) ?? _readerWriter,
+    throwOnPrompt: throwOnPrompt,
+  );
+
+  @override
+  Future<BuildResult> finalizeBuild(
+    BuildResult buildResult,
+    FinalizedAssetsView finalizedAssetsView,
+    AssetReader reader,
+    Set<BuildDirectory> buildDirs,
+  ) => Future.value(buildResult);
 }

@@ -4,6 +4,7 @@
 - `AssetNotFoundException` now also reports the missing `path`.
 - Bump the min sdk to 3.7.0.
 - Use `build_test` 3.0.0.
+- Use `build_runner_core` 9.0.0.
 - Add `package:build/src/internal.dart` for use by `build_resolvers`,
   `build_runner_core` and `build_test`.
 - Refactor `PathProvidingAssetReader` to `AssetPathProvider`.
