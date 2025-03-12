@@ -10,6 +10,7 @@ import 'asset_finder.dart';
 import 'asset_path_provider.dart';
 import 'filesystem.dart';
 import 'filesystem_cache.dart';
+import 'filesystem_digests.dart';
 import 'generated_asset_hider.dart';
 import 'reader_writer.dart';
 
@@ -18,11 +19,13 @@ extension AssetReaderStateExtension on AssetReader {
   /// Returns a new instance with optionally updated [cache] and/or [generatedAssetHider].
   AssetReaderWriter copyWith({
     FilesystemCache? cache,
+    FilesystemDigests? digests,
     GeneratedAssetHider? generatedAssetHider,
   }) {
     _requireIsAssetReaderState();
     return (this as AssetReaderState).copyWith(
       cache: cache,
+      digests: digests,
       generatedAssetHider: generatedAssetHider,
     );
   }
@@ -88,6 +91,7 @@ abstract interface class AssetReaderState {
   /// Returns a new instance with optionally updated [cache] and/or [generatedAssetHider].
   AssetReaderWriter copyWith({
     FilesystemCache? cache,
+    FilesystemDigests? digests,
     GeneratedAssetHider? generatedAssetHider,
   });
 

@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
+import 'package:crypto/crypto.dart';
 import 'package:glob/glob.dart';
 import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as path;
@@ -34,6 +35,7 @@ class ReaderWriter extends AssetReader
   final Filesystem filesystem;
   @override
   final FilesystemCache cache;
+  final FilesystemDigests digests;
 
   final void Function(AssetId)? onDelete;
 
@@ -50,6 +52,7 @@ class ReaderWriter extends AssetReader
     generatedAssetHider: const NoopGeneratedAssetHider(),
     filesystem: IoFilesystem(),
     cache: const PassthroughFilesystemCache(),
+    digests: const NoopFilesystemDigests(),
     onDelete: null,
   );
 
@@ -60,12 +63,14 @@ class ReaderWriter extends AssetReader
     required this.generatedAssetHider,
     required this.filesystem,
     required this.cache,
+    required this.digests,
     required this.onDelete,
   });
 
   @override
   ReaderWriter copyWith({
     FilesystemCache? cache,
+    FilesystemDigests? digests,
     GeneratedAssetHider? generatedAssetHider,
     void Function(AssetId)? onDelete,
   }) => ReaderWriter.using(
@@ -75,6 +80,7 @@ class ReaderWriter extends AssetReader
     generatedAssetHider: generatedAssetHider ?? this.generatedAssetHider,
     filesystem: filesystem,
     cache: cache ?? this.cache,
+    digests: digests ?? this.digests,
     onDelete: onDelete ?? this.onDelete,
   );
 
@@ -82,19 +88,21 @@ class ReaderWriter extends AssetReader
       assetPathProvider.pathFor(generatedAssetHider.maybeHide(id, rootPackage));
 
   @override
-  Future<bool> canRead(AssetId id) {
-    return cache.exists(
+  Future<bool> canRead(AssetId id) async {
+    final result = await cache.exists(
       id,
       ifAbsent: () async {
         final path = _pathFor(id);
         return filesystem.exists(path);
       },
     );
+    digests.addOrCheck(id, result ? await digest(id) : Digest(const []));
+    return result;
   }
 
   @override
   Future<List<int>> readAsBytes(AssetId id) async {
-    return cache.readAsBytes(
+    final result = await cache.readAsBytes(
       id,
       ifAbsent: () async {
         final path = _pathFor(id);
@@ -104,11 +112,13 @@ class ReaderWriter extends AssetReader
         return filesystem.readAsBytes(path);
       },
     );
+    digests.addOrCheck(id, _digest(id, result));
+    return result;
   }
 
   @override
   Future<String> readAsString(AssetId id, {Encoding encoding = utf8}) async {
-    return cache.readAsString(
+    final result = await cache.readAsString(
       id,
       encoding: encoding,
       ifAbsent: () async {
@@ -119,7 +129,12 @@ class ReaderWriter extends AssetReader
         return filesystem.readAsBytes(path);
       },
     );
+    digests.addOrCheck(id, await digest(id));
+    return result;
   }
+
+  Digest _digest(AssetId id, List<int> bytes) =>
+      md5.convert(bytes + id.toString().codeUnits);
 
   // This is only for generators, so only `BuildStep` needs to implement it.
   @override

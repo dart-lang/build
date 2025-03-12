@@ -60,9 +60,10 @@ class BuildImpl {
   final List<BuildPhase> _buildPhases;
 
   final FinalizedReader finalizedReader;
-  final AssetReaderWriter _readerWriter;
   final RunnerAssetWriter _deleteWriter;
   final ResourceManager _resourceManager = ResourceManager();
+
+  AssetReaderWriter _readerWriter;
 
   Future<void> beforeExit() => _resourceManager.beforeExit();
 
@@ -90,6 +91,9 @@ class BuildImpl {
     Set<BuildFilter> buildFilters = const {},
   }) {
     finalizedReader.reset(_buildPaths(buildDirs), buildFilters);
+    _readerWriter = _readerWriter.copyWith(
+      digests: SingleBuildFilesystemDigests(),
+    );
     return _SingleBuild(this, buildDirs, buildFilters).run(updates)
       ..whenComplete(_options.resolvers.reset);
   }

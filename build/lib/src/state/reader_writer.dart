@@ -14,6 +14,7 @@ import 'asset_finder.dart';
 import 'asset_path_provider.dart';
 import 'filesystem.dart';
 import 'filesystem_cache.dart';
+import 'filesystem_digests.dart';
 import 'generated_asset_hider.dart';
 import 'reader_state.dart';
 
@@ -49,10 +50,12 @@ class DelegatingAssetReaderWriter
   @override
   AssetReaderWriter copyWith({
     FilesystemCache? cache,
+    FilesystemDigests? digests,
     GeneratedAssetHider? generatedAssetHider,
   }) => DelegatingAssetReaderWriter(
     reader: reader.copyWith(
       cache: cache,
+      digests: digests,
       generatedAssetHider: generatedAssetHider,
     ),
     writer: writer,

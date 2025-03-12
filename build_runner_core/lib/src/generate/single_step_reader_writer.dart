@@ -163,6 +163,7 @@ class SingleStepReaderWriter extends AssetReader
   @override
   SingleStepReaderWriter copyWith({
     FilesystemCache? cache,
+    FilesystemDigests? digests,
     GeneratedAssetHider? generatedAssetHider,
   }) => SingleStepReaderWriter(
     runningBuild: _runningBuild,
@@ -170,6 +171,7 @@ class SingleStepReaderWriter extends AssetReader
     fakeRunningBuildStep: _fakeRunningBuildStep,
     readerWriter: _delegate.copyWith(
       cache: cache,
+      digests: digests,
       generatedAssetHider: generatedAssetHider,
     ),
     inputTracker: inputTracker,

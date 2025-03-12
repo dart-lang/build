@@ -47,6 +47,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
       generatedAssetHider: const NoopGeneratedAssetHider(),
       filesystem: filesystem,
       cache: const PassthroughFilesystemCache(),
+      digests: const NoopFilesystemDigests(),
       onDelete: null,
     );
   }
@@ -60,6 +61,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
     required super.generatedAssetHider,
     required super.filesystem,
     required super.cache,
+    required super.digests,
     required super.onDelete,
   }) : super.using() {
     InputTracker.captureInputTrackersForTesting = true;
@@ -70,6 +72,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
     FilesystemCache? cache,
     GeneratedAssetHider? generatedAssetHider,
     void Function(AssetId)? onDelete,
+    FilesystemDigests? digests,
   }) => InMemoryAssetReaderWriter.using(
     assetsRead: assetsRead,
     assetsWritten: assetsWritten,
@@ -80,6 +83,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
     filesystem: filesystem,
     cache: cache ?? this.cache,
     onDelete: onDelete ?? this.onDelete,
+    digests: digests ?? this.digests,
   );
 
   @override
