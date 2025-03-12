@@ -108,7 +108,7 @@ void main() {
           var phaseNum = n;
           final builderOptionsNode = AssetNode.builderOptions(
             makeAssetId(),
-            lastKnownDigest: Digest([n]),
+            // lastKnownDigest: Digest([n]),
           );
           graph.add(builderOptionsNode);
           final anchorNode = AssetNode.postProcessAnchorForInputAndAction(
@@ -121,7 +121,7 @@ void main() {
           for (var g = 0; g < 5 - n; g++) {
             var builderOptionsNode = AssetNode.builderOptions(
               makeAssetId(),
-              lastKnownDigest: md5.convert(utf8.encode('test')),
+              // lastKnownDigest: md5.convert(utf8.encode('test')),
             );
 
             var generatedNode = AssetNode.generated(
@@ -276,19 +276,19 @@ void main() {
         var node = graph.get(primaryInputId)!;
         expect(node.primaryOutputs, [primaryOutputId]);
         expect(node.outputs, isEmpty);
-        expect(
+        /*expect(
           node.lastKnownDigest,
           isNotNull,
           reason: 'Nodes with outputs should get an eager digest.',
-        );
+        );*/
 
         var excludedNode = graph.get(excludedInputId);
         expect(excludedNode, isNotNull);
-        expect(
+        /*expect(
           excludedNode!.lastKnownDigest,
           isNull,
           reason: 'Nodes with no output shouldn\'t get an eager digest.',
-        );
+        );*/
 
         expect(graph.get(internalId)?.type, NodeType.internal);
 

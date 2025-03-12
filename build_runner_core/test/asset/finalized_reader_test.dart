@@ -42,12 +42,12 @@ void main() {
       var notDeleted = makeAssetNode(
         'a|web/a.txt',
         [],
-        computeDigest(AssetId('a', 'web/a.txt'), 'a'),
+        // computeDigest(AssetId('a', 'web/a.txt'), 'a'),
       );
       var deleted = makeAssetNode(
         'a|lib/b.txt',
         [],
-        computeDigest(AssetId('a', 'lib/b.txt'), 'b'),
+        // computeDigest(AssetId('a', 'lib/b.txt'), 'b'),
       );
 
       deleted = deleted.rebuild(

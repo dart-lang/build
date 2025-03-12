@@ -39,7 +39,7 @@ void main() {
     ),
   );
   final globBuilder = GlobbingBuilder(Glob('**.txt'));
-  final defaultBuilderOptions = const BuilderOptions({});
+  // final defaultBuilderOptions = const BuilderOptions({});
   final placeholders = placeholderIdsFor(
     buildPackageGraph({rootPackage('a'): []}),
   );
@@ -1259,19 +1259,19 @@ void main() {
     var aSourceNode = makeAssetNode(
       'a|web/a.txt',
       [],
-      computeDigest(AssetId('a', 'web/a.txt'), 'a'),
+      // computeDigest(AssetId('a', 'web/a.txt'), 'a'),
     );
     var bSourceNode = makeAssetNode(
       'a|lib/b.txt',
       [],
-      computeDigest(AssetId('a', 'lib/b.txt'), 'b'),
+      // computeDigest(AssetId('a', 'lib/b.txt'), 'b'),
     );
 
     // Regular generated asset nodes and supporting nodes.
     var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
     var builderOptionsNode = AssetNode.builderOptions(
       builderOptionsId,
-      lastKnownDigest: computeBuilderOptionsDigest(defaultBuilderOptions),
+      // lastKnownDigest: computeBuilderOptionsDigest(defaultBuilderOptions),
     );
 
     var aCopyId = makeAssetId('a|web/a.txt.copy');
@@ -1283,7 +1283,7 @@ void main() {
       wasOutput: true,
       isFailure: false,
       builderOptionsId: builderOptionsId,
-      lastKnownDigest: computeDigest(aCopyId, 'a'),
+      // lastKnownDigest: computeDigest(aCopyId, 'a'),
       inputs: [makeAssetId('a|web/a.txt')],
       isHidden: false,
     );
@@ -1306,7 +1306,7 @@ void main() {
       wasOutput: true,
       isFailure: false,
       builderOptionsId: builderOptionsId,
-      lastKnownDigest: computeDigest(bCopyId, 'b'),
+      // lastKnownDigest: computeDigest(bCopyId, 'b'),
       inputs: [makeAssetId('a|lib/b.txt')],
       isHidden: false,
     );
@@ -1324,7 +1324,7 @@ void main() {
     var postBuilderOptionsId = makeAssetId('a|PostPhase0.builderOptions');
     var postBuilderOptionsNode = AssetNode.builderOptions(
       postBuilderOptionsId,
-      lastKnownDigest: computeBuilderOptionsDigest(defaultBuilderOptions),
+      // lastKnownDigest: computeBuilderOptionsDigest(defaultBuilderOptions),
     );
 
     var aAnchorNode = AssetNode.postProcessAnchorForInputAndAction(
@@ -1346,7 +1346,7 @@ void main() {
       wasOutput: true,
       isFailure: false,
       builderOptionsId: postBuilderOptionsId,
-      lastKnownDigest: computeDigest(makeAssetId(r'$$a|web/a.txt.post'), 'a'),
+      // lastKnownDigest: computeDigest(makeAssetId(r'$$a|web/a.txt.post'), 'a'),
       inputs: [makeAssetId('a|web/a.txt'), aAnchorNode.id],
       isHidden: true,
     );
@@ -1371,7 +1371,7 @@ void main() {
       wasOutput: true,
       isFailure: false,
       builderOptionsId: postBuilderOptionsId,
-      lastKnownDigest: computeDigest(makeAssetId(r'$$a|lib/b.txt.post'), 'b'),
+      // lastKnownDigest: computeDigest(makeAssetId(r'$$a|lib/b.txt.post'), 'b'),
       inputs: [makeAssetId('a|lib/b.txt'), bAnchorNode.id],
       isHidden: true,
     );

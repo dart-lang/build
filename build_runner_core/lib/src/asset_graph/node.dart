@@ -74,12 +74,6 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   /// node is the primary input.
   BuiltSet<AssetId> get anchorOutputs;
 
-  /// The [Digest] for this node in its last known state.
-  ///
-  /// May be `null` if this asset has no outputs, or if it doesn't actually
-  /// exist.
-  Digest? get lastKnownDigest;
-
   /// The IDs of the [AssetNode.postProcessAnchor] for post process builder
   /// which requested to delete this asset.
   BuiltSet<AssetId> get deletedBy;
@@ -108,10 +102,10 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
 
   /// Whether changes to this node will have any effect on other nodes.
   bool get changesRequireRebuild =>
-      type == NodeType.internal ||
-      type == NodeType.glob ||
-      outputs.isNotEmpty ||
-      lastKnownDigest != null;
+      type == NodeType.internal || type == NodeType.glob || outputs.isNotEmpty
+  // TODO(davidmorgan): this used to check lastKnownDigest, does it need
+  // something else?
+  ;
 
   factory AssetNode([void Function(AssetNodeBuilder) updates]) = _$AssetNode;
 
@@ -121,19 +115,16 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   ///
   /// They are "inputs" to the entire build, so they are never explicitly
   /// tracked as inputs.
-  factory AssetNode.internal(AssetId id, {Digest? lastKnownDigest}) =>
-      AssetNode(
-        (b) =>
-            b
-              ..id = id
-              ..type = NodeType.internal
-              ..lastKnownDigest = lastKnownDigest,
-      );
+  factory AssetNode.internal(AssetId id) => AssetNode(
+    (b) =>
+        b
+          ..id = id
+          ..type = NodeType.internal,
+  );
 
   /// A manually-written source file.
   factory AssetNode.source(
     AssetId id, {
-    Digest? lastKnownDigest,
     Iterable<AssetId>? outputs,
     Iterable<AssetId>? primaryOutputs,
   }) => AssetNode(
@@ -142,22 +133,19 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
           ..id = id
           ..type = NodeType.source
           ..primaryOutputs.replace(primaryOutputs ?? {})
-          ..outputs.replace(outputs ?? {})
-          ..lastKnownDigest = lastKnownDigest,
+          ..outputs.replace(outputs ?? {}),
   );
 
   /// A [BuilderOptions] object.
   ///
   /// Each [AssetNode.generated] has one describing its configuration, so it
   /// rebuilds when the configuration changes.
-  factory AssetNode.builderOptions(AssetId id, {Digest? lastKnownDigest}) =>
-      AssetNode(
-        (b) =>
-            b
-              ..id = id
-              ..type = NodeType.builderOptions
-              ..lastKnownDigest = lastKnownDigest,
-      );
+  factory AssetNode.builderOptions(AssetId id) => AssetNode(
+    (b) =>
+        b
+          ..id = id
+          ..type = NodeType.builderOptions,
+  );
 
   /// A missing source file.
   ///
@@ -165,14 +153,12 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   ///
   /// If later the file does exist, the builder must be rerun as it can
   /// produce different output.
-  factory AssetNode.missingSource(AssetId id, {Digest? lastKnownDigest}) =>
-      AssetNode(
-        (b) =>
-            b
-              ..id = id
-              ..type = NodeType.missingSource
-              ..lastKnownDigest = lastKnownDigest,
-      );
+  factory AssetNode.missingSource(AssetId id) => AssetNode(
+    (b) =>
+        b
+          ..id = id
+          ..type = NodeType.missingSource,
+  );
 
   /// Placeholders for useful parts of packages.
   ///
@@ -180,19 +166,16 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   /// `test` folder, the `web` folder, and the whole package.
   ///
   /// TODO(davidmorgan): describe how these are used.
-  factory AssetNode.placeholder(AssetId id, {Digest? lastKnownDigest}) =>
-      AssetNode(
-        (b) =>
-            b
-              ..id = id
-              ..type = NodeType.placeholder
-              ..lastKnownDigest = lastKnownDigest,
-      );
+  factory AssetNode.placeholder(AssetId id) => AssetNode(
+    (b) =>
+        b
+          ..id = id
+          ..type = NodeType.placeholder,
+  );
 
   /// A generated node.
   factory AssetNode.generated(
     AssetId id, {
-    Digest? lastKnownDigest,
     required AssetId primaryInput,
     required AssetId builderOptionsId,
     required int phaseNumber,
@@ -215,14 +198,12 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
           ..generatedNodeState.previousInputsDigest = previousInputsDigest
           ..generatedNodeState.pendingBuildAction = pendingBuildAction
           ..generatedNodeState.wasOutput = wasOutput
-          ..generatedNodeState.isFailure = isFailure
-          ..lastKnownDigest = lastKnownDigest,
+          ..generatedNodeState.isFailure = isFailure,
   );
 
   /// A glob node.
   factory AssetNode.glob(
     AssetId id, {
-    Digest? lastKnownDigest,
     required String glob,
     required int phaseNumber,
     Iterable<AssetId>? inputs,
@@ -236,8 +217,7 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
           ..globNodeConfiguration.glob = glob
           ..globNodeConfiguration.phaseNumber = phaseNumber
           ..globNodeState.pendingBuildAction = pendingBuildAction
-          ..globNodeState.results.replace(results ?? [])
-          ..lastKnownDigest = lastKnownDigest,
+          ..globNodeState.results.replace(results ?? []),
   );
 
   static AssetId createGlobNodeId(String package, String glob, int phaseNum) =>

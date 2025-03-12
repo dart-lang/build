@@ -5,18 +5,8 @@ import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_test/build_test.dart';
-import 'package:crypto/crypto.dart';
 
-AssetNode makeAssetNode([
-  String? assetIdString,
-  List<AssetId>? outputs,
-  Digest? lastKnownDigest,
-]) {
+AssetNode makeAssetNode([String? assetIdString, List<AssetId>? outputs]) {
   var id = makeAssetId(assetIdString);
-  return AssetNode.source(
-    id,
-    lastKnownDigest: lastKnownDigest,
-    outputs: outputs,
-    primaryOutputs: outputs,
-  );
+  return AssetNode.source(id, outputs: outputs, primaryOutputs: outputs);
 }

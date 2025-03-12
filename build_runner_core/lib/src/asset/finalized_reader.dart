@@ -87,7 +87,8 @@ class FinalizedReader {
         unreadableReason != UnreadableReason.deleted) {
       throw AssetNotFoundException(id);
     }
-    return _ensureDigest(id);
+    throw 'who uses this anyway?';
+    //return _ensureDigest(id);
   }
 
   Future<List<int>> readAsBytes(AssetId id) => _delegate.readAsBytes(id);
@@ -118,7 +119,7 @@ class FinalizedReader {
   /// necessary.
   ///
   /// Note that [id] must exist in the asset graph.
-  FutureOr<Digest> _ensureDigest(AssetId id) {
+  /*FutureOr<Digest> _ensureDigest(AssetId id) {
     var node = _assetGraph.get(id)!;
     if (node.lastKnownDigest != null) return node.lastKnownDigest!;
     return _delegate.digest(id).then((digest) {
@@ -127,7 +128,7 @@ class FinalizedReader {
       });
       return digest;
     });
-  }
+  }*/
 }
 
 enum UnreadableReason {

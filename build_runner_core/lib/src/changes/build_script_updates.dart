@@ -72,7 +72,7 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
         );
       } else {
         // Make sure we are tracking changes for all ids in [allSources].
-        for (var id in allSources) {
+        /*for (var id in allSources) {
           final node = graph.get(id)!;
           if (node.lastKnownDigest == null) {
             final digest = await reader.digest(id);
@@ -80,7 +80,7 @@ class _MirrorBuildScriptUpdates implements BuildScriptUpdates {
               nodeBuilder.lastKnownDigest = digest;
             });
           }
-        }
+        }*/
       }
     } on ArgumentError // ignore: avoid_catching_errors
     catch (_) {

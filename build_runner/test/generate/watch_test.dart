@@ -25,7 +25,7 @@ void main() {
   final copyABuildApplication = applyToRoot(
     TestBuilder(buildExtensions: appendExtension('.copy', from: '.txt')),
   );
-  final defaultBuilderOptions = const BuilderOptions({});
+  // final defaultBuilderOptions = const BuilderOptions({});
   final packageConfigId = makeAssetId('a|.dart_tool/package_config.json');
   final packageGraph = buildPackageGraph({
     rootPackage('a', path: path.absolute('a')): [],
@@ -364,11 +364,11 @@ void main() {
         var builderOptionsId = makeAssetId('a|Phase0.builderOptions');
         var builderOptionsNode = AssetNode.builderOptions(
           builderOptionsId,
-          lastKnownDigest: computeBuilderOptionsDigest(defaultBuilderOptions),
+          // lastKnownDigest: computeBuilderOptionsDigest(defaultBuilderOptions),
         );
 
         var bCopyId = makeAssetId('a|web/b.txt.copy');
-        var bTxtId = makeAssetId('a|web/b.txt');
+        // var bTxtId = makeAssetId('a|web/b.txt');
         var bCopyNode = AssetNode.generated(
           bCopyId,
           phaseNumber: 0,
@@ -377,7 +377,7 @@ void main() {
           wasOutput: true,
           isFailure: false,
           builderOptionsId: builderOptionsId,
-          lastKnownDigest: computeDigest(bCopyId, 'b2'),
+          // lastKnownDigest: computeDigest(bCopyId, 'b2'),
           inputs: [makeAssetId('a|web/b.txt')],
           isHidden: false,
         );
@@ -387,9 +387,11 @@ void main() {
         expectedGraph
           ..add(bCopyNode)
           ..add(
-            makeAssetNode('a|web/b.txt', [
-              bCopyNode.id,
-            ], computeDigest(bTxtId, 'b2')),
+            makeAssetNode(
+              'a|web/b.txt',
+              [bCopyNode.id],
+              //computeDigest(bTxtId, 'b2'),
+            ),
           );
 
         var cCopyId = makeAssetId('a|web/c.txt.copy');
@@ -402,7 +404,7 @@ void main() {
           wasOutput: true,
           isFailure: false,
           builderOptionsId: builderOptionsId,
-          lastKnownDigest: computeDigest(cCopyId, 'c'),
+          // lastKnownDigest: computeDigest(cCopyId, 'c'),
           inputs: [makeAssetId('a|web/c.txt')],
           isHidden: false,
         );
@@ -412,9 +414,11 @@ void main() {
         expectedGraph
           ..add(cCopyNode)
           ..add(
-            makeAssetNode('a|web/c.txt', [
-              cCopyNode.id,
-            ], computeDigest(cTxtId, 'c')),
+            makeAssetNode(
+              'a|web/c.txt',
+              [cCopyNode.id],
+              //computeDigest(cTxtId, 'c'),
+            ),
           );
 
         expectedGraph.add(builderOptionsNode);

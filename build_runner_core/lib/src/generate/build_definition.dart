@@ -168,8 +168,9 @@ class AssetTracker {
     var preExistingSources = originalGraphSources.intersection(inputSources)
       ..addAll(internalSources.where(assetGraph.contains));
     var modifyChecks = preExistingSources.map((id) async {
-      var node = assetGraph.get(id)!;
-      var originalDigest = node.lastKnownDigest;
+      // var node = assetGraph.get(id)!;
+      var originalDigest = 1 == 1 ? null : null;
+      // var originalDigest = node.lastKnownDigest;
       if (originalDigest == null) return;
       await _reader.cache.invalidate([id]);
       var currentDigest = await _reader.digest(id);
@@ -611,11 +612,12 @@ class _Loader {
             '${nodeBuilder.build()}',
           );
         }
+        /*
         var oldDigest = nodeBuilder.lastKnownDigest;
         nodeBuilder.lastKnownDigest = computeBuilderOptionsDigest(options);
         if (nodeBuilder.lastKnownDigest != oldDigest) {
           result[builderOptionsId] = ChangeType.MODIFY;
-        }
+        }*/
       });
     }
 

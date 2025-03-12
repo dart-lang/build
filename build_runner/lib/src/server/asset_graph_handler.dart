@@ -175,7 +175,7 @@ class AssetGraphHandler {
             node.type == NodeType.glob
                 ? node.globNodeConfiguration!.glob
                 : null,
-        'lastKnownDigest': node.lastKnownDigest.toString(),
+        // 'lastKnownDigest': node.lastKnownDigest.toString(),
       },
       'edges': edges,
       'nodes': nodes,

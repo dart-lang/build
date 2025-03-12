@@ -372,11 +372,11 @@ class SingleStepReaderWriter extends AssetReader
   /// Note that [id] must exist in the asset graph.
   FutureOr<Digest> _ensureDigest(AssetId id) {
     if (_runningBuild == null) return _delegate.digest(id);
-    var node = _runningBuild.assetGraph.get(id)!;
-    if (node.lastKnownDigest != null) return node.lastKnownDigest!;
+    // var node = _runningBuild.assetGraph.get(id)!;
+    // if (node.lastKnownDigest != null) return node.lastKnownDigest!;
     return _delegate.digest(id).then((digest) {
       _runningBuild.assetGraph.updateNode(id, (nodeBuilder) {
-        nodeBuilder.lastKnownDigest = digest;
+        // nodeBuilder.lastKnownDigest = digest;
       });
       return digest;
     });

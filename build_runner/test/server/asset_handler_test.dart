@@ -45,7 +45,11 @@ void main() {
   });
 
   void addAsset(String id, String content, {bool deleted = false}) {
-    var node = makeAssetNode(id, [], computeDigest(AssetId.parse(id), 'a'));
+    var node = makeAssetNode(
+      id,
+      [],
+      //computeDigest(AssetId.parse(id), 'a')
+    );
     if (deleted) {
       node = node.rebuild(
         (b) => b..deletedBy.add(node.id.addExtension('.post_anchor.1')),

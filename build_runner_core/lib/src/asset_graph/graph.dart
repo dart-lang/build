@@ -197,7 +197,7 @@ class AssetGraph {
         add(
           AssetNode.builderOptions(
             builderOptionsIdForAction(phase, phaseNum),
-            lastKnownDigest: computeBuilderOptionsDigest(phase.builderOptions),
+            // lastKnownDigest: computeBuilderOptionsDigest(phase.builderOptions),
           ),
         );
       } else if (phase is PostBuildPhase) {
@@ -206,9 +206,9 @@ class AssetGraph {
           add(
             AssetNode.builderOptions(
               builderOptionsIdForAction(builderAction, actionNum),
-              lastKnownDigest: computeBuilderOptionsDigest(
+              /*lastKnownDigest: computeBuilderOptionsDigest(
                 builderAction.builderOptions,
-              ),
+              ),*/
             ),
           );
           actionNum++;
@@ -228,10 +228,10 @@ class AssetGraph {
     await digestReader.cache.invalidate(ids);
     await Future.wait(
       ids.map((id) async {
-        final digest = await digestReader.digest(id);
+        /*final digest = await digestReader.digest(id);
         updateNode(id, (nodeBuilder) {
           nodeBuilder.lastKnownDigest = digest;
-        });
+        });*/
       }),
     );
   }
@@ -369,9 +369,9 @@ class AssetGraph {
           .where(
             (node) =>
                 node.isTrackedInput &&
-                (node.outputs.isNotEmpty ||
-                    node.primaryOutputs.isNotEmpty ||
-                    node.lastKnownDigest != null),
+                (node.outputs.isNotEmpty || node.primaryOutputs.isNotEmpty
+                // TODO(davidmorgan): needs something to replace it?
+                /*node.lastKnownDigest != null*/ ),
           )
           .map((node) => node.id),
       digestReader,

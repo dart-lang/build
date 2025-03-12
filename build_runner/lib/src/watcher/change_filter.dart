@@ -32,9 +32,10 @@ FutureOr<bool> shouldProcess(
     if (change.type == ChangeType.MODIFY) {
       // Was it really modified or just touched?
       reader.cache.invalidate([change.id]);
-      return reader
+      return true;
+      /*return reader
           .digest(change.id)
-          .then((newDigest) => node.lastKnownDigest != newDigest);
+          .then((newDigest) => node.lastKnownDigest != newDigest);*/
     }
   } else {
     if (change.type != ChangeType.ADD) return false;

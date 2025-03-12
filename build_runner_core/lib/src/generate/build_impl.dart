@@ -967,8 +967,8 @@ class _SingleBuild {
           ..globNodeState.inputs.replace(
             generatedFileInputs.followedBy(otherInputs),
           )
-          ..globNodeState.pendingBuildAction = PendingBuildAction.none
-          ..lastKnownDigest = md5.convert(utf8.encode(results.join(' ')));
+          ..globNodeState.pendingBuildAction = PendingBuildAction.none;
+        //..lastKnownDigest = md5.convert(utf8.encode(results.join(' ')));
       });
 
       unawaited(_lazyGlobs.remove(globId));
@@ -990,8 +990,8 @@ class _SingleBuild {
       }
     }
 
-    var builderOptionsNode = _assetGraph.get(builderOptionsId)!;
-    combine(builderOptionsNode.lastKnownDigest!.bytes as Uint8List);
+    // var builderOptionsNode = _assetGraph.get(builderOptionsId)!;
+    // combine(builderOptionsNode.lastKnownDigest!.bytes as Uint8List);
 
     for (final id in ids) {
       var node = _assetGraph.get(id)!;
@@ -1006,15 +1006,15 @@ class _SingleBuild {
         combine(md5.convert(id.toString().codeUnits).bytes as Uint8List);
         continue;
       } else {
-        if (node.lastKnownDigest == null) {
+        /*if (node.lastKnownDigest == null) {
           final digest = await reader.digest(id);
           await reader.cache.invalidate([id]);
           node = _assetGraph.updateNode(node.id, (nodeBuilder) {
             nodeBuilder.lastKnownDigest = digest;
           });
-        }
+        }*/
       }
-      combine(node.lastKnownDigest!.bytes as Uint8List);
+      // combine(node.lastKnownDigest!.bytes as Uint8List);
     }
 
     return Digest(combinedBytes);
@@ -1057,7 +1057,7 @@ class _SingleBuild {
 
     for (var output in outputs) {
       var wasOutput = readerWriter.assetsWritten.contains(output);
-      var digest = wasOutput ? await _readerWriter.digest(output) : null;
+      // var digest = wasOutput ? await _readerWriter.digest(output) : null;
 
       _removeOldInputs(output, usedInputs);
       _addNewInputs(output, usedInputs);
@@ -1067,7 +1067,7 @@ class _SingleBuild {
           ..wasOutput = wasOutput
           ..isFailure = isFailure
           ..previousInputsDigest = inputsDigest;
-        nodeBuilder.lastKnownDigest = digest;
+        // nodeBuilder.lastKnownDigest = digest;
       });
 
       if (isFailure) {
@@ -1083,7 +1083,7 @@ class _SingleBuild {
               ..wasOutput = false
               ..isFailure = true
               ..previousInputsDigest = null;
-            nodeBuilder.lastKnownDigest = null;
+            // nodeBuilder.lastKnownDigest = null;
           });
           allSkippedFailures.add(output);
           needsMarkAsFailure.addAll(_assetGraph.get(output)!.primaryOutputs);
