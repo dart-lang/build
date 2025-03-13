@@ -13,7 +13,6 @@ import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/asset_graph/node.dart';
 import 'package:build_runner_core/src/generate/phase.dart';
 import 'package:crypto/crypto.dart';
-import 'package:glob/glob.dart';
 import 'package:test/test.dart';
 import 'package:watcher/watcher.dart';
 
@@ -91,7 +90,7 @@ void main() {
       test('serialize/deserialize', () {
         var globNode = AssetNode.glob(
           makeAssetId(),
-          glob: Glob('**/*.dart'),
+          glob: '**/*.dart',
           phaseNumber: 0,
           pendingBuildAction: PendingBuildAction.build,
           inputs: HashSet(),
@@ -474,7 +473,7 @@ void main() {
           () async {
             var globNode = AssetNode.glob(
               primaryInputId.addExtension('.glob'),
-              glob: Glob('lib/*.cool'),
+              glob: 'lib/*.cool',
               phaseNumber: 0,
               pendingBuildAction: PendingBuildAction.none,
               inputs: HashSet(),

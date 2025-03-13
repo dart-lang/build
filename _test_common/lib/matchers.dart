@@ -178,11 +178,10 @@ class _AssetGraphMatcher extends Matcher {
 
           final configuration = node.globNodeConfiguration!;
           final expectedConfiguration = expectedNode.globNodeConfiguration!;
-          if (configuration.glob.pattern !=
-              expectedConfiguration.glob.pattern) {
+          if (configuration.glob != expectedConfiguration.glob) {
             matchState['glob of ${node.id}'] = [
-              configuration.glob.pattern,
-              expectedConfiguration.glob.pattern,
+              configuration.glob,
+              expectedConfiguration.glob,
             ];
             matches = false;
           }

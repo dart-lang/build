@@ -11,6 +11,7 @@ import 'package:build/build.dart';
 // ignore: implementation_imports
 import 'package:build/src/internal.dart';
 import 'package:crypto/crypto.dart';
+import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
@@ -679,6 +680,8 @@ class _SingleBuild {
     }
     // Clear input tracking accumulated during `_buildShouldRun`.
     readerWriter.inputTracker.clear();
+    // The anchor node is an input.
+    readerWriter.inputTracker.add(anchorNode.id);
 
     // Clean out the impacts of the previous run.
     await FailureReporter.clean(phaseNumber, input);
@@ -910,6 +913,7 @@ class _SingleBuild {
     return _lazyGlobs.putIfAbsent(globId, () async {
       final globNodeConfiguration =
           _assetGraph.get(globId)!.globNodeConfiguration!;
+      final glob = Glob(globNodeConfiguration.glob);
 
       // Generated files that match the glob.
       final generatedFileInputs = <AssetId>[];
@@ -924,7 +928,7 @@ class _SingleBuild {
             (node.type != NodeType.generated ||
                 node.generatedNodeConfiguration!.phaseNumber <
                     globNodeConfiguration.phaseNumber) &&
-            globNodeConfiguration.glob.matches(node.id.path)) {
+            glob.matches(node.id.path)) {
           if (node.type == NodeType.generated) {
             generatedFileInputs.add(node.id);
           } else {

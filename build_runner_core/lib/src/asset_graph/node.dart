@@ -7,8 +7,8 @@ import 'dart:convert';
 import 'package:build/build.dart' hide Builder;
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
+import 'package:built_value/serializer.dart';
 import 'package:crypto/crypto.dart';
-import 'package:glob/glob.dart';
 
 import '../generate/phase.dart';
 
@@ -16,6 +16,8 @@ part 'node.g.dart';
 
 /// Types of [AssetNode].
 class NodeType extends EnumClass {
+  static Serializer<NodeType> get serializer => _$nodeTypeSerializer;
+
   static const NodeType builderOptions = _$builderOptions;
   static const NodeType generated = _$generated;
   static const NodeType glob = _$glob;
@@ -33,6 +35,8 @@ class NodeType extends EnumClass {
 
 /// A node in the asset graph which may be an input to other assets.
 abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
+  static Serializer<AssetNode> get serializer => _$assetNodeSerializer;
+
   AssetId get id;
   NodeType get type;
 
@@ -219,7 +223,7 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
   factory AssetNode.glob(
     AssetId id, {
     Digest? lastKnownDigest,
-    required Glob glob,
+    required String glob,
     required int phaseNumber,
     Iterable<AssetId>? inputs,
     required PendingBuildAction pendingBuildAction,
@@ -236,11 +240,8 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
           ..lastKnownDigest = lastKnownDigest,
   );
 
-  static AssetId createGlobNodeId(String package, Glob glob, int phaseNum) =>
-      AssetId(
-        package,
-        'glob.$phaseNum.${base64.encode(utf8.encode(glob.pattern))}',
-      );
+  static AssetId createGlobNodeId(String package, String glob, int phaseNum) =>
+      AssetId(package, 'glob.$phaseNum.${base64.encode(utf8.encode(glob))}');
 
   /// A [primaryInput] to a [PostBuildAction].
   ///
@@ -313,6 +314,9 @@ abstract class AssetNode implements Built<AssetNode, AssetNodeBuilder> {
 abstract class GeneratedNodeConfiguration
     implements
         Built<GeneratedNodeConfiguration, GeneratedNodeConfigurationBuilder> {
+  static Serializer<GeneratedNodeConfiguration> get serializer =>
+      _$generatedNodeConfigurationSerializer;
+
   /// The primary input which generated this node.
   AssetId get primaryInput;
 
@@ -342,6 +346,9 @@ abstract class GeneratedNodeConfiguration
 /// State for an [AssetNode.generated] that changes during the build.
 abstract class GeneratedNodeState
     implements Built<GeneratedNodeState, GeneratedNodeStateBuilder> {
+  static Serializer<GeneratedNodeState> get serializer =>
+      _$generatedNodeStateSerializer;
+
   /// All the inputs that were read when generating this asset, or deciding not
   /// to generate it.
   BuiltSet<AssetId> get inputs;
@@ -373,7 +380,10 @@ abstract class GeneratedNodeState
 /// Additional configuration for an [AssetNode.glob].
 abstract class GlobNodeConfiguration
     implements Built<GlobNodeConfiguration, GlobNodeConfigurationBuilder> {
-  Glob get glob;
+  static Serializer<GlobNodeConfiguration> get serializer =>
+      _$globNodeConfigurationSerializer;
+
+  String get glob;
   int get phaseNumber;
 
   factory GlobNodeConfiguration(
@@ -386,6 +396,10 @@ abstract class GlobNodeConfiguration
 /// State for an [AssetNode.glob] that changes during the build.
 abstract class GlobNodeState
     implements Built<GlobNodeState, GlobNodeStateBuilder> {
+  static Serializer<GlobNodeState> get serializer => _$globNodeStateSerializer;
+
+  /// The next work that needs doing on this node.
+
   /// All the potential inputs matching this glob.
   ///
   /// This field differs from [results] in that [AssetNode.generated] which may
@@ -412,6 +426,9 @@ abstract class PostProcessAnchorNodeConfiguration
           PostProcessAnchorNodeConfiguration,
           PostProcessAnchorNodeConfigurationBuilder
         > {
+  static Serializer<PostProcessAnchorNodeConfiguration> get serializer =>
+      _$postProcessAnchorNodeConfigurationSerializer;
+
   int get actionNumber;
   AssetId get builderOptionsId;
   AssetId get primaryInput;
@@ -427,6 +444,9 @@ abstract class PostProcessAnchorNodeConfiguration
 abstract class PostProcessAnchorNodeState
     implements
         Built<PostProcessAnchorNodeState, PostProcessAnchorNodeStateBuilder> {
+  static Serializer<PostProcessAnchorNodeState> get serializer =>
+      _$postProcessAnchorNodeStateSerializer;
+
   Digest? get previousInputsDigest;
 
   factory PostProcessAnchorNodeState(
@@ -438,6 +458,9 @@ abstract class PostProcessAnchorNodeState
 
 /// Work that needs doing for a node that tracks its inputs.
 class PendingBuildAction extends EnumClass {
+  static Serializer<PendingBuildAction> get serializer =>
+      _$pendingBuildActionSerializer;
+
   static const PendingBuildAction none = _$none;
   static const PendingBuildAction buildIfInputsChanged = _$buildIfInputsChanged;
   static const PendingBuildAction build = _$build;
@@ -447,4 +470,60 @@ class PendingBuildAction extends EnumClass {
   static BuiltSet<PendingBuildAction> get values => _$pendingBuildActionValues;
   static PendingBuildAction valueOf(String name) =>
       _$pendingBuildActionValueOf(name);
+}
+
+@SerializersFor([AssetNode])
+final Serializers serializers =
+    (_$serializers.toBuilder()
+          ..add(AssetIdSerializer())
+          ..add(DigestSerializer()))
+        .build();
+
+/// Serializer for [AssetId].
+///
+/// It would also work to make `AssetId` a `built_value` class, but there's
+/// little benefit and it's nicer to keep codegen local to this package.
+class AssetIdSerializer implements PrimitiveSerializer<AssetId> {
+  @override
+  Iterable<Type> get types => [AssetId];
+
+  @override
+  String get wireName => 'AssetId';
+
+  @override
+  AssetId deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => AssetId.parse(serialized as String);
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    AssetId object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => object.toString();
+}
+
+/// Serializer for [Digest].
+class DigestSerializer implements PrimitiveSerializer<Digest> {
+  @override
+  Iterable<Type> get types => [Digest];
+
+  @override
+  String get wireName => 'Digest';
+
+  @override
+  Digest deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => Digest(base64.decode(serialized as String));
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    Digest object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => base64.encode(object.bytes);
 }

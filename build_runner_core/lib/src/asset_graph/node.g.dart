@@ -76,6 +76,881 @@ final BuiltSet<PendingBuildAction> _$pendingBuildActionValues =
       _$build,
     ]);
 
+Serializers _$serializers =
+    (new Serializers().toBuilder()
+          ..add(AssetNode.serializer)
+          ..add(GeneratedNodeConfiguration.serializer)
+          ..add(GeneratedNodeState.serializer)
+          ..add(GlobNodeConfiguration.serializer)
+          ..add(GlobNodeState.serializer)
+          ..add(NodeType.serializer)
+          ..add(PendingBuildAction.serializer)
+          ..add(PostProcessAnchorNodeConfiguration.serializer)
+          ..add(PostProcessAnchorNodeState.serializer)
+          ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(AssetId)]),
+            () => new SetBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(AssetId)]),
+            () => new SetBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(AssetId)]),
+            () => new ListBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(AssetId)]),
+            () => new SetBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(AssetId)]),
+            () => new SetBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(AssetId)]),
+            () => new SetBuilder<AssetId>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(AssetId)]),
+            () => new SetBuilder<AssetId>(),
+          ))
+        .build();
+Serializer<NodeType> _$nodeTypeSerializer = new _$NodeTypeSerializer();
+Serializer<AssetNode> _$assetNodeSerializer = new _$AssetNodeSerializer();
+Serializer<GeneratedNodeConfiguration> _$generatedNodeConfigurationSerializer =
+    new _$GeneratedNodeConfigurationSerializer();
+Serializer<GeneratedNodeState> _$generatedNodeStateSerializer =
+    new _$GeneratedNodeStateSerializer();
+Serializer<GlobNodeConfiguration> _$globNodeConfigurationSerializer =
+    new _$GlobNodeConfigurationSerializer();
+Serializer<GlobNodeState> _$globNodeStateSerializer =
+    new _$GlobNodeStateSerializer();
+Serializer<PostProcessAnchorNodeConfiguration>
+_$postProcessAnchorNodeConfigurationSerializer =
+    new _$PostProcessAnchorNodeConfigurationSerializer();
+Serializer<PostProcessAnchorNodeState> _$postProcessAnchorNodeStateSerializer =
+    new _$PostProcessAnchorNodeStateSerializer();
+Serializer<PendingBuildAction> _$pendingBuildActionSerializer =
+    new _$PendingBuildActionSerializer();
+
+class _$NodeTypeSerializer implements PrimitiveSerializer<NodeType> {
+  @override
+  final Iterable<Type> types = const <Type>[NodeType];
+  @override
+  final String wireName = 'NodeType';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    NodeType object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => object.name;
+
+  @override
+  NodeType deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => NodeType.valueOf(serialized as String);
+}
+
+class _$AssetNodeSerializer implements StructuredSerializer<AssetNode> {
+  @override
+  final Iterable<Type> types = const [AssetNode, _$AssetNode];
+  @override
+  final String wireName = 'AssetNode';
+
+  @override
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    AssetNode object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = <Object?>[
+      'id',
+      serializers.serialize(object.id, specifiedType: const FullType(AssetId)),
+      'type',
+      serializers.serialize(
+        object.type,
+        specifiedType: const FullType(NodeType),
+      ),
+      'primaryOutputs',
+      serializers.serialize(
+        object.primaryOutputs,
+        specifiedType: const FullType(BuiltSet, const [
+          const FullType(AssetId),
+        ]),
+      ),
+      'outputs',
+      serializers.serialize(
+        object.outputs,
+        specifiedType: const FullType(BuiltSet, const [
+          const FullType(AssetId),
+        ]),
+      ),
+      'anchorOutputs',
+      serializers.serialize(
+        object.anchorOutputs,
+        specifiedType: const FullType(BuiltSet, const [
+          const FullType(AssetId),
+        ]),
+      ),
+      'deletedBy',
+      serializers.serialize(
+        object.deletedBy,
+        specifiedType: const FullType(BuiltSet, const [
+          const FullType(AssetId),
+        ]),
+      ),
+    ];
+    Object? value;
+    value = object.generatedNodeConfiguration;
+    if (value != null) {
+      result
+        ..add('generatedNodeConfiguration')
+        ..add(
+          serializers.serialize(
+            value,
+            specifiedType: const FullType(GeneratedNodeConfiguration),
+          ),
+        );
+    }
+    value = object.generatedNodeState;
+    if (value != null) {
+      result
+        ..add('generatedNodeState')
+        ..add(
+          serializers.serialize(
+            value,
+            specifiedType: const FullType(GeneratedNodeState),
+          ),
+        );
+    }
+    value = object.globNodeConfiguration;
+    if (value != null) {
+      result
+        ..add('globNodeConfiguration')
+        ..add(
+          serializers.serialize(
+            value,
+            specifiedType: const FullType(GlobNodeConfiguration),
+          ),
+        );
+    }
+    value = object.globNodeState;
+    if (value != null) {
+      result
+        ..add('globNodeState')
+        ..add(
+          serializers.serialize(
+            value,
+            specifiedType: const FullType(GlobNodeState),
+          ),
+        );
+    }
+    value = object.postProcessAnchorNodeConfiguration;
+    if (value != null) {
+      result
+        ..add('postProcessAnchorNodeConfiguration')
+        ..add(
+          serializers.serialize(
+            value,
+            specifiedType: const FullType(PostProcessAnchorNodeConfiguration),
+          ),
+        );
+    }
+    value = object.postProcessAnchorNodeState;
+    if (value != null) {
+      result
+        ..add('postProcessAnchorNodeState')
+        ..add(
+          serializers.serialize(
+            value,
+            specifiedType: const FullType(PostProcessAnchorNodeState),
+          ),
+        );
+    }
+    value = object.lastKnownDigest;
+    if (value != null) {
+      result
+        ..add('lastKnownDigest')
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(Digest)),
+        );
+    }
+    return result;
+  }
+
+  @override
+  AssetNode deserialize(
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = new AssetNodeBuilder();
+
+    final iterator = serialized.iterator;
+    while (iterator.moveNext()) {
+      final key = iterator.current! as String;
+      iterator.moveNext();
+      final Object? value = iterator.current;
+      switch (key) {
+        case 'id':
+          result.id =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(AssetId),
+                  )!
+                  as AssetId;
+          break;
+        case 'type':
+          result.type =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(NodeType),
+                  )!
+                  as NodeType;
+          break;
+        case 'generatedNodeConfiguration':
+          result.generatedNodeConfiguration.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(GeneratedNodeConfiguration),
+                )!
+                as GeneratedNodeConfiguration,
+          );
+          break;
+        case 'generatedNodeState':
+          result.generatedNodeState.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(GeneratedNodeState),
+                )!
+                as GeneratedNodeState,
+          );
+          break;
+        case 'globNodeConfiguration':
+          result.globNodeConfiguration.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(GlobNodeConfiguration),
+                )!
+                as GlobNodeConfiguration,
+          );
+          break;
+        case 'globNodeState':
+          result.globNodeState.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(GlobNodeState),
+                )!
+                as GlobNodeState,
+          );
+          break;
+        case 'postProcessAnchorNodeConfiguration':
+          result.postProcessAnchorNodeConfiguration.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(
+                    PostProcessAnchorNodeConfiguration,
+                  ),
+                )!
+                as PostProcessAnchorNodeConfiguration,
+          );
+          break;
+        case 'postProcessAnchorNodeState':
+          result.postProcessAnchorNodeState.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(PostProcessAnchorNodeState),
+                )!
+                as PostProcessAnchorNodeState,
+          );
+          break;
+        case 'primaryOutputs':
+          result.primaryOutputs.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltSet, const [
+                    const FullType(AssetId),
+                  ]),
+                )!
+                as BuiltSet<Object?>,
+          );
+          break;
+        case 'outputs':
+          result.outputs.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltSet, const [
+                    const FullType(AssetId),
+                  ]),
+                )!
+                as BuiltSet<Object?>,
+          );
+          break;
+        case 'anchorOutputs':
+          result.anchorOutputs.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltSet, const [
+                    const FullType(AssetId),
+                  ]),
+                )!
+                as BuiltSet<Object?>,
+          );
+          break;
+        case 'lastKnownDigest':
+          result.lastKnownDigest =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(Digest),
+                  )
+                  as Digest?;
+          break;
+        case 'deletedBy':
+          result.deletedBy.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltSet, const [
+                    const FullType(AssetId),
+                  ]),
+                )!
+                as BuiltSet<Object?>,
+          );
+          break;
+      }
+    }
+
+    return result.build();
+  }
+}
+
+class _$GeneratedNodeConfigurationSerializer
+    implements StructuredSerializer<GeneratedNodeConfiguration> {
+  @override
+  final Iterable<Type> types = const [
+    GeneratedNodeConfiguration,
+    _$GeneratedNodeConfiguration,
+  ];
+  @override
+  final String wireName = 'GeneratedNodeConfiguration';
+
+  @override
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    GeneratedNodeConfiguration object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = <Object?>[
+      'primaryInput',
+      serializers.serialize(
+        object.primaryInput,
+        specifiedType: const FullType(AssetId),
+      ),
+      'builderOptionsId',
+      serializers.serialize(
+        object.builderOptionsId,
+        specifiedType: const FullType(AssetId),
+      ),
+      'phaseNumber',
+      serializers.serialize(
+        object.phaseNumber,
+        specifiedType: const FullType(int),
+      ),
+      'isHidden',
+      serializers.serialize(
+        object.isHidden,
+        specifiedType: const FullType(bool),
+      ),
+    ];
+
+    return result;
+  }
+
+  @override
+  GeneratedNodeConfiguration deserialize(
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = new GeneratedNodeConfigurationBuilder();
+
+    final iterator = serialized.iterator;
+    while (iterator.moveNext()) {
+      final key = iterator.current! as String;
+      iterator.moveNext();
+      final Object? value = iterator.current;
+      switch (key) {
+        case 'primaryInput':
+          result.primaryInput =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(AssetId),
+                  )!
+                  as AssetId;
+          break;
+        case 'builderOptionsId':
+          result.builderOptionsId =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(AssetId),
+                  )!
+                  as AssetId;
+          break;
+        case 'phaseNumber':
+          result.phaseNumber =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(int),
+                  )!
+                  as int;
+          break;
+        case 'isHidden':
+          result.isHidden =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(bool),
+                  )!
+                  as bool;
+          break;
+      }
+    }
+
+    return result.build();
+  }
+}
+
+class _$GeneratedNodeStateSerializer
+    implements StructuredSerializer<GeneratedNodeState> {
+  @override
+  final Iterable<Type> types = const [GeneratedNodeState, _$GeneratedNodeState];
+  @override
+  final String wireName = 'GeneratedNodeState';
+
+  @override
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    GeneratedNodeState object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = <Object?>[
+      'inputs',
+      serializers.serialize(
+        object.inputs,
+        specifiedType: const FullType(BuiltSet, const [
+          const FullType(AssetId),
+        ]),
+      ),
+      'pendingBuildAction',
+      serializers.serialize(
+        object.pendingBuildAction,
+        specifiedType: const FullType(PendingBuildAction),
+      ),
+      'wasOutput',
+      serializers.serialize(
+        object.wasOutput,
+        specifiedType: const FullType(bool),
+      ),
+      'isFailure',
+      serializers.serialize(
+        object.isFailure,
+        specifiedType: const FullType(bool),
+      ),
+    ];
+    Object? value;
+    value = object.previousInputsDigest;
+    if (value != null) {
+      result
+        ..add('previousInputsDigest')
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(Digest)),
+        );
+    }
+    return result;
+  }
+
+  @override
+  GeneratedNodeState deserialize(
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = new GeneratedNodeStateBuilder();
+
+    final iterator = serialized.iterator;
+    while (iterator.moveNext()) {
+      final key = iterator.current! as String;
+      iterator.moveNext();
+      final Object? value = iterator.current;
+      switch (key) {
+        case 'inputs':
+          result.inputs.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltSet, const [
+                    const FullType(AssetId),
+                  ]),
+                )!
+                as BuiltSet<Object?>,
+          );
+          break;
+        case 'pendingBuildAction':
+          result.pendingBuildAction =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(PendingBuildAction),
+                  )!
+                  as PendingBuildAction;
+          break;
+        case 'wasOutput':
+          result.wasOutput =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(bool),
+                  )!
+                  as bool;
+          break;
+        case 'isFailure':
+          result.isFailure =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(bool),
+                  )!
+                  as bool;
+          break;
+        case 'previousInputsDigest':
+          result.previousInputsDigest =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(Digest),
+                  )
+                  as Digest?;
+          break;
+      }
+    }
+
+    return result.build();
+  }
+}
+
+class _$GlobNodeConfigurationSerializer
+    implements StructuredSerializer<GlobNodeConfiguration> {
+  @override
+  final Iterable<Type> types = const [
+    GlobNodeConfiguration,
+    _$GlobNodeConfiguration,
+  ];
+  @override
+  final String wireName = 'GlobNodeConfiguration';
+
+  @override
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    GlobNodeConfiguration object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = <Object?>[
+      'glob',
+      serializers.serialize(object.glob, specifiedType: const FullType(String)),
+      'phaseNumber',
+      serializers.serialize(
+        object.phaseNumber,
+        specifiedType: const FullType(int),
+      ),
+    ];
+
+    return result;
+  }
+
+  @override
+  GlobNodeConfiguration deserialize(
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = new GlobNodeConfigurationBuilder();
+
+    final iterator = serialized.iterator;
+    while (iterator.moveNext()) {
+      final key = iterator.current! as String;
+      iterator.moveNext();
+      final Object? value = iterator.current;
+      switch (key) {
+        case 'glob':
+          result.glob =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
+          break;
+        case 'phaseNumber':
+          result.phaseNumber =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(int),
+                  )!
+                  as int;
+          break;
+      }
+    }
+
+    return result.build();
+  }
+}
+
+class _$GlobNodeStateSerializer implements StructuredSerializer<GlobNodeState> {
+  @override
+  final Iterable<Type> types = const [GlobNodeState, _$GlobNodeState];
+  @override
+  final String wireName = 'GlobNodeState';
+
+  @override
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    GlobNodeState object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = <Object?>[
+      'inputs',
+      serializers.serialize(
+        object.inputs,
+        specifiedType: const FullType(BuiltSet, const [
+          const FullType(AssetId),
+        ]),
+      ),
+      'pendingBuildAction',
+      serializers.serialize(
+        object.pendingBuildAction,
+        specifiedType: const FullType(PendingBuildAction),
+      ),
+      'results',
+      serializers.serialize(
+        object.results,
+        specifiedType: const FullType(BuiltList, const [
+          const FullType(AssetId),
+        ]),
+      ),
+    ];
+
+    return result;
+  }
+
+  @override
+  GlobNodeState deserialize(
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = new GlobNodeStateBuilder();
+
+    final iterator = serialized.iterator;
+    while (iterator.moveNext()) {
+      final key = iterator.current! as String;
+      iterator.moveNext();
+      final Object? value = iterator.current;
+      switch (key) {
+        case 'inputs':
+          result.inputs.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltSet, const [
+                    const FullType(AssetId),
+                  ]),
+                )!
+                as BuiltSet<Object?>,
+          );
+          break;
+        case 'pendingBuildAction':
+          result.pendingBuildAction =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(PendingBuildAction),
+                  )!
+                  as PendingBuildAction;
+          break;
+        case 'results':
+          result.results.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltList, const [
+                    const FullType(AssetId),
+                  ]),
+                )!
+                as BuiltList<Object?>,
+          );
+          break;
+      }
+    }
+
+    return result.build();
+  }
+}
+
+class _$PostProcessAnchorNodeConfigurationSerializer
+    implements StructuredSerializer<PostProcessAnchorNodeConfiguration> {
+  @override
+  final Iterable<Type> types = const [
+    PostProcessAnchorNodeConfiguration,
+    _$PostProcessAnchorNodeConfiguration,
+  ];
+  @override
+  final String wireName = 'PostProcessAnchorNodeConfiguration';
+
+  @override
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    PostProcessAnchorNodeConfiguration object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = <Object?>[
+      'actionNumber',
+      serializers.serialize(
+        object.actionNumber,
+        specifiedType: const FullType(int),
+      ),
+      'builderOptionsId',
+      serializers.serialize(
+        object.builderOptionsId,
+        specifiedType: const FullType(AssetId),
+      ),
+      'primaryInput',
+      serializers.serialize(
+        object.primaryInput,
+        specifiedType: const FullType(AssetId),
+      ),
+    ];
+
+    return result;
+  }
+
+  @override
+  PostProcessAnchorNodeConfiguration deserialize(
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = new PostProcessAnchorNodeConfigurationBuilder();
+
+    final iterator = serialized.iterator;
+    while (iterator.moveNext()) {
+      final key = iterator.current! as String;
+      iterator.moveNext();
+      final Object? value = iterator.current;
+      switch (key) {
+        case 'actionNumber':
+          result.actionNumber =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(int),
+                  )!
+                  as int;
+          break;
+        case 'builderOptionsId':
+          result.builderOptionsId =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(AssetId),
+                  )!
+                  as AssetId;
+          break;
+        case 'primaryInput':
+          result.primaryInput =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(AssetId),
+                  )!
+                  as AssetId;
+          break;
+      }
+    }
+
+    return result.build();
+  }
+}
+
+class _$PostProcessAnchorNodeStateSerializer
+    implements StructuredSerializer<PostProcessAnchorNodeState> {
+  @override
+  final Iterable<Type> types = const [
+    PostProcessAnchorNodeState,
+    _$PostProcessAnchorNodeState,
+  ];
+  @override
+  final String wireName = 'PostProcessAnchorNodeState';
+
+  @override
+  Iterable<Object?> serialize(
+    Serializers serializers,
+    PostProcessAnchorNodeState object, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = <Object?>[];
+    Object? value;
+    value = object.previousInputsDigest;
+    if (value != null) {
+      result
+        ..add('previousInputsDigest')
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(Digest)),
+        );
+    }
+    return result;
+  }
+
+  @override
+  PostProcessAnchorNodeState deserialize(
+    Serializers serializers,
+    Iterable<Object?> serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) {
+    final result = new PostProcessAnchorNodeStateBuilder();
+
+    final iterator = serialized.iterator;
+    while (iterator.moveNext()) {
+      final key = iterator.current! as String;
+      iterator.moveNext();
+      final Object? value = iterator.current;
+      switch (key) {
+        case 'previousInputsDigest':
+          result.previousInputsDigest =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(Digest),
+                  )
+                  as Digest?;
+          break;
+      }
+    }
+
+    return result.build();
+  }
+}
+
+class _$PendingBuildActionSerializer
+    implements PrimitiveSerializer<PendingBuildAction> {
+  @override
+  final Iterable<Type> types = const <Type>[PendingBuildAction];
+  @override
+  final String wireName = 'PendingBuildAction';
+
+  @override
+  Object serialize(
+    Serializers serializers,
+    PendingBuildAction object, {
+    FullType specifiedType = FullType.unspecified,
+  }) => object.name;
+
+  @override
+  PendingBuildAction deserialize(
+    Serializers serializers,
+    Object serialized, {
+    FullType specifiedType = FullType.unspecified,
+  }) => PendingBuildAction.valueOf(serialized as String);
+}
+
 class _$AssetNode extends AssetNode {
   @override
   final AssetId id;
@@ -750,7 +1625,7 @@ class GeneratedNodeStateBuilder
 
 class _$GlobNodeConfiguration extends GlobNodeConfiguration {
   @override
-  final Glob glob;
+  final String glob;
   @override
   final int phaseNumber;
 
@@ -811,9 +1686,9 @@ class GlobNodeConfigurationBuilder
     implements Builder<GlobNodeConfiguration, GlobNodeConfigurationBuilder> {
   _$GlobNodeConfiguration? _$v;
 
-  Glob? _glob;
-  Glob? get glob => _$this._glob;
-  set glob(Glob? glob) => _$this._glob = glob;
+  String? _glob;
+  String? get glob => _$this._glob;
+  set glob(String? glob) => _$this._glob = glob;
 
   int? _phaseNumber;
   int? get phaseNumber => _$this._phaseNumber;
