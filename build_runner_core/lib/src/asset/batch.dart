@@ -11,7 +11,6 @@ import 'package:build/src/internal.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 
-import '../environment/io_environment.dart';
 import 'writer.dart';
 
 /// A batch of file system writes that should be committed at once instead of
@@ -22,9 +21,6 @@ import 'writer.dart';
 /// re-analyze incomplete states multiple times.
 /// By storing pending outputs in memory first and then committing them at the
 /// end of the build, we have a better view over that needs to happen.
-///
-/// The default [IOEnvironment] uses readers and writes that are batch-aware
-/// outside of low-memory mode.
 ///
 /// TODO(davidmorgan): this is not currently used, refactor into `Filesystem`.
 final class _FileSystemWriteBatch {

@@ -126,10 +126,7 @@ targets:
         d.dir('lib', [d.file('some_lib.dart')]),
       ]).create();
       var packageGraph = await PackageGraph.forPath(pkgARoot);
-      environment = OverrideableEnvironment(
-        IOEnvironment(packageGraph),
-        onLog: (_) {},
-      );
+      environment = BuildEnvironment(packageGraph, onLogOverride: (_) {});
       options = await BuildOptions.create(
         LogSubscription(environment, logLevel: Level.OFF),
         packageGraph: packageGraph,
@@ -477,7 +474,7 @@ targets:
         // options object.
         await options.logListener.cancel();
         logs.clear();
-        environment = OverrideableEnvironment(environment, onLog: logs.add);
+        environment = environment.copyWith(onLogOverride: logs.add);
         options = await BuildOptions.create(
           LogSubscription(environment, logLevel: Level.WARNING),
           packageGraph: options.packageGraph,
@@ -728,7 +725,7 @@ targets:
         await createFile(aTxt.path, 'hello');
 
         var writerSpy = RunnerAssetWriterSpy(environment.writer);
-        environment = OverrideableEnvironment(environment, writer: writerSpy);
+        environment = environment.copyWith(writer: writerSpy);
 
         var originalAssetGraph = await AssetGraph.build(
           buildPhases,
@@ -801,12 +798,9 @@ targets:
         );
 
         var packageGraph = await PackageGraph.forPath(pkgARoot);
-        environment = OverrideableEnvironment(
-          IOEnvironment(packageGraph),
-          onLog: (_) {},
-        );
+        environment = BuildEnvironment(packageGraph, onLogOverride: (_) {});
         var writerSpy = RunnerAssetWriterSpy(environment.writer);
-        environment = OverrideableEnvironment(environment, writer: writerSpy);
+        environment = environment.copyWith(writer: writerSpy);
         options = await BuildOptions.create(
           LogSubscription(environment, logLevel: Level.OFF),
           packageGraph: packageGraph,

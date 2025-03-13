@@ -243,18 +243,15 @@ class BuildRunnerDaemonBuilder implements DaemonBuilder {
     var expectedDeletes = <AssetId>{};
     var outputStreamController = StreamController<ServerLog>();
 
-    var environment = OverrideableEnvironment(
-      IOEnvironment(
-        packageGraph,
-        outputSymlinksOnly: daemonOptions.outputSymlinksOnly,
-      ),
-      onLog: (record) {
+    var environment = BuildEnvironment(
+      packageGraph,
+      outputSymlinksOnly: daemonOptions.outputSymlinksOnly,
+      onLogOverride: (record) {
         outputStreamController.add(ServerLog.fromLogRecord(record));
       },
     );
 
-    var daemonEnvironment = OverrideableEnvironment(
-      environment,
+    var daemonEnvironment = environment.copyWith(
       writer: (environment.writer as ReaderWriter).copyWith(
         onDelete: expectedDeletes.add,
       ),

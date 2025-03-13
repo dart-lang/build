@@ -1,6 +1,7 @@
 ## 3.0.0-wip
 
 - Bump the min SDK to 3.7.0.
+- Use `build_runner_core` 9.0.0.
 - Breaking change: tests must use new `TestReaderWriter` instead of
   `InMemoryAssetReader` and `InMemoryAssetWriter`.
 - Breaking change: `testBuilder` no longer accepts a `reader` and a `writer`.

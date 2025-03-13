@@ -131,11 +131,11 @@ Future<TestBuildersResult> testBuilders(
   });
 
   builderConfigOverrides ??= const {};
-  var environment = OverrideableEnvironment(
-    IOEnvironment(packageGraph),
+  var environment = BuildEnvironment(
+    packageGraph,
     reader: readerWriter,
     writer: readerWriter,
-    onLog: onLog,
+    onLogOverride: onLog,
   );
   var logSubscription = LogSubscription(
     environment,

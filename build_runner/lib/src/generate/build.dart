@@ -82,15 +82,14 @@ Future<BuildResult> build(
   skipBuildScriptCheck ??= false;
   trackPerformance ??= false;
   verbose ??= false;
-  var environment = OverrideableEnvironment(
-    IOEnvironment(
-      packageGraph,
-      assumeTty: assumeTty,
-      outputSymlinksOnly: outputSymlinksOnly,
-    ),
+  var environment = BuildEnvironment(
+    packageGraph,
+    assumeTty: assumeTty,
+    outputSymlinksOnly: outputSymlinksOnly,
     reader: reader,
     writer: writer,
-    onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose),
+    onLogOverride:
+        onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose),
   );
   var logSubscription = LogSubscription(
     environment,
