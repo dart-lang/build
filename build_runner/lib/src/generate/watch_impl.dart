@@ -67,15 +67,14 @@ Future<ServeHandler> watch(
   trackPerformance ??= false;
   verbose ??= false;
 
-  var environment = OverrideableEnvironment(
-    IOEnvironment(
-      packageGraph,
-      assumeTty: assumeTty,
-      outputSymlinksOnly: outputSymlinksOnly,
-    ),
+  var environment = BuildEnvironment(
+    packageGraph,
+    assumeTty: assumeTty,
+    outputSymlinksOnly: outputSymlinksOnly,
     reader: reader,
     writer: writer,
-    onLog: onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose),
+    onLogOverride:
+        onLog ?? stdIOLogListener(assumeTty: assumeTty, verbose: verbose),
   );
   var logSubscription = LogSubscription(
     environment,
@@ -241,8 +240,7 @@ class WatchImpl implements BuildState {
     Future until, {
     bool isReleaseMode = false,
   }) {
-    var watcherEnvironment = OverrideableEnvironment(
-      environment,
+    var watcherEnvironment = environment.copyWith(
       writer: (environment.writer as ReaderWriter).copyWith(
         onDelete: _expectedDeletes.add,
       ),

@@ -1,5 +1,7 @@
-## 8.0.1-wip
+## 9.0.0-wip
 
+- Breaking: refactor `OverridableEnvironment` and `IOEnvironment` into
+  `BuildEnvironment`
 - Bump the min SDK to 3.7.0.
 - Fix crash when running on assets ending in a dot.
 - Start using `package:build/src/internal.dart'.

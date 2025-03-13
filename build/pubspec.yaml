@@ -10,7 +10,7 @@ environment:
 dependencies:
   analyzer: '>=6.9.0 <8.0.0'
   async: ^2.5.0
-  build_runner_core: ^8.0.1-wip
+  build_runner_core: ^9.0.0-wip
   convert: ^3.0.0
   crypto: ^3.0.0
   glob: ^2.0.0
