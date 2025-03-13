@@ -2,25 +2,44 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:build_runner_core/build_runner_core.dart';
+
 import '../asset/reader.dart';
+import '../asset/writer.dart';
 import 'asset_finder.dart';
 import 'asset_path_provider.dart';
 import 'filesystem.dart';
 import 'filesystem_cache.dart';
+import 'generated_asset_hider.dart';
 import 'reader_writer.dart';
 
 /// Provides access to the state backing an [AssetReader].
 extension AssetReaderStateExtension on AssetReader {
-  /// Returns a new instance with optionally updated [cache].
+  /// Returns a new instance with optionally updated [cache] and/or [generatedAssetHider].
   AssetReaderWriter copyWith({
-    AssetPathProvider? assetPathProvider,
     FilesystemCache? cache,
+    GeneratedAssetHider? generatedAssetHider,
   }) {
     _requireIsAssetReaderState();
     return (this as AssetReaderState).copyWith(
-      assetPathProvider: assetPathProvider,
       cache: cache,
+      generatedAssetHider: generatedAssetHider,
     );
+  }
+
+  AssetFinder get assetFinder {
+    _requireIsAssetReaderState();
+    return (this as AssetReaderState).assetFinder;
+  }
+
+  AssetPathProvider get assetPathProvider {
+    _requireIsAssetReaderState();
+    return (this as AssetReaderState).assetPathProvider;
+  }
+
+  GeneratedAssetHider get generatedAssetHider {
+    _requireIsAssetReaderState();
+    return (this as AssetReaderState).generatedAssetHider;
   }
 
   Filesystem get filesystem {
@@ -33,14 +52,25 @@ extension AssetReaderStateExtension on AssetReader {
     return (this as AssetReaderState).cache;
   }
 
-  AssetFinder get assetFinder {
-    _requireIsAssetReaderState();
-    return (this as AssetReaderState).assetFinder;
+  /// Throws if `this` is not an [AssetReaderState].
+  void _requireIsAssetReaderState() {
+    if (this is! AssetReaderState) {
+      throw StateError(
+        '`AssetReader` must implement `AssetReaderState`: $this',
+      );
+    }
   }
+}
 
-  AssetPathProvider get assetPathProvider {
+/// Provides access to the state backing an [AssetWriter].
+extension AssetWriterStateExtension on RunnerAssetWriter {
+  /// Returns a new instance with optionally updated [generatedAssetHider].
+  RunnerAssetWriter copyWith({GeneratedAssetHider? generatedAssetHider}) {
     _requireIsAssetReaderState();
-    return (this as AssetReaderState).assetPathProvider;
+    return (this as AssetReaderState).copyWith(
+          generatedAssetHider: generatedAssetHider,
+        )
+        as RunnerAssetWriter;
   }
 
   /// Throws if `this` is not an [AssetReaderState].
@@ -55,20 +85,11 @@ extension AssetReaderStateExtension on AssetReader {
 
 /// The state backing an [AssetReader].
 abstract interface class AssetReaderState {
-  /// Returns a new instance with optionally updated [assetPathProvider] and/or [cache].
+  /// Returns a new instance with optionally updated [cache] and/or [generatedAssetHider].
   AssetReaderWriter copyWith({
-    AssetPathProvider? assetPathProvider,
     FilesystemCache? cache,
+    GeneratedAssetHider? generatedAssetHider,
   });
-
-  /// The [Filesystem] that this reader reads from.
-  ///
-  /// Warning: this access to the filesystem bypasses reader functionality
-  /// such as read tracking, caching and visibility restriction.
-  Filesystem get filesystem;
-
-  /// The [FilesystemCache] that this reader uses for caching.
-  FilesystemCache get cache;
 
   /// The [AssetFinder] associated with this reader.
   ///
@@ -78,4 +99,16 @@ abstract interface class AssetReaderState {
 
   /// The [AssetPathProvider] associated with this reader.
   AssetPathProvider get assetPathProvider;
+
+  /// The [GeneratedAssetHider] associated with this reader.
+  GeneratedAssetHider get generatedAssetHider;
+
+  /// The [Filesystem] that this reader reads from.
+  ///
+  /// Warning: this access to the filesystem bypasses reader functionality
+  /// such as read tracking, caching and visibility restriction.
+  Filesystem get filesystem;
+
+  /// The [FilesystemCache] that this reader uses for caching.
+  FilesystemCache get cache;
 }

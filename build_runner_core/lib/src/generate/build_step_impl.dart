@@ -74,12 +74,15 @@ class BuildStepImpl implements BuildStep, AssetReaderState, AssetReaderWriter {
 
   @override
   BuildStepImpl copyWith({
-    AssetPathProvider? assetPathProvider,
     FilesystemCache? cache,
+    GeneratedAssetHider? generatedAssetHider,
   }) => BuildStepImpl(
     inputId,
     allowedOutputs,
-    _readerWriter.copyWith(assetPathProvider: assetPathProvider, cache: cache),
+    _readerWriter.copyWith(
+      cache: cache,
+      generatedAssetHider: generatedAssetHider,
+    ),
     _resolvers,
     _resourceManager,
     _resolvePackageConfig,
@@ -88,16 +91,20 @@ class BuildStepImpl implements BuildStep, AssetReaderState, AssetReaderWriter {
   );
 
   @override
-  Filesystem get filesystem => _readerWriter.filesystem;
-
-  @override
-  FilesystemCache get cache => _readerWriter.cache;
-
-  @override
   AssetFinder get assetFinder => _readerWriter.assetFinder;
 
   @override
   AssetPathProvider get assetPathProvider => _readerWriter.assetPathProvider;
+
+  @override
+  GeneratedAssetHider get generatedAssetHider =>
+      _readerWriter.generatedAssetHider;
+
+  @override
+  Filesystem get filesystem => _readerWriter.filesystem;
+
+  @override
+  FilesystemCache get cache => _readerWriter.cache;
 
   InputTracker get inputTracker => _readerWriter.inputTracker;
 

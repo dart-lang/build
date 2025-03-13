@@ -44,6 +44,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
       rootPackage: rootPackage ?? 'unset',
       assetFinder: InMemoryAssetFinder(filesystem, rootPackage),
       assetPathProvider: const InMemoryAssetPathProvider(),
+      generatedAssetHider: const NoopGeneratedAssetHider(),
       filesystem: filesystem,
       cache: const PassthroughFilesystemCache(),
       onDelete: null,
@@ -56,6 +57,7 @@ class InMemoryAssetReaderWriter extends ReaderWriter
     required super.rootPackage,
     required super.assetFinder,
     required super.assetPathProvider,
+    required super.generatedAssetHider,
     required super.filesystem,
     required super.cache,
     required super.onDelete,
@@ -65,15 +67,16 @@ class InMemoryAssetReaderWriter extends ReaderWriter
 
   @override
   InMemoryAssetReaderWriter copyWith({
-    AssetPathProvider? assetPathProvider,
     FilesystemCache? cache,
+    GeneratedAssetHider? generatedAssetHider,
     void Function(AssetId)? onDelete,
   }) => InMemoryAssetReaderWriter.using(
     assetsRead: assetsRead,
     assetsWritten: assetsWritten,
     rootPackage: rootPackage,
     assetFinder: assetFinder,
-    assetPathProvider: assetPathProvider ?? this.assetPathProvider,
+    assetPathProvider: assetPathProvider,
+    generatedAssetHider: generatedAssetHider ?? this.generatedAssetHider,
     filesystem: filesystem,
     cache: cache ?? this.cache,
     onDelete: onDelete ?? this.onDelete,

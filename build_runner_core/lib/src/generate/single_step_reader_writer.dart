@@ -162,15 +162,15 @@ class SingleStepReaderWriter extends AssetReader
 
   @override
   SingleStepReaderWriter copyWith({
-    AssetPathProvider? assetPathProvider,
     FilesystemCache? cache,
+    GeneratedAssetHider? generatedAssetHider,
   }) => SingleStepReaderWriter(
     runningBuild: _runningBuild,
     runningBuildStep: _runningBuildStep,
     fakeRunningBuildStep: _fakeRunningBuildStep,
     readerWriter: _delegate.copyWith(
-      assetPathProvider: assetPathProvider,
       cache: cache,
+      generatedAssetHider: generatedAssetHider,
     ),
     inputTracker: inputTracker,
     assetsWritten: assetsWritten,
@@ -232,13 +232,16 @@ class SingleStepReaderWriter extends AssetReader
   }
 
   @override
+  AssetPathProvider get assetPathProvider => _delegate.assetPathProvider;
+
+  @override
+  GeneratedAssetHider get generatedAssetHider => _delegate.generatedAssetHider;
+
+  @override
   Filesystem get filesystem => _delegate.filesystem;
 
   @override
   FilesystemCache get cache => _delegate.cache;
-
-  @override
-  AssetPathProvider get assetPathProvider => _delegate.assetPathProvider;
 
   /// Checks whether [id] can be read by this step - attempting to build the
   /// asset if necessary.

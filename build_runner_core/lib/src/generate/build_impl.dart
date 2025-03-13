@@ -53,48 +53,36 @@ Set<String> _buildPaths(Set<BuildDirectory> buildDirs) =>
         : buildDirs.map((b) => b.directory).toSet();
 
 class BuildImpl {
-  final FinalizedReader finalizedReader;
-
-  final AssetGraph assetGraph;
-
-  final BuildScriptUpdates? buildScriptUpdates;
-
-  final List<BuildPhase> _buildPhases;
-  final PackageGraph _packageGraph;
-  final TargetGraph _targetGraph;
-  final AssetReaderWriter _reader;
-  final Resolvers _resolvers;
-  final ResourceManager _resourceManager;
-  final RunnerAssetWriter _writer;
-  final bool _trackPerformance;
   final BuildEnvironment _environment;
-  final String? _logPerformanceDir;
+  final AssetGraph assetGraph;
+  final BuildScriptUpdates? buildScriptUpdates;
+  final BuildOptions _options;
+  final List<BuildPhase> _buildPhases;
+
+  final FinalizedReader finalizedReader;
+  final AssetReaderWriter _readerWriter;
+  final RunnerAssetWriter _deleteWriter;
+  final ResourceManager _resourceManager = ResourceManager();
 
   Future<void> beforeExit() => _resourceManager.beforeExit();
 
   BuildImpl._(
-    BuildDefinition buildDefinition,
-    BuildOptions options,
+    this._environment,
+    this.assetGraph,
+    this.buildScriptUpdates,
+    this._options,
     this._buildPhases,
     this.finalizedReader,
-  ) : buildScriptUpdates = buildDefinition.buildScriptUpdates,
-      _packageGraph = buildDefinition.packageGraph,
-      _targetGraph = buildDefinition.targetGraph,
-      _reader =
-          options.enableLowResourcesMode
-              ? buildDefinition.reader.copyWith(
-                cache: const PassthroughFilesystemCache(),
-              )
-              : buildDefinition.reader.copyWith(
-                cache: InMemoryFilesystemCache(),
-              ),
-      _resolvers = options.resolvers,
-      _writer = buildDefinition.writer,
-      assetGraph = buildDefinition.assetGraph,
-      _resourceManager = buildDefinition.resourceManager,
-      _environment = buildDefinition.environment,
-      _trackPerformance = options.trackPerformance,
-      _logPerformanceDir = options.logPerformanceDir;
+  ) : _deleteWriter = _environment.writer.copyWith(
+        generatedAssetHider: assetGraph,
+      ),
+      _readerWriter = _environment.reader.copyWith(
+        generatedAssetHider: assetGraph,
+        cache:
+            _options.enableLowResourcesMode
+                ? const PassthroughFilesystemCache()
+                : InMemoryFilesystemCache(),
+      );
 
   Future<BuildResult> run(
     Map<AssetId, ChangeType> updates, {
@@ -103,7 +91,7 @@ class BuildImpl {
   }) {
     finalizedReader.reset(_buildPaths(buildDirs), buildFilters);
     return _SingleBuild(this, buildDirs, buildFilters).run(updates)
-      ..whenComplete(_resolvers.reset);
+      ..whenComplete(_options.resolvers.reset);
   }
 
   static Future<BuildImpl> create(
@@ -132,14 +120,18 @@ class BuildImpl {
       buildPhases,
     );
     var finalizedReader = FinalizedReader(
-      buildDefinition.reader,
+      environment.reader.copyWith(
+        generatedAssetHider: buildDefinition.assetGraph,
+      ),
       buildDefinition.assetGraph,
-      buildDefinition.targetGraph,
+      options.targetGraph,
       buildPhases,
       options.packageGraph.root.name,
     );
     var build = BuildImpl._(
-      buildDefinition,
+      environment,
+      buildDefinition.assetGraph,
+      buildDefinition.buildScriptUpdates,
       options,
       buildPhases,
       finalizedReader,
@@ -161,9 +153,9 @@ class _SingleBuild {
   final TargetGraph _targetGraph;
   final BuildPerformanceTracker _performanceTracker;
   final AssetReaderWriter _readerWriter;
+  final RunnerAssetWriter _deleteWriter;
   final Resolvers _resolvers;
   final ResourceManager _resourceManager;
-  final RunnerAssetWriter _writer;
   final Set<BuildDirectory> _buildDirs;
   final String? _logPerformanceDir;
   final _failureReporter = FailureReporter();
@@ -183,18 +175,18 @@ class _SingleBuild {
       _buildFilters = buildFilters,
       _buildPhases = buildImpl._buildPhases,
       _environment = buildImpl._environment,
-      _packageGraph = buildImpl._packageGraph,
-      _targetGraph = buildImpl._targetGraph,
+      _packageGraph = buildImpl._options.packageGraph,
+      _targetGraph = buildImpl._options.targetGraph,
       _performanceTracker =
-          buildImpl._trackPerformance
+          buildImpl._options.trackPerformance
               ? BuildPerformanceTracker()
               : BuildPerformanceTracker.noOp(),
-      _readerWriter = buildImpl._reader,
-      _resolvers = buildImpl._resolvers,
+      _readerWriter = buildImpl._readerWriter,
+      _deleteWriter = buildImpl._deleteWriter,
+      _resolvers = buildImpl._options.resolvers,
       _resourceManager = buildImpl._resourceManager,
-      _writer = buildImpl._writer,
       _buildDirs = buildDirs,
-      _logPerformanceDir = buildImpl._logPerformanceDir {
+      _logPerformanceDir = buildImpl._options.logPerformanceDir {
     hungActionsHeartbeat = HungActionsHeartbeat(() {
       final message = StringBuffer();
       const actionsToLogMax = 5;
@@ -297,7 +289,7 @@ class _SingleBuild {
           _logger,
           'Caching finalized dependency graph',
           () async {
-            await _writer.writeAsBytes(
+            await _readerWriter.writeAsBytes(
               AssetId(_packageGraph.root.name, assetGraphPath),
               _assetGraph.serialize(),
             );
@@ -320,7 +312,7 @@ class _SingleBuild {
             () {
               var performanceLogId = AssetId(_packageGraph.root.name, logPath);
               var serialized = jsonEncode(result.performance);
-              return _writer.writeAsString(performanceLogId, serialized);
+              return _readerWriter.writeAsString(performanceLogId, serialized);
             },
           );
         }
@@ -1136,7 +1128,7 @@ class _SingleBuild {
     }
   }
 
-  Future _delete(AssetId id) => _writer.delete(id);
+  Future _delete(AssetId id) => _deleteWriter.delete(id);
 }
 
 String _actionLoggerName(

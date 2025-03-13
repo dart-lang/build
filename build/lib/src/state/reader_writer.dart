@@ -14,6 +14,7 @@ import 'asset_finder.dart';
 import 'asset_path_provider.dart';
 import 'filesystem.dart';
 import 'filesystem_cache.dart';
+import 'generated_asset_hider.dart';
 import 'reader_state.dart';
 
 /// An [AssetReader] and [AssetWriter].
@@ -40,14 +41,20 @@ class DelegatingAssetReaderWriter
   AssetPathProvider get assetPathProvider => reader.assetPathProvider;
 
   @override
+  GeneratedAssetHider get generatedAssetHider => reader.generatedAssetHider;
+
+  @override
   FilesystemCache get cache => reader.cache;
 
   @override
   AssetReaderWriter copyWith({
-    AssetPathProvider? assetPathProvider,
     FilesystemCache? cache,
+    GeneratedAssetHider? generatedAssetHider,
   }) => DelegatingAssetReaderWriter(
-    reader: reader.copyWith(assetPathProvider: assetPathProvider, cache: cache),
+    reader: reader.copyWith(
+      cache: cache,
+      generatedAssetHider: generatedAssetHider,
+    ),
     writer: writer,
   );
 
@@ -80,4 +87,7 @@ class DelegatingAssetReaderWriter
     String contents, {
     Encoding encoding = utf8,
   }) => writer.writeAsString(id, contents);
+
+  // TODO(davidmorgan): fix interfaces/dependencies to improve this.
+  Future delete(AssetId id) => throw UnimplementedError();
 }

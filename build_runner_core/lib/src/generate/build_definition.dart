@@ -16,8 +16,6 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
-import '../asset/build_cache.dart';
-import '../asset/reader_writer.dart';
 import '../asset/writer.dart';
 import '../asset_graph/exceptions.dart';
 import '../asset_graph/graph.dart';
@@ -36,37 +34,13 @@ import 'phase.dart';
 
 final _logger = Logger('BuildDefinition');
 
+// TODO(davidmorgan): rename/refactor this, it's now just about loading state,
+// not a build definition.
 class BuildDefinition {
   final AssetGraph assetGraph;
-  final TargetGraph targetGraph;
-
-  final AssetReader reader;
-  final RunnerAssetWriter writer;
-
-  final PackageGraph packageGraph;
-  final bool deleteFilesByDefault;
-  final ResourceManager resourceManager;
-
   final BuildScriptUpdates? buildScriptUpdates;
 
-  /// Whether or not to run in a mode that conserves RAM at the cost of build
-  /// speed.
-  final bool enableLowResourcesMode;
-
-  final BuildEnvironment environment;
-
-  BuildDefinition._(
-    this.assetGraph,
-    this.targetGraph,
-    this.reader,
-    this.writer,
-    this.packageGraph,
-    this.deleteFilesByDefault,
-    this.resourceManager,
-    this.buildScriptUpdates,
-    this.enableLowResourcesMode,
-    this.environment,
-  );
+  BuildDefinition._(this.assetGraph, this.buildScriptUpdates);
 
   static Future<BuildDefinition> prepareWorkspace(
     BuildEnvironment environment,
@@ -333,32 +307,12 @@ class _Loader {
         'Checking for unexpected pre-existing outputs.',
         () => _initialBuildCleanup(
           conflictingOutputs,
-          _copyWriterWithBuildCacheAssetPathProvider(
-            _environment.writer,
-            assetGraph!,
-          ),
+          _environment.writer.copyWith(generatedAssetHider: assetGraph),
         ),
       );
     }
 
-    return BuildDefinition._(
-      assetGraph!,
-      _options.targetGraph,
-      _copyReaderWithBuildCacheAssetPathProvider(
-        _environment.reader,
-        assetGraph!,
-      ),
-      _copyWriterWithBuildCacheAssetPathProvider(
-        _environment.writer,
-        assetGraph!,
-      ),
-      _options.packageGraph,
-      _options.deleteFilesByDefault,
-      ResourceManager(),
-      buildScriptUpdates,
-      _options.enableLowResourcesMode,
-      _environment,
-    );
+    return BuildDefinition._(assetGraph!, buildScriptUpdates);
   }
 
   /// Checks that the [_buildPhases] are valid based on whether they are
@@ -558,39 +512,13 @@ class _Loader {
       _buildPhases,
       updates,
       _options.packageGraph.root.name,
-      (id) => _copyWriterWithBuildCacheAssetPathProvider(
-        _environment.writer,
-        assetGraph,
-      ).delete(id),
-      _copyReaderWithBuildCacheAssetPathProvider(
-        _environment.reader,
-        assetGraph,
-      ),
+      (id) => _environment.writer
+          .copyWith(generatedAssetHider: assetGraph)
+          .delete(id),
+      _environment.reader.copyWith(generatedAssetHider: assetGraph),
     );
     return updates;
   }
-
-  AssetReader _copyReaderWithBuildCacheAssetPathProvider(
-    AssetReader original,
-    AssetGraph assetGraph,
-  ) => original.copyWith(
-    assetPathProvider: BuildCacheAssetPathProvider(
-      delegate: original.assetPathProvider,
-      assetGraph: assetGraph,
-      rootPackage: _options.packageGraph.root.name,
-    ),
-  );
-
-  RunnerAssetWriter _copyWriterWithBuildCacheAssetPathProvider(
-    RunnerAssetWriter original,
-    AssetGraph assetGraph,
-  ) => (original as ReaderWriter).copyWith(
-    assetPathProvider: BuildCacheAssetPathProvider(
-      delegate: original.assetPathProvider,
-      assetGraph: assetGraph,
-      rootPackage: _options.packageGraph.root.name,
-    ),
-  );
 
   /// Checks for any updates to the [AssetNode.builderOptions] for
   /// [buildPhases] compared to the last known state.

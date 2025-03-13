@@ -265,9 +265,12 @@ Future<AssetId> _writeAsset(
       if (symlinkOnly) {
         // We assert at the top of `createMergedOutputDirectories` that the
         // reader filesystem is `IoFilesystem`, so symlinks make sense.
-        await Link(
-          _filePathFor(outputDir, outputId),
-        ).create(reader.assetPathProvider.pathFor(id), recursive: true);
+        await Link(_filePathFor(outputDir, outputId)).create(
+          reader.assetPathProvider.pathFor(
+            reader.generatedAssetHider.maybeHide(id, packageGraph.root.name),
+          ),
+          recursive: true,
+        );
       } else {
         await _writeAsBytes(outputDir, outputId, await reader.readAsBytes(id));
       }
