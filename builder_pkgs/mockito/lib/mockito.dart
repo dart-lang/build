@@ -24,7 +24,6 @@ export 'src/mock.dart'
         Mock,
         SmartFake,
         named, // ignore: deprecated_member_use_from_same_package
-
         // -- setting behaviour
         when,
         any,
@@ -36,7 +35,6 @@ export 'src/mock.dart'
         Answering,
         Expectation,
         PostExpectation,
-
         // -- verification
         verify,
         verifyInOrder,
@@ -46,7 +44,6 @@ export 'src/mock.dart'
         VerificationResult,
         Verification,
         ListOfVerificationResult,
-
         // -- misc
         throwOnMissingStub,
         clearInteractions,

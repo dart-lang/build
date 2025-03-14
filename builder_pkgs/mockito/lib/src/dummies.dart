@@ -27,8 +27,11 @@ const double _dummyDouble = 0.0;
 
 // Create a dummy String with info on why it was created.
 String _dummyString(Object o, Invocation i) => Uri.encodeComponent(
-    'Dummy String created while calling ${i.toPrettyString()} on $o.'
-        .replaceAll(' ', '_'));
+  'Dummy String created while calling ${i.toPrettyString()} on $o.'.replaceAll(
+    ' ',
+    '_',
+  ),
+);
 
 // This covers functions with up to 20 positional arguments, for more arguments,
 // type arguments or named arguments, users would have to provide a dummy
@@ -55,7 +58,8 @@ Never Function([
   Object? arg18,
   Object? arg19,
   Object? arg20,
-]) _dummyFunction(Object parent, Invocation invocation) {
+])
+_dummyFunction(Object parent, Invocation invocation) {
   final stackTrace = StackTrace.current;
   return ([
     arg1,
@@ -78,8 +82,7 @@ Never Function([
     arg18,
     arg19,
     arg20,
-  ]) =>
-      throw FakeFunctionUsedError(invocation, parent, stackTrace);
+  ]) => throw FakeFunctionUsedError(invocation, parent, stackTrace);
 }
 
 class MissingDummyValueError {
@@ -104,22 +107,22 @@ typedef DummyBuilder<T> = T Function(Object parent, Invocation invocation);
 Map<Type, DummyBuilder> _dummyBuilders = {};
 
 Map<Type, DummyBuilder> _defaultDummyBuilders = {
-  bool: (_, __) => false,
-  int: (_, __) => _dummyInt,
-  num: (_, __) => _dummyInt,
-  double: (_, __) => _dummyDouble,
+  bool: (_, _) => false,
+  int: (_, _) => _dummyInt,
+  num: (_, _) => _dummyInt,
+  double: (_, _) => _dummyDouble,
   String: _dummyString,
-  Int8List: (_, __) => Int8List(0),
-  Int16List: (_, __) => Int16List(0),
-  Int32List: (_, __) => Int32List(0),
-  Int64List: (_, __) => Int64List(0),
-  Uint8List: (_, __) => Uint8List(0),
-  Uint16List: (_, __) => Uint16List(0),
-  Uint32List: (_, __) => Uint32List(0),
-  Uint64List: (_, __) => Uint64List(0),
-  Float32List: (_, __) => Float32List(0),
-  Float64List: (_, __) => Float64List(0),
-  ByteData: (_, __) => ByteData(0),
+  Int8List: (_, _) => Int8List(0),
+  Int16List: (_, _) => Int16List(0),
+  Int32List: (_, _) => Int32List(0),
+  Int64List: (_, _) => Int64List(0),
+  Uint8List: (_, _) => Uint8List(0),
+  Uint16List: (_, _) => Uint16List(0),
+  Uint32List: (_, _) => Uint32List(0),
+  Uint64List: (_, _) => Uint64List(0),
+  Float32List: (_, _) => Float32List(0),
+  Float64List: (_, _) => Float64List(0),
+  ByteData: (_, _) => ByteData(0),
   ...platformDummies,
 };
 

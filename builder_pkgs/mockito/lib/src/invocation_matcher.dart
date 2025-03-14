@@ -40,13 +40,15 @@ Matcher invokes(
   if (isGetter && isSetter) {
     throw ArgumentError('Cannot set isGetter and iSetter');
   }
-  return _InvocationMatcher(_InvocationSignature(
-    memberName: memberName,
-    positionalArguments: positionalArguments,
-    namedArguments: namedArguments,
-    isGetter: isGetter,
-    isSetter: isSetter,
-  ));
+  return _InvocationMatcher(
+    _InvocationSignature(
+      memberName: memberName,
+      positionalArguments: positionalArguments,
+      namedArguments: namedArguments,
+      isGetter: isGetter,
+      isSetter: isSetter,
+    ),
+  );
 }
 
 /// Returns a matcher that matches the name and arguments of an [invocation].
@@ -109,8 +111,10 @@ class _InvocationMatcher implements Matcher {
 
   // Returns named arguments as an iterable of '<name>: <value>'.
   static Iterable<String> _namedArgsAndValues(Invocation invocation) =>
-      invocation.namedArguments.keys.map((name) =>
-          '${_symbolToString(name)}: ${invocation.namedArguments[name]}');
+      invocation.namedArguments.keys.map(
+        (name) =>
+            '${_symbolToString(name)}: ${invocation.namedArguments[name]}',
+      );
 
   // This will give is a mangled symbol in dart2js/aot with minification
   // enabled, but it's safe to assume very few people will use the invocation
@@ -130,7 +134,7 @@ class _InvocationMatcher implements Matcher {
   // Specifically, if a Matcher is passed as an argument, we'd like to get an
   // error like "Expected fly(miles: > 10), Actual: fly(miles: 5)".
   @override
-  Description describeMismatch(item, Description d, _, __) {
+  Description describeMismatch(item, Description d, _, _) {
     if (item is Invocation) {
       d = d.add('Does not match ');
       return _describeInvocation(d, item);
@@ -144,11 +148,12 @@ class _InvocationMatcher implements Matcher {
       _invocation.memberName == item.memberName &&
       _invocation.isSetter == item.isSetter &&
       _invocation.isGetter == item.isGetter &&
-      const ListEquality<dynamic /* Matcher | E */ >(_MatcherEquality())
-          .equals(_invocation.positionalArguments, item.positionalArguments) &&
-      const MapEquality<dynamic, dynamic /* Matcher | E */ >(
-              values: _MatcherEquality())
-          .equals(_invocation.namedArguments, item.namedArguments);
+      const ListEquality<dynamic /* Matcher | E */>(
+        _MatcherEquality(),
+      ).equals(_invocation.positionalArguments, item.positionalArguments) &&
+      const MapEquality<dynamic, dynamic /* Matcher | E */>(
+        values: _MatcherEquality(),
+      ).equals(_invocation.namedArguments, item.namedArguments);
 }
 
 // Uses both DeepCollectionEquality and custom matching for invocation matchers.

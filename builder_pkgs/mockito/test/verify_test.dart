@@ -31,9 +31,12 @@ class _RealClass {
     throw StateError('I must be mocked');
   }
 
-  String? methodWithLongArgs(LongToString? a, LongToString? b,
-          {LongToString? c, LongToString? d}) =>
-      'Real';
+  String? methodWithLongArgs(
+    LongToString? a,
+    LongToString? b, {
+    LongToString? c,
+    LongToString? d,
+  }) => 'Real';
 }
 
 class LongToString {
@@ -44,7 +47,8 @@ class LongToString {
   LongToString(this.aList, this.aMap, this.aString);
 
   @override
-  String toString() => 'LongToString<\n'
+  String toString() =>
+      'LongToString<\n'
       '    aList: $aList\n'
       '    aMap: $aMap\n'
       '    aString: $aString\n'
@@ -58,13 +62,16 @@ void expectFail(Pattern expectedMessage, void Function() expectedToFail) {
     expectedToFail();
     fail('It was expected to fail!');
   } on TestFailure catch (e) {
-    expect(e.message,
-        expectedMessage is String ? expectedMessage : contains(expectedMessage),
-        reason: 'Failed but with unexpected message');
+    expect(
+      e.message,
+      expectedMessage is String ? expectedMessage : contains(expectedMessage),
+      reason: 'Failed but with unexpected message',
+    );
   }
 }
 
-const noMatchingCallsFooter = '(If you called `verify(...).called(0);`, '
+const noMatchingCallsFooter =
+    '(If you called `verify(...).called(0);`, '
     'please instead use `verifyNever(...);`.)';
 
 void main() {
@@ -93,14 +100,12 @@ void main() {
 
     test('should mock method with positional args', () {
       mock.methodWithPositionalArgs(42, 17);
-      expectFail(
-          'No matching calls. All calls: '
+      expectFail('No matching calls. All calls: '
           '_MockedClass.methodWithPositionalArgs(42, 17)\n'
           '$noMatchingCallsFooter', () {
         verify(mock.methodWithPositionalArgs(42));
       });
-      expectFail(
-          'No matching calls. All calls: '
+      expectFail('No matching calls. All calls: '
           '_MockedClass.methodWithPositionalArgs(42, 17)\n'
           '$noMatchingCallsFooter', () {
         verify(mock.methodWithPositionalArgs(42, 18));
@@ -110,14 +115,12 @@ void main() {
 
     test('should mock method with named args', () {
       mock.methodWithNamedArgs(42, y: 17);
-      expectFail(
-          'No matching calls. All calls: '
+      expectFail('No matching calls. All calls: '
           '_MockedClass.methodWithNamedArgs(42, {y: 17})\n'
           '$noMatchingCallsFooter', () {
         verify(mock.methodWithNamedArgs(42));
       });
-      expectFail(
-          'No matching calls. All calls: '
+      expectFail('No matching calls. All calls: '
           '_MockedClass.methodWithNamedArgs(42, {y: 17})\n'
           '$noMatchingCallsFooter', () {
         verify(mock.methodWithNamedArgs(42, y: 18));
@@ -127,8 +130,7 @@ void main() {
 
     test('should mock method with list args', () {
       mock.methodWithListArgs([42]);
-      expectFail(
-          'No matching calls. All calls: '
+      expectFail('No matching calls. All calls: '
           '_MockedClass.methodWithListArgs([42])\n'
           '$noMatchingCallsFooter', () {
         verify(mock.methodWithListArgs([43]));
@@ -138,8 +140,7 @@ void main() {
 
     test('should mock method with argument matcher', () {
       mock.methodWithNormalArgs(100);
-      expectFail(
-          'No matching calls. All calls: '
+      expectFail('No matching calls. All calls: '
           '_MockedClass.methodWithNormalArgs(100)\n'
           '$noMatchingCallsFooter', () {
         verify(mock.methodWithNormalArgs(argThat(greaterThan(100))));
@@ -147,25 +148,30 @@ void main() {
       verify(mock.methodWithNormalArgs(argThat(greaterThanOrEqualTo(100))));
     });
 
-    test('should mock method with mix of argument matchers and real things',
-        () {
-      mock.methodWithPositionalArgs(100, 17);
-      expectFail(
-          'No matching calls. All calls: '
-          '_MockedClass.methodWithPositionalArgs(100, 17)\n'
-          '$noMatchingCallsFooter', () {
-        verify(mock.methodWithPositionalArgs(
-            argThat(greaterThanOrEqualTo(100)), 18));
-      });
-      expectFail(
-          'No matching calls. All calls: '
-          '_MockedClass.methodWithPositionalArgs(100, 17)\n'
-          '$noMatchingCallsFooter', () {
-        verify(mock.methodWithPositionalArgs(argThat(greaterThan(100)), 17));
-      });
-      verify(mock.methodWithPositionalArgs(
-          argThat(greaterThanOrEqualTo(100)), 17));
-    });
+    test(
+      'should mock method with mix of argument matchers and real things',
+      () {
+        mock.methodWithPositionalArgs(100, 17);
+        expectFail('No matching calls. All calls: '
+            '_MockedClass.methodWithPositionalArgs(100, 17)\n'
+            '$noMatchingCallsFooter', () {
+          verify(
+            mock.methodWithPositionalArgs(
+              argThat(greaterThanOrEqualTo(100)),
+              18,
+            ),
+          );
+        });
+        expectFail('No matching calls. All calls: '
+            '_MockedClass.methodWithPositionalArgs(100, 17)\n'
+            '$noMatchingCallsFooter', () {
+          verify(mock.methodWithPositionalArgs(argThat(greaterThan(100)), 17));
+        });
+        verify(
+          mock.methodWithPositionalArgs(argThat(greaterThanOrEqualTo(100)), 17),
+        );
+      },
+    );
 
     test('should mock getter', () {
       mock.getter;
@@ -174,8 +180,10 @@ void main() {
 
     test('should mock setter', () {
       mock.setter = 'A';
-      final expectedMessage = RegExp.escape('No matching calls. '
-          'All calls: _MockedClass.setter==\'A\'\n$noMatchingCallsFooter');
+      final expectedMessage = RegExp.escape(
+        'No matching calls. '
+        'All calls: _MockedClass.setter==\'A\'\n$noMatchingCallsFooter',
+      );
       // RegExp needed because of https://github.com/dart-lang/sdk/issues/33565
       final expectedPattern = RegExp(expectedMessage.replaceFirst('==', '=?='));
 
@@ -199,12 +207,16 @@ void main() {
         fail('verify call was expected to throw!');
       } catch (exception) {
         expect(
-            exception,
-            isA<StateError>().having(
-                (exception) => exception.message,
-                'message',
-                contains('Verification appears to be in progress. '
-                    '2 verify calls have been stored.')));
+          exception,
+          isA<StateError>().having(
+            (exception) => exception.message,
+            'message',
+            contains(
+              'Verification appears to be in progress. '
+              '2 verify calls have been stored.',
+            ),
+          ),
+        );
       }
     });
 
@@ -217,8 +229,7 @@ void main() {
 
   group('verify should fail when no matching call is found', () {
     test('and there are no unmatched calls', () {
-      expectFail(
-          'No matching calls (actually, no calls at all).\n'
+      expectFail('No matching calls (actually, no calls at all).\n'
           '$noMatchingCallsFooter', () {
         verify(mock.methodWithNormalArgs(43));
       });
@@ -227,26 +238,29 @@ void main() {
     test('and there is one unmatched call', () {
       mock.methodWithNormalArgs(42);
       expectFail(
-          'No matching calls. All calls: _MockedClass.methodWithNormalArgs(42)\n'
-          '$noMatchingCallsFooter', () {
-        verify(mock.methodWithNormalArgs(43));
-      });
+        'No matching calls. All calls: _MockedClass.methodWithNormalArgs(42)\n'
+        '$noMatchingCallsFooter',
+        () {
+          verify(mock.methodWithNormalArgs(43));
+        },
+      );
     });
 
     test('and there is one unmatched call without args', () {
       mock.methodWithOptionalArg();
       expectFail(
-          'No matching calls. All calls: _MockedClass.methodWithOptionalArg(null)\n'
-          '$noMatchingCallsFooter', () {
-        verify(mock.methodWithOptionalArg(43));
-      });
+        'No matching calls. All calls: _MockedClass.methodWithOptionalArg(null)\n'
+        '$noMatchingCallsFooter',
+        () {
+          verify(mock.methodWithOptionalArg(43));
+        },
+      );
     });
 
     test('and there are multiple unmatched calls', () {
       mock.methodWithNormalArgs(41);
       mock.methodWithNormalArgs(42);
-      expectFail(
-          'No matching calls. All calls: '
+      expectFail('No matching calls. All calls: '
           '_MockedClass.methodWithNormalArgs(41), '
           '_MockedClass.methodWithNormalArgs(42)\n'
           '$noMatchingCallsFooter', () {
@@ -256,8 +270,7 @@ void main() {
 
     test('and unmatched calls have only named args', () {
       mock.methodWithOnlyNamedArgs(y: 1);
-      expectFail(
-          'No matching calls. All calls: '
+      expectFail('No matching calls. All calls: '
           '_MockedClass.methodWithOnlyNamedArgs({y: 1, z: null})\n'
           '$noMatchingCallsFooter', () {
         verify(mock.methodWithOnlyNamedArgs());
@@ -268,8 +281,7 @@ void main() {
   group('verify qualifies', () {
     group('unqualified as at least one', () {
       test('zero fails', () {
-        expectFail(
-            'No matching calls (actually, no calls at all).\n'
+        expectFail('No matching calls (actually, no calls at all).\n'
             '$noMatchingCallsFooter', () {
           verify(mock.methodWithoutArgs());
         });
@@ -289,8 +301,7 @@ void main() {
 
     group('expecting one call', () {
       test('zero actual calls fails', () {
-        expectFail(
-            'No matching calls (actually, no calls at all).\n'
+        expectFail('No matching calls (actually, no calls at all).\n'
             '$noMatchingCallsFooter', () {
           verify(mock.methodWithoutArgs()).called(1);
         });
@@ -304,17 +315,18 @@ void main() {
       test('more than one actual call fails', () {
         mock.methodWithoutArgs();
         mock.methodWithoutArgs();
-        expectFail('Expected: <1>\n  Actual: <2>\nUnexpected number of calls\n',
-            () {
-          verify(mock.methodWithoutArgs()).called(1);
-        });
+        expectFail(
+          'Expected: <1>\n  Actual: <2>\nUnexpected number of calls\n',
+          () {
+            verify(mock.methodWithoutArgs()).called(1);
+          },
+        );
       });
     });
 
     group('expecting more than two calls', () {
       test('zero actual calls fails', () {
-        expectFail(
-            'No matching calls (actually, no calls at all).\n'
+        expectFail('No matching calls (actually, no calls at all).\n'
             '$noMatchingCallsFooter', () {
           verify(mock.methodWithoutArgs()).called(greaterThan(2));
         });
@@ -322,8 +334,7 @@ void main() {
 
       test('one actual call fails', () {
         mock.methodWithoutArgs();
-        expectFail(
-            'Expected: a value greater than <2>\n'
+        expectFail('Expected: a value greater than <2>\n'
             '  Actual: <1>\n'
             '   Which: is not a value greater than <2>\n'
             'Unexpected number of calls\n', () {
@@ -341,8 +352,7 @@ void main() {
 
     group('expecting zero calls', () {
       test('zero actual calls passes', () {
-        expectFail(
-            'No matching calls (actually, no calls at all).\n'
+        expectFail('No matching calls (actually, no calls at all).\n'
             '$noMatchingCallsFooter', () {
           verify(mock.methodWithoutArgs()).called(0);
         });
@@ -350,8 +360,7 @@ void main() {
 
       test('one actual call fails', () {
         mock.methodWithoutArgs();
-        expectFail(
-            'Expected: <0>\n'
+        expectFail('Expected: <0>\n'
             '  Actual: <1>\n'
             'Unexpected number of calls\n', () {
           verify(mock.methodWithoutArgs()).called(0);
@@ -380,8 +389,7 @@ void main() {
       test('fail case', () {
         mock.methodWithoutArgs();
         verify(mock.methodWithoutArgs());
-        expectFail(
-            'No matching calls. '
+        expectFail('No matching calls. '
             'All calls: [VERIFIED] _MockedClass.methodWithoutArgs()\n'
             '$noMatchingCallsFooter', () {
           verify(mock.methodWithoutArgs());
@@ -404,8 +412,7 @@ void main() {
 
     test('any touch fails', () {
       mock.methodWithoutArgs();
-      expectFail(
-          'No interaction expected, but following found: '
+      expectFail('No interaction expected, but following found: '
           '_MockedClass.methodWithoutArgs()', () {
         verifyZeroInteractions(mock);
       });
@@ -414,8 +421,7 @@ void main() {
     test('verified call fails', () {
       mock.methodWithoutArgs();
       verify(mock.methodWithoutArgs());
-      expectFail(
-          'No interaction expected, but following found: '
+      expectFail('No interaction expected, but following found: '
           '[VERIFIED] _MockedClass.methodWithoutArgs()', () {
         verifyZeroInteractions(mock);
       });
@@ -429,8 +435,7 @@ void main() {
 
     test('any unverified touch fails', () {
       mock.methodWithoutArgs();
-      expectFail(
-          'No more calls expected, but following found: '
+      expectFail('No more calls expected, but following found: '
           '_MockedClass.methodWithoutArgs()', () {
         verifyNoMoreInteractions(mock);
       });
@@ -457,8 +462,7 @@ void main() {
     test('wrong order fails', () {
       mock.methodWithoutArgs();
       mock.getter;
-      expectFail(
-          'Matching call #1 not found. All calls: '
+      expectFail('Matching call #1 not found. All calls: '
           '_MockedClass.methodWithoutArgs(), _MockedClass.getter', () {
         verifyInOrder([mock.getter, mock.methodWithoutArgs()]);
       });
@@ -466,39 +470,42 @@ void main() {
 
     test('should fail when given non-mock-call parameters', () {
       expectFail(
-          RegExp("'verifyInOrder' called with non-mockito stub calls; List "
-              'contains 3 elements, but 2 stub calls were stored'), () {
-        verifyInOrder([mock.getter, mock.methodWithoutArgs, mock.getter]);
-      });
+        RegExp(
+          "'verifyInOrder' called with non-mockito stub calls; List "
+          'contains 3 elements, but 2 stub calls were stored',
+        ),
+        () {
+          verifyInOrder([mock.getter, mock.methodWithoutArgs, mock.getter]);
+        },
+      );
     });
 
     test('should fail when parameters do not map to List elements', () {
       expectFail(
-          RegExp("'verifyInOrder' called with non-mockito stub calls; List "
-              'contains 1 elements, but 2 stub calls were stored'), () {
-        verifyInOrder([
-          [mock.getter, mock.getter]
-        ]);
-      });
+        RegExp(
+          "'verifyInOrder' called with non-mockito stub calls; List "
+          'contains 1 elements, but 2 stub calls were stored',
+        ),
+        () {
+          verifyInOrder([
+            [mock.getter, mock.getter],
+          ]);
+        },
+      );
     });
 
     test('verify been used as an argument fails', () {
       mock.methodWithoutArgs();
       mock.getter;
-      expectFail(
-          'There is already a verification in progress, '
+      expectFail('There is already a verification in progress, '
           'check if it was not called with a verify argument(s)', () {
-        verifyInOrder([
-          verify(mock.getter),
-          verify(mock.methodWithoutArgs()),
-        ]);
+        verifyInOrder([verify(mock.getter), verify(mock.methodWithoutArgs())]);
       });
     });
 
     test('incomplete fails', () {
       mock.methodWithoutArgs();
-      expectFail(
-          'Matching call #1 not found. All calls: '
+      expectFail('Matching call #1 not found. All calls: '
           '_MockedClass.methodWithoutArgs()', () {
         verifyInOrder([mock.methodWithoutArgs(), mock.getter]);
       });
@@ -508,19 +515,23 @@ void main() {
       mock.methodWithoutArgs();
       mock.getter;
       mock.methodWithoutArgs();
-      verifyInOrder(
-          [mock.methodWithoutArgs(), mock.getter, mock.methodWithoutArgs()]);
+      verifyInOrder([
+        mock.methodWithoutArgs(),
+        mock.getter,
+        mock.methodWithoutArgs(),
+      ]);
     });
 
     test('can return captures from capturing argument matchers', () {
       mock.methodWithNormalArgs(1);
       mock.methodWithoutArgs();
       mock.methodWithNormalArgs(2);
-      final captured = verifyInOrder([
-        mock.methodWithNormalArgs(captureAny),
-        mock.methodWithoutArgs(),
-        mock.methodWithNormalArgs(captureAny)
-      ]).captured;
+      final captured =
+          verifyInOrder([
+            mock.methodWithNormalArgs(captureAny),
+            mock.methodWithoutArgs(),
+            mock.methodWithNormalArgs(captureAny),
+          ]).captured;
       expect(captured, hasLength(3));
       expect(captured[0], equals([1]));
       expect(captured[1], equals([]));
@@ -531,27 +542,32 @@ void main() {
       mock.methodWithoutArgs();
       mock.methodWithoutArgs();
       mock.getter;
-      expectFail(
-          'Matching call #2 not found. All calls: '
+      expectFail('Matching call #2 not found. All calls: '
           '_MockedClass.methodWithoutArgs(), _MockedClass.methodWithoutArgs(), '
           '_MockedClass.getter', () {
-        verifyInOrder(
-            [mock.methodWithoutArgs(), mock.getter, mock.methodWithoutArgs()]);
+        verifyInOrder([
+          mock.methodWithoutArgs(),
+          mock.getter,
+          mock.methodWithoutArgs(),
+        ]);
       });
     });
   });
 
   group('multiline toStrings on objects', () {
-    test(
-        '"No matching calls" message visibly separates unmatched calls, '
+    test('"No matching calls" message visibly separates unmatched calls, '
         'if an arg\'s string representations is multiline', () {
-      mock.methodWithLongArgs(LongToString([1, 2], {1: 'a', 2: 'b'}, 'c'),
-          LongToString([4, 5], {3: 'd', 4: 'e'}, 'f'));
-      mock.methodWithLongArgs(null, null,
-          c: LongToString([5, 6], {5: 'g', 6: 'h'}, 'i'),
-          d: LongToString([7, 8], {7: 'j', 8: 'k'}, 'l'));
-      expectFail(
-          'No matching calls. All calls: '
+      mock.methodWithLongArgs(
+        LongToString([1, 2], {1: 'a', 2: 'b'}, 'c'),
+        LongToString([4, 5], {3: 'd', 4: 'e'}, 'f'),
+      );
+      mock.methodWithLongArgs(
+        null,
+        null,
+        c: LongToString([5, 6], {5: 'g', 6: 'h'}, 'i'),
+        d: LongToString([7, 8], {7: 'j', 8: 'k'}, 'l'),
+      );
+      expectFail('No matching calls. All calls: '
           '_MockedClass.methodWithLongArgs(\n'
           '    LongToString<\n'
           '        aList: [1, 2]\n'

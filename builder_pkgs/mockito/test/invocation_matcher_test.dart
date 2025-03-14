@@ -82,9 +82,11 @@ void main() {
         call1,
         isInvocation(call3),
         // RegExp needed because of https://github.com/dart-lang/sdk/issues/33565
-        RegExp('Expected: set value=? <true> '
-            "Actual: <Instance of '${call3.runtimeType}'> "
-            'Which: Does not match get value'),
+        RegExp(
+          'Expected: set value=? <true> '
+          "Actual: <Instance of '${call3.runtimeType}'> "
+          'Which: Does not match get value',
+        ),
       );
     });
 
@@ -100,9 +102,11 @@ void main() {
         call1,
         isInvocation(call3),
         // RegExp needed because of https://github.com/dart-lang/sdk/issues/33565
-        RegExp('Expected: set value=? <false> '
-            "Actual: <Instance of '${call3.runtimeType}'> "
-            'Which: Does not match set value=? <true>'),
+        RegExp(
+          'Expected: set value=? <false> '
+          "Actual: <Instance of '${call3.runtimeType}'> "
+          'Which: Does not match set value=? <true>',
+        ),
       );
     });
   });
@@ -168,9 +172,10 @@ void shouldFail(value, Matcher matcher, expected) {
     expect(value, matcher);
     fail(reason);
   } on TestFailure catch (e) {
-    final matcher = expected is String
-        ? equalsIgnoringWhitespace(expected)
-        : expected is RegExp
+    final matcher =
+        expected is String
+            ? equalsIgnoringWhitespace(expected)
+            : expected is RegExp
             ? contains(expected)
             : expected;
     expect(collapseWhitespace(e.message!), matcher, reason: reason);

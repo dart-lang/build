@@ -14,6 +14,7 @@
 
 import 'dart:io';
 import 'dart:isolate';
+
 import 'dummies.dart' show DummyBuilder;
 import 'mock.dart' show SmartFake;
 
@@ -22,7 +23,8 @@ class FakeSendPort extends SmartFake implements SendPort {
 }
 
 Map<Type, DummyBuilder> platformDummies = {
-  ProcessResult: (parent, invocation) => ProcessResult(0, 0, '', '''
+  ProcessResult:
+      (parent, invocation) => ProcessResult(0, 0, '', '''
 dummy ProcessResult created for a call to $parent.${invocation.memberName}'''),
   // We can't fake `Isolate`, but we can fake `SendPort`, so use it.
   Isolate: (parent, invocation) => Isolate(FakeSendPort(parent, invocation)),

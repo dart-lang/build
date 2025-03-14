@@ -37,8 +37,9 @@ class _ContainsIgnoringFormattingMatcher extends Matcher {
 
   @override
   Description describe(Description description) {
-    return description
-        .add('Contains "$_expected" when ignoring source formatting');
+    return description.add(
+      'Contains "$_expected" when ignoring source formatting',
+    );
   }
 
   @override
@@ -52,8 +53,9 @@ class _ContainsIgnoringFormattingMatcher extends Matcher {
   /// The goal is not to produce an but valid version of the code, just to
   /// produce a string that will reliably match the actual string when it has
   /// also been stripped the same way.
-  String _stripFormatting(String code) => code
-      .replaceAll(_whitespacePattern, '')
-      .replaceAllMapped(_trailingCommaPattern, (match) => match[1]!)
-      .trim();
+  String _stripFormatting(String code) =>
+      code
+          .replaceAll(_whitespacePattern, '')
+          .replaceAllMapped(_trailingCommaPattern, (match) => match[1]!)
+          .trim();
 }

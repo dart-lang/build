@@ -43,8 +43,10 @@ void main() {
   group('capture', () {
     test('captureAny should match anything', () {
       mock.methodWithNormalArgs(42);
-      expect(verify(mock.methodWithNormalArgs(captureAny)).captured.single,
-          equals(42));
+      expect(
+        verify(mock.methodWithNormalArgs(captureAny)).captured.single,
+        equals(42),
+      );
     });
 
     test('captureThat should match some things', () {
@@ -53,14 +55,17 @@ void main() {
       mock.methodWithNormalArgs(43);
       mock.methodWithNormalArgs(45);
       expect(
-          verify(mock.methodWithNormalArgs(captureThat(lessThan(44)))).captured,
-          equals([42, 43]));
+        verify(mock.methodWithNormalArgs(captureThat(lessThan(44)))).captured,
+        equals([42, 43]),
+      );
     });
 
     test('should capture list arguments', () {
       mock.methodWithListArgs([42]);
-      expect(verify(mock.methodWithListArgs(captureAny)).captured.single,
-          equals([42]));
+      expect(
+        verify(mock.methodWithListArgs(captureAny)).captured.single,
+        equals([42]),
+      );
     });
 
     test('should capture setter invocations', () {
@@ -71,54 +76,71 @@ void main() {
     test('should capture multiple arguments', () {
       mock.methodWithPositionalArgs(1, 2);
       expect(
-          verify(mock.methodWithPositionalArgs(captureAny, captureAny))
-              .captured,
-          equals([1, 2]));
+        verify(mock.methodWithPositionalArgs(captureAny, captureAny)).captured,
+        equals([1, 2]),
+      );
     });
 
     test('should capture with matching arguments', () {
       mock.methodWithPositionalArgs(1);
       mock.methodWithPositionalArgs(2, 3);
       expect(
-          verify(mock.methodWithPositionalArgs(captureAny, captureAny))
-              .captured,
-          equals([1, null, 2, 3]));
+        verify(mock.methodWithPositionalArgs(captureAny, captureAny)).captured,
+        equals([1, null, 2, 3]),
+      );
     });
 
     test('should capture multiple invocations', () {
       mock.methodWithNormalArgs(1);
       mock.methodWithNormalArgs(2);
-      expect(verify(mock.methodWithNormalArgs(captureAny)).captured,
-          equals([1, 2]));
+      expect(
+        verify(mock.methodWithNormalArgs(captureAny)).captured,
+        equals([1, 2]),
+      );
     });
 
     test('should capture invocations with named arguments', () {
       mock.methodWithTwoNamedArgs(1, y: 42, z: 43);
       expect(
-          verify(mock.methodWithTwoNamedArgs(any,
-                  y: captureAnyNamed('y'), z: captureAnyNamed('z')))
-              .captured,
-          equals([42, 43]));
+        verify(
+          mock.methodWithTwoNamedArgs(
+            any,
+            y: captureAnyNamed('y'),
+            z: captureAnyNamed('z'),
+          ),
+        ).captured,
+        equals([42, 43]),
+      );
     });
 
     test('should capture invocations with named arguments', () {
       mock.methodWithTwoNamedArgs(1, y: 42, z: 43);
       mock.methodWithTwoNamedArgs(1, y: 44, z: 45);
       expect(
-          verify(mock.methodWithTwoNamedArgs(any,
-                  y: captureAnyNamed('y'), z: captureAnyNamed('z')))
-              .captured,
-          equals([42, 43, 44, 45]));
+        verify(
+          mock.methodWithTwoNamedArgs(
+            any,
+            y: captureAnyNamed('y'),
+            z: captureAnyNamed('z'),
+          ),
+        ).captured,
+        equals([42, 43, 44, 45]),
+      );
     });
 
     test('should capture invocations with out-of-order named arguments', () {
       mock.methodWithTwoNamedArgs(1, z: 42, y: 43);
       mock.methodWithTwoNamedArgs(1, y: 44, z: 45);
       expect(
-          verify(mock.methodWithTwoNamedArgs(any,
-                  y: captureAnyNamed('y'), z: captureAnyNamed('z')))
-              .captured,
-          equals([43, 42, 44, 45]));
+        verify(
+          mock.methodWithTwoNamedArgs(
+            any,
+            y: captureAnyNamed('y'),
+            z: captureAnyNamed('z'),
+          ),
+        ).captured,
+        equals([43, 42, 44, 45]),
+      );
     });
   });
 }

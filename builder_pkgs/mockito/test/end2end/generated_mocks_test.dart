@@ -6,31 +6,30 @@ import 'foo.dart';
 import 'foo_sub.dart';
 import 'generated_mocks_test.mocks.dart';
 
-@GenerateMocks([
-  Foo,
-  FooSub,
-  Bar
-], customMocks: [
-  MockSpec<Foo>(
-    as: #MockFooWithDefaults,
-    onMissingStub: OnMissingStub.returnDefault,
-  ),
-  MockSpec<Baz>(
-    as: #MockBazWithUnsupportedMembers,
-    unsupportedMembers: {
-      #returnsPrivate,
-      #privateArg,
-      #privateTypeField,
-      #$hasDollarInName,
-    },
-  ),
-  // ignore: deprecated_member_use_from_same_package
-  MockSpec<HasPrivate>(mixingIn: [HasPrivateMixin]),
-])
+@GenerateMocks(
+  [Foo, FooSub, Bar],
+  customMocks: [
+    MockSpec<Foo>(
+      as: #MockFooWithDefaults,
+      onMissingStub: OnMissingStub.returnDefault,
+    ),
+    MockSpec<Baz>(
+      as: #MockBazWithUnsupportedMembers,
+      unsupportedMembers: {
+        #returnsPrivate,
+        #privateArg,
+        #privateTypeField,
+        #$hasDollarInName,
+      },
+    ),
+    // ignore: deprecated_member_use_from_same_package
+    MockSpec<HasPrivate>(mixingIn: [HasPrivateMixin]),
+  ],
+)
 @GenerateNiceMocks([
   MockSpec<Foo>(as: #MockFooNice),
   MockSpec<Bar>(as: #MockBarNice),
-  MockSpec<UsesExtTypes>()
+  MockSpec<UsesExtTypes>(),
 ])
 void main() {
   group('for a generated mock,', () {
@@ -83,8 +82,7 @@ void main() {
       expect(foo.parameterWithDefault2(), equals('Default'));
     });
 
-    test(
-        'a method with a parameter with a default value factory redirect can '
+    test('a method with a parameter with a default value factory redirect can '
         'be stubbed', () {
       const foo2 = FooSub2<int>();
       when(foo.parameterWithDefaultFactoryRedirect(foo2)).thenReturn('Stubbed');
@@ -107,32 +105,36 @@ void main() {
       expect(() => foo.returnsVoid(), returnsNormally);
     });
 
-    test('a method which returns Future<void> can be called without stubbing',
-        () {
-      expect(() => foo.returnsFutureVoid(), returnsNormally);
-    });
-
-    test('a method which returns Future<void>? can be called without stubbing',
-        () {
-      expect(() => foo.returnsNullableFutureVoid(), returnsNormally);
-    });
+    test(
+      'a method which returns Future<void> can be called without stubbing',
+      () {
+        expect(() => foo.returnsFutureVoid(), returnsNormally);
+      },
+    );
 
     test(
-        'a method with a non-nullable positional parameter accepts an argument '
-        'matcher while stubbing', () {
-      when(foo.positionalParameter(any)).thenReturn('Stubbed');
-      expect(foo.positionalParameter(42), equals('Stubbed'));
-    });
+      'a method which returns Future<void>? can be called without stubbing',
+      () {
+        expect(() => foo.returnsNullableFutureVoid(), returnsNormally);
+      },
+    );
 
     test(
-        'a method with a non-nullable named parameter accepts an argument '
+      'a method with a non-nullable positional parameter accepts an argument '
+      'matcher while stubbing',
+      () {
+        when(foo.positionalParameter(any)).thenReturn('Stubbed');
+        expect(foo.positionalParameter(42), equals('Stubbed'));
+      },
+    );
+
+    test('a method with a non-nullable named parameter accepts an argument '
         'matcher while stubbing', () {
       when(foo.namedParameter(x: anyNamed('x'))).thenReturn('Stubbed');
       expect(foo.namedParameter(x: 42), equals('Stubbed'));
     });
 
-    test(
-        'a method with a non-nullable parameter accepts an argument matcher '
+    test('a method with a non-nullable parameter accepts an argument matcher '
         'while verifying', () {
       when(foo.positionalParameter(any)).thenReturn('Stubbed');
       foo.positionalParameter(42);
@@ -150,16 +152,26 @@ void main() {
       when(foo.namedParameter(x: 42)).thenReturn('Stubbed');
       expect(
         () => foo.namedParameter(x: 43),
-        throwsA(TypeMatcher<MissingStubError>().having((e) => e.toString(),
-            'toString()', contains('namedParameter({x: 43})'))),
+        throwsA(
+          TypeMatcher<MissingStubError>().having(
+            (e) => e.toString(),
+            'toString()',
+            contains('namedParameter({x: 43})'),
+          ),
+        ),
       );
     });
 
     test('an unstubbed getter throws', () {
       expect(
         () => foo.getter,
-        throwsA(TypeMatcher<MissingStubError>()
-            .having((e) => e.toString(), 'toString()', contains('getter'))),
+        throwsA(
+          TypeMatcher<MissingStubError>().having(
+            (e) => e.toString(),
+            'toString()',
+            contains('getter'),
+          ),
+        ),
       );
     });
 
@@ -168,16 +180,14 @@ void main() {
       expect(await foo.returnsFuture(0), 1);
     });
 
-    test(
-        'a method returning a function with optional non-nullable argument '
+    test('a method returning a function with optional non-nullable argument '
         'can be stubbed', () {
       when(foo.returnsFunction()).thenReturn((x, [s = 'x']) => s + s);
       expect(foo.returnsFunction()(1), equals('xx'));
       expect(foo.returnsFunction()(1, 'y'), equals('yy'));
     });
 
-    test(
-        'a method returning a function with named optional non-nullable '
+    test('a method returning a function with named optional non-nullable '
         'argument can be stubbed', () {
       when(foo.returnsFunctionNamed()).thenReturn((x, {s = 'x'}) => s + s);
       expect(foo.returnsFunctionNamed()(1), equals('xx'));
@@ -220,22 +230,21 @@ void main() {
       baz.returnsBoundedTypeVariable();
     });
 
-    test(
-        'a method with multiple type parameters and a type variable return '
+    test('a method with multiple type parameters and a type variable return '
         'type can be called', () {
       when(baz.returnsTypeVariableFromTwo()).thenReturn(3);
       baz.returnsTypeVariableFromTwo();
     });
 
-    test(
-        'a getter with a type variable return type throws if there is no '
+    test('a getter with a type variable return type throws if there is no '
         'dummy value', () {
-      expect(() => when(baz.typeVariableField).thenReturn(Bar()),
-          throwsA(isA<MissingDummyValueError>()));
+      expect(
+        () => when(baz.typeVariableField).thenReturn(Bar()),
+        throwsA(isA<MissingDummyValueError>()),
+      );
     });
 
-    test(
-        'a getter with a type variable return type can be called if dummy '
+    test('a getter with a type variable return type can be called if dummy '
         'value was provided', () {
       provideDummy<Bar>(Bar());
       final bar = Bar();
@@ -254,18 +263,25 @@ void main() {
     test('an unstubbed method returns a value', () {
       when(foo.namedParameter(x: 42)).thenReturn('Stubbed');
       expect(
-          foo.namedParameter(x: 43),
-          contains(Uri.encodeComponent(
-              'Dummy String created while calling namedParameter({x: 43})'
-                  .replaceAll(' ', '_'))));
+        foo.namedParameter(x: 43),
+        contains(
+          Uri.encodeComponent(
+            'Dummy String created while calling namedParameter({x: 43})'
+                .replaceAll(' ', '_'),
+          ),
+        ),
+      );
     });
 
     test('an unstubbed getter returns a value', () {
       expect(
-          foo.getter,
-          contains(Uri.encodeComponent(
-              'Dummy String created while calling getter'
-                  .replaceAll(' ', '_'))));
+        foo.getter,
+        contains(
+          Uri.encodeComponent(
+            'Dummy String created while calling getter'.replaceAll(' ', '_'),
+          ),
+        ),
+      );
     });
   });
 
@@ -279,18 +295,25 @@ void main() {
     test('an unstubbed method returns a value', () {
       when(foo.namedParameter(x: 42)).thenReturn('Stubbed');
       expect(
-          foo.namedParameter(x: 43),
-          contains(Uri.encodeComponent(
-              'Dummy String created while calling namedParameter({x: 43})'
-                  .replaceAll(' ', '_'))));
+        foo.namedParameter(x: 43),
+        contains(
+          Uri.encodeComponent(
+            'Dummy String created while calling namedParameter({x: 43})'
+                .replaceAll(' ', '_'),
+          ),
+        ),
+      );
     });
 
     test('an unstubbed getter returns a value', () {
       expect(
-          foo.getter,
-          contains(Uri.encodeComponent(
-              'Dummy String created while calling getter'
-                  .replaceAll(' ', '_'))));
+        foo.getter,
+        contains(
+          Uri.encodeComponent(
+            'Dummy String created while calling getter'.replaceAll(' ', '_'),
+          ),
+        ),
+      );
     });
 
     test('an unstubbed method returning non-core type returns a fake', () {
@@ -302,18 +325,30 @@ void main() {
       when(foo.returnsBar(42)).thenReturn(Bar());
       final bar = foo.returnsBar(43);
       expect(
-          () => bar.x,
-          throwsA(isA<FakeUsedError>().having(
-              (e) => e.toString(), 'toString()', contains('returnsBar(43)'))));
+        () => bar.x,
+        throwsA(
+          isA<FakeUsedError>().having(
+            (e) => e.toString(),
+            'toString()',
+            contains('returnsBar(43)'),
+          ),
+        ),
+      );
     });
 
     test('a fake throws a FakeUsedError if a method is called', () {
       when(foo.returnsBar(42)).thenReturn(Bar());
       final bar = foo.returnsBar(43);
       expect(
-          () => bar.f(),
-          throwsA(isA<FakeUsedError>().having(
-              (e) => e.toString(), 'toString()', contains('returnsBar(43)'))));
+        () => bar.f(),
+        throwsA(
+          isA<FakeUsedError>().having(
+            (e) => e.toString(),
+            'toString()',
+            contains('returnsBar(43)'),
+          ),
+        ),
+      );
     });
     group('a method returning Future<T>', () {
       final bar = Bar();
@@ -346,14 +381,14 @@ void main() {
       });
 
       test(
-          'a method using extension type as an argument can be stubbed with any',
-          () {
-        when(usesExtTypes.extTypeArg(any)).thenReturn(true);
-        expect(usesExtTypes.extTypeArg(Ext(42)), isTrue);
-      });
+        'a method using extension type as an argument can be stubbed with any',
+        () {
+          when(usesExtTypes.extTypeArg(any)).thenReturn(true);
+          expect(usesExtTypes.extTypeArg(Ext(42)), isTrue);
+        },
+      );
 
-      test(
-          'a method using extension type as an argument can be stubbed with a '
+      test('a method using extension type as an argument can be stubbed with a '
           'specific value', () {
         when(usesExtTypes.extTypeArg(Ext(42))).thenReturn(true);
         expect(usesExtTypes.extTypeArg(Ext(0)), isFalse);

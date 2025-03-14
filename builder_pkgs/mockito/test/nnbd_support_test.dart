@@ -24,8 +24,11 @@ class Foo {
 class MockFoo extends Mock implements Foo {
   @override
   String returnsNonNullableString() {
-    return super.noSuchMethod(Invocation.method(#returnsNonNullableString, []),
-        returnValue: 'Dummy') as String;
+    return super.noSuchMethod(
+          Invocation.method(#returnsNonNullableString, []),
+          returnValue: 'Dummy',
+        )
+        as String;
   }
 }
 
@@ -65,8 +68,7 @@ void main() {
       verifyCall(verificationResponse);
     });
 
-    test(
-        'nSM returns the dummy value during method call verification, using '
+    test('nSM returns the dummy value during method call verification, using '
         'verifyNever', () {
       // Trigger method call verification.
       final verifyNeverCall = verifyNever;
@@ -111,8 +113,7 @@ void main() {
       verifyCall(verificationResponse);
     });
 
-    test(
-        'nSM returns the dummy value during method call verification, using '
+    test('nSM returns the dummy value during method call verification, using '
         'verifyNever', () {
       // Trigger method call verification.
       final verifyNeverCall = verifyNever;

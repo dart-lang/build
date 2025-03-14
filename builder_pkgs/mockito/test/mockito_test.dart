@@ -122,8 +122,9 @@ void main() {
     });
 
     test('should mock method with argument matcher', () {
-      when(mock.methodWithNormalArgs(argThat(greaterThan(100))))
-          .thenReturn('A lot!');
+      when(
+        mock.methodWithNormalArgs(argThat(greaterThan(100))),
+      ).thenReturn('A lot!');
       expect(mock.methodWithNormalArgs(100), isNull);
       expect(mock.methodWithNormalArgs(101), equals('A lot!'));
     });
@@ -141,27 +142,33 @@ void main() {
     });
 
     test('should mock method with multiple named args and matchers', () {
-      when(mock.methodWithTwoNamedArgs(any, y: anyNamed('y')))
-          .thenReturn('x y');
-      when(mock.methodWithTwoNamedArgs(any, z: anyNamed('z')))
-          .thenReturn('x z');
+      when(
+        mock.methodWithTwoNamedArgs(any, y: anyNamed('y')),
+      ).thenReturn('x y');
+      when(
+        mock.methodWithTwoNamedArgs(any, z: anyNamed('z')),
+      ).thenReturn('x z');
       expect(mock.methodWithTwoNamedArgs(42), 'x z');
       expect(mock.methodWithTwoNamedArgs(42, y: 18), equals('x y'));
       expect(mock.methodWithTwoNamedArgs(42, z: 17), equals('x z'));
       expect(mock.methodWithTwoNamedArgs(42, y: 18, z: 17), isNull);
-      when(mock.methodWithTwoNamedArgs(any, y: anyNamed('y'), z: anyNamed('z')))
-          .thenReturn('x y z');
+      when(
+        mock.methodWithTwoNamedArgs(any, y: anyNamed('y'), z: anyNamed('z')),
+      ).thenReturn('x y z');
       expect(mock.methodWithTwoNamedArgs(42, y: 18, z: 17), equals('x y z'));
     });
 
-    test('should mock method with mix of argument matchers and real things',
-        () {
-      when(mock.methodWithPositionalArgs(argThat(greaterThan(100)), 17))
-          .thenReturn('A lot with 17');
-      expect(mock.methodWithPositionalArgs(100, 17), isNull);
-      expect(mock.methodWithPositionalArgs(101, 18), isNull);
-      expect(mock.methodWithPositionalArgs(101, 17), equals('A lot with 17'));
-    });
+    test(
+      'should mock method with mix of argument matchers and real things',
+      () {
+        when(
+          mock.methodWithPositionalArgs(argThat(greaterThan(100)), 17),
+        ).thenReturn('A lot with 17');
+        expect(mock.methodWithPositionalArgs(100, 17), isNull);
+        expect(mock.methodWithPositionalArgs(101, 18), isNull);
+        expect(mock.methodWithPositionalArgs(101, 17), equals('A lot with 17'));
+      },
+    );
 
     test('should mock getter', () {
       when(mock.getter).thenReturn('A');
@@ -206,8 +213,9 @@ void main() {
     });
 
     test('should mock method with calculated result', () {
-      when(mock.methodWithNormalArgs(any)).thenAnswer(
-          (Invocation inv) => inv.positionalArguments[0].toString());
+      when(
+        mock.methodWithNormalArgs(any),
+      ).thenAnswer((Invocation inv) => inv.positionalArguments[0].toString());
       expect(mock.methodWithNormalArgs(43), equals('43'));
       expect(mock.methodWithNormalArgs(42), equals('42'));
     });
@@ -245,41 +253,49 @@ void main() {
 
     test('thenReturn throws if provided Future', () {
       expect(
-          () => when(mock.methodReturningFuture())
-              .thenReturn(Future.value('stub')),
-          throwsArgumentError);
+        () =>
+            when(mock.methodReturningFuture()).thenReturn(Future.value('stub')),
+        throwsArgumentError,
+      );
     });
 
     test('thenReturn throws if provided Stream', () {
       expect(
-          () => when(mock.methodReturningStream())
-              .thenReturn(Stream.fromIterable(['stub'])),
-          throwsArgumentError);
+        () => when(
+          mock.methodReturningStream(),
+        ).thenReturn(Stream.fromIterable(['stub'])),
+        throwsArgumentError,
+      );
     });
 
     test('thenReturn throws if provided expects are empty for inOrder', () {
-      expect(() => when(mock.methodReturningStream()).thenReturnInOrder([]),
-          throwsArgumentError);
+      expect(
+        () => when(mock.methodReturningStream()).thenReturnInOrder([]),
+        throwsArgumentError,
+      );
     });
 
     test('thenAnswer supports stubbing method returning a Future', () async {
-      when(mock.methodReturningFuture())
-          .thenAnswer((_) => Future.value('stub'));
+      when(
+        mock.methodReturningFuture(),
+      ).thenAnswer((_) => Future.value('stub'));
 
       expect(await mock.methodReturningFuture(), 'stub');
     });
 
     test('thenAnswer supports stubbing method returning a Stream', () async {
-      when(mock.methodReturningStream())
-          .thenAnswer((_) => Stream.fromIterable(['stub']));
+      when(
+        mock.methodReturningStream(),
+      ).thenAnswer((_) => Stream.fromIterable(['stub']));
 
       expect(await mock.methodReturningStream()?.toList(), ['stub']);
     });
 
     test('should throw if named matcher is passed as the wrong name', () {
       expect(() {
-        when(mock.methodWithNamedArgs(argThat(equals(42)), y: anyNamed('z')))
-            .thenReturn('99');
+        when(
+          mock.methodWithNamedArgs(argThat(equals(42)), y: anyNamed('z')),
+        ).thenReturn('99');
       }, throwsArgumentError);
     });
 
@@ -307,27 +323,29 @@ void main() {
       expect(() => mock.methodWithoutArgs(), returnsNormally);
     });
 
-    test(
-        'should throw the exception when a mock was called without a matching'
+    test('should throw the exception when a mock was called without a matching'
         'stub and an exception builder is set.', () {
-      throwOnMissingStub(mock, exceptionBuilder: (_) {
-        throw Exception('test message');
-      });
+      throwOnMissingStub(
+        mock,
+        exceptionBuilder: (_) {
+          throw Exception('test message');
+        },
+      );
       when(mock.methodWithNormalArgs(42)).thenReturn('Ultimate Answer');
       expect(() => mock.methodWithoutArgs(), throwsException);
     });
   });
 
-  test(
-      'reports an error when using an argument matcher outside of stubbing or '
+  test('reports an error when using an argument matcher outside of stubbing or '
       'verification', () {
     expect(() => mock.methodWithNormalArgs(any), throwsArgumentError);
   });
 
-  test(
-      'reports an error when using an argument matcher in a position other '
+  test('reports an error when using an argument matcher in a position other '
       'than an argument for the stubbed method', () {
-    expect(() => when(mock.methodWithListArgs(List.filled(7, any))),
-        throwsArgumentError);
+    expect(
+      () => when(mock.methodWithListArgs(List.filled(7, any))),
+      throwsArgumentError,
+    );
   });
 }

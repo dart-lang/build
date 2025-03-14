@@ -1,3 +1,7 @@
+## 5.4.7-wip
+
+* Require Dart SDK ^3.7.0.
+
 ## 5.4.6
 
 * When formatting a generated mocks library, use the language version of the

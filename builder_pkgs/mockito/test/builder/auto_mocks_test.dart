@@ -629,8 +629,7 @@ void main() {
     );
   });
 
-  test(
-      'throws when given a parameter default value using a private type, and '
+  test('throws when given a parameter default value using a private type, and '
       'refers to the class-to-mock', () {
     _expectBuilderThrows(
       assets: {
@@ -890,8 +889,7 @@ void main() {
     },
   );
 
-  test(
-      'overrides `toString` with a correct signature if the class overrides '
+  test('overrides `toString` with a correct signature if the class overrides '
       'it', () async {
     await expectSingleNonNullableOutput(
       dedent('''
@@ -903,8 +901,7 @@ void main() {
     );
   });
 
-  test(
-      'does not override `toString` if the class does not override `toString` '
+  test('does not override `toString` if the class does not override `toString` '
       'with additional parameters', () async {
     final mocksContent = await buildWithSingleNonNullableSource(
       dedent('''
@@ -916,8 +913,7 @@ void main() {
     expect(mocksContent, isNot(contains('toString')));
   });
 
-  test(
-      'overrides `toString` with a correct signature if a mixed in class '
+  test('overrides `toString` with a correct signature if a mixed in class '
       'overrides it, in a Fake', () async {
     await expectSingleNonNullableOutput(
       dedent('''
@@ -1233,8 +1229,7 @@ void main() {
     },
   );
 
-  test(
-      'imports libraries for external class types found in a method return '
+  test('imports libraries for external class types found in a method return '
       'type', () async {
     final mocksContent = await buildWithSingleNonNullableSource(
       dedent(r'''
@@ -1264,8 +1259,7 @@ void main() {
     },
   );
 
-  test(
-      'imports libraries for external class types found in the return type of '
+  test('imports libraries for external class types found in the return type of '
       'a function-typed parameter', () async {
     final mocksContent = await buildWithSingleNonNullableSource(
       dedent(r'''
@@ -1296,8 +1290,7 @@ void main() {
     },
   );
 
-  test(
-      'imports libraries for external class types found in a function-typed '
+  test('imports libraries for external class types found in a function-typed '
       'parameter', () async {
     final mocksContent = await buildWithSingleNonNullableSource(
       dedent(r'''
@@ -1311,8 +1304,7 @@ void main() {
     expect(mocksContent, contains('f(_i3.Future<void> Function()? a)'));
   });
 
-  test(
-      'imports libraries for external class types found in a FunctionType '
+  test('imports libraries for external class types found in a FunctionType '
       'parameter', () async {
     final mocksContent = await buildWithSingleNonNullableSource(
       dedent(r'''
@@ -1326,8 +1318,7 @@ void main() {
     expect(mocksContent, contains('f(_i3.Future<void> Function()? a)'));
   });
 
-  test(
-      'imports libraries for external class types found nested in a '
+  test('imports libraries for external class types found nested in a '
       'function-typed parameter', () async {
     final mocksContent = await buildWithSingleNonNullableSource(
       dedent(r'''
@@ -1341,8 +1332,7 @@ void main() {
     expect(mocksContent, contains('f(void Function(_i3.Future<void>)? a)'));
   });
 
-  test(
-      'imports libraries for external class types found in the bound of a '
+  test('imports libraries for external class types found in the bound of a '
       'type parameter of a method', () async {
     final mocksContent = await buildWithSingleNonNullableSource(
       dedent(r'''
@@ -1356,8 +1346,7 @@ void main() {
     expect(mocksContent, contains('f<T extends _i3.Future<dynamic>>(T? a)'));
   });
 
-  test(
-      'imports libraries for external class types found in the default value '
+  test('imports libraries for external class types found in the default value '
       'of a parameter', () async {
     final mocksContent = await buildWithSingleNonNullableSource(
       dedent(r'''
@@ -1475,8 +1464,7 @@ void main() {
     },
   );
 
-  test(
-      'imports libraries for types declared in private SDK libraries exported '
+  test('imports libraries for types declared in private SDK libraries exported '
       'in dart:io', () async {
     final mocksContent = await buildWithSingleNonNullableSource(
       dedent('''
@@ -1490,8 +1478,7 @@ void main() {
     expect(mocksContent, contains('_i2.HttpStatus f() =>'));
   });
 
-  test(
-      'imports libraries for types declared in private SDK libraries exported '
+  test('imports libraries for types declared in private SDK libraries exported '
       'in dart:html', () async {
     final mocksContent = await buildWithSingleNonNullableSource(
       dedent('''
@@ -1630,8 +1617,7 @@ void main() {
     );
   });
 
-  test(
-      'widens the type of potentially non-nullable type variables to be '
+  test('widens the type of potentially non-nullable type variables to be '
       'nullable', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
@@ -1681,8 +1667,7 @@ void main() {
     },
   );
 
-  test(
-      'widens the type of covariant parameters (declared covariant in a '
+  test('widens the type of covariant parameters (declared covariant in a '
       'superclass) to be nullable', () async {
     await expectSingleNonNullableOutput(
       dedent('''
@@ -1807,8 +1792,7 @@ void main() {
     );
   });
 
-  test(
-      'matches nullability of return type of a generic function-typed '
+  test('matches nullability of return type of a generic function-typed '
       'parameter', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
@@ -1842,8 +1826,7 @@ void main() {
     },
   );
 
-  test(
-      'matches nullability of parameter types within a generic function-typed '
+  test('matches nullability of parameter types within a generic function-typed '
       'parameter', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
@@ -1883,8 +1866,7 @@ void main() {
     },
   );
 
-  test(
-      'matches nullability of parameter types within a function-typed '
+  test('matches nullability of parameter types within a function-typed '
       'parameter', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
@@ -1903,8 +1885,7 @@ void main() {
     );
   });
 
-  test(
-      'matches requiredness of parameter types within a function-typed '
+  test('matches requiredness of parameter types within a function-typed '
       'parameter', () async {
     await expectSingleNonNullableOutput(
       dedent('''
@@ -2766,8 +2747,7 @@ void main() {
     );
   });
 
-  test(
-      'creates a dummy non-null function-typed return value, with optional '
+  test('creates a dummy non-null function-typed return value, with optional '
       'parameters', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
@@ -2783,8 +2763,7 @@ void main() {
     );
   });
 
-  test(
-      'creates a dummy non-null function-typed return value, with named '
+  test('creates a dummy non-null function-typed return value, with named '
       'parameters', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
@@ -2800,8 +2779,7 @@ void main() {
     );
   });
 
-  test(
-      'creates a dummy non-null function-typed return value, with required '
+  test('creates a dummy non-null function-typed return value, with required '
       'named parameters', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
@@ -2817,8 +2795,7 @@ void main() {
     );
   });
 
-  test(
-      'creates a dummy non-null function-typed return value, with non-core '
+  test('creates a dummy non-null function-typed return value, with non-core '
       'return type', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
@@ -2900,8 +2877,7 @@ void main() {
     },
   );
 
-  test(
-      'creates a dummy non-null function-typed (with an imported parameter '
+  test('creates a dummy non-null function-typed (with an imported parameter '
       'type) return value', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
@@ -2924,8 +2900,7 @@ void main() {
     );
   });
 
-  test(
-      'creates a dummy non-null function-typed (with an imported return type) '
+  test('creates a dummy non-null function-typed (with an imported return type) '
       'return value', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
@@ -3252,8 +3227,7 @@ void main() {
     },
   );
 
-  test(
-      'throws when GenerateMocks is given a class with a method with a '
+  test('throws when GenerateMocks is given a class with a method with a '
       'private return type', () async {
     _expectBuilderThrows(
       assets: {
@@ -3273,8 +3247,7 @@ void main() {
     );
   });
 
-  test(
-      'throws when GenerateMocks is given a class with an inherited method '
+  test('throws when GenerateMocks is given a class with an inherited method '
       'with a private return type', () async {
     _expectBuilderThrows(
       assets: {
@@ -3295,8 +3268,7 @@ void main() {
     );
   });
 
-  test(
-      'throws when GenerateMocks is given a class with a method with a '
+  test('throws when GenerateMocks is given a class with a method with a '
       'type alias return type which refers to private types', () async {
     _expectBuilderThrows(
       assets: {
@@ -3341,8 +3313,7 @@ void main() {
     },
   );
 
-  test(
-      'throws when GenerateMocks is given a class with a method with a return '
+  test('throws when GenerateMocks is given a class with a method with a return '
       'type with private type arguments', () async {
     _expectBuilderThrows(
       assets: {
@@ -3362,8 +3333,7 @@ void main() {
     );
   });
 
-  test(
-      'throws when GenerateMocks is given a class with a method with a return '
+  test('throws when GenerateMocks is given a class with a method with a return '
       'function type, with a private return type', () async {
     _expectBuilderThrows(
       assets: {
@@ -3383,8 +3353,7 @@ void main() {
     );
   });
 
-  test(
-      'throws when GenerateMocks is given a class with a method with a '
+  test('throws when GenerateMocks is given a class with a method with a '
       'private parameter type', () async {
     _expectBuilderThrows(
       assets: {
@@ -3404,8 +3373,7 @@ void main() {
     );
   });
 
-  test(
-      'throws when GenerateMocks is given a class with a method with a '
+  test('throws when GenerateMocks is given a class with a method with a '
       'parameter with private type arguments', () async {
     _expectBuilderThrows(
       assets: {
@@ -3425,8 +3393,7 @@ void main() {
     );
   });
 
-  test(
-      'throws when GenerateMocks is given a class with a method with a '
+  test('throws when GenerateMocks is given a class with a method with a '
       'function parameter type, with a private return type', () async {
     _expectBuilderThrows(
       assets: {
@@ -3446,8 +3413,7 @@ void main() {
     );
   });
 
-  test(
-      'throws when GenerateMocks is given a class with a method with a return '
+  test('throws when GenerateMocks is given a class with a method with a return '
       'function type, with a private parameter type', () async {
     _expectBuilderThrows(
       assets: {
@@ -3490,8 +3456,7 @@ void main() {
     },
   );
 
-  test(
-      'throws when GenerateMocks is given a class with a method with a '
+  test('throws when GenerateMocks is given a class with a method with a '
       'type parameter with a private bound', () async {
     _expectBuilderThrows(
       assets: {
@@ -3511,8 +3476,7 @@ void main() {
     );
   });
 
-  test(
-      "calls 'dummyValue' for a getter with a "
+  test("calls 'dummyValue' for a getter with a "
       'non-nullable class-declared type variable type', () async {
     await expectSingleNonNullableOutput(
       dedent('''
@@ -3524,8 +3488,7 @@ void main() {
     );
   });
 
-  test(
-      "calls 'dummyValue' for a method with a "
+  test("calls 'dummyValue' for a method with a "
       'non-nullable class-declared type variable return type', () async {
     await expectSingleNonNullableOutput(
       dedent('''
@@ -3537,8 +3500,7 @@ void main() {
     );
   });
 
-  test(
-      "calls 'dummyValue' for a method with a "
+  test("calls 'dummyValue' for a method with a "
       'non-nullable method-declared type variable return type', () async {
     await expectSingleNonNullableOutput(
       dedent('''
@@ -3822,8 +3784,7 @@ void main() {
     );
   });
 
-  test(
-      'adds ignore: must_be_immutable analyzer comment if mocked class is '
+  test('adds ignore: must_be_immutable analyzer comment if mocked class is '
       'immutable', () async {
     await expectSingleNonNullableOutput(
       dedent(r'''
@@ -4317,10 +4278,10 @@ void main() {
 }
 
 TypeMatcher<List<int>> _containsAllOf(String a, [String? b]) => decodedMatches(
-      b == null
-          ? containsIgnoringFormatting(a)
-          : allOf(containsIgnoringFormatting(a), containsIgnoringFormatting(b)),
-    );
+  b == null
+      ? containsIgnoringFormatting(a)
+      : allOf(containsIgnoringFormatting(a), containsIgnoringFormatting(b)),
+);
 
 /// Expect that [testBuilder], given [assets], in a package which has opted into
 /// null safety, throws an [InvalidMockitoAnnotationException] with a message
@@ -4375,7 +4336,9 @@ String dedent(String input) {
 String dedent2(String input) {
   final indentMatch = RegExp(r'^  (\s*)').firstMatch(input)!;
   final indent = ''.padRight(indentMatch.group(1)!.length);
-  return input.replaceFirst(RegExp(r'\s*$'), '').splitMapJoin(
+  return input
+      .replaceFirst(RegExp(r'\s*$'), '')
+      .splitMapJoin(
         '\n',
         onNonMatch: (s) => s.replaceFirst(RegExp('^$indent'), ''),
       );

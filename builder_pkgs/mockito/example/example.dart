@@ -31,15 +31,15 @@ abstract class Callbacks {
   String? makeSound();
 }
 
-@GenerateMocks([
-  Cat,
-  Callbacks,
-], customMocks: [
-  MockSpec<Cat>(
-    as: #MockCatRelaxed,
-    onMissingStub: OnMissingStub.returnDefault,
-  ),
-])
+@GenerateMocks(
+  [Cat, Callbacks],
+  customMocks: [
+    MockSpec<Cat>(
+      as: #MockCatRelaxed,
+      onMissingStub: OnMissingStub.returnDefault,
+    ),
+  ],
+)
 void main() {
   late Cat cat;
 
@@ -103,8 +103,9 @@ void main() {
     when(cat.eatFood(argThat(startsWith('dry')))).thenReturn(false);
 
     // ... or mix arguments with matchers
-    when(cat.eatFood(argThat(startsWith('dry')), hungry: true))
-        .thenReturn(true);
+    when(
+      cat.eatFood(argThat(startsWith('dry')), hungry: true),
+    ).thenReturn(true);
     expect(cat.eatFood('fish'), isTrue);
     expect(cat.walk(['roof', 'tree']), equals(2));
     expect(cat.eatFood('dry food'), isFalse);
@@ -123,18 +124,21 @@ void main() {
     verify(cat.hunt('backyard', null)); // OK: no arg matchers.
 
     cat.hunt('backyard', null);
-    verify(cat.hunt(argThat(contains('yard')),
-        argThat(isNull))); // OK: null is wrapped in an arg matcher.
+    verify(
+      cat.hunt(argThat(contains('yard')), argThat(isNull)),
+    ); // OK: null is wrapped in an arg matcher.
   });
 
   test('Named arguments', () {
     // GOOD: argument matchers include their names.
     when(cat.eatFood(any, hungry: anyNamed('hungry'))).thenReturn(true);
-    when(cat.eatFood(any, hungry: argThat(isNotNull, named: 'hungry')))
-        .thenReturn(false);
+    when(
+      cat.eatFood(any, hungry: argThat(isNotNull, named: 'hungry')),
+    ).thenReturn(false);
     when(cat.eatFood(any, hungry: captureAnyNamed('hungry'))).thenReturn(false);
-    when(cat.eatFood(any, hungry: captureThat(isNotNull, named: 'hungry')))
-        .thenReturn(true);
+    when(
+      cat.eatFood(any, hungry: captureThat(isNotNull, named: 'hungry')),
+    ).thenReturn(true);
   });
 
   test('Verifying exact number of invocations / at least x / never', () {
@@ -192,8 +196,9 @@ void main() {
     // Conditional capture:
     cat.eatFood('Milk');
     cat.eatFood('Fish');
-    expect(
-        verify(cat.eatFood(captureThat(startsWith('F')))).captured, ['Fish']);
+    expect(verify(cat.eatFood(captureThat(startsWith('F')))).captured, [
+      'Fish',
+    ]);
   });
 
   test('Waiting for an interaction', () async {

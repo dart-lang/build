@@ -54,8 +54,11 @@ class MockedClass extends Mock implements RealClass {
 
   @override
   int nonNullableReturn(int? x) =>
-      super.noSuchMethod(Invocation.method(#nonNullableReturn, [x]),
-          returnValue: 1) as int;
+      super.noSuchMethod(
+            Invocation.method(#nonNullableReturn, [x]),
+            returnValue: 1,
+          )
+          as int;
 
   // A generic return type is very tricky to work with in a manually mocked
   // method. What value can be passed as the second argument to
@@ -64,13 +67,19 @@ class MockedClass extends Mock implements RealClass {
   // is optional, so that the override is still legal.
   @override
   T nonNullableReturn2<T>(T? x, {T? sentinal}) =>
-      super.noSuchMethod(Invocation.method(#nonNullableReturn2, [x]),
-          returnValue: sentinal!) as T;
+      super.noSuchMethod(
+            Invocation.method(#nonNullableReturn2, [x]),
+            returnValue: sentinal!,
+          )
+          as T;
 
   @override
   Future<int> nonNullableFutureReturn(int? x) =>
-      super.noSuchMethod(Invocation.method(#nonNullableFutureReturn, [x]),
-          returnValue: Future.value(1)) as Future<int>;
+      super.noSuchMethod(
+            Invocation.method(#nonNullableFutureReturn, [x]),
+            returnValue: Future.value(1),
+          )
+          as Future<int>;
 
   @override
   int get getter =>
@@ -91,22 +100,24 @@ void main() {
   });
 
   group('when()', () {
-    test(
-        'cannot operate on method with non-nullable params without a manual '
+    test('cannot operate on method with non-nullable params without a manual '
         'mock', () {
       // Normally this use of `any` would be a static error. To push forward to
       // reveal the runtime error, we cast as dynamic.
       expect(
-          () => when(mock.notMockedNonNullableParam((any as dynamic) as int))
-              .thenReturn('Mock'),
-          throwsA(TypeMatcher<TypeError>()));
+        () => when(
+          mock.notMockedNonNullableParam((any as dynamic) as int),
+        ).thenReturn('Mock'),
+        throwsA(TypeMatcher<TypeError>()),
+      );
     });
 
-    test(
-        'cannot operate on method with non-nullable return type without a '
+    test('cannot operate on method with non-nullable return type without a '
         'manual mock', () {
-      expect(() => when(mock.notMockedNonNullableReturn()).thenReturn(7),
-          throwsA(TypeMatcher<TypeError>()));
+      expect(
+        () => when(mock.notMockedNonNullableReturn()).thenReturn(7),
+        throwsA(TypeMatcher<TypeError>()),
+      );
     });
 
     test('should mock method with non-nullable params', () {
@@ -115,24 +126,21 @@ void main() {
       expect(mock.nonNullableParam(42), equals('Mock'));
     });
 
-    test(
-        'should mock method with non-nullable params with "any" argument '
+    test('should mock method with non-nullable params with "any" argument '
         'matcher', () {
       when(mock.nonNullableParam(any)).thenReturn('Mock');
       expect(mock.nonNullableParam(100), equals('Mock'));
       expect(mock.nonNullableParam(101), equals('Mock'));
     });
 
-    test(
-        'should mock generic method with non-nullable params with "any" '
+    test('should mock generic method with non-nullable params with "any" '
         'argument matcher', () {
       when(mock.nonNullableParam2(any)).thenReturn('Mock');
       expect(mock.nonNullableParam2(100), equals('Mock'));
       expect(mock.nonNullableParam2(101), equals('Mock'));
     });
 
-    test(
-        'should mock generic method with non-nullable generic params with '
+    test('should mock generic method with non-nullable generic params with '
         '"any" argument matcher', () {
       when(mock.nonNullableParam3<int>(any)).thenReturn('Mock');
       expect(mock.nonNullableParam3<int>(100), equals('Mock'));
@@ -166,19 +174,21 @@ void main() {
   });
 
   group('real calls', () {
-    test(
-        'should throw a TypeError on a call to a function with a non-nullable '
+    test('should throw a TypeError on a call to a function with a non-nullable '
         'return type without a matching stub', () {
       expect(
-          () => mock.nonNullableReturn(43), throwsA(TypeMatcher<TypeError>()));
+        () => mock.nonNullableReturn(43),
+        throwsA(TypeMatcher<TypeError>()),
+      );
     });
 
-    test(
-        'should throw a NoSuchMethodError on a call without a matching stub, '
+    test('should throw a NoSuchMethodError on a call without a matching stub, '
         'using `throwOnMissingStub` behavior', () {
       throwOnMissingStub(mock);
-      expect(() => mock.nonNullableReturn(43),
-          throwsA(TypeMatcher<MissingStubError>()));
+      expect(
+        () => mock.nonNullableReturn(43),
+        throwsA(TypeMatcher<MissingStubError>()),
+      );
     });
   });
 
@@ -188,8 +198,7 @@ void main() {
       verify(mock.nonNullableParam(42)).called(1);
     });
 
-    test(
-        'should verify method with non-nullable params with "any" argument '
+    test('should verify method with non-nullable params with "any" argument '
         'matcher', () {
       mock.nonNullableParam(42);
       verify(mock.nonNullableParam(any)).called(1);
@@ -208,8 +217,7 @@ void main() {
       verifyNever(mock.nonNullableParam(43));
     });
 
-    test(
-        'should verify method with non-nullable params with "any" argument '
+    test('should verify method with non-nullable params with "any" argument '
         'matcher', () {
       verifyNever(mock.nonNullableParam(any));
     });

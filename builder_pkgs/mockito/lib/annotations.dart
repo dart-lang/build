@@ -130,14 +130,16 @@ class MockSpec<T> {
   /// as a legal return value.
   const MockSpec({
     Symbol? as,
-    @Deprecated('Avoid adding concrete implementation to mock classes. '
-        'Use a manual implementation of the class without `Mock`')
+    @Deprecated(
+      'Avoid adding concrete implementation to mock classes. '
+      'Use a manual implementation of the class without `Mock`',
+    )
     List<Type> mixingIn = const [],
     this.unsupportedMembers = const {},
     this.fallbackGenerators = const {},
     this.onMissingStub,
-  })  : mockName = as,
-        mixins = mixingIn;
+  }) : mockName = as,
+       mixins = mixingIn;
 }
 
 /// Values indicating the action to perform when a real call is made to a mock
@@ -151,5 +153,5 @@ enum OnMissingStub {
   /// For basic known types, like `int` and `Future<String>`, a simple value is
   /// returned (like `0` and `Future.value('')`). For unknown user types, an
   /// instance of a fake implementation is returned.
-  returnDefault;
+  returnDefault,
 }

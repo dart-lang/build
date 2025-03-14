@@ -66,10 +66,13 @@ final List<ArgMatcher> _storedArgs = <ArgMatcher>[];
 final Map<String, ArgMatcher> _storedNamedArgs = <String, ArgMatcher>{};
 
 @Deprecated(
-    'This function is not a supported function, and may be deleted as early as '
-    'Mockito 5.0.0')
+  'This function is not a supported function, and may be deleted as early as '
+  'Mockito 5.0.0',
+)
 void setDefaultResponse(
-    Mock mock, CallPair<dynamic> Function() defaultResponse) {
+  Mock mock,
+  CallPair<dynamic> Function() defaultResponse,
+) {
   mock._defaultResponse = defaultResponse;
 }
 
@@ -155,9 +158,11 @@ mixin class Mock {
   /// return type.
   @override
   @visibleForTesting
-  dynamic noSuchMethod(Invocation invocation,
-      {Object? returnValue,
-      Object? returnValueForMissingStub = deferToDefaultResponse}) {
+  dynamic noSuchMethod(
+    Invocation invocation, {
+    Object? returnValue,
+    Object? returnValueForMissingStub = deferToDefaultResponse,
+  }) {
     // noSuchMethod is that 'magic' that allows us to ignore implementing fields
     // and methods and instead define them later at compile-time per instance.
     invocation = _useMatchedInvocationIfSet(invocation);
@@ -175,14 +180,17 @@ mixin class Mock {
       if (returnValueForMissingStub == deferToDefaultResponse) {
         defaultResponse = _defaultResponse;
       } else {
-        defaultResponse = () =>
-            CallPair<Object?>.allInvocations((_) => returnValueForMissingStub);
+        defaultResponse =
+            () => CallPair<Object?>.allInvocations(
+              (_) => returnValueForMissingStub,
+            );
       }
       _realCalls.add(RealCall(this, invocation));
       _invocationStreamController.add(invocation);
       final cannedResponse = _responses.lastWhere(
-          (cr) => cr.call.matches(invocation, {}),
-          orElse: defaultResponse);
+        (cr) => cr.call.matches(invocation, {}),
+        orElse: defaultResponse,
+      );
       final response = cannedResponse.response(invocation);
       return response;
     }
@@ -195,16 +203,18 @@ mixin class Mock {
   int get hashCode => _givenHashCode ?? 0;
 
   @override
-  bool operator ==(other) => (_givenHashCode != null && other is Mock)
-      ? _givenHashCode == other._givenHashCode
-      : identical(this, other);
+  bool operator ==(other) =>
+      (_givenHashCode != null && other is Mock)
+          ? _givenHashCode == other._givenHashCode
+          : identical(this, other);
 
   @override
   String toString() => _givenName ?? runtimeType.toString();
 
   String _realCallsToString([Iterable<RealCall>? realCalls]) {
-    final stringRepresentations =
-        (realCalls ?? _realCalls).map((call) => call.toString());
+    final stringRepresentations = (realCalls ?? _realCalls).map(
+      (call) => call.toString(),
+    );
     if (stringRepresentations.any((s) => s.contains('\n'))) {
       // As each call contains newlines, put each on its own line, for better
       // readability.
@@ -239,10 +249,15 @@ class SmartFake {
   bool operator ==(Object? other) => identical(this, other);
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => throw FakeUsedError(
-      _parentInvocation, invocation, _parent, _createdStackTrace);
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw FakeUsedError(
+        _parentInvocation,
+        invocation,
+        _parent,
+        _createdStackTrace,
+      );
   SmartFake(this._parent, this._parentInvocation)
-      : _createdStackTrace = StackTrace.current;
+    : _createdStackTrace = StackTrace.current;
 
   @override
   String toString() {
@@ -271,12 +286,16 @@ class FakeUsedError extends Error {
   final StackTrace createdStackTrace;
   final String _memberName;
 
-  FakeUsedError(this.parentInvocation, this.invocation, this.receiver,
-      this.createdStackTrace)
-      : _memberName = _symbolToString(parentInvocation.memberName);
+  FakeUsedError(
+    this.parentInvocation,
+    this.invocation,
+    this.receiver,
+    this.createdStackTrace,
+  ) : _memberName = _symbolToString(parentInvocation.memberName);
 
   @override
-  String toString() => "FakeUsedError: '$_memberName'\n"
+  String toString() =>
+      "FakeUsedError: '$_memberName'\n"
       'No stub was found which matches the argument of this method call:\n'
       '${parentInvocation.toPrettyString()}\n\n'
       'A fake object was created for this call, in the hope that it '
@@ -296,11 +315,14 @@ class FakeFunctionUsedError extends Error {
   final String _memberName;
 
   FakeFunctionUsedError(
-      this.parentInvocation, this.receiver, this.createdStackTrace)
-      : _memberName = _symbolToString(parentInvocation.memberName);
+    this.parentInvocation,
+    this.receiver,
+    this.createdStackTrace,
+  ) : _memberName = _symbolToString(parentInvocation.memberName);
 
   @override
-  String toString() => "FakeFunctionUsedError: '$_memberName'\n"
+  String toString() =>
+      "FakeFunctionUsedError: '$_memberName'\n"
       'No stub was found which matches the argument of this method call:\n'
       '${parentInvocation.toPrettyString()}\n\n'
       'A fake function was created for this call, in the hope that it '
@@ -362,8 +384,9 @@ class _InvocationForMatchedArguments extends Invocation {
   factory _InvocationForMatchedArguments(Invocation invocation) {
     if (_storedArgs.isEmpty && _storedNamedArgs.isEmpty) {
       throw StateError(
-          '_InvocationForMatchedArguments called when no ArgMatchers have been '
-          'saved.');
+        '_InvocationForMatchedArguments called when no ArgMatchers have been '
+        'saved.',
+      );
     }
 
     // Handle named arguments first, so that we can provide useful errors for
@@ -377,12 +400,13 @@ class _InvocationForMatchedArguments extends Invocation {
     _storedNamedArgs.clear();
 
     return _InvocationForMatchedArguments._(
-        invocation.memberName,
-        positionalArguments,
-        namedArguments,
-        invocation.isGetter,
-        invocation.isMethod,
-        invocation.isSetter);
+      invocation.memberName,
+      positionalArguments,
+      namedArguments,
+      invocation.isGetter,
+      invocation.isMethod,
+      invocation.isSetter,
+    );
   }
 
   // Reconstitutes the named arguments in an invocation from
@@ -392,8 +416,9 @@ class _InvocationForMatchedArguments extends Invocation {
   // by a stored value in [_storedNamedArgs].
   static Map<Symbol, dynamic> _reconstituteNamedArgs(Invocation invocation) {
     final namedArguments = <Symbol, dynamic>{};
-    final storedNamedArgSymbols =
-        _storedNamedArgs.keys.map((name) => Symbol(name));
+    final storedNamedArgSymbols = _storedNamedArgs.keys.map(
+      (name) => Symbol(name),
+    );
 
     // Iterate through [invocation]'s named args, validate them, and add them
     // to the return map.
@@ -420,21 +445,23 @@ class _InvocationForMatchedArguments extends Invocation {
         _storedArgs.clear();
         _storedNamedArgs.clear();
         throw ArgumentError(
-            'An ArgumentMatcher was declared as named $name, but was not '
-            'passed as an argument named $name.\n\n'
-            'BAD:  when(obj.fn(anyNamed: "a")))\n'
-            'GOOD: when(obj.fn(a: anyNamed: "a")))');
+          'An ArgumentMatcher was declared as named $name, but was not '
+          'passed as an argument named $name.\n\n'
+          'BAD:  when(obj.fn(anyNamed: "a")))\n'
+          'GOOD: when(obj.fn(a: anyNamed: "a")))',
+        );
       }
       if (invocation.namedArguments[nameSymbol] != null) {
         // Clear things out for the next call.
         _storedArgs.clear();
         _storedNamedArgs.clear();
         throw ArgumentError(
-            'An ArgumentMatcher was declared as named $name, but a different '
-            'value (${invocation.namedArguments[nameSymbol]}) was passed as '
-            '$name.\n\n'
-            'BAD:  when(obj.fn(b: anyNamed("a")))\n'
-            'GOOD: when(obj.fn(b: anyNamed("b")))');
+          'An ArgumentMatcher was declared as named $name, but a different '
+          'value (${invocation.namedArguments[nameSymbol]}) was passed as '
+          '$name.\n\n'
+          'BAD:  when(obj.fn(b: anyNamed("a")))\n'
+          'GOOD: when(obj.fn(b: anyNamed("b")))',
+        );
       }
       namedArguments[nameSymbol] = arg;
     });
@@ -444,8 +471,9 @@ class _InvocationForMatchedArguments extends Invocation {
 
   static List<dynamic> _reconstitutePositionalArgs(Invocation invocation) {
     final positionalArguments = <dynamic>[];
-    final nullPositionalArguments =
-        invocation.positionalArguments.where((arg) => arg == null);
+    final nullPositionalArguments = invocation.positionalArguments.where(
+      (arg) => arg == null,
+    );
     if (_storedArgs.length > nullPositionalArguments.length) {
       // More _positional_ ArgMatchers were stored than were actually passed as
       // positional arguments. There are three ways this call could have been
@@ -461,13 +489,14 @@ class _InvocationForMatchedArguments extends Invocation {
       _storedArgs.clear();
       _storedNamedArgs.clear();
       throw ArgumentError(
-          'An argument matcher (like `any`) was either not used as an '
-          'immediate argument to ${invocation.memberName} (argument matchers '
-          'can only be used as an argument for the very method being stubbed '
-          'or verified), or was used as a named argument without the Mockito '
-          '"named" API (Each argument matcher that is used as a named argument '
-          'needs to specify the name of the argument it is being used in. For '
-          'example: `when(obj.fn(x: anyNamed("x")))`).');
+        'An argument matcher (like `any`) was either not used as an '
+        'immediate argument to ${invocation.memberName} (argument matchers '
+        'can only be used as an argument for the very method being stubbed '
+        'or verified), or was used as a named argument without the Mockito '
+        '"named" API (Each argument matcher that is used as a named argument '
+        'needs to specify the name of the argument it is being used in. For '
+        'example: `when(obj.fn(x: anyNamed("x")))`).',
+      );
     }
     var storedIndex = 0;
     var positionalIndex = 0;
@@ -482,8 +511,9 @@ class _InvocationForMatchedArguments extends Invocation {
       } else {
         // An argument matching helper was not used; add the [ArgMatcher] from
         // [invocation].
-        positionalArguments
-            .add(invocation.positionalArguments[positionalIndex]);
+        positionalArguments.add(
+          invocation.positionalArguments[positionalIndex],
+        );
         positionalIndex++;
       }
     }
@@ -496,17 +526,25 @@ class _InvocationForMatchedArguments extends Invocation {
     return positionalArguments;
   }
 
-  _InvocationForMatchedArguments._(this.memberName, this.positionalArguments,
-      this.namedArguments, this.isGetter, this.isMethod, this.isSetter);
+  _InvocationForMatchedArguments._(
+    this.memberName,
+    this.positionalArguments,
+    this.namedArguments,
+    this.isGetter,
+    this.isMethod,
+    this.isSetter,
+  );
 }
 
 @Deprecated(
-    'This function does not provide value; hashCode and toString() can be '
-    'stubbed individually. This function may be deleted as early as Mockito '
-    '5.0.0')
-T named<T extends Mock>(T mock, {String? name, int? hashCode}) => mock
-  .._givenName = name
-  .._givenHashCode = hashCode;
+  'This function does not provide value; hashCode and toString() can be '
+  'stubbed individually. This function may be deleted as early as Mockito '
+  '5.0.0',
+)
+T named<T extends Mock>(T mock, {String? name, int? hashCode}) =>
+    mock
+      .._givenName = name
+      .._givenHashCode = hashCode;
 
 /// Clear stubs of, and collected interactions with [mock].
 void reset(var mock) {
@@ -571,8 +609,9 @@ class PostExpectation<T> {
   void _completeWhen(Answering<T> answer) {
     if (_whenCall == null) {
       throw StateError(
-          'No method stub was called from within `when()`. Was a real method '
-          'called, or perhaps an extension method?');
+        'No method stub was called from within `when()`. Was a real method '
+        'called, or perhaps an extension method?',
+      );
     }
     _whenCall!._setExpected<T>(answer);
     _whenCall = null;
@@ -581,12 +620,16 @@ class PostExpectation<T> {
 
   void _throwIfInvalid(T expected) {
     if (expected is Future) {
-      throw ArgumentError('`thenReturn` should not be used to return a Future. '
-          'Instead, use `thenAnswer((_) => future)`.');
+      throw ArgumentError(
+        '`thenReturn` should not be used to return a Future. '
+        'Instead, use `thenAnswer((_) => future)`.',
+      );
     }
     if (expected is Stream) {
-      throw ArgumentError('`thenReturn` should not be used to return a Stream. '
-          'Instead, use `thenAnswer((_) => stream)`.');
+      throw ArgumentError(
+        '`thenReturn` should not be used to return a Stream. '
+        'Instead, use `thenAnswer((_) => stream)`.',
+      );
     }
   }
 }
@@ -723,7 +766,7 @@ class _UntilCall {
   final Mock _mock;
 
   _UntilCall(this._mock, Invocation invocation)
-      : _invocationMatcher = InvocationMatcher(invocation);
+    : _invocationMatcher = InvocationMatcher(invocation);
 
   bool _matchesInvocation(RealCall realCall) =>
       _invocationMatcher.matches(realCall.invocation);
@@ -735,8 +778,9 @@ class _UntilCall {
       return Future.value(_realCalls.firstWhere(_matchesInvocation).invocation);
     }
 
-    return _mock._invocationStreamController.stream
-        .firstWhere(_invocationMatcher.matches);
+    return _mock._invocationStreamController.stream.firstWhere(
+      _invocationMatcher.matches,
+    );
   }
 }
 
@@ -762,8 +806,9 @@ class _VerifyCall {
       if (!realCall.verified && expectedMatcher.matches(realCall.invocation)) {
         // [Invocation.matcher] collects captured arguments if
         // [verifyInvocation] included capturing matchers.
-        matchingInvocations
-            .add(_RealCallWithCapturedArgs(realCall, [..._capturedArgs]));
+        matchingInvocations.add(
+          _RealCallWithCapturedArgs(realCall, [..._capturedArgs]),
+        );
         _capturedArgs.clear();
       }
     }
@@ -773,16 +818,26 @@ class _VerifyCall {
     ];
 
     return _VerifyCall._(
-        mock, verifyInvocation, matchingInvocations, matchingCapturedArgs);
+      mock,
+      verifyInvocation,
+      matchingInvocations,
+      matchingCapturedArgs,
+    );
   }
 
-  _VerifyCall._(this.mock, this.verifyInvocation, this.matchingInvocations,
-      this.matchingCapturedArgs);
+  _VerifyCall._(
+    this.mock,
+    this.verifyInvocation,
+    this.matchingInvocations,
+    this.matchingCapturedArgs,
+  );
 
   _RealCallWithCapturedArgs _findAfter(DateTime time) {
-    return matchingInvocations.firstWhere((invocation) =>
-        !invocation.realCall.verified &&
-        invocation.realCall.timeStamp.isAfter(time));
+    return matchingInvocations.firstWhere(
+      (invocation) =>
+          !invocation.realCall.verified &&
+          invocation.realCall.timeStamp.isAfter(time),
+    );
   }
 
   void _checkWith(bool never) {
@@ -794,9 +849,11 @@ class _VerifyCall {
         final otherCalls = mock._realCallsToString();
         message = 'No matching calls. All calls: $otherCalls';
       }
-      fail('$message\n'
-          '(If you called `verify(...).called(0);`, please instead use '
-          '`verifyNever(...);`.)');
+      fail(
+        '$message\n'
+        '(If you called `verify(...).called(0);`, please instead use '
+        '`verifyNever(...);`.)',
+      );
     }
     if (never && matchingInvocations.isNotEmpty) {
       final calls = mock._unverifiedCallsToString();
@@ -842,8 +899,12 @@ Null get any => _registerMatcher(anything, false, argumentMatcher: 'any');
 /// See the README section on
 /// [named argument matchers](https://pub.dev/packages/mockito#named-arguments)
 /// for examples.
-Null anyNamed(String named) => _registerMatcher(anything, false,
-    named: named, argumentMatcher: 'anyNamed');
+Null anyNamed(String named) => _registerMatcher(
+  anything,
+  false,
+  named: named,
+  argumentMatcher: 'anyNamed',
+);
 
 /// An argument matcher that matches any argument passed in this argument
 /// position, and captures the argument for later access with
@@ -862,8 +923,12 @@ Null get captureAny =>
 /// See the README section on
 /// [capturing arguments](https://pub.dev/packages/mockito#capturing-arguments-for-further-assertions)
 /// for examples.
-Null captureAnyNamed(String named) => _registerMatcher(anything, true,
-    named: named, argumentMatcher: 'captureAnyNamed');
+Null captureAnyNamed(String named) => _registerMatcher(
+  anything,
+  true,
+  named: named,
+  argumentMatcher: 'captureAnyNamed',
+);
 
 /// An argument matcher that matches an argument (named or positional) that
 /// matches [matcher].
@@ -887,9 +952,12 @@ Null argThat(Matcher matcher, {String? named}) =>
 /// See the README section on
 /// [capturing arguments](https://pub.dev/packages/mockito#capturing-arguments-for-further-assertions)
 /// for examples.
-Null captureThat(Matcher matcher, {String? named}) =>
-    _registerMatcher(matcher, true,
-        named: named, argumentMatcher: 'captureThat');
+Null captureThat(Matcher matcher, {String? named}) => _registerMatcher(
+  matcher,
+  true,
+  named: named,
+  argumentMatcher: 'captureThat',
+);
 
 /// Registers [matcher] into the stored arguments collections.
 ///
@@ -898,8 +966,12 @@ Null captureThat(Matcher matcher, {String? named}) =>
 /// stores it into the named stored arguments map, keyed on [named].
 /// [argumentMatcher] is the name of the public API used to register [matcher],
 /// for error messages.
-Null _registerMatcher(Matcher matcher, bool capture,
-    {String? named, String? argumentMatcher}) {
+Null _registerMatcher(
+  Matcher matcher,
+  bool capture, {
+  String? named,
+  String? argumentMatcher,
+}) {
   if (!_whenInProgress && !_untilCalledInProgress && !_verificationInProgress) {
     // It is not meaningful to store argument matchers outside of stubbing
     // (`when`), or verification (`verify` and `untilCalled`). Such argument
@@ -907,10 +979,11 @@ Null _registerMatcher(Matcher matcher, bool capture,
     _storedArgs.clear();
     _storedNamedArgs.clear();
     throw ArgumentError(
-        'The "$argumentMatcher" argument matcher is used outside of method '
-        'stubbing (via `when`) or verification (via `verify` or '
-        '`untilCalled`). This is invalid, and results in bad behavior during '
-        'the next stubbing or verification.');
+      'The "$argumentMatcher" argument matcher is used outside of method '
+      'stubbing (via `when`) or verification (via `verify` or '
+      '`untilCalled`). This is invalid, and results in bad behavior during '
+      'the next stubbing or verification.',
+    );
   }
   final argMatcher = ArgMatcher(matcher, capture);
   if (named == null) {
@@ -965,8 +1038,9 @@ class VerificationResult {
   List<dynamic> get captured => _captured;
 
   @Deprecated(
-      'captured should be considered final - assigning this field may be '
-      'removed as early as Mockito 5.0.0')
+    'captured should be considered final - assigning this field may be '
+    'removed as early as Mockito 5.0.0',
+  )
   // ignore: unnecessary_getters_setters
   set captured(List<dynamic> captured) => _captured = captured;
 
@@ -992,8 +1066,11 @@ class VerificationResult {
       // cheap getter, but it involves Zones and casting.
       _testApiMismatchHasBeenChecked = true;
     }
-    expect(callCount, wrapMatcher(matcher),
-        reason: 'Unexpected number of calls');
+    expect(
+      callCount,
+      wrapMatcher(matcher),
+      reason: 'Unexpected number of calls',
+    );
   }
 }
 
@@ -1058,16 +1135,20 @@ Verification _makeVerify(bool never) {
     throw StateError(message);
   }
   if (_verificationInProgress) {
-    fail('There is already a verification in progress, '
-        'check if it was not called with a verify argument(s)');
+    fail(
+      'There is already a verification in progress, '
+      'check if it was not called with a verify argument(s)',
+    );
   }
   _verificationInProgress = true;
   return <T>(T mock) {
     _verificationInProgress = false;
     if (_verifyCalls.length == 1) {
       final verifyCall = _verifyCalls.removeLast();
-      final result = VerificationResult._(verifyCall.matchingInvocations.length,
-          verifyCall.matchingCapturedArgs);
+      final result = VerificationResult._(
+        verifyCall.matchingInvocations.length,
+        verifyCall.matchingCapturedArgs,
+      );
       verifyCall._checkWith(never);
       return result;
     } else {
@@ -1110,16 +1191,18 @@ Verification _makeVerify(bool never) {
 /// other calls were made to `eatFood` or `sound` between the three given
 /// calls, or before or after them, the verification will still succeed.
 List<VerificationResult> Function<T>(List<T> recordedInvocations)
-    get verifyInOrder {
+get verifyInOrder {
   if (_verifyCalls.isNotEmpty) {
     throw StateError(_verifyCalls.join());
   }
   _verificationInProgress = true;
   return <T>(List<T> responses) {
     if (responses.length != _verifyCalls.length) {
-      fail("'verifyInOrder' called with non-mockito stub calls; List contains "
-          '${responses.length} elements, but ${_verifyCalls.length} stub calls '
-          'were stored: $_verifyCalls');
+      fail(
+        "'verifyInOrder' called with non-mockito stub calls; List contains "
+        '${responses.length} elements, but ${_verifyCalls.length} stub calls '
+        'were stored: $_verifyCalls',
+      );
     }
     _verificationInProgress = false;
     final verificationResults = <VerificationResult>[];
@@ -1135,16 +1218,20 @@ List<VerificationResult> Function<T>(List<T> recordedInvocations)
         time = matched.realCall.timeStamp;
       } on StateError {
         final mocks = tmpVerifyCalls.map((vc) => vc.mock).toSet();
-        final allInvocations =
-            mocks.expand((m) => m._realCalls).toList(growable: false);
-        allInvocations
-            .sort((inv1, inv2) => inv1.timeStamp.compareTo(inv2.timeStamp));
+        final allInvocations = mocks
+            .expand((m) => m._realCalls)
+            .toList(growable: false);
+        allInvocations.sort(
+          (inv1, inv2) => inv1.timeStamp.compareTo(inv2.timeStamp),
+        );
         var otherCalls = '';
         if (allInvocations.isNotEmpty) {
           otherCalls = " All calls: ${allInvocations.join(", ")}";
         }
-        fail('Matching call #${tmpVerifyCalls.indexOf(verifyCall)} '
-            'not found.$otherCalls');
+        fail(
+          'Matching call #${tmpVerifyCalls.indexOf(verifyCall)} '
+          'not found.$otherCalls',
+        );
       }
     }
     for (final call in matchedCalls) {
@@ -1175,8 +1262,10 @@ void verifyNoMoreInteractions(var mock) {
 void verifyZeroInteractions(var mock) {
   if (mock is Mock) {
     if (mock._realCalls.isNotEmpty) {
-      fail('No interaction expected, but following found: '
-          '${mock._realCalls.join()}');
+      fail(
+        'No interaction expected, but following found: '
+        '${mock._realCalls.join()}',
+      );
     }
   } else {
     _throwMockArgumentError('verifyZeroInteractions', mock);
@@ -1238,8 +1327,9 @@ InvocationLoader get untilCalled {
 
 /// Print all collected invocations of any mock methods of [mocks].
 void logInvocations(List<Mock> mocks) {
-  final allInvocations =
-      mocks.expand((m) => m._realCalls).toList(growable: false);
+  final allInvocations = mocks
+      .expand((m) => m._realCalls)
+      .toList(growable: false);
   allInvocations.sort((inv1, inv2) => inv1.timeStamp.compareTo(inv2.timeStamp));
   for (final inv in allInvocations) {
     print(inv.toString());
@@ -1282,8 +1372,9 @@ extension PrettyString on Invocation {
     if (args.any((arg) => arg.contains('\n'))) {
       // As one or more arg contains newlines, put each on its own line, and
       // indent each, for better readability.
-      final indentedArgs = args
-          .map((arg) => arg.splitMapJoin('\n', onNonMatch: (m) => '    $m'));
+      final indentedArgs = args.map(
+        (arg) => arg.splitMapJoin('\n', onNonMatch: (m) => '    $m'),
+      );
       argString = '\n${indentedArgs.join(',\n')}';
     } else {
       // A compact String should be perfect.
@@ -1291,13 +1382,15 @@ extension PrettyString on Invocation {
     }
     if (namedArguments.isNotEmpty) {
       if (argString.isNotEmpty) argString += ', ';
-      var namedArgs = namedArguments.keys
-          .map((key) => '${_symbolToString(key)}: ${namedArguments[key]}');
+      var namedArgs = namedArguments.keys.map(
+        (key) => '${_symbolToString(key)}: ${namedArguments[key]}',
+      );
       if (namedArgs.any((arg) => arg.contains('\n'))) {
         // As one or more arg contains newlines, put each on its own line, and
         // indent each, for better readability.
-        namedArgs = namedArgs
-            .map((arg) => arg.splitMapJoin('\n', onNonMatch: (m) => '    $m'));
+        namedArgs = namedArgs.map(
+          (arg) => arg.splitMapJoin('\n', onNonMatch: (m) => '    $m'),
+        );
         argString += '{\n${namedArgs.join(',\n')}}';
       } else {
         // A compact String should be perfect.

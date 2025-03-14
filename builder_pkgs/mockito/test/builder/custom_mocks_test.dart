@@ -64,7 +64,7 @@ class MockSpec<T> {
 }
 
 enum OnMissingStub { throwException, returnDefault }
-'''
+''',
 };
 
 const mockitoAssets = {
@@ -73,7 +73,7 @@ export 'src/mock.dart';
 ''',
   'mockito|lib/src/mock.dart': '''
 class Mock {}
-'''
+''',
 };
 
 const simpleTestAsset = {
@@ -82,7 +82,7 @@ import 'package:foo/foo.dart';
 import 'package:mockito/annotations.dart';
 @GenerateMocks([], customMocks: [MockSpec<Foo>()])
 void main() {}
-'''
+''',
 };
 
 void main() {
@@ -92,12 +92,19 @@ void main() {
   /// returning the content of the generated mocks library.
   Future<String> buildWithNonNullable(Map<String, String> sourceAssets) async {
     final packageConfig = PackageConfig([
-      Package('foo', Uri.file('/foo/'),
-          packageUriRoot: Uri.file('/foo/lib/'),
-          languageVersion: LanguageVersion(3, 3))
+      Package(
+        'foo',
+        Uri.file('/foo/'),
+        packageUriRoot: Uri.file('/foo/lib/'),
+        languageVersion: LanguageVersion(3, 3),
+      ),
     ]);
-    await testBuilder(buildMocks(BuilderOptions({})), sourceAssets,
-        writer: writer, packageConfig: packageConfig);
+    await testBuilder(
+      buildMocks(BuilderOptions({})),
+      sourceAssets,
+      writer: writer,
+      packageConfig: packageConfig,
+    );
     final mocksAsset = AssetId('foo', 'test/foo_test.mocks.dart');
     return utf8.decode(writer.assets[mocksAsset]!);
   }
@@ -117,10 +124,12 @@ void main() {
         import 'package:mockito/annotations.dart';
         @GenerateMocks([], customMocks: [MockSpec<Foo>(as: #MockFoo)])
         void main() {}
-        '''
+        ''',
     });
-    expect(mocksContent,
-        contains('class MockFoo<T> extends _i1.Mock implements _i2.Foo<T>'));
+    expect(
+      mocksContent,
+      contains('class MockFoo<T> extends _i1.Mock implements _i2.Foo<T>'),
+    );
   });
 
   test('without type arguments, generates generic method types', () async {
@@ -136,7 +145,7 @@ void main() {
         import 'package:mockito/annotations.dart';
         @GenerateMocks([], customMocks: [MockSpec<Foo>(as: #MockFoo)])
         void main() {}
-        '''
+        ''',
     });
     expect(mocksContent, contains('List<T> get f =>'));
   });
@@ -154,12 +163,14 @@ void main() {
         @GenerateMocks(
             [], customMocks: [MockSpec<Foo<List<Bar>>>(as: #MockFoo)])
         void main() {}
-        '''
+        ''',
     });
     expect(
-        mocksContent,
-        contains(
-            'class MockFoo extends _i1.Mock implements _i2.Foo<List<_i2.Bar>>'));
+      mocksContent,
+      contains(
+        'class MockFoo extends _i1.Mock implements _i2.Foo<List<_i2.Bar>>',
+      ),
+    );
   });
 
   test('generates a generic mock class with type arguments', () async {
@@ -175,35 +186,41 @@ void main() {
         @GenerateMocks(
             [], customMocks: [MockSpec<Foo<int, Bar>>(as: #MockFooOfIntBar)])
         void main() {}
-        '''
+        ''',
     });
     expect(
-        mocksContent,
-        contains(
-            'class MockFooOfIntBar extends _i1.Mock implements _i2.Foo<int, _i2.Bar>'));
+      mocksContent,
+      contains(
+        'class MockFooOfIntBar extends _i1.Mock implements _i2.Foo<int, _i2.Bar>',
+      ),
+    );
   });
 
-  test('generates a generic mock class with lower bound type arguments',
-      () async {
-    final mocksContent = await buildWithNonNullable({
-      ...annotationsAsset,
-      'foo|lib/foo.dart': dedent(r'''
+  test(
+    'generates a generic mock class with lower bound type arguments',
+    () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
         class Foo<T, U extends Bar> {}
         class Bar {}
         '''),
-      'foo|test/foo_test.dart': '''
+        'foo|test/foo_test.dart': '''
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
         @GenerateMocks(
             [], customMocks: [MockSpec<Foo<dynamic, Bar>>(as: #MockFoo)])
         void main() {}
-        '''
-    });
-    expect(
+        ''',
+      });
+      expect(
         mocksContent,
         contains(
-            'class MockFoo extends _i1.Mock implements _i2.Foo<dynamic, _i2.Bar>'));
-  });
+          'class MockFoo extends _i1.Mock implements _i2.Foo<dynamic, _i2.Bar>',
+        ),
+      );
+    },
+  );
 
   test('generates a generic mock class with nullable type arguments', () async {
     final mocksContent = await buildWithNonNullable({
@@ -218,12 +235,14 @@ void main() {
         @GenerateMocks(
             [], customMocks: [MockSpec<Foo<int?, Bar?>>(as: #MockFooOfIntBar)])
         void main() {}
-        '''
+        ''',
     });
     expect(
-        mocksContent,
-        contains(
-            'class MockFooOfIntBar extends _i1.Mock implements _i2.Foo<int?, _i2.Bar?>'));
+      mocksContent,
+      contains(
+        'class MockFooOfIntBar extends _i1.Mock implements _i2.Foo<int?, _i2.Bar?>',
+      ),
+    );
   });
 
   test('generates a generic mock class with nested type arguments', () async {
@@ -238,51 +257,61 @@ void main() {
         @GenerateMocks(
             [], customMocks: [MockSpec<Foo<List<int>>>(as: #MockFooOfListOfInt)])
         void main() {}
-        '''
+        ''',
     });
     expect(
-        mocksContent,
-        contains(
-            'class MockFooOfListOfInt extends _i1.Mock implements _i2.Foo<List<int>>'));
+      mocksContent,
+      contains(
+        'class MockFooOfListOfInt extends _i1.Mock implements _i2.Foo<List<int>>',
+      ),
+    );
   });
 
-  test('generates a generic mock class with type arguments but no name',
-      () async {
-    final mocksContent = await buildWithNonNullable({
-      ...annotationsAsset,
-      'foo|lib/foo.dart': dedent(r'''
+  test(
+    'generates a generic mock class with type arguments but no name',
+    () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
         class Foo<T> {}
         '''),
-      'foo|test/foo_test.dart': '''
+        'foo|test/foo_test.dart': '''
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
         @GenerateMocks([], customMocks: [MockSpec<Foo<int>>()])
         void main() {}
-        '''
-    });
-    expect(mocksContent,
-        contains('class MockFoo extends _i1.Mock implements _i2.Foo<int>'));
-  });
+        ''',
+      });
+      expect(
+        mocksContent,
+        contains('class MockFoo extends _i1.Mock implements _i2.Foo<int>'),
+      );
+    },
+  );
 
-  test('generates a generic, bounded mock class without type arguments',
-      () async {
-    final mocksContent = await buildWithNonNullable({
-      ...annotationsAsset,
-      'foo|lib/foo.dart': dedent(r'''
+  test(
+    'generates a generic, bounded mock class without type arguments',
+    () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
         class Foo<T extends Object> {}
         '''),
-      'foo|test/foo_test.dart': '''
+        'foo|test/foo_test.dart': '''
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
         @GenerateMocks([], customMocks: [MockSpec<Foo>(as: #MockFoo)])
         void main() {}
-        '''
-    });
-    expect(
+        ''',
+      });
+      expect(
         mocksContent,
         contains(
-            'class MockFoo<T extends Object> extends _i1.Mock implements _i2.Foo<T>'));
-  });
+          'class MockFoo<T extends Object> extends _i1.Mock implements _i2.Foo<T>',
+        ),
+      );
+    },
+  );
 
   test('generates mock classes from multiple annotations', () async {
     final mocksContent = await buildWithNonNullable({
@@ -298,38 +327,48 @@ void main() {
         void fooTests() {}
         @GenerateMocks([], customMocks: [MockSpec<Bar>()])
         void barTests() {}
-        '''
+        ''',
     });
-    expect(mocksContent,
-        contains('class MockFoo extends _i1.Mock implements _i2.Foo'));
-    expect(mocksContent,
-        contains('class MockBar extends _i1.Mock implements _i2.Bar'));
+    expect(
+      mocksContent,
+      contains('class MockFoo extends _i1.Mock implements _i2.Foo'),
+    );
+    expect(
+      mocksContent,
+      contains('class MockBar extends _i1.Mock implements _i2.Bar'),
+    );
   });
 
-  test('generates mock classes from multiple annotations on a single element',
-      () async {
-    final mocksContent = await buildWithNonNullable({
-      ...annotationsAsset,
-      'foo|lib/a.dart': dedent(r'''
+  test(
+    'generates mock classes from multiple annotations on a single element',
+    () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/a.dart': dedent(r'''
         class Foo {}
         '''),
-      'foo|lib/b.dart': dedent(r'''
+        'foo|lib/b.dart': dedent(r'''
         class Foo {}
         '''),
-      'foo|test/foo_test.dart': '''
+        'foo|test/foo_test.dart': '''
         import 'package:foo/a.dart' as a;
         import 'package:foo/b.dart' as b;
         import 'package:mockito/annotations.dart';
         @GenerateMocks([], customMocks: [MockSpec<a.Foo>(as: #MockAFoo)])
         @GenerateMocks([], customMocks: [MockSpec<b.Foo>(as: #MockBFoo)])
         void main() {}
-        '''
-    });
-    expect(mocksContent,
-        contains('class MockAFoo extends _i1.Mock implements _i2.Foo'));
-    expect(mocksContent,
-        contains('class MockBFoo extends _i1.Mock implements _i3.Foo'));
-  });
+        ''',
+      });
+      expect(
+        mocksContent,
+        contains('class MockAFoo extends _i1.Mock implements _i2.Foo'),
+      );
+      expect(
+        mocksContent,
+        contains('class MockBFoo extends _i1.Mock implements _i3.Foo'),
+      );
+    },
+  );
 
   test('generates a mock class with a declared mixin', () async {
     final mocksContent = await buildWithNonNullable({
@@ -344,12 +383,13 @@ void main() {
         import 'package:mockito/annotations.dart';
         @GenerateMocks([], customMocks: [MockSpec<Foo>(mixingIn: [FooMixin])])
         void main() {}
-        '''
+        ''',
     });
     expect(
       mocksContent,
       contains(
-          'class MockFoo extends _i1.Mock with _i2.FooMixin implements _i2.Foo {'),
+        'class MockFoo extends _i1.Mock with _i2.FooMixin implements _i2.Foo {',
+      ),
     );
   });
 
@@ -367,17 +407,17 @@ void main() {
         import 'package:mockito/annotations.dart';
         @GenerateMocks([], customMocks: [MockSpec<Foo>(mixingIn: [Mixin1, Mixin2])])
         void main() {}
-        '''
+        ''',
     });
     expect(
       mocksContent,
       contains(
-          'class MockFoo extends _i1.Mock with _i2.Mixin1, _i2.Mixin2 implements _i2.Foo {'),
+        'class MockFoo extends _i1.Mock with _i2.Mixin1, _i2.Mixin2 implements _i2.Foo {',
+      ),
     );
   });
 
-  test('generates a mock class with a declared mixin with a type arg',
-      () async {
+  test('generates a mock class with a declared mixin with a type arg', () async {
     final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
       'foo|lib/foo.dart': dedent('''
@@ -390,12 +430,13 @@ void main() {
         import 'package:mockito/annotations.dart';
         @GenerateMocks([], customMocks: [MockSpec<Foo<int>>(mixingIn: [FooMixin<int>])])
         void main() {}
-        '''
+        ''',
     });
     expect(
       mocksContent,
       contains(
-          'class MockFoo extends _i1.Mock with _i2.FooMixin<int> implements _i2.Foo<int> {'),
+        'class MockFoo extends _i1.Mock with _i2.FooMixin<int> implements _i2.Foo<int> {',
+      ),
     );
   });
 
@@ -413,17 +454,17 @@ void main() {
           MockSpec<Foo>(mixingIn: [FooMarkerMixin])
         ])
         void main() {}
-        '''
+        ''',
     });
     expect(
       mocksContent,
       contains(
-          'class MockFoo extends _i1.Mock with _i2.FooMarkerMixin implements _i2.Foo {'),
+        'class MockFoo extends _i1.Mock with _i2.FooMarkerMixin implements _i2.Foo {',
+      ),
     );
   });
 
-  test(
-      'generates mock methods with private return types, given '
+  test('generates mock methods with private return types, given '
       'unsupportedMembers', () async {
     final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
@@ -441,25 +482,29 @@ void main() {
           MockSpec<Foo>(unsupportedMembers: {#m}),
         ])
         void main() {}
-        '''
+        ''',
     });
     expect(
-        mocksContent,
-        containsIgnoringFormatting('m() => throw UnsupportedError('
-            'r\'"m" cannot be used without a mockito fallback generator.\''));
+      mocksContent,
+      containsIgnoringFormatting(
+        'm() => throw UnsupportedError('
+        'r\'"m" cannot be used without a mockito fallback generator.\'',
+      ),
+    );
   });
 
-  test('generates mock getters with private types, given unsupportedMembers',
-      () async {
-    final mocksContent = await buildWithNonNullable({
-      ...annotationsAsset,
-      'foo|lib/foo.dart': dedent('''
+  test(
+    'generates mock getters with private types, given unsupportedMembers',
+    () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent('''
         abstract class Foo {
           _Bar get f;
         }
         class _Bar {}
         '''),
-      'foo|test/foo_test.dart': '''
+        'foo|test/foo_test.dart': '''
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
 
@@ -467,25 +512,30 @@ void main() {
           MockSpec<Foo>(unsupportedMembers: {#f}),
         ])
         void main() {}
-        '''
-    });
-    expect(
+        ''',
+      });
+      expect(
         mocksContent,
-        containsIgnoringFormatting('get f => throw UnsupportedError('
-            'r\'"f" cannot be used without a mockito fallback generator.\''));
-  });
+        containsIgnoringFormatting(
+          'get f => throw UnsupportedError('
+          'r\'"f" cannot be used without a mockito fallback generator.\'',
+        ),
+      );
+    },
+  );
 
-  test('generates mock setters with private types, given unsupportedMembers',
-      () async {
-    final mocksContent = await buildWithNonNullable({
-      ...annotationsAsset,
-      'foo|lib/foo.dart': dedent('''
+  test(
+    'generates mock setters with private types, given unsupportedMembers',
+    () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent('''
         abstract class Foo {
           set f(_Bar value);
         }
         class _Bar {}
         '''),
-      'foo|test/foo_test.dart': '''
+        'foo|test/foo_test.dart': '''
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
 
@@ -493,16 +543,19 @@ void main() {
           MockSpec<Foo>(unsupportedMembers: {Symbol('f=')}),
         ])
         void main() {}
-        '''
-    });
-    expect(
+        ''',
+      });
+      expect(
         mocksContent,
-        containsIgnoringFormatting('set f(value) => throw UnsupportedError('
-            'r\'"f=" cannot be used without a mockito fallback generator.\''));
-  });
+        containsIgnoringFormatting(
+          'set f(value) => throw UnsupportedError('
+          'r\'"f=" cannot be used without a mockito fallback generator.\'',
+        ),
+      );
+    },
+  );
 
-  test(
-      'generates mock methods with return types with private names in type '
+  test('generates mock methods with return types with private names in type '
       'arguments, given unsupportedMembers', () async {
     final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
@@ -520,26 +573,30 @@ void main() {
           MockSpec<Foo>(unsupportedMembers: {#m}),
         ])
         void main() {}
-        '''
+        ''',
     });
     expect(
-        mocksContent,
-        containsIgnoringFormatting('m() => throw UnsupportedError('
-            'r\'"m" cannot be used without a mockito fallback generator.\''));
+      mocksContent,
+      containsIgnoringFormatting(
+        'm() => throw UnsupportedError('
+        'r\'"m" cannot be used without a mockito fallback generator.\'',
+      ),
+    );
   });
 
   test(
-      'generates mock methods with return types with private names in function '
-      'types, given unsupportedMembers', () async {
-    final mocksContent = await buildWithNonNullable({
-      ...annotationsAsset,
-      'foo|lib/foo.dart': dedent(r'''
+    'generates mock methods with return types with private names in function '
+    'types, given unsupportedMembers',
+    () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
         abstract class Foo {
           void Function(_Bar) m();
         }
         class _Bar {}
         '''),
-      'foo|test/foo_test.dart': '''
+        'foo|test/foo_test.dart': '''
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
 
@@ -547,16 +604,19 @@ void main() {
           MockSpec<Foo>(unsupportedMembers: {#m}),
         ])
         void main() {}
-        '''
-    });
-    expect(
+        ''',
+      });
+      expect(
         mocksContent,
-        containsIgnoringFormatting('m() => throw UnsupportedError('
-            'r\'"m" cannot be used without a mockito fallback generator.\''));
-  });
+        containsIgnoringFormatting(
+          'm() => throw UnsupportedError('
+          'r\'"m" cannot be used without a mockito fallback generator.\'',
+        ),
+      );
+    },
+  );
 
-  test(
-      'generates mock methods with private parameter types, given '
+  test('generates mock methods with private parameter types, given '
       'unsupportedMembers', () async {
     final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
@@ -574,16 +634,18 @@ void main() {
           MockSpec<Foo>(unsupportedMembers: {#m}),
         ])
         void main() {}
-        '''
+        ''',
     });
     expect(
-        mocksContent,
-        containsIgnoringFormatting('void m(b) => throw UnsupportedError('
-            'r\'"m" cannot be used without a mockito fallback generator.\''));
+      mocksContent,
+      containsIgnoringFormatting(
+        'void m(b) => throw UnsupportedError('
+        'r\'"m" cannot be used without a mockito fallback generator.\'',
+      ),
+    );
   });
 
-  test(
-      'generates mock methods with non-nullable return types, specifying '
+  test('generates mock methods with non-nullable return types, specifying '
       'legal default values for basic known types', () async {
     final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
@@ -603,14 +665,13 @@ void main() {
           ],
         )
         void main() {}
-        '''
+        ''',
     });
     expect(mocksContent, contains('returnValue: 0,'));
     expect(mocksContent, contains('returnValueForMissingStub: 0,'));
   });
 
-  test(
-      'generates mock methods with non-nullable return types, specifying '
+  test('generates mock methods with non-nullable return types, specifying '
       'legal default values for unknown types', () async {
     final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
@@ -631,7 +692,7 @@ void main() {
           ],
         )
         void main() {}
-        '''
+        ''',
     });
 
     expect(
@@ -645,16 +706,17 @@ void main() {
     );
   });
 
-  test('generates mock classes including a fallback generator for a getter',
-      () async {
-    final mocksContent = await buildWithNonNullable({
-      ...annotationsAsset,
-      'foo|lib/foo.dart': dedent(r'''
+  test(
+    'generates mock classes including a fallback generator for a getter',
+    () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
         abstract class Foo<T> {
           T get f;
         }
         '''),
-      'foo|test/foo_test.dart': '''
+        'foo|test/foo_test.dart': '''
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
 
@@ -669,13 +731,13 @@ void main() {
           ],
         )
         void main() {}
-        '''
-    });
-    expect(mocksContent, contains('returnValue: _i3.fShim()'));
-  });
+        ''',
+      });
+      expect(mocksContent, contains('returnValue: _i3.fShim()'));
+    },
+  );
 
-  test(
-      'generates mock classes including a fallback generator for a generic '
+  test('generates mock classes including a fallback generator for a generic '
       'method with positional parameters', () async {
     final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
@@ -700,13 +762,12 @@ void main() {
           ],
         )
         void main() {}
-        '''
+        ''',
     });
     expect(mocksContent, contains('returnValue: _i3.mShim<T>(a),'));
   });
 
-  test(
-      'generates mock classes including a fallback generator for a generic '
+  test('generates mock classes including a fallback generator for a generic '
       'method on a super class', () async {
     final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
@@ -732,7 +793,7 @@ void main() {
           ],
         )
         void main() {}
-        '''
+        ''',
     });
     expect(mocksContent, contains('returnValue: _i3.mShim<T>(a),'));
   });
@@ -765,24 +826,24 @@ void main() {
           ],
         )
         void main() {}
-        '''
+        ''',
     });
     expect(mocksContent, contains('returnValue: _i3.mShimA<T>(a),'));
     expect(mocksContent, contains('returnValue: _i3.mShimB<T>(a),'));
   });
 
   test(
-      'generates mock classes including a fallback generator for a generic '
-      'method with positional parameters returning a Future of the generic',
-      () async {
-    final mocksContent = await buildWithNonNullable({
-      ...annotationsAsset,
-      'foo|lib/foo.dart': dedent(r'''
+    'generates mock classes including a fallback generator for a generic '
+    'method with positional parameters returning a Future of the generic',
+    () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
         abstract class Foo {
           Future<T> m<T>(T a);
         }
         '''),
-      'foo|test/foo_test.dart': '''
+        'foo|test/foo_test.dart': '''
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
 
@@ -796,13 +857,13 @@ void main() {
           customMocks: [MockSpec<Foo>(as: #MockFoo, fallbackGenerators: {#m: mShim})],
         )
         void main() {}
-        '''
-    });
-    expect(mocksContent, contains('returnValue: _i4.mShim<T>(a),'));
-  });
+        ''',
+      });
+      expect(mocksContent, contains('returnValue: _i4.mShim<T>(a),'));
+    },
+  );
 
-  test(
-      'generates mock classes including a fallback generator for a generic '
+  test('generates mock classes including a fallback generator for a generic '
       'method with named parameters', () async {
     final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
@@ -825,13 +886,12 @@ void main() {
           customMocks: [MockSpec<Foo>(as: #MockFoo, fallbackGenerators: {#m: mShim})],
         )
         void main() {}
-        '''
+        ''',
     });
     expect(mocksContent, contains('returnValue: _i3.mShim<T>(a: a),'));
   });
 
-  test(
-      'generates mock classes including a fallback generator for a bounded '
+  test('generates mock classes including a fallback generator for a bounded '
       'generic method with named parameters', () async {
     final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
@@ -854,13 +914,12 @@ void main() {
           customMocks: [MockSpec<Foo>(as: #MockFoo, fallbackGenerators: {#m: mShim})],
         )
         void main() {}
-        '''
+        ''',
     });
     expect(mocksContent, contains('returnValue: _i3.mShim<T>(a: a),'));
   });
 
-  test(
-      'generates mock classes including a fallback generator for a generic '
+  test('generates mock classes including a fallback generator for a generic '
       'method with a parameter with a function-typed type argument with '
       'unknown return type', () async {
     final mocksContent = await buildWithNonNullable({
@@ -885,13 +944,12 @@ void main() {
           ],
         )
         void main() {}
-        ''')
+        '''),
     });
     expect(mocksContent, contains('returnValue: _i3.mShim<T>(a: a),'));
   });
 
-  test(
-      'generates mock classes including a fallback generator and '
+  test('generates mock classes including a fallback generator and '
       'OnMissingStub.returnDefault', () async {
     final mocksContent = await buildWithNonNullable({
       ...annotationsAsset,
@@ -917,36 +975,39 @@ void main() {
           ],
         )
         void main() {}
-        '''
+        ''',
     });
     expect(mocksContent, contains('returnValue: _i3.fShim(),'));
     expect(mocksContent, contains('returnValueForMissingStub: _i3.fShim(),'));
   });
 
   test(
-      'throws when GenerateMocks is given a class with a type parameter with a '
-      'private bound', () async {
-    _expectBuilderThrows(
-      assets: {
-        ...annotationsAsset,
-        'foo|lib/foo.dart': dedent(r'''
+    'throws when GenerateMocks is given a class with a type parameter with a '
+    'private bound',
+    () async {
+      _expectBuilderThrows(
+        assets: {
+          ...annotationsAsset,
+          'foo|lib/foo.dart': dedent(r'''
         class Foo<T extends _Bar> {
           void m(int a) {}
         }
         class _Bar {}
         '''),
-        'foo|test/foo_test.dart': dedent('''
+          'foo|test/foo_test.dart': dedent('''
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
         @GenerateMocks([], customMocks: [MockSpec<Foo>()])
         void main() {}
         '''),
-      },
-      message: contains(
+        },
+        message: contains(
           "The class 'Foo' features a private type parameter bound, and cannot "
-          'be stubbed.'),
-    );
-  });
+          'be stubbed.',
+        ),
+      );
+    },
+  );
 
   test('throws when MockSpec() is missing a type argument', () async {
     _expectBuilderThrows(
@@ -960,7 +1021,8 @@ void main() {
         '''),
       },
       message: contains(
-          'MockSpec requires a type argument to determine the class to mock'),
+        'MockSpec requires a type argument to determine the class to mock',
+      ),
     );
   });
 
@@ -994,18 +1056,19 @@ void main() {
     );
   });
 
-  test('throws when two distinct classes with the same name are mocked',
-      () async {
-    _expectBuilderThrows(
-      assets: {
-        ...annotationsAsset,
-        'foo|lib/a.dart': dedent(r'''
+  test(
+    'throws when two distinct classes with the same name are mocked',
+    () async {
+      _expectBuilderThrows(
+        assets: {
+          ...annotationsAsset,
+          'foo|lib/a.dart': dedent(r'''
         class Foo {}
         '''),
-        'foo|lib/b.dart': dedent(r'''
+          'foo|lib/b.dart': dedent(r'''
         class Foo {}
         '''),
-        'foo|test/foo_test.dart': dedent('''
+          'foo|test/foo_test.dart': dedent('''
         import 'package:foo/a.dart' as a;
         import 'package:foo/b.dart' as b;
         import 'package:mockito/annotations.dart';
@@ -1013,13 +1076,15 @@ void main() {
         @GenerateMocks([], customMocks: [MockSpec<b.Foo>()])
         void main() {}
         '''),
-      },
-      message: contains(
+        },
+        message: contains(
           'Mockito cannot generate two mocks with the same name: MockFoo (for '
           'Foo declared in /foo/lib/a.dart, and for Foo declared in '
-          '/foo/lib/b.dart)'),
-    );
-  });
+          '/foo/lib/b.dart)',
+        ),
+      );
+    },
+  );
 
   test('throws when a mock class of the same name already exists', () async {
     _expectBuilderThrows(
@@ -1037,8 +1102,9 @@ void main() {
         '''),
       },
       message: contains(
-          'Mockito cannot generate a mock with a name which conflicts with '
-          'another class declared in this library: MockFoo'),
+        'Mockito cannot generate a mock with a name which conflicts with '
+        'another class declared in this library: MockFoo',
+      ),
     );
   });
 
@@ -1060,7 +1126,8 @@ void main() {
         '''),
       },
       message: contains(
-          'contains a class which appears to already be mocked inline: FakeFoo'),
+        'contains a class which appears to already be mocked inline: FakeFoo',
+      ),
     );
   });
 
@@ -1120,12 +1187,13 @@ void main() {
     );
   });
 
-  test('throws when GenerateMocks references sealed a class via typedef',
-      () async {
-    _expectBuilderThrows(
-      assets: {
-        ...annotationsAsset,
-        'foo|test/foo_test.dart': dedent('''
+  test(
+    'throws when GenerateMocks references sealed a class via typedef',
+    () async {
+      _expectBuilderThrows(
+        assets: {
+          ...annotationsAsset,
+          'foo|test/foo_test.dart': dedent('''
         // @dart=3.0
         import 'package:mockito/annotations.dart';
         sealed class Foo {}
@@ -1133,10 +1201,11 @@ void main() {
         @GenerateMocks([], customMocks: [MockSpec<Bar>()])
         void main() {}
         '''),
-      },
-      message: contains("Mockito cannot mock a sealed class 'Foo'"),
-    );
-  });
+        },
+        message: contains("Mockito cannot mock a sealed class 'Foo'"),
+      );
+    },
+  );
 
   test('throws when GenerateMocks references a base class', () async {
     _expectBuilderThrows(
@@ -1228,34 +1297,34 @@ void main() {
   });
 
   test(
-      'generates a mock class which uses the new behavior of returning '
-      'a valid value for missing stubs, if GenerateNiceMocks were used',
-      () async {
-    final mocksContent = await buildWithNonNullable({
-      ...annotationsAsset,
-      'foo|lib/foo.dart': dedent(r'''
+    'generates a mock class which uses the new behavior of returning '
+    'a valid value for missing stubs, if GenerateNiceMocks were used',
+    () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
         class Bar {}
         abstract class Foo<T> {
           int m();
           Bar get f;
         }
         '''),
-      'foo|test/foo_test.dart': '''
+        'foo|test/foo_test.dart': '''
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
         @GenerateNiceMocks([MockSpec<Foo>()])
         void main() {}
-        '''
-    });
-    expect(mocksContent, isNot(contains('throwOnMissingStub')));
-    expect(mocksContent, contains('returnValue: 0'));
-    expect(mocksContent, contains('returnValueForMissingStub: 0'));
-    expect(mocksContent, contains('returnValue: _FakeBar_0('));
-    expect(mocksContent, contains('returnValueForMissingStub: _FakeBar_0('));
-  });
+        ''',
+      });
+      expect(mocksContent, isNot(contains('throwOnMissingStub')));
+      expect(mocksContent, contains('returnValue: 0'));
+      expect(mocksContent, contains('returnValueForMissingStub: 0'));
+      expect(mocksContent, contains('returnValue: _FakeBar_0('));
+      expect(mocksContent, contains('returnValueForMissingStub: _FakeBar_0('));
+    },
+  );
 
-  test(
-      'generates a mock class which uses the new behavior of returning '
+  test('generates a mock class which uses the new behavior of returning '
       'a valid value for missing stubs, if GenerateNiceMocks and '
       'fallbackGenerators were used', () async {
     final mocksContent = await buildWithNonNullable({
@@ -1275,32 +1344,34 @@ void main() {
 
         @GenerateNiceMocks([MockSpec<Foo>(fallbackGenerators: {#m: mShim})])
         void main() {}
-        '''
+        ''',
     });
     expect(mocksContent, isNot(contains('throwOnMissingStub')));
     expect(mocksContent, contains('returnValue: _i3.mShim(),'));
     expect(mocksContent, contains('returnValueForMissingStub: _i3.mShim(),'));
   });
 
-  test('mixed GenerateMocks and GenerateNiceMocks annotations could be used',
-      () async {
-    final mocksContent = await buildWithNonNullable({
-      ...annotationsAsset,
-      'foo|lib/foo.dart': dedent(r'''
+  test(
+    'mixed GenerateMocks and GenerateNiceMocks annotations could be used',
+    () async {
+      final mocksContent = await buildWithNonNullable({
+        ...annotationsAsset,
+        'foo|lib/foo.dart': dedent(r'''
         class Foo<T> {}
         class Bar {}
         '''),
-      'foo|test/foo_test.dart': '''
+        'foo|test/foo_test.dart': '''
         import 'package:foo/foo.dart';
         import 'package:mockito/annotations.dart';
         @GenerateNiceMocks([MockSpec<Foo>()])
         @GenerateMocks([], customMocks: [MockSpec<Bar>()])
         void main() {}
-        '''
-    });
-    expect(mocksContent, contains('class MockFoo'));
-    expect(mocksContent, contains('class MockBar'));
-  });
+        ''',
+      });
+      expect(mocksContent, contains('class MockFoo'));
+      expect(mocksContent, contains('class MockBar'));
+    },
+  );
 
   group('typedef mocks', () {
     group('are generated properly', () {
@@ -1318,7 +1389,7 @@ void main() {
               MockSpec<Bar>(),
             ])
             void main() {}
-          '''
+          ''',
         });
 
         expect(mocksContent, contains('class MockBar extends _i1.Mock'));
@@ -1339,15 +1410,14 @@ void main() {
               MockSpec<Bar>(),
             ])
             void main() {}
-          '''
+          ''',
         });
 
         expect(mocksContent, contains('class MockBar extends _i1.Mock'));
         expect(mocksContent, contains('implements _i2.Bar'));
       });
 
-      test(
-          'when the typedef defines a type and it corresponds to a different '
+      test('when the typedef defines a type and it corresponds to a different '
           'index of the aliased type', () async {
         final mocksContent = await buildWithNonNullable({
           ...annotationsAsset,
@@ -1362,7 +1432,7 @@ void main() {
               MockSpec<Bar<int>>(),
             ])
             void main() {}
-          '''
+          ''',
         });
 
         expect(mocksContent, contains('class MockBar extends _i1.Mock'));
@@ -1383,7 +1453,7 @@ void main() {
               MockSpec<Bar>(),
             ])
             void main() {}
-          '''
+          ''',
         });
 
         expect(mocksContent, contains('class MockBar extends _i1.Mock'));
@@ -1407,15 +1477,14 @@ void main() {
               MockSpec<Qux<Bar<int>>>(),
             ])
             void main() {}
-          '''
+          ''',
         });
 
         expect(mocksContent, contains('class MockQux extends _i1.Mock'));
         expect(mocksContent, contains('implements _i2.Qux<_i2.Foo<int>>'));
       });
 
-      test(
-          'when the typedef defines a bounded class type and it is NOT '
+      test('when the typedef defines a bounded class type and it is NOT '
           'instantiated', () async {
         final mocksContent = await buildWithNonNullable({
           ...annotationsAsset,
@@ -1431,16 +1500,17 @@ void main() {
               MockSpec<Baz>(),
             ])
             void main() {}
-          '''
+          ''',
         });
 
-        expect(mocksContent,
-            contains('class MockBaz<X extends _i1.Bar> extends _i2.Mock'));
+        expect(
+          mocksContent,
+          contains('class MockBaz<X extends _i1.Bar> extends _i2.Mock'),
+        );
         expect(mocksContent, contains('implements _i1.Baz<X>'));
       });
 
-      test(
-          'when the typedef defines a bounded type and the mock instantiates '
+      test('when the typedef defines a bounded type and the mock instantiates '
           'it', () async {
         final mocksContent = await buildWithNonNullable({
           ...annotationsAsset,
@@ -1455,7 +1525,7 @@ void main() {
               MockSpec<Bar<int>>(),
             ])
             void main() {}
-          '''
+          ''',
         });
 
         expect(mocksContent, contains('class MockBar extends _i1.Mock'));
@@ -1481,14 +1551,13 @@ void main() {
               MockSpec<Bar>(),
             ])
             void main() {}
-          '''
+          ''',
         });
 
         expect(mocksContent, contains('String get value'));
       });
 
-      test(
-          'when the typedef is parameterized and the aliased type has a '
+      test('when the typedef is parameterized and the aliased type has a '
           'parameterized method', () async {
         final mocksContent = await buildWithNonNullable({
           ...annotationsAsset,
@@ -1513,7 +1582,7 @@ void main() {
               MockSpec<Bar>(fallbackGenerators: {#value: fallbackGenerator}),
             ])
             void main() {}
-          '''
+          ''',
         });
 
         expect(mocksContent, contains('T get value'));
@@ -1537,7 +1606,7 @@ void main() {
               MockSpec<Bar>(),
             ])
             void main() {}
-          '''
+          ''',
         });
 
         expect(mocksContent, contains('class MockBar extends _i1.Mock'));
@@ -1562,7 +1631,7 @@ void main() {
               MockSpec<Baz>(),
             ])
             void main() {}
-          '''
+          ''',
         });
 
         expect(mocksContent, contains('class MockBaz extends _i1.Mock'));
@@ -1587,10 +1656,11 @@ void main() {
 
             @GenerateNiceMocks([MockSpec<Bar>()])
             void main() {}
-          '''
+          ''',
         },
-        message:
-            contains('Mockito cannot mock a type-aliased nullable type: Bar'),
+        message: contains(
+          'Mockito cannot mock a type-aliased nullable type: Bar',
+        ),
       );
     });
   });
@@ -1630,7 +1700,7 @@ void main() {
               MockSpec<Bar>(),
             ])
             void main() {}
-          '''
+          ''',
     });
     expect(mocksContent, contains('Iterable<T1> map<T1>(T1 Function(T)? f)'));
   });
@@ -1652,7 +1722,7 @@ void main() {
               MockSpec<Bar>(),
             ])
             void main() {}
-          '''
+          ''',
     });
     expect(mocksContent, contains('Iterable<T1> map<T1>(T1 Function(T)? f)'));
   });
@@ -1673,7 +1743,7 @@ void main() {
               MockSpec<Foo>(),
             ])
             void main() {}
-          '''
+          ''',
     });
     expect(mocksContent, contains('returnValue: <T1>(T1 __p0) => <T>[]'));
   });
@@ -1694,7 +1764,7 @@ void main() {
               MockSpec<Foo>(),
             ])
             void main() {}
-          '''
+          ''',
     });
     expect(mocksContent, contains('Iterable<T1> m<T1>(T1 Function()? f)'));
   });
@@ -1717,7 +1787,7 @@ void main() {
               MockSpec<Foo>(), MockSpec<Bar>(), MockSpec<FooBar>()
             ])
             void main() {}
-          '''
+          ''',
     });
     expect(mocksContent, contains('class MockBar<T>'));
     expect(mocksContent, contains('class MockFooBar<X>'));
@@ -1740,12 +1810,14 @@ void main() {
 
             @GenerateMocks([FooBar])
             void main() {}
-          '''
+          ''',
     });
     expect(
-        mocksContent,
-        contains(
-            'X1 m1<X1 extends _i2.Foo<_i2.Foo<X1, X>, X1>>(X1 Function(X)? f)'));
+      mocksContent,
+      contains(
+        'X1 m1<X1 extends _i2.Foo<_i2.Foo<X1, X>, X1>>(X1 Function(X)? f)',
+      ),
+    );
   });
 }
 
@@ -1756,9 +1828,15 @@ void _expectBuilderThrows({
   required dynamic /*String|Matcher<List<int>>*/ message,
 }) {
   expect(
-      () async => await testBuilder(buildMocks(BuilderOptions({})), assets),
-      throwsA(TypeMatcher<InvalidMockitoAnnotationException>()
-          .having((e) => e.message, 'message', message)));
+    () async => await testBuilder(buildMocks(BuilderOptions({})), assets),
+    throwsA(
+      TypeMatcher<InvalidMockitoAnnotationException>().having(
+        (e) => e.message,
+        'message',
+        message,
+      ),
+    ),
+  );
 }
 
 /// Dedent [input], so that each line is shifted to the left, so that the first
@@ -1766,6 +1844,8 @@ void _expectBuilderThrows({
 String dedent(String input) {
   final indentMatch = RegExp(r'^(\s*)').firstMatch(input)!;
   final indent = ''.padRight(indentMatch.group(1)!.length);
-  return input.splitMapJoin('\n',
-      onNonMatch: (s) => s.replaceFirst(RegExp('^$indent'), ''));
+  return input.splitMapJoin(
+    '\n',
+    onNonMatch: (s) => s.replaceFirst(RegExp('^$indent'), ''),
+  );
 }
