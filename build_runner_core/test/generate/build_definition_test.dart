@@ -129,6 +129,11 @@ targets:
       ]).create();
       var packageGraph = await PackageGraph.forPath(pkgARoot);
       environment = BuildEnvironment(packageGraph, onLogOverride: (_) {});
+      environment = environment.copyWith(
+        reader: environment.reader.copyWith(
+          digests: SingleBuildFilesystemDigests(),
+        ),
+      );
       options = await BuildOptions.create(
         LogSubscription(environment, logLevel: Level.OFF),
         packageGraph: packageGraph,
@@ -246,10 +251,15 @@ targets:
         });
         await createFile(
           assetGraphPath,
-          originalAssetGraph.serialize(const NoopFilesystemDigests()),
+          originalAssetGraph.serialize(environment.reader.digests),
         );
 
         await modifyFile(p.join('lib', 'a.txt'), 'b');
+        environment = environment.copyWith(
+          reader: environment.reader.copyWith(
+            digests: SingleBuildFilesystemDigests(),
+          ),
+        );
         var buildDefinition = await BuildDefinition.prepareWorkspace(
           environment,
           options,

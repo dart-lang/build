@@ -142,8 +142,7 @@ class AssetTracker {
     var preExistingSources = originalGraphSources.intersection(inputSources)
       ..addAll(internalSources.where(assetGraph.contains));
     var modifyChecks = preExistingSources.map((id) async {
-      var node = assetGraph.get(id)!;
-      var originalDigest = node.lastKnownDigest;
+      var originalDigest = assetGraph.previousFilesystemDigests.get(id);
       if (originalDigest == null) return;
       await _reader.cache.invalidate([id]);
       var currentDigest = await _reader.digest(id);

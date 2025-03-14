@@ -13,6 +13,8 @@ abstract interface class FilesystemDigests {
 
   Iterable<MapEntry<AssetId, Digest>> get digests;
 
+  Digest? get(AssetId id);
+
   BuiltMap<AssetId, Digest> toMap();
 }
 
@@ -26,6 +28,9 @@ class NoopFilesystemDigests implements FilesystemDigests {
   Iterable<MapEntry<AssetId, Digest>> get digests => const [];
 
   @override
+  Digest? get(AssetId id) => null;
+
+  @override
   BuiltMap<AssetId, Digest> toMap() => <AssetId, Digest>{}.build();
 }
 
@@ -36,6 +41,9 @@ class SingleBuildFilesystemDigests implements FilesystemDigests {
     : _digests = digests.toMap();
 
   SingleBuildFilesystemDigests() : _digests = {};
+
+  @override
+  Digest? get(AssetId id) => _digests[id];
 
   @override
   void addOrCheck(AssetId id, Digest digest) {
@@ -68,7 +76,7 @@ class FileChangedException implements Exception {
   @override
   String toString() =>
       '$id changed during the build, from ${_digestToString(from)} '
-      'to ${_digestToString(to)}$to.';
+      'to ${_digestToString(to)}.';
 }
 
 String _digestToString(Digest digest) {

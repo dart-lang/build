@@ -51,9 +51,10 @@ class BuildEnvironment {
 
   BuildEnvironment copyWith({
     void Function(LogRecord)? onLogOverride,
+    AssetReader? reader,
     RunnerAssetWriter? writer,
   }) => BuildEnvironment._(
-    reader,
+    reader ?? this.reader,
     writer ?? this.writer,
     _isInteractive,
     _outputSymlinksOnly,

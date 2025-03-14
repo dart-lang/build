@@ -6,6 +6,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:build/build.dart';
+// ignore: implementation_imports
+import 'package:build/src/internal.dart';
 import 'package:build_runner_core/build_runner_core.dart';
 import 'package:build_runner_core/src/asset_graph/graph.dart';
 import 'package:build_runner_core/src/generate/build_definition.dart';
@@ -40,7 +42,9 @@ void main() {
           isRoot: true,
         ),
       );
-      var reader = ReaderWriter(packageGraph);
+      var reader = ReaderWriter(
+        packageGraph,
+      ).copyWith(digests: SingleBuildFilesystemDigests());
       var aId = AssetId('a', 'web/a.txt');
       assetGraph = await AssetGraph.build([], {aId}, <AssetId>{}, packageGraph);
       // We need to pre-emptively assign a digest so we determine that the
@@ -63,6 +67,9 @@ void main() {
         (_) async {},
         reader,
       );
+      assetGraph = AssetGraph.deserialize(assetGraph.serialize(reader.digests));
+      reader = reader.copyWith(digests: SingleBuildFilesystemDigests());
+      assetTracker = AssetTracker(reader, targetGraph);
       // We should see no changes initially other than new sdk sources
       expect(
         updates..removeWhere(

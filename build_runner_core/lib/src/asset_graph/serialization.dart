@@ -55,7 +55,7 @@ class _AssetGraphDeserializer {
             .map((k, v) => MapEntry(k as AssetId, v as Digest)),
       ),
       SingleBuildFilesystemDigests.from(
-        (serializers.deserialize(_serializedGraph['builderOptionsDigests'])
+        (serializers.deserialize(_serializedGraph['filesystemDigests'])
                 as BuiltMap)
             .map((k, v) => MapEntry(k as AssetId, v as Digest)),
       ),
