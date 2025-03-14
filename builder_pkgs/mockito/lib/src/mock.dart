@@ -1252,7 +1252,10 @@ void verifyNoMoreInteractions(var mock) {
   if (mock is Mock) {
     final unverified = mock._realCalls.where((inv) => !inv.verified).toList();
     if (unverified.isNotEmpty) {
-      fail('No more calls expected, but following found: ${unverified.join()}');
+      fail(
+        'No more calls expected, but following found: '
+        '${unverified.join(',\n')}',
+      );
     }
   } else {
     _throwMockArgumentError('verifyNoMoreInteractions', mock);
@@ -1264,7 +1267,7 @@ void verifyZeroInteractions(var mock) {
     if (mock._realCalls.isNotEmpty) {
       fail(
         'No interaction expected, but following found: '
-        '${mock._realCalls.join()}',
+        '${mock._realCalls.join(',\n')}',
       );
     }
   } else {
