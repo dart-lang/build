@@ -1018,14 +1018,8 @@ class _SingleBuild {
         // This needs to be unique per input so we use the md5 hash of the id.
         combine(md5.convert(id.toString().codeUnits).bytes as Uint8List);
       } else {
-        if (node.lastKnownDigest == null) {
-          final digest = await reader.digest(id);
-          await reader.cache.invalidate([id]);
-          node = _assetGraph.updateNode(node.id, (nodeBuilder) {
-            nodeBuilder.lastKnownDigest = digest;
-          });
-        }
-        combine(node.lastKnownDigest!.bytes as Uint8List);
+        final digest = await _readerWriter.digest(id);
+        combine(digest.bytes as Uint8List);
       }
     }
 
